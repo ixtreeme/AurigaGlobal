@@ -1,0 +1,11 @@
+file(GLOB_RECURSE RENDER_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE RENDER_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Render STATIC ${RENDER_HEADER} ${RENDER_SOURCE})
+
+target_link_libraries(Render
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

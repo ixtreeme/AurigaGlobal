@@ -1,0 +1,1 @@
+auriga_add_server_executable(GameServer LIBS LUA)

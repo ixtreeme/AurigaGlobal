@@ -1,0 +1,11 @@
+file(GLOB_RECURSE EFFECT_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE EFFECT_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Effect STATIC ${EFFECT_HEADER} ${EFFECT_SOURCE})
+
+target_link_libraries(Effect
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

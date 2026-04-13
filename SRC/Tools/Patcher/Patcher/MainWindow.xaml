@@ -1,0 +1,112 @@
+﻿<Window x:Class="AurigaPatcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Patcher" Height="550" Width="840" Background="Transparent" WindowStyle="None" ResizeMode="NoResize" HorizontalAlignment="Left" VerticalAlignment="Top" Icon="/1-3526ebe1.ico" Focusable="False">
+    <Grid x:Name="Grid" Height="550" Width="840">
+        <Grid.Background>
+            <ImageBrush/>
+        </Grid.Background>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Image x:Name="img_bg" MouseLeftButtonDown="img_bg_MouseLeftButtonDown" Height="550" Width="840" Stretch="UniformToFill" Source="IMG/Patcher Full.png" />
+        <Image x:Name="img_pb_empty" HorizontalAlignment="Left" Width="526" Margin="20,465,0,0" Height="35" VerticalAlignment="Top" Source="IMG/Loading_0.png" />
+        <Image x:Name="img_pb_full" HorizontalAlignment="Left" Width="526" Margin="20,465,0,0" Height="35" VerticalAlignment="Top" Source="IMG/Loading_1.png" Stretch="UniformToFill"/>
+
+        <TextBlock x:Name="tb_pb_speed" Foreground="#FFACD403" Margin="288,396,280,115" FontSize="16" TextAlignment="Left" IsHitTestVisible="False" />
+
+        <TextBlock x:Name="tb_pb_full" Foreground="#FFACD403" Margin="22,396,593,115" FontSize="16" TextAlignment="Center" IsHitTestVisible="False"/>
+
+
+
+        <Image x:Name="btn_start" MouseLeftButtonDown="btn_start_MouseLeftButtonDown" HorizontalAlignment="Left" Height="90" Width="250" Margin="570,355,0,0" VerticalAlignment="Top" Source="IMG/Play.png" >
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+
+        <Image x:Name="btn_config" MouseLeftButtonDown="btn_config_MouseLeftButtonDown" HorizontalAlignment="Left" Height="40" Width="160" Margin="615,465,0,0" VerticalAlignment="Top" Source="IMG/Settings.png" >
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+        <Image  x:Name="btn_quit" MouseLeftButtonDown="btn_quit_MouseLeftButtonDown" HorizontalAlignment="Left" Height="35" Margin="791,10,0,0" VerticalAlignment="Top" Width="35" Source="IMG/Cancel.png">
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+        <Image x:Name="btn_minimize" MouseLeftButtonDown="btn_minimize_MouseLeftButtonDown" HorizontalAlignment="Left" Height="35" Margin="752,10,0,0" VerticalAlignment="Top" Width="35" Source="IMG/Minimalize.png">
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+        <Image x:Name="btn_dx" MouseLeftButtonDown="btn_dx_MouseLeftButtonDown" HorizontalAlignment="Left" Height="35" Margin="12,10,0,0" VerticalAlignment="Top" Width="36" Source="IMG/Dx_Button.png">
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+        <Image x:Name="btn_vc" MouseLeftButtonDown="btn_vc_MouseLeftButtonDown" HorizontalAlignment="Left" Height="35" Margin="58,10,0,0" VerticalAlignment="Top" Width="36" Source="IMG/Vcredisc_V2.png">
+            <Image.Style>
+                <Style>
+                    <Style.Triggers>
+                        <Trigger Property="UIElement.IsMouseOver" Value="True">
+                            <Setter Property="UIElement.Opacity" Value=".8" />
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="UIElement.Opacity" Value=".5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+        </Image>
+
+    </Grid>
+</Window>

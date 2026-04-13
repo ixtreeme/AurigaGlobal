@@ -1,0 +1,11 @@
+file(GLOB_RECURSE GAME_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE GAME_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Game STATIC ${GAME_HEADER} ${GAME_SOURCE})
+
+target_link_libraries(Game
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

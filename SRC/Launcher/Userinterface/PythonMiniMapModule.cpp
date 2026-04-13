@@ -1,0 +1,406 @@
+#include "StdAfx.h"
+#include "PythonMiniMap.h"
+#define ENABLE_MINIMAP_NAN_CHECK
+#ifdef ENABLE_MINIMAP_NAN_CHECK
+#include <cmath>
+#ifdef ENABLE_MINIMAP_NAN_CHECK
+bool _logged_INVALID_COORD = false;
+#endif
+
+// ====== SAFE CHECK + LOG SYSTEM ====== //
+#define MINI_LOG_ONCE(id, msg, ...) \
+{ \
+    static bool _logged_##id = false; \
+    if (!_logged_##id) { \
+        Tracenf(msg, ##__VA_ARGS__); \
+        _logged_##id = true; \
+    } \
+}
+
+#define MINI_LOG_RESET(id, msg, ...) \
+{ \
+    extern bool _logged_##id; \
+    if (_logged_##id) { \
+        Tracenf(msg, ##__VA_ARGS__); \
+        _logged_##id = false; \
+    } \
+}
+
+#define CHECK_SAFE_COORD(x, y) \
+    if (std::isnan(x) || std::isnan(y) || !std::isfinite(x) || !std::isfinite(y)) { \
+        MINI_LOG_ONCE(INVALID_COORD, "MiniMap ERROR: Invalid player position (x=%f, y=%f)", x, y); \
+        return Py_BuildValue(""); \
+    } else { \
+        MINI_LOG_RESET(INVALID_COORD, "MiniMap: Position recovered (x=%f, y=%f)", x, y); \
+    }
+#endif // ENABLE_MINIMAP_NAN_CHECK
+
+
+PyObject* miniMapSetScale(PyObject* poSelf, PyObject* poArgs)
+{
+    float fScale;
+    if (!PyTuple_GetFloat(poArgs, 0, &fScale))
+        return Py_BuildException();
+
+    CPythonMiniMap::Instance().SetScale(fScale);
+    return Py_BuildNone();
+}
+
+PyObject* miniMapSetCenterPosition(PyObject* poSelf, PyObject* poArgs)
+{
+    float fCenterX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fCenterX))
+        return Py_BuildException();
+
+    float fCenterY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fCenterY))
+        return Py_BuildException();
+
+    CPythonMiniMap::Instance().SetCenterPosition(fCenterX, fCenterY);
+    return Py_BuildNone();
+}
+
+PyObject* miniMapSetMiniMapSize(PyObject* poSelf, PyObject* poArgs)
+{
+    float fWidth;
+    if (!PyTuple_GetFloat(poArgs, 0, &fWidth))
+        return Py_BuildException();
+
+    float fHeight;
+    if (!PyTuple_GetFloat(poArgs, 1, &fHeight))
+        return Py_BuildException();
+
+    CPythonMiniMap::Instance().SetMiniMapSize(fWidth, fHeight);
+    return Py_BuildNone();
+}
+
+PyObject* miniMapDestroy(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().Destroy();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapCreate(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().Create();
+    return Py_BuildNone();
+}
+
+
+// ====================== UPDATE ====================== //
+PyObject* miniMapUpdate(PyObject* poSelf, PyObject* poArgs)
+{
+    float fCenterX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fCenterX))
+        return Py_BuildException();
+
+    float fCenterY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fCenterY))
+        return Py_BuildException();
+
+#ifdef ENABLE_MINIMAP_NAN_CHECK
+    CHECK_SAFE_COORD(fCenterX, fCenterY);
+  //  Tracenf("MiniMap Update OK (x=%f, y=%f)", fCenterX, fCenterY);
+#endif
+
+    CPythonMiniMap::Instance().Update(fCenterX, fCenterY);
+    return Py_BuildNone();
+}
+
+
+// ====================== RENDER ====================== //
+PyObject* miniMapRender(PyObject* poSelf, PyObject* poArgs)
+{
+    float fScrrenX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fScrrenX))
+        return Py_BuildException();
+
+    float fScrrenY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fScrrenY))
+        return Py_BuildException();
+
+#ifdef ENABLE_MINIMAP_NAN_CHECK
+    CHECK_SAFE_COORD(fScrrenX, fScrrenY);
+ //   Tracenf("MiniMap Render OK (fx=%f, fy=%f)", fScrrenX, fScrrenY);
+#endif
+
+    CPythonMiniMap::Instance().Render(fScrrenX, fScrrenY);
+    return Py_BuildNone();
+}
+
+
+PyObject* miniMapShow(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().Show();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapHide(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().Hide();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapisShow(PyObject* poSelf, PyObject* poArgs)
+{
+    bool bShow = CPythonMiniMap::Instance().CanShow();
+    return Py_BuildValue("b", bShow);
+}
+
+PyObject* miniMapScaleUp(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().ScaleUp();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapScaleDown(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().ScaleDown();
+    return Py_BuildNone();
+}
+
+
+// ====================== INFO ====================== //
+PyObject* miniMapGetInfo(PyObject* poSelf, PyObject* poArgs)
+{
+    float fScrrenX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fScrrenX))
+        return Py_BuildException();
+
+    float fScrrenY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fScrrenY))
+        return Py_BuildException();
+
+    std::string aString;
+    float fPosX, fPosY;
+    uint32_t dwTextColor;
+    bool bFind = CPythonMiniMap::Instance().GetPickedInstanceInfo(fScrrenX, fScrrenY, aString, &fPosX, &fPosY, &dwTextColor);
+    int iPosX, iPosY;
+    PR_FLOAT_TO_INT(fPosX, iPosX);
+    PR_FLOAT_TO_INT(fPosY, iPosY);
+    iPosX /= 100;
+    iPosY /= 100;
+    return Py_BuildValue("isiil", (int)bFind, aString.c_str(), iPosX, iPosY, (signed)dwTextColor);
+}
+
+
+// ====================== ATLAS ====================== //
+PyObject* miniMapLoadAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    if (!CPythonMiniMap::Instance().LoadAtlas())
+        TraceError("CPythonMiniMap::Instance().LoadAtlas() Failed");
+    return Py_BuildNone();
+}
+
+PyObject* miniMapUpdateAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().UpdateAtlas();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapRenderAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    float fScrrenX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fScrrenX))
+        return Py_BuildException();
+
+    float fScrrenY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fScrrenY))
+        return Py_BuildException();
+
+#ifdef ENABLE_MINIMAP_NAN_CHECK
+    CHECK_SAFE_COORD(fScrrenX, fScrrenY);
+    Tracenf("MiniMap Atlas Render OK (fx=%f, fy=%f)", fScrrenX, fScrrenY);
+#endif
+
+    CPythonMiniMap::Instance().RenderAtlas(fScrrenX, fScrrenY);
+    return Py_BuildNone();
+}
+
+PyObject* miniMapShowAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().ShowAtlas();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapHideAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().HideAtlas();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapisShowAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    bool bShow = CPythonMiniMap::Instance().CanShowAtlas();
+    return Py_BuildValue("b", bShow);
+}
+
+PyObject* miniMapIsAtlas(PyObject* poSelf, PyObject* poArgs)
+{
+    bool isData = CPythonMiniMap::Instance().IsAtlas();
+    return Py_BuildValue("b", isData);
+}
+
+PyObject* miniMapGetAtlasInfo(PyObject* poSelf, PyObject* poArgs)
+{
+    float fScrrenX;
+    if (!PyTuple_GetFloat(poArgs, 0, &fScrrenX))
+        return Py_BuildException();
+    float fScrrenY;
+    if (!PyTuple_GetFloat(poArgs, 1, &fScrrenY))
+        return Py_BuildException();
+
+    std::string aString = "";
+    float fPosX = 0.0f;
+    float fPosY = 0.0f;
+    uint32_t dwTextColor = 0;
+    uint32_t dwGuildID = 0;
+#ifdef ENABLE_ATLAS_BOSS
+    long lTime = 0;
+    bool bFind = CPythonMiniMap::Instance().GetAtlasInfo(fScrrenX, fScrrenY, aString, &fPosX, &fPosY, &dwTextColor, &dwGuildID, &lTime);
+#else
+    bool bFind = CPythonMiniMap::Instance().GetAtlasInfo(fScrrenX, fScrrenY, aString, &fPosX, &fPosY, &dwTextColor, &dwGuildID);
+#endif
+    int iPosX, iPosY;
+    PR_FLOAT_TO_INT(fPosX, iPosX);
+    PR_FLOAT_TO_INT(fPosY, iPosY);
+    iPosX /= 100;
+    iPosY /= 100;
+#ifdef ENABLE_ATLAS_BOSS
+    return Py_BuildValue("isiilii", (int)bFind, aString.c_str(), iPosX, iPosY, (signed)dwTextColor, dwGuildID, lTime);
+#else
+    return Py_BuildValue("isiili", (int)bFind, aString.c_str(), iPosX, iPosY, (signed)dwTextColor, dwGuildID);
+#endif
+}
+
+PyObject* miniMapGetAtlasSize(PyObject* poSelf, PyObject* poArgs)
+{
+    float fSizeX, fSizeY;
+    bool bGet = CPythonMiniMap::Instance().GetAtlasSize(&fSizeX, &fSizeY);
+
+    int iSizeX, iSizeY;
+    PR_FLOAT_TO_INT(fSizeX, iSizeX);
+    PR_FLOAT_TO_INT(fSizeY, iSizeY);
+
+    return Py_BuildValue("bii", (int)bGet, iSizeX, iSizeY);
+}
+
+PyObject* miniMapAddWayPoint(PyObject* poSelf, PyObject* poArgs)
+{
+    int iID;
+    if (!PyTuple_GetInteger(poArgs, 0, &iID))
+        return Py_BuildException();
+
+    float fX;
+    if (!PyTuple_GetFloat(poArgs, 1, &fX))
+        return Py_BuildException();
+
+    float fY;
+    if (!PyTuple_GetFloat(poArgs, 2, &fY))
+        return Py_BuildException();
+
+    char* buf = nullptr;
+    if (!PyTuple_GetString(poArgs, 3, &buf))
+        return Py_BuildException();
+
+    CPythonMiniMap::Instance().AddWayPoint(CPythonMiniMap::TYPE_WAYPOINT, (uint32_t)iID, fX, fY, buf);
+
+    return Py_BuildNone();
+}
+
+PyObject* miniMapRemoveWayPoint(PyObject* poSelf, PyObject* poArgs)
+{
+    int iID;
+    if (!PyTuple_GetInteger(poArgs, 0, &iID))
+        return Py_BuildException();
+
+    CPythonMiniMap::Instance().RemoveWayPoint((uint32_t)iID);
+
+    return Py_BuildNone();
+}
+
+PyObject* miniMapRegisterAtlasWindow(PyObject* poSelf, PyObject* poArgs)
+{
+    PyObject* poHandler;
+    if (!PyTuple_GetObject(poArgs, 0, &poHandler))
+        return Py_BuildException();
+    CPythonMiniMap::Instance().RegisterAtlasWindow(poHandler);
+    return Py_BuildNone();
+}
+
+PyObject* miniMapUnregisterAtlasWindow(PyObject* poSelf, PyObject* poArgs)
+{
+    CPythonMiniMap::Instance().UnregisterAtlasWindow();
+    return Py_BuildNone();
+}
+
+PyObject* miniMapGetGuildAreaID(PyObject* poSelf, PyObject* poArgs)
+{
+    float fx;
+    if (!PyTuple_GetFloat(poArgs, 0, &fx))
+        return Py_BuildException();
+    float fy;
+    if (!PyTuple_GetFloat(poArgs, 1, &fy))
+        return Py_BuildException();
+
+    uint32_t dwGuildID = CPythonMiniMap::Instance().GetGuildAreaID(fx, fy);
+    return Py_BuildValue("i", dwGuildID);
+}
+
+void initMiniMap()
+{
+    static PyMethodDef s_methods[] =
+    {
+        { "SetScale", miniMapSetScale, METH_VARARGS },
+        { "ScaleUp", miniMapScaleUp, METH_VARARGS },
+        { "ScaleDown", miniMapScaleDown, METH_VARARGS },
+        { "SetMiniMapSize", miniMapSetMiniMapSize, METH_VARARGS },
+
+        { "SetCenterPosition", miniMapSetCenterPosition, METH_VARARGS },
+
+        { "Destroy", miniMapDestroy, METH_VARARGS },
+        { "Create", miniMapCreate, METH_VARARGS },
+        { "Update", miniMapUpdate, METH_VARARGS },
+        { "Render", miniMapRender, METH_VARARGS },
+
+        { "Show", miniMapShow, METH_VARARGS },
+        { "Hide", miniMapHide, METH_VARARGS },
+
+        { "isShow", miniMapisShow, METH_VARARGS },
+
+        { "GetInfo", miniMapGetInfo, METH_VARARGS },
+
+        { "LoadAtlas", miniMapLoadAtlas, METH_VARARGS },
+        { "UpdateAtlas", miniMapUpdateAtlas, METH_VARARGS },
+        { "RenderAtlas", miniMapRenderAtlas, METH_VARARGS },
+        { "ShowAtlas", miniMapShowAtlas, METH_VARARGS },
+        { "HideAtlas", miniMapHideAtlas, METH_VARARGS },
+        { "isShowAtlas", miniMapisShowAtlas, METH_VARARGS },
+        { "IsAtlas", miniMapIsAtlas, METH_VARARGS },
+        { "GetAtlasInfo", miniMapGetAtlasInfo, METH_VARARGS },
+        { "GetAtlasSize", miniMapGetAtlasSize, METH_VARARGS },
+
+        { "AddWayPoint", miniMapAddWayPoint, METH_VARARGS },
+        { "RemoveWayPoint", miniMapRemoveWayPoint, METH_VARARGS },
+
+        { "RegisterAtlasWindow", miniMapRegisterAtlasWindow, METH_VARARGS },
+        { "UnregisterAtlasWindow", miniMapUnregisterAtlasWindow, METH_VARARGS },
+
+        { "GetGuildAreaID", miniMapGetGuildAreaID, METH_VARARGS },
+
+        { nullptr, nullptr },
+    };
+
+    PyObject* poModule = Py_InitModule("miniMap", s_methods);
+
+    PyModule_AddIntConstant(poModule, "TYPE_OPC", CPythonMiniMap::TYPE_OPC);
+    PyModule_AddIntConstant(poModule, "TYPE_OPCPVP", CPythonMiniMap::TYPE_OPCPVP);
+    PyModule_AddIntConstant(poModule, "TYPE_OPCPVPSELF", CPythonMiniMap::TYPE_OPCPVPSELF);
+    PyModule_AddIntConstant(poModule, "TYPE_NPC", CPythonMiniMap::TYPE_NPC);
+    PyModule_AddIntConstant(poModule, "TYPE_MONSTER", CPythonMiniMap::TYPE_MONSTER);
+    PyModule_AddIntConstant(poModule, "TYPE_WARP", CPythonMiniMap::TYPE_WARP);
+    PyModule_AddIntConstant(poModule, "TYPE_WAYPOINT", CPythonMiniMap::TYPE_WAYPOINT);
+    PyModule_AddIntConstant(poModule, "TYPE_PARTY", CPythonMiniMap::TYPE_PARTY);
+    PyModule_AddIntConstant(poModule, "TYPE_EMPIRE", CPythonMiniMap::TYPE_EMPIRE);
+}
+

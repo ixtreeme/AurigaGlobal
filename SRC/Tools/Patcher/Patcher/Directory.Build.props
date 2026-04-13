@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <!-- Stabilabb build -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+
+    <!-- Ne legyen full PDB path leak / stabilabb forrásútvonal -->
+    <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
+
+    <!-- PDB legyen hordozható -->
+    <DebugType>portable</DebugType>
+
+    <!-- Ajánlott release-hez -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+</Project>

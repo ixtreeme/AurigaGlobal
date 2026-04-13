@@ -1,0 +1,10 @@
+file(GLOB_RECURSE AUDIO_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE AUDIO_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(AudioLib STATIC ${AUDIO_HEADER} ${AUDIO_SOURCE})
+
+target_link_libraries(AudioLib
+	PUBLIC granny2
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

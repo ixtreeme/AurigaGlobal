@@ -1,0 +1,11 @@
+file(GLOB_RECURSE SCRIPT_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE SCRIPT_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Script STATIC ${SCRIPT_HEADER} ${SCRIPT_SOURCE})
+
+target_link_libraries(Script
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

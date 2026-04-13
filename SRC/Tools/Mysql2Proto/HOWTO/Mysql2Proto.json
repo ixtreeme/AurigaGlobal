@@ -1,0 +1,7 @@
+{
+	"hostname":	"152.53.120.221",
+	"user":		"ixtreeme",
+	"password":	"admin",
+	"database":	"player",
+	"port":		3306
+}

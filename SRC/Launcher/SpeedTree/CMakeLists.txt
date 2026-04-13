@@ -1,0 +1,9 @@
+file(GLOB_RECURSE SPT_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE SPT_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(SpeedTree STATIC ${SPT_HEADER} ${SPT_SOURCE})
+
+target_link_libraries(SpeedTree
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

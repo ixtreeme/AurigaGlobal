@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Ne próbáljon determinisztikus source path-okat csinálni -->
+    <Deterministic>false</Deterministic>
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
+
+    <!-- PDB portable -->
+    <DebugType>portable</DebugType>
+
+    <!-- Release optimalizálás -->
+    <Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
+  </PropertyGroup>
+</Project>

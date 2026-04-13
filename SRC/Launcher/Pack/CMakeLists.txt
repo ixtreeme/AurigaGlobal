@@ -1,0 +1,11 @@
+file(GLOB_RECURSE PACK_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE PACK_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Pack STATIC ${PACK_HEADER} ${PACK_SOURCE})
+
+target_link_libraries(Pack
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)

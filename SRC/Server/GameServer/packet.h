@@ -1,0 +1,656 @@
+#pragma once
+
+#include "stdafx.h"
+#include <common/Headers/Header_CG.h>
+#include <common/Headers/Header_GC.h>
+#include <common/Headers/Header_GG.h>
+#include <common/Headers/CG_Packet.h>
+#include <common/Headers/GC_Packet.h>
+#include <common/Headers/GG_Packet.h>
+
+#pragma pack(1)
+
+
+enum
+{
+	GUILD_SUBHEADER_GG_CHAT,
+	GUILD_SUBHEADER_GG_SET_MEMBER_COUNT_BONUS,
+	// Razor93: guild renewal (21+ level) sync between cores
+	GUILD_SUBHEADER_GG_RENEWAL_LEVEL_UPDATE,
+	GUILD_SUBHEADER_GG_RENEWAL_REFRESH, // sync renewal storage/money/contrib
+};
+
+enum
+{
+	PARTY_SUBHEADER_GG_CREATE,
+	PARTY_SUBHEADER_GG_DESTROY,
+	PARTY_SUBHEADER_GG_JOIN,
+	PARTY_SUBHEADER_GG_QUIT,
+};
+
+typedef struct SMessengerData
+{
+	char        szMobile[MOBILE_MAX_LEN + 1];
+} TMessengerData;
+
+enum EMoveFuncType
+{
+	FUNC_WAIT,
+	FUNC_MOVE,
+	FUNC_ATTACK,
+	FUNC_COMBO,
+	FUNC_MOB_SKILL,
+	_FUNC_SKILL,
+	FUNC_MAX_NUM,
+	FUNC_SKILL = 0x80,
+};
+
+enum
+{
+	SHOP_SUBHEADER_CG_END,
+	SHOP_SUBHEADER_CG_BUY,
+	SHOP_SUBHEADER_CG_SELL,
+	SHOP_SUBHEADER_CG_SELL2
+#ifdef ENABLE_BUY_STACK_FROM_SHOP
+	,SHOP_SUBHEADER_CG_BUY2
+#endif
+};
+
+enum
+{
+	EXCHANGE_SUBHEADER_CG_START,	/* arg1 == vid of target character */
+	EXCHANGE_SUBHEADER_CG_ITEM_ADD,	/* arg1 == position of item */
+	EXCHANGE_SUBHEADER_CG_ITEM_DEL,	/* arg1 == position of item */
+	EXCHANGE_SUBHEADER_CG_ELK_ADD,	/* arg1 == amount of gold */
+	EXCHANGE_SUBHEADER_CG_ACCEPT,	/* arg1 == not used */
+	EXCHANGE_SUBHEADER_CG_CANCEL,	/* arg1 == not used */
+};
+
+enum EPhase
+{
+	PHASE_CLOSE,
+	PHASE_HANDSHAKE,
+	PHASE_LOGIN,
+	PHASE_SELECT,
+	PHASE_LOADING,
+	PHASE_GAME,
+	PHASE_DEAD,
+
+	PHASE_CLIENT_CONNECTING,
+	PHASE_DBCLIENT,
+	PHASE_P2P,
+	PHASE_AUTH,
+
+};
+
+enum
+{
+	LOGIN_FAILURE_ALREADY	= 1,
+	LOGIN_FAILURE_ID_NOT_EXIST	= 2,
+	LOGIN_FAILURE_WRONG_PASS	= 3,
+	LOGIN_FAILURE_FALSE		= 4,
+	LOGIN_FAILURE_NOT_TESTOR	= 5,
+	LOGIN_FAILURE_NOT_TEST_TIME	= 6,
+	LOGIN_FAILURE_FULL		= 7
+};
+
+enum
+{
+	ADD_CHARACTER_STATE_DEAD		= (1 << 0),
+	ADD_CHARACTER_STATE_SPAWN		= (1 << 1),
+	ADD_CHARACTER_STATE_GUNGON		= (1 << 2),
+	ADD_CHARACTER_STATE_KILLER		= (1 << 3),
+	ADD_CHARACTER_STATE_PARTY		= (1 << 4),
+};
+
+
+
+struct packet_item_use
+{
+	uint8_t	header;
+	TItemPos Cell;
+	uint32_t	ch_vid;
+	uint32_t	victim_vid;
+	uint32_t	vnum;
+};
+
+struct packet_item_move
+{
+	uint8_t	header;
+	TItemPos Cell;
+	TItemPos CellTo;
+};
+
+struct packet_quickslot_add
+{
+	uint8_t	header;
+	uint8_t	pos;
+	TQuickslot	slot;
+};
+
+struct packet_quickslot_del
+{
+	uint8_t	header;
+	uint8_t	pos;
+};
+
+struct packet_quickslot_swap
+{
+	uint8_t	header;
+	uint8_t	pos;
+	uint8_t	pos_to;
+};
+
+struct packet_motion
+{
+	uint8_t	header;
+	uint32_t	vid;
+	uint32_t	victim_vid;
+	uint16_t	motion;
+};
+
+enum EPacketShopSubHeaders
+{
+	SHOP_SUBHEADER_GC_START,
+	SHOP_SUBHEADER_GC_END,
+	SHOP_SUBHEADER_GC_UPDATE_ITEM,
+	SHOP_SUBHEADER_GC_UPDATE_PRICE,
+	SHOP_SUBHEADER_GC_OK,
+	SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY,
+#ifdef ENABLE_BUY_WITH_ITEM
+    SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM,
+#endif
+	SHOP_SUBHEADER_GC_SOLDOUT,
+	SHOP_SUBHEADER_GC_INVENTORY_FULL,
+	SHOP_SUBHEADER_GC_INVALID_POS,
+	SHOP_SUBHEADER_GC_SOLD_OUT,
+	SHOP_SUBHEADER_GC_START_EX,
+	SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX,
+};
+
+enum EPacketTradeSubHeaders
+{
+	EXCHANGE_SUBHEADER_GC_START,	/* arg1 == vid */
+	EXCHANGE_SUBHEADER_GC_ITEM_ADD,	/* arg1 == vnum  arg2 == pos  arg3 == count */
+	EXCHANGE_SUBHEADER_GC_ITEM_DEL,
+	EXCHANGE_SUBHEADER_GC_GOLD_ADD,	/* arg1 == gold */
+	EXCHANGE_SUBHEADER_GC_ACCEPT,	/* arg1 == accept */
+	EXCHANGE_SUBHEADER_GC_END,		/* arg1 == not used */
+	EXCHANGE_SUBHEADER_GC_ALREADY,	/* arg1 == not used */
+	EXCHANGE_SUBHEADER_GC_LESS_GOLD,	/* arg1 == not used */
+};
+
+enum EPVPModes
+{
+	PVP_MODE_NONE,
+	PVP_MODE_AGREE,
+	PVP_MODE_FIGHT,
+	PVP_MODE_REVENGE
+};
+
+struct packet_quest_info
+{
+	uint8_t header;
+	uint16_t size;
+	uint16_t index;
+#ifdef __QUEST_RENEWAL__
+	uint16_t c_index;
+#endif
+	uint8_t flag;
+	char	szTitle[30 + 1];
+	uint8_t	isBegin;
+	char	szClockName[16 + 1];
+	int		iClockValue;
+	char	szCounterName[16 + 1];
+	int		iCounterValue;
+	char	szIconFileName[24 + 1];
+};
+
+enum
+{
+#ifdef ENABLE_MESSENGER_TEAM
+	MESSENGER_SUBHEADER_GC_TEAM_LIST,
+	MESSENGER_SUBHEADER_GC_TEAM_LOGIN,
+	MESSENGER_SUBHEADER_GC_TEAM_LOGOUT,
+#endif
+	MESSENGER_SUBHEADER_GC_LIST,
+	MESSENGER_SUBHEADER_GC_LOGIN,
+	MESSENGER_SUBHEADER_GC_LOGOUT,
+	MESSENGER_SUBHEADER_GC_INVITE,
+	MESSENGER_SUBHEADER_GC_MOBILE
+#ifdef ENABLE_MESSENGER_HELPER
+	, MESSENGER_SUBHEADER_GC_HELPER_LIST,
+	MESSENGER_SUBHEADER_GC_HELPER_LOGIN,
+	MESSENGER_SUBHEADER_GC_HELPER_LOGOUT
+#endif
+};
+
+enum
+{
+	MESSENGER_SUBHEADER_CG_ADD_BY_VID,
+	MESSENGER_SUBHEADER_CG_ADD_BY_NAME,
+	MESSENGER_SUBHEADER_CG_REMOVE,
+	MESSENGER_SUBHEADER_CG_INVITE_ANSWER,
+};
+
+enum
+{
+	PARTY_SKILL_HEAL = 1,
+	PARTY_SKILL_WARP = 2
+};
+
+enum
+{
+	SAFEBOX_MONEY_STATE_SAVE,
+	SAFEBOX_MONEY_STATE_WITHDRAW,
+};
+
+enum
+{
+	GUILD_SUBHEADER_GC_LOGIN,
+	GUILD_SUBHEADER_GC_LOGOUT,
+	GUILD_SUBHEADER_GC_LIST,
+	GUILD_SUBHEADER_GC_GRADE,
+	GUILD_SUBHEADER_GC_ADD,
+	GUILD_SUBHEADER_GC_REMOVE,
+	GUILD_SUBHEADER_GC_GRADE_NAME,
+	GUILD_SUBHEADER_GC_GRADE_AUTH,
+	GUILD_SUBHEADER_GC_INFO,
+	GUILD_SUBHEADER_GC_COMMENTS,
+	GUILD_SUBHEADER_GC_CHANGE_EXP,
+	GUILD_SUBHEADER_GC_CHANGE_MEMBER_GRADE,
+	GUILD_SUBHEADER_GC_SKILL_INFO,
+	GUILD_SUBHEADER_GC_CHANGE_MEMBER_GENERAL,
+	GUILD_SUBHEADER_GC_GUILD_INVITE,
+	GUILD_SUBHEADER_GC_WAR,
+	GUILD_SUBHEADER_GC_GUILD_NAME,
+	GUILD_SUBHEADER_GC_GUILD_WAR_LIST,
+	GUILD_SUBHEADER_GC_GUILD_WAR_END_LIST,
+	GUILD_SUBHEADER_GC_WAR_SCORE,
+	GUILD_SUBHEADER_GC_MONEY_CHANGE,
+#ifdef ADVANCED_GUILD_INFO
+	GUILD_SUBHEADER_GC_CHANGE_TROPHIES,
+#endif
+};
+
+enum GUILD_SUBHEADER_CG
+{
+	GUILD_SUBHEADER_CG_ADD_MEMBER,
+	GUILD_SUBHEADER_CG_REMOVE_MEMBER,
+	GUILD_SUBHEADER_CG_CHANGE_GRADE_NAME,
+	GUILD_SUBHEADER_CG_CHANGE_GRADE_AUTHORITY,
+	GUILD_SUBHEADER_CG_OFFER,
+	GUILD_SUBHEADER_CG_POST_COMMENT,
+	GUILD_SUBHEADER_CG_DELETE_COMMENT,
+	GUILD_SUBHEADER_CG_REFRESH_COMMENT,
+	GUILD_SUBHEADER_CG_CHANGE_MEMBER_GRADE,
+	GUILD_SUBHEADER_CG_USE_SKILL,
+	GUILD_SUBHEADER_CG_CHANGE_MEMBER_GENERAL,
+	GUILD_SUBHEADER_CG_GUILD_INVITE_ANSWER,
+	GUILD_SUBHEADER_CG_CHARGE_GSP,
+	GUILD_SUBHEADER_CG_DEPOSIT_MONEY,
+	GUILD_SUBHEADER_CG_WITHDRAW_MONEY,
+};
+
+enum
+{
+	FISHING_SUBHEADER_GC_START,
+	FISHING_SUBHEADER_GC_STOP,
+	FISHING_SUBHEADER_GC_REACT,
+	FISHING_SUBHEADER_GC_SUCCESS,
+	FISHING_SUBHEADER_GC_FAIL,
+	FISHING_SUBHEADER_GC_FISH,
+};
+
+enum
+{
+	DUNGEON_SUBHEADER_GC_TIME_ATTACK_START = 0,
+	DUNGEON_SUBHEADER_GC_DESTINATION_POSITION = 1,
+};
+
+enum
+{
+	WALKMODE_RUN,
+	WALKMODE_WALK,
+};
+
+struct TNPCPosition
+{
+	uint8_t bType;
+#ifdef ENABLE_MULTI_NAMES
+	uint32_t	name;
+#else
+	char	name[CHARACTER_NAME_MAX_LEN+1];
+#endif
+	int32_t x;
+	int32_t y;
+};
+
+typedef struct SEquipmentItemSet
+{
+	uint32_t   vnum;
+	uint8_t    count;
+	int32_t    alSockets[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+} TEquipmentItemSet;
+
+typedef struct pakcet_view_equip
+{
+	uint8_t	header;
+	uint32_t	vid;
+	struct
+	{
+		uint32_t	vnum;
+		uint8_t	count;
+		int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
+		TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+	}
+#ifdef EQUIP_ENABLE_VIEW_SASH
+	equips[23];
+#else
+	equips[16];	
+#endif
+} TPacketViewEquip;
+
+typedef struct
+{
+	uint32_t	dwID;
+	int32_t	x, y;
+	int32_t	width, height;
+	uint32_t	dwGuildID;
+} TLandPacketElement;
+
+typedef struct SPacketGGPCBangUpdate
+{
+	uint8_t bHeader;
+	unsigned long ulPCBangID;
+} TPacketPCBangUpdate;
+
+#ifdef _IMPROVED_PACKET_ENCRYPTION_
+struct TPacketKeyAgreement
+{
+	static const int MAX_DATA_LEN = 256;
+	uint8_t bHeader;
+	uint16_t wAgreedLength;
+	uint16_t wDataLength;
+	uint8_t data[MAX_DATA_LEN];
+};
+
+struct TPacketKeyAgreementCompleted
+{
+	uint8_t bHeader;
+	uint8_t data[3]; // dummy (not used)
+};
+
+#endif // _IMPROVED_PACKET_ENCRYPTION_
+
+
+
+// ȥ
+enum EDragonSoulRefineWindowRefineType
+{
+	DragonSoulRefineWindow_UPGRADE,
+	DragonSoulRefineWindow_IMPROVEMENT,
+	DragonSoulRefineWindow_REFINE,
+};
+
+enum EPacketCGDragonSoulSubHeaderType
+{
+	DS_SUB_HEADER_OPEN,
+	DS_SUB_HEADER_CLOSE,
+	DS_SUB_HEADER_DO_REFINE_GRADE,
+	DS_SUB_HEADER_DO_REFINE_STEP,
+	DS_SUB_HEADER_DO_REFINE_STRENGTH,
+	DS_SUB_HEADER_REFINE_FAIL,
+	DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE,
+	DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL,
+	DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY,
+	DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL,
+	DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL,
+	DS_SUB_HEADER_REFINE_SUCCEED,
+};
+typedef struct SPacketGGCheckAwakeness
+{
+	uint8_t bHeader;
+} TPacketGGCheckAwakeness;
+
+#ifdef ENABLE_DS_REFINE_ALL
+typedef struct SPacketDragonSoulRefineAll {
+	uint8_t header, subheader, type, grade;
+} TPacketDragonSoulRefineAll;
+#endif
+
+
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+namespace offlineshop
+{
+	typedef struct {
+		TItemPos	pos;
+		TPriceInfo	price;
+	}TShopItemInfo;
+
+	//AUCTION
+	typedef struct {
+		TAuctionInfo	auction;
+		TPriceInfo		actual_best;
+		uint32_t			dwOfferCount;
+	}TAuctionListElement;
+
+	//offlineshop-updated 03/08/19
+	typedef struct {
+		TItemInfo item;
+		char szShopName[OFFLINE_SHOP_NAME_MAX_LEN];
+	} TMyOfferExtraInfo;
+
+
+	//GAME TO CLIENT
+	enum eSubHeaderGC
+	{
+		SUBHEADER_GC_SHOP_LIST,
+		SUBHEADER_GC_SHOP_OPEN,
+		SUBHEADER_GC_SHOP_OPEN_OWNER,
+		SUBHEADER_GC_SHOP_OPEN_OWNER_NO_SHOP,
+		SUBHEADER_GC_SHOP_CLOSE,
+		SUBHEADER_GC_SHOP_BUY_ITEM_FROM_SEARCH,
+
+		SUBHEADER_GC_OFFER_LIST,
+
+		SUBHEADER_GC_SHOP_FILTER_RESULT,
+		SUBHEADER_GC_SHOP_SAFEBOX_REFRESH,
+
+		//AUCTION
+		SUBHEADER_GC_AUCTION_LIST,
+		SUBHEADER_GC_OPEN_MY_AUCTION,
+		SUBHEADER_GC_OPEN_MY_AUCTION_NO_AUCTION,
+		SUBHEADER_GC_OPEN_AUCTION,
+#ifdef ENABLE_NEW_SHOP_IN_CITIES
+		SUBHEADER_GC_INSERT_SHOP_ENTITY,
+		SUBHEADER_GC_REMOVE_SHOP_ENTITY,
+#endif
+
+	};
+
+	
+
+	// CLIENT TO GAME
+	enum eSubHeaderCG
+	{
+		SUBHEADER_CG_SHOP_CREATE_NEW,
+		SUBHEADER_CG_SHOP_CHANGE_NAME,
+		SUBHEADER_CG_SHOP_FORCE_CLOSE,
+		SUBHEADER_CG_SHOP_REQUEST_SHOPLIST,
+		SUBHEADER_CG_SHOP_OPEN,
+		SUBHEADER_CG_SHOP_OPEN_OWNER,
+		SUBHEADER_CG_SHOP_BUY_ITEM,
+
+		SUBHEADER_CG_SHOP_ADD_ITEM,
+		SUBHEADER_CG_SHOP_REMOVE_ITEM,
+		SUBHEADER_CG_SHOP_EDIT_ITEM,
+
+		SUBHEADER_CG_SHOP_FILTER_REQUEST,
+
+		SUBHEADER_CG_SHOP_OFFER_CREATE,
+		SUBHEADER_CG_SHOP_OFFER_ACCEPT,
+		SUBHEADER_CG_SHOP_OFFER_CANCEL,
+		SUBHEADER_CG_SHOP_REQUEST_OFFER_LIST,
+
+		SUBHEADER_CG_SHOP_SAFEBOX_OPEN,
+		SUBHEADER_CG_SHOP_SAFEBOX_GET_ITEM,
+		SUBHEADER_CG_SHOP_SAFEBOX_GET_VALUTES,
+		SUBHEADER_CG_SHOP_SAFEBOX_CLOSE,
+
+		//AUCTION
+		SUBHEADER_CG_AUCTION_LIST_REQUEST,
+		SUBHEADER_CG_AUCTION_OPEN_REQUEST,
+		SUBHEADER_CG_MY_AUCTION_OPEN_REQUEST,
+		SUBHEADER_CG_CREATE_AUCTION,
+		SUBHEADER_CG_AUCTION_ADD_OFFER,
+		SUBHEADER_CG_EXIT_FROM_AUCTION,
+
+		SUBHEADER_CG_CLOSE_BOARD,
+#ifdef ENABLE_NEW_SHOP_IN_CITIES
+		SUBHEADER_CG_CLICK_ENTITY,
+#endif
+		SUBHEADER_CG_AUCTION_CLOSE,
+	};
+}
+#endif
+
+#ifdef ENABLE_ACCE_SYSTEM
+enum
+{	
+	ACCE_SUBHEADER_GC_OPEN = 0,
+	ACCE_SUBHEADER_GC_CLOSE,
+	ACCE_SUBHEADER_GC_ADDED,
+	ACCE_SUBHEADER_GC_REMOVED,
+	ACCE_SUBHEADER_CG_REFINED,
+	ACCE_SUBHEADER_CG_CLOSE = 0,
+	ACCE_SUBHEADER_CG_ADD,
+	ACCE_SUBHEADER_CG_REMOVE,
+	ACCE_SUBHEADER_CG_REFINE,
+};
+
+typedef struct SPacketAcce
+{
+	uint8_t	header;
+	uint8_t	subheader;
+	bool	bWindow;
+	uint32_t	dwPrice;
+	uint8_t	bPos;
+	TItemPos	tPos;
+	uint32_t	dwItemVnum;
+	uint32_t	dwMinAbs;
+	uint32_t	dwMaxAbs;
+} TPacketAcce;
+#endif
+
+#ifdef ENABLE_SWITCHBOT
+struct TPacketGGSwitchbot
+{
+	uint8_t bHeader;
+	uint16_t wPort;
+	TSwitchbotTable table;
+
+	TPacketGGSwitchbot() : bHeader(HEADER_GG_SWITCHBOT), wPort(0)
+	{
+		table = {};
+	}
+};
+
+enum ECGSwitchbotSubheader
+{
+	SUBHEADER_CG_SWITCHBOT_START,
+	SUBHEADER_CG_SWITCHBOT_STOP,
+};
+
+
+
+enum EGCSwitchbotSubheader
+{
+	SUBHEADER_GC_SWITCHBOT_UPDATE,
+	SUBHEADER_GC_SWITCHBOT_UPDATE_ITEM,
+	SUBHEADER_GC_SWITCHBOT_SEND_ATTRIBUTE_INFORMATION,
+};
+
+
+
+struct TSwitchbotUpdateItem
+{
+	uint8_t	slot;
+	uint8_t	vnum;
+	uint8_t	count;
+	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+};
+#endif
+
+#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
+enum
+{
+	CUBE_RENEWAL_SUB_HEADER_OPEN_RECEIVE,
+	CUBE_RENEWAL_SUB_HEADER_CLEAR_DATES_RECEIVE,
+	CUBE_RENEWAL_SUB_HEADER_DATES_RECEIVE,
+	CUBE_RENEWAL_SUB_HEADER_DATES_LOADING,
+
+	CUBE_RENEWAL_SUB_HEADER_MAKE_ITEM,
+	CUBE_RENEWAL_SUB_HEADER_CLOSE,
+};
+#endif
+
+#ifdef ENABLE_MULTI_LANGUAGE
+
+typedef struct SPacketRequestLang
+{
+	uint8_t	bHeader;
+	char	targetName[CHARACTER_NAME_MAX_LEN + 1];
+} TPacketRequestLang;
+
+typedef struct SPacketRecvLang
+{
+	uint8_t	bHeader;
+	char	targetName[CHARACTER_NAME_MAX_LEN + 1];
+	char	targetLanguage[2 + 1];
+} TPacketRecvLang;
+
+typedef struct SPacketChangeLanguage {
+	uint8_t	bHeader;
+	uint8_t	bLanguage;
+} TPacketChangeLanguage;
+#endif
+
+#ifdef ENABLE_NEW_FISHING_SYSTEM
+enum {
+	FISHING_SUBHEADER_NEW_START = 0,
+	FISHING_SUBHEADER_NEW_STOP = 1,
+	FISHING_SUBHEADER_NEW_CATCH = 2,
+	FISHING_SUBHEADER_NEW_CATCH_FAIL = 3,
+	FISHING_SUBHEADER_NEW_CATCH_SUCCESS = 4,
+	FISHING_SUBHEADER_NEW_CATCH_FAILED = 5,
+};
+
+typedef struct SPacketFishingNew
+{
+	uint8_t header;
+	uint8_t subheader;
+	uint32_t vid;
+	int dir;
+	uint8_t need;
+	uint8_t count;
+} TPacketFishingNew;
+#endif
+
+#ifdef ENABLE_OPENSHOP_PACKET
+typedef struct SPacketOpenShop {
+	uint8_t header;
+	int32_t shopid;
+} TPacketOpenShop;
+#endif
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+typedef struct command_wheel
+{
+	uint8_t	header;
+	uint8_t	option;
+} TPacketCGWheelDestiny;
+#endif
+#pragma pack()

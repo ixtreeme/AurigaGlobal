@@ -1,0 +1,9 @@
+file(GLOB_RECURSE MSA_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE MSA_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_executable(MSA ${MSA_HEADER} ${MSA_SOURCE})
+
+target_link_libraries(MSA
+	PUBLIC granny2
+
+)

@@ -1,0 +1,36 @@
+#include "CMachineGuid.h"
+
+#include "../../../Launcher/SecureLayer/obfuscate.h"
+
+CMachineGuid::~CMachineGuid()
+= default;
+
+CMachineGuid::CMachineGuid()
+{
+	HKEY hKey;
+	LSTATUS res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, AY_OBFUSCATE(L"SOFTWARE\\Microsoft\\Cryptography"), 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
+
+	if (res == ERROR_SUCCESS)
+	{
+		std::wstring temp;
+		res = GetStringRegKey(hKey, OBF_W(L"MachineGuid"), temp, L"");
+		if (res == ERROR_SUCCESS)
+		{
+			m_MachineGUID.assign(temp.begin(), temp.end());
+		}
+	}
+	RegCloseKey(hKey);
+}
+
+LONG CMachineGuid::GetStringRegKey(HKEY hKey, const std::wstring &strValueName, std::wstring &strValue, const std::wstring &strDefaultValue)
+{
+	strValue = strDefaultValue;
+	WCHAR szBuffer[512];
+	DWORD dwBufferSize = sizeof(szBuffer);
+	ULONG nError;
+	nError = RegQueryValueExW(hKey, strValueName.c_str(), nullptr, nullptr, (LPBYTE)szBuffer, &dwBufferSize);
+	if (ERROR_SUCCESS == nError)
+		strValue = szBuffer;
+
+	return nError;
+}

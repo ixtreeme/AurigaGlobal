@@ -1,0 +1,11 @@
+file(GLOB_RECURSE IMG_HEADER CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE IMG_SOURCE CONFIGURE_DEPENDS "*.cpp")
+
+add_library(Image STATIC ${IMG_HEADER} ${IMG_SOURCE})
+
+target_link_libraries(Image
+	PUBLIC granny2
+	PUBLIC AudioLib
+	PUBLIC SpeedTreeRT
+	PUBLIC FoxFS
+)
