@@ -1,18 +1,166 @@
-#include "stdafx.h"
-#include "config.h"
-#include "char.h"
-#include "char_manager.h"
-#include "packet.h"
-#include "guild.h"
-#include "vector.h"
-#include "questmanager.h"
-#include "item.h"
-#include "horsename_manager.h"
-#include "locale_service.h"
-#include "arena.h"
-#include "desc.h"
+#include "../../stdafx.h"
+
+#include "MountSystem.hpp"
+
+#include "../../config.h"
+#include "../../char.h"
+#include "../../char_manager.h"
+#include "../../packet.h"
+#include "../../guild.h"
+#include "../../vector.h"
+#include "../../questmanager.h"
+#include "../../item.h"
+#include "../../horsename_manager.h"
+#include "../../locale_service.h"
+#include "../../arena.h"
+#include "../../desc.h"
+#include "../AIHelpers.hpp"
+#include "../Registry.hpp"
+#include "../VIDRegistry.hpp"
+#include "../components/dirty_components.hpp"
+#include "../components/identity_components.hpp"
+#include "../components/social_components.hpp"
 
 #include <common/VnumHelper.h>
+
+namespace
+{
+
+LPCHARACTER LegacyCharacter(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    if (!vid)
+        return nullptr;
+
+    return CHARACTER_MANAGER::instance().Find(vid->value);
+}
+
+ecs::MountState* GetMountState(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::MountState>(e);
+}
+
+void SyncMountState(entt::entity e, uint32_t mountVnum, uint32_t mountTime,
+    uint8_t sendHorseLevel, uint8_t sendHorseHealthGrade, uint8_t sendHorseStaminaGrade, int mountPulse)
+{
+    auto* state = GetMountState(e);
+    if (!state)
+        return;
+
+    state->mountVnum = mountVnum;
+    state->mountTime = mountTime;
+    state->sendHorseLevel = sendHorseLevel;
+    state->sendHorseHealthGrade = sendHorseHealthGrade;
+    state->sendHorseStaminaGrade = sendHorseStaminaGrade;
+    state->mountPulse = mountPulse;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+} // namespace
+
+namespace MountSystem {
+
+bool StartRiding(entt::entity rider)
+{
+    LPCHARACTER ch = LegacyCharacter(rider);
+    return ch ? ch->StartRiding() : false;
+}
+
+bool StopRiding(entt::entity rider)
+{
+    LPCHARACTER ch = LegacyCharacter(rider);
+    return ch ? ch->StopRiding() : false;
+}
+
+void SetRider(entt::entity horse, entt::entity rider)
+{
+    LPCHARACTER chHorse = LegacyCharacter(horse);
+    LPCHARACTER chRider = LegacyCharacter(rider);
+    if (chHorse)
+        chHorse->SetRider(chRider);
+}
+
+entt::entity GetRider(entt::entity horse)
+{
+    LPCHARACTER chHorse = LegacyCharacter(horse);
+    if (!chHorse)
+        return entt::null;
+
+    return chHorse->GetRider() ? CVIDRegistry::Instance().Find(chHorse->GetRider()->GetVID()) : entt::null;
+}
+
+void HorseSummon(entt::entity owner, bool summon, bool fromFar, uint32_t vnum, const char* petName)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    if (ch)
+        ch->HorseSummon(summon, fromFar, vnum, petName);
+}
+
+uint32_t GetMyHorseVnum(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    return ch ? ch->GetMyHorseVnum() : 0;
+}
+
+void HorseDie(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    if (ch)
+        ch->HorseDie();
+}
+
+bool ReviveHorse(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    return ch ? ch->ReviveHorse() : false;
+}
+
+void ClearHorseInfo(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    if (ch)
+        ch->ClearHorseInfo();
+}
+
+void SendHorseInfo(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    if (ch)
+        ch->SendHorseInfo();
+}
+
+bool CanUseHorseSkill(entt::entity owner)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    return ch ? ch->CanUseHorseSkill() : false;
+}
+
+void SetHorseLevel(entt::entity owner, int level)
+{
+    LPCHARACTER ch = LegacyCharacter(owner);
+    if (ch)
+        ch->SetHorseLevel(level);
+}
+
+bool IsRiding(entt::entity rider)
+{
+    LPCHARACTER ch = LegacyCharacter(rider);
+    return ch ? ch->IsRiding() : false;
+}
+
+uint32_t GetMountVnum(entt::entity rider)
+{
+    LPCHARACTER ch = LegacyCharacter(rider);
+    return ch ? ch->GetMountVnum() : 0;
+}
+
+} // namespace MountSystem
 
 bool CHARACTER::StartRiding()
 {
@@ -62,7 +210,6 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	// 턱시도 입은 상태의 말 타기 금지
 	LPITEM armor = GetWear(WEAR_BODY);
 
 	if (armor && (armor->GetVnum() >= 11901 && armor->GetVnum() <= 11904))
@@ -73,10 +220,8 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	// @warme005
 	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		return false;
-
 
 	uint32_t dwMountVnum = m_chHorse ? m_chHorse->GetRaceNum() : GetMyHorseVnum();
 
@@ -94,7 +239,6 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	// 소환한 말 없애고
 	HorseSummon(false);
 
 	MountVnum(dwMountVnum);
@@ -102,6 +246,11 @@ bool CHARACTER::StartRiding()
 	if(test_server)
 		sys_log(0, "Ride Horse : %s ", GetName());
 
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 	return true;
 }
 
@@ -117,8 +266,6 @@ bool CHARACTER::StopRiding()
 		{
 			uint32_t dwOldVnum = GetMountVnum();
 			MountVnum(0);
-
-			// [NOTE] 말에서 내릴 땐 자기가 탔던걸 소환하도록 수정
 			HorseSummon(true, false, dwOldVnum);
 		}
 		else
@@ -132,7 +279,11 @@ bool CHARACTER::StopRiding()
 		PointChange(POINT_DX, 0);
 		PointChange(POINT_HT, 0);
 		PointChange(POINT_IQ, 0);
-
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 		return true;
 	}
 
@@ -149,7 +300,6 @@ EVENTFUNC(horse_dead_event)
 		return 0;
 	}
 
-	// <Factor>
 	LPCHARACTER ch = info->ch;
 	if (ch == nullptr) {
 		return 0;
@@ -174,19 +324,16 @@ LPCHARACTER CHARACTER::GetRider() const
 	return m_chRider;
 }
 
-
 void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
 {
 	if ( bSummon )
 	{
-		//NOTE : summon했는데 이미 horse가 있으면 아무것도 안한다.
 		if( m_chHorse != nullptr)
 			return;
 
 		if (GetHorseLevel() <= 0)
 			return;
 
-		// 무언가를 타고 있다면 실패
 		if (IsRiding())
 			return;
 
@@ -225,10 +372,8 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 
 		if (GetHorseHealth() <= 0)
 		{
-			// 죽은거처럼 있게 하는 처리
 			m_chHorse->SetPosition(POS_DEAD);
 
-			// 일정시간있다 사라지게 하자.
 			char_event_info* info = AllocEventInfo<char_event_info>();
 			info->ch = this;
 			m_chHorse->m_pkDeadEvent = event_create(horse_dead_event, info, PASSES_PER_SEC(60));
@@ -279,9 +424,8 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 
 		LPCHARACTER chHorse = m_chHorse;
 
-		chHorse->SetRider(nullptr); // m_chHorse assign to NULL
+		chHorse->SetRider(nullptr);
 
-		// 말시체가 소환되어 있을때 상점 열면 bFromFar를 false로 만들어 말 시체를 사라지게 한다.
 		if ((GetHorseHealth() <= 0))
 			bFromFar = false;
 
@@ -291,7 +435,6 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		}
 		else
 		{
-			// 멀어지면서 사라지는 처리 하기
 			chHorse->SetNowWalking(false);
 			float fx, fy;
 			chHorse->SetRotation(GetDegreeFromPositionXY(chHorse->GetX(), chHorse->GetY(), GetX(), GetY())+180);
@@ -301,8 +444,13 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		}
 
 		m_chHorse = nullptr;
-
 	}
+
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 }
 
 uint32_t CHARACTER::GetMyHorseVnum() const
@@ -332,6 +480,11 @@ bool CHARACTER::ReviveHorse()
 	{
 		HorseSummon(false);
 		HorseSummon(true);
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 		return true;
 	}
 	return false;
@@ -349,7 +502,11 @@ void CHARACTER::ClearHorseInfo()
 	}
 
 	m_chHorse = nullptr;
-
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 }
 
 void CHARACTER::SendHorseInfo()
@@ -358,20 +515,6 @@ void CHARACTER::SendHorseInfo()
 	{
 		int iHealthGrade;
 		int iStaminaGrade;
-		/*
-		   HP
-3: 70% < ~ <= 100%
-2: 30% < ~ <= 70%
-1:  0% < ~ <= 30%
-0: 사망
-
-STM
-
-3: 71% < ~ <= 100%
-2: 31% < ~ <= 70%
-1: 10% < ~ <= 30%
-0:	 ~ <= 10%
-		 */
 		if (GetHorseHealth() == 0)
 			iHealthGrade = 0;
 		else if (GetHorseHealth() * 10 <= GetHorseMaxHealth() * 3)
@@ -396,11 +539,14 @@ STM
 		{
 			ChatPacket(CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
 
-			// FIX : 클라이언트에 "말 상태 버프" 아이콘을 표시하지 않을 목적으로 함수 초입에 return함으로써 아래 코드를 무시한다면
-			// 말을 무한대로 소환하는 무시무시한 버그가 생김.. 정확한 원인은 파악 안해봐서 모름.
 			m_bSendHorseLevel = GetHorseLevel();
 			m_bSendHorseHealthGrade = iHealthGrade;
 			m_bSendHorseStaminaGrade = iStaminaGrade;
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+			SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+			SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 		}
 	}
 }
@@ -419,7 +565,6 @@ bool CHARACTER::CanUseHorseSkill()
 			if (GetMountVnum() >= 20209 && GetMountVnum() <= 20212)
 				return true;
 
-			//라마단 흑마
 			if (CMobVnumHelper::IsRamadanBlackHorse(GetMountVnum()))
 				return true;
 		}
@@ -435,5 +580,9 @@ void CHARACTER::SetHorseLevel(int iLevel)
 {
 	CHorseRider::SetHorseLevel(iLevel);
 	SetSkillLevel(SKILL_HORSE, GetHorseLevel());
+#ifdef DISABLE_CORE_PULSE_RAZOR93
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+#else
+	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+#endif
 }
-

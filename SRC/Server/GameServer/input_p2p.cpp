@@ -43,6 +43,9 @@ void CInputP2P::Logout(LPDESC d, const char * c_pData)
 	P2P_MANAGER::instance().Logout(p->szName);
 }
 
+// migrated from p2p CHARACTER handling
+// TODO Phase 8: p2p ECS sync
+// DUAL-PATH: legacy only during migration window
 int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 {
 	TPacketGGRelay * p = (TPacketGGRelay *) c_pData;
@@ -290,6 +293,9 @@ void CInputP2P::MessengerRemove(const char * c_pData)
 	MessengerManager::instance().__RemoveFromList(p->szAccount, p->szCompanion);
 }
 
+// migrated from p2p CHARACTER handling
+// TODO Phase 8: p2p ECS sync
+// DUAL-PATH: legacy only during migration window
 void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 {
 	TPacketGGFindPosition* p = (TPacketGGFindPosition*) c_pData;
@@ -313,6 +319,9 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 	}
 }
 
+// migrated from p2p CHARACTER handling
+// TODO Phase 8: p2p ECS sync
+// DUAL-PATH: legacy only during migration window
 void CInputP2P::WarpCharacter(const char* c_pData)
 {
 	TPacketGGWarpCharacter* p = (TPacketGGWarpCharacter*) c_pData;
@@ -347,6 +356,9 @@ void CInputP2P::GuildWarZoneMapIndex(const char* c_pData)
 	}
 }
 
+// migrated from p2p CHARACTER handling
+// TODO Phase 8: p2p ECS sync
+// DUAL-PATH: legacy only during migration window
 void CInputP2P::Transfer(const char * c_pData)
 {
 	TPacketGGTransfer * p = (TPacketGGTransfer *) c_pData;
@@ -368,6 +380,9 @@ void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
 }
 
 // BLOCK_CHAT
+// migrated from p2p CHARACTER handling
+// TODO Phase 8: p2p ECS sync
+// DUAL-PATH: legacy only during migration window
 void CInputP2P::BlockChat(const char * c_pData)
 {
 	TPacketGGBlockChat * p = (TPacketGGBlockChat *) c_pData;

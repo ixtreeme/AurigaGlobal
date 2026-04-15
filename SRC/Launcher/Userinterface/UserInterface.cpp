@@ -460,13 +460,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 //	abort_if_vm_detected(true);
 //#endif
 //
-#if defined(NEEDED_COMMAND_ARGUMENT)
-	if (strstr(lpCmdLine, AY_OBFUSCATE("KC8nRPUPHbL9rMeamQqr")) == nullptr) {
-		MessageBox(nullptr, AY_OBFUSCATE("Use the patcher!"), AY_OBFUSCATE("Auriga-Global"), MB_ICONSTOP);
-
-		return -1;
-	}
-#endif
+//#if defined(NEEDED_COMMAND_ARGUMENT)
+//	if (strstr(lpCmdLine, AY_OBFUSCATE("KC8nRPUPHbL9rMeamQqr")) == nullptr) {
+//		MessageBox(nullptr, AY_OBFUSCATE("Use the patcher!"), AY_OBFUSCATE("Auriga-Global"), MB_ICONSTOP);
+//
+//		return -1;
+//	}
+//#endif
 
 
 	//Sleep(3500);

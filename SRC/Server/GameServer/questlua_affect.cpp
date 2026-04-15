@@ -5,6 +5,7 @@
 #include "char.h"
 #include "affect.h"
 #include "db.h"
+#include "ecs/quest_helpers.hpp"
 
 namespace quest
 {
@@ -13,6 +14,8 @@ namespace quest
 	//
 	ALUA(affect_add)
 	{
+		// migrated from CHARACTER::AddAffect
+		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("invalid argument");
@@ -44,6 +47,8 @@ namespace quest
 
 	ALUA(affect_remove)
 	{
+		// migrated from CHARACTER::RemoveAffect
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		uint32_t iType;
 
@@ -64,6 +69,8 @@ namespace quest
 
 	ALUA(affect_remove_bad)
 	{
+		// migrated from CHARACTER::RemoveBadAffect
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		ch->RemoveBadAffect();
 		return 0;
@@ -71,6 +78,8 @@ namespace quest
 
 	ALUA(affect_remove_good)
 	{
+		// migrated from CHARACTER::RemoveGoodAffect
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		ch->RemoveGoodAffect();
 		return 0;
@@ -78,6 +87,8 @@ namespace quest
 
 	ALUA(affect_add_hair)
 	{
+		// migrated from CHARACTER::AddAffect
+		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("invalid argument");
@@ -106,6 +117,8 @@ namespace quest
 
 	ALUA(affect_remove_hair) // 헤어 효과를 없앤다.
 	{
+		// migrated from CHARACTER::FindAffect
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		CAffect* pkAff = ch->FindAffect( AFFECT_HAIR );
@@ -127,29 +140,49 @@ namespace quest
 	// usage :	applyOn = affect.get_apply(AFFECT_TYPE)
 	ALUA(affect_get_apply_on)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		// migrated from CHARACTER::FindAffect()
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("invalid argument");
 			return 0;
 		}
 
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		uint32_t affectType = lua_tonumber(L, 1);
+		auto* al = ECS_TryGet<ecs::AffectList>(e);
+		if (!al)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			if (!ch)
+			{
+				lua_pushnumber(L, 0);
+				return 1;
+			}
+			CAffect* pkAff = ch->FindAffect(affectType);
+			if (pkAff != nullptr)
+				lua_pushnumber(L, pkAff->bApplyOn);
+			else
+				lua_pushnil(L);
+			return 1;
+		}
 
-		CAffect* pkAff = ch->FindAffect(affectType);
+		for (auto* aff : al->affects)
+		{
+			if (aff && aff->dwType == affectType)
+			{
+				lua_pushnumber(L, aff->bApplyOn);
+				return 1;
+			}
+		}
 
-		if ( pkAff != nullptr)
-			lua_pushnumber(L, pkAff->bApplyOn);
-		else
-			lua_pushnil(L);
-
+		lua_pushnil(L);
 		return 1;
-
 	}
 
 	ALUA(affect_add_collect)
 	{
+		// migrated from CHARACTER::AddAffect
+		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("invalid argument");
@@ -206,6 +239,8 @@ namespace quest
 #endif
 	ALUA(affect_add_collect_point)
 	{
+		// migrated from CHARACTER::AddAffect
+		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("invalid argument");
@@ -234,6 +269,8 @@ namespace quest
 
 	ALUA(affect_remove_collect)
 	{
+		// migrated from CHARACTER::RemoveAffect
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if ( ch != nullptr)
@@ -274,6 +311,8 @@ namespace quest
 
 	ALUA(affect_remove_all_collect)
 	{
+		// migrated from CHARACTER::RemoveAffect
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if ( ch != nullptr)
@@ -287,6 +326,8 @@ namespace quest
 #ifdef ENABLE_VOTE4BUFF
 	ALUA(affect_add_affect)
 	{
+		// migrated from CHARACTER::AddAffect
+		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) || !ch)
@@ -331,3 +372,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("affect", affect_functions);
 	}
 };
+

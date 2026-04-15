@@ -1,91 +1,1165 @@
-#include "stdafx.h"
+#include "../../stdafx.h"
+
 #include <sstream>
-//#include <cstring>
 
-#include "utils.h"
-#include "config.h"
-#include "vector.h"
-#include "char.h"
-#include "char_manager.h"
-#include "battle.h"
-//#include "LostCastleDungeon.h"
-#include "desc.h"
-#include "desc_manager.h"
-#include "packet.h"
-#include "affect.h"
-#include "item.h"
-#include "sectree_manager.h"
-#include "mob_manager.h"
-#include "start_position.h"
-#include "party.h"
-#include "buffer_manager.h"
-#include "guild.h"
-#include "log.h"
-#include "unique_item.h"
-#include "questmanager.h"
+#include "SkillSystem.hpp"
+
+#include "../../utils.h"
+#include "../../vector.h"
+#include "../../char.h"
+#include "../../char_manager.h"
+#include "../../config.h"
+#include "../../battle.h"
+#include "../../desc.h"
+#include "../../desc_client.h"
+#include "../../desc_manager.h"
+#include "../../constants.h"
+#include "../../log.h"
+#include "../../packet.h"
+#include "../../questmanager.h"
+#include "../../skill.h"
+#include "../../affect.h"
+#include "../../item.h"
+#include "../../sectree_manager.h"
+#include "../../mob_manager.h"
+#include "../../start_position.h"
+#include "../../party.h"
+#include "../../buffer_manager.h"
+#include "../../guild.h"
+#include "../../unique_item.h"
 #include <common/CommonDefines.h>
-
-#ifdef __SKILL_COLOR_SYSTEM__
-#include "desc_client.h"
-#endif
 #ifdef LEADERBOARD_RAZOR93
-#include "db.h"
+#include "../../db.h"
 #endif
+
 #define ENABLE_FORCE2MASTERSKILL
-// #define ENABLE_MOUNTSKILL_CHECK
-// #define ENABLE_NULLIFYAFFECT_LIMIT
+
+#include "../AIHelpers.hpp"
+#include "../Registry.hpp"
+#include "../VIDRegistry.hpp"
+#include "../components/dirty_components.hpp"
+#include "../components/identity_components.hpp"
+#include "../components/skill_components.hpp"
+
+namespace
+{
+
+LPCHARACTER LegacyCharacter(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    if (!vid)
+        return nullptr;
+
+    return CHARACTER_MANAGER::instance().Find(vid->value);
+}
+
+ecs::SkillLevels* TryGetSkillLevels(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::SkillLevels>(e);
+}
+
+const ecs::SkillLevels* TryGetSkillLevels(entt::entity e, int)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::SkillLevels>(e);
+}
+
+void MarkDirty(entt::entity e)
+{
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+bool ShouldCheckSkillBookExp(LPCHARACTER ch)
+{
+    return ch && ch->GetLevel() < gPlayerMaxLevel;
+}
 
 static const uint32_t s_adwSubSkillVnums[] =
 {
-	SKILL_LEADERSHIP,
-	SKILL_COMBO,
-	SKILL_MINING,
-	SKILL_LANGUAGE1,
-	SKILL_LANGUAGE2,
-	SKILL_LANGUAGE3,
-	SKILL_POLYMORPH,
-	SKILL_HORSE,
-	SKILL_HORSE_SUMMON,
-	SKILL_HORSE_WILDATTACK,
-	SKILL_HORSE_CHARGE,
-	SKILL_HORSE_ESCAPE,
-	SKILL_HORSE_WILDATTACK_RANGE,
-	SKILL_ADD_HP,
-	SKILL_RESIST_PENETRATE
+    SKILL_LEADERSHIP,
+    SKILL_COMBO,
+    SKILL_MINING,
+    SKILL_LANGUAGE1,
+    SKILL_LANGUAGE2,
+    SKILL_LANGUAGE3,
+    SKILL_POLYMORPH,
+    SKILL_HORSE,
+    SKILL_HORSE_SUMMON,
+    SKILL_HORSE_WILDATTACK,
+    SKILL_HORSE_CHARGE,
+    SKILL_HORSE_ESCAPE,
+    SKILL_HORSE_WILDATTACK_RANGE,
+    SKILL_ADD_HP,
+    SKILL_RESIST_PENETRATE
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
-	,NEW_SUPPORT_SKILL_ATTACK,
-	NEW_SUPPORT_SKILL_YANG,
-	NEW_SUPPORT_SKILL_MONSTERS,
-	NEW_SUPPORT_SKILL_HP,
+    , NEW_SUPPORT_SKILL_ATTACK,
+    NEW_SUPPORT_SKILL_YANG,
+    NEW_SUPPORT_SKILL_MONSTERS,
+    NEW_SUPPORT_SKILL_HP,
 #endif
 };
 
+const int SKILL_LIST_COUNT = 6;
+static const uint32_t SkillListByJob[JOB_MAX_NUM][SKILL_GROUP_MAX_NUM][SKILL_LIST_COUNT] =
+{
+	{ {	1,	2,	3,	4,	5,	6	}, {	16,	17,	18,	19,	20,	21	} },
+	{ {	31,	32,	33,	34,	35,	36	}, {	46,	47,	48,	49,	50,	51	} },
+	{ {	61,	62,	63,	64,	65,	66	}, {	76,	77,	78,	79,	80,	81	} },
+	{ {	91,	92,	93,	94,	95,	96	}, {	106,107,108,109,110,111	} },
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	{ {	170,171,172,173,174,175	}, {	0,	0,	0,	0,	0,	0	} },
+#endif
+};
+
+} // namespace
+
+namespace SkillSystem {
+
+time_t GetSkillNextReadTime(entt::entity e, uint32_t skillId)
+{
+    if (skillId >= SKILL_MAX_NUM)
+        return 0;
+
+    const auto* levels = TryGetSkillLevels(e, 0);
+    return (levels && levels->levels) ? levels->levels[skillId].tNextRead : 0;
+}
+
+void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
+{
+    if (skillId >= SKILL_MAX_NUM)
+        return;
+
+    auto* levels = TryGetSkillLevels(e);
+    if (!levels || !levels->levels)
+        return;
+
+    levels->levels[skillId].tNextRead = when;
+    MarkDirty(e);
+}
+
+int GetSkillLevel(entt::entity e, uint32_t skillId)
+{
+    if (skillId >= SKILL_MAX_NUM)
+        return 0;
+
+    const auto* levels = TryGetSkillLevels(e, 0);
+    return (levels && levels->levels) ? MIN(SKILL_MAX_LEVEL, levels->levels[skillId].bLevel) : 0;
+}
+
+uint8_t GetSkillGroup(entt::entity e)
+{
+    const auto* levels = TryGetSkillLevels(e, 0);
+    return levels ? levels->group : 0;
+}
+
+void SetSkillGroup(entt::entity e, uint8_t skillGroup)
+{
+    auto* levels = TryGetSkillLevels(e);
+    if (!levels)
+        return;
+
+    levels->group = skillGroup;
+    MarkDirty(e);
+}
+
+void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
+{
+    if (skillId >= SKILL_MAX_NUM)
+        return;
+
+    auto* levels = TryGetSkillLevels(e);
+    if (!levels || !levels->levels)
+        return;
+
+    levels->levels[skillId].bLevel = MIN(40, level);
+
+#ifdef ENABLE_NEW_SECONDARY_SKILLS
+    if ((level > 10) &&
+        ((skillId == NEW_SUPPORT_SKILL_ATTACK) || (skillId == NEW_SUPPORT_SKILL_YANG) ||
+         (skillId == NEW_SUPPORT_SKILL_MONSTERS) || (skillId == NEW_SUPPORT_SKILL_HP))) {
+        level = 10;
+        levels->levels[skillId].bLevel = level;
+    }
+#endif
+
+    if (level >= 40)
+        levels->levels[skillId].bMasterType = SKILL_PERFECT_MASTER;
+    else if (level >= 30)
+        levels->levels[skillId].bMasterType = SKILL_GRAND_MASTER;
+    else if (level >= 20)
+        levels->levels[skillId].bMasterType = SKILL_MASTER;
+    else
+        levels->levels[skillId].bMasterType = SKILL_NORMAL;
+
+    MarkDirty(e);
+}
+
+bool IsLearnableSkill(entt::entity e, uint32_t skillId)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->IsLearnableSkill(skillId) : false;
+}
+
+bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->LearnGrandMasterSkill(skillId) : false;
+}
+
+bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->LearnSkillByBook(skillId, prob) : false;
+}
+
+bool CanUseMobSkill(entt::entity e, unsigned int idx)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->CanUseMobSkill(idx) : false;
+}
+
+bool CanUseSkill(entt::entity e, uint32_t skillId)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->CanUseSkill(skillId) : false;
+}
+
+bool CheckSkillHit(entt::entity attacker, uint8_t skillId, VID targetVID)
+{
+    LPCHARACTER ch = LegacyCharacter(attacker);
+    return ch ? ch->CheckSkillHitCount(skillId, targetVID) : false;
+}
+
+int ComputeCooltime(entt::entity e, int time)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? CalculateDuration(ch->GetPoint(POINT_CASTING_SPEED), time) : time;
+}
+
+void DisableCooltime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& cooldowns = g_registry.get_or_emplace<ecs::SkillCooldowns>(e);
+    cooldowns.disableCooltime = true;
+    MarkDirty(e);
+}
+
+void ResetMobSkillCooltime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& cooldowns = g_registry.get_or_emplace<ecs::SkillCooldowns>(e);
+    cooldowns.mob.fill(0);
+    MarkDirty(e);
+}
+
+void LearnSkill(entt::entity, uint32_t)
+{
+}
+
+void SetSkillCooltime(entt::entity, uint32_t, uint32_t, uint32_t)
+{
+}
+
+bool IsSkillCooltime(entt::entity, uint32_t, uint32_t)
+{
+    return false;
+}
+
+int GetSkillPoint(entt::entity)
+{
+    return 0;
+}
+
+void AddSkillPoint(entt::entity, int)
+{
+}
+
+int GetSkillMasterType(entt::entity e, uint32_t skillId)
+{
+    if (skillId >= SKILL_MAX_NUM)
+        return SKILL_NORMAL;
+
+    const auto* levels = TryGetSkillLevels(e, 0);
+    return (levels && levels->levels) ? levels->levels[skillId].bMasterType : SKILL_NORMAL;
+}
+
+int GetSkillPower(entt::entity, uint32_t, uint8_t)
+{
+    return 0;
+}
+
+void ComputeSkillPoints(entt::entity)
+{
+    if (g_bSkillDisable)
+        return;
+}
+
+void ResetSkill(entt::entity e)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (ch)
+        ch->ResetSkill();
+}
+
+} // namespace SkillSystem
+
+int CHARACTER::ComputeCooltime(int time)
+{
+    return SkillSystem::ComputeCooltime(AIHelpers::EcsOf(this), time);
+}
+
+void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
+{
+    if (bSkillGroup > 2)
+        return;
+
+    m_points.skill_group = bSkillGroup;
+    SkillSystem::SetSkillGroup(AIHelpers::EcsOf(this), bSkillGroup);
+
+    TPacketGCChangeSkillGroup p;
+    p.header = HEADER_GC_SKILL_GROUP;
+    p.skill_group = m_points.skill_group;
+
+    GetDesc()->Packet(&p, sizeof(TPacketGCChangeSkillGroup));
+}
+
 time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
 {
-	if (dwVnum >= SKILL_MAX_NUM)
-	{
-		sys_err("vnum overflow (vnum: %u)", dwVnum);
-		return 0;
-	}
+    if (dwVnum >= SKILL_MAX_NUM)
+    {
+        sys_err("vnum overflow (vnum: %u)", dwVnum);
+        return 0;
+    }
 
-	return m_pSkillLevels ? m_pSkillLevels[dwVnum].tNextRead : 0;
+    const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+    if (e != entt::null && g_registry.valid(e))
+        return SkillSystem::GetSkillNextReadTime(e, dwVnum);
+
+    return m_pSkillLevels ? m_pSkillLevels[dwVnum].tNextRead : 0;
 }
 
 void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
 {
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK))
-		time = uint32_t(get_global_time() + (3600 * 3));
-	else if ((dwVnum >= SKILL_HELP_PALBANG) && (dwVnum <= SKILL_HELP_BYEURAK))
-		time = uint32_t(get_global_time() + (3600 * 2));
+    if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK))
+        time = uint32_t(get_global_time() + (3600 * 3));
+    else if ((dwVnum >= SKILL_HELP_PALBANG) && (dwVnum <= SKILL_HELP_BYEURAK))
+        time = uint32_t(get_global_time() + (3600 * 2));
 #endif
-	
-	if ((GetSkillMasterType(dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
-		time = uint32_t(get_global_time() + 3600);
-	
-	if (m_pSkillLevels && dwVnum < SKILL_MAX_NUM)
-		m_pSkillLevels[dwVnum].tNextRead = time;
+
+    if ((GetSkillMasterType(dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
+        time = uint32_t(get_global_time() + 3600);
+
+    if (m_pSkillLevels && dwVnum < SKILL_MAX_NUM)
+        m_pSkillLevels[dwVnum].tNextRead = time;
+
+    SkillSystem::SetSkillNextReadTime(AIHelpers::EcsOf(this), dwVnum, time);
 }
+
+void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
+{
+    if (nullptr == m_pSkillLevels)
+        return;
+
+    if (dwVnum >= SKILL_MAX_NUM)
+    {
+        sys_err("vnum overflow (vnum %u)", dwVnum);
+        return;
+    }
+
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+    if ((!SkillCanUp(dwVnum)) && (bLev != 0))
+        return;
+
+    if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK) && (bLev == 11))
+        bLev = 20;
+#endif
+
+    m_pSkillLevels[dwVnum].bLevel = MIN(40, bLev);
+
+#ifdef ENABLE_NEW_SECONDARY_SKILLS
+    if ((bLev > 10) &&
+        ((dwVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwVnum == NEW_SUPPORT_SKILL_YANG) ||
+         (dwVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwVnum == NEW_SUPPORT_SKILL_HP))) {
+        bLev = 10;
+        m_pSkillLevels[dwVnum].bLevel = bLev;
+    }
+#endif
+
+    if (bLev >= 40)
+        m_pSkillLevels[dwVnum].bMasterType = SKILL_PERFECT_MASTER;
+    else if (bLev >= 30)
+        m_pSkillLevels[dwVnum].bMasterType = SKILL_GRAND_MASTER;
+    else if (bLev >= 20)
+        m_pSkillLevels[dwVnum].bMasterType = SKILL_MASTER;
+    else
+        m_pSkillLevels[dwVnum].bMasterType = SKILL_NORMAL;
+
+    SkillSystem::SetSkillLevel(AIHelpers::EcsOf(this), dwVnum, bLev);
+}
+
+int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
+{
+    if (dwVnum >= SKILL_MAX_NUM)
+    {
+        sys_err("%s skill vnum overflow %u", GetName(), dwVnum);
+        sys_log(0, "%s skill vnum overflow %u", GetName(), dwVnum);
+        return 0;
+    }
+
+    const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+    if (e != entt::null && g_registry.valid(e))
+        return SkillSystem::GetSkillLevel(e, dwVnum);
+
+    return MIN(SKILL_MAX_LEVEL, m_pSkillLevels ? m_pSkillLevels[dwVnum].bLevel : 0);
+}
+
+void CHARACTER::DisableCooltime()
+{
+    m_bDisableCooltime = true;
+    SkillSystem::DisableCooltime(AIHelpers::EcsOf(this));
+}
+
+void CHARACTER::ComputeSkillPoints()
+{
+    SkillSystem::ComputeSkillPoints(AIHelpers::EcsOf(this));
+}
+
+bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
+{
+	const CSkillProto * pkSkill = CSkillManager::instance().Get(dwSkillVnum);
+
+	if (!pkSkill)
+		return false;
+
+	if (GetSkillLevel(dwSkillVnum) >= SKILL_MAX_LEVEL)
+		return false;
+
+	if (pkSkill->dwType == 0)
+	{
+		if (GetSkillLevel(dwSkillVnum) >= pkSkill->bMaxLevel)
+			return false;
+
+		return true;
+	}
+
+	if (pkSkill->dwType == 5)
+	{
+		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && GetJob() != JOB_ASSASSIN)
+			return false;
+
+		return true;
+	}
+
+	if (GetSkillGroup() == 0)
+		return false;
+
+	if (pkSkill->dwType - 1 == GetJob())
+		return true;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	if (7 == pkSkill->dwType && JOB_WOLFMAN == GetJob())
+		return true;
+#endif
+	if (6 == pkSkill->dwType)
+	{
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+		return true;
+#else
+		if (SKILL_7_A_ANTI_TANHWAN <= dwSkillVnum && dwSkillVnum <= SKILL_7_D_ANTI_YONGBI)
+		{
+			for (int i=0 ; i < 4 ; i++)
+			{
+				if (unsigned(SKILL_7_A_ANTI_TANHWAN + i) != dwSkillVnum)
+				{
+					if (0 != GetSkillLevel(SKILL_7_A_ANTI_TANHWAN + i))
+					{
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		if (SKILL_8_A_ANTI_GIGONGCHAM <= dwSkillVnum && dwSkillVnum <= SKILL_8_D_ANTI_BYEURAK)
+		{
+			for (int i=0 ; i < 4 ; i++)
+			{
+				if (unsigned(SKILL_8_A_ANTI_GIGONGCHAM + i) != dwSkillVnum)
+				{
+					if (0 != GetSkillLevel(SKILL_8_A_ANTI_GIGONGCHAM + i))
+						return false;
+				}
+			}
+
+			return true;
+		}
+#endif
+	}
+
+	return false;
+}
+
+bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
+{
+	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
+
+	if (!pkSk)
+		return false;
+
+	if (!IsLearnableSkill(dwSkillVnum))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
+#endif
+		return false;
+	}
+
+	sys_log(0, "learn grand master skill[%d] cur %d, next %d", dwSkillVnum, get_global_time(), GetSkillNextReadTime(dwSkillVnum));
+
+	if (pkSk->dwType == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 265, "");
+#endif
+		return false;
+	}
+
+	if (GetSkillMasterType(dwSkillVnum) != SKILL_GRAND_MASTER) {
+#ifdef TEXTS_IMPROVEMENT
+		if (GetSkillMasterType(dwSkillVnum) > SKILL_GRAND_MASTER) {
+			ChatPacketNew(CHAT_TYPE_INFO, 422, "");
+		} else {
+			ChatPacketNew(CHAT_TYPE_INFO, 421, "");
+		}
+#endif
+		return false;
+	}
+
+	std::string strTrainSkill;
+	{
+		std::ostringstream os;
+		os << "training_grandmaster_skill.skill" << dwSkillVnum;
+		strTrainSkill = os.str();
+	}
+
+	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
+	int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 30);
+
+	sys_log(0, "LearnGrandMasterSkill %s table idx %d value %d", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
+
+	int iTotalReadCount = GetQuestFlag(strTrainSkill) + 1;
+	SetQuestFlag(strTrainSkill, iTotalReadCount);
+
+	int iMinReadCount = aiGrandMasterSkillBookMinCount[idx];
+	int iMaxReadCount = aiGrandMasterSkillBookMaxCount[idx];
+
+	int iBookCount = aiGrandMasterSkillBookCountForLevelUp[idx];
+
+	if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+	{
+		if (iBookCount&1)
+			iBookCount = iBookCount / 2 + 1;
+		else
+			iBookCount = iBookCount / 2;
+
+		RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+	}
+
+	int n = number(1, iBookCount);
+	sys_log(0, "Number(%d)", n);
+
+	uint32_t nextTime = get_global_time() + number(g_dwSkillBookNextReadMin, g_dwSkillBookNextReadMax);
+
+	sys_log(0, "GrandMaster SkillBookCount min %d cur %d max %d (next_time=%d)", iMinReadCount, iTotalReadCount, iMaxReadCount, nextTime);
+
+	bool bSuccess = n == 2;
+
+	if (iTotalReadCount < iMinReadCount)
+		bSuccess = false;
+	if (iTotalReadCount > iMaxReadCount)
+		bSuccess = true;
+
+	if (bSuccess)
+	{
+		SkillLevelUp(dwSkillVnum, SKILL_UP_BY_QUEST);
+	}
+
+	SetSkillNextReadTime(dwSkillVnum, nextTime);
+
+	if (bLastLevel == GetSkillLevel(dwSkillVnum))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
+#endif
+		LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_FAIL", "");
+		return false;
+	}
+
+#ifdef TEXTS_IMPROVEMENT
+	ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+#endif
+	LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_SUCCESS", "");
+	return true;
+}
+
+bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
+{
+	const CSkillProto* pkSk = CSkillManager::instance().Get(dwSkillVnum);
+
+	if (!pkSk)
+		return false;
+
+	if (!IsLearnableSkill(dwSkillVnum))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
+#endif
+		return false;
+	}
+
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+	if (!SkillCanUp(dwSkillVnum, true))
+		return false;
+#endif
+
+	int64_t need_exp = 0;
+#ifndef DISABLE_SKILL_BOOK_NEED_EXP
+	if (ShouldCheckSkillBookExp(this))
+	{
+		need_exp = 20000;
+		if (GetExp() < need_exp)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 247, "");
+#endif
+			return false;
+		}
+	}
+#endif
+	if (pkSk->dwType != 0)
+	{
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+		if ((GetSkillMasterType(dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
+#else
+		if (GetSkillMasterType(dwSkillVnum) != SKILL_MASTER)
+#endif
+		{
+#ifdef TEXTS_IMPROVEMENT
+			if (GetSkillMasterType(dwSkillVnum) > SKILL_MASTER) {
+				ChatPacketNew(CHAT_TYPE_INFO, 423, "");
+			}
+			else {
+				ChatPacketNew(CHAT_TYPE_INFO, 424, "");
+			}
+#endif
+			return false;
+		}
+	}
+
+#ifdef ENABLE_NEW_SECONDARY_SKILLS
+	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
+		if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+		{
+			RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 465, "");
+#endif
+		}
+		else
+		{
+			int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
+			int iHours = iTime / 3600;
+			int iMinutes = (iTime - (iHours * 3600)) / 60;
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+#endif
+			return false;
+		}
+	}
+
+	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
+#else
+	if (get_global_time() < GetSkillNextReadTime(dwSkillVnum))
+#endif
+	{
+		if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
+		{
+			if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+			{
+				RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 465, "");
+#endif
+			}
+			else
+			{
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+				int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
+				int iHours = iTime / 3600;
+				int iMinutes = (iTime - (iHours * 3600)) / 60;
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+#endif
+#else
+				SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
+#endif
+				return false;
+			}
+		}
+	}
+
+	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
+
+	if (bProb != 0)
+	{
+		if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+		{
+			bProb += bProb / 2;
+			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+		}
+
+		sys_log(0, "LearnSkillByBook Pct %u prob %d", dwSkillVnum, bProb);
+
+		if (number(1, 100) <= bProb)
+		{
+			if (test_server)
+				sys_log(0, "LearnSkillByBook %u SUCC", dwSkillVnum);
+
+			SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+		}
+		else
+		{
+			if (test_server)
+				sys_log(0, "LearnSkillByBook %u FAIL", dwSkillVnum);
+		}
+	}
+
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+	else if ((dwSkillVnum >= SKILL_ANTI_PALBANG) && (dwSkillVnum <= SKILL_ANTI_BYEURAK) && (bLastLevel < 30)) {
+		quest::CQuestManager& q = quest::CQuestManager::instance();
+		quest::PC* pPC = q.GetPC(GetPlayerID());
+		if (!pPC)
+			return false;
+
+		int aiSkillBookCount[30] = {
+										1, 1, 1, 2, 2, 2, 3, 3, 3, 4,
+										0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+										4, 5, 6, 7, 8, 9, 10, 13, 15, 19
+		};
+
+		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
+
+		char szFlag[128 + 1];
+		memset(szFlag, 0, sizeof(szFlag));
+		snprintf(szFlag, sizeof(szFlag), "training_%d.count", dwSkillVnum);
+
+		int iReadCount = pPC->GetFlag(szFlag);
+		int percent = 30;
+
+		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
+			percent = 20;
+			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+		}
+#ifndef DISABLE_SKILL_BOOK_NEED_EXP
+		if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+#endif
+		if (number(1, 100) > percent) {
+			if (iReadCount >= needBookCount) {
+				SetSkillLevel(dwSkillVnum, bLastLevel + 1);
+
+				ComputePoints();
+				SkillLevelPacket();
+				pPC->SetFlag(szFlag, 0);
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+#endif
+				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+				return true;
+			}
+			else {
+				pPC->SetFlag(szFlag, iReadCount + 1);
+#ifdef TEXTS_IMPROVEMENT
+				switch (number(1, 3)) {
+				case 1:
+					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+					break;
+				case 2:
+					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+					break;
+				case 3:
+				default:
+					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+					break;
+				}
+#endif
+
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+#endif
+				return true;
+			}
+		}
+	}
+#endif
+
+#ifdef ENABLE_NEW_SECONDARY_SKILLS
+	else if ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP)) {
+		quest::CQuestManager& q = quest::CQuestManager::instance();
+		quest::PC* pPC = q.GetPC(GetPlayerID());
+		if (!pPC)
+			return false;
+
+		int aiSkillBookCount[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, };
+		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
+
+		char szFlag[128 + 1];
+		memset(szFlag, 0, sizeof(szFlag));
+		snprintf(szFlag, sizeof(szFlag), "training_%d.count", dwSkillVnum);
+
+		int iReadCount = pPC->GetFlag(szFlag);
+		int percent = 30;
+
+		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
+			percent = 10;
+			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+		}
+
+#ifndef DISABLE_SKILL_BOOK_NEED_EXP
+		 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+#endif
+		if (number(1, 100) > percent) {
+			if (iReadCount >= needBookCount) {
+				SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+				pPC->SetFlag(szFlag, 0);
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+#endif
+				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+				return true;
+			}
+			else {
+				pPC->SetFlag(szFlag, iReadCount + 1);
+#ifdef TEXTS_IMPROVEMENT
+				switch (number(1, 3)) {
+				case 1:
+					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+					break;
+				case 2:
+					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+					break;
+				case 3:
+				default:
+					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+					break;
+				}
+#endif
+
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+#endif
+				return true;
+			}
+		}
+	}
+#endif
+
+	else
+	{
+		int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 20);
+
+		sys_log(0, "LearnSkillByBook %s table idx %d value %d", GetName(), idx, aiSkillBookCountForLevelUp[idx]);
+
+		{
+			int need_bookcount = 0;
+
+#ifndef DISABLE_SKILL_BOOK_NEED_EXP
+			 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
+#endif
+			quest::CQuestManager& q = quest::CQuestManager::instance();
+			quest::PC* pPC = q.GetPC(GetPlayerID());
+
+			if (pPC)
+			{
+				char flag[128 + 1];
+				memset(flag, 0, sizeof(flag));
+				snprintf(flag, sizeof(flag), "traning_master_skill.%u.read_count", dwSkillVnum);
+
+				int read_count = pPC->GetFlag(flag);
+				int percent = 30;
+				if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+				{
+					percent = 0;
+					if ((dwSkillVnum >= SKILL_HELP_PALBANG) && (dwSkillVnum <= SKILL_HELP_BYEURAK))
+						percent = 20;
+
+					RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+				}
+
+				if (number(1, 100) > percent)
+				{
+#ifdef ENABLE_MASTER_SKILLBOOK_NO_STEPS
+					if (true)
+#else
+					if (read_count >= need_bookcount)
+#endif
+					{
+						SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
+						pPC->SetFlag(flag, 0);
+
+#ifdef TEXTS_IMPROVEMENT
+						ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+#endif
+						LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+						return true;
+					}
+					else
+					{
+						pPC->SetFlag(flag, read_count + 1);
+#ifdef TEXTS_IMPROVEMENT
+						switch (number(1, 3)) {
+						case 1:
+							ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+							break;
+						case 2:
+							ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+							break;
+						case 3:
+						default:
+							ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+							break;
+						}
+#endif
+#ifdef TEXTS_IMPROVEMENT
+						ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
+#endif
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	if (bLastLevel != GetSkillLevel(dwSkillVnum))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+#endif
+		LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+	}
+	else
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
+#endif
+		LogManager::instance().CharLog(this, dwSkillVnum, "READ_FAIL", "");
+	}
+
+	return true;
+}
+
+bool CHARACTER::CanUseMobSkill(unsigned int idx) const
+{
+	const TMobSkillInfo* pInfo = GetMobSkill(idx);
+
+	if (!pInfo)
+		return false;
+
+	if (m_adwMobSkillCooltime[idx] > get_dword_time())
+		return false;
+
+	if (number(0, 1))
+		return false;
+
+	return true;
+}
+
+bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
+{
+	if (0 == dwSkillVnum) return false;
+
+	if (0 < GetSkillGroup())
+	{
+		const uint32_t* pSkill = SkillListByJob[ GetJob() ][ GetSkillGroup()-1 ];
+
+		for (int i=0 ; i < SKILL_LIST_COUNT ; ++i)
+		{
+			if (pSkill[i] == dwSkillVnum) return true;
+		}
+	}
+
+	if (true == IsRiding())
+	{
+#ifdef ENABLE_MOUNTSKILL_CHECK
+		eMountType eIsMount = GetMountLevelByVnum(GetMountVnum(), false);
+		if (eIsMount != MOUNT_TYPE_MILITARY)
+		{
+			if (test_server)
+				sys_log(0, "CanUseSkill: Mount can't skill. vnum(%u) type(%d)", GetMountVnum(), static_cast<int>(eIsMount));
+			return false;
+		}
+#endif
+		switch(dwSkillVnum)
+		{
+			case SKILL_HORSE_WILDATTACK:
+			case SKILL_HORSE_CHARGE:
+			case SKILL_HORSE_ESCAPE:
+			case SKILL_HORSE_WILDATTACK_RANGE:
+				return true;
+		}
+	}
+
+	switch( dwSkillVnum )
+	{
+		case 121: case 122: case 124: case 126: case 127: case 128: case 129: case 130:
+		case 131:
+		case 151: case 152: case 153: case 154: case 155: case 156: case 157: case 158: case 159:
+			return true;
+	}
+
+	return false;
+}
+
+bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, const VID TargetVID)
+{
+	std::map<int, TSkillUseInfo>::iterator iter = m_SkillUseInfo.find(SkillID);
+
+	if (iter == m_SkillUseInfo.end())
+	{
+		sys_log(0, "SkillHack: Skill(%u) is not in container", SkillID);
+		return false;
+	}
+
+	TSkillUseInfo& rSkillUseInfo = iter->second;
+
+	if (false == rSkillUseInfo.bUsed)
+	{
+		sys_log(0, "SkillHack: not used skill(%u)", SkillID);
+		return false;
+	}
+
+	switch (SkillID)
+	{
+		case SKILL_YONGKWON:
+		case SKILL_HWAYEOMPOK:
+		case SKILL_DAEJINGAK:
+		case SKILL_PAERYONG:
+			sys_log(0, "SkillHack: cannot use attack packet for skill(%u)", SkillID);
+			return false;
+	}
+
+	auto iterTargetMap = rSkillUseInfo.TargetVIDMap.find(TargetVID);
+
+	if (rSkillUseInfo.TargetVIDMap.end() != iterTargetMap)
+	{
+		size_t MaxAttackCountPerTarget = 1;
+
+		switch (SkillID)
+		{
+			case SKILL_SAMYEON:
+			case SKILL_CHARYUN:
+#ifdef ENABLE_WOLFMAN_CHARACTER
+			case SKILL_CHAYEOL:
+#endif
+				MaxAttackCountPerTarget = 3;
+				break;
+
+			case SKILL_HORSE_WILDATTACK_RANGE:
+				MaxAttackCountPerTarget = 5;
+				break;
+
+			case SKILL_YEONSA:
+				MaxAttackCountPerTarget = 7;
+				break;
+
+			case SKILL_HORSE_ESCAPE:
+				MaxAttackCountPerTarget = 10;
+				break;
+		}
+
+		if (iterTargetMap->second >= MaxAttackCountPerTarget)
+		{
+			sys_log(0, "SkillHack: Too Many Hit count from SkillID(%u) count(%u)", SkillID, iterTargetMap->second);
+			return false;
+		}
+
+		iterTargetMap->second++;
+	}
+	else
+	{
+		rSkillUseInfo.TargetVIDMap.insert( std::make_pair(TargetVID, 1) );
+	}
+
+	return true;
+}
+
+void CHARACTER::ResetMobSkillCooltime()
+{
+    memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
+    SkillSystem::ResetMobSkillCooltime(AIHelpers::EcsOf(this));
+}
+
+void CHARACTER::ResetSkill()
+{
+	if (nullptr == m_pSkillLevels)
+		return;
+
+	std::vector<std::pair<uint32_t, TPlayerSkill> > vec;
+	size_t count = sizeof(s_adwSubSkillVnums) / sizeof(s_adwSubSkillVnums[0]);
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		if (s_adwSubSkillVnums[i] >= SKILL_MAX_NUM)
+			continue;
+
+		vec.push_back(std::make_pair(s_adwSubSkillVnums[i], m_pSkillLevels[s_adwSubSkillVnums[i]]));
+	}
+
+	memset(m_pSkillLevels, 0, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+	std::vector<std::pair<uint32_t, TPlayerSkill> >::const_iterator iter = vec.begin();
+	while (iter != vec.end())
+	{
+		const std::pair<uint32_t, TPlayerSkill>& pair = *(iter++);
+		m_pSkillLevels[pair.first] = pair.second;
+	}
+
+	ComputePoints();
+	SkillLevelPacket();
+
+#ifdef __SKILL_COLOR_SYSTEM__
+	uint32_t data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
+	for (int i = 0; i < ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT; i++) {
+		for (int j = 0; j < 5; j++) {
+			data[i][j] = 0;
+		}
+	}
+
+	SetSkillColor(data[0]);
+
+	TSkillColor db_pack;
+	memcpy(db_pack.dwSkillColor, data, sizeof(data));
+	db_pack.player_id = GetPlayerID();
+	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
+	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
+#endif
+
+    SkillSystem::SetSkillGroup(AIHelpers::EcsOf(this), GetSkillGroup());
+}
+
+// char_skill.cpp slice E + remaining helpers migrated
 
 bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
 {
@@ -164,27 +1238,6 @@ void CHARACTER::SetAffectedEunhyung()
 	m_dwAffectedEunhyungLevel = GetSkillPower(SKILL_EUNHYUNG);
 }
 
-void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
-{
-	if (bSkillGroup > 2)
-		return;
-
-	/* 	if (GetLevel() < 5)
-			return; */
-
-	m_points.skill_group = bSkillGroup;
-
-	TPacketGCChangeSkillGroup p;
-	p.header = HEADER_GC_SKILL_GROUP;
-	p.skill_group = m_points.skill_group;
-
-	GetDesc()->Packet(&p, sizeof(TPacketGCChangeSkillGroup));
-}
-
-int CHARACTER::ComputeCooltime(int time)
-{
-	return CalculateDuration(GetPoint(POINT_CASTING_SPEED), time);
-}
 
 void CHARACTER::SkillLevelPacket()
 {
@@ -198,618 +1251,6 @@ void CHARACTER::SkillLevelPacket()
 	GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
 }
 
-void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
-{
-	if (nullptr == m_pSkillLevels)
-		return;
-
-	if (dwVnum >= SKILL_MAX_NUM)
-	{
-		sys_err("vnum overflow (vnum %u)", dwVnum);
-		return;
-	}
-
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if ((!SkillCanUp(dwVnum)) && (bLev != 0))
-		return;
-	
-	if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK) && (bLev == 11))
-		bLev = 20;
-#endif
-
-	m_pSkillLevels[dwVnum].bLevel = MIN(40, bLev);
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-	if ((bLev > 10) && ((dwVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwVnum == NEW_SUPPORT_SKILL_YANG) || (dwVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwVnum == NEW_SUPPORT_SKILL_HP))) {
-		bLev = 10;
-		m_pSkillLevels[dwVnum].bLevel = bLev;
-	}
-#endif
-
-	if (bLev >= 40)
-		m_pSkillLevels[dwVnum].bMasterType = SKILL_PERFECT_MASTER;
-	else if (bLev >= 30)
-		m_pSkillLevels[dwVnum].bMasterType = SKILL_GRAND_MASTER;
-	else if (bLev >= 20)
-		m_pSkillLevels[dwVnum].bMasterType = SKILL_MASTER;
-	else
-		m_pSkillLevels[dwVnum].bMasterType = SKILL_NORMAL;
-}
-
-bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
-{
-	const CSkillProto * pkSkill = CSkillManager::instance().Get(dwSkillVnum);
-
-	if (!pkSkill)
-		return false;
-
-	if (GetSkillLevel(dwSkillVnum) >= SKILL_MAX_LEVEL)
-		return false;
-
-	if (pkSkill->dwType == 0)
-	{
-		if (GetSkillLevel(dwSkillVnum) >= pkSkill->bMaxLevel)
-			return false;
-
-		return true;
-	}
-
-	if (pkSkill->dwType == 5)
-	{
-		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && GetJob() != JOB_ASSASSIN)
-			return false;
-
-		return true;
-	}
-
-	if (GetSkillGroup() == 0)
-		return false;
-
-	if (pkSkill->dwType - 1 == GetJob())
-		return true;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	// ĽöŔÎÁ· ˝şĹł
-	if (7 == pkSkill->dwType && JOB_WOLFMAN == GetJob())
-		return true;
-#endif
-	if (6 == pkSkill->dwType)
-	{
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-		return true;
-#else
-		if (SKILL_7_A_ANTI_TANHWAN <= dwSkillVnum && dwSkillVnum <= SKILL_7_D_ANTI_YONGBI)
-		{
-			for (int i=0 ; i < 4 ; i++)
-			{
-				if (unsigned(SKILL_7_A_ANTI_TANHWAN + i) != dwSkillVnum)
-				{
-					if (0 != GetSkillLevel(SKILL_7_A_ANTI_TANHWAN + i))
-					{
-						return false;
-					}
-				}
-			}
-
-			return true;
-		}
-
-		if (SKILL_8_A_ANTI_GIGONGCHAM <= dwSkillVnum && dwSkillVnum <= SKILL_8_D_ANTI_BYEURAK)
-		{
-			for (int i=0 ; i < 4 ; i++)
-			{
-				if (unsigned(SKILL_8_A_ANTI_GIGONGCHAM + i) != dwSkillVnum)
-				{
-					if (0 != GetSkillLevel(SKILL_8_A_ANTI_GIGONGCHAM + i))
-						return false;
-				}
-			}
-
-			return true;
-		}
-#endif
-	}
-	
-	return false;
-}
-
-// ADD_GRANDMASTER_SKILL
-bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
-{
-	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
-
-	if (!pkSk)
-		return false;
-
-	if (!IsLearnableSkill(dwSkillVnum))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
-#endif
-		return false;
-	}
-
-	sys_log(0, "learn grand master skill[%d] cur %d, next %d", dwSkillVnum, get_global_time(), GetSkillNextReadTime(dwSkillVnum));
-
-	/*
-	   if (get_global_time() < GetSkillNextReadTime(dwSkillVnum))
-	   {
-	   if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
-	   {
-	   if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
-	   {
-	// ÁÖľČĽúĽ­ »çżëÁßżˇ´Â ˝Ă°Ł Á¦ÇŃ ą«˝Ă
-	RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
-	}
-	else
-	{
-	SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
-	return false;
-	}
-	}
-	}
-	 */
-
-	if (pkSk->dwType == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 265, "");
-#endif
-		return false;
-	}
-
-	if (GetSkillMasterType(dwSkillVnum) != SKILL_GRAND_MASTER) {
-#ifdef TEXTS_IMPROVEMENT
-		if (GetSkillMasterType(dwSkillVnum) > SKILL_GRAND_MASTER) {
-			ChatPacketNew(CHAT_TYPE_INFO, 422, "");
-		} else {
-			ChatPacketNew(CHAT_TYPE_INFO, 421, "");
-		}
-#endif
-		return false;
-	}
-
-	std::string strTrainSkill;
-	{
-		std::ostringstream os;
-		os << "training_grandmaster_skill.skill" << dwSkillVnum;
-		strTrainSkill = os.str();
-	}
-
-	// ż©±âĽ­ Č®·üŔ» °č»ęÇŐ´Ď´Ů.
-	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
-
-	int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 30);
-
-	sys_log(0, "LearnGrandMasterSkill %s table idx %d value %d", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
-
-	int iTotalReadCount = GetQuestFlag(strTrainSkill) + 1;
-	SetQuestFlag(strTrainSkill, iTotalReadCount);
-
-	int iMinReadCount = aiGrandMasterSkillBookMinCount[idx];
-	int iMaxReadCount = aiGrandMasterSkillBookMaxCount[idx];
-
-	int iBookCount = aiGrandMasterSkillBookCountForLevelUp[idx];
-
-	if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
-	{
-		if (iBookCount&1)
-			iBookCount = iBookCount / 2 + 1;
-		else
-			iBookCount = iBookCount / 2;
-
-		RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
-	}
-
-	int n = number(1, iBookCount);
-	sys_log(0, "Number(%d)", n);
-
-	uint32_t nextTime = get_global_time() + number(g_dwSkillBookNextReadMin, g_dwSkillBookNextReadMax);
-
-	sys_log(0, "GrandMaster SkillBookCount min %d cur %d max %d (next_time=%d)", iMinReadCount, iTotalReadCount, iMaxReadCount, nextTime);
-	
-	bool bSuccess = n == 2;
-
-	if (iTotalReadCount < iMinReadCount)
-		bSuccess = false;
-	if (iTotalReadCount > iMaxReadCount)
-		bSuccess = true;
-
-	if (bSuccess)
-	{
-		SkillLevelUp(dwSkillVnum, SKILL_UP_BY_QUEST);
-	}
-
-	SetSkillNextReadTime(dwSkillVnum, nextTime);
-
-	if (bLastLevel == GetSkillLevel(dwSkillVnum))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
-#endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_FAIL", "");
-		return false;
-	}
-
-#ifdef TEXTS_IMPROVEMENT
-	ChatPacketNew(CHAT_TYPE_INFO, 304, "");
-#endif
-	LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_SUCCESS", "");
-	return true;
-}
-// END_OF_ADD_GRANDMASTER_SKILL
-
-static bool FN_should_check_exp(LPCHARACTER ch)
-{
-	// @warme005
-	return ch->GetLevel() < gPlayerMaxLevel;
-}
-
-// #define ENABLE_MASTER_SKILLBOOK_NO_STEPS
-bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
-{
-	const CSkillProto* pkSk = CSkillManager::instance().Get(dwSkillVnum);
-
-	if (!pkSk)
-		return false;
-
-	if (!IsLearnableSkill(dwSkillVnum))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
-#endif
-		return false;
-	}
-
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-	if (!SkillCanUp(dwSkillVnum, true))
-		return false;
-#endif
-
-	
-	int64_t need_exp = 0;
-#ifndef DISABLE_SKILL_BOOK_NEED_EXP
-	 
-	 if (FN_should_check_exp(this))
-	 {
-	     need_exp = 20000;
-	     if (GetExp() < need_exp)
-	     {
-	 #ifdef TEXTS_IMPROVEMENT
-	         ChatPacketNew(CHAT_TYPE_INFO, 247, "");
-	 #endif
-	         return false; 
-	     }
-	 }
-#endif
-	if (pkSk->dwType != 0)
-	{
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-		if ((GetSkillMasterType(dwSkillVnum) != SKILL_MASTER) && ((dwSkillVnum < SKILL_ANTI_PALBANG) || (dwSkillVnum > SKILL_ANTI_BYEURAK)))
-#else
-		if (GetSkillMasterType(dwSkillVnum) != SKILL_MASTER)
-#endif
-		{
-#ifdef TEXTS_IMPROVEMENT
-			if (GetSkillMasterType(dwSkillVnum) > SKILL_MASTER) {
-				ChatPacketNew(CHAT_TYPE_INFO, 423, "");
-			}
-			else {
-				ChatPacketNew(CHAT_TYPE_INFO, 424, "");
-			}
-#endif
-			return false;
-		}
-	}
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
-		if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
-		{
-			RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
-#ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 465, "");
-#endif
-		}
-		else
-		{
-			int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
-			int iHours = iTime / 3600;
-			int iMinutes = (iTime - (iHours * 3600)) / 60;
-#ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
-#endif
-			return false;
-		}
-	}
-
-	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && (dwSkillVnum != NEW_SUPPORT_SKILL_ATTACK) && (dwSkillVnum != NEW_SUPPORT_SKILL_YANG) && (dwSkillVnum != NEW_SUPPORT_SKILL_MONSTERS) && (dwSkillVnum != NEW_SUPPORT_SKILL_HP))
-#else
-	if (get_global_time() < GetSkillNextReadTime(dwSkillVnum))
-#endif
-	{
-		if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
-		{
-			if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
-			{
-				// ÁÖľČĽúĽ­ »çżëÁßżˇ´Â ˝Ă°Ł Á¦ÇŃ ą«˝Ă
-				RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 465, "");
-#endif
-			}
-			else
-			{
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-				int iTime = GetSkillNextReadTime(dwSkillVnum) - get_global_time();
-				int iHours = iTime / 3600;
-				int iMinutes = (iTime - (iHours * 3600)) / 60;
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
-#endif
-#else
-				SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
-#endif
-				return false;
-			}
-		}
-	}
-
-	// ż©±âĽ­ Č®·üŔ» °č»ęÇŐ´Ď´Ů.
-	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
-
-	if (bProb != 0)
-	{
-		// SKILL_BOOK_BONUS
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
-		{
-			bProb += bProb / 2;
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
-		}
-		// END_OF_SKILL_BOOK_BONUS
-
-		sys_log(0, "LearnSkillByBook Pct %u prob %d", dwSkillVnum, bProb);
-
-		if (number(1, 100) <= bProb)
-		{
-			if (test_server)
-				sys_log(0, "LearnSkillByBook %u SUCC", dwSkillVnum);
-
-			SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
-		}
-		else
-		{
-			if (test_server)
-				sys_log(0, "LearnSkillByBook %u FAIL", dwSkillVnum);
-		}
-	}
-
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-	else if ((dwSkillVnum >= SKILL_ANTI_PALBANG) && (dwSkillVnum <= SKILL_ANTI_BYEURAK) && (bLastLevel < 30)) {
-		quest::CQuestManager& q = quest::CQuestManager::instance();
-		quest::PC* pPC = q.GetPC(GetPlayerID());
-		if (!pPC)
-			return false;
-
-		int aiSkillBookCount[30] = {
-										1, 1, 1, 2, 2, 2, 3, 3, 3, 4,
-										0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-										4, 5, 6, 7, 8, 9, 10, 13, 15, 19
-		};
-
-		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
-
-		char szFlag[128 + 1];
-		memset(szFlag, 0, sizeof(szFlag));
-		snprintf(szFlag, sizeof(szFlag), "training_%d.count", dwSkillVnum);
-
-		int iReadCount = pPC->GetFlag(szFlag);
-		int percent = 30;		/* 70% di successo per libri abilita contraattacco */
-
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
-			percent = 20;		/* 80% di successo per libri abilita contraattacco con lettura */
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
-		}
-#ifndef DISABLE_SKILL_BOOK_NEED_EXP
-		if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
-#endif
-		if (number(1, 100) > percent) {
-			if (iReadCount >= needBookCount) {
-				SetSkillLevel(dwSkillVnum, bLastLevel + 1);
-
-				ComputePoints();
-				SkillLevelPacket();
-				pPC->SetFlag(szFlag, 0);
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
-#endif
-				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
-				return true;
-			}
-			else {
-				pPC->SetFlag(szFlag, iReadCount + 1);
-#ifdef TEXTS_IMPROVEMENT
-				switch (number(1, 3)) {
-				case 1:
-					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
-					break;
-				case 2:
-					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
-					break;
-				case 3:
-				default:
-					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
-					break;
-				}
-#endif
-
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
-#endif
-				return true;
-			}
-		}
-	}
-#endif
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-	else if ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP)) {
-		quest::CQuestManager& q = quest::CQuestManager::instance();
-		quest::PC* pPC = q.GetPC(GetPlayerID());
-		if (!pPC)
-			return false;
-
-		int aiSkillBookCount[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, };
-		int needBookCount = aiSkillBookCount[GetSkillLevel(dwSkillVnum)];
-
-		char szFlag[128 + 1];
-		memset(szFlag, 0, sizeof(szFlag));
-		snprintf(szFlag, sizeof(szFlag), "training_%d.count", dwSkillVnum);
-
-		int iReadCount = pPC->GetFlag(szFlag);
-		int percent = 30;		/* 70% di successo per libri abilita secondaria dei bonus */
-
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
-			percent = 10;		/* 90% di successo per libri abilita secondaria dei bonus con lettura concentrata */
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
-		}
-
-#ifndef DISABLE_SKILL_BOOK_NEED_EXP
-		 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
-#endif
-		if (number(1, 100) > percent) {
-			if (iReadCount >= needBookCount) {
-				SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
-				pPC->SetFlag(szFlag, 0);
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
-#endif
-				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
-				return true;
-			}
-			else {
-				pPC->SetFlag(szFlag, iReadCount + 1);
-#ifdef TEXTS_IMPROVEMENT
-				switch (number(1, 3)) {
-				case 1:
-					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
-					break;
-				case 2:
-					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
-					break;
-				case 3:
-				default:
-					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
-					break;
-				}
-#endif
-
-#ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
-#endif
-				return true;
-			}
-		}
-	}
-#endif
-
-	else
-	{
-		int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 20);
-
-		sys_log(0, "LearnSkillByBook %s table idx %d value %d", GetName(), idx, aiSkillBookCountForLevelUp[idx]);
-
-		{
-			int need_bookcount = 0;
-
-#ifndef DISABLE_SKILL_BOOK_NEED_EXP
-			 if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
-#endif
-			quest::CQuestManager& q = quest::CQuestManager::instance();
-			quest::PC* pPC = q.GetPC(GetPlayerID());
-
-			if (pPC)
-			{
-				char flag[128 + 1];
-				memset(flag, 0, sizeof(flag));
-				snprintf(flag, sizeof(flag), "traning_master_skill.%u.read_count", dwSkillVnum);
-
-				int read_count = pPC->GetFlag(flag);
-				int percent = 30;		/* 70% di successo per libri abilita normali e boost */
-				if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
-				{
-					percent = 0;		/* 100% di successo per libri abilita normali con lettura */
-					if ((dwSkillVnum >= SKILL_HELP_PALBANG) && (dwSkillVnum <= SKILL_HELP_BYEURAK))
-						percent = 20;		/* 80% di successo per libri abilita boost con lettura */
-
-					RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
-				}
-
-				if (number(1, 100) > percent)
-				{
-					// ĂĄŔĐ±âżˇ Ľş°ř
-#ifdef ENABLE_MASTER_SKILLBOOK_NO_STEPS
-					if (true)
-#else
-					if (read_count >= need_bookcount)
-#endif
-					{
-						SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
-						pPC->SetFlag(flag, 0);
-
-#ifdef TEXTS_IMPROVEMENT
-						ChatPacketNew(CHAT_TYPE_INFO, 304, "");
-#endif
-						LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
-						return true;
-					}
-					else
-					{
-						pPC->SetFlag(flag, read_count + 1);
-#ifdef TEXTS_IMPROVEMENT
-						switch (number(1, 3)) {
-						case 1:
-							ChatPacketNew(CHAT_TYPE_INFO, 319, "");
-							break;
-						case 2:
-							ChatPacketNew(CHAT_TYPE_INFO, 318, "");
-							break;
-						case 3:
-						default:
-							ChatPacketNew(CHAT_TYPE_INFO, 320, "");
-							break;
-						}
-#endif
-#ifdef TEXTS_IMPROVEMENT
-						ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
-#endif
-						return true;
-					}
-				}
-			}
-			else
-			{
-				// »çżëŔÚŔÇ Äů˝şĆ® Á¤ş¸ ·Îµĺ ˝ÇĆĐ
-			}
-		}
-	}
-
-	if (bLastLevel != GetSkillLevel(dwSkillVnum))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 304, "");
-#endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
-	}
-	else
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
-#endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "READ_FAIL", "");
-	}
-
-	return true;
-}
 
 
 bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
@@ -1139,57 +1580,6 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	SkillLevelPacket();
 }
 
-void CHARACTER::ComputeSkillPoints()
-{
-	if (g_bSkillDisable)
-		return;
-}
-
-void CHARACTER::ResetSkill()
-{
-	if (nullptr == m_pSkillLevels)
-		return;
-
-	// ş¸Á¶ ˝şĹłŔş ¸®ĽÂ˝ĂĹ°Áö ľĘ´Â´Ů
-	std::vector<std::pair<uint32_t, TPlayerSkill> > vec;
-	size_t count = sizeof(s_adwSubSkillVnums) / sizeof(s_adwSubSkillVnums[0]);
-
-	for (size_t i = 0; i < count; ++i)
-	{
-		if (s_adwSubSkillVnums[i] >= SKILL_MAX_NUM)
-			continue;
-
-		vec.push_back(std::make_pair(s_adwSubSkillVnums[i], m_pSkillLevels[s_adwSubSkillVnums[i]]));
-	}
-
-	memset(m_pSkillLevels, 0, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
-	std::vector<std::pair<uint32_t, TPlayerSkill> >::const_iterator iter = vec.begin();
-	while (iter != vec.end())
-	{
-		const std::pair<uint32_t, TPlayerSkill>& pair = *(iter++);
-		m_pSkillLevels[pair.first] = pair.second;
-	}
-
-	ComputePoints();
-	SkillLevelPacket();
-
-#ifdef __SKILL_COLOR_SYSTEM__
-	uint32_t data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
-	for (int i = 0; i < ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT; i++) {
-		for (int j = 0; j < 5; j++) {
-			data[i][j] = 0;
-		}
-	}
-
-	SetSkillColor(data[0]);
-
-	TSkillColor db_pack;
-	memcpy(db_pack.dwSkillColor, data, sizeof(data));
-	db_pack.player_id = GetPlayerID();
-	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
-	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
-#endif
-}
 
 void CHARACTER::ComputePassiveSkill(uint32_t dwVnum)
 {
@@ -3547,18 +3937,6 @@ int CHARACTER::GetSkillPower(uint32_t dwVnum, uint8_t bLevel) const
 	//SKILL_POWER_BY_LEVEL
 }
 
-int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
-{
-	if (dwVnum >= SKILL_MAX_NUM)
-	{
-		sys_err("%s skill vnum overflow %u", GetName(), dwVnum);
-		sys_log(0, "%s skill vnum overflow %u", GetName(), dwVnum);
-		return 0;
-	}
-
-	return MIN(SKILL_MAX_LEVEL, m_pSkillLevels ? m_pSkillLevels[dwVnum].bLevel : 0);
-}
-
 EVENTFUNC(skill_muyoung_event)
 {
 	char_event_info* info = dynamic_cast<char_event_info*>( event->info );
@@ -3688,11 +4066,6 @@ void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
 #endif
 }
 
-void CHARACTER::DisableCooltime()
-{
-	m_bDisableCooltime = true;
-}
-
 bool CHARACTER::HasMobSkill() const
 {
 	return CountMobSkill() > 0;
@@ -3726,21 +4099,6 @@ const TMobSkillInfo* CHARACTER::GetMobSkill(unsigned int idx) const
 	return &m_pkMobData->m_mobSkillInfo[idx];
 }
 
-bool CHARACTER::CanUseMobSkill(unsigned int idx) const
-{
-	const TMobSkillInfo* pInfo = GetMobSkill(idx);
-
-	if (!pInfo)
-		return false;
-
-	if (m_adwMobSkillCooltime[idx] > get_dword_time())
-		return false;
-
-	if (number(0, 1))
-		return false;
-
-	return true;
-}
 
 EVENTINFO(mob_skill_event_info)
 {
@@ -3896,11 +4254,6 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 	}
 
 	return true;
-}
-
-void CHARACTER::ResetMobSkillCooltime()
-{
-	memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
 }
 
 bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
@@ -4581,134 +4934,4 @@ const uint32_t GetRandomSkillVnum(uint8_t bJob)
 	return dwSkillVnum;
 }
 
-bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
-{
-	if (0 == dwSkillVnum) return false;
-
-	//// LostCastle klón kivétel: a klónnak nincs kliens inputja/skill group packetje,
-	//// de ha van skill levelje, engedjük (különben sosem tud skillezni).
-	//if (IsFakePlayer() && CLostCastleDungeon::instance().IsCloneVID(GetVID()))
-	//{
-	//	if (GetSkillLevel(dwSkillVnum) > 0)
-	//		return true;
-	//}
-
-	if (0 < GetSkillGroup())
-	{
-		const uint32_t* pSkill = SkillList[ GetJob() ][ GetSkillGroup()-1 ];
-
-		for (int i=0 ; i < SKILL_COUNT ; ++i)
-		{
-			if (pSkill[i] == dwSkillVnum) return true;
-		}
-	}
-
-	//if (true == IsHorseRiding())
-
-	if (true == IsRiding())
-	{
-		//¸¶żîĆ® Ĺ»°ÍÁß °í±Ţ¸»¸¸ ˝şĹł »çżë°ˇ´É
-#ifdef ENABLE_MOUNTSKILL_CHECK
-		eMountType eIsMount = GetMountLevelByVnum(GetMountVnum(), false);
-		if (eIsMount != MOUNT_TYPE_MILITARY)
-		{
-			if (test_server)
-				sys_log(0, "CanUseSkill: Mount can't skill. vnum(%u) type(%d)", GetMountVnum(), static_cast<int>(eIsMount));
-			return false;
-		}
-#endif
-		switch(dwSkillVnum)
-		{
-			case SKILL_HORSE_WILDATTACK:
-			case SKILL_HORSE_CHARGE:
-			case SKILL_HORSE_ESCAPE:
-			case SKILL_HORSE_WILDATTACK_RANGE:
-				return true;
-		}
-	}
-
-	switch( dwSkillVnum )
-	{
-		case 121: case 122: case 124: case 126: case 127: case 128: case 129: case 130:
-		case 131:
-		case 151: case 152: case 153: case 154: case 155: case 156: case 157: case 158: case 159:
-			return true;
-	}
-
-	return false;
-}
-
-bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, const VID TargetVID)
-{
-	std::map<int, TSkillUseInfo>::iterator iter = m_SkillUseInfo.find(SkillID);
-
-	if (iter == m_SkillUseInfo.end())
-	{
-		sys_log(0, "SkillHack: Skill(%u) is not in container", SkillID);
-		return false;
-	}
-
-	TSkillUseInfo& rSkillUseInfo = iter->second;
-
-	if (false == rSkillUseInfo.bUsed)
-	{
-		sys_log(0, "SkillHack: not used skill(%u)", SkillID);
-		return false;
-	}
-
-	switch (SkillID)
-	{
-		case SKILL_YONGKWON:
-		case SKILL_HWAYEOMPOK:
-		case SKILL_DAEJINGAK:
-		case SKILL_PAERYONG:
-			sys_log(0, "SkillHack: cannot use attack packet for skill(%u)", SkillID);
-			return false;
-	}
-
-	auto iterTargetMap = rSkillUseInfo.TargetVIDMap.find(TargetVID);
-
-	if (rSkillUseInfo.TargetVIDMap.end() != iterTargetMap)
-	{
-		size_t MaxAttackCountPerTarget = 1;
-
-		switch (SkillID)
-		{
-
-			case SKILL_SAMYEON:
-			case SKILL_CHARYUN:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case SKILL_CHAYEOL:
-#endif
-				MaxAttackCountPerTarget = 3;
-				break;
-
-			case SKILL_HORSE_WILDATTACK_RANGE:
-				MaxAttackCountPerTarget = 5;
-				break;
-
-			case SKILL_YEONSA:
-				MaxAttackCountPerTarget = 7;
-				break;
-
-			case SKILL_HORSE_ESCAPE:
-				MaxAttackCountPerTarget = 10;
-				break;
-		}
-
-		if (iterTargetMap->second >= MaxAttackCountPerTarget)
-		{
-			sys_log(0, "SkillHack: Too Many Hit count from SkillID(%u) count(%u)", SkillID, iterTargetMap->second);
-			return false;
-		}
-
-		iterTargetMap->second++;
-	}
-	else
-	{
-		rSkillUseInfo.TargetVIDMap.insert( std::make_pair(TargetVID, 1) );
-	}
-
-	return true;
-}
 

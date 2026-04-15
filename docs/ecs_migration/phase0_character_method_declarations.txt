@@ -1,0 +1,856 @@
+time_t GetLastFruitUse() const
+void SetLastFruitUse(time_t t)
+time_t GetLastGoldFruitUse() const
+void SetLastGoldFruitUse(time_t t)
+virtual void EncodeInsertPacket(LPENTITY entity)
+virtual void EncodeRemovePacket(LPENTITY entity)
+LPCHARACTER FindCharacterInView(const char* name, bool bFindPCOnly)
+void UpdatePacket()
+std::string GetItemOnTitlePrefix() const
+std::string GetDisplayedNameWithItemOnTitle() const
+void UpdateItemOnTitleName(bool bForce = false)
+void SendItemOnTitleNameToDesc(LPDESC d) const
+virtual void StateMove()
+virtual void StateBattle()
+virtual void StateIdle()
+virtual void StateFlag()
+virtual void StateFlagBase()
+void StateHorse()
+void __StateIdle_Monster()
+void __StateIdle_Stone()
+static void SpawnStoneStep(CHARACTER* ch, uint32_t dwVnum, int step)
+void __StateIdle_NPC()
+long long GetVoteCoin()
+void SetVoteCoin(long long amount)
+uint32_t GetAIFlag() const
+void SetAggressive()
+bool IsAggressive() const
+void SetCoward()
+bool IsCoward() const
+void CowardEscape()
+void SetNoAttackShinsu()
+bool IsNoAttackShinsu() const
+void SetNoAttackChunjo()
+bool IsNoAttackChunjo() const
+void SetNoAttackJinno()
+bool IsNoAttackJinno() const
+void SetAttackMob()
+bool IsAttackMob() const
+virtual void BeginStateEmpty()
+virtual void EndStateEmpty()
+void RestartAtSamePos()
+CHARACTER()
+~CHARACTER() override
+void Create(const char* c_pszName, uint32_t vid, bool isPC)
+void Destroy()
+void Disconnect(const char* c_pszReason)
+void Initialize()
+uint32_t GetLastTargetInfoPulse() const
+void SetLastTargetInfoPulse(uint32_t pulse)
+uint32_t GetPlayerID() const
+int GetBeltCount() const
+int GetBeltCount() const
+std::string GetDisplayedNameWithBeltCount() const
+void CHARACTER::UpdateMountCountOverhead(LPCHARACTER ch, bool force) void SetPlayerProto(const TPlayerTable* table)
+void CreatePlayerProto(TPlayerTable& tab)
+void SetProto(const CMob* c_pkMob)
+uint16_t GetRaceNum() const
+void Save()
+void SaveReal()
+void FlushDelayedSaveItem()
+const char* GetName(uint8_t lang = DEFAULT_LANGUAGE) const
+const char* GetName() const
+const VID& GetVID() const
+void SetName(const std::string& name)
+void SetRace(uint8_t race)
+bool ChangeSex()
+uint32_t GetAID() const
+int GetChangeEmpireCount() const
+void SetChangeEmpireCount()
+int ChangeEmpire(uint8_t empire)
+uint8_t GetJob() const
+uint8_t GetCharType() const
+bool IsPC() const
+bool IsNPC() const
+bool IsMonster() const
+bool IsStone() const
+bool IsDoor() const
+bool IsBuilding() const
+bool IsWarp() const
+bool IsGoto() const
+void SetDungeonTicketExtraMetin(bool b)
+bool IsDungeonTicketExtraMetin() const
+uint32_t GetLastShoutPulse() const
+void SetLastShoutPulse(uint32_t pulse)
+int GetLevel() const
+void SetLevel(uint8_t level)
+uint8_t GetGMLevel() const
+BOOL IsGM() const
+void SetGMLevel()
+uint32_t GetExp() const
+void SetExp(uint32_t exp)
+uint32_t GetNextExp() const
+uint32_t PetGetNextExp() const
+LPCHARACTER DistributeExp()
+void DistributeHP(LPCHARACTER pkKiller)
+void DistributeSP(LPCHARACTER pkKiller, int iMethod = 0)
+void SetPosition(int pos)
+bool IsPosition(int pos) const
+int GetPosition() const
+void SetPart(uint8_t bPartPos, uint16_t wVal)
+uint16_t GetPart(uint8_t bPartPos) const
+uint16_t GetOriginalPart(uint8_t bPartPos) const
+void SetHP(int64_t hp)
+int64_t GetHP() const
+void SetSP(int64_t sp)
+int64_t GetSP() const
+void SetStamina(int stamina)
+int GetStamina() const
+void SetMaxHP(int64_t iVal)
+int64_t GetMaxHP() const
+void SetMaxSP(int64_t iVal)
+int64_t GetMaxSP() const
+void SetMaxStamina(int64_t iVal)
+int64_t GetMaxStamina() const
+void SetRandomHP(int v)
+void SetRandomSP(int v)
+int GetRandomHP() const
+int GetRandomSP() const
+int GetHPPct() const
+void SetRealPoint(uint8_t idx, int64_t val)
+int64_t GetRealPoint(uint8_t idx) const
+void SetPoint(uint8_t idx, int64_t val)
+int64_t GetPoint(uint8_t idx) const
+int GetLimitPoint(uint8_t idx) const
+int GetPolymorphPoint(uint8_t idx) const
+const TMobTable& GetMobTable() const
+uint8_t GetMobRank() const
+uint8_t GetMobBattleType() const
+uint8_t GetMobSize() const
+uint32_t GetMobDamageMin() const
+uint32_t GetMobDamageMax() const
+uint16_t GetMobAttackRange() const
+uint32_t GetMobDropItemVnum() const
+float GetMobDamageMultiply() const
+bool IsBerserker() const
+bool IsBerserk() const
+void SetBerserk(bool mode)
+bool IsStoneSkinner() const
+bool IsGodSpeeder() const
+bool IsGodSpeed() const
+void SetGodSpeed(bool mode)
+bool IsDeathBlower() const
+bool IsDeathBlow() const
+bool IsReviver() const
+bool HasReviverInParty() const
+bool IsRevive() const
+void SetRevive(bool mode)
+bool IsRaceFlag(uint32_t dwBit) const
+bool IsSummonMonster() const
+uint32_t GetSummonVnum() const
+uint32_t GetPolymorphItemVnum() const
+uint32_t GetMonsterDrainSPPoint() const
+void MainCharacterPacket()
+void ComputeAligin()
+void ComputePoints()
+void ComputeBattlePoints()
+void PointChange(uint8_t type, int64_t amount, bool bAmount = false, bool bBroadcast = false , bool bForceExp = false )
+void PointsPacket()
+void ApplyPoint(uint8_t bApplyType, int iVal)
+void SendPetLevelUpEffect(int vid, int type, int value, int amount)
+void CheckMaximumPoints()
+bool Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool bShowSpawnMotion = false)
+void Sitdown(int is_ground)
+void Standup()
+void SetRotation(float fRot, bool bForce = false)
+void SetRotation(float fRot)
+void SetRotationToXY(int32_t x, int32_t y)
+float GetRotation() const
+void MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet)
+void Motion(uint8_t motion, LPCHARACTER victim = nullptr)
+void ChatPacket(uint8_t type, const char* format, ...)
+void SendGreetMessage()
+void ResetPoint(int iLv)
+void SetBlockMode(uint8_t bFlag)
+void SetBlockModeForce(uint8_t bFlag)
+bool IsBlockMode(uint8_t bFlag) const
+bool IsPolymorphed() const
+bool IsPolyMaintainStat() const
+void SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false)
+uint32_t GetPolymorphVnum() const
+int GetPolymorphPower() const
+void fishing()
+void fishing_take()
+void mining(LPCHARACTER chLoad)
+void mining_cancel()
+void mining_take()
+void ResetPlayTime(uint32_t dwTimeRemain = 0)
+void CreateFly(uint8_t bType, LPCHARACTER pkVictim)
+void ResetChatCounter()
+uint8_t IncreaseChatCounter()
+uint8_t GetChatCounter() const
+void ResetMountCounter()
+uint8_t IncreaseMountCounter()
+uint8_t GetMountCounter() const
+int32_t SetInvincible(bool arg)
+bool GetInvincible()
+int32_t IncreaseMobHP(int32_t lArg)
+int32_t IncreaseMobRigHP(int32_t lArg)
+bool IsStateMove() const
+bool IsStateIdle() const
+bool IsWalking() const
+void SetWalking(bool bWalkFlag)
+void SetNowWalking(bool bWalkFlag)
+void ResetWalking()
+bool Goto(int32_t x, int32_t y)
+void Stop()
+bool CanMove() const
+void SyncPacket()
+bool Sync(int32_t x, int32_t y)
+bool Move(int32_t x, int32_t y)
+void OnMove(bool bIsAttack = false)
+uint32_t GetMotionMode() const
+float GetMoveMotionSpeed() const
+float GetMoveSpeed() const
+void CalculateMoveDuration()
+void SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f)
+uint32_t GetCurrentMoveDuration() const
+uint32_t GetWalkStartTime() const
+uint32_t GetLastMoveTime() const
+uint32_t GetLastAttackTime() const
+void SetLastAttacked(uint32_t time)
+bool SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList = true)
+bool IsSyncOwner(LPCHARACTER ch) const
+bool WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0)
+bool SwitchChannel(int32_t newAddr, uint16_t newPort)
+bool StartChannelSwitch(int32_t newAddr, uint16_t newPort)
+void SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y)
+void WarpEnd()
+const PIXEL_POSITION& GetWarpPosition() const
+bool WarpToPID(uint32_t dwPID)
+void SaveExitLocation()
+void ExitToSavedLocation()
+void StartStaminaConsume()
+void StopStaminaConsume()
+bool IsStaminaConsume() const
+bool IsStaminaHalfConsume() const
+void ResetStopTime()
+uint32_t GetStopTime() const
+void ClearSync()
+void SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
+bool GetQuickslot(uint8_t pos, TQuickslot** ppSlot)
+bool SetQuickslot(uint8_t pos, TQuickslot& rSlot)
+bool DelQuickslot(uint8_t pos)
+bool SwapQuickslot(uint8_t a, uint8_t b)
+void ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos)
+offlineshop::CShop* GetOfflineShop()
+void SetOfflineShop(offlineshop::CShop* pkShop)
+offlineshop::CShop* GetOfflineShopGuest() const
+void SetOfflineShopGuest(offlineshop::CShop* pkShop)
+offlineshop::CShopSafebox* GetShopSafebox()
+void SetShopSafebox(offlineshop::CShopSafebox* pk)
+void SetAuction(offlineshop::CAuction* pk)
+void SetAuctionGuest(offlineshop::CAuction* pk)
+offlineshop::CAuction* GetAuction()
+offlineshop::CAuction* GetAuctionGuest() const
+void SetLookingOfflineshopOfferList(bool is)
+bool IsLookingOfflineshopOfferList()
+int GetOfflineShopUseTime() const
+void SetOfflineShopUseTime()
+void StartAffectEvent()
+void ClearAffect(bool bSave = false)
+void ComputeAffect(CAffect* pkAff, bool bAdd)
+bool AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube = false)
+void RefreshAffect()
+bool RemoveAffect(uint32_t dwType)
+bool IsAffectFlag(uint32_t dwAff) const
+bool UpdateAffect()
+int ProcessAffect()
+void LoadAffect(uint32_t dwCount, TPacketAffectElement* pElements)
+void SaveAffect()
+bool IsLoadedAffect() const
+bool IsGoodAffect(uint8_t bAffectType) const
+void RemoveGoodAffect()
+void RemoveBadAffect()
+CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const
+const std::list<CAffect*>& GetAffectContainer() const
+bool RemoveAffect(CAffect* pkAff)
+void ClearAffectSkills()
+void SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
+void LoadAffectSkills()
+void SetParty(LPPARTY pkParty)
+LPPARTY GetParty() const
+bool RequestToParty(LPCHARACTER leader)
+void DenyToParty(LPCHARACTER member)
+void AcceptToParty(LPCHARACTER member)
+void PartyInvite(LPCHARACTER pchInvitee)
+void PartyInviteAccept(LPCHARACTER pchInvitee)
+void PartyInviteDeny(uint32_t dwPID)
+bool BuildUpdatePartyPacket(TPacketGCPartyUpdate& out)
+int GetLeadershipSkillLevel() const
+bool CanSummon(int iLeaderShip)
+void SetPartyRequestEvent(LPEVENT pkEvent)
+void PartyJoin(LPCHARACTER pkLeader)
+static PartyJoinErrCode IsPartyJoinableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest)
+static PartyJoinErrCode IsPartyJoinableMutableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest)
+void SetDungeon(LPDUNGEON pkDungeon)
+LPDUNGEON GetDungeon() const
+LPDUNGEON GetDungeonForce() const
+void SetGuild(CGuild* pGuild)
+CGuild* GetGuild() const
+void SetWarMap(CWarMap* pWarMap)
+CWarMap* GetWarMap() const
+bool CanHandleItem(bool bSkipRefineCheck = false, bool bSkipObserver = false)
+bool IsItemLoaded() const
+void SetItemLoaded()
+void ClearItem()
+void EditMyInven()
+void EditMyExtraInven()
+void SetItem(TItemPos Cell, LPITEM item, bool isHighLight = false)
+void SetItem(TItemPos Cell, LPITEM item)
+LPITEM GetItem(TItemPos Cell) const
+LPITEM GetInventoryItem(uint16_t wCell) const
+LPITEM GetExtraInventoryItem(uint16_t wCell) const
+void SetNextSortExtraInventoryPulse(int pulse)
+int GetSortExtraInventoryPulse()
+int ExtraInventoryMaxSlots(int iArg1, bool bAuto = false) const
+void UnlockExtraInventory(uint8_t category)
+bool IsEmptyItemGrid(TItemPos Cell, uint8_t size, int iExceptionCell = -1) const
+void SetWear(uint8_t bCell, LPITEM item)
+LPITEM GetWear(uint8_t bCell) const
+void UseSilkBotary(void)
+void UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p)
+bool UseItemEx(LPITEM item, TItemPos DestCell)
+bool UseItem(TItemPos Cell, TItemPos DestCell = NPOS)
+bool IsRefineThroughGuild() const
+CGuild* GetRefineGuild() const
+int64_t ComputeRefineFee(int64_t iCost, int64_t iMultiply = 5) const
+void PayRefineFee(int64_t iTotalMoney)
+void SetRefineNPC(LPCHARACTER ch)
+bool RefineItem(LPITEM pkItem, LPITEM pkTarget)
+bool DropItem(TItemPos Cell, int uint8_t bCount = 0)
+bool DestroyItem(TItemPos Cell)
+void ItemDivision(TItemPos Cell)
+bool GiveRecallItem(LPITEM item)
+void ProcessRecallItem(LPITEM item)
+void EffectPacket(uint8_t enumEffectType)
+void SpecificEffectPacket(const char filename[128])
+bool DoRefine(LPITEM item, bool bMoneyOnly = false)
+bool DoRefineWithScroll(LPITEM item)
+bool RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell = -1)
+void SetRefineMode(int iAdditionalCell = -1)
+void ClearRefineMode()
+bool GiveItem(LPCHARACTER victim, TItemPos Cell)
+bool CanReceiveItem(LPCHARACTER from, LPITEM item) const
+void ReceiveItem(LPCHARACTER from, LPITEM item)
+bool GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums, std::vector <uint32_t>& dwItemCounts, std::vector <LPITEM>& item_gets, int& count)
+bool MoveItem(TItemPos pos, TItemPos change_pos, int uint32_t count)
+bool PickupItem(uint32_t vid)
+bool EquipItem(LPITEM item, int iCandidateCell = -1)
+bool UnequipItem(LPITEM item)
+bool CanEquipNow(const LPITEM item, const TItemPos& srcCell = NPOS, const TItemPos& destCell = NPOS)
+bool CanUnequipNow(const LPITEM item, const TItemPos& srcCell = NPOS, const TItemPos& destCell = NPOS)
+bool SwapItem(uint8_t bCell, uint8_t bDestCell)
+LPITEM AutoGiveItem(uint32_t dwItemVnum, int uint8_t bCount = 1, int iRarePct = -1, bool bMsg = true , bool isHighLight = true )
+void AutoGiveItem(LPITEM item, bool longOwnerShip = false , bool isHighLight = true )
+bool AutoGiveDS(LPITEM item, bool longOwnerShip = false)
+bool CanTakeInventoryItem(LPITEM item, TItemPos* pos)
+int GetEmptyExtraInventory(LPITEM pItem) const
+int GetEmptyExtraInventory(uint8_t size, uint8_t category) const
+int GetEmptyInventory(uint8_t size) const
+int GetEmptyDragonSoulInventory(LPITEM pItem) const
+void CopyDragonSoulItemGrid(std::vector<uint16_t>& vDragonSoulItemGrid) const
+int CountEmptyInventory() const
+int CountSpecifyItemRenewal(uint32_t vnum) const
+int CountSpecifyItem(uint32_t vnum) const
+void RemoveSpecifyItem(uint32_t vnum, int count = 1, bool cuberenewal = false)
+LPITEM FindSpecifyItem(uint32_t vnum , bool reinforce = false ) const
+LPITEM FindItemByID(uint32_t id) const
+int CountSpecifyTypeItem(uint8_t type) const
+void RemoveSpecifyTypeItem(uint8_t type, int count = 1)
+bool IsEquipUniqueItem(uint32_t dwItemVnum) const
+bool IsEquipUniqueGroup(uint32_t dwGroupVnum) const
+void SendEquipment(LPCHARACTER ch)
+void SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
+int64_t GetGold() const
+void SetGold(int64_t gold)
+int Inven_Point() const
+int Inventory_Size() const
+void Set_Inventory_Point(int black)
+bool Update_Inven()
+bool DropGold(int64_t gold)
+int64_t GetAllowedGold() const
+void GiveGold(int64_t iAmount)
+int GetDuel(const char* type) const
+void SetDuel(const char* type, int value)
+int GetGaya() const
+void SetGaya(int gaya)
+void SetShop(LPSHOP pkShop)
+LPSHOP GetShop() const
+void ShopPacket(uint8_t bSubHeader)
+void SetShopOwner(LPCHARACTER ch)
+LPCHARACTER GetShopOwner() const
+void OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount , uint32_t KasmirNpc, uint8_t KasmirBaslik )
+void UseSilkBotaryKasmir(void)
+LPSHOP GetMyShop() const
+void CloseMyShop()
+void DestroyPvP()
+void SetSkillColor(uint32_t* dwSkillColor)
+uint32_t* GetSkillColor()
+bool ExchangeStart(LPCHARACTER victim)
+void SetExchange(CExchange* pkExchange)
+CExchange* GetExchange() const
+void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
+std::shared_ptr<CWheelDestiny> GetWheelDestiny() const
+void SetWheelFreeCount(const int count)
+int GetWheelFreeCount() const
+void SetQuestDamage(int race, int dmg)
+uint64_t GetQuestDamage(int race)
+bool IsBeranMap(int lMapIndex)
+bool Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type = DAMAGE_TYPE_NORMAL)
+bool __Profile__Damage(LPCHARACTER pAttacker, int dam, EDamageType type = DAMAGE_TYPE_NORMAL)
+void DeathPenalty(uint8_t bExpLossPercent)
+void ReviveInvisible(int iDur)
+bool Attack(LPCHARACTER pkVictim, uint8_t bType = 0)
+bool IsAlive() const
+bool CanFight() const
+bool CanBeginFight() const
+void BeginFight(LPCHARACTER pkVictim)
+bool CounterAttack(LPCHARACTER pkChr)
+bool IsStun() const
+void Stun()
+bool IsDead() const
+void Dead(LPCHARACTER pkKiller = nullptr, bool bImmediateDead = false)
+void SetImmortal(int st)
+bool IsImmortal()
+void SetNewPetSkillCD(int s, uint32_t time)
+uint32_t GetNewPetSkillCD(int s)
+void Reward(bool bItemDrop)
+void RewardGold(LPCHARACTER pkAttacker)
+bool Shoot(uint8_t bType)
+void FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader)
+void ForgetMyAttacker()
+void AggregateMonster()
+void AggregateMonsterPlus()
+void AttractRanger()
+void PullMonster()
+int GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount = 1)
+void UseArrow(LPITEM pkArrow, uint32_t dwArrowCount)
+void SendLeaderboardData()
+void SendLeaderboardDataSkillMob(LPCHARACTER viewer)
+void SendLeaderboardDataGuild()
+static std::vector<LeaderboardEntry> FetchTop10SkillMob()
+static void CheckLeaderboardSkillMobChanges()
+void AttackedByPoison(LPCHARACTER pkAttacker)
+void RemovePoison()
+void AttackedByBleeding(LPCHARACTER pkAttacker)
+void RemoveBleeding()
+void AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
+void RemoveFire()
+uint8_t GetAlignmentGrade() const
+void ClearAlignmentBonus()
+void ApplyAlignmentBonus()
+void UpdateAlignment(uint32_t iAmount)
+uint32_t GetAlignment() const
+int GetMountCount() const
+void UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
+void UpdateMountCountOverheadToViewers()
+bool IsNextMountPulse() const
+void UpdateMountPulse()
+uint32_t GetRealAlignment() const
+void SetKillerMode(bool bOn)
+bool IsKillerMode() const
+void UpdateKillerMode()
+uint8_t GetPKMode() const
+void SetPKMode(uint8_t bPKMode)
+void ItemDropPenalty(LPCHARACTER pkKiller)
+void UpdateAggrPoint(LPCHARACTER ch, EDamageType type, int dam)
+void SetComboSequence(uint8_t seq)
+uint8_t GetComboSequence() const
+void SetLastComboTime(uint32_t time)
+uint32_t GetLastComboTime() const
+int GetValidComboInterval() const
+void SetValidComboInterval(int interval)
+uint8_t GetComboIndex() const
+void IncreaseComboHackCount(int k = 1)
+void ResetComboHackCount()
+void SkipComboAttackByTime(int interval)
+uint32_t GetSkipComboAttackByTime() const
+void UpdateAggrPointEx(LPCHARACTER ch, EDamageType type, int dam, TBattleInfo& info)
+void ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
+void SetStone(LPCHARACTER pkChrStone)
+void ClearStone(LPCHARACTER pkKiller = nullptr)
+void RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage = 1)
+void ClearStone()
+uint32_t GetDragonCoin()
+void SetDragonCoin(uint32_t amount)
+void SetProtectTime(const std::string& flagname, int value)
+int GetProtectTime(const std::string& flagname) const
+void DetermineDropMetinStone()
+uint32_t GetDropMetinStoneVnum() const
+uint8_t GetDropMetinStonePct() const
+void DetermineDropMetinStofa()
+uint32_t GetDropMetinStofaVnum() const
+uint8_t GetDropMetinStofaPct() const
+void DetermineDropMetinSacca()
+uint32_t GetDropMetinSaccaVnum() const
+uint8_t GetDropMetinSaccaPct() const
+void SetSkillHit(bool b)
+bool IsSkillHit() const
+long long GetRankPoints(int iArg)
+void SetRankPoints(int iArg, long long lPoint)
+void RankingSubcategory(int iArg)
+void SetAttrDialogRemove(int iArg)
+int GetAttrDialogRemove() const
+void SetPetEnchant(int iArg)
+int GetPetEnchant() const
+bool SkillCanUp(uint32_t dwVnum, bool book = false)
+void SkillLevelPacket()
+void SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT)
+bool SkillLevelDown(uint32_t dwVnum)
+bool UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster = true)
+void ResetSkill()
+void SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
+int GetUsedSkillMasterType(uint32_t dwVnum)
+bool IsLearnableSkill(uint32_t dwSkillVnum) const
+bool CheckSkillHitCount(const uint8_t SkillID, const VID dwTargetVID)
+bool CanUseSkill(uint32_t dwSkillVnum) const
+bool IsUsableSkillMotion(uint32_t dwMotionIndex) const
+int GetSkillLevel(uint32_t dwVnum) const
+int GetSkillMasterType(uint32_t dwVnum) const
+int GetSkillPower(uint32_t dwVnum, uint8_t bLevel = 0) const
+time_t GetSkillNextReadTime(uint32_t dwVnum) const
+void SetSkillNextReadTime(uint32_t dwVnum, time_t time)
+void SkillLearnWaitMoreTimeMessage(uint32_t dwVnum)
+void ComputePassiveSkill(uint32_t dwVnum)
+int ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0)
+int ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0)
+int ComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0)
+int ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0)
+void ComputeSkillPoints()
+void SetSkillGroup(uint8_t bSkillGroup)
+uint8_t GetSkillGroup() const
+int ComputeCooltime(int time)
+void GiveRandomSkillBook()
+void DisableCooltime()
+bool LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0)
+bool LearnGrandMasterSkill(uint32_t dwSkillVnum)
+bool HasMobSkill() const
+size_t CountMobSkill() const
+const TMobSkillInfo* GetMobSkill(unsigned int idx) const
+bool CanUseMobSkill(unsigned int idx) const
+bool UseMobSkill(unsigned int idx)
+void ResetMobSkillCooltime()
+void StartMuyeongEvent()
+void StopMuyeongEvent()
+void StartGyeongGongEvent()
+void StopGyeongGongEvent()
+int GetChainLightningIndex() const
+void IncChainLightningIndex()
+void AddChainLightningExcept(LPCHARACTER ch)
+void ResetChainLightningIndex()
+int GetChainLightningMaxCount() const
+const CHARACTER_SET& GetChainLightingExcept() const
+void SetAffectedEunhyung()
+void ClearAffectedEunhyung()
+bool GetAffectedEunhyung() const
+void AssignTriggers(const TMobTable* table)
+LPCHARACTER GetVictim() const
+void SetVictim(LPCHARACTER pkVictim)
+LPCHARACTER GetNearestVictim(LPCHARACTER pkChr)
+LPCHARACTER GetProtege() const
+bool Follow(LPCHARACTER pkChr, float fMinimumDistance = 150.0f)
+bool Return()
+bool IsGuardNPC() const
+bool IsChangeAttackPosition(LPCHARACTER target) const
+void ResetChangeAttackPositionTime()
+void SetChangeAttackPositionTime()
+bool OnIdle()
+void OnAttack(LPCHARACTER pkChrAttacker)
+void OnClick(LPCHARACTER pkChrCauser)
+void SetTarget(LPCHARACTER pkChrTarget)
+void BroadcastTargetPacket()
+void ClearTarget()
+void CheckTarget()
+LPCHARACTER GetTarget() const
+int GetSafeboxSize() const
+void QuerySafeboxSize()
+void SetSafeboxSize(int size)
+CSafebox* GetSafebox() const
+void LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
+void ChangeSafeboxSize(uint8_t bSize)
+void CloseSafebox()
+CMountInventory* GetMountInventory() const
+void QueryMountInventory()
+void LoadMountInventory(const std::vector<TMountInventoryItemTable>& items)
+void SendMountInventory()
+void ReqSafeboxLoad(const char* pszPassword)
+void CancelSafeboxLoad(void)
+void SetMallLoadTime(int t)
+int GetMallLoadTime() const
+CSafebox* GetMall() const
+void LoadMall(int iItemCount, TPlayerItem* pItems)
+void CloseMall()
+void SetSafeboxOpenPosition()
+float GetDistanceFromSafeboxOpen() const
+void MountVnum(uint32_t vnum)
+uint32_t GetMountVnum() const
+uint32_t GetLastMountTime() const
+bool CanUseHorseSkill()
+virtual void SetHorseLevel(int iLevel)
+virtual bool StartRiding()
+virtual bool StopRiding()
+virtual uint32_t GetMyHorseVnum() const
+virtual void HorseDie()
+virtual bool ReviveHorse()
+virtual void SendHorseInfo()
+virtual void ClearHorseInfo()
+void HorseSummon(bool bSummon, bool bFromFar = false, uint32_t dwVnum = 0, const char* name = nullptr)
+LPCHARACTER GetHorse() const
+LPCHARACTER GetRider() const
+void SetRider(LPCHARACTER ch)
+bool IsRiding() const
+LPITEM* GetAttrTransferItem()
+bool IsAttrTransferOpen() const
+void SetAttrTransferNpc(LPCHARACTER npc)
+bool CanDoAttrTransfer() const
+CPetSystem* GetPetSystem()
+public: CMountSystem* GetMountSystem()
+void MountSummon(LPITEM mountItem)
+void MountUnsummon(LPITEM mountItem)
+void CheckMount()
+bool IsRidingMount()
+CNewPetSystem* GetNewPetSystem()
+public: void UpdatePetSkin()
+uint32_t GetPetSkinVnum()
+void UpdateMountSkin()
+uint32_t GetMountSkinVnum()
+void DetailLog()
+void ToggleMonsterLog()
+void MonsterLog(const char* format, ...)
+void SetEmpire(uint8_t bEmpire)
+uint8_t GetEmpire() const
+void SetRegen(LPREGEN pkRegen)
+bool CannotMoveByAffect() const
+bool IsImmune(uint32_t dwImmuneFlag)
+void SetImmuneFlag(uint32_t dw)
+void ApplyMobAttribute(const TMobTable* table)
+void SetQuestNPCID(uint32_t vid)
+uint32_t GetQuestNPCID() const
+LPCHARACTER GetQuestNPC() const
+void SetQuestItemPtr(LPITEM item)
+void ClearQuestItemPtr()
+LPITEM GetQuestItemPtr() const
+void SetQuestBy(uint32_t dwQuestVnum)
+uint32_t GetQuestBy() const
+int GetQuestFlag(const std::string& flag) const
+void SetQuestFlag(const std::string& flag, int value)
+void ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID)
+bool StartStateMachine(int iPulse = 1)
+void StopStateMachine()
+void UpdateStateMachine(uint32_t dwPulse)
+void SetNextStatePulse(int iPulseNext)
+void UpdateCharacter(uint32_t dwPulse)
+LPCHARACTER GetMarryPartner() const
+void SetMarryPartner(LPCHARACTER ch)
+int GetMarriageBonus(uint32_t dwItemVnum, bool bSum = true)
+void SetWeddingMap(marriage::WeddingMap* pMap)
+marriage::WeddingMap* GetWeddingMap() const
+void StartWarpNPCEvent()
+void StartSaveEvent()
+void StartRecoveryEvent()
+void StartDestroyWhenIdleEvent()
+bool IsWarping() const
+int GetPremiumRemainSeconds(uint8_t bType) const
+bool SetPCBang(bool flag)
+bool IsPCBang() const
+bool ItemProcess_Hair(LPITEM item, int iDestCell)
+void ClearSkill()
+void ClearSubSkill()
+bool ResetOneSkill(uint32_t dwVnum)
+void SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag)
+void SetArena(CArena* pArena)
+void SetArenaObserverMode(bool flag)
+CArena* GetArena() const
+bool GetArenaObserverMode() const
+void SetPotionLimit(int count)
+int GetPotionLimit() const
+bool IsOpenSafebox() const
+void SetOpenSafebox(bool b)
+int GetSafeboxLoadTime() const
+void SetSafeboxLoadTime()
+int GetSkillPowerByLevel(int level, bool bMob = false) const
+int GetRefineTime() const
+void SetRefineTime()
+int GetUseSeedOrMoonBottleTime() const
+void SetUseSeedOrMoonBottleTime()
+int GetExchangeTime() const
+void SetExchangeTime()
+int GetMyShopTime() const
+void SetMyShopTime()
+bool IsHack(bool bSendMsg = true, bool bCheckShopOwner = true, int limittime = g_nPortalLimitTime)
+void Say(const std::string& s)
+bool ItemProcess_Polymorph(LPITEM item)
+LPITEM* GetCubeItem()
+bool IsCubeOpen() const
+void SetCubeNpc(LPCHARACTER npc)
+bool CanDoCube() const
+void UpdateDepositPulse()
+bool CanDeposit() const
+void __OpenPrivateShop( bool bKasmir = false )
+const std::string GetNewName() const
+void SetNewName(const std::string name)
+void GoHome()
+void SendGuildName(CGuild* pGuild)
+void SendGuildName(uint32_t dwGuildID)
+uint32_t GetLogOffInterval() const
+bool UnEquipSpecialRideUniqueItem()
+bool CanWarp() const
+uint32_t GetLastBuySellTime() const
+void SetLastBuySellTime(uint32_t dwLastBuySellTime)
+void AutoRecoveryItemProcess(const EAffectTypes)
+void AutoRecallProcess()
+void BuffOnAttr_AddBuffsFromItem(LPITEM pItem)
+void BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem)
+void BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue)
+void BuffOnAttr_ClearAll()
+void SetArmada()
+void ResetArmada()
+void SetPet()
+bool IsPet()
+void SetMount()
+bool IsMount()
+void SetNewPet()
+bool IsNewPet() const
+void SetEggVid(int vid)
+int GetEggVid()
+float GetAttMul()
+void SetAttMul(float newAttMul)
+float GetDamMul()
+void SetDamMul(float newDamMul)
+bool IsValidItemPosition(TItemPos Pos) const
+void DragonSoul_Initialize()
+int DragonSoul_GetActiveDeck() const
+bool DragonSoul_IsDeckActivated() const
+bool DragonSoul_ActivateDeck(int deck_idx)
+void DragonSoul_DeactivateAll()
+void DragonSoul_CleanUp()
+bool DragonSoul_RefineWindow_Open(LPENTITY pEntity)
+bool DragonSoul_RefineWindow_Close()
+LPENTITY DragonSoul_RefineWindow_GetOpener()
+bool DragonSoul_RefineWindow_CanRefine()
+uint32_t GetLastOfflinePMTime() const
+void SetLastOfflinePMTime()
+void SendOfflineMessage(const char* To, const char* Message)
+void ReadOfflineMessages()
+unsigned int GetItemAward_vnum()
+char* GetItemAward_cmd()
+void SetItemAward_vnum(unsigned int vnum)
+void SetItemAward_cmd(char* cmd)
+int GetCmdAntiFloodPulse()
+uint32_t GetCmdAntiFloodCount()
+uint32_t IncreaseCmdAntiFloodCount()
+void SetCmdAntiFloodPulse(int dwPulse)
+void SetCmdAntiFloodCount(uint32_t dwCount)
+void SetLastSyncTime(const timeval& tv)
+const timeval& GetLastSyncTime()
+void SetSyncHackCount(int iCount)
+int GetSyncHackCount()
+bool isAcceOpened(bool bCombination)
+void OpenAcce(bool bCombination)
+void CloseAcce()
+void ClearAcceMaterials()
+bool CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
+LPITEM* GetAcceMaterials()
+bool AcceIsSameGrade(int32_t lGrade)
+uint32_t GetAcceCombinePrice(int32_t lGrade , bool isCostume )
+void GetAcceCombineResult(uint32_t& dwItemVnum, uint32_t& dwMinAbs, uint32_t& dwMaxAbs)
+uint8_t CheckEmptyMaterialSlot()
+void AddAcceMaterial(TItemPos tPos, uint8_t bPos)
+void RemoveAcceMaterial(uint8_t bPos)
+uint8_t CanRefineAcceMaterials()
+void RefineAcceMaterials()
+bool IsAcceOpen() const
+void SetBodyCostumeHidden(bool hidden, bool pass = false)
+bool IsBodyCostumeHidden() const
+void SetHairCostumeHidden(bool hidden, bool pass = false)
+bool IsHairCostumeHidden() const
+bool HasBattlePassBoost(uint8_t bBattlePassId)
+uint32_t GetBattlePassAdjustedTotal(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal)
+void ApplyBattlePassBoostRecalc(uint8_t bBattlePassId)
+void EnsureFreeBattlePassActive()
+void SetAcceCostumeHidden(bool hidden, bool pass = false)
+bool IsAcceCostumeHidden() const
+void SetWeaponCostumeHidden(bool hidden, bool pass = false)
+bool IsWeaponCostumeHidden() const
+bool CheckItemsFull()
+void UpdateItemsGayaMarker0()
+void UpdateItemsGayaMarker()
+void InfoGayaMarker()
+void ClearGayaMarket()
+bool CheckSlotGayaMarket(int slot)
+void UpdateSlotGayaMarket(int slot)
+void BuyItemsGayaMarket(int slot)
+void RefreshItemsGayaMarket()
+void CraftGayaItems(int slot)
+void MarketGayaItems(int slot)
+void RefreshGayaItems()
+void LOAD_GAYA()
+int GetGayaState(const std::string& state) const
+void SetGayaState(const std::string& state, int szValue)
+void StartCheckTimeMarket()
+bool DoRefineItemSoul(LPITEM item)
+int GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSoulType)
+void LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
+uint32_t GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID)
+void UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride = false)
+bool IsCompletedMission(uint8_t bMissionType)
+bool IsLoadedBattlePass() const
+uint8_t GetBattlePassId()
+int GetSecondsTillNextMonth()
+int GetBattlePassEndTime()
+void CancelStayOnlineEvent()
+std::string GetLang()
+uint16_t GetRuneEffect()
+void ChatPacketNew(uint8_t type, uint32_t idx, const char* format, ...)
+void fishing_new_start()
+void fishing_new_stop()
+void fishing_new_catch()
+void fishing_new_catch_failed()
+void fishing_catch_decision(uint32_t itemVnum)
+void SetFishCatch(int i)
+uint8_t GetFishCatch()
+void SetLastCatchTime(uint32_t i)
+int GetLastCatchTime()
+void SetFishCatchFailed(int i)
+uint8_t GetFishCatchFailed()
+int GetGoToXYTime() const
+void SetGoToXYTime()
+int GetSavePointTime() const
+void SetSavePointTime()
+int GetSortInv1Time() const
+void SetSortInv1Time()
+int GetSortInv2Time() const
+void SetSortInv2Time()
+int GetLastBuyTime() const
+void SetLastBuyTime()
+bool GetDeadByMonster() const
+void SetDeadByMonster(bool flag)
+int32_t GetLastUnlock() const
+void SetLastUnlock()
+int32_t GetLastDSREfine() const
+void SetLastDSREfine()
+void CheckBiologistReward()
+void ClearCheatChecks()
+void ProcessCheatCheck(int32_t time)
+void BlockProcessed()
+void BlockDrop()
+void UnblockDrop()
+void SetDropStatus()
+void ComputeMountInventoryBonuses()
+bool IsDefanceWaweMastAttackMob(int32_t vnum) const
+int GetItemUseAntiFloodPulse()
+uint32_t GetItemUseAntiFloodCount()
+uint32_t IncreaseItemUseAntiFloodCount()
+void SetItemUseAntiFloodPulse(int dwPulse)
+void SetItemUseAntiFloodCount(uint32_t dwCount)

@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "guild.h"
 #include "guild_manager.h"
+#include "ecs/quest_helpers.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -18,89 +19,86 @@
 
 namespace quest
 {
+    namespace
+    {
+        LPCHARACTER GetGuildQuestCharacter()
+        {
+            return CQuestManager::instance().GetCurrentCharacterPtr();
+        }
+
+        CGuild* GetGuildFromECSOrLegacy(lua_State* L)
+        {
+            entt::entity e = CQuestManager::instance().GetPCEntity(L);
+            if (auto* gm = ECS_TryGet<ecs::GuildMembership>(e))
+                return gm->guild;
+
+            LPCHARACTER ch = GetGuildQuestCharacter();
+            return ch ? ch->GetGuild() : nullptr;
+        }
+    }
+
 	//
 	// "guild" Lua functions
 	//
-	ALUA(guild_around_ranking_string)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		if (!ch->GetGuild())
-			lua_pushstring(L,"");
-		else
-		{
-			char szBuf[4096+1];
-			CGuildManager::instance().GetAroundRankString(ch->GetGuild()->GetID(), szBuf, sizeof(szBuf));
-			lua_pushstring(L, szBuf);
-		}
-		return 1;
-	}
+    ALUA(guild_around_ranking_string)
+    {
+        // migrated from CHARACTER::GetGuild()
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        if (!guild)
+            lua_pushstring(L, "");
+        else
+        {
+            char szBuf[4096+1];
+            CGuildManager::instance().GetAroundRankString(guild->GetID(), szBuf, sizeof(szBuf));
+            lua_pushstring(L, szBuf);
+        }
+        return 1;
+    }
 
-	ALUA(guild_high_ranking_string)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		uint32_t dwMyGuild = 0;
-		if (ch->GetGuild())
-			dwMyGuild = ch->GetGuild()->GetID();
+    ALUA(guild_high_ranking_string)
+    {
+        // migrated from CHARACTER::GetGuild()
+        uint32_t dwMyGuild = 0;
+        if (CGuild* guild = GetGuildFromECSOrLegacy(L))
+            dwMyGuild = guild->GetID();
+        char szBuf[4096+1];
+        CGuildManager::instance().GetHighRankString(dwMyGuild, szBuf, sizeof(szBuf));
+        lua_pushstring(L, szBuf);
+        return 1;
+    }
 
-		char szBuf[4096+1];
-		CGuildManager::instance().GetHighRankString(dwMyGuild, szBuf, sizeof(szBuf));
-		lua_pushstring(L, szBuf);
-		return 1;
-	}
+    ALUA(guild_get_ladder_point)
+    {
+        // migrated from CHARACTER::GetGuild()->GetLadderPoint()
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, guild ? guild->GetLadderPoint() : -1);
+        return 1;
+    }
 
-	ALUA(guild_get_ladder_point)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		if (!ch->GetGuild())
-		{
-			lua_pushnumber(L, -1);
-		}
-		else
-		{
-			lua_pushnumber(L, ch->GetGuild()->GetLadderPoint());
-		}
-		return 1;
-	}
+    ALUA(guild_get_rank)
+    {
+        // migrated from CHARACTER::GetGuild()
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, guild ? CGuildManager::instance().GetRank(guild) : -1);
+        return 1;
+    }
 
-	ALUA(guild_get_rank)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
-		if (!ch->GetGuild())
-		{
-			lua_pushnumber(L, -1);
-		}
-		else
-		{
-			lua_pushnumber(L, CGuildManager::instance().GetRank(ch->GetGuild()));
-		}
-		return 1;
-	}
-
-	ALUA(guild_is_war)
-	{
-		if (!lua_isnumber(L, 1))
-		{
-			sys_err("invalid argument");
-			return 0;
-		}
-
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		if (ch->GetGuild() && ch->GetGuild()->UnderWar((uint32_t) lua_tonumber(L, 1)))
-			lua_pushboolean(L, true);
-		else
-			lua_pushboolean(L, false);
-
-		return 1;
-	}
+    ALUA(guild_is_war)
+    {
+        // migrated from CHARACTER::GetGuild()->UnderWar()
+        if (!lua_isnumber(L, 1))
+        {
+            sys_err("invalid argument");
+            return 0;
+        }
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        lua_pushboolean(L, (guild && guild->UnderWar((uint32_t)lua_tonumber(L, 1))) ? 1 : 0);
+        return 1;
+    }
 
 	ALUA(guild_name)
 	{
+        // migrated from CHARACTER::GetGuild()->GetName()
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("invalid argument");
@@ -119,6 +117,7 @@ namespace quest
 
 	ALUA(guild_level)
 	{
+        // migrated from CHARACTER::GetGuild()->GetLevel()
 		luaL_checknumber(L, 1);
 
 		CGuild * pkGuild = CGuildManager::instance().FindGuild((uint32_t) lua_tonumber(L, 1));
@@ -131,37 +130,33 @@ namespace quest
 		return 1;
 	}
 
-	ALUA(guild_war_enter)
-	{
-		if (!lua_isnumber(L, 1))
-		{
-			sys_err("invalid argument");
-			return 0;
-		}
+    ALUA(guild_war_enter)
+    {
+        // migrated from CHARACTER::GetGuild()->GuildWarEntryAccept()
+        // DUAL-PATH: ECS update + legacy call
+        if (!lua_isnumber(L, 1))
+        {
+            sys_err("invalid argument");
+            return 0;
+        }
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        if (guild && ch)
+            guild->GuildWarEntryAccept((uint32_t) lua_tonumber(L, 1), ch);
+        return 0;
+    }
 
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
-		if (ch->GetGuild())
-			ch->GetGuild()->GuildWarEntryAccept((uint32_t) lua_tonumber(L, 1), ch);
-
-		return 0;
-	}
-
-	ALUA(guild_get_any_war)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		if (ch->GetGuild())
-			lua_pushnumber(L, ch->GetGuild()->UnderAnyWar());
-		else
-			lua_pushnumber(L, 0);
-
-		return 1;
-	}
+    ALUA(guild_get_any_war)
+    {
+        // migrated from CHARACTER::GetGuild()->UnderAnyWar()
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, guild ? guild->UnderAnyWar() : 0);
+        return 1;
+    }
 
 	ALUA(guild_get_name)
 	{
+        // migrated from CHARACTER::GetGuild()->GetName()
 		if (!lua_isnumber(L, 1))
 		{
 			lua_pushstring(L,  "");
@@ -178,32 +173,38 @@ namespace quest
 		return 1;
 	}
 
-	ALUA(guild_war_bet)
-	{
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
-		{
-			sys_err("invalid argument");
-			return 0;
-		}
-
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		TPacketGDGuildWarBet p;
-
-		p.dwWarID = (uint32_t) lua_tonumber(L, 1);
-		strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
-		p.dwGuild = (uint32_t) lua_tonumber(L, 2);
-		p.dwGold = (uint32_t) lua_tonumber(L, 3);
-
-		sys_log(0, "GUILD_WAR_BET: %s login %s war_id %u guild %u gold %u",
-				ch->GetName(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
-
-		db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
-		return 0;
-	}
+    ALUA(guild_war_bet)
+    {
+        // migrated from CHARACTER::GetGuild()
+        // DUAL-PATH: ECS update + legacy call
+        if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
+        {
+            sys_err("invalid argument");
+            return 0;
+        }
+        entt::entity e = CQuestManager::instance().GetPCEntity(L);
+        if (auto* gm = ECS_TryGet<ecs::GuildMembership>(e))
+        {
+            if (!gm->guild)
+                return 0;
+        }
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        if (!ch || !ch->GetDesc())
+            return 0;
+        TPacketGDGuildWarBet p;
+        p.dwWarID = (uint32_t) lua_tonumber(L, 1);
+        strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+        p.dwGuild = (uint32_t) lua_tonumber(L, 2);
+        p.dwGold = (uint32_t) lua_tonumber(L, 3);
+        sys_log(0, "GUILD_WAR_BET: %s login %s war_id %u guild %u gold %u",
+                ch->GetName(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
+        db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
+        return 0;
+    }
 
 	ALUA(guild_is_bet)
 	{
+        // migrated from CHARACTER::GetDesc()
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("invalid argument");
@@ -220,6 +221,7 @@ namespace quest
 
 	ALUA(guild_get_warp_war_list)
 	{
+        // migrated from CHARACTER::GetGuild()
 		FBuildLuaGuildWarList f(L);
 		CGuildManager::instance().for_each_war(f);
 		return 1;
@@ -227,6 +229,7 @@ namespace quest
 
 	ALUA(guild_get_reserve_war_table)
 	{
+        // migrated from CHARACTER::GetGuild()
 		std::vector<CGuildWarReserveForGame *> & con = CGuildManager::instance().GetReserveWarRef();
 
 		int i = 0;
@@ -279,290 +282,199 @@ namespace quest
 		return 1;
 	}
 
-	ALUA(guild_get_member_count)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+    ALUA(guild_get_member_count)
+    {
+        // migrated from CHARACTER::GetGuild()->GetMemberCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, pGuild ? pGuild->GetMemberCount() : 0);
+        return 1;
+    }
 
-		if ( ch == nullptr)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
+    ALUA(guild_change_master)
+    {
+        // migrated from CHARACTER::GetGuild()->ChangeMasterTo()
+        // DUAL-PATH: ECS GuildMembership check + legacy call
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (!ch)
+        {
+            lua_pushnumber(L, 4);
+            return 1;
+        }
+        if ( pGuild != nullptr)
+        {
+            if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
+            {
+                if ( lua_isstring(L, 1) == false )
+                    lua_pushnumber(L, 0);
+                else
+                {
+                    bool ret = pGuild->ChangeMasterTo(pGuild->GetMemberPID(lua_tostring(L, 1)));
+                    lua_pushnumber(L, ret == false ? 2 : 3 );
+                }
+            }
+            else
+                lua_pushnumber(L, 1);
+        }
+        else
+            lua_pushnumber(L, 4);
+        return 1;
+    }
 
-		CGuild* pGuild = ch->GetGuild();
-
-		if ( pGuild == nullptr)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		lua_pushnumber(L, pGuild->GetMemberCount());
-
-		return 1;
-	}
-
-	ALUA(guild_change_master)
-	{
-		// 리턴값
-		//	0 : 입력한 이름이 잘못되었음 ( 문자열이 아님 )
-		//	1 : 길드장이 아님
-		//	2 : 지정한 이름의 길드원이 없음
-		//	3 : 요청 성공
-		//	4 : 길드가 없음
-
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		if ( pGuild != nullptr)
-		{
-			if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
-			{
-				if ( lua_isstring(L, 1) == false )
-				{
-					lua_pushnumber(L, 0);
-				}
-				else
-				{
-					bool ret = pGuild->ChangeMasterTo(pGuild->GetMemberPID(lua_tostring(L, 1)));
-
-					lua_pushnumber(L, ret == false ? 2 : 3 );
-				}
-			}
-			else
-			{
-				lua_pushnumber(L, 1);
-			}
-		}
-		else
-		{
-			lua_pushnumber(L, 4);
-		}
-
-		return 1;
-	}
-
-	ALUA(guild_change_master_with_limit)
-	{
-		// 인자
-		//  arg0 : 새 길드장 이름
-		//  arg1 : 새 길드장 레벨 제한
-		//  arg2 : resign_limit 제한 시간
-		//  arg3 : be_other_leader 제한 시간
-		//  arg4 : be_other_member 제한 시간
-		//  arg5 : 캐시템인가 아닌가
-		//
-		// 리턴값
-		//	0 : 입력한 이름이 잘못되었음 ( 문자열이 아님 )
-		//	1 : 길드장이 아님
-		//	2 : 지정한 이름의 길드원이 없음
-		//	3 : 요청 성공
-		//	4 : 길드가 없음
-		//	5 : 지정한 이름이 온라인이 아님
-		//	6 : 지정한 캐릭터 레벨이 기준레벨보다 낮음
-		//	7 : 새 길드장이 be_other_leader 제한에 걸림
-
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		if ( pGuild != nullptr)
-		{
-			if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
-			{
-				if ( lua_isstring(L, 1) == false )
-				{
-					lua_pushnumber(L, 0);
-				}
-				else
-				{
-					LPCHARACTER pNewMaster = CHARACTER_MANAGER::instance().FindPC( lua_tostring(L,1) );
-
-					if ( pNewMaster != nullptr)
-					{
-						if ( pNewMaster->GetLevel() < lua_tonumber(L, 2) )
-						{
-							lua_pushnumber(L, 6);
-						}
-						else
-						{
-							int nBeOtherLeader = pNewMaster->GetQuestFlag("change_guild_master.be_other_leader");
-							CQuestManager::instance().GetPC( ch->GetPlayerID() );
-
-							if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
-
-							if ( nBeOtherLeader > get_global_time() )
-							{
-								lua_pushnumber(L, 7);
-							}
-							else
-							{
-								bool ret = pGuild->ChangeMasterTo(pGuild->GetMemberPID(lua_tostring(L, 1)));
-
-								if ( ret == false )
-								{
-									lua_pushnumber(L, 2);
-								}
-								else
-								{
-									lua_pushnumber(L, 3);
-
-									pNewMaster->SetQuestFlag("change_guild_master.be_other_leader", 0);
-									pNewMaster->SetQuestFlag("change_guild_master.be_other_member", 0);
-									pNewMaster->SetQuestFlag("change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
-
-									ch->SetQuestFlag("change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
-									ch->SetQuestFlag("change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
-									ch->SetQuestFlag("change_guild_master.resign_limit", 0);
-								}
-							}
-						}
-					}
-					else
-					{
-						lua_pushnumber(L, 5);
-					}
-				}
-			}
-			else
-			{
-				lua_pushnumber(L, 1);
-			}
-		}
-		else
-		{
-			lua_pushnumber(L, 4);
-		}
-
-		return 1;
-	}
+    ALUA(guild_change_master_with_limit)
+    {
+        // migrated from CHARACTER::GetGuild()->ChangeMasterTo()
+        // DUAL-PATH: ECS GuildMembership check + legacy call
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (!ch)
+        {
+            lua_pushnumber(L, 4);
+            return 1;
+        }
+        if ( pGuild != nullptr)
+        {
+            if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
+            {
+                if ( lua_isstring(L, 1) == false )
+                    lua_pushnumber(L, 0);
+                else
+                {
+                    LPCHARACTER pNewMaster = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
+                    if ( pNewMaster != nullptr)
+                    {
+                        if ( pNewMaster->GetLevel() < lua_tonumber(L, 2) )
+                            lua_pushnumber(L, 6);
+                        else
+                        {
+                            int nBeOtherLeader = pNewMaster->GetQuestFlag("change_guild_master.be_other_leader");
+                            CQuestManager::instance().GetPC( ch->GetPlayerID() );
+                            if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
+                            if ( nBeOtherLeader > get_global_time() )
+                                lua_pushnumber(L, 7);
+                            else
+                            {
+                                bool ret = pGuild->ChangeMasterTo(pGuild->GetMemberPID(lua_tostring(L, 1)));
+                                if ( ret == false )
+                                    lua_pushnumber(L, 2);
+                                else
+                                {
+                                    lua_pushnumber(L, 3);
+                                    pNewMaster->SetQuestFlag("change_guild_master.be_other_leader", 0);
+                                    pNewMaster->SetQuestFlag("change_guild_master.be_other_member", 0);
+                                    pNewMaster->SetQuestFlag("change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
+                                    ch->SetQuestFlag("change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
+                                    ch->SetQuestFlag("change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
+                                    ch->SetQuestFlag("change_guild_master.resign_limit", 0);
+                                }
+                            }
+                        }
+                    }
+                    else
+                        lua_pushnumber(L, 5);
+                }
+            }
+            else
+                lua_pushnumber(L, 1);
+        }
+        else
+            lua_pushnumber(L, 4);
+        return 1;
+    }
 
 #ifdef ADVANCED_GUILD_INFO
-	ALUA(guild_get_wins)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		
-		if ( ch == nullptr)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		CGuild* pGuild = ch->GetGuild();
-
-		if ( pGuild == nullptr)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		lua_pushnumber(L, pGuild->GetGuildWarWinCount());
-
-		return 1;
-	}
+    ALUA(guild_get_wins)
+    {
+        // migrated from CHARACTER::GetGuild()->GetGuildWarWinCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, pGuild ? pGuild->GetGuildWarWinCount() : 0);
+        return 1;
+    }
 #endif
 
 #ifdef ENABLE_NEWSTUFF
-	ALUA(guild_get_sp0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+    ALUA(guild_get_sp0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetSP()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetSP() : 0);
+        return 1;
+    }
 
-		CGuild* pGuild = ch->GetGuild();
+    ALUA(guild_get_maxsp0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetMaxSP()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetMaxSP() : 0);
+        return 1;
+    }
 
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetSP():0);
-		return 1;
-	}
+    ALUA(guild_get_money0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetGuildMoney()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildMoney() : 0);
+        return 1;
+    }
 
-	ALUA(guild_get_maxsp0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+    ALUA(guild_get_max_member0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetMaxMemberCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetMaxMemberCount() : 0);
+        return 1;
+    }
 
-		CGuild* pGuild = ch->GetGuild();
+    ALUA(guild_get_total_member_level0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetTotalLevel()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetTotalLevel() : 0);
+        return 1;
+    }
 
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetMaxSP():0);
-		return 1;
-	}
+    ALUA(guild_has_land0)
+    {
+        // migrated from CHARACTER::GetGuild()->HasLand()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushboolean(L, (pGuild != nullptr) ? pGuild->HasLand() : false);
+        return 1;
+    }
 
-	ALUA(guild_get_money0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+    ALUA(guild_get_win_count0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetGuildWarWinCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarWinCount() : 0);
+        return 1;
+    }
 
-		CGuild* pGuild = ch->GetGuild();
+    ALUA(guild_get_draw_count0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetGuildWarDrawCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarDrawCount() : 0);
+        return 1;
+    }
 
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetGuildMoney():0);
-		return 1;
-	}
+    ALUA(guild_get_loss_count0)
+    {
+        // migrated from CHARACTER::GetGuild()->GetGuildWarLossCount()
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarLossCount() : 0);
+        return 1;
+    }
 
-	ALUA(guild_get_max_member0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetMaxMemberCount():0);
-		return 1;
-	}
-
-	ALUA(guild_get_total_member_level0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetTotalLevel():0);
-		return 1;
-	}
-
-	ALUA(guild_has_land0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushboolean(L, (pGuild!= nullptr)?pGuild->HasLand():false);
-		return 1;
-	}
-
-	ALUA(guild_get_win_count0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetGuildWarWinCount():0);
-		return 1;
-	}
-
-	ALUA(guild_get_draw_count0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetGuildWarDrawCount():0);
-		return 1;
-	}
-
-	ALUA(guild_get_loss_count0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		lua_pushnumber(L, (pGuild!= nullptr)?pGuild->GetGuildWarLossCount():0);
-		return 1;
-	}
-
-	ALUA(guild_add_comment0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-		if (pGuild)
-			pGuild->AddComment(ch, std::string(lua_tostring(L, 1)));
-		return 0;
-	}
+    ALUA(guild_add_comment0)
+    {
+        // migrated from CHARACTER::GetGuild()->AddComment()
+        // DUAL-PATH: ECS update + legacy call
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (pGuild && ch)
+            pGuild->AddComment(ch, std::string(lua_tostring(L, 1)));
+        return 0;
+    }
 
 	// ALUA(guild_set_war_data0)
 	// {
@@ -583,15 +495,15 @@ namespace quest
 		return 1;
 	}
 
-	ALUA(guild_set_skill_level0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-		if (pGuild)
-			pGuild->SetSkillLevel(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_isnumber(L, 3)?lua_tonumber(L, 3):0);
-		return 0;
-	}
+    ALUA(guild_set_skill_level0)
+    {
+        // migrated from CHARACTER::GetGuild()->SetSkillLevel()
+        // DUAL-PATH: ECS update + legacy call
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (pGuild)
+            pGuild->SetSkillLevel(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_isnumber(L, 3) ? lua_tonumber(L, 3) : 0);
+        return 0;
+    }
 
 	ALUA(guild_get_skill_point0)
 	{
@@ -602,93 +514,66 @@ namespace quest
 		return 1;
 	}
 
-	ALUA(guild_set_skill_point0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-		if (pGuild)
-			pGuild->SetSkillPoint(lua_tonumber(L, 1));
-		return 0;
-	}
+    ALUA(guild_set_skill_point0)
+    {
+        // migrated from CHARACTER::GetGuild()->SetSkillPoint()
+        // DUAL-PATH: ECS update + legacy call
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (pGuild)
+            pGuild->SetSkillPoint(lua_tonumber(L, 1));
+        return 0;
+    }
 
 	ALUA(guild_get_exp_level0)
 	{
+        // migrated from CHARACTER::GetGuild()
 		lua_pushnumber(L, guild_exp_table2[MINMAX(0, lua_tonumber(L, 1) ,GUILD_MAX_LEVEL)]);
 		return 1;
 	}
 
-	ALUA(guild_offer_exp0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+    ALUA(guild_offer_exp0)
+    {
+        // migrated from CHARACTER::GetGuild()->OfferExp()
+        // DUAL-PATH: ECS update + legacy call
+        LPCHARACTER ch = GetGuildQuestCharacter();
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (!pGuild || !ch)
+        {
+            lua_pushboolean(L, false);
+            return 1;
+        }
+        uint32_t offer = lua_tonumber(L, 1);
+        if (pGuild->GetLevel() >= GUILD_MAX_LEVEL)
+            lua_pushboolean(L, false);
+        else
+        {
+            offer /= 100;
+            offer *= 100;
+            lua_pushboolean(L, pGuild->OfferExp(ch, offer) ? true : false);
+        }
+        return 1;
+    }
 
-		CGuild* pGuild = ch->GetGuild();
-
-		if (!pGuild)
-		{
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		uint32_t offer = lua_tonumber(L, 1);
-
-		if (pGuild->GetLevel() >= GUILD_MAX_LEVEL)
-		{
-			lua_pushboolean(L, false);
-		}
-		else
-		{
-			offer /= 100;
-			offer *= 100;
-
-			if (pGuild->OfferExp(ch, offer))
-			{
-				lua_pushboolean(L, true);
-			}
-			else
-			{
-				lua_pushboolean(L, false);
-			}
-		}
-		return 1;
-	}
-
-	ALUA(guild_give_exp0)
-	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		CGuild* pGuild = ch->GetGuild();
-
-		if (!pGuild)
-			return 0;
-
-		pGuild->GuildPointChange(POINT_EXP, lua_tonumber(L, 1) / 100, true);
-		return 0;
-	}
+    ALUA(guild_give_exp0)
+    {
+        // migrated from CHARACTER::GetGuild()->GuildPointChange()
+        // DUAL-PATH: ECS update + legacy call
+        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        if (!pGuild)
+            return 0;
+        pGuild->GuildPointChange(POINT_EXP, lua_tonumber(L, 1) / 100, true);
+        return 0;
+    }
 
 #endif
 
-	ALUA(guild_get_id)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		if (!ch)
-		{
-			sys_err("no current character.");
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		CGuild * guild = ch->GetGuild();
-		if (!guild)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		lua_pushnumber(L, guild->GetID());
-		return 1;
-	}
+    ALUA(guild_get_id)
+    {
+        // migrated from CHARACTER::GetGuild()->GetID()
+        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        lua_pushnumber(L, guild ? guild->GetID() : 0);
+        return 1;
+    }
 
 	void RegisterGuildFunctionTable()
 	{

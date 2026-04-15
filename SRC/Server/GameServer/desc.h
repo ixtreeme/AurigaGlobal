@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_DESC_H__
 #define __INC_METIN_II_GAME_DESC_H__
 
+#include <entt/entt.hpp>
+
 #include "constants.h"
 #include "input.h"
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
@@ -133,6 +135,8 @@ class DESC
 
 		void			BindCharacter(LPCHARACTER ch);
 		LPCHARACTER		GetCharacter()		{ return m_lpCharacter; }
+        entt::entity        GetEntity() const      { return m_entity; }
+        void                SetEntity(entt::entity e) { m_entity = e; }
 
 		bool			IsPhase(int phase) const	{ return m_iPhase == phase ? true : false; }
 
@@ -240,6 +244,7 @@ class DESC
 
 		LPEVENT			m_pkPingEvent;
 		LPCHARACTER		m_lpCharacter;
+        entt::entity        m_entity { entt::null };
 		TAccountTable		m_accountTable;
 
 		struct sockaddr_in	m_SockAddr;

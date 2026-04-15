@@ -11,6 +11,8 @@ namespace quest
 	//
 	ALUA(target_pos)
 	{
+		// migrated from CHARACTER::Target position lookup
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
@@ -46,6 +48,8 @@ namespace quest
 
 	ALUA(target_vid)
 	{
+		// migrated from CHARACTER::Target VID lookup
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
@@ -72,6 +76,8 @@ namespace quest
 	// 현재 퀘스트에 등록된 타겟을 삭제 한다.
 	ALUA(target_delete)
 	{
+		// migrated from CHARACTER::DeleteTarget
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
@@ -89,6 +95,8 @@ namespace quest
 	// 현재 퀘스트 인덱스로 되어있는 타겟을 모두 삭제한다.
 	ALUA(target_clear)
 	{
+		// migrated from CHARACTER::DeleteTarget
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
@@ -99,6 +107,8 @@ namespace quest
 
 	ALUA(target_id)
 	{
+		// migrated from CHARACTER::GetTargetEvent
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		uint32_t dwQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
@@ -150,4 +160,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("target", target_functions);
 	}
 };
+
 

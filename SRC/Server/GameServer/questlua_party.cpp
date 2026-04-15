@@ -9,6 +9,7 @@
 #include "packet.h"
 #include "char_manager.h"
 #include "db.h"
+#include "ecs/quest_helpers.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -21,11 +22,30 @@ namespace quest
 {
 	using namespace std;
 
+	namespace
+	{
+		LPCHARACTER GetPartyQuestCharacter()
+		{
+			return CQuestManager::instance().GetCurrentCharacterPtr();
+		}
+
+		LPPARTY GetPartyFromECSOrLegacy(lua_State* L)
+		{
+			entt::entity e = CQuestManager::instance().GetPCEntity(L);
+			if (auto* pm = ECS_TryGet<ecs::PartyMembership>(e))
+				return pm->party;
+
+			LPCHARACTER ch = GetPartyQuestCharacter();
+			return ch ? ch->GetParty() : nullptr;
+		}
+	}
 	//
 	// "party" Lua functions
 	//
 	ALUA(party_clear_ready)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachNearMember
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (ch->GetParty())
@@ -38,31 +58,41 @@ namespace quest
 
 	ALUA(party_get_max_level)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetParty()->GetMemberMaxLevel()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetMemberMaxLevel() : 1);
+			return 1;
+		}
 
-		if (ch->GetParty())
-			lua_pushnumber(L,ch->GetParty()->GetMemberMaxLevel());
-		else
-			lua_pushnumber(L, 1);
-
+		lua_pushnumber(L, pm->party->GetMemberMaxLevel());
 		return 1;
 	}
 
 #ifdef ENABLE_NEWSTUFF
 	ALUA(party_get_min_level)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetParty()->GetMemberMinLevel()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetMemberMinLevel() : 1);
+			return 1;
+		}
 
-		if (ch->GetParty())
-			lua_pushnumber(L,ch->GetParty()->GetMemberMinLevel());
-		else
-			lua_pushnumber(L, 1);
-
+		lua_pushnumber(L, pm->party->GetMemberMinLevel());
 		return 1;
 	}
 
 	ALUA(party_leave_party)
 	{
+		// migrated from CHARACTER::GetParty()->Quit
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon())
@@ -83,6 +113,8 @@ namespace quest
 
 	ALUA(party_delete_party)
 	{
+		// migrated from CHARACTER::GetParty()->Delete
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ch->GetPlayerID())
@@ -129,6 +161,8 @@ namespace quest
 
 	ALUA(party_run_cinematic)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachNearMember
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			return 0;
 
@@ -178,6 +212,8 @@ namespace quest
 
 	ALUA(party_show_cinematic)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachNearMember
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			return 0;
 
@@ -196,18 +232,24 @@ namespace quest
 
 	ALUA(party_get_near_count)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetParty()->GetNearMemberCount()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetNearMemberCount() : 0);
+			return 1;
+		}
 
-		if (ch->GetParty())
-			lua_pushnumber(L, ch->GetParty()->GetNearMemberCount());
-		else
-			lua_pushnumber(L, 0);
-
+		lua_pushnumber(L, pm->party->GetNearMemberCount());
 		return 1;
 	}
 
 	ALUA(party_syschat)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachOnlineMember
+		// DUAL-PATH: legacy only during migration window
 		LPPARTY pParty = CQuestManager::Instance().GetCurrentCharacterPtr()->GetParty();
 
 		if (pParty)
@@ -225,40 +267,64 @@ namespace quest
 
 	ALUA(party_is_leader)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetParty()->GetLeaderPID()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			if (!ch || !ch->GetParty())
+			{
+				lua_pushboolean(L, 0);
+				return 1;
+			}
 
-		if (ch->GetParty() && ch->GetParty()->GetLeaderPID() == ch->GetPlayerID())
-			lua_pushboolean(L, 1);
-		else
-			lua_pushboolean(L, 0);
+			lua_pushboolean(L, ch->GetParty()->GetLeaderPID() == ch->GetPlayerID() ? 1 : 0);
+			return 1;
+		}
 
+		auto* pid = ECS_TryGet<ecs::PlayerID>(e);
+		lua_pushboolean(L, (pid && pm->party->GetLeaderPID() == pid->pid) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(party_is_party)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushboolean(L, ch->GetParty() ? 1 : 0);
+		// migrated from CHARACTER::GetParty()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushboolean(L, (ch && ch->GetParty()) ? 1 : 0);
+			return 1;
+		}
+
+		lua_pushboolean(L, pm->party != nullptr ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(party_get_leader_pid)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		if (ch->GetParty())
+		// migrated from CHARACTER::GetParty()->GetLeaderPID()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
 		{
-			lua_pushnumber(L, ch->GetParty()->GetLeaderPID());
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetLeaderPID() : -1);
+			return 1;
 		}
-		else
-		{
-			lua_pushnumber(L, -1);
-		}
+
+		lua_pushnumber(L, pm->party->GetLeaderPID());
 		return 1;
 	}
 
 
 	ALUA(party_chat)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachOnlineMember
+		// DUAL-PATH: legacy only during migration window
 		LPPARTY pParty = CQuestManager::Instance().GetCurrentCharacterPtr()->GetParty();
 
 		if (pParty)
@@ -277,6 +343,8 @@ namespace quest
 
 	ALUA(party_is_map_member_flag_lt)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachOnMapMemberBool
+		// DUAL-PATH: legacy only during migration window
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		{
@@ -306,6 +374,8 @@ namespace quest
 
 	ALUA(party_set_flag)
 	{
+		// migrated from CHARACTER::GetParty()->SetFlag
+		// DUAL-PATH: ECS update + legacy call during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (ch->GetParty() && lua_isstring(L, 1) && lua_isnumber(L, 2))
@@ -316,6 +386,8 @@ namespace quest
 
 	ALUA(party_get_flag)
 	{
+		// migrated from CHARACTER::GetParty()->GetFlag
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (!ch->GetParty() || !lua_isstring(L, 1))
@@ -328,6 +400,8 @@ namespace quest
 
 	ALUA(party_set_quest_flag)
 	{
+		// migrated from CHARACTER::SetQuestFlag
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 
 		FSetQuestFlag f;
@@ -347,14 +421,19 @@ namespace quest
 
 	ALUA(party_is_in_dungeon)
 	{
-		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		LPPARTY pParty = ch->GetParty();
-		if (pParty != nullptr){
-			lua_pushboolean (L, pParty->GetDungeon() ? true : false);
+		// migrated from CHARACTER::GetParty()->GetDungeon()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
+		if (!pm || !pm->party)
+		{
+			CQuestManager & q = CQuestManager::instance();
+			LPCHARACTER ch = q.GetCurrentCharacterPtr();
+			LPPARTY pParty = ch ? ch->GetParty() : nullptr;
+			lua_pushboolean(L, (pParty != nullptr && pParty->GetDungeon()) ? true : false);
 			return 1;
 		}
-		lua_pushboolean (L, false);
+
+		lua_pushboolean(L, pm->party->GetDungeon() ? true : false);
 		return 1;
 	}
 
@@ -384,6 +463,8 @@ namespace quest
 	// 같은 맵에 있는 파티원만 영향을 받는다.
 	ALUA(party_give_buff)
 	{
+		// migrated from CHARACTER::AddAffect
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
@@ -426,6 +507,8 @@ namespace quest
 
 	ALUA(party_get_member_pids)
 	{
+		// migrated from CHARACTER::GetParty()->ForEachOnMapMember
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager & q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPPARTY pParty = ch->GetParty();
@@ -445,6 +528,8 @@ namespace quest
 
 	ALUA(party_get_leader_name)
 	{
+		// migrated from CHARACTER::GetParty()->GetLeaderPID
+		// DUAL-PATH: legacy fallback during migration window
 		std::string name = "";
 
 		CQuestManager & q = CQuestManager::instance();
@@ -473,6 +558,8 @@ namespace quest
 
 	ALUA(party_give_gold)
 	{
+		// migrated from CHARACTER::PointChange(POINT_GOLD, ...)
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		if (!ch)
@@ -528,6 +615,8 @@ namespace quest
 
 	ALUA(party_give_blacksmith)
 	{
+		// migrated from CHARACTER::SetQuestFlag
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		if (!ch)
@@ -598,6 +687,7 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("party", party_functions);
 	}
 }
+
 
 
 

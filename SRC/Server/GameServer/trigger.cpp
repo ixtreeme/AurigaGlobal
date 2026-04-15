@@ -6,6 +6,7 @@
 #include "battle.h"
 #include "affect.h"
 #include "shop_manager.h"
+#include "ecs/AIHelpers.hpp"
 
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 #include "OrcsDungeon.h"
@@ -289,7 +290,8 @@ public:
 
 		if (pkChr->IsNPC())
 		{
-			if (!pkChr->IsMonster() || !m_pkChr->IsAttackMob() || m_pkChr->IsAggressive())
+			const entt::entity ownerEntity = AIHelpers::EcsOf(m_pkChr);
+			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))
 				return false;
 
 		}

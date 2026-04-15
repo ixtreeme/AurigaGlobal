@@ -15,6 +15,7 @@
 #include "party.h"
 #include "locale_service.h"
 #include "dungeon.h"
+#include "ecs/VIDRegistry.hpp"
 
 
 #ifdef __QUEST_RENEWAL__
@@ -1096,6 +1097,44 @@ namespace quest
 		m_pCurrentPC = GetPCForce(pc);
 		m_pCurrentCharacter = pkChr;
 		return (m_pCurrentPC);
+	}
+
+	entt::entity CQuestManager::GetPCEntity(lua_State* L)
+	{
+		(void)L;
+
+		LPCHARACTER ch = GetCurrentCharacterPtr();
+		if (!ch)
+			return entt::null;
+
+		entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+
+		// Temporary verification - REMOVE IN PHASE 9
+		if (e == entt::null) {
+			sys_err("GetPCEntity: VID=%u not in ECS registry",
+					ch->GetVID());
+		}
+
+		return e;
+	}
+
+	entt::entity CQuestManager::GetNPCEntity(lua_State* L)
+	{
+		(void)L;
+
+		LPCHARACTER ch = GetCurrentNPCCharacterPtr();
+		if (!ch)
+			return entt::null;
+
+		entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+
+		// Temporary verification - REMOVE IN PHASE 9
+		if (e == entt::null) {
+			sys_err("GetPCEntity: VID=%u not in ECS registry",
+					ch->GetVID());
+		}
+
+		return e;
 	}
 
 	void CQuestManager::ClearScript()

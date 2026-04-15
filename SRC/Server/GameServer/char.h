@@ -21,6 +21,8 @@
 #include "cuberenewal.h"
 #endif
 #include "mining.h"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/systems/AffectSystem.hpp"
 
 #include "utils.h"
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
@@ -733,30 +735,6 @@ public:
 private:
 	std::string			m_lastItemOnTitlePrefix;
 #endif
-	//////////////////////////////////////////////////////////////////////////////////
-	// FSM (Finite State Machine) 관련
-protected:
-	CStateTemplate<CHARACTER>	m_stateMove;
-	CStateTemplate<CHARACTER>	m_stateBattle;
-	CStateTemplate<CHARACTER>	m_stateIdle;
-
-public:
-	virtual void		StateMove();
-	virtual void		StateBattle();
-	virtual void		StateIdle();
-	virtual void		StateFlag();
-	virtual void		StateFlagBase();
-	void				StateHorse();
-	//std::string GetDisplayedNameWithBeltCount() const;//Razor93
-protected:
-	// STATE_IDLE_REFACTORING
-	void				__StateIdle_Monster();
-	void				__StateIdle_Stone();
-#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-	static void SpawnStoneStep(CHARACTER* ch, uint32_t dwVnum, int step);
-#endif
-	void				__StateIdle_NPC();
-	// END_OF_STATE_IDLE_REFACTORING
 
 
 #ifdef ENABLE_VOTE4BUFF
@@ -872,7 +850,7 @@ public:
 	const VID& GetVID() const { return m_vid; }
 	// char.h (public)
 
-	//void			SetCharType(uint8_t bType) { m_bCharType = bType; }
+	void			SetCharType(uint8_t bType) { m_bCharType = bType; }
 	//void SetName(const char* name) { m_stName = (name ? name : ""); }
 	void			SetName(const std::string& name) { m_stName = name; }
 
@@ -1123,17 +1101,15 @@ public:
 	int32_t	IncreaseMobHP(int32_t lArg);
 	int32_t	IncreaseMobRigHP(int32_t lArg);
 	 
-	//void SetFakePlayer(bool b) { m_bFakePlayer = b; }
-	//bool IsFakePlayer() const { return m_bFakePlayer; }
+	void SetFakePlayer(bool b) { m_bFakePlayer = b; }
+	bool IsFakePlayer() const { return m_bFakePlayer; }
 
 	 
-	//void SetCharType(uint8_t bType) { m_bCharType = bType; }
+	//void			SetCharType(uint8_t bType) { m_bCharType = bType; }
 private:
 	bool	isInvincible;
-	//bool m_bFakePlayer = false;
+	bool	m_bFakePlayer = false;
 public:
-	bool			IsStateMove() const { return IsState((CState&)m_stateMove); }
-	bool			IsStateIdle() const { return IsState((CState&)m_stateIdle); }
 	bool			IsWalking() const { return m_bNowWalking || GetStamina() <= 0; }
 	void			SetWalking(bool bWalkFlag) { m_bWalking = bWalkFlag; }
 	void			SetNowWalking(bool bWalkFlag);
@@ -2311,6 +2287,7 @@ public:
 	bool				CannotMoveByAffect() const;	// 특정 효과에 의해 움직일 수 없는 상태인가?
 	bool				IsImmune(uint32_t dwImmuneFlag);
 	void				SetImmuneFlag(uint32_t dw) { m_pointsInstant.dwImmuneFlag = dw; }
+	uint32_t			GetImmuneFlag() const { return m_pointsInstant.dwImmuneFlag; }
 
 protected:
 	void				ApplyMobAttribute(const TMobTable* table);
@@ -2851,7 +2828,7 @@ public:
 	void SetGayaState(const std::string& state, int szValue);
 	void StartCheckTimeMarket();
 
-private:
+public:
 	std::vector<Gaya_Shop_Values> info_items;
 	std::vector<Gaya_Shop_Values> info_slots;
 	std::vector<Gaya_Load_Values> load_gaya_items;
@@ -3051,3 +3028,7 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
+
+
+
+

@@ -66,6 +66,50 @@ extern void Map1MassSpawnEvent_OnMobDead(uint32_t vid);
 #endif
 #endif
 static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+static void ProcessStoneSpawnStep(LPCHARACTER ch)
+{
+	if (!ch || !ch->IsStone() || ch->GetMaxHP() <= 0)
+		return;
+
+	const int iPercent = (ch->GetHP() * 100) / ch->GetMaxHP();
+	const uint32_t dwVnum = number(
+		MIN(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed),
+		MAX(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed));
+
+	int wantStep = 0;
+	if (iPercent <= 10) wantStep = 10;
+	else if (iPercent <= 20) wantStep = 9;
+	else if (iPercent <= 30) wantStep = 8;
+	else if (iPercent <= 40) wantStep = 7;
+	else if (iPercent <= 50) wantStep = 6;
+	else if (iPercent <= 60) wantStep = 5;
+	else if (iPercent <= 70) wantStep = 4;
+	else if (iPercent <= 80) wantStep = 3;
+	else if (iPercent <= 90) wantStep = 2;
+	else if (iPercent <= 99) wantStep = 1;
+	else return;
+
+	for (int step = ch->GetMaxSP() + 1; step <= wantStep; ++step)
+	{
+		ch->SetMaxSP(step);
+		ch->SendMovePacket(FUNC_ATTACK, 0, ch->GetX(), ch->GetY(), 0);
+
+		CHARACTER_MANAGER::instance().SelectStone(ch);
+
+		if (step == 10 || step == 9)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1500, ch->GetY() - 1500, ch->GetX() + 1500, ch->GetY() + 1500);
+		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1000, ch->GetY() - 1000, ch->GetX() + 1000, ch->GetY() + 1000);
+		else if (step == 5 || step == 4 || step == 2)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 500, ch->GetY() - 500, ch->GetX() + 500, ch->GetY() + 500);
+
+		CHARACTER_MANAGER::instance().SelectStone(nullptr);
+	}
+
+	ch->UpdatePacket();
+}
+#endif
 static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
 {
 	if (!pAttacker || !pVictim)
@@ -4309,7 +4353,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		PointChange(POINT_HP, -dam, false);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 		if (IsStone())
-			__StateIdle_Stone();
+			ProcessStoneSpawnStep(this);
 #endif
 	}
 

@@ -91,6 +91,7 @@ vcpkg_require(
     rapidjson
     miniaudio
     directxsdk
+    entt
     discord-rpc
     libjpeg-turbo
     nlohmann-json

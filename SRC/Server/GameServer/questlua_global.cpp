@@ -25,6 +25,8 @@
 #include "sectree_manager.h"
 
 #include "desc.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -42,12 +44,16 @@ namespace quest
 {
 	ALUA(_get_locale)
 	{
+		// migrated from CHARACTER::get_locale
+		// DUAL-PATH: legacy only during migration window
 		lua_pushstring(L, g_stLocale.c_str());
 		return 1;
 	}
 
 	ALUA(_number)
 	{
+		// migrated from CHARACTER::number
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 			lua_pushnumber(L, 0);
 		else
@@ -57,6 +63,8 @@ namespace quest
 
 	ALUA(_time_to_str)
 	{
+		// migrated from CHARACTER::time_to_str
+		// DUAL-PATH: legacy only during migration window
 		time_t curTime = (time_t)lua_tonumber(L, -1);
 		lua_pushstring(L, asctime(gmtime(&curTime)));
 		return 1;
@@ -64,6 +72,8 @@ namespace quest
 
 	ALUA(_say)
 	{
+		// migrated from CHARACTER::say
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 		CQuestManager::Instance().AddScript(s.str() + "[ENTER]");
@@ -72,6 +82,8 @@ namespace quest
 
 	ALUA(_chat)
 	{
+		// migrated from CHARACTER::chat
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 
@@ -81,6 +93,8 @@ namespace quest
 
 	ALUA(_cmdchat)
 	{
+		// migrated from CHARACTER::cmdchat
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_COMMAND, "%s", s.str().c_str());
@@ -89,6 +103,8 @@ namespace quest
 
 	ALUA(_syschat)
 	{
+		// migrated from CHARACTER::syschat
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_INFO, "%s", s.str().c_str());
@@ -97,6 +113,8 @@ namespace quest
 
 	ALUA(_notice)
 	{
+		// migrated from CHARACTER::notice
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_NOTICE, "%s", s.str().c_str());
@@ -105,6 +123,8 @@ namespace quest
 
 	ALUA(_left_image)
 	{
+		// migrated from CHARACTER::left_image
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isstring(L, -1))
 		{
 			string s = lua_tostring(L,-1);
@@ -115,6 +135,8 @@ namespace quest
 
 	ALUA(_top_image)
 	{
+		// migrated from CHARACTER::top_image
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isstring(L, -1))
 		{
 			string s = lua_tostring(L,-1);
@@ -125,6 +147,8 @@ namespace quest
 
 	ALUA(_set_skin) // Quest UI style
 	{
+		// migrated from CHARACTER::set_skin
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isnumber(L, -1))
 		{
 			CQuestManager::Instance().SetSkinStyle((int)rint(lua_tonumber(L,-1)));
@@ -139,6 +163,8 @@ namespace quest
 
 	ALUA(_set_server_timer)
 	{
+		// migrated from CHARACTER::set_server_timer
+		// DUAL-PATH: legacy only during migration window
 		int n = lua_gettop(L);
 		if ((n != 2 || !lua_isnumber(L, 2) || !lua_isstring(L, 1)) &&
 				(n != 3 || !lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3)))
@@ -165,6 +191,8 @@ namespace quest
 
 	ALUA(_set_server_loop_timer)
 	{
+		// migrated from CHARACTER::set_server_loop_timer
+		// DUAL-PATH: legacy only during migration window
 		int n = lua_gettop(L);
 		if ((n != 2 || !lua_isnumber(L, 2) || !lua_isstring(L, 1)) &&
 				(n != 3 || !lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3)))
@@ -189,6 +217,8 @@ namespace quest
 
 	ALUA(_clear_server_timer)
 	{
+		// migrated from CHARACTER::clear_server_timer
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		const char * name = lua_tostring(L, 1);
 		uint32_t arg = (uint32_t) lua_tonumber(L, 2);
@@ -198,6 +228,8 @@ namespace quest
 
 	ALUA(_set_named_loop_timer)
 	{
+		// migrated from CHARACTER::set_named_loop_timer
+		// DUAL-PATH: legacy only during migration window
 		int n = lua_gettop(L);
 
 		if (n != 2 || !lua_isnumber(L, -1) || !lua_isstring(L, -2))
@@ -217,12 +249,16 @@ namespace quest
 
 	ALUA(_get_server_timer_arg)
 	{
+		// migrated from CHARACTER::get_server_timer_arg
+		// DUAL-PATH: legacy only during migration window
 		lua_pushnumber(L, CQuestManager::instance().GetServerTimerArg());
 		return 1;
 	}
 
 	ALUA(_set_timer)
 	{
+		// migrated from CHARACTER::set_timer
+		// DUAL-PATH: legacy only during migration window
 		if (lua_gettop(L) != 1 || !lua_isnumber(L, -1))
 			sys_err("QUEST invalid argument.");
 		else
@@ -238,6 +274,8 @@ namespace quest
 
 	ALUA(_set_named_timer)
 	{
+		// migrated from CHARACTER::set_named_timer
+		// DUAL-PATH: legacy only during migration window
 		int n = lua_gettop(L);
 
 		if (n != 2 || !lua_isnumber(L, -1) || !lua_isstring(L, -2))
@@ -259,6 +297,8 @@ namespace quest
 
 	ALUA(_timer)
 	{
+		// migrated from CHARACTER::timer
+		// DUAL-PATH: legacy only during migration window
 		if (lua_gettop(L) == 1)
 			return _set_timer(L);
 		else
@@ -267,6 +307,8 @@ namespace quest
 
 	ALUA(_clear_named_timer)
 	{
+		// migrated from CHARACTER::clear_named_timer
+		// DUAL-PATH: legacy only during migration window
 		int n = lua_gettop(L);
 
 		if (n != 1 || !lua_isstring(L, -1))
@@ -282,6 +324,8 @@ namespace quest
 
 	ALUA(_getnpcid)
 	{
+		// migrated from CHARACTER::getnpcid
+		// DUAL-PATH: legacy only during migration window
 		const char * name = lua_tostring(L, -1);
 		CQuestManager & q = CQuestManager::instance();
 		lua_pushnumber(L, q.FindNPCIDByName(name));
@@ -290,12 +334,16 @@ namespace quest
 
 	ALUA(_is_test_server)
 	{
+		// migrated from CHARACTER::is_test_server
+		// DUAL-PATH: legacy only during migration window
 		lua_pushboolean(L, test_server);
 		return 1;
 	}
 
 	ALUA(_raw_script)
 	{
+		// migrated from CHARACTER::raw_script
+		// DUAL-PATH: legacy only during migration window
 		if ( test_server )
 			sys_log ( 0, "_raw_script : %s ", lua_tostring(L,-1));
 		if (lua_isstring(L, -1))
@@ -308,6 +356,8 @@ namespace quest
 
 	ALUA(_char_log)
 	{
+		// migrated from CHARACTER::char_log
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
@@ -325,6 +375,8 @@ namespace quest
 
 	ALUA(_item_log)
 	{
+		// migrated from CHARACTER::item_log
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
@@ -346,6 +398,8 @@ namespace quest
 
 	ALUA(_syslog)
 	{
+		// migrated from CHARACTER::syslog
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 			return 0;
 
@@ -371,6 +425,8 @@ namespace quest
 
 	ALUA(_syserr)
 	{
+		// migrated from CHARACTER::syserr
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			return 0;
 
@@ -391,6 +447,8 @@ namespace quest
 	// LUA_ADD_BGM_INFO
 	ALUA(_set_bgm_volume_enable)
 	{
+		// migrated from CHARACTER::set_bgm_volume_enable
+		// DUAL-PATH: legacy only during migration window
 		CHARACTER_SetBGMVolumeEnable();
 
 		return 0;
@@ -398,6 +456,8 @@ namespace quest
 
 	ALUA(_add_bgm_info)
 	{
+		// migrated from CHARACTER::add_bgm_info
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 			return 0;
 
@@ -418,6 +478,8 @@ namespace quest
 	// LUA_ADD_GOTO_INFO
 	ALUA(_add_goto_info)
 	{
+		// migrated from CHARACTER::add_goto_info
+		// DUAL-PATH: legacy only during migration window
 		const char* name = lua_tostring(L, 1);
 
 		int empire 	= (int)lua_tonumber(L, 2);
@@ -436,6 +498,8 @@ namespace quest
 	// REFINE_PICK
 	ALUA(_refine_pick)
 	{
+		// migrated from CHARACTER::refine_pick
+		// DUAL-PATH: legacy only during migration window
 		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
 
 		CQuestManager& q = CQuestManager::instance();
@@ -452,6 +516,8 @@ namespace quest
 
 	ALUA(_fish_real_refine_rod)
 	{
+		// migrated from CHARACTER::fish_real_refine_rod
+		// DUAL-PATH: legacy only during migration window
 		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
 
 		CQuestManager& q = CQuestManager::instance();
@@ -467,6 +533,8 @@ namespace quest
 
 	ALUA(_give_char_privilege)
 	{
+		// migrated from CHARACTER::give_char_privilege
+		// DUAL-PATH: legacy only during migration window
 		int pid = CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID();
 		int type = (int)lua_tonumber(L, 1);
 		int value = (int)lua_tonumber(L, 2);
@@ -484,6 +552,8 @@ namespace quest
 
 	ALUA(_give_empire_privilege)
 	{
+		// migrated from CHARACTER::give_empire_privilege
+		// DUAL-PATH: legacy only during migration window
 		int empire = (int)lua_tonumber(L,1);
 		int type = (int)lua_tonumber(L, 2);
 		int value = (int)lua_tonumber(L, 3);
@@ -509,6 +579,8 @@ namespace quest
 
 	ALUA(_give_guild_privilege)
 	{
+		// migrated from CHARACTER::give_guild_privilege
+		// DUAL-PATH: legacy only during migration window
 		int guild_id = (int)lua_tonumber(L,1);
 		int type = (int)lua_tonumber(L, 2);
 		int value = (int)lua_tonumber(L, 3);
@@ -530,6 +602,8 @@ namespace quest
 
 	ALUA(_get_empire_privilege_string)
 	{
+		// migrated from CHARACTER::get_empire_privilege_string
+		// DUAL-PATH: legacy only during migration window
 		int empire = (int) lua_tonumber(L, 1);
 		ostringstream os;
 		bool found = false;
@@ -559,6 +633,8 @@ namespace quest
 
 	ALUA(_get_empire_privilege)
 	{
+		// migrated from CHARACTER::get_empire_privilege
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L,1) || !lua_isnumber(L,2))
 		{
 			lua_pushnumber(L,0);
@@ -573,6 +649,8 @@ namespace quest
 
 	ALUA(_get_guild_privilege_string)
 	{
+		// migrated from CHARACTER::get_guild_privilege_string
+		// DUAL-PATH: legacy only during migration window
 		int guild = (int) lua_tonumber(L,1);
 		ostringstream os;
 		bool found = false;
@@ -601,6 +679,8 @@ namespace quest
 
 	ALUA(_get_guildid_byname)
 	{
+		// migrated from CHARACTER::get_guildid_byname
+		// DUAL-PATH: legacy only during migration window
 		if ( !lua_isstring( L, 1 ) ) {
 			sys_err( "_get_guildid_byname() - invalud argument" );
 			lua_pushnumber( L, 0 );
@@ -619,6 +699,8 @@ namespace quest
 
 	ALUA(_get_guild_privilege)
 	{
+		// migrated from CHARACTER::get_guild_privilege
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L,1) || !lua_isnumber(L,2))
 		{
 			lua_pushnumber(L,0);
@@ -633,6 +715,8 @@ namespace quest
 
 	ALUA(_item_name)
 	{
+		// migrated from CHARACTER::item_name
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isnumber(L,1))
 		{
 			uint32_t dwVnum = (uint32_t)lua_tonumber(L,1);
@@ -657,6 +741,8 @@ namespace quest
 
 	ALUA(_mob_name)
 	{
+		// migrated from CHARACTER::mob_name
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isnumber(L, 1))
 		{
 			uint32_t dwVnum = (uint32_t) lua_tonumber(L,1);
@@ -683,6 +769,8 @@ namespace quest
 
 	ALUA(_mob_vnum)
 	{
+		// migrated from CHARACTER::mob_vnum
+		// DUAL-PATH: legacy only during migration window
 		if (lua_isstring(L,1))
 		{
 			const char* str = lua_tostring(L, 1);
@@ -700,6 +788,8 @@ namespace quest
 
 	ALUA(_get_global_time)
 	{
+		// migrated from CHARACTER::get_global_time
+		// DUAL-PATH: legacy only during migration window
 		lua_pushnumber(L, get_global_time());
 		return 1;
 	}
@@ -707,6 +797,8 @@ namespace quest
 
 	ALUA(_get_channel_id)
 	{
+		// migrated from CHARACTER::get_channel_id
+		// DUAL-PATH: legacy only during migration window
 		lua_pushnumber(L, g_bChannel);
 
 		return 1;
@@ -714,6 +806,8 @@ namespace quest
 
 	ALUA(_do_command)
 	{
+		// migrated from CHARACTER::do_command
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			return 0;
 
@@ -727,6 +821,8 @@ namespace quest
 
 	ALUA(_find_pc)
 	{
+		// migrated from CHARACTER::find_pc
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 		{
 			sys_err("invalid argument");
@@ -742,6 +838,8 @@ namespace quest
 
 	ALUA(_find_pc_cond)
 	{
+		// migrated from CHARACTER::find_pc_cond
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("invalid argument");
@@ -776,6 +874,8 @@ namespace quest
 
 	ALUA(_find_npc_by_vnum)
 	{
+		// migrated from CHARACTER::find_npc_by_vnum
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("invalid argument");
@@ -812,6 +912,8 @@ namespace quest
 	// 새로운 state를 만든다.
 	ALUA(_set_quest_state)
 	{
+		// migrated from CHARACTER::set_quest_state
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1) || !lua_isstring(L, 2))
 			return 0;
 
@@ -848,6 +950,8 @@ namespace quest
 
 	ALUA(_get_quest_state)
 	{
+		// migrated from CHARACTER::get_quest_state
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1) )
 			return 0;
 
@@ -878,6 +982,8 @@ namespace quest
 
 	ALUA(_under_han)
 	{
+		// migrated from CHARACTER::under_han
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			lua_pushboolean(L, 0);
 		else
@@ -888,6 +994,8 @@ namespace quest
 #ifdef ENABLE_FULL_NOTICE
 	ALUA(_big_notice)
 	{
+		// migrated from CHARACTER::big_notice
+		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
 		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
@@ -896,6 +1004,8 @@ namespace quest
 
 	ALUA(_big_notice_in_map)
 	{
+		// migrated from CHARACTER::big_notice_in_map
+		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (pChar != nullptr) {
 			SendNoticeMap(lua_tostring(L,1), pChar->GetMapIndex(), true);
@@ -906,6 +1016,8 @@ namespace quest
 
 	ALUA(_big_notice_all)
 	{
+		// migrated from CHARACTER::big_notice_all
+		// DUAL-PATH: legacy only during migration window
 #ifdef TEXTS_IMPROVEMENT
 		if (!lua_isnumber(L, 1)) {
 			return 0;
@@ -938,6 +1050,8 @@ namespace quest
 
 	ALUA(_notice_all)
 	{
+		// migrated from CHARACTER::notice_all
+		// DUAL-PATH: legacy only during migration window
 #ifdef TEXTS_IMPROVEMENT
 		if (!lua_isnumber(L, 1)) {
 			return 0;
@@ -1023,6 +1137,8 @@ namespace quest
 
 	ALUA(_warp_all_to_village)
 	{
+		// migrated from CHARACTER::warp_all_to_village
+		// DUAL-PATH: legacy only during migration window
 		int iMapIndex 	= static_cast<int>(lua_tonumber(L, 1));
 		int iSec		= static_cast<int>(lua_tonumber(L, 2));
 
@@ -1039,6 +1155,8 @@ namespace quest
 
 	ALUA(_warp_to_village)
 	{
+		// migrated from CHARACTER::warp_to_village
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (nullptr != ch)
@@ -1052,6 +1170,8 @@ namespace quest
 
 	ALUA(_say_in_map)
 	{
+		// migrated from CHARACTER::say_in_map
+		// DUAL-PATH: legacy only during migration window
 		int32_t iMapIndex 		= static_cast<int32_t>(lua_tonumber( L, 1 ));
 		std::string Script(lua_tostring( L, 2 ));
 
@@ -1098,6 +1218,8 @@ namespace quest
 
 	ALUA(_kill_all_in_map)
 	{
+		// migrated from CHARACTER::kill_all_in_map
+		// DUAL-PATH: legacy only during migration window
 		LPSECTREE_MAP pSecMap = SECTREE_MANAGER::instance().GetMap( lua_tonumber(L,1) );
 
 		if (nullptr != pSecMap)
@@ -1112,6 +1234,8 @@ namespace quest
 	//주의: 몹 리젠이 안되는 맵에서만 사용
 	ALUA(_regen_in_map)
 	{
+		// migrated from CHARACTER::regen_in_map
+		// DUAL-PATH: legacy only during migration window
 		int32_t iMapIndex = static_cast<int32_t>(lua_tonumber(L, 1));
 		std::string szFilename(lua_tostring(L, 2));
 
@@ -1127,6 +1251,8 @@ namespace quest
 
 	ALUA(_enable_over9refine)
 	{
+		// migrated from CHARACTER::enable_over9refine
+		// DUAL-PATH: legacy only during migration window
 		if ( lua_isnumber(L, 1) == true && lua_isnumber(L, 2) == true )
 		{
 			uint32_t dwVnumFrom = (uint32_t)lua_tonumber(L, 1);
@@ -1140,6 +1266,8 @@ namespace quest
 
 	ALUA(_add_ox_quiz)
 	{
+		// migrated from CHARACTER::add_ox_quiz
+		// DUAL-PATH: legacy only during migration window
 		int level = (int)lua_tonumber(L, 1);
 		const char* quiz = lua_tostring(L, 2);
 		bool answer = lua_toboolean(L, 3);
@@ -1181,6 +1309,8 @@ namespace quest
 
 	ALUA(_block_chat)
 	{
+		// migrated from CHARACTER::block_chat
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (pChar != nullptr)
@@ -1209,6 +1339,8 @@ namespace quest
 #ifdef ENABLE_NEWSTUFF
 	ALUA(_spawn_mob0)
 	{
+		// migrated from CHARACTER::spawn_mob0
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		{
 			lua_pushnumber(L, -1);
@@ -1239,6 +1371,8 @@ namespace quest
 
 	ALUA(_spawn_mob)
 	{
+		// migrated from CHARACTER::spawn_mob
+		// DUAL-PATH: ECS update + legacy call during migration window
 		if( false == lua_isnumber(L, 1) || false == lua_isnumber(L, 2) || false == lua_isboolean(L, 3) )
 		{
 			lua_pushnumber(L, 0);
@@ -1271,6 +1405,16 @@ namespace quest
 				if(nullptr != pSpawnMonster )
 				{
 					++SpawnCount;
+				// DUAL-PATH: register spawned mob in ECS registry
+				if (pSpawnMonster) {
+					EntityFactory::CreateMonster(
+						g_registry,
+						pSpawnMonster->GetMobTable(),
+						pSpawnMonster->GetX(),
+						pSpawnMonster->GetY(),
+						pSpawnMonster->GetMapIndex(),
+						pSpawnMonster->GetVID());
+				}
 				}
 			}
 
@@ -1285,6 +1429,8 @@ namespace quest
 #ifdef ENABLE_NEWSTUFF
 	ALUA(_spawn_mob_in_map)
 	{
+		// migrated from CHARACTER::spawn_mob_in_map
+		// DUAL-PATH: legacy only during migration window
 		if( false == lua_isnumber(L, 1) || false == lua_isnumber(L, 2) || false == lua_isboolean(L, 3) || false == lua_isnumber(L, 4) || false == lua_isnumber(L, 5) || false == lua_isnumber(L, 6) )
 		{
 			lua_pushnumber(L, 0);
@@ -1328,6 +1474,16 @@ namespace quest
 				if(nullptr != pSpawnMonster )
 				{
 					++SpawnCount;
+				// DUAL-PATH: register spawned mob in ECS registry
+				if (pSpawnMonster) {
+					EntityFactory::CreateMonster(
+						g_registry,
+						pSpawnMonster->GetMobTable(),
+						pSpawnMonster->GetX(),
+						pSpawnMonster->GetY(),
+						pSpawnMonster->GetMapIndex(),
+						pSpawnMonster->GetVID());
+				}
 				}
 			}
 
@@ -1342,6 +1498,8 @@ namespace quest
 
 	ALUA(_notice_in_map)
 	{
+		// migrated from CHARACTER::notice_in_map
+		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (nullptr != pChar)
@@ -1366,6 +1524,8 @@ namespace quest
 
 	ALUA(_get_locale_base_path)
 	{
+		// migrated from CHARACTER::get_locale_base_path
+		// DUAL-PATH: legacy only during migration window
 		lua_pushstring( L, LocaleService_GetBasePath().c_str() );
 
 		return 1;
@@ -1406,6 +1566,8 @@ namespace quest
 
 	ALUA(_purge_area)
 	{
+		// migrated from CHARACTER::purge_area
+		// DUAL-PATH: legacy only - area purge affects many entities
 		int32_t x1 = (int32_t)lua_tonumber(L, 1);
 		int32_t y1 = (int32_t)lua_tonumber(L, 2);
 		int32_t x2 = (int32_t)lua_tonumber(L, 3);
@@ -1464,6 +1626,8 @@ namespace quest
 
 	ALUA(_warp_all_in_area_to_area)
 	{
+		// migrated from CHARACTER::warp_all_in_area_to_area
+		// DUAL-PATH: legacy only during migration window
 		int32_t from_x1 = (int32_t)lua_tonumber(L, 1);
 		int32_t from_y1 = (int32_t)lua_tonumber(L, 2);
 		int32_t from_x2 = (int32_t)lua_tonumber(L, 3);
@@ -1505,6 +1669,8 @@ namespace quest
 
 	ALUA(_get_special_item_group)
 	{
+		// migrated from CHARACTER::get_special_item_group
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber (L, 1))
 		{
 			sys_err("invalid argument");
@@ -1533,6 +1699,8 @@ namespace quest
 #ifdef ENABLE_NEWSTUFF
 	ALUA(_get_table_postfix)
 	{
+		// migrated from CHARACTER::get_table_postfix
+		// DUAL-PATH: legacy only during migration window
 		lua_pushstring(L, get_table_postfix());
 		return 1;
 	}
@@ -1543,6 +1711,8 @@ namespace quest
 #endif
 	ALUA(_mysql_direct_query)
 	{
+		// migrated from CHARACTER::mysql_direct_query
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 			return 0;
 
@@ -1611,6 +1781,8 @@ namespace quest
 
 	ALUA(_mysql_escape_string)
 	{
+		// migrated from CHARACTER::mysql_escape_string
+		// DUAL-PATH: legacy only during migration window
 		char szQuery[1024] = {0};
 
 		if (!lua_isstring(L, 1))
@@ -1623,6 +1795,8 @@ namespace quest
 
 	/*ALUA(_mysql_password)
 	{
+		// migrated from CHARACTER::mysql_password
+		// DUAL-PATH: legacy only during migration window
 		lua_pushstring(L, mysql_hash_password(lua_tostring(L, 1)).c_str());
 		return 1;
 	}*/
@@ -1630,6 +1804,8 @@ namespace quest
 #ifdef __VERSION_162__
 	ALUA(_add_restart_city_pos)
 	{
+		// migrated from CHARACTER::add_restart_city_pos
+		// DUAL-PATH: legacy only during migration window
 		int iMapIndex = (int)lua_tonumber(L, 1);
 		int iEmpire = (int)lua_tonumber(L, 2);
 		int iX = (int)lua_tonumber(L, 3);
@@ -1647,6 +1823,8 @@ namespace quest
 
 		luaL_reg global_functions[] =
 		{
+		// migrated from CHARACTER::quest_setstate
+		// DUAL-PATH: legacy only during migration window
 			{	"sys_err",					_syserr					},
 			{	"sys_log",					_syslog					},
 			{	"char_log",					_char_log				},
@@ -1754,4 +1932,6 @@ namespace quest
 		}
 	}
 }
+
+
 

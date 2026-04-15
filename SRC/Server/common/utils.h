@@ -79,6 +79,14 @@ inline bool str_to_number (long long& out, const char *in)
 	return true;
 }
 
+inline bool str_to_number (uint64_t& out, const char *in)
+{
+	if (nullptr==in || 0==in[0])	return false;
+
+	out = (uint64_t) strtoull(in, nullptr, 10);
+	return true;
+}
+
 inline bool str_to_number (float& out, const char *in)
 {
 	if (nullptr==in || 0==in[0])	return false;
@@ -94,14 +102,6 @@ inline bool str_to_number (double& out, const char *in)
 	out = (double) strtod(in, nullptr);
 	return true;
 }
-
-//inline bool str_to_number(uint64_t& out, const char* in)
-//{
-//	if (nullptr == in || 0 == in[0])	return false;
-//
-//	out = (uint64_t)strtoull(in, nullptr, 10);
-//	return true;
-//}
 
 #ifdef __FreeBSD__
 inline bool str_to_number (long double& out, const char *in)

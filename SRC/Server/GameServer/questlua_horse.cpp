@@ -8,6 +8,7 @@
 #include "config.h"
 #include "utils.h"
 #include "arena.h"
+#include "ecs/quest_helpers.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -23,18 +24,24 @@ namespace quest
 	//
 	ALUA(horse_is_riding)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::IsHorseRiding()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		if (!ms)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->IsHorseRiding()) ? 1 : 0);
+			return 1;
+		}
 
-		if (ch->IsHorseRiding())
-			lua_pushnumber(L, 1);
-		else
-			lua_pushnumber(L, 0);
-
+		lua_pushnumber(L, ms->mountVnum != 0 ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(horse_is_summon)
 	{
+		// migrated from CHARACTER::GetHorse
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if (nullptr != ch)
@@ -51,6 +58,11 @@ namespace quest
 
 	ALUA(horse_ride)
 	{
+		// migrated from CHARACTER::StartRiding
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 #ifdef ENABLE_PVP_ADVANCED	
 	if ((ch->GetDuel("BlockRide")))
@@ -69,20 +81,44 @@ namespace quest
 			return 0;		
 #endif
 
-		ch->StartRiding();
+		if (ms && sf)
+		{
+			sf->isMountActive = true;
+			ms->mountTime = get_dword_time();
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+
+		if (ch)
+			ch->StartRiding();
 		return 0;
 	}
 
 	ALUA(horse_unride)
 	{
+		// migrated from CHARACTER::StopRiding
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
+		if (sf)
+		{
+			sf->isMountActive = false;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		ch->StopRiding();
+		if (ch)
+			ch->StopRiding();
 		return 0;
 	}
 
 	ALUA(horse_summon)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();	
+		// migrated from CHARACTER::HorseSummon
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
+		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 #ifdef ENABLE_PVP_ADVANCED	
 	if ((ch->GetDuel("BlockRide")))
 	{
@@ -101,76 +137,147 @@ namespace quest
 #endif
 
 		bool bFromFar = lua_isboolean(L, 1) ? lua_toboolean(L, 1) : false;
-		uint32_t horseVnum= lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
+		uint32_t horseVnum = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
 		const char* name = lua_isstring(L, 3) ? lua_tostring(L, 3) : nullptr;
-		ch->HorseSummon(true, bFromFar, horseVnum, name);
+		if (ms && sf)
+		{
+			ms->mountVnum = horseVnum;
+			ms->mountTime = get_dword_time();
+			sf->isMountActive = (horseVnum != 0);
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+		if (ch)
+			ch->HorseSummon(true, bFromFar, horseVnum, name);
 		return 0;
 	}
 
 	ALUA(horse_unsummon)
 	{
+		// migrated from CHARACTER::HorseSummon(false)
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
+		if (ms && sf)
+		{
+			ms->mountVnum = 0;
+			sf->isMountActive = false;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		ch->HorseSummon(false);
+		if (ch)
+			ch->HorseSummon(false);
 		return 0;
 	}
 
 	ALUA(horse_is_mine)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPCHARACTER horse = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+		// migrated from CHARACTER::GetHorse() ownership check
+		entt::entity pcE = CQuestManager::instance().GetPCEntity(L);
+		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
+		auto* mount = ECS_TryGet<ecs::MountState>(pcE);
+		auto* npcVid = ECS_TryGet<ecs::VIDComponent>(npcE);
+		if (!mount || !npcVid)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			LPCHARACTER horse = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+			lua_pushboolean(L, horse && horse->GetRider() == ch);
+			return 1;
+		}
 
-		lua_pushboolean(L, horse && horse->GetRider() == ch);
+		lua_pushboolean(L, mount->mountVnum == npcVid->value ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(horse_set_level)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		// migrated from CHARACTER::SetHorseLevel
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		if (!lua_isnumber(L, 1))
 			return 0;
 
 		int newlevel = MINMAX(0, (int)lua_tonumber(L, 1), HORSE_MAX_LEVEL);
-		ch->SetHorseLevel(newlevel);
-		ch->ComputePoints();
-		ch->SkillLevelPacket();
+		if (ms)
+		{
+			ms->sendHorseLevel = static_cast<uint8_t>(newlevel);
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+
+		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		if (ch)
+		{
+			ch->SetHorseLevel(newlevel);
+			ch->ComputePoints();
+			ch->SkillLevelPacket();
+		}
 		return 0;
 	}
 
 	ALUA(horse_get_level)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch->GetHorseLevel());
+		// migrated from CHARACTER::GetHorseLevel()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		if (!ms)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, ch ? ch->GetHorseLevel() : 0);
+			return 1;
+		}
+
+		lua_pushnumber(L, ms->sendHorseLevel);
 		return 1;
 	}
 
 	ALUA(horse_advance)
 	{
+		// migrated from CHARACTER::SetHorseLevel
+		// DUAL-PATH: ECS update + legacy call during migration window
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-		if (ch->GetHorseLevel() >= HORSE_MAX_LEVEL)
+		if (ch && ch->GetHorseLevel() >= HORSE_MAX_LEVEL)
 			return 0;
 
-		ch->SetHorseLevel(ch->GetHorseLevel() + 1);
-		ch->ComputePoints();
-		ch->SkillLevelPacket();
+		if (ms && ms->sendHorseLevel < HORSE_MAX_LEVEL)
+		{
+			++ms->sendHorseLevel;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+
+		if (ch)
+		{
+			ch->SetHorseLevel(ch->GetHorseLevel() + 1);
+			ch->ComputePoints();
+			ch->SkillLevelPacket();
+		}
 		return 0;
 	}
 
 	ALUA(horse_get_health)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetHorseHealth()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		if (!ms)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetHorseLevel()) ? ch->GetHorseHealth() : 0);
+			return 1;
+		}
 
-		if (ch->GetHorseLevel())
-			lua_pushnumber(L, ch->GetHorseHealth());
-		else
-			lua_pushnumber(L, 0);
-
+		lua_pushnumber(L, ms->sendHorseLevel ? ms->sendHorseHealthGrade : 0);
 		return 1;
 	}
 
 	ALUA(horse_get_health_pct)
 	{
+		// migrated from CHARACTER::GetHorseHealth
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		int pct = MINMAX(0, ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth(), 100);
@@ -186,18 +293,24 @@ namespace quest
 
 	ALUA(horse_get_stamina)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		// migrated from CHARACTER::GetHorseStamina()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* ms = ECS_TryGet<ecs::MountState>(e);
+		if (!ms)
+		{
+			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			lua_pushnumber(L, (ch && ch->GetHorseLevel()) ? ch->GetHorseStamina() : 0);
+			return 1;
+		}
 
-		if (ch->GetHorseLevel())
-			lua_pushnumber(L, ch->GetHorseStamina());
-		else
-			lua_pushnumber(L, 0);
-
+		lua_pushnumber(L, ms->sendHorseLevel ? ms->sendHorseStaminaGrade : 0);
 		return 1;
 	}
 
 	ALUA(horse_get_stamina_pct)
 	{
+		// migrated from CHARACTER::GetHorseStamina
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		int pct = MINMAX(0, ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina(), 100);
 		sys_log(1, "horse.get_stamina_pct %d", pct);
@@ -212,6 +325,8 @@ namespace quest
 
 	ALUA(horse_get_grade)
 	{
+		// migrated from CHARACTER::GetHorseGrade
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		lua_pushnumber(L, ch->GetHorseGrade());
 		return 1;
@@ -219,6 +334,8 @@ namespace quest
 
 	ALUA(horse_is_dead)
 	{
+		// migrated from CHARACTER::GetHorseHealth
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		lua_pushboolean(L, ch->GetHorseHealth()<=0);
 		return 1;
@@ -226,6 +343,8 @@ namespace quest
 
 	ALUA(horse_revive)
 	{
+		// migrated from CHARACTER::ReviveHorse
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (ch->GetHorseLevel() > 0 && ch->GetHorseHealth() <= 0)
 		{
@@ -236,6 +355,8 @@ namespace quest
 
 	ALUA(horse_feed)
 	{
+		// migrated from CHARACTER::FeedHorse
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		//uint32_t dwHorseFood = ch->GetHorseLevel() + ITEM_HORSE_FOOD_1 - 1;
 		if (ch->GetHorseLevel() > 0 && ch->GetHorseHealth() > 0)
@@ -247,6 +368,8 @@ namespace quest
 
 	ALUA(horse_set_name)
 	{
+		// migrated from CHARACTER::SetQuestFlag
+		// DUAL-PATH: legacy only during migration window
 		// 리턴값
 		// 0 : 소유한 말이 없다
 		// 1 : 잘못된 이름이다
@@ -292,6 +415,8 @@ namespace quest
 
 	ALUA(horse_get_name)
 	{
+		// migrated from CHARACTER::GetPlayerID
+		// DUAL-PATH: legacy fallback during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if ( ch != nullptr)
@@ -357,6 +482,7 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("horse", horse_functions);
 	}
 }
+
 
 
 

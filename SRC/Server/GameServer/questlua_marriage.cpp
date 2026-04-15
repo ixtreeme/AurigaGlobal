@@ -17,6 +17,8 @@ namespace quest
 {
 	ALUA(marriage_engage_to)
 	{
+		// migrated from marriage system
+		// TODO Phase 8: MarriageState component integration
 		uint32_t vid = (uint32_t) lua_tonumber(L, 1);
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		LPCHARACTER ch_you = CHARACTER_MANAGER::instance().Find(vid);
@@ -29,6 +31,8 @@ namespace quest
 
 	ALUA(marriage_remove)
 	{
+		// migrated from marriage system
+		// TODO Phase 8: MarriageState component integration
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (!pMarriage)
@@ -42,6 +46,8 @@ namespace quest
 
 	ALUA(marriage_set_to_marriage)
 	{
+		// migrated from marriage system
+		// TODO Phase 8: MarriageState component integration
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (!pMarriage)
@@ -55,6 +61,8 @@ namespace quest
 
 	ALUA(marriage_find_married_vid)
 	{
+		// migrated from marriage system
+		// TODO Phase 8: MarriageState component integration
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		uint32_t vid = 0;
@@ -99,12 +107,16 @@ namespace quest
 
 	ALUA(marriage_get_wedding_list)
 	{
+		// migrated from marriage system
+		// TODO Phase 8: MarriageState component integration
 		marriage::CManager::instance().for_each_wedding(FBuildLuaWeddingMapList(L));
 		return 1;
 	}
 
 	ALUA(marriage_join_wedding)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("invalid player id for wedding map");
@@ -138,6 +150,8 @@ namespace quest
 
 	ALUA(marriage_warp_to_my_marriage_map)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (!pMarriage)
@@ -158,6 +172,8 @@ namespace quest
 
 	ALUA(marriage_end_wedding)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (!pMarriage)
@@ -175,6 +191,8 @@ namespace quest
 
 	ALUA(marriage_wedding_dark)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isboolean(L, 1))
 		{
 			sys_err("invalid argument 1 : must be boolean");
@@ -199,6 +217,8 @@ namespace quest
 
 	ALUA(marriage_wedding_client_command)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isstring(L, 1))
 		{
 			sys_err("invalid argument 1 : must be string");
@@ -223,6 +243,8 @@ namespace quest
 
 	ALUA(marriage_wedding_is_playing_music)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (!pMarriage)
@@ -244,6 +266,8 @@ namespace quest
 	}
 	ALUA(marriage_wedding_music)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isboolean(L, 1))
 		{
 			sys_err("invalid argument 1 : must be boolean");
@@ -274,6 +298,8 @@ namespace quest
 	}
 	ALUA(marriage_wedding_snow)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isboolean(L, 1))
 		{
 			sys_err("invalid argument 1 : must be boolean");
@@ -296,6 +322,8 @@ namespace quest
 
 	ALUA(marriage_in_my_wedding)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 		if (pMarriage->pWeddingInfo)
@@ -311,6 +339,8 @@ namespace quest
 
 	ALUA(marriage_get_married_time)
 	{
+		// migrated from marriage system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ch->GetPlayerID());
 
@@ -349,3 +379,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("marriage", marriage_functions);
 	}
 }
+

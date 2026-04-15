@@ -32,6 +32,8 @@
 #include "pcbang.h"
 #include "unique_item.h"
 #include "DragonSoul.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/VIDRegistry.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -840,7 +842,11 @@ ACMD(do_mob_aggresive)
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
-			tch->SetAggressive();
+				{
+					const entt::entity e = CVIDRegistry::Instance().Find(tch->GetVID());
+					if (e != entt::null)
+						AIHelpers::SetAggressive(e, true);
+				}
 	}
 }
 

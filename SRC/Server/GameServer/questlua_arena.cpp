@@ -9,6 +9,8 @@ namespace quest
 {
 	ALUA(arena_start_duel)
 	{
+		// migrated from arena system
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		LPCHARACTER ch2 = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
 		int nSetPoint = (int)lua_tonumber(L, 2);
@@ -51,6 +53,8 @@ namespace quest
 
 	ALUA(arena_add_map)
 	{
+		// migrated from arena system
+		// DUAL-PATH: legacy only during migration window
 		int mapIdx		= (int)lua_tonumber(L, 1);
 		int startposAX	= (int)lua_tonumber(L, 2);
 		int startposAY	= (int)lua_tonumber(L, 3);
@@ -71,6 +75,8 @@ namespace quest
 
 	ALUA(arena_get_duel_list)
 	{
+		// migrated from arena system
+		// DUAL-PATH: legacy only during migration window
 		CArenaManager::instance().GetDuelList(L);
 
 		return 1;
@@ -78,6 +84,8 @@ namespace quest
 
 	ALUA(arena_add_observer)
 	{
+		// migrated from arena observer system
+		// DUAL-PATH: legacy only during migration window
 		int mapIdx = (int)lua_tonumber(L, 1);
 		int ObPointX = (int)lua_tonumber(L, 2);
 		int ObPointY = (int)lua_tonumber(L, 3);
@@ -90,6 +98,8 @@ namespace quest
 
 	ALUA(arena_is_in_arena)
 	{
+		// migrated from arena system
+		// DUAL-PATH: legacy only during migration window
 		uint32_t pid = (uint32_t)lua_tonumber(L, 1);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pid);
@@ -131,4 +141,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("arena", arena_functions);
 	}
 }
+
 

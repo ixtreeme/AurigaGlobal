@@ -50,6 +50,11 @@
 #include <common/CommonDefines.h>
 
 #include "desc_client.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/components/vital_components.hpp"
+#include "ecs/components/inventory_components.hpp"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
@@ -540,6 +545,47 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	ch->SetEmpire(d->GetEmpire());
 
 	d->BindCharacter(ch);
+
+    // Phase 7: create parallel ECS entity for this player
+    {
+        entt::entity ecs_e = EntityFactory::CreatePC(
+            g_registry,
+            *pTab,
+            d,
+            ch->GetVID());
+        d->SetEntity(ecs_e);
+        sys_log(0, "ECS: PC entity created VID=%u pid=%u",
+                ch->GetVID(), ch->GetPlayerID());
+
+        // VID unification verification - REMOVE IN PHASE 9
+        entt::entity verify = CVIDRegistry::Instance().Find(ch->GetVID());
+        if (verify == entt::null || !g_registry.valid(verify)) {
+            sys_err("VID UNIFICATION FAILED: vid=%u", ch->GetVID());
+        } else {
+            sys_log(0, "VID OK: vid=%u entity valid", ch->GetVID());
+        }
+
+        // Phase 7: sync ECS vital components from DB result
+        if (g_registry.valid(ecs_e)) {
+            auto& h = g_registry.get_or_emplace<ecs::Health>(ecs_e);
+            h.current = ch->GetHP();
+            h.max     = ch->GetMaxHP();
+
+            auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
+            m.current = ch->GetSP();
+            m.max     = ch->GetMaxSP();
+
+            auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
+            lv.value = ch->GetLevel();
+
+            auto& exp = g_registry.get_or_emplace<ecs::Experience>(ecs_e);
+            exp.current = ch->GetExp();
+            exp.next    = ch->GetNextExp();
+
+            auto& gold = g_registry.get_or_emplace<ecs::GoldAmount>(ecs_e);
+            gold.amount = ch->GetGold();
+        }
+    }
 
 	{
 		// P2P Login

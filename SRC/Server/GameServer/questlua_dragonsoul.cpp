@@ -15,6 +15,9 @@ namespace quest
 {
 	ALUA(ds_open_refine_window)
 	{
+		// migrated from CHARACTER DragonSoul refine window
+		// TODO Phase 8: DragonSoulComponent
+		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (nullptr == ch)
 		{
@@ -37,3 +40,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("ds", ds_functions);
 	}
 };
+

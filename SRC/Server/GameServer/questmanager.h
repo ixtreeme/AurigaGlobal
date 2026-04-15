@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include <entt/entt.hpp>
+
 #include "questnpc.h"
 
 class ITEM;
@@ -173,6 +175,8 @@ namespace quest
 		LPCHARACTER		GetCurrentCharacterPtr() { return m_pCurrentCharacter; }
 		LPCHARACTER		GetCurrentPartyMember() { return m_pCurrentPartyMember; }
 		PC* GetCurrentPC() { return m_pCurrentPC; }
+		entt::entity	GetPCEntity(lua_State* L);
+		entt::entity	GetNPCEntity(lua_State* L);
 
 		void		ClearScript();
 		void		SendScript();

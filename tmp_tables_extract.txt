@@ -1,0 +1,82 @@
+	uint8_t	channelFlag;
+	uint32_t	value[4];
+	bool	eventStatus;
+	bool	eventTypeOnlyStart;
+	char	startTimeText[25];
+	char	endTimeText[25];
+}TEventManagerData;
+enum
+{
+	EVENT_MANAGER_LOAD,
+	EVENT_MANAGER_EVENT_STATUS,
+	EVENT_MANAGER_REMOVE_EVENT,
+	EVENT_MANAGER_UPDATE,
+
+	BONUS_EVENT = 1,
+	DOUBLE_BOSS_LOOT_EVENT = 2,
+	DOUBLE_METIN_LOOT_EVENT = 3,
+	DOUBLE_MISSION_BOOK_EVENT = 4,
+	DUNGEON_COOLDOWN_EVENT = 5,
+	DUNGEON_TICKET_LOOT_EVENT = 6,
+	EMPIRE_WAR_EVENT = 7,
+	MOONLIGHT_EVENT = 8,
+	TOURNAMENT_EVENT = 9,
+	WHELL_OF_FORTUNE_EVENT = 10,
+	HALLOWEEN_EVENT = 11,
+	NPC_SEARCH_EVENT = 12,
+	EXP_EVENT = 13,
+	ITEM_DROP_EVENT = 14,
+	YANG_DROP_EVENT = 15,
+	HATSZOG_LADA_EVENT = 16,
+	BUPLA_RUN_BOSS_LOOT_EVENT = 17,
+	MIKI_EVENT = 18,
+	KARI_EVENT = 19,
+	DUPLA_SZILI_EVENT = 20,
+	COIN_EVENT = 21,
+	DUPLA_BOSS_PONT_EVENT = 22,
+	DUPLA_RUN_PONT_EVENT = 23,
+	VALENTIN_EVENT = 24,
+	TANAKA_EVENT = 25,
+	GOLDEN_FROG_EVENT = 26,
+	EASTER_EVENT = 27,
+	LELEKGOMB_EVENT = 28,
+
+
+
+
+
+};
+#endif
+
+
+#ifdef ENABLE_ITEMSHOP
+enum
+{
+	ITEMSHOP_LOAD,
+	ITEMSHOP_LOG,
+	ITEMSHOP_BUY,
+	ITEMSHOP_DRAGONCOIN,
+	ITEMSHOP_RELOAD,
+};
+typedef struct SIShopData
+{
+	uint32_t	id;
+	uint32_t	itemVnum;
+	uint32_t	itemPrice;
+	int		topSellingIndex;
+	uint8_t	discount;
+	int64_t		offerTime;
+	int64_t		addedTime;
+	uint32_t	sellCount;
+	int	week_limit;
+	int	month_limit;
+	int32_t alSocket[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+}TIShopData;
+typedef struct SIShopLogData
+{
+	uint32_t	accountID;
+	char	playerName[CHARACTER_NAME_MAX_LEN + 1];
+	char	buyDate[21];
+	int		buyTime;
+	char	ipAdress[16];

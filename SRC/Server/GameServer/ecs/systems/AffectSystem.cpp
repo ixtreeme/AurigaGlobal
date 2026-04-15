@@ -1,26 +1,734 @@
+#include "../../stdafx.h"
 
-#include "stdafx.h"
+#include "AffectSystem.hpp"
 
-#include "config.h"
-#include "char.h"
-#include "char_manager.h"
-#include "affect.h"
-#include "packet.h"
-#include "buffer_manager.h"
-#include "desc_client.h"
-#include "battle.h"
-#include "guild.h"
-#include "utils.h"
-#include "locale_service.h"
-#include "lua_incl.h"
-#include "arena.h"
-#include "horsename_manager.h"
-#include "item.h"
-#include "DragonSoul.h"
-#include <common/CommonDefines.h>
+#include "../../affect.h"
+#include "../../arena.h"
+#include "../../buffer_manager.h"
+#include "../../char.h"
+#include "../../char_manager.h"
+#include "../../config.h"
+#include "../../desc.h"
+#include "../../desc_client.h"
+#include "../../battle.h"
+#include "../../DragonSoul.h"
+#include "../../guild.h"
+#include "../../horsename_manager.h"
+#include "../../item.h"
+#include "../../locale_service.h"
+#include "../../lua_incl.h"
+#include "../../packet.h"
 #ifdef ENABLE_NEW_USE_POTION
-#include "party.h"
+#include "../../party.h"
 #endif
+#include "../../utils.h"
+#include "../Registry.hpp"
+#include "../components/dirty_components.hpp"
+#include "../components/identity_components.hpp"
+#include "../components/status_components.hpp"
+#include "../events.hpp"
+#include "../EventDispatcher.hpp"
+
+namespace {
+
+const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
+    80, 50, 40, 30, 25, 1
+};
+
+int GetPoisonDamageRate(LPCHARACTER ch)
+{
+    int iRate = ch->IsPC() ? 50 : poison_damage_rate[ch->GetMobRank()];
+    iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
+    return iRate;
+}
+
+EVENTINFO(TPoisonEventInfo)
+{
+    DynamicCharacterPtr ch;
+    int count;
+    uint32_t attacker_pid;
+
+    TPoisonEventInfo()
+        : ch()
+        , count(0)
+        , attacker_pid(0)
+    {
+    }
+};
+
+EVENTFUNC(poison_event)
+{
+    TPoisonEventInfo* info = dynamic_cast<TPoisonEventInfo*>(event->info);
+    if (info == nullptr) {
+        sys_err("poison_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    int dam = ch->GetMaxHP() * GetPoisonDamageRate(ch) / 1000;
+    if (test_server) {
+        ch->ChatPacket(CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
+    }
+
+    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_POISON)) {
+        ch->m_pkPoisonEvent = nullptr;
+        return 0;
+    }
+
+    --info->count;
+    if (info->count) {
+        return PASSES_PER_SEC(3);
+    }
+
+    ch->m_pkPoisonEvent = nullptr;
+    return 0;
+}
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
+    80, 50, 40, 30, 25, 1
+};
+
+int GetBleedingDamageRate(LPCHARACTER ch)
+{
+    int iRate = ch->IsPC() ? 50 : bleeding_damage_rate[ch->GetMobRank()];
+    iRate = MAX(0, iRate - ch->GetPoint(POINT_BLEEDING_REDUCE));
+#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_ITEM_BLEEDING_AS_POISON)
+    iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
+#endif
+    return iRate;
+}
+
+EVENTINFO(TBleedingEventInfo)
+{
+    DynamicCharacterPtr ch;
+    int count;
+    uint32_t attacker_pid;
+
+    TBleedingEventInfo()
+        : ch()
+        , count(0)
+        , attacker_pid(0)
+    {
+    }
+};
+
+EVENTFUNC(bleeding_event)
+{
+    TBleedingEventInfo* info = dynamic_cast<TBleedingEventInfo*>(event->info);
+    if (info == nullptr) {
+        sys_err("bleeding_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    int dam = ch->GetMaxHP() * GetBleedingDamageRate(ch) / 1000;
+    if (test_server) {
+        ch->ChatPacket(CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
+    }
+
+    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_BLEEDING)) {
+        ch->m_pkBleedingEvent = nullptr;
+        return 0;
+    }
+
+    --info->count;
+    if (info->count) {
+        return PASSES_PER_SEC(3);
+    }
+
+    ch->m_pkBleedingEvent = nullptr;
+    return 0;
+}
+#endif
+
+EVENTINFO(TFireEventInfo)
+{
+    DynamicCharacterPtr ch;
+    int count;
+    int amount;
+    uint32_t attacker_pid;
+
+    TFireEventInfo()
+        : ch()
+        , count(0)
+        , amount(0)
+        , attacker_pid(0)
+    {
+    }
+};
+
+EVENTFUNC(fire_event)
+{
+    TFireEventInfo* info = dynamic_cast<TFireEventInfo*>(event->info);
+    if (info == nullptr) {
+        sys_err("fire_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    int dam = info->amount;
+    if (test_server) {
+        ch->ChatPacket(CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
+    }
+
+    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_FIRE)) {
+        ch->m_pkFireEvent = nullptr;
+        return 0;
+    }
+
+    --info->count;
+    if (info->count) {
+        return PASSES_PER_SEC(3);
+    }
+
+    ch->m_pkFireEvent = nullptr;
+    return 0;
+}
+
+int poison_level_adjust[9] = {
+    100, 90, 80, 70, 50, 30, 10, 5, 0
+};
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+int bleeding_level_adjust[9] = {
+    100, 90, 80, 70, 50, 30, 10, 5, 0
+};
+#endif
+
+LPCHARACTER LegacyCharacter(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return nullptr;
+    }
+
+    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    return vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
+}
+
+void MarkPoison(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return;
+    }
+
+    if (auto* sf = g_registry.try_get<ecs::StatusFlags>(e)) {
+        sf->hasPoisoned = value;
+    }
+
+    if (value) {
+        g_registry.emplace_or_replace<ecs::PoisonTag>(e);
+    } else {
+        g_registry.remove<ecs::PoisonTag>(e);
+    }
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+void MarkBleeding(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return;
+    }
+
+    if (auto* sf = g_registry.try_get<ecs::StatusFlags>(e)) {
+        sf->hasBled = value;
+    }
+
+    if (value) {
+        g_registry.emplace_or_replace<ecs::BleedTag>(e);
+    } else {
+        g_registry.remove<ecs::BleedTag>(e);
+    }
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+void MarkFire(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return;
+    }
+
+    if (value) {
+        g_registry.emplace_or_replace<ecs::FireTag>(e);
+    } else {
+        g_registry.remove<ecs::FireTag>(e);
+    }
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+void SyncAffectList(entt::entity e, LPCHARACTER ch)
+{
+    if (!ch || e == entt::null || !g_registry.valid(e)) {
+        return;
+    }
+
+    auto& affectList = g_registry.get_or_emplace<ecs::AffectList>(e);
+    affectList.affects.assign(ch->GetAffectContainer().begin(), ch->GetAffectContainer().end());
+    affectList.isLoaded = true;
+}
+
+} // namespace
+
+namespace AffectSystem {
+
+void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count)
+{
+    MarkFire(target, true);
+
+    LPCHARACTER ch = LegacyCharacter(target);
+    if (!ch || ch->m_pkFireEvent) {
+        return;
+    }
+
+    ch->AddAffect(AFFECT_FIRE, POINT_NONE, 0, AFF_FIRE, count * 3 + 1, 0, true);
+
+    TFireEventInfo* info = AllocEventInfo<TFireEventInfo>();
+    info->ch = ch;
+    info->count = count;
+    info->amount = amount;
+
+    if (LPCHARACTER pkAttacker = LegacyCharacter(attacker)) {
+        info->attacker_pid = pkAttacker->GetPlayerID();
+    } else {
+        info->attacker_pid = 0;
+    }
+
+    ch->m_pkFireEvent = event_create(fire_event, info, 1);
+}
+
+void RemoveFire(entt::entity e)
+{
+    MarkFire(e, false);
+
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return;
+    }
+
+    ch->RemoveAffect(AFFECT_FIRE);
+    event_cancel(&ch->m_pkFireEvent);
+}
+
+void ApplyPoison(entt::entity target, entt::entity attacker)
+{
+    MarkPoison(target, true);
+
+    LPCHARACTER ch = LegacyCharacter(target);
+    if (!ch || ch->m_pkPoisonEvent) {
+        return;
+    }
+
+    if (ch->m_bHasPoisoned && !ch->IsPC()) {
+        return;
+    }
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    if (ch->m_pkBleedingEvent) {
+        return;
+    }
+
+    if (ch->m_bHasBled && !ch->IsPC()) {
+        return;
+    }
+#endif
+
+    LPCHARACTER pkAttacker = LegacyCharacter(attacker);
+    if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
+        int delta = ch->GetLevel() - pkAttacker->GetLevel();
+        if (delta > 8) {
+            delta = 8;
+        }
+
+        if (number(1, 100) > poison_level_adjust[delta]) {
+            return;
+        }
+    }
+
+    ch->m_bHasPoisoned = true;
+    ch->AddAffect(AFFECT_POISON, POINT_NONE, 0, AFF_POISON, POISON_LENGTH + 1, 0, true);
+
+    TPoisonEventInfo* info = AllocEventInfo<TPoisonEventInfo>();
+    info->ch = ch;
+    info->count = 10;
+    info->attacker_pid = pkAttacker ? pkAttacker->GetPlayerID() : 0;
+    ch->m_pkPoisonEvent = event_create(poison_event, info, 1);
+
+    if (test_server && pkAttacker) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "POISON %s -> %s", pkAttacker->GetName(), ch->GetName());
+        pkAttacker->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+    }
+}
+
+void RemovePoison(entt::entity e)
+{
+    MarkPoison(e, false);
+
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return;
+    }
+
+    ch->RemoveAffect(AFFECT_POISON);
+    event_cancel(&ch->m_pkPoisonEvent);
+}
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+void ApplyBleeding(entt::entity target, entt::entity attacker)
+{
+    MarkBleeding(target, true);
+
+    LPCHARACTER ch = LegacyCharacter(target);
+    if (!ch || ch->m_pkBleedingEvent) {
+        return;
+    }
+
+    if (ch->m_bHasBled && !ch->IsPC()) {
+        return;
+    }
+
+    if (ch->m_pkPoisonEvent) {
+        return;
+    }
+
+    if (ch->m_bHasPoisoned && !ch->IsPC()) {
+        return;
+    }
+
+    LPCHARACTER pkAttacker = LegacyCharacter(attacker);
+    if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
+        int delta = ch->GetLevel() - pkAttacker->GetLevel();
+        if (delta > 8) {
+            delta = 8;
+        }
+
+        if (number(1, 100) > bleeding_level_adjust[delta]) {
+            return;
+        }
+    }
+
+    ch->m_bHasBled = true;
+    ch->AddAffect(AFFECT_BLEEDING, POINT_NONE, 0, AFF_BLEEDING, BLEEDING_LENGTH + 1, 0, true);
+
+    TBleedingEventInfo* info = AllocEventInfo<TBleedingEventInfo>();
+    info->ch = ch;
+    info->count = 10;
+    info->attacker_pid = pkAttacker ? pkAttacker->GetPlayerID() : 0;
+    ch->m_pkBleedingEvent = event_create(bleeding_event, info, 1);
+
+    if (test_server && pkAttacker) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", pkAttacker->GetName(), ch->GetName());
+        pkAttacker->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+    }
+}
+
+void RemoveBleeding(entt::entity e)
+{
+    MarkBleeding(e, false);
+
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return;
+    }
+
+    ch->RemoveAffect(AFFECT_BLEEDING);
+    event_cancel(&ch->m_pkBleedingEvent);
+}
+#else
+void ApplyBleeding(entt::entity, entt::entity)
+{
+}
+
+void RemoveBleeding(entt::entity)
+{
+}
+#endif
+
+bool IsImmune(entt::entity e, uint32_t immuneFlag)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return false;
+    }
+
+    if (IS_SET(ch->GetImmuneFlag(), immuneFlag))
+    {
+#ifdef ENABLE_IMMUNE_PERC
+        int immune_pct = 90;
+        int percent = number(1, 100);
+
+        if (percent <= immune_pct)
+#else
+        if (true)
+#endif
+        {
+            if (test_server && ch->IsPC()) {
+                ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ch->GetName());
+            }
+
+            return true;
+        }
+
+        if (test_server && ch->IsPC()) {
+            ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ch->GetName());
+        }
+
+        return false;
+    }
+
+    if (test_server && ch->IsPC()) {
+        ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ch->GetName());
+    }
+
+    return false;
+}
+
+void ApplyMobAttribute(entt::entity target, const TMobTable* table)
+{
+    LPCHARACTER ch = LegacyCharacter(target);
+    if (!ch || !table) {
+        return;
+    }
+
+    for (int i = 0; i < MOB_ENCHANTS_MAX_NUM; ++i) {
+        if (table->cEnchants[i] != 0) {
+            ch->ApplyPoint(aiMobEnchantApplyIdx[i], table->cEnchants[i]);
+        }
+    }
+
+#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
+    if (table->cEnchants[MOB_ENCHANT_POISON] != 0) {
+        ch->ApplyPoint(APPLY_BLEEDING_PCT, table->cEnchants[MOB_ENCHANT_POISON] / 50);
+    }
+#endif
+
+    for (int i = 0; i < MOB_RESISTS_MAX_NUM; ++i) {
+        if (table->cResists[i] != 0) {
+            ch->ApplyPoint(aiMobResistsApplyIdx[i], table->cResists[i]);
+        }
+    }
+
+#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_CLAW_AS_DAGGER)
+    if (table->cResists[MOB_RESIST_DAGGER] != 0) {
+        ch->ApplyPoint(APPLY_RESIST_CLAW, table->cResists[MOB_RESIST_DAGGER]);
+    }
+#endif
+
+#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
+    if (table->cResists[MOB_RESIST_POISON] != 0) {
+        ch->ApplyPoint(APPLY_BLEEDING_REDUCE, table->cResists[MOB_RESIST_POISON]);
+    }
+#endif
+
+    if (target != entt::null && g_registry.valid(target)) {
+        g_registry.emplace_or_replace<ecs::DirtyTag>(target);
+    }
+}
+
+CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->FindAffect(type, apply) : nullptr;
+}
+
+bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
+               uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
+               bool isCube)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return false;
+    }
+
+    const bool result = ch->AddAffect(type, applyOn, applyValue, flag, duration, spCost, overwrite, isCube);
+    SyncAffectList(e, ch);
+    return result;
+}
+
+bool RemoveAffect(entt::entity e, uint32_t type)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return false;
+    }
+
+    const bool result = ch->RemoveAffect(type);
+    SyncAffectList(e, ch);
+    return result;
+}
+
+void ClearAffect(entt::entity e, bool save)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return;
+    }
+
+    ch->ClearAffect(save);
+    SyncAffectList(e, ch);
+}
+
+void RefreshAffect(entt::entity e)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    if (!ch) {
+        return;
+    }
+
+    ch->RefreshAffect();
+    SyncAffectList(e, ch);
+}
+
+void UpdateAffect(entt::registry& reg, uint32_t tick)
+{
+    if ((tick % PASSES_PER_SEC(1)) != 0) {
+        return;
+    }
+
+    auto view = reg.view<ecs::VIDComponent>();
+    view.each([&](entt::entity e, const ecs::VIDComponent& vid) {
+        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
+        if (!ch) {
+            return;
+        }
+
+        SyncAffectList(e, ch);
+    });
+}
+
+} // namespace AffectSystem
+
+void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
+{
+    AffectSystem::ApplyFire(
+        CVIDRegistry::Instance().Find(GetVID()),
+        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null,
+        amount,
+        count);
+}
+
+void CHARACTER::AttackedByPoison(LPCHARACTER pkAttacker)
+{
+    AffectSystem::ApplyPoison(
+        CVIDRegistry::Instance().Find(GetVID()),
+        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null);
+}
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+void CHARACTER::AttackedByBleeding(LPCHARACTER pkAttacker)
+{
+    AffectSystem::ApplyBleeding(
+        CVIDRegistry::Instance().Find(GetVID()),
+        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null);
+}
+#endif
+
+void CHARACTER::RemoveFire()
+{
+    AffectSystem::RemoveFire(CVIDRegistry::Instance().Find(GetVID()));
+}
+
+void CHARACTER::RemovePoison()
+{
+    AffectSystem::RemovePoison(CVIDRegistry::Instance().Find(GetVID()));
+}
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+void CHARACTER::RemoveBleeding()
+{
+    AffectSystem::RemoveBleeding(CVIDRegistry::Instance().Find(GetVID()));
+}
+#endif
+
+bool CHARACTER::IsImmune(uint32_t dwImmuneFlag)
+{
+    return AffectSystem::IsImmune(CVIDRegistry::Instance().Find(GetVID()), dwImmuneFlag);
+}
+
+void CHARACTER::ApplyMobAttribute(const TMobTable* table)
+{
+    AffectSystem::ApplyMobAttribute(CVIDRegistry::Instance().Find(GetVID()), table);
+}
+
+void AffectSystem_Update(entt::registry& reg, uint32_t tick)
+{
+    // migrated from CHARACTER::ProcessAffect
+    if ((tick % PASSES_PER_SEC(1)) != 0) {
+        return;
+    }
+
+    AffectSystem::UpdateAffect(reg, tick);
+
+    auto view = reg.view<ecs::AffectList>();
+    view.each([&](const entt::entity entity, ecs::AffectList& affectList) {
+        bool dirty = false;
+
+        for (auto it = affectList.affects.begin(); it != affectList.affects.end();) {
+            CAffect* affect = *it;
+            if (!affect) {
+                it = affectList.affects.erase(it);
+                dirty = true;
+                continue;
+            }
+
+            if (affect->lDuration != INFINITE_AFFECT_DURATION) {
+                --affect->lDuration;
+            }
+
+            if (affect->lDuration > 0 || affect->lDuration == INFINITE_AFFECT_DURATION) {
+                ++it;
+                continue;
+            }
+
+            g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect->dwType });
+            CAffect::Release(affect);
+            it = affectList.affects.erase(it);
+            dirty = true;
+        }
+
+        affectList.skillAffects.erase(
+            std::remove_if(affectList.skillAffects.begin(), affectList.skillAffects.end(), [&](TAffectSkills& affect) {
+                if (affect.lDuration != INFINITE_AFFECT_DURATION) {
+                    --affect.lDuration;
+                }
+
+                if (affect.lDuration > 0 || affect.lDuration == INFINITE_AFFECT_DURATION) {
+                    return false;
+                }
+
+                g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect.dwType });
+                dirty = true;
+                return true;
+            }),
+            affectList.skillAffects.end());
+
+        if (dirty) {
+            reg.emplace_or_replace<ecs::DirtyTag>(entity);
+        }
+    });
+}
+
+// char_affect.cpp moved into AffectSystem.cpp
+
 
 #define IS_NO_SAVE_AFFECT(type) ((type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
 #define IS_NO_CLEAR_ON_DEATH_AFFECT(type) ((type) == AFFECT_PVM_RACE || (type) == AFFECT_BLOCK_CHAT || ((type) >= 500 && (type) < 600) || ((type) >= 564 && (type) < 566) || ((type) >= NEW_AFFECT_BIOLOGIST_1 && (type) <= NEW_AFFECT_BIOLOGIST_16))

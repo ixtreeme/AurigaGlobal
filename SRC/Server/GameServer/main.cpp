@@ -52,6 +52,15 @@
 #include "spam.h"
 #include "skill_power.h"
 #include "DragonSoul.h"
+#include "ecs/Registry.hpp"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
+#include "ecs/systems/VitalRegenSystem.hpp"
+#include "ecs/systems/AISystem.hpp"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include <boost/bind.hpp>
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -839,6 +848,28 @@ int idle()
 
 	t = get_dword_time();
 	CHARACTER_MANAGER::instance().Update(thecore_heart->pulse);
+	// ECS system tick - runs alongside legacy update during migration
+	{
+		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
+		AISystem_Update(g_registry, tick);
+		MovementSystem_Update(g_registry, tick);
+		CombatSystem_Update(g_registry, tick);
+		VitalRegenSystem_Update(g_registry, tick);
+		AffectSystem::UpdateAffect(g_registry, tick);
+		AffectSystem_Update(g_registry, tick);
+		NetworkSyncSystem_Update(g_registry, tick);
+		g_dispatcher.update();
+		// Phase 7 verification log - REMOVE IN PHASE 9
+		static uint32_t s_ecsdebug = 0;
+		if (++s_ecsdebug % 3000 == 0) {
+			size_t ecsCount = 0;
+			for (auto entity : g_registry.storage<entt::entity>().each()) {
+				(void)entity;
+				++ecsCount;
+			}
+			sys_log(0, "ECS registry: %zu alive entities", ecsCount);
+		}
+	}
 	db_clientdesc->Update(t);
 	s_dwProfiler[PROF_CHR_UPDATE] += (get_dword_time() - t);
 
@@ -1007,4 +1038,8 @@ int io_loop(LPFDWATCH fdw)
 
 	return 1;
 }
+
+
+
+
 

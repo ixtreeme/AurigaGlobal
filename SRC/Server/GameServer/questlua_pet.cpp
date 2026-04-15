@@ -24,6 +24,8 @@ namespace quest
 	// syntax in LUA: pet.summon(mob_vnum, pet's name, (bool)run to me from far away)
 	ALUA(pet_summon)
 	{
+		// migrated from CHARACTER CPetSystem
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CPetSystem* petSystem = ch->GetPetSystem();
 		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
@@ -67,6 +69,8 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA(pet_unsummon)
 	{
+		// migrated from CHARACTER CPetSystem
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (!ch)
 			return 0;
@@ -92,6 +96,8 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA(pet_count_summoned)
 	{
+		// migrated from CHARACTER CPetSystem
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CPetSystem* petSystem = ch->GetPetSystem();
 
@@ -108,6 +114,8 @@ namespace quest
 	// syntax: pet.is_summon(mob_vnum)
 	ALUA(pet_is_summon)
 	{
+		// migrated from CHARACTER CPetSystem
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CPetSystem* petSystem = ch->GetPetSystem();
 
@@ -129,6 +137,8 @@ namespace quest
 
 	ALUA(pet_spawn_effect)
 	{
+		// migrated from CHARACTER CPetSystem
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CPetSystem* petSystem = ch->GetPetSystem();
 
@@ -168,3 +178,4 @@ namespace quest
 #endif
 
 }
+

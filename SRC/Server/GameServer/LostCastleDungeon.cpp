@@ -741,8 +741,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             if (!clone)
                 continue;
 
-            clone->SetCharType(CHAR_TYPE_PC);
-            clone->SetFakePlayer(true);
+            //clone->SetCharType(CHAR_TYPE_PC);
+        //    clone->SetFakePlayer(true);
             clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
@@ -1291,8 +1291,8 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         if (!clone)
             continue;
 
-        clone->SetCharType(CHAR_TYPE_PC);
-        clone->SetFakePlayer(true);
+       // clone->SetCharType(CHAR_TYPE_PC);
+      //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
         clone->SetRace((uint8_t)source->GetRaceNum());
@@ -1764,22 +1764,22 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
         return true;
 
     // Player/NPC -> Clone
-    if (!attackerIsClone && victimIsClone)
-    {
-        if (!(attacker->IsPC() || attacker->IsFakePlayer()))
-            return false;
+    //if (!attackerIsClone && victimIsClone)
+    //{
+    //    if (!(attacker->IsPC() || attacker->IsFakePlayer()))
+    //        return false;
 
-        return s_lc.IsCloneAttackAllowed(vVid, attacker->GetPlayerID());
-    }
+    //    return s_lc.IsCloneAttackAllowed(vVid, attacker->GetPlayerID());
+    //}
 
-    // Clone -> Player/NPC
-    if (attackerIsClone && !victimIsClone)
-    {
-        if (!(victim->IsPC() || victim->IsFakePlayer()))
-            return false;
+    //// Clone -> Player/NPC
+    //if (attackerIsClone && !victimIsClone)
+    //{
+    //    if (!(victim->IsPC() || victim->IsFakePlayer()))
+    //        return false;
 
-        return s_lc.IsCloneAttackAllowed(aVid, victim->GetPlayerID());
-    }
+    //    return s_lc.IsCloneAttackAllowed(aVid, victim->GetPlayerID());
+    //}
 
     // Clone -> Clone tiltás
     return false;

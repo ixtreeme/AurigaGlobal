@@ -13,6 +13,7 @@
 #include "db.h"
 #include "config.h"
 #include "battle_pass.h"
+#include "ecs/quest_helpers.hpp"
 #ifdef ENABLE_MELEY_LAIR
 #include "guild.h"
 #endif
@@ -43,6 +44,8 @@ namespace quest
 #if defined(__DUNGEON_INFO_SYSTEM__)
 	ALUA(dungeon_update_rank)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		// DungeonMapIndex, FinishTime, HighestDamage
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
@@ -96,6 +99,8 @@ namespace quest
 
 	ALUA(dungeon_get_rank)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_tonumber(L, 1) || !lua_tonumber(L, 2)) {
 			sys_err("Invalid argument");
 			return 0;
@@ -199,6 +204,8 @@ namespace quest
 
 	ALUA(dungeon_get_my_rank)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		// DungeonMapIndex, RankingType (Completed|FinishTime|HighestDamage)
 		if (!lua_tonumber(L, 1) || !lua_tonumber(L, 2))
 		{
@@ -243,18 +250,27 @@ namespace quest
 
 	ALUA(dungeon_join_coords)
 	{
-		//if (lua_gettop(L) < 3 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
+		// migrated from CHARACTER::GetDungeon()
+		// DUAL-PATH: ECS update + legacy call during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
 			sys_err("not enough arguments.");
 			return 0;
 		}
 
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* dm = ECS_TryGet<ecs::DungeonMembership>(e);
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 		LPDUNGEON pDungeon = CDungeonManager::instance().Create(mapidx);
 		if (!pDungeon) {
 			sys_err("dungeon %s cannot be started.", mapidx);
 			return 0;
+		}
+
+		if (dm)
+		{
+			dm->dungeon = pDungeon;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
@@ -276,6 +292,8 @@ namespace quest
 
 	ALUA(dungeon_find)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy fallback during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -299,6 +317,8 @@ namespace quest
 
 	ALUA(dungeon_jump_all)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 3 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
@@ -321,6 +341,8 @@ namespace quest
 
 	ALUA(dungeon_set_unique)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 3 || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || !lua_isnumber(L, 3))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2) || !lua_isnumber(L, 3))
 		{
@@ -343,6 +365,8 @@ namespace quest
 
 	ALUA(dungeon_is_unique_dead)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy fallback during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -367,6 +391,8 @@ namespace quest
 
 	ALUA(dungeon_get_unique_vid)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy fallback during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -391,6 +417,8 @@ namespace quest
 
 	ALUA(dungeon_kill_unique)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -413,6 +441,8 @@ namespace quest
 
 	ALUA(dungeon_set_flag)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 3 || !lua_isnumber(L, 1) || !lua_isstring(L, 2) || !lua_isnumber(L, 3))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2) || !lua_isnumber(L, 3))
 		{
@@ -435,6 +465,8 @@ namespace quest
 
 	ALUA(dungeon_get_flag)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy fallback during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -459,6 +491,8 @@ namespace quest
 
 	ALUA(dungeon_notice)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 #ifdef TEXTS_IMPROVEMENT
 		//if (lua_gettop(L) < 3 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3))
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3))
@@ -497,6 +531,8 @@ namespace quest
 
 	ALUA(dungeon_spawn_mob)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 4 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		{
@@ -561,6 +597,8 @@ namespace quest
 
 	ALUA(dungeon_set_regen_file)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -583,6 +621,8 @@ namespace quest
 
 	ALUA(dungeon_regen_file)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -605,6 +645,8 @@ namespace quest
 
 	ALUA(dungeon_clear_regen)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -627,6 +669,8 @@ namespace quest
 
 	ALUA(dungeon_set_vid_invincible)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isboolean(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isboolean(L, 2))
 		{
@@ -679,6 +723,8 @@ namespace quest
 
 	ALUA(dungeon_exit_all_lobby)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
@@ -701,6 +747,8 @@ namespace quest
 
 	ALUA(dungeon_count_monster)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy fallback during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -725,6 +773,8 @@ namespace quest
 
 	ALUA(dungeon_kill_all)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -747,6 +797,8 @@ namespace quest
 
 	ALUA(dungeon_kill_all_monsters)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -769,6 +821,8 @@ namespace quest
 
 	ALUA(dungeon_cmdchat)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		if (!lua_isnumber(L, 1) || !lua_isstring(L, 2))
 		{
@@ -791,6 +845,8 @@ namespace quest
 
 	ALUA(dungeon_purge_vid)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -812,6 +868,8 @@ namespace quest
 #ifdef __DEFENSE_WAVE__
 	ALUA(dungeon_kill_all_monstershydra)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -834,6 +892,8 @@ namespace quest
 
 	ALUA(dungeon_restore_mast_partial_life)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		//if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		if (!lua_isnumber(L, 1))
 		{
@@ -873,6 +933,8 @@ namespace quest
 
 	ALUA(dungeon_check_entrance)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		std::string r = "";
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) || !lua_isnumber(L, 5) || !lua_isstring(L, 6))
@@ -1021,6 +1083,8 @@ namespace quest
 
 	ALUA(dungeon_remove_item)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		std::string r = "";
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) || !lua_isnumber(L, 5) || !lua_isnumber(L, 6) || !lua_isnumber(L, 7) || !lua_isnumber(L, 8) || !lua_isnumber(L, 9) || !lua_isnumber(L, 10) || !lua_isnumber(L, 11) || !lua_isnumber(L, 12) || !lua_isnumber(L, 13) || !lua_isnumber(L, 14) || !lua_isnumber(L, 15) || !lua_isnumber(L, 16) || !lua_isnumber(L, 17) || !lua_isstring(L, 18))
@@ -1229,6 +1293,8 @@ namespace quest
 
 	ALUA(dungeon_complete)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		std::string r;
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isstring(L, 4))
@@ -1423,6 +1489,8 @@ namespace quest
 
 	ALUA(dungeon_check_entrance_meley)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		std::string r = "";
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) || !lua_isstring(L, 5))
 		{
@@ -1556,6 +1624,8 @@ namespace quest
 
 	ALUA(dungeon_remove_item_meley)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 		std::string r = "";
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3))
@@ -1625,6 +1695,8 @@ namespace quest
 
 	ALUA(dungeon_attack_meley)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("not enough arguments.");
@@ -1687,6 +1759,8 @@ namespace quest
 
 	ALUA(dungeon_set_meley_last_statue)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("not enough arguments.");
@@ -1726,6 +1800,8 @@ namespace quest
 
 	ALUA(dungeon_kill_meley)
 	{
+		// migrated from CHARACTER::GetDungeon
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("not enough arguments.");
@@ -1846,3 +1922,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("d", dungeon_functions);
 	}
 }
+

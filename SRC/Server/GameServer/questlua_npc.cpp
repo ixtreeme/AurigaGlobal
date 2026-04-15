@@ -7,6 +7,8 @@
 #include "char_manager.h"
 #include "shop_manager.h"
 #include "guild.h"
+#include "ecs/quest_helpers.hpp"
+#include "ecs/events.hpp"
 
 namespace quest
 {
@@ -15,6 +17,8 @@ namespace quest
 	//
 	ALUA(npc_open_shop)
 	{
+		// migrated from CHARACTER::StartShopping
+		// DUAL-PATH: legacy only during migration window
 		int iShopVnum = 0;
 		if (lua_gettop(L) == 1)
 		{
@@ -29,46 +33,64 @@ namespace quest
 
 	ALUA(npc_is_pc)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-		if (npc && npc->IsPC())
-			lua_pushboolean(L, 1);
-		else
-			lua_pushboolean(L, 0);
+		// migrated from CHARACTER::IsPC()
+		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
+		if (npcE == entt::null || !g_registry.valid(npcE)) {
+			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+			lua_pushboolean(L, (npc && npc->IsPC()) ? 1 : 0);
+			return 1;
+		}
+		lua_pushboolean(L, g_registry.all_of<ecs::TagPC>(npcE) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(npc_get_empire)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-		if (npc)
-			lua_pushnumber(L, npc->GetEmpire());
-		else
-			lua_pushnumber(L, 0);
+		// migrated from CHARACTER::GetEmpire()
+		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
+		auto* emp = ECS_TryGet<ecs::EmpireComponent>(npcE);
+		if (!emp) {
+			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+			lua_pushnumber(L, npc ? npc->GetEmpire() : 0);
+			return 1;
+		}
+		lua_pushnumber(L, emp->value);
 		return 1;
 	}
 
 	ALUA(npc_get_race)
 	{
-		lua_pushnumber(L, CQuestManager::instance().GetCurrentNPCRace());
+		// migrated from CHARACTER::GetRaceNum()
+		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
+		auto* race = ECS_TryGet<ecs::RaceComponent>(npcE);
+		if (!race) {
+			lua_pushnumber(L, CQuestManager::instance().GetCurrentNPCRace());
+			return 1;
+		}
+		lua_pushnumber(L, race->value);
 		return 1;
 	}
 
 	ALUA(npc_get_guild)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-		CGuild* pGuild = nullptr;
-		if (npc)
-			pGuild = npc->GetGuild();
-
-		lua_pushnumber(L, pGuild ? pGuild->GetID() : 0);
+		// migrated from CHARACTER::GetGuild()
+		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
+		auto* gm = ECS_TryGet<ecs::GuildMembership>(npcE);
+		if (!gm) {
+			CQuestManager& q = CQuestManager::instance();
+			LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
+			CGuild* pGuild = npc ? npc->GetGuild() : nullptr;
+			lua_pushnumber(L, pGuild ? pGuild->GetID() : 0);
+			return 1;
+		}
+		lua_pushnumber(L, (gm->guild ? gm->guild->GetID() : 0));
 		return 1;
 	}
 
 	ALUA(npc_is_quest)
 	{
+		// migrated from CHARACTER::GetQuestBy
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -89,57 +111,76 @@ namespace quest
 
 	ALUA(npc_kill)
 	{
+		// migrated from CHARACTER::Dead
+		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
+		entt::entity npcE = q.GetNPCEntity(L);
+		entt::entity pcE = q.GetPCEntity(L);
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		ch->SetQuestNPCID(0);
-		if (npc)
-		{
-			npc->Dead();
+		if (ch)
+			ch->SetQuestNPCID(0);
+		if (g_registry.valid(npcE)) {
+			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
+			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
 		}
+		if (npc)
+			npc->Dead();
 		return 0;
 	}
 
 	ALUA(npc_purge)
 	{
+		// migrated from CHARACTER::Dead
+		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
+		entt::entity npcE = q.GetNPCEntity(L);
+		entt::entity pcE = q.GetPCEntity(L);
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		ch->SetQuestNPCID(0);
-		if (npc)
-		{
-			M2_DESTROY_CHARACTER(npc);
+		if (ch)
+			ch->SetQuestNPCID(0);
+		if (g_registry.valid(npcE)) {
+			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
+			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
 		}
+		if (npc)
+			M2_DESTROY_CHARACTER(npc);
 		return 0;
 	}
 
 	ALUA(npc_is_near)
 	{
+		// migrated from CHARACTER::GetX/GetY
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-
+		entt::entity pcE = q.GetPCEntity(L);
+		entt::entity npcE = q.GetNPCEntity(L);
+		auto* pcPos = ECS_TryGet<ecs::Position>(pcE);
+		auto* npcPos = ECS_TryGet<ecs::Position>(npcE);
 		lua_Number dist = 10;
-
 		if (lua_isnumber(L, 1))
 			dist = lua_tonumber(L, 1);
 
-		if (ch == nullptr || npc == nullptr)
+		if (!pcPos || !npcPos)
 		{
-			lua_pushboolean(L, false);
-		}
-		else
-		{
-			lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+			LPCHARACTER ch = q.GetCurrentCharacterPtr();
+			LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
+			if (ch == nullptr || npc == nullptr)
+				lua_pushboolean(L, false);
+			else
+				lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+			return 1;
 		}
 
+		lua_pushboolean(L, DISTANCE_APPROX(pcPos->x - npcPos->x, pcPos->y - npcPos->y) < dist*100);
 		return 1;
 	}
 
 	ALUA(npc_is_near_vid)
 	{
+		// migrated from CHARACTER::GetX/GetY
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("invalid vid");
@@ -148,28 +189,33 @@ namespace quest
 		}
 
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find((uint32_t)lua_tonumber(L, 1));
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-
+		entt::entity targetE = CVIDRegistry::Instance().Find((uint32_t)lua_tonumber(L, 1));
+		entt::entity npcE = q.GetNPCEntity(L);
+		auto* targetPos = ECS_TryGet<ecs::Position>(targetE);
+		auto* npcPos = ECS_TryGet<ecs::Position>(npcE);
 		lua_Number dist = 10;
-
 		if (lua_isnumber(L, 2))
 			dist = lua_tonumber(L, 2);
 
-		if (ch == nullptr || npc == nullptr)
+		if (!targetPos || !npcPos)
 		{
-			lua_pushboolean(L, false);
-		}
-		else
-		{
-			lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find((uint32_t)lua_tonumber(L, 1));
+			LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
+			if (ch == nullptr || npc == nullptr)
+				lua_pushboolean(L, false);
+			else
+				lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+			return 1;
 		}
 
+		lua_pushboolean(L, DISTANCE_APPROX(targetPos->x - npcPos->x, targetPos->y - npcPos->y) < dist*100);
 		return 1;
 	}
 
 	ALUA(npc_unlock)
 	{
+		// migrated from CHARACTER::SetQuestNPCID
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
@@ -189,6 +235,8 @@ namespace quest
 
 	ALUA(npc_lock)
 	{
+		// migrated from CHARACTER::SetQuestNPCID
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
@@ -214,6 +262,8 @@ namespace quest
 
 	ALUA(npc_get_leader_vid)
 	{
+		// migrated from CHARACTER::GetParty
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -235,17 +285,24 @@ namespace quest
 
 	ALUA(npc_get_vid)
 	{
+		// migrated from CHARACTER::GetVID()
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-
-		lua_pushnumber(L, npc->GetVID());
-
-
+		entt::entity npcE = q.GetNPCEntity(L);
+		auto* vid = ECS_TryGet<ecs::VIDComponent>(npcE);
+		if (!vid)
+		{
+			LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
+			lua_pushnumber(L, npc ? npc->GetVID() : 0);
+			return 1;
+		}
+		lua_pushnumber(L, vid->value);
 		return 1;
 	}
 
 	ALUA(npc_get_vid_attack_mul)
 	{
+		// migrated from CHARACTER::GetAttMul
+		// DUAL-PATH: legacy fallback during migration window
 		if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		{
 			sys_err("not enough arguments.");
@@ -268,6 +325,8 @@ namespace quest
 
 	ALUA(npc_set_vid_attack_mul)
 	{
+		// migrated from CHARACTER::SetAttMul
+		// DUAL-PATH: legacy only during migration window
 		if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("not enough arguments.");
@@ -288,6 +347,8 @@ namespace quest
 
 	ALUA(npc_get_vid_damage_mul)
 	{
+		// migrated from CHARACTER::GetDamMul
+		// DUAL-PATH: legacy fallback during migration window
 		if (lua_gettop(L) < 1 || !lua_isnumber(L, 1))
 		{
 			sys_err("not enough arguments.");
@@ -310,6 +371,8 @@ namespace quest
 
 	ALUA(npc_set_vid_damage_mul)
 	{
+		// migrated from CHARACTER::SetDamMul
+		// DUAL-PATH: legacy only during migration window
 		if (lua_gettop(L) < 2 || !lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("not enough arguments.");
@@ -331,6 +394,8 @@ namespace quest
 #ifdef ENABLE_NEWSTUFF
 	ALUA(npc_get_level0)
 	{
+		// migrated from CHARACTER::GetLevel
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -340,6 +405,8 @@ namespace quest
 
 	ALUA(npc_get_name0)
 	{
+		// migrated from CHARACTER::GetName
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -349,6 +416,8 @@ namespace quest
 
 	ALUA(npc_get_pid0)
 	{
+		// migrated from CHARACTER::GetPlayerID
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -358,6 +427,8 @@ namespace quest
 
 	ALUA(npc_get_vnum0)
 	{
+		// migrated from CHARACTER::GetRaceNum
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -367,6 +438,8 @@ namespace quest
 
 	ALUA(npc_is_available0)
 	{
+		// migrated from CHARACTER::IsNPC
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
@@ -434,3 +507,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("npc", npc_functions);
 	}
 };
+

@@ -12,6 +12,9 @@
 #include "item_manager.h"
 #include "item.h"
 #include "desc.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/components/movement_components.hpp"
 
 
 EVENTINFO(petsystem_event_info)
@@ -266,15 +269,23 @@ bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 
 	//if (m_pkChar->Goto(m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy))
 	//	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	if (!m_pkChar->IsStateMove() && m_pkChar->Goto(dest_x, dest_y))
+	const entt::entity petEntity = AIHelpers::EcsOf(m_pkChar);
+	const bool isMoving = petEntity != entt::null
+		&& g_registry.valid(petEntity)
+		&& g_registry.all_of<ecs::MovementDestination>(petEntity);
+	if (!isMoving && m_pkChar->Goto(dest_x, dest_y))
+	{
+		if (petEntity != entt::null && g_registry.valid(petEntity))
+			g_registry.emplace_or_replace<ecs::MovementDestination>(petEntity, static_cast<int32_t>(dest_x), static_cast<int32_t>(dest_y));
 		m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+	}
 
 	m_dwLastActionTime = get_dword_time();
 
 	return true;
 }
 
-// char_state.cpp StateHorse함수 그냥 C&P -_-;
+// StateHorse함수 그냥 C&P -_-;
 bool CPetActor::_UpdateFollowAI()
 {
 	if (nullptr == m_pkChar->m_pkMobData)

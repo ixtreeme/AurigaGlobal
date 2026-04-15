@@ -48,6 +48,11 @@
 #include "mount_inventory_helper.h"
 #include "MountInventory.h"
 #include "input.h"
+#include "ecs/Registry.hpp"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/components/combat_components.hpp"
+#include "ecs/components/dirty_components.hpp"
+#include "ecs/components/movement_components.hpp"
 
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
@@ -104,6 +109,9 @@ static int __deposit_limit()
 #ifdef __SEND_TARGET_INFO__
 void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate TargetInfoLoad handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "CInputMain::PartyInvite.");//INGAME_DEBUG_RAZOR93
 #endif
@@ -394,6 +402,9 @@ int ProcessTextTag(LPCHARACTER ch, const char * c_pszText, uint64_t len)
 
 int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Whisper handler ECS
+// DUAL-PATH: legacy only during migration window
 	const auto pinfo = reinterpret_cast<const TPacketCGWhisper*>(data);
 
 	if (uiBytes < pinfo->wSize)
@@ -808,6 +819,9 @@ struct FYmirChatPacket
 #ifdef __NEWPET_SYSTEM__
 void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate BraveRequestPetName handler ECS
+// DUAL-PATH: legacy only during migration window
 	if (!ch->GetDesc()) { return; }
 	int vid = ch->GetEggVid();
 	if (vid == 0) { return; }
@@ -877,6 +891,9 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 
 int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Chat handler ECS
+// DUAL-PATH: legacy only during migration window
 	//if (ch->IsFakePlayer())
 	//	return false;
 	auto pinfo = reinterpret_cast<const TPacketCGChat*>(data);
@@ -1486,6 +1503,9 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 void CInputMain::ItemUse(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemUse handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1494,6 +1514,9 @@ void CInputMain::ItemUse(LPCHARACTER ch, const char * data)
 
 void CInputMain::ItemToItem(LPCHARACTER ch, const char * pcData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemToItem handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1504,6 +1527,9 @@ void CInputMain::ItemToItem(LPCHARACTER ch, const char * pcData)
 
 void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemDrop handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1526,6 +1552,9 @@ void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
 
 void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemDrop2 handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1547,6 +1576,9 @@ void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
 
 void CInputMain::ItemMove(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemMove handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1559,6 +1591,9 @@ void CInputMain::ItemMove(LPCHARACTER ch, const char * data)
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 void CInputMain::InventoryExpansion(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate InventoryExpansion handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1569,6 +1604,9 @@ void CInputMain::InventoryExpansion(LPCHARACTER ch, const char * data)
 
 void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemPickup handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1586,6 +1624,9 @@ void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 
 void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate QuickslotAdd handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotAdd");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1635,6 +1676,9 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 
 void CInputMain::QuickslotDelete(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate QuickslotDelete handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1644,6 +1688,9 @@ void CInputMain::QuickslotDelete(LPCHARACTER ch, const char * data)
 
 void CInputMain::QuickslotSwap(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate QuickslotSwap handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1653,6 +1700,9 @@ void CInputMain::QuickslotSwap(LPCHARACTER ch, const char * data)
 
 int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Messenger handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1777,6 +1827,9 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 #ifdef ENABLE_BATTLE_PASS
 int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate BattlePass handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1819,6 +1872,9 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 
 int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Shop handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1937,6 +1993,9 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate OnClick handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1953,6 +2012,9 @@ void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 
 void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Exchange handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2123,6 +2185,9 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 
 void CInputMain::Position(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Position handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2237,6 +2302,14 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 	}
 
+	// migrated from CHARACTER::Move
+	entt::entity e = (ch && ch->GetDesc()) ? ch->GetDesc()->GetEntity() : entt::null;
+	if (e != entt::null && g_registry.valid(e))
+	{
+		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(pinfo->lX), static_cast<int32_t>(pinfo->lY));
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+	// DUAL-PATH: ECS + legacy call
 	if (pinfo->bFunc == FUNC_MOVE)
 	{
 		if (ch->GetLimitPoint(POINT_MOV_SPEED) == 0)
@@ -2314,6 +2387,9 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 #ifdef __SKILL_COLOR_SYSTEM__
 void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate SetSkillColor handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2437,6 +2513,16 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					}
 				}
 
+				// migrated from CHARACTER::Attack
+				entt::entity attacker = (ch && ch->GetDesc()) ? ch->GetDesc()->GetEntity() : entt::null;
+				entt::entity target = CVIDRegistry::Instance().Find(packMelee->dwVID);
+				if (attacker != entt::null && target != entt::null && g_registry.valid(attacker) && g_registry.valid(target))
+				{
+					g_registry.emplace_or_replace<ecs::CombatTarget>(attacker, target, get_dword_time());
+					g_registry.emplace_or_replace<ecs::CombatActiveTag>(attacker);
+					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
+				}
+				// DUAL-PATH: ECS + legacy call
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;
@@ -2453,6 +2539,9 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 
 int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate SyncPosition handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2601,6 +2690,9 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 void CInputMain::FlyTarget(LPCHARACTER ch, const char * pcData, uint8_t bHeader)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate FlyTarget handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2610,6 +2702,9 @@ void CInputMain::FlyTarget(LPCHARACTER ch, const char * pcData, uint8_t bHeader)
 
 void CInputMain::UseSkill(LPCHARACTER ch, const char * pcData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate UseSkill handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2619,6 +2714,9 @@ void CInputMain::UseSkill(LPCHARACTER ch, const char * pcData)
 
 void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ScriptButton handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2643,6 +2741,9 @@ void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
 
 void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ScriptAnswer handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2663,6 +2764,9 @@ void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
 // SCRIPT_SELECT_ITEM
 void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ScriptSelectItem handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2674,6 +2778,9 @@ void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
 
 void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate QuestInputString handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2688,6 +2795,9 @@ void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
 
 void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate QuestConfirm handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2704,6 +2814,9 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 
 void CInputMain::Target(LPCHARACTER ch, const char * pcData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Target handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2724,6 +2837,9 @@ void CInputMain::Target(LPCHARACTER ch, const char * pcData)
 
 void CInputMain::Warp(LPCHARACTER ch, const char * pcData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Warp handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2732,6 +2848,9 @@ void CInputMain::Warp(LPCHARACTER ch, const char * pcData)
 
 void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate SafeboxCheckin handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckin");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2851,6 +2970,9 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 
 void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMall)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate SafeboxCheckout handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckout");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2994,6 +3116,9 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 
 void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate SafeboxItemMove handler ECS
+// DUAL-PATH: legacy only during migration window
 
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
@@ -3017,6 +3142,9 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 
 void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate MountInventoryCheckin handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckin");
 #endif
@@ -3131,6 +3259,9 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate MountInventoryCheckout handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckout");
 #endif
@@ -3194,6 +3325,9 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate MountInventoryItemMove handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
 #endif
@@ -3228,6 +3362,9 @@ void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 #ifdef ENABLE_MAP_TELEPORTER
 void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate MapTeleporter handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3326,6 +3463,9 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 // PARTY_JOIN_BUG_FIX
 void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartyInvite handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3352,6 +3492,9 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 
 void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartyInviteAnswer handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3381,6 +3524,9 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 
 void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartySetState handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3445,6 +3591,9 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartyRemove handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3549,6 +3698,9 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate AnswerMakeGuild handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3624,6 +3776,9 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartyUseSkill handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3662,6 +3817,9 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::PartyParameter(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate PartyParameter handler ECS
+// DUAL-PATH: legacy only during migration window
 	TPacketCGPartyParameter * p = (TPacketCGPartyParameter *) c_pData;
 
 	if (ch->GetParty())
@@ -3671,6 +3829,9 @@ void CInputMain::PartyParameter(LPCHARACTER ch, const char * c_pData)
 #ifdef __INGAME_WIKI__
 void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate RecvWikiPacket handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3810,6 +3971,9 @@ size_t GetSubPacketSize(const GUILD_SUBHEADER_CG& header)
 
 int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Guild handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4198,6 +4362,9 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 void CInputMain::Fishing(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Fishing handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4209,6 +4376,9 @@ void CInputMain::Fishing(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemGive handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4233,6 +4403,9 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 
 void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Hack handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4249,6 +4422,9 @@ void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 
 int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate MyShop handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4301,6 +4477,9 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 
 void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Refine handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
 #endif
@@ -4418,6 +4597,9 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 #ifdef ENABLE_ACCE_SYSTEM
 void CInputMain::Acce(LPCHARACTER pkChar, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Acce handler ECS
+// DUAL-PATH: legacy only during migration window
 
 	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(pkChar->GetPlayerID());
 	if (pPC->IsRunning())
@@ -4455,6 +4637,9 @@ void CInputMain::Acce(LPCHARACTER pkChar, const char* c_pData)
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 void CInputMain::CubeRenewalSend(LPCHARACTER ch, const char* data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate CubeRenewalSend handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5007,6 +5192,9 @@ int OfflineshopPacket(const char* data , LPCHARACTER ch, int32_t iBufferLeft)
 
 void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemDestroy handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5023,6 +5211,9 @@ void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
 
 void CInputMain::ItemDivision(LPCHARACTER ch, const char * data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ItemDivision handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5037,6 +5228,9 @@ void CInputMain::ItemDivision(LPCHARACTER ch, const char * data)
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 void CInputMain::FishingNew(LPCHARACTER ch, const char* c_pData)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate FishingNew handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5077,6 +5271,9 @@ void CInputMain::FishingNew(LPCHARACTER ch, const char* c_pData)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate WheelDestiny handler ECS
+// DUAL-PATH: legacy only during migration window
 	if (!ch)
 	{
 		return;
@@ -5642,6 +5839,9 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef ENABLE_SWITCHBOT
 int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate Switchbot handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5695,6 +5895,9 @@ int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 #ifdef ENABLE_MULTI_LANGUAGE
 void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate ChangeLanguage handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5718,6 +5921,9 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 
 void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
 {
+// migrated from CHARACTER handler
+// TODO Phase 8: migrate RequestLanguage handler ECS
+// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ch->ChatPacket(CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif

@@ -5,8 +5,9 @@ set(AURIGA_SERVER_PLATFORM_LIBS
 
 function(auriga_collect_server_sources out_var)
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/*.h")
+    file(GLOB_RECURSE _headerspp CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/*.hpp")
     file(GLOB_RECURSE _sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/*.cpp")
-    set(${out_var} ${_headers} ${_sources} PARENT_SCOPE)
+    set(${out_var} ${_headers} ${_headerspp} ${_sources} PARENT_SCOPE)
 endfunction()
 
 function(auriga_add_server_library target)
@@ -14,6 +15,7 @@ function(auriga_add_server_library target)
     add_library(${target} STATIC ${_module_sources})
     target_link_libraries(${target} PUBLIC SERVER)
     set_target_properties(${target} PROPERTIES FOLDER Server)
+	source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${_module_sources})
 endfunction()
 
 function(auriga_add_server_executable target)
@@ -31,6 +33,7 @@ function(auriga_add_server_executable target)
             ${AURIGA_SERVER_PLATFORM_LIBS}
     )
     set_target_properties(${target} PROPERTIES FOLDER Server)
+	source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${_module_sources})
 endfunction()
 
 add_library(SERVER INTERFACE)

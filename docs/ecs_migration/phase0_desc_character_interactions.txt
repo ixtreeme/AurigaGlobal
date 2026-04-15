@@ -1,0 +1,1798 @@
+SRC/Server/GameServer/arena.cpp:307: chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/arena.cpp:315: chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+SRC/Server/GameServer/arena.cpp:333: chA->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/arena.cpp:340: chB->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/arena.cpp:357: chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/arena.cpp:362: chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+SRC/Server/GameServer/arena.cpp:452: chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/arena.cpp:453: chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/arena.cpp:985: if (pChar->GetDesc() != nullptr) {
+SRC/Server/GameServer/arena.cpp:986: pChar->GetDesc()->Packet(c_pvData, iSize);
+SRC/Server/GameServer/arena.cpp:1004: if (pChar->GetDesc() != nullptr) {
+SRC/Server/GameServer/battle.cpp:1022: //std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/battle.cpp:1023: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/battle_pass.cpp:196: //	if (!GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:589: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:669: pkChar->GetDesc()->BufferedPacket(&packet, sizeof(packet));
+SRC/Server/GameServer/battle_pass.cpp:670: pkChar->GetDesc()->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
+SRC/Server/GameServer/battle_pass.cpp:671: pkChar->GetDesc()->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
+SRC/Server/GameServer/battle_pass.cpp:680: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:734: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:784: if(!pkChar->GetDesc())
+SRC/Server/GameServer/building.cpp:94: LPDESC d;
+SRC/Server/GameServer/building.cpp:96: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/building.cpp:130: LPDESC d;
+SRC/Server/GameServer/building.cpp:132: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/building.cpp:741: LPDESC d = *(it++);
+SRC/Server/GameServer/building.cpp:743: if (d->GetCharacter() && d->GetCharacter()->GetMapIndex() == pTable->lMapIndex)
+SRC/Server/GameServer/building.cpp:746: d->GetCharacter()->SendGuildName(guild);
+SRC/Server/GameServer/building.cpp:937: void CManager::SendLandList(LPDESC d, int32_t lMapIndex)
+SRC/Server/GameServer/building.cpp:956: LPCHARACTER ch  = d->GetCharacter();
+SRC/Server/GameServer/char.cpp:125: DESC* desc = ch->GetDesc();
+SRC/Server/GameServer/char.cpp:149: DESC* otherDesc = other->GetDesc();
+SRC/Server/GameServer/char.cpp:738: if (GetDesc())
+SRC/Server/GameServer/char.cpp:740: GetDesc()->BindCharacter(nullptr);
+SRC/Server/GameServer/char.cpp:919: if (!ch->GetDesc())
+SRC/Server/GameServer/char.cpp:946: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1145: db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, GetDesc()->GetHandle(), &header, sizeof(TItemPriceListTable));
+SRC/Server/GameServer/char.cpp:1277: LPDESC d;
+SRC/Server/GameServer/char.cpp:1278: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/char.cpp:1430: if (entity->IsType(ENTITY_CHARACTER) && GetDesc()) {
+SRC/Server/GameServer/char.cpp:1437: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1462: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1518: if (!viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1547: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1569: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1583: //	if (!viewer->GetDesc()) // Kell hogy legyen kliens socket
+SRC/Server/GameServer/char.cpp:1599: //	viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1621: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1622: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1639: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1640: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1654: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1657: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1661: //		sys_log(0, "WARNING: GetDesc() is null, cannot send belt name update");
+SRC/Server/GameServer/char.cpp:1672: LPDESC d;
+SRC/Server/GameServer/char.cpp:1674: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/char.cpp:1739: pack.bLanguage = (IsPC() && GetDesc()) ? GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/char.cpp:1763: if (pEntity->GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1769: pEntity->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1773: pEntity->GetDesc()->Packet(&pack2, sizeof(pack2));
+SRC/Server/GameServer/char.cpp:1779: if (pEntity->GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1781: pEntity->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1788: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1790: GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1845: void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
+SRC/Server/GameServer/char.cpp:1876: if (GetDesc())
+SRC/Server/GameServer/char.cpp:1877: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1962: strlcpy(tab.ip, GetDesc() ? GetDesc()->GetHostName() : "", sizeof(tab.ip));
+SRC/Server/GameServer/char.cpp:2079: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:2088: db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, GetDesc()->GetHandle(), &table, sizeof(TPlayerTable));
+SRC/Server/GameServer/char.cpp:2116: assert(GetDesc() != NULL);
+SRC/Server/GameServer/char.cpp:2160: LogManager::instance().LoginLog(false, GetDesc()->GetAccountTable().id, GetPlayerID(), GetLevel(), GetJob(), playTime);
+SRC/Server/GameServer/char.cpp:2163: CPCBangManager::instance().Log(GetDesc()->GetHostName(), GetPlayerID(), playTime);
+SRC/Server/GameServer/char.cpp:2264: if (GetDesc())
+SRC/Server/GameServer/char.cpp:2266: GetDesc()->BindCharacter(nullptr);
+SRC/Server/GameServer/char.cpp:2419: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:2496: mainChrPacket.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2502: GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter4_BGM_VOL));
+SRC/Server/GameServer/char.cpp:2514: mainChrPacket.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2518: GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter3_BGM));
+SRC/Server/GameServer/char.cpp:2535: pack.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2538: GetDesc()->Packet(&pack, sizeof(TPacketGCMainCharacter));
+SRC/Server/GameServer/char.cpp:2548: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:2574: GetDesc()->Packet(&pack, sizeof(TPacketGCPoints));
+SRC/Server/GameServer/char.cpp:2686: if (!GetDesc() || !*GetDesc()->GetHostName())
+SRC/Server/GameServer/char.cpp:4025: if (GetDesc())
+SRC/Server/GameServer/char.cpp:4028: GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/char.cpp:5301: if (GetDesc())
+SRC/Server/GameServer/char.cpp:5316: GetDesc()->Packet(&pack, sizeof(struct packet_point_change));
+SRC/Server/GameServer/char.cpp:5677: LPDESC d = GetDesc();
+SRC/Server/GameServer/char.cpp:6575: pchInvitee->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:6998: if (GetDesc())
+SRC/Server/GameServer/char.cpp:7000: m_pointsInstant.gm_level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/char.cpp:7125: if (!pkChr->GetDesc())
+SRC/Server/GameServer/char.cpp:7131: pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7315: GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7356: if (!pkChr->GetDesc())
+SRC/Server/GameServer/char.cpp:7362: pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7411: uint8_t ch = GetDesc() ? GetDesc()->GetAccountTable().bChannel : 0;
+SRC/Server/GameServer/char.cpp:7478: GetDesc()->Packet(&p, sizeof(TPacketGCWarp));
+SRC/Server/GameServer/char.cpp:7508: GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/char.cpp:7795: p.dwID = GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char.cpp:7796: strlcpy(p.szLogin, GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/char.cpp:7799: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_LOAD, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:7825: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:7866: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:7879: if (!IsPC() || !GetDesc())
+SRC/Server/GameServer/char.cpp:7886: GetDesc());
+SRC/Server/GameServer/char.cpp:7917: if (m_bMountInventoryLoaded || !GetDesc())
+SRC/Server/GameServer/char.cpp:7927: GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:7962: if (!GetDesc() || !m_pkMountInventory)
+SRC/Server/GameServer/char.cpp:7990: GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char.cpp:8018: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:8107: GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:8115: DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u", get_table_postfix(), iSize / SAFEBOX_PAGE_SIZE, GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:8614: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:8935: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9186: GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char.cpp:9360: DESC* desc = GetDesc();
+SRC/Server/GameServer/char.cpp:9465: if (GetDesc())
+SRC/Server/GameServer/char.cpp:9466: if (GetDesc()->DelayedDisconnect(number(2, 7)))
+SRC/Server/GameServer/char.cpp:9630: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:9685: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9711: if (!IsPC() || !GetDesc() || !CanWarp())
+SRC/Server/GameServer/char.cpp:9760: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9801: if (!ch->GetDesc())
+SRC/Server/GameServer/char.cpp:9887: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:9913: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10244: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10290: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10521: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10558: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:11382: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11389: GetDesc()->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
+SRC/Server/GameServer/char.cpp:11608: auto language = GetDesc()->GetLanguage();
+SRC/Server/GameServer/char.cpp:11668: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/char.cpp:11681: std::string login = ch->GetDesc()->GetAccountTable().login;
+SRC/Server/GameServer/char.cpp:11803: std::string login = GetDesc()->GetAccountTable().login;
+SRC/Server/GameServer/char.cpp:11887: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11897: db_clientdesc->DBPacket(HEADER_GD_SEND_OFFLINE_MESSAGE, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:11904: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11909: db_clientdesc->DBPacket(HEADER_GD_REQUEST_OFFLINE_MESSAGES, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:11957: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%d';", GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11967: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%d';", amount, GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11973: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11983: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", amount, GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char2.cpp:31: LPDESC d = GetDesc();
+SRC/Server/GameServer/char2.cpp:106: LPDESC desc = GetDesc();
+SRC/Server/GameServer/char2.cpp:139: //			LPDESC desc = GetDesc();
+SRC/Server/GameServer/char_affect.cpp:27: void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point)
+SRC/Server/GameServer/char_affect.cpp:42: void SendAffectAddPacket(LPDESC d, CAffect * pkAff)
+SRC/Server/GameServer/char_affect.cpp:300: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:449: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:536: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/char_affect.cpp:611: if (!GetDesc()->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/char_affect.cpp:740: SendAffectAddPacket(GetDesc(), pkAff);
+SRC/Server/GameServer/char_affect.cpp:864: if (GetDesc()) {
+SRC/Server/GameServer/char_affect.cpp:865: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:902: SendAffectAddPacket(GetDesc(), pkAff);
+SRC/Server/GameServer/char_affect.cpp:1012: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_battle.cpp:303: const char* szItemName = item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/char_battle.cpp:663: if (GetDesc()) {
+SRC/Server/GameServer/char_battle.cpp:665: GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/char_battle.cpp:1268: if (pkKiller && pkKiller->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1269: lang = pkKiller->GetDesc()->GetLanguage();
+SRC/Server/GameServer/char_battle.cpp:1662: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1665: DESC* d = ch->GetDesc();
+SRC/Server/GameServer/char_battle.cpp:1688: if (!mch || !mch->IsPC() || !mch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1707: key = "ACC:" + std::to_string(mch->GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char_battle.cpp:1768: if (!rch || !rch->IsPC() || !rch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:2697: if ((GetDesc()->GetHostName() != pkKiller->GetDesc()->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
+SRC/Server/GameServer/char_battle.cpp:2779: GetDesc()->SetPhase(PHASE_DEAD);
+SRC/Server/GameServer/char_battle.cpp:2843: if (GetDesc() != nullptr) {
+SRC/Server/GameServer/char_battle.cpp:2850: SendAffectAddPacket(GetDesc(), *it++);
+SRC/Server/GameServer/char_battle.cpp:2998: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char_battle.cpp:3000: GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+SRC/Server/GameServer/char_battle.cpp:3003: if (pAttacker->GetDesc() != nullptr)
+SRC/Server/GameServer/char_battle.cpp:3005: pAttacker->GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+SRC/Server/GameServer/char_battle.cpp:4411: if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4447: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:4455: if (!viewer || !viewer->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4485: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:4491: if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4531: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:5249: //	if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:5285: //	GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:5291: //	if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:5329: //	GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_dragonsoul.cpp:155: LPDESC d = GetDesc();
+SRC/Server/GameServer/char_fishing.cpp:50: if (LPDESC d = ch->GetDesc())
+SRC/Server/GameServer/char_fishing.cpp:406: if (LPDESC d = GetDesc())
+SRC/Server/GameServer/char_horse.cpp:248: if (GetDesc()) {
+SRC/Server/GameServer/char_horse.cpp:249: bLang = GetDesc()->GetLanguage();
+SRC/Server/GameServer/char_item.cpp:593: if (GetDesc())
+SRC/Server/GameServer/char_item.cpp:618: GetDesc()->Packet(&pack, sizeof(TPacketGCItemSet));
+SRC/Server/GameServer/char_item.cpp:633: GetDesc()->Packet(&pack, sizeof(TPacketGCItemDelDeprecated));
+SRC/Server/GameServer/char_item.cpp:2741: GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+SRC/Server/GameServer/char_item.cpp:2829: GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+SRC/Server/GameServer/char_item.cpp:3140: db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_REQ, GetDesc()->GetHandle(), &dwPlayerID, sizeof(uint32_t));
+SRC/Server/GameServer/char_item.cpp:4244: if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
+SRC/Server/GameServer/char_item.cpp:5616: if (GetDesc() == nullptr)
+SRC/Server/GameServer/char_item.cpp:6253: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8210: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8307: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8556: if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
+SRC/Server/GameServer/char_item.cpp:8967: GetDesc()->DelayedDisconnect(0);
+SRC/Server/GameServer/char_item.cpp:8988: //if (GetDesc()) {
+SRC/Server/GameServer/char_item.cpp:8989: //	GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/char_item.cpp:9278: LPDESC desc = GetDesc();
+SRC/Server/GameServer/char_item.cpp:9949: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char_item.cpp:10278: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10365: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10467: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));//földröl
+SRC/Server/GameServer/char_item.cpp:10561: , 102, "%d#%s", item2->GetCount(), item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10648: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10783: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10797: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:11971: , 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:12026: , 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:12093: , 102, "%d#%s", bCount, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_manager.cpp:1245: LPDESC d = c->GetDesc();
+SRC/Server/GameServer/char_manager.cpp:1980: if (!desc->GetCharacter())
+SRC/Server/GameServer/char_manager.cpp:1990: auto desc = ch->GetDesc();
+SRC/Server/GameServer/char_manager.cpp:2067: LPCHARACTER ch = desc->GetCharacter();
+SRC/Server/GameServer/char_manager.cpp:2083: LPCHARACTER ch = desc->GetCharacter();
+SRC/Server/GameServer/char_manager.cpp:2119: if (!desc->GetCharacter())
+SRC/Server/GameServer/char_manager.cpp:2173: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2181: uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char_manager.cpp:2183: db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
+SRC/Server/GameServer/char_manager.cpp:2279: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2379: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2501: uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char_manager.cpp:2507: strlcpy(ipAdress, ch->GetDesc()->GetHostName(), sizeof(ipAdress));
+SRC/Server/GameServer/char_manager.cpp:2519: db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2533: void RefreshItemShop(LPDESC d)
+SRC/Server/GameServer/char_manager.cpp:2535: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/char_quickslot.cpp:105: if (GetDesc())
+SRC/Server/GameServer/char_quickslot.cpp:111: GetDesc()->Packet(&pack_quickslot_add, sizeof(pack_quickslot_add));
+SRC/Server/GameServer/char_quickslot.cpp:129: GetDesc()->Packet(&pack_quickslot_del, sizeof(pack_quickslot_del));
+SRC/Server/GameServer/char_quickslot.cpp:149: GetDesc()->Packet(&pack_quickslot_swap, sizeof(pack_quickslot_swap));
+SRC/Server/GameServer/char_skill.cpp:181: GetDesc()->Packet(&p, sizeof(TPacketGCChangeSkillGroup));
+SRC/Server/GameServer/char_skill.cpp:191: if (!GetDesc())
+SRC/Server/GameServer/char_skill.cpp:198: GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
+SRC/Server/GameServer/char_skill.cpp:3136: if (this != pkVictim && this->GetDesc() && pkVictim->GetDesc())
+SRC/Server/GameServer/cmd.cpp:905: ch->GetDesc()->DelayedDisconnect(0);
+SRC/Server/GameServer/cmd.cpp:997: LogManager::instance().GMCommandLog(ch->GetPlayerID(), ch->GetName(), ch->GetDesc()->GetHostName(), g_bChannel, buf);
+SRC/Server/GameServer/cmd_general.cpp:47: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:50: DESC* d = ch->GetDesc();
+SRC/Server/GameServer/cmd_general.cpp:74: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:94: ch->GetDesc()->GetAccountTable().id
+SRC/Server/GameServer/cmd_general.cpp:314: ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:326: ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:356: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_general.cpp:358: if (d->GetCharacter())
+SRC/Server/GameServer/cmd_general.cpp:360: if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+SRC/Server/GameServer/cmd_general.cpp:361: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+SRC/Server/GameServer/cmd_general.cpp:368: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_general.cpp:376: if (d->GetCharacter())
+SRC/Server/GameServer/cmd_general.cpp:377: d->GetCharacter()->Disconnect("Shutdown(DisconnectFunc)");
+SRC/Server/GameServer/cmd_general.cpp:548: db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:580: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/cmd_general.cpp:593: acc_info.dwPlayerID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:735: ch->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/cmd_general.cpp:1561: //if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:1732: //if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:2008: p.dwID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:2012: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:2049: p.dwID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:2050: strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/cmd_general.cpp:2053: db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:2920: ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:2934: ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:2948: ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:3403: //	uint8_t lang = ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/cmd_general.cpp:3515: LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ch->GetName());
+SRC/Server/GameServer/cmd_gm.cpp:148: //    if (!source->GetDesc() || !target->GetDesc())
+SRC/Server/GameServer/cmd_gm.cpp:1177: LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1182: tch = d->GetCharacter();
+SRC/Server/GameServer/cmd_gm.cpp:1426: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1428: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1431: d->GetCharacter()->ChatPacket((m_bBigFont)?CHAT_TYPE_BIG_NOTICE:CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1433: d->GetCharacter()->ChatPacket(CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1462: void operator() (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1464: if (d->GetCharacter() == nullptr) return;
+SRC/Server/GameServer/cmd_gm.cpp:1465: if (d->GetCharacter()->GetMapIndex() != m_mapIndex) return;
+SRC/Server/GameServer/cmd_gm.cpp:1467: d->GetCharacter()->ChatPacket(m_bBigFont == true ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1485: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1487: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1490: if (d->GetCharacter()->GetGMLevel() > GM_PLAYER)
+SRC/Server/GameServer/cmd_gm.cpp:1491: d->GetCharacter()->ChatPacket(CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1538: void operator () (LPDESC d) {
+SRC/Server/GameServer/cmd_gm.cpp:1539: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1544: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1545: } else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+SRC/Server/GameServer/cmd_gm.cpp:1546: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1549: else if (d->GetCharacter()->GetEmpire() == m_empire) {
+SRC/Server/GameServer/cmd_gm.cpp:1551: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1552: } else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+SRC/Server/GameServer/cmd_gm.cpp:1553: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1663: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1665: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1668: int len = snprintf(str + str_len, sizeof(str) - str_len, "%-16s ", d->GetCharacter()->GetName());
+SRC/Server/GameServer/cmd_gm.cpp:1715: LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1716: LPCHARACTER	tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1744: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1745: LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1768: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1769: LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1792: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1793: LPCHARACTER tch = d ? d->GetCharacter() : NULL;
+SRC/Server/GameServer/cmd_gm.cpp:3149: db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+SRC/Server/GameServer/cmd_gm.cpp:3215: db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+SRC/Server/GameServer/cmd_guild_renewal.cpp:47: LPDESC d = *it;
+SRC/Server/GameServer/cmd_guild_renewal.cpp:51: LPCHARACTER member = d->GetCharacter();
+SRC/Server/GameServer/config.cpp:1632: LPDESC d = *(it++);
+SRC/Server/GameServer/config.cpp:1634: if (!d->GetCharacter())
+SRC/Server/GameServer/config.cpp:1639: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 484, "");
+SRC/Server/GameServer/cuberenewal.cpp:830: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/cuberenewal.cpp:843: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/db.cpp:450: void DBManager::SendAuthLogin(LPDESC d)
+SRC/Server/GameServer/db.cpp:482: void DBManager::LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRemainSecs, LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes)
+SRC/Server/GameServer/db.cpp:614: LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
+SRC/Server/GameServer/db.cpp:844: LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
+SRC/Server/GameServer/db.cpp:1231: strlcpy(p.szSellAccount, CardOwner->GetDesc()->GetAccountTable().login, sizeof(p.szSellAccount));
+SRC/Server/GameServer/db.cpp:1233: strlcpy(p.szBuyAccount, CardTaker->GetDesc()->GetAccountTable().login, sizeof(p.szBuyAccount));
+SRC/Server/GameServer/db.cpp:1240: CardOwner->GetName(), CardOwner->GetDesc()->GetHostName(),
+SRC/Server/GameServer/db.cpp:1241: CardTaker->GetName(), CardTaker->GetDesc()->GetHostName());
+SRC/Server/GameServer/desc.cpp:58: m_lpCharacter = nullptr;
+SRC/Server/GameServer/desc.cpp:120: if (m_lpCharacter)
+SRC/Server/GameServer/desc.cpp:122: m_lpCharacter->Disconnect("DESC::~DESC");
+SRC/Server/GameServer/desc.cpp:123: m_lpCharacter = nullptr;
+SRC/Server/GameServer/desc.cpp:144: CShutdownManager::instance().RemoveDesc((LPDESC)this);
+SRC/Server/GameServer/desc.cpp:174: LPDESC desc = info->desc;
+SRC/Server/GameServer/desc.cpp:664: if (GetCharacter())
+SRC/Server/GameServer/desc.cpp:665: sys_log(0, "Handshake: client_time %u server_time %u name: %s", m_dwClientTime, dwCurTime, GetCharacter()->GetName());
+SRC/Server/GameServer/desc.cpp:686: sys_err("handshake retry limit reached! (limit %d character %s)", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? GetCharacter()->GetName() : "!NO CHARACTER!");
+SRC/Server/GameServer/desc.cpp:751: void DESC::BindCharacter(LPCHARACTER ch)
+SRC/Server/GameServer/desc.cpp:753: m_lpCharacter = ch;
+SRC/Server/GameServer/desc.cpp:803: LPDESC d2 = (LPDESC) fdwatch_get_client_data(m_lpFdw, event_idx);
+SRC/Server/GameServer/desc.cpp:848: LPDESC d = info->desc;
+SRC/Server/GameServer/desc.cpp:870: if (GetCharacter()) {
+SRC/Server/GameServer/desc.cpp:875: GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 295, "");
+SRC/Server/GameServer/desc_client.cpp:170: LPDESC d = *it;
+SRC/Server/GameServer/desc_client.cpp:184: LPDESC d = *it;
+SRC/Server/GameServer/desc_manager.cpp:233: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:251: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:292: LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
+SRC/Server/GameServer/desc_manager.cpp:295: LPDESC						newd;
+SRC/Server/GameServer/desc_manager.cpp:374: LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
+SRC/Server/GameServer/desc_manager.cpp:403: void DESC_MANAGER::ConnectAccount(const std::string& login, LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:435: void DESC_MANAGER::DestroyDesc(LPDESC d, bool bEraseFromSet)
+SRC/Server/GameServer/desc_manager.cpp:461: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:484: LPDESC DESC_MANAGER::FindByLoginName(const std::string& login)
+SRC/Server/GameServer/desc_manager.cpp:494: LPDESC DESC_MANAGER::FindByHandle(uint32_t handle)
+SRC/Server/GameServer/desc_manager.cpp:517: bool operator () (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:519: if (d->GetCharacter() && !strcmp(d->GetCharacter()->GetName(), m_name))
+SRC/Server/GameServer/desc_manager.cpp:526: LPDESC DESC_MANAGER::FindByCharacterName(const char* name)
+SRC/Server/GameServer/desc_manager.cpp:549: void operator () (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:576: LPDESC DESC_MANAGER::FindByHandshake(uint32_t dwHandshake)
+SRC/Server/GameServer/desc_manager.cpp:598: void operator() (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:600: if (d->GetCharacter())
+SRC/Server/GameServer/desc_manager.cpp:654: LPDESC DESC_MANAGER::FindByLoginKey(uint32_t dwKey)
+SRC/Server/GameServer/desc_manager.cpp:661: return it->second->m_pkDesc;
+SRC/Server/GameServer/desc_manager.cpp:665: uint32_t DESC_MANAGER::CreateLoginKey(LPDESC d)
+SRC/Server/GameServer/DragonSoul.cpp:496: ch->ChatPacketNew(CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/DragonSoul.cpp:520: ch->ChatPacketNew(CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/DragonSoul.cpp:1340: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/entity.cpp:72: if (ent->GetDesc())
+SRC/Server/GameServer/entity.cpp:73: ent->GetDesc()->Packet(m_data, m_bytes);
+SRC/Server/GameServer/exchange.cpp:22: if (!ch->GetDesc())
+SRC/Server/GameServer/exchange.cpp:57: ch->GetDesc()->Packet(&pack_exchg, sizeof(pack_exchg));
+SRC/Server/GameServer/fishing.cpp:433: ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+SRC/Server/GameServer/fishing.cpp:542: ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+SRC/Server/GameServer/guild.cpp:44: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:355: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:364: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:413: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:444: LPDESC d;
+SRC/Server/GameServer/guild.cpp:445: if (!(d=ch->GetDesc()))
+SRC/Server/GameServer/guild.cpp:501: if (!ch->GetDesc())
+SRC/Server/GameServer/guild.cpp:515: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild.cpp:530: if (!ch->GetDesc())
+SRC/Server/GameServer/guild.cpp:543: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild.cpp:760: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:787: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:864: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:904: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:913: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:996: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1117: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:1180: LPDESC d = (*(itOnline++))->GetDesc();
+SRC/Server/GameServer/guild.cpp:1215: LPDESC d = (*(itOnline++))->GetDesc();
+SRC/Server/GameServer/guild.cpp:1450: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:1641: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1749: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1818: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1874: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1904: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1962: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:2140: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:2311: pchInvitee->GetDesc()->Packet( buf.read_peek(), buf.size() );
+SRC/Server/GameServer/guild.cpp:2596: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:2667: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:36: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:650: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:850: if (!ch->GetDesc())
+SRC/Server/GameServer/guild_manager.cpp:866: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild_renewal.cpp:323: LPDESC d = *it;
+SRC/Server/GameServer/guild_renewal.cpp:327: LPCHARACTER member = d->GetCharacter();
+SRC/Server/GameServer/guild_renewal.cpp:645: if (!ch || !ch->GetDesc())
+SRC/Server/GameServer/guild_renewal.cpp:808: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_renewal.cpp:850: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_renewal.cpp:1223: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_war.cpp:50: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_war.cpp:64: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input.cpp:36: bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+SRC/Server/GameServer/input.cpp:114: void CInputProcessor::Pong(LPDESC d)
+SRC/Server/GameServer/input.cpp:119: void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input.cpp:158: ch->GetDesc()->SetClientVersion(p->timestamp);
+SRC/Server/GameServer/input.cpp:161: void LoginFailure(LPDESC d, const char * c_pszStatus)
+SRC/Server/GameServer/input.cpp:200: int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:68: void CInputAuth::Login(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:165: void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:417: int CInputAuth::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:124: LPDESC d = DESC_MANAGER::instance().FindByHandle(dwHandle);
+SRC/Server/GameServer/input_db.cpp:189: void CInputDB::PlayerCreateFailure(LPDESC d, uint8_t bType)
+SRC/Server/GameServer/input_db.cpp:202: void CInputDB::PlayerCreateSuccess(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:418: void CInputDB::PlayerDeleteSuccess(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:431: void CInputDB::PlayerDeleteFail(LPDESC d)
+SRC/Server/GameServer/input_db.cpp:442: void CInputDB::ChangeName(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:472: void CInputDB::PlayerLoad(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:523: if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/input_db.cpp:525: LPCHARACTER p = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:542: d->BindCharacter(ch);
+SRC/Server/GameServer/input_db.cpp:561: inet_ntoa(ch->GetDesc()->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ch->GetMapIndex(), ch->GetAlignment());
+SRC/Server/GameServer/input_db.cpp:567: ch->GetDesc()->GetAccountTable().id, ch->GetPlayerID(), ch->GetLevel(), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+SRC/Server/GameServer/input_db.cpp:570: ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ch->GetDesc()->GetHostName()));
+SRC/Server/GameServer/input_db.cpp:1141: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input_db.cpp:1171: void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1176: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1246: if (ch->GetDesc()->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/input_db.cpp:1261: void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1274: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1279: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1287: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1297: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1304: if (d->GetCharacter()->GetPremiumRemainSeconds(PREMIUM_SAFEBOX) > 0 || d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_LARGE_SAFEBOX))
+SRC/Server/GameServer/input_db.cpp:1308: //if (d->GetCharacter()->IsEquipUniqueItem(UNIQUE_ITEM_SAFEBOX_EXPAND))
+SRC/Server/GameServer/input_db.cpp:1311: //d->GetCharacter()->LoadSafebox(p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1312: d->GetCharacter()->LoadSafebox(bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1315: void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1322: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1325: d->GetCharacter()->ChangeSafeboxSize(bSize);
+SRC/Server/GameServer/input_db.cpp:1331: void CInputDB::SafeboxWrongPassword(LPDESC d)
+SRC/Server/GameServer/input_db.cpp:1336: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1343: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1346: void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_db.cpp:1351: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1357: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 187, "");
+SRC/Server/GameServer/input_db.cpp:1360: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 186, "");
+SRC/Server/GameServer/input_db.cpp:1365: void CInputDB::MallLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1378: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1381: d->GetCharacter()->LoadMall(p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1384: void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1393: LPDESC d2 = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_db.cpp:1412: void CInputDB::EmpireSelect(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1632: void CInputDB::SkillColorLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1636: if (!d || !(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_db.cpp:1643: void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1647: if (!d || !(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_db.cpp:1772: void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1775: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1778: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1794: void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1797: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1800: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1842: ch->GetDesc()->BufferedPacket(&packet, sizeof(packet));
+SRC/Server/GameServer/input_db.cpp:1843: ch->GetDesc()->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
+SRC/Server/GameServer/input_db.cpp:1854: void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1859: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1862: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1999: void CInputDB::AuthLogin(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:2138: LPDESC d = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_db.cpp:2143: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:2318: void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
+SRC/Server/GameServer/input_db.cpp:2322: if (!d || !(ch = d->GetCharacter()) )
+SRC/Server/GameServer/input_db.cpp:2855: int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:3263: bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesProceed)
+SRC/Server/GameServer/input_db.cpp:3323: LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);	//login
+SRC/Server/GameServer/input_db.cpp:3329: if (d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3331: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:3343: void CInputDB::RespondChannelStatus(LPDESC desc, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3363: void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3365: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3374: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 636, "");
+SRC/Server/GameServer/input_db.cpp:3380: d->GetCharacter()->StartChannelSwitch(p->lAddr, p->port);
+SRC/Server/GameServer/input_db.cpp:3386: void CInputDB::ReadOfflineMessages(LPDESC desc, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3388: if (!desc || !desc->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3391: if (desc->GetCharacter()->IsBlockMode(BLOCK_WHISPER))
+SRC/Server/GameServer/input_db.cpp:3462: void CInputDB::ItemShop(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_db.cpp:3473: CHARACTER_MANAGER::Instance().LoadItemShopLogReal(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_db.cpp:3479: CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_login.cpp:132: void CInputLogin::Login(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:184: void CInputLogin::LoginByKey(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:238: void CInputLogin::ChangeName(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:268: void CInputLogin::CharacterSelect(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:481: void CInputLogin::CharacterCreate(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:552: void CInputLogin::CharacterDelete(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:595: void CInputLogin::Entergame(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:599: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_login.cpp:795: ch->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/input_login.cpp:913: packet.bLanguage = ch->GetDesc()->GetLanguage();
+SRC/Server/GameServer/input_login.cpp:914: ch->GetDesc()->Packet(&packet, sizeof(TPacketChangeLanguage));
+SRC/Server/GameServer/input_login.cpp:976: void CInputLogin::Empire(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1008: int CInputLogin::GuildSymbolUpload(LPDESC d, const char* c_pData, uint64_t uiBytes)
+SRC/Server/GameServer/input_login.cpp:1052: void CInputLogin::GuildSymbolCRC(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1089: void CInputLogin::GuildMarkUpload(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1133: void CInputLogin::GuildMarkIDXList(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1166: void CInputLogin::GuildMarkCRCList(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1217: int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1301: Version(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_login.cpp:1305: Version(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_main.cpp:141: ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+SRC/Server/GameServer/input_main.cpp:160: ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+SRC/Server/GameServer/input_main.cpp:243: auto it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/input_main.cpp:247: spam_score_of_ip.insert(std::make_pair(ch->GetDesc()->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
+SRC/Server/GameServer/input_main.cpp:248: it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/input_main.cpp:268: strlcpy(info->host, ch->GetDesc()->GetHostName(), sizeof(info->host));
+SRC/Server/GameServer/input_main.cpp:407: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:424: LPDESC pkDesc = nullptr;
+SRC/Server/GameServer/input_main.cpp:438: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:445: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:467: pkDesc = pkChr->GetDesc();
+SRC/Server/GameServer/input_main.cpp:473: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:491: int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/input_main.cpp:530: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:538: ch->GetDesc()->Packet(&pack, sizeof(TPacketGCWhisper));
+SRC/Server/GameServer/input_main.cpp:547: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:554: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:559: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:566: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:614: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:621: int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/input_main.cpp:665: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:689: if (!c->GetDesc())
+SRC/Server/GameServer/input_main.cpp:692: c->GetDesc()->Packet(m_buf, m_buf_len);
+SRC/Server/GameServer/input_main.cpp:713: void operator () (LPDESC d)
+SRC/Server/GameServer/input_main.cpp:715: if (!d->GetCharacter())
+SRC/Server/GameServer/input_main.cpp:718: if (d->GetCharacter()->GetMapIndex() != iMapIndex)
+SRC/Server/GameServer/input_main.cpp:725: d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+SRC/Server/GameServer/input_main.cpp:726: d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+SRC/Server/GameServer/input_main.cpp:738: ConvertEmpireText(bEmpire, converted_msg + namelen, len - namelen, 10 + 2 * d->GetCharacter()->GetSkillPower(SKILL_LANGUAGE1 + bEmpire - 1));
+SRC/Server/GameServer/input_main.cpp:780: void operator() (LPDESC d)
+SRC/Server/GameServer/input_main.cpp:782: if (!d->GetCharacter())
+SRC/Server/GameServer/input_main.cpp:785: if (d->GetCharacter()->GetMapIndex() != m_iMapIndex)
+SRC/Server/GameServer/input_main.cpp:790: d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+SRC/Server/GameServer/input_main.cpp:791: d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+SRC/Server/GameServer/input_main.cpp:811: if (!ch->GetDesc()) { return; }
+SRC/Server/GameServer/input_main.cpp:892: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:1103: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/input_main.cpp:1189: //	LPDESC d = *it;
+SRC/Server/GameServer/input_main.cpp:1191: //	if (!d || !(rc = d->GetCharacter())) continue;
+SRC/Server/GameServer/input_main.cpp:1228: LPDESC d = *it;
+SRC/Server/GameServer/input_main.cpp:1229: if (!d || !d->GetCharacter()) continue;
+SRC/Server/GameServer/input_main.cpp:1230: d->GetCharacter()->ChatPacket(CHAT_TYPE_INFO, "%s", msg);
+SRC/Server/GameServer/input_main.cpp:1421: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, "", "NORMAL", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1447: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetParty()->GetLeaderPID(), "", "PARTY", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1467: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetGuild()->GetID(), ch->GetGuild()->GetName(), "GUILD", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1691: LPDESC d = ch_companion->GetDesc();
+SRC/Server/GameServer/input_main.cpp:1704: if (ch->GetDesc() == d) // ڽ ߰  .
+SRC/Server/GameServer/input_main.cpp:1806: db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+SRC/Server/GameServer/input_main.cpp:2218: if (ch->GetDesc()) {
+SRC/Server/GameServer/input_main.cpp:2219: bool CheckSpeedHack = (false == ch->GetDesc()->IsHandshaking() && dwCurTime - ch->GetDesc()->GetClientTime() > 7000);
+SRC/Server/GameServer/input_main.cpp:2223: int iServerDelta = (int)(dwCurTime - ch->GetDesc()->GetClientTime());
+SRC/Server/GameServer/input_main.cpp:2226: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/input_main.cpp:2229: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/input_main.cpp:2261: ch->GetDesc()->DelayedDisconnect(number(150, 500));
+SRC/Server/GameServer/input_main.cpp:2291: if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+SRC/Server/GameServer/input_main.cpp:2297: if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+SRC/Server/GameServer/input_main.cpp:2412: if (nullptr == ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:2417: ch->GetDesc()->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
+SRC/Server/GameServer/input_main.cpp:2469: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2490: //ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2540: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2568: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2581: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2719: ch->GetDesc()->Packet(&pckTarget, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/input_main.cpp:3344: if (!pInvitee || !ch->GetDesc() || !pInvitee->GetDesc())
+SRC/Server/GameServer/input_main.cpp:3369: if (!pInviter || !pInviter->GetDesc()) {
+SRC/Server/GameServer/input_main.cpp:3677: if (!ch || (ch && !ch->GetDesc()))
+SRC/Server/GameServer/input_main.cpp:3748: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:3782: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:4084: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:4247: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:5172: int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_main.cpp:5177: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_main.cpp:5598: int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_main.cpp:5602: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_main.cpp:5704: if (!ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:5707: uint8_t bCurrentLanguage = ch->GetDesc()->GetLanguage();
+SRC/Server/GameServer/input_main.cpp:5715: ch->GetDesc()->SetLanguage(bLanguage);
+SRC/Server/GameServer/input_main.cpp:5727: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input_p2p.cpp:35: void CInputP2P::Login(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:40: void CInputP2P::Logout(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:46: int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:99: pkChr->GetDesc()->Packet(buf, p->lSize);
+SRC/Server/GameServer/input_p2p.cpp:102: pkChr->GetDesc()->Packet(c_pbData, p->lSize);
+SRC/Server/GameServer/input_p2p.cpp:108: int CInputP2P::Notice(LPDESC d, const char * c_pData, uint64_t uiBytes, bool bBigFont)
+SRC/Server/GameServer/input_p2p.cpp:110: int CInputP2P::Notice(LPDESC d, const char * c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:136: int CInputP2P::NoticeNew(LPDESC d, const char * c_pData, uint64_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:156: int CInputP2P::Guild(LPDESC d, const char* c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:230: void operator () (LPDESC d)
+SRC/Server/GameServer/input_p2p.cpp:233: if (!d->GetCharacter() || (!g_bGlobalShoutEnable && d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+SRC/Server/GameServer/input_p2p.cpp:236: if (!d->GetCharacter() || (d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+SRC/Server/GameServer/input_p2p.cpp:239: d->GetCharacter()->ChatPacket(CHAT_TYPE_SHOUT, "%s", m_str);
+SRC/Server/GameServer/input_p2p.cpp:259: LPDESC d = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_p2p.cpp:264: if (!d->GetCharacter())
+SRC/Server/GameServer/input_p2p.cpp:272: void CInputP2P::Setup(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:293: void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_p2p.cpp:360: void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:397: void CInputP2P::IamAwake(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:404: int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:531: void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_udp.cpp:58: void CInputUDP::Handshake(LPDESC pDesc, const char * c_pData)
+SRC/Server/GameServer/input_udp.cpp:102: int CInputUDP::Analyze(LPDESC pDesc, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_udp.cpp:124: bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+SRC/Server/GameServer/item.cpp:148: LPDESC d;
+SRC/Server/GameServer/item.cpp:150: if (!(d = ent->GetDesc()))
+SRC/Server/GameServer/item.cpp:189: LPDESC d;
+SRC/Server/GameServer/item.cpp:191: if (!(d = ent->GetDesc()))
+SRC/Server/GameServer/item.cpp:246: if (!m_pOwner || !m_pOwner->GetDesc())
+SRC/Server/GameServer/item.cpp:269: m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/item.cpp:599: if (ch->GetDesc())
+SRC/Server/GameServer/item.cpp:650: if (ch->GetDesc())
+SRC/Server/GameServer/item.cpp:2239: if (pkOwner && pkOwner->GetDesc() && item->GetWindow() == MOUNT_INVENTORY)
+SRC/Server/GameServer/item.cpp:2251: pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/item.cpp:2252: pkOwner->GetDesc()->Packet(msg, len + 1);
+SRC/Server/GameServer/item.cpp:3035: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item.cpp:3036: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item.cpp:3829: //			if (LPDESC d = m_pOwner->GetDesc())
+SRC/Server/GameServer/item.cpp:3873: if (LPDESC d = m_pOwner->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:247: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:248: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:588: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:589: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:608: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:609: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:647: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:704: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:705: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_manager.cpp:612: t.owner = (t.window == SAFEBOX || t.window == MALL) ? item->GetOwner()->GetDesc()->GetAccountTable().id : item->GetOwner()->GetPlayerID();
+SRC/Server/GameServer/log.cpp:88: c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "",
+SRC/Server/GameServer/log.cpp:95: ItemLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), itemID, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "", itemVnum);
+SRC/Server/GameServer/log.cpp:111: CharLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), dw, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/log.cpp:142: if (ch->GetDesc())
+SRC/Server/GameServer/log.cpp:144: HackLog(c_pszHackName, ch->GetDesc()->GetAccountTable().login, ch->GetName(), ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/log.cpp:262: if (nullptr != pChar->GetDesc())
+SRC/Server/GameServer/log.cpp:264: aid = pChar->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/log.cpp:314: if (nullptr == ch->GetDesc())
+SRC/Server/GameServer/log.cpp:323: ch->GetDesc()->GetAccountTable().id,
+SRC/Server/GameServer/log.cpp:325: ch->GetDesc()->GetHostName(),
+SRC/Server/GameServer/log.cpp:326: ch->GetDesc()->GetClientVersion());
+SRC/Server/GameServer/log.cpp:331: ch->GetDesc()->GetAccountTable().id,
+SRC/Server/GameServer/LostCastleDungeon.cpp:162: if (pc && pc->GetDesc())
+SRC/Server/GameServer/LostCastleDungeon.cpp:242: if (!viewer || !viewer->GetDesc() || !target)
+SRC/Server/GameServer/LostCastleDungeon.cpp:253: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/main.cpp:216: void operator () (LPDESC d)
+SRC/Server/GameServer/main.cpp:218: if (d->GetCharacter())
+SRC/Server/GameServer/main.cpp:220: if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+SRC/Server/GameServer/main.cpp:221: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+SRC/Server/GameServer/main.cpp:228: void operator () (LPDESC d)
+SRC/Server/GameServer/main.cpp:900: LPDESC	d;
+SRC/Server/GameServer/main.cpp:911: d = (LPDESC) fdwatch_get_client_data(fdw, event_idx);
+SRC/Server/GameServer/marriage.cpp:54: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/marriage.cpp:278: LPDESC d1, d2;
+SRC/Server/GameServer/marriage.cpp:281: d1 = ch1 ? ch1->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:294: d2 = ch2 ? ch2->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:338: LPDESC d1, d2;
+SRC/Server/GameServer/marriage.cpp:341: d1 = ch1 ? ch1->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:358: d2 = ch2 ? ch2->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:409: ch1->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/marriage.cpp:410: ch2->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/messenger_manager.cpp:302: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:391: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:396: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:417: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:472: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:562: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:568: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:593: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:693: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:752: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:757: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:782: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/MountInventory.cpp:190: return m_pkOwner && m_pkOwner->GetDesc() ? m_pkOwner->GetDesc()->GetAccountTable().id : 0;
+SRC/Server/GameServer/MountSystem.cpp:534: LPCHARACTER pMount = mountActor->GetCharacter();
+SRC/Server/GameServer/new_offlineshop_manager.cpp:740: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:763: ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:764: ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:772: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:783: ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:784: ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2225: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2235: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2262: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2356: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2390: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2396: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2433: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2439: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2448: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2453: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2469: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2475: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2549: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2566: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2574: ch->GetDesc()->Packet(&pack , sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2798: if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ch->GetDesc()->GetLanguage()] , strnlen(pTable->szLocaleName[ch->GetDesc()->GetLanguage()], ITEM_NAME_MAX_LEN)))
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2837: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2859: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3038: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3061: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3112: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3229: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3266: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3523: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3542: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3550: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3570: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3577: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3585: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3593: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3625: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/New_PetSystem.cpp:1588: LPCHARACTER pPet = petActor->GetCharacter();
+SRC/Server/GameServer/new_switchbot.cpp:290: if (pkKiller && pkKiller->GetDesc())
+SRC/Server/GameServer/new_switchbot.cpp:291: lang = pkKiller->GetDesc()->GetLanguage();
+SRC/Server/GameServer/new_switchbot.cpp:333: LPDESC desc = pkOwner->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:398: pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_switchbot.cpp:399: pkOwner->GetDesc()->Packet(buf, len);
+SRC/Server/GameServer/new_switchbot.cpp:812: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:1049: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:1106: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/OrcsDungeon.cpp:455: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/OXEvent.cpp:444: LogManager::instance().ItemLog(pkChar->GetPlayerID(), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+SRC/Server/GameServer/OXEvent.cpp:448: LogManager::instance().ItemLog(pkChar->GetPlayerID(), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+SRC/Server/GameServer/p2p.cpp:31: void P2P_MANAGER::Boot(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:56: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:60: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/p2p.cpp:65: void P2P_MANAGER::RegisterAcceptor(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:72: void P2P_MANAGER::UnregisterAcceptor(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:79: void P2P_MANAGER::RegisterConnector(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:92: void P2P_MANAGER::UnregisterConnector(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:94: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.find(d);
+SRC/Server/GameServer/p2p.cpp:104: void P2P_MANAGER::EraseUserByDesc(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:118: void P2P_MANAGER::Send(const void * c_pvData, int iSize, LPDESC except)
+SRC/Server/GameServer/p2p.cpp:120: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:124: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/p2p.cpp:133: void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
+SRC/Server/GameServer/p2p.cpp:261: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:267: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/party.cpp:234: if (leader && leader->GetDesc())
+SRC/Server/GameServer/party.cpp:320: if (rMember.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:325: rMember.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:675: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:676: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:692: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:693: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:699: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:711: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:717: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:729: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:731: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:738: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:750: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:752: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:759: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:773: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:801: if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+SRC/Server/GameServer/party.cpp:804: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:811: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:822: if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+SRC/Server/GameServer/party.cpp:825: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:846: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:852: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1382: if (bLongTimeExpBonusChanged && ch->GetDesc()) {
+SRC/Server/GameServer/party.cpp:1454: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:1455: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1469: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:1470: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1587: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/PetSystem.cpp:525: LPCHARACTER pPet = petActor->GetCharacter();
+SRC/Server/GameServer/pvp.cpp:430: LPDESC d = *it++;
+SRC/Server/GameServer/pvp.cpp:663: LPDESC pkVictimDesc = pkVictim->GetDesc();
+SRC/Server/GameServer/pvp.cpp:1035: void CPVPManager::SendList(LPDESC d)
+SRC/Server/GameServer/pvp.cpp:1039: uint32_t dwVID = d->GetCharacter()->GetVID();
+SRC/Server/GameServer/pvp.cpp:1081: if (ch && ch->GetDesc())
+SRC/Server/GameServer/pvp.cpp:1083: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/pvp.cpp:1090: if (ch && ch->GetDesc())
+SRC/Server/GameServer/pvp.cpp:1092: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questlua.cpp:106: if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+SRC/Server/GameServer/questlua.cpp:108: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questlua.cpp:117: if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+SRC/Server/GameServer/questlua.cpp:120: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questlua_dungeon.cpp:91: std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ch->GetDesc() ? ch->GetDesc()->GetAccountTable().id : 0, pid, map_index, 1, time, damage));
+SRC/Server/GameServer/questlua_dungeon.cpp:1324: LPDESC desc = tch->GetDesc();
+SRC/Server/GameServer/questlua_dungeon.cpp:1383: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/questlua_game.cpp:61: LPDESC d = q.GetCurrentCharacterPtr()->GetDesc();
+SRC/Server/GameServer/questlua_game.cpp:83: p.dwID = q.GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/questlua_game.cpp:85: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE,  q.GetCurrentCharacterPtr()->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/questlua_global.cpp:646: lua_pushstring(L,pTable->szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+SRC/Server/GameServer/questlua_global.cpp:671: lua_pushstring(L, pkMob->m_table.szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+SRC/Server/GameServer/questlua_guild.cpp:194: strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/questlua_guild.cpp:215: CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_party.cpp:121: if (ch->GetDesc())
+SRC/Server/GameServer/questlua_party.cpp:124: ch->GetDesc()->BufferedPacket(&pack, sizeof(struct packet_script));
+SRC/Server/GameServer/questlua_party.cpp:125: ch->GetDesc()->Packet(data.c_str(),data.size());
+SRC/Server/GameServer/questlua_party.cpp:170: if (ch->GetDesc())
+SRC/Server/GameServer/questlua_party.cpp:173: ch->GetDesc()->BufferedPacket(&packet_script, sizeof(struct packet_script));
+SRC/Server/GameServer/questlua_party.cpp:174: ch->GetDesc()->Packet(str,len);
+SRC/Server/GameServer/questlua_pc.cpp:2240: LogManager::instance().ChangeNameLog(pid, ch->GetName(), szName, ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/questlua_pc.cpp:2574: if ( pChar->GetDesc() != nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:2576: lua_pushnumber( L, pChar->GetDesc()->GetAccountTable().id );
+SRC/Server/GameServer/questlua_pc.cpp:2591: if(nullptr != pChar->GetDesc() )
+SRC/Server/GameServer/questlua_pc.cpp:2593: lua_pushstring( L, pChar->GetDesc()->GetAccountTable().login );
+SRC/Server/GameServer/questlua_pc.cpp:2795: if (ch == nullptr || ch->GetDesc() == nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:2809: packet.aid = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/questlua_pc.cpp:2833: sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_pc.cpp:2836: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2840: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2861: sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_pc.cpp:2864: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2871: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:3306: lua_pushstring(L, ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/questlua_pc.cpp:3313: lua_pushstring(L, ch->GetDesc()->GetClientVersion());
+SRC/Server/GameServer/questlua_pc.cpp:3320: bool bRet = ch->GetDesc()->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
+SRC/Server/GameServer/questlua_pc.cpp:3503: if (pChar->GetDesc() != nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:3505: lua_pushstring(L, LC_CONVERT(pChar->GetDesc()->GetLanguage()));
+SRC/Server/GameServer/questlua_pc.cpp:3661: db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+SRC/Server/GameServer/questlua_pc.cpp:3775: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questlua_pet.cpp:143: LPCHARACTER pet_ch = petActor->GetCharacter();
+SRC/Server/GameServer/questlua_petnew.cpp:264: LPCHARACTER pet_ch = petActor->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1144: LPDESC desc = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/questmanager.cpp:1394: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1419: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1432: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questnpc.cpp:943: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questpc.cpp:298: CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questpc.cpp:346: //		CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(&qi, sizeof(qi));
+SRC/Server/GameServer/refine.cpp:62: ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/RuneDungeon.cpp:287: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/safebox.cpp:86: m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/safebox.cpp:120: m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/safebox.cpp:131: t.dwID = m_pkChrOwner->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/sectree.cpp:51: if (ch->GetDesc())
+SRC/Server/GameServer/sectree.cpp:52: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/sectree_manager.cpp:1033: if (ch->GetDesc())
+SRC/Server/GameServer/sectree_manager.cpp:1034: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/sectree_manager.cpp:1099: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/sectree_manager.cpp:1162: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/shop.cpp:830: ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
+SRC/Server/GameServer/shop.cpp:831: ch->GetDesc()->Packet(&pack2, sizeof(TPacketGCShopStart));
+SRC/Server/GameServer/shop.cpp:849: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shop.cpp:864: if (ch->GetDesc())
+SRC/Server/GameServer/shop.cpp:865: ch->GetDesc()->Packet(data, bytes);
+SRC/Server/GameServer/shop_manager.cpp:266: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shop_manager.cpp:303: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shopEx.cpp:112: ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
+SRC/Server/GameServer/shopEx.cpp:113: ch->GetDesc()->BufferedPacket(&pack2, sizeof(TPacketGCShopStartEx));
+SRC/Server/GameServer/shopEx.cpp:114: ch->GetDesc()->Packet(temp, size);
+SRC/Server/GameServer/shutdown_manager.cpp:21: void CShutdownManager::AddDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:34: void CShutdownManager::RemoveDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:41: std::list<LPDESC>::iterator i = m_lstDesc.begin();
+SRC/Server/GameServer/shutdown_manager.cpp:58: for(std::list<LPDESC>::iterator i = m_lstDesc.begin(); i != m_lstDesc.end(); i++) {
+SRC/Server/GameServer/shutdown_manager.cpp:70: for(std::list<LPDESC>::iterator i = m_lstDesc.begin(); i != m_lstDesc.end(); i++)	//   PHASE_CLOSE
+SRC/Server/GameServer/shutdown_manager.cpp:84: int CShutdownManager::SearchDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:88: std::list<LPDESC>::iterator iter = m_lstDesc.begin();
+SRC/Server/GameServer/target.cpp:15: void SendTargetCreatePacket(LPDESC d, TargetInfo * info)
+SRC/Server/GameServer/target.cpp:30: void SendTargetUpdatePacket(LPDESC d, int iID, int x, int y)
+SRC/Server/GameServer/target.cpp:41: void SendTargetDeletePacket(LPDESC d, int iID)
+SRC/Server/GameServer/target.cpp:122: SendTargetUpdatePacket(pkChr->GetDesc(), info->iID, x, y);
+SRC/Server/GameServer/target.cpp:180: SendTargetDeletePacket(pkChr->GetDesc(), existInfo->iID);
+SRC/Server/GameServer/target.cpp:199: SendTargetCreatePacket(pkChr->GetDesc(), existInfo);
+SRC/Server/GameServer/target.cpp:236: SendTargetCreatePacket(pkChr->GetDesc(), newInfo);
+SRC/Server/GameServer/target.cpp:267: //SendTargetDeletePacket(info->pkChr->GetDesc(), info->iID);
+SRC/Server/GameServer/target.cpp:270: SendTargetDeletePacket(pkChr->GetDesc(), info->iID);
+SRC/Server/GameServer/TritonTempleDungeon.cpp:212: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/war_map.cpp:149: if (ch->GetDesc())
+SRC/Server/GameServer/war_map.cpp:152: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/war_map.cpp:395: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/war_map.cpp:592: ch->GetDesc()->Packet(m_pvData, m_iSize);
+SRC/Server/GameServer/war_map.cpp:634: void CWarMap::SendWarPacket(LPDESC d)
+SRC/Server/GameServer/war_map.cpp:652: void CWarMap::SendScorePacket(uint8_t bIdx, LPDESC d)
+SRC/Server/GameServer/wedding.cpp:153: if (ch->GetDesc())
+SRC/Server/GameServer/wedding.cpp:154: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/whisper_admin.cpp:134: void operator () (LPDESC d)
+SRC/Server/GameServer/whisper_admin.cpp:136: if (!d->GetCharacter())
+SRC/Server/GameServer/whisper_admin.cpp:139: if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
+SRC/Server/GameServer/whisper_admin.cpp:141: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
+SRC/Server/GameServer/whisper_admin.cpp:157: int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)
+SRC/Server/GameServer/arena.cpp:307: chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/arena.cpp:315: chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+SRC/Server/GameServer/arena.cpp:333: chA->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/arena.cpp:340: chB->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/arena.cpp:357: chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/arena.cpp:362: chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+SRC/Server/GameServer/arena.cpp:452: chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/arena.cpp:453: chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/arena.cpp:985: if (pChar->GetDesc() != nullptr) {
+SRC/Server/GameServer/arena.cpp:986: pChar->GetDesc()->Packet(c_pvData, iSize);
+SRC/Server/GameServer/arena.cpp:1004: if (pChar->GetDesc() != nullptr) {
+SRC/Server/GameServer/battle.cpp:1022: //std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/battle.cpp:1023: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/battle_pass.cpp:196: //	if (!GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:589: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:669: pkChar->GetDesc()->BufferedPacket(&packet, sizeof(packet));
+SRC/Server/GameServer/battle_pass.cpp:670: pkChar->GetDesc()->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
+SRC/Server/GameServer/battle_pass.cpp:671: pkChar->GetDesc()->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
+SRC/Server/GameServer/battle_pass.cpp:680: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:734: if(!pkChar->GetDesc())
+SRC/Server/GameServer/battle_pass.cpp:784: if(!pkChar->GetDesc())
+SRC/Server/GameServer/building.cpp:94: LPDESC d;
+SRC/Server/GameServer/building.cpp:96: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/building.cpp:130: LPDESC d;
+SRC/Server/GameServer/building.cpp:132: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/building.cpp:741: LPDESC d = *(it++);
+SRC/Server/GameServer/building.cpp:743: if (d->GetCharacter() && d->GetCharacter()->GetMapIndex() == pTable->lMapIndex)
+SRC/Server/GameServer/building.cpp:746: d->GetCharacter()->SendGuildName(guild);
+SRC/Server/GameServer/building.cpp:937: void CManager::SendLandList(LPDESC d, int32_t lMapIndex)
+SRC/Server/GameServer/building.cpp:956: LPCHARACTER ch  = d->GetCharacter();
+SRC/Server/GameServer/char.cpp:125: DESC* desc = ch->GetDesc();
+SRC/Server/GameServer/char.cpp:149: DESC* otherDesc = other->GetDesc();
+SRC/Server/GameServer/char.cpp:738: if (GetDesc())
+SRC/Server/GameServer/char.cpp:740: GetDesc()->BindCharacter(nullptr);
+SRC/Server/GameServer/char.cpp:919: if (!ch->GetDesc())
+SRC/Server/GameServer/char.cpp:946: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1145: db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, GetDesc()->GetHandle(), &header, sizeof(TItemPriceListTable));
+SRC/Server/GameServer/char.cpp:1277: LPDESC d;
+SRC/Server/GameServer/char.cpp:1278: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/char.cpp:1430: if (entity->IsType(ENTITY_CHARACTER) && GetDesc()) {
+SRC/Server/GameServer/char.cpp:1437: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1462: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1518: if (!viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1547: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1569: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:1583: //	if (!viewer->GetDesc()) // Kell hogy legyen kliens socket
+SRC/Server/GameServer/char.cpp:1599: //	viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1621: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1622: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1639: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1640: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1654: //	if (GetDesc())
+SRC/Server/GameServer/char.cpp:1657: //		GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1661: //		sys_log(0, "WARNING: GetDesc() is null, cannot send belt name update");
+SRC/Server/GameServer/char.cpp:1672: LPDESC d;
+SRC/Server/GameServer/char.cpp:1674: if (!(d = entity->GetDesc()))
+SRC/Server/GameServer/char.cpp:1739: pack.bLanguage = (IsPC() && GetDesc()) ? GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/char.cpp:1763: if (pEntity->GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1769: pEntity->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1773: pEntity->GetDesc()->Packet(&pack2, sizeof(pack2));
+SRC/Server/GameServer/char.cpp:1779: if (pEntity->GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1781: pEntity->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1788: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char.cpp:1790: GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/char.cpp:1845: void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
+SRC/Server/GameServer/char.cpp:1876: if (GetDesc())
+SRC/Server/GameServer/char.cpp:1877: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:1962: strlcpy(tab.ip, GetDesc() ? GetDesc()->GetHostName() : "", sizeof(tab.ip));
+SRC/Server/GameServer/char.cpp:2079: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:2088: db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, GetDesc()->GetHandle(), &table, sizeof(TPlayerTable));
+SRC/Server/GameServer/char.cpp:2116: assert(GetDesc() != NULL);
+SRC/Server/GameServer/char.cpp:2160: LogManager::instance().LoginLog(false, GetDesc()->GetAccountTable().id, GetPlayerID(), GetLevel(), GetJob(), playTime);
+SRC/Server/GameServer/char.cpp:2163: CPCBangManager::instance().Log(GetDesc()->GetHostName(), GetPlayerID(), playTime);
+SRC/Server/GameServer/char.cpp:2264: if (GetDesc())
+SRC/Server/GameServer/char.cpp:2266: GetDesc()->BindCharacter(nullptr);
+SRC/Server/GameServer/char.cpp:2419: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char.cpp:2496: mainChrPacket.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2502: GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter4_BGM_VOL));
+SRC/Server/GameServer/char.cpp:2514: mainChrPacket.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2518: GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter3_BGM));
+SRC/Server/GameServer/char.cpp:2535: pack.empire = GetDesc()->GetEmpire();
+SRC/Server/GameServer/char.cpp:2538: GetDesc()->Packet(&pack, sizeof(TPacketGCMainCharacter));
+SRC/Server/GameServer/char.cpp:2548: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:2574: GetDesc()->Packet(&pack, sizeof(TPacketGCPoints));
+SRC/Server/GameServer/char.cpp:2686: if (!GetDesc() || !*GetDesc()->GetHostName())
+SRC/Server/GameServer/char.cpp:4025: if (GetDesc())
+SRC/Server/GameServer/char.cpp:4028: GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/char.cpp:5301: if (GetDesc())
+SRC/Server/GameServer/char.cpp:5316: GetDesc()->Packet(&pack, sizeof(struct packet_point_change));
+SRC/Server/GameServer/char.cpp:5677: LPDESC d = GetDesc();
+SRC/Server/GameServer/char.cpp:6575: pchInvitee->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:6998: if (GetDesc())
+SRC/Server/GameServer/char.cpp:7000: m_pointsInstant.gm_level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/char.cpp:7125: if (!pkChr->GetDesc())
+SRC/Server/GameServer/char.cpp:7131: pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7315: GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7356: if (!pkChr->GetDesc())
+SRC/Server/GameServer/char.cpp:7362: pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/char.cpp:7411: uint8_t ch = GetDesc() ? GetDesc()->GetAccountTable().bChannel : 0;
+SRC/Server/GameServer/char.cpp:7478: GetDesc()->Packet(&p, sizeof(TPacketGCWarp));
+SRC/Server/GameServer/char.cpp:7508: GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/char.cpp:7795: p.dwID = GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char.cpp:7796: strlcpy(p.szLogin, GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/char.cpp:7799: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_LOAD, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:7825: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:7866: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:7879: if (!IsPC() || !GetDesc())
+SRC/Server/GameServer/char.cpp:7886: GetDesc());
+SRC/Server/GameServer/char.cpp:7917: if (m_bMountInventoryLoaded || !GetDesc())
+SRC/Server/GameServer/char.cpp:7927: GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:7962: if (!GetDesc() || !m_pkMountInventory)
+SRC/Server/GameServer/char.cpp:7990: GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char.cpp:8018: GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+SRC/Server/GameServer/char.cpp:8107: GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:8115: DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u", get_table_postfix(), iSize / SAFEBOX_PAGE_SIZE, GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char.cpp:8614: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:8935: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9186: GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char.cpp:9360: DESC* desc = GetDesc();
+SRC/Server/GameServer/char.cpp:9465: if (GetDesc())
+SRC/Server/GameServer/char.cpp:9466: if (GetDesc()->DelayedDisconnect(number(2, 7)))
+SRC/Server/GameServer/char.cpp:9630: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:9685: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9711: if (!IsPC() || !GetDesc() || !CanWarp())
+SRC/Server/GameServer/char.cpp:9760: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char.cpp:9801: if (!ch->GetDesc())
+SRC/Server/GameServer/char.cpp:9887: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:9913: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10244: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10290: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10521: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:10558: GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+SRC/Server/GameServer/char.cpp:11382: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11389: GetDesc()->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
+SRC/Server/GameServer/char.cpp:11608: auto language = GetDesc()->GetLanguage();
+SRC/Server/GameServer/char.cpp:11668: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/char.cpp:11681: std::string login = ch->GetDesc()->GetAccountTable().login;
+SRC/Server/GameServer/char.cpp:11803: std::string login = GetDesc()->GetAccountTable().login;
+SRC/Server/GameServer/char.cpp:11887: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11897: db_clientdesc->DBPacket(HEADER_GD_SEND_OFFLINE_MESSAGE, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:11904: if (!GetDesc())
+SRC/Server/GameServer/char.cpp:11909: db_clientdesc->DBPacket(HEADER_GD_REQUEST_OFFLINE_MESSAGES, GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/char.cpp:11957: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%d';", GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11967: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%d';", amount, GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11973: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char.cpp:11983: std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", amount, GetDesc()->GetAccountTable().id));
+SRC/Server/GameServer/char2.cpp:31: LPDESC d = GetDesc();
+SRC/Server/GameServer/char2.cpp:106: LPDESC desc = GetDesc();
+SRC/Server/GameServer/char2.cpp:139: //			LPDESC desc = GetDesc();
+SRC/Server/GameServer/char_affect.cpp:27: void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point)
+SRC/Server/GameServer/char_affect.cpp:42: void SendAffectAddPacket(LPDESC d, CAffect * pkAff)
+SRC/Server/GameServer/char_affect.cpp:300: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:449: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:536: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/char_affect.cpp:611: if (!GetDesc()->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/char_affect.cpp:740: SendAffectAddPacket(GetDesc(), pkAff);
+SRC/Server/GameServer/char_affect.cpp:864: if (GetDesc()) {
+SRC/Server/GameServer/char_affect.cpp:865: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_affect.cpp:902: SendAffectAddPacket(GetDesc(), pkAff);
+SRC/Server/GameServer/char_affect.cpp:1012: SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
+SRC/Server/GameServer/char_battle.cpp:303: const char* szItemName = item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/char_battle.cpp:663: if (GetDesc()) {
+SRC/Server/GameServer/char_battle.cpp:665: GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/char_battle.cpp:1268: if (pkKiller && pkKiller->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1269: lang = pkKiller->GetDesc()->GetLanguage();
+SRC/Server/GameServer/char_battle.cpp:1662: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1665: DESC* d = ch->GetDesc();
+SRC/Server/GameServer/char_battle.cpp:1688: if (!mch || !mch->IsPC() || !mch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:1707: key = "ACC:" + std::to_string(mch->GetDesc()->GetAccountTable().id);
+SRC/Server/GameServer/char_battle.cpp:1768: if (!rch || !rch->IsPC() || !rch->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:2697: if ((GetDesc()->GetHostName() != pkKiller->GetDesc()->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
+SRC/Server/GameServer/char_battle.cpp:2779: GetDesc()->SetPhase(PHASE_DEAD);
+SRC/Server/GameServer/char_battle.cpp:2843: if (GetDesc() != nullptr) {
+SRC/Server/GameServer/char_battle.cpp:2850: SendAffectAddPacket(GetDesc(), *it++);
+SRC/Server/GameServer/char_battle.cpp:2998: if (GetDesc() != nullptr)
+SRC/Server/GameServer/char_battle.cpp:3000: GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+SRC/Server/GameServer/char_battle.cpp:3003: if (pAttacker->GetDesc() != nullptr)
+SRC/Server/GameServer/char_battle.cpp:3005: pAttacker->GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+SRC/Server/GameServer/char_battle.cpp:4411: if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4447: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:4455: if (!viewer || !viewer->GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4485: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:4491: if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:4531: GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:5249: //	if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:5285: //	GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_battle.cpp:5291: //	if (!GetDesc())
+SRC/Server/GameServer/char_battle.cpp:5329: //	GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/char_dragonsoul.cpp:155: LPDESC d = GetDesc();
+SRC/Server/GameServer/char_fishing.cpp:50: if (LPDESC d = ch->GetDesc())
+SRC/Server/GameServer/char_fishing.cpp:406: if (LPDESC d = GetDesc())
+SRC/Server/GameServer/char_horse.cpp:248: if (GetDesc()) {
+SRC/Server/GameServer/char_horse.cpp:249: bLang = GetDesc()->GetLanguage();
+SRC/Server/GameServer/char_item.cpp:593: if (GetDesc())
+SRC/Server/GameServer/char_item.cpp:618: GetDesc()->Packet(&pack, sizeof(TPacketGCItemSet));
+SRC/Server/GameServer/char_item.cpp:633: GetDesc()->Packet(&pack, sizeof(TPacketGCItemDelDeprecated));
+SRC/Server/GameServer/char_item.cpp:2741: GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+SRC/Server/GameServer/char_item.cpp:2829: GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+SRC/Server/GameServer/char_item.cpp:3140: db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_REQ, GetDesc()->GetHandle(), &dwPlayerID, sizeof(uint32_t));
+SRC/Server/GameServer/char_item.cpp:4244: if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
+SRC/Server/GameServer/char_item.cpp:5616: if (GetDesc() == nullptr)
+SRC/Server/GameServer/char_item.cpp:6253: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8210: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8307: GetDesc()->GetHostName(),
+SRC/Server/GameServer/char_item.cpp:8556: if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
+SRC/Server/GameServer/char_item.cpp:8967: GetDesc()->DelayedDisconnect(0);
+SRC/Server/GameServer/char_item.cpp:8988: //if (GetDesc()) {
+SRC/Server/GameServer/char_item.cpp:8989: //	GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/char_item.cpp:9278: LPDESC desc = GetDesc();
+SRC/Server/GameServer/char_item.cpp:9949: if (viewer->IsPC() && viewer->GetDesc())
+SRC/Server/GameServer/char_item.cpp:10278: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10365: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10467: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));//földröl
+SRC/Server/GameServer/char_item.cpp:10561: , 102, "%d#%s", item2->GetCount(), item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10648: , 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10783: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:10797: , 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:11971: , 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:12026: , 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_item.cpp:12093: , 102, "%d#%s", bCount, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/char_manager.cpp:1245: LPDESC d = c->GetDesc();
+SRC/Server/GameServer/char_manager.cpp:1980: if (!desc->GetCharacter())
+SRC/Server/GameServer/char_manager.cpp:1990: auto desc = ch->GetDesc();
+SRC/Server/GameServer/char_manager.cpp:2067: LPCHARACTER ch = desc->GetCharacter();
+SRC/Server/GameServer/char_manager.cpp:2083: LPCHARACTER ch = desc->GetCharacter();
+SRC/Server/GameServer/char_manager.cpp:2119: if (!desc->GetCharacter())
+SRC/Server/GameServer/char_manager.cpp:2173: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2181: uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char_manager.cpp:2183: db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
+SRC/Server/GameServer/char_manager.cpp:2279: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2379: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2501: uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/char_manager.cpp:2507: strlcpy(ipAdress, ch->GetDesc()->GetHostName(), sizeof(ipAdress));
+SRC/Server/GameServer/char_manager.cpp:2519: db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), buf.size());
+SRC/Server/GameServer/char_manager.cpp:2533: void RefreshItemShop(LPDESC d)
+SRC/Server/GameServer/char_manager.cpp:2535: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/char_quickslot.cpp:105: if (GetDesc())
+SRC/Server/GameServer/char_quickslot.cpp:111: GetDesc()->Packet(&pack_quickslot_add, sizeof(pack_quickslot_add));
+SRC/Server/GameServer/char_quickslot.cpp:129: GetDesc()->Packet(&pack_quickslot_del, sizeof(pack_quickslot_del));
+SRC/Server/GameServer/char_quickslot.cpp:149: GetDesc()->Packet(&pack_quickslot_swap, sizeof(pack_quickslot_swap));
+SRC/Server/GameServer/char_skill.cpp:181: GetDesc()->Packet(&p, sizeof(TPacketGCChangeSkillGroup));
+SRC/Server/GameServer/char_skill.cpp:191: if (!GetDesc())
+SRC/Server/GameServer/char_skill.cpp:198: GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
+SRC/Server/GameServer/char_skill.cpp:3136: if (this != pkVictim && this->GetDesc() && pkVictim->GetDesc())
+SRC/Server/GameServer/cmd.cpp:905: ch->GetDesc()->DelayedDisconnect(0);
+SRC/Server/GameServer/cmd.cpp:997: LogManager::instance().GMCommandLog(ch->GetPlayerID(), ch->GetName(), ch->GetDesc()->GetHostName(), g_bChannel, buf);
+SRC/Server/GameServer/cmd_general.cpp:47: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:50: DESC* d = ch->GetDesc();
+SRC/Server/GameServer/cmd_general.cpp:74: if (!ch || !ch->IsPC() || !ch->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:94: ch->GetDesc()->GetAccountTable().id
+SRC/Server/GameServer/cmd_general.cpp:314: ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:326: ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:356: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_general.cpp:358: if (d->GetCharacter())
+SRC/Server/GameServer/cmd_general.cpp:360: if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+SRC/Server/GameServer/cmd_general.cpp:361: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+SRC/Server/GameServer/cmd_general.cpp:368: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_general.cpp:376: if (d->GetCharacter())
+SRC/Server/GameServer/cmd_general.cpp:377: d->GetCharacter()->Disconnect("Shutdown(DisconnectFunc)");
+SRC/Server/GameServer/cmd_general.cpp:548: db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:580: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/cmd_general.cpp:593: acc_info.dwPlayerID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:735: ch->GetDesc()->SetPhase(PHASE_GAME);
+SRC/Server/GameServer/cmd_general.cpp:1561: //if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:1732: //if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+SRC/Server/GameServer/cmd_general.cpp:2008: p.dwID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:2012: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:2049: p.dwID = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/cmd_general.cpp:2050: strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/cmd_general.cpp:2053: db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/cmd_general.cpp:2920: ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:2934: ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:2948: ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/cmd_general.cpp:3403: //	uint8_t lang = ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/cmd_general.cpp:3515: LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ch->GetName());
+SRC/Server/GameServer/cmd_gm.cpp:148: //    if (!source->GetDesc() || !target->GetDesc())
+SRC/Server/GameServer/cmd_gm.cpp:1177: LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1182: tch = d->GetCharacter();
+SRC/Server/GameServer/cmd_gm.cpp:1426: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1428: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1431: d->GetCharacter()->ChatPacket((m_bBigFont)?CHAT_TYPE_BIG_NOTICE:CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1433: d->GetCharacter()->ChatPacket(CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1462: void operator() (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1464: if (d->GetCharacter() == nullptr) return;
+SRC/Server/GameServer/cmd_gm.cpp:1465: if (d->GetCharacter()->GetMapIndex() != m_mapIndex) return;
+SRC/Server/GameServer/cmd_gm.cpp:1467: d->GetCharacter()->ChatPacket(m_bBigFont == true ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1485: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1487: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1490: if (d->GetCharacter()->GetGMLevel() > GM_PLAYER)
+SRC/Server/GameServer/cmd_gm.cpp:1491: d->GetCharacter()->ChatPacket(CHAT_TYPE_NOTICE, "%s", m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1538: void operator () (LPDESC d) {
+SRC/Server/GameServer/cmd_gm.cpp:1539: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1544: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1545: } else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+SRC/Server/GameServer/cmd_gm.cpp:1546: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1549: else if (d->GetCharacter()->GetEmpire() == m_empire) {
+SRC/Server/GameServer/cmd_gm.cpp:1551: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1552: } else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+SRC/Server/GameServer/cmd_gm.cpp:1553: d->GetCharacter()->ChatPacketNew(m_type, m_idx, m_str);
+SRC/Server/GameServer/cmd_gm.cpp:1663: void operator () (LPDESC d)
+SRC/Server/GameServer/cmd_gm.cpp:1665: if (!d->GetCharacter())
+SRC/Server/GameServer/cmd_gm.cpp:1668: int len = snprintf(str + str_len, sizeof(str) - str_len, "%-16s ", d->GetCharacter()->GetName());
+SRC/Server/GameServer/cmd_gm.cpp:1715: LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1716: LPCHARACTER	tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1744: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1745: LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1768: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1769: LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+SRC/Server/GameServer/cmd_gm.cpp:1792: LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
+SRC/Server/GameServer/cmd_gm.cpp:1793: LPCHARACTER tch = d ? d->GetCharacter() : NULL;
+SRC/Server/GameServer/cmd_gm.cpp:3149: db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+SRC/Server/GameServer/cmd_gm.cpp:3215: db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+SRC/Server/GameServer/cmd_guild_renewal.cpp:47: LPDESC d = *it;
+SRC/Server/GameServer/cmd_guild_renewal.cpp:51: LPCHARACTER member = d->GetCharacter();
+SRC/Server/GameServer/config.cpp:1632: LPDESC d = *(it++);
+SRC/Server/GameServer/config.cpp:1634: if (!d->GetCharacter())
+SRC/Server/GameServer/config.cpp:1639: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 484, "");
+SRC/Server/GameServer/cuberenewal.cpp:830: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/cuberenewal.cpp:843: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/db.cpp:450: void DBManager::SendAuthLogin(LPDESC d)
+SRC/Server/GameServer/db.cpp:482: void DBManager::LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRemainSecs, LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes)
+SRC/Server/GameServer/db.cpp:614: LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
+SRC/Server/GameServer/db.cpp:844: LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
+SRC/Server/GameServer/db.cpp:1231: strlcpy(p.szSellAccount, CardOwner->GetDesc()->GetAccountTable().login, sizeof(p.szSellAccount));
+SRC/Server/GameServer/db.cpp:1233: strlcpy(p.szBuyAccount, CardTaker->GetDesc()->GetAccountTable().login, sizeof(p.szBuyAccount));
+SRC/Server/GameServer/db.cpp:1240: CardOwner->GetName(), CardOwner->GetDesc()->GetHostName(),
+SRC/Server/GameServer/db.cpp:1241: CardTaker->GetName(), CardTaker->GetDesc()->GetHostName());
+SRC/Server/GameServer/desc.cpp:58: m_lpCharacter = nullptr;
+SRC/Server/GameServer/desc.cpp:120: if (m_lpCharacter)
+SRC/Server/GameServer/desc.cpp:122: m_lpCharacter->Disconnect("DESC::~DESC");
+SRC/Server/GameServer/desc.cpp:123: m_lpCharacter = nullptr;
+SRC/Server/GameServer/desc.cpp:144: CShutdownManager::instance().RemoveDesc((LPDESC)this);
+SRC/Server/GameServer/desc.cpp:174: LPDESC desc = info->desc;
+SRC/Server/GameServer/desc.cpp:664: if (GetCharacter())
+SRC/Server/GameServer/desc.cpp:665: sys_log(0, "Handshake: client_time %u server_time %u name: %s", m_dwClientTime, dwCurTime, GetCharacter()->GetName());
+SRC/Server/GameServer/desc.cpp:686: sys_err("handshake retry limit reached! (limit %d character %s)", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? GetCharacter()->GetName() : "!NO CHARACTER!");
+SRC/Server/GameServer/desc.cpp:751: void DESC::BindCharacter(LPCHARACTER ch)
+SRC/Server/GameServer/desc.cpp:753: m_lpCharacter = ch;
+SRC/Server/GameServer/desc.cpp:803: LPDESC d2 = (LPDESC) fdwatch_get_client_data(m_lpFdw, event_idx);
+SRC/Server/GameServer/desc.cpp:848: LPDESC d = info->desc;
+SRC/Server/GameServer/desc.cpp:870: if (GetCharacter()) {
+SRC/Server/GameServer/desc.cpp:875: GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 295, "");
+SRC/Server/GameServer/desc_client.cpp:170: LPDESC d = *it;
+SRC/Server/GameServer/desc_client.cpp:184: LPDESC d = *it;
+SRC/Server/GameServer/desc_manager.cpp:233: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:251: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:292: LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
+SRC/Server/GameServer/desc_manager.cpp:295: LPDESC						newd;
+SRC/Server/GameServer/desc_manager.cpp:374: LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
+SRC/Server/GameServer/desc_manager.cpp:403: void DESC_MANAGER::ConnectAccount(const std::string& login, LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:435: void DESC_MANAGER::DestroyDesc(LPDESC d, bool bEraseFromSet)
+SRC/Server/GameServer/desc_manager.cpp:461: LPDESC d = *i;
+SRC/Server/GameServer/desc_manager.cpp:484: LPDESC DESC_MANAGER::FindByLoginName(const std::string& login)
+SRC/Server/GameServer/desc_manager.cpp:494: LPDESC DESC_MANAGER::FindByHandle(uint32_t handle)
+SRC/Server/GameServer/desc_manager.cpp:517: bool operator () (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:519: if (d->GetCharacter() && !strcmp(d->GetCharacter()->GetName(), m_name))
+SRC/Server/GameServer/desc_manager.cpp:526: LPDESC DESC_MANAGER::FindByCharacterName(const char* name)
+SRC/Server/GameServer/desc_manager.cpp:549: void operator () (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:576: LPDESC DESC_MANAGER::FindByHandshake(uint32_t dwHandshake)
+SRC/Server/GameServer/desc_manager.cpp:598: void operator() (LPDESC d)
+SRC/Server/GameServer/desc_manager.cpp:600: if (d->GetCharacter())
+SRC/Server/GameServer/desc_manager.cpp:654: LPDESC DESC_MANAGER::FindByLoginKey(uint32_t dwKey)
+SRC/Server/GameServer/desc_manager.cpp:661: return it->second->m_pkDesc;
+SRC/Server/GameServer/desc_manager.cpp:665: uint32_t DESC_MANAGER::CreateLoginKey(LPDESC d)
+SRC/Server/GameServer/DragonSoul.cpp:496: ch->ChatPacketNew(CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/DragonSoul.cpp:520: ch->ChatPacketNew(CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+SRC/Server/GameServer/DragonSoul.cpp:1340: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/entity.cpp:72: if (ent->GetDesc())
+SRC/Server/GameServer/entity.cpp:73: ent->GetDesc()->Packet(m_data, m_bytes);
+SRC/Server/GameServer/exchange.cpp:22: if (!ch->GetDesc())
+SRC/Server/GameServer/exchange.cpp:57: ch->GetDesc()->Packet(&pack_exchg, sizeof(pack_exchg));
+SRC/Server/GameServer/fishing.cpp:433: ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+SRC/Server/GameServer/fishing.cpp:542: ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+SRC/Server/GameServer/guild.cpp:44: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:355: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:364: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:413: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:444: LPDESC d;
+SRC/Server/GameServer/guild.cpp:445: if (!(d=ch->GetDesc()))
+SRC/Server/GameServer/guild.cpp:501: if (!ch->GetDesc())
+SRC/Server/GameServer/guild.cpp:515: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild.cpp:530: if (!ch->GetDesc())
+SRC/Server/GameServer/guild.cpp:543: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild.cpp:760: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:787: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:864: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:904: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:913: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:996: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1117: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:1180: LPDESC d = (*(itOnline++))->GetDesc();
+SRC/Server/GameServer/guild.cpp:1215: LPDESC d = (*(itOnline++))->GetDesc();
+SRC/Server/GameServer/guild.cpp:1450: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:1641: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1749: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1818: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1874: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1904: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:1962: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:2140: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild.cpp:2311: pchInvitee->GetDesc()->Packet( buf.read_peek(), buf.size() );
+SRC/Server/GameServer/guild.cpp:2596: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild.cpp:2667: LPDESC d = (*it)->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:36: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:650: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_manager.cpp:850: if (!ch->GetDesc())
+SRC/Server/GameServer/guild_manager.cpp:866: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/guild_renewal.cpp:323: LPDESC d = *it;
+SRC/Server/GameServer/guild_renewal.cpp:327: LPCHARACTER member = d->GetCharacter();
+SRC/Server/GameServer/guild_renewal.cpp:645: if (!ch || !ch->GetDesc())
+SRC/Server/GameServer/guild_renewal.cpp:808: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_renewal.cpp:850: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_renewal.cpp:1223: const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+SRC/Server/GameServer/guild_war.cpp:50: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/guild_war.cpp:64: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input.cpp:36: bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+SRC/Server/GameServer/input.cpp:114: void CInputProcessor::Pong(LPDESC d)
+SRC/Server/GameServer/input.cpp:119: void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input.cpp:158: ch->GetDesc()->SetClientVersion(p->timestamp);
+SRC/Server/GameServer/input.cpp:161: void LoginFailure(LPDESC d, const char * c_pszStatus)
+SRC/Server/GameServer/input.cpp:200: int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:68: void CInputAuth::Login(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:165: void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_auth.cpp:417: int CInputAuth::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:124: LPDESC d = DESC_MANAGER::instance().FindByHandle(dwHandle);
+SRC/Server/GameServer/input_db.cpp:189: void CInputDB::PlayerCreateFailure(LPDESC d, uint8_t bType)
+SRC/Server/GameServer/input_db.cpp:202: void CInputDB::PlayerCreateSuccess(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:418: void CInputDB::PlayerDeleteSuccess(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:431: void CInputDB::PlayerDeleteFail(LPDESC d)
+SRC/Server/GameServer/input_db.cpp:442: void CInputDB::ChangeName(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:472: void CInputDB::PlayerLoad(LPDESC d, const char * data)
+SRC/Server/GameServer/input_db.cpp:523: if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/input_db.cpp:525: LPCHARACTER p = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:542: d->BindCharacter(ch);
+SRC/Server/GameServer/input_db.cpp:561: inet_ntoa(ch->GetDesc()->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ch->GetMapIndex(), ch->GetAlignment());
+SRC/Server/GameServer/input_db.cpp:567: ch->GetDesc()->GetAccountTable().id, ch->GetPlayerID(), ch->GetLevel(), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+SRC/Server/GameServer/input_db.cpp:570: ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ch->GetDesc()->GetHostName()));
+SRC/Server/GameServer/input_db.cpp:1141: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input_db.cpp:1171: void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1176: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1246: if (ch->GetDesc()->IsPhase(PHASE_GAME))
+SRC/Server/GameServer/input_db.cpp:1261: void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1274: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1279: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1287: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1297: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1304: if (d->GetCharacter()->GetPremiumRemainSeconds(PREMIUM_SAFEBOX) > 0 || d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_LARGE_SAFEBOX))
+SRC/Server/GameServer/input_db.cpp:1308: //if (d->GetCharacter()->IsEquipUniqueItem(UNIQUE_ITEM_SAFEBOX_EXPAND))
+SRC/Server/GameServer/input_db.cpp:1311: //d->GetCharacter()->LoadSafebox(p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1312: d->GetCharacter()->LoadSafebox(bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1315: void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1322: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1325: d->GetCharacter()->ChangeSafeboxSize(bSize);
+SRC/Server/GameServer/input_db.cpp:1331: void CInputDB::SafeboxWrongPassword(LPDESC d)
+SRC/Server/GameServer/input_db.cpp:1336: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1343: d->GetCharacter()->CancelSafeboxLoad();
+SRC/Server/GameServer/input_db.cpp:1346: void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_db.cpp:1351: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1357: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 187, "");
+SRC/Server/GameServer/input_db.cpp:1360: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 186, "");
+SRC/Server/GameServer/input_db.cpp:1365: void CInputDB::MallLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1378: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1381: d->GetCharacter()->LoadMall(p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+SRC/Server/GameServer/input_db.cpp:1384: void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1393: LPDESC d2 = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_db.cpp:1412: void CInputDB::EmpireSelect(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1632: void CInputDB::SkillColorLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1636: if (!d || !(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_db.cpp:1643: void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1647: if (!d || !(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_db.cpp:1772: void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1775: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1778: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1794: void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1797: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1800: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1842: ch->GetDesc()->BufferedPacket(&packet, sizeof(packet));
+SRC/Server/GameServer/input_db.cpp:1843: ch->GetDesc()->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
+SRC/Server/GameServer/input_db.cpp:1854: void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:1859: if (!d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:1862: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:1999: void CInputDB::AuthLogin(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:2138: LPDESC d = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_db.cpp:2143: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:2318: void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
+SRC/Server/GameServer/input_db.cpp:2322: if (!d || !(ch = d->GetCharacter()) )
+SRC/Server/GameServer/input_db.cpp:2855: int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_db.cpp:3263: bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesProceed)
+SRC/Server/GameServer/input_db.cpp:3323: LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);	//login
+SRC/Server/GameServer/input_db.cpp:3329: if (d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3331: LPCHARACTER ch = d->GetCharacter();
+SRC/Server/GameServer/input_db.cpp:3343: void CInputDB::RespondChannelStatus(LPDESC desc, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3363: void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3365: if (!d || !d->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3374: d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 636, "");
+SRC/Server/GameServer/input_db.cpp:3380: d->GetCharacter()->StartChannelSwitch(p->lAddr, p->port);
+SRC/Server/GameServer/input_db.cpp:3386: void CInputDB::ReadOfflineMessages(LPDESC desc, const char* pcData)
+SRC/Server/GameServer/input_db.cpp:3388: if (!desc || !desc->GetCharacter())
+SRC/Server/GameServer/input_db.cpp:3391: if (desc->GetCharacter()->IsBlockMode(BLOCK_WHISPER))
+SRC/Server/GameServer/input_db.cpp:3462: void CInputDB::ItemShop(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_db.cpp:3473: CHARACTER_MANAGER::Instance().LoadItemShopLogReal(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_db.cpp:3479: CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_login.cpp:132: void CInputLogin::Login(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:184: void CInputLogin::LoginByKey(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:238: void CInputLogin::ChangeName(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:268: void CInputLogin::CharacterSelect(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:481: void CInputLogin::CharacterCreate(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:552: void CInputLogin::CharacterDelete(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:595: void CInputLogin::Entergame(LPDESC d, const char* data)
+SRC/Server/GameServer/input_login.cpp:599: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_login.cpp:795: ch->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+SRC/Server/GameServer/input_login.cpp:913: packet.bLanguage = ch->GetDesc()->GetLanguage();
+SRC/Server/GameServer/input_login.cpp:914: ch->GetDesc()->Packet(&packet, sizeof(TPacketChangeLanguage));
+SRC/Server/GameServer/input_login.cpp:976: void CInputLogin::Empire(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1008: int CInputLogin::GuildSymbolUpload(LPDESC d, const char* c_pData, uint64_t uiBytes)
+SRC/Server/GameServer/input_login.cpp:1052: void CInputLogin::GuildSymbolCRC(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1089: void CInputLogin::GuildMarkUpload(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1133: void CInputLogin::GuildMarkIDXList(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1166: void CInputLogin::GuildMarkCRCList(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1217: int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
+SRC/Server/GameServer/input_login.cpp:1301: Version(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_login.cpp:1305: Version(d->GetCharacter(), c_pData);
+SRC/Server/GameServer/input_main.cpp:141: ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+SRC/Server/GameServer/input_main.cpp:160: ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+SRC/Server/GameServer/input_main.cpp:243: auto it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/input_main.cpp:247: spam_score_of_ip.insert(std::make_pair(ch->GetDesc()->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
+SRC/Server/GameServer/input_main.cpp:248: it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/input_main.cpp:268: strlcpy(info->host, ch->GetDesc()->GetHostName(), sizeof(info->host));
+SRC/Server/GameServer/input_main.cpp:407: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:424: LPDESC pkDesc = nullptr;
+SRC/Server/GameServer/input_main.cpp:438: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:445: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:467: pkDesc = pkChr->GetDesc();
+SRC/Server/GameServer/input_main.cpp:473: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:491: int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/input_main.cpp:530: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:538: ch->GetDesc()->Packet(&pack, sizeof(TPacketGCWhisper));
+SRC/Server/GameServer/input_main.cpp:547: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:554: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:559: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:566: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/input_main.cpp:614: if (ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:621: int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+SRC/Server/GameServer/input_main.cpp:665: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:689: if (!c->GetDesc())
+SRC/Server/GameServer/input_main.cpp:692: c->GetDesc()->Packet(m_buf, m_buf_len);
+SRC/Server/GameServer/input_main.cpp:713: void operator () (LPDESC d)
+SRC/Server/GameServer/input_main.cpp:715: if (!d->GetCharacter())
+SRC/Server/GameServer/input_main.cpp:718: if (d->GetCharacter()->GetMapIndex() != iMapIndex)
+SRC/Server/GameServer/input_main.cpp:725: d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+SRC/Server/GameServer/input_main.cpp:726: d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+SRC/Server/GameServer/input_main.cpp:738: ConvertEmpireText(bEmpire, converted_msg + namelen, len - namelen, 10 + 2 * d->GetCharacter()->GetSkillPower(SKILL_LANGUAGE1 + bEmpire - 1));
+SRC/Server/GameServer/input_main.cpp:780: void operator() (LPDESC d)
+SRC/Server/GameServer/input_main.cpp:782: if (!d->GetCharacter())
+SRC/Server/GameServer/input_main.cpp:785: if (d->GetCharacter()->GetMapIndex() != m_iMapIndex)
+SRC/Server/GameServer/input_main.cpp:790: d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+SRC/Server/GameServer/input_main.cpp:791: d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+SRC/Server/GameServer/input_main.cpp:811: if (!ch->GetDesc()) { return; }
+SRC/Server/GameServer/input_main.cpp:892: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:1103: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/input_main.cpp:1189: //	LPDESC d = *it;
+SRC/Server/GameServer/input_main.cpp:1191: //	if (!d || !(rc = d->GetCharacter())) continue;
+SRC/Server/GameServer/input_main.cpp:1228: LPDESC d = *it;
+SRC/Server/GameServer/input_main.cpp:1229: if (!d || !d->GetCharacter()) continue;
+SRC/Server/GameServer/input_main.cpp:1230: d->GetCharacter()->ChatPacket(CHAT_TYPE_INFO, "%s", msg);
+SRC/Server/GameServer/input_main.cpp:1421: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, "", "NORMAL", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1447: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetParty()->GetLeaderPID(), "", "PARTY", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1467: LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetGuild()->GetID(), ch->GetGuild()->GetName(), "GUILD", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/input_main.cpp:1691: LPDESC d = ch_companion->GetDesc();
+SRC/Server/GameServer/input_main.cpp:1704: if (ch->GetDesc() == d) // ڽ ߰  .
+SRC/Server/GameServer/input_main.cpp:1806: db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+SRC/Server/GameServer/input_main.cpp:2218: if (ch->GetDesc()) {
+SRC/Server/GameServer/input_main.cpp:2219: bool CheckSpeedHack = (false == ch->GetDesc()->IsHandshaking() && dwCurTime - ch->GetDesc()->GetClientTime() > 7000);
+SRC/Server/GameServer/input_main.cpp:2223: int iServerDelta = (int)(dwCurTime - ch->GetDesc()->GetClientTime());
+SRC/Server/GameServer/input_main.cpp:2226: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/input_main.cpp:2229: ch->GetDesc()->DelayedDisconnect(3);
+SRC/Server/GameServer/input_main.cpp:2261: ch->GetDesc()->DelayedDisconnect(number(150, 500));
+SRC/Server/GameServer/input_main.cpp:2291: if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+SRC/Server/GameServer/input_main.cpp:2297: if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+SRC/Server/GameServer/input_main.cpp:2412: if (nullptr == ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:2417: ch->GetDesc()->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
+SRC/Server/GameServer/input_main.cpp:2469: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2490: //ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2540: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2568: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2581: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:2719: ch->GetDesc()->Packet(&pckTarget, sizeof(TPacketGCTarget));
+SRC/Server/GameServer/input_main.cpp:3344: if (!pInvitee || !ch->GetDesc() || !pInvitee->GetDesc())
+SRC/Server/GameServer/input_main.cpp:3369: if (!pInviter || !pInviter->GetDesc()) {
+SRC/Server/GameServer/input_main.cpp:3677: if (!ch || (ch && !ch->GetDesc()))
+SRC/Server/GameServer/input_main.cpp:3748: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:3782: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/input_main.cpp:4084: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:4247: ch->GetDesc()->SetPhase(PHASE_CLOSE);
+SRC/Server/GameServer/input_main.cpp:5172: int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_main.cpp:5177: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_main.cpp:5598: int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_main.cpp:5602: if (!(ch = d->GetCharacter()))
+SRC/Server/GameServer/input_main.cpp:5704: if (!ch->GetDesc())
+SRC/Server/GameServer/input_main.cpp:5707: uint8_t bCurrentLanguage = ch->GetDesc()->GetLanguage();
+SRC/Server/GameServer/input_main.cpp:5715: ch->GetDesc()->SetLanguage(bLanguage);
+SRC/Server/GameServer/input_main.cpp:5727: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/input_p2p.cpp:35: void CInputP2P::Login(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:40: void CInputP2P::Logout(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:46: int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:99: pkChr->GetDesc()->Packet(buf, p->lSize);
+SRC/Server/GameServer/input_p2p.cpp:102: pkChr->GetDesc()->Packet(c_pbData, p->lSize);
+SRC/Server/GameServer/input_p2p.cpp:108: int CInputP2P::Notice(LPDESC d, const char * c_pData, uint64_t uiBytes, bool bBigFont)
+SRC/Server/GameServer/input_p2p.cpp:110: int CInputP2P::Notice(LPDESC d, const char * c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:136: int CInputP2P::NoticeNew(LPDESC d, const char * c_pData, uint64_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:156: int CInputP2P::Guild(LPDESC d, const char* c_pData, size_t uiBytes)
+SRC/Server/GameServer/input_p2p.cpp:230: void operator () (LPDESC d)
+SRC/Server/GameServer/input_p2p.cpp:233: if (!d->GetCharacter() || (!g_bGlobalShoutEnable && d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+SRC/Server/GameServer/input_p2p.cpp:236: if (!d->GetCharacter() || (d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+SRC/Server/GameServer/input_p2p.cpp:239: d->GetCharacter()->ChatPacket(CHAT_TYPE_SHOUT, "%s", m_str);
+SRC/Server/GameServer/input_p2p.cpp:259: LPDESC d = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
+SRC/Server/GameServer/input_p2p.cpp:264: if (!d->GetCharacter())
+SRC/Server/GameServer/input_p2p.cpp:272: void CInputP2P::Setup(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:293: void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_p2p.cpp:360: void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:397: void CInputP2P::IamAwake(LPDESC d, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:404: int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_p2p.cpp:531: void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
+SRC/Server/GameServer/input_udp.cpp:58: void CInputUDP::Handshake(LPDESC pDesc, const char * c_pData)
+SRC/Server/GameServer/input_udp.cpp:102: int CInputUDP::Analyze(LPDESC pDesc, uint8_t bHeader, const char * c_pData)
+SRC/Server/GameServer/input_udp.cpp:124: bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r_iBytesProceed)
+SRC/Server/GameServer/item.cpp:148: LPDESC d;
+SRC/Server/GameServer/item.cpp:150: if (!(d = ent->GetDesc()))
+SRC/Server/GameServer/item.cpp:189: LPDESC d;
+SRC/Server/GameServer/item.cpp:191: if (!(d = ent->GetDesc()))
+SRC/Server/GameServer/item.cpp:246: if (!m_pOwner || !m_pOwner->GetDesc())
+SRC/Server/GameServer/item.cpp:269: m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/item.cpp:599: if (ch->GetDesc())
+SRC/Server/GameServer/item.cpp:650: if (ch->GetDesc())
+SRC/Server/GameServer/item.cpp:2239: if (pkOwner && pkOwner->GetDesc() && item->GetWindow() == MOUNT_INVENTORY)
+SRC/Server/GameServer/item.cpp:2251: pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/item.cpp:2252: pkOwner->GetDesc()->Packet(msg, len + 1);
+SRC/Server/GameServer/item.cpp:3035: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item.cpp:3036: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item.cpp:3829: //			if (LPDESC d = m_pOwner->GetDesc())
+SRC/Server/GameServer/item.cpp:3873: if (LPDESC d = m_pOwner->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:247: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:248: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:588: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:589: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:608: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:609: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_attribute.cpp:647: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:704: if (GetOwner() && GetOwner()->GetDesc())
+SRC/Server/GameServer/item_attribute.cpp:705: pszIP = GetOwner()->GetDesc()->GetHostName();
+SRC/Server/GameServer/item_manager.cpp:612: t.owner = (t.window == SAFEBOX || t.window == MALL) ? item->GetOwner()->GetDesc()->GetAccountTable().id : item->GetOwner()->GetPlayerID();
+SRC/Server/GameServer/log.cpp:88: c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "",
+SRC/Server/GameServer/log.cpp:95: ItemLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), itemID, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "", itemVnum);
+SRC/Server/GameServer/log.cpp:111: CharLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), dw, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+SRC/Server/GameServer/log.cpp:142: if (ch->GetDesc())
+SRC/Server/GameServer/log.cpp:144: HackLog(c_pszHackName, ch->GetDesc()->GetAccountTable().login, ch->GetName(), ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/log.cpp:262: if (nullptr != pChar->GetDesc())
+SRC/Server/GameServer/log.cpp:264: aid = pChar->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/log.cpp:314: if (nullptr == ch->GetDesc())
+SRC/Server/GameServer/log.cpp:323: ch->GetDesc()->GetAccountTable().id,
+SRC/Server/GameServer/log.cpp:325: ch->GetDesc()->GetHostName(),
+SRC/Server/GameServer/log.cpp:326: ch->GetDesc()->GetClientVersion());
+SRC/Server/GameServer/log.cpp:331: ch->GetDesc()->GetAccountTable().id,
+SRC/Server/GameServer/LostCastleDungeon.cpp:162: if (pc && pc->GetDesc())
+SRC/Server/GameServer/LostCastleDungeon.cpp:242: if (!viewer || !viewer->GetDesc() || !target)
+SRC/Server/GameServer/LostCastleDungeon.cpp:253: viewer->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/main.cpp:216: void operator () (LPDESC d)
+SRC/Server/GameServer/main.cpp:218: if (d->GetCharacter())
+SRC/Server/GameServer/main.cpp:220: if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+SRC/Server/GameServer/main.cpp:221: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+SRC/Server/GameServer/main.cpp:228: void operator () (LPDESC d)
+SRC/Server/GameServer/main.cpp:900: LPDESC	d;
+SRC/Server/GameServer/main.cpp:911: d = (LPDESC) fdwatch_get_client_data(fdw, event_idx);
+SRC/Server/GameServer/marriage.cpp:54: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/marriage.cpp:278: LPDESC d1, d2;
+SRC/Server/GameServer/marriage.cpp:281: d1 = ch1 ? ch1->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:294: d2 = ch2 ? ch2->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:338: LPDESC d1, d2;
+SRC/Server/GameServer/marriage.cpp:341: d1 = ch1 ? ch1->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:358: d2 = ch2 ? ch2->GetDesc() : nullptr;
+SRC/Server/GameServer/marriage.cpp:409: ch1->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/marriage.cpp:410: ch2->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/messenger_manager.cpp:302: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:391: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:396: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:417: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:472: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:562: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:568: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:593: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:693: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/messenger_manager.cpp:752: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/messenger_manager.cpp:757: if (!d->GetCharacter())
+SRC/Server/GameServer/messenger_manager.cpp:782: LPDESC d = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/MountInventory.cpp:190: return m_pkOwner && m_pkOwner->GetDesc() ? m_pkOwner->GetDesc()->GetAccountTable().id : 0;
+SRC/Server/GameServer/MountSystem.cpp:534: LPCHARACTER pMount = mountActor->GetCharacter();
+SRC/Server/GameServer/new_offlineshop_manager.cpp:740: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:763: ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:764: ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:772: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:783: ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:784: ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2225: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2235: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2262: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2356: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2390: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2396: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2433: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2439: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2448: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2453: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2469: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2475: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2549: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2566: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2574: ch->GetDesc()->Packet(&pack , sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2798: if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ch->GetDesc()->GetLanguage()] , strnlen(pTable->szLocaleName[ch->GetDesc()->GetLanguage()], ITEM_NAME_MAX_LEN)))
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2837: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:2859: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3038: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3061: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3112: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3229: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3266: ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3523: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3542: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3550: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3570: ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3577: if (!ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3585: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3593: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/new_offlineshop_manager.cpp:3625: if(!ch || !ch->GetDesc())
+SRC/Server/GameServer/New_PetSystem.cpp:1588: LPCHARACTER pPet = petActor->GetCharacter();
+SRC/Server/GameServer/new_switchbot.cpp:290: if (pkKiller && pkKiller->GetDesc())
+SRC/Server/GameServer/new_switchbot.cpp:291: lang = pkKiller->GetDesc()->GetLanguage();
+SRC/Server/GameServer/new_switchbot.cpp:333: LPDESC desc = pkOwner->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:398: pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
+SRC/Server/GameServer/new_switchbot.cpp:399: pkOwner->GetDesc()->Packet(buf, len);
+SRC/Server/GameServer/new_switchbot.cpp:812: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:1049: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/new_switchbot.cpp:1106: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/OrcsDungeon.cpp:455: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/OXEvent.cpp:444: LogManager::instance().ItemLog(pkChar->GetPlayerID(), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+SRC/Server/GameServer/OXEvent.cpp:448: LogManager::instance().ItemLog(pkChar->GetPlayerID(), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+SRC/Server/GameServer/p2p.cpp:31: void P2P_MANAGER::Boot(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:56: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:60: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/p2p.cpp:65: void P2P_MANAGER::RegisterAcceptor(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:72: void P2P_MANAGER::UnregisterAcceptor(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:79: void P2P_MANAGER::RegisterConnector(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:92: void P2P_MANAGER::UnregisterConnector(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:94: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.find(d);
+SRC/Server/GameServer/p2p.cpp:104: void P2P_MANAGER::EraseUserByDesc(LPDESC d)
+SRC/Server/GameServer/p2p.cpp:118: void P2P_MANAGER::Send(const void * c_pvData, int iSize, LPDESC except)
+SRC/Server/GameServer/p2p.cpp:120: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:124: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/p2p.cpp:133: void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
+SRC/Server/GameServer/p2p.cpp:261: std::unordered_set<LPDESC>::iterator it = m_set_pkPeers.begin();
+SRC/Server/GameServer/p2p.cpp:267: LPDESC pkDesc = *it++;
+SRC/Server/GameServer/party.cpp:234: if (leader && leader->GetDesc())
+SRC/Server/GameServer/party.cpp:320: if (rMember.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:325: rMember.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:675: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:676: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:692: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:693: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:699: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:711: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:717: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:729: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:731: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:738: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:750: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:752: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:759: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:773: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:801: if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+SRC/Server/GameServer/party.cpp:804: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:811: if (!ch->GetDesc())
+SRC/Server/GameServer/party.cpp:822: if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+SRC/Server/GameServer/party.cpp:825: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:846: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:852: ch->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1382: if (bLongTimeExpBonusChanged && ch->GetDesc()) {
+SRC/Server/GameServer/party.cpp:1454: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:1455: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1469: if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+SRC/Server/GameServer/party.cpp:1470: it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+SRC/Server/GameServer/party.cpp:1587: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/PetSystem.cpp:525: LPCHARACTER pPet = petActor->GetCharacter();
+SRC/Server/GameServer/pvp.cpp:430: LPDESC d = *it++;
+SRC/Server/GameServer/pvp.cpp:663: LPDESC pkVictimDesc = pkVictim->GetDesc();
+SRC/Server/GameServer/pvp.cpp:1035: void CPVPManager::SendList(LPDESC d)
+SRC/Server/GameServer/pvp.cpp:1039: uint32_t dwVID = d->GetCharacter()->GetVID();
+SRC/Server/GameServer/pvp.cpp:1081: if (ch && ch->GetDesc())
+SRC/Server/GameServer/pvp.cpp:1083: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/pvp.cpp:1090: if (ch && ch->GetDesc())
+SRC/Server/GameServer/pvp.cpp:1092: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questlua.cpp:106: if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+SRC/Server/GameServer/questlua.cpp:108: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questlua.cpp:117: if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+SRC/Server/GameServer/questlua.cpp:120: ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questlua_dungeon.cpp:91: std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ch->GetDesc() ? ch->GetDesc()->GetAccountTable().id : 0, pid, map_index, 1, time, damage));
+SRC/Server/GameServer/questlua_dungeon.cpp:1324: LPDESC desc = tch->GetDesc();
+SRC/Server/GameServer/questlua_dungeon.cpp:1383: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/questlua_game.cpp:61: LPDESC d = q.GetCurrentCharacterPtr()->GetDesc();
+SRC/Server/GameServer/questlua_game.cpp:83: p.dwID = q.GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/questlua_game.cpp:85: db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE,  q.GetCurrentCharacterPtr()->GetDesc()->GetHandle(), &p, sizeof(p));
+SRC/Server/GameServer/questlua_global.cpp:646: lua_pushstring(L,pTable->szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+SRC/Server/GameServer/questlua_global.cpp:671: lua_pushstring(L, pkMob->m_table.szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+SRC/Server/GameServer/questlua_guild.cpp:194: strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+SRC/Server/GameServer/questlua_guild.cpp:215: CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_party.cpp:121: if (ch->GetDesc())
+SRC/Server/GameServer/questlua_party.cpp:124: ch->GetDesc()->BufferedPacket(&pack, sizeof(struct packet_script));
+SRC/Server/GameServer/questlua_party.cpp:125: ch->GetDesc()->Packet(data.c_str(),data.size());
+SRC/Server/GameServer/questlua_party.cpp:170: if (ch->GetDesc())
+SRC/Server/GameServer/questlua_party.cpp:173: ch->GetDesc()->BufferedPacket(&packet_script, sizeof(struct packet_script));
+SRC/Server/GameServer/questlua_party.cpp:174: ch->GetDesc()->Packet(str,len);
+SRC/Server/GameServer/questlua_pc.cpp:2240: LogManager::instance().ChangeNameLog(pid, ch->GetName(), szName, ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/questlua_pc.cpp:2574: if ( pChar->GetDesc() != nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:2576: lua_pushnumber( L, pChar->GetDesc()->GetAccountTable().id );
+SRC/Server/GameServer/questlua_pc.cpp:2591: if(nullptr != pChar->GetDesc() )
+SRC/Server/GameServer/questlua_pc.cpp:2593: lua_pushstring( L, pChar->GetDesc()->GetAccountTable().login );
+SRC/Server/GameServer/questlua_pc.cpp:2795: if (ch == nullptr || ch->GetDesc() == nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:2809: packet.aid = ch->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/questlua_pc.cpp:2833: sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_pc.cpp:2836: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2840: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2861: sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+SRC/Server/GameServer/questlua_pc.cpp:2864: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:2871: ch->GetDesc()->GetAccountTable().login,
+SRC/Server/GameServer/questlua_pc.cpp:3306: lua_pushstring(L, ch->GetDesc()->GetHostName());
+SRC/Server/GameServer/questlua_pc.cpp:3313: lua_pushstring(L, ch->GetDesc()->GetClientVersion());
+SRC/Server/GameServer/questlua_pc.cpp:3320: bool bRet = ch->GetDesc()->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
+SRC/Server/GameServer/questlua_pc.cpp:3503: if (pChar->GetDesc() != nullptr)
+SRC/Server/GameServer/questlua_pc.cpp:3505: lua_pushstring(L, LC_CONVERT(pChar->GetDesc()->GetLanguage()));
+SRC/Server/GameServer/questlua_pc.cpp:3661: db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+SRC/Server/GameServer/questlua_pc.cpp:3775: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questlua_pet.cpp:143: LPCHARACTER pet_ch = petActor->GetCharacter();
+SRC/Server/GameServer/questlua_petnew.cpp:264: LPCHARACTER pet_ch = petActor->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1144: LPDESC desc = ch ? ch->GetDesc() : nullptr;
+SRC/Server/GameServer/questmanager.cpp:1394: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1419: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questmanager.cpp:1432: LPCHARACTER ch = (*it)->GetCharacter();
+SRC/Server/GameServer/questnpc.cpp:943: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/questpc.cpp:298: CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(buf.read_peek(), buf.size());
+SRC/Server/GameServer/questpc.cpp:346: //		CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(&qi, sizeof(qi));
+SRC/Server/GameServer/refine.cpp:62: ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ch->GetDesc()->GetLanguage()]
+SRC/Server/GameServer/RuneDungeon.cpp:287: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/safebox.cpp:86: m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/safebox.cpp:120: m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/safebox.cpp:131: t.dwID = m_pkChrOwner->GetDesc()->GetAccountTable().id;
+SRC/Server/GameServer/sectree.cpp:51: if (ch->GetDesc())
+SRC/Server/GameServer/sectree.cpp:52: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/sectree_manager.cpp:1033: if (ch->GetDesc())
+SRC/Server/GameServer/sectree_manager.cpp:1034: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/sectree_manager.cpp:1099: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/sectree_manager.cpp:1162: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/shop.cpp:830: ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
+SRC/Server/GameServer/shop.cpp:831: ch->GetDesc()->Packet(&pack2, sizeof(TPacketGCShopStart));
+SRC/Server/GameServer/shop.cpp:849: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shop.cpp:864: if (ch->GetDesc())
+SRC/Server/GameServer/shop.cpp:865: ch->GetDesc()->Packet(data, bytes);
+SRC/Server/GameServer/shop_manager.cpp:266: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shop_manager.cpp:303: ch->GetDesc()->Packet(&pack, sizeof(pack));
+SRC/Server/GameServer/shopEx.cpp:112: ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
+SRC/Server/GameServer/shopEx.cpp:113: ch->GetDesc()->BufferedPacket(&pack2, sizeof(TPacketGCShopStartEx));
+SRC/Server/GameServer/shopEx.cpp:114: ch->GetDesc()->Packet(temp, size);
+SRC/Server/GameServer/shutdown_manager.cpp:21: void CShutdownManager::AddDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:34: void CShutdownManager::RemoveDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:41: std::list<LPDESC>::iterator i = m_lstDesc.begin();
+SRC/Server/GameServer/shutdown_manager.cpp:58: for(std::list<LPDESC>::iterator i = m_lstDesc.begin(); i != m_lstDesc.end(); i++) {
+SRC/Server/GameServer/shutdown_manager.cpp:70: for(std::list<LPDESC>::iterator i = m_lstDesc.begin(); i != m_lstDesc.end(); i++)	//   PHASE_CLOSE
+SRC/Server/GameServer/shutdown_manager.cpp:84: int CShutdownManager::SearchDesc(LPDESC pDesc)
+SRC/Server/GameServer/shutdown_manager.cpp:88: std::list<LPDESC>::iterator iter = m_lstDesc.begin();
+SRC/Server/GameServer/target.cpp:15: void SendTargetCreatePacket(LPDESC d, TargetInfo * info)
+SRC/Server/GameServer/target.cpp:30: void SendTargetUpdatePacket(LPDESC d, int iID, int x, int y)
+SRC/Server/GameServer/target.cpp:41: void SendTargetDeletePacket(LPDESC d, int iID)
+SRC/Server/GameServer/target.cpp:122: SendTargetUpdatePacket(pkChr->GetDesc(), info->iID, x, y);
+SRC/Server/GameServer/target.cpp:180: SendTargetDeletePacket(pkChr->GetDesc(), existInfo->iID);
+SRC/Server/GameServer/target.cpp:199: SendTargetCreatePacket(pkChr->GetDesc(), existInfo);
+SRC/Server/GameServer/target.cpp:236: SendTargetCreatePacket(pkChr->GetDesc(), newInfo);
+SRC/Server/GameServer/target.cpp:267: //SendTargetDeletePacket(info->pkChr->GetDesc(), info->iID);
+SRC/Server/GameServer/target.cpp:270: SendTargetDeletePacket(pkChr->GetDesc(), info->iID);
+SRC/Server/GameServer/TritonTempleDungeon.cpp:212: LPDESC desc = ch->GetDesc();
+SRC/Server/GameServer/war_map.cpp:149: if (ch->GetDesc())
+SRC/Server/GameServer/war_map.cpp:152: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/war_map.cpp:395: LPDESC d = ch->GetDesc();
+SRC/Server/GameServer/war_map.cpp:592: ch->GetDesc()->Packet(m_pvData, m_iSize);
+SRC/Server/GameServer/war_map.cpp:634: void CWarMap::SendWarPacket(LPDESC d)
+SRC/Server/GameServer/war_map.cpp:652: void CWarMap::SendScorePacket(uint8_t bIdx, LPDESC d)
+SRC/Server/GameServer/wedding.cpp:153: if (ch->GetDesc())
+SRC/Server/GameServer/wedding.cpp:154: DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+SRC/Server/GameServer/whisper_admin.cpp:134: void operator () (LPDESC d)
+SRC/Server/GameServer/whisper_admin.cpp:136: if (!d->GetCharacter())
+SRC/Server/GameServer/whisper_admin.cpp:139: if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
+SRC/Server/GameServer/whisper_admin.cpp:141: d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
+SRC/Server/GameServer/whisper_admin.cpp:157: int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)

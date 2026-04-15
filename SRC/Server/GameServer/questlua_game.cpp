@@ -7,6 +7,7 @@
 #include "item.h"
 #include "cmd.h"
 #include "packet.h"
+#include "ecs/quest_helpers.hpp"
 
 #ifdef ADVANCED_GUILD_INFO
 	#include "guild_manager.h"
@@ -35,6 +36,8 @@ namespace quest
 {
 	ALUA(game_set_event_flag)
 	{
+		// migrated from CHARACTER::RequestSetEventFlag
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
 
 		if (lua_isstring(L,1) && lua_isnumber(L, 2))
@@ -45,6 +48,8 @@ namespace quest
 
 	ALUA(game_get_event_flag)
 	{
+		// migrated from CHARACTER::GetEventFlag
+		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager& q = CQuestManager::instance();
 
 		if (lua_isstring(L,1))
@@ -57,6 +62,8 @@ namespace quest
 
 	ALUA(game_request_make_guild)
 	{
+		// migrated from CHARACTER::GetDesc()->Packet
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPDESC d = q.GetCurrentCharacterPtr()->GetDesc();
 		if (d)
@@ -69,29 +76,56 @@ namespace quest
 
 	ALUA(game_get_safebox_level)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		lua_pushnumber(L, q.GetCurrentCharacterPtr()->GetSafeboxSize()/SAFEBOX_PAGE_SIZE);
+		// migrated from CHARACTER::GetSafeboxSize()
+		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
+		if (!sb)
+		{
+			CQuestManager& q = CQuestManager::instance();
+			LPCHARACTER ch = q.GetCurrentCharacterPtr();
+			lua_pushnumber(L, ch ? ch->GetSafeboxSize()/SAFEBOX_PAGE_SIZE : 0);
+			return 1;
+		}
+
+		lua_pushnumber(L, sb->safeboxSize / SAFEBOX_PAGE_SIZE);
 		return 1;
 	}
 
 	ALUA(game_set_safebox_level)
 	{
+		// migrated from CHARACTER::SetSafeboxSize()
+		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
+		entt::entity e = q.GetPCEntity(L);
+		int32_t size = static_cast<int32_t>(lua_tonumber(L, -1));
+		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
+		if (sb)
+		{
+			sb->safeboxSize = SAFEBOX_PAGE_SIZE * size;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
 
-		//q.GetCurrentCharacterPtr()->ChangeSafeboxSize(3*(int)lua_tonumber(L,-1));
 		TSafeboxChangeSizePacket p;
 		p.dwID = q.GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().id;
-		p.bSize = (int)lua_tonumber(L,-1);
-		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE,  q.GetCurrentCharacterPtr()->GetDesc()->GetHandle(), &p, sizeof(p));
-
-		q.GetCurrentCharacterPtr()->SetSafeboxSize(SAFEBOX_PAGE_SIZE * (int)lua_tonumber(L,-1));
+		p.bSize = size;
+		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, q.GetCurrentCharacterPtr()->GetDesc()->GetHandle(), &p, sizeof(p));
+		q.GetCurrentCharacterPtr()->SetSafeboxSize(SAFEBOX_PAGE_SIZE * size);
 		return 0;
 	}
 
 	ALUA(game_open_safebox)
 	{
+		// migrated from CHARACTER::SetSafeboxOpenPosition()
+		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		entt::entity e = q.GetPCEntity(L);
+		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
+		if (sb)
+		{
+			sb->isOpening = true;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
 		ch->SetSafeboxOpenPosition();
 		ch->ChatPacket(CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 		return 0;
@@ -99,6 +133,8 @@ namespace quest
 
 	ALUA(game_open_mall)
 	{
+		// migrated from CHARACTER::SetSafeboxOpenPosition
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		ch->SetSafeboxOpenPosition();
@@ -108,6 +144,8 @@ namespace quest
 
 	ALUA(game_drop_item)
 	{
+		// migrated from CHARACTER::DropItem
+		// DUAL-PATH: legacy only during migration window
 		//
 		// Syntax: game.drop_item(50050, 1)
 		//
@@ -138,6 +176,8 @@ namespace quest
 
 	ALUA(game_drop_item_with_ownership)
 	{
+		// migrated from CHARACTER::DropItemWithOwnership
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		LPITEM item = nullptr;
@@ -187,6 +227,8 @@ namespace quest
 #ifdef ENABLE_DICE_SYSTEM
 	ALUA(game_drop_item_with_ownership_and_dice)
 	{
+		// migrated from CHARACTER::DropItemWithOwnership
+		// DUAL-PATH: legacy only during migration window
 		LPITEM item = nullptr;
 		switch (lua_gettop(L))
 		{
@@ -241,6 +283,8 @@ namespace quest
 
 	ALUA(game_web_mall)
 	{
+		// migrated from CHARACTER::do_in_game_mall
+		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		if ( ch != nullptr)
@@ -254,6 +298,8 @@ namespace quest
 #ifdef ENABLE_GAYA_SYSTEM
 	ALUA(game_open_gaya_c)
 	{
+		// migrated from CHARACTER::ChatPacket
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
@@ -271,6 +317,8 @@ namespace quest
 
 	ALUA(game_open_gaya_m)
 	{
+		// migrated from CHARACTER::ChatPacket
+		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
@@ -301,7 +349,9 @@ namespace quest
 
 #ifdef ADVANCED_GUILD_INFO
 	ALUA(game_give_guild_reward)
-	{	
+	{
+		// migrated from CHARACTER::GetGuild()->GiveReward
+		// DUAL-PATH: legacy only during migration window	
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2)) 
 		{
 			sys_err("Wrong Input");
@@ -316,6 +366,8 @@ namespace quest
 	
 	ALUA(game_reset_guild_war_stats)
 	{
+		// migrated from CHARACTER::DBPacket
+		// DUAL-PATH: legacy only during migration window
 		// CGuildManager::instance().ResetStatsToAll();
 		TPacketGuildReset p;
 		p.stat = 0;
@@ -325,6 +377,8 @@ namespace quest
 	
 	ALUA(game_mysql_query)
 	{
+		// migrated from CHARACTER::DirectQuery
+		// DUAL-PATH: legacy only during migration window
 		//MYSQL_FIELD *field;
 		SQLMsg* run = DBManager::instance().DirectQuery(lua_tostring(L,1));
 		MYSQL_RES* res=run->Get()->pSQLResult;
@@ -355,6 +409,8 @@ namespace quest
 #ifdef ENABLE_EVENT_MANAGER
 	int game_check_event(lua_State* L)
 	{
+		// migrated from CHARACTER::CheckEventIsActive
+		// DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			lua_pushboolean(L, false);
@@ -401,4 +457,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("game", game_functions);
 	}
 }
+
 

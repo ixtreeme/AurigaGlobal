@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 
 
 #include <common/VnumHelper.h>
@@ -38,6 +38,15 @@
 #include "messenger_manager.h"
 #include "unique_item.h"
 #include "priv_manager.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/components/combat_components.hpp"
+#include "ecs/components/dirty_components.hpp"
+#include "ecs/components/identity_components.hpp"
+#include "ecs/components/movement_components.hpp"
 #include "war_map.h"
 #include "banword.h"
 #include "target.h"
@@ -117,6 +126,57 @@ namespace
 		return mapIndex;
 	}
 
+	inline entt::entity EcsEntityOf(const CHARACTER* ch)
+	{
+		if (!ch)
+			return entt::null;
+
+		return CVIDRegistry::Instance().Find(ch->GetVID());
+	}
+
+	inline bool HasCombatState(const CHARACTER* ch)
+	{
+		const entt::entity e = EcsEntityOf(ch);
+		return e != entt::null && g_registry.valid(e) &&
+			g_registry.all_of<ecs::CombatActiveTag>(e);
+	}
+
+	inline bool HasMoveState(const CHARACTER* ch)
+	{
+		const entt::entity e = EcsEntityOf(ch);
+		return e != entt::null && g_registry.valid(e) &&
+			g_registry.all_of<ecs::MovementDestination>(e);
+	}
+
+	inline bool HasIdleState(const CHARACTER* ch)
+	{
+		const entt::entity e = EcsEntityOf(ch);
+		if (e == entt::null || !g_registry.valid(e))
+			return true;
+
+		return !g_registry.all_of<ecs::CombatActiveTag>(e) &&
+			!g_registry.all_of<ecs::MovementDestination>(e);
+	}
+
+	inline void EnterIdleState(CHARACTER* ch)
+	{
+		const entt::entity e = EcsEntityOf(ch);
+		if (e == entt::null || !g_registry.valid(e))
+			return;
+
+		g_registry.remove<ecs::CombatActiveTag>(e);
+		g_registry.remove<ecs::CombatTarget>(e);
+		g_registry.remove<ecs::MovementDestination>(e);
+	}
+
+	inline void EnterBattleState(CHARACTER* ch)
+	{
+		const entt::entity e = EcsEntityOf(ch);
+		if (e == entt::null || !g_registry.valid(e))
+			return;
+
+		g_registry.emplace_or_replace<ecs::CombatActiveTag>(e);
+	}
 	bool CheckAndHandleSameHwid(LPCHARACTER ch)
 	{
 		if (!ch || !ch->IsPC())
@@ -240,9 +300,6 @@ DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
 
 CHARACTER::CHARACTER()
 {
-	m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateIdle, &CHARACTER::EndStateEmpty);
-	m_stateMove.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateMove, &CHARACTER::EndStateEmpty);
-	m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateBattle, &CHARACTER::EndStateEmpty);
 
 	Initialize();
 }
@@ -364,7 +421,7 @@ void CHARACTER::Initialize()
 
 	m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
-	GotoState(m_stateIdle);
+	EnterIdleState(this);
 	m_dwStateDuration = 1;
 
 	m_dwLastAttackTime = get_dword_time() - 20000;
@@ -672,6 +729,13 @@ void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
 
 void CHARACTER::Destroy()
 {
+	// Phase 7: destroy parallel ECS entity
+	{
+		entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+		if (e != entt::null)
+			EntityFactory::Destroy(g_registry, e);
+	}
+
 	CloseMyShop();
 
 	if (m_pkRegen)
@@ -778,7 +842,7 @@ void CHARACTER::Destroy()
 				party->Quit(GetVID());
 		}
 
-		SetParty(nullptr); // ¾ÈÇØµµ µÇÁö¸¸ ¾ÈÀüÇÏ°Ô.
+		SetParty(nullptr); // 3E�O�� ������ 3EA��I��.
 	}
 
 	if (m_pkMobInst)
@@ -933,7 +997,7 @@ EVENTFUNC(battle_pass_stay_online_event)
 	if (ch->GetMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
 		return PASSES_PER_SEC(60);
 
-	// Nálad ez a helyes progress növelés
+	// N�lad ez a helyes progress n�vel�s
 	ch->UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
 
 	return PASSES_PER_SEC(60);
@@ -1000,16 +1064,16 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 	}
 #endif
 
-	if (GetMyShop())	// ÀÌ¹Ì ¼¥ÀÌ ¿­·Á ÀÖÀ¸¸é ´Ý´Â´Ù.
+	if (GetMyShop())	// AI1I 1YAI ?��� A�A��� �ݴ´U.
 	{
 		CloseMyShop();
 		return;
 	}
 
-	// ÁøÇàÁßÀÎ Äù½ºÆ®°¡ ÀÖÀ¸¸é »óÁ¡À» ¿­ ¼ö ¾ø´Ù.
+	// �o�a��A� �u1oA��! A�A��� ���!A� ?� 1� 3o�U.
 	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());
 
-	// GetPCForce´Â NULLÀÏ ¼ö ¾øÀ¸¹Ç·Î µû·Î È®ÀÎÇÏÁö ¾ÊÀ½
+	// GetPCForce�� NULLAI 1� 3oA�1Ƿ� �u�� E�A��I�� 3EA1
 	if (pPC->IsRunning())
 		return;
 
@@ -1065,7 +1129,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 #endif
 
 	// MYSHOP_PRICE_LIST
-	std::map<uint32_t, uint32_t> itemkind;  // ¾ÆÀÌÅÛ Á¾·ùº° °¡°Ý, first: vnum, second: ´ÜÀÏ ¼ö·® °¡°Ý
+	std::map<uint32_t, uint32_t> itemkind;  // 3AAIAU �3�uo� �!��, first: vnum, second: ��AI 1��� �!��
 	// END_OF_MYSHOP_PRICE_LIST
 
 	std::set<TItemPos> cont;
@@ -1117,15 +1181,15 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 	}
 
 	// MYSHOP_PRICE_LIST
-	// º¸µû¸® °³¼ö¸¦ °¨¼Ò½ÃÅ²´Ù.
+	// o��u�� �31��� ��1O1AA2�U.
 	if (CountSpecifyItem(71049)
 #ifdef KASMIR_PAKET_SYSTEM
 		|| CountSpecifyItem(88901)
 #endif
-		) { // ºñ´Ü º¸µû¸®´Â ¾ø¾ÖÁö ¾Ê°í °¡°ÝÁ¤º¸¸¦ ÀúÀåÇÑ´Ù.
+		) { // on�� o��u���� 3o3��� 3E�� �!����o��� A�Aa�N�U.
 
 		//
-		// ¾ÆÀÌÅÛ °¡°ÝÁ¤º¸¸¦ ÀúÀåÇÏ±â À§ÇØ ¾ÆÀÌÅÛ °¡°ÝÁ¤º¸ ÆÐÅ¶À» ¸¸µé¾î DB Ä³½Ã¿¡ º¸³½´Ù.
+		// 3AAIAU �!����o��� A�Aa�I�� A��O 3AAIAU �!����o� A?A�A� ����3� DB �31A?! o�31�U.
 		//
 		// @fixme403 BEGIN
 		TItemPriceListTable header;
@@ -1149,7 +1213,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 	else if (CountSpecifyItem(50200))
 		RemoveSpecifyItem(50200, 1);
 	else
-		return; // º¸µû¸®°¡ ¾øÀ¸¸é Áß´Ü.
+		return; // o��u���! 3oA��� �ߴ�.
 
 	if (m_pkExchange)
 		m_pkExchange->Cancel();
@@ -1175,8 +1239,8 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 	{
 		HorseSummon(false, true);
 	}
-	// new mount ÀÌ¿ë Áß¿¡, °³ÀÎ »óÁ¡ ¿­¸é ÀÚµ¿ unmount
-	// StopRidingÀ¸·Î ´º¸¶¿îÆ®±îÁö Ã³¸®ÇÏ¸é ÁÁÀºµ¥ ¿Ö ±×·¸°Ô ¾ÈÇØ³ù´ÂÁö ¾Ë ¼ö ¾ø´Ù.
+	// new mount AI?� ��?!, �3A� ���! ?��� Aڵ? unmount
+	// StopRidingA��� �o��?�A����� A3���I�� ��Ao�Y ?� �׷��� 3E�O3u���� 3� 1� 3o�U.
 	else if (GetMountVnum())
 	{
 		RemoveAffect(AFFECT_MOUNT);
@@ -1272,7 +1336,7 @@ void CHARACTER::RestartAtSamePos()
 }
 
 // #define ENABLE_SHOWNPCLEVEL
-// Entity¿¡ ³»°¡ ³ªÅ¸³µ´Ù°í ÆÐÅ¶À» º¸³½´Ù.
+// Entity?! 3��! 3aA�3��U�� A?A�A� o�31�U.
 void CHARACTER::EncodeInsertPacket(LPENTITY entity) {
 	LPDESC d;
 	if (!(d = entity->GetDesc()))
@@ -1455,7 +1519,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity) {
 			GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ((LPCHARACTER)entity)->GetName());
 	}
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	// Csak akkor fusson, ha ÉN (this) PC vagyok és a néző is PC!
+	// Csak akkor fusson, ha �N (this) PC vagyok �s a n�z� is PC!
 	if (IsPC() && entity->IsType(ENTITY_CHARACTER))
 	{
 		LPCHARACTER viewer = (LPCHARACTER)entity;
@@ -1574,10 +1638,10 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 
 //void CHARACTER::UpdateMountCountOverhead(LPCHARACTER viewer)
 //{
-//	if (!IsPC()) // Én magam játékos vagyok-e?
+//	if (!IsPC()) // �n magam j�t�kos vagyok-e?
 //		return;
 //
-//	if (!viewer->IsPC()) // Aki kapja, az is játékos legyen
+//	if (!viewer->IsPC()) // Aki kapja, az is j�t�kos legyen
 //		return;
 //
 //	if (!viewer->GetDesc()) // Kell hogy legyen kliens socket
@@ -1593,7 +1657,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 //	TPacketGCFakeShopSign p;
 //	p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
 //
-//	p.dwVID = GetVID(); // ÉN vagyok a tulaj
+//	p.dwVID = GetVID(); // �N vagyok a tulaj
 //	p.iMountCount = beltItemCount;
 //
 //	viewer->GetDesc()->Packet(&p, sizeof(p));
@@ -1608,7 +1672,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 //{
 //	std::string updatedName = GetDisplayedNameWithBeltCount();
 //
-//	// Ha nem változott, ne küldj semmit
+//	// Ha nem v�ltozott, ne k�ldj semmit
 //	if (updatedName == m_strLastSentDisplayedNameWithBelt)
 //		return;
 //
@@ -1617,7 +1681,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 //	p.header = HEADER_GC_BELT_NAME_UPDATE;
 //	strncpy(p.name, updatedName.c_str(), sizeof(p.name) - 1);
 //
-//	// Saját kliensnek
+//	// Saj�t kliensnek
 //	if (GetDesc())
 //		GetDesc()->Packet(&p, sizeof(p));
 //
@@ -1922,17 +1986,17 @@ void CHARACTER::SetPosition(int pos)
 		switch (pos)
 		{
 		case POS_FIGHTING:
-			if (!IsState(m_stateBattle))
-				MonsterLog("[BATTLE] ½Î¿ì´Â »óÅÂ");
+			if (!HasCombatState(this))
+				MonsterLog("[BATTLE] 1�?i�� ��A�");
 
-			GotoState(m_stateBattle);
+			EnterBattleState(this);
 			break;
 
 		default:
-			if (!IsState(m_stateIdle))
-				MonsterLog("[IDLE] ½¬´Â »óÅÂ");
+			if (!HasIdleState(this))
+				MonsterLog("[IDLE] 1��� ��A�");
 
-			GotoState(m_stateIdle);
+			EnterIdleState(this);
 			break;
 		}
 	}
@@ -2103,7 +2167,7 @@ void CHARACTER::SaveReal()
 
 void CHARACTER::FlushDelayedSaveItem()
 {
-	// ÀúÀå ¾ÈµÈ ¼ÒÁöÇ°À» ÀüºÎ ÀúÀå½ÃÅ²´Ù.
+	// A�Aa 3E�E 1O��ǰA� A�o� A�Aa1AA2�U.
 	LPITEM item;
 
 	for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
@@ -2202,7 +2266,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 	if (GetParty())
 		GetParty()->Unlink(this);
 
-	// Á×¾úÀ» ¶§ Á¢¼Ó²÷À¸¸é °æÇèÄ¡ ÁÙ°Ô ÇÏ±â
+	// ��3�A� �� �c1�2�A��� �a�e�! �U�� �I��
 	if (IsStun() || IsDead())
 	{
 		DeathPenalty(0);
@@ -2238,7 +2302,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 	m_bIsLoadedBattlePass = false;
 #endif
 
-	m_bSkipSave = true; // ÀÌ ÀÌÈÄ¿¡´Â ´õÀÌ»ó ÀúÀåÇÏ¸é ¾ÈµÈ´Ù.
+	m_bSkipSave = true; // AI AIE�?!�� �oAI�� A�Aa�I�� 3E�E�U.
 
 	quest::CQuestManager::instance().DisconnectPC(this);
 
@@ -2768,7 +2832,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 	SetSP(t->sp);
 	SetStamina(t->stamina);
 
-	//GMÀÏ¶§ º¸È£¸ðµå
+	//GMAI�� o�EL�?�a
 #ifndef ENABLE_GM_FLAG_IF_TEST_SERVER
 	if (!test_server)
 #endif
@@ -2815,7 +2879,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
 
 #ifdef __PET_SYSTEM__
-	// NOTE: ÀÏ´Ü Ä³¸¯ÅÍ°¡ PCÀÎ °æ¿ì¿¡¸¸ PetSystemÀ» °®µµ·Ï ÇÔ. À¯·´ ¸Ó½Å´ç ¸Þ¸ð¸® »ç¿ë·ü¶§¹®¿¡ NPC±îÁö ÇÏ±ä Á»..
+	// NOTE: AI�� �3��AͰ! PCA� �a?i?!�� PetSystemA� �����I ��. A��� ��1A�� �?�?�� ��?����1�?! NPC���� �I�� ��..
 	if (m_petSystem)
 	{
 		m_petSystem->Destroy();
@@ -2915,38 +2979,6 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
 	CHARACTER_MANAGER::instance().RegisterRaceNumMap(this);
 
-	// XXX CTF GuildWar hardcoding
-	if (warmap::IsWarFlag(GetRaceNum()))
-	{
-		m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlag, &CHARACTER::EndStateEmpty);
-		m_stateMove.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlag, &CHARACTER::EndStateEmpty);
-		m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlag, &CHARACTER::EndStateEmpty);
-	}
-
-	if (warmap::IsWarFlagBase(GetRaceNum()))
-	{
-		m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlagBase, &CHARACTER::EndStateEmpty);
-		m_stateMove.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlagBase, &CHARACTER::EndStateEmpty);
-		m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateFlagBase, &CHARACTER::EndStateEmpty);
-	}
-
-	if (m_bCharType == CHAR_TYPE_HORSE ||
-		GetRaceNum() == 20101 ||
-		GetRaceNum() == 20102 ||
-		GetRaceNum() == 20103 ||
-		GetRaceNum() == 20104 ||
-		GetRaceNum() == 20105 ||
-		GetRaceNum() == 20106 ||
-		GetRaceNum() == 20107 ||
-		GetRaceNum() == 20108 ||
-		GetRaceNum() == 20109
-		)
-	{
-		m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateHorse, &CHARACTER::EndStateEmpty);
-		m_stateMove.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateMove, &CHARACTER::EndStateEmpty);
-		m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateHorse, &CHARACTER::EndStateEmpty);
-	}
-
 	// MINING
 	if (mining::IsVeinOfOre(GetRaceNum()))
 	{
@@ -2984,7 +3016,7 @@ float CHARACTER::GetMobDamageMultiply() const
 	float fDamMultiply = GetMobTable().fDamMultiply;
 
 	if (IsBerserk())
-		fDamMultiply = fDamMultiply * 2.0f; // BALANCE: ±¤ÆøÈ­ ½Ã µÎ¹è
+		fDamMultiply = fDamMultiply * 2.0f; // BALANCE: ��AoE� 1A ��1e
 
 	return fDamMultiply;
 }
@@ -3029,7 +3061,7 @@ uint32_t CHARACTER::GetMonsterDrainSPPoint() const
 uint8_t CHARACTER::GetMobRank() const
 {
 	if (!m_pkMobData)
-		return MOB_RANK_KNIGHT;	// PCÀÏ °æ¿ì KNIGHT±Þ
+		return MOB_RANK_KNIGHT;	// PCAI �a?i KNIGHT�?
 
 	return m_pkMobData->m_table.bRank;
 }
@@ -3125,7 +3157,7 @@ void CHARACTER::ComputeBattlePoints()
 		SetPoint(POINT_MAGIC_DEF_GRADE, GetPoint(POINT_DEF_GRADE));
 
 		//
-		// ±âº» ATK = 2lev + 2str, Á÷¾÷¿¡ ¸¶´Ù 2strÀº ¹Ù²ð ¼ö ÀÖÀ½
+		// ��o� ATK = 2lev + 2str, ��3�?! ���U 2strAo 1U2? 1� A�A1
 		//
 		int iAtk = GetLevel() * 2;
 		int iStatAtk = 0;
@@ -3146,7 +3178,7 @@ void CHARACTER::ComputeBattlePoints()
 			break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 		case JOB_WOLFMAN:
-			// TODO: ¼öÀÎÁ· °ø°Ý·Â °ø½Ä ±âÈ¹ÀÚ¿¡°Ô ¿äÃ»
+			// TODO: 1�A��� �o�ݷ� �o1� ��E1A�?!�� ?�A�
 			iStatAtk = (2 * GetPoint(POINT_ST));
 			break;
 #endif
@@ -3156,14 +3188,14 @@ void CHARACTER::ComputeBattlePoints()
 			break;
 		}
 
-		// ¸»À» Å¸°í ÀÖ°í, ½ºÅÈÀ¸·Î ÀÎÇÑ °ø°Ý·ÂÀÌ ST*2 º¸´Ù ³·À¸¸é ST*2·Î ÇÑ´Ù.
-		// ½ºÅÈÀ» Àß¸ø ÂïÀº »ç¶÷ °ø°Ý·ÂÀÌ ´õ ³·Áö ¾Ê°Ô ÇÏ±â À§ÇØ¼­´Ù.
+		// ��A� A��� Aְ�, 1oAEA��� A��N �o�ݷ�AI ST*2 o��U 3�A��� ST*2�� �N�U.
+		// 1oAEA� A߸o �iAo ��� �o�ݷ�AI �o 3��� 3E�� �I�� A��O1��U.
 		if (GetMountVnum() && iStatAtk < 2 * GetPoint(POINT_ST))
 			iStatAtk = (2 * GetPoint(POINT_ST));
 
 		iAtk += iStatAtk;
 
-		// ½Â¸¶(¸») : °Ë¼ö¶ó µ¥¹ÌÁö °¨¼Ò
+		// 1¸�(��) : ��1��� �Y1I�� ��1O
 		if (GetMountVnum())
 		{
 			if (GetJob() == JOB_SURA && GetSkillGroup() == 1)
@@ -3184,7 +3216,7 @@ void CHARACTER::ComputeBattlePoints()
 		PointChange(POINT_ATT_GRADE, iAtk);
 
 		// DEF = LEV + CON + ARMOR
-		int iShowDef = GetLevel() + GetPoint(POINT_HT); // For Ymir(Ãµ¸¶)
+		int iShowDef = GetLevel() + GetPoint(POINT_HT); // For Ymir(A���)
 		int iDef = GetLevel() + (int)(GetPoint(POINT_HT) / 1.25); // For Other
 		int iArmor = 0;
 
@@ -3204,7 +3236,7 @@ void CHARACTER::ComputeBattlePoints()
 				}
 			}
 
-		// ¸» Å¸°í ÀÖÀ» ¶§ ¹æ¾î·ÂÀÌ ¸»ÀÇ ±âÁØ ¹æ¾î·Âº¸´Ù ³·À¸¸é ±âÁØ ¹æ¾î·ÂÀ¸·Î ¼³Á¤
+		// �� A��� A�A� �� 1a3��AI ��A� ���O 1a3��o��U 3�A��� ���O 1a3��A��� 13��
 		if (true == IsHorseRiding())
 		{
 			if (iArmor < GetHorseArmor())
@@ -3349,7 +3381,7 @@ void CHARACTER::ComputePoints()
 
 	if (IsPC())
 	{
-		// ÃÖ´ë »ý¸í·Â/Á¤½Å·Â
+		// Aִ� ������/��1A��
 		iMaxHP = JobInitialPoints[GetJob()].max_hp + m_points.iRandomHP + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
 		iMaxSP = JobInitialPoints[GetJob()].max_sp + m_points.iRandomSP + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
 		iMaxStamina = JobInitialPoints[GetJob()].max_stamina + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].stamina_per_con;
@@ -3435,7 +3467,7 @@ void CHARACTER::ComputePoints()
 		//71222, 71252, 71256, 71225,
 		//71226, 71227, 71255, 71254,
 		//71233, 71250, 71128, 23014, 23015, 23016, 71137, 71140, 71185,
-		// Övek: 18000 - 18119
+		// �vek: 18000 - 18119
 				18000, 18001, 18002, 18003, 18004, 18005, 18006, 18007, 18008, 18009,
 				18010, 18011, 18012, 18013, 18014, 18015, 18016, 18017, 18018, 18019,
 				18020, 18021, 18022, 18023, 18024, 18025, 18026, 18027, 18028, 18029,
@@ -3450,7 +3482,7 @@ void CHARACTER::ComputePoints()
 				18110, 18111, 18112, 18113, 18114, 18115, 18116, 18117, 18118, 18119,
 				18120, 18121, 18122, 18123, 18124, 18125, 18126, 18127, 18128, 18129,
 				18130, 18131, 18132, 18133, 18134, 18135, 18136, 18137, 18138, 18139,
-				//kártyák: 18140 - 18149
+				//k�rty�k: 18140 - 18149
 				18140, 18141, 18142, 18143, 18144, 18145, 18146, 18147, 18148, 18149,
 				18150, 18151, 18152, 18153, 18154, 18155, 18156, 18157, 18158, 18159
 
@@ -3622,17 +3654,17 @@ void CHARACTER::ComputePoints()
 
 	ComputeBattlePoints();
 
-	// ±âº» HP/SP ¼³Á¤
+	// ��o� HP/SP 13��
 	if (iMaxHP != GetMaxHP())
 	{
-		SetRealPoint(POINT_MAX_HP, iMaxHP); // ±âº»HP¸¦ RealPoint¿¡ ÀúÀåÇØ ³õ´Â´Ù.
+		SetRealPoint(POINT_MAX_HP, iMaxHP); // ��o�HP�� RealPoint?! A�Aa�O 3o�´U.
 	}
 
 	PointChange(POINT_MAX_HP, 0);
 
 	if (iMaxSP != GetMaxSP())
 	{
-		SetRealPoint(POINT_MAX_SP, iMaxSP); // ±âº»SP¸¦ RealPoint¿¡ ÀúÀåÇØ ³õ´Â´Ù.
+		SetRealPoint(POINT_MAX_SP, iMaxSP); // ��o�SP�� RealPoint?! A�Aa�O 3o�´U.
 	}
 
 	PointChange(POINT_MAX_SP, 0);
@@ -3658,10 +3690,10 @@ void CHARACTER::ComputePoints()
 		}
 	}
 
-	// ¿ëÈ¥¼® ½Ã½ºÅÛ
-	// ComputePoints¿¡¼­´Â ÄÉ¸¯ÅÍÀÇ ¸ðµç ¼Ó¼º°ªÀ» ÃÊ±âÈ­ÇÏ°í,
-	// ¾ÆÀÌÅÛ, ¹öÇÁ µî¿¡ °ü·ÃµÈ ¸ðµç ¼Ó¼º°ªÀ» Àç°è»êÇÏ±â ¶§¹®¿¡,
-	// ¿ëÈ¥¼® ½Ã½ºÅÛµµ ActiveDeck¿¡ ÀÖ´Â ¸ðµç ¿ëÈ¥¼®ÀÇ ¼Ó¼º°ªÀ» ´Ù½Ã Àû¿ë½ÃÄÑ¾ß ÇÑ´Ù.
+	// ?�EY1� 1A1oAU
+	// ComputePoints?!1��� �ɸ�A�A� �?�� 1�1o�aA� AE��E��I��,
+	// 3AAIAU, 1��� ��?! ���A�E �?�� 1�1o�aA� A�e�e�I�� ��1�?!,
+	// ?�EY1� 1A1oAU�� ActiveDeck?! Aִ� �?�� ?�EY1�A� 1�1o�aA� �U1A Au?�1A�N3� �N�U.
 #ifdef ENABLE_EVENT_MANAGER
 	CHARACTER_MANAGER::Instance().CheckBonusEvent(this);
 #endif
@@ -3750,9 +3782,9 @@ void CHARACTER::ComputePoints()
 
 }
 
-// m_dwPlayStartTimeÀÇ ´ÜÀ§´Â milisecond´Ù. µ¥ÀÌÅÍº£ÀÌ½º¿¡´Â ºÐ´ÜÀ§·Î ±â·ÏÇÏ±â
-// ¶§¹®¿¡ ÇÃ·¹ÀÌ½Ã°£À» °è»êÇÒ ¶§ / 60000 À¸·Î ³ª´²¼­ ÇÏ´Âµ¥, ±× ³ª¸ÓÁö °ªÀÌ ³²¾Ò
-// À» ¶§ ¿©±â¿¡ dwTimeRemainÀ¸·Î ³Ö¾î¼­ Á¦´ë·Î °è»êµÇµµ·Ï ÇØÁÖ¾î¾ß ÇÑ´Ù.
+// m_dwPlayStartTimeA� ��A��� milisecond�U. �YAIA�oLAI1o?!�� o?��A��� ��I�I��
+// ��1�?! �A�1AI1A�LA� �e�e�O �� / 60000 A��� 3a�21� �I�µY, �� 3a���� �aAI 323O
+// A� �� ?���?! dwTimeRemainA��� 3�3�1� ����� �e�e�ǵ��I �O��3�3� �N�U.
 void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 {
 	m_dwPlayStartTime = get_dword_time() - dwTimeRemain;
@@ -3778,7 +3810,7 @@ EVENTFUNC(recovery_event)
 	if (!ch->IsPC())
 	{
 		//
-		// ¸ó½ºÅÍ È¸º¹
+		// ��1oA� E�o1
 		//
 		if (ch->IsAffectFlag(AFF_POISON))
 			return PASSES_PER_SEC(max((uint8_t)1, ch->GetMobTable().bRegenCycle));
@@ -3854,16 +3886,16 @@ EVENTFUNC(recovery_event)
 	else
 	{
 		//
-		// PC È¸º¹
+		// PC E�o1
 		//
 		ch->CheckTarget();
-		//ch->UpdateSectree(); // ¿©±â¼­ ÀÌ°É ¿ÖÇÏÁö?
+		//ch->UpdateSectree(); // ?���1� AI�� ?��I��?
 		ch->UpdateKillerMode();
 
 		if (ch->IsAffectFlag(AFF_POISON) == true)
 		{
-			// Áßµ¶ÀÎ °æ¿ì ÀÚµ¿È¸º¹ ±ÝÁö
-			// ÆÄ¹ý¼úÀÎ °æ¿ì ÀÚµ¿È¸º¹ ±ÝÁö
+			// �ߵ�A� �a?i Aڵ?E�o1 ����
+			// A�1�1�A� �a?i Aڵ?E�o1 ����
 			return 3;
 		}
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -3872,8 +3904,8 @@ EVENTFUNC(recovery_event)
 #endif
 		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
 
-		// SP È¸º¹ ·çÆ¾.
-		// ¿Ö ÀÌ°É·Î ÇØ¼­ ÇÔ¼ö·Î »©³ù´Â°¡ ?!
+		// SP E�o1 ��A3.
+		// ?� AI�ɷ� �O1� ��1��� ��3u�°! ?!
 		ch->DistributeSP(ch);
 
 		if (ch->GetMaxHP() <= ch->GetHP())
@@ -3904,7 +3936,7 @@ void CHARACTER::StartRecoveryEvent()
 	if (IsDead() || IsStun())
 		return;
 
-	if (IsNPC() && GetHP() >= GetMaxHP()) // ¸ó½ºÅÍ´Â Ã¼·ÂÀÌ ´Ù Â÷ÀÖÀ¸¸é ½ÃÀÛ ¾ÈÇÑ´Ù.
+	if (IsNPC() && GetHP() >= GetMaxHP()) // ��1oAʹ� A1��AI �U ��A�A��� 1AAU 3E�N�U.
 		return;
 
 
@@ -3985,7 +4017,7 @@ void CHARACTER::SetRotation(float fRot)
 	m_pointsInstant.fRot = fRot;
 }
 
-// x, y ¹æÇâÀ¸·Î º¸°í ¼±´Ù.
+// x, y 1a��A��� o��� 1��U.
 void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
 {
 	SetRotation(GetDegreeFromPositionXY(GetX(), GetY(), x, y));
@@ -4001,10 +4033,10 @@ bool CHARACTER::CanMove() const
 	if (CannotMoveByAffect())
 		return false;
 
-	if (GetMyShop())	// »óÁ¡ ¿¬ »óÅÂ¿¡¼­´Â ¿òÁ÷ÀÏ ¼ö ¾øÀ½
+	if (GetMyShop())	// ���! ?� ��A�?!1��� ?o��AI 1� 3oA1
 		return false;
 
-	// 0.2ÃÊ ÀüÀÌ¶ó¸é ¿òÁ÷ÀÏ ¼ö ¾ø´Ù.
+	// 0.2AE A�AI��� ?o��AI 1� 3o�U.
 	/*
 	   if (get_float_time() - m_fSyncTime < 0.2f)
 	   return false;
@@ -4012,7 +4044,7 @@ bool CHARACTER::CanMove() const
 	return true;
 }
 
-// ¹«Á¶°Ç x, y À§Ä¡·Î ÀÌµ¿ ½ÃÅ²´Ù.
+// 1����� x, y A��!�� AI�? 1AA2�U.
 bool CHARACTER::Sync(int32_t x, int32_t y)
 {
 	if (!GetSectree())
@@ -4041,7 +4073,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 	if (GetDungeon())
 	{
-		// ´øÁ¯¿ë ÀÌº¥Æ® ¼Ó¼º º¯È­
+		// �o��?� AIoYA� 1�1o o�E�
 		int iLastEventAttr = m_iEventAttr;
 		m_iEventAttr = new_tree->GetEventAttribute(x, y);
 
@@ -4085,10 +4117,10 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 void CHARACTER::Stop()
 {
-	if (!IsState(m_stateIdle))
-		MonsterLog("[IDLE] Á¤Áö");
+	if (!HasIdleState(this))
+		MonsterLog("[IDLE] ����");
 
-	GotoState(m_stateIdle);
+	EnterIdleState(this);
 
 	m_posDest.x = m_posStart.x = GetX();
 	m_posDest.y = m_posStart.y = GetY();
@@ -4096,8 +4128,8 @@ void CHARACTER::Stop()
 
 bool CHARACTER::Goto(int32_t x, int32_t y)
 {
-	// TODO °Å¸®Ã¼Å© ÇÊ¿ä
-	// °°Àº À§Ä¡¸é ÀÌµ¿ÇÒ ÇÊ¿ä ¾øÀ½ (ÀÚµ¿ ¼º°ø)
+	// TODO �A��A1A� �E?�
+	// ��Ao A��!�� AI�?�O �E?� 3oA1 (Aڵ? 1o�o)
 	if (GetX() == x && GetY() == y)
 		return false;
 
@@ -4128,10 +4160,12 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 
 	if (m_posDest.x == x && m_posDest.y == y)
 	{
-		if (!IsState(m_stateMove))
+		if (!HasMoveState(this))
 		{
 			m_dwStateDuration = 4;
-			GotoState(m_stateMove);
+			const entt::entity e = EcsEntityOf(this);
+			if (e != entt::null && g_registry.valid(e))
+				g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
 		}
 		return false;
 	}
@@ -4144,11 +4178,13 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 	m_dwStateDuration = 4;
 
 
-	if (!IsState(m_stateMove)) {
-		MonsterLog("[MOVE] %s", GetVictim() ? "´ë»óÃßÀû" : "±×³ÉÀÌµ¿");
+	if (!HasMoveState(this)) {
+		MonsterLog("[MOVE] %s", GetVictim() ? "���A�Au" : "��3�AI�?");
 	}
 
-	GotoState(m_stateMove);
+	const entt::entity e = EcsEntityOf(this);
+	if (e != entt::null && g_registry.valid(e))
+		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
 
 	return true;
 }
@@ -4280,14 +4316,14 @@ void CHARACTER::CalculateMoveDuration()
 	m_dwMoveStartTime = get_dword_time();
 }
 
-// x y À§Ä¡·Î ÀÌµ¿ ÇÑ´Ù. (ÀÌµ¿ÇÒ ¼ö ÀÖ´Â °¡ ¾ø´Â °¡¸¦ È®ÀÎ ÇÏ°í Sync ¸Þ¼Òµå·Î ½ÇÁ¦ ÀÌµ¿ ÇÑ´Ù)
-// ¼­¹ö´Â charÀÇ x, y °ªÀ» ¹Ù·Î ¹Ù²ÙÁö¸¸,
-// Å¬¶ó¿¡¼­´Â ÀÌÀü À§Ä¡¿¡¼­ ¹Ù²Û x, y±îÁö interpolationÇÑ´Ù.
-// °È°Å³ª ¶Ù´Â °ÍÀº charÀÇ m_bNowWalking¿¡ ´Þ·ÁÀÖ´Ù.
-// Warp¸¦ ÀÇµµÇÑ °ÍÀÌ¶ó¸é Show¸¦ »ç¿ëÇÒ °Í.
+// x y A��!�� AI�? �N�U. (AI�?�O 1� Aִ� �! 3o�� �!�� E�A� �I�� Sync �?1O�a�� 1��� AI�? �N�U)
+// 1�1��� charA� x, y �aA� 1U�� 1U2U����,
+// A���?!1��� AIA� A��!?!1� 1U2U x, y���� interpolation�N�U.
+// �E�A3a �U�� ��Ao charA� m_bNowWalking?! �?��AִU.
+// Warp�� Aǵ��N ��AI��� Show�� ��?��O ��.
 bool CHARACTER::Move(int32_t x, int32_t y)
 {
-	// °°Àº À§Ä¡¸é ÀÌµ¿ÇÒ ÇÊ¿ä ¾øÀ½ (ÀÚµ¿ ¼º°ø)
+	// ��Ao A��!�� AI�?�O �E?� 3oA1 (Aڵ? 1o�o)
 	if (GetX() == x && GetY() == y)
 		return true;
 
@@ -4456,7 +4492,7 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 
 	m_pointsInstant.points[type] = val;
 
-	// ¾ÆÁ÷ ÀÌµ¿ÀÌ ´Ù ¾È³¡³µ´Ù¸é ÀÌµ¿ ½Ã°£ °è»êÀ» ´Ù½Ã ÇØ¾ß ÇÑ´Ù.
+	// 3A�� AI�?AI �U 3E3!3��U�� AI�? 1A�L �e�eA� �U1A �O3� �N�U.
 	if (type == POINT_MOV_SPEED && get_dword_time() < m_dwMoveStartTime + m_dwMoveDuration)
 	{
 		CalculateMoveDuration();
@@ -4582,7 +4618,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_NEXT_EXP:
 		val = GetNextExp();
-		bAmount = false;	// ¹«Á¶°Ç bAmount´Â false ¿©¾ß ÇÑ´Ù.
+		bAmount = false;	// 1����� bAmount�� false ?�3� �N�U.
 		break;
 
 	case POINT_EXP:
@@ -4590,7 +4626,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		uint32_t exp = GetExp();
 		uint32_t next_exp = GetNextExp();
 
-		// exp°¡ 0 ÀÌÇÏ·Î °¡Áö ¾Êµµ·Ï ÇÑ´Ù
+		// exp�! 0 AI�I�� �!�� 3E���I �N�U
 		if ((amount < 0) && (exp < (uint32_t)(-amount)))
 		{
 			sys_log(1, "%s AMOUNT < 0 %d, CUR EXP: %d", GetName(), -amount, exp);
@@ -4632,7 +4668,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//#endif
 			uint32_t iExpBalance = 0;
 
-			// ·¹º§ ¾÷!
+			// �1o� 3�!
 			if (exp + amount >= next_exp)
 			{
 				iExpBalance = (exp + amount) - next_exp;
@@ -4650,7 +4686,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			uint32_t q = uint32_t(next_exp / 4.0f);
 			int iLevStep = GetRealPoint(POINT_LEVEL_STEP);
 
-			// iLevStepÀÌ 4 ÀÌ»óÀÌ¸é ·¹º§ÀÌ ¿Ã¶ú¾î¾ß ÇÏ¹Ç·Î ¿©±â¿¡ ¿Ã ¼ö ¾ø´Â °ªÀÌ´Ù.
+			// iLevStepAI 4 AI��AI�� �1o�AI ?A��3�3� �I1Ƿ� ?���?! ?A 1� 3o�� �aAI�U.
 			if (iLevStep >= 4)
 			{
 				sys_err("%s LEVEL_STEP bigger than 4! (%d)", GetName(), iLevStep);
@@ -4792,16 +4828,16 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		if (val == 0)
 		{
-			// Stamina°¡ ¾øÀ¸´Ï °ÈÀÚ!
+			// Stamina�! 3oA��I �EA�!
 			SetNowWalking(true);
 		}
 		else if (prev_val == 0)
 		{
-			// ¾ø´ø ½ºÅ×¹Ì³ª°¡ »ý°åÀ¸´Ï ÀÌÀü ¸ðµå º¹±Í
+			// 3o�o 1oA�1I3a�! ���aA��I AIA� �?�a o1��
 			ResetWalking();
 		}
 
-		if (amount < 0 && val != 0) // °¨¼Ò´Â º¸³»Áö¾Ê´Â´Ù.
+		if (amount < 0 && val != 0) // ��1O�� o�3���3E�´U.
 			return;
 	}
 	break;
@@ -4811,7 +4847,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		SetPoint(type, GetPoint(type) + amount);
 
 		const int64_t base = GetRealPoint(POINT_MAX_HP);              // 20-30k
-		const int64_t flat = GetPoint(POINT_MAX_HP);                  // ékszerek stb. fix +HP (ettől lesz 350k)
+		const int64_t flat = GetPoint(POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
 		const int64_t party = GetPoint(POINT_PARTY_TANKER_BONUS);
 		const int64_t pct = GetPoint(POINT_MAX_HP_PCT);              // +20
 
@@ -4831,7 +4867,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		SetPoint(type, GetPoint(type) + amount);
 
 		//SetMaxSP(GetMaxSP() + amount);
-		// ÃÖ´ë Á¤½Å·Â = (±âº» ÃÖ´ë Á¤½Å·Â + Ãß°¡) * ÃÖ´ëÁ¤½Å·Â%
+		// Aִ� ��1A�� = (��o� Aִ� ��1A�� + A߰!) * Aִ���1A��%
 		int64_t sp = GetRealPoint(POINT_MAX_SP);
 		int64_t add_sp = min((int64_t)800, sp * GetPoint(POINT_MAX_SP_PCT) / 100);
 		add_sp += GetPoint(POINT_MAX_SP);
@@ -4980,12 +5016,12 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_HP_RECOVERY:
 	case POINT_SP_RECOVERY:
 
-	case POINT_ATTBONUS_HUMAN:	// 42 ÀÎ°£¿¡°Ô °­ÇÔ
-	case POINT_ATTBONUS_ANIMAL:	// 43 µ¿¹°¿¡°Ô µ¥¹ÌÁö % Áõ°¡
-	case POINT_ATTBONUS_ORC:		// 44 ¿õ±Í¿¡°Ô µ¥¹ÌÁö % Áõ°¡
-	case POINT_ATTBONUS_MILGYO:	// 45 ¹Ð±³¿¡°Ô µ¥¹ÌÁö % Áõ°¡
-	case POINT_ATTBONUS_UNDEAD:	// 46 ½ÃÃ¼¿¡°Ô µ¥¹ÌÁö % Áõ°¡
-	case POINT_ATTBONUS_DEVIL:	// 47 ¸¶±Í(¾Ç¸¶)¿¡°Ô µ¥¹ÌÁö % Áõ°¡
+	case POINT_ATTBONUS_HUMAN:	// 42 AΰL?!�� ����
+	case POINT_ATTBONUS_ANIMAL:	// 43 �?1�?!�� �Y1I�� % �o�!
+	case POINT_ATTBONUS_ORC:		// 44 ?o��?!�� �Y1I�� % �o�!
+	case POINT_ATTBONUS_MILGYO:	// 45 1?�3?!�� �Y1I�� % �o�!
+	case POINT_ATTBONUS_UNDEAD:	// 46 1AA1?!�� �Y1I�� % �o�!
+	case POINT_ATTBONUS_DEVIL:	// 47 ����(3Ǹ�)?!�� �Y1I�� % �o�!
 
 	case POINT_ATTBONUS_MONSTER:
 	case POINT_ATTBONUS_SURA:
@@ -5013,11 +5049,11 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_PENETRATE:
 	case POINT_CURSE_PCT:
 
-	case POINT_STEAL_HP:		// 48 »ý¸í·Â Èí¼ö
-	case POINT_STEAL_SP:		// 49 Á¤½Å·Â Èí¼ö
+	case POINT_STEAL_HP:		// 48 ������ E�1�
+	case POINT_STEAL_SP:		// 49 ��1A�� E�1�
 
-	case POINT_MANA_BURN_PCT:	// 50 ¸¶³ª ¹ø
-	case POINT_DAMAGE_SP_RECOVER:	// 51 °ø°Ý´çÇÒ ½Ã Á¤½Å·Â È¸º¹ È®·ü
+	case POINT_MANA_BURN_PCT:	// 50 ��3a 1o
+	case POINT_DAMAGE_SP_RECOVER:	// 51 �o�ݴ��O 1A ��1A�� E�o1 E���
 	case POINT_RESIST_NORMAL_DAMAGE:
 	case POINT_RESIST_SWORD:
 	case POINT_RESIST_TWOHAND:
@@ -5041,13 +5077,13 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_ICE:
 	case POINT_RESIST_EARTH:
 	case POINT_RESIST_DARK:
-	case POINT_REFLECT_MELEE:	// 67 °ø°Ý ¹Ý»ç
-	case POINT_REFLECT_CURSE:	// 68 ÀúÁÖ ¹Ý»ç
-	case POINT_POISON_REDUCE:	// 69 µ¶µ¥¹ÌÁö °¨¼Ò
+	case POINT_REFLECT_MELEE:	// 67 �o�� 1ݻ�
+	case POINT_REFLECT_CURSE:	// 68 A��� 1ݻ�
+	case POINT_POISON_REDUCE:	// 69 ���Y1I�� ��1O
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	case POINT_BLEEDING_REDUCE:
 #endif
-	case POINT_KILL_SP_RECOVER:	// 70 Àû ¼Ò¸ê½Ã MP È¸º¹
+	case POINT_KILL_SP_RECOVER:	// 70 Au 1O�e1A MP E�o1
 	case POINT_KILL_HP_RECOVERY:	// 75
 	case POINT_HIT_HP_RECOVERY:
 	case POINT_HIT_SP_RECOVERY:
@@ -5353,7 +5389,7 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	case APPLY_SKILL:
 		// SKILL_DAMAGE_BONUS
 	{
-		// ÃÖ»óÀ§ ºñÆ® ±âÁØÀ¸·Î 8ºñÆ® vnum, 9ºñÆ® add, 15ºñÆ® change
+		// Aֻ�A� onA� ���OA��� 8onA� vnum, 9onA� add, 15onA� change
 		// 00000000 00000000 00000000 00000000
 		// ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
 		// vnum     ^ add       change
@@ -5376,11 +5412,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	// END_OF_SKILL_DAMAGE_BONUS
 	break;
 
-	// NOTE: ¾ÆÀÌÅÛ¿¡ ÀÇÇÑ ÃÖ´ëHP º¸³Ê½º³ª Äù½ºÆ® º¸»ó º¸³Ê½º°¡ ¶È°°Àº ¹æ½ÄÀ» »ç¿ëÇÏ¹Ç·Î
-	// ±×³É MAX_HP¸¸ °è»êÇÏ¸é Äù½ºÆ® º¸»óÀÇ °æ¿ì ¹®Á¦°¡ »ý±è. »ç½Ç ¿ø·¡ ÀÌÂÊÀÌ ÇÕ¸®ÀûÀÌ±âµµ ÇÏ°í..
-	// ¹Ù²Û °ø½ÄÀº ÇöÀç ÃÖ´ë hp¿Í º¸À¯ hpÀÇ ºñÀ²À» ±¸ÇÑ µÚ ¹Ù²ð ÃÖ´ë hp¸¦ ±âÁØÀ¸·Î hp¸¦ º¸Á¤ÇÑ´Ù.
-	// ¿ø·¡ PointChange¿¡¼­ ÇÏ´Â°Ô ÁÁÀ»°Í °°Àºµ¥ ¼³°è ¹®Á¦·Î ¾î·Á¿ö¼­ skip..
-	// SPµµ ¶È°°ÀÌ °è»êÇÑ´Ù.
+	// NOTE: 3AAIAU?! A��N Aִ�HP o�3E1o3a �u1oA� o��� o�3E1o�! �E��Ao 1a1�A� ��?��I1Ƿ�
+	// ��3� MAX_HP�� �e�e�I�� �u1oA� o���A� �a?i 1����! ���e. ��1� ?o�! AI�EAI �O��AuAI�⵵ �I��..
+	// 1U2U �o1�Ao ��A� Aִ� hp?� o�A� hpA� onA2A� ���N �� 1U2? Aִ� hp�� ���OA��� hp�� o����N�U.
+	// ?o�! PointChange?!1� �I�°� ��A��� ��Ao�Y 13�e 1����� 3��?�1� skip..
+	// SP�� �E��AI �e�e�N�U.
 	// Mantis : 101460			~ ity ~
 	case APPLY_MAX_HP:
 	case APPLY_MAX_HP_PCT:
@@ -5506,11 +5542,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	case APPLY_RESIST_WOLFMAN:
 #endif
-	case APPLY_ENERGY:					// 82 ±â·Â
-	case APPLY_DEF_GRADE:				// 83 ¹æ¾î·Â. DEF_GRADE_BONUS´Â Å¬¶ó¿¡¼­ µÎ¹è·Î º¸¿©Áö´Â ÀÇµµµÈ ¹ö±×(...)°¡ ÀÖ´Ù.
-	case APPLY_COSTUME_ATTR_BONUS:		// 84 ÄÚ½ºÆ¬ ¾ÆÀÌÅÛ¿¡ ºÙÀº ¼Ó¼ºÄ¡ º¸³Ê½º
-	case APPLY_MAGIC_ATTBONUS_PER:		// 85 ¸¶¹ý °ø°Ý·Â +x%
-	case APPLY_MELEE_MAGIC_ATTBONUS_PER:			// 86 ¸¶¹ý + ¹Ð¸® °ø°Ý·Â +x%
+	case APPLY_ENERGY:					// 82 ���
+	case APPLY_DEF_GRADE:				// 83 1a3��. DEF_GRADE_BONUS�� A���?!1� ��1e�� o�?����� Aǵ��E 1���(...)�! AִU.
+	case APPLY_COSTUME_ATTR_BONUS:		// 84 ��1oA� 3AAIAU?! oUAo 1�1o�! o�3E1o
+	case APPLY_MAGIC_ATTBONUS_PER:		// 85 ��1� �o�ݷ� +x%
+	case APPLY_MELEE_MAGIC_ATTBONUS_PER:			// 86 ��1� + 1?�� �o�ݷ� +x%
 #ifdef ENABLE_ACCE_SYSTEM
 	case APPLY_ACCEDRAIN_RATE:			//97
 #endif
@@ -5652,7 +5688,7 @@ void CHARACTER::MonsterLog(const char* format, ...)
 	else
 		len += len2;
 
-	// \0 ¹®ÀÚ Æ÷ÇÔ
+	// \0 1�A� A���
 	++len;
 
 	va_end(args);
@@ -5748,9 +5784,9 @@ void CHARACTER::mining(LPCHARACTER chLoad)
 		return;
 	}
 
-	int count = number(5, 15); // µ¿ÀÛ È½¼ö, ÇÑ µ¿ÀÛ´ç 2ÃÊ
+	int count = number(5, 15); // �?AU E11�, �N �?AU�� 2AE
 
-	// Ã¤±¤ µ¿ÀÛÀ» º¸¿©ÁÜ
+	// A��� �?AUA� o�?���
 	TPacketGCDigMotion p;
 	p.header = HEADER_GC_DIG_MOTION;
 	p.vid = GetVID();
@@ -5771,7 +5807,7 @@ void CHARACTER::fishing()
 		return;
 	}
 
-	// ¸ø°¨ ¼Ó¼º¿¡¼­ ³¬½Ã¸¦ ½ÃµµÇÑ´Ù?
+	// �o�� 1�1o?!1� 3�1A�� 1A���N�U?
 	{
 		LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(GetMapIndex());
 
@@ -5792,7 +5828,7 @@ void CHARACTER::fishing()
 
 	LPITEM rod = GetWear(WEAR_WEAPON);
 
-	// ³¬½Ã´ë ÀåÂø
+	// 3�1A�� Aa�o
 	if (!rod || rod->GetType() != ITEM_ROD)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -5872,11 +5908,11 @@ void CHARACTER::SetNextStatePulse(int iNextPulse)
 	m_dwNextStatePulse = iNextPulse;
 
 	if (iNextPulse < 10)
-		MonsterLog("´ÙÀ½»óÅÂ·Î¾î¼­°¡ÀÚ");
+		MonsterLog("�UA1��A·�3�1��!A�");
 }
 
 
-// Ä³¸¯ÅÍ ÀÎ½ºÅÏ½º ¾÷µ¥ÀÌÆ® ÇÔ¼ö.
+// �3��A� A�1oAI1o 3��YAIA� ��1�.
 void CHARACTER::UpdateCharacter(uint32_t dwPulse)
 {
 	CFSM::Update();
@@ -6067,7 +6103,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 		if (m_pkChrSyncOwner)
 			sys_log(1, "SyncRelease %s %p from %s", GetName(), this, m_pkChrSyncOwner->GetName());
 
-		// ¸®½ºÆ®¿¡¼­ Á¦°ÅÇÏÁö ¾Ê´õ¶óµµ Æ÷ÀÎÅÍ´Â NULL·Î ¼ÂÆÃµÇ¾î¾ß ÇÑ´Ù.
+		// ��1oA�?!1� ���A�I�� 3E�o�� A�A�Aʹ� NULL�� 1�AA��3�3� �N�U.
 		m_pkChrSyncOwner = nullptr;
 	}
 	else
@@ -6075,12 +6111,12 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 		if (!IsSyncOwner(ch))
 			return false;
 
-		// °Å¸®°¡ 200 ÀÌ»óÀÌ¸é SyncOwner°¡ µÉ ¼ö ¾ø´Ù.
+		// �A���! 200 AI��AI�� SyncOwner�! �� 1� 3o�U.
 		if (DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY()) > 250)
 		{
 			sys_log(1, "SetSyncOwner distance over than 250 %s %s", GetName(), ch->GetName());
 
-			// SyncOwnerÀÏ °æ¿ì Owner·Î Ç¥½ÃÇÑ´Ù.
+			// SyncOwnerAI �a?i Owner�� �Y1A�N�U.
 			if (m_pkChrSyncOwner == ch)
 				return true;
 
@@ -6107,9 +6143,9 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 		m_fSyncTime = get_float_time();
 	}
 
-	// TODO: Sync Owner°¡ °°´õ¶óµµ °è¼Ó ÆÐÅ¶À» º¸³»°í ÀÖÀ¸¹Ç·Î,
-	//       µ¿±âÈ­ µÈ ½Ã°£ÀÌ 3ÃÊ ÀÌ»ó Áö³µÀ» ¶§ Ç®¾îÁÖ´Â ÆÐÅ¶À»
-	//       º¸³»´Â ¹æ½ÄÀ¸·Î ÇÏ¸é ÆÐÅ¶À» ÁÙÀÏ ¼ö ÀÖ´Ù.
+	// TODO: Sync Owner�! ���o�� �e1� A?A�A� o�3��� A�A�1Ƿ�,
+	//       �?��E� �E 1A�LAI 3AE AI�� ��3�A� �� Ǯ3��ִ� A?A�A�
+	//       o�3��� 1a1�A��� �I�� A?A�A� �UAI 1� AִU.
 	TPacketGCOwnership pack;
 
 	pack.bHeader = HEADER_GC_OWNERSHIP;
@@ -6125,7 +6161,7 @@ struct FuncClearSync
 	void operator () (LPCHARACTER ch)
 	{
 		assert(ch != NULL);
-		ch->SetSyncOwner(nullptr, false);	// false ÇÃ·¡±×·Î ÇØ¾ß for_each °¡ Á¦´ë·Î µ·´Ù.
+		ch->SetSyncOwner(nullptr, false);	// false �A�!�׷� �O3� for_each �! ����� ���U.
 	}
 };
 
@@ -6133,7 +6169,7 @@ void CHARACTER::ClearSync()
 {
 	SetSyncOwner(nullptr);
 
-	// ¾Æ·¡ for_each¿¡¼­ ³ª¸¦ m_pkChrSyncOwner·Î °¡Áø ÀÚµéÀÇ Æ÷ÀÎÅÍ¸¦ NULL·Î ÇÑ´Ù.
+	// 3A�! for_each?!1� 3a�� m_pkChrSyncOwner�� �!�o Aڵ�A� A�A�A͸� NULL�� �N�U.
 	std::for_each(m_kLst_pkChrSyncOwned.begin(), m_kLst_pkChrSyncOwned.end(), FuncClearSync());
 	m_kLst_pkChrSyncOwned.clear();
 }
@@ -6143,8 +6179,8 @@ bool CHARACTER::IsSyncOwner(LPCHARACTER ch) const
 	if (m_pkChrSyncOwner == ch)
 		return true;
 
-	// ¸¶Áö¸·À¸·Î µ¿±âÈ­ µÈ ½Ã°£ÀÌ 3ÃÊ ÀÌ»ó Áö³µ´Ù¸é ¼ÒÀ¯±ÇÀÌ ¾Æ¹«¿¡°Ôµµ
-	// ¾ø´Ù. µû¶ó¼­ ¾Æ¹«³ª SyncOwnerÀÌ¹Ç·Î true ¸®ÅÏ
+	// ������A��� �?��E� �E 1A�LAI 3AE AI�� ��3��U�� 1OA���AI 3A1�?!�Ե�
+	// 3o�U. �u��1� 3A1�3a SyncOwnerAI1Ƿ� true ��AI
 	if (get_float_time() - m_fSyncTime >= 3.0f)
 		return true;
 
@@ -6199,11 +6235,11 @@ void CHARACTER::SetParty(LPPARTY pkParty)
 }
 
 // PARTY_JOIN_BUG_FIX
-/// ÆÄÆ¼ °¡ÀÔ event Á¤º¸
+/// A�A1 �!A� event ��o�
 EVENTINFO(TPartyJoinEventInfo)
 {
-	uint32_t	dwGuestPID;		///< ÆÄÆ¼¿¡ Âü¿©ÇÒ Ä³¸¯ÅÍÀÇ PID
-	uint32_t	dwLeaderPID;		///< ÆÄÆ¼ ¸®´õÀÇ PID
+	uint32_t	dwGuestPID;		///< A�A1?! ��?��O �3��A�A� PID
+	uint32_t	dwLeaderPID;		///< A�A1 ���oA� PID
 
 	TPartyJoinEventInfo()
 		: dwGuestPID(0)
@@ -6435,8 +6471,8 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
 }
 
 /**
- * ÆÄÆ¼ ÃÊ´ë event callback ÇÔ¼ö.
- * event °¡ ¹ßµ¿ÇÏ¸é ÃÊ´ë °ÅÀý·Î Ã³¸®ÇÑ´Ù.
+ * A�A1 AE�� event callback ��1�.
+ * event �! 1ߵ?�I�� AE�� �AA��� A3���N�U.
  */
 EVENTFUNC(party_invite_event)
 {
@@ -6556,7 +6592,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 		return;
 
 	//
-	// EventMap ¿¡ ÀÌº¥Æ® Ãß°¡
+	// EventMap ?! AIoYA� A߰!
 	//
 	TPartyJoinEventInfo* info = AllocEventInfo<TPartyJoinEventInfo>();
 
@@ -6566,7 +6602,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 	m_PartyInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
 
 	//
-	// ÃÊ´ë ¹Þ´Â character ¿¡°Ô ÃÊ´ë ÆÐÅ¶ Àü¼Û
+	// AE�� 1?�� character ?!�� AE�� A?A� A�1U
 	//
 
 	TPacketGCPartyInvite p;
@@ -6649,7 +6685,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
 	}
 
 	//
-	// ÆÄÆ¼ °¡ÀÔ Ã³¸®
+	// A�A1 �!A� A3��
 	//
 
 	if (GetParty())
@@ -6850,9 +6886,9 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 	uint32_t vid = GetVID();
 	sys_log(0, "OnClick %s[vnum: %d vid: %d] by %s", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
 
-	// »óÁ¡À» ¿¬»óÅÂ·Î Äù½ºÆ®¸¦ ÁøÇàÇÒ ¼ö ¾ø´Ù.
+	// ���!A� ?���A·� �u1oA��� �o�a�O 1� 3o�U.
 	{
-		// ´Ü, ÀÚ½ÅÀº ÀÚ½ÅÀÇ »óÁ¡À» Å¬¸¯ÇÒ ¼ö ÀÖ´Ù.
+		// ��, A�1AAo A�1AA� ���!A� A����O 1� AִU.
 		if (pkChrCauser->GetMyShop() && pkChrCauser != this)
 		{
 			sys_err("OnClick Fail (%s->%s) - pc has shop", pkChrCauser->GetName(), GetName());
@@ -6860,7 +6896,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 		}
 	}
 
-	// ±³È¯ÁßÀÏ¶§ Äù½ºÆ®¸¦ ÁøÇàÇÒ ¼ö ¾ø´Ù.
+	// �3E���AI�� �u1oA��� �o�a�O 1� 3o�U.
 	{
 		if (pkChrCauser->GetExchange())
 		{
@@ -6871,16 +6907,16 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 
 	if (IsPC())
 	{
-		// Å¸°ÙÀ¸·Î ¼³Á¤µÈ °æ¿ì´Â PC¿¡ ÀÇÇÑ Å¬¸¯µµ Äù½ºÆ®·Î Ã³¸®ÇÏµµ·Ï ÇÕ´Ï´Ù.
+		// A��UA��� 13���E �a?i�� PC?! A��N A����� �u1oA��� A3���I���I �O�I�U.
 		if (!CTargetManager::instance().GetTargetInfo(pkChrCauser->GetPlayerID(), TARGET_TYPE_VID, GetVID()))
 		{
-			// 2005.03.17.myevan.Å¸°ÙÀÌ ¾Æ´Ñ °æ¿ì´Â °³ÀÎ »óÁ¡ Ã³¸® ±â´ÉÀ» ÀÛµ¿½ÃÅ²´Ù.
+			// 2005.03.17.myevan.A��UAI 3A�N �a?i�� �3A� ���! A3�� ���A� AU�?1AA2�U.
 			if (GetMyShop())
 			{
 				if (pkChrCauser->IsDead() == true) return;
 
 				//PREVENT_TRADE_WINDOW
-				if (pkChrCauser == this) // ÀÚ±â´Â °¡´É
+				if (pkChrCauser == this) // Aڱ�� �!��
 				{
 					if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
 					{
@@ -6900,9 +6936,9 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 					}
 #endif
 				}
-				else // ´Ù¸¥ »ç¶÷ÀÌ Å¬¸¯ÇßÀ»¶§
+				else // �U�Y ���AI A�����A���
 				{
-					// Å¬¸¯ÇÑ »ç¶÷ÀÌ ±³È¯/Ã¢°í/°³ÀÎ»óÁ¡/»óÁ¡ÀÌ¿ëÁßÀÌ¶ó¸é ºÒ°¡
+					// A����N ���AI �3E�/Ac��/�3Aλ��!/���!AI?���AI��� oO�!
 					if ((pkChrCauser->GetExchange() || pkChrCauser->IsOpenSafebox() || pkChrCauser->GetMyShop() || pkChrCauser->GetShopOwner()) || pkChrCauser->IsCubeOpen())
 					{
 #ifdef TEXTS_IMPROVEMENT
@@ -6921,7 +6957,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 					}
 #endif
 
-					// Å¬¸¯ÇÑ ´ë»óÀÌ ±³È¯/Ã¢°í/»óÁ¡ÀÌ¿ëÁßÀÌ¶ó¸é ºÒ°¡
+					// A����N ���AI �3E�/Ac��/���!AI?���AI��� oO�!
 					//if ((GetExchange() || IsOpenSafebox() || GetShopOwner()))
 					if ((GetExchange() || IsOpenSafebox() || IsCubeOpen()))
 					{
@@ -6968,12 +7004,12 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 		return;
 	}
 
-	// NPC Àü¿ë ±â´É ¼öÇà : »óÁ¡ ¿­±â µî
+	// NPC A�?� ��� 1��a : ���! ?��� ��
 	if (!IsPC())
 	{
 		if (!m_triggerOnClick.pFunc)
 		{
-			// NPC Æ®¸®°Å ½Ã½ºÅÛ ·Î±× º¸±â
+			// NPC A����A 1A1oAU �α� o���
 			//sys_err("%s.OnClickFailure(%s) : triggerOnClick.pFunc is EMPTY(pid=%d)",
 			//			pkChrCauser->GetName(),
 			//			GetName(),
@@ -7040,7 +7076,7 @@ struct FuncDeadSpawnedByStone
 		if (m_pkKiller && m_pkKiller->IsPC())
 			ch->RegisterDamageForExp(m_pkKiller, 1);
 
-		ch->Dead(nullptr);      // marad: haljon meg a kõvel együtt
+		ch->Dead(nullptr);      // marad: haljon meg a kovel egy�tt
 		ch->SetStone(nullptr);
 	}
 };
@@ -7395,9 +7431,9 @@ void CHARACTER::ExitToSavedLocation()
 }
 
 // fixme
-// Áö±Ý±îÁø privateMapIndex °¡ ÇöÀç ¸Ê ÀÎµ¦½º¿Í °°ÀºÁö Ã¼Å© ÇÏ´Â °ÍÀ» ¿ÜºÎ¿¡¼­ ÇÏ°í,
-// ´Ù¸£¸é warpsetÀ» ºÒ·¶´Âµ¥
-// ÀÌ¸¦ warpset ¾ÈÀ¸·Î ³ÖÀÚ.
+// ���ݱ��o privateMapIndex �! ��A� �E Aε�1o?� ��Ao�� A1A� �I�� ��A� ?�o�?!1� �I��,
+// �U�L�� warpsetA� oO���µY
+// AI�� warpset 3EA��� 3�A�.
 bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 {
 	if (!IsPC())
@@ -7500,7 +7536,7 @@ void CHARACTER::WarpEnd()
 
 	if (!map_allow_find(index))
 	{
-		// ÀÌ °÷À¸·Î ¿öÇÁÇÒ ¼ö ¾øÀ¸¹Ç·Î ¿öÇÁÇÏ±â Àü ÁÂÇ¥·Î µÇµ¹¸®ÀÚ.
+		// AI ��A��� ?����O 1� 3oA�1Ƿ� ?����I�� A� ���Y�� �ǵ1��A�.
 		sys_err("location %d %d not allowed to login this server", m_posWarp.x, m_posWarp.y);
 #ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
 		GoHome();
@@ -7559,7 +7595,7 @@ bool CHARACTER::Return()
 	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 
 	if (test_server)
-		sys_log(0, "%s %p Æ÷±âÇÏ°í µ¹¾Æ°¡ÀÚ! %d %d", GetName(), this, x, y);
+		sys_log(0, "%s %p A����I�� �13A�!A�! %d %d", GetName(), this, x, y);
 
 	if (GetParty())
 		GetParty()->SendMessage(this, PM_RETURN, x, y);
@@ -7579,14 +7615,14 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 	// TRENT_MONSTER
 	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE))
 	{
-		if (pkChr->IsPC()) // ÂÑ¾Æ°¡´Â »ó´ë°¡ PCÀÏ ¶§
+		if (pkChr->IsPC()) // �N3A�!�� ���! PCAI ��
 		{
 			// If i'm in a party. I must obey party leader's AI.
 			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 			{
-				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000) // ¸¶Áö¸·À¸·Î °ø°Ý¹ÞÀºÁö 15ÃÊ°¡ Áö³µ°í
+				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000) // ������A��� �o��1?Ao�� 15AE�! ��3���
 				{
-					// ¸¶Áö¸· ¸ÂÀº °÷À¸·Î ºÎÅÍ 50¹ÌÅÍ ÀÌ»ó Â÷ÀÌ³ª¸é Æ÷±âÇÏ°í µ¹¾Æ°£´Ù.
+					// ������ ��Ao ��A��� o�A� 501IA� AI�� ��AI3a�� A����I�� �13A�L�U.
 					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(pkChr->GetX() - GetX(), pkChr->GetY() - GetY()))
 						if (Return())
 							return true;
@@ -7600,14 +7636,14 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 	int32_t x = pkChr->GetX();
 	int32_t y = pkChr->GetY();
 
-	if (pkChr->IsPC()) // ÂÑ¾Æ°¡´Â »ó´ë°¡ PCÀÏ ¶§
+	if (pkChr->IsPC()) // �N3A�!�� ���! PCAI ��
 	{
 		// If i'm in a party. I must obey party leader's AI.
 		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 		{
-			if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000) // ¸¶Áö¸·À¸·Î °ø°Ý¹ÞÀºÁö 15ÃÊ°¡ Áö³µ°í
+			if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000) // ������A��� �o��1?Ao�� 15AE�! ��3���
 			{
-				// ¸¶Áö¸· ¸ÂÀº °÷À¸·Î ºÎÅÍ 50¹ÌÅÍ ÀÌ»ó Â÷ÀÌ³ª¸é Æ÷±âÇÏ°í µ¹¾Æ°£´Ù.
+				// ������ ��Ao ��A��� o�A� 501IA� AI�� ��AI3a�� A����I�� �13A�L�U.
 				if (5000 < DISTANCE_APPROX(m_pkMobInst->m_posLastAttacked.x - GetX(), m_pkMobInst->m_posLastAttacked.y - GetY()))
 					if (Return())
 						return true;
@@ -7625,12 +7661,12 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-	if (pkChr->IsState(pkChr->m_stateMove) &&
+	if (HasMoveState(pkChr) &&
 		GetMobBattleType() != BATTLE_TYPE_RANGE &&
 		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
 		false == IsPet() && false == IsNewPet()
 #else
-	if (pkChr->IsState(pkChr->m_stateMove) &&
+	if (HasMoveState(pkChr) &&
 		GetMobBattleType() != BATTLE_TYPE_RANGE &&
 		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
 		false == IsPet()
@@ -7639,9 +7675,9 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 
 
 	{
-		// ´ë»óÀÌ ÀÌµ¿ÁßÀÌ¸é ¿¹Ãø ÀÌµ¿À» ÇÑ´Ù
-		// ³ª¿Í »ó´ë¹æÀÇ ¼ÓµµÂ÷¿Í °Å¸®·ÎºÎÅÍ ¸¸³¯ ½Ã°£À» ¿¹»óÇÑ ÈÄ
-		// »ó´ë¹æÀÌ ±× ½Ã°£±îÁö Á÷¼±À¸·Î ÀÌµ¿ÇÑ´Ù°í °¡Á¤ÇÏ¿© °Å±â·Î ÀÌµ¿ÇÑ´Ù.
+		// ���AI AI�?��AI�� ?1Ao AI�?A� �N�U
+		// 3a?� ���1aA� 1ӵ���?� �A����o�A� ��3� 1A�LA� ?1���N E�
+		// ���1aAI �� 1A�L���� ��1�A��� AI�?�N�U�� �!���I?� �A��� AI�?�N�U.
 		float rot = pkChr->GetRotation();
 		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), pkChr->GetX(), pkChr->GetY()));
 
@@ -7673,7 +7709,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		}
 	}
 
-	// °¡·Á´Â À§Ä¡¸¦ ¹Ù¶óºÁ¾ß ÇÑ´Ù.
+	// �!���� A��!�� 1U��o�3� �N�U.
 	SetRotationToXY(x, y);
 
 	float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
@@ -7685,7 +7721,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 
 	if (IsChangeAttackPosition(pkChr) && GetMobRank() < MOB_RANK_BOSS)
 	{
-		// »ó´ë¹æ ÁÖº¯ ·£´ýÇÑ °÷À¸·Î ÀÌµ¿
+		// ���1a ��o� �L���N ��A��� AI�?
 		SetChangeAttackPositionTime();
 
 		int retry = 16;
@@ -7711,23 +7747,23 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 				break;
 		}
 
-		//sys_log(0, "±ÙÃ³ ¾îµò°¡·Î ÀÌµ¿ %s retry %d", GetName(), retry);
+		//sys_log(0, "�UA3 3�o�!�� AI�? %s retry %d", GetName(), retry);
 		if (!Goto(dx, dy))
 			return false;
 	}
 	else
 	{
-		// Á÷¼± µû¶ó°¡±â
+		// ��1� �u��!��
 		float fDistToGo = fDist - fMinDistance;
 		GetDeltaByDegree(GetRotation(), fDistToGo, &fx, &fy);
 
-		//sys_log(0, "Á÷¼±À¸·Î ÀÌµ¿ %s", GetName());
+		//sys_log(0, "��1�A��� AI�? %s", GetName());
 		if (!Goto(GetX() + (int)fx, GetY() + (int)fy))
 			return false;
 	}
 
 	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	//MonsterLog("ÂÑ¾Æ°¡±â; %s", pkChr->GetName());
+	//MonsterLog("�N3A�!��; %s", pkChr->GetName());
 	return true;
 }
 
@@ -8148,9 +8184,9 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
 		if (IsNPC())
 		{
 			if (m_bNowWalking)
-				MonsterLog("°È´Â´Ù");
+				MonsterLog("�E�´U");
 			else
-				MonsterLog("¶Ú´Ù");
+				MonsterLog("�ڴU");
 		}
 
 		//sys_log(0, "%s is now %s", GetName(), m_bNowWalking?"walking.":"running.");
@@ -8230,7 +8266,7 @@ void CHARACTER::ResetPoint(int iLv)
 
 	ComputePoints();
 
-	// È¸º¹
+	// E�o1
 	PointChange(POINT_HP, GetMaxHP() - GetHP());
 	PointChange(POINT_SP, GetMaxSP() - GetSP());
 
@@ -8311,6 +8347,303 @@ void CHARACTER::SendGreetMessage()
 void CHARACTER::BeginStateEmpty()
 {
 	MonsterLog("!");
+}
+
+bool CHARACTER::IsAggressive() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(EcsEntityOf(this));
+}
+
+void CHARACTER::SetAggressive()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE);
+	AIHelpers::SetAggressive(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsCoward() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_COWARD) || AIHelpers::IsCoward(EcsEntityOf(this));
+}
+
+void CHARACTER::SetCoward()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_COWARD);
+	AIHelpers::SetCoward(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsBerserker() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_BERSERK))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(EcsEntityOf(this)))
+		return flags->isBerserk;
+
+	return false;
+}
+
+bool CHARACTER::IsStoneSkinner() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_STONESKIN))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(EcsEntityOf(this)))
+		return flags->isStoneSkinner;
+
+	return false;
+}
+
+bool CHARACTER::IsGodSpeeder() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_GODSPEED))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(EcsEntityOf(this)))
+		return flags->isGodSpeed;
+
+	return false;
+}
+
+bool CHARACTER::IsDeathBlower() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_DEATHBLOW))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(EcsEntityOf(this)))
+		return flags->isDeathBlower;
+
+	return false;
+}
+
+bool CHARACTER::IsReviver() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_REVIVE))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(EcsEntityOf(this)))
+		return flags->isReviver;
+
+	return false;
+}
+
+void CHARACTER::CowardEscape()
+{
+	int iDist[4] = {500, 1000, 3000, 5000};
+
+	for (int iDistIdx = 2; iDistIdx >= 0; --iDistIdx)
+		for (int iTryCount = 0; iTryCount < 8; ++iTryCount)
+		{
+			SetRotation(number(0, 359));
+
+			float fx, fy;
+			float fDist = number(iDist[iDistIdx], iDist[iDistIdx + 1]);
+
+			GetDeltaByDegree(GetRotation(), fDist, &fx, &fy);
+
+			bool bIsWayBlocked = false;
+			for (int j = 1; j <= 100; ++j)
+			{
+				if (!SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
+				{
+					bIsWayBlocked = true;
+					break;
+				}
+			}
+
+			if (bIsWayBlocked)
+				continue;
+
+			m_dwStateDuration = PASSES_PER_SEC(1);
+
+			int iDestX = GetX() + (int)fx;
+			int iDestY = GetY() + (int)fy;
+
+			if (Goto(iDestX, iDestY))
+				SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+
+			sys_log(0, "WAEGU move to %d %d (far)", iDestX, iDestY);
+			return;
+		}
+}
+
+void CHARACTER::SetNoAttackShinsu()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU);
+	AIHelpers::SetNoAttackShinsu(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackShinsu() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(EcsEntityOf(this));
+}
+
+void CHARACTER::SetNoAttackChunjo()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO);
+	AIHelpers::SetNoAttackChunjo(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackChunjo() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(EcsEntityOf(this));
+}
+
+void CHARACTER::SetNoAttackJinno()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO);
+	AIHelpers::SetNoAttackJinno(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackJinno() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(EcsEntityOf(this));
+}
+
+void CHARACTER::SetAttackMob()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB);
+	AIHelpers::SetAttackMob(EcsEntityOf(this), true);
+}
+
+bool CHARACTER::IsAttackMob() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(EcsEntityOf(this));
+}
+
+int CHARACTER::ChangeEmpire(uint8_t empire)
+{
+	if (GetEmpire() == empire)
+		return 1;
+
+	char szQuery[1024 + 1];
+	uint32_t dwAID;
+	uint32_t dwPID[4];
+	memset(dwPID, 0, sizeof(dwPID));
+
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT id, pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+		get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+	if (msg->Get()->uiNumRows == 0)
+		return 0;
+
+	MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+	str_to_number(dwAID, row[0]);
+	str_to_number(dwPID[0], row[1]);
+	str_to_number(dwPID[1], row[2]);
+	str_to_number(dwPID[2], row[3]);
+	str_to_number(dwPID[3], row[4]);
+
+	for (int i = 0; i < 4; ++i)
+	{
+		snprintf(szQuery, sizeof(szQuery), "SELECT guild_id FROM guild_member%s WHERE pid=%u", get_table_postfix(), dwPID[i]);
+		std::unique_ptr<SQLMsg> guildMsg(DBManager::instance().DirectQuery(szQuery));
+		if (guildMsg->Get()->uiNumRows > 0)
+		{
+			uint32_t dwGuildID = 0;
+			MYSQL_ROW guildRow = mysql_fetch_row(guildMsg->Get()->pSQLResult);
+			str_to_number(dwGuildID, guildRow[0]);
+			if (CGuildManager::instance().FindGuild(dwGuildID) != nullptr)
+				return 2;
+		}
+	}
+
+	for (int i = 0; i < 4; ++i)
+	{
+		if (marriage::CManager::instance().IsEngagedOrMarried(dwPID[i]) == true)
+			return 3;
+	}
+
+	snprintf(szQuery, sizeof(szQuery), "UPDATE player_index%s SET empire=%u WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+		get_table_postfix(), empire, GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+	std::unique_ptr<SQLMsg> updateMsg(DBManager::instance().DirectQuery(szQuery));
+	if (updateMsg->Get()->uiAffectedRows <= 0)
+		return 0;
+
+	const entt::entity e = EcsEntityOf(this);
+	if (e != entt::null && g_registry.valid(e))
+	{
+		auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+		emp.value = empire;
+		++emp.changeCount;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+
+	SetChangeEmpireCount();
+#ifdef ENABLE_BUG_FIXES
+	SetEmpire(empire);
+	UpdatePacket();
+#endif
+	return 999;
+}
+
+int CHARACTER::GetChangeEmpireCount() const
+{
+	char szQuery[1024 + 1];
+	uint32_t dwAID = GetAID();
+
+	if (dwAID == 0)
+		return 0;
+
+	snprintf(szQuery, sizeof(szQuery), "SELECT change_count FROM change_empire WHERE account_id = %u", dwAID);
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+	if (msg->Get()->uiNumRows == 0)
+		return 0;
+
+	MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+	uint32_t count = 0;
+	str_to_number(count, row[0]);
+	return count;
+}
+
+void CHARACTER::SetChangeEmpireCount()
+{
+	char szQuery[1024 + 1];
+	uint32_t dwAID = GetAID();
+
+	if (dwAID == 0)
+		return;
+
+	int count = GetChangeEmpireCount();
+	const entt::entity e = EcsEntityOf(this);
+	if (e != entt::null && g_registry.valid(e))
+	{
+		auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+		emp.changeCount = static_cast<uint32_t>(count + 1);
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+
+	if (count == 0)
+	{
+		++count;
+		snprintf(szQuery, sizeof(szQuery), "INSERT INTO change_empire VALUES(%u, %d, NOW())", dwAID, count);
+	}
+	else
+	{
+		++count;
+		snprintf(szQuery, sizeof(szQuery), "UPDATE change_empire SET change_count=%d WHERE account_id=%u", count, dwAID);
+	}
+
+	std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
+}
+
+uint32_t CHARACTER::GetAID() const
+{
+	char szQuery[1024 + 1];
+	uint32_t dwAID = 0;
+
+	snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+		get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+	if (msg->Get()->uiNumRows == 0)
+		return 0;
+
+	MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+	str_to_number(dwAID, row[0]);
+	return dwAID;
 }
 
 void CHARACTER::EffectPacket(uint8_t enumEffectType)
@@ -8442,11 +8775,11 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 		PointChange(POINT_HT, 0);
 	}
 
-	// Æú¸®¸ðÇÁ »óÅÂ¿¡¼­ Á×´Â °æ¿ì, Æú¸®¸ðÇÁ°¡ Ç®¸®°Ô µÇ´Âµ¥
-	// Æú¸® ¸ðÇÁ ÀüÈÄ·Î valid combo intervalÀÌ ´Ù¸£±â ¶§¹®¿¡
-	// Combo ÇÙ ¶Ç´Â Hacker·Î ÀÎ½ÄÇÏ´Â °æ¿ì°¡ ÀÖ´Ù.
-	// µû¶ó¼­ Æú¸®¸ðÇÁ¸¦ Ç®°Å³ª Æú¸®¸ðÇÁ ÇÏ°Ô µÇ¸é,
-	// valid combo intervalÀ» resetÇÑ´Ù.
+	// A����?�� ��A�?!1� �״� �a?i, A����?���! Ǯ���� �ǴµY
+	// A��� �?�� A�Eķ� valid combo intervalAI �U�L�� ��1�?!
+	// Combo �U �Ǵ� Hacker�� A�1��I�� �a?i�! AִU.
+	// �u��1� A����?���� Ǯ�A3a A����?�� �I�� �Ǹ�,
+	// valid combo intervalA� reset�N�U.
 	SetValidComboInterval(0);
 	SetComboSequence(0);
 
@@ -8528,7 +8861,7 @@ void CHARACTER::DetermineDropMetinStone()
 				else
 				{
 					iGradePct -= iLevelGradePortion;
-					m_dwDropMetinStone += 100; // µ¹ +a -> +(a+1)ÀÌ µÉ¶§¸¶´Ù 100¾¿ Áõ°¡
+					m_dwDropMetinStone += 100; // �1 +a -> +(a+1)AI �ɶ����U 1003? �o�!
 				}
 			}
 		}
@@ -8709,9 +9042,9 @@ void CHARACTER::MountVnum(uint32_t vnum)
 	if (m_bIsObserver)
 		return;
 
-	//NOTE : MountÇÑ´Ù°í ÇØ¼­ Client SideÀÇ °´Ã¼¸¦ »èÁ¦ÇÏÁø ¾Ê´Â´Ù.
-	//±×¸®°í ¼­¹öSide¿¡¼­ ÅÀÀ»¶§ À§Ä¡ ÀÌµ¿Àº ÇÏÁö ¾Ê´Â´Ù. ¿Ö³ÄÇÏ¸é Client Side¿¡¼­ Coliision Adjust¸¦ ÇÒ¼ö ÀÖ´Âµ¥
-	//°´Ã¼¸¦ ¼Ò¸ê½ÃÄ×´Ù°¡ ¼­¹öÀ§Ä¡·Î ÀÌµ¿½ÃÅ°¸é ÀÌ¶§ collision check¸¦ ÇÏÁö´Â ¾ÊÀ¸¹Ç·Î ¹è°æ¿¡ ³¢°Å³ª ¶Õ°í ³ª°¡´Â ¹®Á¦°¡ Á¸ÀçÇÑ´Ù.
+	//NOTE : Mount�N�U�� �O1� Client SideA� ��A1�� �e���I�o 3E�´U.
+	//�׸��� 1�1�Side?!1� AAA��� A��! AI�?Ao �I�� 3E�´U. ?�3��I�� Client Side?!1� Coliision Adjust�� �O1� AִµY
+	//��A1�� 1O�e1A�״U�! 1�1�A��!�� AI�?1AA��� AI�� collision check�� �I���� 3EA�1Ƿ� 1e�a?! 3c�A3a �O�� 3a�!�� 1����! ��A��N�U.
 	m_posDest.x = m_posStart.x = GetX();
 	m_posDest.y = m_posStart.y = GetY();
 	//EncodeRemovePacket(this);
@@ -8723,7 +9056,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
 	{
 		LPENTITY entity = (it++)->first;
 
-		//MountÇÑ´Ù°í ÇØ¼­ Client SideÀÇ °´Ã¼¸¦ »èÁ¦ÇÏÁø ¾Ê´Â´Ù.
+		//Mount�N�U�� �O1� Client SideA� ��A1�� �e���I�o 3E�´U.
 		//EncodeRemovePacket(entity);
 		//if (!m_bIsObserver)
 		EncodeInsertPacket(entity);
@@ -8973,10 +9306,10 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
 	}
 	else
 	{
-		// ´Ù¸¥ ¼­¹ö¿¡ ·Î±×ÀÎµÈ »ç¶÷ÀÌ ÀÖÀ½ -> ¸Þ½ÃÁö º¸³» ÁÂÇ¥¸¦ ¹Þ¾Æ¿ÀÀÚ
-		// 1. A.pid, B.pid ¸¦ »Ñ¸²
-		// 2. B.pid¸¦ °¡Áø ¼­¹ö°¡ »Ñ¸°¼­¹ö¿¡°Ô A.pid, ÁÂÇ¥ ¸¦ º¸³¿
-		// 3. ¿öÇÁ
+		// �U�Y 1�1�?! �α�AεE ���AI A�A1 -> �?1A�� o�3� ���Y�� 1?3A?AA�
+		// 1. A.pid, B.pid �� �N�2
+		// 2. B.pid�� �!�o 1�1��! �N��1�1�?!�� A.pid, ���Y �� o�3?
+		// 3. ?���
 		CCI* pcci = P2P_MANAGER::instance().FindByPID(dwPID);
 
 		if (!pcci)
@@ -9045,7 +9378,7 @@ int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
 		if (pGuild == GetGuild())
 			return iCost * iMultiply * 9 / 10;
 
-		// ´Ù¸¥ Á¦±¹ »ç¶÷ÀÌ ½ÃµµÇÏ´Â °æ¿ì Ãß°¡·Î 3¹è ´õ
+		// �U�Y ���1 ���AI 1A���I�� �a?i A߰!�� 31e �o
 		LPCHARACTER chRefineNPC = CHARACTER_MANAGER::instance().Find(m_dwRefineNPCVID);
 		if (chRefineNPC && chRefineNPC->GetEmpire() != GetEmpire())
 			return iCost * iMultiply * 3;
@@ -9065,7 +9398,7 @@ void CHARACTER::PayRefineFee(int64_t iTotalMoney)
 
 	if (pGuild)
 	{
-		// ÀÚ±â ±æµåÀÌ¸é iTotalMoney¿¡ ÀÌ¹Ì 10%°¡ Á¦¿ÜµÇ¾îÀÖ´Ù
+		// Aڱ� �a�aAI�� iTotalMoney?! AI1I 10%�! ��?ܵ�3�AִU
 		if (pGuild != GetGuild())
 		{
 			pGuild->RequestDepositMoney(this, iFee);
@@ -9077,7 +9410,7 @@ void CHARACTER::PayRefineFee(int64_t iTotalMoney)
 }
 // END_OF_ADD_REFINE_BUILDING
 
-//Hack ¹æÁö¸¦ À§ÇÑ Ã¼Å©.
+//Hack 1a���� A��N A1A�.
 bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
 {
 	const int iPulse = thecore_pulse();
@@ -9095,7 +9428,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
 		return true;
 	}
 
-	//°Å·¡°ü·Ã Ã¢ Ã¼Å©
+	//�A�!���A Ac A1A�
 	if (bCheckShopOwner)
 	{
 		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
@@ -9130,7 +9463,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
 	}
 
 	//PREVENT_PORTAL_AFTER_EXCHANGE
-	//±³È¯ ÈÄ ½Ã°£Ã¼Å©
+	//�3E� E� 1A�LA1A�
 	if (iPulse - GetExchangeTime() < PASSES_PER_SEC(limittime))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -9190,7 +9523,7 @@ void CHARACTER::Say(const std::string& s)
 //------------------------------------------------
 void CHARACTER::UpdateDepositPulse()
 {
-	m_deposit_pulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);	// 5ºÐ
+	m_deposit_pulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);	// 5o?
 }
 
 bool CHARACTER::CanDeposit() const
@@ -9517,7 +9850,7 @@ uint8_t CHARACTER::IncreaseMountCounter()
 	return ++m_bMountCounter;
 }
 
-// ¸»ÀÌ³ª ´Ù¸¥°ÍÀ» Å¸°í ÀÖ³ª?
+// ��AI3a �U�Y��A� A��� A�3a?
 bool CHARACTER::IsRiding() const
 {
 	return IsHorseRiding() || GetMountVnum();
@@ -11124,7 +11457,7 @@ void CHARACTER::EnsureFreeBattlePassActive()
 		m_dwBattlePassEndTime = get_global_time() + remain;
 	}
 
-	// ha nincs BP affect (pl. AffectLoad letörölte), akkor add vissza
+	// ha nincs BP affect (pl. AffectLoad let�r�lte), akkor add vissza
 	if (!GetBattlePassId())
 		AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
 	m_bIsLoadedBattlePass = true;
@@ -11999,4 +12332,7 @@ int CHARACTER::GetProtectTime(const std::string& flagname) const
 	return 0;
 }
 #endif
+
+
+
 

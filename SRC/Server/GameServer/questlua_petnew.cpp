@@ -27,6 +27,8 @@ namespace quest
 	// syntax in LUA: pet.summon(mob_vnum, pet's name, (bool)run to me from far away)
 	ALUA (newpet_summon)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
@@ -76,6 +78,8 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA (newpet_unsummon)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (!ch)
 			return 0;
@@ -101,6 +105,8 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA (newpet_count_summoned)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -117,6 +123,8 @@ namespace quest
 	// syntax: pet.is_summon(mob_vnum)
 	ALUA (newpet_is_summon)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -138,6 +146,8 @@ namespace quest
 
 	ALUA (newpet_increaseskill)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -161,6 +171,8 @@ namespace quest
 
 	ALUA (newpet_increaseevolution)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -181,6 +193,8 @@ namespace quest
 
 	ALUA (newpet_get_level)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -201,6 +215,8 @@ namespace quest
 
 	ALUA (newpet_get_evo)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -221,6 +237,8 @@ namespace quest
 
 	ALUA (newpet_restore_pet)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 
 		uint32_t id = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 		if (id == 0){
@@ -250,6 +268,8 @@ namespace quest
 
 	ALUA (newpet_spawn_effect)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
@@ -274,6 +294,8 @@ namespace quest
 
 	ALUA(newpet_eggrequest)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();		
 		int evid = lua_isnumber(L, 0) ? static_cast<int>(lua_tonumber(L, 0)) : 0;
 		ch->SetEggVid(evid);
@@ -283,6 +305,8 @@ namespace quest
 #ifdef ENABLE_NEW_PET_EDITS
 	ALUA(newpet_reset_skills)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (!ch) {
 			lua_pushnumber(L, 2);
@@ -301,6 +325,8 @@ namespace quest
 	
 	ALUA(newpet_reset_skill)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (!ch) {
 			lua_pushnumber(L, 2);
@@ -321,6 +347,8 @@ namespace quest
 
 	ALUA(newpet_change_name)
 	{
+		// migrated from CHARACTER CNewPetSystem
+		// TODO Phase 8: dedicated NewPetComponent
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (!ch)
 			return 0;

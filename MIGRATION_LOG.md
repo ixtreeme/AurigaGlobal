@@ -1,0 +1,1007 @@
+# ECS Migration Log
+
+## Phase 0 - Analysis
+- Status: completed
+- Summary:
+  - Full Phase 0 discovery completed for `SRC/Server/GameServer`.
+  - Generated raw inventory appendices under `docs/ecs_migration/`.
+  - Established baseline build state before ECS changes.
+- Files modified:
+  - `MIGRATION_LOG.md`
+  - `docs/ecs_migration/PHASE0_ECS_REPORT.md`
+  - `docs/ecs_migration/phase0_char_include_direct.txt`
+  - `docs/ecs_migration/phase0_char_include_transitive.txt`
+  - `docs/ecs_migration/phase0_character_members.txt`
+  - `docs/ecs_migration/phase0_character_method_declarations.txt`
+  - `docs/ecs_migration/phase0_character_method_definitions.txt`
+  - `docs/ecs_migration/phase0_quest_interop.txt`
+  - `docs/ecs_migration/phase0_desc_character_interactions.txt`
+- Findings:
+  - `char.h` direct include fanout: `133` files.
+  - `char.h` transitive include fanout: `134` files.
+  - Heuristic member declaration count in `CHARACTER`: `273`.
+  - Heuristic method declaration count in `CHARACTER`: `856`.
+  - `CHARACTER::` implementations found across codebase: `627`.
+  - Unique `CHARACTER` method names found: `600`.
+  - Lua quest bindings touching `pc`/`npc`/`item`: `442`.
+- Baseline build:
+  - `cmake -S . -B build`: success.
+  - `cmake --build build --config RelWithDebInfo --parallel 8`: failed on pre-existing baseline errors.
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: failed on pre-existing baseline errors in `LostCastleDungeon.cpp`.
+- Known issues / TODO:
+  - Full solution is not green before ECS work starts.
+  - `GameServer` target currently fails because `CHARACTER` no longer exposes `SetCharType`, `SetFakePlayer`, `IsFakePlayer` while `LostCastleDungeon.cpp` still calls them.
+  - Full solution also fails in `Database` (`ClientManagerBoot.cpp`, `str_to_number(uint64_t)` mismatch) and `Mysql2Proto` link stage.
+  - Because baseline is already broken, Phase 1 should either fix or isolate these blockers before ECS compilation can be used as a reliable gate.
+
+## Pre-Phase 1 - Baseline Fixes
+- Status: completed
+- Summary:
+  - Restored the minimal `CHARACTER` compatibility surface needed by `LostCastleDungeon.cpp`.
+  - Added the missing `str_to_number(uint64_t&, const char*)` overload used by `ClientManagerBoot.cpp`.
+  - Switched the migration build gate to the requested `GameServer` target only.
+- Files modified:
+  - `SRC/Server/GameServer/char.h`
+  - `SRC/Server/common/utils.h`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO:
+  - Full solution remains out of scope as a migration gate.
+  - `Mysql2Proto` linker failures still exist in full-solution builds, but do not block the `GameServer` target.
+
+## Phase 1 - Component Definitions
+- Status: completed
+- Summary:
+  - Added the ECS component header set under `SRC/Server/GameServer/ecs/components/`.
+  - Integrated EnTT through vcpkg/CMake for the `GameServer` target.
+  - Kept components header-only and used existing server data structures where the live codebase differs from the original prompt.
+- Files modified:
+  - `CMakeLists.txt`
+  - `SRC/Server/GameServer/CMakeLists.txt`
+  - `SRC/Server/GameServer/ecs/components/identity_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/transform_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/movement_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/vital_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/combat_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/status_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/session_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/inventory_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/skill_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/ai_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/social_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/quest_components.hpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO:
+  - Several Phase 1 components intentionally wrap existing legacy structs/pointers and will be decomposed further in later phases.
+
+## Phase 2 - Global Registry and VID Lookup
+- Status: completed
+- Summary:
+  - Added the single global `entt::registry` instance in `ecs/Registry.*`.
+  - Added `CVIDRegistry` as the new VID -> `entt::entity` lookup store for ECS-managed entities.
+- Files modified:
+  - `SRC/Server/GameServer/ecs/Registry.hpp`
+  - `SRC/Server/GameServer/ecs/Registry.cpp`
+  - `SRC/Server/GameServer/ecs/VIDRegistry.hpp`
+  - `SRC/Server/GameServer/ecs/VIDRegistry.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO:
+  - Legacy `CHARACTER_MANAGER` VID lookup still exists in parallel and will be phased out by later migration steps.
+
+## Phase 3 - Entity Factory
+- Status: completed
+- Summary:
+  - Added `EntityFactory` with ECS creation paths for PC, monster, NPC and stone entities.
+  - The factory now allocates ECS VIDs through the existing `CHARACTER_MANAGER::AllocVID()` path to avoid VID collisions during the migration window.
+  - `Destroy()` unregisters VID mappings, detaches `DESC`, clears ECS combat/aggro references, frees heap-backed skill arrays, then destroys the registry entity.
+- Files modified:
+  - `SRC/Server/GameServer/ecs/EntityFactory.hpp`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO:
+  - Legacy sectree removal is a documented no-op in `EntityFactory::Destroy()` until the Phase 4 map sector migration replaces pointer-based sector membership with `entt::entity` membership.
+  - `EntityFactory` uses the live codebase types `TPlayerTable` and `TMobTable` instead of the earlier placeholder `TPlayerData` / `TMobData` names.
+
+## Phase 4 - Systems
+- Status: completed
+- Summary:
+  - Added stateless ECS systems for movement, combat, vital regeneration, AI, affects and network sync.
+  - Added minimal ECS event infrastructure (`events.hpp`, global `entt::dispatcher`) and a `DirtyTag` marker used by `NetworkSyncSystem`.
+  - Resolved hidden Phase 1/3 header dependency issues that only surfaced once the new systems were compiled from real `.cpp` translation units.
+- Files modified:
+  - `SRC/Server/GameServer/ecs/events.hpp`
+  - `SRC/Server/GameServer/ecs/EventDispatcher.hpp`
+  - `SRC/Server/GameServer/ecs/EventDispatcher.cpp`
+  - `SRC/Server/GameServer/ecs/components/dirty_components.hpp`
+  - `SRC/Server/GameServer/ecs/components/ai_components.hpp`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/VitalRegenSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/VitalRegenSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO:
+  - `NetworkSyncSystem` currently sends a conservative move/points sync packet set driven by `DirtyTag`; broader packet parity still belongs to the later packet-handler migration.
+  - The main heartbeat in `SRC/Server/GameServer/main.cpp` still runs `CHARACTER_MANAGER::Update(...)`. Replacing that call outright before the runtime creation/packet/quest paths are ECS-backed would break the live server, so Phase 5 was intentionally not forced in this pass.
+
+## Phase 5 - Game Loop Integration
+- Status: completed
+- Summary:
+  - Located the main heartbeat in `SRC/Server/GameServer/main.cpp` inside `int idle()`.
+  - Confirmed the legacy path still calls `CHARACTER_MANAGER::instance().Update(thecore_heart->pulse)`.
+  - Added the ECS tick block immediately after the legacy character update so both paths run in parallel during the migration window.
+  - Standardized the global ECS dispatcher symbol to `g_dispatcher` and flushed it from the heartbeat after system execution.
+- Files modified:
+  - `SRC/Server/GameServer/main.cpp`
+  - `SRC/Server/GameServer/ecs/EventDispatcher.hpp`
+  - `SRC/Server/GameServer/ecs/EventDispatcher.cpp`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Tick source:
+  - Legacy character FSM update still uses `thecore_heart->pulse`.
+  - ECS systems use `get_dword_time()` inside the new tick block, matching the existing time source already used in the same heartbeat block (`t = get_dword_time(); db_clientdesc->Update(t);`) and matching the Phase 4 system implementations.
+- Remaining legacy fallback count:
+  - `N/A` for Phase 5. Quest and packet fallbacks are introduced in later phases.
+- Known issues:
+  - The ECS registry is still empty on live paths until login/spawn wiring is introduced in Phase 7, so the new systems correctly iterate zero entities at runtime for now.
+
+## Phase 6 - Quest Engine Migration
+- Status: completed
+- Summary:
+  - Added `CQuestManager::GetPCEntity(lua_State*)` and `GetNPCEntity(lua_State*)` for migration-window VID -> `entt::entity` resolution through `CVIDRegistry`.
+  - Added `SRC/Server/GameServer/ecs/quest_helpers.hpp` with `ECS_TryGet` / `ECS_Get`.
+  - Added `EvExperienceChanged` to the ECS event set for the upcoming quest setter migrations.
+  - Revalidated the live quest binding shape: the current codebase primarily uses `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` rather than the earlier `GetPC(L)` pattern, so the file-by-file migration has to be adapted to the real call sites.
+  - `questlua_pc.cpp` Batch A was extended and now covers the remaining inventory/equipment-centric getters (`socket_items`, `sig_items`, `special_ride`, informer getters, killee drop percent) with ECS-first lookup where feasible.
+  - `questlua_pc.cpp` Batch B is largely in place for boolean state queries: dead/polymorph/mount/riding/guild/dungeon/GM/arena/PvP and affect-flag checks now resolve through ECS tags/components first, then fall back to legacy.
+  - `questlua_pc.cpp` Batch C is now substantially advanced: the remaining identity/vital setters (`set_level`, `change_alignment`, `set_part`, `set_skillgroup`, `set_ht/iq/st/dx`, `set_race0`, `set_level0`, `set_gm_level`, `set_max_health`, quest-flag setters/deleters, `change_empire`, `change_name`, `change_sex`, `set_bonus_for_vote`, `set_skill_point`) were converted to migration-window dual-path or conservative legacy-only wrappers with explicit migration comments.
+  - `questlua_pc.cpp` Batch D is now in place for the live warp/movement quest bindings that exist in this codebase: `set_warp_location`, `set_warp_location_local`, `warp`, `warp_local`, `warp_exit`, `warp_to_guild_war_observer_position`, `save_exit_location`, and `teleport` now update ECS warp/exit state before preserving the legacy warp packet path.
+  - `questlua_pc.cpp` Batch E is now covered: EXP/gold reward functions update ECS state before the legacy path, polymorph/mount/status-force functions now sync ECS tags/components alongside legacy calls, skill getters/setters use ECS-first access where safe, and the remaining item / refine / shop / horse / misc complex bindings were wrapped with migration comments while intentionally keeping their live legacy logic unchanged.
+  - The planned `pc_warp_to_village` binding from the migration design does not exist in the live `questlua_pc.cpp`, so there was nothing to migrate for that symbol in this pass.
+- Files modified:
+  - `SRC/Server/GameServer/questmanager.h`
+  - `SRC/Server/GameServer/questmanager.cpp`
+  - `SRC/Server/GameServer/ecs/quest_helpers.hpp`
+  - `SRC/Server/GameServer/ecs/events.hpp`
+  - `SRC/Server/GameServer/questlua_pc.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Remaining legacy fallback count:
+  - Quest Lua direct legacy character access outside `questlua_item.cpp`: `419` current references to `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` across `questlua_*.cpp`.
+  - `questlua_pc.cpp` direct `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` hits: `205`.
+  - `questlua_pc.cpp` migrated function comment count: `178`.
+- Known issues:
+  - `questlua_pc.cpp` now covers Batch A-E, but the rest of Phase 6 files (`questlua_guild.cpp`, `questlua_party.cpp`, etc.) are still not started yet.
+  - Several setters still do not have a clean decomposed ECS field (`change empire count`, `vote coin`, quest flags, vote bonus state), so they currently use conservative dirty-marking or legacy-only migration wrappers instead of a precise component update.
+  - `pc_teleport` had to be migrated with localized edits instead of a full-body rewrite because the file is ANSI-encoded and the function body contains fragile non-ASCII town-name literals; the result builds cleanly but should be reviewed carefully before broader Batch E work touches the same region.
+  - Many Batch E wrappers intentionally still contain direct `GetCurrentCharacterPtr()` usage because Phase 6 requires the legacy fallback path to remain alive until the live runtime creation and packet paths are migrated in later phases.
+  - Because the live quest code does not uniformly use `GetPC(L)`, the per-file migration needs to target real `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` call sites while preserving the required legacy fallback blocks.
+
+### Phase 6 Progress Update - Files 2-5
+- Status: in_progress
+- Summary:
+  - `questlua_guild.cpp` migrated to ECS-first guild membership lookup where feasible, with legacy fallbacks preserved for all remaining guild operations.
+  - `questlua_party.cpp` now resolves party identity getters (`is_party`, `is_leader`, `get_leader_pid`, level/near-count checks, dungeon presence) through `ecs::PartyMembership` first, while complex party actions remain legacy wrappers with migration comments.
+  - `questlua_horse.cpp` now uses ECS-first reads for ride/ownership/level/health/stamina where `ecs::MountState` is sufficient, and dual-path updates for ride/summon/level transitions.
+  - `questlua_game.cpp` now resolves safebox state through `ecs::SafeboxRef` for `get_safebox_level`, `set_safebox_level`, and `open_safebox`; all item, mall, DB and guild-side effects remain conservative legacy wrappers.
+- Files modified:
+  - `SRC/Server/GameServer/questlua_guild.cpp`
+  - `SRC/Server/GameServer/questlua_party.cpp`
+  - `SRC/Server/GameServer/questlua_horse.cpp`
+  - `SRC/Server/GameServer/questlua_game.cpp`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success after each file.
+- Remaining legacy fallback count:
+  - Quest Lua direct legacy character access outside `questlua_item.cpp`: `394` current references to `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` across `questlua_*.cpp`.
+  - `questlua_guild.cpp` direct hits: `5`
+  - `questlua_party.cpp` direct hits: `25`
+  - `questlua_horse.cpp` direct hits: `22`
+  - `questlua_game.cpp` direct hits: `13`
+- Migrated function comment counts:
+  - `questlua_guild.cpp`: `34`
+  - `questlua_party.cpp`: `23`
+  - `questlua_horse.cpp`: `20`
+  - `questlua_game.cpp`: `17`
+- Known issues:
+  - `questlua_horse.cpp` still emits two pre-existing style warnings (`C4805`) in `horse_set_name`; no functional regression was introduced and the build gate remains green.
+  - The remaining direct `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` hits in the migrated files are expected inside legacy fallback or intentionally preserved legacy-only wrappers for Phase 6.
+  - `questlua_dungeon.cpp` and the rest of files 6-16 are still pending.
+
+## Phase 6 - Quest Engine Migration Completion
+- Phase 6 Status: completed
+- Summary:
+  - The remaining quest Lua files (`questlua_dungeon.cpp` through `questlua_building.cpp`) were migrated to the Phase 6 migration-window pattern.
+  - ECS-first reads were added where the mapping is stable and low-risk (`DungeonMembership`, `AffectList` read path, NPC identity/position data, spawned mob ECS registration in `questlua_global.cpp`).
+  - Complex subsystem logic (marriage, arena, pet/newpet, DragonSoul, building, most global helpers, most dungeon ranking/control flows) intentionally remains on the legacy path with explicit migration comments and preserved fallback behavior.
+  - `_spawn_mob` and `_spawn_mob_in_map` now register spawned mobs into the ECS registry via `EntityFactory::CreateMonster(...)` after legacy spawn succeeds.
+- Files modified:
+  - `SRC/Server/GameServer/questlua_pc.cpp`
+  - `SRC/Server/GameServer/questlua_guild.cpp`
+  - `SRC/Server/GameServer/questlua_party.cpp`
+  - `SRC/Server/GameServer/questlua_horse.cpp`
+  - `SRC/Server/GameServer/questlua_game.cpp`
+  - `SRC/Server/GameServer/questlua_dungeon.cpp`
+  - `SRC/Server/GameServer/questlua_affect.cpp`
+  - `SRC/Server/GameServer/questlua_npc.cpp`
+  - `SRC/Server/GameServer/questlua_marriage.cpp`
+  - `SRC/Server/GameServer/questlua_target.cpp`
+  - `SRC/Server/GameServer/questlua_arena.cpp`
+  - `SRC/Server/GameServer/questlua_global.cpp`
+  - `SRC/Server/GameServer/questlua_pet.cpp`
+  - `SRC/Server/GameServer/questlua_petnew.cpp`
+  - `SRC/Server/GameServer/questlua_dragonsoul.cpp`
+  - `SRC/Server/GameServer/questlua_building.cpp`
+- Remaining legacy fallback count:
+  - `questlua_dungeon.cpp`: `9`
+  - `questlua_affect.cpp`: `13`
+  - `questlua_npc.cpp`: `24`
+  - `questlua_marriage.cpp`: `14`
+  - `questlua_target.cpp`: `5`
+  - `questlua_arena.cpp`: `2`
+  - `questlua_global.cpp`: `27`
+  - `questlua_pet.cpp`: `5`
+  - `questlua_petnew.cpp`: `13`
+  - `questlua_dragonsoul.cpp`: `2`
+  - `questlua_building.cpp`: `1`
+  - Total direct `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` references outside `questlua_item.cpp`: `394`
+- Migrated function comment count:
+  - Total `migrated from` comments across `questlua_*.cpp` excluding `questlua_item.cpp`: `477`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Known issues / TODO Phase 8:
+  - `questlua_affect.cpp`: `CAffect` lifecycle/construction is still legacy-bound; only the read-only `affect_get_apply_on` path was safely ECS-enabled.
+  - `questlua_marriage.cpp`: marriage subsystem still needs proper `MarriageState` component integration.
+  - `questlua_arena.cpp`: arena state remains legacy-only and still needs dedicated ECS coverage.
+  - `questlua_pet.cpp` / `questlua_petnew.cpp`: pet systems remain legacy-only and need dedicated ECS components in a later phase.
+  - `questlua_dragonsoul.cpp`: DragonSoul refine flow remains legacy-only.
+  - `questlua_building.cpp`: land/building subsystem remains legacy-only.
+  - `questlua_global.cpp`: several legacy warnings remain (`C4805`, macro redefinition warnings), but the `GameServer` build gate stays green.
+  - `questlua_horse.cpp`: the pre-existing `horse_set_name` style warnings remain.
+  - `questlua_pc.cpp`: `pc_teleport` is still the most encoding-sensitive function because the file is ANSI-encoded and contains fragile non-ASCII literals.
+
+## Phase 7 - Runtime Wiring and Packet Handler Migration
+- Phase 7 Status: completed
+- Summary:
+  - `DESC` now carries a parallel ECS entity handle via `GetEntity()` / `SetEntity()`.
+  - The live player load path was identified in `SRC/Server/GameServer/input_db.cpp` (`CInputDB::PlayerLoad`), not in `input_login.cpp`; parallel ECS player creation is wired there with `EntityFactory::CreatePC(...)` and `d->SetEntity(...)`.
+  - Core runtime spawn paths in `SRC/Server/GameServer/char_manager.cpp` now register spawned mobs, NPCs and stones into the ECS registry after successful `Show(...)`.
+  - `CHARACTER::Destroy()` now destroys the parallel ECS entity through `EntityFactory::Destroy(...)` before legacy member teardown.
+  - `CInputMain::Move(...)` and `CInputMain::Attack(...)` now dual-path into ECS (`MovementDestination`, `CombatTarget`, `CombatActiveTag`, `DirtyTag`) before continuing through the legacy movement / combat path.
+  - Remaining `input_main.cpp` LPCHARACTER handlers were annotated with Phase 7 migration comments and intentionally remain legacy-only for now.
+  - `CInputDB::PlayerLoad(...)` now synchronizes ECS `Health`, `Mana`, `LevelComponent`, `Experience`, and `GoldAmount` from the freshly loaded legacy character state.
+  - `main.cpp` heartbeat now emits a temporary Phase 7 ECS entity-count debug log using an EnTT-compatible entity iteration over `g_registry.storage<entt::entity>().each()`.
+  - `input_p2p.cpp` character-touching handlers were marked with migration comments and kept legacy-only for this phase.
+- Files modified:
+  - `SRC/Server/GameServer/desc.h`
+  - `SRC/Server/GameServer/input_db.cpp`
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/char.cpp`
+  - `SRC/Server/GameServer/input_main.cpp`
+  - `SRC/Server/GameServer/main.cpp`
+  - `SRC/Server/GameServer/input_p2p.cpp`
+- Runtime verification:
+  - `ECS: PC entity created VID=19900 pid=6` confirmed in live logs on login.
+  - Entity-count debug log counter fixed to use an EnTT-compatible iteration pattern.
+  - Entity count verified `N > 0` after login in live logs.
+  - Build: `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8` success.
+  - No crashes or regressions were observed during the confirmed test session.
+- Verification grep results:
+  - `EntityFactory::Create` call sites currently present in:
+    - `SRC/Server/GameServer/input_db.cpp` (`CreatePC`)
+    - `SRC/Server/GameServer/char_manager.cpp` (`CreateMonster` / `CreateNPC` / `CreateStone`)
+    - `SRC/Server/GameServer/questlua_global.cpp` (`CreateMonster`, from Phase 6)
+  - `EntityFactory::Destroy` call sites currently present in:
+    - `SRC/Server/GameServer/char.cpp`
+  - `GetEntity` / `SetEntity` usage currently present in:
+    - `SRC/Server/GameServer/desc.h`
+    - `SRC/Server/GameServer/input_db.cpp`
+    - `SRC/Server/GameServer/input_main.cpp`
+- Known issues carried to Phase 8:
+  - Temporary debug log in `main.cpp` to be removed in Phase 9.
+  - `CHARACTER_MANAGER::Update()` still runs alongside the ECS tick.
+  - `DESC::GetCharacter()` still exists alongside `GetEntity()`.
+  - Legacy fallback paths are still active in quest and packet handlers.
+  - Additional niche spawn sites may still bypass `SpawnMob()` registration.
+  - `input_main.cpp` handlers beyond `Move` / `Attack` are still legacy-only.
+
+## Project Roadmap
+- Phase 8: CHARACTER class removal
+- Phase 9: Cleanup only (NO parallelization yet)
+  - Remove dual-path blocks, debug logs, legacy fallback wrappers, migration comments
+- EVENT system ECS migration
+- ITEM system ECS migration
+- SECTREE system ECS migration
+  - When `typedef.h` is clean (`LPCHARACTER`, `LPITEM`, `LPENTITY`, `LPSECTREE` all removed), THEN parallelization is introduced
+- KLIENS ECS (separate project, after server ECS complete)
+- Cap'n Proto (after BOTH server and client ECS complete)
+- DB modernization:
+  - Dirty flag save (comes with ECS SaveSystem)
+  - Prepared statements (SQL injection prevention)
+  - Repository pattern
+  - Connection pool
+  - Redis cache layer
+- Parallelization is explicitly deferred until `typedef.h` legacy pointers are fully removed. This is intentional; systems must be truly isolated before parallel execution is safe.
+
+## Phase 8 - CHARACTER Removal
+- Phase 8 Status: in_progress
+- Pre-Phase 8 LPCHARACTER reference count:
+  - `2534` matches for `LPCHARACTER|CHARACTER::` in `SRC/Server/GameServer` excluding `questlua_*` and `ecs/`.
+- Step 8.1 audit (`char_state.cpp`):
+  - `char_state.cpp` was audited before deletion.
+  - The current `AISystem` only covers a minimal idle/chase/attack/return loop.
+  - `char_state.cpp` still contains live logic with no ECS equivalent yet, including:
+    - guard victim search
+    - war flag / flag base state handling
+    - NPC / monster / stone / horse specific idle behavior
+    - AI flag helpers (`IsAggressive`, `SetAggressive`, `IsCoward`, `IsAttackMob`, `IsNoAttackShinsu`, etc.)
+  - Remaining non-`char_state.cpp` call sites still depend on this API, including references from:
+    - `char_battle.cpp`
+    - `char_item.cpp`
+    - `char_manager.cpp`
+    - `cmd_gm.cpp`
+    - `questlua.cpp`
+    - `trigger.cpp`
+    - `PetSystem.cpp`
+    - `New_PetSystem.cpp`
+    - `char.h`
+- Build/CMake note:
+  - `SRC/Server/CMakeLists.txt` uses `file(GLOB_RECURSE ... *.cpp)`, so source inclusion is glob-based. For this project, removing a `.cpp` from the build means deleting or relocating the file rather than editing an explicit source list.
+- Current blocker:
+  - `char_state.cpp` cannot be safely deleted yet without first migrating its missing runtime behavior into ECS systems/components.
+  - Deleting it now would break active call sites and regress mob/NPC/flag/guard state behavior.
+- Next required work before Step 8.1 deletion can proceed:
+  - extend `AISystem` (or split into dedicated AI/state helper systems)
+  - introduce ECS equivalents for the missing AI flag/state methods
+  - replace remaining `IsState*` / AI-flag call sites outside `char_state.cpp`
+
+### Phase 8 - AI Foundation Progress
+- Status: in_progress
+- Step 8.0 completed:
+  - `SRC/Server/GameServer/ecs/components/ai_components.hpp` extended with:
+    - `ecs::AIFlags`
+    - `ecs::GuardState`
+    - `ecs::WarFlagState`
+    - `ecs::HorseAITag`
+    - `ecs::StoneAITag`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.cpp` extended with:
+    - guard search update hook
+    - war-flag update hook placeholder
+    - passive stone/horse idle hook
+- Step 8.1 completed:
+  - Added `SRC/Server/GameServer/ecs/AIHelpers.hpp` with ECS-side AI flag accessor/mutator free functions.
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp` now seeds `ecs::AIFlags`, `ecs::GuardState`, `ecs::HorseAITag`, and `ecs::StoneAITag` for mob entities.
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- New blocker discovered before Step 8.2 call-site replacement:
+  - `CQuestManager::GetPCEntity()` / `GetNPCEntity()` resolve ECS entities via `CVIDRegistry::Instance().Find(ch->GetVID())`.
+  - `EntityFactory::CreatePC()` / `CreateMonster()` currently allocate a fresh ECS VID internally instead of reusing the legacy `CHARACTER` VID.
+  - Result: legacy `ch->GetVID()` is not guaranteed to resolve to the parallel ECS entity, which makes direct AI/state call-site replacement unsafe in Phase 8.2.
+- Required next fix before broad call-site replacement:
+  - unify legacy and ECS VID registration so `CVIDRegistry::Find(ch->GetVID())` resolves the correct ECS entity for live legacy objects.
+
+## Phase 8 - VID Unification
+- Status: in_progress
+- Problem:
+  - `EntityFactory::CreatePC()` / `CreateMonster()` / `CreateNPC()` / `CreateStone()` allocated fresh ECS VIDs instead of reusing the live legacy `CHARACTER` VID.
+  - `CVIDRegistry::Find(ch->GetVID())` could therefore fail for live legacy-backed objects, which made broad Phase 8 call-site replacement unsafe.
+- Fix implemented:
+  - `EntityFactory::CreatePC(...)` now accepts `uint32_t legacyVID`, reuses it for `ecs::VIDComponent`, registers the same VID in `CVIDRegistry`, and returns the existing ECS entity if that VID is already registered.
+  - `EntityFactory::CreateMonster(...)`, `CreateNPC(...)`, and `CreateStone(...)` now also accept `uint32_t legacyVID`, reuse it, and apply the same double-registration guard.
+  - All live call sites now pass the legacy VID explicitly:
+    - `SRC/Server/GameServer/input_db.cpp`
+    - `SRC/Server/GameServer/char_manager.cpp`
+    - `SRC/Server/GameServer/questlua_global.cpp`
+- Temporary verification added:
+  - `SRC/Server/GameServer/input_db.cpp`
+    - `VID UNIFICATION FAILED: vid=%u`
+    - `VID OK: vid=%u entity valid`
+  - `SRC/Server/GameServer/questmanager.cpp`
+    - `GetPCEntity: VID=%u not in ECS registry`
+- Files modified:
+  - `SRC/Server/GameServer/ecs/EntityFactory.hpp`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+  - `SRC/Server/GameServer/input_db.cpp`
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/questlua_global.cpp`
+  - `SRC/Server/GameServer/questmanager.cpp`
+- Runtime verification:
+  - WinTest runtime path used: `C:\AurigaGlobal-WinTest\srv1`
+  - PC-side live verification was confirmed on the active channel core:
+    - `ECS: PC entity created VID=19900 pid=6`
+    - `VID OK: vid=19900 entity valid`
+    - later confirmations also appeared for subsequent sessions on `core99`
+  - Final user-facing acceptance gate passed:
+    - login succeeds
+    - in-world movement works
+    - combat / attack works
+- Residual known issue accepted for later follow-up:
+  - temporary `GetPCEntity: VID=... not in ECS registry` diagnostics still appeared for some startup-spawned NPC/mob VIDs during the Phase 8 diagnosis window
+  - startup monster ECS registration was intentionally kept conservative to preserve login stability
+  - if this resurfaces as a gameplay issue, revisit the startup spawn-path coverage before continuing deeper CHARACTER removal work
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Unblocks:
+  - Phase 8 Step 8.2 AI/state call-site replacement
+
+## Phase 8 - VID Unification Diagnosis
+- Status: completed
+- Root cause identified so far:
+  - Option A (stale binary): ruled out as the primary issue for the channel core runtime.
+  - Option B (wrong PC load hook): ruled out on the actual active channel core.
+  - Option C (multi-core architecture mismatch): confirmed.
+    - The active player session for `ixtreeme` / `pid=6` was handled on `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\syslog.txt`, not on `ch1/core1`.
+    - Live evidence on `core99`:
+      - `Apr 14 14:13:48 :: ECS: PC entity created VID=19900 pid=6`
+      - `Apr 14 14:13:48 :: VID OK: vid=19900 entity valid`
+      - `Apr 14 14:14:40 :: ECS: PC entity created VID=20148 pid=6`
+      - `Apr 14 14:14:40 :: VID OK: vid=20148 entity valid`
+  - Option D (spawn paths bypassing ECS registration): partially mitigated during diagnosis.
+    - Live evidence on `core99` quest execution:
+      - `Apr 14 14:14:17 :: quest::CQuestManager::GetNPCEntity: GetPCEntity: VID=7592 not in ECS registry`
+      - `Apr 14 14:14:17 :: quest::CQuestManager::GetNPCEntity: GetPCEntity: VID=19904 not in ECS registry`
+      - `Apr 14 14:15:17 :: quest::CQuestManager::GetNPCEntity: GetPCEntity: VID=20266 not in ECS registry`
+- Fix / diagnosis instrumentation applied:
+  - Added temporary spawn diagnostics to `SRC/Server/GameServer/char_manager.cpp`:
+    - `SPAWN_PATH: <function> vid=<...> vnum=<...> type=<...> at (...)`
+  - Added temporary ECS creation diagnostics to `SRC/Server/GameServer/ecs/EntityFactory.cpp`:
+    - `ECS: Monster entity created VID=... vnum=...`
+    - `ECS: NPC entity created VID=... vnum=...`
+    - `ECS: Stone entity created VID=... vnum=...`
+- Additional fix applied:
+  - Restored the missing ECS registration block inside `SRC/Server/GameServer/char_manager.cpp` `CHARACTER_MANAGER::SpawnMob(...)`.
+  - `SpawnMob(...)` now mirrors `SpawnMobRandomPosition(...)` and registers NPC / monster / stone entities through `EntityFactory::CreateNPC/CreateMonster/CreateStone(..., ch->GetVID())` before the temporary `SPAWN_PATH` log.
+- Latest live findings:
+  - The PC load path stabilized on `core99` after the login-path / VID fixes:
+    - `Apr 14 18:16:40 :: ECS: PC entity created VID=20025 pid=6`
+    - `Apr 14 18:16:40 :: VID OK: vid=20025 entity valid`
+  - `VID UNIFICATION FAILED` was not observed in the latest WinTest logs.
+  - Full zero-error startup spawn coverage was not completed in this phase window; remaining startup-spawn ECS gaps are explicitly deferred unless they become user-facing regressions.
+  - Those missing VIDs are now treated as startup monster entities that were intentionally skipped when startup ECS registration was temporarily narrowed to NPCs/stones to recover login stability.
+- Current code state:
+  - `SRC/Server/GameServer/char_manager.cpp` now again registers ordinary monsters through `EntityFactory::CreateMonster(..., ch->GetVID())`.
+  - Temporary spawn diagnostics remain limited to NPC / warp / goto / stone entities to avoid startup log flood.
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp` still suppresses `ECS: Monster entity created ...` logging while keeping the NPC / stone diagnostics active.
+- Deploy state:
+  - Fresh binaries were deployed repeatedly to `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe` during diagnosis.
+  - The final accepted runtime state is the stable build where login, movement and attack were confirmed working by the user.
+- Build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success.
+- Outcome:
+  - Phase 8 can continue from Step 8.2 with the current runtime-stable VID unification baseline.
+
+## Phase 8 - Step 8.2 / 8.3 char_state.cpp removal
+- Status: in_progress
+- Step 8.2 external call-site replacement:
+  - `SRC/Server/GameServer/cmd_gm.cpp`
+    - replaced the live `SetAggressive()` GM-side call site with `AIHelpers::SetAggressive(...)`
+  - `SRC/Server/GameServer/trigger.cpp`
+    - replaced the live `IsAttackMob()` / `IsAggressive()` guard with `AIHelpers::IsAttackMob(...)` and `AIHelpers::IsAggressive(...)`
+  - `SRC/Server/GameServer/PetSystem.cpp`
+    - replaced `IsStateMove()` with ECS `MovementDestination` presence checks
+    - on successful `Goto(...)`, now mirrors the move intent into `ecs::MovementDestination`
+  - `SRC/Server/GameServer/New_PetSystem.cpp`
+    - replaced `IsStateMove()` with ECS `MovementDestination` presence checks
+    - on successful `Goto(...)`, now mirrors the move intent into `ecs::MovementDestination`
+  - `SRC/Server/GameServer/ecs/AIHelpers.hpp`
+    - added shared `EcsOf(LPCHARACTER)` helper for `CHARACTER* -> entt::entity` lookup through `CVIDRegistry`
+- Files audited with no matching Step 8.2 call sites:
+  - `SRC/Server/GameServer/char_battle.cpp`
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/questlua.cpp`
+  - `SRC/Server/GameServer/char_item.cpp`
+- Step 8.2 internal `char.cpp` FSM migration:
+  - replaced all CHARACTER-local `GotoState(...)` / `IsState(...)` / `m_stateIdle|m_stateMove|m_stateBattle` usage with ECS state helpers based on:
+    - `ecs::CombatActiveTag`
+    - `ecs::CombatTarget`
+    - `ecs::MovementDestination`
+  - removed legacy FSM state reconfiguration for war-flag / war-flag-base / horse setup
+  - moved the still-live AI flag wrapper implementations out of `char_state.cpp` into `SRC/Server/GameServer/char.cpp`
+    - `SetAggressive` / `IsAggressive`
+    - `SetCoward` / `IsCoward` / `CowardEscape`
+    - `SetNoAttackShinsu|Chunjo|Jinno` / `IsNoAttackShinsu|Chunjo|Jinno`
+    - `SetAttackMob` / `IsAttackMob`
+    - `IsBerserker` / `IsStoneSkinner` / `IsGodSpeeder` / `IsDeathBlower` / `IsReviver`
+- Step 8.2 header cleanup:
+  - removed CHARACTER-specific FSM state members and declarations from `SRC/Server/GameServer/char.h`
+    - `m_stateMove`
+    - `m_stateBattle`
+    - `m_stateIdle`
+    - state method declarations (`StateMove`, `StateBattle`, `StateIdle`, `StateFlag`, `StateFlagBase`, `StateHorse`, `__StateIdle_*`)
+    - inline `IsStateMove()` / `IsStateIdle()`
+- Step 8.3 deletion:
+  - deleted `SRC/Server/GameServer/char_state.cpp`
+  - replaced the last deleted-file dependency in `SRC/Server/GameServer/char_battle.cpp` with a local stone-step helper
+- Verification:
+  - `char_state` string grep in `SRC/Server/GameServer/*.cpp|*.h`: zero results
+  - CHARACTER-specific state grep (`IsState|GotoState|m_stateIdle|m_stateBattle|m_stateMove|CStateTemplate`) is zero outside the base FSM infrastructure files (`FSM.*`, `state.h`)
+- LPCHARACTER reference count remaining:
+  - pre-Phase 8 scope: `2534`
+  - current count (`LPCHARACTER|CHARACTER::|#include.*char.h`, excluding `questlua_*` and `ecs/`): `2600`
+    - note: Phase 8 overall CHARACTER removal is still in progress; this count has not started dropping materially yet because only the FSM slice was removed in this cycle
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success after `char.cpp`, `char_state.cpp` deletion, and the follow-up `char_battle.cpp` fix
+- Next deletion targets not yet started in this cycle:
+  - `char_quickslot.cpp`
+  - `char_resist.cpp`
+  - `char_change_empire.cpp`
+
+## Phase 8 - Steps 8.4 / 8.5 / 8.6
+- Status: in_progress
+- `char_quickslot.cpp`
+  - deleted
+  - corrected extraction strategy: quickslot logic now lives in:
+    - `SRC/Server/GameServer/ecs/systems/InventorySystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+  - moved these `CHARACTER::` definitions out of `char.cpp` and into `InventorySystem.cpp`:
+    - `CHARACTER::SyncQuickslot(uint8_t, uint8_t, uint8_t)`
+    - `CHARACTER::GetQuickslot(uint8_t, TQuickslot**)`
+    - `CHARACTER::SetQuickslot(uint8_t, TQuickslot&)`
+    - `CHARACTER::DelQuickslot(uint8_t)`
+    - `CHARACTER::SwapQuickslot(uint8_t, uint8_t)`
+    - `CHARACTER::ChainQuickslotItem(LPITEM, uint8_t, uint8_t)`
+  - `InventorySystem` now owns the ECS-side quickslot operations over `ecs::QuickSlots`
+  - thin migration-window `CHARACTER::` wrappers remain, but they are no longer implemented in `char.cpp`
+  - quickslot storage and sync are still spread across `char.cpp`, `char_item.cpp`, `input_main.cpp`, `item.cpp`, `exchange.cpp`, `shop.cpp`, `item_manager.cpp`, and GM/item helper paths
+- `char_resist.cpp`
+  - pending
+  - deeper audit confirmed this is not a simple resist accessor file
+  - it currently owns:
+    - fire / poison / bleeding dot event handlers
+    - `CHARACTER::AttackedByFire`
+    - `CHARACTER::AttackedByPoison`
+    - `CHARACTER::AttackedByBleeding`
+    - `CHARACTER::RemoveFire`
+    - `CHARACTER::RemovePoison`
+    - `CHARACTER::RemoveBleeding`
+    - `CHARACTER::ApplyMobAttribute`
+    - `CHARACTER::IsImmune`
+  - resist-related combat values remain largely routed through `GetPoint(POINT_RESIST_*)` and `ApplyPoint(APPLY_RESIST_*)` across `char.cpp`, `char_battle.cpp`, `battle.cpp`, and `char_skill.cpp`
+  - this file therefore needs a status/combat migration slice, not just `ResistHelpers`
+- `char_change_empire.cpp`
+  - deleted
+  - moved these definitions into `SRC/Server/GameServer/char.cpp`:
+    - `CHARACTER::ChangeEmpire(uint8_t)`
+    - `CHARACTER::GetChangeEmpireCount() const`
+    - `CHARACTER::SetChangeEmpireCount()`
+    - `CHARACTER::GetAID() const`
+  - added ECS sync through `ecs::EmpireComponent` during empire changes and count updates
+  - expanded `SRC/Server/GameServer/ecs/components/identity_components.hpp`
+    - `EmpireComponent::changeCount`
+- Empire audit note:
+  - the deletion was completed by relocating the methods, not by removing all `ChangeEmpire` call sites yet
+  - remaining live references are expected in:
+    - `SRC/Server/GameServer/char.cpp`
+    - `SRC/Server/GameServer/char.h`
+    - `SRC/Server/GameServer/questlua_pc.cpp`
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_change_empire.cpp` deletion: `2600`
+  - after `char_change_empire.cpp` deletion: `2486`
+  - after `char_quickslot.cpp` deletion into `char.cpp`: `2486`
+  - after quickslot extraction correction into `ecs/systems/InventorySystem.cpp`: `2480`
+- Build:
+  - intermediate build after relocation exposed duplicate symbol definitions until the old file was removed
+  - quickslot extraction correction required a new ECS system file and a one-time clean build diagnosis
+  - final gate passed:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Next:
+  - `char_gaya.cpp`
+
+## Phase 8 - System extraction strategy corrected
+- RULE:
+  - remaining `char_*.cpp` content must move into `ecs/systems/*.cpp` or a small helper header
+  - `char.cpp` is no longer used as an intermediate home for extracted implementations
+- Completed correction:
+  - quickslot logic extracted to `ecs/systems/InventorySystem.*`
+  - `char.cpp` no longer contains quickslot method bodies
+  - current non-quest, non-ecs `LPCHARACTER|CHARACTER::` count: `2480`
+- Build result:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- Next extraction target:
+  - `char_gaya.cpp` into `ecs/systems/GayaSystem.*`
+
+## Phase 8 - Step 8.5 char_resist.cpp -> AffectSystem
+- Status: completed
+- `char_resist.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - AffectSystem now owns the former resist/status-effect slice:
+    - `ApplyFire` / `RemoveFire`
+    - `ApplyPoison` / `RemovePoison`
+    - `ApplyBleeding` / `RemoveBleeding`
+    - `IsImmune`
+    - `ApplyMobAttribute`
+  - migration-window `CHARACTER::` forwarding definitions now live alongside the ECS implementation in `AffectSystem.cpp`
+  - `char.h` keeps the existing method surface so external call sites continue to compile during the migration window
+- Verification:
+  - `SRC/Server/GameServer/char_resist.cpp` no longer exists
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_resist.cpp` deletion: `2480`
+  - after `char_resist.cpp` deletion: `2464`
+- Next:
+  - `char_fishing.cpp` -> `ecs/systems/ActivitySystem.*`
+
+## Phase 8 - Step 8.7 char_fishing.cpp -> ActivitySystem
+- Status: completed
+- `char_fishing.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/components/activity_components.hpp`
+    - `SRC/Server/GameServer/ecs/systems/ActivitySystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp`
+  - ActivitySystem now owns the new fishing slice:
+    - `StartFishing`
+    - `StopFishing`
+    - `CatchFishing`
+    - `CatchFishingFailed`
+    - `CatchDecision`
+    - `UpdateFishing`
+  - legacy `CHARACTER::fishing_new_*` forwarding definitions now live in `ActivitySystem.cpp`
+  - `main.cpp` ECS tick now runs:
+    - `ActivitySystem::UpdateFishing(g_registry, tick);`
+- Verification:
+  - `SRC/Server/GameServer/char_fishing.cpp` no longer exists
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_fishing.cpp` deletion: `2464`
+  - after `char_fishing.cpp` deletion: `2457`
+- Next:
+  - `char_horse.cpp` -> `ecs/systems/MountSystem.*`
+
+## Phase 8 - Step 8.8 char_horse.cpp -> MountSystem
+- Status: completed
+- `char_horse.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/systems/MountSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+  - `MountSystem` now owns the legacy horse slice:
+    - `StartRiding`
+    - `StopRiding`
+    - `SetRider` / `GetRider`
+    - `HorseSummon`
+    - `GetMyHorseVnum`
+    - `HorseDie`
+    - `ReviveHorse`
+    - `ClearHorseInfo`
+    - `SendHorseInfo`
+    - `CanUseHorseSkill`
+    - `SetHorseLevel`
+  - ECS-side mount synchronization now updates `ecs::MountState` from the moved horse methods
+  - migration-window `CHARACTER::` horse method definitions now live in `ecs/systems/MountSystem.cpp`, not in `char.cpp`
+- Verification:
+  - `SRC/Server/GameServer/char_horse.cpp` no longer exists
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_horse.cpp` deletion: `2457`
+  - after `char_horse.cpp` deletion: `2441`
+- Next:
+  - `char_gaya.cpp` -> `ecs/systems/GayaSystem.*`
+
+## Phase 8 - Step 8.9 char_gaya.cpp -> GayaSystem
+- Status: completed
+- `char_gaya.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/systems/GayaSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/GayaSystem.cpp`
+  - `GayaSystem` now owns the former Gaya market slice:
+    - `LOAD_GAYA`
+    - `CheckItemsFull`
+    - `ClearGayaMarket`
+    - `InfoGayaMarker`
+    - `CheckSlotGayaMarket`
+    - `BuyItemsGayaMarket`
+    - `RefreshItemsGayaMarket`
+    - `UpdateSlotGayaMarket`
+    - `UpdateItemsGayaMarker0`
+    - `UpdateItemsGayaMarker`
+    - `CraftGayaItems`
+    - `MarketGayaItems`
+    - `RefreshGayaItems`
+    - `GetGayaState`
+    - `SetGayaState`
+    - `StartCheckTimeMarket`
+  - migration-window `CHARACTER::` Gaya forwarding definitions now live in `ecs/systems/GayaSystem.cpp`, not in `char.cpp`
+  - the `ENABLE_GAYA_SYSTEM` data block in `char.h` was opened for the migration window so the extracted ECS system can own the logic without moving bodies into `char.cpp`
+- Verification:
+  - `SRC/Server/GameServer/char_gaya.cpp` no longer exists
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_gaya.cpp` deletion: `2441`
+  - after `char_gaya.cpp` deletion: `2421`
+- Next:
+  - `char_dragonsoul.cpp` -> `ecs/systems/DragonSoulSystem.*`
+
+## Phase 8 - Step 8.10 char_dragonsoul.cpp -> DragonSoulSystem
+- Status: completed
+- `char_dragonsoul.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp`
+  - ECS-side Dragon Soul state is now tracked in:
+    - `SRC/Server/GameServer/ecs/components/session_components.hpp` via `ecs::DragonSoulState`
+  - `DragonSoulSystem` now owns the former Dragon Soul slice:
+    - `DragonSoul_Initialize`
+    - `DragonSoul_GetActiveDeck`
+    - `DragonSoul_IsDeckActivated`
+    - `DragonSoul_ActivateDeck`
+    - `DragonSoul_DeactivateAll`
+    - `DragonSoul_CleanUp`
+    - `DragonSoul_RefineWindow_Open`
+    - `DragonSoul_RefineWindow_Close`
+    - `DragonSoul_RefineWindow_CanRefine`
+  - migration-window `CHARACTER::` Dragon Soul forwarding definitions now live in `ecs/systems/DragonSoulSystem.cpp`, not in `char.cpp`
+- Verification:
+  - `SRC/Server/GameServer/char_dragonsoul.cpp` no longer exists
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_dragonsoul.cpp` deletion: `2421`
+  - after `char_dragonsoul.cpp` deletion: `2412`
+- Next:
+  - `char_skill.cpp` -> `ecs/systems/SkillSystem.*`
+
+## Phase 8 - Step 8.11 char_skill.cpp -> SkillSystem
+- Status: in_progress
+- `char_skill.cpp`
+  - retained for later sessions; file is still too large to delete safely in one pass
+  - extracted slice A into:
+    - `SRC/Server/GameServer/ecs/systems/SkillSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+  - completed slice A:
+    - `GetSkillNextReadTime`
+    - `SetSkillNextReadTime`
+    - `GetSkillLevel`
+    - `SetSkillLevel`
+  - completed slice B:
+    - `IsLearnableSkill`
+    - `LearnGrandMasterSkill`
+    - `LearnSkillByBook`
+    - `CanUseMobSkill`
+    - `CanUseSkill`
+    - `CheckSkillHitCount`
+  - completed slice C:
+    - `ComputeCooltime`
+    - `DisableCooltime`
+    - `ResetMobSkillCooltime`
+  - completed slice D:
+    - `SetSkillGroup`
+    - `ComputeSkillPoints`
+    - `ResetSkill`
+  - completed slice E:
+    - `GetChainLightningMaxCount`
+    - `SetAffectedEunhyung`
+    - `SkillLevelPacket`
+    - `SkillLevelDown`
+    - `SkillCanUp`
+    - `SkillLevelUp`
+    - `ComputePassiveSkill`
+    - `ComputeSkillAtPosition`
+    - `ComputeSkillParty`
+    - `ComputeGyeongGongSkill`
+    - `ComputeSkill`
+    - `UseSkill`
+    - `GetUsedSkillMasterType`
+    - `GetSkillMasterType`
+    - `GetSkillPower`
+    - `StartMuyeongEvent` / `StopMuyeongEvent`
+    - `StartGyeongGongEvent` / `StopGyeongGongEvent`
+    - `SkillLearnWaitMoreTimeMessage`
+    - `HasMobSkill`
+    - `CountMobSkill`
+    - `GetMobSkill`
+    - `UseMobSkill`
+    - `IsUsableSkillMotion`
+    - `ClearSkill`
+    - `ClearSubSkill`
+    - `ResetOneSkill`
+  - migrated the remaining file-scope skill helpers into `ecs/systems/SkillSystem.cpp` as part of the final extraction:
+    - `TSkillUseInfo::HitOnce`
+    - `TSkillUseInfo::UseSkill`
+    - `FFindNearVictim`
+    - `chain_lightning_event_info` / `ChainLightningEvent`
+    - `SetPolyVarForAttack`
+    - `FuncSplashDamage`
+    - `FuncSplashAffect`
+    - `skill_gwihwan_info`
+    - `FComputeSkillParty`
+    - `mob_skill_event_info`
+    - `FHealerParty`
+    - remaining `SkillList` static tables
+  - migration-window `CHARACTER::` forwarding definitions for slices A/B/C/D/E now live in `ecs/systems/SkillSystem.cpp`
+- Remaining slices:
+  - none
+- Verification:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+  - `SRC/Server/GameServer/char_skill.cpp` had zero remaining `CHARACTER::` bodies before deletion for:
+    - `GetSkillNextReadTime`
+    - `SetSkillNextReadTime`
+    - `GetSkillLevel`
+    - `SetSkillLevel`
+    - `IsLearnableSkill`
+    - `LearnGrandMasterSkill`
+    - `LearnSkillByBook`
+    - `CanUseMobSkill`
+    - `CanUseSkill`
+    - `CheckSkillHitCount`
+    - `ComputeCooltime`
+    - `DisableCooltime`
+    - `ResetMobSkillCooltime`
+    - `SetSkillGroup`
+    - `ComputeSkillPoints`
+    - `ResetSkill`
+    - all remaining Slice E methods
+  - `SRC/Server/GameServer/char_skill.cpp`: deleted
+- LPCHARACTER / CHARACTER reference count:
+  - before slice A extraction: `2412`
+  - after slice A extraction: `2408`
+  - after slice B extraction: `2401`
+  - after slice C extraction: `2398`
+  - after slice D extraction: `2395`
+  - after slice E extraction and `char_skill.cpp` deletion: `2340`
+- Next:
+  - `char_affect.cpp` -> `ecs/systems/AffectSystem.*`
+
+## Phase 8 - Step 8.12 char_affect.cpp -> AffectSystem
+- Status: completed
+- `char_affect.cpp`
+  - deleted
+  - extracted into:
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - `AffectSystem` now owns the former affect lifecycle slice:
+    - `FindAffect`
+    - `UpdateAffect`
+    - `StartAffectEvent`
+    - `ClearAffectSkills`
+    - `SaveAffectSkills`
+    - `LoadAffectSkills`
+    - `ClearAffect`
+    - `ProcessAffect`
+    - `SaveAffect`
+    - `CheckBiologistReward`
+    - `LoadAffect`
+    - `AddAffect`
+    - `RefreshAffect`
+    - `ComputeAffect`
+    - `RemoveAffect`
+    - `IsAffectFlag`
+    - `RemoveGoodAffect`
+    - `IsGoodAffect`
+    - `RemoveBadAffect`
+  - moved the remaining affect file-scope helpers/events into `ecs/systems/AffectSystem.cpp`:
+    - `SendAffectRemovePacket`
+    - `SendAffectAddPacket`
+    - `affect_event`
+    - `load_affect_login_event_info`
+    - `load_affect_login_event`
+  - migration-window `CHARACTER::` affect definitions now live in `ecs/systems/AffectSystem.cpp`, not in `char_affect.cpp`
+  - added ECS-side affect sync wrapper API and heartbeat sync:
+    - `AffectSystem::FindAffect`
+    - `AffectSystem::AddAffect`
+    - `AffectSystem::RemoveAffect`
+    - `AffectSystem::ClearAffect`
+    - `AffectSystem::RefreshAffect`
+    - `AffectSystem::UpdateAffect(entt::registry&, uint32_t)`
+  - `main.cpp` ECS tick now calls:
+    - `AffectSystem::UpdateAffect(g_registry, tick);`
+- Verification:
+  - `SRC/Server/GameServer/char_affect.cpp`: deleted
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_affect.cpp` deletion: `2340`
+  - after `char_affect.cpp` deletion: `2316`
+- Next:
+  - `char_item.cpp` -> `ecs/systems/ItemSystem.*`
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem
+- Status: in_progress
+- `char_item.cpp`
+  - retained for later sessions; file is too large to delete safely in one pass
+  - audit result:
+    - line count: `11748`
+    - `CHARACTER::` body count: `104`
+    - logical slices identified: `6`
+      - A) item getters / finders / count
+      - B) equip / unequip
+      - C) item use / pickup / drop / move
+      - D) item creation / give / remove
+      - E) shop / trade / refine
+      - F) special item behavior (blend / socket / attr / misc)
+  - extracted slice A into:
+    - `SRC/Server/GameServer/ecs/systems/ItemSystem.hpp`
+    - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+  - completed slice A:
+    - `GetInventoryItem`
+    - `GetExtraInventoryItem`
+    - `GetItem`
+    - `FindSpecifyItem`
+    - `FindItemByID`
+    - `CountSpecifyItemRenewal`
+    - `CountSpecifyItem`
+    - `RemoveSpecifyItem`
+    - `CountSpecifyTypeItem`
+  - completed slice B:
+    - `GetWear`
+    - `SetWear`
+    - `UnequipItem`
+    - `EquipItem`
+    - `IsEquipUniqueItem`
+    - `IsEquipUniqueGroup`
+    - `UnEquipSpecialRideUniqueItem`
+    - `CanEquipNow`
+    - `CanUnequipNow`
+  - `ItemSystem` migration-window wrappers now expose ECS-entry getter / finder APIs while the moved `CHARACTER::` item bodies live in `ecs/systems/ItemSystem.cpp`, not in `char.cpp`
+  - build fix during extraction:
+    - removed the heavy `packet.h` dependency from `ItemSystem.hpp`
+    - replaced it with the minimal `common/length.h` + `typedef.h` include surface
+    - added the missing `log.h` dependency to `ItemSystem.cpp`
+    - extended `ItemSystem.cpp` with the original item-slice helper/include surface required by equip logic:
+      - `FN_check_item_sex`
+      - `common/VnumHelper.h`
+      - `belt_inventory_helper.h`
+      - legacy item/equip support headers mirrored from `char_item.cpp`
+- Remaining slices:
+  - C) item use / pickup / drop / move
+  - D) item creation / give / remove
+  - E) shop / trade / refine
+  - F) special item behavior (blend / socket / attr / misc)
+- Slice C split:
+  - C1) `DropItem` / `DropGold` / `MoveItem` / `PickupItem`
+  - C2) `UseItem` / `UseItemEx`
+  - completed slice C1:
+    - `DropItem`
+    - `DropGold`
+    - `MoveItem`
+    - `PickupItem`
+    - support bodies moved with the slice:
+      - `GiveGold`
+      - `FN_copy_item_socket`
+      - `NPartyPickupDistribute`
+  - `ItemSystem.hpp` now exposes ECS-entry wrappers for:
+    - `DropItem`
+    - `DropGold`
+    - `MoveItem`
+    - `PickupItem`
+  - `ItemSystem.cpp` now owns the moved `CHARACTER::` C1 bodies and helper surface, not `char_item.cpp`
+  - remaining live `char_item.cpp` Slice C bodies:
+    - `UseItemEx`
+    - `UseItem`
+- Verification:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+  - `SRC/Server/GameServer/char_item.cpp` no longer contains the extracted Slice A `CHARACTER::` bodies
+  - `SRC/Server/GameServer/char_item.cpp` no longer contains the extracted Slice B equip / unequip `CHARACTER::` bodies
+  - `SRC/Server/GameServer/char_item.cpp` no longer contains the extracted Slice C1 `CHARACTER::` bodies:
+    - `DropItem`
+    - `DropGold`
+    - `MoveItem`
+    - `PickupItem`
+- LPCHARACTER / CHARACTER reference count:
+  - before `char_item.cpp` Slice A extraction: `2316`
+  - after `char_item.cpp` Slice A extraction: `2301`
+  - after `char_item.cpp` Slice B extraction: `2288`
+  - after `char_item.cpp` Slice C1 extraction: `2273`
+- Next:
+  - `char_item.cpp` Slice C2:
+    - `UseItem`
+    - `UseItemEx`
+  - note:
+    - `UseItemEx` remains the largest monolithic item method and may still require a further C2a / C2b split if the next extraction is not compile-safe in one session
