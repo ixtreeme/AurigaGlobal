@@ -89,6 +89,7 @@ bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum,
                                   std::vector<LPITEM>& itemGets,
                                   int& count);
 bool DestroyItem(entt::entity e, TItemPos cell);
+void ItemDivision(entt::entity e, TItemPos cell);
 
 // Slice E - shop / trade / refine
 void SetRefineNPC(entt::entity e, entt::entity npc);

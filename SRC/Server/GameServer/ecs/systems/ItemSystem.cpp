@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "ItemSystem.hpp"
+#include "../VIDRegistry.hpp"
 
 #include "../../utils.h"
 #include "../../config.h"
@@ -454,6 +455,12 @@ bool DestroyItem(entt::entity e, TItemPos cell)
 {
     LPCHARACTER ch = LegacyCharacter(e);
     return ch ? ch->DestroyItem(cell) : false;
+}
+
+void ItemDivision(entt::entity e, TItemPos cell)
+{
+    (void)e;
+    (void)cell;
 }
 
 void SetRefineNPC(entt::entity e, entt::entity npc)
@@ -9235,6 +9242,11 @@ int g_nPortalLimitTime = 10;
 void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
 void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way);
 void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success = 0);
+
+void CHARACTER::ItemDivision(TItemPos Cell)
+{
+	ItemSystem::ItemDivision(CVIDRegistry::Instance().Find(GetVID()), Cell);
+}
 
 void CHARACTER::SetRefineNPC(LPCHARACTER ch)
 {
