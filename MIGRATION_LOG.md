@@ -1115,3 +1115,40 @@
 - count after: `2233`
 - build: success
 - next: slice F (`special item behavior / remaining item helpers`)
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- completed slice F:
+  - remaining lifecycle / inventory helpers moved:
+    - `CanHandleItem`
+    - `SetItem` (both overloads)
+    - `ClearItem`
+    - `IsEmptyItemGrid`
+    - `GetEmptyInventory`
+    - `ExtraInventoryMaxSlots`
+    - `UnlockExtraInventory`
+    - `GetEmptyExtraInventory` (both overloads)
+    - `GetEmptyDragonSoulInventory`
+    - `CopyDragonSoulItemGrid`
+    - `CountEmptyInventory`
+    - `GiveRecallItem`
+    - `ProcessRecallItem`
+    - `SwapItem`
+    - `BuffOnAttr_AddBuffsFromItem`
+    - `BuffOnAttr_RemoveBuffsFromItem`
+    - `BuffOnAttr_ClearAll`
+    - `BuffOnAttr_ValueChange`
+    - `ItemProcess_Hair`
+    - `ItemProcess_Polymorph`
+    - `CanDoCube`
+    - `AutoRecallProcess`
+    - `AutoRecoveryItemProcess`
+    - `IsValidItemPosition`
+    - `CanDoAttrTransfer`
+  - remaining static data moved with the slice:
+    - `CHARACTER::msc_szLastChangeItemAttrFlag`
+    - `g_aBuffOnAttrPoints`
+  - integration note:
+    - `AutoRecallProcess` required the legacy `PetSystem.h` include surface in `ItemSystem.cpp`
+- count after: `2191`
+- build: success
+- next: `char_item.cpp` deletion
