@@ -90,4 +90,15 @@ bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum,
                                   int& count);
 bool DestroyItem(entt::entity e, TItemPos cell);
 
+// Slice E - shop / trade / refine
+void SetRefineNPC(entt::entity e, entt::entity npc);
+bool DoRefine(entt::entity e, LPITEM item, bool moneyOnly = false);
+bool DoRefineWithScroll(entt::entity e, LPITEM item);
+bool DoRefineItemSoul(entt::entity e, LPITEM item);
+bool RefineInformation(entt::entity e, uint8_t cell, uint8_t type, int additionalCell = -1);
+bool RefineItem(entt::entity e, LPITEM item, LPITEM target);
+void UseSilkBotary(entt::entity e);
+void SetRefineMode(entt::entity e, int additionalCell = -1);
+void ClearRefineMode(entt::entity e);
+
 } // namespace ItemSystem

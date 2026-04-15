@@ -453,6 +453,60 @@ bool DestroyItem(entt::entity e, TItemPos cell)
     return ch ? ch->DestroyItem(cell) : false;
 }
 
+void SetRefineNPC(entt::entity e, entt::entity npc)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->SetRefineNPC(LegacyCharacter(npc));
+}
+
+bool DoRefine(entt::entity e, LPITEM item, bool moneyOnly)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->DoRefine(item, moneyOnly) : false;
+}
+
+bool DoRefineWithScroll(entt::entity e, LPITEM item)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->DoRefineWithScroll(item) : false;
+}
+
+bool DoRefineItemSoul(entt::entity e, LPITEM item)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->DoRefineItemSoul(item) : false;
+}
+
+bool RefineInformation(entt::entity e, uint8_t cell, uint8_t type, int additionalCell)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->RefineInformation(cell, type, additionalCell) : false;
+}
+
+bool RefineItem(entt::entity e, LPITEM item, LPITEM target)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->RefineItem(item, target) : false;
+}
+
+void UseSilkBotary(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->UseSilkBotary();
+}
+
+void SetRefineMode(entt::entity e, int additionalCell)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->SetRefineMode(additionalCell);
+}
+
+void ClearRefineMode(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->ClearRefineMode();
+}
+
 } // namespace ItemSystem
 
 // char_item.cpp slice A moved into ItemSystem.cpp
@@ -9174,6 +9228,1595 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 }
 
 int g_nPortalLimitTime = 10;
+
+void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
+void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way);
+void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success = 0);
+
+void CHARACTER::SetRefineNPC(LPCHARACTER ch)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ch->ChatPacket(CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::SetRefineNPC ");//INGAME_DEBUG_RAZOR93
+#endif
+	if (ch != nullptr)
+	{
+		m_dwRefineNPCVID = ch->GetVID();
+	}
+	else
+	{
+		m_dwRefineNPCVID = 0;
+	}
+}
+
+bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	this->ChatPacket(CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
+#endif
+	if (!CanHandleItem(true))
+	{
+		ClearRefineMode();
+		return false;
+	}
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+	//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+
+	if (!prt)
+		return false;
+
+	uint32_t result_vnum = item->GetRefinedVnum();
+	int64_t cost = ComputeRefineFee(prt->cost);
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_TUNING)
+		return false;
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	// REFINE_COST
+	if (GetGold() < cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(this);
+#endif
+#endif
+		return false;
+	}
+
+	if (!bMoneyOnly)
+	{
+		for (int i = 0; i < prt->material_count; ++i)
+		{
+			if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 233, "");
+#endif
+				return false;
+			}
+		}
+
+		for (int i = 0; i < prt->material_count; ++i)
+			RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
+	}
+
+	int prob = number(1, 100);
+
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	if (IsRefineThroughGuild() || bMoneyOnly)
+	{
+		prob -= 10;
+	}
+
+	int success_prob = prt->prob;
+	success_prob += CRefineManager::instance().Result(this);
+#else
+	if (IsRefineThroughGuild() || bMoneyOnly)
+		prob -= 10;
+
+#endif
+	// END_OF_REFINE_COST
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	if (prob <= success_prob)
+#else
+	if (prob <= prt->prob)
+#endif
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌÅÛ È¹µæ
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (pkNewItem)
+		{
+			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+
+			uint8_t bCell = item->GetCell();
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
+						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			// DETAIL_REFINE_LOG
+			NotifyRefineSuccess(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+			// END_OF_DETAIL_REFINE_LOG
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+
+			sys_log(0, "Refine Success %lld", (long long)cost);
+			pkNewItem->AttrLog();
+			//PointChange(POINT_GOLD, -cost);
+			sys_log(0, "PayPee %lld", (long long)cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(this);
+#endif
+			PayRefineFee(cost);
+			sys_log(0, "PayPee End %lld", cost);
+		}
+		else
+		{
+			// DETAIL_REFINE_LOG
+			// ¾ÆÀÌÅÛ »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			sys_err("cannot create item %u", result_vnum);
+			NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+			// END_OF_DETAIL_REFINE_LOG
+		}
+	}
+	else
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁü.
+		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
+		NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+		item->AttrLog();
+		ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+		//PointChange(POINT_GOLD, -cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(this);
+#endif
+		PayRefineFee(cost);
+	}
+
+	return true;
+}
+
+enum enum_RefineScrolls
+{
+	CHUKBOK_SCROLL = 0,
+	HYUNIRON_CHN = 1, // Áß±¹¿¡¼­¸¸ »ç¿ë
+	YONGSIN_SCROLL = 2,
+	MUSIN_SCROLL = 3,
+	YAGONG_SCROLL = 4,
+	MEMO_SCROLL = 5,
+	BDRAGON_SCROLL = 6,
+#ifdef ENABLE_SOUL_SYSTEM
+	SOUL_SCROLL = 9,
+#endif
+};
+
+//#include <set>
+#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+
+std::set<uint32_t> allowedVnums = {
+	1610, 1611, 1612, 1613,
+	1630, 1631, 1632, 1633,
+	1650, 1651, 1652, 1653,
+	1670, 1671, 1672, 1673,
+	1690, 1691, 1692, 1693,
+	1710, 1711, 1712, 1713,
+	1730, 1731, 1732, 1733,
+	1750, 1751, 1752, 1753,
+	1770, 1771, 1772, 1773,
+	1790, 1791, 1792, 1793,
+	1810, 1811, 1812, 1813,
+	1850, 1851, 1852, 1853,
+	1870, 1871, 1872, 1873,
+	1890, 1891, 1892, 1893,
+	1910, 1911, 1912, 1913,
+	1930, 1931, 1932, 1933,
+	1950, 1951, 1952, 1953,
+
+	8060, 8061, 8062, 8063,
+	8080, 8081, 8082, 8083,
+	8100, 8101, 8102, 8103,
+	8120, 8121, 8122, 8123,
+	8140, 8141, 8142, 8143,
+	8160, 8161, 8162, 8163,
+	8200, 8201, 8202, 8203,
+	8220, 8221, 8222, 8223,
+	8240, 8241, 8242, 8243,
+	8260, 8261, 8262, 8263,
+	8280, 8281, 8282, 8283,
+	8330, 8331, 8332, 8333,
+	8360, 8361, 8362, 8363,
+	8380, 8381, 8382, 8383,
+	8400, 8401, 8402, 8403,
+	8420, 8421, 8422, 8423,
+	8440, 8441, 8442, 8443,
+
+	12100, 12101, 12102, 12103,
+	12104, 12105, 12106, 12107,
+	12110, 12111,
+	12112, 12113, 12114, 12115,
+
+	12790, 12791, 12792, 12793,
+
+	12810, 12811, 12812, 12813,
+	12830, 12831, 12832, 12833,
+	12850, 12851, 12852, 12853,
+	12854, 12855, 12856, 12857,
+	12860, 12861,
+	12862, 12863, 12864, 12865,
+	12866, 12867,
+
+	13070, 13071, 13072, 13073,
+	13090, 13091, 13092, 13093,
+
+	13110, 13111, 13112, 13113,
+	13130, 13131, 13132, 13133,
+	13150, 13151, 13152, 13153,
+	13170, 13171, 13172, 13173,
+
+	14230, 14231, 14232, 14233,
+	15010, 15011, 15012, 15013,
+
+	15460, 15461, 15462, 15463,
+	15464, 15465, 15466, 15467,
+
+	16230, 16231, 16232, 16233,
+	16590, 16591, 16592, 16593,
+	17230, 17231, 17232, 17233,
+	17580, 17581, 17582, 17583,
+	19310, 19311, 19312,
+	19510, 19511, 19512,
+	19710, 19711, 19712,
+	19910, 19911, 19912
+};
+#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+
+#ifdef ENABLE_MUSIN_SCROLL_REFINE_100_SUCCESS_RAZOR93
+
+bool CHARACTER::DoRefineWithScroll(LPITEM item)
+{
+	
+	//if (item && IsRefineBlockedVnum(item->GetVnum()))
+	//{
+	//	ChatPacket(CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
+	//	ClearRefineMode();
+	//	return false;
+	//}
+
+	if (!CanHandleItem(true))
+	{
+		ClearRefineMode();
+		return false;
+	}
+
+	ClearRefineMode();
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+		//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+
+	if (!prt)
+		return false;
+
+	LPITEM pkItemScroll;
+
+	// °³·®¼­ Ã¼Å©
+	if (m_iRefineAdditionalCell < 0)
+		return false;
+
+	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+
+	if (!pkItemScroll)
+		return false;
+
+	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
+		return false;
+
+	if (pkItemScroll->GetVnum() == item->GetVnum())
+		return false;
+
+	uint32_t result_vnum = item->GetRefinedVnum();
+	uint32_t result_fail_vnum = item->GetRefineFromVnum();
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	// MUSIN_SCROLL
+	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
+	{
+		
+		//if (item->GetRefineLevel() >= 4)
+		//{
+		//	ChatPacket(CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+		//	return false;
+		//}
+	}
+	// END_OF_MUSIC_SCROLL
+
+	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
+	{
+		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
+#endif
+			return false;
+		}
+	}
+	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
+	{
+		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
+#endif
+			return false;
+		}
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (GetGold() < prt->cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+#endif
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(this);
+#endif
+		return false;
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+	{
+		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 233, "");
+#endif
+			return false;
+		}
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+		RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
+
+	int prob = number(1, 100);
+	int success_prob = prt->prob;
+	bool bDestroyWhenFail = false;
+
+	const char* szRefineType = "SCROLL";
+
+	if (pkItemScroll->GetValue(0) == HYUNIRON_CHN ||
+		pkItemScroll->GetValue(0) == YONGSIN_SCROLL ||
+		pkItemScroll->GetValue(0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½ÅÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+	{
+		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+		if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
+		{
+			success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+		}
+		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
+		{
+			success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+		}
+		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
+		else
+		{
+			sys_err("REFINE : Unknown refine scroll item. Value0: %d", pkItemScroll->GetValue(0));
+		}
+
+		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌÅÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+			bDestroyWhenFail = true;
+
+		// DETAIL_REFINE_LOG
+		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN)
+		{
+			szRefineType = "HYUNIRON";
+		}
+		else if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
+		{
+			szRefineType = "GOD_SCROLL";
+		}
+		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
+		{
+			szRefineType = "YAGONG_SCROLL";
+		}
+		// END_OF_DETAIL_REFINE_LOG
+	}
+	// DETAIL_REFINE_LOG
+	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
+	{
+		
+		success_prob += 100; // Musin izé mindig sikeres 
+		if (success_prob > 100)
+			success_prob = 100;
+
+		szRefineType = "MUSIN_SCROLL";
+	}
+	// END_OF_DETAIL_REFINE_LOG
+	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
+	{
+		success_prob = 100;
+		szRefineType = "MEMO_SCROLL";
+	}
+	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
+	{
+		success_prob = 80;
+		szRefineType = "BDRAGON_SCROLL";
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	success_prob += CRefineManager::instance().Result(this);
+
+#endif
+	pkItemScroll->SetCount(pkItemScroll->GetCount() - 1);
+
+	if (prob <= success_prob)
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌÅÛ È¹µæ
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (pkNewItem)
+		{
+			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+
+			uint8_t bCell = item->GetCell();
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
+						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			NotifyRefineSuccess(this, item, szRefineType);
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+
+
+
+			pkNewItem->AttrLog();
+			//PointChange(POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(this);
+#endif
+			PayRefineFee(prt->cost);
+#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+			if (pkNewItem->GetRefineLevel() >= 8)
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					pkNewItem->GetVnum(),
+					pkNewItem->GetSocket(0),
+					pkNewItem->GetSocket(1),
+					pkNewItem->GetSocket(2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				// Bónuszok
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = pkNewItem->GetAttributeType(i);
+					short val = pkNewItem->GetAttributeValue(i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				// debug log:
+				//sys_log(0, "ItemLink Debug: %s", itemlink);
+				//sys_log(0, "Socket0=%d Socket1=%d Socket2=%d",
+					//pkNewItem->GetSocket(0),
+					//pkNewItem->GetSocket(1),
+					//pkNewItem->GetSocket(2));
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					GetName(), itemlink, pkNewItem->GetName());
+
+				SPacketGGNotice packet;
+				strlcpy(packet.szText, szChat, sizeof(packet.szText));
+				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+
+				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
+
+			}
+
+
+			if (allowedVnums.find(pkNewItem->GetVnum()) != allowedVnums.end())
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					pkNewItem->GetVnum(),
+					pkNewItem->GetSocket(0),
+					pkNewItem->GetSocket(1),
+					pkNewItem->GetSocket(2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = pkNewItem->GetAttributeType(i);
+					short val = pkNewItem->GetAttributeValue(i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					GetName(), itemlink, pkNewItem->GetName());
+
+				ChatPacket(CHAT_TYPE_INFO, szChat);
+			}
+#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+		}
+		else
+		{
+			// ¾ÆÀÌÅÛ »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			sys_err("cannot create item %u", result_vnum);
+			NotifyRefineFail(this, item, szRefineType);
+		}
+
+	}
+	else if (!bDestroyWhenFail && result_fail_vnum)
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌÅÛ È¹µæ
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
+
+		if (pkNewItem)
+		{
+			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
+
+			uint8_t bCell = item->GetCell();
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
+						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
+			NotifyRefineFail(this, item, szRefineType, -1);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+
+			pkNewItem->AttrLog();
+
+			//PointChange(POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(this);
+#endif
+			PayRefineFee(prt->cost);
+		}
+		else
+		{
+			// ¾ÆÀÌÅÛ »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			sys_err("cannot create item %u", result_fail_vnum);
+			NotifyRefineFail(this, item, szRefineType);
+		}
+	}
+	else
+	{
+		NotifyRefineFail(this, item, szRefineType); // °³·®½Ã ¾ÆÀÌÅÛ »ç¶óÁöÁö ¾ÊÀ½
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(this);
+#endif
+		PayRefineFee(prt->cost);
+	}
+
+	return true;
+
+}
+
+#else
+
+bool CHARACTER::DoRefineWithScroll(LPITEM item)
+{
+	if (!CanHandleItem(true))
+	{
+		ClearRefineMode();
+		return false;
+	}
+
+	ClearRefineMode();
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+	//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+
+	if (!prt)
+		return false;
+
+	LPITEM pkItemScroll;
+
+	// °³·®¼­ Ã¼Å©
+	if (m_iRefineAdditionalCell < 0)
+		return false;
+
+	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+
+	if (!pkItemScroll)
+		return false;
+
+	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
+		return false;
+
+	if (pkItemScroll->GetVnum() == item->GetVnum())
+		return false;
+
+	uint32_t result_vnum = item->GetRefinedVnum();
+	uint32_t result_fail_vnum = item->GetRefineFromVnum();
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	// MUSIN_SCROLL
+	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
+	{
+		if (item->GetRefineLevel() >= 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 305, "");
+#endif
+			return false;
+		}
+	}
+	// END_OF_MUSIC_SCROLL
+
+	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
+	{
+		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
+#endif
+			return false;
+		}
+	}
+	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
+	{
+		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
+#endif
+			return false;
+		}
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (GetGold() < prt->cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+#endif
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(this);
+#endif
+		return false;
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+	{
+		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 233, "");
+#endif
+			return false;
+		}
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+		RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
+
+	int prob = number(1, 100);
+	int success_prob = prt->prob;
+	bool bDestroyWhenFail = false;
+
+	const char* szRefineType = "SCROLL";
+
+	if (pkItemScroll->GetValue(0) == HYUNIRON_CHN ||
+		pkItemScroll->GetValue(0) == YONGSIN_SCROLL ||
+		pkItemScroll->GetValue(0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½ÅÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+	{
+		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+		if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
+		{
+			success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+		}
+		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
+		{
+			success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+		}
+		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
+		else
+		{
+			sys_err("REFINE : Unknown refine scroll item. Value0: %d", pkItemScroll->GetValue(0));
+		}
+
+		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌÅÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+			bDestroyWhenFail = true;
+
+		// DETAIL_REFINE_LOG
+		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN)
+		{
+			szRefineType = "HYUNIRON";
+		}
+		else if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
+		{
+			szRefineType = "GOD_SCROLL";
+		}
+		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
+		{
+			szRefineType = "YAGONG_SCROLL";
+		}
+		// END_OF_DETAIL_REFINE_LOG
+	}
+
+	// DETAIL_REFINE_LOG
+	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL) // ¹«½ÅÀÇ Ãàº¹¼­´Â 100% ¼º°ø (+4±îÁö¸¸)
+	{
+		success_prob = 100;
+
+		szRefineType = "MUSIN_SCROLL";
+	}
+	// END_OF_DETAIL_REFINE_LOG
+	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
+	{
+		success_prob = 100;
+		szRefineType = "MEMO_SCROLL";
+	}
+	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
+	{
+		success_prob = 80;
+		szRefineType = "BDRAGON_SCROLL";
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	success_prob += CRefineManager::instance().Result(this);
+
+#endif
+	pkItemScroll->SetCount(pkItemScroll->GetCount() - 1);
+
+	if (prob <= success_prob)
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌÅÛ È¹µæ
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (pkNewItem)
+		{
+			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+
+			uint8_t bCell = item->GetCell();
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
+						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			NotifyRefineSuccess(this, item, szRefineType);
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+
+
+
+			pkNewItem->AttrLog();
+			//PointChange(POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(this);
+#endif
+			PayRefineFee(prt->cost);
+#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+			if (pkNewItem->GetRefineLevel() >= 8)
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					pkNewItem->GetVnum(),
+					pkNewItem->GetSocket(0),
+					pkNewItem->GetSocket(1),
+					pkNewItem->GetSocket(2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				// Bónuszok
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = pkNewItem->GetAttributeType(i);
+					short val = pkNewItem->GetAttributeValue(i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				// debug log:
+				//sys_log(0, "ItemLink Debug: %s", itemlink);
+				//sys_log(0, "Socket0=%d Socket1=%d Socket2=%d",
+					//pkNewItem->GetSocket(0),
+					//pkNewItem->GetSocket(1),
+					//pkNewItem->GetSocket(2));
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					GetName(), itemlink, pkNewItem->GetName());
+
+				SPacketGGNotice packet;
+				strlcpy(packet.szText, szChat, sizeof(packet.szText));
+				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+
+				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
+
+			}
+
+
+			if (allowedVnums.find(pkNewItem->GetVnum()) != allowedVnums.end())
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					pkNewItem->GetVnum(),
+					pkNewItem->GetSocket(0),
+					pkNewItem->GetSocket(1),
+					pkNewItem->GetSocket(2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = pkNewItem->GetAttributeType(i);
+					short val = pkNewItem->GetAttributeValue(i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					GetName(), itemlink, pkNewItem->GetName());
+
+				ChatPacket(CHAT_TYPE_INFO, szChat);
+			}
+#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+		}
+		else
+		{
+			// ¾ÆÀÌÅÛ »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			sys_err("cannot create item %u", result_vnum);
+			NotifyRefineFail(this, item, szRefineType);
+		}
+
+	}
+	else if (!bDestroyWhenFail && result_fail_vnum)
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌÅÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌÅÛ È¹µæ
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
+
+		if (pkNewItem)
+		{
+			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
+
+			uint8_t bCell = item->GetCell();
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
+						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
+			NotifyRefineFail(this, item, szRefineType, -1);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+
+			pkNewItem->AttrLog();
+
+			//PointChange(POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(this);
+#endif
+			PayRefineFee(prt->cost);
+		}
+		else
+		{
+			// ¾ÆÀÌÅÛ »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			sys_err("cannot create item %u", result_fail_vnum);
+			NotifyRefineFail(this, item, szRefineType);
+		}
+	}
+	else
+	{
+		NotifyRefineFail(this, item, szRefineType); // °³·®½Ã ¾ÆÀÌÅÛ »ç¶óÁöÁö ¾ÊÀ½
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(this);
+#endif
+		PayRefineFee(prt->cost);
+	}
+
+	return true;
+
+}
+
+#endif
+#ifdef ENABLE_SOUL_SYSTEM
+
+bool CHARACTER::DoRefineItemSoul(LPITEM item)
+{
+	if (!CanHandleItem(true))
+	{
+		ClearRefineMode();
+		return false;
+	}
+
+	ClearRefineMode();
+
+	LPITEM pkItemScroll;
+
+	if (m_iRefineAdditionalCell < 0)
+		return false;
+
+	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+
+	if (!pkItemScroll)
+		return false;
+
+	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
+		return false;
+
+	if (pkItemScroll->GetVnum() == item->GetVnum())
+		return false;
+
+	uint32_t resultVnum = item->GetRefinedVnum();
+
+	if (resultVnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 666, "%s", item->GetName());
+#endif
+		return false;
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
+
+	if (!pProto)
+	{
+		sys_err("DoRefineWithScroll NOT GET ITEM PROTO %d", item->GetRefinedVnum());
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	int prob = number(1, 100);
+	int successProb = pkItemScroll->GetValue(1);
+
+	pkItemScroll->SetCount(pkItemScroll->GetCount() - 1);
+
+	if (prob <= successProb)
+	{
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
+		if (pkNewItem)
+		{
+			uint8_t bCell = item->GetCell();
+			ChatPacket(CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+		}
+		else
+		{
+			sys_err("Cannot create item soul %u", resultVnum);
+			ChatPacket(CHAT_TYPE_COMMAND, "RefineSoulFailed");
+		}
+	}
+	else
+	{
+		ChatPacket(CHAT_TYPE_COMMAND, "RefineSoulFailed");
+	}
+
+	return true;
+}
+#endif
+
+bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell)
+{
+	if (bCell > INVENTORY_MAX_NUM)
+		return false;
+
+	LPITEM item = GetInventoryItem(bCell);
+
+
+
+	if (!item)
+		return false;
+
+#ifdef ATTR_LOCK
+	if (item->GetLockedAttr() != -1)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 784, "");
+#endif
+		return false;
+	}
+#endif
+
+	// REFINE_COST
+	if (bType == REFINE_TYPE_MONEY_ONLY && !GetQuestFlag("deviltower_zone.can_refine"))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 361, "");
+#endif
+		return false;
+	}
+	// END_OF_REFINE_COST
+
+	TPacketGCRefineInformation p;
+
+	p.header = HEADER_GC_REFINE_INFORMATION;
+	p.pos = bCell;
+	p.src_vnum = item->GetVnum();
+	p.result_vnum = item->GetRefinedVnum();
+	p.type = bType;
+
+	if (p.result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_TUNING)
+	{
+		if (bType == 0)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 424, "");
+#endif
+			return false;
+		}
+		else
+		{
+			LPITEM itemScroll = GetInventoryItem(iAdditionalCell);
+			if (!itemScroll || item->GetVnum() == itemScroll->GetVnum())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 229, "");
+#endif
+				return false;
+			}
+		}
+	}
+
+#ifdef ENABLE_SOUL_SYSTEM
+	if (bType == REFINE_TYPE_SOUL)
+	{
+		LPITEM itemScroll = GetInventoryItem(iAdditionalCell);
+		if (!itemScroll)
+			return false;
+
+		p.cost = 0;
+		p.prob = itemScroll->GetValue(1);
+		p.material_count = 0;
+		memset(p.materials, 0, sizeof(p.materials));
+
+		GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+
+		SetRefineMode(iAdditionalCell);
+		return true;
+	}
+#endif
+
+	CRefineManager& rm = CRefineManager::instance();
+
+	const TRefineTable* prt = rm.GetRefineRecipe(item->GetRefineSet());
+
+	if (!prt)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	p.cost = ComputeRefineFee(prt->cost);
+#ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
+	int success_prob = prt->prob;
+
+	// Kijelzett esély igazítása scroll típus alapján (hogy a kliens ugyanazt lássa, mint amit a szerver használ)
+	if (bType != REFINE_TYPE_MONEY_ONLY)
+	{
+		LPITEM pkScroll = GetInventoryItem(iAdditionalCell);
+		if (pkScroll && pkScroll->GetType() == ITEM_USE && pkScroll->GetSubType() == USE_TUNING)
+		{
+			const int scrollType = pkScroll->GetValue(0);
+
+			if (scrollType == YONGSIN_SCROLL || scrollType == YAGONG_SCROLL || scrollType == HYUNIRON_CHN)
+			{
+				const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+				const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+				if (scrollType == YONGSIN_SCROLL)
+					success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+				else if (scrollType == YAGONG_SCROLL)
+					success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+				// HYUNIRON_CHN: marad a prt->prob
+			}
+			else if (scrollType == MUSIN_SCROLL)
+			{
+				//if (item->GetRefineLevel() >= 9)
+				//{
+				//	ChatPacket(CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+				//	return false;
+				//}
+				success_prob += 100;
+				if (success_prob > 100)
+					success_prob = 100;
+			}
+			else if (scrollType == MEMO_SCROLL)
+			{
+				if (item->GetRefineLevel() != pkScroll->GetValue(1))
+					return false;
+				success_prob = 100;
+			}
+			else if (scrollType == BDRAGON_SCROLL)
+			{
+				if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
+					return false;
+				success_prob = 80;
+			}
+		}
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+	success_prob += CRefineManager::instance().Result(this);
+#endif
+
+	success_prob = MINMAX(0, success_prob, 100);
+	p.prob = success_prob;
+#else
+	p.prob = prt->prob;
+#endif
+	if (bType == REFINE_TYPE_MONEY_ONLY)
+	{
+		p.material_count = 0;
+		memset(p.materials, 0, sizeof(p.materials));
+	}
+	else
+	{
+		p.material_count = prt->material_count;
+		memcpy(&p.materials, prt->materials, sizeof(prt->materials));
+	}
+
+	GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
+
+	SetRefineMode(iAdditionalCell);
+	return true;
+}
+
+bool CHARACTER::RefineItem(LPITEM pkItem, LPITEM pkTarget)
+{
+	if (!CanHandleItem())
+		return false;
+
+#ifdef ENABLE_SOUL_SYSTEM
+	uint32_t vnum = pkItem->GetVnum();
+	if ((vnum == 70602 || vnum == 70603 || vnum == 88958) && pkTarget->GetType() != ITEM_SOUL) {
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 1294, "%s", pkItem->GetName());
+#endif
+		return false;
+	}
+#endif
+
+	if (pkItem->GetSubType() == USE_TUNING)
+	{
+		// XXX ¼º´É, ¼ÒÄÏ °³·®¼­´Â »ç¶óÁ³½À´Ï´Ù...
+		// XXX ¼º´É°³·®¼­´Â Ãàº¹ÀÇ ¼­°¡ µÇ¾ú´Ù!
+		// MUSIN_SCROLL
+		if (pkItem->GetValue(0) == MUSIN_SCROLL)
+			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_MUSIN, pkItem->GetCell());
+		// END_OF_MUSIN_SCROLL
+
+#ifdef ENABLE_SOUL_SYSTEM
+		else if (pkItem->GetValue(0) == SOUL_SCROLL)
+			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_SOUL, pkItem->GetCell());
+#endif
+
+		else if (pkItem->GetValue(0) == HYUNIRON_CHN)
+			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_HYUNIRON, pkItem->GetCell());
+		else if (pkItem->GetValue(0) == BDRAGON_SCROLL)
+		{
+			if (pkTarget->GetRefineSet() != 702) return false;
+			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_BDRAGON, pkItem->GetCell());
+		}
+		else
+		{
+			if (pkTarget->GetRefineSet() == 501) return false;
+			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_SCROLL, pkItem->GetCell());
+		}
+	}
+	else if (pkItem->GetSubType() == USE_DETACHMENT && IS_SET(pkTarget->GetFlag(), ITEM_FLAG_REFINEABLE))
+	{
+		LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT", pkTarget->GetName());
+
+		bool bHasMetinStone = false;
+
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
+		{
+			int32_t socket = pkTarget->GetSocket(i);
+			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+			{
+				bHasMetinStone = true;
+				break;
+			}
+		}
+
+		if (bHasMetinStone)
+		{
+			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			{
+				int32_t socket = pkTarget->GetSocket(i);
+				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+				{
+					AutoGiveItem(socket);
+					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(pkTarget->GetSocket(i));
+					//pkTarget->SetSocket(i, pTable->alValues[2]);
+					// ±úÁøµ¹·Î ´ëÃ¼ÇØÁØ´Ù
+					pkTarget->SetSocket(i, ITEM_BROKEN_METIN_VNUM);
+				}
+			}
+			pkItem->SetCount(pkItem->GetCount() - 1);
+			return true;
+		}
+		else
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ChatPacketNew(CHAT_TYPE_INFO, 360, "");
+#endif
+			return false;
+		}
+	}
+
+	return false;
+}
+
+void CHARACTER::__OpenPrivateShop(
+#ifdef KASMIR_PAKET_SYSTEM
+	bool bKasmir
+#endif
+)
+{
+#ifdef ENABLE_OPEN_SHOP_WITH_ARMOR
+#ifdef KASMIR_PAKET_SYSTEM
+	if (bKasmir) {
+		ChatPacket(CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+		return;
+	}
+#endif
+	ChatPacket(CHAT_TYPE_COMMAND, "OpenPrivateShop");
+#else
+	unsigned bodyPart = GetPart(PART_MAIN);
+	switch (bodyPart)
+	{
+	case 0:
+	case 1:
+	case 2: {
+#ifdef KASMIR_PAKET_SYSTEM
+		if (bKasmir) {
+			ChatPacket(CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+			break;
+		}
+#endif
+
+		ChatPacket(CHAT_TYPE_COMMAND, "OpenPrivateShop");
+	}
+		  break;
+	default:
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 503, "");
+#endif
+		break;
+	}
+#endif
+}
+
+// MYSHOP_PRICE_LIST
+
+void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
+{
+	char szLine[256];
+	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, dwItemPrice);
+	ChatPacket(CHAT_TYPE_COMMAND, szLine);
+	sys_log(0, szLine);
+}
+
+
+//
+// DB Ä³½Ã·Î ºÎÅÍ ¹ÞÀº ¸®½ºÆ®¸¦ User ¿¡°Ô Àü¼ÛÇÏ°í »óÁ¡À» ¿­¶ó´Â Ä¿¸Çµå¸¦ º¸³½´Ù.
+//
+
+void CHARACTER::UseSilkBotaryReal(const TPacketMyshopPricelistHeader * p)
+{
+	const TItemPriceInfo* pInfo = (const TItemPriceInfo*)(p + 1);
+
+	if (!p->byCount)
+		// °¡°Ý ¸®½ºÆ®°¡ ¾ø´Ù. dummy µ¥ÀÌÅÍ¸¦ ³ÖÀº Ä¿¸Çµå¸¦ º¸³»ÁØ´Ù.
+		SendMyShopPriceListCmd(1, 0);
+	else {
+		for (int idx = 0; idx < p->byCount; idx++)
+			SendMyShopPriceListCmd(pInfo[idx].dwVnum, pInfo[idx].dwPrice);
+	}
+
+#ifdef KASMIR_PAKET_SYSTEM
+	__OpenPrivateShop(m_bKasmirPaketDurum);
+#else
+	__OpenPrivateShop();
+#endif
+}
+
+//
+// ÀÌ¹ø Á¢¼Ó ÈÄ Ã³À½ »óÁ¡À» Open ÇÏ´Â °æ¿ì ¸®½ºÆ®¸¦ Load ÇÏ±â À§ÇØ DB Ä³½Ã¿¡ °¡°ÝÁ¤º¸ ¸®½ºÆ® ¿äÃ» ÆÐÅ¶À» º¸³½´Ù.
+// ÀÌÈÄºÎÅÍ´Â ¹Ù·Î »óÁ¡À» ¿­¶ó´Â ÀÀ´äÀ» º¸³½´Ù.
+//
+
+void CHARACTER::UseSilkBotary(void)
+{
+	if (m_bNoOpenedShop) {
+		uint32_t dwPlayerID = GetPlayerID();
+		db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_REQ, GetDesc()->GetHandle(), &dwPlayerID, sizeof(uint32_t));
+		m_bNoOpenedShop = false;
+	}
+	else {
+#ifdef KASMIR_PAKET_SYSTEM
+		__OpenPrivateShop(m_bKasmirPaketDurum);
+#else
+		__OpenPrivateShop();
+#endif
+	}
+}
+// END_OF_MYSHOP_PRICE_LIST
+
+void CHARACTER::SetRefineMode(int iAdditionalCell)
+{
+	m_iRefineAdditionalCell = iAdditionalCell;
+	m_bUnderRefine = true;
+}
+
+void CHARACTER::ClearRefineMode()
+{
+	m_bUnderRefine = false;
+	SetRefineNPC(nullptr);
+}
+
+
+void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
+{
+
+	// ACCESSORY_REFINE
+	if (pkOldItem->IsAccessoryForSocket())
+	{
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			pkNewItem->SetSocket(i, pkOldItem->GetSocket(i));
+		}
+		//pkNewItem->StartAccessorySocketExpireEvent();
+	}
+	// END_OF_ACCESSORY_REFINE
+	else
+	{
+		// ¿©±â¼­ ±úÁø¼®ÀÌ ÀÚµ¿ÀûÀ¸·Î Ã»¼Ò µÊ
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			if (!pkOldItem->GetSocket(i))
+				break;
+			else
+				pkNewItem->SetSocket(i, 1);
+		}
+
+		// ¼ÒÄÏ ¼³Á¤
+		int slot = 0;
+
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			int32_t socket = pkOldItem->GetSocket(i);
+
+			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+				pkNewItem->SetSocket(slot++, socket);
+		}
+
+	}
+
+	// ¸ÅÁ÷ ¾ÆÀÌÅÛ ¼³Á¤
+	pkOldItem->CopyAttributeTo(pkNewItem);
+}
+
+void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ch->ChatPacket(CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
+#endif
+	if (nullptr != ch && item != nullptr)
+	{
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "RefineSuceeded");
+
+		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
+	}
+}
+
+void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ch->ChatPacket(CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
+#endif
+	if (nullptr != ch && nullptr != item)
+	{
+		ch->ChatPacket(CHAT_TYPE_COMMAND, "RefineFailed");
+
+		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
+	}
+}
+
 
 void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 {

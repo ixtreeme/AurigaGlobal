@@ -1090,3 +1090,28 @@
 - count after: `2250`
 - build: success
 - next: slice E (`shop / trade / refine`)
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- completed slice E:
+  - helper surface moved first:
+    - `TransformRefineItem`
+    - `NotifyRefineSuccess`
+    - `NotifyRefineFail`
+  - refine / trade / shop methods moved:
+    - `SetRefineNPC`
+    - `DoRefine`
+    - `DoRefineWithScroll` (both compile-time branches)
+    - `DoRefineItemSoul`
+    - `RefineInformation`
+    - `RefineItem`
+    - `__OpenPrivateShop`
+    - `SendMyShopPriceListCmd`
+    - `UseSilkBotaryReal`
+    - `UseSilkBotary`
+    - `SetRefineMode`
+    - `ClearRefineMode`
+  - note:
+    - the `DoRefineWithScroll` region had to be restored as one contiguous `#ifdef/#else/#endif` block from the last green D checkpoint to preserve the original preprocessor structure
+- count after: `2233`
+- build: success
+- next: slice F (`special item behavior / remaining item helpers`)
