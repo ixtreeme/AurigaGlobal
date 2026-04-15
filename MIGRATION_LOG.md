@@ -1152,3 +1152,15 @@
 - count after: `2191`
 - build: success
 - next: `char_item.cpp` deletion
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- `char_item.cpp`: DELETED
+- deletion verification:
+  - `SRC/Server/GameServer/char_item.cpp` no longer exists
+  - stale VS incremental state required one `--clean-first` rebuild after deletion because the generated project was clean but MSBuild still held the removed translation unit in incremental state
+  - normal build gate after that passed:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- count after `char_item.cpp` deletion: `2191`
+- build: success
+- next target:
+  - `char_item2.cpp` exists and should be sliced into `ItemSystem.cpp` next
