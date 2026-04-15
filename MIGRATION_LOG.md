@@ -967,6 +967,10 @@
 - Slice C split:
   - C1) `DropItem` / `DropGold` / `MoveItem` / `PickupItem`
   - C2) `UseItem` / `UseItemEx`
+  - `UseItemEx` measured size: `5721` lines
+  - C2 therefore split further:
+    - C2a) `UseItem`
+    - C2b) `UseItemEx`
   - completed slice C1:
     - `DropItem`
     - `DropGold`
@@ -981,10 +985,17 @@
     - `DropGold`
     - `MoveItem`
     - `PickupItem`
+    - `UseItem`
   - `ItemSystem.cpp` now owns the moved `CHARACTER::` C1 bodies and helper surface, not `char_item.cpp`
+  - completed slice C2a:
+    - `UseItem`
+    - support additions moved with the slice:
+      - `IS_POTION_PVP_BLOCKED`
+      - `IS_SUMMON_ITEM`
+      - global declaration for `IS_SUMMONABLE_ZONE`
+      - `ItemUse.h` include surface for `item_change::HandleUse`
   - remaining live `char_item.cpp` Slice C bodies:
     - `UseItemEx`
-    - `UseItem`
 - Verification:
   - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
   - `SRC/Server/GameServer/char_item.cpp` no longer contains the extracted Slice A `CHARACTER::` bodies
@@ -994,14 +1005,36 @@
     - `DropGold`
     - `MoveItem`
     - `PickupItem`
+  - `SRC/Server/GameServer/char_item.cpp` no longer contains the extracted Slice C2a `CHARACTER::` body:
+    - `UseItem`
 - LPCHARACTER / CHARACTER reference count:
   - before `char_item.cpp` Slice A extraction: `2316`
   - after `char_item.cpp` Slice A extraction: `2301`
   - after `char_item.cpp` Slice B extraction: `2288`
   - after `char_item.cpp` Slice C1 extraction: `2273`
+  - after `char_item.cpp` Slice C2a extraction: `2272`
 - Next:
-  - `char_item.cpp` Slice C2:
-    - `UseItem`
+  - `char_item.cpp` Slice C2b:
     - `UseItemEx`
+  - attempted slice C2b status:
+    - extraction attempted, then rolled back to the last green `C2a` state
+    - build failure exceeded the `>20 errors` stop threshold, so the slice was aborted per migration rule
+    - primary missing dependency surface pulled in by `UseItemEx` relocation:
+      - `CPVPManager`
+      - `CNewPetSystem`
+      - `CRuneDungeon`
+      - `IS_BOTARYABLE_ZONE`
+      - `FFindStone`
+      - `ITEM_BROKEN_METIN_VNUM`
+      - `stone_chance`
+      - `MAX_ATTR`
+      - `stoleInfoTable`
+    - conclusion:
+      - `UseItemEx` cannot be moved as a single pure body-relocation pass safely
+      - it needs an additional pre-extraction phase for its file-scope helper / constant / subsystem surface before retrying the body move
+  - build after rollback:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`: success
+  - count after rollback to `C2a`:
+    - `2272`
   - note:
-    - `UseItemEx` remains the largest monolithic item method and may still require a further C2a / C2b split if the next extraction is not compile-safe in one session
+    - next session should treat `UseItemEx` as `C2b1` helper-surface extraction + `C2b2` body relocation, not as a single slice

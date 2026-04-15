@@ -54,5 +54,8 @@ bool MoveItem(entt::entity e, TItemPos fromCell, TItemPos toCell,
                   count);
 bool PickupItem(entt::entity e, uint32_t vid);
 
+// Slice C2a - use item wrapper
+bool UseItem(entt::entity e, TItemPos cell, TItemPos destCell = NPOS);
+
 
 } // namespace ItemSystem
