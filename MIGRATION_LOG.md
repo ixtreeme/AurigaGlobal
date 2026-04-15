@@ -1058,3 +1058,18 @@
 - count after: `2272`
 - build: success
 - next: slice C2b2 (`UseItemEx` body relocation)
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- completed slice C2b2:
+  - `UseItemEx`
+  - support bodies moved with the slice:
+    - `kill_campfire_event`
+    - `CalculateConsume`
+    - `CalculateConsumeSP`
+    - `ENABLE_ADDSTONE_FAILURE` local define block
+  - `ItemSystem.hpp` now exposes:
+    - `UseItemEx`
+  - `ItemSystem.cpp` now owns the moved `CHARACTER::UseItemEx` body and its direct helper surface
+- count after: `2264`
+- build: success
+- next: slice D (`item creation / give / remove`)
