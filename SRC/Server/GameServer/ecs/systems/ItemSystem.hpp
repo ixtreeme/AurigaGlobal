@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include <entt/entt.hpp>
 
@@ -58,5 +59,35 @@ bool PickupItem(entt::entity e, uint32_t vid);
 bool UseItem(entt::entity e, TItemPos cell, TItemPos destCell = NPOS);
 bool UseItemEx(entt::entity e, LPITEM item, TItemPos destCell = NPOS);
 
+// Slice D - item creation / give / remove
+void RemoveTypeItem(entt::entity e, uint8_t type, int count = 1);
+void AutoGiveItem(entt::entity e, LPITEM item, bool longOwnerShip = false
+#ifdef __HIGHLIGHT_SYSTEM__
+                  , bool isHighLight = true
+#endif
+);
+#ifdef ENABLE_DS_REFINE_ALL
+bool AutoGiveDS(entt::entity e, LPITEM item, bool longOwnerShip = false);
+#endif
+LPITEM AutoGiveItem(entt::entity e, uint32_t itemVnum,
+#ifdef ENABLE_NEW_STACK_LIMIT
+                    int
+#else
+                    uint8_t
+#endif
+                        count = 1, int rarePct = -1, bool sendMessage = true
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , bool isHighLight = true
+#endif
+);
+bool GiveItem(entt::entity from, entt::entity victim, TItemPos cell);
+bool CanReceiveItem(entt::entity receiver, entt::entity from, LPITEM item);
+void ReceiveItem(entt::entity receiver, entt::entity from, LPITEM item);
+bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum,
+                                  std::vector<uint32_t>& itemVnums,
+                                  std::vector<uint32_t>& itemCounts,
+                                  std::vector<LPITEM>& itemGets,
+                                  int& count);
+bool DestroyItem(entt::entity e, TItemPos cell);
 
 } // namespace ItemSystem

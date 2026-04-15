@@ -149,6 +149,28 @@ static bool IS_SUMMON_ITEM(int vnum)
 }
 
 
+static bool FN_check_item_socket(LPITEM item)
+{
+#ifdef ENABLE_NEW_USE_POTION
+	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_NEW_POTIION)
+	{
+		// inactive new potionok stackelhetnek
+		// active példány (socket1 != 0) ne stackeljen vissza
+		return item->GetSocket(1) == 0;
+	}
+#endif
+
+	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+	{
+		if (item->GetSocket(i) != item->GetProto()->alSockets[i])
+			return false;
+	}
+
+	return true;
+}
+
+// item socket º¹»ç -- by mhh
+
 static bool FN_check_item_sex(LPCHARACTER ch, LPITEM item)
 {
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -344,6 +366,92 @@ bool UseItemEx(entt::entity e, LPITEM item, TItemPos destCell)
     return ch ? ch->UseItemEx(item, destCell) : false;
 }
 
+
+void RemoveTypeItem(entt::entity e, uint8_t type, int count)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->RemoveSpecifyTypeItem(type, count);
+}
+
+void AutoGiveItem(entt::entity e, LPITEM item, bool longOwnerShip
+#ifdef __HIGHLIGHT_SYSTEM__
+                  , bool isHighLight
+#endif
+)
+{
+    if (LPCHARACTER ch = LegacyCharacter(e))
+        ch->AutoGiveItem(item, longOwnerShip
+#ifdef __HIGHLIGHT_SYSTEM__
+                         , isHighLight
+#endif
+        );
+}
+
+#ifdef ENABLE_DS_REFINE_ALL
+bool AutoGiveDS(entt::entity e, LPITEM item, bool longOwnerShip)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->AutoGiveDS(item, longOwnerShip) : false;
+}
+#endif
+
+LPITEM AutoGiveItem(entt::entity e, uint32_t itemVnum,
+#ifdef ENABLE_NEW_STACK_LIMIT
+                    int
+#else
+                    uint8_t
+#endif
+                        count, int rarePct, bool sendMessage
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , bool isHighLight
+#endif
+)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->AutoGiveItem(itemVnum, count, rarePct, sendMessage
+#ifdef __HIGHLIGHT_SYSTEM__
+                                 , isHighLight
+#endif
+    ) : nullptr;
+}
+
+bool GiveItem(entt::entity from, entt::entity victim, TItemPos cell)
+{
+    LPCHARACTER fromCh = LegacyCharacter(from);
+    LPCHARACTER victimCh = LegacyCharacter(victim);
+    return (fromCh && victimCh) ? fromCh->GiveItem(victimCh, cell) : false;
+}
+
+bool CanReceiveItem(entt::entity receiver, entt::entity from, LPITEM item)
+{
+    LPCHARACTER receiverCh = LegacyCharacter(receiver);
+    LPCHARACTER fromCh = LegacyCharacter(from);
+    return (receiverCh && fromCh) ? receiverCh->CanReceiveItem(fromCh, item) : false;
+}
+
+void ReceiveItem(entt::entity receiver, entt::entity from, LPITEM item)
+{
+    LPCHARACTER receiverCh = LegacyCharacter(receiver);
+    LPCHARACTER fromCh = LegacyCharacter(from);
+    if (receiverCh && fromCh)
+        receiverCh->ReceiveItem(fromCh, item);
+}
+
+bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum,
+                                  std::vector<uint32_t>& itemVnums,
+                                  std::vector<uint32_t>& itemCounts,
+                                  std::vector<LPITEM>& itemGets,
+                                  int& count)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->GiveItemFromSpecialItemGroup(groupNum, itemVnums, itemCounts, itemGets, count) : false;
+}
+
+bool DestroyItem(entt::entity e, TItemPos cell)
+{
+    LPCHARACTER ch = LegacyCharacter(e);
+    return ch ? ch->DestroyItem(cell) : false;
+}
 
 } // namespace ItemSystem
 
@@ -9066,3 +9174,1118 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 }
 
 int g_nPortalLimitTime = 10;
+
+void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
+{
+	if (0 == count)
+		return;
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+	for (int i = 0; i < Inventory_Size(); ++i)
+#else
+	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
+#endif
+	{
+		LPITEM item = GetInventoryItem(i);
+		if (!item)
+			continue;
+
+		if (GetInventoryItem(i)->GetType() != type)
+			continue;
+
+
+		if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
+			continue;
+
+		const int itemCount = item->GetCount();
+		if (count >= itemCount)
+		{
+			count -= itemCount;
+			item->SetCount(0);
+
+			if (0 == count)
+				return;
+		}
+		else
+		{
+			item->SetCount(itemCount - count);
+			return;
+		}
+	}
+}
+
+void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
+#ifdef __HIGHLIGHT_SYSTEM__
+	, bool isHighLight
+#endif
+)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ChatPacket(CHAT_TYPE_INFO, "char_item.cpp::void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip,");//INGAME_DEBUG_RAZOR93
+#endif
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	sys_log(0, "Razor93 LOG:: Called: void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip");
+#endif
+	if (nullptr == item)
+	{
+		sys_err("NULL point.");
+		return;
+	}
+	if (item->GetOwner())
+	{
+		sys_err("item %d 's owner exists!", item->GetID());
+		return;
+	}
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+	{
+#ifdef ENABLE_NEW_STACK_LIMIT
+		int
+#else
+		uint8_t
+#endif
+			bCount = item->GetCount();
+		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item2 = GetExtraInventoryItem(i);
+			if (!item2)
+				continue;
+
+			if (item2->GetVnum() == item->GetVnum())
+			{
+				int j = 0;
+				for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
+					if (item2->GetSocket(j) != item->GetSocket(j))
+						break;
+
+				if (j != ITEM_SOCKET_MAX_NUM)
+					continue;
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+				int
+#else
+				uint8_t
+#endif
+					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+				bCount -= bCount2;
+				item2->SetCount(item2->GetCount() + bCount2);
+				if (bCount == 0) {
+					item->SetCount(0);
+					M2_DESTROY_ITEM(item);
+					return;
+				}
+				else {
+					item->SetCount(bCount);
+				}
+			}
+		}
+	}
+	else if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+#else
+	if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+#endif
+	{
+#ifdef ENABLE_NEW_STACK_LIMIT
+		int
+#else
+		uint8_t
+#endif
+			bCount = item->GetCount();
+		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item2 = GetInventoryItem(i);
+			if (!item2)
+				continue;
+
+			if (item2->GetVnum() == item->GetVnum())
+			{
+				int j = 0;
+				for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
+					if (item2->GetSocket(j) != item->GetSocket(j))
+						break;
+
+				if (j != ITEM_SOCKET_MAX_NUM)
+					continue;
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+				int
+#else
+				uint8_t
+#endif
+					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+				bCount -= bCount2;
+				item2->SetCount(item2->GetCount() + bCount2);
+				if (bCount == 0) {
+					item->SetCount(0);
+					M2_DESTROY_ITEM(item);
+					return;
+				}
+				else {
+					item->SetCount(bCount);
+				}
+			}
+		}
+	}
+
+	int cell;
+	if (item->IsDragonSoul())
+	{
+		cell = GetEmptyDragonSoulInventory(item);
+	}
+#ifdef ENABLE_EXTRA_INVENTORY
+	else if (item->IsExtraItem())
+	{
+		cell = GetEmptyExtraInventory(item);
+	}
+#endif
+	else
+	{
+		cell = GetEmptyInventory(item->GetSize());
+	}
+
+	if (cell != -1)
+	{
+		if (item->IsDragonSoul())
+			item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, cell)
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+#ifdef ENABLE_EXTRA_INVENTORY
+		else if (item->IsExtraItem())
+			item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, cell)
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+#endif
+		else
+			item->AddToCharacter(this, TItemPos(INVENTORY, cell)
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+
+		LogManager::instance().ItemLog(this, item, "SYSTEM", item->GetName());
+
+		if (item->GetType() == ITEM_USE && item->GetSubType() == USE_POTION)
+		{
+			TQuickslot* pSlot;
+
+			if (GetQuickslot(0, &pSlot) && pSlot->type == QUICKSLOT_TYPE_NONE)
+			{
+				TQuickslot slot;
+				slot.type = QUICKSLOT_TYPE_ITEM;
+				slot.pos = cell;
+				SetQuickslot(0, slot);
+			}
+		}
+	}
+	else
+	{
+		item->AddToGround(GetMapIndex(), GetXYZ());
+#ifdef ENABLE_NEWSTUFF
+		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+#else
+		item->StartDestroyEvent();
+#endif
+
+		if (longOwnerShip)
+			item->SetOwnership(this, 300);
+		else
+			item->SetOwnership(this, 60);
+		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
+	}
+}
+
+#ifdef ENABLE_DS_REFINE_ALL
+bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
+	if (item == nullptr) {
+		sys_err("NULL point.");
+		return false;
+	}
+
+	if (item->GetOwner()) {
+		sys_err("item %d 's owner exists!", item->GetID());
+		return false;
+	}
+
+	if (!item->IsDragonSoul()) {
+		sys_err("item %d is not alchemy!", item->GetID());
+		return false;
+	}
+
+	int cell = GetEmptyDragonSoulInventory(item);
+	if (cell != -1)
+	{
+		item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, cell)
+#ifdef __HIGHLIGHT_SYSTEM__
+			, true
+#endif
+		);
+
+		LogManager::instance().ItemLog(this, item, "SYSTEM", item->GetName());
+	}
+	else
+	{
+		item->AddToGround(GetMapIndex(), GetXYZ());
+#ifdef ENABLE_NEWSTUFF
+		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+#else
+		item->StartDestroyEvent();
+#endif
+
+		if (longOwnerShip) {
+			item->SetOwnership(this, 300);
+		}
+		else {
+			item->SetOwnership(this, 60);
+		}
+
+		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
+	}
+
+	return true;
+}
+#endif
+
+LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
+#ifdef ENABLE_NEW_STACK_LIMIT
+	int
+#else
+	uint8_t
+#endif
+	bCount, int iRarePct, bool bMsg
+#ifdef __HIGHLIGHT_SYSTEM__
+	, bool isHighLight
+#endif
+)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ChatPacket(CHAT_TYPE_INFO, "char_item.cpp::LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,");//INGAME_DEBUG_RAZOR93
+#endif
+	TItemTable* p = ITEM_MANAGER::instance().GetTable(dwItemVnum);
+
+	if (!p)
+		return nullptr;
+
+	DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, dwItemVnum, bCount);
+
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	if (p->dwFlags & ITEM_FLAG_STACKABLE && ITEM_MANAGER::instance().IsExtraItem(dwItemVnum))
+	{
+		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item = GetExtraInventoryItem(i);
+
+			if (!item)
+				continue;
+
+			if (item->GetVnum() == dwItemVnum && FN_check_item_socket(item))
+			{
+				if (IS_SET(p->dwFlags, ITEM_FLAG_MAKECOUNT))
+				{
+					if (bCount < p->alValues[1])
+						bCount = p->alValues[1];
+				}
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+				int
+#else
+				uint8_t
+#endif
+					bCount2 = std::min(g_bItemCountLimit - item->GetCount(), bCount); // change type for some
+				bCount -= bCount2;
+
+				item->SetCount(item->GetCount() + bCount2);
+
+				if (bCount == 0)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					if (bMsg) {
+						ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+							CHAT_TYPE_INFO_ITEM
+#else
+							CHAT_TYPE_INFO
+#endif
+							, 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+						//ChatPacket(CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 08 |cffffff00%u jelenlegi:%u x %s|r", bCount2, item->GetCount(), item->GetName());
+
+					}
+#endif
+
+					return item;
+				}
+			}
+		}
+	}
+	else if (p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND)
+#else
+	if (p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND)
+#endif
+	{
+		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item = GetInventoryItem(i);
+
+			if (!item)
+				continue;
+
+#ifdef ENABLE_SORT_INVEN
+			if (item->GetOriginalVnum() == dwItemVnum && FN_check_item_socket(item))
+#else
+			if (item->GetVnum() == dwItemVnum && FN_check_item_socket(item))
+#endif
+			{
+				if (IS_SET(p->dwFlags, ITEM_FLAG_MAKECOUNT))
+				{
+					if (bCount < p->alValues[1])
+						bCount = p->alValues[1];
+				}
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+				int
+#else
+				uint8_t
+#endif
+					bCount2 = std::min(g_bItemCountLimit - item->GetCount(), bCount);
+				bCount -= bCount2;
+
+				item->SetCount(item->GetCount() + bCount2);
+
+				if (bCount == 0)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					if (bMsg) {
+						ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+							CHAT_TYPE_INFO_ITEM
+#else
+							CHAT_TYPE_INFO
+#endif
+							, 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+						//ChatPacket(CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 09 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+
+					}
+#endif
+
+					return item;
+				}
+			}
+		}
+	}
+
+	LPITEM item = ITEM_MANAGER::instance().CreateItem(dwItemVnum, bCount, 0, true);
+
+	if (!item)
+	{
+		sys_err("cannot create item by vnum %u (name: %s)", dwItemVnum, GetName());
+		return nullptr;
+	}
+
+	if (item->GetType() == ITEM_BLEND)
+	{
+		for (int i = 0; i < INVENTORY_MAX_NUM; i++)
+		{
+			LPITEM inv_item = GetInventoryItem(i);
+
+			if (inv_item == nullptr) continue;
+
+			if (inv_item->GetType() == ITEM_BLEND)
+			{
+				if (inv_item->GetVnum() == item->GetVnum())
+				{
+					if (inv_item->GetSocket(0) == item->GetSocket(0) &&
+						inv_item->GetSocket(1) == item->GetSocket(1) &&
+						inv_item->GetSocket(2) == item->GetSocket(2) &&
+						inv_item->GetCount() < g_bItemCountLimit)
+					{
+						inv_item->SetCount(inv_item->GetCount() + item->GetCount());
+						return inv_item;
+					}
+				}
+			}
+		}
+	}
+
+	int iEmptyCell;
+	if (item->IsDragonSoul())
+	{
+		iEmptyCell = GetEmptyDragonSoulInventory(item);
+	}
+#ifdef ENABLE_EXTRA_INVENTORY
+	else if (item->IsExtraItem())
+		iEmptyCell = GetEmptyExtraInventory(item);
+#endif
+	else
+		iEmptyCell = GetEmptyInventory(item->GetSize());
+
+	if (iEmptyCell != -1)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		if (bMsg) {
+			ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+				CHAT_TYPE_INFO_ITEM
+#else
+				CHAT_TYPE_INFO
+#endif
+				, 102, "%d#%s", bCount, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+			//ChatPacket(CHAT_TYPE_INFO, "|cffffc700[10:]|r 10 ");
+
+		}
+#endif
+
+		if (item->IsDragonSoul())
+			item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell)
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+#ifdef ENABLE_EXTRA_INVENTORY
+		else if (item->IsExtraItem())
+			item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, iEmptyCell)
+
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+#endif
+		else
+			item->AddToCharacter(this, TItemPos(INVENTORY, iEmptyCell)
+#ifdef __HIGHLIGHT_SYSTEM__
+				, isHighLight
+#endif
+			);
+		LogManager::instance().ItemLog(this, item, "SYSTEM", item->GetName());
+
+		if (item->GetType() == ITEM_USE && item->GetSubType() == USE_POTION)
+		{
+			TQuickslot* pSlot;
+
+			if (GetQuickslot(0, &pSlot) && pSlot->type == QUICKSLOT_TYPE_NONE)
+			{
+				TQuickslot slot;
+				slot.type = QUICKSLOT_TYPE_ITEM;
+				slot.pos = iEmptyCell;
+				SetQuickslot(0, slot);
+			}
+		}
+	}
+	else
+	{
+		item->AddToGround(GetMapIndex(), GetXYZ());
+#ifdef ENABLE_NEWSTUFF
+		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+#else
+		item->StartDestroyEvent();
+#endif
+		// ¾ÈÆ¼ µå¶ø flag°¡ °É·ÁÀÖ´Â ¾ÆÀÌÅÛÀÇ °æ¿ì,
+		// ÀÎº¥¿¡ ºó °ø°£ÀÌ ¾ø¾î¼­ ¾îÂ¿ ¼ö ¾øÀÌ ¶³¾îÆ®¸®°Ô µÇ¸é,
+		// ownershipÀ» ¾ÆÀÌÅÛÀÌ »ç¶óÁú ¶§±îÁö(300ÃÊ) À¯ÁöÇÑ´Ù.
+		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_DROP))
+			item->SetOwnership(this, 300);
+		else
+			item->SetOwnership(this, 60);
+		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
+	}
+
+	sys_log(0,
+		"7: %d %d", dwItemVnum, bCount);
+	return item;
+}
+
+bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
+{
+	if (!CanHandleItem())
+		return false;
+
+	// @fixme150 BEGIN
+	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 740, "");
+#endif
+		return false;
+	}
+	// @fixme150 END
+
+	LPITEM item = GetItem(Cell);
+
+	if (item && !item->IsExchanging())
+	{
+		if (victim->CanReceiveItem(this, item))
+		{
+			victim->ReceiveItem(this, item);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
+{
+	if (IsPC())
+		return false;
+
+	// TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
+	if (DISTANCE_APPROX(GetX() - from->GetX(), GetY() - from->GetY()) > 2000)
+		return false;
+	// END_OF_TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
+
+	uint32_t racenum = GetRaceNum();
+
+	if (racenum == DEVILTOWER_BLACKSMITH_WEAPON_MOB ||
+		racenum == DEVILTOWER_BLACKSMITH_ARMOR_MOB ||
+		racenum == DEVILTOWER_BLACKSMITH_ACCESSORY_MOB) {
+		bool bCanProced = true;
+
+		for (uint8_t i = 0; i < ITEM_LIMIT_MAX_NUM; ++i) {
+			if (item->GetLimitType(i) == LIMIT_LEVEL && item->GetLimitValue(i) >= 90) {
+				bCanProced = false;
+				break;
+			}
+		}
+
+		if (!bCanProced) {
+#ifdef TEXTS_IMPROVEMENT
+			from->ChatPacketNew(CHAT_TYPE_INFO, 1360, "");
+#endif
+			return false;
+		}
+	}
+
+	switch (racenum)
+	{
+	case fishing::CAMPFIRE_MOB:
+		if (item->GetType() == ITEM_FISH &&
+			(item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
+			return true;
+		break;
+
+	case fishing::FISHER_MOB:
+		if (item->GetType() == ITEM_ROD)
+			return true;
+		break;
+
+	case BLACKSMITH_WEAPON_MOB:
+	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
+		if (item->GetType() == ITEM_WEAPON && item->GetRefinedVnum()) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_ARMOR_MOB:
+	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
+		if ((item->GetType() == ITEM_BELT || (item->GetType() == ITEM_ARMOR && (item->GetSubType() == ARMOR_BODY || item->GetSubType() == ARMOR_SHIELD || item->GetSubType() == ARMOR_HEAD))) && item->GetRefinedVnum()) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_ACCESSORY_MOB:
+	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB:
+		if (item->GetType() == ITEM_ARMOR && !(item->GetSubType() == ARMOR_BODY || item->GetSubType() == ARMOR_SHIELD || item->GetSubType() == ARMOR_HEAD
+#ifdef ENABLE_PENDANT
+			|| item->GetSubType() == ARMOR_PENDANT
+#endif
+			) && item->GetRefinedVnum()) {
+			return true;
+		}
+		else {
+			return false;
+		}
+		break;
+	case BLACKSMITH_MOB:
+	case BLACKSMITH2_MOB:
+		if (item->GetRefinedVnum() && item->GetRefineSet()) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	case ALCHEMIST_MOB:
+		if (item->GetRefinedVnum())
+			return true;
+		break;
+
+	case 20101:
+	case 20102:
+	case 20103:
+		// ÃÊ±Þ ¸»
+		if (item->GetVnum() == ITEM_REVIVE_HORSE_1)
+		{
+			if (!IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_1)
+		{
+			if (IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_2 || item->GetVnum() == ITEM_HORSE_FOOD_3)
+		{
+			return false;
+		}
+		break;
+	case 20104:
+	case 20105:
+	case 20106:
+		// Áß±Þ ¸»
+		if (item->GetVnum() == ITEM_REVIVE_HORSE_2)
+		{
+			if (!IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_2)
+		{
+			if (IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 || item->GetVnum() == ITEM_HORSE_FOOD_3)
+		{
+			return false;
+		}
+		break;
+	case 20107:
+	case 20108:
+	case 20109:
+		// °í±Þ ¸»
+		if (item->GetVnum() == ITEM_REVIVE_HORSE_3)
+		{
+			if (!IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 467, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_3)
+		{
+			if (IsDead())
+			{
+#ifdef TEXTS_IMPROVEMENT
+				from->ChatPacketNew(CHAT_TYPE_INFO, 466, "");
+#endif
+				return false;
+			}
+			return true;
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 || item->GetVnum() == ITEM_HORSE_FOOD_2)
+		{
+			return false;
+		}
+		break;
+	}
+
+	//if (IS_SET(item->GetFlag(), ITEM_FLAG_QUEST_GIVE))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
+{
+	if (IsPC())
+		return;
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+	// Rune Dungeon: key pedestal (20507) consumes 89103 and progresses floor 5
+	if (CRuneDungeon::instance().OnNpcTakeItem(from, this, item))
+		return;
+	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(from, this, item))
+		return;
+	if (CVikingDungeon::instance().OnNpcTakeItem(from, this, item))
+		return;
+	// LostCastle Dungeon: statue/totem item usage
+	//if (CLostCastleDungeon::instance().OnNpcTakeItem(from, this, item))
+	//	return;
+#endif
+	switch (GetRaceNum())
+	{
+	case fishing::CAMPFIRE_MOB:
+		if (item->GetType() == ITEM_FISH && (item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
+			fishing::Grill(from, item);
+		else
+		{
+			// TAKE_ITEM_BUG_FIX
+			from->SetQuestNPCID(GetVID());
+			// END_OF_TAKE_ITEM_BUG_FIX
+			quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
+		}
+		break;
+
+		// DEVILTOWER_NPC
+	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
+	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
+	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB: {
+		int set = item->GetRefineSet();
+		if (item->GetRefinedVnum() != 0 && set != 0 /*&& item->GetRefineSet() < 500*/
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+			&& set != 1021
+			&& set != 1022
+			&& set != 1023
+			&& set != 1024
+			&& set != 19
+			&& set != 20
+			&& set != 21
+			&& set != 22
+			&& set != 28
+			&& set != 29
+			&& set != 30
+			&& set != 31
+			&& set != 32
+			&& set != 396
+			&& set != 397
+			&& set != 398
+			&& set != 399
+			&& set != 640
+			&& set != 641
+			&& set != 642
+			&& set != 643
+			&& set != 370
+			&& set != 371
+			&& set != 372
+			&& set != 373
+			&& set != 461
+			&& set != 462
+			&& set != 463
+			&& set != 464
+			&& set != 474
+			&& set != 475
+			&& set != 476
+			&& set != 477
+			&& set != 487
+			&& set != 488
+			&& set != 489
+			&& set != 490
+			&& set != 235
+			&& set != 236
+			&& set != 237
+			&& set != 238
+			&& set != 383
+			&& set != 384
+			&& set != 385
+			&& set != 386
+			&& set != 769
+			&& set != 770
+			&& set != 771
+			&& set != 772
+			&& set != 995
+			&& set != 996
+			&& set != 997
+			&& set != 998
+			&& set != 1017
+			&& set != 1018
+			&& set != 1019
+			&& set != 1020
+			&& set != 448
+			&& set != 449
+			&& set != 450
+			&& set != 451
+			&& set != 430
+			&& set != 431
+			&& set != 432
+			&& set != 433
+			&& set != 325
+			&& set != 326
+			&& set != 327
+			&& set != 328
+#endif
+			)
+		{
+			from->SetRefineNPC(this);
+			from->RefineInformation(item->GetCell(), REFINE_TYPE_MONEY_ONLY);
+		}
+#ifdef TEXTS_IMPROVEMENT
+		else {
+			from->ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+		}
+#endif
+		break;
+	}
+											// END_OF_DEVILTOWER_NPC
+
+	case BLACKSMITH_MOB:
+	case BLACKSMITH2_MOB:
+	case BLACKSMITH_WEAPON_MOB:
+	case BLACKSMITH_ARMOR_MOB:
+	case BLACKSMITH_ACCESSORY_MOB:
+		if (item->GetRefinedVnum())
+		{
+			from->SetRefineNPC(this);
+			from->RefineInformation(item->GetCell(), REFINE_TYPE_NORMAL);
+		}
+#ifdef TEXTS_IMPROVEMENT
+		else {
+			from->ChatPacketNew(CHAT_TYPE_INFO, 427, "");
+		}
+#endif
+		break;
+	case 20101:
+	case 20102:
+	case 20103:
+	case 20104:
+	case 20105:
+	case 20106:
+	case 20107:
+	case 20108:
+	case 20109:
+		if (item->GetVnum() == ITEM_REVIVE_HORSE_1 ||
+			item->GetVnum() == ITEM_REVIVE_HORSE_2 ||
+			item->GetVnum() == ITEM_REVIVE_HORSE_3)
+		{
+			from->ReviveHorse();
+			item->SetCount(item->GetCount() - 1);
+#ifdef TEXTS_IMPROVEMENT
+			from->ChatPacketNew(CHAT_TYPE_INFO, 329, "%s", item->GetName());
+#endif
+		}
+		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 ||
+			item->GetVnum() == ITEM_HORSE_FOOD_2 ||
+			item->GetVnum() == ITEM_HORSE_FOOD_3)
+		{
+			from->FeedHorse();
+#ifdef TEXTS_IMPROVEMENT
+			from->ChatPacketNew(CHAT_TYPE_INFO, 112, "%s", item->GetName());
+#endif
+			item->SetCount(item->GetCount() - 1);
+			EffectPacket(SE_HPUP_RED);
+		}
+		break;
+
+	default:
+		sys_log(0, "TakeItem %s %d %s", from->GetName(), GetRaceNum(), item->GetName());
+		from->SetQuestNPCID(GetVID());
+		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
+		break;
+	}
+}
+
+bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<uint32_t> &dwItemVnums,
+	std::vector<uint32_t> &dwItemCounts, std::vector <LPITEM> &item_gets, int& count)
+{
+	const CSpecialItemGroup* pGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(dwGroupNum);
+
+	if (!pGroup)
+	{
+		sys_err("cannot find special item group %d", dwGroupNum);
+		return false;
+	}
+
+	std::vector <int> idxes;
+	int n = pGroup->GetMultiIndex(idxes);
+
+	bool bSuccess;
+
+	for (int i = 0; i < n; i++)
+	{
+		bSuccess = false;
+		int idx = idxes[i];
+		uint32_t dwVnum = pGroup->GetVnum(idx);
+		uint32_t dwCount = pGroup->GetCount(idx);
+		int	iRarePct = pGroup->GetRarePct(idx);
+		LPITEM item_get = nullptr;
+		switch (dwVnum)
+		{
+		case CSpecialItemGroup::GOLD:
+			PointChange(POINT_GOLD, dwCount);
+			LogManager::instance().CharLog(this, dwCount, "TREASURE_GOLD", "");
+
+			bSuccess = true;
+			break;
+		case CSpecialItemGroup::EXP:
+		{
+			PointChange(POINT_EXP, dwCount);
+			LogManager::instance().CharLog(this, dwCount, "TREASURE_EXP", "");
+
+			bSuccess = true;
+		}
+		break;
+
+		case CSpecialItemGroup::MOB:
+		{
+			sys_log(0, "CSpecialItemGroup::MOB %d", dwCount);
+			int x = GetX() + number(-500, 500);
+			int y = GetY() + number(-500, 500);
+
+			LPCHARACTER ch = CHARACTER_MANAGER::instance().SpawnMob(dwCount, GetMapIndex(), x, y, 0, true, -1);
+			if (ch)
+				ch->SetAggressive();
+			bSuccess = true;
+		}
+		break;
+		case CSpecialItemGroup::SLOW:
+		{
+			sys_log(0, "CSpecialItemGroup::SLOW %d", -(int)dwCount);
+			AddAffect(AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
+			bSuccess = true;
+		}
+		break;
+		case CSpecialItemGroup::DRAIN_HP:
+		{
+			int64_t iDropHP = GetMaxHP() * dwCount / 100;
+			sys_log(0, "CSpecialItemGroup::DRAIN_HP %d", -iDropHP);
+			iDropHP = std::min(iDropHP, GetHP() - 1);
+			sys_log(0, "CSpecialItemGroup::DRAIN_HP %d", -iDropHP);
+			PointChange(POINT_HP, -iDropHP);
+			bSuccess = true;
+		}
+		break;
+		case CSpecialItemGroup::POISON:
+		{
+			AttackedByPoison(nullptr);
+			bSuccess = true;
+		}
+		break;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+		case CSpecialItemGroup::BLEEDING:
+		{
+			AttackedByBleeding(NULL);
+			bSuccess = true;
+		}
+		break;
+#endif
+		case CSpecialItemGroup::MOB_GROUP:
+		{
+			int sx = GetX() - number(300, 500);
+			int sy = GetY() - number(300, 500);
+			int ex = GetX() + number(300, 500);
+			int ey = GetY() + number(300, 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwCount, GetMapIndex(), sx, sy, ex, ey, nullptr, true);
+
+			bSuccess = true;
+		}
+		break;
+		default:
+		{
+			item_get = AutoGiveItem(dwVnum, dwCount, iRarePct);
+
+			if (item_get)
+			{
+				bSuccess = true;
+			}
+		}
+		break;
+		}
+
+		if (bSuccess)
+		{
+			dwItemVnums.push_back(dwVnum);
+			dwItemCounts.push_back(dwCount);
+			item_gets.push_back(item_get);
+			count++;
+
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return bSuccess;
+}
+
+bool CHARACTER::DestroyItem(TItemPos Cell)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ChatPacket(CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
+#endif
+	LPITEM item = nullptr;
+	if (!CanHandleItem()) {
+#ifdef TEXTS_IMPROVEMENT
+		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
+			ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+		}
+#endif
+
+		return false;
+	}
+
+	if (IsDead())
+		return false;
+
+	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
+		return false;
+
+	if (item->IsEquipped())
+		return false;
+
+	if (item->IsExchanging())
+		return false;
+
+	if (true == item->isLocked())
+		return false;
+
+	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
+		return false;
+
+	if ((item->GetVnum() >= 55701) && (item->GetVnum() <= 55711)) {
+		if (item->GetSocket(0) != 0)
+			return false;
+	}
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	if (item->IsExtraItem()) {
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+	}
+	else {
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	}
+#else
+	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+#endif
+
+#ifdef ENABLE_BATTLE_PASS
+	uint8_t bBattlePassId = GetBattlePassId();
+	if (bBattlePassId)
+	{
+		uint32_t dwItemVnum, dwCnt;
+		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, DESTROY_ITEM, &dwItemVnum, &dwCnt))
+		{
+			if (dwItemVnum == item->GetVnum() && GetMissionProgress(DESTROY_ITEM, bBattlePassId) < dwCnt)
+				UpdateMissionProgress(DESTROY_ITEM, bBattlePassId, item->GetCount(), dwCnt);
+		}
+	}
+#endif
+
+#ifdef TEXTS_IMPROVEMENT
+	ChatPacketNew(CHAT_TYPE_INFO, 47, "%s", item->GetName());
+#endif
+	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
+	return true;
+}
+

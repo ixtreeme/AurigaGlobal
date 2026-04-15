@@ -1073,3 +1073,20 @@
 - count after: `2264`
 - build: success
 - next: slice D (`item creation / give / remove`)
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- completed slice D:
+  - `RemoveSpecifyTypeItem`
+  - `AutoGiveItem(LPITEM, ...)`
+  - `AutoGiveDS`
+  - `AutoGiveItem(uint32_t, ...)`
+  - `GiveItem`
+  - `CanReceiveItem`
+  - `ReceiveItem`
+  - `GiveItemFromSpecialItemGroup`
+  - `DestroyItem`
+  - support helper moved with the slice:
+    - `FN_check_item_socket`
+- count after: `2250`
+- build: success
+- next: slice E (`shop / trade / refine`)
