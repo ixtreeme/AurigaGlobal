@@ -49,14 +49,51 @@
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
 #include "../../ItemUse.h"
+#ifdef __NEWPET_SYSTEM__
+#include "../../New_PetSystem.h"
+#define __NEWPET_SYSTEM_CHECK
+#endif
+#ifdef ENABLE_NEWSTUFF
+#include "../../pvp.h"
+#endif
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+#include "../../RuneDungeon.h"
+#include "../../Halloween2022Dungeon.h"
+#include "../../VikingDungeon.h"
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+#include "../../../common/stole_length.h"
+#endif
 #include "../../../common/CommonDefines.h"
 
 #include "../Registry.hpp"
 #include "../components/identity_components.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
+bool IS_BOTARYABLE_ZONE(int nMapIndex);
+extern int stone_chance;
 
 namespace {
+
+const int ITEM_BROKEN_METIN_VNUM = 28960;
+
+struct FFindStone
+{
+	std::map<uint32_t, LPCHARACTER> m_mapStone;
+
+	void operator()(LPENTITY pEnt)
+	{
+		if (pEnt->IsType(ENTITY_CHARACTER) == true)
+		{
+			LPCHARACTER pChar = (LPCHARACTER)pEnt;
+
+			if (pChar->IsStone() == true)
+			{
+				m_mapStone[(uint32_t)pChar->GetVID()] = pChar;
+			}
+		}
+	}
+};
 
 LPCHARACTER LegacyCharacter(entt::entity e)
 {
@@ -103,10 +140,8 @@ static bool IS_SUMMON_ITEM(int vnum)
 	case 22000:
 	case 22010:
 	case 22011:
-	case 22012:
-	case 22013:
-	case 22014:
-	case 22015:
+	case 22020:
+	case ITEM_MARRIAGE_RING:
 		return true;
 	}
 

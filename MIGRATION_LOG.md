@@ -1038,3 +1038,23 @@
     - `2272`
   - note:
     - next session should treat `UseItemEx` as `C2b1` helper-surface extraction + `C2b2` body relocation, not as a single slice
+
+## Phase 8 - Step 8.13 char_item.cpp -> ItemSystem (continued)
+- completed slice C2b1:
+  - helper surface extracted for `UseItemEx`
+  - added missing subsystem/include surface to `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`:
+    - `New_PetSystem.h`
+    - `pvp.h`
+    - `RuneDungeon.h`
+    - `Halloween2022Dungeon.h`
+    - `VikingDungeon.h`
+    - `common/stole_length.h`
+  - added missing file-scope / global support surface to `ItemSystem.cpp`:
+    - `IS_BOTARYABLE_ZONE` declaration
+    - `stone_chance` extern declaration
+    - `ITEM_BROKEN_METIN_VNUM`
+    - `FFindStone`
+  - corrected local `IS_SUMMON_ITEM` helper to match the original `char_item.cpp` behavior
+- count after: `2272`
+- build: success
+- next: slice C2b2 (`UseItemEx` body relocation)
