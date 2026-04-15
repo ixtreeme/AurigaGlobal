@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 70.
+[X_PADDING=12]*Nivel maxim: 120.
+[X_PADDING=12]*Permis: Permis Rune.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=386]Permis Rune		 Piatra lui Zeus
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 1 orã ºi 5 minute.
+[X_PADDING=12]*Il cooldown è di 2 ore (utilizzando la Pietra di Zeus è possibile resettare il tempo d'attesa).
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby Special.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva monºtrilor Rune.
+[X_PADDING=12]*Elementul monºtrilor: Gheaþã - Întuneric - Foc - Fulger - Pãmânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMUL ETAJ
+[X_PADDING=20]1. Omoarã toþi monºtrii.
+[X_PADDING=20]2. Distruge Metinele Runelor în ordinea corectã pentru a trece la urmãtorul etaj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 2 (Vei avea aleatoriu una dintre cele 3 modalitãþi)
+[X_PADDING=20]* 1. Omoarã toþi monºtrii ºi Metinele Runelor pentru al invoca pe Haru. Când va apãrea doar ºeful
+[X_PADDING=20]grupului va putea sã îi scadã PV-ul pânã când va ajunge la 70% din PV-ul sãu, ajuns la 70% toþi
+[X_PADDING=20]membrii grupului vor putea sã îi scadã PV.
+
+[X_PADDING=20]* 2. Omoarã monºtri pentru a dropa 10 Suflete de Runã, sufletele le va primi ºeful grupului direct
+[X_PADDING=20]în inventar. Odatã gãsite cele 10 Suflete de Runã va trebuii sã dai click pe ele pentru a primi
+[X_PADDING=20]Cheia Divinã. Cu ajutorul acestei chei vei putea trece la urmãtorul etaj.
+
+[X_PADDING=20]* 3. Atunci când Buncho va rãmâne doar cu 60% din PV-ul sãu nu îi vei mai putea scade PV-ul, va trebuii sã
+[X_PADDING=20]distrugi Metinele Runelor pentru ai putea scade PV-ul din nou. Odatã ce ajunge la 20% din PV nu îi vei mai
+[X_PADDING=20]putea scade PV-ul din nou, va trebuie sã omori 100 de monºtri pentru ai putea face daune din nou.
+[X_PADDING=20]Atenþie când Buncho ajunge la 20% din PV daunele sale vor fi dublate.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 3 (Vei avea aleatoriu una dintre cele 3 modalitãþi)
+[X_PADDING=20]* 1. Omoarã toþi monºtrii ºi Metinele Runelor pentru al invoca pe Haru. Când va apãrea doar ºeful
+[X_PADDING=20]grupului va putea sã îi scadã PV-ul pânã când va ajunge la 70% din PV-ul sãu, ajuns la 70% toþi
+[X_PADDING=20]membrii grupului vor putea sã îi scadã PV.
+
+[X_PADDING=20]* 2. Omoarã monºtri pentru a dropa 10 Suflete de Runã, sufletele le va primi ºeful grupului direct
+[X_PADDING=20]în inventar. Odatã gãsite cele 10 Suflete de Runã va trebuii sã dai click pe ele pentru a primi
+[X_PADDING=20]Cheia Divinã. Cu ajutorul acestei chei vei putea trece la urmãtorul etaj.
+
+[X_PADDING=20]* 3. Atunci când Buncho va rãmâne doar cu 60% din PV-ul sãu nu îi vei mai putea scade PV-ul, va trebuii sã
+[X_PADDING=20]distrugi Metinele Runelor pentru ai putea scade PV-ul din nou. Odatã ce ajunge la 20% din PV nu îi vei mai
+[X_PADDING=20]putea scade PV-ul din nou, va trebuie sã omori 100 de monºtri pentru ai putea face daune din nou.
+[X_PADDING=20]Atenþie când Buncho ajunge la 20% din PV daunele sale vor fi dublate.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 4 (Vei avea aleatoriu una dintre cele 3 modalitãþi)
+[X_PADDING=20]* 1. Omoarã toþi monºtrii ºi Metinele Runelor pentru al invoca pe Haru. Când va apãrea doar ºeful
+[X_PADDING=20]grupului va putea sã îi scadã PV-ul pânã când va ajunge la 70% din PV-ul sãu, ajuns la 70% toþi
+[X_PADDING=20]membrii grupului vor putea sã îi scadã PV.
+
+[X_PADDING=20]* 2. Omoarã monºtri pentru a dropa 10 Suflete de Runã, sufletele le va primi ºeful grupului direct
+[X_PADDING=20]în inventar. Odatã gãsite cele 10 Suflete de Runã va trebuii sã dai click pe ele pentru a primi
+[X_PADDING=20]Cheia Divinã. Cu ajutorul acestei chei vei putea trece la urmãtorul etaj.
+
+[X_PADDING=20]* 3. Atunci când Buncho va rãmâne doar cu 60% din PV-ul sãu nu îi vei mai putea scade PV-ul, va trebuii sã
+[X_PADDING=20]distrugi Metinele Runelor pentru ai putea scade PV-ul din nou. Odatã ce ajunge la 20% din PV nu îi vei mai
+[X_PADDING=20]putea scade PV-ul din nou, va trebuie sã omori 100 de monºtri pentru ai putea face daune din nou.
+[X_PADDING=20]Atenþie când Buncho ajunge la 20% din PV daunele sale vor fi dublate.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMUL ETAJ
+[X_PADDING=20]1. Pentru ai putea scade PV-ul lui Haru va trebuii sã distrugi toate Metinele Runelor.
+[X_PADDING=20]2. Omoarã-l pe Haru.
+[X_PADDING=20]3. Omoarã monºtri pentru a dropa Cheii Divine.
+[X_PADDING=20]4. Distruge Piatra Runelor cu ajutorul Cheilor Divine pentru a putea scade PV-ul lui Buncho.
+[X_PADDING=20]5. Omoarã-l pe Buncho.
+[X_PADDING=20]6. Scade PV-ul lui Eien, dar atenþie odatã ce este la 50% din PV-ul sãu nu va mai putea fi atacat.
+[X_PADDING=20]7. Va trebuie sã omori toþi monºtrii pentru a-l putea ataca din nou pe Eien.
+[X_PADDING=20]8. Odatã ce este la 10% din PV-ul sãu nu va mai putea fi atacat.
+[X_PADDING=20]9. Va trebuie sã omori toate Metinele Runelor pentru a-l putea ataca din nou pe Eien.
+[X_PADDING=20]10. Omoarã-l pe Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=934; CENTER_ALIGN]

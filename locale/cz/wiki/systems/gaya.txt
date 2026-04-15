@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya je mena, která umožnuje každému hráci nakupovat predmety v Gaya Shopu.
+[X_PADDING=12]2. Gayu mužete získat od obchodníka Gayi NPC.
+[X_PADDING=12]3. K získání 1 Gaya potrebujete 10 blýskavých kamenu a 1 kámen ducha +0 až +3.
+[X_PADDING=12]4. Rafinace drahokamu je vždy 100%.
+[X_PADDING=12]5. Chcete -li otevrít Gaya Shop, jdete k Npc Gaya obchodník.
+[X_PADDING=12]6. Obchod Gaya má k dispozici 9 slotu, z nichž 6 bude uzamceno, sloty mužete odemknout
+[X_PADDING=12]zakoupením predmetu Rozšírení Gaya obchodu od Npc Gaya obchodník.
+[X_PADDING=12]7. Obchod Gaya se aktualizuje automaticky každých 5 hodin, Gaya Shop mužete aktualizovat rucne
+[X_PADDING=12]Zakoupením predmetu Gaya obchod reset od Npc Gaya obchodník.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]KDE NAJÍT BLÝSKAVÉ KAMENY
+
+[X_PADDING=12]1. Blýskávé kameny získáte v dungeonech, nebo zabítím bosu ruzných map.
+[X_PADDING=12]2. Velké množství blýskávých kamenu najdete v Truhle Královny Meley.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Blýskavé kameny										 Rozšírení Gaya obchodu							Gaya obchod reset
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Orice costum eºarfã are 6 bonusuri prestabilite:
+[X_PADDING=20]- Tare împotriva Monºtrilor
+[X_PADDING=20]- Tare împotriva Metinelor
+[X_PADDING=20]- Tare împotriva ªefilor
+[X_PADDING=20]- Tare vs Semi-Oameni
+[X_PADDING=20]- Rezistenþã la Semi-Oameni
+[X_PADDING=20]- Max. PV
+
+[X_PADDING=12]Acestea au 4 grade, în baza cãruia valorile bonusurilor va scade/creºte.
+
+[X_PADDING=12]Valorile maxime al bonusurilor:
+[X_PADDING=20]- Tare împotriva Monºtrilor +20%
+[X_PADDING=20]- Tare împotriva Metinelor 20%
+[X_PADDING=20]- Tare împotriva ªefilor 20%
+[X_PADDING=20]- Tare vs Semi-Oameni +15%
+[X_PADDING=20]- Rezistenþã la Semi-Oameni 15%
+[X_PADDING=20]- Max. PV +3000
+
+[X_PADDING=12]Pentru a schimba valorile bonusurilor al unui costum vei avea nevoie de Vrãjeºte Costum Eºarfã.
+
+[X_PADDING=12]Pentru a creºte gradul unui costum eºarfã va trebuie sã o combini la NPC-ul Theowahdan. Combinaþia poate fi
+[X_PADDING=12]conclusã dacã ai un alt costum eºarfã de acelaºi tip si grad.
+[X_PADDING=12](Atenþie deoarece în cazul în care combinaþia va avea succes, vei primi un nou costum eºarfã cu noul grad,
+[X_PADDING=12]iar bonusurile acestuia vor fi aleatoriu în funcþie de gradul acestuia).
+[X_PADDING=12]Tot la NPC-ul Theowahdan cu ajutorul item-ului Transferã Bonus Costume vei putea transfera bonusurile de pe
+[X_PADDING=12]un costum pe altul.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Vrãj. Co. Eºarfã																						   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

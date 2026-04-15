@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12;CENTER_ALIGN]Systém bonusu zmrazení se skládá ze 3 predmetu:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Bonus zamrazení							 Bonus znovu zmrazení							Bonus za rozmrazení
+
+[X_PADDING=12;CENTER_ALIGN]Pokud presunete Bonus zmrazení na jakýkoli predmet vybavení, který má bonusy, je zmrazen
+[X_PADDING=12;CENTER_ALIGN]zcela náhodný bonus. Bonusy talismanu nelze zmrazit.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Beware when a bonus is frozen it has no effect on your character and until it is thawed
+[X_PADDING=12]it will not be possible to improve, craft and absorb the item on a Shoulder Sash.
+
+[X_PADDING=12]Bonuses that cannot be frozen are:
+[X_PADDING=20]Medium damage
+[X_PADDING=20]Skill Damage
+[X_PADDING=20]Double Strong against Half humans (for example if we have a Triton Sword with double halfmen already using the
+[X_PADDING=20]freeze bonus that bonus is not frozen).
+
+[X_PADDING=12]The Refreeze Bonus is used when you already have a frozen bonus on the item that we do not like,
+[X_PADDING=12]and then try to freeze a new bonus always randomly.
+
+[X_PADDING=12]The Defrost Bonus is used to defrost a bonus that we have on one of our items.
+[X_PADDING=12]When the bonus is thawed, it will be possible to make improvements, craft and absorb the item again
+[X_PADDING=12]on a Shoulder Sash, and the character regains the effectiveness of that bonus.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

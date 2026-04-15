@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Nivel mínimo: 85.
+[X_PADDING=12]*Nivel maximo: 100.
+[X_PADDING=12]*Ticket: Ticket de Nemere.
+[X_PADDING=12]*Type: Solo y en grupo
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Ticket de Nemere
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 50 minutos.
+[X_PADDING=12]*Enfriamiento: 1 hora
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Poder de hielo
+[X_PADDING=12]*Elemento de monstruos: Hielo
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Encuentra la llave de escarcha correcta.
+[X_PADDING=20]2. Haga clic en la tecla Frost para ir al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PISO
+[X_PADDING=20]1. Desbloquea los cubos árticos en el orden correcto usando las estrellas del norte que soltarás de los monstruos.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+[X_PADDING=20]2. Destruye el Metin del frío.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SÉPTIMO PISO
+[X_PADDING=20]1. Encuentra y mata al Szel correcto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OCTAVO PISO
+[X_PADDING=20]1. Encuentra la clave correcta de la flor de hielo.
+[X_PADDING=20]2. Haga clic en la llave de Frostflower para ir al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]NOVENO PISO
+[X_PADDING=20]1. Destruye el Pilar del Dragón del Norte.
+[X_PADDING=20]2. Habla con Frosty Lion.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DECIMO PISO
+[X_PADDING=20]1. Matar a Nemere.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

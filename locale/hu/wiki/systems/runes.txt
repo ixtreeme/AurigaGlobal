@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[CENTER_ALIGN]A 70 -es szinten megjelenik egy küldetés, amelyre kattintva feloldja a rúnák paneljét.
+
+[X_PADDING=12]A rúna panel 6 normál rúnából és 1 különlegesbol áll, minden rúna különleges erovel rendelkezik.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Arész rúnája								  Erra rúnája								    Apollón rúnája
+
+
+
+
+
+
+[X_PADDING=80]Afrodité rúnája							   Poszeidón rúnája							     Athéna rúnája
+
+
+
+
+
+
+[X_PADDING=238]Zeusz rúnája
+
+[X_PADDING=12]A normál rúnák maximális teljesítménye 100%, ráadásul teljesítményük magas, és százalékos
+[X_PADDING=12] a bónuszok magasabbak lesznek.
+
+[X_PADDING=12]A normál rúnák maximális százaléka:
+[X_PADDING=20]- Afrodité rúnája: Metinek elleni ero 15% - Ügyesség +15
+[X_PADDING=20]- Apollón rúnája: Foszörnyek elleni ero 15% - Ero +15
+[X_PADDING=20]- Athéna rúnája: Átlagos kár [PVM] 12% - Támadó érték +150
+[X_PADDING=20]- Erra rúnája: Max MP  +1200 - Intelligencia +15
+[X_PADDING=20]- Poszeidón rúnája: Szörnyek elleni ero +15% - 15% Esély a kritikus csapásra [PVM]
+[X_PADDING=20]- Arész rúnája: Max. TP +2500 - VIT +15
+
+[X_PADDING=12]A különleges rúna, amely a Zeusz rúnája lenne, automatikusan aktiválódik, ha minden normál rúna rendelkezik
+[X_PADDING=12] a rendelkezésre álló energia legalább 50% -a.
+
+[X_PADDING=12] A Zeusz rúnája aktív állapotban a következo bónuszokat juttatja a karakterhez:
+[X_PADDING=20]- Félemberek elleni ero 10%
+[X_PADDING=20]- Félemberek elleni védelem 10%
+
+[X_PADDING=12]Amikor bármely normál rúna ereje 50% alá csökken, Zeusz rúnája kialszik
+[X_PADDING=12] automatikusan.
+
+[X_PADDING=12]Továbbá, ha minden normál rúna legalább 60% -os teljesítményu, különleges hatás jelenik meg a karakterben.
+[X_PADDING=12] (A hatás a rúnák panelrol is kikapcsolható).
+
+[X_PADDING=12]Lehetoség van a rúnák újratöltésére a Rune Bottle segítségével, amely megvásárolható a boltban
+[X_PADDING=12] a rúnák panelen.
+[X_PADDING=12] A rúnapalack csak olyan Runatikus töredék-kel lesz megvásárolható, amelyeket csak a Rúna Dungeon dob.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Rune palack (P)					  Rune palack (M)					  Rune palack (G)						  Runatikus töredék
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

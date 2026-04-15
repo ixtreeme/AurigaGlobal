@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 75.
+[X_PADDING=12]*Maximální level: 95.
+[X_PADDING=12]*Propustka: Vysušená hlava.
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Vysušená hlava
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 40 minut.
+[X_PADDING=12]*Cooldown: 1 hodina.
+[X_PADDING=12]*Každy ve skupine musí mít propustku.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Silný proti nemrtvým .
+[X_PADDING=12]*Element príšer: Temnota.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Zabíjej monstra pro získání Klíce krystalu duše. 
+[X_PADDING=20]2. Pretáhni klíc na sochu Kud, aby ses dostal do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO
+[X_PADDING=20]1. Znic správny Metin odplaty.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ PATRO
+[X_PADDING=20]1. Zabíj správného Tartarose.
+[X_PADDING=20]2. Pretáhni Šklebící se totem na Obelisk basalt.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÉ PATRO
+[X_PADDING=20]1. Zabíj Chárona.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PÁTÉ PATRO
+[X_PADDING=20]1. Zabíj azraela.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

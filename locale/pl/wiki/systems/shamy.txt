@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]System wsparcia szamanów, który da ci szanse na przywolanie szamana, który automatycznie daje buff
+[CENTER_ALIGN]dla twojej postaci.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]1. Ikona panelu wsparcia szamana znajduje sie obok ekwipunku lub mozesz otworzyc panel
+[X_PADDING=12]naciskajac klawisz X.
+
+[X_PADDING=12]2.Aby odblokowac panel wsparcia szamana, musisz miec przedmiot Odblokuj wsparcie Mocy Smoka lub
+[X_PADDING=12]Odblokuj wsparcie Mocy Leczenia
+
+[X_PADDING=12]3 Jesli masz jeden z tych elementów, klikajac go prawym przyciskiem, pojawi sie panel, w którym zostaniesz zapytany o
+[X_PADDING=12]wprowadzenie nazwy oraz wybranie plci twojego szamana.
+
+[X_PADDING=12]4. Szaman wsparcia bedzie startowal za kazdym razem od lvl 1 i bedzie mógl osiagnac lvl 120, im wyzszy bedzie Lv tym wyzsze beda % buffów
+[X_PADDING=12]Szaman wsparcia otrzymuje PD tylko wtedy, gdy zostanie przywolany i gdy potwory zostana zabite
+
+[X_PADDING=12]5. Szaman zacznie od podstawowego wyposazenia, bedziesz mial wybór
+[X_PADDING=12]jego estetyki otwierajac sklep znajdujacy sie na panelu.
+
+[X_PADDING=12]6. Nie da sie wezwac 2 szamanów wsparcia razem i nie da sie ich wezwac na Wojnie Gildii
+
+[X_PADDING=12]7. Mozesz zmienic imie swojego szamana za pomoca przedmiotu Magia imienia.
+
+[X_PADDING=12]8. Mozesz zmienic plec swojego szamana za pomoca przedmiotu Zwój Przemiany.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Odblokuj Moc Leczenia						  Odblokuj Moc Smoka						 Magia Imienia					  Zwój Transformacji
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya ist eine Währung, die es jedem Spieler ermöglicht, Gegenstände im Gaya-Shop zu kaufen.
+[X_PADDING=12]2. Sie können Gaya von den Händlern von Gaya npc erhalten.
+[X_PADDING=12]3. Um 1 Gaya zu erhalten, brauchst du 10 Edelsteine ??plus einen +0 bis +3 Geisterstein.
+[X_PADDING=12]4. Die Edelsteinveredelung beträgt immer 100%.
+[X_PADDING=12]5. Um den Gaya Shop zu öffnen, gehe zum Npc Gaya Shop.
+[X_PADDING=12]6. Der Gaya Shop hat 9 Slots zur Verfügung, von denen 6 gesperrt sind, Sie können die Slots freischalten
+[X_PADDING=12]durch den Kauf des Artikels Ampliam. Gaya-Shop vom Npc Mecante di Gaya.
+[X_PADDING=12]7. Der Gaya Shop aktualisiert sich automatisch alle 5 Stunden, Sie können den Gaya Shop manuell aktualisieren
+[X_PADDING=12]durch den Kauf des Gaya Reset Shop-Gegenstands vom Gaya Mecante-NPC.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WO FINDEN SIE DIE EDELSTEINE
+
+[X_PADDING=12]1. Edelsteine ??findest du in den Dungeons oder Bossen der verschiedenen Karten.
+[X_PADDING=12]2. In Königin Meleys Truhe finden Sie eine große Menge an Edelsteinen.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Edelsteine ??Ampliam. Gaya-Shop Res. Neg. Gaya
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

@@ -1,0 +1,28 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/beran.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 80.
+[X_PADDING=12]*Maksimum giris seviyesi: 100.
+[X_PADDING=12]*Giris Bileti: Kivrik Anahtar.
+[X_PADDING=12]*Tür: Tek veya Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30179.tga; Y=15; X=478]
+[X_PADDING=462]Kivrik Anahtar
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Soguma Süresi: 1 saat 30 dakika.
+[X_PADDING=12]*Bir gruba katilirsan herkes 1 bilete sahip olmali.
+[X_PADDING=12]*Haritadan Erisebilirsiniz: Lobi Zindani.
+[X_PADDING=12]*Önerilen Bonus: Simsek.
+[X_PADDING=12]*Irk: Simsek.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ILK ASAMA
+[X_PADDING=20]1. Beran-Setaou'ya hasar vurabilmek için tüm metin taslarini yok edin.
+[X_PADDING=20]2. Beran-Setaou'yu öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=278; CENTER_ALIGN]

@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA BIOLOGICKÉHO SYSTÉMU
+
+[X_PADDING=12]1. Ikona panelu biologa se nachází na minimape.
+[X_PADDING=12]2. Za splnení misí biologa se udelují trvalé bonusy.
+[X_PADDING=12]3. Predmety potrebné pro mise si mužete zakoupit u biologa ve Wonder Village.
+[X_PADDING=12]4. V panelu biologa mužete povilit notifikaci, která vás upozorní když cekací doba vyprší.
+[X_PADDING=12]5. K resetování cooldownu mužete použít Elixír výzkumníka.
+[X_PADDING=12]6. Pomocí Výzkumníkova Elixíru + mužete resetovat cooldown a zlepšit kvalitu predmetu, 
+[X_PADDING=12]když jsou doruceny biologovi.
+[X_PADDING=12]7. Pomocí predmetu Biologova magie mužete zmenit bonus zvolený v misích úrovne 105 a 110.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISE A ODMENY
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

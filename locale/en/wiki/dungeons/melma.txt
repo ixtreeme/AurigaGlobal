@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 45.
+[X_PADDING=12]*Maximum level: 65.
+[X_PADDING=12]*Ticket: Piece of Menhir Slime.
+[X_PADDING=12]*Type: Solo and Party
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Piece of Menhir Slime
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Time limit 30 minutes.inuti.
+[X_PADDING=12]*Cooldown: 40 minutes.
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Animals.
+[X_PADDING=12]*Element of monsters: Earth.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST PHASE
+[X_PADDING=20]1. Destroy the Metin Slime.
+[X_PADDING=20]2. Kill 103 monsters.
+[X_PADDING=20]3. Click on the Slime Stone.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND PHASE
+[X_PADDING=20]1. Destroy 4 Metin Slime and collect the Empty Slime Vial.
+[X_PADDING=20]2. Drag the Empty Slime Vial onto the Slime to collect some.
+[X_PADDING=20]3. Drag the Full Slime Vial onto the Seal Stone.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD PHASE
+[X_PADDING=20]1. Kill 103 monsters.
+[X_PADDING=20]2. Kill Slime Queen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum szint: 85.
+[X_PADDING=12]*Maximum szint: 100.
+[X_PADDING=12]*Belépo: Nemere belépo.
+[X_PADDING=12]*Type: Solo and Party
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Nemere belépo
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 50 perc.
+[X_PADDING=12]*Újratöltés: 1 óra.
+[X_PADDING=12]*Ha csapatban lépsz be, mindenkinek kell belépo.
+[X_PADDING=12]*A dungeon elérheto: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Jég ero
+[X_PADDING=12]*Szörnyek eleme: Jég
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet az emeleten.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Találd meg a helyes Fagy-kulcsot.
+[X_PADDING=20]2. Jobb klikkelj a Fagy-kulcsra, hogy a következo emeletre kerülj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet az emeleten.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet az emeleten.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Ötödik emelet
+[X_PADDING=20]1. Nyisd ki a helyes sorrendben a Sarkvidéki kockákat az Északi sarkcsillag segítségével.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Hatodik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet.
+[X_PADDING=20]2. Majd pusztítsd el a Hideg metinjét.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Hetedik emelet
+[X_PADDING=20]1. Pusztítsd el Szelt.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Nyolcadik emelet
+[X_PADDING=20]1. Találd meg a helyes Jégvirág-kulcsot.
+[X_PADDING=20]2. Job klikkelj a Jégvirág-kulcsra, hogy a következo emeletre kerülj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Kilencedik emelet
+[X_PADDING=20]1. Pusztítsd el az Északi sárkányoszlopot.
+[X_PADDING=20]2. Beszélj a Fagyos Oroszlánnal.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Tizedik emelet
+[X_PADDING=20]1. Pusztítsd el Nemerét a jég és a fagy segítségével.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

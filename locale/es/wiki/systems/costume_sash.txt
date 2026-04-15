@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Cada traje robado comienza con 6 bonificaciones preestablecidas:
+[X_PADDING=20]- Fuerza contra los monstruos
+[X_PADDING=20]- Fuerza contra las piedras de Metin
+[X_PADDING=20]- Fuerza contra los jefes
+[X_PADDING=20]- Fuerza contra medio humano
+[X_PADDING=20]- Resistencia contra mediohumanos
+[X_PADDING=20]- Max. HP
+
+[X_PADDING=12]El disfraz robado tiene 4 rangos y, según el rango, los porcentajes máximos de bonificación aumentan.
+
+[X_PADDING=12]Porcentajes máximos de bonificaciones:
+[X_PADDING=20]- Fuerza contra los monstruos +20%
+[X_PADDING=20]- Fuerza contra las piedras de Metin 20%
+[X_PADDING=20]- Fuerza contra los jefes 20%
+[X_PADDING=20]- Fuerza contra medio humano +15%
+[X_PADDING=20]- Resistencia a los mediohumanos 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]Para cambiar los porcentajes del traje robado, necesitas el artículo Encantar traje robado.
+
+[X_PADDING=12]Para aumentar el rango del traje robado, debes combinarlo del NPC Theowahdan, un traje robado puede
+[X_PADDING=12]combinarse solo con el mismo tipo de estola y con el mismo grado.
+[X_PADDING=12](Tenga cuidado, la combinación baraja los porcentajes de bonificación de acuerdo con el nuevo rango y existe el riesgo de que
+[X_PADDING=12]la combinación puede fallar).
+[X_PADDING=12]Es posible transferir las bonificaciones de un disfraz robado a otro disfraz con el objeto Transferir disfraz extra.
+[X_PADDING=12]yendo a theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Encantar estola de disfraces																					   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

@@ -1,0 +1,9 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/fastkey.png]
+[CENTER_ALIGN;FONT_SIZE=24]Weapon Upgrade
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=30; CENTER_ALIGN]
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/emoji/fegyo.tga; Y=50; X=12]

@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]With this system it will be possible to drop only with 2 characters.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMATION
+
+[X_PADDING=12]1. The first 2 open clients will have the drop available, by opening the third client the drop will be blocked automatically
+[X_PADDING=12]so it can only earn xp
+[X_PADDING=12]2. It will be possible to activate and deactivate the drop to a character by clicking on the icon at the top left.
+[X_PADDING=12]3. The drop can only be activated and deactivated in the Wonder Village map and you have to wait for a cooldown
+[X_PADDING=12] of 5 seconds.
+[X_PADDING=12]4. If you have more than 2 clients open and you enable the drop to the third client, you automatically disable the drop to the first client, and
+[X_PADDING=12]so on in numerical order for other open clients.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

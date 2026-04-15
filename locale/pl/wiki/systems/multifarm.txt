@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Dzieki temu systemowi bedzie mozna zdobywac przedmioty tylko 2 postaciami.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMACJE
+
+[X_PADDING=12]1. Pierwsze 2 otwarte klienty beda mialy dostep do dropu, otwarcie trzeciego klienta spowoduje automatyczne zablokowanie dropu
+[X_PADDING=12]wiec moze zdobyc tylko doswiadczenie.
+[X_PADDING=12]2. Drop bedzie mozna aktywowac i dezaktywowac, klikajac ikone w lewym górnym rogu.
+[X_PADDING=12]3. Drop mozna aktywowac i dezaktywowac tylko na mapie Cudowna Wioska i trzeba poczekac na odnowienie
+[X_PADDING=12] 5 sekund.
+[X_PADDING=12]4. Jesli masz otwarte wiecej niz 2 okna gry i wlaczysz drop na trzecim oknie klienta, automatycznie wylaczasz drop na pierwszym kliencie,
+[X_PADDING=12]i tak dalej w kolejnosci numerycznej dla innych otwartych klientów.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

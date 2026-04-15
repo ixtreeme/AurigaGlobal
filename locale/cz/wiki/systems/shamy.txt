@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]Systém Podpory Shamyho je systém který umožnuje privolat Šamana, který vám bude automaticky dávat buff
+[CENTER_ALIGN]pro tvojí pg.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12]1.Podpora Shamy iconka je vedle inventáre nebo mužete otevrít panel
+[X_PADDING=12]stisknutím tlacítka X.
+
+[X_PADDING=12]2.Pro odemcení panelu podpory šamana nejdríve musíte mít predmet Odemcení Podpory Drací Síli nebo Odemcení Podpory Lécení
+[X_PADDING=12]Odemcení Podpory Lécení 
+
+[X_PADDING=12]3 Pokud máte jeden z techto predmetu kliknutím na nej pravím tlacítkem ,se objeví panel kde se vás zeptají
+[X_PADDING=12]aby jste zvolil jméno a pohlaví vaší podpory šamana.
+
+[X_PADDING=12]4.Podpora shamy zacíná vždy na levlu 1 a muže dosáhnout 120 levlu, cím vyšší level tím veší procenta
+[X_PADDING=12]bude mít. Podpora šaman bere EXP je když príšera umre.
+
+[X_PADDING=12]5. Šaman zacíná ze základní výbavou ,vy si budete moci vybrat
+[X_PADDING=12]jak bude vypadat on/ona pri otevrení obchodu v panelu.
+
+[X_PADDING=12]6. Je nemožné vyvolat oba šamany najednou, a je nemožé je vyvolat pri Cechovních Válkách
+
+[X_PADDING=12]7. Mužete zmenit jméno svého šamana pomocí predmetu Kouzla Jména.
+
+[X_PADDING=12]8. Mužete zmenit pohlaví svého šamana použitím predmetu Svitku Premeny.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Odemkni Lécení						  Odemkni Drací Sílu						 Kouzlo Jména					  Svitek Premeny.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

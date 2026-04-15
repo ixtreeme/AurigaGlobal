@@ -1,0 +1,37 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/orcmaze.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 35.
+[X_PADDING=12]*Nivel maximo: 60.
+[X_PADDING=12]*Ticket: Entrada de los orcos.
+[X_PADDING=12]*Type: Solo y en grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89106.tga; Y=15; X=478]
+[X_PADDING=459]Entrada de los orcos
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 30 minutos.
+[X_PADDING=12]*Enfriamiento: 40 minutos.
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra los animales.
+[X_PADDING=12]*Elemento de monstruos: Tierra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata a los orcos para soltar la llave del orco verde.
+[X_PADDING=20]2. Inserta la llave Green Orc en el sello que se encuentra al final del puente.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Destruye todo el Metin de la Sombra
+[X_PADDING=20]2. Mata al Orco Jefe.
+[X_PADDING=20]3. Arrastra la llave Black Orc sobre el sello para desbloquear el tercer puente.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Destruye todos los Metin of Shadow para poder hacer daño al jefe.
+[X_PADDING=20]2. Mata al Jefe Orco Renacido.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=390; CENTER_ALIGN]

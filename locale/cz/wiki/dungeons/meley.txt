@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 75.
+[X_PADDING=12]*Maximální level: 120.
+[X_PADDING=12]*Typ: Cechovní.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 1 hodina.
+[X_PADDING=12]*Cooldown: 3 hodiny.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Síla proti ohni
+[X_PADDING=12]*Element príšer: Ohen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ FÁZE
+[X_PADDING=20]Jako první cíl budete muset zpusobit poškození sochám v místnosti, dokud nedosáhnou 75% svých HP. 
+[X_PADDING=20]Behem této fáze se budou objevovat monstra, která musíte zabít.
+[X_PADDING=20]Když se socha dostane na 25% HP, zmení barvu a již ji nelze poškodit.
+[X_PADDING=20]Až všechny sochy zmení barvu, zacne fáze 2. 
+[X_PADDING=20]Behem tohoto prechodu monstra v místnosti zmizí a vy nebudete moci poškozovat sochy.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÁ FÁZE
+[X_PADDING=20]V této fázi budete muset znovu poškodit sochy, dokud nedosáhnou 50% svého HP.
+[X_PADDING=20]Tentokrát se objeví velká skupina monster, které vám budou bránit v nicení vajícek.
+[X_PADDING=20]Vejce zarucují sochám odolnost proti poškození, proto lze pocet hp soch snížit, pokud nejsou prítomna žádná vejce. 
+[X_PADDING=20]Jakmile sochy dosáhnou 50% HP, stanou se opet neznicitelnými. 
+[X_PADDING=20]Až všechny sochy znovu zmení barvu, prejdete do fáze 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ FÁZE
+[X_PADDING=20]V této fázi budete stále muset nicit sochy, dokud jejich HP nebude na nule. Objeví se stejná vejce z predchozí fáze, 
+[X_PADDING=20]ješte vetší pocet mobu a ctyri Dragon Watcher Idalls . Tyto monstra musí být zabita pred
+[X_PADDING=20]koncem této fáze, jinak nebude možné dungeon ukoncit. Stejne jako v predchozí fázi, pokud jsou v místnosti vejce, 
+[X_PADDING=20]sochy nelze poškodit. Když sochy dosáhnou 0% HP, zbarví se do modra. V tomto okamžiku budete muset znicit
+[X_PADDING=20]sochy pretažením prstenu, který padá z monster.
+[X_PADDING=20]Každý hrác muže znicit pouze jednu sochu. Jakmile pretáhnete prsten, socha se zmení na zelenou.
+[X_PADDING=20]Tretí fáze skoncí, když všechny sochy zmení barvu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÁ FÁZE
+[X_PADDING=20]Jak každá fáze koncí, Sochy zaútocí na Meleyho, až tretí fáze skoncí sochy zpusobí poslední ránu a Meley
+[X_PADDING=20]utece. Nyní budete moci získat svou odmenu interakcí se Zlatou drací truhlou.
+[X_PADDING=20]Po dokoncení tohoto dungeonu si každý úcastník muže vybrat jednu ze 2 truhel: Truhla královny Meley a Truhla strážce draka
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRÍPADY BANKRUPTCY
+[X_PADDING=20]Maximální doba dokoncení je 1 hodina. Krome tohoto omezení muže skupina selhat v prípade, že: non
+[X_PADDING=20]drací strážci nebyli zabiti do konce fáze 3. vejce se respawnovala, než pretáhla
+[X_PADDING=20]všechny prsteny na sochy.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ODMENA
+[X_PADDING=20]Všichni úcastníci obdrží v prípade úspechu odmenu. Hráci si budou moci vybrat mezi 2 truhlami:
+[X_PADDING=20]Truhla královny Meley a truhla Dragon Guardian.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

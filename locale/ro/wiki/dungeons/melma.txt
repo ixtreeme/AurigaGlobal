@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 45.
+[X_PADDING=12]*Nivel maxim: 65.
+[X_PADDING=12]*Permis: Piatrã Slime.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=470]Piatrã Slime
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 40 de minute.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Vampirilor.
+[X_PADDING=12]*Elementul monºtrilor: Pãmânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. Distruge Metinul Nãmolului.
+[X_PADDING=20]2. Omoarã 103 monºtri.
+[X_PADDING=20]3. Dã click pe Cremene.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 2-A ETAPA
+[X_PADDING=20]1. Distruge cele 4 Metine Nãmol pentru a dropa o Fiolã goalã.
+[X_PADDING=20]2. Acum va trebui sã pui Fiola goalã pe Nãmol pentru a primi Fiolã cu nãmol.
+[X_PADDING=20]3. Pune Fiola cu nãmol pe Cremene.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 3-A ETAPA
+[X_PADDING=20]1. Omoarã 103 monºtri.
+[X_PADDING=20]2. Omoarã Regina nãmolului.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]El sistema shamy de apoyo es un sistema que puede brindarte la oportunidad de convocar a un chamán, que automáticamente otorga un beneficio.
+[CENTER_ALIGN]a tu pj.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]1.El icono del panel de soporte falso se encuentra junto al inventario o puede abrir el panel
+[X_PADDING=12]presionando el botón X.
+
+[X_PADDING=12]2.Para desbloquear el panel del apoyo del chamán, necesitará que el elemento Desbloquear sea compatible con fuerza de dragón o Desbloquear sea compatible con Fuerza curativa.
+[X_PADDING=12]Desbloquear soporte Fuerza curativa
+
+[X_PADDING=12]3 Si tienes uno de esos elementos haciendo clic en él con el botón derecho, aparecerá un panel donde preguntarás
+[X_PADDING=12]para insertar un nombre y elegir el sexo de su chamán de apoyo.
+
+[X_PADDING=12]4.El soporte shamy comenzará cada vez desde el nivel 1 y podrá llegar al nivel 120, cuanto más alto sea el nivel, mayor será el porcentaje.
+[X_PADDING=12]incrementará. El chamán de apoyo toma xp solo cuando es evocado y cuando los monstruos mueren.
+
+[X_PADDING=12]5. El chamán comenzará con un equipamiento básico, tendrás la opción de elegir
+[X_PADDING=12]la estética de él / ella abriendo la tienda situada en el panel.
+
+[X_PADDING=12]6. Es imposible convocar el apoyo de 2 chamanes juntos, y es imposible convocarlos en Guerra de gremios
+
+[X_PADDING=12]7. Puedes cambiar el nombre de tu chamán usando el elemento Magia del nombre.
+
+[X_PADDING=12]8. Puedes cambiar el sexo de tu chamán usando el objeto Pergamino de transformación.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Desbloquear fuerza curativa						  Desbloquear fuerza de dragón						 Magia del nombre					  Pergamino de transformación.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

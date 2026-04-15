@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 70.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: Ticket of the Runes.
+[X_PADDING=12]*Type: Solo and Group
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Ticket of the Runes		Zeus Stone
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Time limit 1 hour and 30 minutes
+[X_PADDING=12]*Cooldown: 2 hours (using the Zeus Stone it is possible to reset the cooldown time).
+[X_PADDING=12]*If you join a group everyone must have a ticke
+[X_PADDING=12]*You can access from the map: Special Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Rune Monsters
+[X_PADDING=12]*Element of monsters: Ice - Dark - Fire - Lightning - Earth.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Kill all the monsters to be able to destroy the Metin of Runes.
+[X_PADDING=20]2. Destroy all Metin of Runes in the correct order.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Kill all the monsters and destroy all the Metin of Runes to make Haru appear. When the boss appears,
+[X_PADDING=20]only the party leader can damage him until the boss reaches 70% of his HP, once he reaches 70% of his HP, 
+[X_PADDING=20]the rest of the group can do damage to the boss.
+
+[X_PADDING=20]* 2. Kill monsters to find 10 Rune Soul,the Rune Souls will go directly to the party leader's inventory.
+[X_PADDING=20]Once you have found the 10 Rune Souls, just click on one of them to make them appear in the inventory
+[X_PADDING=20]of the group leader the Key of the Stone. Click on the Key to the Stone to proceed to the next phase.
+
+[X_PADDING=20]* 3. When Haru has 60% of his HP it will no longer be possible to damage him, destroy the Metin of the Runes
+[X_PADDING=20]in order to do damage to the boss. When Buncho drops to 20% of his HP it will no longer be possible to damage him,
+[X_PADDING=20]kill 100 monsters to be able to do damage to the boss. (Attention Haru when his HP reaches 20% its damage doubles)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD FLOOR (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Kill all the monsters and destroy all the Metin of Runes to make Buncho appear. When the boss appears,
+[X_PADDING=20]only the party leader can damage him until the boss reaches 70% of his HP, once he reaches 70% of his HP
+[X_PADDING=20]the rest of the group can do damage to the boss.
+
+[X_PADDING=20]* 2. Kill monsters to find 10 Rune Soul,the Rune Souls will go directly to the party leader's inventory.
+[X_PADDING=20]Once you have found the 10 Rune Souls, just click on one of them to make them appear in the inventory
+[X_PADDING=20]of the group leader the Key of the Stone. Click on the Key to the Stone to proceed to the next phase.
+
+[X_PADDING=20]* 3. When Buncho has 60% of his HP it will no longer be possible to damage him, destroy the Metin of the Runes
+[X_PADDING=20]in order to do damage to the boss. When Buncho drops to 20% of his HP it will no longer be possible to damage him,
+[X_PADDING=20]kill 100 monsters to be able to do damage to the boss. (Attention Buncho when his HP reaches 20% its damage doubles)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH FLOOR (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Kill all the monsters and destroy all the Metin of Runes to make Eien appear. When the boss appears,
+[X_PADDING=20]only the party leader can damage him until the boss reaches 70% of his HP, once he reaches 70% of his HP
+[X_PADDING=20]the rest of the group can do damage to the boss.
+              
+[X_PADDING=20]* 2. Kill monsters to find 10 Rune Soul,the Rune Souls will go directly to the party leader's inventory.
+[X_PADDING=20]Once you have found the 10 Rune Souls, just click on one of them to make them appear in the inventory
+[X_PADDING=20]of the group leader the Key of the Stone. Click on the Key to the Stone to proceed to the next phase.
+              
+[X_PADDING=20]* 3. When Eien has 60% of his HP it will no longer be possible to damage him, destroy the Metin of the Runes
+[X_PADDING=20]in order to do damage to the boss. When Buncho drops to 20% of his HP it will no longer be possible to damage him,
+[X_PADDING=20]kill 100 monsters to be able to do damage to the boss. (Attention Eien when his HP reaches 20% its damage doubles)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIFTH FLOOR
+[X_PADDING=20]1. Destroy all the Metin of Runes in order to do damage to Haru.
+[X_PADDING=20]2. Kill Haru.
+[X_PADDING=20]3. Kill monsters to be able to find the Key to the Stone.
+[X_PADDING=20]4. Destroy the Rune Stone by dragging the Key to the Stones over it to do damage to Buncho.
+[X_PADDING=20]5. Kill Buncho.
+[X_PADDING=20]6. Attack the boss Eien, but be careful when his life is at 50% he will not take more damage.
+[X_PADDING=20]7. In order to continue doing damage to the boss Eien, kill the monsters first.
+[X_PADDING=20]8. Attack the boss Eien, but be careful when his life is at 10% he will not take more damage.
+[X_PADDING=20]9. In order to continue dealing damage to boss Eien, destroy the Metin of Runes.
+[X_PADDING=20]10. Kill Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

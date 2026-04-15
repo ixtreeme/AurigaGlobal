@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NEGOZIO ALCHIMIA
+
+[X_PADDING=12]1. Você pode comprar Cor Draconis (Antigo) na loja de alquimia localizada no painel de alquimia com as lascas de pedra
+[X_PADDING=12]de Dragão.
+[X_PADDING=12]2. Você pode comprar Elixir do Tempo na Loja de Alquimia localizada no Painel de Alquimia com Lascas de Pedra
+[X_PADDING=12]de Dragão.
+[X_PADDING=12]3. Você pode comprar o feijão verde, azul e rosa na loja de alquimia localizada no painel de alquimia
+[X_PADDING=12]com Pedra Lasca d. Dragão.
+[X_PADDING=12]4. Você pode comprar Pinças do Dragão na Loja de Alquimia localizada no Painel de Alquimia com Lascas de Pedra
+[X_PADDING=12]de Dragão.
+[X_PADDING=12]5. Você pode comprar mudança de bônus alquimia na loja de alquimia localizada no painel alquimia com Cor Draconis
+[X_PADDING=12](Antigo), ou dropar nas masmorras e calabouços.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASSE
+
+[X_PADDING=12]1. No Auriga existem apenas 3 classes. Antigo, Lendário e Mítico.
+[X_PADDING=12]2. Para melhorar a classe de uma pedra, 2 pedras do mesmo tipo e classe são necessárias.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRAU DE CLAREZA
+
+[X_PADDING=12]1. Existem 5 graus de clareza: Impecável, Translúcida, Límpida, Brilhante e Excelente.
+[X_PADDING=12]2. Para melhorar o grau de clareza de uma pedra, são necessárias duas pedras do mesmo tipo e mesmo grau de
+[X_PADDING=12]clareza.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LEVEL
+
+[X_PADDING=12]1. As Pedras do Dragão podem ser aprimoradas até +6.
+[X_PADDING=12]2. As Pedras do Dragão podem ser aprimorada com feijão verde, azul ou rosa.
+[X_PADDING=12]3. A diferença entre os vários grãos é a porcentagem do up, o grão verde tem a menor porcentagem enquanto o
+[X_PADDING=12]rosa mais alto.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DURAÇÃO DA PEDRA DE DRAGÃO
+
+[X_PADDING=12]1. Cada pedra do dragão tem uma duração máxima de 24 horas.
+[X_PADDING=12]2. Quando o tempo da pedra do dragão expira, a pedra não desaparece.
+[X_PADDING=12]3. É possível comprar Elixir do tempo para recarregar a pedra na loja de alquimia.
+[X_PADDING=12]4. É possível remover uma pedra do dragão da alquimia usando a pinça do dragão, a pedra é sempre removida com
+[X_PADDING=12]100% de sucesso.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OS BÔNUS DAS PEDRAS 
+
+[X_PADDING=12]1. As Pedras do Dragão Antigas e Lendárias sempre têm 2 bônus fixos básicos.
+[X_PADDING=12]2. As pedras do dragão míticas sempre têm 3 bônus fixos básicos.
+[X_PADDING=12]3. É possível alterar os bônus de uma pedra do dragão apenas quando ela for da classe Mítica e de grau Excelente.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OS VÁRIOS BÔNUS QUE PODEM SAIR NAS PEDRAS DE DRAGÃO
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Os bônus indicados referem-se a Alquimia Mítica, Excelente +6)
+
+
+[X_PADDING=52]DIAMANTE DO DRAGÃO:
+[X_PADDING=60]- Inteligência +16
+[X_PADDING=60]- Resistência a gelo 20%
+[X_PADDING=60]- Força do gelo 20%
+[X_PADDING=60]- Forte contra sura 24%
+[X_PADDING=60]- Chance de defesa contra sura 24%
+[X_PADDING=60]- HP máx. +32%
+[X_PADDING=60]- Regeneração de SP 16%
+[X_PADDING=60]- Valor de ataque mágico +24
+[X_PADDING=60]- Defesa mágica +24
+
+
+[X_PADDING=52]RUBI DO DRAGÃO:
+[X_PADDING=60]- Força +16
+[X_PADDING=60]- Resistência fogo 20%
+[X_PADDING=60]- Força do fogo 20%
+[X_PADDING=60]- Forte contra guerreiro 24%
+[X_PADDING=60]- Chance de defesa contra guerreiro 24%
+[X_PADDING=60]- Chance de dropar Gold 26%
+[X_PADDING=60]- Regeneração de HP +16%
+[X_PADDING=60]- Resistência a dano médio 24%
+[X_PADDING=60]- Defesa +320
+
+
+[X_PADDING=52]JADE DO DRAGÃO:
+[X_PADDING=60]- SP +1000
+[X_PADDING=60]- Resistência vento 20%
+[X_PADDING=60]- Força do vento 20%
+[X_PADDING=60]- Resistência Monstros 20%
+[X_PADDING=60]- Dano de habilidade 24%
+[X_PADDING=60]- Resistência contra dano de habilidade 24%
+[X_PADDING=60]- Valore d'attacco +480
+[X_PADDING=60]- Forte contro mostri 20%
+[X_PADDING=60]- Chance de dropar dobro de objetos 20%
+
+
+[X_PADDING=52]SAFIRA DO DRAGÃO:
+[X_PADDING=60]- Destreza +16
+[X_PADDING=60]- Resistência terra 20%
+[X_PADDING=60]- Força da terra 20%
+[X_PADDING=60]- Forte contra ninja 24%
+[X_PADDING=60]- Chance de defesa contra ninja 24%
+[X_PADDING=60]- Forte contra Metin 20%
+[X_PADDING=60]- SP max. +32%
+[X_PADDING=60]- Regeneração de HP 16%
+[X_PADDING=60]- Regeneração de SP 16%
+
+
+[X_PADDING=52]GRANADA DO DRAGÃO:
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Resistência relâmpago 20%
+[X_PADDING=60]- Força do raio 20%
+[X_PADDING=60]- Forte contra xamã 24%
+[X_PADDING=60]- Chance de defesa contra xamã 24%
+[X_PADDING=60]- Forte contra Boss 20%
+[X_PADDING=60]- Máx. HP +4800
+[X_PADDING=60]- Chance de bônus EXP 26%
+[X_PADDING=60]- Dano médio 24%
+
+
+[X_PADDING=52]ÔNIX DO DRAGÃO:
+[X_PADDING=60]- Vitalidade +16
+[X_PADDING=60]- Resistência contra escuridão 20%
+[X_PADDING=60]- Força da escuridão 20%
+[X_PADDING=60]- Chance de evitar flechas 16%
+[X_PADDING=60]- Resistência contra golpes perfurantes 16%
+[X_PADDING=60]- Resistência contra golpes críticos +16%
+[X_PADDING=60]- Refletir ataques físicos 16%
+[X_PADDING=60]- Chance de bloquear ataques físicos 16%
+[X_PADDING=60]- Máx. SP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BÔNUS CONJUNTO ALQUÍMICO COMPLETO
+
+[X_PADDING=12]1. Completar toda a roda alquímica com pedras +6 ativa automaticamente o bônus do conjunto alquímico.
+[X_PADDING=12]2. Canto superior esquerdo quando o ícone de bônus do conjunto alquímico estiver vermelho o bônus do conjunto não está ativo.
+[X_PADDING=12]2. Canto superior esquerdo quando o ícone de bônus do conjunto alquímico estiver verde o bônus do conjunto está ativo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BÔNUS FORNECIDOS:
+
+[X_PADDING=12]1. Forte contra Metin +10%
+[X_PADDING=12]2. Forte contra Monstros +10%
+[X_PADDING=12]3. Máx. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

@@ -1,0 +1,39 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ANFORDERUNGEN:
+[X_PADDING=12]*Minimum level: 45.
+[X_PADDING=12]*Maximum level: 65.
+[X_PADDING=12]*Ticket: Stück von Menhir Schleim.
+[X_PADDING=12]*Type: Einzeln und Gruppe
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Stück von Menhir Schleim.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit: 30 Minuten.
+[X_PADDING=12]*Wartezeit: 40 Minuten.
+[X_PADDING=12]*In Einer Gruppe muss jeder ein Ticket haben.
+[X_PADDING=12]*Du kannst darauf zugreifen von: Dungeon Lobby.
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Tiere
+[X_PADDING=12]*Element der Monster: Erde
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄREND DEM DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE PHASE
+[X_PADDING=20]1. Zerstöre den Schleim Metin.
+[X_PADDING=20]2. Töte 103 Monster.
+[X_PADDING=20]3. Klicke auf den Schleimstein.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE PHASE
+[X_PADDING=20]1. Zerstöre 4 Metin Steine und erhalte das leere Schleimgefäß.
+[X_PADDING=20]2. Zieh das Leere Schleimgefäß auf den Schleim um welchen zu erhalten.
+[X_PADDING=20]3. Zieh das Volle Schleimgefäß auf den Siegelstein.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE PHASE
+[X_PADDING=20]1. Töte 103 Monster.
+[X_PADDING=20]2. Töte Schleim Queen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]
+

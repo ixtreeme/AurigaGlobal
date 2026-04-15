@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Guía para principiantes.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]INICIO:
+[X_PADDING=12]Sube de nivel en el Mapa1 hasta al menos nivel 25–30. Mientras tanto, rompe Piedras Metin para conseguir Pergaminos de Bendición y materiales de mejora.
+[X_PADDING=20]¡No te olvides de los Capitanes Brutales! — ellos pueden soltar armas de nivel 30.
+[X_PADDING=20]A nivel 26, vale la pena comprar una armadura de nivel 26 y un casco de nivel 21 del NPC, que puedes subir fácilmente a +9.
+
+[X_PADDING=12;COLOR=ffff00]NIVEL 30:
+[X_PADDING=12]Ve al Mapa2 para seguir subiendo de nivel y farmeando. Si tienes buen equipo (armadura, casco y arma de nivel 30), no tendrás problemas con las Metins de nivel 45.
+[X_PADDING=20]Mientras farmeas, ¡no te olvides de las mazmorras! Usa el tiempo permitido y complétalas
+[X_PADDING=20]para conseguir monturas, mascotas y más objetos valiosos.
+[X_PADDING=20]De las Metins Orcas necesitarás una armadura de nivel 42 y un escudo de nivel 41 para sobrevivir en el siguiente mapa.
+
+[X_PADDING=12;COLOR=ffff00]NIVEL 50:
+[X_PADDING=20]Cuando llegues aquí, deberías tener al menos una mascota y 6 monturas en tu inventario de monturas — cada mazmorra da 2.
+[X_PADDING=20]Sube hasta el nivel 65 y no olvides al Jefe Abierto — ¡puedes conseguir Añadidores Legendarios muy valiosos!
+[X_PADDING=20]Necesitarás un arma de nivel 65. Si la subes a +9, te dará +55% de daño contra diabólicos.
+[X_PADDING=20]También puedes conseguir una armadura de nivel 65 del Jefe Abierto — esencial para el siguiente mapa.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Reglas del Juego!!
+
+[FONT_SIZE=18;COLOR=00ff00] Reglas de chat y comportamiento
+[X_PADDING=12]¡PROHIBIDO acosar, amenazar o insultar a otros jugadores!
+[X_PADDING=12]¡PROHIBIDO provocar con temas políticos o religiosos en el chat global!
+[X_PADDING=12]¡PROHIBIDO hacer spam en el chat, incluyendo mensajes repetidos o publicidad!
+
+[FONT_SIZE=18;COLOR=00ff00] Seguridad de cuentas y datos
+[X_PADDING=12]¡TÚ eres responsable de la seguridad de tu cuenta! ¡No compartas tus datos de acceso!
+[X_PADDING=12]El equipo NUNCA pedirá tu contraseña — si alguien lo hace, repórtalo inmediatamente.
+[X_PADDING=12]Está PROHIBIDO ingresar en la cuenta de otro jugador, incluso si te da los datos.
+
+[FONT_SIZE=18;COLOR=00ff00] Staff y soporte
+[X_PADDING=12]¡PROHIBIDO molestar a los GMs o llamarlos sin razón! Usa el sistema de tickets o el foro.
+[X_PADDING=12]Las decisiones de los GMs son finales. Si hay conflictos, puedes pedir una revisión educadamente.
+
+[FONT_SIZE=18;COLOR=00ff00] Explotación y juego limpio
+[X_PADDING=12]¡PROHIBIDO usar programas o herramientas que den ventaja (bot, speedhack, zoomhack, etc.)!
+[X_PADDING=12]¡PROHIBIDO aprovechar errores o inactividad de otros jugadores (comercio, PvP, etc.)!
+[X_PADDING=12]¡PROHIBIDO manipular a propósito sistemas de PvP, eventos o mapas!
+
+[FONT_SIZE=18;COLOR=00ff00] Comercio, tiendas y hacks
+[X_PADDING=12]¡PROHIBIDO el comercio entre servidores!
+[X_PADDING=12]¡PROHIBIDO poner información falsa en las tiendas (ej. 1 yang = 1kk)!
+[X_PADDING=12]¡TODO uso de hacks, incluyendo macros, está ESTRICTAMENTE PROHIBIDO!
+[X_PADDING=12]¡PROHIBIDO vender o comerciar objetos o cuentas por dinero real!
+[X_PADDING=12]¡PROHIBIDO estafar o sacar ventaja injusta en el comercio!
+
+[FONT_SIZE=18;COLOR=00ff00] Errores y reportes
+[X_PADDING=12]Si encuentras un bug, estás OBLIGADO a reportarlo — ¡su uso está ESTRICTAMENTE PROHIBIDO!
+[X_PADDING=12]Aprovechar errores compromete la seguridad del servidor y tendrá consecuencias severas.
+
+[FONT_SIZE=18;COLOR=00ff00] Prohibiciones generales
+[X_PADDING=12]¡PROHIBIDO el lenguaje ofensivo, odio o racismo — todos somos humanos!
+[X_PADDING=12]¡NINGUNA otra persona puede usar tu cuenta — ni siquiera tus amigos!
+[X_PADDING=12]¡PROHIBIDO promocionar o enlazar otros servidores!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]¡VIOLAR ESTAS REGLAS PUEDE RESULTAR EN UN BANEADO PERMANENTE POR HARDWARE!
+[X_PADDING=12]

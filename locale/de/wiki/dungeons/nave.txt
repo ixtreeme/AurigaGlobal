@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 105.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: White Sail.
+[X_PADDING=12]*Type: Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]White Sail
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIOENEN:
+[X_PADDING=12]*Zeitlimit 30 minuten.
+[X_PADDING=12]*Abklingzeit: 1 Stunde und 30 Minuten
+[X_PADDING=12]*Sie können über die Karte zugreifen: Spezieller Lobby-Dungeon.
+[X_PADDING=12]*Empfohlener Bonus: Eiskraft.
+[X_PADDING=12]*Element der Monster: Eis.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE PHASE
+[X_PADDING=20]1. Der Gruppenleiter muss auf das Ruder klicken, um den Dungeon zu starten.
+[X_PADDING=20]2. Verteidige den Mast des Schiffes um 02:30.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE PHASE
+[X_PADDING=20]1. Töte die Sirenenkönigin.
+[X_PADDING=20]2. Töte die erste Hydra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE PHASE
+[X_PADDING=20]1. Verteidige den Mast des Schiffes für 01:30.
+[X_PADDING=20]2. Töte die zweite Hydra.
+[X_PADDING=20]3. Repariere den Mast des Schiffes, indem du auf Repair Woods klickst.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE PHASE
+[X_PADDING=20]1. Verteidige den Mast des Schiffes für 01:30
+[X_PADDING=20]2. Zerstöre die Hydra-Eier, um der Hydra Schaden zuzufügen.
+[X_PADDING=20]3. Töte die letzte Hydra.
+[X_PADDING=20]4. Zerstöre den Hydra-Schatz, um die Belohnung zu erhalten.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

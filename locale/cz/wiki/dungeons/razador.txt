@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 85.
+[X_PADDING=12]*Maximální level: 100.
+[X_PADDING=12]*Propustka: Razadorova propustka
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Razadorova propustka
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 50 minut.
+[X_PADDING=12]*Cooldown: 1 hodina.
+[X_PADDING=12]*Každý ve skupine musí mít propustku.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Síla proti ohni.
+[X_PADDING=12]*Element príšer: Ohen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Promluv si s Maw of Am-heh Gorge pro odemcení prvního mostu. Po dokoncení mostu si znovu promluvte s Am-heh a nový most se odemkne.
+[X_PADDING=20]Znovu a nový most se odemkne.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]MÓD DUNGEONU:
+[X_PADDING=20]1. Najdi správné Zlaté ozubené kolo pro znicení náhrobku Isfet.
+[X_PADDING=20]2. Zabíj Ignatora.
+[X_PADDING=20]3. Zabíj všechny monstra.
+[X_PADDING=20]4. Najdi a znic Metiny Maat pro znicení náhrobku  Isfet.
+[X_PADDING=20]5. Znic Metin ohne ocistce.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO
+[X_PADDING=20]1. Zabíj Razadora.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

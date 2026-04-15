@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talism. Fuoco								 Talism. Ghiaccio								Talismano Terra
+
+
+
+
+
+
+[X_PADDING=81]Talism. Oscurità								  Talism. Vento								   Talism. Lampo
+
+[CENTER_ALIGN]I talismani sono item che forniscono nuovi bonus al personaggio, possono essere uppati massimo fino a +30.
+[CENTER_ALIGN]Sarà possibile acquistare un talismano+0 dall'NPC Yonah.
+
+[X_PADDING=12]Nei talismani sarà possibile inserire un massimo di 5 bonus:
+[X_PADDING=20]1. Dal primo al quarto bonus c'è bisongo dell'item Rinforza Talismani.
+[X_PADDING=20]2. Per inserire il quinto bonus c'è bisogno dell'item Rafforza Talismani.
+[X_PADDING=20]3. Per cambiare i bonus ad un talismano c'è bisogno dell'item Incanta Talismani.
+
+[X_PADDING=12]Bonus che possono uscire su un talismano:
+[X_PADDING=20]- Interruzione Difesa Spada 5%
+[X_PADDING=20]- Interruzione Difesa Spadone 5%
+[X_PADDING=20]- Interruzione Difesa Pugnale 5%
+[X_PADDING=20]- Interruzione Difesa Freccia 5%
+[X_PADDING=20]- Interruzione Difesa Ventagli 5%
+[X_PADDING=20]- Interruzione Difesa Campana 5%
+[X_PADDING=20]- Resistenza Mezziuomini 10%
+[X_PADDING=20]- Forte contro Mezziuomini 10%
+[X_PADDING=20]- Forte contro Mostri 15%
+[X_PADDING=20]- Forte contro Metin 15%
+[X_PADDING=20]- Forte contro Boss 15%
+[X_PADDING=20]- Resistenza Oscurità 15%
+[X_PADDING=20]- Resistenza Terra 15%
+[X_PADDING=20]- Resistenza Ghiaccio 15%
+[X_PADDING=20]- Resistenza Fuoco 15%
+[X_PADDING=20]- Resistenza Vento 15%
+[X_PADDING=20]- Resistenza Lampo 15%
+[X_PADDING=20]- Forte contro Mostri delle Rune 20% 
+
+[X_PADDING=12]E' possibile uppare i talismani fino a +10 droppando item nei dungeon iniziali, da +11 a +30 bisogna droppare il Baule
+[X_PADDING=12]Elementale dove al suo interno usciranno item necessari per l'upp del talismani.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Rinforza Talism.								 Incanta Talism.								Rafforza Talism.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

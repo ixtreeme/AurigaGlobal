@@ -1,0 +1,1568 @@
+1	Musisz miec dostepnych co najmniej %s punktów statusu.
+2	Otrzymales %s punktów doswiadczenia.
+3	Otrzymales %s Yang.
+4	Otrzymales %s Gaya.
+5	Nie masz zadnych uchwytów.
+6	Ukonczyles juz te Przepustke Bojowa.
+7	Prosimy o kontakt z pracownikiem z bledem: errBattlePass01.
+8	Masz juz aktywna Przepustke Bitewna.
+9	Nie mozesz tego uzyc na %s, to jest tylko dla zodiakalnych przedmiotów.
+10	Nie mozesz tego uzyc na %s, to jest tylko dla normalnych przedmiotów.
+11	Podglad pojedynku jest juz zablokowany.
+12	Podglad sprzetu do pojedynków zostal zablokowany.
+13	Podglad wyposazenia do pojedynków jest juz odblokowany.
+14	Podglad wyposazenia do pojedynków zostal odblokowany.
+15	Zmieniles swój kolor umiejetnosci.
+16	Nie masz zadnych dostepnych zmian.
+17	%s wyzwalo cie na pojedynek!
+18	Kostium stuly moze byc wykonany tylko z innym kostiumem stuly.
+19	Stula moze byc laczona tylko z inna stula.
+20	%s nie mozna juz poprawic.
+21	Bonusy %s zostaly zmienione.
+22	%s moze byc wykorzystane tylko na kostiumy stolów.
+23	<Pomoc systemowa> Nie masz wystarczajaco duzo wolnego miejsca w ekwipunku.
+24	<Wsparcie systemu> Nie mozesz tego zrobic podczas handlu!
+25	<System wsparcia> Otrzymales wsparcie!
+26	<Wsparcie systemu> Blad w ustawianiu wartosci.
+27	Efekt %s wygasl.
+28	Efekt %s zostal dezaktywowany.
+29	Efekt %s zostal aktywowany.
+30	<Susanoo System> %s nie ma mocy, by zostac aktywowany.
+31	<Susanoo System> %s zostal aktywowany.
+32	<Susanoo System> %s zostal dezaktywowany.
+33	<Susanoo System> Moc %s jest juz maksymalna.
+34	<Susanoo System> Moc %s zostala zwiekszona o %s%.
+35	<Susanoo System> Slot %s nie jest pusty.
+36	<Anti Farm> Status zrzutu mozna zmienic tylko z poziomu Villo.
+37	<Anti Farm> Nie masz zadnych wolnych slotów na zrzuty, aby aktywowac zrzut na tym koncie.
+38	<Anti Farm> Zrzut na tym koncie jest juz aktywny.
+39	<Anti Farm> Zrzut na tym koncie jest juz dezaktywowany.
+40	<Anti Farm> Zrzut na tym koncie zostal aktywowany.
+41	<Anti Farm> Zrzut na tym koncie zostal dezaktywowany.
+42	<Anti Farm> Zadanie zostalo wykonane.
+43	<Anti Farm> Zadanie zostanie wykonane w ciagu %s sekund.
+44	<Anti Farm> Jest juz uruchomione zadanie. Prosze czekac!
+45	Aby otworzyc ten sklep, potrzebujesz wiazki kaszmiru.
+46	Wybrany styl tytulu jest nieprawidlowy.
+47	Zniszczyles %s.
+48	Nie mozesz uzywac teleportu w lochu.
+49	Nie mozesz uzyc punktu zapisu w lochu.
+50	Ta nazwa jest juz uzywana, wybierz inna!
+51	Musisz poczekac jeszcze %s godzin i %s minut, aby nauczyc sie tej umiejetnosci.
+52	Szkolenie nie powiodlo sie.
+53	Aby ulepszyc umiejetnosc zwierzaka, musisz najpierw nadac mu imie.
+54	Twój zwierzak nie nauczyl sie jeszcze tej umiejetnosci.
+55	Nie mozesz pozwolic, aby Twoje zwierze nauczylo sie tej samej umiejetnosci dwa razy.
+56	Umiejetnosc Twojego zwierzaka osiagnela poziom: %s.
+57	Twoje zwierze nauczylo sie nowej umiejetnosci.
+58	Ta umiejetnosc osiagnela juz maksymalny poziom.
+59	Twój zwierzak musi miec pelne doswiadczenie, aby ewoluowac.
+60	Potrzebujesz %s %s, aby kontynuowac.
+61	Ulepszenie premii Peta zakonczylo sie sukcesem.
+62	Ulepszenie premii dla zwierzat domowych nie powiodlo sie.
+63	Bonus tego zwierzaka nie moze byc juz ulepszony.
+64	Musisz najpierw przywolac zwierzaka przynajmniej raz!
+65	Wydluzyles czas dzialania swojego zwierzaka.
+66	Mozesz go uzywac tylko na zwierzetach domowych.
+67	Odprowadz zwierze, zanim je nakarmisz.
+68	Twój zwierzak moze miec do 1 roku zycia, chyba ze uzyjesz Boskiego Usta (perma).
+69	Twoje zwierze ma juz nieskonczona dlugosc zycia.
+70	Mozesz usuwac bonusy tylko ze stolika.
+71	Ta kradziez nie ma zadnych bonusów do usuniecia.
+72	Bonusy z twojej kradziezy zostaja usuniete.
+73	Mozesz zmienic tylko bonusy smoczego kamienia.
+74	Zmieniles bonusy za smoczy kamien!
+75	Mozesz zmienic bonusy tylko na wysublimowanych mitycznych kamieniach.
+76	Musisz dezaktywowac alchemie, zanim bedziesz mógl to zrobic.
+77	Exp zostal zablokowany.
+78	Exp zostal odblokowany.
+79	<Gira Bonus> Najpierw nalezy dodac kostium, z którego beda pobierane bonusy.
+80	<Przelew Bonusowy> Okno Przelew Bonusowy jest juz otwarte.
+81	<Przeniesienie bonusu> Masz juz otwarte okno z innego systemu. Zamknij ten i otwórz go ponownie.
+82	<Przelew Bonusowy> Okno Przelew Bonusowy nie jest otwarte.
+83	<Wplata bonusowa> Przeciagnij i upusc elementy do okna.
+84	<Przeniesienie bonusów> Bonusy zostaly przeniesione do Kostiumu 1!
+85	<Transfer bonusowy> Aby to zrobic, musisz najpierw umiescic zwój transferowy w jego gniezdzie.
+86	Drugi Kostium musi miec co najmniej jedna premie.
+87	Ten przedmiot posiada juz maksymalna ilosc specjalnych bonusów.
+88	Nie mozesz miec tego samego bonusu specjalnego dwa razy.
+89	Ten przedmiot nie ma specjalnej premii do usuniecia.
+90	Usunales specjalny bonus.
+91	Musisz poczekac jeszcze %s godzin i %s minut.
+92	Musisz miec co najmniej 90 poziom, aby ulepszac umiejetnosci pasywne.
+93	Musisz najpierw nauczyc sie glównej umiejetnosci do maksimum.
+94	zanim bedzie mozna poprawic jego impuls.
+95	%s Blok TEST-SERVER: (%s%)
+96	%s Dodge TEST-SERVER: (%s%)
+97	Mozesz uzyc tego koloru wlosów do tego poziomu: %s
+98	Wylosowane gatunki: %s, %s.
+99	Za %s sekund(y) mozesz ponownie uzyc tego blogoslawienstwa.
+100	Pozostaly czas: %s sekund.
+101	Zostalo Ci %s minut. (Do konca pozostalo %s minut)
+102	Otrzymales|cFF00FF00%s|r |cFFFF0000 x |r %s.
+103	%s sekund do wylogowania.
+104	%s zuzyto %s MP.
+105	Transakcja z %s zakonczyla sie sukcesem.
+106	%s zaprosil cie do swojej grupy.
+107	%s odrzucilo Twoje zaproszenie.
+108	%s jest offline.
+109	%s jest zwyciezca pojedynku!
+110	%s zwyciezylo.
+111	Potrzebujesz: %s.
+112	Nakarmiles konia %s.
+113	%s zostanie teleportowane.
+114	Gildia %s nie istnieje!
+115	Rozpoczela sie walka z %s!
+116	%s zostalo spalone.
+117	Uszlachetniona ruda zniknela z: %s.
+118	Wyzwales %s do walki.
+119	Gildia %s zostala utworzona.
+120	<Gildia> Uzyl %s (MP: %s Wymagane MP: %s) w %s.
+121	<Gildia> Zainwestowales w gildie %s punktów EXP.
+122	<Gildia> Nie udalo Ci sie przekazac EXP.
+123	<Gildia> Przywróciles %s punktów Smoczego Ducha.
+124	<Gildia> %s odrzucono wojne.
+125	<Gildia> Gildia: %s zostala utworzona.
+126	<Gildia> Nie masz wystarczajacej ilosci Yang.
+127	<Gildia> Nie masz pozwolenia na pisanie na tablicy.
+128	<Gildia> Nie moge znalezc tej osoby.
+129	<Gildia> Gildia zostala zmuszona do wycofania sie.
+130	<Gildia> Gildia nie istnieje.
+131	<Gildia> Tylko lider gildii moze wyplacic pieniadze gildii.
+132	<Gildia> Tworzenie gildii nie powiodlo sie.
+133	<Gildia> Nie masz uprawnien do zmiany poziomu umiejetnosci.
+134	<Gildia> Umiejetnosci mozna uzywac tylko podczas wojny.
+135	<Gildia> Nazwa gildii jest nieprawidlowa.
+136	<Gildia> Nie mozna utworzyc gildii.
+137	<Gildia> Musisz poczekac %s godzin zanim bedziesz mógl zgrupowac tego gracza.
+138	<Gildia> Nie nalezy do gildii.
+139	<Gildia> Nie mozesz usunac czlonka gildii.
+140	<Gildia> Nie mozesz zapraszac graczy do dolaczenia do gildii.
+141	<Gildia> Nie mozesz uczynic czlonka gildii liderem gildii.
+142	<Gildia> Nie mozna zmienic rangi czlonków gildii.
+143	<Gildia> Nie mozna zmienic rangi.
+144	<Gildia> Tej umiejetnosci moze uzyc tylko lider gildii.
+145	<Gildia> Liczba czlonków jest mniejsza niz %s, nie mozesz wypowiedziec wojny.
+146	<Gildia> Wojna zostala odwolana.
+147	<Gildia> Podczas wojny nie otrzymujesz zadnych korzysci.
+148	<Gildia> Nie mozesz zapraszac graczy, którzy sa czescia innego królestwa.
+149	<Gildia> Nie mozna juz wyznaczyc lidera.
+150	<Gildia> Nie mozesz wybrac lidera gildii.
+151	<Gildia> Nie masz dosc Yang.
+152	<Gildia> Zwiekszono ilosc punktów do %s.
+153	<Gildia> Wynik %s jest zbyt niski, aby wywolac wojne.
+154	<Gildia> Usunales wiadomosc.
+155	<Gildia> Gracz nie jest na kanale %s (kanal: %s).
+156	<Gildia> jest offline.
+157	<Gildia> Gildia jest juz w stanie wojny.
+158	<Gildia> Zbyt malo czlonków, by wypowiedziec wojne.
+159	<Gildia> Wynik gildii jest zbyt niski, aby wypowiedziec wojne.
+160	<Gildia> Gildia nie ma wystarczajacych funduszy.
+161	<Gildia> Gracz nie moze miec wiecej niz jedna gildie.
+162	<Gildia> Nie masz uprawnien do zapraszania graczy do gildii.
+163	<Gildia> Nie mozesz zaprosic tego gracza.
+164	<Gildia> Nie przywróciles punktów Ducha Smoka.
+165	<Gildia> Nie masz wystarczajacej ilosci punktów Smoczego Ducha (%s, %s).
+166	<Gildia> Dwie gildie nie moga miec tej samej nazwy.
+167	<Gildia> Gildia weszla w stan wojny.
+168	<Gildia> Gildia jest juz w stanie wojny.
+169	<Gildia> Gildia ma zamiar wejsc w stan wojny.
+170	<Gildia> Nieprawidlowa ilosc.
+171	<Gildia> Nazwa rangi zawiera niedozwolone slowa.
+172	<Gildia> Twoja gildia nie ma wystarczajacej ilosci zlota, aby stoczyc wojne gildii.
+173	<Gildia> Przekazane doswiadczenie jest wieksze niz doswiadczenie, które jest jeszcze potrzebne.
+174	<Gildia> Nie mozesz zmienic swojej rangi.
+175	<Gildia> Nie masz uprawnien do zmiany nazwy rangi.
+176	<Gildia> Nie masz uprawnien do zmiany rangi.
+177	<Gildia> Gildia osiagnela swoja maksymalna liczbe czlonków.
+178	<Gildia> Nie mozesz jeszcze uzywac umiejetnosci gildii.
+179	<Gildia> Mozesz stworzyc nowa gildie po %s dniach.
+180	<Gildia> Nadal musisz czekac %s dni na gildie.
+181	<Gildia> Gildia zostala rozwiazana, nie mozesz stworzyc gildii przed uplywem %s dni.
+182	<Messenger> Usunales %s ze swojej listy przyjaciól.
+183	<Messenger> Dodales %s jako znajomego.
+184	<Messenger> Nie mozna dodac GM do listy znajomych.
+185	<Administrator magazynu> Jestes za daleko od obozu.
+186	<Administrator magazynu> Stare haslo jest nieprawidlowe.
+187	<Administrator magazynu> Nie mozna przeniesc tego elementu.
+188	<Administrator magazynu> Nieprawidlowe haslo.
+189	<Administrator magazynu> Po otwarciu sklepu nalezy odczekac 10 sekund.
+190	<Administrator magazynu> Przed ponownym otwarciem magazynu nalezy odczekac 10 sekund.
+191	<Administrator magazynu> Przed ponownym otwarciem magazynu nalezy odczekac 10 sekund.
+192	<Grupa> %s odrzucila zaproszenie.
+193	<Grupa> Dolaczyles do grupy %s.
+194	<Grupa> Maksymalna róznica poziomów dla grupy wynosi 30 poziomów.
+195	<Grupa> Mozesz wyslac zaproszenie jako osoba nieobserwujaca.
+196	<Grupa> Nie mozesz zapraszac graczy z innych krain.
+197	<Grupa> Nie mozna wykluczyc siebie z grupy.
+198	<Grupa> Nie mozna pozbawiac sie celu.
+199	<Grupa> Nie mozna zaprosic innych osób.
+200	<Grupa> Nie mozna dolaczyc, jesli lider grupy nie jest online.
+201	<Grupa> Nie mozna dolaczyc do grupy.
+202	<Grupa> Nikt nie moze opuscic grupy na tej mapie.
+203	<Grupa> Nikt nie moze opuscic grupy na tej mapie.
+204	<Grupa> W tym miejscu nie mozna pozostawic grupy.
+205	<Grupa> Nie mozesz usunac czlonka, gdy jestes w lochu.
+206	<Grupa> Moze to zrobic tylko lider grupy.
+207	<Grupa> Lider grupy nie moze zostac zmieniony.
+208	<Grupa> Ze wzgledu na problemy z serwerem, nie mozesz tego zrobic.
+209	<Grupa> Nie znaleziono.
+210	<Grupa> %s opuscila grupe.
+211	<Grupa> Tylko lider grupy moze uzywac umiejetnosci.
+212	<Grupa> Grupa nie moze odpowiedziec.
+213	<Grupa> Grupa zostala rozwiazana.
+214	<Grupa> Nie mozna utworzyc grupy o róznicy wiekszej niz 30 poziomów.
+215	<Grupa> Zostales zaproszony do grupy.
+216	<Grupa> Zostales wyrzucony z grupy.
+217	<Grupa> Nie mozna znalezc zadanego znaku.
+218	<Grupa> Tylko lider moze zapraszac innych czlonków.
+219	<Grupa> Nie mozna nawiazywac polaczen z czlonkami grupy.
+220	<Grupa> Grupa jest pelna.
+221	Nowa runda rozpocznie sie za 10 sekund.
+222	Pojedynek rozpocznie sie za 10 sekund.
+223	Za 10 sekund wrócisz do wioski.
+224	Czas minal, za 10 sekund wrócisz do wioski.
+225	Wybierz liczbe z zakresu od 1 do 50.
+226	Nie mozesz miec wiecej niz %s z Yang.
+227	Informacje o postepie dla kazdego imperium.
+228	Wprowadzono nieprawidlowa wartosc.
+229	Nie mozna dodawac kamieni tego samego typu.
+230	Nie mozesz dodac wiecej kamieni!
+231	Twój poziom umiejetnosci jest zbyt niski.
+232	Nie masz wystarczajaco duzo Yang.
+233	Nie masz potrzebnych przedmiotów.
+234	Musisz poczekac %s sekund.
+235	Nie mozesz wstac.
+236	Otworzyles sklep i nie mozesz otworzyc kolejnego.
+237	Nie mozesz otworzyc sklepu, kiedy jestes przemieniony.
+238	Budowa nie powiodla sie.
+239	Budynek nie zostal wybudowany.
+240	Wracasz do okna logowania. Zaczekaj.
+241	Termin platnosci uplywa po %s minutach.
+242	Nie mozesz wziac slubu, jesli nie masz obraczki.
+243	Aktualny procent upuszczonych przedmiotów: %s%.
+244	Biezaca wartosc procentowa spadku Yang: %s%.
+245	Aktualny procent upadku Yang x10: %s%.
+246	Biezaca wartosc procentowa spadku Exp: %s%.
+247	Nie masz wystarczajacej liczby punktów Exp, aby przeczytac ksiazke.
+248	Ryba zniknela w glebokiej wodzie.
+249	Wedka otrzymala maksymalna ilosc punktów: %s.
+250	Maksymalny wynik zostal osiagniety.
+251	Do wydobywania mineralów musisz uzywac kilofa.
+252	Musisz miec kilof.
+253	Twoje punkty wzrosly. (%s/%s)
+254	Nadal nie mozesz studiowac tej ksiazki.
+255	Brales udzial w wizji wojny gildii.
+256	W tym trybie nie mozna korzystac z handlu.
+257	Dodatkowe obrazenia: %s.
+258	Niewystarczajace srodki.
+259	Niewystarczajace srodki. Aktualna kwota: %s potrzebna: %s.
+260	Blogoslawienstwo otrzymane od monarchy.
+261	Nie jestes monarcha.
+262	Moje cialo jest pelne ki.
+263	Szkolenie jest prawie zakonczone.
+264	Tak, bardzo powoli, ale bez zatrzymywania sie.
+265	Te umiejetnosc mozna poprawic tylko do pewnego stopnia.
+266	Brak polecenia.
+267	To nie jest online.
+268	Gildia nie istnieje.
+269	Musisz miec co najmniej %s sily.
+270	Lokalizacja nalezy do innej sfery i nie moze zostac zwrócona.
+271	Nie nalezysz do zadnej gildii.
+272	Jak we snie?
+273	Mozesz przejsc na nastepny poziom kilofa poprzez drwala.
+274	%s nie ma wystarczajacej ilosci Yang.
+275	Nie mozesz sie przeksztalcic.
+276	Informacja o postepie: martwy %s.
+277	Nie mozesz zmienic przynety.
+278	Potrzebujesz tylko jednej wedki.
+279	Wedka osiagnela maksymalny poziom wyszkolenia.
+280	Teraz mozna to poprawic, idz do rybaka.
+281	Wlóz przynete!
+282	Wstawiles %s jako przynete.
+283	Punkty preta zostaly zwiekszone: %s/%s
+284	Ryba nie moze byc uzyta.
+285	Nie masz dostepnych punktów.
+286	Nie masz wystarczajacej ilosci dostepnych punktów.
+287	Nie masz wystarczajacej ilosci SP.
+288	Jestes zbyt blisko.
+289	Jestes za daleko.
+290	Przeczytalem prawie wszystko.
+291	Nie mozesz tego teraz zrobic.
+292	Nie mozesz otworzyc transakcji, poniewaz masz otwarte inne okna.
+293	%s nie moze w tej chwili handlowac.
+294	Nie mozesz otworzyc handlu, poniewaz masz otwarte inne okna.
+295	Ktos inny zalogowal sie na to konto. Zostaniesz wylogowany w ciagu 3 sekund.
+296	Nie mozesz otworzyc sklepu, bo masz otwarte inne okna.
+297	Nie ma juz wiecej slotów na uszlachetnianie w tym elemencie.
+298	Najpierw nalezy dodac slot poprzez Diamond.
+299	Przeciwnik sie rozlaczyl.
+300	Pojedynek nie moze sie rozpoczac.
+301	Pojedynek sie rozpoczal.
+302	Jeden z przeciwników sie rozlaczyl.
+303	Nie mozesz go tu uzywac.
+304	Szkolenie zakonczylo sie sukcesem.
+305	Nie da sie tego poprawic.
+306	Poziom tej umiejetnosci jest zbyt wysoki.
+307	Nie mozesz przeczytac ksiazki.
+308	Nie mozesz dodac wiecej bonusów.
+309	Nie mozesz juz kopac.
+310	%s nie moze byc uzyty wewnatrz lochu.
+311	Nie moze byc zastapiony ta sama fryzura.
+312	Nie mozna uzywac umiejetnosci podczas przemiany.
+313	Nie mozna ulepszac umiejetnosci podczas przemiany.
+314	Nie moze poprawic statusu podczas przemiany.
+315	Nie mozesz zmieniac przedmiotów, gdy jestes przemieniony.
+316	Ukonczyles swój trening. Idz do Sinseon.
+317	Nie mogles sie przeksztalcic.
+318	Czy czujesz sie gotowy? Technologia jest trudna do zrozumienia.
+319	Zaczynam rozumiec instrukcje, które czytam.
+320	Ciezki trening? Jedyny sposób, aby nauczyc sie tej umiejetnosci.
+321	Obiekt pozostawiony na ziemi zniknie w ciagu %s sekund.
+322	Nie mozna ulepszyc combo ponizej poziomu 30.
+323	Nie mozna ulepszyc combo ponizej poziomu 50.
+324	Nie mozna poprawic combo bardziej niz to.
+325	Musisz miec co najmniej poziom %s.
+326	Zmieniasz postac. Zaczekaj.
+327	Wyczysciles swój umysl. Wartosc dobra i zla wzrasta o %s.
+328	Nie wezwales konia.
+329	Kon zmartwychwstal.
+330	Najpierw musisz zejsc z wierzchowca.
+331	Ty odeslales wierzchowca.
+332	Musisz najpierw wywolac mocowanie.
+333	Nie masz konia.
+334	Twój kon jest zbyt zmeczony.
+335	Twój kon nie zyje.
+336	Najpierw musisz zejsc z konia.
+337	Ten przedmiot nie moze byc wyposazony w klejnoty.
+338	Ten element nie moze byc wyposazony.
+339	Musisz najpierw dodac normalna premie %s. (%s/%s)
+340	Kamien zostal dodany.
+341	Kamien jest rozbity.
+342	Wprowadz wszystkie polecenia.
+343	Podpolecenie polecenia jest nieprawidlowe.
+344	Nie mozna tu rozpalic ognia.
+345	Bardzo, bardzo stabilny. Tak jak ten pisarz.
+346	Nie mozna rozpalic ognia w wodzie.
+347	Tworzenie nie powiodlo sie.
+348	Nie ma limitu na mikstury.
+349	Limit mikstur: %s.
+350	Do stworzenia eliksiru potrzebujesz innych materialów.
+351	Zalóz przynete, aby lowic ryby.
+352	Musisz miec co najmniej %s zrecznosci.
+353	Nie mozesz upuscic tego elementu.
+354	Ta pozycja nie ma premii do zmiany.
+355	Nie mozesz jezdzic, gdy jestes przemieniony.
+356	Nie mozesz tego zrobic, bo jestes martwy.
+357	%s nie ma innych dostepnych slotów.
+358	Nazwa sklepu jest niewazna.
+359	Nie masz zadnych pustych butelek.
+360	Ten element nie ma kamieni do usuniecia.
+361	Otrzymaliscie juz swoja nagrode.
+362	Przekroczono limit uzycia.
+363	Skladnia: warp to <nazwa gracza>.
+364	Pamietaj, ze nie mozesz uzywac specjalnych mikstur podczas walki.
+365	%s nie ma wystarczajaco duzo wolnego miejsca w magazynie.
+366	Nie masz wystarczajacej ilosci wolnego miejsca w magazynie.
+367	Kanal, do którego jestes podlaczony, nie jest taki sam jak odtwarzacz: %s - %s.
+368	%s zablokowalo handel.
+369	%s jest juz w obrocie.
+370	%s ma zablokowane prosby o znajomych.
+371	Gracz nie jest online.
+372	Nie mozesz sie teleportowac do tej lokacji.
+373	Skrzynia eksploduje... Straciles punkty zycia.
+374	W skrzyni znajdowal sie nastepujacy tekst: %s %s.
+375	W skrzyni znajdowalo sie: %s.
+376	Zielony dym wydobywa sie z klatki piersiowej, zatruwajac twoje cialo.
+377	Dym wydobywa sie z klatki piersiowej, a ty wdychasz go... powoli....
+378	Potwór wyszedl z klatki piersiowej!
+379	Z klatki piersiowej wydobywa sie czerwony dym, zatruwajac cialo.
+380	Ze skrzyni wyszla grupa potworów!
+381	Jestes za daleko od sklepu.
+382	Mozesz byc uzywany tylko przez mezczyzn.
+383	Mozesz byc uzywany tylko przez kobiety.
+384	Dzieki blogoslawienstwu Smoczego Boga, nie straciles zadnego doswiadczenia.
+385	Nie masz wystarczajaco duzo wolnego miejsca w zasobach paska.
+386	Uszlachetnianie nie powiodlo sie.
+387	Udalo sie udoskonalic.
+388	Ten potwór nie moze zostac przywolany.
+389	Dopracowanie zakonczylo sie sukcesem.
+390	Uszlachetnianie nie powiodlo sie.
+391	Nie mozesz zmienic bonusów, musisz poczekac %s minut (pozostalo: %s).
+392	Zmieniles bonusy.
+393	Nie zrozumiales/as szkolenia.
+394	Zrozumiales szkolenie i otrzymales 1 punkt za jazde konna.
+395	Skrzynia byla pusta.
+396	Nie wykonales zadania!
+397	Nie przeszedles szkolenia! Zly duch cie nawiedza.
+398	Nie mozesz trenowac tej umiejetnosci.
+399	Udany reset punktów umiejetnosci.
+400	Nie mozesz zresetowac punktów tej umiejetnosci.
+401	Element %s zostal dostarczony.
+402	%s nie nadaje sie do sprzedazy.
+403	Ta pozycja nie nadaje sie do sprzedazy.
+404	Musisz miec przynajmniej poziom %s, aby móc to zrobic.
+405	Nie posiadasz wymaganego minimalnego poziomu.
+406	Nie mozna otworzyc sklepu o wartosci wyzszej niz %s Yang.
+407	Nie masz zbyt wiele czasu, aby czekac.
+408	Wydaje sie, ze klucz jest nieprawidlowy.
+409	Nie masz maski emocji.
+410	Nie mozesz jezdzic w formalnym ubraniu.
+411	Musisz miec co najmniej poziom %s, aby móc pisac w rozmowach w trybie czatu.
+412	Nie straciles punktów doswiadczenia.
+413	Nie straciles punktów karmy.
+414	Twój czat zostal zablokowany na %s minut.
+415	Zostaniesz teleportowany do swojej ostatniej pozycji.
+416	%s nie moze byc wystawione na sprzedaz.
+417	%s nie moze byc juz poprawione przez %s.
+418	%s nie wydaje sie tutaj dzialac.
+419	%s nie moze byc dolaczone do broni.
+420	%s nie moze byc dolaczone do pancerza.
+421	Ta umiejetnosc osiagnela range arcymistrza.
+422	Ta umiejetnosc jest na wyzszym poziomie. Nie mozna sie tego nauczyc.
+423	Tej umiejetnosci nie mozna sie nauczyc z ksiazek.
+424	Ta umiejetnosc nie moze byc ulepszona.
+425	Uszlachetnienia moga byc dodawane tylko do bransoletek, naszyjników, kolczyków.
+426	Mozesz uzyc tej umiejetnosci tylko z potwierdzonego hosta.
+427	Nie mozesz udoskonalic tego elementu.
+428	To akcesorium nie ma slotów na inne rafinowane mineraly.
+429	Ta ksiazka jest zbyt trudna do zrozumienia.
+430	Znasz juz te umiejetnosc doskonale.
+431	Musisz miec co najmniej poziom %s, aby zrozumiec te ksiazke.
+432	Potrzebna jest zgoda %s.
+433	Jestescie juz blisko miejsca, w którym znajduje sie papirus. Nie musisz go uzywac.
+434	Nie jestes jeszcze gotowy do ruchu, wiec nie mozesz uzyc rolki powrotnej.
+435	Nie mozesz jeszcze czytac, spróbuj ponownie pózniej.
+436	Zmieniles przynete na %s.
+437	Jestescie juz przemienieni.
+438	Twoja gildia wypowiedziala wojne.
+439	Nie mozesz juz tego czytac.
+440	Wojna sie skonczyla.
+441	Nie mozesz tego zrobic, poniewaz jestes juz czescia grupy.
+442	Efekt juz istnieje.
+443	Ryba zniknela.
+444	%s zniknelo bez sladu.
+445	Nie mozesz tego zrobic z graczem tej samej plci.
+446	Ucz sie dalej...
+447	Och, to ostatnia strona. Trening prawie zakonczony.
+448	Wkrótce znikniesz z mapy.
+449	Nie mozesz zbudowac budynku. Nie masz wystarczajaco duzo materialu.
+450	Cos jest nie tak z tym elementem. (ref: staff str001)
+451	Cos jest nie tak z tym elementem. (ref: staff str002)
+452	Montaz zakonczyl sie sukcesem.
+453	Montaz nie powiódl sie.
+454	Nie masz wystarczajacej ilosci %s (%s, %s).
+455	Wybrana nazwa jest niepoprawna.
+456	Pojedynek zostal odwolany.
+457	Ostryga byla pusta.
+458	W ostrydze znajdowal sie: kawalek kamienia.
+459	W ostrydze byla: biala perla.
+460	W ostrydze byla: niebieska perla.
+461	W ostrydze byla czerwona perla.
+462	Ten budynek nie istnieje.
+463	Ten odtwarzacz nie istnieje.
+464	Bardzo dobrze! Kontynuuj.
+465	Uwolniles zlego ducha. Teraz mozesz przeczytac inna ksiazke.
+466	Nie mozna karmic zdechlego konia.
+467	Twój kon nie jest martwy.
+468	Musisz miec co najmniej %s inteligencji.
+469	Mozesz to zrobic w ciagu %s sekund.
+470	Losowanie zakonczylo sie sukcesem.
+471	Losowanie nie powiodlo sie.
+472	Wydobycie zostalo anulowane.
+473	Czat zostal zablokowany.
+474	Czat zostal odblokowany.
+475	Twój czat jest zablokowany na %s godzin, %s minut i %s sekund.
+476	Twój czat zostal zablokowany na %s godzin i %s sekund.
+477	Twój czat zostal zablokowany na %s minut i %s sekund.
+478	Twój czat zostal zablokowany na %s sekund.
+479	Nie mozesz teraz czytac. Spróbuj ponownie pózniej.
+480	Nie ma juz wiecej wiórów do usuniecia.
+481	Musisz miec co najmniej %s zywotnosci.
+482	Wylogowanie zostalo przerwane.
+483	Zamierzasz zmienic postac.
+484	Aby grac poprawnie, musisz zastosowac patch.
+485	Nie mozna przelaczac sie na graczy z innego królestwa.
+486	Nie jestes w zadnej grupie.
+487	Twoja grupa wspólpracuje... otrzymasz premie do doswiadczenia.
+488	Lider grupy nie jest online.
+489	Nie mozesz uzyc go/jej tutaj.
+490	Trwa wojna gildii:
+491	Nie mozna uzyc tego odcienia.
+492	Musisz przeczytac wiecej %s ksiazek, aby ukonczyc szkolenie.
+493	<Guild> Spróbuj ponownie pózniej.
+494	Ta funkcja jest dostepna tylko w Twoich wlasnych zamkach.
+495	Ta pozycja nie jest dla Twojego wyscigu.
+496	Ten element moze byc uzywany tylko przez osoby plci przeciwnej.
+497	Ta funkcja jest dostepna tylko dla monarchy.
+498	Mozesz transferowac zawodników tylko z wlasnego królestwa.
+499	Nie mozesz tego zrobic, poniewaz %s jest w CH%s a ty jestes w CH%s.
+500	Wywolano %s.
+501	%s nie jest dostepny online lub nie istnieje.
+502	Nie mozesz ulepszyc przedmiotu, gdy masz otwarte sklepy/sklepy/magazyny.
+503	Nie mozesz otworzyc sklepu z zalozona zbroja.
+504	Okno jest juz otwarte. Spróbuj ponownie sie zalogowac.
+505	Nie masz wszystkich materialów, których potrzebujesz.
+506	Otwórz najpierw okno craftingu.
+507	<Gildia> Mistrz gildii przeciwnika nie jest online.
+508	Musisz poczekac, aby ponownie uzyc tego elementu.
+509	You can only place permanent mounts in the mount inventory.
+510	Spróbuj ponownie pózniej.
+511	<PvP> Juz toczysz pojedynek.
+512	<PvP> %s nie zgodzil sie na pojedynek.
+513	<PvP> Przeciwnik sie rozlaczyl, pojedynek zostal usuniety.
+514	<PvP> Ty i Twój przeciwnik otrzymujecie zaklad z powrotem, poniewaz pojedynek zostal anulowany.
+515	<PvP> Wygrales %s Yang plus Twój poczatkowy zaklad.
+516	<PvP> Ta cecha jest zablokowana w pojedynku.
+517	<PvP> %s zablokowal te ceche u swojego przeciwnika.
+518	<PvP> %s zablokowal buffa w pojedynku.
+519	Nie mozna dodawac zablokowanych elementów.
+520	Mozesz absorbowac tylko bonusy z pancerza i broni.
+521	Ulepszenie zakonczylo sie sukcesem. Nowy wskaznik absorpcji: %s%.
+522	Tworzenie zakonczylo sie sukcesem.
+523	Tworzenie nie powiodlo sie.
+524	Nie masz wystarczajaco duzo Gaya.
+525	Potrzebujesz %s %s.
+526	Ciecie powiodlo sie.
+527	Ciecie nie powiodlo sie.
+528	Nie mozesz sie teraz teleportowac!
+529	Wspólrzedne x: %s, y: %s nie istnieja.
+530	Nie mozna zapisac wspólrzednych w trybie widza.
+531	Nie mozna zapisac wspólrzednych dla tej mapy.
+532	Juz jedziesz.
+533	Nie mozna usunac kamienia podczas rafinacji!
+534	Pomyslnie usunales %s.
+535	A %s wyszlo z usuwania kamieni.
+536	Nie udalo sie usunac smoczego kamienia.
+537	Nie mozna wykonac usuwania smoczych kamieni.
+538	Juz nosi ten rodzaj kamienia.
+539	Nie masz wystarczajaco duzo wolnego miejsca w inwentarzu specjalnym.
+540	Nie mozna zmienic kolejnosci zapasów, gdy otwarte sa inne okna.
+541	Nie mozna sprzedac wyposazonego przedmiotu.
+542	Rzucasz kostka za: %s
+543	%s you rolled: %s
+544	%s toczyl sie %s. (%s - %s)
+545	Obróciles %s. (%s - %s)
+546	|cFFFFD700[LEVEL UP]|r %s osiagnelo poziom %s.
+547	Naród %s przegral bitwe.
+548	%s zakonczylo przejscie bitwy %s.
+549	Do przybycia potworów pozostalo %s minut(y).
+550	Potwory zaczely atakowac zamek.
+551	Potwory zblizaja sie do zamku %s.
+552	Za 10 minut zaatakuja zamek.
+553	%s jest w walce o plomien.
+554	%s osób udalo sie przedostac.
+555	Od tej chwili masz 30 minut na zdobycie plomienia.
+556	Czas sie skonczyl i plomien zniknal.
+557	Plomien pojawil sie na terytorium %s.
+558	%s zdobylo plomien.
+559	%s przegralo wojne.
+560	%s pokonal wszystkie plomienie.
+561	Monarcha zmienil podatki.
+562	W przyszlosci kazdy %s ze sprzedazy idzie do skarbu królestwa.
+563	Gildia %s wypowiedziala wojne gildii %s.
+564	Za chwile odbedzie sie wojna pomiedzy %s i %s.
+565	Rozpoczela sie wojna miedzy %s i %s.
+566	%s wygralo wojne z %s.
+567	Wojna pomiedzy %s i %s zakonczyla sie remisem.
+568	Wojna miedzy %s a %s zostala zakonczona.
+569	Nowym monarcha %s jest %s!
+570	Serwer napotkal nienaprawialny blad i zostal automatycznie zrestartowany.
+571	Wlaczone wylaczanie, zostaniesz rozlaczony za 10 sekund.
+572	Po 5 minutach bedzie mozna sie normalnie polaczyc.
+573	Spadek %s dla gildii %s zostal zwiekszony o %s%.
+574	Spadek %s gildii %s wrócil do normy.
+575	%s spadek %s zostal zwiekszony o %s%.
+576	Zrzut %s z %s wrócil do normy.
+577	Za %s sekund(y) zostaniesz odlaczony od serwera.
+578	Serwer zostanie zamkniety za %s sekund(y).
+579	W ciagu 10 sekund zostanie udzielona odpowiedz.
+580	Prawidlowa odpowiedz to: O.
+581	Poprawna odpowiedzia jest X.
+582	Niewlasciwa osoba zostanie wyciagnieta w ciagu 5 sekund.
+583	Przygotuj sie na nastepne pytanie!
+584	Pytanie:
+585	Przejdz do O dla TRUE i X dla FALSE.
+586	Wkrótce zostaniesz zabrany z powrotem do wioski.
+587	Monarcha %s uzyl blogoslawienstwa przywracajacego HP i MP wszystkim mieszkancom królestwa.
+588	Monarcha %s uzyl swojej mocy, aby zwiekszyc atak na wszystkich mieszkanców królestwa o 10%.
+589	Monarcha %s uzyl swojej mocy, aby zwiekszyc obrone dla wszystkich mieszkanców królestwa o 10%.
+590	Aktualny wynik: Shinsoo (%s), Chunjo (%s), Jinno (%s).
+591	Zla energia gromadzi sie przy centralnym oltarzu.
+592	Potwory wykazuja oznaki wycofywania sie.
+593	Potwory zaczely sie wycofywac... po chwili wrócisz do wioski.
+594	Pojawil sie szef. Masz 30 minut, zeby go zabic.
+595	Udalo Ci sie pokonac bossa, wkrótce zostaniesz teleportowany z powrotem do wioski.
+596	Boss sie wycofal, wkrótce zostaniesz teleportowany do wioski.
+597	Yonggari umrze za %s sekund.
+598	Masz %s sekundy na zniszczenie posagów.
+599	Rozpoczela sie walka z Meley, Królowa Smoków!
+600	Drzwi zostaly otwarte. Zostalo Ci %s minut.
+601	Gratulacje, zabiles Meley, Królowa Smoków.
+602	Za %s minut i %s sekund.
+603	Loch nie moze zostac uruchomiony, prosimy o kontakt z obsluga.
+604	%s punktów zostalo zwróconych do gildii.
+605	Limit czasu sie skonczyl, wkrótce zostaniesz teleportowany z lochu.
+606	Dla wlasnego bezpieczenstwa zostaniesz teleportowany z mapy za %s sekund/o.
+607	Nie mozesz dodawac znajomych, gdy masz otwarte zadanie.
+608	Pytanie %s jest prawdziwe.
+609	Pytanie %s jest falszywe.
+610	Calkowita liczba pytan: %s.
+611	Nie mozesz sie teleportowac na te mape.
+612	Kanal, z którym jestes polaczony, nie jest taki sam jak %s: %s - %s.
+613	Wyslales zadanie teleportu.
+614	%s jest juz blisko ciebie.
+615	Byles online przez %s godzin.
+616	Zamykasz polaczenie tak szybko jak to mozliwe i robisz sobie przerwe dla zdrowia.
+617	Jestes juz zmeczony ta gra.
+618	Twój czas offline to %s godzin/lat i %s minut/lat.
+619	Twój czas online to %s godzin/lat i %s minut/lat.
+620	Nie masz wystarczajacej ilosci %s.
+621	Nie mozna przekroczyc limitu 100%.
+622	Juz raz dokonales inkrementacji.
+623	Nie mozna wydobyc na czas smoczego kamienia z wyposazeniem.
+624	Ekstrakcja czasu nie powiodla sie.
+625	Ekstrakcja czasu zakonczyla sie sukcesem.
+626	Nie masz wystarczajaco duzo wolnego miejsca w swoim inwentarzu alchemicznym.
+627	Ten kamien smoczy nie moze byc ulepszony bardziej niz jest.
+628	Ten smoczy kamien nie jest tego samego typu/rodzaju.
+629	Rozszerzenie zakonczylo sie sukcesem.
+630	Wzmocnienie nie powiodlo sie.
+631	Nie mozesz handlowac, gdy masz otwarta misje.
+632	%s nie moze otrzymywac zaproszen, poniewaz ma otwarte zadanie.
+633	<Gildia> Gildia jest obecnie w stanie wojny.
+634	<Gildia> Gildia osiagnela juz swoja maksymalna liczbe czlonków.
+635	W %s skarbcu znajduje sie obecnie %s Yang.
+636	Wybrany CH jest w trybie offline.
+637	Moga toczyc sie bitwy.
+638	Jesli chcesz ponownie rozwazyc sprawe, wróc do opiekuna.
+639	Twój czat jest zablokowany.
+640	<Administrator magazynu> Ten element nie moze byc zapisany.
+641	<Administrator magazynu> Nie masz wystarczajacej ilosci wolnego miejsca w magazynie.
+642	Potrzebujesz %s, aby to zrobic.
+643	Smocze kamienie moga zmiescic sie tylko w inwentarzu alchemicznym.
+644	Nie masz wystarczajaco duzo wolnego miejsca w inwentarzu alchemii.
+645	Ta pozycja nie jest zgodna z inwentarzem specjalnym.
+646	Ten przedmiot nie jest kompatybilny z inwentarzem alchemii.
+647	Nie mozesz sie teraz teleportowac. Spróbuj ponownie pózniej.
+648	Grupa nie moze zostac rozwiazana w lochu.
+649	<Gildia> Nie mozesz usunac czlonka, gdy gildia jest w stanie wojny.
+650	<Guildia> Gildia osiagnela juz maksymalny poziom (%s).
+651	Serwer zostanie zamkniety za 10 minut.
+652	<Biolog> Musisz miec co najmniej poziom %s, aby kontynuowac.
+653	<Biolog> Musisz poczekac %s dni/lat, %s godzin/lat, %s minut/lat, %s sekund/lat, aby to zrobic.
+654	<Biolog> Nie masz wymaganego elementu, aby kontynuowac.
+655	<Biolog> Ukonczyles juz wszystkie zadania.
+656	Nie mozna sprzedac pozycji z blokada czasowa.
+657	Mozesz lowic ryby tylko w wodzie.
+658	Zmienisz CH w %s sekundach.
+659	Okno wykanczania stolów jest juz otwarte.
+660	Najpierw nalezy zamknac okno absorpcji stolika.
+661	Najpierw trzeba zamknac okno rafinacji stelaza.
+662	Mozesz uszlachetniac tylko stuly tej samej klasy.
+663	Ta stula ma juz maksymalny wspólczynnik absorpcji (%s).
+664	Nie posiadasz jeszcze kwalifikacji do poslugiwania sie alchemia.
+665	%s nie moze byc ulepszony przez %s.
+666	%s nie moze byc juz ulepszony.
+667	Ten przedmiot nie moze byc uzywany podczas pojedynków.
+668	Na tym obszarze nie wolno prowadzic zadnych sklepów.
+669	Nie mozesz go uzyc, poniewaz nie jestes jeszcze wykwalifikowany do uzywania alchemii.
+670	%s zostal naladowany przez %s sekund/o.
+671	Przeladowywanie %s nie powiodlo sie.
+672	Ten przedmiot nie moze byc teraz uzyty, poniewaz jego partner toczy pojedynek.
+673	Wykrywacz nie znalazl zadnych kamieni metinowych.
+674	Osiagnales juz maksymalna liczbe punktów karmy (%s).
+675	%s dziala tylko na pancerz i bron.
+676	%s nie ma slotów.
+677	Dodales specjalny bonus.
+678	Kamienie+3 nie moga byc usuniete przez %s.
+679	Kamien nie moze byc usuniety przez %s.
+680	Nie mozesz usunac zablokowanej premii kostiumu lub smoczego kamienia.
+681	Moze byc uzywany tylko na talizmanach.
+682	Dziala tylko na elementach ponizej poziomu %s.
+683	Mozna tego uzyc tylko na broni lub pancerzu.
+684	To nie moze byc uzyte na talizmanach.
+685	Ta dusza nie jest wystarczajaco naladowana.
+686	Ta dusza nie ma dostepnego trafienia.
+687	Nie mozesz usunac przedmiotu z switchbota, poniewaz Twój ekwipunek jest pelny.
+688	W tym obszarze nie mozna uzywac tego elementu.
+689	Nie mozesz uzyc tego przedmiotu, gdy masz otwarta misje.
+690	Nie mozesz przesunac przedmiotu, poniewaz switchbot jest aktywny.
+691	Ten obiekt nie moze zostac obrócony przez Switchbota.
+692	Nie mozesz podniesc tego przedmiotu, gdy masz otwarte zadanie.
+693	Nie mozesz nosic ubran slubnych podczas jazdy.
+694	Twój typ broni jest inny niz w tym stroju.
+695	Nie masz wolnych slotów na noszenie tego przedmiotu.
+696	Nie mozesz uzyc tej pozycji, poniewaz nie jestes w zwiazku malzenskim.
+697	Nie mozna otworzyc okna rzemiosla, gdy otwarte sa inne okna.
+698	Aktualny drop %s dla królestw to %s%.
+699	Aktualny drop %s dla gildii to %s%.
+700	Aktualny drop %s dla graczy to %s%.
+701	Nie ma juz wiecej czlonków przeciwnej gildii online.
+702	Jesli nikt nie dolaczy w ciagu minuty, wojna zostanie zakonczona.
+703	Zakonczyl sie limit czasu. Wojna zakonczyla sie remisem.
+704	Malzenstwo jest skonczone. Zostaniesz usuniety z mapy.
+705	Gildia %s przejela flage %s.
+706	Jeden z pojedynkowiczów wylogowal sie.
+707	Pojedynek zostal zakonczony z powodu nieznanego problemu.
+708	Pojedynek zakonczyl sie, poniewaz jeden z przeciwników ma problemy.
+709	%s (%s) : %s (%s)
+710	Wojna nie moze sie rozpoczac w tym czasie.
+711	Gildia ma juz zapytanie o wojne, które czeka na odpowiedz.
+712	<Biolog> Ten przedmiot jest w dobrym stanie.
+713	<Biolog> Ten przedmiot nie jest w dobrym stanie.
+714	<Biolog> Gratulacje, ukonczyles te misje.
+715	Nie mozesz odebrac nagrody!
+716	Poprawna skladnia: /channel (numer ch)
+717	Wprowadzone CH jest nieprawidlowe.
+718	Znajdujesz sie juz w CH %s.
+719	Nie mozna przejsc do tego CH.
+720	Nie mozna zmienic CH bedac w lochu.
+721	Nie brales nagrody w ciagu ostatnich 24 godzin, wiec to bedzie nagroda.
+722	<PvP> Nie mozesz rozpoczac pojedynku, poniewaz cos jest nie tak z Yangami, które obstawiles.
+723	Nie ma w sieci gracza o tym imieniu.
+724	Poprawna skladnia: /monarch_tax (1-50)
+725	Poprawna skladnia: /mmob (nazwa potwora)
+726	To polecenie jest dostepne tylko w twoim królestwie.
+727	W slocie %s inwentarza znajduje sie %s.
+728	Nic nie mozna znalezc w slocie %s w inwentarzu.
+729	Musisz wezwac zwierze, aby kontynuowac.
+730	Nie mozesz teraz rozwinac swojego zwierzaka.
+731	Nie mozna otworzyc magazynu, bedac na mapie wojennej / w lochu.
+732	Nie mozna uzyc wierzchowca podczas transformacji.
+733	Nazwa %s, id %s.
+734	System Gaya jest obecnie wylaczony.
+735	Nie mozesz otworzyc sklepu, gdy masz otwarte inne okna (np. handlu).
+736	Ten potwór nie istnieje.
+737	Teleportowales sie na wspólrzedne: x(%s), y(%s).
+738	Obiekt: %s jest nieprawidlowy.
+739	Obiekt: %s nie istnieje.
+740	Nie mozesz otrzymac tego przedmiotu, gdy masz otwarta misje.
+741	Nie mozesz sie przemieniac podczas jazdy.
+742	Twój zwierzak osiagnal maksymalny poziom.
+743	Umiejetnosc Twojego zwierzaka osiagnela %s.
+744	Umiejetnosc Twojego zwierzaka osiagnela juz maksymalny poziom.
+745	Twój zwierzak nauczyl sie nowej umiejetnosci.
+746	Twój zwierzak nie jest w stanie nauczyc sie zadnych innych umiejetnosci.
+747	Twój zwierzak osiagnal poziom %s.
+748	Twój zwierzak osiagnal juz maksymalny poziom ewolucji.
+749	Musisz odczekac jeszcze %s sekund(y) zanim bedziesz mógl uzyc tej umiejetnosci.
+750	Mozesz uzyc tej umiejetnosci tylko wtedy, gdy Twoje HP wynosi co najmniej 20%.
+751	Przywróciles swoje HP.
+752	Stales sie niezwyciezony.
+753	Usunales negatywne efekty.
+754	Zyrandol zostal zatrzymany, poniewaz nie masz juz zadnych rund bonusowych.
+755	Girabonus zatrzymal sie, poniewaz nie masz wystarczajaco duzo Yang.
+756	Zmieniles swój kod PIN.
+757	Flaga: nazwa (%s), wartosc (%s).
+758	Flaga: nazwa (%s), status (%s), wartosc (%s).
+759	<Commerce> Nieznany blad.
+760	<Guildia> Zdobyles %s Yang.
+761	<Guildia> Straciles %s Yang.
+762	Nie ma zarejestrowanej rangi.
+763	<Wsparcie systemu> Ta nazwa jest juz uzywana. Wybierz inna nazwe!
+764	<System wsparcia> Musisz wezwac wsparcie, zanim zmienisz jego nazwe.
+765	<Wsparcie systemu> Udalo sie zmienic nazwe.
+766	<Wsparcie systemu> Musisz przywolac swojego wierzchowca, zanim zmienisz jego plec.
+767	<Wsparcie systemu> Udalo sie zmienic plec.
+768	Potrzebujesz %s Yang.
+769	Nazwales swoje zwierze.
+770	Blad ustawienia nazwy.
+771	<Teleporter> Musisz miec co najmniej %s poziom, aby kontynuowac.
+772	<Teleporter> Musisz miec co najmniej poziom %s, aby kontynuowac.
+773	<Teleporter> Musisz miec co najmniej %s Yang aby kontynuowac.
+774	Musisz byc administratorem gry, aby z niej korzystac.
+775	Tekst jest niepoprawny.
+776	Spróbuj ponownie za 5 sekund.
+777	Nie ma przejscia bojowego o id: %s.
+778	Nie ma przejscia bojowego o nazwie: %s.
+779	Nie ma nagrody za przejscie bitwy %s.
+780	Nie ma aktywnej karty bitewnej.
+781	Identyfikator bufora (%s) o wartosci %s zostal zablokowany.
+782	Nie mozna zmienic zamówienia elementów w magazynie, gdy otwarte jest okno sklepu offline.
+783	Przedmioty z zamrozonymi bonusami nie moga zostac wchloniete.
+784	Nie mozna wyslac elementu z zamrozonym bonusem.
+785	Nie mozesz uzyc tego przedmiotu, jesli nie masz na wyposazeniu pasa.
+786	Nie mozesz uzyc tego przedmiotu, jesli ulepszysz swój pas.
+787	Musisz odeslac swoje zwierze zanim przejdziesz dalej.
+788	Zywotnosc Twojego zwierzaka zostala przywrócona.
+789	Ten transport zawiera juz zwierze domowe.
+790	Musisz przynajmniej raz przywolac swoje zwierze, zanim umiescisz je w transporterze.
+791	Nie mozna go uzyc na tym elemencie.
+792	Przedmiot musi miec co najmniej 5 bonusów.
+793	Ta pozycja ma juz bonus do zamrozenia.
+794	Ta pozycja nie ma zamrozonej premii.
+795	Ta pozycja nie ma zamrozonego bonusu.
+796	Masz juz na sobie ten typ smoczego kamienia.
+797	Gratulacje, pomyslnie ukonczyles zadanie.
+798	Nie mozesz uzywac emocji podczas jazdy.
+799	Nie mozesz uzywac emocji, poniewaz towarzysz jedzie.
+800	%s nie znajduje sie na tej samej mapie.
+801	%s to PcBang.
+802	%s nie jest PcBang.
+803	%s jest w CH %s, ty jestes w CH %s.
+804	Wymagana teleportacja.
+805	Teleportowales sie na wspólrzedne: map(%s), x(%s), y(%s).
+806	Nie mozna usuwac obiektów, gdy wsparcie jest aktywne.
+807	Nie mozesz tego zrobic, poniewaz twój zwierzak zostal przywolany.
+808	Lacznie gracze: %s. [Shinsoo(%s), Chunjo(%s), Jinno(%s), serwer(%s)].
+809	Przekroczyles limit Yang. Twoje Yang zostaly zresetowane.
+810	Zadanie blokady czatu.
+811	Obiekt nie istnieje.
+812	Aktualna liczba uczestników: %s.
+813	Zarejestrowano zwyciezców.
+814	Zwyciezców nie zostalo zarejestrowanych.
+815	Nie mozna otworzyc okna rzemiosla, poniewaz otwarte sa inne okna.
+816	Nie mozesz ulepszyc tego przedmiotu, poniewaz ma on zamrozona premie.
+817	Jednostka ulegla awarii.
+818	Statek jest udany.
+819	Nie masz wszystkich potrzebnych materialów.
+820	Nikt nie zablokowal czatu.
+821	Nie mozna przejsc do tego obszaru.
+822	Stuly moze byc wykonany tylko z innym stuly.
+823	Potrzebujesz %s, aby to zrobic.
+824	%s wyzwal cie na pojedynek.
+825	Nie mozna utworzyc tego sklepu.
+826	Nie mozna zmienic nazwy tego sklepu.
+827	Nie mozna zamknac tego sklepu.
+828	Nie mozna otworzyc sklepu.
+829	Nie mozna otworzyc sklepu.
+830	Nie mozna dodac elementu do sklepu. 831 Nie mozna kupic tego elementu.
+831	Nie mozesz kupic tej pozycji.
+832	Element nie moze zostac usuniety.
+833	Pozycja nie moze zostac zmieniona.
+834	Nie mozna usunac ostatniego elementu ze sklepu. (mozesz zamknac sklep za pomoca przycisku zamknij).
+835	Nie mozna przeprowadzic wyszukiwania.
+836	Wyszukiwanie mozna przeprowadzac co 2 sekund. (nie mozna jeszcze uruchomic wyszukiwania)
+837	Oferta utworzona pomyslnie.
+838	Nie mozna zlozyc oferty.
+839	Nie mozna przyjac oferty.
+840	Nie mozna otworzyc magazynu sklepu.
+841	Nie mozna pobrac tego elementu.
+842	Nie mozna pobrac yang z magazynu.
+843	niewykorzystane
+844	Udalo Ci sie otrzymac przedmiot.
+845	Nie mozna wyslac listy aukcji.
+846	Nie mozna otworzyc aukcji.
+847	Nie mozna utworzyc aukcji.
+848	Nie mozna zlozyc oferty.
+849	Nie mozna tego teraz zrobic.
+850	Nie moze byc uzywany na talizmanach.
+851	Potrzebujesz co najmniej %s dostepnych punktów.
+852	Nie mozna jezdzic na tej mapie.
+853	%s zawiera juz zwierzatko.
+854	Musisz najpierw odeslac zwierze.
+855	Zwierzak zostal umieszczony w %s.
+856	%s jest pusty.
+857	Usunales zwierzaka z %s.
+858	Aby to zrobic, musisz przynajmniej raz zadzwonic do zwierzecia.
+859	Nie mozesz go umiescic na tym zalaczniku, poniewaz ma nieskonczone rafinacje.
+860	Nie mozesz umiescic go na tym akcesorium, poniewaz ma refinansowanie czasowe.
+861	Zadanie zostanie odblokowane, gdy osiagniesz poziom %s.
+862	Nie masz zadnego Eliksiru Badacza.
+863	Nie masz zadnego Eliksiru Badacza+.
+864	Przedmiot nie jest w dobrym stanie, Biolog nie moze wykonac zadnych badan.
+865	Przedmiot jest w dobrym stanie, Biolog rozpoczyna badania.
+866	Nie posiadasz przedmiotu, którego potrzebuje Biolog.
+867	Ukonczyles juz wszystkie zadania Biologa.
+868	Ukonczyles ostatnie zadanie Biologa, gratulacje!
+869	Nastepne zadanie Biologa zostanie odblokowane na poziomie %s.
+870	Biolog obdarzyl cie jednym lub kilkoma bonusami za ukonczenie misji.
+871	Biolog nie zakonczyl jeszcze badania ostatniej dostarczonej pozycji.
+872	Nie masz obecnie zadnych zadan dla biologów, w których móglbys zmienic bonusy.
+873	Bonus zostal zmieniony.
+874	Pieniadze musza byc w liczbach.
+875	Wprowadzona kwota nie moze byc mniejsza niz 0.
+876	Wprowadzona kwota przekracza limit.
+877	Nie masz wystarczajaco duzo pieniedzy.
+878	Przeciwnik nie ma tej sumy pieniedzy w swoich zasobach.
+879	Pieniadze, które przeciwnik ma w swoich zasobach plus kwota zakladu przekracza limit yang.
+880	Przeciwnik nie ma tej sumy pieniedzy w swoich zasobach.
+881	Jestes teraz w pojedynku.
+882	Przeciwnik juz sie pojedynkuje.
+883	Przeciwnik nie posiada takich pieniedzy w swoich zasobach.
+884	Widok wyposazenia jest juz zablokowany.
+885	Wyswietlacz urzadzenia jest zablokowany.
+886	Wyswietlacz urzadzenia jest odblokowany.
+887	Wyswietlacz urzadzenia jest juz odblokowany.
+888	Przeciwnik ma juz zadanie pojedynku w toku. Spróbuj ponownie za %s sekund(y).
+889	%s próbuje wyzwac Cie na pojedynek, ale masz juz otwarta prosbe.
+890	Tylko lider gildii moze to zrobic.
+891	Aby skorzystac z tej pozycji, musisz byc w zwiazku malzenskim.
+892	Ta stula nie moze byc juz poprawiona.
+893	Ten efekt juz istnieje.
+894	Nie mozna tu lowic ryb.
+895	Do wedkowania potrzebna jest wedka.
+896	%s wlaczyl sie.
+897	Cos jest zaczepione, ale nie mozna powiedziec, co to jest.
+898	Zmieniles swoja aktualna przynete na %s.
+899	Aby lowic ryby, musisz miec przynajmniej jedno wolne miejsce w ekwipunku.
+900	Ten efekt jest juz w uzyciu.
+901	%s zostal dezaktywowany.
+902	Tylko lider grupy moze z niego korzystac.
+903	%s otrzymal %s.
+904	%s dolaczyl do wspanialego swiata Auriga-Global.
+905	Musisz zniszczyc wszystkie kamienie metin, aby usunac
+906	niepokonalnosc bossa.
+907	Musisz zabic wszystkie potwory, aby usunac
+908	Wszyscy czlonkowie grupy moga teraz atakowac bossa.
+909	<Statek bojowy> SOS! Maszt statku zostal zdumiony.
+910	<Bitwa okretowa> Wszyscy uczestnicy zostana teleportowani na zewnatrz!
+911	Lider gildii %s przekazal dowództwo nad gildia `%s` do %s.
+912	Wyscig OX rozpoczal sie!
+913	Mozesz porozmawiac z medrcem Urielem o uczestnictwie.
+914	Zgloszenia do wyscigu OX zostaly zamkniete!
+915	Zadni dodatkowi zawodnicy nie sa akceptowani, mozna byc tylko widzem.
+916	nagród zostalo przyznanych zwyciezcom!
+917	Wyscig OX zakonczyl sie, wkrótce wrócisz do wioski.
+918	%s wlasnie pokonalo Królowa Szlamów.
+919	Grupa %s pokonala Nemere.
+920	%s pokonalo Nemere.
+921	Grupa %s pokonala Beran-Setaou.
+922	%s pokonalo Beran-Setaou.
+923	Grupa, która byla wewnatrz Swiatyni Smoka zawiodla. Czas sie skonczyl.
+924	Swiatynia Smoka jest znowu otwarta.
+925	Gildia %s zdobywa %s miejsce w zlotej lidze.
+926	Gildia %s zdobyla %s miejsce w Srebrnej Lidze.
+927	Gildia %s zdobywa %s miejsce w brazowej lidze.
+928	Gildia %s pokonala wlasnie Królowa Szlamów!
+929	%s wlasnie pokonalo Królowa Szlamów!
+930	Zabij wszystkie demony na tym pietrze!
+931	Katakumby beda zamkniete przez %s minut, poczawszy od teraz.
+932	Katakumby sa znowu otwarte!
+933	Grupa %s oczyscila katakumby z Azreala!
+934	Grupa %s uwolnila Swiatynie Ochao!
+935	%s wyzwolilo Swiatynie Ochao!
+936	%s grupa wyzwolila Lair 3!
+937	%s wyzwolilo Lair 3!
+938	Boss nie jest juz niepokonany.
+939	Pojawil sie boss, tylko lider grupy moze zadawac obrazenia, dopóki jego
+940	zywotnosc osiaga co najmniej 70%.
+941	Prosimy o kontakt z personelem, podajac numer referencyjny: rune020.
+942	Prosimy o kontakt z personelem z podaniem numeru referencyjnego: rune021.
+943	Prosimy o kontakt z personelem z podaniem numeru referencyjnego: rune022.
+944	Prosimy o kontakt z personelem, podajac numer referencyjny: rune024.
+945	Prosimy o kontakt z personelem z podaniem numeru referencyjnego: rune025.
+946	Czas minal, niestety nie udalo Ci sie. Zostaniesz teleportowany
+947	z lochu.
+948	Prosimy o kontakt z personelem, podajac numer referencyjny: rune001.
+949	Od tej chwili masz %s minut na zabicie wszystkich potworów i kamieni metin na tym pietrze.
+950	kamieni metinowych na tym pietrze. Kamienie metin nie otrzymuja obrazen
+951	tak dlugo, jak dlugo zyja jeszcze potwory.
+952	W ciagu 3 sekund zostaniesz teleportowany na trzecie pietro.
+953	Za 3 sekundy zostaniesz teleportowany na czwarte pietro.
+954	Aby nadal zadawac obrazenia bossowi, musisz najpierw zabic potwory.
+955	Aby kontynuowac zadawanie obrazen bossowi, musisz najpierw zniszczyc metiny.
+956	W ciagu 3 sekund zostaniesz teleportowany na ostatnie pietro.
+957	Od teraz masz %s minut na upuszczenie 10 runicznych dusz.
+958	Tylko lider grupy moze je upuscic.
+959	Od teraz masz %s minut na zabicie bossa.
+960	Aby sie pojawil, musisz najpierw zabic wszystkie potwory i kamienie metin.
+961	Od tej chwili masz %s minut na wykonanie tego planu. Do wykonania
+962	tak, ze boss otrzymuje obrazenia musisz najpierw zniszczyc kamienie metin.
+963	Gratulacje, ukonczyles loch!
+964	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+965	Udalo Ci sie zabic bossa. Teraz musisz sprowadzic zycie nastepnego
+966	Szef do co najmniej 50%.
+967	Zniszczyles ostatni posag. Teraz zabij bossa.
+968	Zniszczyles posag, pozostalo %s do zniszczenia.
+969	Udalo Ci sie zabic bossa. Teraz, aby nastepny szef mógl otrzymac
+970	obrazen, musisz najpierw zniszczyc posagi za pomoca Boskiego klucza.
+971	Klucze moga byc upuszczane przez potwory.
+972	Zniszczyles ostatni kamien metinów. Teraz zabij bossa.
+973	Zniszczyles kolejny kamien metin, %s pozostalo do zniszczenia.
+974	Prosimy o kontakt z personelem z podaniem numeru referencyjnego: rune023.
+975	Zabiles wszystkie potwory. Teraz musisz zniszczyc kamienie metinów.
+976	Jeden po drugim, znajdz pierwszy odblokowany metin.
+977	Prosimy o kontakt z personelem z podaniem numeru referencyjnego: rune002.
+978	Zniszczyles kolejny kamien metin, %s pozostalo do zniszczenia.
+979	Zniszczyles ostatni kamien metinów.
+980	W ciagu 3 sekund zostaniesz teleportowany na drugie pietro.
+981	Prosimy o kontakt z personelem podajac numer referencyjny: rune003
+982	Prosze skontaktowac sie z personelem, podajac numer referencyjny: rune004
+983	Prosze skontaktowac sie z personelem, podajac numer referencyjny: rune005
+984	Zostala Ci jedna minuta, aby przywrócic pokój!
+985	Zostalo Ci %s minut na przywrócenie pokoju!
+986	Nie udalo Ci sie, zostaniesz teleportowany na zewnatrz.
+987	Pokonaj bossa Zlego Azraela, aby przywrócic pokój!
+988	Gratulacje, przywróciles pokój!
+989	Za 10 sekund zostaniesz teleportowany przez Straznika Miejskiego.
+990	Od tej chwili bedziesz mial %s minut
+991	do ukonczenia lochu!
+992	Czas minal, zostaniesz wyciagniety.
+993	Wkrótce zostaniesz przeniesiony na kolejne pietro.
+994	Tylko lider grupy moze przeciagnac obiekt.
+995	Znajdz wlasciwy metin, aby pójsc w góre!
+996	Prawidlowy metin zostal zniszczony!
+997	Wkrótce zostaniesz przeniesiony na kolejne pietro.
+998	Zniszczony metin jest falszywy.
+999	Znajdz i zabij wlasciwego Tartarosa, aby kontynuowac!
+1000	Prawidlowy Tartaros zostal zabity!
+1001	Przeciagnij element na totem, aby kontynuowac!
+1002	Zabity Tartaros jest niepoprawny.
+1003	Wkrótce zostaniesz przeniesiony na nastepne pietro!
+1004	Zabij Charona, aby kontynuowac!
+1005	Charon zostal zabity!
+1006	Wkrótce zostaniesz przeniesiony na nastepne pietro!
+1007	Zabij zlego Azraela!
+1008	Uwolniles katakumby od zlego Azraela!
+1009	Za 30 sekund zostaniesz zdjety.
+1010	Zabiles Króla Demonów,
+1011	Wkrótce wejdziesz na czwarte pietro.
+1012	Metin pojawi sie wkrótce, poczekaj...
+1013	Zniszcz prawidlowy metin, aby pójsc w góre.
+1014	Cos poszlo nie tak. Skontaktuj sie z obsluga: Beran001.
+1015	Prawidlowy metin zostal zniszczony, wkrótce zostaniesz teleportowany na kolejne pietro.
+1016	Falszywy metin znika...
+1017	Otwórz wszystkie pieczecie, aby przejsc do góry.
+1018	Masz 20 minut.
+1019	Masz %s minut na otwarcie pieczeci.
+1020	Czas minal, nie udalo Ci sie wejsc na góre.
+1021	Wszystkie pieczecie zostaly otwarte.
+1022	Wkrótce zostaniesz teleportowany na kolejne pietro.
+1023	Pozostala jeszcze jedna pieczec do otwarcia.
+1024	Pozostalo jeszcze %s pieczeci do otwarcia.
+1025	Zabij Elitarnego Króla Demonów, aby uwolnic jednego z legendarnych kowali.
+1026	Jeden z legendarnych kowali zostal uwolniony.
+1027	Wkrótce wjedziesz na 7 pietro.
+1028	Znajdz wlasciwa mape, aby wejsc na góre.
+1029	Znalazles wlasciwa mape,
+1030	Wkrótce wejdziesz na 8 pietro.
+1031	Znajdz wlasciwy klucz, aby wejsc na góre.
+1032	Pieczec zostala otwarta
+1033	Wkrótce wejdziesz na dziewiate pietro.
+1034	Zabij Umar³y Rozpruwacz, aby ukonczyc wieze.
+1035	Za 30 sekund zostaniesz teleportowany z wiezy.
+1036	Aby wyrzadzic szkody Beranowi, zniszcz najpierw wszystkie metiny, ale badz szybki, bo on cie zniszczy!
+1037	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+1038	Twój czas sie skonczyl.
+1039	Zostaniesz wyprowadzony z powrotem z lochu.
+1040	Czas minal, niestety nie udalo Ci sie. Zostaniesz teleportowany
+1041	z lochu.
+1042	Prosimy o kontakt z personelem, podajac numer referencyjny: orchi001.
+1043	Wróc do miejsca, gdzie znajduja sie zablokowane mosty jeden z nich jest odblokowany.
+1044	Teraz musisz zniszczyc wszystkie Shadow Metins.
+1045	Za 3 sekundy zostaniesz teleportowany do pomieszczenia z bossem.
+1046	Musisz zabic kamienie metin, aby zadac obrazenia bossowi.
+1047	Uzyj teraz Green Orc Key, aby zniszczyc Orc Seal.
+1048	Teraz musisz pokonac Orc Boss.
+1049	Uzyj Black Orc Key, aby zniszczyc Lock of Fate.
+1050	Prosze skontaktowac sie z personelem, podajac numer referencyjny: orchi002.
+1051	Szefa mozna teraz zaatakowac.
+1052	Kamienie metin pozostaly do zabicia: %s.
+1053	Ostrzezenie: Odrodzony Wódz Orków jest wsciekly, a jego obrazenia wzrosly.
+1054	Gratulacje, ukonczyles loch!
+1055	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+1056	Od tej chwili masz %s minut na ukonczenie lochu.
+1057	Zabij potwory, aby upuscic Klucz Zielonego Orka, wiec mozesz
+1058	byc w stanie zniszczyc Pieczec Orków. Przejdz do srodka
+1059	mapa i oczysc otwarty most.
+1060	Pokonaj poteznego Razadora, aby ukonczyc loch.
+1061	Poziom wszystkich czlonków grupy musi wynosic co najmniej 120.
+1062	Jesli nie, nie moge pozwolic ci kontynuowac.
+1063	Pozostaly czas: %s minut(s).
+1064	%s uwolnilo Wieze Demonów!
+1065	Twój czas sie skonczyl. W ciagu 10 sekund
+1066	zostaniesz teleportowany do bram fortecy.
+1067	W ciagu 10 sekund grupa zostaje teleportowana z Am Heh.
+1068	Gratulacje, oczysciles Wieze!
+1069	Misja: Przedostac sie do pierscienia demonów
+1070	i wyszedl z niego jako zwyciezca.
+1071	Misja: Znajdz Zlote Kolo i umiesc je na steli Isfet.
+1072	Misja: Wejdz do pierscienia demonów i
+1073	Zdobyc zwyciestwo.
+1074	Quest: Pokonaj Ignatora, Straznika Ognia.
+1075	Misja: Znajdz Kamienie Maat i umiesc je w
+1076	7 Stelae z Isfet we wlasciwej kolejnosci.
+1077	Jesli pomylisz kolejnosc, Kamienie
+1078	zniknie, a stela pozostanie.
+1079	Misja: Tylko ci, którzy nie boja sie piekacego zaru,
+1080	zniszczy Metinów z Czyscca.
+1081	Wszystkie demony zostaly pokonane.
+1082	Porozmawiaj z Am-heh, aby otworzyc nowa destynacje.
+1083	Stela Isfet zostala zniszczona.
+1084	Ignator, straznik ognia, zostal zniszczony.
+1085	Pieczecie zostaly zniszczone.
+1086	Metin z Czyscca zostal zniszczony.
+1087	Potezny Razador zostal zniszczony.
+1088	Wszyscy wojownicy zostana teleportowani z Czyscca w ciagu 30 sekund.
+1089	Oczaruj wszystkie potwory na tym pietrze, aby przejsc dalej.
+1090	Wszystkie potwory na tym pietrze zostaly zdumione.
+1091	Pozostale potwory: %s.
+1092	Znajdz prawdziwy Klucz Mrozu, kochajac potwory.
+1093	Ten Klucz Mrozu byl falszywy.
+1094	Znalazles prawdziwy Klucz Mrozu.
+1095	Pojawila sie kolejna fala potworów.
+1096	Ale tym razem towarzysza im Wladca Mrozu i Szel.
+1097	Wkrótce zostaniesz przeniesiony na kolejne pietro.
+1098	Znajdz Gwiazde Polarna, kochajac potwory.
+1099	Po znalezieniu przeciagnij nad jedna z arktycznych kosci %s, aby spróbowac je otworzyc.
+1100	UWAGA: Kazda matryca arktyczna ma swój wlasny klucz.
+1101	UWAGA: Jesli spróbujesz zniszczyc go za pomoca niewlasciwego klawisza, chaive zostanie zniszczony.
+1102	UWAGA: W takim przypadku trzeba bedzie poszukac innego klucza.
+1103	Jak tylko wszystkie kosci Arktyki zostana otwarte, mozesz kontynuowac.
+1104	Uzywana Gwiazda Polarna jest po prawej stronie, a Arktyczna Kostka zostala otwarta.
+1105	Uzywana gwiazda polarna jest nieprawidlowa i zniknela.
+1106	Wszystkie kosci Arktyki zostaly otwarte.
+1107	Cold Metin zostal wygenerowany. Zniszcz go, aby kontynuowac.
+1108	Metin Zimna zostal zniszczony.
+1109	Zniszczyc sprawiedliwego Szel, aby kontynuowac.
+1110	Zniknal cien Szela.
+1111	Wszystkie cienie Szela zniknely. Aby kontynuowac, zabij sprawiedliwego Szela.
+1112	Zabiles sprawiedliwego Szela.
+1113	Klucz Kwiatu Lodu byl falszywy.
+1114	Znalazles prawdziwy klucz do kwiatu lodu.
+1115	Pokonaj Pólnocna Kolumne Smoków, aby przejsc dalej.
+1116	Pojawil sie Mrozny Lew.
+1117	Aby kontynuowac, lider grupy musi z nim porozmawiac.
+1118	Porozmawiaj z nim, aby kontynuowac.
+1119	Pokonaj wielkiego Nemere, aby uwolnic wieze.
+1120	Za 60 sekund zostaniesz teleportowany z lochu.
+1121	Twój czas sie skonczyl.
+1122	Grupa %s uwolnila statek od Hydry!
+1123	%s uwolnilo katakumby od Azreala!
+1124	Impreza %s uwolnila Wieze Demonów!
+1125	Czas minal, niestety nie udalo Ci sie. Zostaniesz teleportowany
+1126	z lochu.
+1127	Pokonaj Pajeczego Barona, aby upuscic Pajeczy Flet.
+1128	Od tej chwili bedziesz mial %s minut na ukonczenie lochu.
+1129	Nie mozesz tego zrobic.
+1130	Uzyj Arachnid Flute, aby przywolac Spider Baroness.
+1131	Aby zadac obrazenia Pajeczej Baronessie musisz.
+1132	Zniszcz najpierw wszystkie pajecze jaja!
+1133	Prosze skontaktowac sie z personelem, podajac numer referencyjny: spider001.
+1134	Zniszczyles wszystkie jaja, zabij Pajecza Baronowa.
+1135	Prosze skontaktowac sie z personelem, podajac numer referencyjny: spider002.
+1136	Gratulacje, przywróciles pokój!
+1137	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+1138	Udalo Ci sie zniszczyc metiny!
+1139	Potwory nadchodza!!!
+1140	Zabij ich wszystkich!
+1141	%s Metin znowu!
+1142	Zniszczyles wszystkie metiny.
+1143	Wez fiolke i zbierz kilka próbek szlamu, które sie pojawily.
+1144	Teraz wlóz Fiolke Szlamu do pieczeci!!!
+1145	Moc zla zniknela!
+1146	Udalo Ci sie ukonczyc loch!
+1147	Zostaniesz teleportowany za 30 sekund.
+1148	Wyszedl z lochu.
+1149	Zniszcz metiny, by zdobyc fiolke.
+1150	Oprzyj sie slimom!
+1151	Zabiles wszystkie potwory!
+1152	Wlasnie pojawila sie pieczec!
+1153	Sprawdzmy to!
+1154	Przygotuj sie!
+1155	Królowa nadchodzi!
+1156	!!!!! zostalo Ci jeszcze %s minut!!!!!
+1157	Konczy ci sie czas!
+1158	Prawie ci sie nie udalo!
+1159	Zostaniesz teleportowany z lochu!
+1160	Zniszcz kamien w ciagu 4 minut!
+1161	W przeciwnym razie zostaniesz teleportowany z lochu.
+1162	Za kilka sekund bedziesz kontynuowal.
+1163	Nie udalo Ci sie!
+1164	Zabij potwory, aby zebrac kawalki pergaminu, gdy masz 4 kawalki
+1165	odszyfrowac starozytna pieczec!
+1166	Masz wszystkie kawalki! Przejdz do pieczeci, aby ja rozszyfrowac!
+1167	To bylo zaklecie przywolujace sluge Anubisa, zabij go!
+1168	W ciagu kilku sekund przeskoczysz na kolejne pietro.
+1169	Znajdz i zniszcz prawidlowy kamien faraona w ciagu 20 minut!
+1170	Uwazaj, cos silnego kryje sie w srodku!
+1171	Zniszczyles wlasciwy kamien!
+1172	Bastet nadchodzi!
+1173	Ten kamien byl tylko cieniem!
+1174	Ten kamien byl tylko iluzja.
+1175	W ciagu kilku sekund przeskoczysz na kolejne pietro.
+1176	Znajdz wyjscie z tego labiryntu!
+1177	W koncu bedziesz musial zabic prawdziwego Ra!
+1178	To byl prawdziwy Ra.
+1179	W ciagu kilku sekund zostaniesz przeniesiony na kolejne pietro.
+1180	To byl falszywy Ra!
+1181	Zniszcz wszystkie Effigies of Anubis, ale uwazaj, maja swój wlasny mechanizm!
+1182	Musisz zniszczyc je w dokladnej kolejnosci!
+1183	To byl ten wlasciwy!
+1184	Teraz zniszcz kamien Ankh, aby zdobyc kolejny przedmiot!
+1185	Musisz zniszczyc inne Effigies Anubisa.
+1186	Fantastycznie! Potwory nadchodza! Jeden z nich ma inny przedmiot!
+1187	Musisz zniszczyc pozostale Effigies of Anubis.
+1188	Swietnie, ale teraz uwazaj!!!
+1189	Prawdziwy Anubis nadchodzi!
+1190	Zostaniesz teleportowany do nastepnego pietra w ciagu kilku sekund.
+1191	Zniszcz Filar Wadzetów, aby przywolac prawdziwego bossa!
+1192	Zabij teraz wszystkie potwory!
+1193	Zaklecie zniknelo, mozesz zdobyc Klucz Ankh i przeciagnij go do filaru Wadjet.
+1194	Pojawi sie kamien Sfinksa,
+1195	Moze zrodzic potwory i poprzednich bossów!
+1196	Jesli zniszczysz ja w ciagu 5 minut, unikniesz przyciagniecia innych potworów!
+1197	--------------------------------------------------------------
+1198	Zaklecie zniknelo, mozesz zdobyc Klucz Ankh i przeciagnij go do filaru Wadjet.
+1199	Jestes zbyt wolny, potwory cie widzialy!
+1200	Nadchodza, zabijcie ich wszystkich!
+1201	Pojawil sie Filar Wschodu!
+1202	Zniszcz ja w ciagu 3 minut! W przeciwnym razie loch zostanie zamkniety.
+1203	Sfinks nie ma juz mocy magicznej,
+1204	Zabij to!!!
+1205	Nie udalo Ci sie!
+1206	Sfinks jest chroniony!
+1207	Udalo sie! Spektakularna robota,
+1208	Odbierz swoja nagrode,
+1209	Lochy zostana zamkniete automatycznie za 3 minuty.
+1210	Czas minal, niestety nie udalo Ci sie. Zostaniesz teleportowany
+1211	Wyjscie z lochu.
+1212	Zniszczyles Metin Ochao, pozostalo %s do zniszczenia.
+1213	Zniszczyles Metin Ochao, pozostalo %s do zniszczenia.
+1214	Zabiles wszystkich Metin Ochao, gratulacje.
+1215	Teraz znajdz Silnego Ksiecia Ochao i zabij go!
+1216	Teraz musisz zniszczyc 4 Metin Ochaos.
+1217	Gratulacje, przywróciles pokój!
+1218	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+1219	Od tej chwili masz %s minut na ukonczenie lochu.
+1220	Zabij 100 potworów.
+1221	Udaj sie na srodek mapy, aby zabic
+1222	Pierwszy boss Ksiaze Ochao.
+1223	Zostalo %s potworów do zabicia.
+1224	Do zabicia pozostal jeden potwór.
+1225	Gratulacje, przyniesliscie pokój do lasu!
+1226	Za 30 sekund zostaniesz teleportowany na zewnatrz.
+1227	Czas minal.
+1228	Za kilka sekund zostaniesz teleportowany na zewnatrz.Gratulacje, pokonales Razadora.
+1229	SOS! Maszt sie zlamal i twój statek tonie. Zostaniesz teraz przetransportowany na zewnatrz.
+1230	Portal sie pojawil! Udalo Ci sie obronic maszt, zniszczyc skarb.
+1231	Grupa %s uwolnila statek z rak Hydry!
+1232	Wave 4: Podczas obrony masztu pokonaj Hydre.
+1233	Udalo Ci sie obronic maszt. Bardzo dobrze! Przygotuj sie na nastepna fale.
+1234	Wave 3: Podczas obrony drzewa pokonaj Hydre.
+1235	Udalo Ci sie obronic drzewo. Bardzo dobrze! Przygotuj sie na nastepna fale.
+1236	Wave 2: Podczas obrony drzewa pokonaj Hydre.
+1237	Obrona okretu rozpocznie sie za 1 minute.
+1238	Fala przed bedzie trwala 150 sek. Obron drzewo z calych sil.
+1239	%s ukonczono Runiczny loch!
+1240	Metin zostal zniszczony, wkrótce wejdziesz na kolejne pietro.
+1241	Musisz jeszcze zabic %s potworów, aby przejsc dalej.
+1242	Grupa %s pokonala Razadora.
+1243	%s pokonalo Razadora.
+1244	Nie mozna przenosic wyposazonych przedmiotów do magazynu.
+1245	Musisz opuscic grupe, zanim zmienisz swoje imie.
+1246	Mozesz otwierac ogien tylko co 60 sekund.
+1247	Zostaniesz rozlaczony za 3 sekundy. Uzyles przedmiotu, gdy miales otwarta misje !!!
+1248	%s nie ma wystarczajacej ilosci pustego miejsca.
+1249	<Grupa> %s przyjela zaproszenie.
+1250	Masz 40 minut na ukonczenie Wiezy Demonów.
+1251	Czas minal i nie udalo Ci sie.
+1252	Za 3 minut zostaniesz teleportowany z pokoju.
+1253	Oczysc pokój z Beran-Setaou!
+1254	Kamienie Metin wplywaja na obrazenia i regeneracje zycia Smoka.
+1255	Gratulacje, wyczysciles pokój!
+1256	%s wyczyscilo pokój Smoka!
+1257	Druzyna %s oczyscila pokój Smoka!
+1258	Gratulacje, uwolniles wieze z Nemere!
+1259	To byl tylko cien prawdziwego Szela.
+1260	Za 30 sekund zostaniesz teleportowany z Wiezy Nemere.
+1261	Za 30 sekund zostaniesz teleportowany.
+1262	Ten kawalek jest falszywy i zostal zniszczony. Zdobadz oryginal.
+1263	Gratulacje, pokonales Razador.
+1264	Ten kamien Matt nie jest kompatybilny z ta pieczecia.
+1265	Pieczec zostala otwarta.
+1266	Oczysc pokój z Bagjanamu.
+1267	Jotun Thrym zajal pokój, musisz go zabic!
+1268	Grupa %s przywrócila spokój w lesie!
+1269	%s przywrócil spokój w lesie!
+1270	Grupa %s oczyscila piramide!
+1271	%s uwolnilo piramide!
+1272	Grupa %s oczyscila terytorium Orków!
+1273	%s oczyscilo terytorium Orków!
+1274	Pozostalo %s demonów do zabicia.
+1275	Cos poszlo nie tak. Skontaktuj sie z obsluga: Beran002.
+1276	Smok nie jest juz niepokonany.
+1277	Pozostalo %s metin do zniszczenia.
+1278	Zostal jeszcze jeden metin do zniszczenia.
+1279	Aby zadac obrazenia Smokowi, musisz najpierw zniszczyc wszystkie Metiny.
+1280	Za 30 sekund zostaniesz teleportowany na zewnatrz katakumb.
+1281	Zabijanie potworów spowoduje upuszczenie klucza Crist. re. Anime przez
+1282	które mozesz otworzyc Statua Kud, aby przejsc na nastepne pietro.
+1283	%s Party Ukonczono Runiczny Loch!
+1284	<Gildia> Gildia stracila %s punktów.
+1285	Mozesz to zrobic maksymalnie co 10 sekund.
+1286	Mozesz zapisac pozycje maksymalnie co 10 sekund.
+1287	Jestes juz blisko tej lokalizacji.
+1288	Nie mozesz teleportowac sie na zewnatrz, bedac w lochu.
+1289	Znaki specjalne nie sa dozwolone.
+1290	Mozesz to zrobic maksymalnie co 30 sekund.
+1291	Pozostalo %s kamieni do zniszczenia.
+1292	Ten przedmiot jest kompatybilny tylko ze specjalnym ekwipunkiem.
+1293	Stroju stuly mozna laczyc tylko z innym kostiumem stroju stuly tego samego typu.
+1294	%s mozna stosowac tylko na dusze.
+1295	Szansa na bonusowa plansze zostala zmieniona na: %s%.
+1296	Zadaj obrazenia posagom do % s% ich HP!
+1297	Pojawily sie Smocze Jaja, musisz je zniszczyc.
+1298	Posagi stracily swoja nietykalnosc.
+1299	Idall, Strazniku. D. pojawily sie smoki, musisz je zniszczyc.
+1300	Masz 20 sekund na zniszczenie Posagów, przeciagajac na nie Pierscienie Ognistego Smoka.
+1301	%s grupa oczyscila legowisko Meley!
+1302	%s oczyscilo legowisko Meley!
+1303	Rozpoczelo sie wydarzenie swiateczne.
+1304	Impreza bozonarodzeniowa sie skonczyla.
+1305	Impreza bozonarodzeniowa jest aktywna.
+1306	Mozesz go otworzyc tylko wtedy, gdy wydarzenie swiateczne jest aktywne.
+1307	Musisz poczekac!
+1308	Znajdz Królewska Sniezke i zniszcz ja!
+1309	To byla prawdziwa Sniezka, uwazaj, bo nadchodza potwory!
+1310	Zabijaj potwory, az znajdziesz wlasciwy klucz.
+1311	Ta Sniezka byla tylko iluzja.
+1312	Znalazles klucz! Otwórz Magiczny Kamien Krainy Czarów za pomoca tego klucza.
+1313	Porozmawiaj ze Swietym Mikolajem!
+1314	Ta skrzynia byla tylko iluzja!
+1315	Teraz musisz zabic wszystkie potwory.
+1316	Cóz, teraz znajdz królewska skrzynie!
+1317	Duchy Swietego Mikolaja ukradly prezenty... zabierz je z powrotem!
+1318	A teraz wlóz je do torby Swietego Mikolaja!
+1319	Teraz zniszcz wszystkie sniezki.
+1320	To byla prawdziwa Sniezka!
+1321	Cóz, brakuje wiecej prezentów %s.
+1322	Cóz, brakuje ostatniego prezentu.
+1323	To jest teraz wlasciwa skrzynia!
+1324	Teraz musisz zabic Ducha Bozego Narodzenia.
+1325	A teraz zniszcz Swiateczny Kamien!
+1326	Znalazles pierwszy przedmiot!
+1327	Teraz zabij Ducha Bozego Narodzenia, aby otrzymac kolejny przedmiot.
+1328	Znalazles drugi przedmiot!
+1329	Teraz zniszcz wszystkie kamienie bozonarodzeniowe.
+1330	Dobrze, teraz porozmawiaj ze Swietym Mikolajem!
+1331	Dobrze, teraz otwórz Tajemniczy Pomnik!
+1332	Dobrze, teraz zabij zla choinke!
+1333	Grupa %s oczyscila zamarznieta wioske!
+1334	%s uwolnilo zamarznieta wioske!
+1335	W przeciwnym razie zniszcz wszystkie Kamienie Zimowej Krainy w 5 minut
+1336	kolejni bossowie, którzy nadejda, beda znacznie silniejsi!
+1337	Uwaga! Zaklecie sniegu i magia platków sniegu sa
+1338	bardzo wazne, wiec pamietaj, ze masz je w swoim ekwipunku!
+1339	Zabij wszystkie potwory, aby kontynuowac!
+1340	Teraz otwórz Zamarzniete Drzwi, przeciagajac na nie Magie Platków Sniegu.
+1341	Teraz musisz zabic Snieznego Demona!
+1342	Teraz zniszcz pierwsza czesc Zamarznietego Pomnika
+1343	Przeciagajac zaklecie sniegu.
+1344	Uwaga! Zaklecie Sniegu jest bardzo wazne, wiec pamietaj, ze masz je w swoim ekwipunku!
+1345	Teraz zniszcz druga czesc Zamarznietego Pomnika
+1346	przeciagajac zaklecie sniegu.
+1347	Zniszcz wszystkie Kamienie Zimowej Krainy, aby kontynuowac!
+1348	Teraz zniszcz ostatnia czesc Zamarznietego Pomnika.
+1349	Znajdz królewska skradziona swiateczna skarpete.
+1350	Ta skradziona skarpeta swiateczna byla iluzja.
+1351	Gratulacje, znaleziono wlasciwa skradziona swiateczna skarpete!
+1352	Musisz teraz uzyc Wyszukiwarki Drzew, aby kontynuowac.
+1353	Odkryto drzewa! Musisz je wszystkie udekorowac!
+1354	Teraz musisz zabic przekletego pomocnika Swietego Mikolaja.
+1355	Uzyj Swiatecznej Dekoracji, aby udekorowac jedno z drzew!
+1356	Dobrze, teraz musisz zabic Ducha Swietego Mikolaja!
+1357	Grupa %s wyzwolila Ziemie zima!
+1358	%s uwolnilo Ziemie zima!
+1359	Potrzebujesz Zaczarowanie Talizmanu, aby dodac piaty bonus.
+1360	U tego kowala mozesz ulepszac tylko przedmioty ponizej poziomu 90.
+2001	Czy kowal ma czarna kropke na czole?  
+2002	Czy NPC Soon trzyma ksiazke w reku?  
+2003	Czy Miecz Pelni Ksiezyca +9 mozna kupic od NPC?  
+2004	Czy Grillowany Ryba Lotosowa daje +25% EXP na 30 minut?  
+2005	Czy Kupiec Gaya trzyma ksiazke w reku?  
+2006	Czy Auriga-Global to najlepszy serwer?  
+2007	Czy Czerwona Ampulka daje +10% sily przeciwko pólludziom?  
+2008	Czy Zólta Ampulka daje +10% sily przeciwko metinom?  
+2009	Czy bizuterie z Krysztalu Duszy mozna ulepszyc do +13?  
+2010	Czy NPC Thusa ma spinke do wlosów?  
+2011	Czy bronie poziomu 75 mozna ulepszyc do +13?  
+2012	Czy istnieje Biala Rosa (stala)?  
+2013	Czy Talisman Ognia mozna ulepszyc do +30?  
+2014	Czy istnieje napój, który daje +15% szansy na udane ulepszenie?  
+2015	Czy Talisman Ognia +30 mozna uzywac od poziomu 70?  
+2016	Czy z metinów mozna zdobyc rybie osci?  
+2017	Czy rybak nosi fioletowa chuste?  
+2018	Czy handlarz bronia ma blond wlosy?  
+2019	Czy istnieje Kamien, który daje +35% srednich obrazen?  
+2020	Czy cienkiej tkaniny uzywa sie do zakupu naramienników?  
+2021	Czy Kamien Inteligencji+5 daje +10 inteligencji?  
+2022	Czy Manny (staly) mozna ulepszyc do +9?  
+2023	Czy Eliksir Slonca (staly) mozna kupic u Kupca Gaya?  
+2024	Czy kupowanie czegos z innego królestwa kosztuje podwójnie?  
+2025	Czy mozna biegac w smokingu?  
+2026	Czy Eliksir Ksiezyca (staly) mozna kupic u Kupca Gaya?  
+2027	Czy cala alchemie mozna udoskonalic jednym kliknieciem?  
+2028	Czy potrzeba 5 Eliksirów Teczy, aby perfekcyjnie pokolorowac umiejetnosc?  
+2029	Czy Plaszcz Odwagi przyciaga wszystkie moby do ciebie?  
+2030	Czy kowal trzyma mlot w lewej rece?  
+2031	Czy u sprzedawczyni ogólnej mozna kupic Bon Monety Smoka?  
+2032	Czy królestwo Shinsoo ma niebieska flage?  
+2033	Czy naszyjnik z kianitu mozna wytworzyc u NPC Uriel?  
+2034	Czy Biolog wymaga Ksiegi Klatw do misji na poziomie 40?  
+2035	[SGM]Profiq Ninja character?  
+2036	Czy Hisztis jest oficjalnym promotorem Auriga?  
+2037	Czy mozna zapisac pozycje postaci za pomoca klawisza F11?  
+2038	Czy blokada multifarm powoduje brak dropu na 3. kliencie, jesli sa otwarte trzy klienty?  
+2039	Czy Skrecony Klucz jest biletem wstepu do Swiatyni Ochao?  
+2040	Czy www.Auriga-Global.cc to poprawna strona serwera?  
+2041	Czy jesli sa otwarte trzy klienty, wszystkie otrzymuja drop?  
+2042	Czy NPC Uriel nosi buty?  
+2043	Czy Straznik Miasta NPC ma brazowa brode?  
+2044	Czy Kapitan NPC trzyma bron w lewej rece?  
+2045	Czy Stara Kobieta NPC ma otwarte oczy?  
+2046	Czy Dowódca Bitwy NPC ma wasy?  
+2047	Czy bronie poziomu 65 na +9 daja +55% sily przeciwko diablom?  
+2048	Czy na Map2 nie ma NPC Rybaka?  
+2049	Czy mozna teleportowac sie do bossów, klikajac na nich na duzej mapie?  
+2050	Czy Tarcza Trzech Cesarzy mozna ulepszyc do +9?  
+2051	%s wszedl do Smoczej Sali!
+2052	Blekitny Smok powraca!
+2053	[LEVEL UP]%s osiagnal poziom 35 [Odblokowane Dungeon] Ork Run
+2054	[LEVEL UP]%s osiagnal poziom 45 [Odblokowane Dungeon] Slime Run
+2055	[LEVEL UP]%s osiagnal poziom 50 [Odblokowana mapa]: Ice Empire
+2056	[LEVEL UP]%s osiagnal poziom 65 [Odblokowana mapa] Ice Cave
+2057	[LEVEL UP]%s osiagnal poziom 75 [Odblokowane Dungeon] Beran-Setaou
+2058	[LEVEL UP]%s osiagnal poziom 85 [Odblokowana mapa]: Dark Forest
+2059	[LEVEL UP]%s osiagnal poziom 90 [Odblokowane Dungeon]: Ochao Dungeon
+2060	[POZIOM UP]%s osiagnal poziom 100
+2061	[LEVEL UP]%s osiagnal poziom 110
+2062	[LEVEL UP]%s osiagnal poziom 120
+2063	[LEVEL UP]%s osiagnal poziom 130
+2064	[!!!!MAX LVL!!!!]%s Osiagnal poziom 140. Gratulacje dla niego od Zespolu Auriga!
+2065	wydarzenie Szkat. Blasku Ksi?yca rozpoczelo sie
+2066	Oh kurwa..Wydarzenie Szkat. Blasku Ksi?yca dobieglo konca!
+2067	Rozpoczelo sie wydarzenie podwójnego Odlamek kamienia Metin.
+2068	Zakonczylo sie wydarzenie podwójnego Odlamek kamienia Metin.
+2069	Zakonczylo sie zdarzenie upuszczania MD
+2070	Rozpoczelo sie zdarzenie upuszczania MD.
+2071	|cff00A8EB[ItemShop]|r |cffFFFFFFItemShop was update!|r
+2072	|cff00A8EB[ItemShop]|r |cffFFFFFFYou don't have enought dragon coin!|r
+2073	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%sx%d|r |cffFFFFFFfor|e |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2074	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%s|r |cffFFFFFFfor|r |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2075	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the weekly purchase count. Max Count Per Week: %d|r
+2076	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the monthly purchase count. Max Count Per Month: %d|r
+2077	[SYSTEM]You must be seat on the mount before using the mount costume!
+2078	Bonus event is active!
+2079	Bonus event is done
+2080	Double Boss Loot event is active!
+2081	Double Boss Loot event is done!
+2082	Double Metin Loot event is active
+2083	Double Metin Loot event is done
+2084	Double Mission Book event is active
+2085	Double Mission Book event is done
+2086	Dungeon Cooldown event is active!
+2087	Dungeon Cooldown event is done!
+2088	Dungeon Ticket event is active!
+2089	Dungeon Ticket event is done!
+2090	MoonLight event is active!
+2091	MoonLight event is done!
+2092	%s and her/his group killed Hydra!
+2093	%s killed the Hydra!
+2094	The NPC has appeared, talk to her to let you continue.
+2095	Kill the BOSS to free the NPC.
+2096	Kill the Great Hydra to complete the Dungeon.
+2100	Czy wierzchowca Drake mo¿na zdobyæ tylko za DC?
+2101	Czy Niebieska Rosa daje 100 wartoœci ataku?
+2102	Czy Zarz¹dca stoi ty³em do budynku?
+2103	Czy Trener Walki Sztyletami znajduje siê obok Trenera Umys³owego?
+2104	Czy Uriel stoi przed Trenerem Mocy Smoka?
+2105	Czy Alchemik uderza siê w plecy?
+2106	Czy okulary Biologa Chaegiraba s¹ czerwone?
+2107	Czy gumka do w³osów Sprzedawczyni z Sklepu Ogólnego jest niebieska?
+2108	Czy Kowal ma 8 kostek miêœni brzucha?
+2109	Czy przy domu Staruszki znajduje siê w³ócznia?
+2110	Czy na serwerze znajduj¹ siê pomocnicy Helperzy?
+2111	Czy Sklep Offline pozostaje otwarty przez 45 dni?
+2112	Czy umiejêtnoœæ P mo¿na kupiæ u Gaiyaby?
+2113	Czy na serwerze znajduje siê Wikipedia?
+2114	Czy Orcy na poziomach 35-50 znajduj¹ siê na mapie z NPC Thusa?
+2115	Czy Stra¿nik Wie¿y Demonów znajduje siê tylko na Mapie 1?
+2116	Czy w w³osach Sprzedawcy Broni znajduje siê gumka do w³osów?
+2117	Czy Pas M¹droœci +9 daje 60% bonusu do expa?
+2118	Czy Pepsi od Profiq ma nieskoñczony czas trwania?
+2119	Czy Pierœcieñ Eek daje 20% do wszystkich bonusów?
+2120	Czy Zmniejszon¹ G³owê mo¿na zdobyæ tylko za DC?
+2121	Czy Bia³a Rosa ma nieskoñczony czas trwania?
+2122	Czy na Mapie Eventowej znajduje siê jedno drzewo z niebieskimi liœæmi?
+2123	Czy wszystkie drzewa na Mapie Eventowej maj¹ br¹zowy pieñ?
+2124	Czy Lee Chung trzyma w³óczniê w prawej rêce?
+2125	Czy na Mapie 1 znajduje siê bambusowe drzewo?
+2126	Czy ¯ó³ta Rosa daje 10% œrednich obra¿eñ PVM?
+2127	Czy Soon nosi okulary?
+2128	Czy Staruszka (NPC) ma czerwon¹ torebkê?
+2129	Czy Napój Rozwoju (20%) mo¿na kupiæ u NPC Thusa?
+2130	Czy w Sklepie Offline mo¿na sk³adaæ oferty?
+2131	Czy mo¿na zmieniæ imiê zwierzaka?
+2132	Czy na Mapie 1 znajduje siê statek piracki?
+2133	Czy na Mapie 1 znajduje siê 16 g³ównych bossów?
+2134	Czy ka¿de konto otrzymuje Pierœcieñ Anti-Exp?
+2135	Czy na Mapie Eventowej znajduje siê trawa?
+2136	Czy jeden z pos¹gów na Mapie Eventowej siedzi po turecku?
+2137	Czy ka¿dy mo¿e wejœæ na Mapê Eventow¹?
+2138	Czy u Lee Chunga mo¿na zdobyæ wszystkie przedmioty do wejœæ na runy?
+2139	Czy strój Sprzedawczyni z Sklepu Ogólnego jest we wzory?
+2140	Czy za NPC Thusa znajduje siê drzwi?
+2141	Czy w Sklepie z Broni¹ mo¿na kupiæ przedmioty +9?
+2142	Czy 100 Kryszta³ów S³oñca daje 1 Kryszta³ S³oñca+?
+2143	Czy zaczarowanie alchemii kosztuje 200 Od³amków Smoczego Kamienia?
+2144	Czy Magiczny Kamieñ mo¿na zdobyæ tylko z Metinów?
+2145	Czy w Sklepie Ogólnym mo¿na kupiæ Kamienie +4?
+2146	Czy Bia³y Lew+0 mo¿na ulepszyæ do +13?
+2147	Czy Owoc ¯ycia daje 2000 punktów rangi?
+2148	Czy maksymalny poziom rangi to 25 000 punktów?
+2149	Czy mo¿na zaprosiæ do grupy gracza z innego królestwa?
+2150	Kliknij na NPC, aby przejsc dalej!
+2151	%s i jego druzyna wyzwolili Sowia Krypte!
+2152	%s wyzwolil(a) Sowia Krypte!
+2153	Zabij BOSSA, aby pojawil sie NPC, który pozwoli ci przejsc dalej.
+2154	Zabij GLÓWNEGO BOSSA, aby ukonczyc krypte.
+2155	Zabij wszystkie potwory, aby móc uszkodzic Brame Przeznaczenia!
+2156	Brama nie jest juz niesmiertelna!
+2157	Znajdz i zniszcz kamien metin.
+2158	Statua Króla Malp jest nie do zranienia!
+2159	Mozesz ja uszkodzic tylko wtedy, gdy uzyjesz na niej wlóczni.
+2160	Zdobadz 5 wlóczni, aby zniszczyc statue!
+2161	Zabij poteznego Króla Malp, aby ukonczyc loch.
+2162	Pomyslnie zniszczyles statue Króla Malp.
+2163	Zostaniesz przeteleportowany do bossa za 10 sekund.
+2164	%s i jego druzyna uwolnili dzungle Króla Malp!
+2165	%s uwolnil dzungle Króla Malp!
+2067	[LEVEL UP] %s osiagnal poziom %d
+2168	|cff00A8EB[AUTO EVENT]|r: %s event is active, Location: Event Map
+2169	|cff00A8EB[AUTO EVENT]|r: %s event has ended!
+2170	|cff00A8EB[AUTO EVENT]|r: %s will start in 5 minutes, location: Teleport ? Cities: Event Map!
+2171	You cannot use teleport in a dungeon map. Please wait for the automatic teleport.
+2176	|cFFFFD700 nagroda dla zwyciezcy :|cff0cf03d %s |r
+2177	|cFF0cf03d %s|r |cFFFFD700 szt.|r
+2178	|cFF63fff5 Nikt nie zgadl poprawnej odpowiedzi|r |cFFff63fc[%s]|r|cFF63fff5 dlatego Admin to zamknal.|r
+2179	|cFFff63fc [Quiz]|r |cFFFFD700 Wpisz POPRAWNY numer na czacie globalnym! Pierwszy wygrywa! Masz 60 sekund!|r
+2180	|cFFff63fc [Quiz]|r |cFF63fff5Czas minal. Poprawna odpowiedz |r|cFFff63fc[%s]|r |r|cFF63fff5 byla|r
+2181	|cFFFFD700 Zwyciezca: |cff0cf03d [%s]|r |cFFFFD700 Poprawna odpowiedz: |r|cff0cf03d%s |r|cFFFFD700 Nagroda zostala przyznana automatycznie.
+2182	|cFFff63fc [Quiz|]|r|cFFFFD700Mysle o liczbie miedzy 1 a 100|r
+2183	|cFFff63fc [Quiz]]|r|cFFFFD700Mysle o liczbie miedzy 1 a 1000|r
+2185	Grupa %s pomyslnie ukonczyla Loch Koszmarów!
+2186	%s pomyslnie ukonczyl Loch Koszmarów!
+2187	Zabij poteznego Agaresa
+2188	The Hexagonal Chest event has begun!
+2189	The Hexagonal Chest event has ended!
+2190	|cFFFFD700 [WORLDBOSS]|r %s has slain the Dragon Queen Meley on the Fire Map.
+2191	|cFFFFD700 [WORLDBOSS]|r %s has slain the Desert Wraith in the Desert.
+2192	The Double Run Boss drop event has begun.
+2193	The Double Run Boss drop event has ended!
+2194	|cFF0cf03dThe Event map is now open, entry at Map1|r|cFFff63fc at Uriel|r|cFF0cf03d. Hurry, it will close soon!|r
+2195	|cFF0cf03dThe Event map is now closed, no one can enter anymore!|r
+2220	The Santa Claus event has begun!
+2221	The Santa Claus event has ended!
+2222	The Christmas event has begun, the Auriga-Global team wishes you a Merry Christmas <3!
+2223	The Christmas event has ended!
+2224	The Double Metin Shard drop event has begun!
+2225	The Double Metin Shard drop event has ended!
+2226	Auriga Coin Drop has begun!
+2227	Auriga Coin Drop has ended!
+2228	The Double Boss Point event has begun!
+2229	The Double Boss Point event has ended!
+2230	The Double Run Point event has begun!
+2231	The Double Run Point event has ended!
+2232	The Desert World Boss can respawn at any moment on CH%d!
+2233	The Desert World Boss will spawn in %d hour(s) on CH%d!
+2234	The Desert World Boss will spawn in %d minute(s) on CH%d!
+2235	Less than 1 minute until the Desert World Boss spawns on CH%d!
+2236	The Desert World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2237	The Meley World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2238	The Meley World Boss can respawn at any moment on CH%d!
+2239	The Meley World Boss will spawn in %d hour(s) on CH%d!
+2240	The Meley World Boss will spawn in %d minute(s) on CH%d!
+2241	Less than 1 minute until the Meley World Boss spawns on CH%d!

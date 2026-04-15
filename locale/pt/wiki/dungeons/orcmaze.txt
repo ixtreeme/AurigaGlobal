@@ -1,0 +1,37 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/orcmaze.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 35.
+[X_PADDING=12]*Level máximo: 60.
+[X_PADDING=12]*Ingresso: Ingresso de Orcs.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89106.tga; Y=15; X=478]
+[X_PADDING=459]Ingresso de Orcs.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 30 minutos.
+[X_PADDING=12]*O tempo de espera é de 40 minutos.
+[X_PADDING=12]*Caso você entre com o grupo, todos devem ter um ingresso.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Animais.
+[X_PADDING=12]*O elemento dos monstros: Terra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRA FASE
+[X_PADDING=20]1. Mate os orcs para dropar a Chave Orc Verde.
+[X_PADDING=20]2. Insira a Chave Orc Verde no selo encontrado no final da ponte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDA FASE
+[X_PADDING=20]1. Destrua todos os Metin das Sombras.
+[X_PADDING=20]2. Mate o Orc Chefe.
+[X_PADDING=20]3. Arraste a Chave Orc Negra até o selo para destravar a terceira ponte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRA FASE
+[X_PADDING=20]1. Destrua todos os Metin das Sombras para poder causar danos ao chefe.
+[X_PADDING=20]2. Mate o Orc Chefe Renascido.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=390; CENTER_ALIGN]

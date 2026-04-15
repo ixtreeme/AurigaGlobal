@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTTURA DO SISTEMA
+
+[X_PADDING=12]No Auriga, existem 4 novos graus de aprimoramento:
+[X_PADDING=20]- Épico
+[X_PADDING=20]- Legendário
+[X_PADDING=20]- Antigo 
+[X_PADDING=20]- Místico
+
+[X_PADDING=12]1. Quando alguns itens são atualizados em até +9, será possível epicizá-los em 4 graus.
+[X_PADDING=12]2. Quando um item é epicizado, um novo bônus fixo é adicionado a ele ou as porcentagens de bônus fixos
+[X_PADDING=12]já presentes são melhoradas.
+
+[X_PADDING=12;FONT_SIZE=14]ITENS QUE PODEM SER EPICIZADOS:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMAS:
+[X_PADDING=28]- Espada Venenosa+9
+[X_PADDING=28]- Espada do Leão+9
+[X_PADDING=28]- Espada do Ódio+9
+[X_PADDING=28]- Arco Corvo Negro+9
+[X_PADDING=28]- Chakram Asa do Diabo+9
+[X_PADDING=28]- Campainha de Bambu+9
+[X_PADDING=28]- Espada do Zodíaco+9
+[X_PADDING=28]- Lâmina do Zodíaco+9
+[X_PADDING=28]- Glava do Zodíaco+9
+[X_PADDING=28]- Arco do Zodíaco+9
+[X_PADDING=28]- Punhal do Zodíaco+9
+[X_PADDING=28]- Leque do Zodíaco+9
+[X_PADDING=28]- Sino do Zodíaco+9
+[X_PADDING=28]- Espada di Cianite+9
+[X_PADDING=28]- Lâmina de Kyanite+9
+[X_PADDING=28]- Espadão de Kyanite+9
+[X_PADDING=28]- Arco de Kyanite+9
+[X_PADDING=28]- Punhal de Kyanite+9
+[X_PADDING=28]- Leque de Kyanite+9
+[X_PADDING=28]- Sino de Kyanite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMADURAS:
+[X_PADDING=28]- Armadura de Kyanite+9
+[X_PADDING=28]- Armadura Placa de Kyanite+9
+[X_PADDING=28]- Quimono de Kyanite+9
+[X_PADDING=28]- Robe de Kyanite+9
+[X_PADDING=28]- Armadura do Zodíaco+9
+[X_PADDING=28]- Armadura Placa do Zodíaco+9
+[X_PADDING=28]- Quimono do Zodíaco+9
+[X_PADDING=28]- Robe do Zodíaco+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ELMOS:
+[X_PADDING=28]- Elmo Dragão Escuro+9
+[X_PADDING=28]- Elmo Dragão Mágico+9
+[X_PADDING=28]- Elmo Dragão do Vento+9
+[X_PADDING=28]- Elmo Dragão Divino+9
+[X_PADDING=28]- Elmo Aço do Dragão+9
+[X_PADDING=28]- Elmo Escama de Dragão+9
+[X_PADDING=28]- Capuz do Dragão+9
+[X_PADDING=28]- Chapéu do Dragão+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ESCUDOS:
+[X_PADDING=28]- Escudo Falcão+9
+[X_PADDING=28]- Escudo Leão Angular+9
+[X_PADDING=28]- Escudo Tigre Monge+9
+[X_PADDING=28]- Escudo Escamas Dragão+9
+[X_PADDING=28]- Escudo dos Três Reis+9
+[X_PADDING=28]- Escudo Titã+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* PULSEIRAS:
+[X_PADDING=28]- Pulseira de Azurite+9
+[X_PADDING=28]- Pulseira de Kyanite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* COLARES:
+[X_PADDING=28]- Colar de Azurite+9
+[X_PADDING=28]- Colar de Kyanite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRINCOS:
+[X_PADDING=28]- Brinco de Azurite+9
+[X_PADDING=28]- Brinco de Kyanite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SAPATOS:
+[X_PADDING=28]- Sapatos de Fogo+9
+[X_PADDING=28]- Sapatos Oceânicos+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

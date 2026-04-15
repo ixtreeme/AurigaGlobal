@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talisman Foc									Talism. Gheaþã								  Talism. Pãmânt
+
+
+
+
+
+
+[X_PADDING=85]Tal. Întuneric									Talisman Vânt								   Talism. Fulger
+
+[CENTER_ALIGN]Talismanele sunt iteme ce oferã bonusuri noi caracterelor, pot fi îmbunãtãþite pânã la +30.
+[CENTER_ALIGN]Poþi achiziþiona talismane de la NPC-ul Yonah.
+
+[X_PADDING=12]Talismanele pot avea un maxim de 5 bonusuri:
+[X_PADDING=20]1. De la primul la al 4-lea vei avea nevoie de Întãreºte Talisman.
+[X_PADDING=20]2. Pentru al 5-lea bonus vei avea nevoie de Marmurã Talisman.
+[X_PADDING=20]3. Pentru a schimba bonusurile vei avea nevoie de Vrãjeºte Talisman.
+
+[X_PADDING=12]Bonusurile care pot fi gãsite pe talismane:
+[X_PADDING=20]- Întrerupe apãrarea la sabie 5%
+[X_PADDING=20]- Întrerupe apãrarea la doua-mâini 5%
+[X_PADDING=20]- Întrerupe apãrarea la pumnal 5%
+[X_PADDING=20]- Întrerupe apãrarea la sãgeþi 5%
+[X_PADDING=20]- Întrerupe apãrarea la eventai 5%
+[X_PADDING=20]- Întrerupe apãrarea la clopot 5%
+[X_PADDING=20]- Rezistenþã la Semi-Oameni 10%
+[X_PADDING=20]- Tare împotriva Semi-Oamenilor 10%
+[X_PADDING=20]- Tare împotriva Monºtrilor 15%
+[X_PADDING=20]- Tare împotriva Metinelor 15%
+[X_PADDING=20]- Tare împotriva ªefilor 15%
+[X_PADDING=20]- Rezistenþã Întuneric 15%
+[X_PADDING=20]- Rezistenþã Pãmânt 15%
+[X_PADDING=20]- Rezistenþã Gheaþã 15%
+[X_PADDING=20]- Rezistenþã Foc 15%
+[X_PADDING=20]- Rezistenþã Vânt 15%
+[X_PADDING=20]- Rezistenþã Fulger 15%
+[X_PADDING=20]- Tare împotriva monºtrilor Rune 20% 
+
+[X_PADDING=12]Pânã la +10 talismanele pot fi îmbunãtãþite cu iteme dropate în dungeon-urile de început, de la +11 la +30 itemele
+[X_PADDING=12]necesera pot fi gãsite în interiorul Cuferelor Strãvechi.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=83]Întãreºte Talis.								  Vrãjeºte Talism.								 Marmurã Talis.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

@@ -1,0 +1,102 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]Completând anumite misiuni vei primi un Cufãr animal de companie, clickând pe acesta vei putea
+[X_PADDING=12]alege unul dintre urmãtoarele ouã:
+[X_PADDING=20]- Ou Maimuþã
+[X_PADDING=20]- Ou Pãianjen
+[X_PADDING=20]- Ou Razador
+[X_PADDING=20]- Ou Nemere
+[X_PADDING=20]- Ou Dragon Albastru
+[X_PADDING=20]- Ou Dragon Roºu
+[X_PADDING=20]- Ou Baashido
+[X_PADDING=20]- Ou Boia
+[X_PADDING=20]- Ou Nessie
+[X_PADDING=20]- Ou Azrael
+[X_PADDING=20]- Ou Exdyar
+
+[X_PADDING=12]Clickând pe ou, va trebui sã introduci numele pet-ului.
+[X_PADDING=12]Folosind Pergament Nume vei putea alege un nou nume pentru pet.
+[X_PADDING=12]Când pet-ul va ieºi din ou va avea 2 zile de duratã ºi nivel 1.
+
+[X_PADDING=12]Pentru a creºte viaþa pet-ului vei avea nevoie de Biscuite Divin, care poate fi gãsit de 2 zile la NPC-ul Magazinul General.
+
+[X_PADDING=12]Când scoþi pet-ul din Ou acesta va primi 3 bonusuri (valorile bonusurilor sunt aleatoriu):
+[X_PADDING=20]- PV
+[X_PADDING=20]- Tare împotriva Monºtrilor
+[X_PADDING=20]- Paguba medie [PVM]
+
+[X_PADDING=12]Cu ajutorul item-ului Biscuite Special poþi creºte valorile bonusurilor standard.
+[X_PADDING=12](Atenþie deoarece acest proces poate eºua).
+
+[X_PADDING=12]Pet-ul are 3 evoluþii:
+[X_PADDING=20]1. De la Pui la Sãlbatic
+[X_PADDING=20]2. De la Sãlbatic la Curajos
+[X_PADDING=20]3. De la Curajos la Eroic
+
+[X_PADDING=12]Evoluþiile pet-ului se împart astfel:
+[X_PADDING=20]PUI:
+[X_PADDING=28]- De la nivel 1 la 40 farã nici o cerere de item.
+[X_PADDING=20]PUI --> SALBATIC:
+[X_PADDING=28]- De la nivel 41 la nivel 60.
+[X_PADDING=28]- 10 Carte pet tânãr
+[X_PADDING=28]- 10 Perle Albe
+[X_PADDING=28]- 3 Perle Galbene
+[X_PADDING=20]SALBATIC --> CURAJOS:
+[X_PADDING=28]- De la nivel 61 la nivel 80.
+[X_PADDING=28]- 10 Carte pet sãlbatic
+[X_PADDING=28]- 10 Perle Albastre
+[X_PADDING=28]- 3 Perle Verzi
+[X_PADDING=20]CURAJOS --> EROIC:
+[X_PADDING=28]- De la nivel 81 la nivel 100.
+[X_PADDING=28]- 10 Carte pet curajos
+[X_PADDING=28]- 10 Perle Roºii
+[X_PADDING=28]- 3 Perle Violet
+
+[X_PADDING=12]La evoluþia Sãlbatic se va debloca primul slot al abilitãþilor.
+[X_PADDING=12]La evoluþia Curajos se va debloca al-2lea slot al abilitãþilor.
+[X_PADDING=12]La evoluþia Eroic se va debloca al-3lea slot al abilitãþilor.
+
+[X_PADDING=12]Pe lângã asta pet-ul vã va oferi alte bonusuri îmbãtrânind, cu cât el este mai bãtrân cu atât valorile bonusurilor
+[X_PADDING=12]vor fi mai mari.
+[X_PADDING=20]De la 1 zi pânã la 10 zile pet-ul vã oferi urmãtoarele bonusuri:
+[X_PADDING=28]- Max. PV +500
+[X_PADDING=28]- Rezistenþã la Monºtri 2%
+[X_PADDING=28]- Rezistenþã la Semi-Oameni 2%
+[X_PADDING=20]De la 11 zile pânã la 25 zile pet-ul vã oferi urmãtoarele bonusuri:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Rezistenþã la Monºtri 4%
+[X_PADDING=28]- Rezistenþã la Semi-Oameni 4%
+[X_PADDING=20]De la 26 zile pânã la 47 zile pet-ul vã oferi urmãtoarele bonusuri:
+[X_PADDING=28]- Max. PV +2100
+[X_PADDING=28]- Rezistenþã la Monºtri 7%
+[X_PADDING=28]- Rezistenþã la Semi-Oameni 7%
+[X_PADDING=20]De la 48 zile pânã la 59 zile pet-ul vã oferi urmãtoarele bonusuri:
+[X_PADDING=28]- Max. PV +3000
+[X_PADDING=28]- Rezistenþã la Monºtri 10%
+[X_PADDING=28]- Rezistenþã la Semi-Oameni 10%
+[X_PADDING=20]De la 60 zile în sus pet-ul vã oferi urmãtoarele bonusuri:
+[X_PADDING=28]- Max. PV +3000
+[X_PADDING=28]- Rezistenþã la Monºtri 10%
+[X_PADDING=28]- Rezistenþã la Semi-Oameni 10%
+[X_PADDING=28]- ªi se va debloca al-4lea slot al abilitãþilor.
+
+[X_PADDING=12]Abilitãþile care pot fi învãþate de pet:
+[X_PADDING=20]- Posibilitate de a cauza daune critice (PVM) 10%
+[X_PADDING=20]- Tare împotriva Metinelor 10%
+[X_PADDING=20]- Tare împotriva ªefilor 10%
+[X_PADDING=20]- Rezistenþã (Ninja) 10%
+[X_PADDING=20]- Rezistenþã (Sura) 10%
+[X_PADDING=20]- Rezistenþã (Rãboinic) 10%
+[X_PADDING=20]- Rezistenþã (ªaman) 10%
+[X_PADDING=20]- ªansã la bonus-EXP 20%
+[X_PADDING=20]- ªansa de drop Yang a crescut 20%
+[X_PADDING=20]- Valoare atac fizic/atac magic 10%
+[X_PADDING=20]- ªansa de a bloca un atac corporal 10%
+[X_PADDING=20]- 10% ºansã de a reflecta loviturile atacului corporal
+
+[X_PADDING=12]Folosind Reseteazã Abilitate Pet vei putea reseta una dintre abilitãþilor pet-ului, pe lângã asta existã
+[X_PADDING=12]ºi Reseteazã Abilitate Pet (S) care poate fi folositã pentru a reseta toate abilitãþile pet-ului.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1184; CENTER_ALIGN]

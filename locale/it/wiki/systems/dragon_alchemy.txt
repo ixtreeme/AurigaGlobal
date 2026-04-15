@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NEGOZIO ALCHIMIA
+
+[X_PADDING=12]1. Puoi acquistare i Cor Draconis (Antico) nel negozio alchimia situato nel pannello dell'alchimia con le Scheggie Pietre
+[X_PADDING=12]d. Drago.
+[X_PADDING=12]2. Puoi acquistare gli Elisir del tempo nel negozio alchimia situato nel pannello dell'alchimia con le Scheggia Pietra
+[X_PADDING=12]d. drago.
+[X_PADDING=12]3. Puoi acquistare il chicco verde, blu e rosa nel negozio alchimia situato nel pannello dell'alchimia con le 
+[X_PADDING=12]Scheggia Pietra d. drago.
+[X_PADDING=12]4. Puoi acquistare le Tenaglie del Drago nel negozio alchimia situato nel pannello dell'alchimia con le Scheggia Pietra
+[X_PADDING=12]d. drago.
+[X_PADDING=12]5. Puoi acquistare gli Incanta Alchimia nel negozio alchimia situato nel pannello dell'alchimia con i Cor Draconis
+[X_PADDING=12](Antico), oppure dropparli nei vari dugeon.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASSE
+
+[X_PADDING=12]1. Su Auriga sono presenti solo 3 classi. Antico, Leggendario e Mitico.
+[X_PADDING=12]2. Per migliore la classe di una pietra c'è bisogno di 2 pietre della stessa tipologia e classe.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADO DI CHIAREZZA
+
+[X_PADDING=12]1. Sono presenti 5 gradi di chiarezza: Opaco, Chiaro, Limpido, Brillante ed Eccellente.
+[X_PADDING=12]2. Per migliorare il grado di chiarezza di una pietra c'è bisogno di due piete della stessa tipologia e stesso grado di
+[X_PADDING=12]chiarezza.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LIVELLO
+
+[X_PADDING=12]1. Le pietre del drago possono essere uppate fino a +6.
+[X_PADDING=12]2. Le pietre possono essere uppate con il chicco verde, blu o rosa.
+[X_PADDING=12]3. La differenza tra i vari chicchi è la percentuale del up, il chicco verde ha la percentuale più bassa mentre quello
+[X_PADDING=12]viola più alta.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DURATA DELLA PIETRA DEL DRAGO
+
+[X_PADDING=12]1. Ogni pietra del drago ha una durata massima di 24 ore.
+[X_PADDING=12]2. Quando scade il tempo della pietra del drago la pietra non scompare.
+[X_PADDING=12]3. E' possibile acquistare gli Elisir del tempo per ricaricare la pietra nel negozio dell'alchimia.
+[X_PADDING=12]4. E' possibile togliere una pietra del drago dall'alchimia usando le Tenaglio del Drago, la pietra viene tolta sempre con
+[X_PADDING=12]il 100% di successo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]I BONUS DELLE PIETRE DEL DRAGO
+
+[X_PADDING=12]1. Le pietre del drago Antiche e Leggendarie hanno sempre 2 bonus fissi di base.
+[X_PADDING=12]2. Le pietre del drago Mitiche hanno sempre 3 bonus fissi di base.
+[X_PADDING=12]3. E' possibile cambiare i bonus ad una pietra del drago solo quando è di classe Mitica e di grado Eccellente.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]I VARI BONUS CHE POSSONO USCIRE SULLE PIETRE DEL DRAGO
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](I bonus indicati sono riferiti all'alchimia Mitica, Eccellente +6)
+
+
+[X_PADDING=52]DIAMANTE DEL DRAGO:
+[X_PADDING=60]- Intelligenza +16
+[X_PADDING=60]- Resistenza Ghiaccio 20%
+[X_PADDING=60]- Forza del Ghiaccio 20%
+[X_PADDING=60]- Forte contro Sura 24%
+[X_PADDING=60]- Possibilità di difesa dai sura 24%
+[X_PADDING=60]- HP max. +32%
+[X_PADDING=60]- Possibilità di rigenerazione MP 16%
+[X_PADDING=60]- Valore d'attacco magico +24
+[X_PADDING=60]- Difesa magica +24
+
+
+[X_PADDING=52]RUBINO DEL DRAGO:
+[X_PADDING=60]- Forza +16
+[X_PADDING=60]- Resistenza Fuoco 20%
+[X_PADDING=60]- Forza del Fuoco 20%
+[X_PADDING=60]- Forte contro Guerrieri 24%
+[X_PADDING=60]- Possibilità di difesa dai guerrieri 24%
+[X_PADDING=60]- Possibilità di lasciar cadere YANG 26%
+[X_PADDING=60]- Rigenerazione HP +16%
+[X_PADDING=60]- Resistenza ai danni medi 24%
+[X_PADDING=60]- Difesa +320
+
+
+[X_PADDING=52]GIADA DEL DRAGO:
+[X_PADDING=60]- MP +1000
+[X_PADDING=60]- Resistenza Vento 20%
+[X_PADDING=60]- Forza del Vento 20%
+[X_PADDING=60]- Resistenza Mostri 20%
+[X_PADDING=60]- Danni abilità 24%
+[X_PADDING=60]- Resistenza contro i danni abilità 24%
+[X_PADDING=60]- Valore d'attacco +480
+[X_PADDING=60]- Forte contro mostri 20%
+[X_PADDING=60]- Possibilità di far cadere il doppio degli oggetti 20%
+
+
+[X_PADDING=52]ZAFFIRO DEL DRAGO:
+[X_PADDING=60]- Destrezza +16
+[X_PADDING=60]- Resistenza Terra 20%
+[X_PADDING=60]- Forza della Terra 20%
+[X_PADDING=60]- Forte contro ninja 24%
+[X_PADDING=60]- Possibilità di difesa dai ninja 24%
+[X_PADDING=60]- Forte contro Metin 20%
+[X_PADDING=60]- MP max. +32%
+[X_PADDING=60]- Possibilità di rigenerazione HP 16%
+[X_PADDING=60]- Rigenerazione MP 16%
+
+
+[X_PADDING=52]GRANATO DEL DRAGO:
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Resistenza Lampo 20%
+[X_PADDING=60]- Forza del fulmine 20%
+[X_PADDING=60]- Forte contro Shamane 24%
+[X_PADDING=60]- Possibilità di difesa dagli shamani 24%
+[X_PADDING=60]- Forte contro Boss 20%
+[X_PADDING=60]- Max. HP +4800
+[X_PADDING=60]- Possibilità sul EXP bonus 26%
+[X_PADDING=60]- Danni medi 24%
+
+
+[X_PADDING=52]ONICE DEL DRAGO:
+[X_PADDING=60]- Vitalità +16
+[X_PADDING=60]- Resistenza contro l'oscurità 20%
+[X_PADDING=60]- Forza dell'Oscurità 20%
+[X_PADDING=60]- Possibilità di schivare freccie 16%
+[X_PADDING=60]- Resistenza contro i colpi trafiggenti 16%
+[X_PADDING=60]- Resistenza contro il colpo critico +16%
+[X_PADDING=60]- riflettere att. corporale 16%
+[X_PADDING=60]- Possibilità blocco attacco corporale 16%
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS SET ALCHEMICO COMPLETO
+
+[X_PADDING=12]1. Completando tutta la ruota alchemica con pietre +6 si attiva automaticamente il bonus set alchemico.
+[X_PADDING=12]2. In alto a sinistra quando l'icona del bonus set alchemico è di colore rosso se il bonus set non è attivo.
+[X_PADDING=12]2. In alto a sinistra quando l'icona del bonus set alchemico è di colore verde se il bonus set è attivo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS FORNITI:
+
+[X_PADDING=12]1. Forte contro Metin +10%
+[X_PADDING=12]2. Forte contro Mostri +10%
+[X_PADDING=12]3. Max. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

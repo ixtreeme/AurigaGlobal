@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 105.
+[X_PADDING=12]*Level máximo: 120.
+[X_PADDING=12]*Ingresso: Vela Branca.
+[X_PADDING=12]*Tipo: Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]Vela Branca
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 30 minutos.
+[X_PADDING=12]*O tempo de espera é de 1 hora e 30 minutos.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon Especial.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Gelo.
+[X_PADDING=12]*O elemento dos monstros: Gelo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRA FASE
+[X_PADDING=20]1. O líder do grupo deve clicar no leme para iniciar a masmorra.
+[X_PADDING=20]2. Defenda o mastro do navio por 02:30.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDA FASE
+[X_PADDING=20]1. Mate a Rainha Sereia.
+[X_PADDING=20]2. Mate a primeira Hydra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRA FASE
+[X_PADDING=20]1. Defenda o mastro do navio por 1h30.
+[X_PADDING=20]2. Mate a segunda Hydra.
+[X_PADDING=20]3. Repare o mastro do navio clicando em reparar madeiras.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTA FASE
+[X_PADDING=20]1. Defenda o navio à 1:30.
+[X_PADDING=20]2. Destrua os Ovos da Hydra para causar danos à Hydra.
+[X_PADDING=20]3. Mate a última Hydra.
+[X_PADDING=20]4. Destrua o Tesouro Hydra para receber a recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

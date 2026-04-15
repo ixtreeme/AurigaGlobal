@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 105.
+[X_PADDING=12]*Maksimum giris seviyesi: 120.
+[X_PADDING=12]*Giris bileti: Ankh Cross.
+[X_PADDING=12]*Tür: Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankh Cross
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Beklem Süresi: 1 saat 30 dakika.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Özel lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Topragin Gücü
+[X_PADDING=12]*Irk: Toprak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]1. ASAMA
+[X_PADDING=20]1. Wadjet Tasini yok et.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]2. ASAMA
+[X_PADDING=20]1. Parsömenin 4 parçasini bulmak için canavarlari öldür.
+[X_PADDING=20]2.Parsömenin 4 parçasini bulduktan sonra, onu yok etmek için Eski Mühür'e tiklayin (Mühür'e tiklayabilmek için envanterinde
+[X_PADDING=20]parsomenin 4 parçasinin tümüne sahip olmalisin).
+[X_PADDING=20]3. Anubis'in Hizmetkarini Öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]3. ASAMA
+[X_PADDING=20]1. Dogru Firavun Tasini yok et.
+[X_PADDING=20]2. Bastet'i öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]4. ASAMA
+[X_PADDING=20]1. Plani geçmek için 24 portaldan geçmelisin.
+[X_PADDING=20]2. Dogru Ra'yi öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]5. ASAMA
+[X_PADDING=20]1. Wise Band'i bulmak için canavarlari öldür.
+[X_PADDING=20]2. Sage Sash'i yok etmek için düzeltilmis Anubis Efiggie'nin üzerine sürükleyin.
+[X_PADDING=20]3. Wise Band'i bulmak için Ankh Stone'u yok edin.
+[X_PADDING=20]4. Onu yok etmek için Wise Band'i düzeltilmis Anubis Effigy'nin üzerine sürükleyin..
+[X_PADDING=20]3. Wise Band'i bulmak için canavarlari öldür.
+[X_PADDING=20]4. Onu yok etmek için Wise Band'i düzeltilmis Anubis Effigy'nin üzerine sürükleyin..
+[X_PADDING=20]5. Son Bilge Grubu bulmak için Ankh Taslarini yok edin.
+[X_PADDING=20]6. Onu yok etmek için Bilge Band'i son Anubis Effigy'sine sürükleyin.
+[X_PADDING=20]7. Anubis'i öldür
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]6. ASAMA
+[X_PADDING=20]1. Bütün canavarlari öldür.
+[X_PADDING=20]2. Kadim Anahtari almak için Ankh Anahtarina tiklayin.
+[X_PADDING=20]3. Kadim Anahtari yok etmek için wadjet Sütunu'na sürükleyin.
+[X_PADDING=20]4. Sfenks Tasini yok et.
+[X_PADDING=20]5. Kadim Anahtari almak için son Ankh Anahtarina tiklayin.
+[X_PADDING=20]6. Onu yok etmek için Kadim Anahtari wadjet'in son Sütununa sürükleyin.
+[X_PADDING=20]7. Sphinx'i öldür.
+[X_PADDING=20]8. Ödülünüzü almak için Sfenks Hazinesini yok edin.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

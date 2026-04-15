@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]1. 2 oyuncu arasindaki özel sohbeti açarak en üstte Google translate butonunu görebilmelisiniz.
+[X_PADDING=12]2. Dügme etkinse, baska bir dilin mesaji otomatik olarak kendi dilinize çevrilecektir.
+[X_PADDING=12]3. Dügme devre disi birakilirsa, mesaji orijinal dilinde alirsiniz, böylece tercüme edilmeden
+
+[X_PADDING=12](Sadece özel mesaj için otomatik tercüme çalismasina dikkat edin).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]Lonca siralama sistemi 3 ligden olusur:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Altin Lig								   Gümüs Lig							Bronz Lig
+
+
+[X_PADDING=12]Lonca siralama panelini envanterin yanindaki ikona tiklayarak veya F6 tusuna basarak açabilirsiniz.
+
+[X_PADDING=12]Bir lige girmek için minimum kupaya ihtiyaciniz var:
+[X_PADDING=20]1. Altin Lig kupalari gerekli 50
+[X_PADDING=20]2. Gümüs League kupalari gerekli 30
+[X_PADDING=20]3. Bronz Lig kupalari gerekli 5
+
+[X_PADDING=12]Her lig için sinirli sayida yer vardir (en fazla kupaya sahip olan bir ligde kalabilir):
+[X_PADDING=20]1.  Altin Lig 7 yer
+[X_PADDING=20]2.  Gümüs Lig 12 yer
+[X_PADDING=20]3.  Bronz Lig 21 yer
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Çesitli ligler için puanlar ve ödüller:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* ALTIN LIG:
+
+[X_PADDING=28]- Skor :
+[X_PADDING=36]-> Her lonca üyesine +3 kupa / + 15KK kazanin
+[X_PADDING=36]-> Her lonca üyesine -3 kupa / -5kk kaybedersiniz
+[X_PADDING=36]-> Her lonca üyesine +1 kupa / + 5kk kazanin
+
+[X_PADDING=28]- Sezon sonu bonusu (25 günlük sezon süresi):
+[X_PADDING=36]-> 1 Sira: 180kk + Her lonca üyesine 1. P Altin Lig Sandigi
+[X_PADDING=36]-> 2. Sira: Her lonca üyesine 100kk + 2.P Altin Lig Sandigi
+[X_PADDING=36]-> 3.lük: Her lonca üyesine 70kk + 3.P Altin Lig Sandigi
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* GÜMÜS LIG:
+
+[X_PADDING=28]- Skor :
+[X_PADDING=36]-> Her lonca üyesine +3 kupa / + 5KK kazanin
+[X_PADDING=36]-> Yenilgi -2 kupa
+[X_PADDING=36]-> Her lonca üyesine +1 kupa / + 2kk kazanin
+
+[X_PADDING=28]- Sezon sonu bonusu (25 günlük sezon süresi):
+[X_PADDING=36]-> 1 Sira: 100kk + Her lonca üyesine 1. P Gümüs Lig Sandigi
+[X_PADDING=36]-> 2. Sira: Her lonca üyesine 70kk + 2.P Gümüs Lig Sandigi
+[X_PADDING=36]-> 3.lük: Her lonca üyesine 40kk + 3.P Gümüs Lig Sandigi
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRONZ LIG:
+
+[X_PADDING=28]- Skor :
+[X_PADDING=36]-> Zafer +3 kupa
+[X_PADDING=36]-> Yenilgi -1 kupa
+[X_PADDING=36]-> +1 kupa çek
+
+[X_PADDING=28]- Sezon sonu bonusu (25 günlük sezon süresi):
+[X_PADDING=36]-> 1. Sira: 50kk + Her lonca üyesine 1. P Bronze Lig Sandigi
+[X_PADDING=36]-> 2. Sira: Her lonca üyesine 30kk + 2.P Bronz Lig Sandigi
+[X_PADDING=36]-> 3. Sira: Her lonca üyesine 10kk + 3.P Bronz Lig Sandigi
+
+[X_PADDING=12]ZAFER ÖDÜLÜ:
+[X_PADDING=20]- Bir lonca birkaç savas kazanirsa, baska özel ödüller de alabilir:
+[X_PADDING=20]- 5 zafer, her lonca üyesine 1 Gaya kazandirir.
+[X_PADDING=20]- 10 zafer her lonca üyesine 3 gaya kazandirir.
+[X_PADDING=20]- 15 zafer her lonca üyesine 15 gaya kazandirir.
+[X_PADDING=20]- Lonca bilgi panelinden loncanizin zaferlerinin durumunu kontrol edebilirsiniz.
+
+[X_PADDING=12]DIGER DETAYLAR:
+[X_PADDING=20]1. Sadece loncaniz en az 2. seviye oldugunda baska bir loncaya savas ilan edebilirsiniz.
+[X_PADDING=20]2. Her loncanin savas ilan etmesi için loncasinda en az 8 üye olmasi gerekir.
+[X_PADDING=20]3. Sezonun sonunda, tüm loncalar 0 kupaya dönecektir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

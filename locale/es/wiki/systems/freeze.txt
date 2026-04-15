@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12;CENTER_ALIGN]El sistema de congelación adicional consta de 3 elementos:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Bono de congelación							 Bono de recongelación.							Bono de descongelación
+
+[X_PADDING=12;CENTER_ALIGN]Si mueves el Bonus Freeze a cualquier artículo de equipo que tenga bonificaciones, se congelará.
+[X_PADDING=12;CENTER_ALIGN]una bonificación totalmente aleatoria. Las bonificaciones de talismán no se pueden congelar.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Tenga cuidado cuando una bonificación se congela, no tiene ningún efecto en su personaje y hasta que se descongela
+[X_PADDING=12]no será posible mejorar, fabricar y absorber el artículo en una Faja de hombro.
+
+[X_PADDING=12]Las bonificaciones que no se pueden congelar son:
+[X_PADDING=20]Daño de media
+[X_PADDING=20]Daño de habilidad
+[X_PADDING=20]Doble fuerza contra la mitad de los humanos (por ejemplo, si tenemos una espada Triton con la mitad de los hombres dobles que ya usan el
+[X_PADDING=20]bono de congelación ese bono no está congelado).
+
+[X_PADDING=12]El bono de congelación se usa cuando ya tienes un bono congelado en el artículo que no nos gusta,
+[X_PADDING=12]y luego intenta congelar una nueva bonificación siempre al azar.
+
+[X_PADDING=12]La bonificación de descongelación se utiliza para descongelar una bonificación que tenemos en uno de nuestros artículos.
+[X_PADDING=12]Cuando se descongele la bonificación, será posible realizar mejoras, crear y absorber el elemento nuevamente.
+[X_PADDING=12]en un Shoulder Sash, y el personaje recupera la efectividad de esa bonificación.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

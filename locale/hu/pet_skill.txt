@@ -1,0 +1,12 @@
+1	Ellenállás (Harcos)	jijoong	PASSIVE	Harcos támadásokkal szembeni ellenállás (passzív)	0
+2	Ellenállás (Sura)	jijoong	PASSIVE	Sura támadásokkal szembeni ellenállás (passzív)	0
+3	Ellenállás (Nindzsa)	jijoong	PASSIVE	Nindzsa támadásokkal szembeni ellenállás (passzív)	0
+4	Ellenállás (Sámán)	jijoong	PASSIVE	Sámán támadásokkal szembeni ellenállás (passzív)	0
+5	Kritikus sérülés (PvM)	banya	PASSIVE	Növeli a PVM-ben elért kritikus károkat (passzív)	0
+6	Eros Metin ellen	cheonryeong	PASSIVE	Növeli a Metin által okozott kárt (passzív)	0
+7	Eros a Fonök ellen	choehoenbimu	PASSIVE	Növeli a fonököknek okozott károkat (passzív)	0
+8	Sasszem	stealmp	PASSIVE	Az Exp-dobási aránya növekszik (passzív)	0
+9	Yang-dobás	gold_drop	PASSIVE	Megnövekedett Yang-dobási ráta (passzív)	0
+10	Támadás / varázsérték	pacheon	PASSIVE	Megnövekedett támadóerõ érték (passzív)	0
+11	Blokk a. tizedes	block	PASSIVE	Fizikai sérülés blokkolva (passzív)	0
+12	Ref. A. tizedes	reflect_melee	PASSIVE	A kapott sebzés visszatükrözõdik az ellenségre (passzív)	0

@@ -1,0 +1,10 @@
+1	Patronu öldür	Kalan Öldürme: %s	Canavar: |cffff9d9d|H|h%s|h|r	öldür |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+5	Nesneyi kullan	Kullanilacak nesne: %s	Nesne: |cffff9d9d|H|h%s|h|r	Kullan |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+6	ögeyi satmak	Satilacak nesne: %s	Nesne: |cffff9d9d|H|h%s|h|r	Satmak |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+8	Nesneyi gelistir	Gelistirilecek nesne: %s	Nesne: |cffff9d9d|H|h%s|h|r	Gelistir |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+9	Ögenizi yok edin	Yok edilecek nesne: %s	Nesne: |cffff9d9d|H|h%s|h|r	Yok et |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+10	Toplamak	Koleksiyon ürünü: %s	Nesne: |cffff9d9d|H|h%s|h|r	Toplamak |cffff9d9d|H|h%s|h|r görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+11	Baliklari kizartin	Kizartmaniz gereken balik: %s	Kizartin: Hersey	Herhangi bir baligi kizartin görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+12	Balik yakalamak	Yakalanacak balik: %s	Balik tutmak: Hersey	Herhangi bir balik yakalayin görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+14	Yang'i topla	toplamak için Yang: %s	Suradan toplayin: Hersey	Yang'i topla görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.
+15	Zindani Tamamla	Tamamlanacak zindan: %s	Zindan: Hersey	70 zindan tamamla görevi	tamamlamak ve karakteriniz için	ödüller kazanmak için.

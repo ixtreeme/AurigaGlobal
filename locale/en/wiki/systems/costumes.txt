@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Transfer			 Enchant Costume		Special C.E 5%		  Special C.E+ 10%			Special B.R.
+
+[X_PADDING=12]For every costumes that u buy from the NPC "Confucio" otherwise it can be purchased from the Item Shop or the Battle Pass will have 3
+[X_PADDING=12]Normal bonus with random %(percentage) 
+[X_PADDING=12]The normal bonus can be switched with an Enchant Costume .
+[X_PADDING=12]Its possible to add only 2 special bonus for each costume, the items it requires are 2:
+[X_PADDING=20]1. Special Costume Enchant (max 5%)
+[X_PADDING=20]2. Special Costume Enchant+ (max 10%)
+
+[X_PADDING=12] The bonuses who can be inserted with the  Special Costume Enchant are:
+[X_PADDING=20]- Strong against Metin stones
+[X_PADDING=20]- Strong against Monsters
+[X_PADDING=20]- Strong Against Bosses
+[X_PADDING=20]- Resistance against Half-Humans
+[X_PADDING=20]- Strong Against Half Humans
+
+[X_PADDING=12](The special bonus can be removed with a Special Bonus Remove)
+
+[X_PADDING=12]You can transfer bonuses from one costume to another using the "Theowahdan" NPC and having the item 
+[X_PADDING=12]Costume Bonus Transfer.
+
+[X_PADDING=12]When the panel of the bonus transfer customs is open will appear 4 slot:
+[X_PADDING=20]1.To the left it goes to be put the old costume.
+[X_PADDING=20]2.On the top is going to be put l'item "Transfer Bonus Costume".
+[X_PADDING=20]3.To the right it goes the costume u want to transfer the bonus .
+[X_PADDING=20]4.On the bottom u can see the new costume with old bonus .
+
+[X_PADDING=12]Attention if your old own costume have special bonus doing the transfer the special bonus 
+[X_PADDING=12]are going to be removed and the old costume destroyed.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS COSTUMES THAT CAN BE ON VARIOUS KINDS OF COSTUMES
+
+[X_PADDING=12]  Costumes:
+[X_PADDING=20]- Max. HP +2000
+[X_PADDING=20]- Max. SP +800
+[X_PADDING=20]- Damage will be absorbed by SP 8%
+[X_PADDING=20]- Damage will be absorbed by HP 8%
+[X_PADDING=20]- Attack value +50 
+[X_PADDING=20]- Chance for EXP bonus 15%
+[X_PADDING=20]- Chance of double Item drop 15%
+
+[X_PADDING=12]  Hairstyles:
+[X_PADDING=20]- Attack Speed +8%
+[X_PADDING=20]- Chance of Critical Hit +8%
+[X_PADDING=20]- Chance of Piercing Hit +8%
+[X_PADDING=20]- Resistance against Half-Humans 10%
+[X_PADDING=20]- Chance of double Yang drop +15%
+[X_PADDING=20]- HP Regeneration  +15%
+[X_PADDING=20]- SP regeneration +15%
+
+[X_PADDING=12]  Weapon Skin:
+[X_PADDING=20]- Intelligence +10
+[X_PADDING=20]- Strength +10
+[X_PADDING=20]- Agility +10
+[X_PADDING=20]- Vitality +10
+[X_PADDING=20]- Strong Against Undead  +15%
+[X_PADDING=20]- Strong Against Devil's +15%
+[X_PADDING=20]- Strong Against Orcs    +15%
+[X_PADDING=20]- Strong Against Animals +15%
+[X_PADDING=20]- Strong Against Half Humans +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

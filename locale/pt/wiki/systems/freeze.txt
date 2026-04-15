@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[X_PADDING=12;CENTER_ALIGN]O sistema de congelar bônus é formado por 3 item:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Congela Bônus								 Descongela Bôn.								Scongela Bonus
+
+[X_PADDING=12;CENTER_ALIGN]Se você mover o congela bônus para qualquer item de equipamento que tenha bônus, será congelado
+[X_PADDING=12;CENTER_ALIGN]um bônus totalmente aleatório. (Os bônus do talismã não podem ser congelados).
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Cuidado quando um bônus é congelado ele não tem efeito em seu personagem e até que seja descongelado
+[X_PADDING=12]não será possível melhorar, craftar e absorver o item em uma faixa de ombro.
+
+[X_PADDING=12]Os bônus que não podem ser congelados são:
+[X_PADDING=20]Dano Médio
+[X_PADDING=20]Dano Habilidade
+[X_PADDING=20]Duplo Forte contra Semi-Humanos (por exemplo, se tivermos uma espada de tritão com semi-humanos duplos já usando o
+[X_PADDING=20]congela bônus aquele bônus não será congelado)
+
+[X_PADDING=12]O bônus de recongelamento é usado quando você já tem um bônus congelado no item que não gostamos,
+[X_PADDING=12]e então você tenta congelar um novo bônus sempre ao aleatório.
+
+[X_PADDING=12]O descongela bônus é usado para descongelar um bônus que temos em um de nossos itens.
+[X_PADDING=12]Quando o bônus for descongelado, será possível fazer melhorias, craftar e absorver o item novamente
+[X_PADDING=12]em uma faixa de ombro e o personagem recupera a eficácia daquele bônus.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

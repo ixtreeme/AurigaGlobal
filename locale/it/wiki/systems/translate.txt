@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]1. Aprendo la chat privata tra 2 giocatori in alto è situato il tasto Google Traduttore.
+[X_PADDING=12]2. Se il tasto è attivo i messaggi di un altra lingua ti verrano tradotti automaticamente nella tua lingua.
+[X_PADDING=12]3. Se il tasto è disattivato i messaggi ti arriveranno nella lingua originale, quindi senza essere tradotti.
+
+[X_PADDING=12](Attenzione la traduzione automatica funziona solo nei messaggi privati).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 70.
+[X_PADDING=12]*Maximální level: 120.
+[X_PADDING=12]*Propustka: Runová propustka.
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Runová propustka		Diuv kámen
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 1 hodina a 30 minut
+[X_PADDING=12]*Cooldown: 2 hodiny (pomocí Diuv kámen je možné resetovat cas cooldownu).
+[X_PADDING=12]*Každý ve skupine musí mít propustku.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Special Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Silný proti runovým mostrum
+[X_PADDING=12]*Element moster: Led - Temnota - Ohen - Blesk - Zeme.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra, abys mohl znicit Metin run.
+[X_PADDING=20]2. Znic všechny Metiny run ve správném poradí.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Zabij všechny monstra a znicte všechny Metiny run, aby se objevil Haru. Když se objeví boss,
+[X_PADDING=20]pouze vudce skupiny ho muže poškodit, dokud nedosáhne 70% svých HP, jakmile dosáhne 70% svých HP, 
+[X_PADDING=20]zbytek skupiny muže poškodit bosse.
+
+[X_PADDING=20]* 2. Zabíjej monstra a najdi 10 duší run, duše run pujdou prímo do inventáre vudce skupiny.
+[X_PADDING=20]Jakmile najdete 10 runových duší, kliknete na jednu z nich, aby se objevil v inventári
+[X_PADDING=20]vudce skupiny Klíc kamene. Kliknutím na Klíc kamene prejdete do další fáze.
+
+[X_PADDING=20]* 3. Když bude mít Haru 60% HP, nebude možné ho poškodit, znic Metin run
+[X_PADDING=20]za úcelem poškození bosse. Když Haru klesne na 20% svých HP, už ho nebude možné poškodit,
+[X_PADDING=20]zabíj 100 monster, abys mohl poškodit bosse. (Pozor,když Haruho HP dosáhne 20%, jeho poškození se zdvojnásobí)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ PATRO (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Zabíj všechny monstra a znicte všechny Metiny run, aby se objevil Buncho. Když se objeví boss,
+[X_PADDING=20]pouze vudce skupiny ho muže poškodit, dokud nedosáhne 70% svých HP, jakmile dosáhne 70% svých HP
+[X_PADDING=20]zbytek skupiny muže poškodit bosse.
+
+[X_PADDING=20]* 2. Zabíjej monstra a najdi 10 duší run, duše run pujdou prímo do inventáre vudce skupiny.
+[X_PADDING=20]Zabíjej monstra a najdi 10 duší run, duše run pujdou prímo do inventáre vudce skupiny.
+[X_PADDING=20]vudce skupiny Klíc kamene. Kliknutím na Klíc kamene prejdete do další fáze.
+
+[X_PADDING=20]* 3.Když bude mít Buncho 60% HP, nebude možné ho poškodit, znic Metin run
+[X_PADDING=20]za úcelem poškození bosse. Když Buncho klesne na 20% svých HP, už ho nebude možné poškodit,
+[X_PADDING=20]zabíj 100 monster, abys mohl poškodit bosse. (Pozor,když Bunchovo HP dosáhne 20%, jeho poškození se zdvojnásobí)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÉ PATRO (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Zabíj všechny monstra a znicte všechny Metiny run, aby se objevil Eien. Když se objeví boss,
+[X_PADDING=20]pouze vudce skupiny ho muže poškodit, dokud nedosáhne 70% svých HP, jakmile dosáhne 70% svých HP
+[X_PADDING=20]zbytek skupiny muže poškodit bosse.
+              
+[X_PADDING=20]* 2.Zabíjej monstra a najdi 10 duší run, duše run pujdou prímo do inventáre vudce skupiny.
+[X_PADDING=20]Zabíjej monstra a najdi 10 duší run, duše run pujdou prímo do inventáre vudce skupiny.
+[X_PADDING=20]vudce skupiny Klíc kamene. Kliknutím na Klíc kamene prejdete do další fáze.
+              
+[X_PADDING=20]* 3. Když bude mít Eien 60% HP, nebude možné ho poškodit, znic Metin run
+[X_PADDING=20]za úcelem poškození bosse. Když Buncho klesne na 20% svých HP, už ho nebude možné poškodit,
+[X_PADDING=20]zabíj 100 monster, abys mohl poškodit bosse. (Pozor,když Eienovo HP dosáhne 20%, jeho poškození se zdvojnásobí)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PÁTÉ PATRO
+[X_PADDING=20]1. Znic všechny Metiny run, abys poškodil Haru.
+[X_PADDING=20]2. Zabíj Haru.
+[X_PADDING=20]3. Zabíj monstra, abys mohl najít klíc ke kameni.
+[X_PADDING=20]4. Znic Runový kámen pretažením klíce ke kamenum, abys poškodil Buncho.
+[X_PADDING=20]5. Zabíj Buncha.
+[X_PADDING=20]6. Zaútocte na bosse Eiena, ale budte opatrní, když je jeho život na 50%, neobdrží další poškození.
+[X_PADDING=20]7. Abys mohl i nadále zpusobovat poškození bossovi Eienovi, nejprve zabij monstra.
+[X_PADDING=20]8. Zaútoc na bosse Eiena, ale budte opatrní, když je jeho život na 10%, neobdrží další poškození.
+[X_PADDING=20]9. Abys mohl i nadále zpusobovat poškození bossovi Eienovi, znicte Metin run.
+[X_PADDING=20]10. Zabíj Eiena.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

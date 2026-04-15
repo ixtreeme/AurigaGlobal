@@ -1,0 +1,101 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/boost.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Il sistema boost abilità potenzia una sola abilità per ogni dottria.
+[X_PADDING=12]2. L'abilità che può essere potenziata si trova nel pannello delle abilità.
+[X_PADDING=12]3. L'Abilità boost può essere potenziata solo dal momento in cui l'abilità a lei collegata e al livello P.
+[X_PADDING=12]4. L'abilità boost viene potenziata da 1 a M1 con 17 punti abilità.
+[X_PADDING=12]5. L'abilità boost viene potenziata da M1 a G1 con libri boost che troverai nel Boost Baule Libri.
+[X_PADDING=12]6. L'abilità boost viene potenziata da G1 a P con la Pietra delle Anime Boost.
+
+[X_PADDING=12](Attenzione il potenziamento con libri e Pietra delle Anime Boost potrebbe fallire, quindi è consigliabile usare le letture).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ABILITA' CHE POSSONO ESSERE POTENZIATE
+
+[X_PADDING=12]1. Aiuto Vortice della spada
+[X_PADDING=12]2. Aiuto Penetrazione
+[X_PADDING=12]3. Aiuto Tranello
+[X_PADDING=12]4. Aiuto Freccia di fuoco
+[X_PADDING=12]5. Aiuto Colpo Oscuro
+[X_PADDING=12]6. Aiuto Schiocco di dita
+[X_PADDING=12]7. Aiuto Evocare i lampi
+[X_PADDING=12]8. Aiuto Tiro del drago
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=298; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PERCENTUALI DI POTENZIAMENTO
+
+[X_PADDING=12;COLOR=58ADFF]Livello Abilità          Incremento % Abilità
+[X_PADDING=12]1                            0,8%
+[X_PADDING=12]2                            1,0%
+[X_PADDING=12]3                            1,3%
+[X_PADDING=12]4                            1,6%
+[X_PADDING=12]5                            1,9%
+[X_PADDING=12]6                            2,2%
+[X_PADDING=12]7                            2,6%
+[X_PADDING=12]8                            2,9%
+[X_PADDING=12]9                            3,2%
+[X_PADDING=12]10                          3,5%
+[X_PADDING=12]11                          3,8%
+[X_PADDING=12]12                          4,2%
+[X_PADDING=12]13                          4,5%
+[X_PADDING=12]14                          4,8%
+[X_PADDING=12]15                          5,1%
+[X_PADDING=12]16                          5,4%
+[X_PADDING=12]17                          5,8%
+
+[X_PADDING=12;COLOR=58ADFF]Livello Abilità          Incremento % Abilità
+[X_PADDING=12]M1                         8,0%
+[X_PADDING=12]M2                         8,3%
+[X_PADDING=12]M3                         8,6%
+[X_PADDING=12]M4                         8,9%
+[X_PADDING=12]M5                         9,3%
+[X_PADDING=12]M6                         9,6%
+[X_PADDING=12]M7                         10,1%
+[X_PADDING=12]M8                         10,6%
+[X_PADDING=12]M9                         11,0%
+[X_PADDING=12]M10                       11,5%
+
+[X_PADDING=12;COLOR=58ADFF]Livello Abilità          Incremento % Abilità
+[X_PADDING=12]G1                         13,1%
+[X_PADDING=12]G2                         13,6%
+[X_PADDING=12]G3                         14,1%
+[X_PADDING=12]G4                         14,6%
+[X_PADDING=12]G5                         15,0%
+[X_PADDING=12]G6                         15,7%
+[X_PADDING=12]G7                         16,3%
+[X_PADDING=12]G8                         17,0%
+[X_PADDING=12]G9                         17,6%
+[X_PADDING=12]G10                       18,4%
+[X_PADDING=12]P                           20,0%
+
+[IMG=d:/ymir work/ui/skill/passive/pp_palbang_01.sub; Y=356; X=210]
+[IMG=d:/ymir work/ui/skill/passive/pp_gigongcham_01.sub; Y=356; X=250]
+[IMG=d:/ymir work/ui/skill/passive/pp_amseup_01.sub; Y=356; X=290]
+[IMG=d:/ymir work/ui/skill/passive/pp_hwajo_01.sub; Y=356; X=330]
+[IMG=d:/ymir work/ui/skill/passive/pp_maryeong_01.sub; Y=356; X=370]
+[IMG=d:/ymir work/ui/skill/passive/pp_swaeryeong_01.sub; Y=356; X=410]
+[IMG=d:/ymir work/ui/skill/passive/pp_yongpa_01.sub; Y=356; X=450]
+[IMG=d:/ymir work/ui/skill/passive/pp_byeorak_01.sub; Y=356; X=490]
+[IMG=d:/ymir work/ui/skill/passive/pp_palbang_02.sub; Y=582; X=210]
+[IMG=d:/ymir work/ui/skill/passive/pp_gigongcham_02.sub; Y=582; X=250]
+[IMG=d:/ymir work/ui/skill/passive/pp_amseup_02.sub; Y=582; X=290]
+[IMG=d:/ymir work/ui/skill/passive/pp_hwajo_02.sub; Y=582; X=330]
+[IMG=d:/ymir work/ui/skill/passive/pp_maryeong_02.sub; Y=582; X=370]
+[IMG=d:/ymir work/ui/skill/passive/pp_swaeryeong_02.sub; Y=582; X=410]
+[IMG=d:/ymir work/ui/skill/passive/pp_yongpa_02.sub; Y=582; X=450]
+[IMG=d:/ymir work/ui/skill/passive/pp_byeorak_02.sub; Y=582; X=490]
+[IMG=d:/ymir work/ui/skill/passive/pp_palbang_03.sub; Y=726; X=210]
+[IMG=d:/ymir work/ui/skill/passive/pp_gigongcham_03.sub; Y=726; X=250]
+[IMG=d:/ymir work/ui/skill/passive/pp_amseup_03.sub; Y=726; X=290]
+[IMG=d:/ymir work/ui/skill/passive/pp_hwajo_03.sub; Y=726; X=330]
+[IMG=d:/ymir work/ui/skill/passive/pp_maryeong_03.sub; Y=726; X=370]
+[IMG=d:/ymir work/ui/skill/passive/pp_swaeryeong_03.sub; Y=726; X=410]
+[IMG=d:/ymir work/ui/skill/passive/pp_yongpa_03.sub; Y=726; X=450]
+[IMG=d:/ymir work/ui/skill/passive/pp_byeorak_03.sub; Y=726; X=490]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=880; CENTER_ALIGN]

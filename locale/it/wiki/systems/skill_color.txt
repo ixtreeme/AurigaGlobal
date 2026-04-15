@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Il sistema colore abilità ti permette di cambiare colore ad un'abilità.
+
+[X_PADDING=12]1. Puoi cambiare colore ad un'abilità solo quando arriva a P.
+[X_PADDING=12]2. Puoi cambiare colore ad un'abilità solo se possiedi l'item Elisir Arcobaleno.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Elisir Arcobal.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]1. Quando un'abilità arriva a P aprendo il pannello abilità sopra l'icona dell'abilità a P comprarirà un cerchio colorato.
+[X_PADDING=12]2. Cliccando sul cercio con il tasto sinistro del mouse si aprirà il pannello del sistema colore abilità.
+[X_PADDING=12]3. Ogni abilità può essere colorata in 5 colori diversi contemporaneamente, puoi scegliere i vari colori cliccando sui
+[X_PADDING=12]numeri in basso al pannello.
+[X_PADDING=12]4. Ogni volta che vorrai cambiare colore ad una tua abilità dovrai avere un Elisir Arcobaleno.
+[X_PADDING=12]5. Usando la freccia situata a destra del pannello potrai usare le 3 opzioni disponibili, salva colore, inserisci colore con
+[X_PADDING=12]codice hex e utilizza il colore predefinito.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

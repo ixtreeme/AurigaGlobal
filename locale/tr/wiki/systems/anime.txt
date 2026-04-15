@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]Ruh Sistemi, ruhlari yükseltmenize ve kullanmaniza izin verir, oyuncuya geçici bonuslar verir.
+[X_PADDING=12;CENTER_ALIGN]Fiziksel ve Beceri Hasari
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Aydinlanmis Rüya Ruhu																						    Illuminated celestial soul
+
+[X_PADDING=12] RÜYA RUHU VE GÖK RUHU 
+[X_PADDING=20]- Rüya Ruhu fiziksel saldirilari güçlendirir.
+[X_PADDING=20]- Gök Ruhu yeteneklerin verdigi hasari arttirir.
+[X_PADDING=20]- Takviye, bir hedefe karsi yapilan belirli sayida vurusa verilir, ardindan
+[X_PADDING=20]iyilestirme ortadan kalkacaktir.
+
+[X_PADDING=12]Yükseltmeler, bir dönüsüm veya PvP savasi sirasinda etkinlestirilmez.
+[X_PADDING=12]Ata binerek yapilan saldirilar, diger bilgisayarlara karsi degil, yalnizca canavarlara karsi güçlendirilir.
+
+[X_PADDING=12]Ruhu yüklemek için oyunda en az 60 dakika beklemeniz gerekir, ruh yüklenir yüklenmez araç ipucu (açiklama)
+[X_PADDING=12]yalnizca fareyi nesnenin üzerine getirdiginizde görünen) yesil renkte görünür ve etkinlestirilebilir.
+[X_PADDING=12]Belirli bir ardisik çevrim disi sürenin ardindan (yaklasik bir saat), ruh bosalir ve beklemek zorunda kalir.
+[X_PADDING=12]tekrar yüklemek için.
+[X_PADDING=12]Yanardöner Dereceden itibaren, ne kadar çok zaman geçerse, ruhun verdigi hasarin artmasi o kadar artar: ilk
+[X_PADDING=12]artis, maksimum sarjin 2 / 3'üne ve ikinci (varsa) maksimum sarjda.
+[X_PADDING=12]Prizmatik seviyeden itibaren ruh, bir önceki seviyeye ölçeklenerek yükseltme için 2 "yigin" saglayabilir.
+[X_PADDING=12](Örnegin, hasari 2,5 ile çarpilan 500 vurus ve ardindan 1,8 ile çarpilan hasari olan baska bir 500 vurus).
+[X_PADDING=12]Aydinlanma seviyesinde, ruh çevrimdisi kalarak bosalmaz.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RUHLARIN DERECESI
+
+[X_PADDING=12]Ruhlar, alinan destegin yüzdesi ve onlara göre 5 farkli derecede olabilir.
+[X_PADDING=12]yapilabilecek olasi çekim sayisi
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BIR RUHUN DERECESI NASIL ARTIRILIR
+
+[X_PADDING=12]- Bir ruhun rütbesini yükseltmek için Ruh Parsömeni'ne ihtiyaciniz var, Kutsal Papirüs gibi çalisir, sadece
+[X_PADDING=12]parsömeni seçilen ruhun üzerine sürükleyin ve yukari ekran görünecektir.
+[X_PADDING=12]- Aksine, bir Parsömen Parsömeni (%100) kullanarak gelistirme garanti edilir.
+[X_PADDING=12]- Basarisizlik durumunda ruh kirilmaz ve sadece parsömen tüketilir. Tüm özellikleri
+[X_PADDING=12]vuruslar, kalan süre ve mevcut sarj dahil olmak üzere degismeden kalir.
+[X_PADDING=12]- Basarili olursa, ruh bir sonraki rütbeye yükselir, kalan vurus sayisi sifirlanir ve son teslim tarihi gelir.
+[X_PADDING=12]Sifirla; mevcut herhangi bir sarj, yukari ile birlikte kaybolacak, bu yüzden tekrar sarj olmasini beklemeniz gerekecek.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

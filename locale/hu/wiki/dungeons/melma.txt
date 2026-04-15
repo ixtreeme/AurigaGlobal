@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 45.
+[X_PADDING=12]*Maximum szint: 65.
+[X_PADDING=12]*Belépo: Menhir Slime darab
+[X_PADDING=12]*Típus: Egyedül és Csapatban.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Menhir Slime darab
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 30 perc.
+[X_PADDING=12]*Újratöltés: 40 perc.
+[X_PADDING=12]*Ha csapatban lépsz be, mindenkinek kell belépo.
+[X_PADDING=12]*A dungeon elérheto: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Állatok elleni ero.
+[X_PADDING=12]*Szörnyek eleme: Föld.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Pusztítsd el Slime Metinjét.
+[X_PADDING=20]2. Ölj 103 szörnyet.
+[X_PADDING=20]3. Kattints rá a Ko Slime-ra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Pusztíts el 4 Slime Metinjét és gyujtsd be az Üres Slime Fiolát.
+[X_PADDING=20]2. Húzd rá az Üres Slime Fiolát a Slime-ra, hogy feltöltsd.
+[X_PADDING=20]3. Húzd rá a Teli Slime Fiolát a Pecsét Ko-re.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet
+[X_PADDING=20]1. Ölj 103 szörnyet.
+[X_PADDING=20]2. Öld meg a Slime Királynot.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

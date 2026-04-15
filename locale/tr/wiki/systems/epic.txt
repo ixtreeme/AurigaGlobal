@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]Auriga'de 4 yeni iyilestirme derecesi vardir:
+[X_PADDING=20]- Epik
+[X_PADDING=20]- Efsanevi
+[X_PADDING=20]- Antik
+[X_PADDING=20]- Mistik
+
+[X_PADDING=12]1. Bazi esyalar +9'a yükseltildiginde 4 derecede destansi hale getirmek mümkün olacak.
+[X_PADDING=12]2. Bir esya destansi hale getirildiginde, ona yeni bir sabit bonus eklenir veya yüzdeler iyilestirilir.
+[X_PADDING=12]sabit bonuslar zaten mevcut.
+
+[X_PADDING=12;FONT_SIZE=14]EPIZASYON YAPILABILECEK ESYALAR:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SILAHLAR:
+[X_PADDING=28]- Zehir Kilici+ 9
+[X_PADDING=28]- Aslan Kilici+9
+[X_PADDING=28]- Kin Kilici+9
+[X_PADDING=28]- Havali Çelik Yay+9
+[X_PADDING=28]- Seytan Kanadi Çakram+9
+[X_PADDING=28]- Orkide Çan+9
+[X_PADDING=28]- Zodyak Kilici+9
+[X_PADDING=28]- Zodyak Biçagi+9
+[X_PADDING=28]- Zodyak Oragi+9
+[X_PADDING=28]- Zodyak Yay+9
+[X_PADDING=28]- Zodyak Hançer+9
+[X_PADDING=28]- Zodyak Yelpaze+9
+[X_PADDING=28]- Zodyak Çan+9
+[X_PADDING=28]- Kyanit Kiliç+9
+[X_PADDING=28]- Kyanit Kiliç+9
+[X_PADDING=28]- Kyanite Palasi+9
+[X_PADDING=28]- Kyanit Yay+9
+[X_PADDING=28]- Kyanit Hançer+9
+[X_PADDING=28]- Kyanit Yelpaze+9
+[X_PADDING=28]- Kyanit Çan+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ZIRH:
+[X_PADDING=28]- Kyanit Plaka Zirh+9
+[X_PADDING=28]- Kyanit Zirh+9
+[X_PADDING=28]- Kyanit Takimi+9
+[X_PADDING=28]- Kyanit Elbise+9
+[X_PADDING=28]- Zodyak Zirhi+9
+[X_PADDING=28]- Zodyak Plaka Zirh+9
+[X_PADDING=28]- Zodyak Takimi+9
+[X_PADDING=28]- Zodyak Elbise+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* KASKLAR:
+[X_PADDING=28]- Kara Ejder Kaski+9
+[X_PADDING=28]- Kara Ejder Plaka Kaski+9
+[X_PADDING=28]- Rüzgar Ejderhasi Kaski+9
+[X_PADDING=28]- Tanrilar Ejderhasi Kaski+9
+[X_PADDING=28]- Ejderha Çeligi Kaski+9
+[X_PADDING=28]- Ejderha Zirhi Kaski+9
+[X_PADDING=28]- Ejderha Kapüsonu+9
+[X_PADDING=28]- Ejderha Sapka+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* KALKANLAR:
+[X_PADDING=28]- Sahin Kalkan+9
+[X_PADDING=28]- Aslan Agzi Kalkan+9
+[X_PADDING=28]- Kaplan Kalkani+9
+[X_PADDING=28]- Ejderha Pulu Kalkan+9
+[X_PADDING=28]- Üç Imparator Kalkani+9
+[X_PADDING=28]- Titan Kalkani+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BILEZIK:
+[X_PADDING=28]- Ruh Kristali Bilezik+9
+[X_PADDING=28]- Kyanit Bilezik+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* KOLYE:
+[X_PADDING=28]- Ruh Kristali Kolye+9
+[X_PADDING=28]- Kyanit Kolye+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* KÜPE:
+[X_PADDING=28]- Ruh Kristali Küpe+9
+[X_PADDING=28]- Kyanit Küpe+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* AYAKKABI:
+[X_PADDING=28]- Ates Ayakkabi+9
+[X_PADDING=28]- Okyanus Ayakkabi+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

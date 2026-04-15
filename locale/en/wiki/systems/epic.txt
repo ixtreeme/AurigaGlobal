@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]On Auriga there are 4 new degrees of improvement:
+[X_PADDING=20]- Epic
+[X_PADDING=20]- Legendary
+[X_PADDING=20]- Ancient
+[X_PADDING=20]- Mystical
+
+[X_PADDING=12]1. When some items are upgraded up to +9 it will be possible to epicize them in 4 degrees.
+[X_PADDING=12]2. When an item is epicized, a new fixed bonus is added to it or the percentages are improved
+[X_PADDING=12]fixed bonuses already present.
+
+[X_PADDING=12;FONT_SIZE=14]ITEMS THAT CAN BE EPICIZED:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* WEAPONS:
+[X_PADDING=28]- Poisonous Sword + 9
+[X_PADDING=28]- Lion Sword+9
+[X_PADDING=28]- Grudge Sword+9
+[X_PADDING=28]- Crow Steel Bow+9
+[X_PADDING=28]- Devil Wing Chakram+9
+[X_PADDING=28]- Bamboo Bell+9
+[X_PADDING=28]- Zodiac Sword+9
+[X_PADDING=28]- Zodiac Blade+9
+[X_PADDING=28]- Zodiac Glaive+9
+[X_PADDING=28]- Zodiac Bow+9
+[X_PADDING=28]- Zodiac Dagger+9
+[X_PADDING=28]- Zodiac Fan+9
+[X_PADDING=28]- Zodiac Bell+9
+[X_PADDING=28]- Kyanite Sword+9
+[X_PADDING=28]- Kyanite Sword+9
+[X_PADDING=28]- Kyanite Blade+9
+[X_PADDING=28]- Kyanite Bow+9
+[X_PADDING=28]- Kyanite Dagger+9
+[X_PADDING=28]- Kyanite Fan+9
+[X_PADDING=28]- Kyanite Bell+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMOR:
+[X_PADDING=28]- Kyanite Plate Armour+9
+[X_PADDING=28]- Kyanite Harness +9
+[X_PADDING=28]- Kyanite Suit+9
+[X_PADDING=28]- Kyanite Clothing+9
+[X_PADDING=28]- Zodiac Armour+9
+[X_PADDING=28]- Zodiac Plate Armour+9
+[X_PADDING=28]- Zodiac Suit+9
+[X_PADDING=28]- Zodiac Clothing+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* Helmet:
+[X_PADDING=28]- Gloom Dragon Helmet+9
+[X_PADDING=28]- Hex Dragon Helmet+9
+[X_PADDING=28]- Tempest Dragon Helmet+9
+[X_PADDING=28]- Exalted Dragon Helmet+9
+[X_PADDING=28]- Dragoneer Steel Helm+9
+[X_PADDING=28]- Dragoneer Scale Helm+9
+[X_PADDING=28]- Dragoneer Hood+9
+[X_PADDING=28]- Dragon Hat+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SHIELDS:
+[X_PADDING=28]- Falcon Shield+9
+[X_PADDING=28]- Lion Edge Shield+9
+[X_PADDING=28]- Tiger Shield+9
+[X_PADDING=28]- Dragon Scale Shield+9
+[X_PADDING=28]- Three Emperors Shield+9
+[X_PADDING=28]- Titan Shield+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRACELET:
+[X_PADDING=28]- Soul Crystal bracelet+9
+[X_PADDING=28]- Kyanite bracelet+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* NECKLACE:
+[X_PADDING=28]- Soul Crystal Necklace+9
+[X_PADDING=28]- Kyanite necklace+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* EARRINGS:
+[X_PADDING=28]- Soul Crystal Earrings+9
+[X_PADDING=28]- Kyanite earrings+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SHOES:
+[X_PADDING=28]- Fire Shoes+9
+[X_PADDING=28]- Oceanic Shoes+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

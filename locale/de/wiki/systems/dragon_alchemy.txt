@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ALCHEMY SHOP
+
+[X_PADDING=12]1. Du kannst Cor Draconis (Antike) im Alchemieladen in der Alchemietafel mit den Steinsplittern kaufen
+[X_PADDING=12]d. Drachen.
+[X_PADDING=12]2. Du kannst Zeitelixiere im Alchemie-Shop im Alchemie-Panel mit Steinsplittern kaufen
+[X_PADDING=12]d. Drago.
+[X_PADDING=12]3. Sie können die grüne, blaue und rosa Bohne im Alchemie-Shop im Alchemie-Panel kaufen
+[X_PADDING=12]Steinsplitter d. Drachen.
+[X_PADDING=12]4. Sie können Drachenzangen im Alchemieladen im Alchemie-Panel mit Steinsplittern kaufen
+[X_PADDING=12]d. Drago.
+[X_PADDING=12]5. Du kannst Alchemie verzaubern im Alchemieladen in der Alchemietafel bei Cor Draconis kaufen
+[X_PADDING=12](Ancient) oder lass sie in den verschiedenen Dugeons fallen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]KLASSE
+
+[X_PADDING=12]1. Auf Auriga gibt es nur 3 Klassen. Alt, legendär und mythisch.
+[X_PADDING=12]2. Um die Klasse eines Steins zu verbessern, werden 2 Steine ??des gleichen Typs und der gleichen Klasse benötigt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y = 246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Klarheitsgrad
+
+[X_PADDING=12]1. Es gibt 5 Reinheitsgrade: Matt, Clear, Limpid, Brilliant und Excellent.
+[X_PADDING=12]2. Um den Reinheitsgrad eines Steins zu verbessern, werden zwei Steine ??des gleichen Typs und des gleichen Grades benötigt
+[X_PADDING=12]Klarheit.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LEVEL
+
+[X_PADDING=12]1. Drachensteine ??können bis zu +6 aufgewertet werden.
+[X_PADDING=12]2. Die Steine ??können mit der grünen, blauen oder rosa Maserung aufgewertet werden.
+[X_PADDING=12]3. Der Unterschied zwischen den verschiedenen Körnern ist der Prozentsatz des Aufwärtss, der grüne Körner hat den niedrigsten Prozentsatz, während dies
+[X_PADDING=12]höchstes Lila.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DAUER DES DRACHENSTEINS
+
+[X_PADDING=12]1. Jeder Drachenstein hat eine maximale Dauer von 24 Stunden.
+[X_PADDING=12]2. Wenn die Zeit des Drachensteins abgelaufen ist, verschwindet der Stein nicht.
+[X_PADDING=12]3. Zeitelixiere können im Alchemieladen gekauft werden, um den Stein wieder aufzufüllen.
+[X_PADDING=12]4. Es ist möglich, einen Drachenstein mit der Drachenzange aus der Alchemie zu entfernen, der Stein wird immer mit entfernt
+[X_PADDING=12]100 % Erfolg.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y = 588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DIE BONI DER DRACHENSTEINE
+
+[X_PADDING=12]1. Antike und legendäre Drachensteine ??haben immer 2 feste Basisboni.
+[X_PADDING=12]2. Mythische Drachensteine ??haben immer 3 feste Basisboni.
+[X_PADDING=12]3. Es ist nur möglich, die Boni eines Drachensteins zu ändern, wenn er der Mythischen Klasse und dem Ausgezeichneten Rang entspricht.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DIE VERSCHIEDENEN BONUS, DIE AUF DEN DRACHENSTEINEN AUSGEHEN KÖNNEN
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Die angegebenen Boni beziehen sich auf Mythische Alchemie, Ausgezeichnet +6)
+
+
+[X_PADDING=52]DIAMOND :
+[X_PADDING=60]- Intelligenz +16
+[X_PADDING=60]- Eisbeständigkeit 20 %
+[X_PADDING=60]- Macht des Eises 20 %
+[X_PADDING=60]- Stark gegen Sure 24%
+[X_PADDING=60]- Verteidigung gegen Sure 24%
+[X_PADDING=60]- max. HP. +32 %
+[X_PADDING=60]- SP-Regeneration 16%
+[X_PADDING=60]- Magischer Angriffswert +24
+[X_PADDING=60]- Magische Verteidigung +24
+
+
+[X_PADDING=52]RUBY :
+[X_PADDING=60]- Stärke +16
+[X_PADDING=60]- Feuerwiderstand 20 %
+[X_PADDING=60]- Feuerkraft 20 %
+[X_PADDING=60]- Stark gegen Krieger 24%
+[X_PADDING=60]- Verteidigung gegen Krieger 24%
+[X_PADDING=60]- Chance, eine doppelte Menge von Yang 26% zu verlieren
+[X_PADDING=60]- HP-Regeneration +16%
+[X_PADDING=60]- Durchschnittliche Schadensresistenz 24%
+[X_PADDING=60]- Verteidigung +320
+
+
+[X_PADDING=52]JADE :
+[X_PADDING=60]- SP +1000
+[X_PADDING=60]- Windwiderstand 20 %
+[X_PADDING=60]- Windkraft 20 %
+[X_PADDING=60]- Widerstandsmonster 20 %
+[X_PADDING=60]- Skillschaden 24%
+[X_PADDING=60]- Fertigkeitswiderstand 24%
+[X_PADDING=60]- Angriffswert +480
+[X_PADDING=60]- Stark gegen Monster 20 %
+[X_PADDING=60]- Chance auf doppelten Item-Drop 20 %
+
+
+[X_PADDING=52]SAPHIR :
+[X_PADDING=60]- Beweglichkeit +16
+[X_PADDING=60]- Erdungswiderstand 20 %
+[X_PADDING=60]- Kraft der Erde 20 %
+[X_PADDING=60]- Stark gegen Ninja 24%
+[X_PADDING=60]- Verteidigung gegen Ninja 24%
+[X_PADDING=60]- Stark gegen Metinsteine ??20%
+[X_PADDING=60]- max. SP. +32 %
+[X_PADDING=60]- Chance, HP 16 % wiederherzustellen
+[X_PADDING=60]- Chance, SP wiederherzustellen. 16%
+
+
+[X_PADDING=52]GARNET :
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Blitzwiderstand 20 %
+[X_PADDING=60]- Energie des Blitzes 20 %
+[X_PADDING=60]- Stark gegen Schamanen 24%
+[X_PADDING=60]- Verteidigung gegen Schamanen 24%
+[X_PADDING=60]- Stark gegen Bosse 20 %
+[X_PADDING=60]- max. HP +4800
+[X_PADDING=60]- Chance auf EXP-Bonus 26 %
+[X_PADDING=60]- Durchschnittlicher Schaden 24%
+
+
+[X_PADDING=52]ONYX :
+[X_PADDING=60]- Vitalität +16
+[X_PADDING=60]- Widerstand gegen Dunkelheit 20%
+[X_PADDING=60]- Stark gegen Dunkelheit 20%
+[X_PADDING=60]- 16% Chance Pfeillangriff auszuweichen
+[X_PADDING=60]- 16% Wiederstand gegen Durchborender Treffer
+[X_PADDING=60]- 16% Wiederstand gegen Kritischer Treffer
+[X_PADDING=60]- 16% Chance Nahkampf Angriff zu Reflektieren
+[X_PADDING=60]- 16% Chance, Nahkampf-Angriff abzublocken
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]KOMPLETTES ALCHEMISCHES BONUS-SET
+
+[X_PADDING=12]1. Das Vervollständigen des gesamten alchemistischen Rades mit +6 Steinen aktiviert automatisch den alchemistischen Setbonus.
+[X_PADDING=12]2. Oben links, wenn das alchemistische Setbonus-Symbol rot ist, wenn der Setbonus nicht aktiv ist.
+[X_PADDING=12]2. Oben links, wenn das alchemistische Setbonus-Symbol grün ist, wenn der Setbonus aktiv ist.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BEREITGESTELLTE Boni:
+
+[X_PADDING=12]1. Stark gegen Metin +10%
+[X_PADDING=12]2. Stark gegen Monster +10%
+[X_PADDING=12]3. Max. TP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

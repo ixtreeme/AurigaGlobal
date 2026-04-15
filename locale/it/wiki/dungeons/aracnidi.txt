@@ -1,0 +1,32 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/aracnidi.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 60.
+[X_PADDING=12]*Livello massimo: 80.
+[X_PADDING=12]*Biglietto: Chiave degli Aracnidi.
+[X_PADDING=12]*Genere: Solo e Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30324.tga; Y=15; X=478]
+[X_PADDING=459]Chiave Aracnidi
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 30 minuti.
+[X_PADDING=12]*Il cooldown è di 40 minuti.
+[X_PADDING=12]*Nel caso in cui si entra con il gruppo, ognuno deve avere il biglietto.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte contro Animali.
+[X_PADDING=12]*L'elemento dei mostri: Vento.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA FASE
+[X_PADDING=20]1. Uccidi il Barone Ragno.
+[X_PADDING=20]2. Clicca sul Flauto degli Aracnidi per passare alla fase successiva.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDA FASE
+[X_PADDING=20]1. Per poter fare danno alla Baronessa Ragno bisogna distruggere prima le Uova di Ragno.
+[X_PADDING=20]2. Uccidi la Baronessa Ragno.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=332; CENTER_ALIGN]

@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 75.
+[X_PADDING=12]*Nivel maximo: 95.
+[X_PADDING=12]*Ticket: Cabeza reducida.
+[X_PADDING=12]*Type: Solo y en grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Cabeza reducida
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Límite de tiempo 40 minutos.
+[X_PADDING=12]*Enfriamiento: 1 hora.
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra no muertos.
+[X_PADDING=12]*Elemento de monstruos: oscuro.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata monstruos para soltar Soul Crystal Key. 
+[X_PADDING=20]2. Arrastra la llave de cristal del alma a la estatua del kud para pasar a la siguiente etapa.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Destruye el Metin correcto de represalia.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Mata a los tártaros correctos.
+[X_PADDING=20]2. Arrastra el tótem de la mueca hasta el obelisco de basalto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]1. Mata a Caronte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PISO
+[X_PADDING=20]1. Mata a Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

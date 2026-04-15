@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]SZARFY NARAMIENNE:
+[X_PADDING=20]1. System szarf naramiennych pozwala graczom na poziomie 1 i wyzszym na noszenie nowego elementu
+[X_PADDING=20]ekwipunku.
+[X_PADDING=20]2. Szarfy Naramienne moga wchlonac WSZYSTKIE bonusy z broni i zbroi z wyjatkiem specjalnych bonusów broni
+[X_PADDING=20]i Mistycznych zbroji. Procent wchlaniania zalezy od stopnia jakosci
+[X_PADDING=20]Szarfy Naramiennej , im wyzsza jakosc, tym wyzszy procent absorpcji.
+[X_PADDING=20]3. Aby móc dodac bonusy do szarfy, musisz udac sie do NPC Theowahdan na mapie
+[X_PADDING=20]Cudowna Wioska.
+[X_PADDING=20]4.Mozesz kupic naramienna szarfe 1. stopnia od NPC Theowahdana za cienkie tkaniny, które
+[X_PADDING=20]wydropisz z metinów.
+[X_PADDING=20]5. Mozesz usunac bonusy z Szarf Naramiennych za pomoca przedmiotu Usuwanie Zaabsorbowanych Bonusów
+
+[X_PADDING=12]KOMBINACJA SZARF
+[X_PADDING=20]1. Aby ulepszyc naramienna szarfe, udaj sie do NPC Theowahdan i kliknij Kombinacja.
+[X_PADDING=20]2. Ulepszenie ZAWSZE niszczy druga wlozona szarfe, niezaleznie od tego, czy sie udalO, czy nie.
+[X_PADDING=20]W przypadku, gdy w obu naramiennikach sa bonusy, nie beda sie one sumowac,
+[X_PADDING=20]ale tylko te z pierwszej szarfy beda brane pod uwage, poniewaz to jest to
+[X_PADDING=20]co wlasnie zostalo ulepszone. Drugi pelni wylacznie funkcje "ulepszacza".
+
+[X_PADDING=12]MOZLIWE STOPNIE SZARF :
+[X_PADDING=20;COLOR=58ADFF]STOPNIE         PROCENT POCHLANIANYCH BONUSÓW
+[X_PADDING=20]Prosta      1%
+[X_PADDING=20]Dostojna           5%
+[X_PADDING=20]Zacna          10%
+[X_PADDING=20]Unikat     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Usuwanie zaab. bonusów
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

@@ -1,0 +1,17 @@
+1	Kill the Boss	Remaining: %s	Mob: |cffff9d9d|H|h%s|h|r	Kill |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+2	Kill a Player	Remaining: %s	Minimum level: %s+	Which: Lvl %s+	Kill players	to finish the quest and	claim your reward.
+5	Use the item	Item to use: %s	Object: |cffff9d9d|H|h%s|h|r	Use |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+6	Sell the item	Item to sell: %s	Item: |cffff9d9d|H|h%s|h|r	Sell |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+8	Refine the item	Item to refine: %s	Item: |cffff9d9d|H|h%s|h|r	Refine |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+9	Destroy the item	Item to destroy: %s	Item: |cffff9d9d|H|h%s|h|r	Destroy |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+10	Collect	Items to pick up: %s	Item: |cffff9d9d|H|h%s|h|r	Collect |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+11	Cook the fish	Amount: %s	Cook: Any	Cook any fish to	finish the quest and	receive the reward.
+12	Catch the fish	Fish to catch: %s	Fish: Any	Catch any fish to	finish the quest and	receive the reward.
+14	Collect Yang	Yang to collect: %s	Collect: Any	Collect Yang to	finish the quest and	receive the reward.
+15	Complete Runs	Runs: %s	Which: Any	Complete 70 runs to	finish the quest and	receive the reward.
+17	Stay Online	Minutes: %s	 	Stay online to	finish the quest and	receive the reward.
+18	Write in Global Chat	Shouts: %s	Which: Shout	Complete 20000 global chat shouts to	finish the quest and	receive the reward.
+19	Collect	Items to pick up: %s	Item: |cffff9d9d|H|h%s|h|r	Collect |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+20	Collect	Items to pick up: %s	Item: |cffff9d9d|H|h%s|h|r	Collect |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+21	Use the item	Item to use: %s	Object: |cffff9d9d|H|h%s|h|r	Use |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+22	Use the item	Item to use: %s	Object: |cffff9d9d|H|h%s|h|r	Use |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.

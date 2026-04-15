@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Con este sistema será posible soltar solo con 2 caracteres.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMACIÓN
+
+[X_PADDING=12]1. Los primeros 2 clientes abiertos tendrán la gota disponible, al abrir el tercer cliente, la gota se bloqueará automáticamente
+[X_PADDING=12]por lo que solo puede ganar xp
+[X_PADDING=12]2. Será posible activar y desactivar la caída a un personaje haciendo clic en el icono en la parte superior izquierda.
+[X_PADDING=12]3. La caída solo se puede activar y desactivar en el mapa Wonder Village y debes esperar a Enfriamiento
+[X_PADDING=12] de 5 segundos.
+[X_PADDING=12]4. Si tiene más de 2 clientes abiertos y habilita la entrega al tercer cliente, automáticamente deshabilita la entrega al primer cliente y
+[X_PADDING=12]así sucesivamente en orden numérico para otros clientes abiertos.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

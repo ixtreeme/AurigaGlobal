@@ -1,0 +1,10 @@
+1	Omoara-l pe lider	Ucide ràmase: %s	Monstru: |cffff9d9d|H|h%s|h|r	Ucide |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+5	Folositi obiectul	Obiect de utilizat: %s	Obiect: |cffff9d9d|H|h%s|h|r	Folositi |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+6	Vindeti obiectul	Obiect de vânzare: %s	Obiect: |cffff9d9d|H|h%s|h|r	Vinde |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+8	Îmbunàtàtiti obiectul	Obiect de îmbunatatit: %s	Obiect: |cffff9d9d|H|h%s|h|r	Îmbunàtàtiti |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+9	Distrugeti-va obiectul	Obiect de distrus: %s	Obiect: |cffff9d9d|H|h%s|h|r	Distruge |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+10	Colectarea	Obiect de colectie: %s	Obiect: |cffff9d9d|H|h%s|h|r	Colectarea |cffff9d9d|H|h%s|h|r pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+11	Se prajeste pestele	Peste pentru pràjit: %s	A praji: Toate	Se prajeste orice peste pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+12	Prinde Pestii	Peste de prins: %s	A pescui: Toate	Prinde orice peste pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+14	Colecteaza yang	Yang pentru a colecta: %s	Colecteaza de la: Toate	Colecteaza yang pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.
+15	Temnita complet	Temnita de finalizat: %s	Temnita: Toate	Completeaza 70 de Temnita pentru	a finaliza misiunea si a câstiga	recompense pentru personajul tàu.

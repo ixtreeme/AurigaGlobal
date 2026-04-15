@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/guild.png]
+[CENTER_ALIGN]Clasamentul breslelor e format din 3 ligi:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=90]Liga de Aur									 Ligã de Argint								   Liga de Bronz
+
+
+[X_PADDING=12]Poþi deschide fereastra clasamentului apãsând pe icoana care se aflã în stânga inventarului sau apãsând F6.
+
+[X_PADDING=12]Pentru a intra într-o ligã, breasla va avea nevoie de un numãr minim de trofee:
+[X_PADDING=20]1. Liga de Aur: 50
+[X_PADDING=20]2. Liga de Argint: 30
+[X_PADDING=20]3. Liga de Bronz: 5
+
+[X_PADDING=12]Fiecare ligã are un numãr limitat de locuri (breaslele cu mai multe trofee vor rãmâne în clasament):
+[X_PADDING=20]1. Liga de Aur: 7
+[X_PADDING=20]2. Liga de Argint: 12
+[X_PADDING=20]3. Liga de Bronz: 21
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Punctajele ºi recompensele ligilor:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* LIGA DE AUR:
+
+[X_PADDING=28]- Punctaj:
+[X_PADDING=36]-> Victorie +3 trofee / +15KK fiecãrui membru al breslei.
+[X_PADDING=36]-> Înfrângere -3 trofee / -5kk fiecãrui membru al breslei.
+[X_PADDING=36]-> Egalitate +1 trofeu / +5kk fiecãrui membru al breslei.
+
+[X_PADDING=28]- Recompensã la sfârºitul sezonului (duratã sezon 25 zile):
+[X_PADDING=36]-> Primul loc: 180kk + °1 Cufãr Aliaj de Aur fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 2-lea loc: 100kk + °2 Cufãr Aliaj de Aur fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 3-lea loc: 70kk + °3 Cufãr Aliaj de Aur fiecãrui membru al breslei.
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* LIGA DE ARGINT:
+
+[X_PADDING=28]- Punctaj:
+[X_PADDING=36]-> Victorie +3 trofee / +5KK fiecãrui membru al breslei.
+[X_PADDING=36]-> Înfrângere -2 trofee.
+[X_PADDING=36]-> Egalitate +1 trofeu / +2kk fiecãrui membru al breslei.
+
+[X_PADDING=28]- Recompensã la sfârºitul sezonului (duratã sezon 25 zile):
+[X_PADDING=36]-> Primul loc: 100kk + °1 Cufãr Aliaj de Argint fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 2-lea loc: 70kk + °2 Cufãr Aliaj de Argint fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 3-lea loc: 40kk + °3 Cufãr Aliaj de Argint fiecãrui membru al breslei.
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* LIGA DE BRONZ:
+
+[X_PADDING=28]- Punctaj:
+[X_PADDING=36]-> Victorie +3 trofee.
+[X_PADDING=36]-> Înfrângere -1 trofeu.
+[X_PADDING=36]-> Egalitate +1 trofeu.
+
+[X_PADDING=28]- Recompensã la sfârºitul sezonului (duratã sezon 25 zile):
+[X_PADDING=36]-> Primul loc: 50kk + °1 Cufãr Aliaj de Bronz fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 2-lea loc: 30kk + °2 Cufãr Aliaj de Bronz fiecãrui membru al breslei.
+[X_PADDING=36]-> Al 3-lea loc: 10kk + °3 Cufãr Aliaj de Bronz fiecãrui membru al breslei.
+
+[X_PADDING=12]RECOMPENSA VICTORIE:
+[X_PADDING=20]- Dacã o breaslã are mai multe învingeri atunci membrii vor beneficia de anumite recompense:
+[X_PADDING=20]- 5 victorii 1 Gaya fiecãrui membru al breslei.
+[X_PADDING=20]- 10 victorii 3 Gaya fiecãrui membru al breslei.
+[X_PADDING=20]- 15 victorii 15 Gaya fiecãrui membru al breslei.
+[X_PADDING=20]- Poþi controla numãrul de victorii în clasamentul breslelor.
+
+[X_PADDING=12]ALTE DETALII:
+[X_PADDING=20]1. Pentru a putea declara rãzboi breasla ta trebuie sã fie minim nivel 2.
+[X_PADDING=20]2. Pentru a putea declara rãzboi breasla ta trebuie sã aibe minim 8 membri.
+[X_PADDING=20]3. La sfârºitul sezonului trofeele vor fi resetate.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

@@ -1,0 +1,125 @@
+=================================================================================================================
+16.11.2009 Vba32 AntiRootKit 3.12.4.0
+
+* Public release
+
+=================================================================================================================
+
+07.10.2009 Vba32 AntiRootKit 3.12.3.3 beta
+
++ Added support of Windows 7
+
+=================================================================================================================
+
+09.09.2009 Vba32 AntiRootKit 3.12.3.3 beta
+
+* Help was translated from Russian into English
+
+=================================================================================================================
+
+16.07.2009 Vba32 AntiRootKit 3.12.3.3 beta
+
+
++ Added detection and restoration of hooks in Interrupt Descriptor Table (IDT)
+
++ Added detection and restoration of hooks in Code Sections of Kernel (.text and PAGE)
+
++ Viewing and deleting of Kernel-Mode notificators implemented
+  (create thread, create process, load image etc.)
+
+* Added support of Windows Vista SP2 and Windows 7 RC build 7100
+
+* Some bugs in Autorun window and Drivers and Services (from Registry) window were fixed
+
+* Autosize columns in listviews after scanning feature
+
+* Behaviour of Settings window was fixed
+
+* Search hidden driver path algorithm was improved
+
+* Option  "Create ZIP archive" in Logging State window is set to default
+
+* Automatic restart after Advanced Monitoring Driver installation
+
+* Some minor bugs in child windows were fixed
+
+* Help was improved
+
+=================================================================================================================
+
+26.05.2009 Vba32 AntiRootKit 3.12.3.2 beta
+
+
++ Added detection and restoration of hooks in Export Address Table (EAT) in Ndis.sys
+
++ Added detection and restoration of hooks in Export Address Table (EAT) in Ndis.sys
+
++ Advanced monitoring of loaded Kernel Modules
+
++ Added detection and restoration of hooks (aka splicing) in KiFastCallEntry; functions of SSDT and Shadow SSDT tables; 
+  functions from EAT Ntoskrnl.exe, Hal.dll, Ndis.sys
+
++ Memory dump of Kernel Modules feature implemented 
+
++ Added possibility of saving report to Zip-archive
+
++ Automatic detection of VBA32 (checkbox Use AV Kernel)
+
+* Detection of SysEnter register modification was improved
+
+* Hooks acquisition algorithm in KernelMode was improved
+
+* Some minor bugs in child windows were fixed
+
+* Errors in hooks detection were fixed (Windows 2000)
+
+* Report information gathering algorithm was improved
+
+* Help was improved
+
+=================================================================================================================
+
+07.04.2009 Vba32 AntiRootKit 3.12.3.1 beta
+
+
++ Added detection and restoration of hooks in Shadow System Service Table (Shadow SSDT)
+
++ Added detection and restoration of hooks in Kernel Export Address Table (EAT)
+
++ Added detection of IRP and FastIO hooks
+
++ Added "Restore All" button in KernelMode Hooks window
+
+* Name of hooked functions acquisition algorithm was improved
+
+* Recovery and representation of corrupted files algorithm from the Quarantine was improved
+
+* Report information gathering algorithm was improved
+
+* Progress bar behaviour was fixed
+
+=================================================================================================================
+
+06.03.2009 Vba32 AntiRootKit 3.12.3.0 beta
+
+
++ List of Autorun
+  (ActiveX, BHO, LSP, Autorun.inf, SecurityProviders etc.)
+
++ List of Drivers and Services (from Registry)
+
++ Checking state of MSR registers (SysEnter)
+
++ Caching of files in AV-kernel checking 
+
+* Reports are saved in html format
+
+* UNICODE support
+
+* The Quarantine was improved
+
+* "Apply" button behaviour in Settings window was fixed
+
+* Error with receiving of processes-list was fixed on Windows 2003
+
+=================================================================================================================

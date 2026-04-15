@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Leitfaden für Anfänger.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]START:
+[X_PADDING=12]Level dich auf Map1 mindestens bis Level 25–30 hoch. Zerschlage währenddessen Metinsteine für Segensrollen und Upgrade-Materialien.
+[X_PADDING=20]Vergiss nicht die Brutalen Hauptmänner – von ihnen bekommst du Waffen für Level 30.
+[X_PADDING=20]Auf Level 26 lohnt es sich, bei einem NPC ein Level-26-Rüstungsteil und einen Level-21-Helm zu kaufen, die du leicht auf +9 verbessern kannst.
+
+[X_PADDING=12;COLOR=ffff00]LVL 30:
+[X_PADDING=12]Wechsle auf Map2 zum Leveln und Farmen. Wenn du gute Ausrüstung hast (Rüstung, Helm, Waffe), sind selbst die Level-45-Metins kein Problem.
+[X_PADDING=20]Vergiss beim Farmen nicht die Dungeons! Nutze die Zeitbegrenzung und schließe sie ab,
+[X_PADDING=20]um wertvolle Reittiere, Pets und mehr zu erhalten.
+[X_PADDING=20]Aus Ork-Metins brauchst du eine Level-42-Rüstung und ein Level-41-Schild, um auf der nächsten Map zu überleben!
+
+[X_PADDING=12;COLOR=ffff00]LVL 50:
+[X_PADDING=20]Bis dahin solltest du mindestens ein Pet und 6 Reittiere im Reittier-Inventar haben – jeder Dungeon gibt dir 2.
+[X_PADDING=20]Level bis 65 und vergiss nicht die Open Bosse – von ihnen bekommst du wertvolle legendäre Bonuserweiterer!
+[X_PADDING=20]Du brauchst eine Level-65-Waffe, die bei +9 dir +55% Teufelsschaden gibt.
+[X_PADDING=20]Auch eine Level-65-Rüstung bekommst du vom Open Boss – sie ist essenziell für die nächste Map.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Spielregeln!!
+
+[FONT_SIZE=18;COLOR=00ff00] Chat- und Verhaltensregeln
+[X_PADDING=12]BELEIDIGUNGEN, DROHUNGEN oder BELÄSTIGUNGEN gegenüber anderen Spielern sind VERBOTEN!
+[X_PADDING=12]POLITISCHE oder RELIGIÖSE Provokationen im globalen Chat sind VERBOTEN!
+[X_PADDING=12]SPAM ist VERBOTEN – dazu gehören wiederholte Nachrichten und Werbung!
+
+[FONT_SIZE=18;COLOR=00ff00] Account- und Datensicherheit
+[X_PADDING=12]DU bist für die Sicherheit deines Accounts VERANTWORTLICH! Gib deine Logindaten NIEMANDEM weiter!
+[X_PADDING=12]Das Team fragt NIEMALS nach deinem Passwort – wenn doch, melde es sofort!
+[X_PADDING=12]Es ist VERBOTEN, sich in fremde Accounts einzuloggen – auch mit Erlaubnis des Besitzers!
+
+[FONT_SIZE=18;COLOR=00ff00] Support und Teamkontakt
+[X_PADDING=12]GM-Belästigung oder sinnlose Anfragen sind VERBOTEN! Nutze das Ticket-System oder das Forum.
+[X_PADDING=12]Die Entscheidung eines GMs ist endgültig. Bei Problemen darfst du sachlich um eine Überprüfung bitten.
+
+[FONT_SIZE=18;COLOR=00ff00] Ausnutzung und Fairplay
+[X_PADDING=12]Jegliche Programme oder Hilfsmittel, die Vorteile verschaffen (z. B. Bot, Speedhack, Zoomen), sind STRENGSTENS VERBOTEN!
+[X_PADDING=12]Das Ausnutzen von Fehlern anderer Spieler (z. B. im Handel oder PvP) ist VERBOTEN!
+[X_PADDING=12]Das absichtliche Manipulieren von PvP-Systemen, Events oder Maps ist VERBOTEN!
+
+[FONT_SIZE=18;COLOR=00ff00] Handel, Shops und Hacks
+[X_PADDING=12]SERVERÜBERGREIFENDER Handel ist VERBOTEN!
+[X_PADDING=12]FALSCHE oder IRREFÜHRENDE Shop-Beschreibungen (z. B. 1 Yang = 1kk) sind VERBOTEN!
+[X_PADDING=12]Jegliche HACKS oder MACRO-Programme sind STRENGSTENS VERBOTEN!
+[X_PADDING=12]Es ist VERBOTEN, Items oder Accounts gegen echtes Geld zu verkaufen!
+[X_PADDING=12]BETRUG im Handel ist VERBOTEN – Ehrlichkeit ist Pflicht!
+
+[FONT_SIZE=18;COLOR=00ff00] Bugnutzung und Meldung
+[X_PADDING=12]Wenn du einen Bug findest, BIST DU VERPFLICHTET, ihn zu melden – das Ausnutzen ist STRENGSTENS VERBOTEN!
+[X_PADDING=12]Bugs gefährden die Sicherheit des Servers und führen zu HARTE STRAFEN!
+
+[FONT_SIZE=18;COLOR=00ff00] Allgemeine Verbote
+[X_PADDING=12]VULGÄRE Sprache, HASSREDE und RASSISMUS sind VERBOTEN – wir sind alle Menschen!
+[X_PADDING=12]NIEMAND außer dir darf deinen Account benutzen – auch kein Freund!
+[X_PADDING=12]WERBUNG für andere Server oder deren Links ist VERBOTEN!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]DIE MISSACHTUNG DIESER REGELN KANN ZU EINEM PERMANENTEN HARDWARE-BAN FÜHREN!
+[X_PADDING=12]

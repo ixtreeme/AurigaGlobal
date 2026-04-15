@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]Pe Auriga existã 4 grade noi de îmbunãtãþire:
+[X_PADDING=20]- Epic
+[X_PADDING=20]- Legendar
+[X_PADDING=20]- Antic
+[X_PADDING=20]- Mistic
+
+[X_PADDING=12]1. Anumite iteme care sunt +9 pot fi îmbunãtãþite ºn în noile grade.
+[X_PADDING=12]2. Atunci când gradul unui item este îmbunãtãþit acesta va primi un nou bonus fix sau va îmbunãtãþi
+[X_PADDING=12]valorile bonusurilor fixe care sunt deja prezente.
+
+[X_PADDING=12;FONT_SIZE=14]ITEM CHE POSSONO ESSERE EPICIZZATI:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARME:
+[X_PADDING=28]- Sabie otrãvitã+9
+[X_PADDING=28]- Sabie leu+9
+[X_PADDING=28]- Sabia mâniei+9
+[X_PADDING=28]- Arcul oþelit al ciorii+9
+[X_PADDING=28]- Chakram Aripã Diavol+9
+[X_PADDING=28]- Clopot Orhidee+9
+[X_PADDING=28]- Sabie Zodiac+9
+[X_PADDING=28]- Lamã Zodiac+9
+[X_PADDING=28]- Glaive Zodiac+9
+[X_PADDING=28]- Arc Zodiac+9
+[X_PADDING=28]- Pumnal Zodiac+9
+[X_PADDING=28]- Evantai Zodiac+9
+[X_PADDING=28]- Clopot Zodiac+9
+[X_PADDING=28]- Sabie din Cianit+9
+[X_PADDING=28]- Lamã din Cianit+9
+[X_PADDING=28]- Glaive din Cianit+9
+[X_PADDING=28]- Arc din Cianit+9
+[X_PADDING=28]- Pumnal din Cianit+9
+[X_PADDING=28]- Evantai din Cianit+9
+[X_PADDING=28]- Clopot din Cianit+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMURI:
+[X_PADDING=28]- Armurã din Cianit+9
+[X_PADDING=28]- Platoºã din Cianit+9
+[X_PADDING=28]- Costum din Cianit+9
+[X_PADDING=28]- Hainã din Cianit+9
+[X_PADDING=28]- Armurã Zodiac+9
+[X_PADDING=28]- Platoºã Zodiac+9
+[X_PADDING=28]- Costum Zodiac+9
+[X_PADDING=28]- Hainã Zodiac+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* COIFURI:
+[X_PADDING=28]- Coif Dragon Negru+9
+[X_PADDING=28]- Coif Dragon Vrãjit+9
+[X_PADDING=28]- Coif Dragon Furios+9
+[X_PADDING=28]- Coif Dragon Înfocat+9
+[X_PADDING=28]- Coif Oþel Dragoneer+9
+[X_PADDING=28]- Coif Solzi Dragon+9
+[X_PADDING=28]- Glugã Dragon+9
+[X_PADDING=28]- Pãlãrie Dragon+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SCUTURI:
+[X_PADDING=28]- Scutul vulturului+9
+[X_PADDING=28]- Scutul leului+9
+[X_PADDING=28]- Scutul tigrului+9
+[X_PADDING=28]- Scut solzii Dragonului+9
+[X_PADDING=28]- Scut Cei-3-Împãraþi+9
+[X_PADDING=28]- Scut Titan+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRAÞARI:
+[X_PADDING=28]- Brãþarã Suflet Cristal+9
+[X_PADDING=28]- Brãþarã Cianit+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* COLIERE:
+[X_PADDING=28]- Colier Suflet Cristal+9
+[X_PADDING=28]- Colier Cianit+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* CERCEI:
+[X_PADDING=28]- Cercei Suflet Cristal+9
+[X_PADDING=28]- Cercei Cianit +9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* PAPUCI:
+[X_PADDING=28]- Papuci de Foc+9
+[X_PADDING=28]- Papuci de Apã+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

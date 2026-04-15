@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 40.
+[X_PADDING=12]*Level máximo: 100.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 50 minutos.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Zombi.
+[X_PADDING=12]*O elemento dos monstros: Escuridão
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRA ANDAR
+[X_PADDING=20]1. Mate todos os monstros.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR
+[X_PADDING=20]1. Mate o Rei Demônio.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRO ANDAR
+[X_PADDING=20]1. Destrua o Metin do Diabo.
+[X_PADDING=20]2. Destrua o Metin da Queda correto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO ANDAR
+[X_PADDING=20]1. Encontre 5 Pedras Chaves.
+[X_PADDING=20]2. Arraste a pedra chave para os selos antigos para mover-se para o próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO ANDAR
+[X_PADDING=20]1. Mate o Rei Demônio de Elite.
+[X_PADDING=20]2. Use o ferreiro para melhorar qualquer item ou clique nele para prosseguir para a próxima fase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO ANDAR
+[X_PADDING=20]1. Destrua o Metin da Morte.
+[X_PADDING=20]2. Destrua o Metin do assassino para dropar o misterioso baú antigo.
+[X_PADDING=20]3. Clique com o botão direito no Baú Misterioso para Dropar a Mapa Torre de Zin-Sa-Gui no chão.
+[X_PADDING=20]4. Clique com o botão direito no mapa da Torre Zin-Sa-Gui para ir para o próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SÉTIMO ANDAR
+[X_PADDING=20]1. Encontre a chave Zin-Bong-In.
+[X_PADDING=20]2. Arraste a chave Zin-Bong-In para Sa-Soe para ir para o próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OITAVO ANDAR
+[X_PADDING=20]1. Mate a morte personificada.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

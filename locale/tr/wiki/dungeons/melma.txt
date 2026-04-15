@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:	
+[X_PADDING=12]*Minimum Giris Seviyesi: 45.
+[X_PADDING=12]*Maksimum Giris Seviyesi: 65.
+[X_PADDING=12]*Giris Bileti: Balçik Mühürü
+[X_PADDING=12]*Tür: Tek veya Grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Balçik Mühürü
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman sinir 30 dakika.
+[X_PADDING=12]*Bekleme süresi 40 dakika.
+[X_PADDING=12]*Bir gruba katilirsaniz Herkesin bir bileti olmalidir.
+[X_PADDING=12]*Haritadan erisebilirsiniz: lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Hayvanlara karsi güçlü.
+[X_PADDING=12]*Irk: Toprak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Balçik metinlerini yok et.
+[X_PADDING=20]2. 103 canavari öldür.
+[X_PADDING=20]3. Balçik diregine tikla.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. 4 Balçik metnini yok et ve bos balçik sisesini topla.
+[X_PADDING=20]2. Balçik toplamak için bos balçik sisesini balçik üzerine sürükleyin.
+[X_PADDING=20]3. Dolu balçik sisesini mühür tasinin üzerine sürükleyin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÜÇÜNCÜ ASAMA
+[X_PADDING=20]1. 103 canavari öldür.
+[X_PADDING=20]2. Balçik kraliçesini öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

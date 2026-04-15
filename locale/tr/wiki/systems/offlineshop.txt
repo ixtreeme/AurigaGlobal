@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]1. Mini haritada bulunan paket simgesine tiklayarak veya dügmesine basarak çevrimdisi magaza panelini açabilirsiniz.
+[X_PADDING=12]Y tusu.
+[X_PADDING=12]2. Çevrimdisi magaza 9 bölümden olusur:
+[X_PADDING=20]I. Dükkanim
+[X_PADDING=20]II. Magazalarin listesi
+[X_PADDING=20]III. Depo
+[X_PADDING=20]IV. Tekliflerim
+[X_PADDING=20]V.  Arama
+[X_PADDING=20]VI. Aramalarim
+[X_PADDING=20]VII. Kaydedilen aramalar
+[X_PADDING=20]VIII. Müzayedelerim
+[X_PADDING=20]IX. Açik artirmalar devam ediyor
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ÇESITLI BÖLÜMLERIN ISLEVSELLIGI
+
+[X_PADDING=12]1. Magazam: Bu bölümde çevrimdisi magazanizi olusturabilirsiniz, sag üstte magazanin bir önizlemesini bulacaksiniz.
+[X_PADDING=12]kullanacaginiz dükkan, oklara tiklayarak özel dükkanlari da seçebilirsiniz ancak dikkatli olun,
+[X_PADDING=12]Özel magazalari kullanmak için 1 Kasmir Paketine ihtiyaciniz olacak.
+
+[X_PADDING=12]2. Magaza Listesi: Bu bölümde tüm aktif çevrimdisi magazalara bakabilirsiniz.
+
+[X_PADDING=12]3. Depo: Bu bölümde satmadiginiz tüm esyalar ve satislardan elde edilen gelirler bulunur.
+
+[X_PADDING=12]4. Tekliflerim: Bu bölüm, yaptiginiz tüm teklifleri listeler.
+
+[X_PADDING=12]5. Arama: Bu bölümde, hedefli bir arama yapmak için çesitli filtreleri kullanabilirsiniz.
+
+[X_PADDING=12]6. Aramalarim: Bu bölümde yaptiginiz tüm aramalari görebilirsiniz.
+
+[X_PADDING=12]7. Kaydedilen Aramalar: Kaydedilen tüm arama filtreleri bu bölümde listelenir.
+
+[X_PADDING=12]8.Müzayedelerim: Bu bölümde bir müzayede olusturabilir veya devam eden müzayedelerinizden birinin durumunu kontrol edebilirsiniz
+
+[X_PADDING=12]9. Devam eden açik artirmalar: bu bölüm, devam etmekte olan tüm açik artirmalari listeler
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DIGERLERI
+
+[X_PADDING=12]1. Magazanizin görünümünü degistirmek için Magazam bölümünden magazanizin görünümünü degistirmeyi seçebilirsiniz.
+[X_PADDING=12]alisveris için Kasmir Paketine ihtiyaciniz olacak.
+[X_PADDING=12]2. Kasmir paketini Gaya Magazasinda veya çesitli etkinliklerde bulabilirsiniz.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Kasmir Paketi
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

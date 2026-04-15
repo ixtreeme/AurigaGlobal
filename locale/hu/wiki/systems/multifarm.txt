@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Ezzel a rendszerrel csak és kizárólag 2 karakter tud farmolni.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12]1. Az elso 2 kliensen (ami megvan nyitva) van lehetoséged tárgy dobására, ha megnyitsz egy harmadikat, a dobási esélyed blockolva lesz, 
+[X_PADDING=12]és csak EXP-t tudsz szerezni.
+[X_PADDING=12]2. Lehetoséged lesz ki/be kapcsolni a tárgy dobás esélyét, méghozzá a bal felso sarokban található ikonra kattintva.
+[X_PADDING=12]3. Ki és bekapcsolni a tárgy dobás esélyét csak és kizárólag a Wonder Village mapon van lehetoséged, és kikell várnod az
+[X_PADDING=12] 5 másodperces újratöltési idot is.
+[X_PADDING=12]4. Ha 2-nél több kliensed van nyitva, és bekapcsolod a tárgy dobásának esélyét a harmadik kliensen, akkor kikapcsolja az elso klienseden, és
+[X_PADDING=12]így tovább, számozási sorrendben.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

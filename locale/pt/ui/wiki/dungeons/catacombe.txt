@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 75.
+[X_PADDING=12]*Level máximo: 95.
+[X_PADDING=12]*Ingresso: Cabeça Encolhida.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Cabeça Encolhida
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 40 minutos.
+[X_PADDING=12]*O tempo de espera é de 1 hora.
+[X_PADDING=12]*Caso você entre com o grupo, todos devem ter um bilhete.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Zombi.
+[X_PADDING=12]*O elemento dos monstros: Zombi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRA ANDAR
+[X_PADDING=20]1. Mate os monstros para dropar a chave Crist. d. Alma.
+[X_PADDING=20]2. Arraste a chave Crist. d. Alma na estátua de Kud para continuar com a próxima fase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR
+[X_PADDING=20]1. Destrua o Metin de retaliação correto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRO ANDAR
+[X_PADDING=20]1. Mate os Tártaros corretos.
+[X_PADDING=20]2. Arraste o Totem da Careta para o Obelisco de Basalto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO ANDAR
+[X_PADDING=20]1. Mate Charon.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO ANDAR
+[X_PADDING=20]1. Mate Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

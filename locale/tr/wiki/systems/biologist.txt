@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BIYOLOG SISTEMININ YAPISI
+
+[X_PADDING=12]1. Biyolog paneli simgesi mini haritada bulunur.
+[X_PADDING=12]2. Biyologun görevlerini tamamlamak kalici bonuslar saglar.
+[X_PADDING=12]3. Harikalar Köyündeki biyologa giderek görevler için gerekli esyalari satin alabilirsiniz.
+[X_PADDING=12]4. Bekleme süresi doldugunda biyolog panelinde bir bildirimi etkinlestirebilirsiniz.
+[X_PADDING=12]5. Bekleme süresini sifirlamak için Arastirmaci Iksirini kullanabilirsiniz.
+[X_PADDING=12]6. Bekleme süresini sifirlamak ve esyalarin kalitesini artirmak için Arastirmaci Iksiri + kullanabilirsiniz.
+[X_PADDING=12]biyologa teslim edilirler.
+[X_PADDING=12]7. Seviye 105 ve 110 görevlerinde seçilen bonusu degistirmek için Biyologun Sihri ögesini kullanabilirsiniz.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GÖREVLER VE ÖDÜLLER
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

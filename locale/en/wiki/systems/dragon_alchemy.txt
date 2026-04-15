@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ALCHEMY SHOP
+
+[X_PADDING=12]1. You can purchase Cor Draconis (Ancient) in the alchemy shop located in the alchemy panel with the Stone Splinters
+[X_PADDING=12]d. Dragon.
+[X_PADDING=12]2. You can purchase Time Elixirs in the Alchemy Shop located in the Alchemy Panel with Stone Splinters
+[X_PADDING=12]d. drago.
+[X_PADDING=12]3. You can purchase the green, blue and pink bean in the alchemy shop located in the alchemy panel
+[X_PADDING=12]Stone Splinter d. dragon.
+[X_PADDING=12]4. You can purchase Dragon Pincers from the Alchemy Shop located in the Alchemy Panel with Stone Splinters
+[X_PADDING=12]d. drago.
+[X_PADDING=12]5. You can purchase Enchant Alchemy in the Alchemy Shop located in the Alchemy Panel with Cor Draconis
+[X_PADDING=12](Ancient), or drop them in the various dugeons.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASS
+
+[X_PADDING=12]1. On Auriga there are only 3 classes. Ancient, Legendary and Mythical.
+[X_PADDING=12]2. To improve the class of a stone, 2 stones of the same type and class are needed.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEGREE OF CLARITY
+
+[X_PADDING=12]1. There are 5 degrees of clarity: Matte, Clear, Limpid, Brilliant and Excellent.
+[X_PADDING=12]2. To improve the degree of clarity of a stone, two stones of the same type and same degree are needed
+[X_PADDING=12]clarity.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LEVEL
+
+[X_PADDING=12]1. Dragonstones can be upgraded up to +6.
+[X_PADDING=12]2. The stones can be upped with the green, blue or pink grain.
+[X_PADDING=12]3. The difference between the various grains is the percentage of the up, the green grain has the lowest percentage while that
+[X_PADDING=12]highest purple.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DURATION OF THE DRAGON STONE
+
+[X_PADDING=12]1. Each dragon stone has a maximum duration of 24 hours.
+[X_PADDING=12]2. When the time of the dragon stone expires, the stone does not disappear.
+[X_PADDING=12]3. Time Elixirs can be purchased to refill the stone in the Alchemy Shop.
+[X_PADDING=12]4. It is possible to remove a dragon stone from alchemy using the Dragon Tongs, the stone is always removed with
+[X_PADDING=12]100% success.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]THE BONUSES OF THE DRAGON STONES
+
+[X_PADDING=12]1. Ancient and Legendary Dragonstones always have 2 base fixed bonuses.
+[X_PADDING=12]2. Mythic Dragonstones always have 3 base fixed bonuses.
+[X_PADDING=12]3. It is possible to change the bonuses of a dragon stone only when it is of Mythic class and of Excellent rank.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]THE VARIOUS BONUSES THAT CAN GO OUT ON THE DRAGON STONES
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](The indicated bonuses refer to Mythic alchemy, Excellent +6)
+
+
+[X_PADDING=52]DIAMOND :
+[X_PADDING=60]- Intelligence +16
+[X_PADDING=60]- Ice Resistance 20%
+[X_PADDING=60]- Power of Ice 20%
+[X_PADDING=60]- Strong Against Sura 24%
+[X_PADDING=60]- Defence Against Sura 24%
+[X_PADDING=60]- max HP. +32%
+[X_PADDING=60]- SP Regeneration 16%
+[X_PADDING=60]- Magical Attack Value +24
+[X_PADDING=60]- Magical Defense +24
+
+
+[X_PADDING=52]RUBY :
+[X_PADDING=60]- Strength +16
+[X_PADDING=60]- Fire Resistance 20%
+[X_PADDING=60]- Fire Power 20%
+[X_PADDING=60]- Strong Against Warrior 24%
+[X_PADDING=60]- Defence Against Warrior 24%
+[X_PADDING=60]- Chance to drop a double amount of yang 26%
+[X_PADDING=60]- HP Regeneration +16%
+[X_PADDING=60]- Average Damage Resistance 24%
+[X_PADDING=60]- Defense +320
+
+
+[X_PADDING=52]JADE :
+[X_PADDING=60]- SP +1000
+[X_PADDING=60]- Wind Resistance 20%
+[X_PADDING=60]- Power of Wind 20%
+[X_PADDING=60]- Resistance monsters 20%
+[X_PADDING=60]- Skill Damage 24%
+[X_PADDING=60]- Skill Resistance 24%
+[X_PADDING=60]- Attack Value +480
+[X_PADDING=60]- Strong against monsters 20%
+[X_PADDING=60]- Chance of double Item drop 20%
+
+
+[X_PADDING=52]SAPPHIRE :
+[X_PADDING=60]- Agility +16
+[X_PADDING=60]- Earth Resistance 20%
+[X_PADDING=60]- Power of Earth 20%
+[X_PADDING=60]- Strong Against Ninja 24%
+[X_PADDING=60]- Defence Against ninja 24%
+[X_PADDING=60]- Strong against Metin stones 20%
+[X_PADDING=60]- max SP. +32%
+[X_PADDING=60]- Chance to restore  HP 16%
+[X_PADDING=60]- Chance to restore SP. 16%
+
+
+[X_PADDING=52]GARNET :
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Lightning Resistance 20%
+[X_PADDING=60]- Power of Lightning 20%
+[X_PADDING=60]- Strong Against Shaman 24%
+[X_PADDING=60]- Defence Against Shaman 24%
+[X_PADDING=60]- Strong Against Bosses 20%
+[X_PADDING=60]- Max. HP +4800
+[X_PADDING=60]- Chance of EXP bonus 26%
+[X_PADDING=60]- Average Damage 24%
+
+
+[X_PADDING=52]ONYX :
+[X_PADDING=60]- Vitality +16
+[X_PADDING=60]- Dark Resistance 20%
+[X_PADDING=60]- Power of Darkness 20%
+[X_PADDING=60]- Chance to avoid arrows 16%
+[X_PADDING=60]- Resistance against piercing hits 16%
+[X_PADDING=60]- Resistance against critical hits +16%
+[X_PADDING=60]- Chance to reflect close combat hits 16%
+[X_PADDING=60]- Chance to block close combat hits 16%
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]COMPLETE ALCHEMICAL BONUS SET
+
+[X_PADDING=12]1. Completing the entire alchemical wheel with +6 stones automatically activates the alchemical set bonus.
+[X_PADDING=12]2. Top left when the alchemical set bonus icon is red if the set bonus is not active.
+[X_PADDING=12]2. Top left when the alchemical set bonus icon is green if the set bonus is active.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSES PROVIDED:
+
+[X_PADDING=12]1. Strong against Metin stones +10%
+[X_PADDING=12]2. Strong against Monsters +10%
+[X_PADDING=12]3. Max. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

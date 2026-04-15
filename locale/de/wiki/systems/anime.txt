@@ -1,0 +1,66 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]Das Seelensystem ermöglicht es dir, Seelen zu verbessern und zu verwenden, sie geben dem Spieler temporäre Boni auf
+[X_PADDING=12;CENTER_ALIGN]Schaden mit physischen und Fertigkeitsangriffen.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES SYSTEMS
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]E. Oniricha-Seele																						    E. himmlische Seele
+
+[X_PADDING=12] SEELE ONIRICHA UND HIMMLISCHE SEELE
+[X_PADDING=20]- Seelen-Oniricha stärkt physische Angriffe.
+[X_PADDING=20]- Die Himmlische Seele verstärkt den von Fähigkeiten verursachten Schaden.
+[X_PADDING=20]- Der Boost wird einer definierten Anzahl von Treffern gegen ein Ziel gewährt, wonach die
+[X_PADDING=20]Verbesserung verschwindet.
+
+[X_PADDING=12]Upgrades werden während einer Transformation oder eines PvP-Kampfes nicht aktiviert.
+[X_PADDING=12]Angriffe durch Reiten auf Pferden werden verstärkt, aber nur gegen Monster, nicht gegen andere SC.
+
+[X_PADDING=12]Um die Seele zu laden muss man im Spiel mindestens 60 Minuten warten, sobald die Seele geladen ist der Tooltip (Beschreibung
+[X_PADDING=12], das nur erscheint, wenn Sie die Maus über das Objekt bewegen) wird grün angezeigt und kann aktiviert werden.
+[X_PADDING=12]Nach einer gewissen aufeinanderfolgenden Offline-Zeit (etwa eine Stunde) entlädt sich die Seele und muss warten
+[X_PADDING=12]erneut, um es zu laden.
+[X_PADDING=12]Ab dem schillernden Grad erhöht sich die Verstärkung des Schadens, den die Seele zufügt, je mehr Zeit vergeht: der erste
+[X_PADDING=12]Erhöhung erreicht 2/3 der maximalen Ladung und die zweite (falls vorhanden) bei maximaler Ladung.
+[X_PADDING=12]Ab dem Prismatic-Rang kann die Seele 2 "Stapel" des Upgrades bereitstellen, die auf den vorherigen Rang skalieren
+[X_PADDING=12](500 Treffer mit Schaden multipliziert mit 2,5 und dann weitere 500 mit Schaden multipliziert mit 1,8 zum Beispiel).
+[X_PADDING=12]Auf dem Rang der Erleuchteten entlädt sich die Seele nicht, indem sie offline bleibt.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y = 374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRAD DER SEELE
+
+[X_PADDING=12]Die Seelen können 5 verschiedene Grade haben, je nachdem der Prozentsatz des erhaltenen Boosts und der
+[X_PADDING=12]Anzahl möglicher Aufnahmen.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y = 558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WIE MAN DEN GRAD EINER SEELE VERBESSERT
+
+[X_PADDING=12]- Um den Rang einer Seele zu verbessern, brauchst du die Schriftrolle der Seele, sie funktioniert wie ein Heiliger Papyrus, nur
+[X_PADDING=12]Ziehe das Pergament über die ausgewählte Seele und der obere Bildschirm wird angezeigt.
+[X_PADDING=12]- Im Gegenteil, bei Verwendung einer Schriftrolle der Seele (100 %) ist die Verbesserung garantiert.
+[X_PADDING=12]- Bei einem Misserfolg bricht die Seele nicht und nur die Schriftrolle wird verbraucht. Alle seine Funktionen
+[X_PADDING=12]bleibt unverändert, einschließlich Schüsse, verbleibende Zeit und aktuelle Ladung.
+[X_PADDING=12]- Bei Erfolg steigt die Seele in den nächsten Rang auf, die Anzahl der verbleibenden Treffer wird zurückgesetzt und die Frist kommt
+[X_PADDING=12]zurücksetzen; Jede vorhandene Ladung geht mit dem up verloren, Sie müssen also warten, bis es wieder aufgeladen ist.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

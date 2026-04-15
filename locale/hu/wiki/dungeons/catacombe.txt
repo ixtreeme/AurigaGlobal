@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 75.
+[X_PADDING=12]*Maximum szint: 95.
+[X_PADDING=12]*Belépo: Zsugorított fej.
+[X_PADDING=12]*Típus: Egyedül és Csapatban.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Zsugorított fej
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 40 perc.
+[X_PADDING=12]*Újratöltés: 1 óra.
+[X_PADDING=12]*Ha csapatban lépsz be, mindenkinek kell belépo.
+[X_PADDING=12]*A dungeon elérheto: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Éloholtak elleni ero.
+[X_PADDING=12]*Szörnyek eleme: Sötétség.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Meg kell ölni a szörnyeket, amíg nem kapsz Lélekkristály-kulcsot. 
+[X_PADDING=20]2. Ezt kell elvinni a térkép végén lévo Kud szobrához.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Pusztítsátok el a megfelelo Megtorlás metinjét.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet
+[X_PADDING=20]1. Találd meg és öld meg Tartarost, a kamrák közül az egyikben van a hegy alatt.
+[X_PADDING=20]2. A Grimaszoló totemet vidd el a Bazalt obeliszkhez és húzd rá azt.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet és gyozd le Charont, a halála után minden szörnyet el kell tüntetni a térképrol, hogy tovább juthass.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Ötödik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet a kamrában mielott megölöd Azraelt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

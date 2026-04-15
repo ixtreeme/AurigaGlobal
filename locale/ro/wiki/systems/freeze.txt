@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12;CENTER_ALIGN]Sistemul de îngheþare al bonusurilor este format din 3 iteme:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Îngheaþã Bonus							   Reîngheaþã Bon.							   Dezgheaþã Bon.
+
+[X_PADDING=12;CENTER_ALIGN]Folosind Îngheaþã Bonus pe un item care are bonusuri, unul dintre bonusurile acestuia va fi 
+[X_PADDING=12;CENTER_ALIGN]îngheþat în mod aleatoriu. Bonusurile talismanelor nu pot fi îngheþate.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Bonusurile îngheþate nu au niciun efect asupra caracterului chiar dacã item-ul este echipat, pe
+[X_PADDING=12]lângã asta nu vei putea îmbunãtãþi, crafta sau absorbi itemul pe o eºarfã.
+
+[X_PADDING=12]Bonusurile ce nu pot fi îngheþate:
+[X_PADDING=20]Paguba Medie
+[X_PADDING=20]Paguba Abilitãþii
+[X_PADDING=20]Dublu Tare împotriva Semi-Oameni (de exemplu dacã ai Sabie Triton cu dublu Tare împotriva Semi-Oameni
+[X_PADDING=20]acesta nu va fi îngheþat).
+
+[X_PADDING=12]Reîngheaþã Bonusul este folosit atunci când avem un bonus îngheþat nedorit,
+[X_PADDING=12]deci se reîncearcã îngheþarea unui alt bonus tot în mod aleatoriu.
+
+[X_PADDING=12]Dezgheaþã Bonusul este pentru a dezgheaþã bonusul unui item.
+[X_PADDING=12]Când bonusul a fost dezgheaþat pe item, acesta va avea din nou efect asupra caracterului dacã va fi
+[X_PADDING=12]echipat. De asemenea poate din nou sã fie îmbunãtãþit, craftat ºi absorbit pe o eºarfã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

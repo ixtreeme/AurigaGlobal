@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]By completing some in-game missions you are given a Pet Chest, clicking on it will ask you to
+[X_PADDING=12]choose which pet egg you prefer:
+[X_PADDING=20]- Monkey egg
+[X_PADDING=20]- Spider Egg
+[X_PADDING=20]- Egg of Razador
+[X_PADDING=20]- Egg of Nemere
+[X_PADDING=20]- Blue Dragon Egg
+[X_PADDING=20]- Red Dragon Egg
+[X_PADDING=20]- Baashido Baby Egg
+[X_PADDING=20]- Chubby Executioner Egg
+[X_PADDING=20]- Nessie egg
+[X_PADDING=20]- Egg of Mini azrael
+[X_PADDING=20]- Exdyar egg
+
+[X_PADDING=12]Right clicking on your egg will ask you to choose the name before hatching the pet
+[X_PADDING=12]from the egg (using the Name Scroll it is possible to change the name of your pet).
+[X_PADDING=12]When the pet has hatched it will have 2 days to live and will be level 1.
+[X_PADDING=12]To increase the life of the pet you need the Divine Boccone, available from 2g in the NPC Shopkeeper.
+
+[X_PADDING=12]When the pet hatches it will have 3 bonuses (these bonuses will come out with random percentages):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Strong against monsters
+[X_PADDING=20]- Medium damage[PVM]
+
+[X_PADDING=12]It is possible to increase the percentages of the standard pet bonuses with a Special Bite.
+[X_PADDING=12](Beware the percentage increase of a standard bonus could fail).
+
+[X_PADDING=12]The pet has 3 development processes:
+[X_PADDING=20]1. From Puppy to Wild
+[X_PADDING=20]2. From Wild to Brave
+[X_PADDING=20]3. From Brave to Heroic
+
+[X_PADDING=12]Pet developments are divided as follows:
+[X_PADDING=20]PUPPIES:
+[X_PADDING=28]- Level 1 to 40 with no item required
+[X_PADDING=20]PUPPIES--> WILD:
+[X_PADDING=28]Level 41 to 60
+[X_PADDING=28]- 10 Puppy Pet Book
+[X_PADDING=28]- 10 White Pearl
+[X_PADDING=28]- 3 Yellow Pearl
+[X_PADDING=20]WIL --> COURAGEOUS:
+[X_PADDING=28]- Lv 61 to lv 80
+[X_PADDING=28]- 10 Wild Pet Book
+[X_PADDING=28]- 10 Blue Pearl
+[X_PADDING=28]- 3 Green Pearl
+[X_PADDING=20]COURAGEOUS --> HEROIC:
+[X_PADDING=28]- Lv 81 to 100
+[X_PADDING=28]- 10 Brave Pet Book
+[X_PADDING=28]- 10 Red Pearl
+[X_PADDING=28]- 3 Purple Pearl
+
+[X_PADDING=12]Wild Rank unlocks the first skill slot.
+[X_PADDING=12]Brave Rank unlocks the second skill slot.
+[X_PADDING=12]Heroic Rank unlocks the third skill slot.
+
+[X_PADDING=12]In addition, the pet will provide new bonuses as it gets older, the older the pet will be, the higher the value of its bonuses will be.
+[X_PADDING=20]From 1 to 10 days old the pet will give the following bonuses:
+[X_PADDING=28]- Max. HP +500
+[X_PADDING=28]- Resistance Monsters 2%
+[X_PADDING=28]- Half Human Resistance 2%
+[X_PADDING=20]From 11 to 25 days the pet will give the following bonuses:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Resistance Monsters 4%
+[X_PADDING=28]- Half Human Resistance 4%
+[X_PADDING=20] From 26 to 47 days the pet will give the following bonuses:
+[X_PADDING=28]- Max. HP +2100
+[X_PADDING=28]- Resistance Monsters 7%
+[X_PADDING=28]- Half Human Resistance 7%
+[X_PADDING=20]From 48 to 59 days the pet will give the following bonuses:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistance Monsters 10%
+[X_PADDING=28]- Half Human Resistance 10%
+[X_PADDING=20]From 60 days onwards:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistance Monsters 10%
+[X_PADDING=28]- Half Human Resistance 10%
+[X_PADDING=28]- And the fourth skill slot will unlock
+
+[X_PADDING=12]Skills that can be taught to the pet:
+[X_PADDING=20]- Chance of Critical Hit[PvM] 10%
+[X_PADDING=20]- Strong against Metin stones 10%
+[X_PADDING=20]- Strong Against Bosses 10%
+[X_PADDING=20]- Ninja Resistance 10%
+[X_PADDING=20]- Sura Resistance 10%
+[X_PADDING=20]- Warrior Resistance 10%
+[X_PADDING=20]- Shaman Resistance 10%
+[X_PADDING=20]- Chance of EXP bonus 20%
+[X_PADDING=20]- Chance to drop a double amount of yang 20%
+[X_PADDING=20]- Attack value/Magic 10%
+[X_PADDING=20]- Chance to Block  physical attacks 10%
+[X_PADDING=20]- Chance to reflect physical attackse 10%
+
+[X_PADDING=12]It is possible to make forget a skill of the pet's choice using the Reset Pet Skills book and it is also possible to make it forget
+[X_PADDING=12]all pet skills using the Reset Pet Skills book (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

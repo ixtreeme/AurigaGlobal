@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 40.
+[X_PADDING=12]*Maximální level: 100.
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 50 minut.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Silný proti nemrtvým.
+[X_PADDING=12]*Element príšer: Temnota.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO
+[X_PADDING=20]1. Zabíj Krále démonu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ PATRO
+[X_PADDING=20]1. Znic Metin dábla.
+[X_PADDING=20]2. Znic správný Metin pádu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÉ PATRO
+[X_PADDING=20]1. Najdi 5 Klícu.
+[X_PADDING=20]2. Pretáhni klíce na pecete, aby ses dostal do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PATÉ PATRO
+[X_PADDING=20]1. Zabíj Hrdého krále démonu.
+[X_PADDING=20]2. Použíj kováre pro vylepšení predmetu nebo pro pokrácování.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ŠESTÉ PATRO
+[X_PADDING=20]1. Znic všechny Metiny smrti
+[X_PADDING=20]2. Znic Metiny vraždy, pro získání Neznámé staré bedny.
+[X_PADDING=20]3. Otevírej Neznámé staré bedny pro získání mapy Zin-San-Gui .
+[X_PADDING=20]4. Klikni pravým na mapu Zin-Sa-Gui pro presunutí do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEDMÉ PATRO
+[X_PADDING=20]1. Najdí klíc Zin-Bong-In.
+[X_PADDING=20]2. Pretáhni klíc Zin-Bong-In na Sa-Soe pro presunutí do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OSMÉ PATRON
+[X_PADDING=20]1.  Zabíj Zubatou s kosou. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

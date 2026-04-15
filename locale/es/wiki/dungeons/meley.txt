@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 75.
+[X_PADDING=12]*Nivel maximo: 120.
+[X_PADDING=12]*Type: Gremio.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 1 hora
+[X_PADDING=12]*Enfriamiento: 3 horas.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Poder de fuego
+[X_PADDING=12]*Elemento de monstruos: fuego.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]Como primer objetivo, los jugadores deberán infligir daño a las estatuas en la habitación hasta que alcancen el 75% de su HP. 
+[X_PADDING=20]El grupo será bloqueado por la aparición de numerosas turbas durante la duración de esta fase.
+[X_PADDING=20]Cuando una estatua pierde el 25% de HP, cambia de color y ya no se puede dañar.
+[X_PADDING=20]Cuando todas las estatuas cambien de color, comenzará la etapa 2. 
+[X_PADDING=20]Durante esta transición, las turbas de la habitación desaparecerán y no podrás interactuar con las estatuas.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]En esta fase, las estatuas tendrán que golpear las estatuas nuevamente, hasta que alcancen el 50% de su HP.
+[X_PADDING=20]Esta vez, el grupo de jugadores será bloqueado por la aparición de un mayor número de mobs y, además,
+[X_PADDING=20]Los huevos garantizan la inmunidad al daño de las estatuas, por lo tanto, el HP de las estatuas solo se puede reducir cuando no hay huevos presentes. 
+[X_PADDING=20]Una vez que alcance el 50% de las estatuas de HP, una vez más, se volverán indestructibles. 
+[X_PADDING=20]Cuando todas las estatuas vuelvan a cambiar de color, pasarás a la fase 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]En esta etapa, aún necesitarás golpear estatuas hasta que se agote el HP. Aparecerán los mismos Huevos de la fase anterior, 
+[X_PADDING=20]un número aún mayor de mobs y cuatro Dragon Watcher Idall. Estas turbas deben eliminarse antes
+[X_PADDING=20]final de esta fase, de lo contrario no será posible finalizar la ejecución. Como en la etapa anterior, si hay huevos en la habitación, 
+[X_PADDING=20]Las estatuas no se pueden dañar. Cuando las estatuas alcancen el 0% de HP, se volverán azules. En este punto tendrás que destruir el
+[X_PADDING=20]Estatuas arrastrándolas sobre un anillo de fuego de dragón, que dejan caer los monstruos de las mazmorras.
+[X_PADDING=20]Cada jugador puede destruir solo una estatua. Una vez que arrastras el anillo, la estatua se vuelve verde:
+[X_PADDING=20]La estatua se vuelve verde: la tercera etapa terminará cuando todas las estatuas cambien de color.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]A medida que termina cada etapa, las estatuas atacarán a Meley: la tercera fase terminará, las estatuas infligirán el último golpe y Meley
+[X_PADDING=20]huirá. Los jugadores ahora podrán recibir su recompensa al interactuar con el Cofre del Dragón Dorado del NPC.
+[X_PADDING=20]Después de completar esta prisión, cualquier participante puede elegir uno de los 2 cofres: el cofre de la reina Meley y el cofre del vigilante del dragón.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CASOS DE BANCARROTA
+[X_PADDING=20]El tiempo máximo de finalización es de 1 hora. Además de esta limitación, el grupo puede fallar en el caso de que: no
+[X_PADDING=20]los Guardianes del Dragón fueron asesinados al final de la fase 3. Los Huevos reaparecerían antes de arrastrar
+[X_PADDING=20]todos los anillos en las estatuas.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RECOMPENSA
+[X_PADDING=20]Todos los participantes recibirán una recompensa, en caso de éxito. Los jugadores podrán elegir entre 2 cofres:
+[X_PADDING=20]Cofre de la reina Meley y cofre del guardián del dragón.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

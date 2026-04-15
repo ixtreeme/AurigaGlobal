@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]Anforderungen:
+[X_PADDING=12]*Minimum level: 75.
+[X_PADDING=12]*Maximum level: 95.
+[X_PADDING=12]*Ticket: Schrumpfkopf.
+[X_PADDING=12]*Type: Alleine und im Team.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Schrumpfkopf
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeit limit 40 Minuten.
+[X_PADDING=12]*Abklingzeit: 1 Stunde.
+[X_PADDING=12]*Wenn du einer Gruppe beitrittst, muss jeder ein Ticket haben.
+[X_PADDING=12]*Sie können über die Karte zugreifen: Dungeon Lobby.
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Untote.
+[X_PADDING=12]*Element der Monster: Dunkelheit.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE EBENE
+[X_PADDING=20]1. Töte Monster, um Seelenkristallschlüssel fallen zu lassen. 
+[X_PADDING=20]2. Ziehe den Seelenkristallschlüssel zur Kudstatue, um zur nächsten Stufe zu gelangen.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE EBENE
+[X_PADDING=20]1. Zerstöre den richtige Metin der Vergeltung.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE EBENE
+[X_PADDING=20]1. Töte den richtigen Tartaros.
+[X_PADDING=20]2. Ziehe das Grimassentotem auf den Basalt-Obelisken.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE EBENE
+[X_PADDING=20]1. Töte Charon.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÜNFTE EBENE
+[X_PADDING=20]1. Töte Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

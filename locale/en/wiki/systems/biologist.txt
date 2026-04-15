@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE BIOLOGICAL SYSTEM
+
+[X_PADDING=12]1. The biologist panel icon is located on the minimap.
+[X_PADDING=12]2. Permanent bonuses are awarded for completing the biologist's missions.
+[X_PADDING=12]3. You can purchase the items required for the missions by going to the biologist in the Wonder Village.
+[X_PADDING=12]4. You can enable a notification in the biologist panel when the waiting time is up.
+[X_PADDING=12]5. You can use the Researcher's Elixir to reset the cooldown.
+[X_PADDING=12]6. You can use Researcher's Elixir + to reset the cooldown and improve the quality of items when
+[X_PADDING=12]they are delivered to the biologist.
+[X_PADDING=12]7. You can use the Biologist's Magic item to change the bonus chosen in level 105 and 110 missions.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISSIONS AND AWARDS
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

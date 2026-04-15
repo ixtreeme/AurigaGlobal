@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. You can open the offline shop panel by clicking on the bundle icon located on the minimap or by pressing
+[X_PADDING=12]the Y key.
+[X_PADDING=12]2. The offline shop consists of 9 sections:
+[X_PADDING=20]I. My shop
+[X_PADDING=20]II. List of shops
+[X_PADDING=20]III. Warehouse
+[X_PADDING=20]IV. My offers
+[X_PADDING=20]V.  Search
+[X_PADDING=20]VI. My searches
+[X_PADDING=20]VII. Saved searches
+[X_PADDING=20]VIII. My auctions
+[X_PADDING=20]IX. Auctions in progress
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNCTIONALITY OF THE VARIOUS SECTIONS
+
+[X_PADDING=12]1. My shop: in this section you can create your offline shop, at the top right you will find a preview of the
+[X_PADDING=12]shop you will use, by clicking on the arrows you can also choose the special shops but be careful,
+[X_PADDING=12]to use the special shops you will need 1 Cashmere Bundle.
+
+[X_PADDING=12]2. Store List: In this section you can look at all active offline stores.
+
+[X_PADDING=12]3. Warehouse: in this section there are all the items that you have not sold and the revenue received from the sales.
+
+[X_PADDING=12]4. Le mie offerte: in questa sezione sono elencate tutte le offerte che hai effetuato.
+
+[X_PADDING=12]5. Search: in this section you can use the various filters to make a targeted search.
+
+[X_PADDING=12]6. My searches: in this section you can see all the searches you have made.
+
+[X_PADDING=12]7. Saved Searches: All saved search filters are listed in this section.
+
+[X_PADDING=12]8. My auctions: in this section you can create an auction or check the status of one of your auctions in progress.
+
+[X_PADDING=12]9. Auctions in progress: this section lists all the auctions still in progress.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OTHERS
+
+[X_PADDING=12]1. You can choose to change the look of your shop in the My shop section, to change the look of yours
+[X_PADDING=12]shop you will need the Cashmere Bundle.
+[X_PADDING=12]2. You can find the cashmere bundle in the Gaya Shop or at various events.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Cashmere Bundle.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

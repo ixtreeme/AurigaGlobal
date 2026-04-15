@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/ochao.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 100.
+[X_PADDING=12]*Maximální level: 115.
+[X_PADDING=12]*Propustka: Propustka Ochao.
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/76025.tga; Y=15; X=478]
+[X_PADDING=460]Propustka Ochao
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 30 minut.
+[X_PADDING=12]*Cooldown: 1 hodina a 30 minut.
+[X_PADDING=12]*Každý ve skupine musí mít propustku.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Silný proti orkum.
+[X_PADDING=12]*Element príšer: Vítr.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ FÁZE
+[X_PADDING=20]1. Zabíj 100 monster.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÁ FÁZE
+[X_PADDING=20]1. Zabíj Lorda Ochaa umísteného v centrální místnosti na mape.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ FÁZE
+[X_PADDING=20]1. Znic 4 Metiny Ochao umístené v centrální místnosti na mape.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÁ FÁZE
+[X_PADDING=20]1. Zabij Silného lorda Ochaa umísteného v centrální místnosti na mape.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]Soul System vám umožnuje upgradovat a používat duše, dávající hráci docasné bonusy
+[X_PADDING=12;CENTER_ALIGN]poškození fyzickými útoky a schopnostmi.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Osvícená duše oniricha																				    Illuminated celestial soul
+
+[X_PADDING=12] DUŠE ONIRICHA A CELESTIÁLNÍ DUŠE 
+[X_PADDING=20]- Duše Oniricha posiluje fyzické útoky.
+[X_PADDING=20]- Nebeská duše zvyšuje poškození zpusobené schopnostmi.
+[X_PADDING=20]- Bonus se udeluje definovanému poctu zásahu provedených proti cíli, po kterém
+[X_PADDING=20]bonus zmizí.
+
+[X_PADDING=12]Bonusy nejsou aktivovány behem transformace nebo boje PvP.
+[X_PADDING=12]Útoky provádené jízdou na koni jsou vylepšeny, pouze proti príšerám, nikoli proti jiným PCs.
+
+[X_PADDING=12]Na nactení duše musíte pockat alespon 60 minut ve hre, jakmile je duše nactena zobrazí (popis
+[X_PADDING=12]který se zobrazí pouze v prípade, že umístíte myš nad objekt) se zelený popisek pro aktivování.
+[X_PADDING=12]Po urcité dobe nepretržitého offline režimu (asi hodinu) se duše vybije a budete muset pockat
+[X_PADDING=12]na její dobití.
+[X_PADDING=12]Od iridescentního stupne platí, že cím více casu uplyne, tím více se zesiluje poškození, které duše udeluje: první
+[X_PADDING=12]zvýšení dosáhne 2/3 maximálního nabití a druhého (je -li k dispozici) pri maximálním nabití ..
+[X_PADDING=12]Od Prizmatické úrovne je duše schopna poskytnout 2 "nastackování" upgradu, škálující na predchozí stupen
+[X_PADDING=12](500 zásahu se poškozením vynásobeným 2,5 a potom dalších 500 se poškozením násobeným napríklad 1,8).
+[X_PADDING=12]V hodnosti Osvícení se duše nevybíjí tím, že zustanete offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STUPNE DUŠÍ
+
+[X_PADDING=12]Duše mohou mít 5 ruzných stupnu, podle nich procento prijatého bonusu a
+[X_PADDING=12]pocet možných zásahu.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]JAK ZVÝŠIT STUPEN DUŠE
+
+[X_PADDING=12]- K vylepšení stupne duše potrebujete svitek duše, který funguje jako posvátný papyrus, jen
+[X_PADDING=12]pretáhnete pergamen pres zvolenou duši a objeví se tabulka.
+[X_PADDING=12]- Za pomoci svitku duše (100%) je vylepšení zaruceno.
+[X_PADDING=12]- V prípade selhání se duše nerozbije a spotrebuje se pouze svitek. Všechny vlastnosti
+[X_PADDING=12]zustávají beze zmeny, vcetne zásahu, zbývajícího casu a aktuálního nabití.
+[X_PADDING=12]- V prípade úspešnosti, duše se zvedne na další stupen, pocet zbývajících zásahu se vynuluje a cas se
+[X_PADDING=12]vyresetuje; jakýkoli prítomný náboj bude ztracen i s vylepšením, takže budete muset pockat, až se znovu nabije.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

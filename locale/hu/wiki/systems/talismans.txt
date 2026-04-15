@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Tuz Talizmán								 Jég Talizmán								Föld Talizmán
+
+
+
+
+
+
+[X_PADDING=81] Sötétség Talizmán							  Szél Talizmán							   Villám Talizmán
+
+[CENTER_ALIGN]A talizmán egy tárgy ami új bónuszokat adhat a karakterednek, +30-ig lehet felhúzni oket.
+[CENTER_ALIGN]Yonah nevu npc-tol vehetsz +0-ás talizmánokat.
+
+[X_PADDING=12]Egy talizmánon maximum 5 opt lehet:
+[X_PADDING=20]1. 1-4 optig Talizmán megerosíto tárgyra lesz szükséged.
+[X_PADDING=20]2. 5. opt hozzáadásához Talizmán erosíto tárgyra lesz szükséged.
+[X_PADDING=20]3. Az optok megváltoztatásáért Talizmán elvarázsolás tárgyra leesz szükséged.
+
+[X_PADDING=12] Lehetséges optok a talizmánokon:
+[X_PADDING=20]- Kard Védelem 5%
+[X_PADDING=20]- Kétkezes Védelem 5%
+[X_PADDING=20]- Tor Védelem 5%
+[X_PADDING=20]- Nyíl Védelem 5%
+[X_PADDING=20]- Legyezo Védelem 5%
+[X_PADDING=20]- Harang Védelem 5%
+[X_PADDING=20]- Félemberek Ellenállás 10%
+[X_PADDING=20]- Félemberek elleni ero 10%
+[X_PADDING=20]- Szörnyek elleni ero 15%
+[X_PADDING=20]- Metinek elleni ero  15%
+[X_PADDING=20]- Foszörnyek elleni ero 15%
+[X_PADDING=20]- Sötétség Ellenállás 15%
+[X_PADDING=20]- Föld Ellenállás 15%
+[X_PADDING=20]- Jég Ellenállás 15%
+[X_PADDING=20]- Tuz Ellenállás 15%
+[X_PADDING=20]- Szél Ellenállás 15%
+[X_PADDING=20]- Villám Ellenállás 15%
+[X_PADDING=20]- Rúna szörnyek elleni ero 20% 
+
+[X_PADDING=12]A kezdo dungeonökbol +10-ig tudjátok húzni a talizmánokat, +11-+30-ig Alapveto Láda nevu tárgyra
+[X_PADDING=12]lesz szükséged, amiben talizmán fejleszto tárgyak találhatóak.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Talizmán megerosíto.								 Talizmán elvarázsolás.								Talizmán erosíto.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

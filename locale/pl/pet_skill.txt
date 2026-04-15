@@ -1,0 +1,12 @@
+1	Odpornoœæ (wojownik) 	jijoong	PASSIVE	Odpornoœæ na ataki wojowników (pasywna)	0
+2	Odpornoœæ (sura) 	jijoong	PASSIVE	Odpornoœæ na ataki Sura (pasywna)	0
+3	Odpornoœæ (ninja) 	jijoong	PASSIVE	Odpornoœæ na ataki ninja (pasywna)	0
+4	Odpornoœæ (szaman) 	jijoong	PASSIVE	Odpornoœæ na ataki szamanów (pasywna)	0
+5	Krytyczne obrazenia (PvM)	banya	PASSIVE	Zwieksza obrazenia krytyczne zadawane w PVM (pasywna)	0
+6	Silny przeciwko Metin	cheonryeong	PASSIVE	Zwieksza obrazenia zadawane Metin (pasywna)	0
+7	Silny przeciwko bossowi	choehoenbimu	PASSIVE	Zwieksza obrazenia zadawane w Bossach (pasywna)	0
+8	Spostrzegawczoœæ	stealmp	PASSIVE	Zwieksza sie czestotliwosc wypadania Exp (pasywna)	0
+9	Drop Yang	gold_drop	PASSIVE	Szansa na drop Yang wzrasta (pasywna)	0
+10	Atak/Wartosc magiczna	pacheon	PASSIVE	Wartoœæ ataku podwysza siê (pasywna)	0
+11	Blok a. ciala	block	PASSIVE	Blokuje fizyczne obra¿enia (pasywna)	0
+12	Nr ref. kapral	reflect_melee	PASSIVE	Odnoszone obraenia s¹ odbijane w przeciwnika (pasywna)	0

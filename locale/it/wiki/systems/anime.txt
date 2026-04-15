@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/anime.png]
+[X_PADDING=12;CENTER_ALIGN]Il Sistema delle Anime permette di potenziare ed utilizzare le anime, esse donano al giocatore bonus temporanei ai
+[X_PADDING=12;CENTER_ALIGN]danni con attacchi fisici e con abilità.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]A. onirica illum.																						    A. celeste illum.
+
+[X_PADDING=12]ANIME ONIRICHE E ANIME CELESTI
+[X_PADDING=20]- L'Anima Oniricha potenziano gli attacchi fisici.
+[X_PADDING=20]- L'Anime Celeste potenziano i danni inflitti dalle abilità.
+[X_PADDING=20]- Il potenziamento è concesso ad un numero definito di colpi fatti contro un bersaglio, terminati i quali il
+[X_PADDING=20]potenziamento svanirà.
+
+[X_PADDING=12]I potenziamenti non vengono attivati durante una trasformazione o un combattimento PvP.
+[X_PADDING=12]Attacchi effettuati da cavallo vengono potenzati ma solo contro i mostri, non contro altri PG.
+
+[X_PADDING=12]Per caricare l'anima bisogna attendere minimo 60 minuti in gioco, appena l'anima sarà carica il tooltip (descrizione
+[X_PADDING=12]che compare solamente se si posiziona il mouse sopra l'oggetto) apparirà in verde e potrà essere attivata. 
+[X_PADDING=12]Dopo un certo periodo di tempo offline consecutivo (circa un ora), l'anima si scarica e bisognerà attendere
+[X_PADDING=12]nuovamente per caricarla.
+[X_PADDING=12]Dal Grado Iridata in poi, più tempo passa più aumenta l'amplificazione dei danni che l'anima concede: il primo
+[X_PADDING=12]incremento arriva a 2/3 della carica massima e il secondo (se presente) a carica massima. 
+[X_PADDING=12]Dal grado Prismatica in poi, l'anima è in grado di fornire 2 "cariche" del potenziamento, scalando al grado precedente
+[X_PADDING=12](500 colpi con il danno moltiplicato per 2.5 e poi altri 500 con il danno moltiplicato per 1.8, per esempio). 
+[X_PADDING=12]Al grado Illuminata, l'anima non si scarica restando offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADO DELLE ANIME
+
+[X_PADDING=12]Le anime possono essere di 5 gradi diversi, in base ad essi cambia la percentuale dei potenziamento ricevuto e il
+[X_PADDING=12]numero di colpi possibili da fare.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]COME POTENZIARE IL GRADO DI UN'ANIMA
+
+[X_PADDING=12]- Per potenziare il grado di un'anima serve la Pergamena dell'Anima, funziona come un Papiro Consacrato, basta
+[X_PADDING=12]trascinare la pergamena sopra l'anima scelta e apparirà la schermata di up. 
+[X_PADDING=12]- Al contrario, utilizzando una Pergamena dell'Anima (100%) il potenziamento è garantito.
+[X_PADDING=12]- In caso di fallimento, l'anima non si rompe e viene consumata solo la pergamena. Tutte le sue caratteristiche
+[X_PADDING=12]rimangono invariate, tra cui colpi, tempo rimanente e carica attuale.
+[X_PADDING=12]- In caso di successo, l'anima sale al grado successivo, viene resettato il numero di colpi rimasti e la scadenza viene
+[X_PADDING=12]resettata; qualunque carica presente verrà persa con l'up, per cui bisognerà aspettare nuovamente che si carichi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

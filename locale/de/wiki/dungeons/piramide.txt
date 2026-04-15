@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 105.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: Ankh Cross.
+[X_PADDING=12]*Type: Gruppe.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankh Cross
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 30 minutes.
+[X_PADDING=12]*Abklingzeit: 1 Stunde und 30 Minuten
+[X_PADDING=12]*Sie können von der Karte aus zugreifen: Special Lobby Dungeon.
+[X_PADDING=12]*Bonus: Stark gg Erde.
+[X_PADDING=12]*Element der Monster: Erde.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE EBENE
+[X_PADDING=20]1. Zerstöre den Wadjet-Stein.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE EBENE
+[X_PADDING=20]1. Töte die Monster, um die 4 Teile des Pergaments zu finden.
+[X_PADDING=20]2. Sobald Sie die 4 Stücke des Pergaments gefunden haben, klicken Sie auf das antike Siegel, um es zu zerstören (Wer auf das Siegel klickt
+[X_PADDING=20]e und muss alle 4 Teile der Schriftrolle in ihrem Inventar haben).
+[X_PADDING=20]3. Tötet den Diener von Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE EBENE
+[X_PADDING=20]1. Zerstöre den richtigen Pharao-Stein.
+[X_PADDING=20]2. Töte Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE EBENE
+[X_PADDING=20]1. Um durch den Plan zu kommen, müssen Sie 24 Portale durchlaufen.
+[X_PADDING=20]2. Töte den richtigen Ra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÜNFTE EBENE
+[X_PADDING=20]1. Töte Monster, um die Weise Band zu finden.
+[X_PADDING=20]2. Ziehe die Sage Sash auf das korrigierte Anubis Efiggie, um es zu zerstören.
+[X_PADDING=20]3. Zerstöre den Ankh-Stein, um die Weise Band zu finden.
+[X_PADDING=20]4. Ziehe das Weisenband auf das korrigierte Anubis-Bildnis, um es zu zerstören.
+[X_PADDING=20]3. Töte Monster, um die Weise Band zu finden.
+[X_PADDING=20]4. Ziehe das Weisenband auf das korrigierte Anubis-Bildnis, um es zu zerstören.
+[X_PADDING=20]5. Zerstöre die Ankh-Steine, um die letzte Weisenbande zu finden.
+[X_PADDING=20]6. Ziehe das Weise Band auf das letzte Bildnis von Anubis, um es zu zerstören.
+[X_PADDING=20]7. Töte Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECHSTE EBENE
+[X_PADDING=20]1. Töte alle Monster.
+[X_PADDING=20]2. Klicke auf den Ankh-Schlüssel, um den Alten Schlüssel zu erhalten.
+[X_PADDING=20]3. Ziehe den Alten Schlüssel zur Wadjet-Säule, um sie zu zerstören.
+[X_PADDING=20]4. Zerstöre den Sphinxstein.
+[X_PADDING=20]5. Klicke auf den letzten Ankh-Schlüssel, um den Alten Schlüssel zu erhalten.
+[X_PADDING=20]6. Ziehe den Alten Schlüssel zur letzten Säule des Wadjets, um ihn zu zerstören.
+[X_PADDING=20]7. Töte die Sphinx.
+[X_PADDING=20]8. Zerstöre den Sphinx-Schatz, um die Belohnung zu erhalten.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12]1. Az offline piacpanelt a minimap térképen található csomag ikonra vagy az Y billentyu megnyomásával nyithatja meg.
+[X_PADDING=12]2. Az offline piac 9 részbol áll:
+[X_PADDING=20]I. Saját piac
+[X_PADDING=20]II. Piacok listája
+[X_PADDING=20]III. Raktár
+[X_PADDING=20]IV. Ajánlataim
+[X_PADDING=20]V.  Keresés
+[X_PADDING=20]VI. Saját keresések
+[X_PADDING=20]VII. Mentett keresések
+[X_PADDING=20]VIII. Aukcióim
+[X_PADDING=20]IX. Folyamatban lévo aukciók
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]A KÜLÖNBÖZO SZAKASZOK FUNKCIONALITÁSA
+
+[X_PADDING=12]1. Saját piac: ebben a részben létrehozhatja offline piacét, a jobb felso sarokban megtekintheti az Ön által használt piac elonézetét,
+[X_PADDING=12]a nyilakra kattintva kiválaszthatja a speciális piaceket is,
+[X_PADDING=12]de vigyázzon a speciális piacek használatára 1 kasmírcsomagra lesz szüksége.
+
+[X_PADDING=12]2. Piaclista: Ebben a részben megtekintheti az összes aktív offline piacet.
+
+[X_PADDING=12]3. Raktár: ebben a részben az összes olyan tétel szerepel, amelyet még nem adott el, és az értékesítésbol származó bevétel.
+
+[X_PADDING=12]4. Ajánlataim: ez a rész felsorolja az Ön által tett ajánlatokat.
+
+[X_PADDING=12]5. Keresés: ebben a részben a különbözo szuroket használhatja célzott kereséshez.
+
+[X_PADDING=12]6. Saját keresések: ebben a részben az összes keresést láthatja.
+
+[X_PADDING=12]7. Mentett keresések: Ebben a részben az összes mentett keresési szuro szerepel.
+
+[X_PADDING=12]8. Aukcióim: ebben a részben aukciót hozhat létre, vagy ellenorizheti az egyik folyamatban lévo aukció állapotát.
+
+[X_PADDING=12]9. Folyamatban lévo aukciók: ez a rész felsorolja a még folyamatban lévo aukciókat.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]EGYÉB
+
+[X_PADDING=12]1. Választhat az piac megjelenésének megváltoztatásáért a Saját piac részben,
+[X_PADDING=12] az piac megjelenésének megváltoztatásához szüksége lesz a kasmírcsomagra.
+[X_PADDING=12]2. A kasmírcsomagot megtalálhatja a Gaya Shopban vagy különbözo rendezvényeken.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Kasmírcsomag.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

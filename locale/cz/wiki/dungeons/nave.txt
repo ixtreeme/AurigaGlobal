@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 105.
+[X_PADDING=12]*Maximální level: 120.
+[X_PADDING=12]*Propustka: Bílá plachta.
+[X_PADDING=12]*Typ: Skupina.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]Bílá plachta
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 30 minut.
+[X_PADDING=12]*Cooldown: 1 hodina a 30 minut.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Special Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Síla proti ledu.
+[X_PADDING=12]*Element príšer: Led.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FPRVNÍ FÁZE
+[X_PADDING=20]1. Vudce skupiny musí kliknout na kormidlo pro zahájení dungeonu.
+[X_PADDING=20]2. Ochrante stožár lodi na 02:30.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÁ FÁZE
+[X_PADDING=20]1. Zabíjte Královnu sirén.
+[X_PADDING=20]2. Zabíjte první Hydru.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ FÁZE
+[X_PADDING=20]1. Ochrante stožár lodi na 01:30.
+[X_PADDING=20]2. Zabíjte druhou Hydru.
+[X_PADDING=20]3. Opravte stožár lodi kliknutím na opravná dreva.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÁ FÁZE
+[X_PADDING=20]1. Ochrante stožár lodi na 01:30.
+[X_PADDING=20]2. Znicte vajícka hydry, aby jste mohli zabít hydru.
+[X_PADDING=20]3. Zabíjte poslední Hydru.
+[X_PADDING=20]4. Znicte Hydrí truhlu pro získání odmeny.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

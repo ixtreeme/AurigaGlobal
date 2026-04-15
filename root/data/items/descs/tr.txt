@@ -1,0 +1,1349 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	Bu sandik rastgele bir +5 ruh tasi icerir.
+49021	Spirit Sword (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49022	Spirit Dagger (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49023	Spirit Bow (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49024	Spirit Glaive (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49025	Spirit Bell (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49026	Spirit Fan (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49027	Spirit Costume (F) (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+49028	Spirit Costume (M) (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+85112	Spirit Stole (inf)	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+71056	Helper Scroll	Bu oge yalnizca Yardimci rolune sahip olanlar icin gecerlidir.
+89001	Kupon	1 Ejderha Paras  de erinde kupon.
+89002	Kupon	2 Ejderha Paras  de erinde kupon.
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+89003	Kupon	3 Ejderha Paras  de erinde kupon.
+89004	Kupon	50 Ejderha Paras  de erinde kupon.
+89005	Kupon	100 Ejderha Paras  de erinde kupon.
+89006	Kupon	500 Ejderha Paras  de erinde kupon.
+89007	Kupon	1000 Ejderha Paras  de erinde kupon.
+50001	Item-Shop	G gs n i inde:
+70027	Mistyc Blessing scroll	Item refine prob 100%
+100000	S re  z t  (K)	Bir ejderha ta  n n s resini doldurur.
+100001	S re  z t  (O)	Bir ejderha ta  n n s resini doldurur.
+100002	S re  z t  (B)	Bir ejderha ta  n n s resini doldurur.
+100100	Ejderha kerpeteni	Ejderha ta  n    karmada ba ar  olas l   n  y kseltmeye yarayan bir tamir aleti.
+100300	Ye il Ejderha Fasulyesi	B y l  fasulye, ejderha ta   seviyesini y kseltir. G  lendirme ba ar s z olabilir.
+100400	Mavi Ejderha Fasulyesi	B y l  fasulye, ejderha ta  n n bir seviye y kselmesi olas l   n  art r r.
+100500	Pembe Ejderha Fasulyesi	Ejderha ta  n  ba ar yla bir seviye geli tirme  ans  %10 artar.
+11901	Smokin	Erkeklerin d   nde giydi i tak m elbise.
+11902	Smokin	Erkeklerin d   nde giydi i tak m elbise.
+11903	Gelinlik	Bayanlar n d   nde giydi i  zel k yafet.
+11904	Gelinlik	Bayanlar n d   nde giydi i  zel k yafet.
+18900	K z l Alev Ta  	Kemerinin bonuslar n  g  lendirir.
+25040	Kutsama Ka  d 	Geli tirme ba ar s z oldu unda e yan n yok olma riski ortadan kalk p, sadece kalitesi 1 kademe d  er.
+25041	B y l  Metal	Bir nesnenin en iyi  ekilde geli tirilmesini sa layan bir efsanevi metal topa  . Bunun d   nda, geli tirilmi  olan nesne, ne yok edilir ne de de erden d   r l r.
+25100	Zihin Ta   Ka  d 	Bu Ka  t, silah ve z rhlardan zihin ta     karmaya yarar. Ta     kard ktan sonra izi kal r.
+27600	Kamp Ate i	Ate  yakmak i in kesilmi  a a .
+27610	Bal k  l k K resi	Bu sihirli k re oltaya tak lan bal k hakk nda bilgi verir.
+27620	Bal k  l k S rlar 	Bu kitap bal klar hakk nda bilgi verir.
+27803	Sudak Bal   	Genellikle g lde ya ayan bir bal k t r .
+27804	Ringa Bal   	Lezzetli bir bal k t r .
+27805	B y k Sudak Bal   	B y k  i man sudak bal   .
+27806	Sazan	 ri g m   renkli bal k.
+27807	Som Bal   	 iftle me mevsiminde evine d nen bir bal k.
+27808	Ot Sazan 	Genelde bitkilerle beslenen sazan t r .
+27809	Dere Alabal   	Som Bal   n n akrabas  olan bir bal k.
+27810	Zargana	Uzun, zay f y lana benzer bir bal k .  ok fazla diren  i erir.
+27811	G kku a   Alabal   	S rt  g kku a   renginde bir bal k.
+27812	Nehir Alabal   	Nehirde ya ayan bir bal kt r.
+27813	Hamsi	S r  halinde ya ayan bir bal kt r.
+27814	Levrek	Tatl  suda ya ayan bir bal k.
+27815	Tekir Bal   	Sadece temiz sularda ya ayan bir bal k t r d r.
+27816	Yay n Bal   	Bu bal   n ay rt edici  zelli i kediye benzer b y k a z d r.
+27817	 opra Bal   	S   ve  amurlu sularda ya ayan kaygan bir t r bal kt r.
+27818	L fer Bal   	Kar   k beslenen, temiz sularda ya ayan bir bal kt r.
+27819	Sevimli Bal k	Palamut t r n n akrabas d r. Temiz sularda ya ar.
+27820	Palamut Bal   	Bir t r k   bal   d r. Buz bal k  lar  taraf ndan avlan r.
+27821	Kadife Bal   	G zel renklere sahip olan bir bal kt r.
+27822	Aynal  Sazan	Yerel bir sazan t r .
+27823	Alt n Sudak Bal   	Nadir rastlanan Sudak Bal    t r .
+27824	Y lan ba   bal   	Tropikal tatl  suda ya ayan bir avc  bal k.
+27825	Kurba a bal   	Sadece akarsularda mevcut olan bal k.
+27826	Kral yengeci	Bu yenge  t rlerine, boylar ndan dolay  canavar yenge  de denir.
+27827	Yabbie yengeci	Bu yenge  geceleri aktiftir ve g n boyunca sakland    yerde kal r.
+27833	 l  Sudak Bal   	 l  Sudak Bal   |Kamp Ate inde  zgara yap labilir.
+27834	 l  Ringa Bal   	 l  Ringa Bal   |Kamp Ate inde  zgara yap labilir.
+27835	 l  B y k Sudak Bal   	 l  B y k Sudak Bal   |Kamp Ate inde  zgara yap labilir.
+27836	 l  Sazan	 l  Sazan|Kamp Ate inde  zgara yap labilir.
+27837	 l  Som Bal   	 l  Som Bal   |Kamp Ate inde  zgara yap labilir.
+27838	 l  Ot Sazan 	 l  Ot Sazan |Kamp Ate inde  zgara yap labilir.
+27839	 l  Dere Alabal   	 l  Dere Alabal   |Kamp Ate inde  zgara yap labilir.
+27840	 l  Zargana	 l  Zargana|Kamp Ate inde  zgara yap labilir.
+27841	 l  G kku a   Alabal   	 l  g kku a  alabal   |Kamp Ate inde  zgara yap labilir.
+27842	 l  Nehir Alabal   	 l  nehir alabal   |Kamp Ate inde  zgara yap labilir.
+27843	 l  Hamsi	 l  Hamsi|Kamp Ate inde  zgara yap labilir.
+27844	 l  Levrek	 l  Levrek|Kamp Ate inde  zgara yap labilir.
+27845	 l  Tekir Bal   	 l  Tekir Bal   |Kamp Ate inde  zgara yap labilir.
+27846	 l  Yay n Bal   	 l  Yay n Bal   |Kamp Ate inde  zgara yap labilir.
+27847	 l   opra Bal   	 l   opra Bal   |Kamp Ate inde  zgara yap labilir.
+27848	 l  L fer Bal   	 l  L fer Bal   |Kamp Ate inde  zgara yap labilir.
+27849	 l  Sevimli Bal k	 l  Sevimli bal k|Kamp Ate inde  zgara yap labilir.
+27850	 l  Palamut Bal   	 l  Palamut Bal   |Kamp Ate inde  zgara yap labilir.
+27851	 l  Kadife Bal   	 l  Kadife Bal   |Kamp Ate inde  zgara yap labilir.
+27852	 l  Aynal  Sazan	 l  Aynal  Sazan|Kamp Ate inde  zgara yap labilir.
+27853	 l  Alt n Sudak Bal   	 l  Alt n Sudak Bal   |Kamp Ate inde  zgara yap labilir.
+27854	 l  y lan ba   bal   	Bu bal k, a  k ate te  zgara yapmak i in idealdir.
+27855	 l  kurba a bal   	Bu bal k, a  k ate te  zgara yapmak i in idealdir.
+27856	 l  kral yengeci	Bu  a anoz, a  k ate te  zgara yapmak i in idealdir.
+27857	 l  Yabbie yengeci	Bu  a anoz, a  k ate te  zgara yapmak i in idealdir.
+27987	 stiridye	Ho  g r n ml  bir deniz kabuklusudur.   inde inci olabilir.
+27990	Ta  Par as 	K   k boyutlarda olmas   ok rahat ta  nmas n  sa lar. Farkl   ekillerde kullan labilir.
+27992	Beyaz  nci	Saf Beyaz inci|Bayanlar sever.
+27993	Mavi  nci	Mavi Renkli  nci |Bayanlar sever.
+27994	Kank rm z   nci	Kan K rm z   nci |Bayanlar sever.
+30179	K vr k Anahtar	Bu sihirli anahtar, Ejderha Tap na  'na giden kap y  etkinle tiriyor.
+30270	Ejderha Ta   Par as 	Ender bulunan bir ejderha ta   limesi
+30311	Ruh Kristali Anahtar 	 nce i lenen mavi ruh kristalli bu anahtar  eytan Katakombu'nun 2. kat n  a ar.
+30312	Surat Totemi	Surat kakmal  bu tahta levha  eytan Katakombu'nun 6. kat n n anahtar d r.
+30320	K   len Kafa	K   len  eytan Kafas   eytan Katakombu'nun 2. kat n n m hr n  a ar.
+30321	K   len Kafa	K   len  eytan Kafas   eytan Katakombu'nun 2. kat n n m hr n  a ar.
+30325	Arachnida Anahtar 	Baronesin yuvas na giden kap y  a ar. Dayan kl  de il, 24 saat sonra k r l r. Ancak grup lideri kullanabilir.
+30327	Arachnida Fl t 	Bu enstr mandan   kan melodi,  r mcek Barones'i kendine  eker.
+30329	Alt n Di li  ark	 sfet Steli'ndeki gizli mekan zmay  harekete ge irir.
+30330	Maat Ta  	Adalet tanr  as  Maat, karga ay  d zene d n  t r r.
+30331	Buz Anahtar 	Anahtar buz gibi so uk ve Nemere G zlemevi'nin    nc  kat ndaki kap s n  a ar. Sadece  amanlar kullanabilir.
+30332	Kuzey Y ld z 	Saf buzdan yap lma bir m h r ta  . Nemere G zlemevi'nin alt nc  kat ndaki kap s n  a ar.
+30333	Buz i e i Anahtar 	Buz anahtar  Nemere G zlemevi'nin dokuzuncu kat ndaki kap s n  a ar.
+30341	Ejderha Ate i Y z   	Enerji y kl  bir    lt  seni sar yor. Ejderha ate iyle olu turulan bu y z k Meley'in  ni'ndeki heykelleri an nda imha eder.
+30505	Z mr t   lemeli	Silah n  ar nd rmaya yarayan   e
+30506	Safir Oyma B  a  	Silah n  ar nd rmaya yarayan alet
+30512	K rm z  Ejderha  eli i	Ejderha derisi  ok hafif ve esnek ama olduk a dayan kl . Metal gibi i lenir ve z rh yap m  i in kullan l r.
+30518	Alt n  plik	S v  alt ndan yap lma b y l  iplik makaras . Bir de erli ta la birlikte k ymetli m cevher haline getirilebilir.
+30519	Alt n Kanca	Saf alt ndan olu ur ve bir de erli ta la birlikte k ymetli m cevher haline getirilebilir.
+30520	Alt n Kenet	Saf alt ndan olu ur ve bir de erli ta la birlikte k ymetli m cevher haline getirilebilir.
+30613	Orman Perisi Ta  	Gizemle    ldayan bu ye il ta ta a a  ruhu olan bir Orman Perisi'nin ruhu kilitlidir. Orman Perisi Erebos'a giri  yap labilmesini sa layan gizli s zleri biliyor.
+30616	Titandiyoksit	Prizmatik kristal ekipman nesnesinin ar nd r lmas na yarar.
+30617	Akik	Gizemli    ldayan s s ta   ekipman nesnesinin ar nd r lmas na yarar.
+30618	Ay Ta  	Damla  eklindeki de erli ta  bir k v lc m ay      n  i inde ta  r. Bir ekipman nesnesinin ar nd r lmas na yarar.
+33031	Element  i e i	Element t ls mlar n  geli tiren  i ek  eklindeki de erli ta .
+39001	B y l  Metal	Bu ta , e ya y kseltmede ba ar   ans n  y kseltir. Ayr ca, ne yok edilebilir ne de de eri d   r lebilir. Bu e yan n ticareti var.
+39007	Demircinin El Kitab 	Ya l  bir demircinin ruhuyla ba l  olan bir kitap. Nesne y kseltme  ans n  art r r. Bu e yan n ticareti var.
+39008	K t  Ruh Kovma Ka  d 	  renme ba ar s z olursa, seni k t  ruhun lanetinden korur. Bu ka  d n yard m yla ayn  g n bir beceri belgesi daha okuyabilirsin. Bu e yan n ticareti var.
+39022	Ejderha Par  meni	Geli tirme i lemi ba ar s z oldu unda bir e yan n yok olma riskini ortadan kald r r. Yaln zca kalitesi bir basamak d  er. Ayr ca ba ar l  bir geli tirme ihtimali %10 artar. Bu e yan n ticareti var.
+39027	Ta  Sanat  Kitab 	Bir e yada bulunan t m k r k ta lar    kar r. Bu sayede bir kere daha silah ve z rh  y kseltme  ans n olur. Bu e yan n ticareti var.
+39030	M nzevi Tavsiyesi	Bir sonraki kitab  (ya da ruh ta  n ) okurken yetene ini geli tirme  ans n  iki bu uk kat na   kar r. Bu e yan n ticareti var.
+39039	G ne   z t  (B)	HP'ni otomatik olarak yeniler. 7.000.000 HP i erir. Bu e yan n ticareti var.
+39042	Ay  z t  (B)	SP'ni otomatik olarak yeniler. 15.000 SP i erir. Bu e yan n ticareti var.
+39063	Gaya ma azas n  s f rla	Gaya ma azas n  5 saat dolmadan s f rlar ve hemen yeni, de erli e yalar kazand r r.
+39064	Gaya Ma azas n  Geni let	De erli bir e ya se ene i i in soldan ikinci s ran n ilk b l m nden ba layarak Gaya ma azas n  geni letir.
+40108	Kesici Di  B  a  +	Cad lar Bayram 'nda k l c n  zincirli testereye d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40109	Kesici Di  Han eri+	Cad lar Bayram 'nda han erini zincirli testereye d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40110	Kesici Di  Yay +	Cad lar Bayram 'nda yay n   ift tarafl  zincirli testereye d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40111	Kesici Di  M zra  +	Cad lar Bayram 'nda  ift el k l c n  de nekli zincirli testereye d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40112	Kesici Di   an +	Cad lar Bayram 'nda  an n  zincirli testere g rz ne d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40113	Kesici Di  Yelpazesi+	Cad lar Bayram 'nda yelpazeni zincirli testere yelpazesine d n  t ren bir silah g r n m . Sana en az bir tesad fi bonus verir.
+40129	Aquarus b  a  	K l c n  sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+40130	Aquarus han eri	Han erini sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+40131	Aquarus yay 	Yay n  sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+40132	Aquarus glaive	 ki elli k l c n  sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+40133	Aquarus  an 	 an n  sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+40134	Aquarus yeplazesi	Yelpazeni sa lam ve yanar d ner mavi suyla kaplayan silah g r n m .
+41029	  l Sava   s  (E, Bonus)	Erkeklere  zel bu sava  giysisiyle zorlu   l ko ullar na kar   koyulur. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41030	  l Sava   s  (K, Bonus)	Bayanlara  zel bu sava  giysisiyle zorlu   l ko ullar na kar   koyulur. Bu e yan n ticareti var.
+41117	   Silah  rler Kost m 	   silah  rler tarz nda s ra d    bir k yafet.
+41118	Hizmet i K z  niformas 	Frans z hizmet i k z tarz nda beyaz  nl kl  siyah elbise.
+41119	Salsa K yafeti	Latin amerikali dans  lara  zel turuncu ve siyah renkte darac k bir k yafet.
+41120	Salsa Elbisesi	Siyah eldivenli k rm z  darac k bir dans k yafeti
+41121	Centilmen K yafeti	A  rba l  beylere  zel   k bir k yafet
+41122	Kokteyl K yafeti	G k mavi renkte kurdeleli bir elbise ve uygun sandaletler
+41125	Balkaba   Smokini	Bu vesileyle yeniden tasarland  ve t m g zleri  st ne  ekmeni sa lar.
+41126	Balkaba   Giysisi	Bu vesileyle yeniden tasarland  ve t m g zleri  st ne  ekmeni sa lar.
+41129	   Silah  rler Kost m +	   silah  rler tarz nda s ra d    bir k yafet. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41130	Hizmet i K z  niformas +	Frans z hizmet i k z  niformas  tarz nda beyaz  nl kl  siyah bir elbise. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41131	Salsa K yafeti+	Latin amerikal  dans  lara  zel darac k turuncu ve siyah bir k yafet. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41132	Salsa Elbisesi+	Siyah eldivenli darac k k rm z  dans elbisesi. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41133	Centilmen K yafeti+	A  rba l  beylere  zel   k bir k yafet. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41134	Kokteyl K yafeti+	G k mavi renkte kurdeleli bir elbise ve uygun sandaletler. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+41135	Balkaba   Smokini(Bonus)	Bu vesileyle yeniden tasarland  ve t m g zleri  st ne  ekmeni sa lar. Bu kost m sana bir rastgele bonus kazand r r.
+41136	Balkaba   Giysisi(Bonus)	Bu vesileyle yeniden tasarland  ve t m g zleri  st ne  ekmeni sa lar. Bu kost m sana bir rastgele bonus kazand r r.
+41307	Kobra Giysisi (e)	Y lan motifli siyah parlak giysi
+41308	Kobra Giysisi (k)	Y lan motifli siyah parlak giysi
+41309	Kobra Giysisi+ (e)	Y lan motifli siyah parlak giysi. Sana en az bir rastgele bonus verir.
+41310	Kobra Giysisi+ (k)	Y lan motifli siyah parlak giysi. Sana en az bir rastgele bonus verir.
+41311	  l Sava   s  (e, siyah)	Erkeklere  zel siyah sava  giysisi.
+41312	  l Sava   s  (k, siy.)	Kad nlara  zel siyah sava  giysisi.
+41313	  l Sava   s + (e,siyah)	Erkeklere  zel siyah sava  giysisi. Sana en az bir rastgele bonus verir. Bu e yan n ticareti var.
+41314	  l Sava   s + (k, siy.)	Kad nlar i in siyah kuma tan yap lm   bir sava  giysisi. Sana en az bir rastgele bonus verir.
+41315	Azrail'in Z rh  (e)	Nam salm    eytan Prensi'nin  elik z rh .
+41316	Azrail'in Z rh  (k)	Nam salm    eytan Prensi'nin  elik z rh .
+41317	Azrail'in Z rh + (e)	Nam salm    eytan Prensi'nin  elik z rh . Sana en az bir rastgele bonus verir.
+41318	Azrail'in Z rh + (k)	Nam salm    eytan Prensi'nin  elik z rh . Sana en az bir rastgele bonus verir.
+41324	Ay Y ld z Sava   s 	Erkeklere  zel ay y ld z amblemi ta  yan sava  giysisi
+41325	Ay Y ld z Sava   s 	Bayanlara  zel ay y ld z amblemi ta  yan sava  giysisi
+41326	Ay Y ld z Sava   s  +	Erkeklere  zel ay y ld z amblemi ta  yan sava  giysisi. Sana en az bir tane rastgele bonus kazand r r.
+41327	Ay Y ld z Sava   s  +	Bayanlara  zel ay y ld z amblemi ta  yan sava  giysisi. Sana en az bir tane rastgele bonus kazand r r.
+41528	  l Prensi (k rm z )	Liderler i in k rm z  kuma tan yap lan bir sava    kaftan .
+41529	  l Prensi (mavi)	Liderler i in mavi kuma tan yap lan bir sava    kaftan .
+45053	   Silah  rler Sa  Stili	   silah  rler tarz nda bak ml  k sa sar  sa  kesimi.
+45054	Hizmet i K z Sa  Stili	Hizmet i k z ba l kl  sar  k t sa lar.
+45055	Mini Mohikan	Mohikan tarz nda haval  bir k sa sa  kesimi.
+45056	Salsa D   m 	K rm z   i ekli zarif bir topuz.
+45057	Bogart  apkas 	Humphrey Bogart tarz nda klasik bir f tr  apka.
+45065	   Silah  rler Sa Stili+	   silah  rler tarz nda bak ml  k sa sar  sa  kesimi. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45066	Hizmet i K z Ba l    +	Hizmet i k z ba l kl  sar  k t sa lar. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45067	Mini Mohikan+	Mohikan tarz nda g z al c  bir k sa sa  kesimi. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45068	Salsa D   m +	K rm z   i ekli zarif bir topuz. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45069	Bogart  apkas +	Humphrey Bogart tarz nda klasik bir f tr  apka. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45070	 i ek Modeli+	Rengarenk  i eklerle s slenmi   irin bir  rg l  sa  modeli. Sana en az bir tane rastgele bonus kazand r r. Bu e yan n ticareti var.
+45135	Kobra Sa  Modeli (e)	Kobra giysisine uygun ba l k
+45136	Kobra Sa  Modeli (k)	Kobra giysisine uygun ba l k
+45147	Siyah Kavuk (e)	Erkekler i in siyah kuma tan yap lm   bir ba l k.
+45148	Siyah Kavuk (k)	Kad nlar i in siyah kuma tan yap lm   bir ba l k.
+45149	Siyah Kavuk+ (e)	Erkekler i in siyah kuma tan yap lm   bir ba l k. Sana en az bir rastgele bonus verir. Bu e yan n ticareti var.
+45150	Siyah Kavuk+ (k)	Kad nlar i in siyah kuma tan yap lm   bir ba l k. Sana en az bir rastgele bonus verir.
+45151	Azrail'in Mi feri	Nam salm    eytan Prensi'nin y zl  ba l   .
+45152	Azrail'in Mi feri (k)	Nam salm    eytan Prensi'nin y zl  ba l   .
+45153	Azrail'in Mi feri+ (e)	Nam salm    eytan Prensi'nin y zl  ba l   . Sana en az bir rastgele bonus sa lar.
+45154	Azrail'in Mi feri+ (k)	Nam salm    eytan Prensi'nin y zl  ba l   . Sana en az bir rastgele bonus sa lar.
+45160	Ay Y ld z Sa  Modeli (e)	Yukar  toplanm   k rm z  beyaz rasta sa  modeli.
+45161	Ay Y ld z Sa  Modeli (k)	Yukar  toplanm   sa  bantl  k rm z  beyaz rasta sa  modeli.
+45198	Kahverengi Kavuk	Sava   lar i in dayan kl  bir kuma tan  retilen zarif, kahverengi bir kavuk.
+45199	Beyaz Kavuk	Sava   lar i in dayan kl  bir kuma tan  retilen zarif, beyaz bir kavuk.
+45200	Kahverengi Ba l k	Di i sava   lar i in hafif bir kuma tan  retilen kahverengi bir ba l k.
+45201	Beyaz Ba l k	Di i sava   lar i in hafif bir kuma tan  retilen beyaz bir ba l k.
+45202	Kahverengi Kavuk+	Sava   lar i in dayan kl  bir kuma tan  retilen zarif, kahverengi bir kavuk. Sana en az bir rastgele bonus verir.
+45203	Beyaz Kavuk+	Sava   lar i in dayan kl  bir kuma tan  retilen zarif, beyaz bir kavuk. Sana en az bir rastgele bonus verir.
+45240	Kahverengi Ba l k+	Di i sava   lar i in hafif bir kuma tan  retilen kahverengi bir ba l k. Sana rastgele en az bir bonus verir.
+45241	Ye il Ba l k+	Di i sava   lar i in hafif bir kuma tan  retilen ye il bir ba l k. Sana rastgele en az bir bonus verir.
+50010	 orap	Baz  insanlar, y lba  nda hediyelerini bu  orab n i ine koyarlar.
+50011	Ay      Define Sand   	G z al c  s slemeleri insanlar  ba tan   kar r. Ay      ald   nda do a  st   eyler olur.
+50053	Asker At Kitab 	En  st d zeydeki binicilik sertifikas |At  zerinde becerilerinizi kullanman za izin verir.
+50054	Saman	Acemi atlar n beslemesi i in kuru saman.
+50055	Havu 	Atlar n favori sebzesi.
+50056	K rm z  Ginseng	G  lendirici ginseng. Sadece asker atlar k rm z  ginseng ile beslenir.
+50070	Ork Ba kan n n Sand   	Kutuda de erli bir ey olabilir.
+50071	  reti Lideri Sand   	  reti liderine ait olan sand k.   inde baz  k ymetli e yalar mevcut.
+50073	Krali e  r mcek Sand   	Kral  e  r mcege ait sand k.   inde baz  k ymetli e yalar mevcut.
+50076	Dev  lkaplumba a Sand   	Dev   l kaplumba as na ait sand k.   inde baz  k ymetli e yalar mevcut.
+50077	Dokuz Kuyruk Sand   	Dokuz Kuyruk Sand   .   inde baz  k ymetli e yalar mevcut.
+50078	Sar  Kaplan H. Sand   	Dev kaplana ait sand k.   inde baz  k ymetli e yalar mevcut.
+50079	Ate  Kral Sand   	Ate  Kral na ait sand k.   inde baz  k ymetli e yalar mevcut.
+50080	K rm z  Ejderha Sand   	K rm z  Ejderhaya ait sand k.   inde baz  k ymetli e yalar mevcut.
+50082	Lusifer Sand   	Lusifer'e ait sand k.   inde baz  k ymetli e yalar mevcut.
+50084	Kilit A ma Ta  	Bu ta  n, etraf n  saran enerji y kl  bir    lt s  vard r. M h r b y lerine kar   etkilidir.
+50097	Azrail'in Sand   	 eytani g  ler bu sand    kilitli tutuyor.   inde de erli hazineler olmal .
+50187	  rak Sand    I	Kar  lama hediyen maceraya ideal bir ba lang   yapmak i in gereken temel donan m  i eriyor.
+50188	  rak Sand    I I	Sand k ancak 10. seviyeye ula t   nda a  labilir.
+50189	  rak Sand    III	Bu sand k ancak 20. seviyeye ula t   nda a  labilir.
+50190	Uzman Sand    I	Bu sand k ancak 30. seviyeye ula t   nda a  labilir.
+50191	Uzman Sand    II	Bu sand k ancak 40. seviyeye ula t   nda a  labilir.
+50192	Uzman Sand    III	Bu sand k, ancak 50. seviyeye ula t   nda a  labilir.
+50193	Usta Sand    I	Bu sand k ancak 60. seviyeye ula t   nda a  labilir.
+50194	Usta Sand    II	Bu sand k ancak 75. seviyeye ula t   nda a  labilir.
+50195	Usta Sand    III	Bu sand k, ancak 100. seviyeye ula t   nda a  labilir.
+50196	B y k  stat Sand   	Bu sand k ancak 120. seviyeye ula t   nda a  labilir.
+50212	  rak Sand    I	Kar  lama hediyen maceraya ideal bir ba lang   yapmak i in gereken temel donan m  i eriyor.
+50213	  rak Sand    I	Kar  lama hediyesi maceraya ideal bir ba lang   yapmak i in gereken temel donan m  i eriyor.
+50259	Cor Draconis, Antika	Kristal ejderha kalbi, i inde ruhu, ejderha ta  n  bar nd r r.
+50266	Jotun Thrym Sand   	Jotun Thrym sand   . A  r kilidi i inde de erli bir  ey bulundu unu g sterir.
+50270	Krali e Meley'in Sand   	Bu sand k Krali e Meley'in ininde bulundu. Ger ek bir kraliyet hazine i err. Bu e yan n ticareti var.
+50271	Ejderha Bek isi Sand   	Bu sand k say s z ejderha bek isinin birka  nadir ve y zy llardan beri kayboldu u san lan hazineleri i erir. Bu e yan n ticareti var.
+50301	Sun zi Sava  Sanat 	3 Sava  stratejisi kitab ndan biri | Liderlik duygusunu artt r r | Kitap okundukan sonra yok olur.
+50302	Wu zi Sava  Sanat 	3 Sava  stratejisi kitab ndan biri | Liderlik duygusunu artt r r | Kitap okunduktan sonra yok olur.
+50303	WeiLiao Zi Sava  Sanat 	3 Sava  stratejisi kitab ndan biri | Liderlik duygusunu artt r r | Kitap okunduktan sonra yok olur.
+50307	G rev Kitab (Kolay)	Kitab n i inde kolay g revler var.
+50308	G rev Kitab (Normal)	Kitab n i inde normal g revler var.
+50309	G rev Kitab (Zor)	Kitab n i inde zor g revler var.
+50310	G rev Kitab (Uzman)	Kitab n i inde  ok zor g revler var.
+50314	D n   m Kitab 	Kitap ba ar yla okundu unda d n   m becerisini y kselir. Kitap okunduktan sonra yok olur.
+50315	 leri D n   m Kitab 	Bu kitab  iyi   renenin d n   m yetene i artar. Okunduktan sonra yok olur.
+50316	Master D n   m Kitab 	Bu kitab  yarat  a D n  mek i in kullan | Liderlik duygusunu artt r r | Kitap okunduktan sonra yok olur.
+50323	Kitap Sand    Misilleme	Bu sand k misilleme becerilerinin   renilmesini sa layan rastgele bir beceri kitab  i erir.
+50324	Kitap Sand   G  lendirme	Bu sand k g  lendirme becerilerinin   renilmesini sa layan rastgele bir beceri kitab  i erir.
+50401	   Y nl  Kesme Klavuzu	   y nl  kesme becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50402	K l    evirme Klavuzu	K l    evirme becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50403	 fke Klavuzu	 fke becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50404	Hava K l c  Klavuzu	Hava k l c  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50405	Hamle Klavuzu	Hamle becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50406	Ya ama  ste i Kitab 	Ya ama iste ini ba ar yla tamamlamak i in kullan l r. Kitap okunduktan sonra kaybolur.
+50416	Ruh Vuru u Klavuzu	Ruh vuru u becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50417	 iddetli Vuru  Klavuzu	 iddetli vuru  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50418	G  l  Vuru  Klavuzu	G  l  vuru  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50419	G  l  Beden Klavuzu	G  l  beden becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50420	K l   Darbesi Klavuzu	K l   darbesi becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50421	K l    emberi Kitab 	K l    emberini ba ar yla tamamlamak i in kullan l r. Kitap okunduktan sonra kaybolur.
+50431	Suikast Klavuzu	Suikast becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50432	H zl  Sald r  Klavuzu	H zl  sald r  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50433	B  ak  evirme Klavuzu	B  ak  evirme becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50434	Kamuflaj Klavuzu	Kamuflaj becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50435	Zehirli Bulut Klavuzu	Zehirli bulut becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50436	Sinsi Zehir Kitab 	Sinsi zehri ba ar yla tamamlamak i in kullan l r. Kitap okunduktan sonra kaybolur.
+50446	Tekrarlanan At   Klavuzu	Tekrarlanan at   becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50447	Ok Ya muru Klavuzu	Ok ya muru becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50448	Ate li Ok Klavuzu	Ate li ok becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50449	Hafif Ad m Klavuzu	Hafif ad m becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50450	Zehirli Ok Klavuzu	Zehirli ok becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50451	K v lc m Vuru u Kitab 	K v lc m vuru u ba ar yla tamamlamak i in kullan l r. Kitap okunduktan sonra kaybolur.
+50461	Parmak Darbesi Klavuzu	Parmak darbesi becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50462	Ejderha D n    Klavuzu	Ejderha d n    becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50463	B y l  Keskinlik Klavuzu	B y l  keskinlik becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50464	Deh et Klavuzu	Deh et becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50465	B y l  Z rh Klavuzu	B y l  z rh becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50466	B y    zme Klavuzu	B y    zme becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50476	Karanl k Vuru  Klavuzu	Karanl k vuru  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50477	Ate  Vuru  Klavuzu	Ate  vuru  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50478	Ate  Hayaleti Klavuzu	Ate  hayaleti becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50479	Karanl k Koruma Klavuzu	Karanl k koruma becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50480	Hayalet Vuru  Klavuzu	Hayalet vuru  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50481	Karanl k K re Klavuzu	Karanl k k re becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50491	U an T ls m Klavuzu	U an t ls m becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50492	Ejderha At    Klavuzu	Ejderha at    becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50493	Ejder K kremesi Klavuzu	Ejder k kremesi becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50494	Kutsama Klavuzu	Kutsama becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50495	Yans tma Klavuzu	Yans tma becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50496	Ejderha Yard m  Kitab 	Ejderha yard m  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50506	 im ek Atmak Klavuzu	 im ek atma becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50507	 im ek  a  rma Klavuzu	 im ek  a  rma becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50508	 im ek Pen esi Klavuzu	 im ek pen esi becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50509	 yile tirme Klavuzu	 yile tirme becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50510	H z Klavuzu	H z becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50511	Y ksek Sald r  Klavuzu	Sald r  becerisinde ustala mak i in kullan l r. Kitap okunduktan sonra yok olur.
+50513	Ruh Ta  	Grandmaster becerilerini art ran efsanevi ta . Kullan ld ktan sonra yok olur.
+50516	K l    evirme Misilleme	Bu kitap sana k l    evirmeyle hasar n  d   rmeyi   retir.
+50517	Suikast Misillemesi	Bu kitap sana suikastle hasar n  d   rmeyi   retir.
+50518	Parmak Darbesi Misilleme	Bu kitap sana parmak darbesiyle hasar n  d   rmeyi   retir.
+50519	Ejderha At    Misilleme	Bu kitap sana ejderha at   yla hasar n  d   rmeyi   retir.
+50520	Ruh Vuru u Misillemesi	Bu kitap sana ruh vuru uyla hasar n  d   rmeyi   retir.
+50521	Ate li Ok Misillemesi	Bu kitap sana ate li okla hasar n  d   rmeyi   retir.
+50522	Karanl k Vuru  Misilleme	Bu kitap sana karanl k vuru la hasar n  d   rmeyi   retir.
+50523	 im ek  a  rma Misilleme	Bu kitap sana  im ek  a  rmayla hasar n  d   rmeyi   retir.
+50560	K l    evirme G  lendir.	Bu kitap sana k l    evirmeyi g  lendirme becerisini   retir.
+50561	Suikast G  lendirmesi	Bu kitap sana suikasti g  lendirme becerisini   retir.
+50562	Parmak Darbesi G  lendir	Bu kitap sana parmak darbesini g  lendirme becerisini   retir.
+50563	Ejderha At    G  lendirm	Bu kitap sana ejderha at    g  lendirme becerisini   retir.
+50564	Ruh Vuru u G  lendirmesi	Bu kitap sana ruh vuru u g  lendirme becerisini   retir.
+50565	Ate li Ok G  lendirmesi	Bu kitap sana ate  okunu g  lendirme becerisini   retir.
+50566	Karanl k Vuru  G  lendir	Bu kitap sana karanl k vuru un g  lendirme becerisini   retir.
+50567	 im ek  a  rma G  lendir	Bu kitap sana  im ek  a  rma g  lendirme becerisini   retir.
+50621	Elmas	Bu de erli m cevher aksesuarlara eklenebilir.
+50622	Kehribar	G zel bir kehribar| Aksesuarlara eklenebilir.
+50623	Fosil A a  G vdesi	Aksesuarlara dayan kl l k kazand ran de erli bir odun.
+50624	Bak r	Bazen bronz ve bozuk para yap m nda kullan l r | Bak r aksesuarlara eklenebilir.
+50625	G m  	M cevher yap m nda kullan lan parlak bir soy metal.
+50626	Alt n	M cevher yap m nda kullan l r. | Alt n aksesuarlara eklenebilir.
+50627	Ye imTa  	5000 y l  a k n s redir kullan lan de erli bir mineral. M cevher yap m nda hala kullan l r.
+50628	Abanoz	T m odunlar n en parlak ve g  l s .| Abanoz aksesuarlara eklenebilir.
+50629	 nci	Sedeften  retilen, zarif  ekilde par ldayan, m cevherlerin m cevheridir.
+50630	Beyaz Alt n	Dayan kl , beyazla t r lm   bu alt n m cevher yap m nda sevilerek kullan l r.
+50631	Kristal	Farkl  renklerde olabilen kristal kuvars. M cevher yap m nda s k a kullan l r.
+50632	Ametist	Mor kuartz.| Ametist aksesuarlara eklenebilir.
+50633	Cennetin G zya  	Cennetten kristalle mi  ya mur | Cennetin g z  aksesuarlara eklenebilir.
+50926	S s Ta  	S s ta lar  topla ve Gaya t ccar n n bunlar  de erli Gayaya d n  ecek  ekilde bilemesini sa la.
+51001	Enerji Par as 	Enerji kristaline ait par a. 30 tanesiyle bir kristal  retilebilir.
+51002	Enerji Kristali	Bu kristal iki saat boyunca bonuslar n  art r r.
+52040	Vah i aslan	M h r, binicisinin sald r  de erini 30 art ran vah i aslan n   a  r r.
+53010	Leonidas	Bu m h rle aslan yavrun Leonidas'  yan na  a  rabilirsin. Bu petin sana sa lad klar : | +%15 b y /yak n d v   sald r s  | +1500 HP
+53011	Khan	Bu m h rle kaplan yavrun Khan'  yan na  a  rabilirsin. Bu petin sana sa lad klar : | +%15 b y /yak n d v   sald r s  | +1500 HP
+53012	Porki	Bu m h rle yaban domuzu yavrun Porki'yi yan na  a  rabilirsin. Bu petin sana sa lad klar : | +%15 b y /yak n d v   sald r s  | +1500 HP
+53013	Rufus	Bu m h rle kurt yavrusu Rufus'u yan na  a  rabilirsin. Bu petin sana sa lad klar : | +%15 b y /yak n d v   sald r s  | +1500 HP
+53017	Ye im Ankas 	M h r, zarif ye im ankas n   a  r r. Bu petin sana sa lad klar  | +%15 b y -/yak n sald r s  | +%50 EXP bonus  ans .
+53256	Bonsai	Bu m h r minik sava    Bonsa'y   a  r r.
+54043	  rak Sand    I	Kar  lama hediyen, maceraya ideal bir ba lang   yapmak i in gereken temel donan m  i eriyor.
+55008	Pet  smi Par  meni	Petinin ismini de i tirmek i in par  meni petinin  zerine  ek.
+55009	Pet Kitab  Sand   	Rastgele se ilmi  bir pet beceri kitab  i erir.
+55010	Dayan kl l k (Sava   )	Bu beceriyi   rendikten sonra petin dayan kl l   n  sava    ataklar na kar   art r r.
+55011	Dayan kl l k (Sura)	Bu beceriyi   rendikten sonra petin dayan kl l   n  Sura ataklar na kar   art r r.
+55012	Dayan kl l k (Ninja)	Bu beceriyi   rendikten sonra petin dayan kl l   n  ninja ataklar na kar   art r r.
+55013	Dayan kl l k ( aman)	Bu beceriyi   rendikten sonra petin dayan kl l   n   aman ataklar na kar   art r r.
+55401	Maymun Yumurtas 	Petinin yumurtadan   kmas n  istiyorsan sa  fare tu u ile yumurtay  t kla.
+55402	 r mcek Yumurtas 	Petinin yumurtadan   kmas n  istiyorsan sa  fare tu u ile yumurtay  t kla.
+55403	Razad r Yumurtas 	Petinin yumurtadan   kmas n  istiyorsan sa  fare tu u ile yumurtay  t kla.
+55404	Nemere Yumurtas 	Petinin yumurtadan   kmas n  istiyorsan sa  fare tu u ile yumurtay  t kla.
+55405	Mavi Ejderha Yumurtas 	Petini kulu kadan   karmak istersen farenin sa  tu uyla yumurtaya t kla.
+55406	K z l Ejderha Yumurtas 	Petini kulu kadan   karmak istersen farenin sa  tu uyla yumurtaya t kla.
+55407	Azrailcik yumurtas 	Petini kulu kadan   karmak istersen farenin sa  tu uyla yumurtaya t kla.
+55408	Tombk cellatck yumurtas 	Petini kulu kadan   karmak istersen farenin sa  tu uyla yumurtaya t kla.
+55409	Baashido Yavrusu Yumurt.	Petini kulu kadan   karmak istersen farenin sa  tu uyla yumurtaya t kla.
+55410	Nessie yumurtas 	Petini kulu kadan   karmak istersen, farenin sa  tu uyla yumurtaya t kla.
+55411	Exedyar Yumurtas 	Petini kulu kadan   karmak istersen, farenin sa  tu uyla yumurtaya t kla.
+55701	K   k Maymun	Petini sa  fare tu u ile  a  r ve ard ndan P tu u ile pet kullan c  ara birimini g r nt le.
+55702	K   k  r mcek	Petini sa  fare tu u ile  a  r ve ard ndan P tu u ile pet kullan c  ara birimini g r nt le.
+55703	K   k Razad r	Petini sa  fare tu u ile  a  r ve ard ndan P tu u ile pet kullan c  ara birimini g r nt le.
+55704	K   k Nemere	Petini sa  fare tu u ile  a  r ve ard ndan P tu u ile pet kullan c  ara birimini g r nt le.
+55705	K   k Ejderha	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55706	K   k Meley	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55707	Azrailcik	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55708	Tombik cellatc k	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55709	Baashido Yavrusu	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55710	Nessie	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+55711	Exedyar yavrusu	Petini farenin sa  tu una t klayarak  a  r. Sonra "P" tu una basarak petinin kullan c  aray z n  g r nt le.
+70031	Eskrim Bro  r 	Bu bro  r, di er  eylerin yan nda, insan anatomisinin potansiyeli ve zay fl klar  konular n  i erir.
+70038	Cesaret Pelerini	Ger ek sava   lar ta  d klar  renkli pelerin ile t m yarat klar n dikkatini kendi  zerlerine  eker ve b ylelikle kahramanl klar n  kan tlarlar.
+70039	Demircinin El Kitab 	Eski demircilerin ruhlar n  bar nd ran kitap. Kullan l rsa, y kseltme ba ar s  oran n  artt r r.
+70063	K st m  d n  t r	Kost mlerinden birinin bonuslar n  kald r r ve yenilerini ekler.  ans n yaver giderse bu arada bonuslar n n say s  de i ir. (en fazla 3 olacak kadar)
+70064	Kost m  efsunla	Kost mlerinden birinin bonuslar n  kald r r ve yenilerini ekler.
+70065	Kost m Bonusu Aktar m 	Bir kost mdeki bonusu ba ka bir kost me aktar r. Bu i lemde kost mlerden biri yok edilir.
+70102	Zen Fasulye	K t  s ralamay  azalt r|iyi s ralamay  artt r r.
+70104	D n   m K resi	Bu k reyle yarat  a d n  ebilirsin.
+70105	D n   m K resi	Bu k reyle yarat  a d n  ebilirsin.
+70106	D n   m K resi	Bu k reyle yarat  a d n  ebilirsin.
+70107	D n   m K resi	Bu k reyle yarat  a d n  ebilirsin.
+70201	Sa  Boyas  Temizleyici	Sa lar  orjinal rengine d nd r r. Bu i lemi g rm   sa lar  tekrar boyayabilirsiniz.
+70202	Beyaz Sa  Boyas 	Sa   beyaza boyar.| Her 3 seviyede bir kez kullanabilirsiniz.
+70203	Sar  Sa  Boyas 	Sa   sar ya boyar.|Her 3 seviyede bir kez kullanabilirsiniz.
+70204	K rm z  Sa  Boyas 	Sa   k rm z ya boyar.|Her 3 seviyede bir kez kullanabilirsiniz.
+70205	Kahverengi Sa  Boyas 	Sa   kahverengiye boyar.|Her 3 seviyede bir kez kullanabilirsiniz.
+70206	Siyah Sa  Boyas 	Sa   siyaha boyar.|Her 3 seviyede bir kez kullanabilirsiniz.
+70301	S z Y z   	Sevenleri belli eden y z k.
+70302	Nikah Y z   	Evli  iftleri belirleyen y z k.
+70602	Ruh Par  meni (%100)	Bu par  menle ruhunu bir basamak ilerleyecek  ekilde geli tir.
+70603	Ruh Par  meni	Bu par  menle ruhunu bir basama a kadar ilerleyecek  ekilde geli tir. Deneme ba ar s z olabilir.
+71001	K t  Ruh Kovma Ka  d 	  renme ba ar s z olursa, k t  ruh lanetinden korunman z  sa lar.
+71002	Stat  S f rlama Ka  d 	Stat  puanlar n  s f rlayarak karakterinizi ba ka y nde geli tirmenizi sa lar.
+71032	Ejderha Par  meni	Geli tirme i lemi ba ar s z oldu unda bir e yan n yok olma riskini ortadan kald r r. Yaln zca kalitesi bir basamak d  er. Ayr ca ba ar l  bir geli tirme ihtimali %10 artar.
+71035	Ara t rmac n n  z t 	Toplad   n z ara t rma nesnelerinin kalitesini artt r r, b ylece kabul edilmeleri kolayla  r. Yohara'daki g revler i in ge erli de ildir.
+71048	De i im T ls m 	Bu t ls m karakterinizin cinsiyetini de i tirebilir.
+71054	Krall klar n  zi	Bir karakter ba ka bir krall  a ka abilir, yani krall k de i tirebilir.
+71055	 sim  zi	Karakter ismini de i tirir.
+71075	Sa  Boyas (Beyaz)	Sa   beyaza boyar.
+71076	Sa  Boyas (Sar   n)	Sa   sar ya boyar.
+71077	Sa  Boyas (K rm z )	Sa   k rm z ya boyar.
+71078	Sa  Boyas (Kahverengi)	Sa   kahverengiye boyar.
+71079	Sa  Boyas (Siyah)	Sa   siyaha boyar.
+71083	Ta  Sanat  Kitab 	K r k ta   eklentiden silerek, bo  ekleme alan  olu turur.
+71084	Efsun Nesnesi	Nesnelerinden birinin bonuslar n  siler ve yenilerini ekler. Sadece 1-5 bonuslar  i in ge erlidir.
+71093	D n   m K resi	Bu k reyle bir yarat  a d n  ebilirsin.
+71094	M nzevi Tavsiyesi	Bir sonraki kitab  (ya da ruh ta  n ) okurken yetene ini geli tirme  ans n  iki bu uk kat na   kar r.
+71099	Yer De i tirme Y z   	Lonca liderinin yer de i imi ayarlamas n  sa lar.
+71100	Bilgi De i im Ka  d 	T m bilgini unut ve yenisini edin.
+71103	Tekrar Da  tma (VIT)	Canl l   n  1'e d   r r ve puanlar n  yeniden da  tman  sa lar.
+71104	Tekrar d tma ka  d (INT)	Zeka puan n  1'e d   r r ve puanlar n  yeniden da  tman  sa lar.
+71105	Tekrar Da  tma (STR)	G c n  1'e d   r r ve puanlar n  tekrar da  tman  sa lar.
+71106	Tekrar D tma Ka  d (DEX)	 evikli ini 1'e d   r r ve puanlar n  tekrar da  tman  sa lar.
+71107	Ya am Meyvesi	S ralama puan n  2.000 artt r r (so uma s resi: 8 saat).
+71123	Ejderha Pulu	Ejderha pullar  bilinen en  iddetli malzemeler aras nda yer al yor.
+71124	Beyaz Aslan	Beyaz k rkl  hayvanlara olduk a ender rastlan yor.
+71125	Sava  yaban domuzu	K t  hayvan ruhlar n  dizginle tirmek ancak sihir sanat  ile m mk n.
+71126	K zg n kurt	K t  hayvan ruhlar n  dizginle tirmek ancak sihir sanat  ile m mk n.
+71127	Vah i kaplan	K t  hayvan ruhlar n  dizginle tirmek ancak sihir sanat  ile m mk n. Sonucuysa  ok etkileyici.
+71128	Y rt c  aslan	K t  hayvan ruhlar n  dizginle tirmek ancak sihir sanat  ile m mk n. Sonucuysa  ok etkileyici.
+71129	Ejderha Pen esi	Bu  rk t c  pen eyi g r nce an lar canlan yor...
+71137	Kral kaplan  (mavi)	M hr n b y s , heybetli Kral Kaplan  bine ini (mavi)  a  r r. Tecr be toplamay  %30 art r r.
+71138	Kral kaplan  (k rmz )	M hr n b y s , heybetli Kral Kaplan  bine ini (k rm z )  a  r r. Tecr be toplamay  %30 art r r.
+71139	Kral kaplan  (alt n)	M hr n b y s , heybetli Kral Kaplan  bine ini (alt n)  a  r r.
+71140	Kral kaplan  (ye il)	M hr n b y s , heybetli Kral Kaplan  bine ini (ye il)  a  r r. Tecr be toplamay  %30 art r r.
+71141	Kral Kaplan  (gri)	M hr n b y s , heybetli Kral Kaplan  bine ini (gri)  a  r r. Tecr be toplamay  %30 art r r.
+71142	Kral kaplan  (beyaz)	M hr n b y s , heybetli Kral Kaplan  bine ini (beyaz)  a  r r. Tecr be toplamay  %30 art r r.
+71149	 l mc l G c n Y z   	Sana bir s re boyunca +%30 EXP, +%20 Suralara kar   savunma  ans , +%20  amanlara kar   savunma  ans , +%20 Lycanlara kar   savunma  ans , +%30 canavarlara kar   g  , +%10 maksimum HP ile +%10 maksimum SP sa lar.
+71151	Ye il Efsun	Nesnelerinden birinin bonuslar n  siler ve yenilerini ekler. Yaln zca 30. seviye ve alt ndaki silahlara ve z rhlara uygulanabilir. Ticareti yok.
+71161	Equus Purpur	G zel mi g zel ve ender bulunan mor at m hr . Hareket h z n  60 art r r.
+71164	Kuyruklu y ld z	Ren geyi i Kuyruklu Y ld z'  yan na  a  ran bir m h r. Hareket h z n  60 art r r.
+71165	Kutup predat r 	Sava sever Kutup Predat r 'n  yan na  a  ran bir m h r. Hareket h z n  60 art r r.
+71166	Z rhl  panda	Z rhl  Panda'y  yan na  a  ran bir m h r. Hareket h z n  60 art r r.
+71171	Tekboynuz	Tekboynuz'unu yan na  a  ran bir m h r. Hareket h z n  60 art r r.
+71172	Kabus	Kabus'unu yan na  a  ran bir m h r. Hareket h z n  60 art r r.
+71176	Siyah Panter	Esrarengiz siyah Panter'ini yan na  a  ran bir m h r. Hareket h z n  30 art r r.
+71177	Leopar	Cesur Leopar' n  yan na  a  ran bir m h r. Hareket h z n  30 art r r.
+71182	Muffin (kahverengi)	Korku salan sava  tavu u Muffin'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71183	Nugget (kahverengi)	Korkun  sava  tavu u Nugget'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71184	Muffin (mavi)	Korku salan sava  tavu u Muffin'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71185	Nugget (mavi)	Korkun  sava  tavu u Nugget'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71186	Muffin (kahverengi)	Korku salan sava  tavu u Muffin'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71187	Nugget (ye il)	Korkun  sava  tavu u Nugget'i yan na  a  ran bir m h r. Hareket h z n  20 art r r.
+71192	G rleme	G mb rt  isimli ren geyi ini yan na  a  ran bir m h r. Hareket h z n  20, tecr be toplamay  %30 art r r.
+71193	 im ek	 im ek isimli ren geyi ini yan na  a  ran bir m h r. Hareket h z n  20, tecr be toplamay  %30 art r r.
+71197	Nugget (lacivert)	Bu m h rle, korkun  sava  tavu u Nugget'i yan na  a  r rs n.
+71198	Muffin (pembe)	Bu m h rle, korku salan sava  tavu u Muffin'i yan na  a  r rs n.
+71221	Nirvana ejderhas 	M h r, Nirvana Ejderha'n   a  r r.
+71222	Samsara ejderhas 	M h r, Samsara Ejderha'n   a  r r.
+71223	Manni	Bu m h rle g  l  bir mamutu  a  r rs n.
+71224	Manu	Bu m h rle g  l  bir mamutu  a  r rs n.
+71225	Spektral at	Bu m h r, parlak bine ini  a  r r.
+71226	At Nokturnat	Bu m h r, gece karanl    bine ini  a  r r.
+71227	Ay g lgesi	Bu m h r, kemikli sava  at  Ay g lgesini  a  r r.
+71228	G m   y ld z	Bu m h r, kemikli sava  at  G m   y ld z   a  r r.
+71250	Beyaz Sfenks	Bu m h r, beyaz ve ayn  zamanda bilge olan bine ini  a  r r.
+71251	Ta  Sfenks	Bu m h r, sert ve ayn  zamanda sakin olan bine ini  a  r r.
+72301	Kutsama Ka  d 	Geli tirme ba ar s z oldu unda e yan n yok olma riski ortadan kalk p, sadece seviyesi 1 kademe d  er.
+72309	Demircinin El Kitab 	Ya l  bir demircinin ruhuyla ba l  olan bir kitap. Kullan l rsa, y kseltme ba ar s  oran n  artt r r.
+72310	K t  Ruh Kovma Ka  d 	  renme ba ar s z olursa, seni k t  ruhun lanetinden korur. Bu ka  d n yard m yla ayn  g n bir beceri belgesi daha okuyabilirsin.
+72314	Ejderha Par  meni	Geli tirme i lemi ba ar s z oldu unda bir e yan n yok olmas  riskini ortadan kald r r. Yaln zca kalitesi bir basamak d  er. Ayr ca ba ar l  bir geli tirme ihtimali %10 artar.
+72319	Envanter geni lemesi	Envanterini geni letmek i in bu nesneyi kullan. Ticareti yap labilir.
+72320	Envanter Geni letme	Envanterini geni letmek i in bu nesneyi kullan.
+72725	G ne   z t  (B)	HP'ni otomatik olarak yeniler. 7.000.000 HP i erir.
+72729	Ay  z t  (B)	SP'ni otomatik olarak yeniler. 15.000 SP i erir.
+73001	Haval  K sa Sa  (k z l)	Sa  stili size  arp c  bir g r nt  kazand r r.
+73002	Haval  K sa Sa  (a  k)	Sa  stili size  arp c  bir g r nt  kazand r r.
+73003	Haval  K sa Sa  (mavi)	Sa  stili size  arp c  bir g r nt  kazand r r.
+73004	Haval  K sa Sa  (kahve)	Sa  stili size  arp c  bir g r nt  kazand r r.
+73005	Bandana (k z l)	Bandana ile bantlanm   da  n k sa  stili.
+73006	Bandana (ekoseli kahve)	Bandana ile bantlanm   da  n k sa  stili.
+73007	Bandana (mavi)	Bandana ile bantlanm   da  n k sa  stili.
+73008	Bandana (ekoseli ye il)	Bandana ile bantlanm   da  n k sa  stili.
+73009	Uzun sa  (siyah)	Sava   lar n atalar  taraf ndan kullan lan arkadan ba l  sa  stili.
+73010	Uzun sa  (k z l)	Sava   lar n atalar  taraf ndan kullan lan arkadan ba l  sa  stili.
+73011	Uzun sa  (a  k kahve)	Sava   lar n atalar  taraf ndan kullan lan arkadan ba l  sa  stili.
+73012	Uzun sa  (a  k ye il)	Sava   lar n atalar  taraf ndan kullan lan arkadan ba l  sa  stili.
+73251	At kuyru u (kahve)	At kuyru u  eklinde toplanm   uzun sa lar.
+73252	At kuyru u (ye il)	At kuyru u  eklinde toplanm   uzun sa lar.
+73253	At kuyru u (mavi)	At kuyru u  eklinde toplanm   uzun sa lar.
+73254	At kuyru u (fildi i)	At kuyru u  eklinde toplanm   uzun sa lar.
+73255	G zel K sa Sa  (k z l)	Do al g steren uzun sa  stili.
+73256	G zel K sa Sa  (kahve)	Do al g steren uzun sa  stili.
+73257	G zel K sa Sa  (a  k)	Do al g steren uzun sa  stili.
+73258	G zel K sa Sa  (bordo)	Do al g steren uzun sa  stili.
+73259	K sa Sa  stili (k z l	Tehditk r bir g r n m kazand ran kullan  l  k sa sa  stili.
+73260	K sa Sa  stili (mavi)	Tehditk r bir g r n m kazand ran k sa sa  stili.
+73261	K sa Sa  stili (siyah)	Tehditk r bir g r n m kazand ran k sa sa  stili.
+73262	K sa Sa  stili (sar )	Size zalim bir g r nt  veren sa  stili.
+73501	Spor Sa  Stili (beyaz)	Askeri stil sa  kesimi.
+73502	Spor Sa  Stili (kahve)	Askeri stil sa  kesimi.
+73503	Spor Sa  Kesimi (sar )	Askeri stil sa  kesimi.
+73504	Spor Sa  Kesimi (ye il)	Askeri stil sa  kesimi.
+73505	Karizmatik Sa  (beyaz)	G  l  bir karakteri g steren sa  stili.
+73506	Karizmatik Sa  (k z l)	G  l  bir karakteri g steren sa  stili.
+73507	Karizmatik Sa  (siyah)	G  l  bir karakteri g steren sa  stili.
+73508	Karizmatik Sa  (bordo)	G  l  bir karakteri g steren sa  stili.
+73509	  k Sa  Modeli (Beyaz)	T m sa  n arkaya tarand    moda bir sa  stili.
+73510	  k Sa  Modeli (mavi)	T m sa  n arkaya tarand    moda bir sa  stili.
+73511	  k Sa  Modeli (Siyah)	T m sa  n arkaya tarand    moda bir sa  stili.
+73512	  k Sa  Modeli (kahve)	T m sa  n arkaya tarand    moda bir sa  stili.
+73751	Zarif sa  stili (kahve)	Kelebek tokas yla ayarlanm     k bir sa  modeli.
+73752	Zarif sa  stili (siyah)	Kelebek tokas yla ayarlanm     k bir sa  modeli.
+73753	Zarif sa  stili(mavi)	Kelebek tokasy la ayarlanm     k bir sa  modeli.
+73754	Zarif sa  stili (beyaz)	Kelebek tokasy la ayarlanm     k bir sa  modeli.
+73755	Orta Uz. Sa  (kahve)	  k  aman sa  stili.
+73756	Orta Uz. Sa  (siyah	  k  aman sa  stili.
+73757	Orta Uz. Sa  (sar )	Zarif ve d z sa  stili.
+73758	Orta Uz. Sa  (mor)	  k  aman sa  stili.
+73759	Eski sa  stili (kahve)	Uzun katl  feminen bir sa  stili.
+73760	Eski sa  stili (a  k)	Uzun ve geleneksel sa  stili.
+73761	Eski sa  stili (mor)	Uzun katl  feminen bir sa  stili.
+73762	Eski sa  stili (k z l)	Uzun katl  feminen bir sa  stili.
+74001	Moda Sa  Stili (k z l)	Bu sa  modeli kendine  zg  bir g r n m kazand r r
+74002	Moda Sa  Stili (a  k)	Bu sa  stili sana  arp c  bir g r n m kazand r r
+74003	Moda Sa  (mavi)	Bu sa  stili sana  arp c  bir g r n m kazand r r
+74004	Moda Sa  (kahve)	Bu sa  stili sana  arp c  bir g r n m kazand r r
+74005	Bandana (k z l)	K rm z  bandanal  k sa kahverengi sa lar
+74006	Bandana (ekoseli kahve)	A  k renk bandanal  k sa sar  sa  stili.
+74007	Bandana (mavi)	Kahverengi bandanal  k sa mavi sa lar
+74008	Bandana (ekoseli ye il)	Ye il bandanal  k sa ye il sa lar
+74009	Uzun sa  (siyah)	Sava   lara  arp c  bir g r n m kazand ran sa  stili
+74010	Uzun sa  (k z l)	 arp c  bir g r n m kazand ran sa  stili
+74011	Uzun sa  (kahve)	Etkileyici bir g r n m kazand ran sa  stili
+74012	Uzun sa  (ye il)	Etkileyici bir g r n m kazand ran sa  stili
+74013	Sava    Afro (e)	Erkek sava   ya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74014	Sava    Afro (e)	Erkek sava   ya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74015	Sava   (e)Samuray Mi fer	Erkek sava   ya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74016	Sava   (e)Samuray Mi fer	Erkek sava   ya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74017	Sava    Fesi (e)	Erkek sava   lar i in k rm z  bir ba l k. (s resi 7 g n)
+74018	Sava    Pu isi (e)	Erkek sava   lar i in bir ba l k. (s resi 7 g n)
+74019	Sava    Kavu u (e)	Erkek sava   lar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+74020	Jack Pumpkin Sava    (e)	Sava    i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+74251	At kuyru u (kahve)	 r lm   uzun kahverengi sa lar - Bayanlar n  ok sevdi i bir sa  stili
+74252	At kuyru u (ye il)	 r lm   uzun ye il sa lar - Bayanlar n  ok sevdi i bir sa  stili
+74253	At kuyru u (mavi)	 r lm   uzun mavi sa lar - Bayanlar n  ok sevdi i bir sa  stili
+74254	At kuyru u (fildi i)	 r lm   uzun a  k renk sa lar - Bayanlar n  ok sevdi i bir sa  stili
+74255	Omuz hiz. sa  (k z l)	  mar k ve haval  g steren sa  stili
+74256	Omuz hiz. sa  (kahve)	  mar k ve haval  g steren sa  stili
+74257	Omuz hiz. sa /a  k	  mar k ve haval  g steren sa  stili
+74258	Omuz hiz. sa /mor	  mar k ve haval  g steren sa  stili
+74259	K sa Sa  stili (k z l)	Ninja tarzda per emli k rm z  sa  stili
+74260	K sa Sa  stili (mavi)	Ninja tarzda per emli mavi sa  stili
+74261	K sa Sa  stili (siyah)	Ninja tarzda per emli siyah sa  stili.
+74262	K sa Sa  stili (sar )	Ninja tarzda per emli sar  sa  stili
+74263	Ninja Afro (k)	Bayan ninjaya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74264	Ninja Afro (k)	Bayan ninjaya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74265	Ninja (k):  i ekli  apka	Bayan ninjaya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74266	Ninja (k):  i ekli  apka	Bayan ninjaya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74267	Ninja (k): Kum Pe esi	Bayan ninjalar i in  ok de erli kuma tan yap lma bir pe e. (s resi 7 g n)
+74268	Ninja (k):   l Pu isi	Bayan ninjalar i in k ymetli kuma tan yap lma bir   l pu isi. (s resi 7 g n)
+74269	Ninja Sar    (k)	Bayan ninjalar i in  ok de erli kuma tan yap lma bir kavuk. (s resi 7 g n)
+74270	Jack Pumpkin Ninja (k)	Bayan ninjalar i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+74501	Spor Sa  Stili (beyaz)	Askeri tarzda k sa kesimli sa  stili
+74502	Spor Sa  Stili (kahve)	Askeri tarzda k sa kesimli sa  stili
+74503	Spor Sa  Kesimi (sar )	Askeri tarzda k sa kesimli sa  stili
+74504	Spor Sa  Kesimi (ye il)	Askeri tarzda k sa kesimli sa  stili.
+74505	Karizmatik Sa  (beyaz)	Bu sa  stili sana ki isel bir g r n m kazand r r.
+74506	Karizmatik Sa  (k z l)	Bu sa  stili sana ki isel bir g r n m n kazand r r.
+74507	Karizmatik Sa  (siyah)	Bu sa  stili sana ki isel bir g r n m kazand r r.
+74508	Karizmatik Sa  (mor)	Bu sa  stili sana ki isel bir g r n m kazand r r.
+74509	Uzun  rg  (beyaz)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74510	Uzun  rg  (mavi)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74511	Uzun  rg  (siyah)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74512	Uzun  rg  (kahve)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74513	Sura Afro (e)	Erkek suraya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74514	Sura Afro (e)	Erkek suraya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74515	Sura (e):Samuray Mi feri	Erkek suraya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74516	Sura (e):Samuray Mi feri	Erkek suraya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s re 7 g n).
+74517	Sura Fesi (e)	Erkek suralar i in k rm z  bir ba l k. (s resi 7 g n)
+74518	Sura Pu isi (e)	Erkek suralar i in bir ba l k. (s resi 7 g n)
+74519	Sura Kavu u (e)	Erkek suralar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+74520	Jack Pumpkin Sura (e)	Sura i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+74521	Moda sa  stili (gri)	Bu sa  stili sana  arp c  bir g r n m kazand r r
+74522	Bandana	Bandana ile toplanm   k sa sa  stili.
+74523	Uzun sa  (sar )	G steri li ve sar  sa l , g z al c  bir sa  stili.
+74524	Moda sa  stili (alt n)	Modaya uygun bandanal  alt n sa .
+74525	Bandana (siyah)	Bandana ile toplanm   da  n k sa  stili.
+74526	Uzun sa  (yakut k rm z )	G steri li yakut k rm z s  sa .
+74527	At Kuyru u (k rm z )	At kuyru u  eklinde toplanm   uzun sa lar.
+74528	Omuzda Sa /su	Mavi bandanal  kibar sa  stili
+74529	K sa Sa  Modeli (kahve)	Korku veren rahat bir k sa sa  stili.
+74530	At Kuyru u (k rm z )	Uzun, k rm z  ve sa   rg s   eklinde toplanm   sa lar. Bayanlar n  ok sevdi i bir sa  stili.
+74531	Omuzda Sa /siyah	  mar k ve haval  bir sa  stili
+74532	K sa Sa  Modeli (gri)	Tehditk r bir g r n m kazand ran k sa sa  stili.
+74533	Spor Sa  Modeli (siyah)	Askeri tarzda k sa sa  stili
+74534	Karizma Sa  Modeli(sar )	Bu sa  stili sana ki isel bir g r n m n kazand r r.
+74535	Uzun Sa   rg s  (pembe)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74536	Spor Sa  Modeli (mor)	S ra d    bir k sa sa  modeli
+74537	Karizma Sa  Modeli(sar )	Karizmatik uzun sa  modeli
+74538	Uzun Sa   rg s  (azur)	Evvelce zenginlik sembol  olan eski tarz  rg l  sa .
+74539	Zarif Sa  Stili(eflatun)	Toplanm   zarif sa  stili
+74540	Orta Uz. Sa  (koyu)	Zarif bir  aman sa  stili
+74541	Eski Sa  Modeli (beyaz)	Uzun ve geleneksel sa  stili.
+74542	Zarif Sa  Mod. (k rm z )	Kelebekli i neyle yukar  toplanm   zarif sa  stili.
+74543	Orta Uz. Sa  (beyaz)	Zarif d z sa lar
+74544	Eski Sa  Modeli (siyah)	Feminen tarzda katl  uzun sa  stili.
+74545	Kabile sa   rg.+ (k z l)	Ait oldu un kabileyi g steren k rm z  ah ap boncuklarla s slenmi  sa   rg s .
+74546	Kabile sa   rg.+ (sar )	Ait oldu un kabileyi g steren sar  ah ap boncuklarla s slenmi  sa   rg s .
+74547	Kabile sa   rg.+ (mavi)	Ait oldu un kabileyi g steren mavi ah ap boncuklarla s slenmi  sa   rg s .
+74548	Kabile sa   rg.+ (efl.)	Ait oldu un kabileyi g steren eflatun ah ap boncuklarla s slenmi  sa   rg s .
+74549	Kabile sa   rg.+ (ye il)	Ait oldu un kabileyi g steren ye il ah ap boncuklarla s slenmi  sa   rg s .
+74550	Koruyucu al nl.+ (alt n)	  lemeli, klasik sa  modelli bir koruyucu al nl k.
+74551	Koruyucu al nl.+ (siyah)	  lemeli, klasik sa  modelli bir koruyucu al nl k.
+74552	Koruyucu al nl.+ (k rm.)	  lemeli, klasik sa  modelli bir koruyucu al nl k.
+74553	Koruyucu al nl.+ (mavi)	  lemeli, klasik sa  modelli bir koruyucu al nl k.
+74554	Koruyucu al nl.+ (byz.)	  lemeli, klasik sa  modelli bir koruyucu al nl k.
+74555	Koruyucu ba l k+ (alt n)	 akaklar  iyice koruyan, klasik sa  modelli bir koruyucu ba l k.
+74556	Koruyucu ba l k+ (siyah)	 akaklar  iyice koruyan, klasik sa  modelli bir koruyucu ba l k.
+74557	Koruyucu ba l k+ (k rm.)	 akaklar  iyice koruyan, klasik sa  modelli bir koruyucu ba l k.
+74558	Koruyucu ba l k+ (mavi)	 akaklar  iyice koruyan, klasik sa  modelli bir koruyucu ba l k.
+74559	Koruyucu ba l k+ (ye il)	 akaklar  iyice koruyan, klasik sa  modelli bir koruyucu ba l k.
+74751	Zarif Sa  Modeli (kahve)	Kelebekli i neyle yukar  toplanm   zarif sa  stili.
+74752	Zarif Sa  Modeli (siyah)	Kelebekli i neyle yukar  toplanm   zarif sa  stili.
+74753	Zarif sa  stili (mavi)	Kelebekli i neyle yukar  toplanm   zarif sa  stili.
+74754	Zarif Sa  Modeli (beyaz)	Kelebekli i neyle yukar  toplanm   zarif sa  stili.
+74755	Orta Uz. Sa  (kahve)	Zarif bir  aman sa  stili
+74756	Orta Uz. Sa  (siyah)	Zarif bir  aman sa  stili
+74757	Orta Uz. Sa  (sar )	Zarif bir  aman sa  stili
+74758	Orta Uz. Sa  (mor)	Zarif bir  aman sa  stili
+74759	Eski Sa  Stili (kahve)	Feminen tarzda katl  uzun sa  stili.
+74760	Eski Sa  Stili (sar   n)	Feminen tarzda katl  uzun sa  stili.
+74761	Eski sa  stili (mor)	Feminen tarzda katl  uzun sa  stili.
+74762	Eski sa  stili (k z l)	Feminen tarzda katl  uzun sa  stili.
+74763	 aman Afro (d)	Bayan  amana %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74764	 aman Afro (d)	Bayan  amana %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74765	 aman (d):  i ekli  apka	Bayan  amana %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s re 7 g n).
+74766	 aman (d):  i ekli  apka	Bayan  amana %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+74767	 aman (d): Kum Pe esi	Bayan  amanlar i in  ok de erli kuma tan yap lma bir pe e. (s resi 7 g n)
+74768	 aman (d):   l Pu isi	Bayan  amanlar i in k ymetli kuma tan yap lma bir   l pu isi. (s resi 7 g n)
+74769	 aman Sar    (d)	Bayan  amanlar i in  ok de erli kuma tan yap lma bir sar k. (s resi 7 g n)
+74770	Jack Pumpkin  aman (k)	Bayan  aman i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+75001	Modern sa  (k z l)	K z l sa l  ve bandanal  modern sa  stili.
+75002	Modern sa  (a  k)	A  k renk sa l  ve bandanal  modern sa  stili.
+75003	Modern sa  (mavi)	Mavi sa l  ve bandanal  modern sa  stili.
+75004	Modern sa  (kahve)	Kahverengi sa l  ve bandanal  modern sa  stili.
+75005	Bandana (kahve)	Bandana ile toplanm   da  n k k sa sa  stili.
+75006	Bandana (sar   n)	Bandana ile toplanm   da  n k k sa sa  stili.
+75007	Bandana (mavi)	Bandana ile toplanm   da  n k k sa sa  stili.
+75008	Bandana (ye il)	Bandana ile toplanm   da  n k k sa sa  stili.
+75009	Uzun sa  (siyah)	G rkemli siyah sa lar
+75010	Uzun sa  (k z l)	G rkemli k rm z  sa lar
+75011	Uzun sa  (kahve)	G rkemli kahverengi sa lar
+75012	Uzun sa  (ye il)	G rkemli ye il sa lar
+75013	Sava    Afro (d)	Bayan sava   ya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s re 7 g n).
+75014	Sava    Afro (d)	Bayan sava   ya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75015	Sava   (d): i ekli  apka	Bayan sava   ya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75016	Sava   (d): i ekli  apka	Bayan sava   ya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75017	Sava    (d): Kum Pe esi	Bayan sava   lar i in  ok de erli kuma tan yap lma bir pe e. (s resi 7 g n)
+75018	Sava    (d):   l Pu isi	Bayan sava   lar i in kaliteli kuma tan yap lma bir   l pu isi. (s resi 7 g n)
+75019	Sava    Sar    (d)	Bayan sava   lar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+75020	Jack Pumpkin Sava    (k)	Bayan sava    i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+75201	At kuyru u (kahve)	At kuyru u  eklinde toplanm   sa lar.
+75202	At kuyru u (ye il)	At kuyru u  eklinde toplanm   sa lar.
+75203	At kuyru u (mavi)	At kuyru u  eklinde toplanm   sa lar.
+75204	At kuyru u (gri)	At kuyru u  eklinde toplanm   sa lar.
+75205	Omuz Hiz. Sa  (k rm z )	Beyaz bandanal  kibar bir sa  stili.
+75206	Omuz Hiz. Sa  (kahve)	Ye il bandanal , kibar bir sa  stili.
+75207	Omuz hiz. sa /a  k	A  k renk bandanal  kibar bir sa  stili.
+75208	Omuz Hiz. Sa  (mor)	K rm z  bandanal  kibar bir sa  stili.
+75209	K sa sa  (k z l)	Tehditk r bir g r n m kazand ran sa  stili.
+75210	K sa sa  (mavi)	Tehditk r bir g r n m kazand ran sa  stili.
+75211	K sa sa  (siyah)	Tehditk r bir g r n m kazand ran sa  stili.
+75212	K sa sa  (sar   n)	Tehditk r bir g r n m kazand ran sa  stili.
+75213	Ninja Afro (e)	Erkek ninjaya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75214	Ninja Afro (e)	Erkek ninjaya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75215	Ninja(e):Samuray Mi feri	Erkek ninjaya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75216	Ninja(e):Samuray Mi feri	Erkek ninjaya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75217	Ninja Fesi (e)	Erkek ninjalar i in k rm z  bir ba l k. (s resi 7 g n)
+75218	Ninja Pu isi (e)	Erkek ninjalar    l f rt nalar ndan koruyan bir ba l k. (s resi 7 g n)
+75219	Ninja Kavu u (e)	Erkek ninjalar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+75220	Jack Pumpkin Ninja (e)	Ninja i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+75401	Spor Sa  Stili (gri)	Bayan suralara  zg  s rad    sa  stili.
+75402	Spor sa  stili (kahve)	Bayan suralara  zg  s rad    sa  stili.
+75403	Spor Sa  Stili (sar   n)	Bayan suralara  zg  s rad    sa  stili.
+75404	Spor sa  stili (ye il)	Bayan suralara  zg  s rad    sa  stili.
+75405	Karizmatik Sa  (beyaz)	U uk tarzda uzun beyaz sa lar.
+75406	Karizmatik Sa  (k z l)	U uk tarzda uzun k rm z  sa lar.
+75407	Karizmatik Sa  (siyah)	U uk bir g r n m kazand ran uzun siyah sa lar.
+75408	Karizmatik Sa  (mor)	U uk tarzda uzun mor sa lar.
+75409	Uzun  rg  (beyaz)	 rg l  sa  stili
+75410	Uzun  rg  (mor)	 rg l  sa  stili
+75411	Uzun  rg  (siyah)	 rg l  sa  stili
+75412	Uzun  rg  (kahve)	 rg l  sa  stili
+75413	Sura Afro (k)	Bayan suraya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75414	Sura Afro (k)	Bayan suraya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75415	Sura (k):  i ekli  apka	Bayan suraya %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75416	Sura (k):  i ekli  apka	Bayan suraya %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75417	Sura (k): Kum Pe esi	Bayan  uralar i in  ok de erli kuma tan yap lma bir pe e. (s resi 7 g n)
+75418	Sura (k):   l Pu isi	Bayan  uralar i in kaliteli kuma tan yap lma bir   l pu isi. (s resi 7 g n)
+75419	Sura Sar    (k)	Bayan  uralar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+75420	Jack Pumpkin Sura (k)	Bayan sura i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+75601	G s. Sa  Stili (kahve)	 amana asil bir g r n m kazand ran modern kesim.
+75602	Zarif sa  stili (siyah)	 amana asil bir g r n m kazand ran modern kesim.
+75603	Zarif sa  stili (mavi)	 amana asil bir g r n m kazand ran modern kesim.
+75604	Zarif sa  stili (a  k)	 amana asil bir g r n m kazand ran modern kesim.
+75605	Orta Uz. Sa  (kahve)	D z kahverengi sa .
+75606	Orta Uz. Sa (siyah)	D z siyah sa .
+75607	Orta Uz. Sa  (a  k)	D z sar  sa .
+75608	Orta Uz. Sa (mor)	D z mor sa .
+75609	Eski sa  stili (kahve)	Eski sava    sa  stili. Kahverengi sa lar  rg   eklinde toplanm  t r.
+75610	Eski sa  stili (a  k)	Eski sava    sa  stili. A  k renk sa lar  rg   eklinde toplanm  t r.
+75611	Eski sa  stili (mor)	Eski sava    sa  stili. Mor sa lar  rg   eklinde toplanm  t r.
+75612	Eski sa  stili (k z l)	Eski sava    sa  stili. K z l sa lar  rg   eklinde toplanm  t r.
+75613	 aman Afro (e)	Erkek  amana %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75614	 aman Afro (e)	Erkek  amana %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75615	 aman(e):Samuray Mi feri	Erkek  amana %1'lik HP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75616	 aman(e):Samuray Mi feri	Erkek  amana %1'lik SP bonusu kazand r r. Mevcut sa  stilinin yerini al r (s resi 7 g n).
+75617	 aman Fesi (e)	Erkek  amanlar i in k rm z  bir ba l k. (s resi 7 g n)
+75618	 aman Pu isi (e)	Erkek  amanlar    l f rt nalar ndan koruyan bir ba l k. (s resi 7 g n).
+75619	 aman Kavu u (e)	Erkek  amanlar i in k ymetli kuma tan yap lma bir ba l k. (s resi 7 g n)
+75620	Jack Pumpkin  aman (e)	 aman i in balkaba    eklinde bir maske.  znitelik ve s re rastgele belirlenir. Mevcut olan sa  stillerinin yerini al r.
+76001	Stat  S f rlama Ka  d 	Bu nesneyi kullanman, stat  puanlar n  yeniden da  tma olana   sa lar. B ylece karakterini ba ka bir y nde geli tirebilirsin. Ticareti yok.
+76002	K   len Kafa	K   len  eytan Kafas   eytan Katakombu'nun 3. kat n n m hr n  a ar. Ticareti yok.
+76007	Cesaret Pelerini	T m yarat klar n kendine  eken renkli bir pelerin. Sava   lar bununla bir zamanlar cesaretlerini kan tlard . Ticareti yok.
+76016	Kutsama Par  meni	Geli tirme ba ar s z oldu unda e yan n yok olma riskini ortadan kald r r. Bu durumda sadece kalitesi 1 puan d  er. Ticareti yok.
+76023	Ye il Efsun	Nesnelerinden birinin bonuslar n  siler ve yenilerini ekler. Yaln zca 40. seviye ve alt ndaki silahlara ve z rhlara uygulanabilir. Seviye sand   ndan bir e yad r, ticareti yok.
+76025	R zgar n Ayakkab lar 	Bu esya ile Ochao Tapinagi'nin zindaniyla y zlesebilirsin.
+79501	Ok  antas 	Seni 24 saat boyunca sonsuz say da okla destekleyen bir  anta. Hasar uzun menzilli at  larda d  mez.
+79502	Ok  antas 	Seni 7 g n boyunca sonsuz say da okla destekleyen bir  anta. Hasar uzun menzilli at  larda d  mez.
+79503	Ok  antas 	Seni sava ta sonsuz say da okla destekleyen bir  anta. Hasar uzun menzilli at  larda d  mez.
+79504	Ok  antas 	Seni sava ta sonsuz say da okla destekleyen bir  anta. Hasar uzun menzilli at  larda d  mez.
+85001	Hakim Ku a   (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85002	Hakim Ku a   (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85003	Hakim Ku a   (asil)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85004	Hakim Ku a  (ki iye  z.)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85005	Usta Ku a   (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85006	Usta Ku a   (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85007	Usta Ku a   (asil)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85008	Usta Ku a   (ki iye  z.)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85011	Bey Ku a   (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85012	Bey Ku a   (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85013	Bey Ku a   (soylu)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85014	Bey Ku a   (ki iye  zel)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85015	Kral Ku a   (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85016	Kral Ku a   (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85017	Kral Ku a   (soylu)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85018	Kral Ku a   (ki iye  ze)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85071	Chou Band  (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85072	Chou Band  (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85073	Chou Band  (asil)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85074	Chou Band  (ki iye  zel)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85075	Mao Band  (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85076	Mao Band  (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85077	Mao Band  (asil)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85078	Mao Band  (ki iye  zel)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+85079	Yu Band  (basit)	Bu ku ak kulland   n silah veya z rha ait bonusun %1'ini emer.
+85080	Yu Band  (zarif)	Bu ku ak kulland   n silah veya z rha ait bonusun %5'ini emer.
+85081	Yu Band  (asil)	Bu ku ak kulland   n silah veya z rha ait bonusun %10'unu emer.
+85082	Yu Band  (ki iye  zel)	Bu ku ak kulland   n silah veya z rha ait bonusun %11~25'ini emer.
+90000	D n   m Belgesi	Omuz ku a  ndaki bonuslar  silmek i in d n   m belgesini kullan.
+10951	Beyaz Yelken	Bu esya Gemi Savunma zindaniyla savasmak i in kullanilir.
+10954	Ates Kristali	Bu Kristal, bir NPC'den bir Ates Tilsimi satin almak veya y kseltmek i in kullanilir.
+10955	Buz Kristali	Bu Kristal, bir NPC'den bir Buz Tilsimi satin almak veya y kseltmek i in kullanilir.
+10956	Karanlik Kristali	Bu Kristal, bir NPC'den bir Karanlik Tilsimi satin almak veya y kseltmek i in kullanilir.
+10957	Simsek Kristali	Bu Kristal, bir NPC'den bir Simsek Tilsimi satin almak veya y kseltmek i in kullanilir.
+10958	R zgar Kristali	Bu Kristal, bir NPC'den bir R zgar Tilsimi satin almak veya y kseltmek i in kullanilir.
+10959	Toprak Kristali	Bu Kristal, bir NPC'den bir Toprak Tilsimi satin almak veya y kseltmek i in kullanilir.
+10960	1. Sira Altin Alasimli Sandik	 d l 1. Siniflandirilmis Altin Lig.
+10961	1. Sira G m s Alasimli Sandik	 d l 1. Siniflandirilmis G m s Lig.
+10962	1. Sira Bronz Alasimli Sandik	 d l 1. Siniflandirilmis Bronz Lig.
+10963	2. Sira Altin Alasimli Sandik	2. Siniflandirilmis Altin Lig'i  d llendirin.
+10964	2. Sira G m s Alasimli Sandik	2. Siniflandirilmis G m s Lig'i  d llendirin.
+10965	2. Sira Bronz Alasimli Sandik	2. Siniflandirilmis Bronz Lig'i  d llendirin.
+10966	3. Sira Altin Alasimli Sandik	3. Siniflandirilmis Altin Lig'i  d llendirin.
+10967	3. Sira G m s Alasimli Sandik	3. Siniflandirilmis G m s Lig'i  d llendirin.
+10968	3. Sira Bronz Alasimli Sandik	3. Siniflandirilmis Bronz Lig'i  d llendirin.
+18901	Kirmizi Alev Tasi (Kalici)	Kemerinizin bonuslarini arttirir. S re: kalici
+27798	Tatli su karidesi	B y k baliklari yakalamak i in yem.	Nadir bir baligin yakalanma sansini %20 arttirir.
+27799	Kil ik	Bir Baligin Kemikleri
+27800	Yapistirici	Hafif ve ucuz bir yem	Nadir bir baligin yakalanma sansini %5 arttirir.
+27801	Solucan	Baliklari  eken pop ler yem.	Nadir bir baligin yakalanma sansini %8 arttirir.
+27802	Minik Balik	B y k baliklari  eken yem.	Nadir bir baligin yakalanma sansini %12 arttirir.
+27863	Izgara Zander	Asagidakileri almak i in bu baligi yiyin:
+27864	Izgara Mandalina Baligi	Asagidakileri almak i in bu baligi yiyin:
+27865	Izgara B y k Zander	Asagidakileri almak i in bu baligi yiyin:
+27866	Izgara Sazan	Asagidakileri almak i in bu baligi yiyin:
+27867	Izgara Somon	Asagidakileri almak i in bu baligi yiyin:
+27868	Izgara Ot Sazani	Asagidakileri almak i in bu baligi yiyin:
+27869	Izgara Dere Alabaligi	Asagidakileri almak i in bu baligi yiyin:
+27870	Izgara yilan baligi	Asagidakileri almak i in bu baligi yiyin:
+27871	Izgara G kkusagi Alabaligi	Asagidakileri almak i in bu baligi yiyin:
+27872	Izgara nehir alabaligi	Asagidakileri almak i in bu baligi yiyin:
+27873	Izgara kizilcik	Asagidakileri almak i in bu baligi yiyin:
+27874	Izgara levrek	Asagidakileri almak i in bu baligi yiyin:
+27875	Izgara ten i	Asagidakileri almak i in bu baligi yiyin:
+27876	Izgara yayin baligi	Asagidakileri almak i in bu baligi yiyin:
+27877	Izgara Loach	Asagidakileri almak i in bu baligi yiyin:
+27878	Izgara Lotus Baligi	Asagidakileri almak i in bu baligi yiyin:
+27879	Izgara tatli balik	Asagidakileri almak i in bu baligi yiyin:
+27880	Izgara kokusu	Asagidakileri almak i in bu baligi yiyin:
+27881	Izgara seri	Asagidakileri almak i in bu baligi yiyin:
+27882	Izgara Aynali Sazan	Asagidakileri almak i in bu baligi yiyin:
+27883	Izgara Altin balik	Asagidakileri almak i in bu baligi yiyin:
+27884	Izgara yilanbasi	Asagidakileri almak i in bu baligi yiyin:
+27885	Izgara Skygazer	Asagidakileri almak i in bu baligi yiyin:
+27886	Izgara Kirmizi Kral Yenge 	Asagidakileri almak i in bu baligi yiyin:
+27887	Izgara Yabby	Asagidakileri almak i in bu baligi yiyin:
+30002	Kara egrelti otu	Chaegirab'in ilgisini  ekebilir.
+30003	Chaegirab y z g 	Chaegirab'in ilgisini  ekebilir.
+30004	Metin kristali	Chaegirab'in ilgisini  ekebilir.
+30005	Saflastirilmis  ekirdek	Chaegirab'in ilgisini  ekebilir.
+30006	Ork Disi	Chaegirab'in ilgisini  ekebilir..
+30015	Seytan Hatirasi	Chaegirab'in ilgisini  ekebilir.
+30047	Lanet Kitabi	Chaegirab'in ilgisini  ekebilir.
+30050	Buz Topu	Chaegirab'in ilgisini  ekebilir.
+30094	Yang  antasi K   k	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 5.000 ile 15.000 yang arasinda bulabilirsiniz.
+30095	Yang  antasi Orta	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 10.000 ile 30.000 yang arasinda bulabilirsiniz.
+30096	Yang  antasi B y k	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 15.000 ile 45.000 yang arasinda bulabilirsiniz.
+30097	Yang  antasi K   k	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 5.000 ile 15.000 yang arasinda bulabilirsiniz.
+30098	Yang  antasi Orta	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 10.000 ile 30.000 yang arasinda bulabilirsiniz.
+30099	Yang  antasi B y k	Yang'i bu  antadan bulabilirsiniz, A mak i in sag tiklayin. 15.000 ile 45.000 yang arasinda bulabilirsiniz.
+30165	Zelkova Dali	Chaegirab'in ilgisini  ekebilir.
+30166	Tugyis Tabelasi	Chaegirab'in ilgisini  ekebilir.
+30167	Kirmizi Hayalet Agaci Dali	Chaegirab'in ilgisini  ekebilir.
+30168	Liderin Notlari	Chaegirab'in ilgisini  ekebilir.
+30251	K t l k M cevheri	Chaegirab'in ilgisini  ekebilir.
+30252	Bilgelik M cevheri	Chaegirab'in ilgisini  ekebilir.
+30255	Ates Yaziti	Bu esya, Ates Tilsimi'ni y kseltmek i in kullanilir.
+30256	Simsek Yaziti	Bu esya, Simsek Tilsimi'ni y kseltmek i in kullanilir.
+30257	Toprak Yaziti	Bu esya, Toprak Tilsimi'ni y kseltmek i in kullanilir.
+30258	Buz Yaziti	Bu esya, Buz Tilsimi'ni y kseltmek i in kullanilir.
+30259	R zgar Yaziti	Bu esya, R zgar Tilsimi'ni y kseltmek i in kullanilir.
+30260	Karanlik Yaziti	Bu esya, Karanlik Tilsimi'ni y kseltmek i in kullanilir.
+30271	Metin Kayasi Par asi	Bu  ge, ekipman par alarini y kseltmek i in kullanilir.
+30273	Mistik sertifika	Bu  ge, ekipman par alarini epiklestirmek i in kullanilir.
+30274	Antika Sertifika	Bu  ge, ekipman par alarini epiklestirmek i in kullanilir.
+30275	Epik Sertifika	Bu  ge, ekipman par alarini epiklestirmek i in kullanilir.
+30276	Efsanevi Sertifika	Bu  ge, ekipman par alarini epiklestirmek i in kullanilir.
+30277	Tanrilar Kristali	100 birim Tanrilar Kristali ile 1 Tanrilar Kristali+ takas edebilirsiniz.	Onlari d n st rmek i in sag tiklayin.
+30278	Tanrilar Kristali+	Bu  ge, gelistirmeler, is ilik ve  esitli npc satin alimlari i in kullanilir.
+30279	G nes Kristali	100 birim G nes Kristali ile 1 G nes Kristali+ takas edebilirsiniz.	Onlari d n st rmek i in sag tiklayin.
+30280	G nes Kristali+	Bu  ge, gelistirmeler, is ilik ve  esitli npc satin alimlari i in kullanilir.
+30282	Razador Boynuzu	Bu  ge, ekipman par alarini y kseltmek i in kullanilir.
+30283	Nemere Boynuzu	Bu  ge, ekipman par alarini y kseltmek i in kullanilir.
+30284	Ruhsuz Tas	Bu  ge, NPC'den iyilestirmeler ve  esitli satin almalar i in kullanilir.
+30516	Antika Apolet	Ekipman iyilestirme i in  ge.
+30524	Alev Tasi	Ekipman iyilestirme i in  ge.
+30525	Buz Alevi Tasi	Ekipman iyilestirme i in  ge.
+30587	Mor Kumas	Ekipman iyilestirme i in  ge.
+30602	Mavi boya	Ekipman iyilestirme i in  ge.
+30610	Mitril	Ekipman iyilestirme i in  ge.
+30612	Saglam Ipler	Ekipman iyilestirme i in  ge.
+30614	Siyah Boya	Ekipman iyilestirme i in  ge.
+30615	Beyaz Boya	Ekipman iyilestirme i in  ge.
+30623	Bal ik sisesi bos	Bu esya Slime zindaninda kullanilir, bir kez d st g nde slime  zerine s r klenmelidir.
+30624	Bal ik sisesi dolu	Bu esya Slime zindaninda kullanilir, bir kez d st g nde  akmaktasina s r klenmelidir.
+30625	Menhir bal ik par asi	Bu esya Slime zindaniyla savasmak i in kullanilir.
+30798	Piramit Zindani Bileti	Bu esya ile piramitlerin zindaniyla y zlesebilirsiniz.
+30800	Pars men par asi 1	Bu esya Piramit Zindaninin ikinci katinin  stesinden gelmek i in kullanilir.
+30801	Pars men par asi 2	Bu esya Piramit Zindaninin ikinci katinin  stesinden gelmek i in kullanilir.
+30802	Pars men par asi 3	Bu esya Piramit Zindaninin ikinci katinin  stesinden gelmek i in kullanilir.
+30803	Pars men par asi 4	Bu esya Piramit Zindaninin ikinci katinin  stesinden gelmek i in kullanilir.
+30804	Ada ayi Bandi	Bu esya Piramit Zindaninda kullanilir.
+30805	Antik Anahtar	Bu esya Piramit Zindaninda kullanilir.
+30806	Antik Sandik	Bu esya Piramit Zindaninda kullanilir.
+39015	Demirci Ta  	Bu tasla demirciden bir esya satin almak m mk nd r.
+39048	Savas i Sandigi	Savas ilar i in faydali kitaplar i eren paket.
+39050	Ninja Sandigi	Ninja i in faydali kitaplar i eren paket.
+39052	Sura Sandigi	Sura i in faydali kitaplar i eren paket.
+39054	Saman Sandigi	Saman i in faydali kitaplar i eren paket.
+39065	Yang (20kk)	20kk Yang i erir.
+39066	Yang (40kk)	40kk Yang i erir.
+39067	Yang (70kk)	70kk Yang i erir.
+39068	Yang (15kk)	15kk Yang i erir.
+39069	Yang (10kk)	10kk Yang i erir.
+39070	Yang (30kk)	30kk Yang i erir.
+39071	Yang (5kk)	5kk Yang i erir.
+39072	Yang (25kk)	25kk Yang i erir.
+39073	Yang (35kk)	35kk Yang i erir.
+39074	Yang (55kk)	55kk Yang i erir.
+39075	Yang (50kk)	50kk Yang i erir.
+39076	Yang (100kk)	100kk Yang i erir.
+39077	Yang (150kk)	150kk Yang i erir.
+39079	Yang (80kk)	80kk Yang i erir.
+39080	Yang (130kk)	130kk Yang i erir.
+39081	Yang (230kk)	230kk Yang i erir.
+39082	Yang (120kk)	120kk Yang i erir.
+39083	Yang (220kk)	220kk Yang i erir.
+40004	Eek'in Y z g 	Size  zel bonuslar veren gizli malzemelerle yapilmis bir Y z k.
+40095	Karanlik Zodyak Yelpazesi	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40096	Karanlik Zodyak  ani	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40097	Karanlik Zodyak Oragi	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40098	Karanlik Zodyak Yayi	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40099	Karanlik Zodyak Bi agi	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40100	Karanlik Zodyak Kilici	Battle Pass magazasindan satin alinabilen bir silah g r n m .
+40143	Arastirmaci Iksiri +	Bu iksir, esyalarin kalitesini arttirir ve bekleme s resini sifirlar.
+40144	Arastirmaci Iksiri	Bu iksir, bekleme s resini sifirlar.
+40192	Karanlik Zodyak Kost mleri (f)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40193	Karanlik Zodyak Kost mleri (m)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40194	Karanlik Zodyak Kost mleri (f)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40195	Karanlik Zodyak Kost mleri (m)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40196	Karanlik Zodyak Kost mleri (m)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40197	Karanlik Zodyak Kost mleri (f)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40198	Karanlik Zodyak Kost mleri (m)	Silahlarla eslesen efektlere sahip zodyak kost m .
+40199	Karanlik Zodyak Kost mleri (f)	Silahlarla eslesen efektlere sahip zodyak kost m .
+45242	Siyah  rg ler + (m)	Zodyak Kost m ne uyan  zel  rg ler.
+45243	Siyah  rg ler + (f)	Zodyak Kost m ne uyan  zel  rg ler.
+46003	Hilal Savas isi (f)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46004	Hilal Savas isi (m)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46005	Azrail'in Zirhi (f)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46006	Azrail'in Zirhi (m)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46007	  l Savas isi (f)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46008	  l Savas isi (m)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46303	Azrail'in Migferi (f)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46304	Azrail'in Migferi (m)	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46307	Salsa Topuzu	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46308	Mini Mohawk	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46601	Yirtik Dis Yelpazesi	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46602	Yirtik Dis  ani	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46603	Aquarus Yelpazesi	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46604	Aquarus  ani	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46605	Seker  ani	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+46606	Buzlu Fan	Bu  ge yalnizca destek samani tarafindan giyilebilir.
+50063	Razador Sandigi	Bu sandik Kizil Ejderha Kalesinden alindi. Ger ekten muhtesem bir hazine i eriyor.
+50064	Nemere Sandigi	Bu sandik Nemere'nin G zetleme Kulesi'nden  ikarildi. Ger ekten muhtesem bir hazine i eriyor.
+50065	Buz Cadisi Sandigi	Bu sandik degerli bir sey i eriyor.
+50066	Degerli Sandik	Bu sandik, ekipmaniniz i in degerli esyalar i erir. Kost mler i in kanat kost mleri ve diger faydali esyalari i erebilir.
+50067	G nl k Hediye Sandigi	Bu Sandik bazi harika  d ller i eriyor.
+50069	Lord Hayalet Aga  Sandigi	Bu sandik degerli bir sey i eriyor.
+50072	Ork Labirent Sandigi	Bu sandik degerli bir sey i eriyor.
+50074	Barones Sandigi	Bu sandik degerli bir sey i eriyor.
+50075	Bal ik Krali e Sandigi	Bu sandik degerli bir sey i eriyor.
+50081	B y k Hayalet Aga  Sandigi	Bu sandik degerli bir sey i eriyor.
+50098	Beran-Setaou'nun Sandigi	Bu sandik S rg n Magarasi'ndan  ikarildi. Ger ekten muhtesem bir hazine i eriyor.
+50099	Elemental Sandik	Bu sandik, tilsimlari y kseltmek i in gereken  geleri i erir.
+50100	Haru Sandigi	Bu sandik degerli bir sey i eriyor.
+50101	Eien Sandigi	Bu sandik degerli bir sey i eriyor.
+50102	Buncho Sandigi	Bu sandik degerli bir sey i eriyor.
+50138	Mahon Sandigi	Bu sandik degerli bir sey i eriyor.
+50139	Bo Sandigi	Bu sandik degerli bir sey i eriyor.
+50140	Goo-Pae Sandigi	Bu sandik degerli bir sey i eriyor.
+50141	Chuong Sandigi	Bu sandik degerli bir sey i eriyor.
+50142	Acimasiz Komutan Sandigi	 Bu sandik degerli bir sey i eriyor.
+50143	Beceri Sandigi	Beceri Sandigi, standart beceriler i in kitaplar i erir.
+50203	Hydra'nin Sandigi	Bu sandik degerli bir sey i eriyor.
+50204	Ochao'nun Sandigi	Bu sandik degerli bir sey i eriyor.
+50254	Karanligin Sandigi	Agir sandik, Karanlik Ulus'un unutulduguna inanilan zenginliklerini gizler.
+50285	En-Tai'nin sandigi	En-Tai'nin sandigi degerli  d ller i eriyor.
+50333	Ilahi G   Kitabi	Ilahi g c  gelistirin. Bu kitap sayesinde standart Ilahi G   becerisini gelistirebilirsiniz.
+50334	Altin Ustasi Kitabi	Ilahi g c  gelistirin. Bu kitap sayesinde standart Yang Toplama yetenegini gelistirebilirsiniz.
+50335	Canavar Avcisi Kitabi	Ilahi g c  gelistirin. Bu kitap sayesinde standart Canavar Avcisi becerisini gelistirebilirsiniz.
+50336	Yasam G c  Kitabi	Ilahi g c  gelistirin. Bu kitap sayesinde standart Yasam G c  yetenegini gelistirebilirsiniz.
+50525	M kemmel Ruh Tasi	Bu Kusursuz Tas, becerilerinizi yalnizca bir tas kullanarak Grand Master seviyesinden Perfect Master seviyesine y kseltmenizi saglar. Kullanimdan sonra tas kaybolur.
+50526	Ruh Takviyesi Tasi	Bu efsanevi tas, g  lendirme becerilerinin Grandmaster becerilerini artirmaniza izin verir. Kullanimdan sonra tas kaybolur.
+50527	Ruh Taslarinin Karsi Saldirisi	Bu efsanevi tas, karsi saldiri becerilerinin Grandmaster becerilerini artirmaniza olanak tanir. Kullanimdan sonra tas kaybolur.
+50634	Ruh kristali	Ruh kadar saf bir kristal. Aksesuar olarak takilabilir.
+50635	Yakut	Essiz bir kaplamaya sahip kirmizi degerli tas. Aksesuar olarak takilabilir.
+50636	Grena	Essiz bir kaplamaya sahip turuncu degerli tas. Aksesuar olarak takilabilir.
+50637	Z mr t	Essiz bir kaplamaya sahip yesil degerli tas. Aksesuar olarak takilabilir.
+50638	Safir	Essiz bir kaplamaya sahip mavi degerli tas. Aksesuar olarak takilabilir.
+50639	Turmalin	Bu b y l  degerli tas, g kkusaginin t m renkleri ile isildiyor. Aksesuar olarak takilabilir.
+50640	Kyanit	Essiz bir kesime sahip mavi ve kirmizi bir degerli tas. Aksesuar olarak takilabilir. S re: sonsuz
+50672	Kehribar (Kalici)	Bal veya altin tonlarinda parlayan, fosillesmis re ineden yapilmis berrak bir m cevher. S re: Kalici
+50673	Fosil Ahsap (Kalici)	M cevher esyalarina stabilite saglayabilen degerli bir aga . S re: Kalici
+50674	Bakir (Kalici)	M cevher ve madeni para yapmak i in kullanilabilen d v lebilir degerli bir metal. Bronz  retimi i in de gereklidir. S re: Kalici
+50675	G m s (Kalici)	M cevher yapiminda kullanilan parlak degerli metal. G m s aksesuarlara islenebilir. S re: Kalici
+50676	Altin (Kalici)	M cevher yapiminda kullanilan altin metal. Altin aksesuarlara d n st r lebilir. S re: Kalici
+50677	Yesim (Kalici)	5000 yili askin s redir kullanilan degerli bir mineral. Aksesuarlara ve m cevherlere islenebilir. S re: Kalici
+50678	Abanoz (Kalici)	Bu siyah, sert ahsap, t m ahsaplarin en degerlilerinden biridir. Aksesuarlara ve m cevherlere islenebilir. S re: Kalici
+50679	Inci (Kalici)	M cevher yapiminda kullanilir. Aksesuarlara ve m cevherlere islenebilir. S re: Kalici
+50680	Beyaz Altin (Kalici)	Genellikle m cevherat i in kullanilan sert, beyaz bir altin alasimi. S re: Kalici
+50681	Kristal (Kalici)	Farkli renklerde bulunabilen kristal kuvarstan yapilmis sert bir tas. Genellikle m cevherat i in kullanilir. S re: Kalici
+50682	Ametist (Kalici)	Morun farkli tonlarinda bulunabilen pop ler bir kuvars. Genellikle m cevher yapiminda kullanilir. S re: Kalici
+50683	Cennetin G zyasi (Kalici)	G kten kristalize yagmur. M cevher yapiminda kullanilabilir. S re: Kalici
+50684	Ruh Kristali (Kalici)	Ruh kadar saf bir kristal. Aksesuar olarak takilabilir. S re: Kalici
+50685	Yakut (Kalici)	Essiz bir kaplamaya sahip kirmizi degerli tas. Aksesuar olarak takilabilir. S re: Kalici
+50686	Grena (Kalici)	Essiz bir kaplamaya sahip turuncu degerli tas. Aksesuar olarak takilabilir. S re: Kalici
+50687	Z mr t (Kalici)	Essiz bir kaplamaya sahip yesil degerli tas. Aksesuar olarak takilabilir. S re: Kalici
+50688	Safir (Kalici)	Essiz bir kaplamaya sahip mavi degerli tas. Aksesuar olarak takilabilir. S re: Kalici
+50689	Turmalin (Kalici)	Bu b y l  degerli tas, g kkusaginin t m renkleri ile isildiyor. Aksesuar olarak takilabilir. S re: Kalici
+50690	Kyanit (Kalici)	Essiz bir kesime sahip mavi ve kirmizi bir degerli tas. Aksesuar olarak takilabilir. S re: Kalici
+53025	Leopar Yavrusu	Bu m h r, tatli bebek leoparinizi  agirabilirsiniz.
+53026	Leonidas M hr (15d)	Bu m h r ile 15 g nl k Leonidas aslan yavrunuzu  agirabilirsiniz.
+53027	Leonidas M hr (30d)	Bu m h r ile 30 g nl k Leonidas aslan yavrunuzu  agirabilirsiniz.
+53028	Leonidas M hr (Kalici)	Bu m h r ile Kalici Leonidas'i  agirabilirsiniz.
+53029	Nogai M hr  (15d)	Bu m h r ile 15 g nl k bir Nogaj  agirabilirsiniz.
+53030	Nogai M hr  (30d)	Bu m h r ile 30 g nl k bir Nogaj  agirabilirsiniz.
+53031	Nogai M hr  (Kalici)	Bu m h r Kalici bir Nogaj  agirabilirsiniz.
+53248	Donnie (15d)	Bu m h rle, kabus tavsaniniz Donnie'yi  agirabilirsiniz
+53249	Donnie (30d)	Bu m h rle, kabus tavsaniniz Donnie'yi  agirabilirsiniz
+53250	Donnie (Kalici)	Bu m h rle, kabus tavsaniniz Donnie'yi  agirabilirsiniz
+53251	Frank (15d)	Bu m h rle, kabus tavsaniniz Frank'i  agirabilirsiniz
+53252	Frank (30d)	Bu m h rle, kabus tavsaniniz Frank'i  agirabilirsiniz
+53253	Frank (Kalici)	Bu m h rle, kabus tavsaniniz Frank'i  agirabilirsiniz
+53263	Griffy	Bu m h r Griffy'yi  agirir, evcil hayvaninizi  agirir.
+53264	Nogai	Bu m h r Nogai'yi  agiriyor, evcil hayvaninizi  agiriyor.
+53282	Her Seyi G ren Alev Kedisi	Bu m h rle her seyi g ren ates kedisini  agirabilirsiniz.
+53283	Her seyi g ren Frost Kedisi	Bu m h rle her seyi g ren bir buz kedisi  agirabilirsiniz.
+55002	Nakliye Kutusu	Evcil hayvaninizi tasiyiciya yerlestirerek onu pazarlanabilir hale getireceksiniz.
+55003	Gen  Pet Kitabi	Bu kitap evcil hayvan gelisimi i in kullanilir.
+55004	Vahsi Pet Kitabi	Bu kitap evcil hayvan gelisimi i in kullanilir.
+55005	Kahraman Pet Kitabi	Bu kitap evcil hayvan gelisimi i in kullanilir.
+55014	Kritik Hasar Kitabi (PvM)	Bu beceriyi  grendikten sonra pet, PVM'de verilen kritik hasari arttirir.
+55015	Metin Avcisi Kitabi	Bu beceriyi  grendikten sonra pet, Metin Taslarina verilen hasari arttirir.
+55016	Patron Avcisi Kitabi	Bu beceriyi  grendikten sonra pet, Patronlara verilen hasari arttirir.
+55017	EXP Kitabi	 Bu beceriyi  grendikten sonra pet, XP bonus degerini arttirir.
+55018	Yang D s rme Kitabi	Bu beceriyi  grendikten sonra pet, Yang'i d s rme sansini arttirir.
+55019	Berserker	Bu beceriyi  grendikten sonra pet, b y l /yakin d v s hasarini arttirir.
+55020	V cut Saldiri Blok Kitabi	Bu beceriyi  grendikten sonra pet, bedensel saldirilari engelleme sansini artirir.
+55021	Yansitma Kitabi	Bu beceriyi  grendikten sonra pet, oyuncunun aldigi hasari arttirir ve bu da rakibe yansiyacaktir.
+56001	Y kseltme Iksiri (%5)	Bu iksir, bir  geyi y kseltme sansini %5 artirir. Bu esya ayni zamanda demirciden esya satin almak i in de kullanilir.
+56002	Y kseltme Iksiri (10%)	Bu iksir, bir  geyi y kseltme sansini %10 artirir. Bu esya ayni zamanda demirciden esya satin almak i in de kullanilir
+56003	Y kseltme Iksiri (15%)	Bu iksir, bir  geyi y kseltme sansini %15 artirir.
+70058	G   Y z g  (15 G)	15 g n boyunca size  zel bonuslar veren gizli malzemelerle yapilmis bir Y z k.
+70059	G   Y z g  (30 G)	30 g n boyunca size  zel bonuslar veren gizli malzemelerle yapilmis bir Y z k.
+70060	G   Y z g  (Kalici)	Size kalici  zel bonuslar veren gizli malzemelerle yapilmis bir Y z k.
+70401	Kost m Efsun Kaldirici	Kost mlerinizden birindeki bonuslari kaldirin ve yenilerini ekleyin.
+70402	Cadi Kost m   zel (%5)	Kost mlerinizden birine  zel bir bonus (en fazla 2) ekleyin.
+70403	Cadi  zel Kost m  (%10)	Kost mlerinizden birine  zel bir bonus (en fazla 2) ekleyin.
+70404	 zel Bonusu Kaldir	Se tiginiz  zel bonuslardan birini kost mlerinizden kaldirir.
+70604	Dondurma Bonusu	Bu  geyi bonuslari olan bir ekipman  zerinde kullanmak, sans eseri se ilen bir bonusu dondurur..
+70605	Yeniden Dondurma Bonusu	Bu  ge, tesad fen se ilen donmus bonusu degistirmenizi saglar..
+70606	  z lme Bonusu	Bu  ge, donmus bonusu olan bir ekipmani   zmenizi saglar..
+70610	Savas Bileti Kuponu	Bu  ge, Savas pasosu magazasindan kost m satin almak i in kullanilir.
+70611	Savas Bileti	Bu  ge Savas pasosunu etkinlestirir.
+70612	Degerli Elmas	Bu  d ll  Elmas, bir NPC'den silah kaplamalari, zirh ve sa  satin almak i in kullanilir..
+70613	G zellik Iksiri	Bu G zellik Iksiri, bir NPC'den Pet ve Binek g r n mleri satin almak i in kullanilir..
+70614	G zellik Iksiri	Bu G zellik Iksiri, bir NPC'den Pet ve Binek g r n mleri satin almak i in kullanilir..
+71025	Demircinin Tasi	Bu tas ile demirciden demircinin kitabini satin alabilirsiniz..
+71085	Esyayi G  lendir	Esyalarinizdan birine 5 bonus ekleyin.
+71135	Hilal Y z g  (7G)	Hilal seklinde ustaca islenmis grav r i eren bir y z k.
+71136	G  l  Lolipop (7G)	Size  zel bonuslar veren gizli malzemelerle yapilmis bir lolipop.
+71148	Irade G c  Y z g  (30G)	Size  zel bonuslar veren gizli malzemelerle yapilmis bir Y z k.
+71153	Bilgelik Iksiri (1 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+71174	Razador Bileti	Razador Biletini gardiyana vererek Kizil Ejderha Kalesine girmek i in izin alacaksiniz..
+71175	Nemere Bileti	Nemere Biletini gardiyana vererek, Nemere G zetleme Kulesi'ne girmek i in izin alacaksiniz..
+71188	Sihirli Lolipop (15G)	Size  zel bonuslar veren gizli malzemelerle yapilmis bir lolipop.
+71203	Savas i Sandigi	Rastgele se ilmis 10 Beceri Kitabi i eren Savas i Paketi.
+71204	Ninja Sandigi	Rastgele se ilmis 10 Beceri Kitabi i eren Ninja Paketi.
+71205	Sura Sandigi	Rastgele se ilmis 10 Beceri Kitabi i eren Sura Paketi.
+71206	Saman Sandigi	Rastgele se ilmis 10 Beceri Kitabi i eren Saman Paketi.
+71229	Manu (30G)	M h r, 30 g nl k g  l  bir mamutu  agristiriyor.
+71231	Beyaz Aslan (30G)	Animals with white fur are very rare and many cultures worship them, believing that they carry remarkable powers.
+71233	Spektral At (30G)	This seal summons your gleaming mount.
+71234	Sihirli Lolipop (30G)	Size  zel bonuslar veren gizli malzemelerle yapilmis bir lolipop.
+71235	Sihirli Lolipop (Kalici)	Size  zel bonuslar veren gizli malzemelerle yapilmis bir lolipop.
+71252	Drake	Bu Binek sadece BattlePass'te bulunabilir.
+71253	Manu (Kalici)	M h r, g  l  ve kalici bir mamutu  agristiriyor.
+71254	Beyaz Aslan (Kalici)	Beyaz k rkl  hayvanlar  ok nadirdir ve bir ok k lt r, olagan st  g  ler tasidiklarina inanarak onlara tapar..
+71255	Spektral At (Kalici)	Bu m h r parildayan bineginizi  agiriyor.
+72001	Deneyim Y z g  (1 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72002	Deneyim Y z g  (3 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72006	Hirsiz Eldiveni (1 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72013	Balik Tutma Kitabi (30Dakika)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72014	Balik Tutma Kitabi (1 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72015	Balik Tutma Kitabi (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72044	Liderin Kitabi (1 saat)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+72726	G nes  z t  (E)	HP'nizi otomatik olarak doldurur. Sonsuz HP i erir.
+72730	Ay  z t  (E)	SP'nizi otomatik olarak doldurur. Sonsuz SP i erir.
+80019	Sari ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80022	Kirmizi ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80023	A ik mavi ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80024	Yesil ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80025	Mor ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80026	Turuncu ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+80027	Mavi ince kumas	Bu malzemeden bir Omuz Kanat'i yapilir.
+84999	Kost m Efsun Kaldirici	Kusak kost mlerinizden birindeki bonuslari kaldirin ve yenilerini uygulayin. Degiskenler rastgeledir ve Kusak derecesine baglidir.
+85019	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85020	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85021	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85022	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85023	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85024	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85025	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85026	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85027	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85028	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85029	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85030	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85031	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85032	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85033	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85034	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85035	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85036	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85037	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85038	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85039	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85040	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85041	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85042	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85043	Kral Kusagi Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85044	Kral Kusagi Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85045	Kral Kusagi Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85046	Kral Kusagi Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85047	Yu Bandi (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85048	Yu Bandi (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85049	Yu Bandi (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85050	Yu Bandi (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85051	Mao bandi (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85052	Mao bandi (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85053	Mao bandi (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85054	Mao bandi (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85055	Ger ek i kanat Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85056	Ger ek i kanat Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85057	Ger ek i kanat Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85058	Ger ek i kanat Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85059	Prensip kanat Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85060	Prensip kanat Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85061	Prensip kanat Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85062	Prensip kanat Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85063	Usta kusak Kost m  (basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85064	Usta kusak Kost m  (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85065	Usta kusak Kost m  (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85066	Usta kusak Kost m  (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85067	Chou Bandi(basit)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85068	Chou Bandi (zarif)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85069	Chou Bandi (asil)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85070	Chou Bandi (kisiye  z.)	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+85083	Seytan Kanatlari	Bu  ge, karakterinize ek bonuslar saglayan bir kusak kost md r.
+86050	Tilsim Arttirma Kagidi	Tilsiminiza yeni bir bonus ekler (en fazla 4 bonusa kadar).
+86051	Tilsim Efsun Nesnesi	Tilsimdaki bonuslari kaldirir ve yenilerini uygular. Oranlar degiskenlik g sterir.
+86052	Tilsim Kutsama K resi	Efsanevi k re, Bir tilsimin zaten 4  zelligi varsa, bu son bonusu eklemenizi saglar
+86053	Sari Inci Par asi	10 Sari Inci Par asini 1 Sari Inci ile degistirebilirsiniz. Degistirmek i in sag tiklayin.
+86054	Yesil Inci Par asi	1 Yesil Inci i in 10 Yesil Inci Par asi degistirebilirsiniz. Degistirmek i in sag tiklayin.
+86055	Mor Inci Par asi	10 Mor Inci Par asini 1 Mor Inci ile degistirebilirsiniz. Degistirmek i in sag tiklayin.
+86056	Sari Inci	Evcil hayvani gelistirmek i in kullanilan  ok nadir bir inci.
+86057	Yesil Inci	Evcil hayvani gelistirmek i in kullanilan  ok nadir bir inci.
+86058	Mor Inci	Evcil hayvani gelistirmek i in kullanilan  ok nadir bir inci.
+86060	Zodyak Efsun Nesnesi	Zodiac silahiniz ve zirhinizdan bonuslari kaldirir ve yenilerini uygular.
+86062	Simya Efsun Nesnesi	Ejderha taslarinizdan birindeki bonuslari kaldirin ve yenilerini uygulayin.
+86066	B y l  Tas Par asi	Bu esya ile demirciye giderek B y l  Tas satin alabilirsiniz.
+86067	Kaba Tilsim	Bu  ge tilsimlarin iyilestirilmesi i in kullanilir.
+86071	Protein Atistirmaligi (2G)	Bu nesne ile evcil hayvaninizi canlandirabilir veya  mr n  uzatabilirsiniz. Yeni bir s re alacaksiniz: 2g. Kullanmak i in bu nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+86072	Protein Atistirmaligi (4G)	Bu nesne ile evcil hayvaninizi canlandirabilir veya  mr n  uzatabilirsiniz. Yeni bir s re alacaksiniz: 4g. Kullanmak i in bu nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+86073	Protein Atistirmaligi (8G)	Bu nesne ile evcil hayvaninizi canlandirabilir veya  mr n  uzatabilirsiniz. Yeni bir s re alacaksiniz: 8g. Kullanmak i in bu nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+86074	Ilahi Protein Atistirmaligi (Kalici)	Bu nesne ile evcil hayvaninizi canlandirabilir veya  mr n  uzatabilirsiniz. Yeni bir sonsuz s re alacak. Kullanmak i in nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+86075	 zel Atistirmalik	Bu nesne sayesinde evcil hayvaninizin tercih ettigi bir bonusu iyilestirebilirsiniz. Kullanmak i in nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+86076	Pet Beceri Sifirlama	Bu  ge, evcil hayvaninizin bir becerisini unutmanizi saglar. Kullanmak i in evcil hayvaninizi  agirmaniz gerekir.
+86077	Pet Beceri Sifirlama (S)	Bu  ge, evcil hayvaninizin t m yeteneklerini unutmanizi saglar. Kullanmak i in evcil hayvaninizi  agirmaniz gerekir.
+86080	Kusak Bonusu kaldir	Bu esya sayesinde kusak bonuslarini kaldirabilirsiniz.Bonuslari kaldirmak i in esyayi kusagin  zerine s r kle.
+88001	Saman Kral Kusagi	Bu  ge sadece destekleyici saman tarafindan giyilebilir.
+88005	Saman Kirmizi Kral Kusagi	Bu  ge sadece destekleyici saman tarafindan giyilebilir.
+88009	Saman Siyah Kral Kusagi	Bu  ge sadece destekleyici saman tarafindan giyilebilir.
+88010	Maymun Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88011	Maymun Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88012	 r mcek Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88013	 r mcek Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88014	Razador Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88015	Razador Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88016	Nemere Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88017	Nemere Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88018	Ejder Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88019	Ejder Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88020	Meley Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88021	Meley Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88022	Azrail Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88023	Azrail Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88024	Sisman Y r t c  Kost mleri (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88025	Sisman Mini Y r t c  Kost mleri (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88026	Baashido Bebek Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88027	Baashido Bebek Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88028	Nessie Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88029	Nessie Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88030	Exedyar Kost m  (7G)	Bu  r n evcil hayvaniniz i in 7 g n boyunca  zel bir estetik saglar.
+88031	Exedyar Kost m  (Kalici)	Bu  ge evcil hayvaniniza kalici olarak  zel bir estetik saglar.
+88035	Saman Beyaz Kanati	Bu  ge sadece destek saman tarafindan giyilebilir.
+88039	Saman Chou Kusagi	Bu  ge sadece destek saman tarafindan giyilebilir.
+88110	Aslan Kost m  (7G)	Bu  ge, bineginize 7 g n boyunca  zel bir estetik kazandirir.
+88111	Aslan Kost m  (Kalici)	Bu  ge, bineginize kalici olarak  zel bir estetik saglar.
+88112	Ejder Kost m  (7d)	Bu  ge, bineginize 7 g n boyunca  zel bir estetik kazandirir.
+88113	Ejder Kost m  (Kalici)	Bu  ge, bineginize kalici olarak  zel bir estetik saglar.
+88114	Fil Kost m  (7G)	Bu  ge, bineginize 7 g n boyunca  zel bir estetik kazandirir.
+88115	Fil Kost m  (Kalici)	Bu  ge, bineginize kalici olarak  zel bir estetik saglar.
+88116	Panda Kost m  (7G)	Bu  ge, bineginize 7 g n boyunca  zel bir estetik kazandirir.
+88117	Panda Kost m  (Kalici)	Bu  ge, bineginize kalici olarak  zel bir estetik saglar.
+88210	Kara Silah Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88211	Kara Silah Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88212	Siyah Zirh Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88213	Siyah Zirh Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88214	Pembe Silah Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88215	Pembe Silah Etkisi (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88216	Pembe Zirh Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88217	Pembe Zirh Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88218	Turuncu Silah Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88219	Turuncu Silah Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88220	Turuncu Zirh Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88221	Turuncu Zirh Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88222	Yesil Silah Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88223	Yesil Silah Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88224	Yesil Zirh Etkisi I (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88225	Yesil Zirh Etkisi I (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88226	Mor Silah Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88227	Mor Silah Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88228	Mor Zirh Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88229	Mor Zirh Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88230	Mavi Silah Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88231	Mavi Silah Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88232	Mavi Zirh Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88233	Mavi Zirh Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88234	Pembe Silah Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88235	Pembe Silah Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88236	Pembe Zirh Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88237	Pembe Zirh Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88238	Beyaz Silah Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88239	Beyaz Silah Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88240	Beyaz Zirh Etkisi II (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88241	Beyaz Zirh Etkisi II (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88242	Yesil Silah Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88243	Yesil Silah Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88244	Yesil Zirh Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88245	Yesil Zirh Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88246	Kirmizi Silah Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88247	Kirmizi Silah Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88248	Kirmizi Zirh Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88249	Kirmizi Zirh Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88250	Mavi Silah Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88251	Mavi Silah Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88252	A ik Mavi Zirh Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88253	A ik Mavi Zirh Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88254	Sari Silah Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88255	Sari Silah Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88256	Sari Zirh Etkisi III (7G)	Bu  ge, karakterinize  zel bir estetik saglar.
+88257	Sari Zirh Etkisi III (Kalici)	Bu  ge, karakterinize  zel bir estetik saglar.
+88902	Kasmir Paketi	Bu paket,  zel magazanizi benzersiz bir sekilde dekore etmenizi saglar.
+88910	Turuncu Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88911	Sari Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88912	Mavi Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88913	Kirmizi Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88914	Yesil Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88915	Mor Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88916	Mavi Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88917	Turuncu Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88918	Beyaz Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88919	Sari Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88920	Kirmizi Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88921	Yesil Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88922	Kritik Isabet	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88923	Delici M cadele	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88924	Ejderha Tanri Saldirisi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88925	Ejderha Tanri Savunmasi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88926	Ejderha Tanri Zekasi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88927	Ejderha Tanri Yasami	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88928	Hiz Iksiri	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88929	Yesil Iksir (L) (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88930	Mavi Sebnem (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88931	Turuncu Sebnem (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88932	Sari Sebnem (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88933	Kirmizi Sebnem (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88934	Yesil Sebnem (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88935	Kritik Isabet (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88936	Delici Isabet (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88937	Ejderha Tanri saldirisi (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88938	Ejderha Tanri Savunmasi (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88939	Ejderha Tanri Zekasi (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88940	Ejderha Tanri Yasami (Kalici)	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88941	Mavi Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88942	Turuncu Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88943	Sari Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88944	Kirmizi Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88945	Yesil Sebnem	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88946	Turuncu Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88947	Sari Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88948	Mavi Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88949	Kirmizi Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88950	Yesil Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88951	Mor Amp l	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88952	Kritik Isabet	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88953	Delici Isabet	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88954	Ejderha Tanri Saldirisi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88955	Ejderha Tanri Savunmasi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88956	Ejderha Tanri Zekasi	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88957	Ejderha Tanri Yasami	Ejderha Tanrisi sizi kutsayacak: Kutsama almak i in sag tiklayin.
+88958	Ruh Parsomeni	Bu pars men ile ruhunuzu bir seviye gelistirebilirsiniz.
+88959	Efsun Nesnesi	 gelerinizden birindeki bonuslari kaldirir ve daha fazlasini ekler.
+88960	 zel Atistirmalik	Bu nesne sayesinde evcil hayvaninizin tercih ettigi bir bonusu iyilestirebilirsiniz. Kullanmak i in nesneyi evcil hayvan simgesinin  zerine s r kleyin.
+88961	Simya Efsun Nesnesi	Ejderha taslarinizdan birindeki bonuslari kaldirir ve yenilerini uygular.
+88962	Kusak Kost m  Efsun	Nesnesi	Kusak kost mlerinizden birindeki bonuslari kaldirir ve yenilerini uygular. Degiskenler rastgeledir ve kusak derecesine baglidir.
+88963	Kost m Efsun Nesnesi	Kost mlerinizden birindeki bonuslari kaldirir ve yenilerini uygular.
+88964	Tilsim Kutsama K resi	Efsanevi k re, Bir tilsimin zaten 4  zelligi varsa,son bonusu eklemenizi saglar.
+88965	Tilsim Efsun Nesnesi	Tilsimdaki bonuslari kaldirir ve yenilerini uygular. Oranlar rastgele gelir.
+88966	Tilsim Arttirma Kagidi	Tilsiminiza yeni bir bonus ekler (en fazla 4 bonusa kadar).
+88967	Evcil Hayvan Sandigi	Evcil hayvan yumurtalari i erir Evcil hayvaninizi se mek i in sag tiklayin.
+88968	G zellik Iksiri	Bu G zellik Iksiri, bir NPC'den Pet ve Binek g r n mleri satin almak i in kullanilir.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Zeus Tasi	Bu  ge, r n zindaninin bekleme s resini sifirlamaniza izin verir.
+89101	R n Bileti	Bu bilet, r n zindanina giris yapmanizi saglar.
+89102	R n Ruhu	10 r n ruhunu 1 Ilahi Anahtar ile takas edebilirsiniz. Degistirmek i in sag tiklayin.
+89103	Ilahi Anahtar	Bu anahtar, rune zindaninin 1. katinda kullanilir. Ayrica r n zindaninin en  st katinda da kullanilir. 1. Katta kullanmak i in sag tiklayin. Rune Zindaninin en  st katinda yok etmek i in R n Tasina s r kleyin.
+89104	Yesil Ork Anahtari	Bu esya, Ork Zindanindaki bir m hr  a mak i in kullanilir.
+89105	Kara Ork Anahtari	Bu esya, Ork zindanindaki son k pr n n kilidini a mak i in kullanilir.
+89106	Ork Bileti	Bu esya Ork Zindanina girmek i in kullanilir.
+89107	R n Bileti	Bu bilet, R n zindanina giris yapmanizi saglar.
+89108	Uyum K peleri (2Saat)	Eslerden biri tarafindan giyilirse, her iki es i in de 3 saat boyunca en fazla %8 oraninda delici vurus sansini artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89109	Sevgi Bilezigi (2Saat)	Eslerden biri tarafindan giyilirse, savas sirasinda her iki es i in de 3 saat boyunca maksimum %20 oraninda deneyim puani toplamayi artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89110	Sevgi K peleri (2Saat)	Eslerden biri tarafindan giyilirse, her iki es i in de kritik vurus sansini 3 saat boyunca maksimum %8 arttirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89111	Uyum Bilezigi (2Saat)	Eslerden biri tarafindan giyilirse, d sman canavarlarin her iki es  zerindeki saldiri g c n  3 saat boyunca maksimum %15 azaltir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89112	Sevgi Kolyesi (2Saat)	Biri tarafindan giyilirse, her iki es i in de saldiri g c n  3 saat boyunca maksimum 40 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89113	Uyum Kolyesi (2Saat)	Biri tarafindan giyilirse, her iki esin savunmasini 3 saat boyunca maksimum 30 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89114	Uyum K pesi (8 Saat)	Eslerden biri tarafindan giyilirse, her iki es i in de 3 saat boyunca en fazla %8 oraninda delici vurus sansini artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89115	Sevgi Bilezigi (8Saat)	Eslerden biri tarafindan giyilirse, savas sirasinda her iki es i in de 3 saat boyunca maksimum %20 oraninda deneyim puani toplamayi artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89116	Sevgi k pesi (8Saat)	Eslerden biri tarafindan giyilirse, her iki es i in de kritik vurus sansini 3 saat boyunca maksimum %8 artirin.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89117	Uyum Bilezigi (8Saat)	Eslerden biri tarafindan giyilirse, d sman canavarlarin her iki es  zerindeki saldiri g c n  3 saat boyunca maksimum %15 azaltir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89118	Sevgi Kolyesi (8Saat)	Biri tarafindan giyilirse, her iki es i in de saldiri g c n  3 saat boyunca maksimum 40 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89119	Uyum Kolyesi (8Saat)	Biri tarafindan giyilirse, her iki esin savunmasini 3 saat boyunca maksimum 30 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89120	Uyum K pesi (Kalici)	Eslerden biri tarafindan giyilirse, her iki es i in de 3 saat boyunca en fazla %8 oraninda delici vurus sansini artirin.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89121	Sevgi Bilezigi (Kalici)	Eslerden biri tarafindan giyilirse, savas sirasinda her iki es i in de 3 saat boyunca maksimum %20 oraninda deneyim puani toplamayi artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89122	Sevgi K pesi (Kalici)	Eslerden biri tarafindan giyilirse, her iki es i in de kritik vurus sansini 3 saat boyunca maksimum %8 artirin.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89123	Uyum Bilezigi (Kalici)	Eslerden biri tarafindan giyilirse, d sman canavarlarin her iki es  zerindeki saldiri g c n  3 saat boyunca maksimum %15 azaltir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89124	Sevgi Kolyesi (Kalici)	Biri tarafindan giyilirse, her iki es i in de saldiri g c n  3 saat boyunca maksimum 40 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+89125	Uyum Kolyesi (Kalici)	Eslerden biri tarafindan giyilirse, her iki esin savunmasini 3 saat boyunca maksimum 30 artirir.  genin etkisi, ask puanlarinin y zdesine baglidir.  rnegin bir  iftin %50 ask puani varsa, maksimum etki yari yariya azalir.
+164401	Biyolog B y s 	Bu esya ile bazi biyolog g revlerinin bonusunu sifirlamak m mk nd r.
+164402	Chaegirab Papir s 	Bu papir s ile Biyolog'dan esya satin almak m mk n.
+164406	G kkusagi Iksiri	Bu  ge, becerilerinizden birinin rengini degistirmenizi saglar.
+164407	Parlama iksiri	Bu Iksir, bir NPC'den silah ve zirh efektleri satin almak i in kullanilir.
+164408	Tanri Meyvesi	Ejderha Tanrisi bah esinin tatli kadim meyvesi. Bir ekipman  gesini rafine etmek i in kullanilir.
+164409	Tanri  z t 	Sise gizemli bir parlak sivi i erir. Bir ekipman  gesini rafine etmek i in kullanilir.
+164410	Hakikat Ruhu	Iyi bir ruh sonsuza kadar cam bir k reye hapsedilmis. Bir ekipman  gesini rafine etmek i in kullanilir.
+164411	Hakikat Kitabi	Basligi parildayan g  l  cilt. Bir ekipman  gesini rafine etmek i in kullanilir.
+164412	Ilahi  i ek	Ejderha Tanrisi Bah esinden kutsal  i ek. Bir ekipman  gesini rafine etmek i in kullanilir.
+164413	Kili  Par asi Goad	Bu esya ile Zehir Kilicini +9'dan Destansi dereceye  retmek m mk nd r.
+164414	Seytanin Kilicinin Par asi	Bu esya ile Aslan Kilicini +9'dan Destansi dereceye  retmek m mk nd r.
+164415	Ruh  alan Bi ak Par asi	Bu esya ile Kin Kilicini +9'dan Epic r tbesine  ikarmak m mk nd r.
+164416	Mavi Ejderha Yay Par asi	Bu esya ile +9'dan Destansi dereceye Havali  elik Yay  retmek m mk nd r.
+164417	Yelpaze Par asi	Bu esya ile Bamboo Bell'i +9'dan Epic r tbesine  ikarmak m mk nd r.
+164418	Siyam Bi agi Par asi	Bu esya ile Seytan Kanadi  akrami +9'dan Epic rank'a getirmek m mk nd r.
+164419	Parlama Iksiri	Bu Iksir, bir NPC'den silah ve zirh efektleri satin almak i in kullanilir.
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min

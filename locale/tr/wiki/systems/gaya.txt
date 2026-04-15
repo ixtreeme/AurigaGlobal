@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya, herhangi bir oyuncunun Gaya Magazasinda esya satin almasina izin veren bir para birimidir.
+[X_PADDING=12]2. Gaya Tüccarlari npc'sinden Gaya alabilirsiniz.
+[X_PADDING=12]3. 1 Gaya almak için 10 Mücevher arti +0 ila +3 Ruh Tasina ihtiyaciniz var.
+[X_PADDING=12]4. Mücevher iyilestirmesi her zaman %100'dür.
+[X_PADDING=12]5. Gaya Shop'u açmak için Npc Gaya Magazasina gidin.
+[X_PADDING=12]6. Gaya Shop'ta 6'si kilitli olmak üzere 9 yuva mevcuttur, yuvalarin kilidini açabilirsiniz.
+[X_PADDING=12]Ampliam ögesini satin alarak. Npc Mecante di Gaya'dan Gaya magazasi
+[X_PADDING=12]7. Gaya Magazasi her 5 saatte bir otomatik olarak güncellenir, Gaya Magazasini manuel olarak güncelleyebilirsiniz.
+[X_PADDING=12]Gaya Mecante npc'den Gaya Sifirlama Dükkani ögesini satin alarak.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MÜCEVHERLER NEREDE BULABILIRIM
+
+[X_PADDING=12]1. Mücevherleri çesitli haritalarin zindanlarinda veya patronlarinda bulabilirsiniz.
+[X_PADDING=12]2. Kraliçe Meley'in Sandigi'nda çok miktarda Mücevher bulabilirsiniz.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Mücevherler										 Ampliam. Gaya dükkani							 Res. Neg. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

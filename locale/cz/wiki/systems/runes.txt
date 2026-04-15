@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[CENTER_ALIGN]Na lvl 70 se objeví mise a kliknutím na ni se odemkne panel run.
+
+[X_PADDING=12]Panel run se skládá ze 6 normálních run a 1 speciální, každá runa má zvláštní sílu.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Aresova runa								 Erina runa								    Apollova runa
+
+
+
+
+
+
+[X_PADDING=80]Afroditina runa							   Poseidonova runa							     Aténina runa
+
+
+
+
+
+
+[X_PADDING=238]Zeusova runa
+
+[X_PADDING=12]Normální runy mají maximální sílu 100%, cím vetší je jejich síla,
+[X_PADDING=12]tím vetší je jejich bonus..
+
+[X_PADDING=12]Maximální procento bonusu normálních run:
+[X_PADDING=20]- Afroditina runa: Silný proti metinum 15% - Pohyblivost +15
+[X_PADDING=20]- Apollova runa: Silný proti bossum 15% - Síla +15
+[X_PADDING=20]- Aténina runa: Prumerná škoda [PVM] 12% - Hodnostu útoku +150
+[X_PADDING=20]- Erina runa: Max MB  +1200 - Inteligence +15
+[X_PADDING=20]- Poseidonova runa: Silný proti príšerám +15% - 15% Šance na kritický zásah [PVM]
+[X_PADDING=20]- Aresova runa: Max. HP +2500 - Vitalita +15
+
+[X_PADDING=12]Zvláštní runa, kterou by byla runa Dia, se automaticky aktivuje, když mají všechny normální runy
+[X_PADDING=12]alespon 50% dostupné síly.
+
+[X_PADDING=12]Pokud je Zeusova runa aktivní, udeluje postave následující bonusy:
+[X_PADDING=20]- Silný proti pololidem 10%
+[X_PADDING=20]- Odolnost proti pololidem 10%
+
+[X_PADDING=12]Když jakákoli normální runa klesne pod 50%, Zeusova runa automaticky
+[X_PADDING=12]zhasne.
+
+[X_PADDING=12]Když mají všechny normální runy alespon 60% síly, objeví se na postave speciální efekt.
+[X_PADDING=12](Efekt lze také vypnout v panelu run).
+
+[X_PADDING=12]Je možné dobít energii run pomocí Runových láhví, které lze zakoupit v obchode umísteném
+[X_PADDING=12]v panelu run.
+[X_PADDING=12]Runové lahve bude možné zakoupit pouze s Runovými fragmenty, které dropnete pouze v Runovém Dungeonu.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Runová lahev (M)					  Runová lahev (S)					  Runová lahev (V)						  Runový fragment
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

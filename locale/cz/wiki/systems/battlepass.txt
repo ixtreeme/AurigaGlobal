@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Battle Pass je systém, který nabízí sérii misí s exkluzivními odmenami.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA
+
+[X_PADDING=12]1. Ikona panelu Battle Pass se nachází vedle inventáre nebo mužete panel otevrít stisknutím klávesy F8.
+[X_PADDING=12]2. K odemcení panelu budete potrebovat položku Battle Pass.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISE A ODMENY
+
+[X_PADDING=12]1. Battle Pass se skládá z 10 misí.
+[X_PADDING=12]2. Každá mise musí být dokoncena do 25 dnu.
+[X_PADDING=12]3. V pravé cásti panelu mužete videt prubeh mise.
+[X_PADDING=12]4. Po dokoncení mise obdržíte speciální odmenu.
+[X_PADDING=12]5. Když jsou všechny mise dokonceny kliknutím na tlacítko „Odmena“ (tlacítko s mincemi nalezenými na
+[X_PADDING=12]druhé stránce) obdržíte nekolik voucheru Battle Pass.
+[X_PADDING=12]6. Voucher Battle Pass vám umožnuje nakupovat položky v obchode Battle Pass.
+[X_PADDING=12]7. Všechny položky v obchode Battle Pass jsou exkluzivní, takže po skoncení Battle Passu již
+[X_PADDING=12]nebudou možné zakoupit.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

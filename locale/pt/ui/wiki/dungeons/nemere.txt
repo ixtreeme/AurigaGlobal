@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 85.
+[X_PADDING=12]*Level máximo: 100.
+[X_PADDING=12]*Ingresso: Ingresso de Nemere.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Ingresso Nemere
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 50 minutos.
+[X_PADDING=12]*O tempo de espera é de 1 hora.
+[X_PADDING=12]*Caso você entre com o grupo, todos devem ter um ingresso.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Gelo.
+[X_PADDING=12]*O elemento dos monstros: Gelo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRO ANDAR
+[X_PADDING=20]1. Mate todos os monstros.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR
+[X_PADDING=20]1. Encontre a chave da Geada correta.
+[X_PADDING=20]2. Clique na Chave da Geada para ir para o próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRO ANDAR
+[X_PADDING=20]1. Mate todos os monstros.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO ANDAR
+[X_PADDING=20]1. Mate todos os monstros.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO ANDAR
+[X_PADDING=20]1. Abre os selos no Cubo Ártico usando as Estrelas Polares na ordem correta para chegar ao próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO ANDAR
+[X_PADDING=20]1. Mate todos os monstros
+[X_PADDING=20]2. Destrói a Metin do Frio.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SÉTIMO ANDAR
+[X_PADDING=20]1. Encontra e derrota Szel correto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OITAVO ANDAR
+[X_PADDING=20]1. Encontre a Chave da Flor da Geada correta.
+[X_PADDING=20]2. Clique na chave Flor da Geada para ir para o próximo andar.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]NONO ANDAR
+[X_PADDING=20]1. Destrói o Pilar do Dragão do Norte. 
+[X_PADDING=20]2. Fale com o Leão Gelado.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DÉCIMO ANDAR
+[X_PADDING=20]1. Derrota Nemere, Rei do Gelo e da Geada.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

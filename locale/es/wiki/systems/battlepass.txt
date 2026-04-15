@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]El Pase de batalla es un sistema que ofrece una serie de misiones con recompensas exclusivas.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA
+
+[X_PADDING=12]1. El ícono del panel del Pase de batalla se encuentra al lado del inventario o puede abrir el panel presionando la tecla F8.
+[X_PADDING=12]2. Para desbloquear el panel, necesitará el elemento Pase de batalla.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISIONES Y PREMIOS
+
+[X_PADDING=12]1. El pase de batalla consta de 10 misiones.
+[X_PADDING=12]2. Cada misión debe completarse dentro de los 25 días.
+[X_PADDING=12]3. Puedes ver el progreso de una misión a la derecha del panel.
+[X_PADDING=12]4. Cuando se completa una misión, recibe una recompensa especial.
+[X_PADDING=12]5. Cuando se completen todas las misiones, haga clic en el botón "Premio" (el botón con las monedas que se encuentran en el
+[X_PADDING=12]segunda pagina) recibirás varios cupones de pase de batalla.
+[X_PADDING=12]6. El vale de pase de batalla te permite comprar artículos en la tienda de pase de batalla.
+[X_PADDING=12]7. Todos los artículos de la tienda del Pase de batalla son exclusivos, por lo que el Pase de batalla del mes ya no caducará.
+[X_PADDING=12]posible comprarlos.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 105.
+[X_PADDING=12]*Nivel maximo: 120.
+[X_PADDING=12]*Ticket: Ankh Cross.
+[X_PADDING=12]*Type: Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankh Cross
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 30 minutos.
+[X_PADDING=12]*Enfriamiento: 1 hora y 30 minutos.
+[X_PADDING=12]*Puedes acceder desde el mapa: Special Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Earth Power.
+[X_PADDING=12]*Elemento de monstruos: Tierra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Destruye la piedra Wadjet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Mata a los monstruos para encontrar las 4 piezas del pergamino.
+[X_PADDING=20]2. Una vez que haya encontrado las 4 piezas del pergamino, haga clic en el Sello Antiguo para destruirlo (Quien haga clic en el sello
+[X_PADDING=20]Debe tener las 4 piezas del pergamino en su inventario).
+[X_PADDING=20]3. Matar al sirviente de Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Destruye la Piedra Faraón correcta.
+[X_PADDING=20]2. Mata a Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]1. Para pasar por el plan tienes que pasar por 24 portales.
+[X_PADDING=20]2. Mata al Ra correcto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PISO
+[X_PADDING=20]1. Mata monstruos para encontrar la Wise Band.
+[X_PADDING=20]2. Arrastra el Sage Sash al Anubis Efiggie corregido para destruirlo.
+[X_PADDING=20]3. Destruye la piedra Ankh para encontrar la banda sabia.
+[X_PADDING=20]4. Arrastra la Wise Band a la Efigie de Anubis corregida para destruirla.
+[X_PADDING=20]3. Mata monstruos para encontrar la Wise Band.
+[X_PADDING=20]4. Arrastra la Wise Band a la Efigie de Anubis corregida para destruirla.
+[X_PADDING=20]5. Destruye las piedras Ankh para encontrar la última banda sabia.
+[X_PADDING=20]6. Arrastra la Wise Band hasta la última Efigie de Anubis para destruirla.
+[X_PADDING=20]7. Mata a Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+[X_PADDING=20]2. Haga clic en la llave Ankh para recibir la llave antigua.
+[X_PADDING=20]3. Arrastra la llave antigua al pilar wadjet para destruirlo.
+[X_PADDING=20]4. Destruye la piedra de la esfinge.
+[X_PADDING=20]5. Haga clic en la última llave Ankh para recibir la llave antigua.
+[X_PADDING=20]6. Arrastra la llave antigua hasta el último pilar del wadjet para destruirlo.
+[X_PADDING=20]7. Mata a la esfinge.
+[X_PADDING=20]8. Destruye el tesoro de la esfinge para recibir la recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 85.
+[X_PADDING=12]*Nivel maxim: 100.
+[X_PADDING=12]*Permis: Permis Trecere Razador.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=460]P. Tre. Razador
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 50 de minute.
+[X_PADDING=12]**Timpul de aºteptare este de 1 orã.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Puterea Focului.
+[X_PADDING=12]*Elementul monºtrilor: Foc.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. Vorbeºte cu Marele Am-heh pentru a debloca primul pod. La completarea oricãrui pod va trebuie sã te
+[X_PADDING=20]reîntorci la Marele Am-heh pentru a debloca un nou pod în mod aleatoriu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]MODURILE ALEATORI CE POT FI SUNT:
+[X_PADDING=20]1. Gãseºte Roata Zimþatã de Aur corectã cu care poþi distruge Stele din Isfet.
+[X_PADDING=20]2. Omoarã-l pe Ignitor.
+[X_PADDING=20]3. Omoarã toþi monºtrii.
+[X_PADDING=20]4. Gãseºte Piatrele Maat cu care poþi distruge Stelele din Isfet.
+[X_PADDING=20]5. Distruge Metinul Focul Iadului.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMA ETAPA
+[X_PADDING=20]1. Omoarã-l pe Razador.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

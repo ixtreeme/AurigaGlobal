@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]1. Puoi aprire il pannello del negozio offline cliccando sull'icona del fagotto situata sulla minimappa oppure premendo
+[X_PADDING=12]il tasto Y.
+[X_PADDING=12]2. Il negozio offline è composto da 9 sezioni:
+[X_PADDING=20]I. Il mio negozio
+[X_PADDING=20]II. Lista dei negozi
+[X_PADDING=20]III. Magazzino
+[X_PADDING=20]IV. Le mie offerte
+[X_PADDING=20]V. Cerca 
+[X_PADDING=20]VI. Le mie ricerche
+[X_PADDING=20]VII. Ricerche salvate
+[X_PADDING=20]VIII. Le mie aste
+[X_PADDING=20]IX. Aste in corso
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNZIONALITA' DELLE VARIE SEZIONI
+
+[X_PADDING=12]1. Il mio negozio: in questa sezione puoi creare il tuo negozio offline, in alto a destra troverai un anteprima del
+[X_PADDING=12]negozio che userai, cliccando sulle freccie potrai scegliere anche i negozi speciali ma attenzione,
+[X_PADDING=12]per usare i negozi speciali avrai bisogno di 1 Fagotto di cashmere.
+
+[X_PADDING=12]2. Lista dei negozi: in questa sezione puoi guardare tutti i negozi offline attivi.
+
+[X_PADDING=12]3. Magazzino: in questa sezione sono presenti tutti gli item che non hai venduto e il ricavo ricevuto dalle vendite.
+
+[X_PADDING=12]4. Le mie offerte: in questa sezione sono elencate tutte le offerte che hai effetuato.
+
+[X_PADDING=12]5. Cerca: in questa sezione puoi usare i vari filtri per fare un ricerca mirata .
+
+[X_PADDING=12]6. Le mie ricerche: in questa sezione puoi guardare tutte le ricerche che hai effettuato.
+
+[X_PADDING=12]7. Ricerche salvate: in questa sezione sono elencati tutti i filtri di ricerca salvati.
+
+[X_PADDING=12]8. Le mie aste: in questa sezione puoi creare un'asta oppure controllare lo stato di una tua asta in corso.
+
+[X_PADDING=12]9. Aste in corso: in questa sezione sono elencate tutte le aste ancora in corso.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ALTRI
+
+[X_PADDING=12]1. Puoi scegliere di cambiare l'estetica del tuo negozio nella sezione Il mio negozio, per cambiare l'estetica del tuo
+[X_PADDING=12]negozio avrai bisogno del Fagotto di cashmere.
+[X_PADDING=12]2. Puoi trovare il fagotto di cashmere nel Negozio di Gaya oppure nei vari eventi.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Fag. Cashmere
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

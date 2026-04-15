@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12]1. Otevrením soukromého chatu mezi 2 hráci byste meli videt tlacítko pro preklad Google v horní cásti
+[X_PADDING=12]2. Pokud je tlacítko aktivní, zpráva jiného jazyka se automaticky preloží do vašeho jazyka
+[X_PADDING=12]3. Pokud je tlacítko deaktivováno, obdržíte zprávu v puvodním jazyce, tedy bez prekladu
+
+[X_PADDING=12](Pozor, automatický preklad funguje pouze pro soukromou zprávu).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

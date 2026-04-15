@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12]1. Ha megnyitja a privát csevegést két játékos között, látnia kell a Google fordító gombját a tetején.
+[X_PADDING=12]2. Ha a gomb aktív, akkor egy másik nyelv üzenete automatikusan le lesz fordítva az Ön nyelvére.
+[X_PADDING=12]3. Ha a gomb ki van kapcsolva, akkor az üzenetet eredeti nyelven fogja megkapni, tehát lefordítás nélkül.
+
+[X_PADDING=12](Figyelem az automatikus fordítás csak a privát üzenetre vonatkozik).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

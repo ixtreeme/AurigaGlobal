@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BONUS SCHULTERBAND:
+[X_PADDING=20]1. Das Shoulder Sash System ermöglicht es Spielern ab Level 1 ein neues Teil zu tragen
+[X_PADDING=20]von der Ausrüstung.
+[X_PADDING=20]2. Schulterband kann ALLE Waffen- und Rüstungsboni absorbieren, außer Spezialwaffenboni
+[X_PADDING=20]und mystische Rüstung. Der Prozentsatz der Absorption hängt von seinem Qualitätsgrad ab
+[X_PADDING=20]des Schulterband, je höher die Qualität, desto höher der Prozentsatz der Absorption.
+[X_PADDING=20]3. Um die Boni einzugeben, musst du zum NPC Theowahdan auf der Karte gehen
+[X_PADDING=20]Wonder Village.
+[X_PADDING=20]4.Sie können ein Schulterband des 1. Ranges von NPC Theowahdan mit den dünnen Stoffen kaufen, die
+[X_PADDING=20]man von Metins Droppt.
+[X_PADDING=20]5. Sie können Boni von einem Schulterband entfernen, indem Sie den Bonusgegenstand „Boni entfernen“ verwenden.
+
+[X_PADDING=12]VERBESSERUNG EINER STOLE:
+[X_PADDING=20]1.Um ein Schulterband aufzuwerten, gehe zum NPC Theowahdan und klicke auf Kombination.
+[X_PADDING=20]2. Das Upgrade zerstört IMMER den zweiten eingesetzten Schultergurt, egal ob erfolgreich oder nicht
+[X_PADDING=20]im Konkursfall. Falls es in beiden Schulterbändern Boni gibt, tun sie dies nicht
+[X_PADDING=20]sie werden sich summieren, aber nur die dem ersten Schulterband werden berücksichtigt, da dies der Fall ist
+[X_PADDING=20]wird tatsächlich verbessert. Der zweite hat die alleinige Funktion des "Objekts zur Verbesserung".".
+
+[X_PADDING=12]POSSIBLE DEGREES OF SASH :
+[X_PADDING=20;COLOR=58ADFF]GRAD          Prozentzahl der Absorption
+[X_PADDING=20]Basis       1%
+[X_PADDING=20]Fein           5%
+[X_PADDING=20]Edel          10%
+[X_PADDING=20]Maßgefärtigt     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Remove B. Sash
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

@@ -1,0 +1,1561 @@
+1	[System] Potøebujete mít k dispozici alespoò %s stavovıch bodù.
+2	[EXP] Získali jste %s zkušenostních bodù.
+3	[YANG] Obdreli jste %s Yang.
+4	[GAYA] Obdreli jste %s Gaya.
+5	[System] Nemáte ádného mounta.
+6	[System] Tento Battle Pass jste ji dokonèili.
+7	[System] Kontaktujte prosím GM s chybou: errBattlePass01.
+8	[System] Ji máte aktivní Battle Pass.
+9	[System] Toto nelze pouít na %s, je to pouze pro pøedmìty Zvìrokruhu.
+10	[System] Toto nelze pouít na %s, je to pouze pro normální pøedmìty.
+11	[System] Náhled duelu je ji zablokován.
+12	[System] Náhled soubojového vybavení byl uzamèen.
+13	[System] Náhled soubojového vybavení je ji odemèen.
+14	[System] Odemèen náhled soubojového vybavení.
+15	[System] Zmìnili jste barvu dovedností.
+16	[System] Nemáte k dispozici ádné zmìny.
+17	[System] %s a vyzval na souboj!
+18	[System] Kostım se šerpou lze vyrobit pouze s jinım kostımem se šerpou.
+19	[System] Šerpa lze kombinovat pouze s jinou šerpou.
+20	[System] %s ji nelze zlepšit.
+21	[Bonusy] Bonusy %s byly zmìnìnı.
+22	[System] %s lze pouít pouze na ukradené kostımy.
+23	[System] V inventáøi nemáte dostatek volného místa.
+24	[System] Tohle nemùete dìlat, kdy obchodujete!
+25	[System] Dostali jste podporu!
+26	[System] Chyba v nastavení hodnot.
+27	[System] Úèinek %s vypršel.
+28	[System] Efekt %s byl deaktivován.
+29	[System] %s efekt byl aktivován.
+30	[Susanoo System] %s nemá sílu bıt aktivován.
+31	[Susanoo System] %s byl aktivován.
+32	[Susanoo System] %s byl deaktivován.
+33	[Susanoo System] %s síla je ji na maximum.
+34	[Susanoo System] %s síla byla zvıšena o %s%.
+35	[Susanoo System] Slot %s není prázdnı.
+36	[Anti-Farm] Stav dropu mùete zmìnit pouze z mìsta.
+37	[Anti-Farm] Na tomto úètu nemáte ádné volné sloty pro aktivaci dropu.
+38	[Anti-Farm] Drop na tomto úètu je ji aktivní.
+39	[Anti-Farm] Drop na tomto úètu je ji deaktivován.
+40	[Anti-Farm] Drop na tomto úètu byl aktivován.
+41	[Anti-Farm] Drop na tomto úètu byl deaktivován.
+42	[Anti-Farm] Poadavek byl proveden.
+43	[Anti-Farm] Poadavek bude proveden za %s sekund.
+44	[Anti-Farm] Ji je spuštìn poadavek. Poèkejte prosím!
+45	[System] K otevøení tohoto obchodu potøebujete Kašmírovı svazek.
+46	[System] Zvolenı styl názvù je neplatnı.
+47	[System] Znièili jste %s.
+48	[System] V dungeonu nelze pouít teleport.
+49	[System] V dungeonu nelze pouít bod uloení.
+50	[Mazlík] Tento název je ji pouíván, zvolte jinı název!
+51	[Mazlík] Na nauèení této dovednosti musíte poèkat dalších %s hodin a %s minut.
+52	[Mazlík] Bohuel vıuka se nezdaøila.
+53	[Mazlík] Chcete-li zlepšit dovednost mazlíèka, musíte ho nejprve pojmenovat.
+54	[Mazlík] Váš mazlíèek se tuto dovednost ještì nenauèilo.
+55	[Mazlík] Mazlíèek se nemùe nauèit stejnou dovednost dvakrát.
+56	[Mazlík] Dovednost vašeho mazlíèka dosáhla úrovnì: %s.
+57	[Mazlík] Váš mazlíèek se nauèilo novou dovednost.
+58	[Mazlík] Tato dovednost ji dosáhla maximální úrovnì.
+59	[Mazlík] Aby se Váš mazlíèek mohlo vyvíjet, musí mít plné zkušenosti.
+60	[Mazlík] Pro pokraèování potøebujete %s %s.
+61	[Mazlík] Bonusové vylepšení mazlíèka bolo úspìšné.
+62	[Mazlík] Vylepšení bonusù pro mazlíèka se nezdaøilo.
+63	[Mazlík] Bonus tohoto mazlíèka ji nelze vylepšit.
+64	[Mazlík] Nejprve musíte mazlíèka alespoò jednou pøivolat!
+65	[Mazlík] Prodlouili jste dobu trvání svého mazlíèka.
+66	[Mazlík] Mùete to pouít pouze pro mazlíèka.
+67	[Mazlík] Ne zaènete mazlíèka krmit, pošlete ho pryè.
+68	[Mazlík] Vaš mazlíèek mùe bıt a 1 rok staré, pokud nepouijete Boské sousto (trvalé).
+69	[Mazlík] Váš domácí mazlíèek u má nekoneènou délku ivota.
+70	[Bonusy] Bonusy mùete odebírat pouze z pøedmìtù.
+71	[Bonusy] Tento pøedmìt nemá ádné bonusy, které by bylo moné odstranit.
+72	[Bonusy] Bonusy z pøedmìtù jsou odstranìny.
+73	[Bonusy] Zmìnit lze pouze bonusy draèího kamene.
+74	[Bonusy] Zmìnili jste bonusy!
+75	[Bonusy] Bonusy lze mìnit pouze u vznešenıch mıtickıch kamenù.
+76	[Sytsem] Pøedtím, ne to budete moci udìlat, musíte deaktivovat alchymii.
+77	[Anti-Exp] Exp byl zablokkován!
+78	[Anti-Exp] Exp byl povolen!
+79	[Bonusy] Nejprve musíte pøidat kostım, ze kterého budou bonusy odebrány.
+80	[Bonusy] Okno Bonusového pøenosu je ji otevøeno.
+81	[Bonusy] Máte ji otevøené okno z jiného systému. Zavøete ji a znovu ji otevøete.
+82	[Bonusy] Okno Bonusovı pøenos není otevøeno.
+83	[Bonusy] Pøetáhnìte poloky do okna.
+84	[Bonusy] Bonusy byly pøevedeny na kostım!
+85	[Bonusy] Chcete-li to provést, musíte nejprve vloit svitek pøenosu do jeho slotu.
+86	[Bonusy] Druhı kostım musí mít alespoò jeden bonus.
+87	[Bonusy] Tato poloka ji má maximální poèet speciálních bonusù.
+88	[Bonusy] Stejnı speciální bonus nelze získat dvakrát.
+89	[Bonusy] Tato poloka nemá ádnı speciální bonus k odstranìní.
+90	[Bonusy] Odstranili jste speciální bonus.
+91	[Sytsem] Musíte poèkat dalších %s hodin a %s minut.
+92	[Sytsem] Pro zlepšení pasivních dovedností musíte bıt alespoò na Lv.90.
+93	[Sytsem] Nejprve se musíte nauèit hlavní dovednost na maximum.
+94	[Sytsem] Pøedtím, se Vám musí zlepšit jeho základnú schopnost.
+95	[Sytsem] %s Blok TEST-SERVER: (%s%)
+96	[Sytsem] %s Dodge TEST-SERVER: (%s%)
+97	[Sytsem] Tuto barvu vlasù mùete pouívat a do této úrovnì: %s
+98	[Sytsem] Druhy rıb: %s, %s.
+99	[Sytsem] Za %s sec. mùete poehnání pouít znovu.
+100	[Sytsem] Zbıvající èas: %s sec.
+101	[Sytsem] Zbıvá vám %s minut. (Zbıvá %s minut)
+102	[Drop] Obdreli jste:|cFF00FF00%s|r |cFFFF0000 x |r %s.
+103	[System] %s sekund do odhlášení.
+104	[System] %s spotøebovalo %s MB.
+105	[System] Obchod s %s byl úspìšnı.
+106	[System] %s Vás pozval do své skupiny.
+107	[System] %s vaše pozvání odmítlo.
+108	[System] %s je offline.
+109	[System] Vítìzem duelu se stává: %s!
+110	[System] Zvítìzilo: %s.
+111	[System] Potøebujete: %s.
+112	[System] Nakrmili jste konì %s.
+113	[System] %s bude teleportováno.
+114	[System] Cech %s neexistuje!
+115	[System] Boj proti %s zaèal!
+116	[System] %s bylo spáleno.
+117	[System] Rafinovaná ruda zmizela z: %s.
+118	[System] Vyzval jsi %s na souboj.
+119	[Cech] Cech %s byl vytvoøen.
+120	[Cech] Pouito %s (MP: %s MP potøebujete: %s) na %s.
+121	[Cech] Investovali jste do cechu %s EXP bodù.
+122	[Cech] Nepodaøilo se vám darovat EXP.
+123	[Cech] Obnovil jsi %s bodù draèího ducha.
+124	[Cech] %s odmítl válku.
+125	[Cech] Byl vytvoøen cech: %s.
+126	[Cech] Nemáš dostatek yangu.
+127	[Cech] Nemáte povolení psát na tabuli.
+128	[Cech] Nemùete najít osobu.
+129	[Cech] Cech byl nucen odstoupit.
+130	[Cech] Cech neexistuje.
+131	[Cech] Peníze cechu mùe vybrat pouze jeho vedoucí.
+132	[Cech] Vytvoøení cechu se nezdaøilo.
+133	[Cech] Nemáte oprávnìní mìnit úroveò dovedností.
+134	[Cech] Dovednosti mùete pouívat pouze bìhem války.
+135	[Cech] Název cechu není platnı.
+136	[Cech] Nemùete vytvoøit cech.
+137	[Cech] Musíte poèkat %s hodin, ne budete moci pozvat tohoto hráèe.
+138	[Cech] Nepatøí do cechu.
+139	[Cech] Èlena cechu nelze odstranit.
+140	[Cech] Do cechu nelze zvát hráce.
+141	[Cech] Èlena cechu nelze uèinit vùdcem cechu.
+142	[Cech] Èlenùm cechu nelze mìnit hodnost.
+143	[Cech] Hodnost nelze zmìnit.
+144	[Cech] Tuto schopnost mùe pouívat pouze vùdce cechu.
+145	[Cech] Poèet èlenù je menší ne %s, nemùete vyhlásit válku.
+146	[Cech] Válka je zrušena.
+147	[Cech] Bìhem války nedostáváte ádné vıhody.
+148	[Cech] Nemùete pozvat hráèe, kteøí jsou souèástí jiného království.
+149	[Cech] Vùdce ji nelze urèit.
+150	[Cech] Nemáte právo vybrat si vùdce cechu.
+151	[Cech] Nemáte dost Yangu.
+152	[Cech] Zvıšenı poèet bodù na %s.
+153	[Cech] Skóre %s je pøíliš nízké na to, aby bylo moné vést válku.
+154	[Cech] Zprávu jste smazali.
+155	[Cech] Hráè není v CH %s (CH: %s).
+156	[Cech] Je offline.
+157	[Cech] Cech je ji ve válce.
+158	[Cech] Pøíliš málo èlenù na vyhlášení války.
+159	[Cech] Skóre cechu je pøíliš nízké na vyhlášení války.
+160	[Cech] Cech nemá dostatek prostøedkù.
+161	[Cech] Hráè nemùe mít více ne jeden cech.
+162	[Cech] Nemáte oprávnìní zvát hráèe do cechu.
+163	[Cech] Tohoto hráèe nelze pozvat.
+164	[Cech] Body Draèího ducha jste neobnovili.
+165	[Cech] Nemáte dostatek bodù Draèího ducha (%s, %s).
+166	[Cech] Dva cechy nemohou mít stejné jméno.
+167	[Cech] Cech vstoupil do váleèného stavu.
+168	[Cech] Cech je ji ve válce.
+169	[Cech] Cech se chystá vstoupit do váleèného stavu.
+170	[Cech] Nesprávná èástka.
+171	[Cech] Název hodnosti obsahuje zakázaná slova.
+172	[Cech] Váš cech nemá dostatek zlata na vedení cechovní války.
+173	[Cech] Darované zkušenosti jsou vìtší ne zkušenosti, které jsou ještì potøeba.
+174	[Cech] Svou hodnost nesmíte mìnit.
+175	[Cech] Nejste oprávnìni mìnit jméno hodností.
+176	[Cech] Nemáte licenci na zmìnu hodnosti.
+177	[Cech] Cech dosáhl maximálního poètu èlenù.
+178	[Cech] Zatím nemùete pouívat cechovní dovedností.
+179	[Cech] Novı cech mùete zaloit po %s dnech.
+180	[Cech] Na pozvání musíte ještì %s dní poèkat.
+181	[Cech] Cech byl rozpuštìn, cech nelze zaloit døíve ne za %s dní.
+182	[System] Ze seznamu pøátel jste odstranili %s.
+183	[System] Pøidali jste si %s jako pøítele.
+184	[System] GM nelze pøidat do seznamu pøátel.
+185	[Správce skladu] Jste pøíliš daleko od tábora.
+186	[Správce skladu] Staré heslo je nesprávné.
+187	[Správce skladu] Tuto poloku nelze pøesunout.
+188	[Správce skladu] Špatné heslo.
+189	[Správce skladu] Po otevøení skladu musíte poèkat 10 sekund.
+190	[Správce skladu] Pøed opìtovnım otevøením skladu musíte poèkat 10 sekund.
+191	[Správce skladu] Musíte poèkat 10 sekund.
+192	[Skupina] %s odmítl/a pozvánku.
+193	[Skupina] Pøipojili jste se ke skupinì %s.
+194	[Skupina] Maximální rozdíl je pøe skupinu 30 úrovní.
+195	[Skupina] Pozvánku mùete poslat jako nevoliè.
+196	[Skupina] Nemùete pozvat hráèe z jinıch øíš.
+197	[Skupina] Ze skupiny se nemùete vylouèit.
+198	[Skupina] Nemùeš se pøipravit o cíl.
+199	[Skupina] Nelze pozvat další osoby.
+200	[Skupina] Nelze se pøipojit, pokud vedoucí skupiny není online.
+201	[Skupina] Ke skupinì se nelze pøipojit.
+202	[Skupina] Na této mapì nemùe nikdo opustit skupinu.
+203	[Skupina] Na této mapì nemùe nikdo opustit skupinu.
+204	[Skupina] Zde nelze skupinu opustit.
+205	[Skupina] V dungeonu nelze odstranit èlena.
+206	[Skupina] Toto mùe provést pouze vedoucí skupiny.
+207	[Skupina] Vedoucího skupiny nelze zmìnit.
+208	[Skupina] Z dùvodu problémù se serverem to nelze provést.
+209	[Skupina] Nenalezeno.
+210	[Skupina] %s opustil/a skupinu.
+211	[Skupina] Dovednosti mùe pouívat pouze vedoucí skupiny.
+212	[Skupina] Skupina nemùe odpovìdìt.
+213	[Skupina] Skupina byla rozpuštìna.
+214	[Skupina] Nelze vytvoøit skupinu s rozdílem vìtším ne 30 úrovní.
+215	[Skupina] Byli jste pozváni do skupiny.
+216	[Skupina] Byli jste vyøazení ze skupiny.
+217	[Skupina] Nelze najít poadovanı znak.
+218	[Skupina] Pouze vedoucí mùe pozvat ostatní èleny.
+219	[Skupina] Èlenùm skupiny nelze volat.
+220	[Skupina] Skupina je plná.
+221	[System] Nové kolo zaène za 10 sekund.
+222	[System] Souboj zaène za 10 sekund.
+223	[System] Do mìsta se vrátíte za 10 sekund.
+224	[System] Èas vypršel, za 10 sekund se vrátíte do mìsta.
+225	[System] Vyberte èíslo od 1 do 50.
+226	[System] Nemuete mít více ne %s Yangu.
+227	[System] Informace o pokroku pro kadou ríši.
+228	[System] Zadali jste nesprávnou hodnotu.
+229	[System] Nelze pøidávat kameny stejného typu.
+230	[System] Nemùete pøidávat další kameny!
+231	[System] Vaše úroveò dovedností je pøíliš nízká.
+232	[System] Nemáš dostatek Yangu.
+233	[System] Nemáte potøebné pøedmìty.
+234	[System] Musíte poèkat %s sekund.
+235	[System] Nemùeš vstát.
+236	[System] Nemùete si otevøít další Obchod.
+237	[System] Bìhem promìny si nemùete otevøít obchod.
+238	[System] Stavba se nezdaøila.
+239	[System] Budova nebyla postavená.
+240	[System] Vrátíte se do pøihlašovacího okna. Poèkejte...
+241	[System] Doba platby vyprší po %s min.
+242	[System] Nemùete se vzít, pokud nemáte prsten.
+243	[EVENT RATY] Zvıšené percentá DROP PØEDMÌTU: %s%.
+244	[EVENT RATY] Zvıšené percentá YANGU: %s%.
+245	[EVENT RATY] Zvıšené percentá x10 YANGU: %s%.
+246	[EVENT RATY] Zvıšené percentá EXPU: %s%.
+247	[System] Na pøeètení knihy nemáte dostatek exp. bodù.
+248	[Rybolov] Ryba zmizela v hluboké vody.
+249	[Rybolov] Rybáøskı prut získal maximální poèet bodù: %s.
+250	[System] Bylo dosaeno maximálního skóre.
+251	[Tìba] K tìbì minerálu musíte pouít krumpáè.
+252	[Tìba] Musíte mít krumpáè.
+253	[System] Vaše body se zvıšily. (%s/%s)
+254	[System] Knihu stále nemuete studovat.
+255	[System] Zúèastnil ses války cechu.
+256	[System] V tomto reimu nelze pouívat obchodování.
+257	[System] Další poškození: %s.
+258	[System] Nedostatek finanèních prostøedkù.
+259	[System] Nedostatek finanèních prostøedkù. Aktuální èástka: %s Potøebná èástka: %s.
+260	[System] Poehnání od panovníka.
+261	[System] Nejste panovníkem.
+262	[System] Moje tìlo je plné ki.
+263	[System] Školení je témìø u konce.
+264	[System] Ano, velmi pomalu, ale bez zastavení.
+265	[System] Tuto dovednost lze zlepšit jen do urèité míry.
+266	[System] Nemáš pàavo na tento pøíkaz alebo pøíkaz neexistuje.
+267	[System] Není online.
+268	[System] Cech neexistuje.
+269	[System] Musíte mít sílu alespoò %s.
+270	[System] Lokalita patøí do jiné øíše a nelze ji vrátit.
+271	[System] Nepatríš k ádnému cechu.
+272	[System] Jako ve snu?
+273	[System] Na další úroveò krumpáèe se dostanete pøes døevorubce.
+274	[System] %s nemá dostatek yangu.
+275	[System] Nemùete se promìnit.
+276	[System] Informace o prùbìhu: Mrtvı %s.
+277	[Rybolov] Návnadu nelze zmìnit.
+278	[Rybolov] Potøebujete pouze jeden rybáøskı prut.
+279	[Rybolov] Rybáøskı prut dosáhl maximální úroveò.
+280	[System] Nyní je moné ji vylepšit, jdìte k rybáøi.
+281	[Rybolov] Vlote návnadu!
+282	[Rybolov] Jako návnadu jste vloili %s.
+283	[Rybolov] Body rybáøskı prut byly zvıšeny: %s/%s
+284	[Rybolov] Ryby nelze pouít.
+285	[System] Nemáte k dispozici ádné body.
+286	[System] Nemáte k dispozici dostatek bodù.
+287	[System] Nemáte dostatek MB.
+288	[System] Jste pøíliš blízko.
+289	[System] Jste pøíliš daleko.
+290	[System] Pøeèetl jsem témìø všechno.
+291	[System] Teï to nemùete udìlat.
+292	[System] Obchod nelze otevøít, protoe máte otevøená jiná okna.
+293	[System] %s v tuto chvíli nemùe obchodovat.
+294	[System] Nemùete otevøít obchod, protoe máte otevøená jiné okna.
+295	[WARNING] !!!K tomuto úètu se pøihlásil nìkdo jinı. Za 3 sekundy budete odhlášeni!!!
+296	[System] Obchod nemùete otevøít, protoe máte otevøená jiná okna.
+297	[System] V této poloce ji nejsou ádné sloty pro vylepšení.
+298	[System] Nejprve je nutné pøidat slot do šperkù pomocou Diamantù.
+299	[System] Souper se odpojil.
+300	[System] Souboj nemùe zaèít.
+301	[System] Souboj zaèal.
+302	[System] Jeden z protivníkù se odpojil.
+303	[System] Tady ho nemùete pouít.
+304	[System] Školení probìhlo úspìšnì.
+305	[System] Nelze ji zlepšit.
+306	[System] Úroveò této dovednosti je pøíliš vysoká.
+307	[System] Knihu si nemùete pøeèíst.
+308	[System] Nemùete pøidat ádné další bonusy.
+309	[System] U nemùete kopat.
+310	[System] %s nelze pouít uvnitø dungeonu.
+311	[System] Nelze nahradit stejnım úèesem.
+312	[System] Pøi pøemìnì nelze pouívat dovedností.
+313	[System] Pøi pøemìnì nelze zlepšovat dovednosti.
+314	[System] Pøi pøemìnì nelze zlepšit stav.
+315	[System] Bìhem pøemìny nelze mìnit poloky.
+316	[System] Dokonèil jsi vıcvik.
+317	[System] Nemohl ses promìnit.
+318	[System] Cítíte se pøipraveni? Táto technologie je obtíná.
+319	[System] Zaèínáš rozumìt návodu, kterı jsi èetl.
+320	[System] Tvrdı trénink? Jedinı zpùsob, jak se nauèit tuto dovednost.
+321	[System] Pøedmìt zemi zmizí bìhem %s sekund.
+322	[System] Nelze vylepšit kombo pod úrovní Lv. 30.
+323	[System] Nelze vylepšit kombo pod úrovní Lv. 50.
+324	[System] Kombo si vylepšil na maximum.
+325	[System] Musíte bıt alespoò na úrovni %s.
+326	[System] Mìníte znaky. Poèkejte...
+327	[System] Vyèistil sis karmu. Hodnota se zvyšuje o %s.
+328	[Mount] Mounta jsi nezavolal.
+329	[Mount] Mount byl vzkøíšen.
+330	[Mount] Nejprve musíš z mountu slézt.
+331	[Mount] Poslal jsi mounta pryè.
+332	[Mount] Nejprve je nutné zavolat mounta.
+333	[Mount] Nemáš mounta.
+334	[Mount] Váš mount je pøíliš unavenı.
+335	[Mount] Tvùj mount je mrtvı.
+336	[Mount] Nejdøív musíš sesednout z mountu.
+337	[System] Tento pøedmìt nelze vybavit drahokamy.
+338	[System] Tuto poloku nelze vybavit.
+339	[System] Nejprve je tøeba pøidat normální bonus %s. (%s/%s)
+340	[System] ÚSPÌCH! Kámen byl pøidán.
+341	[System] Kámen se rozbil...
+342	[System] Zadejte všechny pøíkazy.
+343	[System] Dílèí pøíkaz pøíkazu je nesprávnı.
+344	[System] Tady se nedá rozdìlat oheò.
+345	[System] Velmi, velmi stabilní. Stejnì jako tento spisovatel.
+346	[System] Ve vodì oheò nerozdìláte.
+347	[System] Stvoøení se nezdaøilo.
+348	[System] Poèet lektvarù není omezen.
+349	[System] Limit lektvarù: %s.
+350	[System] K vırobì lektvarù potøebujete další materiály.
+351	[Rybolov] Dejte návnadu náèik, abyste mohli lovit.
+352	[System] Musíte mít alespoò %s pohyblivos (DEX).
+353	[System] Tuto poloku nelze vyhodi.
+354	[System] Tato poloka nemá ádnı bonus k zmìnì.
+355	[System] Pøi promìnì nelze jezdit.
+356	[System] Nemùeš to udìlat, protoe jsi mrtvı.
+357	[System] %s nemá k dispozici ádné další sloty.
+358	[System] Název obchodu je neplatnı.
+359	[System] Nemáte ádné prázdné láhve.
+360	[System] Táto poloka nemá ádnı kámen k odstranìní.
+361	[System] Svou odmìnu jste ji obdreli.
+362	[System] Limit pouití byl pøekroèen.
+363	[System] Pøíklad: teleport na <jméno hráèe>.
+364	[System] Nezapomeòte, e bìhem boje nemùete pouívat speciální lektvary.
+365	[System] %s nemá v inventáøi dostatek volného místa.
+366	[System] Nemáte dostatek volného místa v inventáøi.
+367	[System] CH, ke kterému jste pøipojení, není stejnı jako na kterém je hráè: %s - %s.
+368	[System] %s má zablokované obchodování.
+369	[System] %s se ji obchoduje.
+370	[System] %s má zablokované ádostí o pøátelství.
+371	[System] Hráè není online.
+372	[System] Na toto místo se nemùete teleportovat.
+373	[System] Hrudník exploduje... Ztratili jste body ivota.
+374	[System] V truhle bylo následující: %s %s.
+375	[System] V truhle bylo: %s.
+376	[System] Z hrudníku vychází zelenı kouø, kterı otravuje vaše tìlo.
+377	[System] Kouø vychází z hrudi a vy ho vdechujete pomalu...
+378	[System] Z truhly vylezla pøíšera!
+379	[System] Z hrudi vychází èervenı kouø, kterı otráví vaše tìlo.
+380	[System] Z truhly vylezla skupina pøíšer!
+381	[System] Jste pøíliš daleko od obchodu.
+382	[System] Mohou to pouívat pouze mui.
+383	[System] Mohou to pouívat pouze eny.
+384	[System] Díky poehnání Draèího boha jsi neztratil ádné zkušenosti.
+385	[System] V inventáøi opasku nemáte dostatek volného místa.
+386	[System] Zpøesnìní se nezdaøilo...
+387	[System] ÚSPÌCH! Zpøesnìní probìhlo úspìšnì.
+388	[System] Tuto nestvùru nelze vyvolat.
+389	[System] ÚSPÌCH! Zpøesnìní bylo úspìšné.
+390	[System] Zpøesnìní se nezdarilo...
+391	[System] Nemùete zmìnit bonusy, musíte poèkat %s minut (zbıvá: %s).
+392	[System] Zmìnili jste bonusy.
+393	[System] Školení jste nepochopili.
+394	[System] Pochopili jste školení a získali jste 1 bod za jízdu.
+395	[System] Truhla byla prázdná.
+396	[System] Úkol se vám nepodaøilo splnit!
+397	[System] Neuspìl jsi pøi vıcviku! Pronásleduje vás zlı duch karmy.
+398	[System] Tuto dovednost nelze trénovat.
+399	[System] Úspìšnı reset dovednostních bodù.
+400	[System] Body této dovednosti nelze obnovit.
+401	[System] Poloka %s byla doruèena.
+402	[System] %s je neprodejná.
+403	[System] Tato poloka není prodejná.
+404	[System] Abyste to mohli provést, musíte bıt alespoò na úrovni %s.
+405	[System] Nemáte poadovanou minimální úroveò.
+406	[System] Nelze otevøít obchod s hodnotou vyšší ne %s Yang.
+407	[System] U nemáš moc èasu na èekání.
+408	[System] Zdá se, e klíè je špatnı.
+409	[System] Nemáte masku emocí.
+410	[System] Nemùete jezdit ve spoleèenském obleèení.
+411	[System] Musíte bıt alespoò na úrovni %s, abyste mohli psát ve voláních v reimu chatu.
+412	[System] O zkušenostní body jste nepøišli.
+413	[System] Neztratili jste hodnost.
+414	[System] Váš chat byl zablokován na %s minut.
+415	[System] Budete teleportováni na svou poslední pozici.
+416	[System] %s nelze nabídnout k prodeji.
+417	[System] %s ji nelze vylepšit pomocí %s.
+418	[System] %s zde zøejmì nefunguje.
+419	[System] %s nelze pøipojit ke zbraním.
+420	[System] %s nelze pøipojit ke zbroji.
+421	[System] Tato dovednost dosáhla stupnì velmistra.
+422	[System] Tato dovednost je vyšší úrovnì. Nemùete se to nauèit.
+423	[System] Tuto dovednost se nelze nauèit z knih.
+424	[System] Tuto dovednost nelze zlepšit.
+425	[System] Vylepšení lze pøidat pouze k náramkùm, náhrdelníkùm a náušnicím.
+426	[System] Tuto dovednost lze pouít pouze u potvrzeného hostitele.
+427	[System] Tuto poloku nemùete vylepšit.
+428	[System] Toto príslušenství nemá ádné sloty pro jiné tavby.
+429	[System] Tato kniha je pøíliš sloitá na pochopení.
+430	[System] Tuto dovednost ji dokonale ovládáte.
+431	[System] Pro porozumìní této knize musíte bıt alespoò na úrovni %s.
+432	[System] Potøebujete souhlas %s.
+433	[System] U jsi blízko místa, kde se nachází papyrus. Nemusíte ji pouívat.
+434	[System] Nejste pøipraveni k pohybu, take nemùete pouít Scroll Návratu.
+435	[System] Zatím nemùete èíst, zkuste to pozdìji.
+436	[Rybolov] Zmìnili jste návnadu na %s.
+437	[System] Ji jste promìnìní.
+438	[Cech] Váš cech vyhlásil válku.
+439	[System] Tohle u nemùete èíst.
+440	[Cech] Válka skoncila.
+441	[System] Nemùete to udìlat, protoe u jste souèástí skupiny.
+442	[System] Úèinek ji existuje.
+443	[Rybolov] Ryba zmizela.
+444	[System] %s zmizelo beze stopy.
+445	[System] Nemùete to udìlat s hráèem stejného pohlaví.
+446	[System] Uète se dál...
+447	[System] Aha, to je poslední stránka. Trénink je témìø u konce.
+448	[System] Brzy budeš mimo mapy.
+449	[System] Budovu nelze postavit. Nemáte dostatek materiálu.
+450	[ERROR] S touto polokou není nìco v poøádku. (ref.: zamìstnanci str001) Nahlás prosím GM!
+451	[ERROR] S touto polokou není nìco v poøádku. (ref.: zamìstnanci str002) Nahlás prosím GM!
+452	[System] ÚSPÌCH! Montá probìhla úspìšnì.
+453	[System] Montá se nezdaøila...
+454	[System] Nemáte dostatek %s (%s, %s).
+455	[System] Zvolenı název je neplatnı.
+456	[System] Souboj byl zrušen.
+457	[System] Škeble byla prázdná...
+458	[System] V Škeble byl: Kus kamene...
+459	[System] V Škeble byla: Bílá perla!
+460	[System] V Škeble byla: Modrá perla!!
+461	[System] V Škeble byla Èervená perla!!!
+462	[System] Táto budova neexistuje.
+463	[System] Tento hráè neexistuje.
+464	[System] Velmi dobøe! Pokraèujte.
+465	[System] Osvobodil jsi zlého ducha karmy. Nyní si mùete pøeèíst další knihu.
+466	[System] Mrtvého konì nelze krmit.
+467	[System] Váš kùò není mrtvı.
+468	[System] Musíte mít alespoò %s inteligenci (INT).
+469	[System] Mùete to udìlat za %sekund.
+470	[System] Extrakce byla úspìšná.
+471	[System] Extrakce se nezdaøila.
+472	[System] Extrakce byla zrušena.
+473	[System] Chat byl uzamèen.
+474	[System] Chat byl odemèen.
+475	[System] Váš chat je uzamèen na %s hodin, %s minut a %s sekund.
+476	[System] Váš chat je uzamèen na %s hodin a %s sekund.
+477	[System] Váš chat je uzamèen na %s minut a %s sekund.
+478	[System] Váš chat je na %s sekund uzamèen.
+479	[System] Nyní nemùete èíst. Zkuste to pozdìji.
+480	[System] Nejsou zde ádné další tøísky k odstranìní.
+481	[System] Musíte mít alespoò %s vitality (VIT).
+482	[System] Odhlášení bylo pøerušeno.
+483	[System] Chystáte se zmìnit postavu.
+484	[System] Pro správné zobrazování a hraní je nutné prepatchovat hru.
+485	[System] Nelze pøepínat na hráèe z jiné øíše.
+486	[Skupina] Nejste v ádné skupinì.
+487	[Skupina] Vaše skupina spolupracuje! Dostanete Extra EXP.
+488	[Skupina] Vedoucí skupiny není online.
+489	[System] Tady to nemùete pouít.
+490	[Cech] Probíhá cechovní válka:
+491	[System] Tento odstín není moné pouít.
+492	[System] K dokonèení školení musíte pøeèíst více %s knih.
+493	[Cech] Zkuste to pozdìji.
+494	[System] Tato funkce je dostupná pouze ve vašich vlastních hradech.
+495	[System] Tato poloka není pro vaši rasu.
+496	[System] Tuto poloku mùe pouívat pouze opaèné pohlaví.
+497	[System] Tato monost je dostupná pouze pro panovníka.
+498	[System] Hráèe mùete pøevést pouze z vlastního království.
+499	[System] Nemùete to udìlat, protoe %s je v CH%s a vy jste v CH%s.
+500	[System] Bylo vyvoláno %s.
+501	[System] %s buï není online, nebo neexistuje.
+502	[System] Nemùete vylepšit poloku, kdy máte otevøené obchody/sklady/obchodovaní.
+503	[System] Nemùete otevøít obchod s brnìním.
+504	[System] Okno je ji otevøené. Zkuste se relognout.
+505	[System] Nemáte všechny potøebné materiály.
+506	[System] Nejprve otevøete okno pro tvorbu.
+507	[Cech] Protivníkùv cechovní mistr není online.
+508	[System] S opìtovnım pouitím této poloky musíte poèkat.
+509	[System] You can only place permanent mounts in the mount inventory.
+510	[System] Zkuste to pozdìji.
+511	[PvP] Ji probíhá souboj.
+512	[PvP] %s odmítl/a souboj.
+513	[PvP] Soupeø se odpojil, souboj byl zrušen.
+514	[PvP] Vy i váš soupeø obdríte sázku zpìt, protoe souboj byl zrušen.
+515	[PvP] Vyhráli jste %s Yang plus vaší poèáteèní sázku.
+516	[PvP] Tato funkce je v souboji uzamèena.
+517	[PvP] %s zablokoval tuto funkci se svım soupeøem.
+518	[PvP] %s zablokoval buff v souboji.
+519	[System] Blokované poloky nelze pøidat.
+520	[System] Mùete absorbovat pouze bonusy z brnìní a zbraní.
+521	[System] ÚSPÌCH! Zlepšení je úspìšné. Nová míra absorpce: %s%.
+522	[System] ÚSPÌCH! Vytvoøení je úspìšné.
+523	[System] Vytvoøení se nezdarilo...
+524	[System] Nemáte dostatoèné mnostvo Gaya.
+525	[System] Potøebujete %s %s.
+526	[System] ÚSPÌCH! Rez byl úspìšnı.
+527	[System] Rez se nezdaril...
+528	[System] Teï se nemùeš teleportovat!
+529	[System] Souøadnice x: %s, y: %s neexistují.
+530	[System] V reimu diváka nelze ukládat souøadnice.
+531	[System] Souøadnice této mapy nelze uloit.
+532	[INFO] U jedete.
+533	[System] Pøi tvorbì nelze odstranit kámen!
+534	[System] ÚSPÌCH! Úspìšnì jste odstranili %s.
+535	[System] Pøi odstraòování kamene si získal %s.
+536	[System] Odstranìní draèího kamene se nezdarilo...
+537	[System] Nelze provést odstranìní draèího kamene.
+538	[System] Ji nosí tento typ kamene.
+539	[System] Ve speciálním inventáøi nemáte dostatek volného místa.
+540	[System] Pokud máte otevøené okno jinıch systémù, nemùete zmìnit poøadí inventáøe.
+541	[System] Vybavenı pøedmìt nelze prodat.
+542	[INFO] Házíte kostkami pro: %s
+543	[INFO] %s jste hodili: %s
+544	[INFO] %s srolováno %s. (%s - %s)
+545	[INFO] Hodili jste %s. (%s - %s)
+546	|cFFFFD700[LEVEL UP]|r %s dosáhlo úroveò %s.
+547	[INFO] Øíše %s prohrál bitvu.
+548	[INFO] %s dokoncil bojovı pruchod %s.
+549	[INFO] Do pøíchodu pøíšer zbıvá %s minut(y).
+550	[INFO] Pøíšery zaèaly útoèit na hrad.
+551	[INFO] Pøíšery se blíí k hradu %s.
+552	[INFO] Na hrad zaútoèí za 10 minut.
+553	[INFO] %s je v boji o plameò.
+554	[INFO] %s se podaøilo projít.
+555	[INFO] Od této chvíle máte 30 minut na zdolání plamene.
+556	[INFO] Èas vypršel a plamen zmizel.
+557	[INFO] Plameò se objevil na území %s.
+558	[INFO] %s zvítìzil nad plamenem.
+559	[INFO] %s prohrálo válku.
+560	[INFO] %s pøemohlo všechny plameny.
+561	[INFO] Panovník zmìnil danì.
+562	[INFO] V budoucnu pùjde kadé %s z prodeje do královské pokladny.
+563	[INFO] Cech %s vyhlásil válku cechu %s.
+564	[INFO] Za chvíli probìhne válka mezi %s a %s.
+565	[INFO] Válka mezi %s a %s zaèala.
+566	[INFO] %s vyhrálo válku proti %s.
+567	[INFO] Válka mezi %s a %s skonèila remízou.
+568	[INFO] Válka mezi %s a %s skonèila.
+569	[INFO] Novım panovníkem %s je %s!
+570	[WARNING] Server narazil na neopravitelnou chybu a automaticky se restartoval.
+571	[INFO] Server sa vypne za 10 sekund budete odpojení.
+572	[INFO] Po 5 minutách se budete moci normálnì pøipojit.
+573	[INFO] Drop %s pro cech %s byl zvıšen o %s%.
+574	[INFO] Drop %s cechu %s se vrátil do normálu.
+575	[INFO] Drop %s %s byl zvıšen o %s%.
+576	[INFO] Drop %s z %s se vrátil do normálu.
+577	[INFO] Za %s sekund(y) budete odpojení od serveru.
+578	[INFO] Server sa vypne za %s sekund(y).
+579	[OX] Za 10 sekund se dozvíte odpovìï.
+580	[OX] Správná odpovìï je: O.
+581	[OX] Správná odpovìï je: X.
+582	[OX] Kdo odpovìdìl špatnì, bude za 5 sekund vyøazen.
+583	[OX] Pøipravte se na další otázku!
+584	[OX] Otázka:
+585	[OX] Pøejdìte na O pro PRAVDA a X pro LE.
+586	[INFO] Brzy se vrátíte do vesnice.
+587	[INFO] Panovník %s pouil poehnání obnovující ZB a MB všem obyvatelùm øíše.
+588	[INFO] Panovník %s pouil svou moc, aby zvıšil ÚTOK všem obyvatelùm øíše o 10%.
+589	[INFO] Panovník %s pouil svou moc ke zvıšení OBRANY všech obyvatel øíše o 10%.
+590	[INFO] Aktuální skóre: Shinsoo (%s), Chunjo (%s), Jinno (%s).
+591	[INFO] U centrálního oltáøe se shromaïuje zlá energie.
+592	[INFO] Pøíšery vykazují známky ústupu.
+593	[INFO] Pøíšery zaèaly ustupovat... po chvíli se vrátíte do vesnice.
+594	[INFO] Objevil se BOSS. Na jeho zabití máte 30 minut.
+595	[INFO] Porazili jste BOSSE a brzy budete teleportování zpìt do vesnice.
+596	[INFO] Šéf se stáhl, brzy budete teleportováni do vesnice.
+597	[INFO] Yonggari zemøe za %s sekund.
+598	[INFO] Na znièení soch máte %s sekundy.
+599	[INFO] Boj proti Meley, královnì drakù, zaèal!
+600	[INFO] Dveøe se otevøely. Zbıvá vám %s minut.
+601	[INFO] Gratuluji, zabil jsi Meley, královnu drakù.
+602	[INFO] Za %s minut a %s sekund.
+603	[System] Dungeon nelze spustit, kontaktujte prosím GM!
+604	[System] Cechù vráceno %s Karma bodù.
+605	[INFO] Èasovı limit skonèil, brzy budete teleportování prıè.
+606	[System] V zájmu vlastní bezpeènosti budete za %s sekund/o teleportování z mapy.
+607	[System] Kdy máte otevøenı úkol, nemùete pøidávat pøátele.
+608	[INFO] Otázka %s je pravdivá.
+609	[INFO] Otázka %s je nepravdivá.
+610	[INFO] Celkovı poèet otázek: %s.
+611	[System] Na tuto mapu se nelze teleportovat.
+612	[System] Kanál, ke kterému jste pøipojení, není stejnı jako %s: %s - %s.
+613	[System] Odeslali jste ádost o teleport.
+614	[System] %s je ji blízko vás.
+615	[INFO] Jste online ji %s hodin.
+616	[WARNING] Co nejdøíve vypnìte pøipojení a dejte si pauzu pro své zdraví.
+617	[INFO] Hra Vás u unavuje.
+618	[INFO] Váš èas offline je %s hodin/let a %s minut/let.
+619	[INFO] Váš èas online je %s hodin/let a %s minut/let.
+620	[System] Nemáte dostatek %s.
+621	[System] Nemùete pøekroèit 100% limit.
+622	[System] Ji jednou jste inkrementovali.
+623	[System] Draèí kámen nelze èasovì extrahovat.
+624	[System] Extrakce èasu se nezdaøila...
+625	[System] ÚSPÌCH! Extrakce èasu byla úspìšná.
+626	[System] V alcha inventáøi nemáte dostatek volného místa.
+627	[System] Tento draèí kámen je vylepšeno na MAX.
+628	[System] Tento draèí kámen není stejného typu/stupne.
+629	[System] ÚSPÌCH! Vylepšení bylo úspìšné.
+630	[System] Vylepšení se nezdarilo...
+631	[System] Kdy máte otevøenı úkol, nemùete obchodovat.
+632	[System] %s nemùe pøijímat ádosti, protoe má otevøenou misi.
+633	[Cech] Cech je momentálnì ve válce.
+634	[Cech] Èech ji dosáhl svého maximálního poètu èlenù.
+635	[Cech] V pokladnì %s je aktuálnì %s Yang.
+636	[System] Vybrané CH je offline.
+637	[System] Mohou probíhat bitvy.
+638	[System] Pokud si to chcete rozmyslet, vrate se ke stráci.
+639	[System] Váš chat je uzamèen.
+640	[System] Tuto poloku nelze uloit.
+641	[System] Ve skladu nemáte dostatek volného místa.
+642	[System] K tomu potøebujete %s.
+643	[System] Draèí kameny nemùeš pøesunout do normálního inventaru.
+644	[System] V alcha inventáøi nemáte dostatek volného místa.
+645	[System] Tato poloka není kompatibilní se speciálním inventáøem.
+646	[System] Tato poloka není kompatibilní s alcha inventáøem.
+647	[System] Teï se nemùeš teleportovat. Zkuste to pozdìji.
+648	[Skupina]Skupinu nelze v dungeonu rozpustit.
+649	[Cech] Nemuete odstranit clena, kdy je cech ve válce.
+650	[Cech] Cech ji dosáhl maximální úrovne (%s).
+651	[WARNING] Server bude za 10 minut uzavøen.
+652	[Biolog] Abyste mohli pokraèovat, musíte bıt alespoò na úrovni %s.
+653	[Biolog] Musíte na to èekat %s dní/let, %s hodin/let, %s minut/let, %s sekund/let.
+654	[Biolog] Nemáte poadovanou poloku pro biologa.
+655	[Biolog] Všechny úkoly jste ji splnili.
+656	[System] Nelze prodat poloku s èasovım zámkem.
+657	[System] Ryby mùete lovit pouze ve vodì.
+658	[System] Zmìníte CH za %s sekund/y.
+659	[System] Zušlechovací okno šerp je ji otevøeno.
+660	[System] Nejprve musíte zavøít okno absorb. šerpy.
+661	[System] Nejprve je treba zavrít okno šérp.
+662	[System] Mùete zušlechovat pouze šerpy stejné tøídy.
+663	[System] Tento šerpa ji má maximální míru absorpce (%s).
+664	[System] Zatím nemáš kvalifikaci k pouívání alchymie.
+665	[System] %s nelze zlepšit pomocí %s.
+666	[System] %s ji nelze zlepšit.
+667	[System] Tento pøedmìt nelze pouít pøi souboji.
+668	[System] V této oblasti nejsou povoleny ádné obchody.
+669	[System] Nemùeš ji pouít, protoe ještì nemáš kvalifikaci k pouívání alchymie.
+670	[System] %s bylo dobito o %s sekund/o.
+671	[System] Znovunaètení %s se nezdaøilo.
+672	[System] Tento pøedmìt nelze nyní pouít, protoe partner je v souboji.
+673	[System] Detektor nenašel ádné metinové kameny.
+674	[System] Ji jste dosáhli maximálního poètu Karma bodù (%s).
+675	[System] %s funguje pouze na brnìní a zbranì.
+676	[System] %s nemá ádné sloty.
+677	[System] Pøidali jste speciální bonus.
+678	[System] Kameny +3 nelze odstranit pomocí %s.
+679	[System] Kámen nelze odstranit prostøednictvím %s.
+680	[System] Nemùete odstranit uzamèenı bonus kostımu nebo draèího kamene.
+681	[System] Lze pouít pouze na talismany.
+682	[System] Funguje pouze pro poloky pod úrovní %s.
+683	[System] Lze pouít pouze na zbranì nebo brnìní.
+684	[System] Nelze pouít na talismany.
+685	[System] Toto není dostateènì nabité.
+686	[System] Toto nemá ádnı dostupnı zásah.
+687	[System] Nemùete vyjmout pøedmìt ze switchbotu, protoe váš inventáø je plnı.
+688	[System] V této oblasti nelze tuto poloku pouít. 
+689	[System] Tento pøedmet nelze pouít, pokud máte otevøenou misi.
+690	[System] S pøedmìtem nelze hıbat, protoe je aktivní Switchbot.
+691	[System] Tento pøedmìt nelze pomocí Switchbotu natoèit.
+692	[System] Tento pøedmìt nelze zvednout, pokud máte otevøenı úkol.
+693	[System] Pøi jízdì na Mountu nemuete nosit svatební šaty.
+694	[System] Váš Typ Zbranì se liší od tohoto kostımu.
+695	[System] Na nošení tohoto pøedmìtu nemáte ádné volné sloty.
+696	[System] Tuto poloku nemùete pouít, protoe nejste manelé.
+697	[System] Okno craftingu nelze otevøít, pokud máte otevøená jiná okna.
+698	[System] Aktuální pokles %s pro øíše je %s%.
+699	[System] Aktuální drop %s pro cechy je %s%.
+700	[System] Aktuální drop %s pro hráèe je %s%.
+701	[System] ádní další èlenové soupeøícího cechu ji nejsou online.
+702	[System] Pokud se nikdo nepøipojí do jedné minuty, válka skonèí.
+703	[System] Èasovı limit vypršel. Válka skonèila nerozhodnì.
+704	[System] Svatba je u konce. Budete teleportováni z mapy.
+705	[System] Cech %s pøevzal vlajku %s.
+706	[System] Jeden z duelantù se odhlásil.
+707	[System] Souboj skonèil kvùli neznámému problému.
+708	[System] Souboj skonèil, protoe jeden ze soupeøu má problém.
+709	[System] %s (%s) : %s (%s)
+710	[System] Válka nemùe v tuto chvíli zaèít.
+711	[System] Cech ji má nevyøízenou ádost o válku.
+712	[Biolog] ÚSPÌCH! Tato poloka je v dobrém stavu.
+713	[Biolog] Tato poloka není v dobrém stavu...
+714	[Biolog] Gratuluji, splnili jsi mise!
+715	[DENNÍ-BONUS] Odmenu si nemuete vzít! Musíš poèka Zıvající èas!
+716	[System] Pøíklad: /channel (císlo ch)
+717	[System] Zadanı CH je neplatnı.
+718	[System] Ji jste na tomto CH %s.
+719	[System] Do tohoto CH nemuete jít.
+720	[System] Nemùete zmìnit CH, kdy jste v dungu.
+721	[DENNÍ-BONUS] Tady je Vaše odmìna. Nezapomeò si ho vzít i zítra.
+722	[PVP] Nemùete zahájit souboj, protoe s Yangy, které jste vsadili, je neco špatne.
+723	[System] ádnı Hráè s tímto jménem není online.
+724	[System] Pøíklad: /monarch_tax (1-50)
+725	[System] Pøíklad: /mmob (jméno príšery)
+726	[System] Tento pøíkaz je k dispozici pouze ve vaší doménì.
+727	[System] Ve slotu %s inventáøe se nachází %s.
+728	[System] Ve slotu %s v inventáøi nelze nic najít.
+729	[Mazlík] Abyste mohli pokraèovat, musíte mazlíèka pøivolat.
+730	[Mazlík] Nyní mazlíèka nelze vyvinout.
+731	[System] Pøi válce v dungeonu nelze otevøít skladištì.
+732	[System] Pøi promìnì nelze nasednout na mounta.
+733	[System] Jméno %s, id %s.
+734	[System] Systém Gaya je v souèasné dobì Vypnutı!
+735	[System] Nelze otevøít obchod, kdy máte otevøená jiná okna (napø. trade).
+736	[System] Toto monstrum neexistuje.
+737	[System] Teleportovali jste se na souøadnice: x(%s), y(%s).
+738	[System] Objekt: %s není platnı.
+739	[System] Objekt: %s neexistuje.
+740	[System] Tento pøedmìt nemùete obdret, pokud máte otevøenou misi.
+741	[System] Bìhem jízdy se nemùete promìnit!
+742	[Mazlík] Váš Mazlíèek dosáhl maximální úrovnì!
+743	[Mazlík] Dovednost Vašeho Mazlíèka dosáhla %s.
+744	[Mazlík] Dovednost Vašeho Mazlíèka je ji na maximální úrovni!
+745	[Mazlík] ÚSPÌCH! Váš Mazlíèek se nauèil novou schopnost.
+746	[Mazlík] Váš Mazlíèek se nemùe nauèit další schopnosti.
+747	[Mazlík] Váš Mazlíèek se vyvinul na úrovnì %s.
+748	[Mazlík] Váš Mazlíèek ji dosáhl Maximální úrovnì vıvoje!
+749	[System] Ne budete moci tuto schopnost pouít, musíte poèkat!
+750	[System] Tuto schopnost muete pouít pouze tehdy, pokud jsou vaše HP alespoò na 20%.
+751	[System] Obnovili jste své HP.
+752	[System] Stal ses nepøemoitelnım!
+753	[System] Odstranili jste negativní úèinky.
+754	[System] Switchbot se zastavil, protoe u nemáte ádná zaèarka.
+755	[System] Switchbot se zastavil, protoe nemáte dostatek yangù.
+756	[System] Zmìnili jste kód PIN.
+757	[System] Pøíznak: Název (%s), Hodnota (%s).
+758	[System] Pøíznak: Název (%s), Stav (%s), Hodnota (%s).
+759	[ERROR] Neznámá chyba. Napiš GM aby se zabránilo bugum.
+760	[Cech] Získali jste %s Yang.
+761	[Cech] Ztratili jste %s Yang.
+762	[System] Není registrována ádná Hodnost.
+763	[System] Tento název je ji pouíván. Vyberte si jiné Jméno!
+764	[System] Pred zmìnou Názvu je nutné pøivolat GM.
+765	[System] Úspìšne jste zmìnili Název.
+766	[System] Pøed zmìnou pohlaví je nutné pøivolat svého Konì.
+767	[System] Úspešne jste zmenili Pohlaví.
+768	[System] Potøebujete %s Yang/u.
+769	[Mazlík] Pojmenovali jste svého mazlíèka! Teï ho mùeš pøivolat!
+770	[System] Chyba nastavení názvu.
+771	[System] Abyste mohli pokraèovat, musíte bıt alespoò na Lv.%s.
+772	[System] Abyste mohli pokraèovat, musíte bıt alespoò na Lv.%s.
+773	[System] Abyste mohli pokraèovat, musíte mít alespoò %s Yang.
+774	[System] Abyste ji mohli pouívat, musíte bıt GM.
+775	[System] Text je neplatnı!
+776	[System] Zkuste to znovu za 5 sekund!
+777	[BP] Neexistuje ádnı BattlePass s id: %s.
+778	[BP] Neexistuje ádnı BattlePass s názvem: %s.
+779	[BP] Neexistuje ádná odmìna v BattlePassu %s.
+780	[BP] Nemáte aktivní BattlePass!
+781	[System] ID Buffu (%s) %s bylo odemèeno.
+782	[System] Kdy máte otevøené okno offline obchodu, nemuete v inventáøi znovu objednat poloky.
+783	[System] Pøedmìty se Zmrazenımi Bonusy nelze absorbovat.
+784	[System] Nelze vylepšit pøedmìt se Zmrazenım Bonusem.
+785	[System] Tento pøedmìt nemuete pouít, pokud nemáte Opasek.
+786	[System] Tento pøedmìt nemuete pouít, pokud si vylepšujete Opasek.
+787	[Mazlík] Pøed pokraèováním je nutné odvolat Mazlíèka.
+788	[Mazlík] ivotnost vašeho malíèka byla obnovena!
+789	[Mazlík] Tato pøepravka ji obsahuje Mazlíèka.
+790	[Mazlík] Pøed umístìním Mazlíèka do pøepravky musíte mazlíèka alespoò jednou pøivolat.
+791	[System] Nelze pouít na tento pøedmìt.
+792	[System] Pøedmìt musí mít alespoò 5 bonusù!
+793	[System] Tato poloka ji má Zmrazenı Bonus.
+794	[System] Tato poloka nemá ádnı Zmrazenı Bonus.
+795	[System] Tato poloka nemá ádnı Uzamèenı Bonus.
+796	[System] Tento typ Draèího Kamene ji nosíš.
+797	[System] Gratulujeme, úspešnì jste dokonèili úkol!
+798	[System] Bìhem jízdy nemuete pouívat Emoce.
+799	[System] Nemùete pouít emoce, protoe partnet sedí na Mountovi.
+800	[System] %s není na stejné Mapì.
+801	[System] %s je PcBang.
+802	[System] %s není PcBang.
+803	[System] %s je v CH %s, vy jste v CH %s. (Nejste na stejném CH)
+804	[System] Teleport vyádán.
+805	[System] Teleportovali jste se na souøadnice: map(%s), x(%s), y(%s).
+806	[System] Pøedmìty nelze odstranit, pokud je podpora aktivní.
+807	[Mazlík] Nemùeš to udìlat, protoe tvuj Mazlíèek je pøivolán.
+808	[System] Celkovı poèet hráèù: %s. [Shinsoo(%s), Chunjo(%s), Jinno(%s), Server(%s)].
+809	[System] Pøekroèili jste limit Yangù. Vaše Yangy byly resetovány.
+810	[System] Vyádáno zablokování chatu.
+811	[System] Pøedmìt neexistuje.
+812	[System] Aktuální poèet úèastníkù: %s.
+813	[System] Bylo zaregistrováno vıhercù.
+814	[System] Vıhercù nebylo zaregistrováno.
+815	[System] Okno vıroby nelze otevøít, protoe máte otevøená jiná okna.
+816	[System] Tento pøedmet nelze vylepšit, protoe má Zmrazenı Bonus.
+817	[System] Vıroba selhala...
+818	[System] ÚSPÌCH! Vıroba byla úspìšná!
+819	[System] Nemáte všechny potøebné materiály.
+820	[System] Nikdo nemá zamèenı chat.
+821	[System] Do této oblasti se nemuete pøesunout.
+822	[System] Šerpu lze vyrobit pouze s jinou šerpou.
+823	[System] K tomu potøebujete %s.
+824	[System] %s vás vyzval na souboj.
+825	[System] Tento obchod nelze vytvoøit.
+826	[System] Název tohoto obchodu nelze zmìnit.
+827	[System] Tento obchod nelze uzavøít.
+828	[System] Nelze otevøít obchod.
+829	[System] Nelze otevrít obchod.
+830	[System] Nelze pøidat poloku do obchodu.
+831	[System] Tuto poloku nelze zakoupit.
+832	[System] Poloku nelze odstranit.
+833	[System] Poloku nelze zmìnit.
+834	[System] Nelze odstranit poslední poloku z obchodu. Najpr zavøi obchod!
+835	[System] Nelze provést vyhledávání.
+836	[System] Vyhledávání mùete provádet kadıch 2 sekund.
+837	[System] Nabídka byla úspešnì vytvoøena.
+838	[System] Nelze podat nabídku.
+839	[System] Nelze pøíjmout nabídku.
+840	[System] Nelze otevøít váš sklad.
+841	[System] Tuto poloku nelze vybrat.
+842	[System] Nelze vybrat yang ze skladu.
+843	
+844	[System] Zboí jste úspešnì obdreli.
+845	[System] Nelze otevøít seznam Aukcí.
+846	[System] Aukci nelze otevøít.
+847	[System] Aukci nelze vytvoøit.
+848	[System] Tuto nabídku není moné vytvoøit.
+849	[System] Nyní to nelze provést.
+850	[System] Nelze pouít na Talismany.
+851	[System] Potøebujete alespoò %s dostupnıch bodù.
+852	[System] Na této mape nelze jezdit!
+853	[Mazlík] %s ji obsahuje mazlíèka.
+854	[Mazlík] Nejprve musíte mazlíèka poslat pryè.
+855	[Mazlík] Mazlíèek byl umísten do %s.
+856	[Mazlík] %s je prázdné.
+857	[Mazlík] Odstranili jste Mazlíèka z %s.
+858	[Mazlík] K tomu je tøeba Mazlíèka alespoò jednou zavolat!
+859	[System] Na toto príslušenství jej nelze umístit, protoe má nekoneèné mnoství vylepšení.
+860	[System] Na toto príslušenství jej nelze umístit, protoe má èasovì omezené vylepšení.
+861	[Biolog] Úkol se odemkne, a dosáhnete Lv.%s.
+862	[Biolog] Nemáte ádnı Vızkumníkùv Elixír!
+863	[Biolog] Nemáte ádnı Vızkumníkuv Elixír+!
+864	[Biolog] R.I.P. Poloka není v dobrém stavu, biolog nemue provádìt vızkum...
+865	[Biolog] ÚSPÌCH! Poloka je v dobrém stavu, biolog zaène s vızkumem.
+866	[Biolog] Nemáte pøedmìt, kterı Biolog potøebuje.
+867	[Biolog] Všechny úkoly Biologa jste ji splnili.
+868	[Biolog] Dokonèili jste poslední úkol Biologa, Gratulujeme!
+869	[Biolog] Další úkol Biologa bude odemèen na Lv.%s.
+870	[Biolog] Biolog Vás obdaøil jedním nebo více Bonusy za splnení mise!
+871	[Biolog] Biolog ještì nedokonèil vızkum poslední dodané poloky!
+872	[Biolog] V souèasné dobì nemáte ádné úkoly Biologa, u kterıch byste mohli zmìnit bonusy.
+873	[System] Bonus byl zmìnen.
+874	[PVP] Peníze musí bıt v èíslech.
+875	[PVP] Zadaná èástka nesmí bıt menší ne 0.
+876	[PVP] Zadaná èástka pøesahuje limit.
+877	[PVP] Nemáte dostatek Yangù.
+878	[PVP] Soupeø tuto èástku Yangù nemá.
+879	[PVP] Peníze, které má soupeø v zásobì, plus vsazená cástka, pøesahují limit yangù.
+880	[PVP] Soupeø tuto èástku Yangù nemá.
+881	[PVP] Nyní se úèastníte souboje.
+882	[PVP] Soupeø ji vede jinı souboj.
+883	[PVP] Soupeø tuto èástku Yangù nemá.
+884	[System] Zobrazení vybavení je ji zablokováno.
+885	[System] Zobrazení vybavení je uzamèeno.
+886	[System] Zobrazení vybavení je odemèeno.
+887	[System] Zobrazení vybavení je ji odemèeno.
+888	[PVP] Soupeø ji ádost o souboj dostal. Zkuste to znovu za %s sec.
+889	[PVP] %s se tì snaí vyzvat na souboj, ale ty u máš otevøenou ádost.
+890	[Cech] To mue udìlat pouze vùdce cechu.
+891	[System] Ak chcete pouít tuto poloku, musíte bıt enatı/ vdaná.
+892	[System] Tuto šerpu ji nelze vylepšit.
+893	[System] Tento efekt ji existuje.
+894	[Rybolov] Zde nemùete rybaøit.
+895	[Rybolov] K rybaøení potøebujete prút.
+896	[Rybolov] %s je na háèku.
+897	[Rybolov] Nìco je na háèku, ale nedá se øíct, co to je.  
+898	[Rybolov] Zmìnili jste svou aktuální návnadu na %s.
+899	[Rybolov] Abyste mohli lovit, musíte mít v inventáøi alespoò jedno volné místo.
+900	[System] Tento Efekt se ji pouívá.
+901	[System] %s byl deaktivován.
+902	[System] Mue ji pouít pouze vedoucí skupiny.
+903	[System] %s obdrel/a %s.
+904	[INFO] %s se pripojil/a k úasnému svìtu Auriga-Global.
+905	[DUNGEON] Musíte znièit všechny kameny Metin abyste odstranili nepøemoitelnost Bosse!
+906	
+907	[DUNGEON] Musíte zabít všechny pøíšery!
+908	[DUNGEON] Všichni èlenové skupiny nyní mohou útoèit na bosse.
+909	[EVENT LOÏ] !SOS! Stoár je rozbitı.
+910	[EVENT LOÏ] Všichni úèastníci budou teleportováni ven!
+911	[Cech] Vùdce cechu %s pøedal velení cechu `%s` na %s.
+912	[OX] Soutì OX zaèala! [OX]
+913	[OX] O úèasti si mùete promluvit s NPC Uriel-em.
+914	[OX] Pøihlášky na soutì OX byly uzavøeny!
+915	[OX] Další soutìící nejsou pøijímáni, muete bıt pouze diváky.
+916	[OX] Vıhercum byly udìleny ceny!
+917	[OX] Soutì OX skonèila, brzy se vrátíte do vesnice. [OX]
+918	[INFO] %s právì dokonèil/a Slizkou Královnu!
+919	[INFO] Skupina hráèe %s dokonèila Nemerovu Vì!
+920	[INFO] %s dokonèil/a Nemerovu Vì!
+921	[INFO] Skupina hráèe %s dokonèila Berana-Setaou!
+922	[INFO] %s dokonèil/a Berana-Setaou!
+923	[INFO] Skupina, která byla uvnitø Draèího Chrámu, selhala. Èas vypršel.
+924	[INFO] Draèí chrám je opìt otevøen.
+925	[INFO] Cech %s získává %s místo ve Zlaté lize.
+926	[INFO] Cech %s získává %s místo ve Støíbrné lize.
+927	[INFO] Cech %s získává %s místo ve Bronzové Lize.
+928	[INFO] Cech %s právì porazil Slizkou Královnu!
+929	[INFO] %s právì dokonèil/a Slizkou Královnu!
+930	[DUNGEON] Zabijte všechny Démony v tomto patøe!
+931	[INFO] Katakomby budou od této chvíle na %s minut uzavøeny.
+932	[INFO] Katakomby jsou opet otevøené!
+933	[INFO] Skupina hráèe %s dokonèila Katakomby Azraela!
+934	[INFO] %s skupina dokonèila chrám Ochao!
+935	[INFO] %s dokonèil/a Chrám Ochao!
+936	[INFO] %s skupina dokonèila Pavouèí Dungeon!
+937	[INFO] %s dokonèil/a Pavouèí Dungeon!
+938	[DUNGEON] Boss u je zranitelnı!
+939	[DUNGEON] Objevil se Boss, poškození mue zpusobit pouze vùdce skupiny, dokud jeho HP dosahuje alespon 70%.
+940	
+941	[ERROR] Obrate se prosím na GM s error codem: Rune020
+942	[ERROR] Obrate se prosím na GM s error codem: Rune021
+943	[ERROR] Obrate se prosím na GM s error codem: Rune022
+944	[ERROR] Obrate se prosím na GM s error codem: Rune024
+945	[ERROR] Obrate se prosím na GM s error codem: Rune025
+946	[DUNGEON] Èas vypršel, bohuel jste neuspìli. Budete teleportováni z dungu.
+947	
+948	[ERROR] [ERROR] Obrate se prosím na GM s error codem: Rune001
+949	[DUNGEON] Od této chvíle máš %s minut na zabití všech Príšer a Metinovıch kamenu v tomto patøe.
+950	[DUNGEON] Kamene Metin nelze poškodit, dokud jsou príšery naivu.
+951	
+952	[DUNGEON] Za 3 sekundy budete teleportováni do 3. patra.
+953	[DUNGEON] Za 3 sekundy budete teleportováni do 4. patra.
+954	[DUNGEON] Abyste mohli pokraèovat v poškozování bosse, musíte nejprve zabít Príšery.
+955	[DUNGEON] Ak Chcete pokraèovat v poškozování Bosse, musíte nejprve znièit Metiny.
+956	[DUNGEON] Za 3 sekundy budete teleportováni do nejvyššího patra.
+957	[DUNGEON] Od této chvíle máš %s minut na to, abys upustil 10 runovıch duší.
+958	[DUNGEON] Upustit je mue pouze vedoucí skupiny.
+959	[DUNGEON] Od této chvíle máte na zabití Bosse %s minut.
+960	[DUNGEON] Aby se objevil Boss, musíte nejprve zabít všechny Monstra a Kamene Metin.
+961	[DUNGEON] Od této chvíle máte na dokonèení tohoto patra %s minut. Ak chcete aby Boss dostával poškození, musíte nejprve znièit Kameny Metin!
+962	
+963	[DUNGEON] Gratulujeme, dokonèili jste dungeon!
+964	[DUNGEON] Za 30 sekund budete teleportováni ven.
+965	[DUNGEON] Zabil jsi bosse. Nyní musíte dostat HP dalšího Bosse nejménì na 50%.
+966	
+967	[DUNGEON] Znièil jsi poslední sochu. Nyní zabijte Bosse!
+968	[DUNGEON] Znièili jste sochu! Ještì zbıvá znièit %s.
+969	[DUNGEON] Zabili jste bosse. Nyní, aby další boss obdrel poškození, musíte nejprve znièit sochy pomocí Boského Klíèe.
+970	
+971	[DUNGEON] Klíèe mohou bıt dropnutı z príšer.
+972	[DUNGEON] Znièil jsi poslední Metin Kámen. Nyní zabijte Bosse!
+973	[DUNGEON] Zbıvá znièit %s Metinu!
+974	[ERROR] Obrate se prosím na GM s error codem: Rune023
+975	[DUNGEON] Zabili jste všechny príšery. Nyní musíte znièit Kameny Metin.
+976	[DUNGEON] Postupnì najdìte první odemèenı Metin.
+977	[ERROR] Obrate se prosím na GM s error codem: Rune002
+978	[DUNGEON] Zbıvá znièit %s Metinu!
+979	[DUNGEON] Znièil jsi poslední Metin Kámen!
+980	[DUNGEON] Za 3 sekundy budete teleportováni do 2. patra.
+981	[ERROR] Obrate se prosím na GM s error codem: Rune003
+982	[ERROR] Obrate se prosím na GM s error codem: Rune004
+983	[ERROR] Obrate se prosím na GM s error codem: Rune005
+984	[DUNGEON] Na dokonèenie dungu vám zbıvá jedna minuta!!!
+985	[DUNGEON] Na dokonèenie dungu vám zbıvá %s minut!
+986	[DUNGEON] Neuspìl jsi, budeš teleportován ven.
+987	[DUNGEON] Porate mocného Azraela!
+988	[DUNGEON] Gratulují, dokonèil si dungeon!
+989	[DUNGEON] Za 10 sekund vás stráce mìsta teleportuje ven.
+990	[DUNGEON] Od této chvíle budete mít k dispozici %s minut k dokonèení dungeonu!
+991	
+992	[DUNGEON] Èas vypršel, budete teleportováni ven.
+993	[DUNGEON] Zanedlouho se dostanete dál.
+994	[DUNGEON] Pøedmìt mùe pøetáhnout pouze vedoucí skupiny!
+995	[DUNGEON] Najdìte správnı Metin, abyste se dostali dál!
+996	[DUNGEON] CG! Správnı metin byl znièen!
+997	[DUNGEON] Brzy se dostanete dál!
+998	[DUNGEON] R.I.P Znièenı metin je falešnı...
+999	[DUNGEON] Najdete a zabijte správného Tartarose, abyste mohli pokraèovat!
+1000	[DUNGEON] Správnı Tartaros byl zabit!
+1001	[DUNGEON] Pøetáhnete pøedmìt na totem a pokraèujte!
+1002	[DUNGEON] Zabitı Tartaros je nesprávnı...
+1003	[DUNGEON] Brzy se dostanete dál!
+1004	[DUNGEON] Pro pokraèování zabijte Charona!
+1005	[DUNGEON] Charon byl zabit!
+1006	[DUNGEON] Brzy se dostanete dál!
+1007	[DUNGEON] Zabij mocného Azraela!
+1008	[DUNGEON] Osvobodil jsi katakomby od Azraela!
+1009	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1010	[DUNGEON] Zabil jsi Krále Démonù!
+1011	
+1012	[DUNGEON] Metin se brzy objeví, poèkejte...
+1013	[DUNGEON] Zniète správnı metin, abyste se dostali dál!
+1014	[DUNGEON] Nìco se pokazilo. Kontaktujte GM s error codem: Vez001.
+1015	[DUNGEON] Správnı metin byl znièen, brzy budete teleportováni do dalšího patra.
+1016	[DUNGEON] Falešnı metin mizí...
+1017	[DUNGEON] Otevøete všechny peèetì a vıjdìte nahoru.
+1018	[DUNGEON] Máte 20 minut.
+1019	[DUNGEON] Na otevøení peèetí máte %s minut.
+1020	[DUNGEON] Èas vypršel, vıstup jste nezvládli.
+1021	[DUNGEON] Všechny peèetì byly otevøeny.
+1022	[DUNGEON] Brzy budete teleportováni do 6. patra.
+1023	[DUNGEON] Zbıvá otevøít ještì jednu peèe.
+1024	[DUNGEON] Zbıvá otevøít ještì %s peèetí.
+1025	[DUNGEON] Zabij elitního krále démonù a osvoboï jednoho z legendárních kováøù.
+1026	[DUNGEON] Jeden z legendárních Kováøù byl osvobozen!
+1027	[PATRO 6-7] Brzy vystoupáte do 7. patra.
+1028	[PATRO 7] Najdìte správnou mapu, abyste mohli jít nahoru.
+1029	[PATRO 7] Našli jste správnou Mapu!
+1030	[PATRO 7-8] Brzy vystoupáte do 8. patra.
+1031	[PATRO 8] Najdìte správnı klíè, kterım se dostanete nahoru.
+1032	[PATRO 8] Peèe byla otevøena!
+1033	[PATRO 8-9] Brzy vystoupáte do 9. patra.
+1034	[DUNGEON] Zabijte Zubatou s kosou a dokonèete vì.
+1035	[DUNGEON] Za 30 sekund budete teleportováni z vìe.
+1036	[DUNGEON] Ak Chcete Berana poškodit, zniète nejprve všechny Metiny!
+1037	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1038	[DUNGEON] Váš èas vypršel.
+1039	[DUNGEON] Budeš vyveden ven z dungu.
+1040	[DUNGEON] Èas vypršel, bohuel jste selhali. Budete teleportováni ven.
+1041	
+1042	[ERROR] Obrate se na GM s error codem: Orchi001.
+1043	[DUNGEON] Vrate se na místo, kde jsou zablokované mosty, jeden z nich je odemèenı!
+1044	[DUNGEON] Nyní musíte znièit všechny Stínové Metiny.
+1045	[DUNGEON] Za 3 sekundy budete teleportováni do místnosti s Bossem.
+1046	[DUNGEON] Abyste mohli poškodit Bosse, musíte rozbít Kamene Metin!
+1047	[DUNGEON] Nyní pouijte zelenı Orèí klíè a zniète Orèí peèe.
+1048	[DUNGEON] Nyní musíte porazit Orèího Bosse.
+1049	[DUNGEON] Ke znièení Zámku Osudu pouijte Èernı Orèí klíè.
+1050	[ERROR] Obrate se na GM s error codem: Orchi002.
+1051	[DUNGEON] Na Bosse lze nyní zaútoèit!
+1052	[DUNGEON] Ještì musíš rozbít %s Metinovıch Kamenù!
+1053	[DUNGEON] Znovuzrozenı náèelník skøetù je naštvanı a jeho poškození se zvıšilo.
+1054	[DUNGEON] Gratulujeme, dokonèili jste dungeon!
+1055	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1056	[DUNGEON] Od této chvíle máte na dokonèení dungeonu %s minut.
+1057	[DUNGEON] Zabij príšery, aby jsi získal Zelenı Orèí Klíè, kterı znièí Orèí peèe. Pøejdìte do støedu mapy a vyèistìte otevøenı most.
+1058	
+1059	
+1060	[DUNGEON] Pora mocného Razadora a dokonèi dungeon!
+1061	[DUNGEON] Úroveò všech èlenù skupiny musí bıt alespoò Lv.120.
+1062	[DUNGEON] Pokud ne, nemohu tì nechat pokracovat.
+1063	[DUNGEON] Zbıvající èas: %s minut(y).
+1064	[INFO] %s dokonèil/a Vì Démonù!
+1065	[DUNGEON] Váš èas vypršel. Budete teleportována ven.
+1066	
+1067	[DUNGEON] Za 10 sekund bude skupina teleportována ven.
+1068	[DUNGEON] Gratulujeme, vyèistili jste vì!
+1069	[DUNGEON] Vydejte se do kruhu démonù!
+1070	
+1071	[DUNGEON] Najdìte zlaté kolo a umístìte ho na Isfetovu Sochu.
+1072	[DUNGEON] Vydejte se do kruhu démonù!
+1073	
+1074	[DUNGEON] Porate Ignatora, Stráce ohnì.
+1075	[DUNGEON] Najdìte kameny Maat a umístìte ve správném poøadí na sochy.
+1076	
+1077	[DUNGEON] Pokud si spletete poøadí, kameny zmizí, zatímco Socha zùstane.
+1078	
+1079	[DUNGEON] Jen ten, kdo se nebojí áru, znièí Metiny Oèistce.
+1080	
+1081	[DUNGEON] Všichni démoni byli poraeni.
+1082	[DUNGEON] Promluvte si s Am-hehem a otevøete novou destinaci.
+1083	[DUNGEON] Isfetská stéla byla znièena.
+1084	[DUNGEON] Stráce ohnì, Ignator, byl znièen.
+1085	[DUNGEON] Peèeti byly znièeny.
+1086	[DUNGEON] Metin Oèistce byl znièen.
+1087	[DUNGEON] Mocnı Razador byl znièen.
+1088	[DUNGEON] Všichni bojovníci budou za 30 sekund teleportováni ven.
+1089	[DUNGEON] Zabijte všechny príšery v tomto patøe, abyste mohli pokraèovat.
+1090	[DUNGEON] Všechny pøíšery na tomto patøe byly zabitı.
+1091	[DUNGEON] Zbıvající pøíšery: %s.
+1092	[DUNGEON] Najdìte skuteènı Ledovı Klíè tím, e budete zabíjet príšery.
+1093	[DUNGEON] Tento Ledovı Klíè byl falešnı.
+1094	[DUNGEON] Našel jsi skuteènı Ledovı Klíè.
+1095	[DUNGEON] Objevila se další vlna pøíšer.
+1096	[DUNGEON] Tentokrát je však doprovází Pán Mrazu a Szel.
+1097	[DUNGEON] Brzy se dostanete do dalšího patra.
+1098	[DUNGEON] Najdìte polární hvìzdu tím, e budete zabíjet pøíšery.
+1099	[DUNGEON] Po nalezení pøetáhnete jednu z %s Arktickıch Kostek a zkusíte je otevøít.
+1100	[DUNGEON] Kadá Arktická Kostka má svuj vlastní klíè.
+1101	[DUNGEON] Pokud se pokusíte o znièení špatnım klíèem, dojde ke znicení klíèe.
+1102	[DUNGEON] V takovém pøípade budete muset hledat jinı klíè.
+1103	[DUNGEON] Jakmile jsou všechny Arktické Kostky otevøené, muete pokraèovat.
+1104	[DUNGEON] Pouitá polární hvìzda je správná a arktická kostka byla otevøena.
+1105	[DUNGEON] Pouitá polární hvìzda není správná a zmizela.
+1106	[DUNGEON] Všechny Arktické Kostky byly otevøeny.
+1107	[DUNGEON] Spwnul se Metin Chladu. Ak Chcete pokracovat, zniète jej!
+1108	[DUNGEON] Metin Chladu byl znièen.
+1109	[DUNGEON] Zniète pravého Szela, abyste mohli pokraèovat.
+1110	[DUNGEON] Szeluv stín zmizel!
+1111	[DUNGEON] Všechny Szelovy stíny jsou pryè. Ak Chcete pokraèovat, zabijte pravého Szela!
+1112	[DUNGEON] Zabil jsi pravého Szela.
+1113	[DUNGEON] Klíè ledového kvìtu byl falešnı.
+1114	[DUNGEON] Našli jste skuteènı klíè ledového kvìtu.
+1115	[DUNGEON] Porate Severní Draèí Pilíø a pokraèujte dál.
+1116	[DUNGEON] Objevil se Mrazivı Lev!
+1117	[DUNGEON] Vedoucí skupiny s ním musí promluvit, aby mohl pokraèovat.
+1118	[DUNGEON] Chcete pokraèovat, promluvte si s ním.
+1119	[DUNGEON] Porazte velkého Nemereho a osvoboïte vì.
+1120	[DUNGEON] Za 60 sekund budete teleportováni z ven.
+1121	[DUNGEON] Váš èas vypršel.
+1122	[INFO] Skupina hráèe %s dokonèila loï od Hydry!
+1123	[INFO] %s dokonèil/a Katakomby Azraela!
+1124	[INFO] Skupina hráèe %s dokonèila Vì Démonù!
+1125	[DUNGEON] Èas vypršel, bohuel jste neuspìli. Budete teleportováni ven.
+1126	
+1127	[DUNGEON] Porate Pavouèího Barona a získejte Pavouèí Flétnu.
+1128	[DUNGEON] Od této chvíle máte na dokonèení dungeonu %s minut.
+1129	[DUNGEON] To teï nemuete udìlat.
+1130	[DUNGEON] Pomocí pavouèí flétny pøivolejte Pavouèí Baronku.
+1131	[DUNGEON] Chcete poškodit Pavouèí Baronku ale je nepøemoitelná!
+1132	[DUNGEON] Nejdøíve znièit všechna její Vejce!
+1133	[ERROR] Obrate se prosím na GM s error codem: Spider001.
+1134	[DUNGEON] Znièili jste všechna Vejce! Baronka oslábla! Zabíj ju!
+1135	[ERROR] Obrate se prosím na GM s error codem: Spider002.
+1136	[DUNGEON] Úspešnì jste dokonèili dungeon!
+1137	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1138	[DUNGEON] Úspešne jste znièili metiny!
+1139	[DUNGEON] Pøíšery pricházejí!!!
+1140	[DUNGEON] Zabij je všechny!
+1141	[DUNGEON] Zbıvá znièit %s Metinu!
+1142	[DUNGEON] Znièili jste všechny Metiny Slizu.
+1143	[DUNGEON] Vezmìte lahvièku a seberte vzorky slizu, kterı se objevil.
+1144	[DUNGEON] Nyní vlote lahvièku se slizem do peceti!!!
+1145	[DUNGEON] Moc Zla je pryè!
+1146	[DUNGEON] Úspešnì jste dokonèili dungeon!
+1147	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1148	
+1149	[DUNGEON] Zniète metiny a získejte lahvièku.
+1150	[DUNGEON] Odolejte slizùm!
+1151	[DUNGEON] Zabil jsi všechny pøíšery!
+1152	[DUNGEON] Právì se objevila peèe!
+1153	[DUNGEON] Pojïme se podívat!
+1154	[DUNGEON] Pøipravte se!
+1155	[DUNGEON] Královna Slizu pøichází!
+1156	[DUNGEON] !!!!! Zbıvá vám ještì %s minut!!!!!
+1157	[DUNGEON] Dochází ti èas!
+1158	[DUNGEON] Málem jsi neuspìl!
+1159	[DUNGEON] Budete teleportováni z dungu!
+1160	[DUNGEON] Zniè kámen do 4 minut!
+1161	[DUNGEON] V opaèném pøípadì budete teleportováni ven z dungu.
+1162	[DUNGEON] Za nìkolik sekund budete pokraèovat.
+1163	[DUNGEON] Neuspìl jsi!
+1164	[DUNGEON] Zabijte pøíšery a posbírejte kousky pergamenu, jakmile získáte 4 kousky 
+1165	dešifrujete starovìkou peèe!
+1166	[DUNGEON] Máte všechny dílky! Pøejdìte na peèet a rozluštìte ji!
+1167	[DUNGEON] Bylo to kouzlo na vyvolání Anubisova sluebníka, zabij ho!
+1168	[DUNGEON] Za nìkolik sekund pøeskoèíte do dalšího patra.
+1169	[DUNGEON] Najdìte a zniète správnı Faraonuv kámen do 20 minut!
+1170	[DUNGEON] Buïte opatrní, uvnitø se skrıvá neco silného!
+1171	[DUNGEON] Znièili jste správnı kámen!
+1172	[DUNGEON] Bastet prichází!
+1173	[DUNGEON] Tento kámen byl jen stínem!
+1174	[DUNGEON] Tento kámen byl jen iluzí.
+1175	[DUNGEON] Bìhem nìkolika sekund pøeskoèíte do dalšího patra.
+1176	[DUNGEON] Najdìte cestu ven z tohoto bludištì!
+1177	[DUNGEON] Nakonec budeš muset zabít skuteèného Ra!
+1178	[DUNGEON] CG! Toto byl skuteènı Ra.
+1179	[DUNGEON] Bìhem nìkolika sekund budete pøesunutí do dalšího patra.
+1180	[DUNGEON] Tohle byl falešnı Ra!
+1181	[DUNGEON] Zniète všechny Anubisovy podobizny, ale pozor, mají vlastní mechanismus!
+1182	[DUNGEON] Musíte je znièit v pøesném poøadí!
+1183	[DUNGEON] CG! Tohle byla ta správná!
+1184	[DUNGEON] Nyní zniète kámen Ankh a získejte další pøedmìt!
+1185	[DUNGEON] Musíte znièit ostatní Anubisové klony.
+1186	[DUNGEON] Super! Pøíšery pøicházejí! Jeden z nich má další poloku!
+1187	[DUNGEON] Musíte znièit ostatní Anubisové klony.
+1188	[DUNGEON] Skvìlé, ale teï pozor!!!
+1189	[DUNGEON] Skuteènı Anubis prichází!
+1190	[DUNGEON] Bìhem nekolika sekund budete teleportováni do dalšího patra.
+1191	[DUNGEON] Zniète Wadjetuv sloup, pro pøivolání skutecného Bosse!
+1192	[DUNGEON] Zabijte všechny pøíšery!
+1193	[DUNGEON] Kouzlo je pryè, mùete získat Klíè Ankhu a pretáhnìte jej na sloup Wadjet.
+1194	[DUNGEON] Objeví se Kámen Sfingy,
+1195	[DUNGEON] Mùe vyvolávat pøíšery a pøedchozí bossy!
+1196	[DUNGEON] Pokud ji znièíte do 5 minut, vyhnete se pøilákání dalších pøíšer!
+1197	
+1198	[DUNGEON] Kouzlo je pryè, mùete získat Klíè Ankhu a pøetáhnìte jej na sloup Wadjet.
+1199	[DUNGEON] Byl jsi pøíliš pomalı, pøíšery tì vidìly! 
+1200	[DUNGEON] Pøicházejí, zabijte je všechny!
+1201	[DUNGEON] Sloup Vıchodu se objevil!
+1202	[DUNGEON] Zniète ji do 3 minut! V opaèném prípade bude dungeon uzavøen.
+1203	[DUNGEON] Sfinga u nemá schopnost kouzlit!
+1204	[DUNGEON] Zabij ji ihneï!!!
+1205	[DUNGEON] Neuspìl jsi!
+1206	[DUNGEON] Sfinga je chránìna!
+1207	[DUNGEON] Uspìli jste! Velkolepá práce!
+1208	[DUNGEON] Tady je odmìna!
+1209	[DUNGEON] Dungeon bude automaticky uzavøen za 3 minuty.
+1210	[DUNGEON] Èas vypršel, bohuel jste neuspìli. Budete teleportováni ven.
+1211	
+1212	[DUNGEON] Znièili jste Metin Ochao! Zbıvá znièit %s.
+1213	[DUNGEON] Znièili jste Metin Ochao! Zbıvá znièit %s.
+1214	[DUNGEON] Znièili jste všechny Metiny Ochao, Gratulujeme!
+1215	[DUNGEON] Nyní najdi silného kníete Ochao a zabij ho!
+1216	[DUNGEON] Nyní musíte znièit 4 Metin Ochao.
+1217	[DUNGEON] Gratuluji, obnovili jste mír!
+1218	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1219	[DUNGEON] Od této chvíle máte na dokonèení dungeonu %s minut.
+1220	[DUNGEON] Zabijte 100 pøíšer.
+1221	[DUNGEON] Jdìte do støedu mapy a zabijte prince Ochao.
+1222	
+1223	[DUNGEON] Zbıvá zabít %s pøíšer.
+1224	[DUNGEON] Zbıvá zabít jednu pøíšeru.
+1225	[DUNGEON] Gratulujeme, pøinesl jsi do lesa mír!
+1226	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1227	[DUNGEON] Èas vypršel...
+1228	[DUNGEON] Za nìkolik sekund budete teleportováni ven.
+1229	[DUNGEON] SOS! Stoár se zlomil a vaše loï se potápí. Nyní budete teleportováni ven.
+1230	[DUNGEON] Portál se objevil! Úspešne jste ubránili stoár, znièili poklad.
+1231	[INFO] Skupina hráèe %s dokonèila Hudru!
+1232	[DUNGEON] Vlna 4: Pøi obranì stoáru porazte Hydru.
+1233	[DUNGEON] Úspešnì jste ubránili stoár. Velmi dobøe! Pøipravte se na další vlnu.
+1234	[DUNGEON] Vlna 3: Pøi obranì stoáru porazte Hydru.
+1235	[DUNGEON] Úspešnì jste ubránili stoár. Velmi dobøe! Pøipravte se na další vlnu.
+1236	[DUNGEON] Vlna 2: Bìhem obrany stoáru porazte Hydru.
+1237	[DUNGEON] Obrana lodi zaène za 1 minutu.
+1238	[DUNGEON] První vlna bude trvat 150sec. Stoár braòte ze všech síl.
+1239	[INFO] %s dokonèil/a Runovı dungeon!
+1240	[DUNGEON] Metin byl znièen, brzy vystoupáte do dalšího patra.
+1241	[DUNGEON] Abyste mohli pokraèovat, musíte ješte zabít %s pøíšer.
+1242	[INFO] Skupina hráèe %s dokonèila Razadora!
+1243	[INFO] %s dokonèil/a Razadora!
+1244	[System] Vybavené pøedmìty nelze pøesunout do skladu.
+1245	[System] Pøed zmìnou jména musíte skupinu opustit.
+1246	[System] Støílet mùete pouze kadıch 60 sekund.
+1247	[WARNING] Za 3 sekundy budete odpojeni. Pouili jste pøedmìt, kdy jste mìli otevrenou misi!!!
+1248	[System] %s nemá dostatek prázdného místa.
+1249	[Skupina] %s pøijala pozvání.
+1250	[DUNGEON] Na dokonèení Vìe Démonù máte 40 minut.
+1251	[DUNGEON] Èas vypršel a vy jste selhali.
+1252	[DUNGEON] Za 3 minut budete z místnosti teleportováni ven.
+1253	[DUNGEON] Uvolnìte místnost Berana-Setaou!
+1254	[DUNGEON] Poškození draka a regenerace ivota jsou ovlivnìny Metinovımi kameny!
+1255	[DUNGEON] Gratulujeme, vyèistili jste místnost!
+1256	[INFO] %s dokonèil/a Draèí místnost!
+1257	[INFO] Skupina hráèe %s dokonèila Draèí místnost!
+1258	[DUNGEON] Gratulujeme, osvobodili jste Nemerovu vì!
+1259	[DUNGEON] To byl jen stín skuteèného Szela.
+1260	[DUNGEON] Za 30 sekund budete teleportováni ven z Nemereho vìe.
+1261	[DUNGEON] Za 30 sekund budete teleportováni ven.
+1262	[DUNGEON] Tento kus je falešnı a byl znièen. Získejte správnı.
+1263	[DUNGEON] Gratulujeme, porazili jste Razadora.
+1264	[DUNGEON] Tento kámen Matt není kompatibilní s touto peèetí.
+1265	[DUNGEON] Peèe byla otevøena.
+1266	[DUNGEON] Uvolnìte místnost Bagjanamu!
+1267	[DUNGEON] Jotun Thrym obsadil místnost, musíte ho zabít!
+1268	[INFO] Skupina hráèe %s dokonèila Lesnı dungeon!
+1269	[INFO] %s dokonèil/a Lesnı dungeon!
+1270	[INFO] Skupina hráèe %s dokonèila Pyramídu!
+1271	[INFO] %s dokonèil/a Pyramídu!
+1272	[INFO] Skupina hráèe %s dokonèila Orèí dungeon!
+1273	[INFO] %s dokonèil/a Orèí dungeon!
+1274	[DUNGEON] %s démonù zbıvá zabít.
+1275	[ERROR] Nìco se pokazilo! Kontaktujte GM s error codem: Beran002.
+1276	[DUNGEON] Drak ji je porazitelnı. Tak sa naò vrhni!
+1277	[DUNGEON] %s metinù zbıvá znièit.
+1278	[DUNGEON] Zbıvá znièit u jen jeden kámen Metin.
+1279	[DUNGEON] Abyste mohli poškodit Draka, musíte nejprve znièit všechny Metiny.
+1280	[DUNGEON] Za 30 sekund budete teleportováni mimo Katakomby.
+1281	[DUNGEON] Zabíjením pøíšer získáte Krystalovı klíè duše, díky kterému 
+1282	mùete otevøít sochu Kud a pøesunout se do dalšího patra.
+1283	[INFO] Skupina hráèe %s dokonèila Runovı dungeon!
+1284	[Cech] Cech ztratil %s bodù.
+1285	[System] Muete to udìlat kadıch 10 sekund.
+1286	[System] Pozici mùete uloit maximálnì kadıch 10 sekund.
+1287	[System] K tomuto místu jste ji blízko.
+1288	[System] Nemùete se teleportovat, pokud jste v dungeonu.
+1289	[System] Speciální znaky nejsou povoleny.
+1290	[System] Muete to udìlat kadıch 30 sekund.
+1291	[DUNGEON] Zbıvá %s kamenù ke znièení.
+1292	[System] Tato poloka je kompatibilní pouze se zvláštním inventáøem.
+1293	[System] Kostım šerpy lze kombinovat pouze s jinım kostımem šerpy stejného typu.
+1294	[System] %s lze pouít pouze na duše.
+1295	[EVENT] Šance bonusového dropu z dungeonu byla zmìnena na: %s%.
+1296	[DUNGEON] Zpùsobte poškození soch a do %s% jejich HP!
+1297	[DUNGEON] Objevilo se draèí vejce, musíte je znièit.
+1298	[DUNGEON] Sochy ztratily svou neporazitelnost.
+1299	[DUNGEON] Objevili se draci, musíte je znièit.
+1300	[DUNGEON] Máte 20 sekund na to, abyste znièili sochy pøetaením prstenu Ohnivého draka!
+1301	[INFO] %s skupina dokonèila Meley dungeon!
+1302	[INFO] %s dokonèil/a Meley dungeon!
+1303	[EVENT] Vánoèní Event právì zaèal!
+1304	[EVENT] Vánoèní Event skonèil...
+1305	[EVENT] Vánoèní Event je aktivní. Tak na èo èekáš ?
+1306	[System] Mùete jej otevøít pouze tehdy, kdy je aktivní Vánoèní Event.
+1307	[System] Musíte poèkat!
+1308	[DUNGEON] Najdìte Královskou snìhovou kouli a zniète ji!
+1309	[DUNGEON] Tohle byla skuteèná Snìhová koule, buï opatrnı, protoe se blíí pøíšery!
+1310	[DUNGEON] Zabíjejte pøíšery, dokud nenajdete správnı klíè.
+1311	[DUNGEON] Tato Snìhová koule byla jen iluze.
+1312	[DUNGEON] Našli jste klíè! Otevøete Kouzelnı Kámen Øíše Divù pomocí tohoto klíèe.
+1313	[DUNGEON] Promluv si se Santou!
+1314	[DUNGEON] Tato truhla byla jen iluze!
+1315	[DUNGEON] Nyní musíte zabít všechny pøíšery.
+1316	[DUNGEON] Nyní najdìte Královskou truhlu!
+1317	[DUNGEON] Duchové Santa Clause ukradli dárky... vezmìte si je zpìt!
+1318	[DUNGEON] Teï je dej do Jeíškova pytle!
+1319	[DUNGEON] Nyní zniè všechny Snìhové koule.
+1320	[DUNGEON] Tohle byla skuteèná Snìhová koule!
+1321	[DUNGEON] No, chybí ještì %s darù.
+1322	[DUNGEON] No, chybí poslední dárek.
+1323	[DUNGEON] Tohle je ta pravá truhla!
+1324	[DUNGEON] Nyní musíte zabít Vánoèního ducha.
+1325	[DUNGEON] Nyní zniète Vánoèní kámen!
+1326	[DUNGEON] Našli jste první poloku!
+1327	[DUNGEON] Nyní zabijte vánoèního ducha, abyste získali další predmet.
+1328	[DUNGEON] Našli jste druhou poloku!
+1329	[DUNGEON] Nyní zniè všechny vánoèní kameny.
+1330	[DUNGEON] Dobøe, teï si promluv se Santou!
+1331	[DUNGEON] Dobøe, nyní otevøete Tajemnı pomník!
+1332	[DUNGEON] Dobøe, teï zabij ten zlı vánoèní stromeèek!
+1333	[INFO] Skupina hráèe %s dokonèila Zamrzlou vesnici!
+1334	[INFO] %s dokonèil/a Zamrzlou vesnici!
+1335	[DUNGEON] Zniè všechny Kameny Zimní zemì do 5 minut, jinak si prohrál,
+1336	[DUNGEON] Další bossové, kteøí pøijdou, budou mnohem silnejší!
+1337	[DUNGEON] Pozor! Kouzlo snìhu a kouzlo snìhovıch vloèek 
+1338	jsou velmi duleité, take mìjte na pamìti, e je máte ve svém inventáøi!
+1339	[DUNGEON] Zabijte všechna monstra a pokraèujte!
+1340	[DUNGEON] Nyní otevøete Zamrzlé Dveøe pøetaením kouzla snìhové vloèky na nì.
+1341	[DUNGEON] Nyní musíte zabít Snìného Démona!
+1342	[DUNGEON] Nyní zniète první èást Zmrzlého Monumentu.
+1343	[DUNGEON] Pretaením kouzla snìhu.
+1344	[DUNGEON] Pozor! Snìhové kouzlo je velmi duleité, take mìjte na pamìti, e je máte ve svém inventáøi!
+1345	[DUNGEON] Nyní zniète druhou èást Zmrzlého Monumentu.
+1346	[DUNGEON] Pøetaením kouzla snìhu.
+1347	[DUNGEON] Zniète všechny kameny Zimní zemì a pokraèujte!
+1348	[DUNGEON] Nyní zniète poslední èást Zmrzlého Monumentu.
+1349	[DUNGEON] Najdìte Královskou ukradenou vánoèní ponoku.
+1350	[DUNGEON] Tato ukradená vánoèní ponoka byla iluze.
+1351	[DUNGEON] Blahopøejeme, našla se ta správná ukradená vánoèní ponoka!
+1352	[DUNGEON] Nyní musíte pouít Vyhledávaè stromù, abyste mohli pokraèovat.
+1353	[DUNGEON] Stromy byly objeveny! Musíte je všechny ozdobit!
+1354	[DUNGEON] Nyní musíte zabít Santova prokletého pomocníka.
+1355	[DUNGEON] Pouijte vánoèní ozdobu k ozdobení jednoho ze stromkù!
+1356	[DUNGEON] Dobøe, teï musíte zabít ducha Santa Clause!
+1357	[DUNGEON] Skupina hráèe %s osvobodila Zemi v zimì!
+1358	[DUNGEON] %s osvobodil/a Zemi v zimì!
+1359	[System] K pøidání pátého bonusu potøebujete Zaèarování Talismanu.
+1360	[System] U tohoto kováøe mùete upgradovat pouze pøedmìty do úrovnì Lv.90.
+2001	[OX] Na cele Kováre je cerná tecka?
+2002	[OX] Má NPC Soon v ruce knihu?
+2003	[OX] Lze kúpit FMS +9 od NPC?
+2004	[OX] Dává Grilovaná Lotusová Ryba +25% EXP na 30 minut?
+2005	[OX] Má Gaya Obchodník v ruce knihu?
+2006	[OX] Je Auriga-Global nejlepší server?
+2007	[OX] Dává Cervená Ampule +10% sílnı proti Pololidem?
+2008	[OX] Dává lutá Ampule +10% sílnı proti Metinum?
+2009	[OX] Lze Krištálové šperky duše vylepšit a na +13?
+2010	[OX] Má NPC Thusa 1 sponu ve vlasech?
+2011	[OX] Lze zbrane na úrovní 75 vylepšit a na +13?
+2012	[OX] Existuje Bílá Rosa (trvalá)?
+2013	[OX] Lze Ohnivı Talisman vylepšit a na +30?
+2014	[OX] Existuje nápoj, kterı dává +15% šanci na úspešné vylepšení?
+2015	[OX] Lze Ohnivı Talisman +30 pouít od úrovne Lv.70?
+2016	[OX] Lze získat Rybiu Kost z Metinu?
+2017	[OX] Nosí rybár fialovı šátek?
+2018	[OX] Má obchodník se zbranemi blond vlasy?
+2019	[OX] Existuje Kámen, kterı dává +35% Prumerné Škody?
+2020	[OX] Lze Jemné Plátná pouít k nákupu Ramecních doplnku?
+2021	[OX] Dává Kámen Inteligence +5 a +10 inteligence?
+2022	[OX] Lze Manny (trvalı) vylepšit a na +9?
+2023	[OX] Lze Elixír Slunce (trvalı) zakoupit u Gaya Obchodníka?
+2024	[OX] Lze behat ve smokingu?
+2026	[OX] Lze Elixír Mesíce (trvalı) zakoupit u Gaya Obchodníka?
+2027	[OX] Lze všechny Alcha predmety rafinovat jedinım kliknutím?
+2028	[OX] Je potreba 5x Duhovı elixír k úplnému vylepšení jedné schopnosti?
+2029	[OX] Pritahuje Plášt odvahy všechny prıšery k tobe?
+2030	[OX] Drí Kovár kladivo v levé ruce?
+2031	[OX] Lze zakoupit Poukaz na DM u Smíšeného Obchodníka?
+2032	[OX] Má Shinsoo království modrou vlajku?
+2033	[OX] Lze vytvorit Kianitovı náhrdelník u NPC Uriela?
+2034	[OX] Potrebuje Biolog Knihu kleteb pro úkol na Lv.40?
+2035	[OX] [SGM]Profiq je Ninja postava?
+2036	[OX] Je Hisztis Oficiálním promotérem Auriga?
+2037	[OX] Uloí klávesa F11 pozici tvé postavy?
+2038	[OX] Zablokuje multifarm tretímu klientu drop, pokud jsou otevrení tri klienti?
+2039	[OX] Je potreba Kroucenı klíc pro vstup do Ochao chrámu?
+2040	[OX] Je správná naše webová stránka serveru www.Auriga-Global.cc?
+2041	[OX] Dostanou všichni tri klienti drop, pokud jsou otevreni tri klienti?
+2042	[OX] Nosí NPC Uriel boty?
+2043	[OX] Má NPC Stráce mesta hnedı vous?
+2044	[OX] Drí NPC Kapitán zbran v levé ruce?
+2045	[OX] Má NPC Starší ena otevrené oci?
+2046	[OX] Má NPC Velitel bitvy knír?
+2047	[OX] Dávají zbrane na úrovni 65 +9 55% síly proti Dáblum?
+2048	[OX] Na Map2 sa dá najít Rybár NPC?
+2049	[OX] Lze teleportovat k BOSS-um kliknutím na ne na Velké mape?
+2050	[OX] Lze Štít Trí císaru vylepšit a na +9?
+2051	[INFO] %s vstoupil do Draèí sínì!
+2052	[INFO] Drak je zpìt!
+2053	[LEVEL UP] %s Dosáhl úroveò Lv.35
+2054	[LEVEL UP] %s Dosáhl úroveò Lv.45
+2055	[LEVEL UP] %s Dosáhl úroveò Lv.50
+2056	[LEVEL UP] %s Dosáhl úroveò Lv.65
+2057	[LEVEL UP] %s Dosáhl úroveò Lv.70
+2058	[LEVEL UP] %s Dosáhl úroveò Lv.85
+2059	[LEVEL UP] %s Dosáhl úroveò Lv.90
+2060	[LEVEL UP] %s Dosáhl úroveò Lv.100
+2061	[LEVEL UP] %s Dosáhl úroveò Lv.110
+2062	[LEVEL UP] %s Dosáhl úroveò Lv.120
+2063	[LEVEL UP] %s Dosáhl úroveò Lv.130
+2064	[LEVEL UP] %s Dosáhl úroveò Lv.140 Team Auriga-Global ti Blahopøeje!
+2065	[EVENT] Drop Mìsíèních pokladníc zaèala
+2066	[EVENT] Drop Mìsíèních pokladníc skonèila.
+2067	[EVENT] Double Drop z Kamenu Metin zaèala!
+2068	[EVENT] Double Drop z Kamenu Metin skonèila!
+2069	[EVENT] DM drop skonèil!
+2070	[EVENT] DM drop zaèal!
+2077	[System] Pøed pouitím kostımù pro mounta, musíte si na mounta sadnou!
+2078	Bonus event is active!
+2079	Bonus event is done
+2080	Double Boss Loot event is active!
+2081	Double Boss Loot event is done!
+2082	Double Metin Loot event is active
+2083	Double Metin Loot event is done
+2084	Double Mission Book event is active
+2085	Double Mission Book event is done
+2086	Dungeon Cooldown event is active!
+2087	Dungeon Cooldown event is done!
+2088	Dungeon Ticket event is active!
+2089	Dungeon Ticket event is done!
+2090	MoonLight event is active!
+2091	MoonLight event is done!
+2092	%s and her/his group killed Hydra!
+2093	%s killed the Hydra!
+2094	The NPC has appeared, talk to her to let you continue.
+2095	Kill the BOSS to free the NPC.
+2096	Kill the Great Hydra to complete the Dungeon.
+2100	Lze získat Drake mount pouze za DC?
+2101	Dává Modrá rosa 100 útoèné hodnoty?
+2102	Stojí Správce zády k budovì?
+2103	Je instruktor dıkového boje vedle mentálního instruktora?
+2104	Stojí Uriel pøed Instruktorem Draèí síly?
+2105	Alchymista ho mlátí do zad?
+2106	Má biolog Chaegirab èervené brıle?
+2107	Má gumièka do vlasù Prodavaèky ze smíšeného obchodu modrou barvu?
+2108	Má kováø osm bøišních svalù?
+2109	Nachází se u domu Staré eny kopí?
+2110	Jsou na serveru pomocníci (Helper)?
+2111	Je Offline obchod otevøenı 45 dní?
+2112	Lze P-Skill zakoupit u Gayy?
+2113	Nachází se na serveru Wikipedie?
+2114	Je NPC Thusa na mapì Lv.35-50 mezi Orky?
+2115	Nachází se Stráce Démonické vìe pouze na map1?
+2116	Má Obchodník se zbranìmi gumièku do vlasù?
+2117	Dává Pás moudrosti+9 60% bonusu k exp?
+2118	Má Profiqova Pepsi nekoneèné trvání?
+2119	Dává Eekùv prsten všechny bonusy +20%?
+2120	Lze Zmenšenou hlavu získat pouze za DC?
+2121	Má Bílá rosa nekoneèné trvání?
+2122	Nachází se na Event mapì 1 strom s modrımi listy?
+2123	Mají všechny stromy na Event mapì hnìdé kmeny?
+2124	Drí Lee Chung kopí v pravé ruce?
+2125	Nachází se bambusovı strom na map1?
+2126	Dává lutá rosa 10% PVM prùmìrného poškození?
+2127	Nosí Soon brıle?
+2128	Má Stará ena (NPC) èervenou kabelku?
+2129	Lze Kámen vylepšení (20%) koupit u Thusy?
+2130	Lze v Offline shopu podávat nabídky?
+2131	Lze zmìnit jméno domácího mazlíèka?
+2132	Nachází se na map1 Pirátská loï?
+2133	Je na map1 16 hlavních bossù?
+2134	Získá kadı charakter Anti Exp prsten?
+2135	Nachází se na Event mapì tráva?
+2136	Sedí jedna socha na Event mapì v tureckém sedu? 
+2137	Mùe na Event mapu vstoupit kdokoliv?
+2138	Lze u Lee Chunga získat všechny vstupenky do dungeonù?
+2139	Má Prodavaèka ze smíšeného obchodu vzorované obleèení?
+2140	Nacházejí se za NPC Thusou dveøe?
+2141	Prodávají se u Obchodníka se zbranìmi pøedmìty v +9?
+2142	Dává 100 ks Sluneèního krystalu 1 ks Sluneèního krystalu+?
+2143	Stojí 200 ks Úlomku draèího kamene Oèarování alchymie?
+2144	Lze Magickı kámen získat pouze z Metin kamene?
+2145	Lze u Smíšeného obchodníka koupit +4 kámen?
+2146	Lze Bílého lva+0 vylepšit a na +13?
+2147	Dává Plod ivota 2000 bodù hodnosti?
+2148	Lze hodnost zvıšit a na 25 000 bodù?
+2149	Lze pozvat hráèe z jiné øíše do skupiny?
+2150	Klikni na NPC, aby ses mohl(a) posunout dál!
+2151	%s a jeho tım osvobodili Soví kobku!
+2152	%s osvobodil(a) Soví kobku!
+2153	Zabij BOSSe, aby se objevil NPC, kterı te pustí dál.
+2154	Zabij HLAVNÍHO BOSSe, aby jsi dokoncil(a) kobku.
+2155	Zabij všechny príšery, abys mohl poškodit Bránu Osudu!
+2156	Brána u není nezranitelná!
+2157	Najdi a znic metinovı kámen.
+2158	Socha Opicího krále je nezranitelná!
+2159	Mueš ji poškodit pouze, pokud na ni pouiješ kopí.
+2160	Získej 5 kopií, abys znicil sochu!
+2161	Zabij mocného Opicího krále, abys dokoncil dungeon.
+2162	Úspešne jsi znicil sochu Opicího krále.
+2163	Za 10 sekund budeš teleportován k bossovi.
+2164	%s a jeho tım osvobodili dungli Opicího krále!
+2165	%s osvobodil dungli Opicího krále!
+2067	[LEVEL UP] %s dosáhl úrovne %d
+2168	|cff00A8EB[AUTO EVENT]|r: %s event is active, Location: Event Map
+2169	|cff00A8EB[AUTO EVENT]|r: %s event has ended!
+2170	|cff00A8EB[AUTO EVENT]|r: %s will start in 5 minutes, location: Teleport ? Cities: Event Map!
+2171	You cannot use teleport in a dungeon map. Please wait for the automatic teleport.
+2176	|cFFFFD700 odmena pro víteze :|cff0cf03d %s |r
+2177	|cFF0cf03d %s|r |cFFFFD700 ks|r
+2178	|cFF63fff5 Nikdo netrefil správnou odpoved|r |cFFff63fc\[%s]|r|cFF63fff5 proto to Admin uzavrel.|r
+2179	|cFFff63fc [Kvíz]|r |cFFFFD700 Napiš SPRÁVNÉ císlo do globálního chatu! První vyhrává! K dispozici je 60 sekund!|r
+2180	|cFFff63fc [Kvíz]|r |cFF63fff5Cas vypršel. Správná odpoved byla |r|cFFff63fc\[%s]|r |r|cFF63fff5 .|r
+2181	|cFFFFD700 Vítez: |cff0cf03d \[%s]|r |cFFFFD700 Správná odpoved: |r|cff0cf03d%s |r|cFFFFD700 Odmena byla udelena automaticky.
+2182	|cFFff63fc [Kvíz|]|r|cFFFFD700Myslím na císlo mezi 1 a 100|r
+2183	|cFFff63fc [Kvíz]]|r|cFFFFD700Myslím na císlo mezi 1 a 1000|r
+2185	%s skupina úspešne dokoncila Nightmare Dungeon!
+2186	%s úspešne dokoncil Nightmare Dungeon!
+2187	Zabij mocného Agaresa
+2188	The Hexagonal Chest event has begun!
+2189	The Hexagonal Chest event has ended!
+2190	|cFFFFD700 [WORLDBOSS]|r %s has slain the Dragon Queen Meley on the Fire Map.
+2191	|cFFFFD700 [WORLDBOSS]|r %s has slain the Desert Wraith in the Desert.
+2192	The Double Run Boss drop event has begun.
+2193	The Double Run Boss drop event has ended!
+2194	|cFF0cf03dThe Event map is now open, entry at Map1|r|cFFff63fc at Uriel|r|cFF0cf03d. Hurry, it will close soon!|r
+2195	|cFF0cf03dThe Event map is now closed, no one can enter anymore!|r
+2220	The Santa Claus event has begun!
+2221	The Santa Claus event has ended!
+2222	The Christmas event has begun, the Auriga-Global team wishes you a Merry Christmas <3!
+2223	The Christmas event has ended!
+2224	The Double Metin Shard drop event has begun!
+2225	The Double Metin Shard drop event has ended!
+2226	Auriga Coin Drop has begun!
+2227	Auriga Coin Drop has ended!
+2228	The Double Boss Point event has begun!
+2229	The Double Boss Point event has ended!
+2230	The Double Run Point event has begun!
+2231	The Double Run Point event has ended!
+2232	The Desert World Boss can respawn at any moment on CH%d!
+2233	The Desert World Boss will spawn in %d hour(s) on CH%d!
+2234	The Desert World Boss will spawn in %d minute(s) on CH%d!
+2235	Less than 1 minute until the Desert World Boss spawns on CH%d!
+2236	The Desert World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2237	The Meley World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2238	The Meley World Boss can respawn at any moment on CH%d!
+2239	The Meley World Boss will spawn in %d hour(s) on CH%d!
+2240	The Meley World Boss will spawn in %d minute(s) on CH%d!
+2241	Less than 1 minute until the Meley World Boss spawns on CH%d!

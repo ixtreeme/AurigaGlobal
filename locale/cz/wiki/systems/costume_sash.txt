@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Každý kostým šerpy zacíná s 6 prednastavenými bonusy:
+[X_PADDING=20]- Silný proti príšerám
+[X_PADDING=20]- Silný proti metinum
+[X_PADDING=20]- Silný proti bossum
+[X_PADDING=20]- Silný proti pololidem
+[X_PADDING=20]- Odolonst proti pololidem
+[X_PADDING=20]- Max. HP
+
+[X_PADDING=12]Kostým šerpy má 4 úrovne a na základe úrovne se zvyšují maximální bonusová procenta.
+
+[X_PADDING=12]Maximální procenta bonusu:
+[X_PADDING=20]- Silný proti príšerám +20%
+[X_PADDING=20]- Silný proti metinum 20%
+[X_PADDING=20]- Silný proti bossum 20%
+[X_PADDING=20]- Silný proti pololidem +15%
+[X_PADDING=20]- Odolonst proti pololidem 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]Chcete-li zmenit procenta kostýmu šerpy, potrebujete predmet Zacarovat kostým šerpy.
+
+[X_PADDING=12]Chcete -li zvýšit úroven kostýmu šerpy, musíte jej zkombinovat u NPC Theowahdan, kostým šerpy lze 
+[X_PADDING=12]kombinovat pouze se stejným typem šerpy a stejného stupne.
+[X_PADDING=12](Pozor, kombinace zmení procenta bonusu podle nové úrovne a existuje
+[X_PADDING=12]riziko, že kombinace muže selhat).
+[X_PADDING=12]Je možné prevést bonusy jednoho kostýmu šerpy do jiného kostýmu použitím predmetu Prevod bonusu kostýmu 
+[X_PADDING=12]u Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Zacarovat kostým šerpy																					   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

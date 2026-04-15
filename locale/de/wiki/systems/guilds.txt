@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]The guild ranking system consists of 3 leagues:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Gold League Silver League Bronze League
+
+
+[X_PADDING=12]Du kannst die Gildenrangliste öffnen, indem du auf das Symbol neben dem Inventar klickst oder die Taste F6 drückst.
+
+[X_PADDING=12]Um einer Liga beizutreten, benötigst du mindestens Trophäen:
+[X_PADDING=20]1. Gold League-Trophäen benötigt 50
+[X_PADDING=20]2. Silver League-Trophäen erforderlich 30
+[X_PADDING=20]3. Bronze-Liga-Trophäen erforderlich 5
+
+[X_PADDING=12]Für jede Liga gibt es begrenzte Plätze (wer die meisten Trophäen hat, kann in einer Liga bleiben):
+[X_PADDING=20]1. Lega Gold League 7 Plätze
+[X_PADDING=20]2. Lega Silber 12 Plätze
+[X_PADDING=20]3. Bronze League 21 Plätze
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Punkte und Preise für die verschiedenen Ligen:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* GOLD LEAGUE:
+
+[X_PADDING=28]- Punktzahl:
+[X_PADDING=36]-> Gewinne +3 Trophäen / + 15KK für jedes Gildenmitglied
+[X_PADDING=36]-> Besiege -3 Trophäen / -5kk für jedes Gildenmitglied
+[X_PADDING=36]-> Ziehe +1 Trophäe / + 5kk für jedes Gildenmitglied
+
+[X_PADDING=28]- Saisonende-Bonus (25-tägige Saisondauer):
+[X_PADDING=36]-> 1. Platz: 180kk + 1st P Gold League Truhe für jedes Gildenmitglied
+[X_PADDING=36]-> 2. Platz: 100kk + 2. P Gold League Truhe für jedes Gildenmitglied
+[X_PADDING=36]-> 3. Platz: 70kk + 3. P Gold League Chest für jedes Gildenmitglied
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* SILVER LEAGUE:
+
+[X_PADDING=28]- Punktzahl:
+[X_PADDING=36]-> Gewinne +3 Trophäen / + 5KK für jedes Gildenmitglied
+[X_PADDING=36]-> Besiege -2 Trophäe
+[X_PADDING=36]-> Ziehe +1 Trophäe / + 2kk an jedes Gildenmitglied
+
+[X_PADDING=28]- Saisonende-Bonus (25-tägige Saisondauer):
+[X_PADDING=36]-> 1. Platz: 100kk + 1st P Silver League Truhe für jedes Gildenmitglied
+[X_PADDING=36]-> 2. Platz: 70kk + 2. P Silberligatruhe für jedes Gildenmitglied
+[X_PADDING=36]-> 3. Platz: 40kk + 3. P Silberliga-Truhe für jedes Gildenmitglied
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRONZE-LEAGUE:
+
+[X_PADDING=28]- Punktzahl:
+[X_PADDING=36]-> Sieg +3 Trophäen
+[X_PADDING=36]-> Besiege -1 Trophäe
+[X_PADDING=36]-> Ziehe +1 Trophäe
+
+[X_PADDING=28]- Saisonende-Bonus (25-tägige Saisondauer):
+[X_PADDING=36]-> 1. Platz: 50kk + 1. P Bronze Ligatruhe für jedes Gildenmitglied
+[X_PADDING=36]-> 2. Platz: 30kk + 2. P Bronze Ligatruhe für jedes Gildenmitglied
+[X_PADDING=36]-> 3. Platz: 10kk + 3. P Bronze Ligatruhe für jedes Gildenmitglied
+
+[X_PADDING=12]Siegespreis:
+[X_PADDING=20]- Wenn eine Gilde mehrere Kriege gewinnt, kann sie andere besondere Belohnungen erhalten:
+[X_PADDING=20]- 5 gewinnt 1 Gaya für jedes Gildenmitglied.
+[X_PADDING=20]- 10 gewinnt 3 Gaya für jedes Gildenmitglied.
+[X_PADDING=20]- 15 gewinnt 15 Gaya für jedes Gildenmitglied.
+[X_PADDING=20]- Du kannst den Status der Siege deiner Gilde im Gildeninfo-Panel überprüfen.
+
+[X_PADDING=12]SONSTIGE DETAILS:
+[X_PADDING=20]1. Du kannst einer anderen Gilde nur den Krieg erklären, wenn deine Gilde mindestens Level 2 ist.
+[X_PADDING=20]2. Jede Gilde, die einen Krieg erklärt, muss mindestens 8 Mitglieder in ihrer Gilde haben.
+[X_PADDING=20]3. Am Ende der Saison kehren alle Gilden zu 0 Trophäen zurück.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

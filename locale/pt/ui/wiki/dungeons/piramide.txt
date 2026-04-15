@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 105.
+[X_PADDING=12]*Level máximo: 120.
+[X_PADDING=12]*Ingresso: Cruz de Ankh.
+[X_PADDING=12]*Tipo: Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Cruz de Ankh
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 30 minutos.
+[X_PADDING=12]*O tempo de espera é de 1 hora e 40 minutos.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon Especial.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Terra.
+[X_PADDING=12]*O elemento dos monstros: Terra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRO ANDAR
+[X_PADDING=20]1. Destrua a Pedra Wadjet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR
+[X_PADDING=20]1. Mate os monstros para encontrar as 4 peças do pergaminho.
+[X_PADDING=20]2. Tendo encontrado os 4 pedaços do pergaminho, clique no Selo Antigo para destruí-lo (quem clicar no selo deve ter todos
+[X_PADDING=20] 4 pedaços de pergaminho em seu inventário).
+[X_PADDING=20]3. Mate o Servo de Anúbis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRO ANDAR
+[X_PADDING=20]1. Destrua a Pedra do Faraó correta.
+[X_PADDING=20]2. Mate Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO ANDAR
+[X_PADDING=20]1. Para seguir o plano você tem que passar por 24 portais
+[X_PADDING=20]2. Mate o Ra correto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PIANO
+[X_PADDING=20]1. Mate os monstros para encontrar a Faixa Sagrada.
+[X_PADDING=20]2. Arraste a Faixa Sagrada para o Anubis Efiggie correto para destruí-lo.
+[X_PADDING=20]3. Destrua a Pedra Ankh para encontrar a Faixa Sagrada.
+[X_PADDING=20]4. Arraste a Faixa Sagrada para o Anubis Efiggie correto para destruí-lo.
+[X_PADDING=20]3. Mate os monstros para encontrar a Faixa Sagrada.
+[X_PADDING=20]4. Arraste a Faixa Sagrada para o Anubis Efiggie correto para destruí-lo.
+[X_PADDING=20]5. Distruggi le Pietre di Ankh per trovare l'ultima Fascia Saggia.
+[X_PADDING=20]6. Arraste a Faixa Sagrada até o último Anubis Efiggie correto para destruí-lo.
+[X_PADDING=20]7. Mate Anúbis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO PIANO
+[X_PADDING=20]1. Mate todos os monstros.
+[X_PADDING=20]2. Clique na Chave Ankh para receber a Chave Antiga.
+[X_PADDING=20]3. Arraste a Chave Antiga para o Pilar do wadjet para destruí-lo.
+[X_PADDING=20]4. Destrua a Pedra da Esfinge.
+[X_PADDING=20]5. Clique na última Chave Ankh para receber a Chave Antiga.
+[X_PADDING=20]6. Arraste a Chave Antiga até o último Pilar do wadjet para destruí-lo.
+[X_PADDING=20]7. Mate a Esfinge.
+[X_PADDING=20]8. Destrua o Tesouro da Esfinge para receber a recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

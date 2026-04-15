@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12]1. Panel offline obchodu mužete otevrít kliknutím na ikonu balícku umístenou na minimape nebo
+[X_PADDING=12]stisknutím klávesy Y.
+[X_PADDING=12]2. Offline obchod se skládá z 9 sekcí:
+[X_PADDING=20]I. Muj obchod
+[X_PADDING=20]II. Seznam obchodu
+[X_PADDING=20]III. Sklad
+[X_PADDING=20]IV. Mé nabídky
+[X_PADDING=20]V.  Vyhledat
+[X_PADDING=20]VI. Mé hledání
+[X_PADDING=20]VII. Uložené hledání
+[X_PADDING=20]VIII. Mé aukce
+[X_PADDING=20]IX. Probíhající aukce
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNKCNOST RUZNÝCH SEKCÍ
+
+[X_PADDING=12]1. Muj obchod: v této sekci mužete vytvorit svuj offline obchod, vpravo nahore najdete náhled obchodu, který
+[X_PADDING=12]budete používat, kliknutím na šipky mužete také vybrat speciální obchody, ale
+[X_PADDING=12]pozor, k používání speciálního obchodu budete potrebovat 1 Kašmírový balícek.
+
+[X_PADDING=12]2. Seznam obchodu: V této sekci se mužete podívat na všechny aktivní offline obchody.
+
+[X_PADDING=12]3. Sklad: v této sekci jsou všechny položky, které jste neprodali, a tržby získané z prodeje.
+
+[X_PADDING=12]4. Moje nabídky: v této sekci jsou uvedeny všechny nabídky, které jste ucinili.
+
+[X_PADDING=12]5. Hledat: v této sekci mužete použít ruzné filtry pro cílené vyhledávání.
+
+[X_PADDING=12]6. Moje vyhledávání: v této sekci mužete videt všechna vámi provedená vyhledávání.
+
+[X_PADDING=12]7. Uložená vyhledávání: V této cásti jsou uvedeny všechny uložené filtry vyhledávání.
+
+[X_PADDING=12]8. Moje aukce: v této sekci mužete vytvorit aukci nebo zkontrolovat stav jedné z vašich probíhajících aukcí.
+
+[X_PADDING=12]9. Probíhající aukce: v této cásti jsou uvedeny všechny dosud probíhající aukce.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DALŠÍ
+
+[X_PADDING=12]1. Mužete se rozhodnout zmenit vzhled svého obchodu v sekci Muj obchod, ke zmene 
+[X_PADDING=12]vzhledu vašeho obchodu budete potrebovat Kašmírový balícek.
+[X_PADDING=12]2. Kašmírový balícek najdete v Gaya Shopu nebo na ruzných akcích.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Kašmírový balícek.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

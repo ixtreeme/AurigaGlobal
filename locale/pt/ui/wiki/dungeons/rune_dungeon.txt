@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 70.
+[X_PADDING=12]*Level máximo: 120.
+[X_PADDING=12]*Ingresso: Ingresso das Runas.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Ingresso das Runas		Pedra do Zeus
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 1 hora e 5 minutos.
+[X_PADDING=12]*O tempo de espera é de 2 horas (usando a Pedra de Zeus é possível zerar o tempo de espera).
+[X_PADDING=12]*Caso você entre com o grupo, todos devem ter um ingresso.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon Especial.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Monstros das Runas.
+[X_PADDING=12]*O elemento dos monstros: Fogo - Gelo - Escuridão - Relâmpado - Terra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRO ANDAR
+[X_PADDING=20]1. Mate todos os monstros para poder destruir as Runas Metin.
+[X_PADDING=20]2. Destrua todas as Runas Metin na ordem correta.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR (Eles podem sair de um dos 3 modos aleatoriamente)
+[X_PADDING=20]* 1. Mate todos os monstros e destrua todos as Runas Metin para fazer Haru aparecer. Quando aparecer o
+[X_PADDING=20]chefe, apenas o líder do grupo pode causar dano até que o chefe atinja 70% de seu HP, que chegar a 70%
+[X_PADDING=20]de seu HP, o resto do grupo pode causar danos ao chefe.
+
+[X_PADDING=20]* 2. Mate monstros para encontrar 10 almas rúnicas, as almas rúnicas irão direto para o inventário do
+[X_PADDING=20]líder do grupo. Encontre as 10 almas rúnicas, basta clicar em uma delas para que apareça no inventário
+[X_PADDING=20]do líder do grupo a Chave da Pedra. Clique na Chave da Pedra para avançar para a próxima fase.
+
+[X_PADDING=20]* 3. Quando Buncho tiver 60% de seu HP não será mais possível danificá-lo, destrua as Runas Metin
+[X_PADDING=20]a fim de causar danos ao chefe. Quando Buncho cair para 20% de seu HP, não será mais possível danificá-lo,
+[X_PADDING=20]mate 100 monstros para poder causar danos ao chefe. (Cuidado com o Buncho quando ele atingir 20% de seu HP
+[X_PADDING=20]os danos se multiplicam 2x)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCEIRO ANDAR (Eles podem sair de um dos 3 modos aleatoriamente)
+[X_PADDING=20]* 1. Mate todos os monstros e destrua todos as Runas Metin para fazer Haru aparecer. Quando aparecer o
+[X_PADDING=20]chefe, apenas o líder do grupo pode causar dano até que o chefe atinja 70% de seu HP, que chegar a 70%
+[X_PADDING=20]de seu HP, o resto do grupo pode causar danos ao chefe.
+
+[X_PADDING=20]* 2. Mate monstros para encontrar 10 almas rúnicas, as almas rúnicas irão direto para o inventário do
+[X_PADDING=20]líder do grupo. Encontre as 10 almas rúnicas, basta clicar em uma delas para que apareça no inventário
+[X_PADDING=20]do líder do grupo a Chave da Pedra. Clique na Chave da Pedra para avançar para a próxima fase.
+
+[X_PADDING=20]* 3. Quando Buncho tiver 60% de seu HP não será mais possível danificá-lo, destrua as Runas Metin
+[X_PADDING=20]a fim de causar danos ao chefe. Quando Buncho cair para 20% de seu HP, não será mais possível danificá-lo,
+[X_PADDING=20]mate 100 monstros para poder causar danos ao chefe. (Cuidado com o Buncho quando ele atingir 20% de seu HP
+[X_PADDING=20]os danos se multiplicam 2x)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO ANDAR (Eles podem sair de um dos 3 modos aleatoriamente)
+[X_PADDING=20]* 1. Mate todos os monstros e destrua todos as Runas Metin para fazer Haru aparecer. Quando aparecer o
+[X_PADDING=20]chefe, apenas o líder do grupo pode causar dano até que o chefe atinja 70% de seu HP, que chegar a 70%
+[X_PADDING=20]de seu HP, o resto do grupo pode causar danos ao chefe.
+
+[X_PADDING=20]* 2. Mate monstros para encontrar 10 almas rúnicas, as almas rúnicas irão direto para o inventário do
+[X_PADDING=20]líder do grupo. Encontre as 10 almas rúnicas, basta clicar em uma delas para que apareça no inventário
+[X_PADDING=20]do líder do grupo a Chave da Pedra. Clique na Chave da Pedra para avançar para a próxima fase.
+
+[X_PADDING=20]* 3. Quando Buncho tiver 60% de seu HP não será mais possível danificá-lo, destrua as Runas Metin
+[X_PADDING=20]a fim de causar danos ao chefe. Quando Buncho cair para 20% de seu HP, não será mais possível danificá-lo,
+[X_PADDING=20]mate 100 monstros para poder causar danos ao chefe. (Cuidado com o Buncho quando ele atingir 20% de seu HP
+[X_PADDING=20]os danos se multiplicam 2x)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO ANDAR
+[X_PADDING=20]1. Destrua todos as Runas Metin para causar danos a Haru.
+[X_PADDING=20]2. Mate Haru.
+[X_PADDING=20]3. Mate os monstros para encontrar a Chave da Pedra.
+[X_PADDING=20]4. Destrua a Pedra Rúnica arrastando a Chave de Pedra sobre ela para causar danos ao Buncho.
+[X_PADDING=20]5. Mate Buncho.
+[X_PADDING=20]6. Ataque o chefe Eien, mas tome cuidado quando sua vida estiver em 50% ele não sofrerá mais dano.
+[X_PADDING=20]7. Para continuar causando danos ao chefe Eien, mate os monstros primeiro.
+[X_PADDING=20]8. Ataque o chefe Eien, mas tome cuidado quando sua vida estiver em 10% ele não sofrerá mais dano.
+[X_PADDING=20]9. Para continuar causando dano ao chefe Eien, destrua as Runas Metin.
+[X_PADDING=20]10. Mate Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

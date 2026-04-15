@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/guild.png]
+[CENTER_ALIGN]Il sistema classifica gilde è composto da 3 leghe:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Lega Oro									   Lega Argento									 Lega Bronzo
+
+
+[X_PADDING=12]Puoi aprire il pannello della classifica gilde cliccando sull'icona di lato all'inventario oppure premendo il tasto F6.
+
+[X_PADDING=12]Per entrare in una lega c'è bisogno di un minimo di trofei:
+[X_PADDING=20]1. Lega Oro trofei richiesti 50
+[X_PADDING=20]2. Lega Argento trofei richiesti 30
+[X_PADDING=20]3. Lega Bronzo trofei richiesti 5
+
+[X_PADDING=12]Per ogni lega ci sono dei posti limitati (chi avrà più trofei riuscirà a rimanere in una lega):
+[X_PADDING=20]1. Lega Oro posti 7
+[X_PADDING=20]2. Lega Argento posti 12
+[X_PADDING=20]3. Lega Bronzo posti 21
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Punti e premi per le varie leghe:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* LEGA ORO:
+
+[X_PADDING=28]- Punteggio:
+[X_PADDING=36]-> Vittoria +3 trofei / +15KK ad ogni membro della gilda
+[X_PADDING=36]-> Sconfitta -3 trofeo / -5kk ad ogni membro della gilda
+[X_PADDING=36]-> Pareggio +1 trofeo / +5kk ad ogni membro della gilda
+
+[X_PADDING=28]- Premio fine stagione (durata stagione 25 giorni):
+[X_PADDING=36]-> 1 Posto: 180kk + Baule Lega d'Oro 1°P ad ogni membro della gilda
+[X_PADDING=36]-> 2 Posto: 100kk + Baule Lega d'Oro 2°P ad ogni membro della gilda
+[X_PADDING=36]-> 3 Posto: 70kk + Baule Lega d'Oro 3°P ad ogni membro della gilda
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* LEGA ARGENTO:
+
+[X_PADDING=28]- Punteggio:
+[X_PADDING=36]-> Vittoria +3 trofei / +5KK ad ogni membro della gilda
+[X_PADDING=36]-> Sconfitta -2 trofeo
+[X_PADDING=36]-> Pareggio +1 trofeo / +2kk ad ogni membro della gilda
+
+[X_PADDING=28]- Premio fine stagione (durata stagione 25 giorni):
+[X_PADDING=36]-> 1 Posto: 100kk + Baule Lega d'Argento 1°P ad ogni membro della gilda
+[X_PADDING=36]-> 2 Posto: 70kk + Baule Lega d'Argento 2°P ad ogni membro della gilda
+[X_PADDING=36]-> 3 Posto: 40kk + Baule Lega d'Argento 3°P ad ogni membro della gilda
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* LEGA BRONZO:
+
+[X_PADDING=28]- Punteggio:
+[X_PADDING=36]-> Vittoria +3 trofei
+[X_PADDING=36]-> Sconfitta -1 trofeo
+[X_PADDING=36]-> Pareggio +1 trofeo
+
+[X_PADDING=28]- Premio fine stagione (durata stagione 25 giorni):
+[X_PADDING=36]-> 1 Posto: 50kk + Baule Lega di Bronzo 1°P ad ogni membro della gilda
+[X_PADDING=36]-> 2 Posto: 30kk + Baule Lega di Bronzo 2°P ad ogni membro della gilda
+[X_PADDING=36]-> 3 Posto: 10kk + Baule Lega di Bronzo 3°P ad ogni membro della gilda
+
+[X_PADDING=12]PREMIO VITTORIA:
+[X_PADDING=20]- Una gilda se vince diverse guerre può ricevere altri premi speciali:
+[X_PADDING=20]- 5 vittorie 1 Gaya ad ogni membro della gilda.
+[X_PADDING=20]- 10 vittorie 3 Gaya ad ogni membro della gilda.
+[X_PADDING=20]- 15 vittorie 15 Gaya ad ogni membro della gilda.
+[X_PADDING=20]- Puoi controllare lo stato delle vittorie della tua gilda nel pannello informazioni della gilda.
+
+[X_PADDING=12]ALTRI DETTAGLI:
+[X_PADDING=20]1. Puoi dichiarare guerra ad un altra gilda solo quando la tua gilda è ad almeno livello 2.
+[X_PADDING=20]2. Ogni gilda per dichiarare una guerra deve avere almeno 8 membri nella sua gilda.
+[X_PADDING=20]3. Finita la stagione tutte le gilde torneranno a 0 trofei. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

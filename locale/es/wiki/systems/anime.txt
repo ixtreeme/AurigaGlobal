@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]El sistema de almas te permite actualizar y usar almas, le dan al jugador bonificaciones temporales para
+[X_PADDING=12;CENTER_ALIGN]daño con ataques físicos y de habilidad.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Alma oniricha iluminada																						    Illuminated celestial soul
+
+[X_PADDING=12] SOUL ONIRICHA Y ALMA CELESTIAL
+[X_PADDING=20]- Soul Oniricha potencia los ataques físicos.
+[X_PADDING=20]- El alma celestial aumenta el daño infligido por las habilidades.
+[X_PADDING=20]- El impulso se otorga a un número definido de golpes realizados contra un objetivo, después de lo cual el
+[X_PADDING=20]la mejora desaparecerá.
+
+[X_PADDING=12]Las mejoras no se activan durante una transformación o un combate PvP..
+[X_PADDING=12]Los ataques realizados al montar a caballo se potencian, pero solo contra monstruos, no contra otros PCs.
+
+[X_PADDING=12]Para cargar el alma, debes esperar al menos 60 minutos en el juego, tan pronto como se cargue el alma, la información sobre herramientas. (descripción
+[X_PADDING=12]que aparece solo si coloca el mouse sobre el objeto) aparecerá en verde y se puede activar.
+[X_PADDING=12]Después de un cierto período de tiempo sin conexión consecutivo (aproximadamente una hora), el alma se descarga y tendrá que esperar
+[X_PADDING=12]otra vez para cargarlo.
+[X_PADDING=12]A partir del Grado Iridiscente, cuanto más tiempo pasa, más aumenta la amplificación del daño que otorga el alma: la primera
+[X_PADDING=12]el aumento alcanza 2/3 de la carga máxima y el segundo (si está presente) a la carga máxima.
+[X_PADDING=12]Desde el rango Prismático en adelante, el alma puede proporcionar 2 "acumulaciones" de la mejora, escalando al rango anterior.
+[X_PADDING=12](500 golpes con daño multiplicado por 2,5 y luego otros 500 con daño multiplicado por 1,8, por ejemplo).
+[X_PADDING=12]En el rango de Iluminado, el alma no se descarga al permanecer fuera de línea.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADO DE ALMAS
+
+[X_PADDING=12]Las almas pueden ser de 5 grados diferentes, según ellos el porcentaje del impulso recibido y el
+[X_PADDING=12]número de disparos posibles a realizar.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]HOW TO ENHANCE THE DEGREE OF A SOUL
+
+[X_PADDING=12]- To upgrade the rank of a soul you need the Scroll of the Soul, it works like a Sacred Papyrus, just
+[X_PADDING=12]drag the parchment over the chosen soul and the up screen will appear.
+[X_PADDING=12]- On the contrary, using a Scroll of the Soul (100%) the enhancement is guaranteed.
+[X_PADDING=12]- In case of failure, the soul does not break and only the scroll is consumed. All its features
+[X_PADDING=12]remain unchanged, including shots, remaining time, and current charge.
+[X_PADDING=12]- If successful, the soul rises to the next rank, the number of hits left is reset, and the deadline comes
+[X_PADDING=12]reset; any charge present will be lost with the up, so you will have to wait for it to charge again.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

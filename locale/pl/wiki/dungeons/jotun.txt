@@ -1,0 +1,30 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/jotun.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimalny poziom: 110.
+[X_PADDING=12]*Maksymalny poziom: 115.
+[X_PADDING=12]*Przepustka: Kamien Driad.
+[X_PADDING=12]*Typ: Solo lub w grupie.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30613.tga; Y=15; X=478]
+[X_PADDING=466]Kamien Driad.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]INFORMACJE:
+[X_PADDING=12]*Limit czasu: 30 minut.
+[X_PADDING=12]*Cooldown: 1 godzina i 30 minut
+[X_PADDING=12]*Jesli idziesz w grupie, kazdy musi miec przepustke.
+[X_PADDING=12]*Mozesz uzyskac dostep ze:Specjalnej Poczekalni Wypraw
+[X_PADDING=12]*Dzialajacy bonus: Silny przeciwko Orkom
+[X_PADDING=12]*Zywiol: Ziemia
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE ZADANIE
+[X_PADDING=20]1. Zabij Bagjanamu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE ZADANIE
+[X_PADDING=20]1. Zabij Jotun Thrym.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=304; CENTER_ALIGN]

@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 45.
+[X_PADDING=12]*Maksymalny poziom: 65.
+[X_PADDING=12]*Przepustka: Menhir Szlamu.
+[X_PADDING=12]*Typ: Solo lub w grupie.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Menhir Szlamu
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]INFORMACJE:
+[X_PADDING=12]*Limit czasu: 30 minut.
+[X_PADDING=12]*Cooldown: 40 minut.
+[X_PADDING=12]*Jesli idziesz w grupie, kazdy musi miec przepustke.
+[X_PADDING=12]*Mozesz uzyskac dostep z: Poczekalni Wypraw.
+[X_PADDING=12]*Dzialajacy bonus: Silny przeciwko Zwierzetom .
+[X_PADDING=12]*Zywiol: Ziemia.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG WYPRAWY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIETRO
+[X_PADDING=20]1. Zniszcz Metin Szlamu.
+[X_PADDING=20]2. Pokonaj 103 potwory.
+[X_PADDING=20]3. Kliknij na Kamien Szlamu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIETRO
+[X_PADDING=20]1. Zniszcz 4 Metiny szlamu i zdobadz Pusta Fiolke na Szlam.
+[X_PADDING=20]2. Przenies Fiolke na Szlam, aby ja zapelnic.
+[X_PADDING=20]3. Przenies Fiolke ze Szlamem na Kamien Pieczeci, aby przejsc dalej.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRZECIE PIETRO
+[X_PADDING=20]1. Pokonaj 103 potwory.
+[X_PADDING=20]2. Pokonaj Królowa Szlamu.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

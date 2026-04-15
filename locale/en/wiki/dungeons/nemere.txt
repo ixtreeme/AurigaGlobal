@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 85.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Ticket: Ticket of Nemere.
+[X_PADDING=12]*Type: Solo and Party
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Ticket of Nemere
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 50 minutes.
+[X_PADDING=12]*Cooldown: 1 hour
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Ice Power
+[X_PADDING=12]*Element of monsters: Ice
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Kill all monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR
+[X_PADDING=20]1. Find the correct Frost Key.
+[X_PADDING=20]2. Click on the Frost Key to go to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD PHASE
+[X_PADDING=20]1. Kill all monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH PHASE
+[X_PADDING=20]1. Kill all monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIFTH FLOOR
+[X_PADDING=20]1. Unlocked the Arctic Cubes in the correct order using the North Stars that you will drop from monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIXTH FLOOR
+[X_PADDING=20]1. Kill all monsters.
+[X_PADDING=20]2. Destroy the Metin of Cold.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEVENTH FLOOR
+[X_PADDING=20]1. Find and kill the correct Szel.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]EIGHTH FLOOR
+[X_PADDING=20]1. Trova la chiave Fiore di Ghiaccio corretta.
+[X_PADDING=20]2. Click on the  Frostflower Key to go to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]NINTH FLOOR
+[X_PADDING=20]1. Destroy the North Dragon Pillar.
+[X_PADDING=20]2. Talk to the Frosty Lion.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TENTH FLOOR
+[X_PADDING=20]1. Kill Nemere.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

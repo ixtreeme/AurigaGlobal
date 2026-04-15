@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 85.
+[X_PADDING=12]*Level máximo: 100.
+[X_PADDING=12]*Ingresso: Ingresso de Razador.
+[X_PADDING=12]*Tipo: Solo e Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Ingresso de Razador
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 50 minutos.
+[X_PADDING=12]*O tempo de espera é de 1 hora.
+[X_PADDING=12]*Caso você entre com o grupo, todos devem ter um ingresso.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Fogo.
+[X_PADDING=12]*O elemento dos monstros: Fogo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMEIRO ANDAR
+[X_PADDING=20]1. Falar com o desfiladeiro de Am-heh para ativar a Masmorra. Após a conclusão de uma ponte, volte para falar com
+[X_PADDING=20]Am-heh e ele irá desbloquear uma nova ponte aleatoriamente.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OS POSSÍVEIS MODOS QUE SAEM ALEATÓRIOS:
+[X_PADDING=20]1. Encontrar a engrenagem correta.
+[X_PADDING=20]2. Matar o Chefe Ignitor.
+[X_PADDING=20]3. Mate todos os monstros.
+[X_PADDING=20]4. Colocar os selos em ordem correta.
+[X_PADDING=20]5. Destruir a pedra Metin do Purgatório.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO ANDAR
+[X_PADDING=20]1. Mate Razador.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

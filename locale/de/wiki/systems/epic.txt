@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]Auf Auriga gibt es 4 neue Verbesserungsgrade:
+[X_PADDING=20]- Episch
+[X_PADDING=20] - Legendär
+[X_PADDING=20] - Uralt
+[X_PADDING=20]- Mystisch
+
+[X_PADDING=12]1. Wenn einige Gegenstände auf +9 aufgewertet werden, können sie in 4 Grad episch gemacht werden.
+[X_PADDING=12]2. Wenn ein Gegenstand episch gemacht wird, wird ihm ein neuer fester Bonus hinzugefügt oder die Prozentsätze werden verbessert
+[X_PADDING=12]fixe Boni sind bereits vorhanden.
+
+[X_PADDING=12;FONT_SIZE=14]GEGENSTÄNDE, DIE EPIZISIERT WERDEN KÖNNEN:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* WAFFEN:
+[X_PADDING=28]- Giftiges Schwert + 9
+[X_PADDING=28]- Löwenschwert+9
+[X_PADDING=28]- Grollschwert+9
+[X_PADDING=28]- Krähenstahlbogen+9
+[X_PADDING=28]- Teufelsflügel-Chakram+9
+[X_PADDING=28]- Bambusglocke+9
+[X_PADDING=28]- Sternzeichenschwert+9
+[X_PADDING=28]- Sternzeichenklinge+9
+[X_PADDING=28]- Sternzeichen Glaive+9
+[X_PADDING=28]- Sternzeichenbogen+9
+[X_PADDING=28]- Sternzeichendolch+9
+[X_PADDING=28]- Sternzeichen-Lüfter+9
+[X_PADDING=28]- Sternzeichenglocke+9
+[X_PADDING=28]- Kyanit-Schwert+9
+[X_PADDING=28]- Kyanit-Schwert+9
+[X_PADDING=28]- Kyanitklinge+9
+[X_PADDING=28]- Kyanitbogen+9
+[X_PADDING=28]- Kyanitdolch+9
+[X_PADDING=28]- Kyanit-Lüfter+9
+[X_PADDING=28]- Kyanitglocke+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* RÜSTUNG:
+[X_PADDING=28]- Kyanit-Plattenrüstung+9
+[X_PADDING=28]- Kyanit-Geschirr +9
+[X_PADDING=28]- Kyanit-Anzug+9
+[X_PADDING=28]- Kyanit-Kleidung+9
+[X_PADDING=28]- Sternzeichen-Rüstung+9
+[X_PADDING=28]- Sternzeichen-Plattenrüstung+9
+[X_PADDING=28]- Sternzeichen-Anzug+9
+[X_PADDING=28]- Sternzeichen Kleidung+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* Helm:
+[X_PADDING=28]- Düsterer Drachenhelm+9
+[X_PADDING=28]- Hex-Drachen-Helm+9
+[X_PADDING=28]- Sturmdrachenhelm+9
+[X_PADDING=28]- Erhabener Drachenhelm+9
+[X_PADDING=28]- Stahlhelm des Drachenmanns+9
+[X_PADDING=28]- Drachenschuppen-Schuppenhelm+9
+[X_PADDING=28]- Drachenjägerkapuze+9
+[X_PADDING=28]- Drachenhut+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SCHILDER:
+[X_PADDING=28]- Falkenschild+9
+[X_PADDING=28]- Löwenkantenschild+9
+[X_PADDING=28]- Tigerschild+9
+[X_PADDING=28]- Drachenschuppenschild+9
+[X_PADDING=28]- Drei-Kaiser-Schild+9
+[X_PADDING=28]- Titanenschild+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMBAND:
+[X_PADDING=28]- Seelenkristall-Armband+9
+[X_PADDING=28]- Kyanit-Armband+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* HALSKETTE:
+[X_PADDING=28]- Seelenkristall-Halskette+9
+[X_PADDING=28]- Kyanit-Halskette+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* OHRRINGE:
+[X_PADDING=28]- Seelenkristall-Ohrringe+9
+[X_PADDING=28]- Kyanit-Ohrringe+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SCHUHE:
+[X_PADDING=28]- Feuerschuhe+9
+[X_PADDING=28]- Oceanic Schuhe+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

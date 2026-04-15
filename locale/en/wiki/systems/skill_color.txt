@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]The color system of ability give u permission to change color of an ability
+
+[X_PADDING=12]1. You can be able to change color of an ability only when is at P
+[X_PADDING=12]2. You can be able to change color of an ability only if u have the item Rainbow elixir .
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Rainbow elixir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. When a skill reaches P by opening the skill panel above the skill icon at P it will appear a colored circle.
+[X_PADDING=12]2. Clicking on the circle with the left mouse button will open the panel of the skill color system.
+[X_PADDING=12]3. Each skill can be colored in 5 different colors at the same time, you can choose the various colors by clicking on the
+[X_PADDING=12]numbers at the bottom of the panel.
+[X_PADDING=12]4. Whenever you will  want to change the color of one of your abilities you will need to have a Rainbow Elixir
+[X_PADDING=12]5. Using the arrow located on the right of the panel you can use the 3 available options, save color, insert color with
+[X_PADDING=12]Hex code and use the predefinite color.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

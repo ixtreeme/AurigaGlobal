@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ANFORDERUNGEN:
+[X_PADDING=12]*Minimum level: 40.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Type: Alleine und im Team.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 50 Minuten.
+[X_PADDING=12]*Sie können über die Karte zugreifen: Dungeon Lobby.
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Untote
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Untote.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE EBENE
+[X_PADDING=20]1. Töten sie alle Monster.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE EBENE
+[X_PADDING=20]1. Töte den Dämonenkönig.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE EBENE
+[X_PADDING=20]1. Zerstöre den Richtigen Metin des Teufels.
+[X_PADDING=20]2. Zerstöre das richtige Fall-Metin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE EBENE
+[X_PADDING=20]1. Finde 5 Schlüsselsteine.
+[X_PADDING=20]2. Ziehen Sie den Schlüsselstein zu den Siegeln, um in die nächste Ebene zu gelangen.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÜNFTE EBENE
+[X_PADDING=20]1. Töte den stolzen Dämonenkönig.
+[X_PADDING=20]2. Verwenden Sie den Schmied, um einen Gegenstand aufzuwerten, oder klicken Sie darauf, um in die nächste Etage zu gelangen.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECHSTE EBENE
+[X_PADDING=20]1. Zerstöre alle Metins des Todes
+[X_PADDING=20]2. Zerstöre das Metin des Mordes, um die unbekannte alte Truhe fallen zu lassen.
+[X_PADDING=20]3. Sie müssen auf die unbekannte alte Truhe klicken, um die Zin-Sa-Gui-Karte zu finden.
+[X_PADDING=20]4. Klicken Sie mit der rechten Maustaste auf die Zin-Sa-Gui-Karte, um zum nächsten Stockwerk zu gelangen
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIEBTE EBENE
+[X_PADDING=20]1. Finde den Zin-Bong-In-Schlüssel.
+[X_PADDING=20]2. Ziehen Sie den Zin-Bong-In-Schlüssel nach Sa-Soe, um zum nächsten Stock zu gelangen.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ACHTE EBENE
+[X_PADDING=20]1.  Töte den Sensenmann. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

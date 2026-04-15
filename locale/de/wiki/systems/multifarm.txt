@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Mit diesem System wird es möglich sein, nur mit 2 Zeichen zu fallen.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMATION
+
+[X_PADDING=12]1. Die ersten 2 geöffneten Clients haben den Drop zur Verfügung, beim Öffnen des dritten Clients wird der Drop automatisch blockiert
+[X_PADDING=12]damit es nur XP verdienen kann
+[X_PADDING=12]2. Es wird möglich sein, den Drop zu einem Charakter zu aktivieren und zu deaktivieren, indem Sie auf das Symbol oben links klicken.
+[X_PADDING=12]3. Der Drop kann nur in der Wonder Village Map aktiviert und deaktiviert werden und man muss auf eine Abklingzeit warten
+[X_PADDING=12] von 5 Sekunden.
+[X_PADDING=12]4. Wenn mehr als 2 Clients geöffnet sind und Sie den Drop zum dritten Client aktivieren, deaktivieren Sie automatisch den Drop zum ersten Client und
+[X_PADDING=12]usw in numerischer Reihenfolge für andere offene Clients.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

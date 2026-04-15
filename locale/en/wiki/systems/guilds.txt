@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]The guild ranking system consists of 3 leagues:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Gold League								   Silver League							 Bronze League
+
+
+[X_PADDING=12]You can open the guild ranking panel by clicking on the icon next to the inventory or by pressing the F6 key.
+
+[X_PADDING=12]To enter a league you need a minimum of trophies:
+[X_PADDING=20]1. Gold League trophies required 50
+[X_PADDING=20]2. Silver League trophies required 30
+[X_PADDING=20]3. Bronze League trophies required 5
+
+[X_PADDING=12]For each league there are limited places (whoever has the most trophies will be able to stay in a league):
+[X_PADDING=20]1. Lega Gold League  7 places
+[X_PADDING=20]2. Lega Silver 12   places
+[X_PADDING=20]3. Bronze League 21 places
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Points and prizes for the various leagues:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* GOLD LEAGUE:
+
+[X_PADDING=28]- Score:
+[X_PADDING=36]-> Win +3 trophies / + 15KK to each guild member
+[X_PADDING=36]-> Defeat -3 trophy / -5kk to each guild member
+[X_PADDING=36]-> Draw +1 trophy / + 5kk to each guild member
+
+[X_PADDING=28]- End of season bonus (25-day season duration):
+[X_PADDING=36]-> 1 Place: 180kk + 1st P Gold League Chest to each guild member
+[X_PADDING=36]-> 2nd Place: 100kk + 2nd P Gold League Chest to each guild member
+[X_PADDING=36]-> 3rd Place: 70kk + 3rd P Gold League Chest to each guild member
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* SILVER LEAGUE:
+
+[X_PADDING=28]- Score:
+[X_PADDING=36]-> Win +3 trophies / + 5KK to each guild member
+[X_PADDING=36]-> Defeat -2 trophy
+[X_PADDING=36]-> Draw +1 trophy / + 2kk to each guild member
+
+[X_PADDING=28]- End of season bonus (25-day season duration):
+[X_PADDING=36]-> 1 Place: 100kk + 1st P Silver League Chest to each guild member
+[X_PADDING=36]-> 2nd Place: 70kk + 2nd P Silver League Chest to each guild member
+[X_PADDING=36]-> 3rd Place: 40kk + 3rd P Silver League Chest to each guild member
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRONZE LEAGUE:
+
+[X_PADDING=28]- Score:
+[X_PADDING=36]-> Victory +3 trophies
+[X_PADDING=36]-> Defeat -1 trophy
+[X_PADDING=36]-> Draw +1 trophy
+
+[X_PADDING=28]- End of season bonus (25-day season duration):
+[X_PADDING=36]-> 1st Place: 50kk + 1st P Bronze League Chest to each guild member
+[X_PADDING=36]-> 2nd Place: 30kk + 2nd P Bronze League Chest to each guild member
+[X_PADDING=36]-> 3rd Place: 10kk + 3rd P Bronze League Chest to each guild member
+
+[X_PADDING=12]VICTORY AWARD:
+[X_PADDING=20]- If a guild wins several wars, it can receive other special rewards:
+[X_PADDING=20]- 5 wins 1 Gaya to each guild member.
+[X_PADDING=20]- 10 wins 3 Gaya to each guild member.
+[X_PADDING=20]- 15 wins 15 Gaya to each guild member.
+[X_PADDING=20]- You can check the status of your guild's victories in the guild info panel.
+
+[X_PADDING=12]OTHER DETAILS:
+[X_PADDING=20]1. You can only declare war on another guild when your guild is at least level 2.
+[X_PADDING=20]2. Each guild to declare a war must have at least 8 members in its guild.
+[X_PADDING=20]3. At the end of the season, all guilds will return to 0 trophies.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

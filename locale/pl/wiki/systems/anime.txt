@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]System Dusz pozwala ci ulepszac i uzywac dusz.Dodaja one graczowi tymczasowe bonusy do
+[X_PADDING=12;CENTER_ALIGN]obrazen za pomoca ataków fizycznych i umiejetnosci.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Oswiecona dusza Oniricha																						    Illuminated celestial soul
+
+[X_PADDING=12] DUSZA ONIRICHA I NIEBIANSKA DUSZA 
+[X_PADDING=20]- Dusza Oniricha wzmacnia obrazenia fizyczne.
+[X_PADDING=20]- Niebianska Dusza wzmacnia obrazenia umiejetnosci.
+[X_PADDING=20]- Wzmocnienie jest przyznawane na okreslona liczbe trafien w cel, po czym
+[X_PADDING=20]wzmocnienie zniknie.
+
+[X_PADDING=12]Ulepszenia nie sa aktywowane podczas transformacji lub walki PvP.
+[X_PADDING=12]Ataki wykonane przez jazde konna sa wzmocnione, ale tylko przeciwko potworom.
+
+[X_PADDING=12]Aby zaladowac dusze musisz odczekac co najmniej 60 minut w grze, jak tylko dusza zostanie zaladowana podpowiedz (opis
+[X_PADDING=12]który pojawia sie tylko wtedy, gdy umiescisz kursor myszy nad obiektem) bedzie wyswietlany na zielono i mozna go aktywowac.
+[X_PADDING=12]Po pewnym czasie nieprzerwanego czasu offline (okolo godziny) dusza rozladowuje sie i bedzie musiala czekac
+[X_PADDING=12]ponownie zeby sie naladowac.
+[X_PADDING=12]Od stopnia opalizujacego im wiecej czasu mija, tym wieksze jest wzmocnienie obrazen, które dusza zadaje: pierwszy
+[X_PADDING=12]wzrost osiaga 2/3 maksymalnego naladowania, a drugi (jesli wystepuje) przy maksymalnym naladowaniu. 
+[X_PADDING=12]Od rangi Pryzmatyczny dusza jest w stanie zapewnic 2 „kumulacje” ulepszenia, skalujac sie do poprzedniej rangi
+[X_PADDING=12](np. 500 trafien z obrazeniami pomnozonymi przez 2,5, a nastepnie kolejne 500 z obrazeniami pomnozonymi przez 1,8).
+[X_PADDING=12]Na randze Oswiecenia dusza nie rozladowuje sie, pozostajac offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STOPNIE DUSZ
+
+[X_PADDING=12]Dusze moga miec 5 róznych stopni, wedlug nich procent otrzymanego wzmocnienia i
+[X_PADDING=12]liczba mozliwych do oddania ataków.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]JAK ZWIEKSZYC STOPIEN DUSZY?
+
+[X_PADDING=12]- Aby podniesc range duszy, potrzebujesz Zwoju Duszy, po prostu
+[X_PADDING=12]przeciagnij pergamin nad wybrana dusza, a pojawi sie okno ulepszania.
+[X_PADDING=12]- Przy uzyciu Zwoju Duszy (100%) wzmocnienie jest gwarantowane.
+[X_PADDING=12]- W przypadku niepowodzenia dusza nie peka i zuzywa sie tylko zwój. Wszystkie cechy duszy
+[X_PADDING=12]pozostaja niezmienione, w tym ataki, pozostaly czas i aktualny ladunek.
+[X_PADDING=12]- Jesli sie powiedzie, dusza awansuje do nastepnej rangi, liczba pozostalych trafien zostaje zresetowana.
+[X_PADDING=12]Resetowanie; wszelkie obecne ladowania zostana utracone wraz z ulepszeniem, wiec bedziesz musial poczekac na ponowne naladowanie.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

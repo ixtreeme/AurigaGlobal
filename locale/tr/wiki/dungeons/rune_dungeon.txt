@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 70.
+[X_PADDING=12]*Maximum giris seviyesi: 120.
+[X_PADDING=12]*Giris bileti: Rün Bileti.
+[X_PADDING=12]*Tür: Tek veya grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Rün bileti
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 1 saat 30 dakika
+[X_PADDING=12]*Bekleme süresi: 2 saat (Zeus tasi kullanilarak bekleme süresi sifirlanabilir).
+[X_PADDING=12]*Bir gruba katilirsan herkes 1 bilete sahip olmali
+[X_PADDING=12]*Haritadan erisebilirsiniz: Özel lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Rün canavarlarina karsi güç
+[X_PADDING=12]*Irk: Buz - Karanlik - Ates - Simsek - Toprak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]1. ASAMA
+[X_PADDING=20]1. Runes Metni'ni yok edebilmek için tüm canavarlari öldür.
+[X_PADDING=20]2. Tüm Metin of Runes'i dogru sirayla yok etmelisin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]2. ASAMA (3 moddan herhangi birisi rasgele çikar)
+[X_PADDING=20]* 1. Haru'nun ortaya çikmasi için tüm canavarlari öldürün ve tüm Metin of Runes'i yok edin. Patron göründügünde,
+[X_PADDING=20]HP'sinin %70'ine ulastiginda, patron HP'sinin %70'ine ulasana kadar yalnizca grup lideri ona Auriga verebilir,
+[X_PADDING=20]Grubun geri kalani patrona Auriga verebilir.
+
+[X_PADDING=20]* 2. 10 Ruh rün'ü bulmak için canavarlari öldürün, Ruh rünü dogrudan grup liderinin envanterine gidecek.
+[X_PADDING=20]10 Ruh rünü buldugunuzda, envanterde görünmelerini saglamak için bunlardan birine tiklamaniz yeterlidir.
+[X_PADDING=20]Rün Anahtari grup liderinde. Bir sonraki asamaya geçmek için rün Anahtarina tiklayin.
+
+[X_PADDING=20]*3. Haru'nun HP'sinin %60'i oldugunda artik ona Auriga vermek mümkün olmayacak, Runes Metni'ni yok edin
+[X_PADDING=20]boss'a Auriga vermek için. Buncho, HP'sinin %20'sine düstügünde artik ona Auriga vermek mümkün olmayacak,
+[X_PADDING=20]Boss'a Auriga verebilmek için 100 canavar öldür. (Dikkat Haru, HP'si %20'ye ulastiginda hasari ikiye katlanir)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]3. ASAMA (3 moddan herhangi birisi rasgele çikar)
+[X_PADDING=20]* 1.Bütün canavarlari öldürün ve Buncho'nun ortaya çikmasi için tüm Runes Metinlerini yok edin. Patron göründügünde,
+[X_PADDING=20]HP'sinin %70'ine ulastiginda, patron HP'sinin %70'ine ulasana kadar yalnizca grup lideri ona Auriga verebilir
+[X_PADDING=20]Grubun geri kalani patrona Auriga verebilir.
+
+[X_PADDING=20]* 2. 10 Ruh rünü bulmak için canavarlari öldürün, Ruh rünü dogrudan grup liderinin envanterine gidecek.
+[X_PADDING=20]10 Ruh rünü buldugunuzda, envanterde görünmelerini saglamak için bunlardan birine tiklamaniz yeterlidir.
+[X_PADDING=20]Ruh Anahtari grup liderinde. Bir sonraki asamaya geçmek için Ruh Anahtarina tiklayin.
+
+[X_PADDING=20]* 3. Haru'nun HP'sinin %60'i oldugunda artik ona Auriga vermek mümkün olmayacak, Runes Metni'ni yok edin
+[X_PADDING=20]boss'a Auriga vermek için. Buncho, HP'sinin %20'sine düstügünde artik ona Auriga vermek mümkün olmayacak,
+[X_PADDING=20]Boss'a Auriga verebilmek için 100 canavar öldür. (Dikkat Haru, HP'si %20'ye ulastiginda hasari ikiye katlanir)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]4. ASAMA (3 moddan herhangi birisi rasgele çikar)
+[X_PADDING=20]* 1.Bütün canavarlari öldürün ve Buncho'nun ortaya çikmasi için tüm Runes Metinlerini yok edin. Patron göründügünde,
+[X_PADDING=20]HP'sinin %70'ine ulastiginda, patron HP'sinin %70'ine ulasana kadar yalnizca grup lideri ona Auriga verebilir
+[X_PADDING=20]Grubun geri kalani patrona Auriga verebilir.
+              
+[X_PADDING=20]* 2. 10 Ruh rünü bulmak için canavarlari öldürün, Ruh rünü dogrudan grup liderinin envanterine gidecek.
+[X_PADDING=20]10 Ruh rünü buldugunuzda, envanterde görünmelerini saglamak için bunlardan birine tiklamaniz yeterlidir.
+[X_PADDING=20]Ruh Anahtari grup liderinde. Bir sonraki asamaya geçmek için Ruh Anahtarina tiklayin.
+              
+[X_PADDING=20]* 3. Haru'nun HP'sinin %60'i oldugunda artik ona Auriga vermek mümkün olmayacak, Runes Metni'ni yok edin
+[X_PADDING=20]boss'a Auriga vermek için. Buncho, HP'sinin %20'sine düstügünde artik ona Auriga vermek mümkün olmayacak,
+[X_PADDING=20]Boss'a Auriga verebilmek için 100 canavar öldür. (Dikkat Haru, HP'si %20'ye ulastiginda hasari ikiye katlanir)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]5. ASAMA
+[X_PADDING=20]1. Haru'ya Auriga vermek için tüm Runes Metinlerini yok edin.
+[X_PADDING=20]2. Haru'yu öldür.
+[X_PADDING=20]3. Anahtari bulmak için canavarlari öldür.
+[X_PADDING=20]4. Buncho'ya Auriga vermek için Taslarin Anahtarini üzerine sürükleyerek Rün Tasini yok edin..
+[X_PADDING=20]5. Buncho'yu öldür.
+[X_PADDING=20]6. Patron Eien'e saldir, ama dikkatli ol, cani %50 oldugunda daha fazla hasar almayacak.
+[X_PADDING=20]7. Patron Eien'e Auriga vermeye devam etmek için önce canavarlari öldürün.
+[X_PADDING=20]8. Patron Eien'e saldir, ama dikkatli ol, cani %10 oldugunda daha fazla hasar almayacak.
+[X_PADDING=20]9. Patron Eien'e hasar vermeye devam etmek için Runes Metni'ni yok edin.
+[X_PADDING=20]10. Eien'i öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

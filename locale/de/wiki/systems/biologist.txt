@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES BIOLOGISCHEN SYSTEMS
+
+[X_PADDING=12]1. Das Symbol des Biologen-Panels befindet sich auf der Minikarte.
+[X_PADDING=12]2. Für das Abschließen der Missionen des Biologen werden dauerhafte Boni vergeben.
+[X_PADDING=12]3. Die für die Missionen benötigten Gegenstände können Sie beim Biologen im Wunderdorf kaufen.
+[X_PADDING=12]4. Sie können eine Benachrichtigung im Biologen-Panel aktivieren, wenn die Wartezeit abgelaufen ist.
+[X_PADDING=12]5. Sie können das Elixier des Forschers verwenden, um die Abklingzeit zurückzusetzen.
+[X_PADDING=12]6. Sie können Forscherelixier + verwenden, um die Abklingzeit zurückzusetzen und die Qualität von Gegenständen zu verbessern, wenn
+[X_PADDING=12]Sie werden dem Biologen übergeben.
+[X_PADDING=12]7. Sie können den magischen Gegenstand des Biologen verwenden, um den ausgewählten Bonus in Missionen der Stufen 105 und 110 zu ändern.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISSIONEN UND AUSZEICHNUNGEN
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

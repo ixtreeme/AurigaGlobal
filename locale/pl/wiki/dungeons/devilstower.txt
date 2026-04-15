@@ -1,0 +1,51 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 40.
+[X_PADDING=12]*Maksymalny poziom: 100.
+[X_PADDING=12]*Typ: Solo lub w grupie.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]INFORMACJE:
+[X_PADDING=12]*Limit czasu 50 minut.
+[X_PADDING=12]*Mozesz uzyskac dostep z: Poczekalni Wypraw.
+[X_PADDING=12]*Dzialajacy bonus: Silny przeciwko Nieumarlym
+[X_PADDING=12]*Zywiol:Mrok.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIETRO
+[X_PADDING=20]1. Pokonaj wszystkie potwory.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIETRO
+[X_PADDING=20]1. Pokonaj Króla Demonów.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRZECIE PIETRO
+[X_PADDING=20]1. Znisz Metina Diabla.
+[X_PADDING=20]2. Zniszcz Metina Upadku.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CZWARTE PIETRO
+[X_PADDING=20]1. Znajdz 5 Kamieni Otwarcia.
+[X_PADDING=20]2. Przenies Kamienie Otwarcia na Kolumny, aby je otworzyc.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIATE PIETRO
+[X_PADDING=20]1. Pokonaj Elit. Króla Demonów.
+[X_PADDING=20]2. Skorzystaj z uslug kowala, i przenies sie na kolejne pietro.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SZÓSTE PIETRO
+[X_PADDING=20]1. Zniszcz wszystkie Metiny Smierci
+[X_PADDING=20]2. Niszcz Metiny Morderstwa, aby zdobyc Nieznana Stara Skrzynie.
+[X_PADDING=20]3. Zdobadz ze skrzyni prawidlowa mape - Zin Sa Gui.
+[X_PADDING=20]4. Kliknij na mape PPM, aby przejsc dalej.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIÓDME PIETRO
+[X_PADDING=20]1. Znajdz klucz Zin-Bong-In.
+[X_PADDING=20]2. Przenies klucz na pomnik Sa-Soe aby przejsc dalej.
+.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÓSME PIETRO
+[X_PADDING=20]1.  Pokonaj Umarlego Rozpruwacza. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

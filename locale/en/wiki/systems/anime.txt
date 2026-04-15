@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]The Soul System allows you to upgrade and use souls, they give the player temporary bonuses to
+[X_PADDING=12;CENTER_ALIGN]damage with physical and skill attacks.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]Enlightened oniricha soul																					    Illuminated celestial soul
+
+[X_PADDING=12] SOUL ONIRICHA  AND CELESTIAL SOUL 
+[X_PADDING=20]- Soul Oniricha empower physical attacks.
+[X_PADDING=20]- The Celestial Soul boosts the damage dealt by abilities.
+[X_PADDING=20]- The boost is granted to a defined number of hits made against a target, after which the
+[X_PADDING=20]enhancement will vanish.
+
+[X_PADDING=12]Upgrades are not activated during a transformation or PvP combat.
+[X_PADDING=12]Attacks made by riding a  horses are empowered but only against monsters, not against other PCs.
+
+[X_PADDING=12]To load the soul you have to wait at least 60 minutes in game, as soon as the soul is loaded the tooltip (description
+[X_PADDING=12]which appears only if you position the mouse over the object) will appear in green and can be activated.
+[X_PADDING=12]After a certain period of consecutive offline time (about an hour), the soul discharges and will have to wait
+[X_PADDING=12]again to load it.
+[X_PADDING=12]From the Iridescent Degree onwards, the more time passes the more the amplification of the damage that the soul grants increases: the first
+[X_PADDING=12]increase reaches 2/3 of the maximum charge and the second (if present) at maximum charge.. 
+[X_PADDING=12]From the Prismatic rank onwards, the soul is able to provide 2 "stacks" of the upgrade, scaling to the previous rank
+[X_PADDING=12](500 hits with damage multiplied by 2.5 and then another 500 with damage multiplied by 1.8, for example).
+[X_PADDING=12]At the Enlightened rank, the soul does not discharge by staying offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEGREE OF SOULS
+
+[X_PADDING=12]The souls can be of 5 different degrees, according to them the percentage of the boost received and the
+[X_PADDING=12]number of possible shots to make.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]HOW TO ENHANCE THE DEGREE OF A SOUL
+
+[X_PADDING=12]- To upgrade the rank of a soul you need the Scroll of the Soul, it works like a Sacred Papyrus, just
+[X_PADDING=12]drag the parchment over the chosen soul and the up screen will appear.
+[X_PADDING=12]- On the contrary, using a Scroll of the Soul (100%) the enhancement is guaranteed.
+[X_PADDING=12]- In case of failure, the soul does not break and only the scroll is consumed. All its features
+[X_PADDING=12]remain unchanged, including shots, remaining time, and current charge.
+[X_PADDING=12]- If successful, the soul rises to the next rank, the number of hits left is reset, and the deadline comes
+[X_PADDING=12]reset; any charge present will be lost with the up, so you will have to wait for it to charge again.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

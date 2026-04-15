@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Guida per i principianti.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]INIZIO:
+[X_PADDING=12]Livella nella Mappa1 almeno fino al livello 25–30. Durante il percorso, distruggi le Pietre Metin per ottenere Pergamene della Benedizione e oggetti di miglioramento.
+[X_PADDING=20]Non dimenticare i Capitani Brutali — da loro puoi ottenere armi di livello 30.
+[X_PADDING=20]Al livello 26, è consigliabile acquistare un’armatura di livello 26 e un elmo di livello 21 dal NPC, facilmente potenziabili a +9.
+
+[X_PADDING=12;COLOR=ffff00]LIVELLO 30:
+[X_PADDING=12]Vai nella Mappa2 per continuare a livellare e farmare. Se hai buoni equipaggiamenti (armatura, elmo, arma livello 30), le Pietre Metin livello 45 non saranno un problema.
+[X_PADDING=20]Durante il farming, non dimenticare i dungeon! Sfrutta il tempo a disposizione e completali
+[X_PADDING=20]per ottenere mount, pet e altri oggetti preziosi.
+[X_PADDING=20]Dalle Pietre Orco avrai bisogno di un’armatura livello 42 e uno scudo livello 41 per sopravvivere nella mappa successiva.
+
+[X_PADDING=12;COLOR=ffff00]LIVELLO 50:
+[X_PADDING=20]Quando arrivi qui, dovresti già avere almeno un pet e 6 mount nel tuo inventario mount — ogni dungeon ne fornisce 2.
+[X_PADDING=20]Salta fino al livello 65 e non dimenticare il Boss Aperto — può ricompensarti con Bonusatori Leggendari molto utili!
+[X_PADDING=20]Avrai bisogno di un’arma di livello 65, che una volta potenziata a +9 ti darà +55% contro i demoni.
+[X_PADDING=20]Puoi ottenere anche un’armatura di livello 65 dal Boss Aperto — essenziale per la mappa successiva.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Regole del Gioco!!
+
+[FONT_SIZE=18;COLOR=00ff00] Chat e comportamento
+[X_PADDING=12]È VIETATO molestare, minacciare o insultare altri giocatori!
+[X_PADDING=12]È VIETATO provocare con argomenti politici o religiosi nella chat globale!
+[X_PADDING=12]È VIETATO spammare in chat — inclusi messaggi ripetitivi o pubblicità!
+
+[FONT_SIZE=18;COLOR=00ff00] Sicurezza dell'account e dei dati
+[X_PADDING=12]SEI TU il responsabile della sicurezza del tuo account! Non condividere i tuoi dati di accesso!
+[X_PADDING=12]Lo staff NON chiederà mai la tua password — se accade, segnalalo subito!
+[X_PADDING=12]È VIETATO accedere all’account di altri giocatori, anche se ti forniscono i dati.
+
+[FONT_SIZE=18;COLOR=00ff00] Staff e supporto
+[X_PADDING=12]È VIETATO disturbare i GM o inviarli richieste inutili! Usa il sistema di ticket o il forum.
+[X_PADDING=12]Le decisioni dei GM sono definitive. In caso di disaccordo, puoi richiedere una revisione in modo civile.
+
+[FONT_SIZE=18;COLOR=00ff00] Sfruttamento e correttezza
+[X_PADDING=12]È VIETATO usare programmi o strumenti che danno vantaggi (bot, speedhack, zoomhack, ecc.).
+[X_PADDING=12]È VIETATO sfruttare bug, errori o l’inattività di altri giocatori (es. nel commercio o PvP).
+[X_PADDING=12]È VIETATO manipolare intenzionalmente i sistemi di PvP, eventi o mappe.
+
+[FONT_SIZE=18;COLOR=00ff00] Commercio, negozi e hack
+[X_PADDING=12]È VIETATO commerciare tra server diversi!
+[X_PADDING=12]È VIETATO inserire annunci ingannevoli nei negozi (es. 1 yang = 1kk)!
+[X_PADDING=12]L’uso di hack, inclusi macro, è ASSOLUTAMENTE VIETATO!
+[X_PADDING=12]È VIETATO vendere o offrire oggetti/account in cambio di denaro reale!
+[X_PADDING=12]È VIETATO truffare o ottenere vantaggi sleali nel commercio!
+
+[FONT_SIZE=18;COLOR=00ff00] Bug e segnalazioni
+[X_PADDING=12]Se trovi un bug, SEI OBBLIGATO a segnalarlo — sfruttarlo è severamente vietato!
+[X_PADDING=12]L’uso dei bug mette a rischio la sicurezza del server e verrà punito duramente!
+
+[FONT_SIZE=18;COLOR=00ff00] Divieti generali
+[X_PADDING=12]È VIETATO usare linguaggio volgare, incitare all’odio o discriminare — siamo tutti esseri umani!
+[X_PADDING=12]NESSUN ALTRO può utilizzare il tuo account — nemmeno i tuoi amici!
+[X_PADDING=12]È VIETATO promuovere o linkare altri server!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]VIOLARE QUESTE REGOLE PUÒ COMPORTARE UN BAN HARDWARE PERMANENTE!
+[X_PADDING=12]

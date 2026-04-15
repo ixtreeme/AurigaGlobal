@@ -1,0 +1,37 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/orcmaze.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 35.
+[X_PADDING=12]*Nivel maxim: 60.
+[X_PADDING=12]*Permis: Permis Temniþa Orcilor.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89106.tga; Y=15; X=478]
+[X_PADDING=461]P. Tem. Orcilor
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 de minute.
+[X_PADDING=12]*Timpul de aºteptare este de 40 de minute.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Orcilor.
+[X_PADDING=12]*Elementul monºtrilor: Pãmânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. Ucide Orci pentru a dropa Cheia Orcilor.
+[X_PADDING=20]2. Cu cheia va trebuie sã deschizi Sigiliul pe care îl vei gãsi la sfârºitul podului.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 2-A ETAPA
+[X_PADDING=20]1. Distruge toate Metinele Umbrei.
+[X_PADDING=20]2. Omoarã ªeful Orc care îþi va dropa Cheia Orcilor Negri.
+[X_PADDING=20]3. Pune Cheia Orcilor Negri pe poarta podului din mijloc.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 3-A ETAPA
+[X_PADDING=20]1. Distruge toate Metinele Umbrei pentru a elimina invincibilitatea Orcului ªef Spirit.
+[X_PADDING=20]2. Omoarã Orcul ªef Spirit.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=390; CENTER_ALIGN]

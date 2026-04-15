@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 70.
+[X_PADDING=12]*Maksymalny poziom: 120.
+[X_PADDING=12]*Przepustka: Runiczna Przepustka.
+[X_PADDING=12]*Typ: Solo lub w grupie.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Runiczna Przpustka		Kamien Zeusa
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]INFORMACJE:
+[X_PADDING=12]*Limit czasu: 1 godzina 30 minut
+[X_PADDING=12]*Cooldown: 2 godziny (uzycie Kamienia Zeusa resetuje czas oczekiwania).
+[X_PADDING=12]*Jesli idziesz w grupie, kazdy musi miec przepustke.
+[X_PADDING=12]*Mozesz uzyskac dostep ze: Specjalnej Poczekalni Wypraw.
+[X_PADDING=12]*Dzialajacy bonus: Silny przeciwko Runicznym Potworom
+[X_PADDING=12]*Zywioly: Lód - Mrok - Ogien - Blyskawice - Ziemia.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIETRO
+[X_PADDING=20]1. Pokonaj wszystkie potwory, aby móc zniszczyc Metiny Run.
+[X_PADDING=20]2. Zniszcz Metiny Run w odpowiedniej kolejnosci.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIETRO (Jedno z 3 zadan pojawi sie losowo)
+[X_PADDING=20]* 1.Pokonaj wszystkie potwory i zniszcz wszystkie Metiny Run aby pojawil sie Haru. Kiedy pojawi sie boss,
+[X_PADDING=20]tylko lider wyprawy bedzie mógl zadawac mu obrazenia az spadnie do 70% PZ.Kiedy to sie stanie,
+[X_PADDING=20]reszta osób bedzie mogla atakowac bossa.
+
+[X_PADDING=20]* 2.Pokonuj potwory, aby zdobyc 10 Run Dusz.Dusze beda wpadac bezposrednio do ekwipunku lidera.
+[X_PADDING=20] Kiedy zdobedziecie 10 Run, lider musi na nie kliknac, aby w jego ekwipunku pojawil sie
+[X_PADDING=20]Klucz Kamienia. Nacisnij na Klucz,aby przejsc dalej.
+
+[X_PADDING=20]* 3. Kiedy PZ Haru osiagnie 60%, nie bedzie mozna zadawac mu obrazen. Zniszcz Metiny Run, aby znów
+[X_PADDING=20]móc atakowac bossa. Kiedy PZ Haru osiagnie 20% nie bedzie mozna go atakowac. Pokonaj 100 potworów,
+[X_PADDING=20]zeby móc znów atakowac bossa. (Uwaga: Obrazenia Haru podwoja sie, gdy jego PZ spadna do 20%)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRZECIE PIETRO (Jedno z 3 zadan pojawi sie losowo)
+[X_PADDING=20]* 1.Pokonaj wszystkie potwory, oraz zniszcz wszystkie Metiny Run aby pojawil sie Buncho. Kiedy pojawi sie,
+[X_PADDING=20]tylko lider wyprawy bedzie mógl zadawac mu obrazenia az spadnie do 70% PZ.Kiedy to sie stanie,
+[X_PADDING=20]reszta osób bedzie mogla atakowac bossa.
+
+[X_PADDING=20]* 2.Pokonuj potwory, aby zdobyc 10 Run Dusz.Dusze beda wpadac bezposrednio do ekwipunku lidera.
+[X_PADDING=20] Kiedy zdobedziecie 10 Run, lider musi na nie kliknac, aby w jego ekwipunku pojawil sie
+[X_PADDING=20]Klucz Kamienia. Nacisnij na Klucz,aby przejsc dalej.
+
+[X_PADDING=20]* 3. Kiedy PZ Buncho osiagnie 60%, nie bedzie mozna zadawac mu obrazen. Zniszcz Metiny Run, aby znów
+[X_PADDING=20]móc atakowac bossa. Kiedy PZ Buncho osiagnie 20% nie bedzie mozna go atakowac. Pokonaj 100 potworów,
+[X_PADDING=20]zeby móc znów atakowac bossa. (Uwaga: Obrazenia Buncho podwoja sie, gdy jego PZ spadna do 20%)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CZWARTE PIETRO (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Pokonaj wszystkie potwory, oraz zniszcz wszystkie Metiny Run aby pojawil sie Eien. Kiedy pojawi sie,
+[X_PADDING=20]tylko lider wyprawy bedzie mógl zadawac mu obrazenia az spadnie do 70% PZ.Kiedy to sie stanie,
+[X_PADDING=20]reszta osób bedzie mogla atakowac bossa.
+              
+[X_PADDING=20]* 2.Pokonuj potwory, aby zdobyc 10 Run Dusz.Dusze beda wpadac bezposrednio do ekwipunku lidera.
+[X_PADDING=20] Kiedy zdobedziecie 10 Run, lider musi na nie kliknac, aby w jego ekwipunku pojawil sie
+[X_PADDING=20]Klucz Kamienia. Nacisnij na Klucz,aby przejsc dalej.
+              
+[X_PADDING=20]* 3. Kiedy PZ Eiena osiagnie 60%, nie bedzie mozna zadawac mu obrazen. Zniszcz Metiny Run, aby znów
+[X_PADDING=20]móc atakowac bossa. Kiedy PZ Eiena osiagnie 20% nie bedzie mozna go atakowac. Pokonaj 100 potworów,
+[X_PADDING=20]zeby móc znów atakowac bossa. (Uwaga: Obrazenia Eiena podwoja sie, gdy jego PZ spadna do 20%)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIATE PIETRO
+[X_PADDING=20]1. Zniszcz wszystkie Metiny Run, aby móc zadawac obrazenia Haru.
+[X_PADDING=20]2. Pokonaj Haru.
+[X_PADDING=20]3. Pokonaj wszystkie potwory, aby znalezc Klucz Kamienia.
+[X_PADDING=20]4. Zniszcz Kamien Run przeciagajac na niego Klucz Kamienia. Pozwoli to zadawac obrazenia Buncho
+[X_PADDING=20]5. Pokonaj Buncho.
+[X_PADDING=20]6. Atakuj Eiena. Kiedy jego PZ spadnie do poziomu 50%, nie bedzie mozna zadawac mu wiecej obrazen.
+[X_PADDING=20]7. Aby móc go dalej atakowac, pokonaj wszystkie potwory.
+[X_PADDING=20]8. Atakuj Eiena. Kiedy jego PZ spadnie do poziomu 10%, nie bedzie mozna zadawac mu wiecej obrazen.
+[X_PADDING=20]9. Aby móc go dalej atakowac, zniszcz wszystkie Metiny Run.
+[X_PADDING=20]10. Pokonaj Eiena.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

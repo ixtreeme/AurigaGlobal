@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BÔNUS FAIXA DE OMBROS:
+[X_PADDING=20]1. O sistema de Faixa permite que jogadores de level 1 e acima usem uma nova peça
+[X_PADDING=20]de equipamento.
+[X_PADDING=20]2. As faixas podem absorver TODOS os bônus de armas e armaduras, exceto bônus de armas especiais
+[X_PADDING=20]e armadura mística. A porcentagem de absorção depende do seu grau de qualidade
+[X_PADDING=20]da faixa, quanto maior a qualidade, maior a porcentagem de absorção.
+[X_PADDING=20]3. Para colocar bônus você precisa ir até o NPC Theowahdan no mapa
+[X_PADDING=20]Vila das Maravilhas.
+[X_PADDING=20]4. Você pode comprar uma faixa de 1ª grau do NPC Theowahdan com os Tecidos Finos que
+[X_PADDING=20]se dropa das metin.
+[X_PADDING=20]5. Você pode remover bônus de uma faixa usando o item de bônus de remoção de faixa.
+
+[X_PADDING=12]MELHORIA DE UMA FAIXA:
+[X_PADDING=20]1. Para aprimorar uma Faixa, vá até o NPC Theowahdan e clique em Combinação.
+[X_PADDING=20]2. A aprimoração SEMPRE destrói a segunda faixa inserida, com sucesso ou
+[X_PADDING=20]em caso de falimento. Caso haja bônus em ambas as faixas, eles não
+[X_PADDING=20]vão somar, mas só serão considerados os da primeira estola, pois isso que
+[X_PADDING=20]é realmente aprimorado. O segundo tem a função única de “objeto de melhoria”.
+
+[X_PADDING=12]POSSÍVEIS GRAUS DE UMA FAIXA:
+[X_PADDING=20;COLOR=58ADFF]GRAUS         PORCENTAGEM DE ABSORÇÃO DE BÔNUS
+[X_PADDING=20]Basico       1%
+[X_PADDING=20]Fino           5%
+[X_PADDING=20]Nobre          10%
+[X_PADDING=20]Pessoal     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Remove B. Faixa
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 105.
+[X_PADDING=12]*Maximální level: 120.
+[X_PADDING=12]*Ticket: Ankhský kríž.
+[X_PADDING=12]*Typ: Skupina.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankhský kríž
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 30 minut.
+[X_PADDING=12]*Cooldown: 1 hodina a 30 minut.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Special Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Síla proti zemi.
+[X_PADDING=12]*Element príšer: Zeme.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Znic kámen Wadjet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO
+[X_PADDING=20]1. Zabíj príšery a najdi 4 kusy pergamenu.
+[X_PADDING=20]2. Jakmile najdeš 4 kusy pergamenu, klikni na Starovekou pecet a znic ji (Kdo klikne na pecet
+[X_PADDING=20]   musí mít ve svém inventári všechny 4 kusy svitku).
+[X_PADDING=20]3. Zabíj Anubisova služebníka.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ PATRO
+[X_PADDING=20]1. Znic správný kámen faraonu.
+[X_PADDING=20]2. Zabíj Basteta.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÉ PATRO
+[X_PADDING=20]1. Aby ses dostal pres plán, musíš projít 24 portály.
+[X_PADDING=20]2. Zabíj správného Ra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PÁTÉ PATRO
+[X_PADDING=20]1. Zabíj monstra, abys našel Moudrou pásku.
+[X_PADDING=20]2. Pretáhnete Šalvejovou šerpu na opravenou podobiznu Anubise a znic ji.
+[X_PADDING=20]3. Znic Ankh kámen, abys našel Moudrou pásku.
+[X_PADDING=20]4. Pretáhni Moudrou pásku na opravenou podobiznu Anubise a znic ji.
+[X_PADDING=20]3. Zabíjej monstra, abys našel Moudrou pásku.
+[X_PADDING=20]4. Pretáhni Moudrou pásku na opravenou podobiznu Anubise a znic ji.
+[X_PADDING=20]5. Znic Ankh kameny a najdi poslední Moudrou pásku.
+[X_PADDING=20]6. Pretáhni Moudrou pásku na poslední podobiznu Anubise, abys ji znicil.
+[X_PADDING=20]7. Zabíj Anubise.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ŠESTÉ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+[X_PADDING=20]2. Klikni na klíc Ankh abys obdržel Staroveký klíc.
+[X_PADDING=20]3. Pretáhni Staroveký klíc na pilíre wadjet a znic ho.
+[X_PADDING=20]4. Znic kámen Sfingy.
+[X_PADDING=20]5. Klikni na poslední klíc Ankh abys obdržel Staroveký klíc.
+[X_PADDING=20]6. Pretáhni Staroveký klíc do posledního pilíre wadjet, abys ho znicil.
+[X_PADDING=20]7. Zabij Sfingu.
+[X_PADDING=20]8. Znic poklad Sfingy, abys získal odmenu.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

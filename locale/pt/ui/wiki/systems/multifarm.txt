@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Com este sistema será possível dropar apenas com 2 personagens.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMAÇÕES
+
+[X_PADDING=12]1. Os 2 primeiros clientes abertos terão o drop disponível, ao abrir o terceiro cliente o drop será bloqueado automaticamente e
+[X_PADDING=12]então ele só pode ganhar EXP.
+[X_PADDING=12]2. Será possível ativar e desativar o drop para um personagem clicando no ícone no canto superior esquerdo.
+[X_PADDING=12]3. O drop só pode ser ativada e desativada no mapa da Vila das Maravilhas e você tem que esperar por um tempo
+[X_PADDING=12]de 5 segundos.
+[X_PADDING=12]4. Se você tiver mais de 2 clientes abertos e habilitar o drop no terceiro cliente, desabilitará automaticamente o drop no primeiro cliente, e
+[X_PADDING=12]assim por diante em ordem numérica para outros clientes abertos.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 40.
+[X_PADDING=12]*Livello massimo: 100.
+[X_PADDING=12]*Genere: Solo e Gruppo.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 50 minuti.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte contro Zombie.
+[X_PADDING=12]*L'elemento dei mostri: Oscurità.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMO PIANO
+[X_PADDING=20]1. Uccidi tutti i mostri.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDO PIANO
+[X_PADDING=20]1. Uccidi il Re dei Demoni.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZO PIANO
+[X_PADDING=20]1. Distruggi la Metin del Diavolo.
+[X_PADDING=20]2. Distruggi la Metin della Caduta corretta.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO PIANO
+[X_PADDING=20]1. Trova 5 Pietra Chiave.
+[X_PADDING=20]2. Trascina le Pietra Chiave sui Vecchi Sigilli per passare al piano successivo.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PIANO
+[X_PADDING=20]1. Uccidi il Re dei Demoni Elitario.
+[X_PADDING=20]2. Usa il Fabbro per uppare un qualsiasi item oppure cliccaci sopra per proseguire alla prossima fase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SESTO PIANO
+[X_PADDING=20]1. Distruggi le Metin della Morte.
+[X_PADDING=20]2. Distruggi la Metin dell'Assassino per droppare la Vecchia Cassa Misteriosa.
+[X_PADDING=20]3. Clicca con il tasto destro sulla Vecchia Cassa Misteriosa per far cadere a terra la Mappa Torre di Zin-Sa-Gui.
+[X_PADDING=20]4. Clicca con il tasto destro sulla Mappa Torre di Zin-Sa-Gui per passare al piano successivo.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SETTIMO PIANO
+[X_PADDING=20]1. Trova la Chiave Zin-Bong-In.
+[X_PADDING=20]2. Trascina la Chiave Zin-Bong-In su Sa-Soe per passare al piano successivo.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OTTAVO PIANO
+[X_PADDING=20]1. Uccidi la Morte Personificata.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=584; CENTER_ALIGN]

@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]En Auriga hay 4 nuevos grados de mejora:
+[X_PADDING=20]- Épico
+[X_PADDING=20]- Legendario
+[X_PADDING=20]- Antiguo
+[X_PADDING=20]- Místico
+
+[X_PADDING=12]1. Cuando algunos elementos se actualizan hasta +9, será posible epicizarlos en 4 grados.
+[X_PADDING=12]2. Cuando se epiciza un elemento, se le agrega una nueva bonificación fija o se mejoran los porcentajes
+[X_PADDING=12]bonificaciones fijas ya presentes.
+
+[X_PADDING=12;FONT_SIZE=14]ARTÍCULOS QUE PUEDEN EPICIARSE:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMAS:
+[X_PADDING=28]- Espada envenenada+9
+[X_PADDING=28]- Espada de leon+9
+[X_PADDING=28]- Espada de rencor+9
+[X_PADDING=28]- Arco de acero de cuervo+9
+[X_PADDING=28]- Chakram del ala del diablo+9
+[X_PADDING=28]- Campana de bambú+9
+[X_PADDING=28]- Espada del zodiaco+9
+[X_PADDING=28]- Hoja del zodiaco+9
+[X_PADDING=28]- Glaive del zodiaco+9
+[X_PADDING=28]- Arco del zodiaco+9
+[X_PADDING=28]- Daga del zodiaco+9
+[X_PADDING=28]- Fan del zodiaco+9
+[X_PADDING=28]- Campana del zodiaco+9
+[X_PADDING=28]- Espada de cianita+9
+[X_PADDING=28]- Espada de cianita+9
+[X_PADDING=28]- Hoja de cianita+9
+[X_PADDING=28]- Arco de cianita+9
+[X_PADDING=28]- Daga de cianita+9
+[X_PADDING=28]- Abanico de cianita+9
+[X_PADDING=28]- Campana de cianita+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMADURAS:
+[X_PADDING=28]- Am. placas de cianita+9
+[X_PADDING=28]- Arnés de cianita +9
+[X_PADDING=28]- Traje de cianita+9
+[X_PADDING=28]- Ropa de cianita+9
+[X_PADDING=28]- Armadura del zodiaco+9
+[X_PADDING=28]- Am. placas del zodíaco+9
+[X_PADDING=28]- Traje del zodiaco+9
+[X_PADDING=28]- Ropaje del Zodiaco+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* CASCOS:
+[X_PADDING=28]- Casco de dragón sombrío+9
+[X_PADDING=28]- Casco de Dragón Hexagonal+9
+[X_PADDING=28]- Casco de dragón tempestad+9
+[X_PADDING=28]- Casco de dragón exaltado+9
+[X_PADDING=28]- Yelmo de acero de dragón+9
+[X_PADDING=28]- Yelmo de escamas de dragón+9
+[X_PADDING=28]- Caperuza de dragón+9
+[X_PADDING=28]- Sombrero de dragón+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ESCUDOS:
+[X_PADDING=28]- Escudo de halcón+9
+[X_PADDING=28]- Escudo de león+9
+[X_PADDING=28]- Escudo de tigre+9
+[X_PADDING=28]- Escudo escamas de dragón+9
+[X_PADDING=28]- Escudo tres emperadores+9
+[X_PADDING=28]- Escudo titán+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRAZALETES:
+[X_PADDING=28]- Brazalete Cristal de alma+9
+[X_PADDING=28]- Brazalete de cianita+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* COLLAR:
+[X_PADDING=28]- Collar de cristal de alma+9
+[X_PADDING=28]- Collar de cianita+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* PENDIENTES:
+[X_PADDING=28]- Pendientes Cristal de alma+9
+[X_PADDING=28]- Pendientes de cianita+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ZAPATOS:
+[X_PADDING=28]- Zapatos de fuego+9
+[X_PADDING=28]- Zapatos oceánicos+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

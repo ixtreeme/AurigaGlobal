@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 40.
+[X_PADDING=12]*Nivel maximo: 100.
+[X_PADDING=12]*Type: Solo y en grupo.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Límite de tiempo 50 minutos.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra no muertos
+[X_PADDING=12]*Elemento de monstruos: oscuro.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata a todos los monstruos.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Mata al Rey Demonio.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Destruye al Metin del diablo.
+[X_PADDING=20]2. Destruye el Metin de otoño correcto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]1. Encuentra 5 piedra clave.
+[X_PADDING=20]2. Arrastre la piedra clave a los sellos para pasar al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PISO
+[X_PADDING=20]1. Mata al orgulloso rey demonio.
+[X_PADDING=20]2. Usa el herrero para mejorar cualquier artículo o haz clic en él para pasar al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEXTO PISO
+[X_PADDING=20]1. Destruye todos los Metins de la Muerte
+[X_PADDING=20]2. Destruye el Metin de Asesinato para soltar el Cofre Viejo Desconocido.
+[X_PADDING=20]3. Debes hacer clic en el Cofre Viejo Desconocido para encontrar el mapa de Zin-San-Gui.
+[X_PADDING=20]4. Haga clic derecho en el mapa de Zin-Sa-Gui para ir al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SÉPTIMO PISO
+[X_PADDING=20]1. Encuentra la llave Zin-Bong-In.
+[X_PADDING=20]2. Arrastre la llave Zin-Bong-In a Sa-Soe para pasar al siguiente piso.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OCTAVO PISO
+[X_PADDING=20]1.  matar al segador de la muerte. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

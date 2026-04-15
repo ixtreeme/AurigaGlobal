@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]CONVIDAMOS VOCÊ A LER E SEGUIR
+[CENTER_ALIGN;FONT_SIZE=24]AS REGRAS DO JOGO PARA EVITAR
+[CENTER_ALIGN;FONT_SIZE=24]QUAISQUER PROBLEMAS.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12]1. VENDA DE CONTAS E ITENS
+[X_PADDING=20]Não é permitida a venda de contas e itens em dinheiro real (como: paysafe, paypall, bitcoin, sofrot, etc.)
+[X_PADDING=20]É estritamente proibido, além disso, não é permitido trocar com outros servidores.
+
+[X_PADDING=12]2. LINGUAGEM OFENSIVA
+[X_PADDING=20]É estritamente proibido insultar outros jogadores. Também é proibido usar uma linguagem não adequada ao tema
+[X_PADDING=20]do jogo,  como: linguagem chula, blasfêmias, ameaças fora do jogo. Os insultos dirigidos à equipe levam ao
+[X_PADDING=20]bloqueio permanente imediato do jogo e da conta do fórum. As medidas são avaliadas com base na gravidade
+[X_PADDING=20]de cada coisa.
+
+[X_PADDING=12]3. BUG
+[X_PADDING=20]Encorajamos todos os usuários a relatar imediatamente qualquer bug encontrado a um membro da equipe.
+[X_PADDING=20]Qualquer tipo de uso ou abuso de bug que afete o curso normal do jogo será punido.
+
+[X_PADDING=12]4. CHEAT
+[X_PADDING=20]O uso de hacks/bots ou qualquer outro software ilegal não é permitido.
+[X_PADDING=20]Qualquer tentativa será punida com o bloqueio permanente.
+
+[X_PADDING=12]5. SEGURANÇA DA CONTA E INFORMAÇÕES PRIVADAS
+[X_PADDING=20]A equipe BwMt2 não assume nenhuma responsabilidade em caso de perda de conta ou item devido ao 
+[X_PADDING=20]compartilhamento de conta. É altamente recomendável que você não compartilhe suas contas / itens.
+[X_PADDING=20]Também aconselhamos você a não compartilhar suas informações privadas com ninguém. Caso alguém
+[X_PADDING=20]divulgue informações de outro usuário, a equipe irá puni-lo.
+
+[X_PADDING=12]6. ANÚNCIO'
+[X_PADDING=20]Qualquer tentativa de anunciar outros servidores em nosso servidor de Jogo
+[X_PADDING=20]de Jogo ou Discord será punida.
+
+[X_PADDING=12]7. MEMBROS DO STAFF
+[X_PADDING=20]Convidamos todos os nossos usuários a seguir e respeitar as escolhas e instruções do STAFF.
+[X_PADDING=20]Se esta regra for quebrada, existe o risco de punição severa.

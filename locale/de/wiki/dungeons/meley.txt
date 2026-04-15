@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ANFORDERUNGEN:
+[X_PADDING=12]*Minimum level: 75.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Type: Gilde.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 1 Stunden
+[X_PADDING=12]*Zeitlimit: 3 Stunden.
+[X_PADDING=12]*Sie können über die Karte zugreifen: Lobby Dungeon.
+[X_PADDING=12]*Empfohlener Bonus: Stark gg Feuer
+[X_PADDING=12]*Element der Monster: Feuer.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE PHASE
+[X_PADDING=20]Als erstes Ziel müssen die Spieler den Statuen im Raum Schaden zufügen, bis sie 75 % ihrer TP erreicht haben.
+[X_PADDING=20]Die Gruppe wird während dieser Phase durch den Spawn zahlreicher Mobs blockiert.
+[X_PADDING=20]Wenn eine Statue 25 % ihrer TP verliert, ändert sie ihre Farbe und kann nicht mehr beschädigt werden.
+[X_PADDING=20]Wenn alle Statuen ihre Farbe ändern, beginnt Stufe 2
+[X_PADDING=20]Während dieses Übergangs verschwinden die Mobs im Raum und Sie können nicht mit den Statuen interagieren.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE PHASE
+[X_PADDING=20]In dieser Phase müssen die Spieler den Statuen erneut schaden hinzufügen, bis sie 50% ihrer TP erreicht haben.
+[X_PADDING=20]Diesmal wird die Spielergruppe durch den Spawn einer größeren Anzahl von Mobs blockiert
+[X_PADDING=20]Eier garantieren Immunität gegen Beschädigungen der Statuen, daher können die TP der Statuen nur reduziert werden, wenn keine Eier vorhanden sind.
+[X_PADDING=20]Sobald die 50% der TP-Statuen erreicht haben, werden sie wieder unzerstörbar.
+[X_PADDING=20]Wenn alle Statuen wieder ihre Farbe ändern, gehen Sie zu Phase 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE PHASE
+[X_PADDING=20]In dieser Phase müssen Sie noch mals den statuen schaden hinzufügen, bis die HP aufgebraucht sind. Es erscheinen die gleichen Eier der vorherigen Phase,
+[X_PADDING=20]Zerstören sie die eier, sonst kann der Lauf nicht beendet werden. Wenn sich wie in der vorherigen Phase Eier im Raum befinden,
+[X_PADDING=20]Statuen können nicht beschädigt werden. Wenn Statuen 0% der TP erreichen, werden sie blau. An diesem Punkt müssen Sie die zerstören
+[X_PADDING=20]Statuen, indem du sie über einen Drachenfeuerring ziehst, der von Dungeon-Monstern fallen gelassen wird.
+[X_PADDING=20]Jeder Spieler kann nur eine Statue zerstören. Sobald Sie den Ring ziehen, wird die Statue grün:
+[X_PADDING=20]Statue wird grün: Die dritte Phase endet, wenn alle Statuen ihre Farbe ändern.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIETRTE PHASE
+[X_PADDING=20]Am Ende jeder Phase greifen die Statuen Meley an: Die dritte Phase endet, die Statuen versetzen den letzten Schlag und Meley
+[X_PADDING=20]wird fliehen. Spieler können jetzt ihre Belohnung erhalten, indem sie mit der NPC Golden Dragon Chest interagieren.
+[X_PADDING=20]Nach Abschluss dieses Gefängnisses kann jeder Teilnehmer eine der 2 Truhen wählen: Königin Meleys Truhe und Drachenwächtertruhe.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÄLLE VON KONKURS
+[X_PADDING=20]Die maximale Bearbeitungszeit beträgt 1 Stunde. Zusätzlich zu dieser Einschränkung kann die Gruppe scheitern, wenn:
+[X_PADDING=20]die Drachenwächter wurden bis zum Ende von Phase 3 nicht getötet. die Eier respawnten, bevor sie alle Ringe
+[X_PADDING=20]auf die Statuen gezogen hatten.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BELOHNEN
+[X_PADDING=20]Alle Teilnehmer erhalten im Erfolgsfall eine Belohnung. Spieler können zwischen 2 Truhen wählen:
+[X_PADDING=20]Königin-Meley-Truhe und Drachenwächter-Truhe.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]Wenn du einige Missionen im Spiel abschließt, erhältst du eine Haustiertruhe, wenn du darauf klickst, wirst du dazu aufgefordert
+[X_PADDING=12]wählen Sie, welches Haustier-Ei Sie bevorzugen:
+[X_PADDING=20]- Affenei
+[X_PADDING=20]- Spinnenei
+[X_PADDING=20]- Ei von Razador
+[X_PADDING=20]- Ei von Nemere
+[X_PADDING=20]- Blaues Drachenei
+[X_PADDING=20]- Rotes Drachenei
+[X_PADDING=20]- Baashido-Baby-Ei
+[X_PADDING=20]- Molliges Henkersei
+[X_PADDING=20]- Nessie-Ei
+[X_PADDING=20]- Ei von Mini Azrael
+[X_PADDING=20]- Exdyar-Ei
+
+[X_PADDING=12]Wenn Sie mit der rechten Maustaste auf Ihr Ei klicken, werden Sie aufgefordert, den Namen auszuwählen, bevor Sie das Haustier schlüpfen
+[X_PADDING=12]aus dem Ei (mit der Namensrolle ist es möglich, den Namen Ihres Haustieres zu ändern).
+[X_PADDING=12]Wenn das Haustier geschlüpft ist, hat es noch 2 Tage zu leben und wird Stufe 1 erreichen.
+[X_PADDING=12]Um das Leben des Haustieres zu verlängern, benötigst du den Göttlichen Boccone, erhältlich ab 2g im NPC-Ladenbesitzer.
+
+[X_PADDING=12]Wenn das Haustier schlüpft, hat es 3 Boni (diese Boni werden mit zufälligen Prozentsätzen herauskommen):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Stark gegen Monster
+[X_PADDING=20]- Mittlerer Schaden[PVM]
+
+[X_PADDING=12]Es ist möglich, die Prozentsätze der Standardhaustierboni mit einem Spezialbiss zu erhöhen.
+[X_PADDING=12](Achtung, die prozentuale Erhöhung eines Standardbonus könnte fehlschlagen).
+
+[X_PADDING=12]Das Haustier hat 3 Entwicklungsprozesse:
+[X_PADDING=20]1. Vom Welpen zum Wild
+[X_PADDING=20]2. Von wild zu mutig
+[X_PADDING=20]3. Von mutig bis heldenhaft
+
+[X_PADDING=12]Die Entwicklungen bei Haustieren sind wie folgt unterteilt:
+[X_PADDING=20]WELPEN:
+[X_PADDING=28]- Level 1 bis 40, kein Gegenstand erforderlich
+[X_PADDING=20]WELPEN --> WILD:
+[X_PADDING=28]Stufe 41 bis 60
+[X_PADDING=28]- 10 Welpen-Haustierbuch
+[X_PADDING=28]- 10 weiße Perle
+[X_PADDING=28]- 3 gelbe Perle
+[X_PADDING=20]WIL --> MUTIG:
+[X_PADDING=28] – Stufe 61 bis Stufe 80
+[X_PADDING=28]- 10 Wildtierbuch
+[X_PADDING=28]- 10 blaue Perle
+[X_PADDING=28]- 3 grüne Perle
+[X_PADDING=20]MUTIG --> HELDEND:
+[X_PADDING=28] - Stufe 81 bis 100
+[X_PADDING=28]- 10 Brave Pet Book
+[X_PADDING=28]- 10 rote Perle
+[X_PADDING=28]- 3 Lila Perle
+
+[X_PADDING=12]Wild Rank schaltet den ersten Skill-Slot frei.
+[X_PADDING=12]Brave Rank schaltet den zweiten Skill-Slot frei.
+[X_PADDING=12]Heroischer Rang schaltet den dritten Skill-Slot frei.
+
+[X_PADDING=12]Außerdem gewährt das Haustier mit zunehmendem Alter neue Boni. Je älter das Haustier ist, desto höher ist der Wert seiner Boni.
+[X_PADDING=20]Im Alter von 1 bis 10 Tagen gewährt das Haustier die folgenden Boni:
+[X_PADDING=28] - max. TP +500
+[X_PADDING=28]- Widerstands gegen monster 2%
+[X_PADDING=28]- Widerstand gegen Halbmenschen 2%
+[X_PADDING=20]Von 11 bis 25 Tagen gewährt das Haustier die folgenden Boni:
+[X_PADDING=28] - max. TP +1200
+[X_PADDING=28]- Widerstand gegen smonster 4%
+[X_PADDING=28]- Widerstand gegen Halbmenschen 4%
+[X_PADDING=20] Von 26 bis 47 Tagen gibt das Haustier die folgenden Boni:
+[X_PADDING=28] - max. TP +2100
+[X_PADDING=28]-  Widerstands gegen monster 7%
+[X_PADDING=28]- Widerstand gegen Halbmenschen 7%
+[X_PADDING=20]Von 48 bis 59 Tagen gewährt das Haustier die folgenden Boni:
+[X_PADDING=28] - max.  TP +3000
+[X_PADDING=28]-  Widerstands gegen monster 10%
+[X_PADDING=28]- Widerstand gegen Halbmenschen 10 %
+[X_PADDING=20]Ab 60 Tagen:
+[X_PADDING=28] - max. TP +3000
+[X_PADDING=28]-  Widerstands gegen monster 10%
+[X_PADDING=28]- Widerstand gegen Halbmenschen 10 %
+[X_PADDING=28]- Und der vierte Skill-Slot wird freigeschaltet
+
+[X_PADDING=12]Fähigkeiten, die dem Haustier beigebracht werden können:
+[X_PADDING=20]- Chance auf kritische Treffer[PvM] 10 %
+[X_PADDING=20]- Stark gegen Metinsteine ??10%
+[X_PADDING=20]- Stark gegen Bosse 10 %
+[X_PADDING=20]- Ninja-Widerstand 10 %
+[X_PADDING=20]- Suren widerstand 10 %
+[X_PADDING=20] – Krieger widerstand 10 %
+[X_PADDING=20]- Schamanen-Widerstand 10 %
+[X_PADDING=20]- Chance auf EXP-Bonus 20 %
+[X_PADDING=20]- Chance, eine doppelte Menge an Yang von 20% zu verlieren
+[X_PADDING=20]- Angriffswert/Magie 10 %
+[X_PADDING=20]- Chance, physische Angriffe zu blocken 10 %
+[X_PADDING=20]- Chance, physische Angriffe zu reflektieren 10 %
+
+[X_PADDING=12]Es ist möglich, eine Fertigkeit der Wahl des Haustiers mithilfe des Buches „Haustier-Fertigkeiten zurücksetzen“ zu vergessen, und es ist auch möglich, es vergessen zu lassen
+[X_PADDING=12]alle Haustierfertigkeiten mit dem Buch „Haustierfertigkeiten zurücksetzen“ (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

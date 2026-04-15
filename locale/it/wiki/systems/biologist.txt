@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA BIOLOGO
+
+[X_PADDING=12]1. L'icona del pannello del biologo è situata sulla minimappa.
+[X_PADDING=12]2. Completando le missioni del biologo si ricevono bonus permanenti.
+[X_PADDING=12]3. Puoi acquistare gli item richiesti per le missioni recandoti dal biologo nel Villaggio della Meraviglia.
+[X_PADDING=12]4. Puoi abilitare una notifica nel pannello del biologo quando il tempo d'attesa è scaduto.
+[X_PADDING=12]5. Puoi usare l'Elisir del Ricercatore per azzerare il tempo d'attesa.
+[X_PADDING=12]6. Puoi usare L'Elisir del Ricercatore+ per azzerare il tempo d'attesa e migliorare la qualità degli oggetti quando
+[X_PADDING=12]vengono consegnati al biologo.
+[X_PADDING=12]7. Puoi usare l'item Magia del Biologo per cambiare il bonus scelto nelle missioni del livello 105 e 110.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISSIONI E PREMI 
+
+[IMG=d:/ymir work/ui/wiki/systems/it/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

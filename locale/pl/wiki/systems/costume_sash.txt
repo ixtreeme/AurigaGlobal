@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Kazdy kostium szarfy ma 6 wbudowanych bonusów
+[X_PADDING=20]- Silny przeciwko potworom
+[X_PADDING=20]- Silny przeciwko kamieniom metin
+[X_PADDING=20]- Silny przeciwko wladcom
+[X_PADDING=20]- Silny przeciwko Pól ludziom
+[X_PADDING=20]- Odpornosc na Pól ludzi
+[X_PADDING=20]- Max. PZ
+
+[X_PADDING=12]Kostiumy Szarfy maja 4 stopnie i w zaleznosci od rangi wzrasta maksymalny procent bonusu.
+
+[X_PADDING=12]Maksymalne bonusy kostiumów:
+[X_PADDING=20]- Silny przeciwko potworom +20%
+[X_PADDING=20]- Silny przeciwko kamieniom metin 20%
+[X_PADDING=20]- Silny przeciwko wladcom 20%
+[X_PADDING=20]- Silny przeciwko Pól ludziom +15%
+[X_PADDING=20]- Odpornosc na Pól ludzi 15%
+[X_PADDING=20]- Max. PZ +3000
+
+[X_PADDING=12]Aby zmienic procentowa wartosc kostiumu szarfy, potrzebujesz przedmiotu Zaczarowanie Kostiumu Szarfy.
+
+[X_PADDING=12]Aby zwiekszyc range szarfy, musisz polaczyc go u NPC Theowahdan, 
+[X_PADDING=12]kostium szarfy mozna laczyc tylko z szarfá tego samego typu i tej samej klasy.
+[X_PADDING=12](Uwazaj, poniewaz kombinacja tasuje procenty bonusów zgodnie z nowa ranga
+[X_PADDING=12]i istnieje ryzyko, ze polaczenie moze sie nie udac).
+[X_PADDING=12]Mozliwe jest przeniesienie bonusów jednej szarfy na inna za pomoca przedmiotu Transfer Bonusów Szarfy 
+[X_PADDING=12]u Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Enchant Costume Stole																					   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/anime.png]
+[X_PADDING=12;CENTER_ALIGN]O Sistema das Almas permite que você potencialize e use almas, eles dão ao jogador bônus temporários para
+[X_PADDING=12;CENTER_ALIGN]danos com ataques físicos e de habilidade.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]A. sonhe como illum.																						    A. celeste illum.
+
+[X_PADDING=12]ALMAS DE SONHO E ALMAS CELESTIAIS
+[X_PADDING=20]- Almas de sonho fortalece ataques físicos.
+[X_PADDING=20]- A Alma Celestial aumenta o dano causado por habilidades.
+[X_PADDING=20]- O aumento é concedido a um número definido de golpes feitos contra um alvo, após o qual
+[X_PADDING=20]o potenciamento desaparecerá.
+
+[X_PADDING=12]I potenziamenti non vengono attivati durante una trasformazione o un combattimento PvP.
+[X_PADDING=12]Attacchi effettuati da cavallo vengono potenzati ma solo contro i mostri, non contro altri PG.
+
+[X_PADDING=12]Para carregar a alma você tem que esperar pelo menos 60 minutos no jogo, assim que a alma é carregada o tooltip (descrição
+[X_PADDING=12]que aparece apenas se você posicionar o mouse sobre o objeto) aparecerá em verde e pode ser ativado.
+[X_PADDING=12]Após um certo período de tempo consecutivo off-line (cerca de uma hora), a alma descarrega e terá que esperar
+[X_PADDING=12]novamente para carregá-la.
+[X_PADDING=12]Do Grau Iridescente em diante, quanto mais o tempo passa, mais aumenta a amplificação do dano que a alma concede: o primeiro
+[X_PADDING=12]o aumento atinge 2/3 da carga máxima e o segundo (se houver) na carga máxima.
+[X_PADDING=12]Do grau Prismático em diante, a alma é capaz de fornecer 2 "cargas" da potenciamento, escalando para o grau anterior
+[X_PADDING=12](500 golpes com dano multiplicado por 2,5 e depois outros 500 com dano multiplicado por 1,8, por exemplo).
+[X_PADDING=12]No grau Iluminado, a alma não descarrega ficando offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRAU DAS ALMAS
+
+[X_PADDING=12]As almas podem ter 5 graus diferentes, em base a elas podem mudar a porcentagem do potenciamento recebido e o
+[X_PADDING=12]número de possíveis golpes a fazer.
+
+[IMG=d:/ymir work/ui/wiki/systems/en/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]COMO POTENCIAR O GRAU DE UMA ALMA
+
+[X_PADDING=12]- Para melhorar o grau de uma alma, você precisa do Pergaminho da Alma, que funciona como um Papiro Sagrado, basta
+[X_PADDING=12]arrastar o pergaminho sobre a alma escolhida e a janela de melhoramento aparecerá.
+[X_PADDING=12]- Pelo contrário, usando um Pergaminho da Alma (100%) o aprimoramento é garantido.
+[X_PADDING=12]- Em caso de falha, a alma não se quebra e apenas o pergaminho é consumido. Todas as suas características
+[X_PADDING=12]permanecem inalterados, incluindo golpes, tempo restante e carga atual.
+[X_PADDING=12]- Se for bem-sucedido, a alma sobe para o próximo grau, o número de golpes restantes é redefinido e o prazo de expiração será
+[X_PADDING=12]redefinido; qualquer carga presente será perdida com o up, portanto, você terá que esperar que ele carregue novamente.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

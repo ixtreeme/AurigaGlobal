@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Yetenegin renk sistemi, bir yetenegin rengini degistirme izni verir.
+
+[X_PADDING=12]1. Bir yetenegin rengini yalnizca P'deyken degistirebilirsiniz.
+[X_PADDING=12]2. Bir yetenegin rengini ancak Gökkusagi iksiri esyasina sahipseniz degistirebilirsiniz.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Gökkusagi Iksiri
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]1. Bir beceri, P'deki beceri simgesinin üzerindeki beceri panelini açarak P'ye ulastiginda, renkli bir daire görünecektir.
+[X_PADDING=12]2. Sol fare tusu ile daireye tiklamak, beceri renk sisteminin panelini açacaktir.
+[X_PADDING=12]3. Her beceri ayni anda 5 farkli renkte boyanabilir, üzerine tiklayarak çesitli renkleri seçebilirsiniz.
+[X_PADDING=12]panelin altindaki sayilar.
+[X_PADDING=12]4. Ne zaman yeteneklerinizden birinin rengini degistirmek isterseniz, bir Gökkusagi Iksiri'ne ihtiyaciniz olacak.
+[X_PADDING=12]5. Panelin sag tarafinda bulunan oku kullanarak mevcut 3 seçenegi kullanabilirsiniz, renk kaydetme, ile renk ekleme
+[X_PADDING=12]Hex kodu ve önceden tanimlanmis rengi kullanin.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

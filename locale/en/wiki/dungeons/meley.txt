@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 75.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Type: Guild.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 1 hour
+[X_PADDING=12]*Cooldown: 3 hours.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Fire Power
+[X_PADDING=12]*Element of monsters: Fire.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST PHASE
+[X_PADDING=20]As a first goal, players will have to inflict damage to statues in the room until they reach 75% of their HP. 
+[X_PADDING=20]The group will be blocked by the spawn of numerous mobs throughout the duration of this phase.
+[X_PADDING=20]When a statue loses 25% of HP, it changes colour and can no longer be damaged.
+[X_PADDING=20]When all the statues change colour, stage 2 will start. 
+[X_PADDING=20]During this transition the mobs in the room will disappear and you will not be able to interact with the Statues.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND PHASE
+[X_PADDING=20]At this phase, Statues will have to hit the statues again, until they reach 50% of their HP.
+[X_PADDING=20]This time, the group of players will be blocked by the spawn of a larger number of mobs and, moreover,
+[X_PADDING=20]Eggs guarantee immunity to damage to the Statues, therefore, hp of the statues can onl be reduced when no eggs are present. 
+[X_PADDING=20]Once the 50% of HP's Statues reach, once again, they will become indestructible. 
+[X_PADDING=20]When all the Statues change color again, you will go to phase 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD PHASE
+[X_PADDING=20]At this stage you will still need to hit Statues until the HP runs out. The same Eggs of the previous phase will appear, 
+[X_PADDING=20]an even bigger number of mobs and four Dragon Watcher Idall . These mobs must be eliminated before
+[X_PADDING=20]the end of this phase, otherwise it will not be possible to end the run. As on the previous stage, if there are Eggs in the room, 
+[X_PADDING=20]Statues can not be damaged. When Statues reach 0% of HP, they will become blue. At this point you will have to destroy the
+[X_PADDING=20]Statues by dragging them over a Dragonfire Ring, dropped by dungeon monsters.
+[X_PADDING=20]Each player can destroy only one Statue. Once you drag the Ring, the Statue becomes green:
+[X_PADDING=20]Statue becomes green: the third stage will end when all the statues change color.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH PHASE
+[X_PADDING=20]As each stage ends, the Statues will attack Meley: the third phase will end the statues will inflict the last blow and Meley
+[X_PADDING=20]will flee. Players will now be able to receive their reward by interacting with the NPC Golden Dragon Chest.
+[X_PADDING=20]After completion of this prison any participant can choose one of the 2 chests: Queen Meley's Chest and Dragon Watcher Chest
+
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CASI DI FALLIMENTO (ELIMINIAMO QUESTA PARTA)
+[X_PADDING=20]Il tempo massimo di completamento è 1 ora. Oltre a questa limitazione, il gruppo potrà fallire nel caso in cui: non
+[X_PADDING=20]venissero uccisi i Guardiani dei Draghi entro la fine della fase 3. le Uova respawnassero prima di aver trascinato
+[X_PADDING=20]tutti gli Anelli sulle Statue.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RICOMPENSA (ELIMINIAMO QUESTA PARTA)
+[X_PADDING=20]Tutti i partecipanti riceveranno una ricompensa, in caso di riuscita. I giocatori potranno scegliere tra un 2 Bauli:
+[X_PADDING=20]Baule della Regina Meley e Baule Guardiano dei Draghi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

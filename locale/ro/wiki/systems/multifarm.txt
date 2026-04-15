@@ -1,0 +1,22 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Cu acest sistem vei putea avea drop pe maxim 2 cliente.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMAÞII
+
+[X_PADDING=12]1. Primele 2 cliente deschise vor avea drop, deschizând altele dropul va fi blocat în mod automat deci prin
+[X_PADDING=12]urmare vei putea doar sã creºti caracterul.
+[X_PADDING=12]2. Poþi activa ºi dezactiva drop-ul cu ajutorul imaginei de afect (de sus în colþ stânga).
+[X_PADDING=12]3. Drop-ul poate fi activat ºi dezactivat doar din Satul Minunilor iar timpul de aºteptare este de
+[X_PADDING=12]5 secunde.
+[X_PADDING=12]4. Dacã ai mai mult de 2 cliente deschise, activând drop-ul pe al 3-lea, în mod automat drop-ul de pe primul
+[X_PADDING=12]client va fi dezactivat ºi tot aºa.
+
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

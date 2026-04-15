@@ -1,0 +1,94 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/passive.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]1. El sistema de habilidades pasivas proporciona un porcentaje de defensa contra una habilidad determinada.
+[X_PADDING=12]2. Las habilidades pasivas se encuentran en el panel de habilidades en la sección pasiva.
+[X_PADDING=12]3. Las habilidades pasivas se pueden actualizar desde el nivel 115 en adelante.
+[X_PADDING=12]4. Las habilidades pasivas se actualizan hasta M10 con los libros de Contraataque que encontrarás en el
+[X_PADDING=12]Los libros de Forzieri contraatacan.
+[X_PADDING=12]5. Las habilidades pasivas se actualizan de G1 a P con Impulso de piedra de alma.
+
+[X_PADDING=12](Cuidado con el refuerzo con libros y Impulso de piedra de alma puede fallar, por lo que es recomendable utilizar las lecturas).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]HABILIDADES PASIVAS QUE PUEDEN MEJORARSE
+
+[X_PADDING=12]1. Giro de espada
+[X_PADDING=12]2. Golpe espiritual
+[X_PADDING=12]3. Emboscada
+[X_PADDING=12]4. Flecha de fuego
+[X_PADDING=12]5. Golpe oscuro
+[X_PADDING=12]6. Golpe de dedo
+[X_PADDING=12]7. Invocar relámpago
+[X_PADDING=12]8. Tiro de dragón
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=298; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PORCENTAJES DE MEJORA
+
+[X_PADDING=12;COLOR=58ADFF]Nivel de habilidad          Incrementar % Habilidad
+[X_PADDING=12]1                            1,2%
+[X_PADDING=12]2                            1,4%
+[X_PADDING=12]3                            1,9%
+[X_PADDING=12]4                            2,4%
+[X_PADDING=12]5                            2,9%
+[X_PADDING=12]6                            3,4%
+[X_PADDING=12]7                            3,8%
+[X_PADDING=12]8                            4,3%
+[X_PADDING=12]9                            4,8%
+[X_PADDING=12]10                          5,3%
+
+[X_PADDING=12;COLOR=58ADFF]Nivel de habilidad           Incrementar % Habilidad
+[X_PADDING=12]M1                         12,0%
+[X_PADDING=12]M2                         12,5%
+[X_PADDING=12]M3                         13,0%
+[X_PADDING=12]M4                         13,4%
+[X_PADDING=12]M5                         13,9%
+[X_PADDING=12]M6                         14,4%
+[X_PADDING=12]M7                         15,1%
+[X_PADDING=12]M8                         15,8%
+[X_PADDING=12]M9                         16,6%
+[X_PADDING=12]M10                       17,3%
+
+[X_PADDING=12;COLOR=58ADFF]Nivel de habilidad          Incrementar % Habilidad
+[X_PADDING=12]G1                         19,7%
+[X_PADDING=12]G2                         20,4%
+[X_PADDING=12]G3                         21,1%
+[X_PADDING=12]G4                         21,8%
+[X_PADDING=12]G5                         22,6%
+[X_PADDING=12]G6                         23,5%
+[X_PADDING=12]G7                         24,5%
+[X_PADDING=12]G8                         25,4%
+[X_PADDING=12]G9                         26,4%
+[X_PADDING=12]G10                       27,6%
+[X_PADDING=12]P                           30,0%
+
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_01.sub; Y=354; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_01.sub; Y=354; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_01.sub; Y=354; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_01.sub; Y=354; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_01.sub; Y=354; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_01.sub; Y=354; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_01.sub; Y=354; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_01.sub; Y=354; X=490]
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_02.sub; Y=498; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_02.sub; Y=498; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_02.sub; Y=498; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_02.sub; Y=498; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_02.sub; Y=498; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_02.sub; Y=498; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_02.sub; Y=498; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_02.sub; Y=498; X=490]
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_03.sub; Y=642; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_03.sub; Y=642; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_03.sub; Y=642; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_03.sub; Y=642; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_03.sub; Y=642; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_03.sub; Y=642; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_03.sub; Y=642; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_03.sub; Y=642; X=490]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=796; CENTER_ALIGN]

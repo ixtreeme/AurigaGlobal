@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Her düsen kostüm, önceden belirlenmis 6 bonusla baslar:
+[X_PADDING=20]- Canavarlara Karsi Güçlü
+[X_PADDING=20]- Metin Taslarina Karsi Güçlü
+[X_PADDING=20]- Patronlara Karsi Güçlü
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü
+[X_PADDING=20]- Yari Insanlara Karsi Savunma
+[X_PADDING=20]- Max. HP
+
+[X_PADDING=12]Düsen kostümün 4 derecesi vardir ve rütbeye bagli olarak maksimum bonus yüzdeleri artar.
+
+[X_PADDING=12]Maksimum bonus yüzdeleri:
+[X_PADDING=20]- Canavarlara Karsi Güçlü +20%
+[X_PADDING=20]- Metin Taslarina Karsi Güçlü 20%
+[X_PADDING=20]- Patronlara Karsi Güçlü 20%
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü +15%
+[X_PADDING=20]- Yari Insanlara Karsi Savunma 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]Düsen kostümün yüzdelerini degistirmek için Kostüm Efsunu Degistirme ögesine ihtiyaciniz var.
+
+[X_PADDING=12]Düsen kostümün rütbesini artirmak için onu NPC Theowahdan'dan birlestirmeniz gerekir, Degerli bir kostüm olabilir
+[X_PADDING=12]sadece ayni tür düsen ve ayni kalite ile birlestirilebilir.
+[X_PADDING=12](Kombinasyonun bonus yüzdelerini yeni siralamaya göre karistirdigina dikkat edin ve
+[X_PADDING=12]kombinasyon basarisiz olabilir).
+[X_PADDING=12]Düsen bir kostümün bonuslarini baska bir kostüme transfer etmek, Kostüm Bonus Transferi esyasi ile mümkündür.
+[X_PADDING=12]Theowahdan'a gidiyor.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Kostüm Efsunu Degistirme																					   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talizman Ognia								 Talizman Lodu								Talizman Ziemi
+
+
+
+
+
+
+[X_PADDING=81] Talizman Mroku							  Talizman Wiatru							   Talizman Blyskawicy
+
+[CENTER_ALIGN]Talizman to przedmiot, który moze dawac nowe bonusy dla postaci, mozliwe jest ulepszenie ich do maks. +30.
+[CENTER_ALIGN]Mozna kupic talizman +0 od npc Yonah.
+
+[X_PADDING=12]Do talizmanu mozna wstawic maksymalnie 5 bonusów:
+[X_PADDING=20]1. Od pierwszego do czwartego bonusu potrzebny jest przedmiot Wzmocnienie Talizmanu.
+[X_PADDING=20]2. Do dodania piatego bonusu potrzebny jest przedmiot Wzmocnij talizman.
+[X_PADDING=20]3. Do zmiany bonusów na talizman potrzebny bedzie przedmiot Zaczarowanie Talizmanu.
+
+[X_PADDING=12] Mozliwe bonusy, które moga znajdowac sie w talizmanie:
+[X_PADDING=20]- Przelamanie odpornosci na Miecze
+[X_PADDING=20]- Przelamanie odpornosci na Bron Dwureczna 5%
+[X_PADDING=20]- Przelamanie odpornosci na Sztylety 5%
+[X_PADDING=20]- Przelamanie odpornosci na Strzaly 5%
+[X_PADDING=20]- Przelamanie odpornosci na Wachlarze 5%
+[X_PADDING=20]- Przelamanie odpornosci na Dzwony 5%
+[X_PADDING=20]- Odpornosc na Pól ludzi 10%
+[X_PADDING=20]- Silny przeciwko Pól ludziom 10%
+[X_PADDING=20]- Silny przeciwko Potoworom 15%
+[X_PADDING=20]- Silny przeciwko Metinom  15%
+[X_PADDING=20]- Silny przeciwko Wladcom 15%
+[X_PADDING=20]- Odpornosc na Mrok 15%
+[X_PADDING=20]- Odpornosc na Ziemie 15%
+[X_PADDING=20]- Odpornosc na Lód 15%
+[X_PADDING=20]- Odpornosc na Ogien 15%
+[X_PADDING=20]- Odpornosc na Wiatr 15%
+[X_PADDING=20]- Odpornosc na Blyskawice 15%
+[X_PADDING=20]- Silny przeciwko runicznym potworom 20% 
+
+[X_PADDING=12]Mozna ulepszyc talizman do +10, zdobywajac przedmioty z poczatkowych wypraw, od +11 do +30 trzeba bedzie wydropic
+[X_PADDING=12]Elementarna Skrzynie, w której beda przedmioty niezbedne do ulepszenia talizmanu.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Wzmocnienie Talizmanu.								 Zaczarowanie Talizmanu.								Wzmocnij Talizman
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

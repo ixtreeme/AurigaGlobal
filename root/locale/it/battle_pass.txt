@@ -1,0 +1,10 @@
+1	Uccidi il boss	Uccisioni Rimaste: %s	Mostro: |cffff9d9d|H|h%s|h|r	Uccidi la |cffff9d9d|H|h%s|h|r per	completare la missione e guadagnare	le ricompense per il tuo personaggio.
+5	Usa l'oggetto	Oggetto da usare: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Usa |cffff9d9d|H|h%s|h|r per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+6	Vendi l'oggetto	Oggetto da vendere: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Vendi |cffff9d9d|H|h%s|h|r per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+8	Migliora l'oggetto	Oggetto da migliorare: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Migliora |cffff9d9d|H|h%s|h|r per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+9	Distruggi il tuo oggetto	Oggetto da distruggere: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Distruggi |cffff9d9d|H|h%s|h|r per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+10	Colleziona	Oggetto da collezionare: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Colleziona |cffff9d9d|H|h%s|h|r per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+11	Friggi il pesce	Pesci da Friggere: %s	Friggi: Tutti	Friggi qualsiasi pesce per	completare la missione e guadagnare	ricompense per il tuo personaggio.
+12	Cattura i Pesci	Pesci da pescare: %s	Pescare: Tutti	Pesca qualsiasi pesce per completare	la missione e guadagnare le ricompense	per il tuo personaggio.
+14	Farma yang	Yang da Farmare: %s	Farma da: Tutti	Farma yang per completare la	missione e guadagnare ricompense	per il tuo personaggio.
+15	Completa Dungeon	Dungeon da completare: %s	Dungeon: Tutti	Completa 70 dungeon per completare	la missione e ricevere ricompense	per il tuo personaggio.

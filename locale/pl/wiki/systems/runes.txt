@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[CENTER_ALIGN]Na poziomie 70 pojawi sie misja, a klikniecie na nia odblokuje panel run.
+
+[X_PADDING=12]Panel run sklada sie z 6 normalnych run plus 1 specjalnej, kazda runa ma specjalna moc.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Runa Aresa							  Runa Hery								    Runa Apollo
+
+
+
+
+
+
+[X_PADDING=80]Runa Afrodyty						   Runa Posejdona							     Runa Ateny
+
+
+
+
+
+
+[X_PADDING=238]Runa Zeusa
+
+[X_PADDING=12]Normalne runy maja maksymalna moc 100%, gdy ich moc jest wysoka procent ich
+[X_PADDING=12]bonusów bedzie wyzszy.
+
+[X_PADDING=12]Maksymalny procent normalnych run:
+[X_PADDING=20]- Runa Afrodyty: Silny przeciwko metinom 15% - Zrecznosc +15
+[X_PADDING=20]- Runa Apollo: Silny przeciwko wladcom 15% - Sila +15
+[X_PADDING=20]-  Runa Ateny: Srednie obrazenia [PVM] 12% - wartosc ataku +150
+[X_PADDING=20]- Runa Hery: Max PM  +1200 - Inteligencja +15
+[X_PADDING=20]- Runa Posejdona: Silny przeciwko potworom +15% - 15% Szansa na cios krytyczny [PVM]
+[X_PADDING=20]- Runa Aresa: Max. PZ +2500 - Witalnosc +15
+
+[X_PADDING=12]Specjalna runa, która jest Runa Zeusa, jest automatycznie aktywowana, gdy wszystkie normalne runy maja
+[X_PADDING=12]przynajmniej 50% dostepnej mocy.
+
+[X_PADDING=12]Runa Zeusa, gdy jest aktywna, zapewnia postaci nastepujace bonusy:
+[X_PADDING=20]- Silny przeciwko Pól ludziom 10%
+[X_PADDING=20]- Odpornosc przeciwko Pól ludziom 10%
+
+[X_PADDING=12]Kiedy jakakolwiek normalna runa spadnie ponizej 50%, runa Zeusa zgasnie
+[X_PADDING=12]automatycznie.
+
+[X_PADDING=12]Ponadto, gdy wszystkie normalne runy maja przynajmniej 60% mocy, na postaci pojawia sie specjalny efekt.
+[X_PADDING=12](Efekt mozna równiez wylaczyc z panelu run).
+
+[X_PADDING=12]Moc run mozna naladowac za pomoca Butelki Run, która mozna kupic w sklepie znajdujacym sie
+[X_PADDING=12]w panelu run.
+[X_PADDING=12]Butelka Run bedzie dostepna do kupienia tylko za Fragmenty Runiczne, które zdobedziesz tylko w Runicznym Dungeonie
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Butelka Run (P)					  Butelka Run (M)					  Butelka Run (G)						  Fragm. Rune
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

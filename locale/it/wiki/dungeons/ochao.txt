@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/ochao.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 100.
+[X_PADDING=12]*Livello massimo: 115.
+[X_PADDING=12]*Biglietto: Biglietto di Ochao.
+[X_PADDING=12]*Genere: Solo e Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/76025.tga; Y=15; X=478]
+[X_PADDING=460]Biglietto Ochao
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 30 minuti.
+[X_PADDING=12]*Il cooldown è di 1 ora e 30 minuti.
+[X_PADDING=12]*Nel caso in cui si entra con il gruppo, ognuno deve avere il biglietto.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte vs Diavolo.
+[X_PADDING=12]*L'elemento dei mostri: Vento.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA FASE
+[X_PADDING=20]1. Uccidi 100 mostri.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDA FASE
+[X_PADDING=20]1. Uccidi il Principe Ochao situato nella stanza centrale della mappa.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZA FASE
+[X_PADDING=20]1. Distruggi le 4 Metin Ochao situate nella stanza centrale della mappa.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTA FASE
+[X_PADDING=20]1. Uccidi il Forte Principe Ochao situato nella stanza centrale della mappa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

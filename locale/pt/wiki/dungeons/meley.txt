@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITOS:
+[X_PADDING=12]*Level mínimo: 75.
+[X_PADDING=12]*Level máximo: 120.
+[X_PADDING=12]*Tipo: Guilda.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OUTRAS INFORMAÇÕES:
+[X_PADDING=12]*O limite de tempo é de 1 hora.
+[X_PADDING=12]*O tempo de espera é de 3 horas.
+[X_PADDING=12]*Ele pode ser acessado através do mapa: Loby Dungeon.
+[X_PADDING=12]*O bônus que se aplica aos monstros: Forte contra Fogo.
+[X_PADDING=12]*O elemento dos monstros: Fogo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DESENVOLVIMENTO DO DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PASSO 1 - GOLPEAR AS ESTÁTUAS
+[X_PADDING=20]Como primeiro objetivo, os jogadores terão que infligir danos às estátuas presentes na sala até que sejam alcançadas
+[X_PADDING=20]75% de seu HP. O grupo será prejudicado pela geração de vários mobs ao longo desta fase.
+[X_PADDING=20]todas as estátuas mudarão de cor. Quando uma estátua perde 25% de seu HP, ela se torna vermelha clara e
+[X_PADDING=20]não pode mais ser danificada. Quando você vai para a fase 2. Durante esta passagem, os mobs presentes na sala
+[X_PADDING=20]eles desaparecerão e você não poderá interagir com as estátuas.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 2 - OVOS DE DRAGÃO
+[X_PADDING=20]Nesta fase será necessário golpear as Estátuas novamente, até atingir 50% de seu HP. Desta vez o
+[X_PADDING=20]grupo de jogadores será impedido pelo aparecimento de um maior número de mobs e também, pelo aparecimento de quatro
+[X_PADDING=20]Ovos de dragão com função específica: os ovos garantem às estátuas imunidade a danos, daí os ovos
+[X_PADDING=20]serão destruídos sempre que reaparecerem. Atingiu 50% do HP das Estátuas mais uma vez
+[X_PADDING=20]elas se tornarão indestrutíveis. Quando todas as estátuas mudarem de cor novamente, ele irá para a fase 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 3 - GUARDIÕES DOS DRAGÕES
+[X_PADDING=20]Nesta fase será necessário golpear as estátuas novamente até que o HP se esgote. Os mesmos Ovos aparecerão na
+[X_PADDING=20]fase anterior, ainda mais mobs e quatro Dragon Guardian Idall. Esses guardiões devem
+[X_PADDING=20]ser eliminado antes do final desta fase, caso contrário, a masmorra irá falhar. Novamente desta vez,
+[X_PADDING=20]se houver Ovos na sala, as estátuas não podem ser danificadas. Quando as estátuas chegarão
+[X_PADDING=20]0% da HP ficará azul. Neste ponto, você terá que destruir as estátuas arrastando-as
+[X_PADDING=20]o Anel do Fogo dos Dragões, que pode ser largado por monstros na masmorra. Assim que o anel é arrastado, a estátua fica verde:
+[X_PADDING=20]a terceira fase terminará quando todas as estátuas mudarem de cor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PASSO 4 - MATE O DRAGÃO
+[X_PADDING=20]A cada conclusão de uma etapa, as estátuas atacarão Meley: assim que a terceira fase terminar, as estátuas infligirão o último
+[X_PADDING=20]golpe e Meley irá fugir. Os jogadores agora poderão receber sua recompensa interagindo com o NPC Baú de Ouro
+[X_PADDING=20]dos Dragões.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CASOS DE FALÊNCIA
+[X_PADDING=20]O tempo máximo de conclusão é de 1 hora. Além dessa limitação, o grupo pode falhar no caso de: não
+[X_PADDING=20]matar os Guardiões do Dragão no final da fase 3. os Ovos reaparecer antes de serem arrastados
+[X_PADDING=20]todos os anéis nas estátuas.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RECOMPENSA
+[X_PADDING=20]Todos os participantes receberão uma recompensa, em caso de sucesso. Os jogadores poderão escolher entre 2 baús:
+[X_PADDING=20]Baú da Rainha Meley e Baú do Dragão Guardião.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

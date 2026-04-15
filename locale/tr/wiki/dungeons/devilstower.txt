@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum Giris Seviyesi: 40.
+[X_PADDING=12]*Maksimum Giris Seviyesi: 100.
+[X_PADDING=12]*Tür: Tek veya Grup.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 50 dakika.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Lobi Zindani.
+[X_PADDING=12]*Önerilen bonus: Ölümsüzlere karsi güç.
+[X_PADDING=12]*Irk: Karanlik.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Tüm canavarlari öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. Seytan Kralini öldür
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÜÇÜNCÜ ASAMA
+[X_PADDING=20]1. Seytanin metnini yok et.
+[X_PADDING=20]2. Sonbahar metnini yok et.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DÖRDÜNCÜ ASAMA
+[X_PADDING=20]1. 5 Anahtar Tasi Bulun.
+[X_PADDING=20]2. Bir sonraki kata geçmek için anahtar tasi direge sürükleyin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BESINCI ASAMA
+[X_PADDING=20]1. Kibirli Seytan Kralini öldür.
+[X_PADDING=20]2. Herhangi bir ögeyi yükseltmek için Demirciyi kullanin veya bir sonraki kata geçmek için üzerine tiklayin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ALTINCI ASAMA
+[X_PADDING=20]1. Tüm ölüm metinlerini yok et
+[X_PADDING=20]2. Bilinmeyen eski Sandigi düsürmek için katil metnini yok et.
+[X_PADDING=20]3. Zin-San-Gui haritasini bulmak için bilinmeyen eski Sandiga tiklamaniz gerekiyor.
+[X_PADDING=20]4. Bir sonraki kata gitmek için Zin-Sa-Gui haritasina sag tiklayin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]YEDINCI ASAMA
+[X_PADDING=20]1. Zin-Bong-in anahtarini bulun.
+[X_PADDING=20]2. Bir sonraki kata geçmek için Zin-Bong-in anahtarini Sa-Soe'ye sürükleyin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEKIZINCI ASAMA
+[X_PADDING=20]1.  Lusiferi öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 105.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: Ankh Cross.
+[X_PADDING=12]*Type: Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankh Cross
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 30 minutes.
+[X_PADDING=12]*Cooldown: 1 hour and 30 minutes
+[X_PADDING=12]*You can access from the map: Special Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Earth Power.
+[X_PADDING=12]*Element of monsters: Earth.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Destroy the Wadjet Stone.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR
+[X_PADDING=20]1. Kill the monsters to find the 4 pieces of the parchment.
+[X_PADDING=20]2. Once you have found the 4 pieces of the parchment, click on the Ancient Seal to destroy it (Whoever clicks on the seal
+[X_PADDING=20]e must have all 4 pieces of the scroll in their inventory).
+[X_PADDING=20]3. Kill the Servant of Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD FLOOR
+[X_PADDING=20]1. Destroy the correct Pharaoh Stone.
+[X_PADDING=20]2. Kill Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH FLOOR
+[X_PADDING=20]1. To get through the plan you have to go through 24 portals.
+[X_PADDING=20]2. Kill the correct Ra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIFTH FLOOR
+[X_PADDING=20]1. Kill monsters to find the Wise Band.
+[X_PADDING=20]2. Trascina la Fascia Saggia sull'Efiggie di Anubi corretto per distruggerlo.
+[X_PADDING=20]3. Destroy the Ankh Stone to find the Wise Band.
+[X_PADDING=20]4. Drag the Wise Band onto the corrected Anubis Effigy to destroy it.
+[X_PADDING=20]3. Kill monsters to find the Wise Band.
+[X_PADDING=20]4. Drag the Wise Band onto the corrected Anubis Effigy to destroy it.
+[X_PADDING=20]5. Destroy the Ankh Stones to find the last Wise Band.
+[X_PADDING=20]6. Drag the Wise Band onto the last Effigy of Anubis to destroy it.
+[X_PADDING=20]7. Kill Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIXTH FLOOR
+[X_PADDING=20]1. Kill all monsters.
+[X_PADDING=20]2. Click on the Ankh Key to receive the Ancient Key.
+[X_PADDING=20]3. Drag the Ancient Key to the wadjet Pillar to destroy it.
+[X_PADDING=20]4. Destroy the Sphinx Stone.
+[X_PADDING=20]5. Click on the last Ankh Key to receive the Ancient Key.
+[X_PADDING=20]6. Drag the Ancient Key to the last Pillar of the wadjet to destroy it.
+[X_PADDING=20]7. Kill the Sphinx.
+[X_PADDING=20]8. Destroy the Sphinx Treasure to receive the reward.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

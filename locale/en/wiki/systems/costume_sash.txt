@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Each stole costume starts with 6 pre-set bonuses:
+[X_PADDING=20]- Strong Against Monsters
+[X_PADDING=20]- Strong Against Metin stones
+[X_PADDING=20]- Strong Against Bosses
+[X_PADDING=20]- Strong Against Half Human
+[X_PADDING=20]- Half Human Resistance
+[X_PADDING=20]- Max. HP
+
+[X_PADDING=12]The stole costume has 4 ranks and based on the rank the maximum bonus percentages increase.
+
+[X_PADDING=12]Maximum percentages of bonuses:
+[X_PADDING=20]- Strong Against Monsters +20%
+[X_PADDING=20]- Strong Against Metin stones 20%
+[X_PADDING=20]- Strong Against Bosses 20%
+[X_PADDING=20]- Strong Against Half Human +15%
+[X_PADDING=20]- Half Human Resistance 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]To change the percentages of the costume stole you need the item Enchant Costume Stole.
+
+[X_PADDING=12]To increase the rank of the stole costume you need to combine it from the NPC Theowahdan, a stole costume can
+[X_PADDING=12]be combined only with the same type of stole and with the same grade.
+[X_PADDING=12](Beware the combination shuffles the bonus percentages according to the new rank and there is a risk that
+[X_PADDING=12]the combination may fail).
+[X_PADDING=12]It is possible to transfer the bonuses of one stole costume to another costume with the item Transfer Bonus Costume
+[X_PADDING=12]going to Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Enchant Costume Stole																					   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]Saman sistemini destekleyen bir sistem size otomatik olarak buff veren bir saman çagirma sansi verebilir.
+[CENTER_ALIGN]sayfaniza.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]1.Destek saman paneli simgesi envanterin yaninda bulunur veya paneli açabilirsiniz
+[X_PADDING=12]X dügmesine basarak.
+
+[X_PADDING=12]2.Saman destegi panelinin kilidini açmak için Unlock support Dragon Force veya Unlock support Healing Force ögelerine sahip olmaniz gerekir.
+[X_PADDING=12]Healing Force desteginin kilidini aç
+
+[X_PADDING=12]3 Bu ögelerden birine sahipseniz, sag tus ile üzerine tiklayarak, soracaginiz bir panel görünecektir.
+[X_PADDING=12]Bir isim eklemek ve destek samaninizin cinsiyetini seçmek için.
+
+[X_PADDING=12]4.Destek saman her seferinde lvl 1'den baslayacak ve lvl 120'ye ulasabilecek, lvl ne kadar yüksek olursa yüzde o kadar yüksek olacaktir
+[X_PADDING=12]artacak. Destek samani yalnizca çagrildiginda ve canavarlar öldürüldügünde xp alir.
+
+[X_PADDING=12]5. Saman temel bir donanimla baslayacak, seçme seçeneginiz olacak.
+[X_PADDING=12]panonun üzerinde yer alan magazayi açarak estetik yaptirabilirsiniz.
+
+[X_PADDING=12]6. 2 saman destegini bir arada çagirmak imkansiz ve onlari Lonca Savaslarinda çagirmak imkansiz
+
+[X_PADDING=12]7. Adin Büyüsü ögesini kullanarak samaninizin adini degistirebilirsiniz.
+
+[X_PADDING=12]8. Dönüsüm Parsömeni ögesini kullanarak samaninizin cinsiyetini degistirebilirsiniz.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Iyilestirme Gücünün Kilidini Aç						  Dragon Force'un kilidini aç						 Magic of the name					  Scroll of Transformation.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

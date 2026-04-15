@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Cada Faixa de Ombro começa com 6 bônus predefinidos:
+[X_PADDING=20]- Forte contra Monstros
+[X_PADDING=20]- Forte contra Metin
+[X_PADDING=20]- Forte contra Boss
+[X_PADDING=20]- Forte contra Semi-Humanos
+[X_PADDING=20]- Resistência Semi-Humanos
+[X_PADDING=20]- Máx. HP
+
+[X_PADDING=12]A Faixa de Ombro tem 4 graus e com base no grau as porcentagens máximas de bônus aumentam.
+
+[X_PADDING=12]Porcentagens máximas de bônus:
+[X_PADDING=20]- Forte contra Monstros +20%
+[X_PADDING=20]- Forte contra Metin 20%
+[X_PADDING=20]- Forte contra Boss 20%
+[X_PADDING=20]- Forte contra Semi-Humanos +15%
+[X_PADDING=20]- Resistência Semi-Humanos 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]Para alterar as porcentagens da faixa de ombro você precisa do item Encanta Faixa.
+
+[X_PADDING=12]Para aumentar o grau da faixa de ombro, você precisa combiná-la com o NPC Theowahdan, uma faixa de ombro pode
+[X_PADDING=12]ser combinada apenas com o mesmo tipo de faixa e com o mesmo grau.
+[X_PADDING=12](Atenção, a combinação embaralha as porcentagens de bônus de acordo com o novo grau e há o risco de que
+[X_PADDING=12]a combinação possa falhar).
+[X_PADDING=12]É possível transferir os bônus de uma faixa de ombro para outra com o item Transfer Bonus Costume
+[X_PADDING=12]falando com o Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Encanta Faixa de Ombros																						  T. Bon. Costume
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

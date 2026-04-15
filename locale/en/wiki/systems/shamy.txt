@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]The support shamy system its a system can provide to you the chance of summon a shaman, who automatically give buff
+[CENTER_ALIGN]to your pg.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1.The shamy support panel icon is located next to the inventory or you can open the panel
+[X_PADDING=12]pressing the X button.
+
+[X_PADDING=12]2.For unlocking the pannel of the shaman support you will need to have the item Unlock support Dragon Force or Unlock support Healing Force
+[X_PADDING=12]Unlock support Healing Force 
+
+[X_PADDING=12]3 If you have one of those items by clicking on it with the right button ,will appear a panel where you will ask
+[X_PADDING=12]to insert a name and choose the sex of your support shaman.
+
+[X_PADDING=12]4.The support shamy will start every time from lvl 1 and will be able to reach lvl 120, more the lvl will be higher more the percentage
+[X_PADDING=12]will increase. The support shaman take xp only when is evocated and when monsters are killed.
+
+[X_PADDING=12]5. The shaman will start with a basic equip,you will have the choice of choosing
+[X_PADDING=12]the esthetic of him/she by opening the shop situated on the panel.
+
+[X_PADDING=12]6. It's impossible to summon 2 shaman support together, and it's impossible to summon them on Guild Wars
+
+[X_PADDING=12]7. You can change the name of your shaman by using the item  Magic of the name.
+
+[X_PADDING=12]8. You can change the sex of your shaman by using the item Scroll of Transformation.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Unlock Healing Force						  Unlock Dragon Force						 Magic of the name					  Scroll of Transformation.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

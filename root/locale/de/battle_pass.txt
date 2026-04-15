@@ -1,0 +1,10 @@
+1	Töte Bosse	Verbleibende Kills: %s	Monster: |cffff9d9d|H|h%s|h|r	Töte die |cffff9d9d|H|h%s|h|r um	die Mission abzuschließen und zu verdienen	die belohnungen für deinen Charakter.
+5	Benutze das Objekt	Objekt zu verwenden: %s	Objekt: |cffff9d9d|H|h%s|h|r	Benutze |cffff9d9d|H|h%s|h|r um die mission	abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+6	Verkaufe den Objekt	Objekt zu verkaufen: %s	Objekt: |cffff9d9d|H|h%s|h|r	Verkaufen |cffff9d9d|H|h%s|h|r um die	mission abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+8	Verfeinern Sie das Objekt	Objekt zu verfeinern: %s	Objekt: |cffff9d9d|H|h%s|h|r	Verfeinern |cffff9d9d|H|h%s|h|r um die	mission abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+9	Zerstöre deinen Gegenstand	Zu zerstöre Objekt: %s	Objekt: |cffff9d9d|H|h%s|h|r	Zerstöre |cffff9d9d|H|h%s|h|r um die mission	abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+10	Sammeln	Objekt zum Sammeln: %s	Objekt: |cffff9d9d|H|h%s|h|r	Sammeln |cffff9d9d|H|h%s|h|r um die mission	abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+11	Fisch anbraten	Fisch zum anbraten: %s	Anbraten: Alle	Braten irgendein Fisch um	die mission abzuschließen und zu verdienen	die belohnungen für deinen Charakter.
+12	Fange die Fische	Fisch zum Fangen: %s	Fischen: Alle	Fange irgendein Fisch um die mission	 abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+14	Sammle Yang	Yang zum Sammeln: %s	Sammeln von: Alle	Sammle Yang um die mission	abzuschließen und zu verdienen die	belohnungen für deinen Charakter.
+15	Schließe die Verlies	Verlies zu vervollständigen: %s	Verlies: Alle	Schließe 70 Verlies um die mission	abzuschließen und zu verdienen die	belohnungen für deinen Charakter .

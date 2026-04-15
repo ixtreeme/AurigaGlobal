@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]TIENDA DE ALQUIMIA
+
+[X_PADDING=12]1. Puedes comprar Cor Draconis (Antiguo) en la tienda de alquimia ubicada en el panel de alquimia con las astillas de piedra.
+[X_PADDING=12]d. Dragon.
+[X_PADDING=12]2. Puedes comprar elixires de tiempo en la tienda de alquimia ubicada en el panel de alquimia con astillas de piedra.
+[X_PADDING=12]d. drago.
+[X_PADDING=12]3. Puedes comprar el frijol verde, azul y rosa en la tienda de alquimia ubicada en el panel de alquimia.
+[X_PADDING=12]Astilla de piedra d. continuar.
+[X_PADDING=12]4. Puedes comprar Dragon Pincers en la tienda de alquimia ubicada en el panel de alquimia con astillas de piedra.
+[X_PADDING=12]d. drago.
+[X_PADDING=12]5. Puedes comprar Encantar alquimia en la Tienda de alquimia ubicada en el Panel de alquimia con Cor Draconis
+[X_PADDING=12](Antiguo), O dejarlos en las diversas mazmorras.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASE
+
+[X_PADDING=12]1. En Auriga solo hay 3 clases. Antiguo, legendario y mítico.
+[X_PADDING=12]2.Para mejorar la clase de una piedra, se necesitan 2 piedras del mismo tipo y clase.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADO DE CLARIDAD
+
+[X_PADDING=12]1. Hay 5 grados de claridad: mate, transparente, límpido, brillante y excelente.
+[X_PADDING=12]2. Para mejorar el grado de claridad de una piedra, se necesitan dos piedras del mismo tipo y grado.
+[X_PADDING=12]claridad.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NIVEL
+
+[X_PADDING=12]1. Las Dragonstones se pueden mejorar hasta +6.
+[X_PADDING=12]2. Las piedras se pueden realzar con el grano verde, azul o rosa.
+[X_PADDING=12]3. La diferencia entre los distintos granos es el porcentaje del up, el grano verde tiene el porcentaje más bajo mientras que el
+[X_PADDING=12]Morado más alto.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DURACIÓN DE LA PIEDRA DRAGÓN
+
+[X_PADDING=12]1. Cada piedra de dragón tiene una duración máxima de 24 horas.
+[X_PADDING=12]2. Cuando el tiempo de la piedra del dragón expira, la piedra no desaparece.
+[X_PADDING=12]3. Se pueden comprar elixires de tiempo para rellenar la piedra en la tienda de alquimia.
+[X_PADDING=12]4. Es posible quitar una piedra de dragón de la alquimia usando las Pinzas de Dragón, la piedra siempre se quita con
+[X_PADDING=12]100% de éxito.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LAS BONUS DE LAS PIEDRAS DE DRAGON
+
+[X_PADDING=12]1. Los Dragonstones o piedras de dragón antiguos y legendarios siempre tienen 2 bonificaciones básicas fijas.
+[X_PADDING=12]2. Los Dragonstones o piedras de dragón míticos siempre tienen 3 bonificaciones básicas fijas.
+[X_PADDING=12]3. Es posible cambiar las bonificaciones de una piedra de dragón solo cuando es de clase Mítica y de rango Excelente.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LAS VARIAS BONIFICACIONES QUE PUEDEN SALIR EN LAS PIEDRAS DEL DRAGÓN
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Las bonificaciones indicadas se refieren a Alquimia mítica, Excelente +6)
+
+
+[X_PADDING=52]DIAMANTE :
+[X_PADDING=60]- Inteligencia +16
+[X_PADDING=60]- Resistencia al hielo 20%
+[X_PADDING=60]- Poder del hielo 20%
+[X_PADDING=60]- Fuerza contra Suras 24%
+[X_PADDING=60]- Defensa contra Suras 24%
+[X_PADDING=60]- max HP. +32%
+[X_PADDING=60]- SP Regeneración 16%
+[X_PADDING=60]- Valor de ataque mágico +24
+[X_PADDING=60]- Defensa mágica +24
+
+
+[X_PADDING=52]RUBÍ :
+[X_PADDING=60]- Fuerza +16
+[X_PADDING=60]- Resistencia al fuego 20%
+[X_PADDING=60]- Poder del fuego 20%
+[X_PADDING=60]- Fuerza contra guerreros 24%
+[X_PADDING=60]- Defensa contra guerreros 24%
+[X_PADDING=60]- Probabilidad de soltar una cantidad doble de yang 26%
+[X_PADDING=60]- HP Regeneración +16%
+[X_PADDING=60]- Resistencia al daño de media 24%
+[X_PADDING=60]- Defensa +320
+
+
+[X_PADDING=52]JADE :
+[X_PADDING=60]- SP +1000
+[X_PADDING=60]- Resistencia al viento 20%
+[X_PADDING=60]- Poder del viento 20%
+[X_PADDING=60]- Resistencia contra mounstros 20%
+[X_PADDING=60]- Daño de habilidad 24%
+[X_PADDING=60]- Resistencia al daño de habilidad 24%
+[X_PADDING=60]- Valor de ataque +480
+[X_PADDING=60]- Fuerza contra monstruos 20%
+[X_PADDING=60]- Probabilidad de caída de objeto doble 20%
+
+
+[X_PADDING=52]ZAFIRO :
+[X_PADDING=60]- Agilidad +16
+[X_PADDING=60]- Resistencia a la tierra 20%
+[X_PADDING=60]- Poder de la Tierra 20%
+[X_PADDING=60]- Fuerte contra Ninja 24%
+[X_PADDING=60]- Defensa contra ninja 24%
+[X_PADDING=60]- Fuerte contra las piedras de Metin 20%
+[X_PADDING=60]- max SP. +32%
+[X_PADDING=60]- Probabilidad de restaurar  HP 16%
+[X_PADDING=60]- Probabilidad de restaurar SP. 16%
+
+
+[X_PADDING=52]GRANATE :
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Resistencia al rayo 20%
+[X_PADDING=60]- Poder del rayo 20%
+[X_PADDING=60]- Fuerza contra chamán 24%
+[X_PADDING=60]- Defensa contra chamán 24%
+[X_PADDING=60]- Fuerza contra jefes 20%
+[X_PADDING=60]- Max. HP +4800
+[X_PADDING=60]- Probabilidad de bonificación de EXP 26%
+[X_PADDING=60]- Daño de media 24%
+
+
+[X_PADDING=52]ONYX :
+[X_PADDING=60]- Vitalidad +16
+[X_PADDING=60]- Resistencia a la oscuridad 20%
+[X_PADDING=60]- Poder de la oscuridad 20%
+[X_PADDING=60]- Probabilidad de evitar flechas 16%
+[X_PADDING=60]- Resistencia a golpes penetrantes 16%
+[X_PADDING=60]- Resistencia a golpes críticos +16%
+[X_PADDING=60]- Probabilidad de reflejar golpes de combate cuerpo a cuerpo 16%
+[X_PADDING=60]- Probabilidad de bloquear golpes cuerpo a cuerpo 16%
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CONJUNTO COMPLETO DE BONIFICACIÓN ALQUÍMICA
+
+[X_PADDING=12]1. Completar toda la rueda alquímica con +6 piedras activa automáticamente la bonificación del conjunto alquímico.
+[X_PADDING=12]2. Arriba a la izquierda cuando el icono de bonificación de conjunto alquímico es rojo si la bonificación de conjunto no está activa.
+[X_PADDING=12]2. Arriba a la izquierda cuando el icono de bonificación de conjunto alquímico es verde si la bonificación de conjunto está activa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS PROPORCIONADOS:
+
+[X_PADDING=12]1. Fuerte contra las piedras de Metin +10%
+[X_PADDING=12]2. Fuerza contra monstruos +10%
+[X_PADDING=12]3. Max. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

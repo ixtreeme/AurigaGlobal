@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]1. Puede abrir el panel de la tienda fuera de línea haciendo clic en el icono del paquete ubicado en el minimapa o presionando
+[X_PADDING=12]la tecla Y.
+[X_PADDING=12]2. La tienda offline consta de 9 secciones:
+[X_PADDING=20]I. Mi tienda
+[X_PADDING=20]II. Lista de tiendas
+[X_PADDING=20]III. Almacén
+[X_PADDING=20]IV. Mis ofertas
+[X_PADDING=20]V.  Buscar
+[X_PADDING=20]VI. Mis búsquedas
+[X_PADDING=20]VII. Búsquedas guardadas
+[X_PADDING=20]VIII. Mis subastas
+[X_PADDING=20]IX. Subastas en curso
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNCIONALIDAD DE LAS DISTINTAS SECCIONES
+
+[X_PADDING=12]1. Mi tienda: en esta sección puedes crear tu tienda offline, en la parte superior derecha encontrarás una vista previa de la
+[X_PADDING=12]tienda que usará, al hacer clic en las flechas también puede elegir las tiendas especiales, pero tenga cuidado,
+[X_PADDING=12]para utilizar las tiendas especiales, necesitará 1 paquete de cachemira.
+
+[X_PADDING=12]2. Lista de tiendas: en esta sección puede ver todas las tiendas fuera de línea activas.
+
+[X_PADDING=12]3. Almacén: en esta sección están todos los artículos que no ha vendido y los ingresos recibidos por las ventas.
+
+[X_PADDING=12]4. Mis ofertas: esta sección enumera todas las ofertas que ha realizado.
+
+[X_PADDING=12]5. Búsqueda: en esta sección puede utilizar los distintos filtros para realizar una búsqueda dirigida.
+
+[X_PADDING=12]6. Mis búsquedas: en esta sección puedes ver todas las búsquedas que has realizado.
+
+[X_PADDING=12]7. Búsquedas guardadas: todos los filtros de búsqueda guardados se enumeran en esta sección.
+
+[X_PADDING=12]8. Mis subastas: en esta sección puede crear una subasta o comprobar el estado de una de sus subastas en curso.
+
+[X_PADDING=12]9. Subastas en curso: esta sección enumera todas las subastas aún en curso.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OTROS
+
+[X_PADDING=12]1. Puede elegir cambiar el aspecto de su tienda en la sección Mi tienda, para cambiar el aspecto de la suya
+[X_PADDING=12]tienda necesitará el paquete Cachemira.
+[X_PADDING=12]2. Puede encontrar el paquete de cachemira en la Tienda Gaya o en varios eventos.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Paquete de cachemira.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

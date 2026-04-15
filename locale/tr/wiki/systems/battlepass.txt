@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Battle Pass, özel ödüller içeren bir dizi görev sunan bir sistemdir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]YAPI
+
+[X_PADDING=12]1. Battle Pass paneli simgesi, envanterin yaninda bulunur veya paneli F8 tusuna basarak açabilirsiniz.
+[X_PADDING=12]2. Panelin kilidini açmak için Savas Bileti ögesine ihtiyaciniz olacak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GÖREVLER VE ÖDÜLLER
+
+[X_PADDING=12]1. Savas Bileti 10 görevden olusur.
+[X_PADDING=12]2. Her görev 25 gün içinde tamamlanmalidir.
+[X_PADDING=12]3. Panelin sag tarafinda bir görevin ilerlemesini görebilirsiniz.
+[X_PADDING=12]4. Bir görev tamamlandiginda özel bir ödül alirsiniz.
+[X_PADDING=12]5. "Ödül" dügmesine tiklayarak tüm görevler tamamlandiginda
+[X_PADDING=12]ikinci sayfa) birkaç Savas Bileti Kuponu alacaksiniz.
+[X_PADDING=12]6. Savas Bileti Kuponu, Savas Bileti magazasindan esya satin almanizi saglar.
+[X_PADDING=12]7. Savas Bileti magazasindaki tüm ögeler özeldir, bu nedenle ayin Savas Bileti artik sona ermeyecek
+[X_PADDING=12]onlari satin almak mümkün.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MAGAZIN ALCHIMIE
+
+[X_PADDING=12]1. Din magazinul alchimiei ce poate fi deschis din panoul alchimiei poþi achiziþiona Cor Draconis (Antic) cu Cioburi
+[X_PADDING=12]Piatrã Dragon.
+[X_PADDING=12]2. Din magazinul alchimiei ce poate fi deschis din panoul alchimiei poþi achiziþiona Elixirul Timpului cu Cioburi
+[X_PADDING=12]Piatrã Dragon.
+[X_PADDING=12]3. Din magazinul alchimiei ce poate fi deschis din panoul alchimiei poþi achiziþiona Fasola verde, albastrã ºi violet
+[X_PADDING=12]cu Cioburi Piatrã Dragon.
+[X_PADDING=12]4. Din magazinul alchimiei ce poate fi deschis din panoul alchimiei poþi achiziþiona Cleºti de Dragon cu Cioburi Piatrã
+[X_PADDING=12]Dragon.
+[X_PADDING=12]5. Din magazinul alchimiei ce poate fi deschis din panoul alchimiei poþi achiziþiona Vrãjeºte Alchimia cu Coruri Draconis
+[X_PADDING=12](Antice) sau pot fi dropate în anumite dungeon-uri.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASE
+
+[X_PADDING=12]1. Pe Auriga existã 3 clase. Antic, Legendar e Mitic.
+[X_PADDING=12]2. Pentru a îmbunãtãþi clasa unei pietre ai nevoie 2 pietre de acelaºi tip ºi clasã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADUL DE CLARITATE
+
+[X_PADDING=12]1. Existã 5 grade de claritate: Opac, Clar, Perfect, Strãlucitor ºi Excelent.
+[X_PADDING=12]2. Pentru a îmbunãtãþi gradul de claritate a unei pietre ai nevoie de 2 pietre de acelaºi tip ºi acelaºi grad de
+[X_PADDING=12]claritate.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NIVELUL
+
+[X_PADDING=12]1. Pietrele Dragon pot fi îmbunãtãþite pânã la +6.
+[X_PADDING=12]2. Nivelul poate fi îmbunãtãþit cu ajutorul Fasolei verde, albastrã sau violet.
+[X_PADDING=12]3. Singura diferenþã dintre fasole este cã schimbã ºansa de succes, iar cea cu cea mai mare ºansã
+[X_PADDING=12]este cea violet.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DURATA PIETREI DRAGON
+
+[X_PADDING=12]1. Orice Piatrã Dragon are o duratã maximã de 24 ore.
+[X_PADDING=12]2. Când durata expirã, aceasta nu va dispãrea, dar nu o vei putea utiliza.
+[X_PADDING=12]3. Vei putea cumpãra Elixirul Timpului pentru a o reîncãrca de la magazinul alchimiei.
+[X_PADDING=12]4. Cu ajutorul Cleºtilor de Dragon vei putea da jos o Piatrã Dragon, ºansa de reuºitã este
+[X_PADDING=12]mereu de 100%.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSURILE PIETRELOR DRAGON
+
+[X_PADDING=12]1. Pietrele Dragon Antice ºi Legendare au întotdeauna 2 bonusuri fixe de bazã.
+[X_PADDING=12]2. Pietrele Dragon Mitice au întotdeauna 3 bonusuri fixe de bazã.
+[X_PADDING=12]3. Pentru a schimba bonusurile unei Pietre Dragon trebuie sã fie Miticã ºi de grad Excelent.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LISTA BONUSURILE CARE POT IEªI PE PIETRELE DRAGON
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Bonusurile indicate sunt cu referire la Pietrele Dragon Mitice - Excelente +6)
+
+
+[X_PADDING=52]DIAMANT DRAGON:
+[X_PADDING=60]- Inteligenþã +16
+[X_PADDING=60]- Rezistenþã la Gheaþa 20%
+[X_PADDING=60]- Puterea Gheþii 20%
+[X_PADDING=60]- Tare împotriva sura 24%
+[X_PADDING=60]- ªansa de apãrare împotriva atacului sura 24%
+[X_PADDING=60]- Max. PV +32%
+[X_PADDING=60]- ªansã 16% de a reface PM
+[X_PADDING=60]- Valoarea atacului magic +24
+[X_PADDING=60]- Apãrare magicã +24
+
+
+[X_PADDING=52]RUBIN DRAGON:
+[X_PADDING=60]- Putere +16
+[X_PADDING=60]- Rezistenþã la Foc 20%
+[X_PADDING=60]- Puterea Focului 20%
+[X_PADDING=60]- Tare împotriva rãzboinicilor 24%
+[X_PADDING=60]- ªansa de apãrare împotriva atacului rãzboinicilor 24%
+[X_PADDING=60]- ªansa de drop Yang a crescut cu 26%
+[X_PADDING=60]- Regenerare PV +16%
+[X_PADDING=60]- Rezistenþa medie la pagubã 24%
+[X_PADDING=60]- Apãrare +320
+
+
+[X_PADDING=52]JAD DRAGON:
+[X_PADDING=60]- PM +1000
+[X_PADDING=60]- Rezistenþã la Vânt 20%
+[X_PADDING=60]- Puterea Vântului 20%
+[X_PADDING=60]- Rezistenþã la Monºtrii 20%
+[X_PADDING=60]- Paguba Abilitãþii 24%
+[X_PADDING=60]- Rezistenþã la Paguba Abilitãþii 24%
+[X_PADDING=60]- Valoare atac +480
+[X_PADDING=60]- Tare împotriva monºtrilor 20%
+[X_PADDING=60]- Creºte ºansa de a primi de douã ori numãrul obiectelor cu 20%
+
+
+[X_PADDING=52]ZAFFIRO DEL DRAGO:
+[X_PADDING=60]- Dexteritate +16
+[X_PADDING=60]- Rezistenþã la Pãmânt 20%
+[X_PADDING=60]- Puterea Pãmântului 20%
+[X_PADDING=60]- Tare împotriva ninja 24%
+[X_PADDING=60]- ªansa de apãrare împotriva atacului ninja 24%
+[X_PADDING=60]- Tare împotriva metinelor 20%
+[X_PADDING=60]- Max. PM +32%
+[X_PADDING=60]- ªansã 16% de a reface PV
+[X_PADDING=60]- Regenerare PM +16%
+
+
+[X_PADDING=52]GRANAT DRAGON:
+[X_PADDING=60]- PV +3500
+[X_PADDING=60]- Rezistenþã la Fulger 20%
+[X_PADDING=60]- Puterea Fulgerului 20%
+[X_PADDING=60]- Tare împotriva ºaman 24%
+[X_PADDING=60]- ªansa de apãrare împotriva atacului ºaman 24%
+[X_PADDING=60]- Tare împotriva ºefilor 20%
+[X_PADDING=60]- PV +4800
+[X_PADDING=60]- ªansã la bonus-EXP 26%
+[X_PADDING=60]- Paguba medie 24%
+
+
+[X_PADDING=52]ONYX DRAGON:
+[X_PADDING=60]- Vitalitate +16
+[X_PADDING=60]- Rezistenþã la Întuneric 20%
+[X_PADDING=60]- Puterea Întunericului 20%
+[X_PADDING=60]- ªansã de a evita atacul cu sãgeþi 16%
+[X_PADDING=60]- Rezistenþã la lovitura pãtrunzãtoare 16%
+[X_PADDING=60]- Rezistenþã la lovitura criticã +16%
+[X_PADDING=60]- ºansã de a reflecta lov. atacului corporal 16%
+[X_PADDING=60]- ªansã de a bloca un atac corporal 16%
+[X_PADDING=60]- PM +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS SET ALCHIMIE
+
+[X_PADDING=12]1. Completând toate roata alchimiei cu Pietre Dragon+6 se va activat automat bonusul set.
+[X_PADDING=12]2. Sus în stânga în icoana bonusului set va fi roºie daca nu e activ.
+[X_PADDING=12]3. Sus în stânga în icoana bonusului set va fi verde daca e activ.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS FORNITI:
+
+[X_PADDING=12]1. Tare împotriva metinelor +10%
+[X_PADDING=12]2. Tare împotriva monºtrilor +10%
+[X_PADDING=12]3. Max. PV +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

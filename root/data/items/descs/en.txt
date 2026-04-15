@@ -1,0 +1,1349 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	This chest contains a random +5 spirit stone.
+49021	Spirit Sword (inf)	This item is available just for who have the role of Helper.
+49022	Spirit Dagger (inf)	This item is available just for who have the role of Helper.
+49023	Spirit Bow (inf)	This item is available just for who have the role of Helper.
+49024	Spirit Glaive (inf)	This item is available just for who have the role of Helper.
+49025	Spirit Bell (inf)	This item is available just for who have the role of Helper.
+49026	Spirit Fan (inf)	This item is available just for who have the role of Helper.
+49027	Spirit Costume (F) (inf)	This item is available just for who have the role of Helper.
+49028	Spirit Costume (M) (inf)	This item is available just for who have the role of Helper.
+85112	Spirit Stole (inf)	This item is available just for who have the role of Helper.
+71056	Helper Scroll	This item is available just for who have the role of Helper.
+89001	Voucher	Voucher to the value of 1 Dragon Coins.
+89002	Voucher	Voucher to the value of 2 Dragon Coins.
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+70027	Mistyc Blessing scroll	Item refine prob 100%
+89003	Voucher	Voucher to the value of 3 Dragon Coins.
+89004	Voucher	Voucher to the value of 50 Dragon Coins.
+89005	Voucher	Voucher to the value of 100 Dragon Coins.
+89006	Voucher	Voucher to the value of 500 Dragon Coins.
+89007	Voucher	Voucher to the value of 1000 Dragon Coins.
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+50001	Item-Shop	Inside the chest is:
+100000	Time Elixir (S)	Refills the duration of a Dragon Stone.
+100001	Time Elixir (M)	Refills the duration of a Dragon Stone.
+100002	Time Elixir (L)	Refills the duration of a Dragon Stone.
+100100	Dragon Tongs	Useful tool that increases the chances of success during Dragon Stone removal.
+100300	Green Dragon Bean	The magical bean increases your Dragon Stone's level. The strengthening process may fail.
+100400	Blue Dragon Bean	The magical bean increases the chance of a successful improvement of the Dragon Stone by one level.
+100500	Pink Dragon Bean	The chance of a successful improvement of the Dragon Stone by one level is 10% higher.
+10951	White Sail	This item is used to battle the Ship Defense dungeon.
+10954	Fire crystal	This Crystal is used to purchase or upgrade a Fire Talisman from an NPC.
+10955	Ice crystal	This Crystal is used to purchase or upgrade an Ice Talisman from an NPC.
+10956	Crystal of Darkness	This Crystal is used to purchase or upgrade an Ice Talisman from an NPC.
+10957	Lightning crystal	This Crystal is used to purchase or upgrade an Ice Talisman from an NPC.
+10958	Wind crystal	This Crystal is used to purchase or upgrade an Ice Talisman from an NPC.
+10959	Earth crystal	This Crystal is used to purchase or upgrade an Ice Talisman from an NPC.
+10960	1st Place Gold Alloy Chest	Reward 1st Classified Gold League.
+10961	1st Place Silver Alloy Chest	Reward 1st Classified Silver League.
+10962	1st Place Bronze Alloy Chest	Reward 1st Classified Bronze League.
+10963	2nd Place Gold Alloy Chest	Reward 2st Classified Gold League.
+10964	2nd Place Silver Alloy Chest	Reward 2st Classified Silver League.
+10965	2nd Place Bronze Alloy Chest	Reward 2st Classified Bronze League.
+10966	3rd Place Gold Alloy Chest	Reward 3st Classified Gold League.
+10967	3rd Place Silver Alloy Chest	Reward 3st Classified Silver League.
+10968	3rd Place Bronze Alloy Chest	Reward 3st Classified Bronze League.
+11901	Tuxedo	An elegant suit for a man to wear at a wedding.
+11902	Tuxedo	An elegant suit for a man to wear at a wedding.
+11903	Wedding Dress	A special dress for a woman to wear at her wedding.
+11904	Wedding Dress	A special dress for a woman to wear at her wedding.
+18900	Red Flame Stone	Enhances your belt's bonuses.
+18901	Red Flame Stone (Permanent)	Enhances your belt's bonuses.	Duration: infinite
+25040	Blessing Scroll	Eliminates the risk of an item being destroyed when an improvement fails. In the case of failure, the item's quality is merely reduced by 1 instead.
+25041	Magic Stone	A chunk of the legendary metal can increase your chances when upgrading an item. The upgraded item can then neither be destroyed nor downgraded.
+25100	Spirit Stone Scroll	The scroll allows you to extract the Spirit Stone from a weapon or armour. It leaves a mark of extraction.
+27600	Bonfire	Wood that has been chopped for a bonfire.
+27610	Fishing Marble	This magic marble reveals what kind of fish is on the hook.
+27620	Fishing Book	A book that provides information about fish.
+27798	Freshwater Shrimp	Bait for catching large fish.	Increases the chance that a rare fish is caught by 20%.
+27799	Fishbones	The bones of a fish
+27800	Paste	A lightweight and cheap bait	Increases the chance that a rare fish is caught by 5%.
+27801	Worm	Popular bait that attracts fish.	Increases the chance that a rare fish is caught by 8%.
+27802	Minnow	Bait that attracts big fish.	Increases the chance that a rare fish is caught by 12%.
+27803	Zander	A common fish that usually lives in a pond.
+27804	Mandarin Fish	A very tasty fish.
+27805	Large Zander	A rather fat example of a Zander
+27806	Carp	A large silver-coloured fish.
+27807	Salmon	A fish that returns home during mating season.
+27808	Grass Carp	A carp that usually feeds on grass.
+27809	Brook Trout	A fish that is related to Salmon.
+27810	Eel	A long, thin fish that looks like a snake. It has a lot of stamina.
+27811	Rainbow Trout	A fish that has a rainbow-coloured back.
+27812	River Trout	A freshwater fish that is very common in this area.
+27813	Rudd	A red, shimmery fish who lives in a swarm.
+27814	Perch	A fish known as the "shark of the seas".
+27815	Tenchi	A type of barb that lives only in clean water.
+27816	Catfish	A fish that has a distinctive big mouth with cat-like whiskers.
+27817	Loach	A slippery fish, that usually lives in shallow, muddy water.
+27818	Lotus Fish	A big fresh water fish that lives on a mixed diet.
+27819	Sweetfish	Related to the Smelt. It lives along coasts and in estuaries.
+27820	Smelt	A winter fish that is most caught whilst ice fishing.
+27821	Shiri	A fish with a beautiful shape and colour.
+27822	Mirror Carp	An indigenous Carp.
+27823	Goldfish	A rare, golden shiny fish.
+27824	Snakehead	A freshwater predator which lives in tropical waters.
+27825	Skygazer	A fish which can only be found in moving waters.
+27826	Red King Crab	This giant is the largest species of king crab.
+27827	Yabby	This species of crayfish is generally nocturnal and stays hidden out of sight during daytime.
+27833	Dead Zander	A fish that is perfect for grilling on a campfire.
+27834	Dead Mandarin Fish	A perfect fish to grill on a campfire.
+27835	Dead Large Zander	Perfect for grilling on a campfire.
+27836	Dead Carp	Perfect for grilling on a campfire.
+27837	Dead Salmon	This fish can be grilled on a campfire.
+27838	Dead Grass Carp	Tastes great when grilled on a campfire.
+27839	Dead Brook Trout	Tastes great when grilled on a campfire.
+27840	Dead Eel	Tastes great when grilled on a campfire.
+27841	Dead Rainbow Trout	Tastes great when grilled on a campfire.
+27842	Dead River Trout	Tastes great when it is grilled on a campfire.
+27843	Dead Rudd	Tastes great when grilled on a campfire.
+27844	Dead Perch	Tastes great when grilled on a campfire.
+27845	Dead Tenchi	Tastes great when grilled on a campfire.
+27846	Dead Catfish	Tastes great when grilled on a campfire.
+27847	Dead Loach	Tastes great when grilled on a campfire.
+27848	Dead Lotus Fish	Tastes great when grilled on a campfire.
+27849	Dead Sweetfish	Tastes great when grilled on a campfire.
+27850	Dead Smelt	Tastes great when grilled on a campfire.
+27851	Dead Shiri	Tastes great when grilled on a campfire.
+27852	Dead Mirror Carp	Tastes great when grilled on a campfire.
+27853	Dead Goldfish	Tastes great when grilled on a campfire.
+27854	Dead Snakehead	A fish that is perfect for grilling on a campfire.
+27855	Dead Skygazer	A fish that is perfect for grilling on a campfire.
+27856	Dead Red King Crab	A crab that is perfect for grilling on a campfire.
+27857	Dead Yabby	A crayfish that is perfect for grilling on a campfire.
+27863	Grilled Zander	Eat this fish to receive:
+27864	Grilled Mandarin Fish	Eat this fish to receive:
+27865	Grilled Large Zander	Eat this fish to receive:
+27866	Grilled Carp	Eat this fish to receive:
+27867	Grilled Salmon	Eat this fish to receive:
+27868	Grilled Grass Carp	Eat this fish to receive:
+27869	Grilled Brook Trout	Eat this fish to receive:
+27870	Grilled Eel	Eat this fish to receive:
+27871	Grilled Rainbow Trout	Eat this fish to receive:
+27872	Grilled River Trout	Eat this fish to receive:
+27873	Grilled Rudd	Eat this fish to receive:
+27874	Grilled Perch	Eat this fish to receive:
+27875	Grilled Tenchi	Eat this fish to receive:
+27876	Grilled Catfish	Eat this fish to receive:
+27877	Grilled Loach	Eat this fish to receive:
+27878	Grilled Lotus Fish	Eat this fish to receive:
+27879	Grilled Sweetfish	Eat this fish to receive:
+27880	Grilled Smelt	Eat this fish to receive:
+27881	Grilled Shiri	Eat this fish to receive:
+27882	Grilled Mirror Carp	Eat this fish to receive:
+27883	Grilled Goldfish	Eat this fish to receive:
+27884	Grilled Snakehead	Eat this fish to receive:
+27885	Grilled Skygazer	Eat this fish to receive:
+27886	Grilled Red King Crab	Eat this fish to receive:
+27887	Grilled Yabby	Eat this fish to receive:
+27987	Clam	A clam with a pretty shell. Sometimes it holds a precious pearl inside.
+27990	Piece of Stone	Because of the small size it can be transported very well. It can be used in many different ways.
+27992	White Pearl	The pure white treasure found inside a seashell.
+27993	Blue Pearl	A magnificent deep blue pearl found inside a seashell.
+27994	Blood-Red Pearl	The tawny-coloured treasure from the inside of a mollusc.
+30002	Dark fern	It might be of interest to Chaegirab.
+30003	Chaegirab ring	It might be of interest to Chaegirab.
+30004	Metin Crystal	It might be of interest to Chaegirab.
+30005	Purified Core	It might be of interest to Chaegirab.
+30006	Orc Tooth	It might be of interest to Chaegirab.
+30015	Demon's Keepsake	It might be of interest to Chaegirab.
+30047	Curse Book	It might be of interest to Chaegirab.
+30050	Ice Marble	It might be of interest to Chaegirab.
+30094	Yang Bag Small	You can find yang from this bag, Right click to open it. you can find from 5.000 to 15.000 yang.
+30095	Yang Bag Medium	You can find yang from this bag, Right click to open it. you can find from 10.000 to 30.000 yang.
+30096	Yang Bag Big	You can find yang from this bag, Right click to open it. you can find from 15.000 to 45.000 yang.
+30097	Yang Bag Small	You can find yang from this bag, Right click to open it. you can find from 5.000 to 15.000 yang.
+30098	Yang Bag Medium	You can find yang from this bag, Right click to open it. you can find from 10.000 to 30.000 yang.
+30099	Yang Bag Big	You can find yang from this bag, Right click to open it. you can find from 15.000 to 45.000 yang.
+30165	Zelkova Branch	It might be of interest to Chaegirab.
+30166	Tugyi's Tablet	It might be of interest to Chaegirab.
+30167	Red Ghost Tree Branch	It might be of interest to Chaegirab.
+30168	Leaders' Notes	It might be of interest to Chaegirab.
+30179	Twisted Key	This magic key activates the portal to the Dragon's Temple.
+30251	Malevolence Jewel	It might be of interest to Chaegirab.
+30252	Wisdom Jewel	It might be of interest to Chaegirab.
+30255	Treatise on Fire	This item is used to upgrade the Fire Talisman.
+30256	Treatise on Lightning	This item is used to upgrade the Lightning Talisman.
+30257	Treatise on Earth	This item is used to upgrade the Earth Talisman.
+30258	Treatise on Ice	This item is used to upgrade the Ice Talisman.
+30259	Treatise on Wind	This item is used to upgrade the Wind Talisman.
+30260	Trattato of Darkness	This item is used to upgrade the Talisman of Darkness.
+30270	Dragon Stone Shard	Fragment of a scarce Dragon Stone
+30271	Shard of Metin Rock	This item is used to upgrade pieces of equipment.
+30273	Mystical Certificate	This item is used to epicize pieces of equipment.
+30274	Ancient Certificate	This item is used to epicize pieces of equipment.
+30275	Epic Certificate	This item is used to epicize pieces of equipment.
+30276	Legendary Certificate	This item is used to epicize pieces of equipment.
+30277	Gods Crystal	You can exchange 100 Gods Crystal for 1 Gods Crystal+.	Right click to transform them.
+30278	Gods Crystal+	This item is used for enhancements, crafting, and various npc purchases.
+30279	Solar Crystal	You can exchange 100 units of Solar Crystal for 1 Solar Crystal+.	Right click to transform them.
+30280	Solar Crystal+	This item is used for enhancements, crafting, and various npc purchases.
+30282	Horn of Razador	This item is used to upgrade pieces of equipment.
+30283	Horn of Nemere	This item is used to upgrade pieces of equipment.
+30284	Spiritless Stone	This item is used for improvements and various purchases from NPC.
+30311	Soul Crystal Key	The delicate detailed key with a Blue Soul Crystal opens the gate to the 2nd floor of the Devil's Catacomb.
+30312	Grimace Totem	This wooden sign with the grimace carved into it serves as a key to the 6th floor of the Devil's Catacomb.
+30320	Shrunken Head	This demon's Shrunken Head opens the seal to the 2rd floor of the Devil's Catacomb.
+30321	Shrunken Head	This demon's Shrunken Head opens the seal to the 2rd floor of the Devil's Catacomb.
+30325	Arachnids Key	Opens the gate to the Baroness' Breeding Lair. Disintegrates after 24 hours. Can only be used by group leaders.
+30327	Arachnids Whistle	This instrument's song lures the Spider Baroness.
+30329	Golden Cog Wheel	Trigger the hidden mechanism in the Isfet Stele.
+30330	Maat Stone	As Goddess of Justice, Maat strives for order amongst the chaos.
+30331	Frost Key	The key is as cold as ice and allows access to the third floor of Nemere's Watchtower. Can only be used by Shamans.
+30332	North Star	Sealstone made of pure ice. Allows access to the sixth floor of Nemere's Watchtower.
+30333	Frostflower Key	The key made of ice allows access to the ninth floor of Nemere's Watchtower.
+30341	Dragonfire Ring	An aura of intense energy surrounds you. Forged in the flames of a dragon, this ring will destroy the statues in Meley's Lair in an instant.
+30505	Emerald Decoration	Element for the refinement of your weapon
+30506	Sapphire Engraving Knife	Tool for the refinement of your weapon
+30512	Red Dragon Steel	Dragon skin leather is extremely light and flexible, yet also virtually indestructible. Can be processed like metal and used for the production of armour.
+30516	Antique Epaulette	Item for equipment improvement.
+30518	Gold Yarn	Magical roll of yarn made from molten gold. Can be processed with a gem into valuable jewellery.
+30519	Golden Hook	Made of pure gold, it can be processed with a gem into valuable jewellery.
+30520	Gold Buckle	Made of pure gold, it can be processed with a gem into valuable jewellery.
+30524	Flame Stone	Item for equipment improvement.
+30525	Ice Flame Stone	Item for equipment improvement.
+30587	Purple cloth	Item for equipment improvement.
+30602	Blue Dye	Item for equipment improvement.
+30610	Mithril	Item for equipment improvement.
+30612	Sturdy Cords	Item for equipment improvement.
+30613	Stone of the Dryads	Shrouded in a green shimmer, this mysterious stone encases the soul of a dryad, a tree spirit. The dryads know the secret words which will grant you access to the Erebus dungeon.
+30614	Black Dye	Item for equipment improvement.
+30615	White Dye	Item for equipment improvement.
+30616	Titanium Dioxide	This prismatic crystal is used for refining a piece of equipment.
+30617	Agate	This mysterious shimmering gemstone is used for refining a piece of equipment.
+30618	Moonstone	A spark of moonlight is encapsulated within this teardrop-shaped jewel. Used for refining a piece of equipment.
+30623	Slime vial empty	This item is used in the Slime dungeon, once dropped it must be dragged onto the slime.
+30624	Vial full of slime	This item is used in the Slime dungeon, once dropped it must be dragged onto the flint.
+30625	Piece of menhir slime	This item is used to battle the Slime dungeon.
+30798	Ankh cross	With this item you can face the dungeon of the pyramids.
+30800	Piece of parchment 1	This item is used to overcome the second floor of the Pyramid Dungeon
+30801	Piece of parchment 2	This item is used to overcome the second floor of the Pyramid Dungeon
+30802	Piece of parchment 3	This item is used to overcome the second floor of the Pyramid Dungeon
+30803	Piece of parchment 4	This item is used to overcome the second floor of the Pyramid Dungeon
+30804	Sage Band	This item is used in the Pyramid Dungeon.
+30805	Ancient Key	This item is used in the Pyramid Dungeon.
+30806	Ancient Chest	This item is used in the Pyramid Dungeon.
+33031	Elemental Bloom	Flower-shaped gemstone for improving your elemental talismans.
+39001	Magic Stone	This stone guarantees the greatest success chance in item improvement. On top of this, the item will neither be destroyed nor downgraded. This item is tradeable.
+39007	Blacksmith Handbook	The book is bound with the soul of an old blacksmith. It increases the chance of item improvement. This item is tradeable.
+39008	Exorcism Scroll	Will lift the curse of the evil spirit, if learning is not successful. With the help of this scroll you can read another document on the same day. This item is tradeable.
+39015	Blacksmith's stone	With this stone it is possible to purchase an item from the blacksmith
+39022	Dragon Scroll	Eliminates the risk of an item being destroyed when an improvement fails. In the case of failure, the item's quality is merely reduced by 1 instead. In addition, the chance of a successful improvement is increased by 10%. This item is tradeable.
+39027	Stone Handbook	Removes all broken stones from an item. With that you will get another chance to improve your weapon or armour. This item is tradeable.
+39030	Concentrated Reading	Increases the chance of improving your talent when reading the next book (or Soul Stone) by 2.5 times. This item is tradeable.
+39039	Sun Elixir (L)	Automatically refills your HP. Contains 7,000,000 HP. This item is tradeable.
+39042	Moon Elixir (L)	Automatically refills your SP. Contains 700,000 SP. This item is tradeable.
+39048	Chest of the Warrior	Pack containing useful books for warriors.
+39050	Chest of the Ninja	Pack containing useful books for ninja.
+39052	Chest of the Sura	Pack containing useful books for surah.
+39054	Chest of the Shamamo	Pack containing useful books for shamans.
+39063	Refresh Gaya Market	Refresh the Gaya Market before the standard 5-hour timer and reveal new valuable items.
+39064	Gaya Market Expansion	Expands the Gaya Market, opening up an extra slot for item offers, starting with the first slot in the second row.
+39065	Yang (20kk)	Contains 20kk of Yang.
+39066	Yang (40kk)	Contains 40kk of Yang.
+39067	Yang (70kk)	Contains 70kk of Yang.
+39068	Yang (15kk)	Contains 15kk of Yang.
+39069	Yang (10kk)	Contains 10kk of Yang.
+39070	Yang (30kk)	Contains 30kk of Yang.
+39071	Yang (5kk)	Contains 5kk of Yang.
+39072	Yang (25kk)	Contains 25kk of Yang.
+39073	Yang (35kk)	Contains 35kk of Yang.
+39074	Yang (55kk)	Contains 55kk of Yang.
+39075	Yang (50kk)	Contains 50kk of Yang.
+39076	Yang (100kk)	Contains 100kk of Yang.
+39077	Yang (150kk)	Contains 150kk of Yang.
+39079	Yang (80kk)	Contains 80kk of Yang.
+39080	Yang (130kk)	Contains 130kk of Yang.
+39081	Yang (230kk)	Contains 230kk of Yang.
+39082	Yang (120kk)	Contains 120kk of Yang.
+39083	Yang (220kk)	Contains 220kk of Yang.
+40004	Eek's Ring	A Ring made with secret ingredients, which gives you special bonuses.
+40095	Fan of the Dark Zodiac	A weapon skin that can be purchased from the battle pass shop.
+40096	Dark Zodiac Bell	A weapon skin that can be purchased from the battle pass shop.
+40097	Glaive of the Dark Zodiac	A weapon skin that can be purchased from the battle pass shop.
+40098	Arc of the Dark Zodiac	A weapon skin that can be purchased from the battle pass shop.
+40099	Dark Zodiac Dagger	A weapon skin that can be purchased from the battle pass shop.
+40100	Sword of the Dark Zodiac	A weapon skin that can be purchased from the battle pass shop.
+40108	Riptooth Blade	A weapon skin which transforms your sword into a chainsaw for Halloween. Provides you with at least one random bonus.
+40109	Riptooth Dagger	A weapon skin which transforms your dagger into a chainsaw for Halloween. Provides you with at least one random bonus.
+40110	Riptooth Bow	A weapon skin which transforms your bow into a double chainsaw for Halloween. Provides you with at least one random bonus.
+40111	Riptooth Glaive	A weapon skin which transforms your two-handed sword into a pole chainsaw for Halloween. Provides you with at least one random bonus.
+40112	Riptooth Bell	A weapon skin which transforms your bell into a chainsaw mace for Halloween. Provides you with at least one random bonus.
+40113	Riptooth Fan	A weapon skin which transforms your fan into a chainsaw fan for Halloween. Provides you with at least one random bonus.
+40129	Aquarian Blade	A weapon skin which sheaths your blade in a layer of hard, iridescent water.
+40130	Aquarian Dagger	A weapon skin which sheaths your dagger in a layer of hard, iridescent water.
+40131	Aquarian Bow	A weapon skin which sheaths your bow in a layer of hard, iridescent water.
+40132	Aquarian Glaive	A weapon skin which sheaths your two-handed sword in a layer of hard, iridescent water.
+40133	Aquarian Bell	A weapon skin which sheaths your bell in a layer of hard, iridescent water.
+40134	Aquarian Fan	A weapon skin which sheaths your fan in a layer of hard, iridescent water.
+40143	Researcher's Elixir +	This elixir increases the quality of items and resets the time to wait.
+40144	Researcher's Elixir	This elixir resets the time to wait.
+40192	Dark Zodiac Costumes (f)	Zodiac costume with effects that match the weapons.
+40193	Dark Zodiac Costumes (m)	Zodiac costume with effects that match the weapons.
+40194	Dark Zodiac Costumes (f)	Zodiac costume with effects that match the weapons.
+40195	Dark Zodiac Costumes (m)	Zodiac costume with effects that match the weapons.
+40196	Dark Zodiac Costumes (m)	Zodiac costume with effects that match the weapons.
+40197	Dark Zodiac Costumes (f)	Zodiac costume with effects that match the weapons.
+40198	Dark Zodiac Costumes (m)	Zodiac costume with effects that match the weapons.
+40199	Dark Zodiac Costumes (f)	Zodiac costume with effects that match the weapons.
+41029	Desert Warrior (M,Bonus)	Battle dress for men, ideal for surviving in inhospitable desert conditions. Provides you with at least one random bonus. Item is tradeable.
+41030	Desert Warrior (F,Bonus)	Battle dress for women, to assist survival in the inhumane desert conditions. Item is tradeable.
+41117	Musketeer Costume	Extravagant suit in the musketeers' style
+41118	Maid Uniform	Black dress with a white apron in the style of a French maid.
+41119	Salsa Suit	Skin-tight, orange-black suit for Latin-American dancers.
+41120	Salsa Dress	Skin-tight, red dance dress with black gloves
+41121	Gentleman's Suit	Elegant suit for men of good conduct
+41122	Cocktail Dress	Sky blue dress with a bow and matching strappy sandals
+41125	Pumpkin Tuxedo	A classic eye-catcher - newly interpreted for this special occasion.
+41126	Pumpkin Dress	A classic eye-catcher - newly interpreted for this special occasion.
+41129	Musketeer Costume +	Extravagant suit in the musketeers' style. Provides you with at least one random bonus. Item is tradeable.
+41130	Maid Uniform +	Black dress with a white apron in the style of a French maid. Provides you with at least one random bonus. Item is tradeable.
+41131	Salsa Suit +	Skin-tight, orange-black suit for Latin-American dancers. Provides you with at least one random bonus. Item is tradeable.
+41132	Salsa Dress +	Skin-tight, red dance dress with black gloves. Provides you with at least one random bonus. Item is tradeable.
+41133	Gentleman's Suit +	Elegant suit for men of good conduct. Provides you with at least one random bonus. Item is tradeable.
+41134	Cocktail Dress +	Sky blue dress with a bow and matching strappy sandals. Provides you with at least one random bonus. Item is tradeable.
+41135	Pumpkin Tuxedo (Bonus)	A classic eye-catcher - newly interpreted for this special occasion. This costume provides you with a random bonus.
+41136	Pumpkin Dress (Bonus)	A classic eye-catcher - newly interpreted for this special occasion. This costume provides you with a random bonus.
+41307	Cobra Outfit (m)	Black shimmering outfit with snake symbols.
+41308	Cobra Outfit (f)	Black shimmering outfit with snake symbols.
+41309	Cobra Outfit+ (m)	Black shimmering outfit with snake symbols. Provides you with at least one random bonus.
+41310	Cobra Outfit+ (f)	Black shimmering outfit with snake symbols. Provides you with at least one random bonus.
+41311	Desert Warrior (M, blk)	Black battle clothing for men.
+41312	Desert Warrior (F, blk)	Black battle clothing for women.
+41313	Desert Warrior+ (M, blk)	Black battle clothing for men. Provides you with at least one random bonus. Item is tradeable.
+41314	Desert Warrior+ (F, blk)	Black battle clothing for women. Provides you with at least one random bonus.
+41315	Azrael's Armour (m)	Steely armour belonging to the infamous demon leader.
+41316	Azrael's Armour (f)	Steely armour belonging to the infamous demon leader.
+41317	Azrael's Armour+ (m)	Steely armour belonging to the infamous demon leader. Provides you with at least one random bonus.
+41318	Azrael's Armour+ (f)	Steely armour belonging to the infamous demon leader. Provides you with at least one random bonus.
+41324	Crescent Warrior	Male battle dress featuring a star and crescent emblem.
+41325	Crescent Warrioress	Female battle dress featuring a star and crescent emblem.
+41326	Crescent Warrior+	Male battle dress featuring a star and crescent emblem. Provides you with at least one random bonus.
+41327	Crescent Warrioress+	Female battle dress featuring a star and crescent emblem. Provides you with at least one random bonus.
+41528	Desert Prince (Red)	A warrior's garments, made of red cloth, and fitting of a leader.
+41529	Desert Prince (Blue)	A warrior's garments, made of blue cloth, and fitting of a leader.
+45053	Musketeer Hairstyle	Well-kept, short blond hairstyle for the perfect musketeer look.
+45054	Maid Bonnet	Blonde bob with a maid's bonnet.
+45055	Mini Mohawk	Cool, short haircut in a Iroquois style.
+45056	Salsa Bun	Elegant updo with a red flower.
+45057	Bogart Fedora	Classic fedora in the style of Humphrey Bogart.
+45065	Musketeer Hairstyle +	Well-kept, short blond hairstyle for the perfect musketeer look. Provides you with at least one random bonus. Item is tradeable.
+45066	Maid Bonnet +	Blonde bob with a maid's bonnet. Provides you with at least one random bonus. Item is tradeable.
+45067	Mini Mohawk +	Cool, short haircut in a Iroquois style. Provides you with at least one random bonus. Item is tradeable.
+45068	Salsa Bun +	Elegant updo with a red flower. Provides you with at least one random bonus. Item is tradeable.
+45069	Bogart Fedora +	Classic fedora in the style of Humphrey Bogart. Provides you with at least one random bonus. Item is tradeable.
+45070	Flower Hairstyle +	Sweet braids with colourful flowers as an accessory. Provides you with at least one random bonus. Item is tradeable.
+45135	Cobra Hairstyle (m)	A matching headdress for the Cobra Outfit.
+45136	Cobra Hairstyle (f)	A matching headdress for the Cobra Outfit.
+45147	Black Turban (m)	A headdress made of black material for men.
+45148	Black Turban (f)	A headdress made of black material for women.
+45149	Black Turban+ (m)	A headdress made of black material for men. Provides you with at least one random bonus. Item is tradeable.
+45150	Black Turban+ (f)	A headdress made of black material for women. Provides you with at least one random bonus.
+45151	Azrael's Helmet (m)	Headdress with the grimace of the infamous demon leader on it.
+45152	Azrael's Helmet (f)	Headdress with the grimace of the infamous demon leader on it.
+45153	Azrael's Helmet+ (m)	Headdress with the grimace of the infamous demon leader on it. Provides you with at least one random bonus.
+45154	Azrael's Helmet+ (f)	Headdress with the grimace of the infamous demon leader on it. Provides you with at least one random bonus.
+45160	Crescent Hairstyle (m)	Tied up dreadlocks, dyed red and white.
+45161	Crescent Hairstyle (f)	Tied up dreadlocks, dyed red and white, with a headband.
+45198	Brown Turban	A gallant brown turban, made of material tough enough for warriors.
+45199	White Turban	A gallant white turban, made of material tough enough for warriors.
+45200	Brown Headscarf	A brown headscarf made of light material, perfect for female warriors.
+45201	White Headscarf	A white headscarf made of light material, perfect for female warriors.
+45202	Brown Turban+	A gallant brown turban, made of material tough enough for warriors. Provides you with at least one random bonus.
+45203	White Turban+	A gallant white turban, made of material tough enough for warriors. Provides you with at least one random bonus.
+45240	Brown Headscarf+	A brown headscarf made of light material, perfect for female warriors. Provides you with at least one random bonus.
+45241	Green Headscarf+	A green headscarf made of light material, perfect for female fighters. Provides you with at least one random bonus.
+45242	Black braids + (m)	Special braids that match the Zodiac Costume.
+45243	Black braids + (f)	Special braids that match the Zodiac Costume.
+46003	Crescent Warrioress (f)	This item can only be worn by the support shamy.
+46004	Crescent Warrioress (m)	This item can only be worn by the support shamy.
+46005	Azrael's Armour (f)	This item can only be worn by the support shamy.
+46006	Azrael's Armour (m)	This item can only be worn by the support shamy.
+46007	Desert Warrior (f)	This item can only be worn by the support shamy.
+46008	Desert Warrior (m)	This item can only be worn by the support shamy.
+46303	Azrael's Helmet (f)	This item can only be worn by the support shamy.
+46304	Azrael's Helmet (m)	This item can only be worn by the support shamy.
+46307	Salsa Bun	This item can only be worn by the support shamy.
+46308	Mini Mohawk	This item can only be worn by the support shamy.
+46601	Riptooth Fan	This item can only be worn by the support shamy.
+46602	Riptooth Bell	This item can only be worn by the support shamy.
+46603	Aquarian Fan	This item can only be worn by the support shamy.
+46604	Aquarian Bell	This item can only be worn by the support shamy.
+46605	Sugary bell	This item can only be worn by the support shamy.
+46606	Frosted fan	This item can only be worn by the support shamy.
+50010	Stocking	A stocking made from warm sheep's wool.
+50011	Moonlight Treasure Chest	An impressive, dazzling decoration. Supernatural things happen when moonlight falls on it.
+50053	Military Horse Book	As soon as you have passed the professional qualification test at the stable, you can call your horse with this licence.
+50054	Hay	Dry hay to feed a horse.
+50055	Carrot	A horse's favourite vegetable.
+50056	Red Ginseng	Steamed ginseng. Only military horses eat Red Ginseng.
+50063	Razador's Chest	This chest was recovered from the Red Dragon Fortress. It contains a truly magnificent treasure.
+50064	Nemere's Chest	This chest was recovered from Nemere's Watchtower. It contains a truly magnificent treasure.
+50065	Ice Witch Chest	The Ice Witch's Chest. This chest contains something valuable.
+50066	Precious Chest	This chest contains valuable items for your equipment.	It can contain sash costumes and other useful items for costumes.
+50067	Daily Gift Chest	This Chest contains some fantastic prizes.
+50069	Lord Ghost Tree Chest	This chest contains something valuable.
+50070	Chief Orc's Box	The chest of the Orc Lord. Apparently something valuable is in the box.
+50071	Esoteric Leader's Box	The chest of the Esoteric Lord. Apparently something valuable is in the box.
+50072	Orc Maze chest	This chest contains something valuable.
+50073	Queen Spider Box	The chest of the Queen Spider. Apparently something valuable is in the box.
+50074	Chest Of The Baroness	This chest contains something valuable.
+50075	Slime Queen Chest	This chest contains something valuable.
+50076	Desert Tortoise Chest	The chest of the Giant Dessert Turtle. Apparently something valuable is in the box.
+50077	Nine Tails' Chest	The chest of the Nine Tails. Apparently something valuable is in the box.
+50078	Yellow Tiger's Chest	The chest of the Giant Tiger. Apparently something valuable is in the box.
+50079	Flame King's Chest	The chest of the Flame King. Apparently something valuable is in the box.
+50080	Red Dragon's Chest	The chest of the Red Dragon. Apparently something valuable is in the box.
+50081	Big Ghost Tree Chest	This chest contains something valuable.
+50082	Grim Reaper's Chest	The chest of the Grim Reaper. Apparently something valuable is in the box.
+50084	Key Stone	An energy-laden aura surrounds this stone. It works against seal magic.
+50097	Azrael's Chest	Demonic powers are keeping this chest locked. Valuable treasure must be within it.
+50098	Beran-Setaou's Chest	This chest was recovered from the Grotto of Exile. It contains a truly magnificent treasure.
+50099	Elemental Chest	This chest contains items needed to upgrade the talismans.
+50100	Haru Chest	Haru's chest. This chest contains something valuable.
+50101	Eien Chest	Eien's chest. This chest contains something valuable.
+50102	Buncho Chest	Buncho's chest. This chest contains something valuable.
+50138	Mahon Chest	Mahon's chest. This chest contains something valuable.
+50139	Bo Chest	Bo's chest. This chest contains something valuable.
+50140	Goo-Pae Chest	Goo-Pae's chest. This chest contains something valuable.
+50141	Chuong Chest	Chuong's chest. This chest contains something valuable.
+50142	Brutal Commander Chest	Brutal Commander's chest. This chest contains something valuable.
+50143	Chest Of Skills	Skill Chest contains books for standard skills.
+50187	Apprentice Chest I	Your greeting gift contains a base equipment set for the optimal start to your adventure.
+50188	Apprentice Chest II	This chest will only open once you have reached level 10.
+50189	Apprentice Chest III	This chest will only open once you have reached level 20.
+50190	Expert Chest I	This chest will only open once you have reached level 30.
+50191	Expert Chest II	This chest will only open once you have reached level 40.
+50192	Expert Chest III	This chest will only open once you have reached level 50.
+50193	Master Chest I	This chest will only open once you have reached level 60.
+50194	Master Chest II	This chest will only open once you have reached level 75.
+50195	Master Chest III	This chest will only open once you have reached level 100.
+50196	Grand Master Chest	This chest will only open once you have reached level 120.
+50203	Hydra's Chest	This chest contains something valuable.
+50204	Ochao's Chest	This chest contains something valuable.
+50212	Apprentice Chest I	Your greeting gift contains a base equipment set for the optimal start to your adventure.
+50213	Apprentice Chest I	Your greeting gift contains a base equipment set for the optimal start to your adventure.
+50254	Chest of Darkness	The weighty chest conceals the believed to be forgotten riches of the Dark Nation.
+50259	Cor Draconis (Antique)	The crystalline dragon heart holds the soul, the Dragon Stone, within.
+50266	Jotun Thrym Chest	The chest of Jotun Thrym. Judging from the heavy lock, something valuable must be contained within.
+50270	Queen Meley's Chest	This chest was recovered from the Dragon Queen Meley's lair. It contains a truly magnificent treasure. This item is tradeable.
+50271	Dragon Watcher Chest	This chest contains the treasures of countless dragon watchers, treasures which for centuries were believed lost. This item is tradeable.
+50285	Ruler En-Tai's chest	Ruler En-Tai's chest contains valuable rewards.
+50301	Sun Zi Art of War	One of the three books of war strategy - it increases its owner's leadership skills. The book disappears after being read.
+50302	Wu zi Art of War	One of the three books of war strategy - it increases its owner's leadership skills. The book disappears being read.
+50303	WeiLiao Zi Art of War	One of the three books of war strategy - it increases its owner's leadership skills. The book disappears after being read.
+50307	Mission Book (Easy)	Contains an easy mission that will be rewarded upon successful completion.
+50308	Mission Book (Normal)	Contains a normal mission, which will be rewarded upon successful completion.
+50309	Mission Book (Hard)	Contains a difficult mission, which will be rewarded upon successful completion.
+50310	Mission Book (Expert)	Contains an expert mission, which will be rewarded upon successful completion.
+50314	Polymorph Book	Successfully studying this book increases your transformation skills. The book disappears after reading.
+50315	Advanced Polymorph Book	Successfully studying this book increases your transformation skills. It disappears after you have read it.
+50316	Master Polymorph Book	Successfully reading this book allows you an increase of your transformation skills. It disappears after you have read it.
+50323	Ward Book Chest	This chest contains a random skill book for learning ward skills.
+50324	Boost Book Chest	This chest contains a random skill book for learning boost skills.
+50333	Book of Divine Force	Enhance divine power. Through this book you can improve the standard Divine Force skill.
+50334	Gold Master Book	Enhance divine power. Through this book you can improve the standard ability Collect Yang.
+50335	Monster Hunter Book	Enhance divine power. Through this book you can improve the standard Monster Hunter skill.
+50336	Book of Life Force	Enhance divine power. Through this book you can improve the standard Life Force ability.
+50401	Three-Way Cut Manual	Use this book to master the Three-Way Cut skill. The book disappears after reading.
+50402	Sword Spin Manual	Use this book to master the Sword Spin skill. The book disappears after reading.
+50403	Berserk Manual	Use this book to master the Berserk skill. The book disappears after reading.
+50404	Aura of the Sword Manual	Use this book to master the Aura of the Sword skill. The book disappears after reading.
+50405	Dash Manual	Use this book to master the Dash skill. The book disappears after reading.
+50406	Life Force Manual	Use this book to master the Life Force skill. The book disappears after being read.
+50416	Strike Manual	Use this book to master the Strike skill. The book disappears after reading.
+50417	Bash Manual	Use this book to master the Bash skill. The book disappears after reading.
+50418	Pounding Manual	Use this book to master the Pounding skill. The book disappears after reading.
+50419	Strong Body Manual	Use this book to master the Strong Body skill. The book disappears after reading.
+50420	Sword Strike Manual	Use this book to master the Sword Strike skill. The book disappears after reading.
+50421	Sword Orb Manual	Use this book to master the Sword Orb skill. The book disappears after being read.
+50431	Ambush Manual	Use this book to master the Ambush skill. The book disappears after reading.
+50432	Fast Attack Manual	Use this book to master the Fast Attack skill. The book disappears after reading.
+50433	Rolling Dagger Manual	Use this book to master the Rolling Dagger skill. The book disappears after reading.
+50434	Disguise Manual	Use this book to master the Disguise skill. The book disappears after reading.
+50435	Poisonous Cloud Manual	Use this book to master the Poisonous Cloud skill. The book disappears after reading.
+50436	Insidious Poison Manual	Use this book to master the Insidious Poison skill. The book disappears after being read.
+50446	Repetitive Shot Manual	Use this book to master the Repetitive Shot skill. The book disappears after reading.
+50447	Arrow Shower Manual	Use this book to master the Arrow Shower skill. The book disappears after reading.
+50448	Fire Arrow Manual	Use this book to master the Fire Arrow skill. The book disappears after reading.
+50449	Feather Walk Manual	Use this book to master the Feather Walk skill. The book disappears after reading.
+50450	Poison Arrow Manual	Use this book to master the Poison Arrow skill. The book disappears after reading.
+50451	Spark Manual	Use this book to master the Spark skill. The book disappears after being read.
+50461	Finger Strike Manual	Use this book to master the Finger Strike skill. The book disappears after reading.
+50462	Dragon Swirl Manual	Use this book to master the Dragon Swirl skill. The book disappears after reading.
+50463	Enchanted Blade Manual	Use this book to master the Enchanted Blade skill. The book disappears after reading.
+50464	Fear Manual	Use this book to master the Fear skill. The book disappears after reading.
+50465	Enchanted Armour Manual	Use this book to master the Enchanted Armour skill. The book disappears after reading.
+50466	Dispel Manual	Use this book to master the Dispel skill. The book disappears after reading.
+50476	Dark Strike Manual	Use this book to master the Dark Strike skill. The book disappears after reading.
+50477	Flame Strike Manual	Use this book to master the Flame Strike skill. The book disappears after reading.
+50478	Flame Spirit Manual	Use this book to master the Flame Spirit skill. The book disappears after reading.
+50479	Dark Protection Manual	Use this book to master the Dark Protection skill. The book disappears after reading.
+50480	Spirit Strike Manual	Use this book to master the Spirit Strike skill. The book disappears after reading.
+50481	Dark Orb Manual	Use this book to master the Dark Orb skill. The book disappears after reading.
+50491	Flying Talisman Manual	Use this book to master the Flying Talisman skill. The book disappears after reading.
+50492	Shooting Dragon Manual	Use this book to master the Shooting Dragon skill. The book disappears after reading.
+50493	Dragon's Roar Manual	Use this book to master the Dragon's Roar skill. The book disappears after reading.
+50494	Blessing Manual	Use this book to master the Blessing skill. The book disappears after reading.
+50495	Reflect Manual	Use this book to master the Reflect skill. The book disappears after reading.
+50496	Dragon's Aid Manual	Use this book to master the Dragon's Aid skill. The book disappears after reading.
+50506	Lightning Throw Manual	Use this book to master the Lightning Throw skill. The book disappears after reading.
+50507	Summon Lightning Manual	Use this book to master the Summon Lightning skill. The book disappears after reading.
+50508	Lightning Claw Manual	Use this book to master the Lightning Claw skill. The book disappears after reading.
+50509	Cure Manual	Use this book to master the Cure skill. The book disappears after reading.
+50510	Swiftness Manual	Use this book to master the Swiftness skill. The book disappears after reading.
+50511	Attack Manual	Use this book to master the Attack Up skill. The book disappears after reading.
+50513	Soul Stone	The legendary stone used to increase your grand master skills. It disappears after use.
+50516	Sword Spin Ward	This book teaches you the ability to reduce the damage inflicted by Sword Spin.
+50517	Ambush Ward	This book teaches you the ability to reduce the damage inflicted by Ambush.
+50518	Finger Strike Ward	This book teaches you the ability to reduce the damage inflicted by Finger Strike.
+50519	Shooting Dragon Ward	This book teaches you the ability to reduce the damage inflicted by Shooting Dragon.
+50520	Spirit Strike Ward	This book teaches you the ability to reduce the damage inflicted by Spirit Strike.
+50521	Fire Arrow Ward	This book teaches you the ability to reduce the damage inflicted by Fire Arrow.
+50522	Dark Strike Ward	This book teaches you the ability to reduce the damage inflicted by Dark Strike.
+50523	Summon Lightning Ward	This book teaches you the ability to reduce the damage inflicted by Summon Lightning.
+50525	Perfect Soul Stonea	This Perfect Stone allows you to upgrade your skills from Grand Master rank to Perfect Grand Master rank using just one stone. The stone disappears following use.
+50526	Stone of Soul Boost	This legendary stone allows you to increase the Grandmaster skills of the boost skills. The stone disappears following use.
+50527	Stone of Souls Counterattack	This legendary stone allows you to increase the Grandmaster skills of the counterattack skills. The stone disappears following use.
+50560	Sword Spin Boost	This book teaches you the ability to strengthen Sword Spin.
+50561	Ambush Boost	This book teaches you the ability to strengthen Ambush.
+50562	Finger Strike Boost	This book teaches you the ability to strengthen Finger Strike.
+50563	Shooting Dragon Boost	This book teaches you the ability to strengthen Shooting Dragon.
+50564	Spirit Strike Boost	This book teaches you the ability to strengthen Spirit Strike.
+50565	Fire Arrow Boost	This book teaches you the ability to strengthen Fire Arrow.
+50566	Dark Strike Boost	This book teaches you the ability to strengthen Dark Strike.
+50567	Summon Lightning Boost	This book teaches you the ability to strengthen Summon Lightning.
+50621	Diamond	The strongest and most well-known gem that can be worked into accessories and jewellery.
+50622	Amber	A clear gem made from fossilised resin, that shines in honey or golden tones.
+50623	Fossil Wood	A valuable wood that can provide stability to jewellery items.
+50624	Copper	A malleable precious metal which can be used to make jewellery and coins. It is also required for the production of bronze.
+50625	Silver	Shiny precious metal used to make jewellery. It can be worked into silver accessories.
+50626	Gold	Golden metal used to make jewellery. It can be worked into gold accessories.
+50627	Jade	A valuable mineral that has been used for over 5000 years.  It can be worked into accessories and jewellery.
+50628	Ebony	This black, hard wood is one of the most valuable timbers of all. It can be worked into accessories and jewellery.
+50629	Pearl	Used for making jewellery. It can be worked into accessories and jewellery.
+50630	White Gold	A hard, white alloy of gold that is often used for jewellery.
+50631	Crystal	A hard stone made of crystalline quartz that can be found in different colours. Often used for jewellery.
+50632	Amethyst	A popular quartz that can be found in different shades of purple. It is often used to make jewellery.
+50633	Heaven's Tear	Crystallized rain from heaven. It can be used to make jewellery.
+50634	Soul Crystal	A crystal, as pure as the soul. It can be inserted as an accessory.
+50635	Ruby	Red gemstone with a unique finish. It can be inserted as an accessory.
+50636	Garnet	Orange gemstone with a unique finish. It can be inserted as an accessory.
+50637	Emerald	Green gemstone with a unique finish. It can be inserted as an accessory.
+50638	Sapphire	Blue gemstone with a unique finish. It can be inserted as an accessory.
+50639	Tourmaline	This magical gemstone shimmers with all the colours of the rainbow. It can be inserted as an accessory.
+50640	Kyanite	A blue and red gemstone with a unique cut. It can be inserted as an accessory.	Duration: infinite
+50672	Amber (Permanent)	A clear gem made from fossilised resin, that shines in honey or golden tones.	Duration: infinite
+50673	Fossil Wood (Permanent)	A valuable wood that can provide stability to jewellery items.	Duration: infinite
+50674	Copper (Permanent)	A malleable precious metal which can be used to make jewellery and coins. It is also required for the production of bronze.	Duration: infinite
+50675	Silver (Permanent)	Shiny precious metal used to make jewellery. It can be worked into silver accessories.	Duration: infinite
+50676	Gold (Permanent)	Golden metal used to make jewellery. It can be worked into gold accessories.	Duration: infinite
+50677	Jade (Permanent)	A valuable mineral that has been used for over 5000 years.  It can be worked into accessories and jewellery.	Duration: infinite
+50678	Ebony (Permanent)	This black, hard wood is one of the most valuable timbers of all. It can be worked into accessories and jewellery.	Duration: infinite
+50679	Pearl (Permanent)	Used for making jewellery. It can be worked into accessories and jewellery.	Duration: infinite
+50680	White Gold (Permanent)	A hard, white alloy of gold that is often used for jewellery.	Duration: infinite
+50681	Crystal (Permanent)	A hard stone made of crystalline quartz that can be found in different colours. Often used for jewellery.	Duration: infinite
+50682	Amethyst (Permanent)	A popular quartz that can be found in different shades of purple. It is often used to make jewellery.	Duration: infinite
+50683	Heaven's Tear (Permanent)	Crystallized rain from heaven. It can be used to make jewellery.	Duration: infinite
+50684	Soul Crystal (Permanent)	A crystal, as pure as the soul. It can be inserted as an accessory.	Duration: infinite
+50685	Ruby (Permanent)	Red gemstone with a unique finish. It can be inserted as an accessory.	Duration: infinite
+50686	Garnet (Permanent)	Orange gemstone with a unique finish. It can be inserted as an accessory.	Duration: infinite
+50687	Emerald (Permanent)	Green gemstone with a unique finish. It can be inserted as an accessory.	Duration: infinite
+50688	Sapphire (Permanent)	Blue gemstone with a unique finish. It can be inserted as an accessory.	Duration: infinite
+50689	Tourmaline (Permanent)	This magical gemstone shimmers with all the colours of the rainbow. It can be inserted as an accessory.	Duration: infinite
+50690	Kyanite (Permanent)	A blue and red gemstone with a unique cut. It can be inserted as an accessory.	Duration: infinite
+50926	Glimmerstone	Collect Glimmerstones and have the Gaya Merchant cut them into valuable Gaya.
+51001	Energy Fragment	Fragment from an Energy Crystal. 30 pieces can be melted into a crystal.
+51002	Energy Crystal	This crystal increases your bonuses for two hours.
+52040	Wild Lion	The seal summons your Wild Lion. He increases his rider's attack value by 30.
+53010	Leonidas Signet	You can use this seal to summon your lion cub, Leonidas. The pet grants you | +15% magic/melee attack | +1500 HP
+53011	Khan Signet	You can use this seal to summon your tiger cub, Khan. The pet grants you | +15% magic/melee attack | +1500 HP
+53012	Porky Signet	You can use this seal to summon your young boar, Porky. The pet grants you | +15% magic/melee attack | +1500 HP
+53013	Rufus Signet	You can use this seal to summon your wolf whelp, Rufus. The pet grants you | +15% magic/melee attack | +1500 HP
+53017	Jade Phoenix Signet	This seal summons the graceful Jade Phoenix. The pet grants you | +15% magic/melee attack | +50% chance for EXP Bonus
+53025	Leopard Cub	This seal evokes your sweet baby leopard.
+53026	Leonidas Signet(15g)	With this seal you can call your 15 day old Leonidas lion cub.
+53027	Leonidas Signet(30g)	With this seal you can call your 30 day old Leonidas lion cub.
+53028	Leonidas Signet(Permanent)	With this seal you can summon Permanent Leonidas.
+53029	Nogai Signet (15g)	With this seal you can call a 15 day Nogaj.
+53030	Nogai Signet (30)	With this seal you can call a 30 day Nogaj.
+53031	Nogai Signet (Permanent)	With this seal you can summon Permanent Nogaj.
+53248	Donnie (15g)	With this seal you call Donnie, your nightmare hare.
+53249	Donnie (30g)	With this seal you call Donnie, your nightmare hare.
+53250	Donnie (Permanent)	With this seal you call Donnie, your nightmare hare.
+53251	Frank (15g)	With this seal you call Frank, your nightmare hare.
+53252	Frank (30g)	With this seal you call Frank, your nightmare hare.
+53253	Frank (Permanent)	With this seal you call Frank, your nightmare hare.
+53256	Bonsai	This seal summons Bonsai the miniature warrior.
+53263	Gryph	This seal summons Griffy, summons your griffin pet.
+53264	Nogai	This seal summons Nogai, summons your griffin pet.
+53282	All-Seeing Flamecat	With this seal he evokes the all-seeing fire cat.
+53283	All-seeing Frost Cat	With this seal you summon an all-seeing frost cat.
+54043	Apprentice Chest I	Your greeting gift contains a base equipment set for the optimal start to your adventure.
+55002	Transport Box	By placing your pet in the carrier, you will make it marketable.
+55003	Young Pet Book	This book is used for pet development.
+55004	Wild Pet Book	This book is used for pet development.
+55005	Valiant Pet Book	This book is used for pet development.
+55008	Pet Name Scroll	Drag the scroll onto your pet to change its name.
+55009	Pet Book Chest	Contains a randomly selected pet skill book.
+55010	Resistance (Warrior)	After learning this skill your pet increases your resistance against Warrior attacks.
+55011	Resistance (Sura)	After learning this skill your pet increases your resistance against Sura attacks.
+55012	Resistance (Ninja)	After learning this skill your pet increases your resistance against Ninja attacks.
+55013	Resistance (Shaman)	After learning this skill your pet increases your resistance against Shaman attacks.
+55014	Critical Damage Book (PvM)	After learning this skill, the pet increases the critical damage dealt in PVM.
+55015	Strong book against Metin	After learning this skill, the pet increases the damage done to Metin Rocks.
+55016	Strong book against Boss	After learning this skill, the pet increases the damage dealt against the Bosses.
+55017	Book of intuition	After learning this skill, the pet increases the XP bonus value.
+55018	Yang's Drop Book	After learning this skill, the pet increases the chance of dropping Yang.
+55019	Attack / Magic Value Book	After learning this skill, the pet increases attack / magic damage.
+55020	Body Attack Block Book	After learning this skill, the pet increases the chance of blocking corporal attacks.
+55021	Book Reflect corporal attack	After learning this skill, the pet increases the damage taken by the player, which will be reflected on the opponent.
+55401	Monkey Egg	When you want your pet to hatch, right-click on the egg.
+55402	Spider Egg	When you want your pet to hatch, right-click on the egg.
+55403	Razador's Egg	When you want your pet to hatch, right-click on the egg.
+55404	Nemere's Egg	When you want your pet to hatch, right-click on the egg.
+55405	Blue Dragon Egg	When you want your pet to hatch, right-click on the egg.
+55406	Red Dragon Egg	When you want your pet to hatch, right-click on the egg.
+55407	Mini Azrael's Egg	When you want your pet to hatch, right-click on the egg.
+55408	Fat Mini Executor Egg	When you want your pet to hatch, right-click on the egg.
+55409	Baby Baashido's Egg	When you want your pet to hatch, right-click on the egg.
+55410	Nessie Egg	When you want your pet to hatch, right-click on the egg.
+55411	Exedyar's Egg	When you want your pet to hatch, right-click on the egg.
+55701	Mini Monkey	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55702	Mini Spider	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55703	Mini Razador	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55704	Mini Nemere	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55705	Dragonette	Right-click to summon your pet, then press "P" on your keyboard to bring up the pet interface.
+55706	Mini Meley	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55707	Mini Azrael	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55708	Fat Mini Executor	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55709	Baby Baashido	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55710	Nessie	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+55711	Exedyar Brood	Right-click to summon your pet, then press 'P' on your keyboard to bring up the pet interface.
+56001	Improvement Potion (5%)	This potion increases the chance to upgrade an item by 5%.	This item is also used to purchase items from the blacksmith.
+56002	Improvement Potion (10%)	This potion increases the chance to upgrade an item by 10%.	This item is also used to purchase items from the blacksmith.
+56003	Improvement Potion (15%)	This potion increases the chance to upgrade an item by 15%.
+70031	Fencing Pamphlet	This pamphlet concerns, amongst other things, the potential and weaknesses of the human anatomy.
+70038	Bravery Cape	Ancient Warriors showed off their bravery by wearing a colourful cape with which they attracted the attention of monsters.
+70039	Blacksmith Handbook	This book contains the soul of an old blacksmith. If it is used, it raises the chance of successfully ameliorating an item.
+70058	Ring of Power (15g)	A Ring made with secret ingredients, which gives you special bonuses for 15 days.
+70059	Ring of Power (30g)	A Ring made with secret ingredients, which gives you special bonuses for 30 days.
+70060	Ring of Power (Permanent)	A Ring made with secret ingredients, which gives you permanent special bonuses.
+70063	Transform Costume	Removes the bonuses from one of your costumes and replaces them with new ones. With a bit of luck, the number of bonuses might also change (up to max. 3).
+70064	Enchant Costume	Removes the bonuses from one of your costumes and replaces them with new ones.
+70065	Costume Bonus Transfer	Transfers the bonuses from one costume onto another. The transfer will destroy one of the costumes.
+70102	Zen Bean	Reduces the evil and raises the good in a character's disposition.
+70104	Polymorph Marble	You can use this marble to transform into a monster.
+70105	Polymorph Marble	You can use this marble to transform into a monster.
+70106	Polymorph Marble	You can use this marble to transform into a monster.
+70107	Polymorph Marble	You can use this marble to transform into a monster.
+70201	Bleach	It turns your hair back into its original colour. Bleached hair can be dyed again.
+70202	White Hair Dye	Dyes your hair white. You can dye your hair once every 3 levels.
+70203	Blonde Hair Dye	Dyes your hair blonde. You can dye your hair once every 3 levels.
+70204	Red Hair Dye	Dyes your hair red. You can dye your hair once every 3 levels.
+70205	Brown Hair Dye	Dyes your hair brown. You can dye your hair once every 3 levels.
+70206	Black Hair Dye	Dyes your hair black. You can dye your hair once every 3 levels.
+70301	Engagement Ring	A ring that is worn by lovers.
+70302	Wedding Ring	A ring that is worn by a married couple.
+70401	Enchant Costumes	Remove bonuses from one of your costumes and apply new ones.
+70402	Witch Costumes Special (5%)	Add a special bonus (up to a maximum of 2) to one of your costumes.
+70403	Witch Special Costumes (10%)	Add a special bonus (up to a maximum of 2) to one of your costumes.
+70404	Remove Special Bonus	Removes one of the special bonuses of your choice from one of your costumes.
+70602	Soul Parchment (100%)	Increase your soul's development one level with this parchment.
+70603	Soul Parchment	Increase your soul's development up to two levels with this parchment. The attempt may fail.
+70604	Freeze Bonus	Using this item on a piece of equipment with bonuses present will freeze a bonus chosen by chance.
+70605	Refreeze Bonus	This item allows you to change the frozen bonus chosen by chance.
+70606	Thaw Bonus	This item allows you to thaw a piece of equipment that has a frozen bonus.
+70610	Battle Pass Voucher	This item is used to purchase costumes from the Battle Pass store.
+70611	Battle Pass	This item activates the Battle Pass.
+70612	Precious Diamond	This Prized Diamond is used to purchase weapon skins, armor, and hair from an NPC.
+70613	Potion of Beauty	This Beauty Potion is used to purchase Pet and Mount skins from an NPC.
+70614	Potion of Beauty	This Beauty Potion is used to purchase Pet and Mount skins from an NPC.
+71001	Exorcism Scroll	Will lift the curse of the evil spirit, if learning is not successful. With the help of this scroll you can read another document on the same day.
+71002	Status Reset Document	Resets status points so that you can change the development of your character.
+71025	Stone of the Blacksmith	With this stone you can buy the blacksmith's book from the blacksmith.
+71032	Dragon Scroll	Eliminates the risk of an item being destroyed when an improvement fails. In the case of failure, the item's quality is merely reduced by 1 instead. In addition, the chance of a successful improvement is increased by 10%.
+71035	Researcher's Elixir	Improves the quality of the research objects which you have collected, thereby increasing the likelihood that they will be accepted. Does not apply to quests in Yohara.
+71048	Modification Charm	This charm can change the gender of your character.
+71054	Tincture of Kingdoms	A character is able to go into exile in another kingdom, this means changing the kingdom.
+71055	Tincture of the Name	Changes the name of a Character.
+71075	Hair Dye (White)	Dyes hair white.
+71076	Hair Dye (Blonde)	Dyes hair blonde.
+71077	Hari Dye (Red)	Dyes hair red.
+71078	Hair Dye (Brown)	Dyes hair brown.
+71079	Hair Dye (Black)	Dyes hair black.
+71083	Stone Handbook	Removes all broken stones from an item. With that you will get another chance to improve your weapon or armour.
+71084	Enchant Item	Removes the bonuses from one of your items and adds new ones. Only applies to bonuses 1-5.
+71085	Reinforce Item	Add 5 bonuses to one of your items.
+71093	Polymorph Marble	You can use this marble to transform into a monster.
+71094	Concentrated Reading	Increases the chance of improving your talent when reading the next book (or Soul Stone) by 2.5 times.
+71099	Ring of Successor	Allows the leader of a guild to set up a successor.
+71100	Scroll of Lore Change	Forget your lore and start a new one.
+71103	Redistribution (VIT)	Puts your vitality back to 1 and allows you to redistribute your points.
+71104	Redistribution (INT)	Puts your intelligence back to 1 and allows you to redistribute your points.
+71105	Redistribution (STR)	Puts your strength back to 1 and allows you to redistribute your points.
+71106	Redistribution (DEX)	Resets your dexterity back to 1 and allows you to redistribute your points.
+71107	Fruit of Life	Increases rank points by 2000 (cooldown time: 8 hours).
+71123	Dragon Scales	Dragon scales are some of the toughest known materials.
+71124	White Lion (15 days)	Animals with white fur are very rare and many cultures worship them, believing that they carry remarkable powers.
+71125	Wild Battle Boar	Taming evil animal spirits requires some skilful use of magic, but the results can be very impressive.
+71126	Fight Wolf	Taming evil animal spirits requires some skilful use of magic, but the results can be very impressive.
+71127	Storm Tiger	Taming evil animal spirits requires some skilful use of magic, but the results can be very impressive.
+71128	Battle Lion	Taming evil animal spirits requires some skilful use of magic, but the results can be very impressive.
+71129	Dragon Claw	The look of this terrifying claw brings back memories...
+71135	Crescent Moon Ring (7g)	A ring with an artfully crafted engraving in the shape of a crescent.
+71136	Mighty Lolly (7g)	A lollipop made with secret ingredients, which gives you special bonuses.
+71137	Royal Tiger (blue)	The magic of this seal summons your mount, the majestic Royal Tiger (blue). It increases experience gain by 30%.
+71138	Royal Tiger (red)	The magic of this seal summons your mount, the majestic Royal Tiger (red). It increases experience gain by 30%.
+71139	Royal Tiger (gold)	The magic of this seal summons your mount, the majestic Royal Tiger (gold).
+71140	Royal Tiger (green)	The magic of this seal summons your mount, the majestic Royal Tiger (green). It increases experience gain by 30%.
+71141	Royal Tiger (grey)	The magic of this seal summons your mount, the majestic Royal Tiger (grey). It increases experience gain by 30%.
+71142	Royal Tiger (white)	The magic of this seal summons your mount, the majestic Royal Tiger (white). It increases experience gain by 30%.
+71148	Ring of Will Power (30g)	A Ring made with secret ingredients, which gives you special bonuses.
+71149	Ring of Deadly Power	Gives you +30% EXP, +20% defence chance against Suras, +20% defence chance against Shamans, +20% defence chance against Lycans, +30% strength against monsters, +10% maximum HP and +10% maximum SP for a period of time.
+71151	Green Magic	Removes the bonuses from one of your items and adds new ones. Can only be used on weapons and armour up to level 30.
+71153	Potion of Wisdom (1h)	Dragon God will bless you with:	Right click to receive the blessing.
+71161	Equus Porphyreus	Seal for one of the beautiful and extremely rare purple horses.
+71164	Comet	You can use this seal to summon your reindeer Comet.
+71165	Polar Predator	You can use this seal to summon your aggressive Polar Predator. It increases your movement speed by 60.
+71166	Armoured Panda	You can use this seal to summon your Armoured Panda. It increases your movement speed by 60.
+71171	Unicorn	You can use this seal to summon your Unicorn. It increases your movement speed by 60.
+71172	Nightmare	You can use this seal to summon your Nightmare. It increases your movement speed by 60.
+71174	Razador Ticket	By handing the Razador Ticket to the guardian you will gain permission to enter the Red Dragon Fortress.
+71175	Nemere Ticket	By handing the Nemere Ticket to the guardian, you will gain permission to enter the Nemere Watchtower.
+71176	Black Panther	This seal summons your mysterious Black Panther. It increases your movement speed by 30.
+71177	Leopard	This seal summons your valiant Leopard. It increases your movement speed by 30.
+71182	Muffin (Brown)	You can use this seal to summon Muffin, the chilling combat chicken. It increases your movement speed by 20.
+71183	Nugget (Brown)	You can use this seal to summon Nugget, the colossal combat cockerel. It increases your movement speed by 20.
+71184	Muffin (Blue)	You can use this seal to summon Muffin, the chilling combat chicken. It increases your movement speed by 20.
+71185	Nugget (Blue)	You can use this seal to summon Nugget, the colossal combat cockerel. It increases your movement speed by 20.
+71186	Muffin (Green)	You can use this seal to summon Muffin, the chilling combat chicken. It increases your movement speed by 20.
+71187	Nugget (Green)	You can use this seal to summon Nugget, the colossal combat cockerel. It increases your movement speed by 20.
+71188	Magic Lolly (15g)	A lollipop made with secret ingredients, which gives you special bonuses.
+71192	Thunder	You can use this seal to summon your reindeer Donner. It increases your movement speed by 20 and experience gain by 30%.
+71193	Blitzen	You can use this seal to summon your reindeer Blitzen. It increases your movement speed by 20 and experience gain by 30%.
+71197	Nugget (Navy Blue)	You can use this seal to summon Nugget, the colossal combat cockerel.
+71198	Muffin (Pink)	You can use this seal to summon Muffin, the chilling combat chicken.
+71203	Warrior's Chest	Warrior Pack containing 10 randomly selected Skill Books.
+71204	Ninja's Chest	Ninja Pack containing 10 randomly selected Skill Books.
+71205	Sura's Chest	Surah pack containing 10 randomly selected Skill Books.
+71206	Shamano's Chest	Shaman Pack containing 10 randomly selected Skill Books.
+71221	Nirvana Dragon	The seal summons your Nirvana Dragon.
+71222	Samsara Dragon	The seal summons your Samsara Dragon.
+71223	Manny	This seal summons a mighty mammoth.
+71224	Ellie (15g)	This seal summons a mighty mammoth.
+71225	Spectral Steed (15g)	This seal summons your gleaming mount.
+71226	Equus Nocturnus (15g)	This seal summons your jet black mount.
+71227	Penumbral Steed	This seal summons the skeletal Penumbral Steed for riding.
+71228	Silverstar Steed	This seal summons the skeletal Silverstar Steed for riding.
+71229	Manny (30g)	The seal evokes a mighty 30-day mammoth.
+71231	White Lion (30g)	Animals with white fur are very rare and many cultures worship them, believing that they carry remarkable powers.
+71233	Spectral Steed (30g)	This seal summons your gleaming mount.
+71234	Magic Lolly (30g)	A lollipop made with secret ingredients, which gives you special bonuses.
+71235	Magic Lolly (Permanent)	A lollipop made with secret ingredients, which gives you special bonuses.
+71250	White Sphinx	This seal summons your wise white mount.
+71251	Stone Sphinx	This seal summons your stoic stony mount.
+71252	Drake	This Mount can only be found in the BattlePass.
+71253	Manny (Permanent)	The seal evokes a powerful permanent mammoth.
+71254	White Lion (Permanent)	Animals with white fur are very rare and many cultures worship them, believing that they carry remarkable powers.
+71255	Spectral Steed (Permanent)	This seal summons your gleaming mount.
+72001	Experience Ring (1h)	Dragon God will bless you with:	Right click to receive the blessing.
+72002	Experience Ring (3h)	Dragon God will bless you with:	Right click to receive the blessing.
+72006	Thief's Gloves (1h)	Dragon God will bless you with:	Right click to receive the blessing.
+72013	Fishing Book (30m)	Dragon God will bless you with:	Right click to receive the blessing.
+72014	Fishing Book (1h)	Dragon God will bless you with:	Right click to receive the blessing.
+72015	Fishing Book (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+72044	Book of the Leader (1h)	Dragon God will bless you with:	Right click to receive the blessing.
+72301	Blessing Scroll	Eliminates the risk of an item being destroyed when an improvement fails. In the case of failure, the item's quality is merely reduced by 1 instead.
+72309	Blacksmith Handbook	This book contains the soul of an old blacksmith. If it is used, it raises the chance of successfully improving an item.
+72310	Exorcism Scroll	Will lift the curse of the evil spirit, if learning is not successful. With the help of this scroll you can read another skill document on the same day.
+72314	Dragon Scroll	Eliminates the risk of an item being destroyed when an upgrade fails. In the case of failure, the item's quality is merely reduced by one level instead. In addition, the chance of a successful upgrade is increased by 10%.
+72319	Inventory Expansion	Use this item to expand your inventory.
+72320	Inventory Expansion	Use this item to expand your inventory.
+72725	Sun Elixir (L)	Automatically refills your HP. Contains 7,000,000 HP.
+72726	Sun Elixir (E)	Automatically refills your HP. Contains infinite HP.
+72729	Moon Elixir (L)	Automatically refills your SP. Contains 700,000 SP.
+72730	Moon Elixir (E)	Automatically refills your SP.Contains infinite SP.
+73001	Trendy Hairstyle (Red)	A trendy hairstyle, that gives you a striking appearance.
+73002	Trendy Hairstyle (Light)	A trendy hairstyle, that gives you a striking appearance.
+73003	Trendy Hairstyle (Blue)	A trendy hairstyle, that gives you a striking appearance.
+73004	Trendy Hairstyle (Brown)	A trendy hairstyle, that gives you a striking appearance.
+73005	Bandanna	Short hair that is tamed with a headband.
+73006	Bandanna	Short hair that is tamed with a headband.
+73007	Bandanna	Short hair that is tamed with a headband.
+73008	Bandanna	Short hair that is tamed with a headband.
+73009	Long Hair (Black)	An impressive hairstyle with magnificent, black hair.
+73010	Long Hair (Red)	An impressive hairstyle with magnificent, red hair.
+73011	Long Hair (Brown)	An impressive hairstyle with magnificent, brown hair.
+73012	Long Hair (Green)	An impressive hairstyle with magnificent, green hair.
+73251	Ponytail (Brown)	Long hair done up in a plait.
+73252	Ponytail (Green)	Long hair done up in a plait.
+73253	Ponytail (Blue)	Long hair done up in a plait.
+73254	Ponytail (Light)	Long hair done up in a plait.
+73255	Shoulder Length (Red)	A natural-looking shoulder-length hairstyle.
+73256	Shoulder Length (Brown)	A natural-looking shoulder-length hair cut.
+73257	Shoulder Length (Light)	A natural-looking shoulder-length hairstyle.
+73258	Shoulder Length (Purple)	A natural-looking shoulder-length hairstyle.
+73259	Short Hair (Red)	A short hairstyle that gives you a threatening look.
+73260	Short Hair (Blue)	A short hairstyle giving you a threatening look.
+73261	Short Hair (Black)	A short hairstyle that gives you a threatening look.
+73262	Short Hair (Blonde)	A short hairstyle that gives you a threatening look.
+73501	Sporty Haircut (Light)	An extravagant short hairstyle.
+73502	Sporty Haircut (Brown)	An extravagant short hairstyle.
+73503	Sporty Haircut (Blonde)	An extravagant short hairstyle.
+73504	Sporty Haircut (Green)	An extravagant short hairstyle.
+73505	Charisma Hair (White)	A charismatic hairstyle with long hair.
+73506	Charisma Hair (Red)	A charismatic hairstyle with long hair.
+73507	Charisma Hair (Black)	A charismatic hairstyle with long hair.
+73508	Charisma Hair (Purple)	A charismatic hairstyle with long hair.
+73509	Long Plait (White)	A traditional plait.
+73510	Long Plait (Blue)	A traditional plait.
+73511	Long Plait (Black)	A traditional plait.
+73512	Long Plait (Brown)	A traditional plait.
+73751	Elegant Hairstyle(Brown)	An elegant hairstyle with tied back hair.
+73752	Elegant Hairstyle(Black)	An elegant haircut with tied back hair.
+73753	Elegant Hairstyle (Blue)	An elegant hairstyle with tied back hair.
+73754	Elegant Hairstyle(Light)	An elegant hairstyle with tied back hair.
+73755	Med. Length Hair (Brown)	Elegant, straight hair.
+73756	Med. Length Hair (Black)	Elegant, straight hair.
+73757	Med.Length Hair (Blonde)	Elegant, straight hair.
+73758	Med.Length Hair (Purple)	Elegant, straight hair.
+73759	Old Hairstyle (Brown)	Long hair, worn in a traditional way.
+73760	Old Hairstyle (Light)	Long hair, worn in a traditional way.
+73761	Old Hairstyle (Purple)	Long hair, worn in a traditional way.
+73762	Old Hairstyle (Red)	Long hair, worn in a traditional way.
+74001	Trendy Hairstyle (Red)	A hairstyle giving you a distinctive look.
+74002	Trendy Hairstyle (Light)	A hairstyle giving you a distinctive look.
+74003	Trendy Hairstyle (Blue)	A hairstyle giving you a distinctive look.
+74004	Trendy Hairstyle (Brown)	A hairstyle giving you a distinctive look.
+74005	Headband (Red)	Short brown hair worn with a red headband
+74006	Headband (Brown plaid)	Short blonde hair with a bright headband
+74007	Headband (Blue)	Short blue hairstyle worn with a headband
+74008	Headband (Green plaid)	Short green hairstyle worn with a green headband
+74009	Long Hair (Black)	A hairstyle giving you a distinctive look
+74010	Long Hair (Red)	A hairstyle giving you a distinctive look
+74011	Long Hair (Brown)	A hairstyle giving you a distinctive look
+74012	Long Hair (Green)	A hairstyle giving you a distinctive look
+74013	Warrior Afro (Male)	Gives a male Warrior an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74014	Warrior Afro (Male)	Gives a male warrior an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74015	Warrior Samurai Helm (M)	Gives a male Warrior an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74016	Warrior Samurai Helm (M)	Gives a male Warrior an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74017	Warrior Fez (M)	A red headdress for male Warriors (duration: 7 days).
+74018	Warrior Keffiyeh (M)	A headdress for male Warriors (duration: 7 days).
+74019	Warrior Turban (M)	A headdress made from the best quality material for male Warriors (duration: 7 days).
+74020	Jack O' Warrior (m)	A mask for warriors in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+74251	Ponytail (Brown)	A popular women's hairstyle in which hair is tied up into a long plait
+74252	Ponytail (Green)	A hairstyle in which the hair has been tied up into a long plait
+74253	Ponytail (Blue)	Long blue hair that has been tied up into a plait - a popular women's hairstyle
+74254	Ponytail (Light)	Long fair hair that has been tied up into a plait - a very popular women's hairstyle
+74255	Shoulder Length (Red)	A hairstyle with a sassy, trendy look.
+74256	Shoulder Length (Brown)	A sassy, trendy hairstyle.
+74257	Shoulder Length (Light)	A sassy, trendy hairstyle.
+74258	Shoulder Length (Purple)	A sassy, trendy hairstyle.
+74259	Short Hair (Red)	Red fringed hair in the Ninja style
+74260	Short Hair (Blue)	Blue fringed hair in the Ninja style
+74261	Short Hair (Black)	Black, fringed hair in the Ninja style
+74262	Short Hair (Blonde)	Blonde, fringed hair in the Ninja style
+74263	Ninja Afro (f)	Gives a female Ninja an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74264	Ninja Afro (f)	Gives a female Ninja an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74265	Ninja Flower Hat (f)	Gives a female Ninja an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74266	Ninja Flower Hat (f)	Gives a female Ninja an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74267	Ninja Headscarf (f)	A face veil made from a very valuable material for female Ninjas (duration: 7 days).
+74268	Ninja Desert Scarf (f)	A desert scarf for female Ninjas made from a precious material (duration: 7 days).
+74269	Ninja Turban (f)	A turban for female Ninjas made from a very valuable material (duration: 7 days).
+74270	Jack O' Ninja (f)	A mask for female ninjas in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+74501	Sporty Hairstyle (White)	A short hairstyle that gives you a military look.
+74502	Sporty Hairstyle (Brown)	A short hairstyle that gives you a military look.
+74503	Sporty Hairstyle(Blonde)	A short hairstyle that gives you a military look.
+74504	Sporty Hairstyle (Green)	A short hairstyle that gives you a military look.
+74505	Charisma Hair (White)	A hairstyle accentuating a strong individual character.
+74506	Charisma Hair (Red)	A hairstyle accentuating a strong individual character.
+74507	Charisma Hair (Black)	A hairstyle accentuating a strong individual character.
+74508	Charisma Hair (Purple)	A hairstyle accentuating a strong individual character.
+74509	Long Plait (White)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74510	Long Plait (Blue)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74511	Long Plait (Black)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74512	Long Plait (Brown)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74513	Sura Afro (m)	Gives a male Sura an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74514	Sura Afro (m)	Gives a male Sura an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74515	Sura Samurai Helmet (M)	Gives a male Sura an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74516	Sura Samurai Helmet (m)	Gives a male Sura an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74517	Sura Fez (m)	A red headscarf for male Suras (duration: 7 days).
+74518	Sura Keffiyeh (m)	A headdress for male Suras (duration: 7 days).
+74519	Sura Turban (m)	A headdress made from the best quality material for male Suras (duration: 7 days).
+74520	Jack O' Sura (m)	A mask for the Sura in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+74521	Trendy Hairstyle (Grey)	A hairstyle giving you a distinctive look.
+74522	Headband	Short hair that is tamed with a headband.
+74523	Long Hair (Blonde)	An impressive hairstyle with magnificent, blonde hair.
+74524	Trendy Hairstyle (Gold)	Trendy hairstyle with golden hair and a hairband.
+74525	Headband (Black)	Short, tousled hair controlled with a headband.
+74526	Long Hair (Ruby Red)	Marvellous, ruby red hair.
+74527	Ponytail (Red)	Long hair done up in a plait.
+74528	Should Length (Aqua)	A discreet hairstyle with a blue headband.
+74529	Short Hair (Brown)	A hairstyle that gives you a threatening look.
+74530	Ponytail (Red)	Long red hair that has been tied up into a plait - a very popular women's hairstyle.
+74531	Shoulder Length (Black)	A hairstyle with a sassy, trendy look.
+74532	Short Hair (Grey)	A short hairstyle that gives you a threatening look.
+74533	Sporty Hairstyle (Black)	A short hairstyle that gives you a military look.
+74534	Charisma Hair (Blond)	A hairstyle accentuating a strong individual character.
+74535	Long Plait (Pink)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74536	Sporty Haircut (Purple)	An extravagant short hairstyle.
+74537	Charisma Hair (Blond)	A charismatic hairstyle with long hair.
+74538	Long Plait (Royal)	A plaited old-fashioned hairstyle that was symbolic of the rich.
+74539	Elegant Hairstyle (Pur.)	An elegant hairstyle with tied back hair.
+74540	Med. Length Hair (Dark)	An elegant Shaman hairstyle.
+74541	Old Hairstyle (White)	Long hair, worn in a traditional way.
+74542	Elegant Hairstyle (Red)	An elegant hairstyle pinned up with a butterfly hairpin.
+74543	Med. Length Hair (White)	Elegant, straight hair.
+74544	Old Hairstyle (Black)	A feminine hairstyle with long, layered hair.
+74545	Tribal Plaits+ (Red)	Plaits decorated with red wooden beads indicating tribal membership.
+74546	Tribal Plaits+ (Yellow)	Plaits decorated with yellow wooden beads indicating tribal membership.
+74547	Tribal Plaits+ (Blue)	Plaits decorated with blue wooden beads indicating tribal membership.
+74548	Tribal Plaits+ (Purple)	Plaits decorated with purple wooden beads indicating tribal membership.
+74549	Tribal Plaits+ (Green)	Plaits decorated with green wooden beads indicating tribal membership.
+74550	Lupine Crown+ (Gold)	Decorated headgear with traditional matching hair jewellery.
+74551	Lupine Crown+ (Black)	Decorated headgear with traditional matching hair jewellery.
+74552	Lupine Crown+ (Red)	Decorated headgear with traditional matching hair jewellery.
+74553	Lupine Crown+ (Blue)	Decorated headgear with traditional matching hair jewellery.
+74554	Lupine Crown+ (White)	Decorated headgear with traditional matching hair jewellery.
+74555	Wolf's Cowl+ (Gold)	Elaborate head and temple armour with traditional hair jewellery.
+74556	Wolf's Cowl+ (Black)	Elaborate head and temple armour with traditional hair jewellery.
+74557	Wolf's Cowl+ (Red)	Elaborate head and temple armour with traditional hair jewellery.
+74558	Wolf's Cowl+ (Blue)	Elaborate head and temple armour with traditional hair jewellery.
+74559	Wolf's Cowl+ (Green)	Elaborate head and temple armour with traditional hair jewellery.
+74751	Elegant Hairstyle(Brown)	An elegant hairstyle pinned up with a butterfly hairpin.
+74752	Elegant Hairstyle(Black)	An elegant hairstyle pinned up with a butterfly hairpin.
+74753	Elegant Hairstyle (Blue)	An elegant hairstyle pinned up with a butterfly hairpin.
+74754	Elegant Hairstyle(Light)	An elegant hairstyle pinned up with a butterfly hairpin.
+74755	Med.Length Hair (Brown)	An elegant Shaman hairstyle.
+74756	Med. Length Hair (Black)	An elegant Shaman hairstyle.
+74757	Med.Length Hair (Blonde)	An elegant Shaman hairstyle.
+74758	Med.Length Hair (Purple)	An elegant Shaman hairstyle.
+74759	Old Hairstyle (Brown)	A feminine hairstyle with long, layered hair.
+74760	Old Hairstyle (Blonde)	A feminine hairstyle with long, layered hair.
+74761	Old Hairstyle (Purple)	A feminine hairstyle with long, layered hair.
+74762	Old Hairstyle (Red)	A feminine hairstyle with long, layered hair.
+74763	Shaman Afro (Female)	Gives a female Shaman an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74764	Shaman Afro (Female)	Gives a female Shaman an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74765	Shaman Flower Hat (F)	Gives a female Shaman an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+74766	Shaman Flower Hat (F)	Gives a female Shaman an SP bonus of 1%. Replaces existing hairstyle (duration 7 days).
+74767	Shaman Headscarf (F)	A face veil made from a very valuable material for female Shamans (duration: 7 days).
+74768	Shaman Desert Scarf (F)	A desert scarf for female Shamans made from a precious material (duration: 7 days).
+74769	Shaman Turban (F)	A turban made from a very valuable material for female Shamans (duration: 7 days).
+74770	Jack O' Shaman (f)	A mask for female shamans in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+75001	Trendy Hairstyle (Red)	Trendy hairstyle with red hair and a hairband.
+75002	Trendy Hairstyle (Light)	Trendy hairstyle with light coloured hair and a hairband.
+75003	Trendy Hairstyle (Blue)	Trendy hairstyle with blue hair and a hairband.
+75004	Trendy Hairstyle (Brown)	Trendy hairstyle with brown hair and a hairband.
+75005	Headband (Brown)	Short, tousled hair controlled with a headband
+75006	Headband (Blonde)	Short, tousled hair controlled with a headband
+75007	Headband (Blue)	Short, tousled hair controlled with a headband
+75008	Headband (Green)	Short, tousled hair controlled with a headband
+75009	Long Hair (Black)	Marvellous, black hair
+75010	Long Hair (Red)	Marvellous, red hair
+75011	Long Hair (Brown)	Marvellous, brown hair
+75012	Long Hair (Green)	Marvellous, green hair
+75013	Warrior Afro (Female)	Gives a female Warrior an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75014	Warrior Afro (Female)	Gives a female Warrior an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75015	Warrior Flower Hat (F)	Gives a female Warrior an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75016	Warrior Flower Hat (F)	Gives a female Warrior an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75017	Warrior Headscarf (F)	A face veil made from a very valuable material for female Warriors (duration: 7 days).
+75018	Warrior Desert Scarf (F)	A desert scarf for female warriors from a precious material (duration: 7 days).
+75019	Warrior Turban (F)	A headdress made from the best quality material for female Warriors (duration: 7 days).
+75020	Jack O' Warrior (f)	A mask for female warriors in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+75201	Ponytail (Brown)	Brown hair with a nice, long ponytail
+75202	Ponytail (Green)	Green hair with a nice, long ponytail
+75203	Ponytail (Blue)	Blue hair with a nice, long ponytail
+75204	Ponytail (Light)	Grey hair with a nice, long ponytail
+75205	Shoulder Length (Red)	A discreet hairstyle with a white headband.
+75206	Shoulder Length (Brown)	A discreet hairstyle with a green headband.
+75207	Shoulder Length (Light)	A discreet hairstyle with a light headband.
+75208	Shoulder Length (Purple)	A discreet hairstyle with a red headband.
+75209	Short Hair (Red)	A hairstyle that gives you a sinister look
+75210	Short Hair (Blue)	A hairstyle that gives you a sinister look
+75211	Short Hair (Black)	A hairstyle that gives you a sinister look
+75212	Short Hair (Blonde)	A hairstyle that gives you a sinister look
+75213	Ninja Afro (m)	Gives a male Ninja an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75214	Ninja Afro (m)	Gives a male Ninja an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75215	Ninja Samurai Helmet (m)	Gives a male Ninja an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75216	Ninja Samurai Helmet (m)	Gives a male Ninja an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75217	Ninja Fez (m)	A red headdress for male Ninjas (duration: 7 days).
+75218	Ninja Keffiyeh (m)	A headdress for male Ninjas. Protects against desert storms (duration: 7 days).
+75219	Ninja Turban (m)	A headdress made from the best quality material for male Ninjas (duration: 7 days).
+75220	Jack O' Ninja (m)	A mask for ninjas in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+75401	Sporty Hairstyle (Light)	An extravagant hairstyle that is popular with female Suras
+75402	Sporty Hairstyle (Brown)	An extravagant hairstyle that is popular with female Suras
+75403	Sporty Hairstyle(Blonde)	An extravagant hairstyle that is popular with female Suras
+75404	Sporty Hairstyle (Green)	An extravagant hairstyle that is popular with female Suras
+75405	Charisma Hair (White)	Long, snow-white hair, that makes you look opinionated
+75406	Charisma Hair (Red)	Long, red hair that makes you look opinionated
+75407	Charisma Hair (Black)	Long, jet-black hair, that makes you look opinionated
+75408	Charisma Hair (Purple)	Long, purple hair, that makes you look opinionated
+75409	Long Plait (White)	Plait
+75410	Long Plait (Blue)	Plait
+75411	Long Plait (Black)	Plait
+75412	Long Plait (Brown)	Plait
+75413	Sura Afro (f)	Gives a female Sura an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75414	Sura Afro (f)	Gives a female Sura an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75415	Sura Flower Hat (f)	Gives a female Sura an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75416	Sura Flower Hat (f)	Gives a female Sura an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75417	Sura Headscarf (f)	A face veil made from a very valuable material for female Suras (duration: 7 days).
+75418	Sura Desert Scarf (f)	A desert scarf for female Suras made from a precious material (duration: 7 days).
+75419	Sura Turban (f)	A headdress made from the best quality material for female Suras (duration: 7 days).
+75420	Jack O' Sura (f)	A mask for female Sura in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+75601	Elegant Hairstyle(Brown)	A trendy trim giving Shamans a strong expression
+75602	Elegant Hairstyle(Black)	A trendy trim giving Shamans a strong expression
+75603	Elegant Hairstyle (Blue)	A trendy trim giving Shamans a strong expression
+75604	Elegant Hairstyle(Light)	A trendy trim that gives Shamans a strong expression
+75605	Med. Length Hair (Brown)	Smooth, brown hair
+75606	Med. Length Hair (Black)	Straight, black hair
+75607	Med.Length Hair (Blonde)	Straight, light coloured hair
+75608	Med.Length Hair (Purple)	Straight, purple hair
+75609	Old Hairstyle (Brown)	Old Warrior hairstyle. The brown hair is tied up in a plait
+75610	Old Hairstyle (Light)	Old Warrior hairstyle. The light coloured hair is tied up in a plait
+75611	Old Hairstyle (Purple)	Old Warrior hairstyle. The purple hair is tied up in a plait
+75612	Old Hairstyle (Red)	Old Warrior hairstyle. The red hair is tied up in a plait
+75613	Shaman Afro (Male)	Gives a male Shaman an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75614	Shaman Afro (Male)	Gives a male Shaman an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75615	Shaman Samurai Helm (M)	Gives a male Shaman an HP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75616	Shaman Samurai Helm (M)	Gives a male Shaman an SP bonus of 1%. Replaces existing hairstyle (duration: 7 days).
+75617	Shaman Fez (M)	A red headdress for male Shamans (duration: 7 days).
+75618	Shaman Keffiyeh (M)	A headdress for male Shamans. Protects against desert storms (duration: 7 days).
+75619	Shaman Turban (M)	A headdress made from the best quality material for male Shamans (duration: 7 days).
+75620	Jack O' Shaman (m)	A mask for shamans in the shape of a pumpkin. Attributes and duration are set at random. It replaces any existing hairstyles.
+76001	Status Reset Document	The use of this item allows you to redistribute your status points. You can use it to steer the development of your character into a new direction. Not tradeable.
+76002	Shrunken Head	This demon's Shrunken Head opens the seal to the 3rd floor of the Devil's Catacomb. Not tradeable.
+76007	Bravery Cape	Ancient Warriors showed off their bravery by wearing a colourful cape with which they attracted the attention of monsters. Not tradeable.
+76016	Blessing Scroll	Eliminates the risk of an item being destroyed when an improvement fails. In the case of failure, the item's quality is merely reduced by 1 instead. Not tradeable.
+76023	Green Magic	Removes the bonuses from one of your items and adds new ones. Can only be used on weapons and armour up to level 40. Item from the level chest, not tradeable.
+76025	Wind Shoes	With this item you will be able to face the dungeon of the temple of Ochao.
+79501	Archer's Quiver	A quiver which provides you with an inexhaustible supply of arrows for 24 hours. No reduction to damage dealt by distance shots.
+79502	Archer's Quiver	A quiver which provides you with an inexhaustible supply of arrows for 7 days. No reduction to damage dealt by distance shots.
+79503	Archer's Quiver	A quiver which provides you with an inexhaustible supply of arrows. No reduction to damage dealt by distance shots.
+79504	Archer's Quiver	A quiver which provides you with an inexhaustible supply of arrows. No reduction to damage dealt by distance shots.
+80019	Yellow thin fabric	A Shoulder Sash is made from this material.
+80022	Red thin fabric	A Shoulder Sash is made from this material.
+80023	Light blue thin fabric	A Shoulder Sash is made from this material.
+80024	Green thin fabric	A Shoulder Sash is made from this material.
+80025	Purple thin fabric	A Shoulder Sash is made from this material.
+80026	Orange thin fabric	A Shoulder Sash is made from this material.
+80027	Blue thin fabric	A Shoulder Sash is made from this material.
+84999	Enchant Costumes Stole	Remove bonuses from one of your stole costumes and apply new ones. The variables are random and are based on the grade of the stole.
+85001	Lord Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85002	Lord Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85003	Lord Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85004	Lord Sash (custom)	This sash takes 11~25% of the bonuses from the weapon or armour that you use for absorption.
+85005	Master Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85006	Master Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85007	Master Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85008	Master Sash (custom)	This sash takes 11~25% of the bonuses from the weapon or armour that you use for absorption.
+85011	Sovereign Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85012	Sovereign Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85013	Sovereign Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85014	Sovereign Sash (custom)	This sash takes 11~25% of the bonuses from the weapon or armour that you use for absorption.
+85015	Royal Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85016	Royal Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85017	Royal Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85018	Royal Sash (custom)	This sash takes 11~25% of the bonuses from the weapon or armour that you use for absorption.
+85019	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85020	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85021	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85022	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85023	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85024	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85025	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85026	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85027	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85028	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85029	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85030	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85031	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85032	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85033	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85034	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85035	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85036	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85037	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85038	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85039	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85040	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85041	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85042	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85043	Costumes Lord Sash (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85044	Costumes Lord Sash (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85045	Costumes Lord Sash (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85046	Costumes Lord Sash (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85047	Costumes Sash di Yu (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85048	Costumes Sash di Yu (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85049	Costumes Sash di Yu (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85050	Costumes Sash di Yu (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85051	Costumes Sash di Mao (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85052	Costumes Sash di Mao (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85053	Costumes Sash di Mao (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85054	Costumes Sash di Mao (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85055	Costumes Sash Reale (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85056	Costumes Sash Reale (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85057	Costumes Sash Reale (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85058	Costumes Sash Reale (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85059	Costumes Sash Principe (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85060	Costumes Sash Principe (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85061	Costumes Sash Principe (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85062	Costumes Sash Principe (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85063	Costumes Sash Maestro (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85064	Costumes Sash Maestro (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85065	Costumes Sash Maestro (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85066	Costumes Sash Maestro (custom)	This item is a stole costume, which provides additional bonuses to your character.
+85067	Costumes Sash di Chou (basic)	This item is a stole costume, which provides additional bonuses to your character.
+85068	Costumes Sash di Chou (fine)	This item is a stole costume, which provides additional bonuses to your character.
+85069	Costumes Sash di Chou (noble)	This item is a stole costume, which provides additional bonuses to your character.
+85070	Costumes Sash di Chou(custom)	This item is a stole costume, which provides additional bonuses to your character.
+85071	Chou Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85072	Chou Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85073	Chou Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85074	Chou Sash (custom)	This sash takes 11-25% of the bonuses from the weapon or armour that you use for absorption.
+85075	Mao Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85076	Mao Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85077	Mao Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85078	Mao Sash (custom)	This sash takes 11-25% of the bonuses from the weapon or armour that you use for absorption.
+85079	You Sash (basic)	This sash takes 1% of the bonuses from the weapon or armour that you use for absorption.
+85080	You Sash (fine)	This sash takes 5% of the bonuses from the weapon or armour that you use for absorption.
+85081	You Sash (noble)	This sash takes 10% of the bonuses from the weapon or armour that you use for absorption.
+85082	You Sash (custom)	This sash takes 11-25% of the bonuses from the weapon or armour that you use for absorption.
+85083	Wings of the Devil	This item is a stole costume, which provides additional bonuses to your character.
+86050	Reinforces Talismans	It will add a new bonus to your talisman (up to a maximum of 4 bonuses).
+86051	Enchant Talismans	Removes bonuses from the talisman and applies new ones. The variables are random.
+86052	Strengthens Talismans	Legendary sphere, If a talisman already has 4 attributes, this allows you to add the last bonus.
+86053	Shard of Yellow Pearl	You can change 10 Yellow Pearl Shards to 1 Yellow Pearl.	Right click to change.
+86054	Shard of Green Pearl	You can change 10 Green Pearl Shards for 1 Green Pearl.	Right click to change.
+86055	Shard of Purple Pearl	You can change 10 Purple Pearl Shards to 1 Purple Pearl.	Right click to change.
+86056	Yellow Pearl	A very rare pearl that is used to evolve the pet.
+86057	Green Pearl	A very rare pearl that is used to evolve the pet.
+86058	Purple Pearl	A very rare pearl that is used to evolve the pet.
+86060	Enchant Zodiac	Removes bonuses from your Zodiac weapon and armor and applies new ones.
+86062	Enchant Alchemy	Remove bonuses from one of your dragon stones and apply new ones.
+86066	Piece Of Magic Stone	With this item, going to the blacksmith, you can buy the Magic Stone.
+86067	Rough Talisman	This item is used for the improvement of talismans.
+86071	Protein Snack (2g)	With this bite you can revive or increase the lifespan of your pet. You will receive a new duration of: 2g.	Drag the bite over the pet icon to use it.
+86072	Protein Snack (4g)	With this bite you can revive or increase the lifespan of your pet. You will receive a new duration of: 4g.	Drag the bite over the pet icon to use it.
+86073	Protein Snack (8g)	With this bite you can revive or increase the lifespan of your pet. You will receive a new duration of: 6g.	Drag the bite over the pet icon to use it.
+86074	Protein Snack Divine (Permanent)	With this bite you can revive or increase the lifespan of your pet. It will receive a new infinite duration.	Drag the bite over the pet icon to use it.
+86075	Special Snack	Through this bite you can improve a bonus of your pet's choice.	Drag the bite over the pet icon to use it.
+86076	Reset Enable Pet	This item allows you to forget a skill of your pet. To use it you need to have your pet summoned.
+86077	Reset Enable Pet (S)	This item allows you to forget all your pet's abilities. To use it you need to have your pet summoned.
+86080	Remove Bonus Stole	Through this item you can remove the bonuses of your stole.	Drag the item over the stole to remove its bonuses.
+88001	Support Shamy Lord Sash	This item can only be worn by the supporting shamy.
+88005	Support Shamy Red Sash	This item can only be worn by the supporting shamy.
+88009	Support Shamy Black Sash	This item can only be worn by the supporting shamy.
+88010	Monkey Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88011	Monkey Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88012	Spider Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88013	Spider Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88014	Razador Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88015	Razador Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88016	Nemere Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88017	Nemere Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88018	Dragon Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88019	Dragon Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88020	Meley Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88021	Meley Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88022	Azrael Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88023	Azrael Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88024	Fat Executor Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88025	Fat Mini Executor Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88026	Baashido baby Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88027	Baashido baby Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88028	Nessie Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88029	Nessie Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88030	Exedyar Costumes (7g)	This item provides a special aesthetic for your pet for 7 days.
+88031	Exedyar Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88035	Support Shamy white Sash	This item can only be worn by the supporting shamy.
+88039	Support Shamy Sash by Chou	This item can only be worn by the supporting shamy.
+88110	Lion Costumes (7g)	This item gives your mount a special aesthetic for 7 days.
+88111	Lion Costumes (Permanent)	This item provides a special aesthetic to your mount permanently.
+88112	Dragon Costumes (7g)	This item gives your mount a special aesthetic for 7 days.
+88113	Dragon Costumes (Permanent)	This item provides a special aesthetic to your mount permanently.
+88114	Elephant Costumes (7g)	This item gives your mount a special aesthetic for 7 days.
+88115	Elephant Costumes (Permanent)	This item provides a special aesthetic to your mount permanently.
+88116	Panda Costumes (7g)	This item gives your mount a special aesthetic for 7 days.
+88117	Panda Costumes (Permanent)	This item provides a special aesthetic to your mount permanently.
+88210	Black Weapon Effect I (7g)	This item provides a special aesthetic to your character.
+88211	Black Weapon Effect I (Permanent)	This item provides a special aesthetic to your character.
+88212	Black Armor Effect I (7g)	This item provides a special aesthetic to your character.
+88213	Black Armor Effect I (Permanent)	This item provides a special aesthetic to your character.
+88214	Pink Weapon Effect I (7g)	This item provides a special aesthetic to your character.
+88215	Pink Weapon Effect I (Permanent)	This item provides a special aesthetic to your character.
+88216	Pink Armor Effect I (7g)	This item provides a special aesthetic to your character.
+88217	Pink Armor Effect I (Permanent)	This item provides a special aesthetic to your character.
+88218	Orange Weapon Effect I (7g)	This item provides a special aesthetic to your character.
+88219	Orange Weapon Effect I (Permanent)	This item provides a special aesthetic to your character.
+88220	Orange Armor Effect I (7g)	This item provides a special aesthetic to your character.
+88221	Orange Armor Effect I (Permanent)	This item provides a special aesthetic to your character.
+88222	Green Weapon Effect I (7g)	This item provides a special aesthetic to your character.
+88223	Green Weapon Effect I (Permanent)	This item provides a special aesthetic to your character.
+88224	Green Armor Effect I (7g)	This item provides a special aesthetic to your character.
+88225	Green Armor Effect I (Permanent)	This item provides a special aesthetic to your character.
+88226	Purple Weapon Effect II (7g)	This item provides a special aesthetic to your character.
+88227	Purple Weapon Effect II (Permanent)	This item provides a special aesthetic to your character.
+88228	Purple Armor Effect II (7g)	This item provides a special aesthetic to your character.
+88229	Purple Armor Effect II (Permanent)	This item provides a special aesthetic to your character.
+88230	Blue Weapon Effect II (7g)	This item provides a special aesthetic to your character.
+88231	Blue Weapon Effect II (Permanent)	This item provides a special aesthetic to your character.
+88232	Blue Armor Effect II (7g)	This item provides a special aesthetic to your character.
+88233	Blue Armor Effect II (Permanent)	This item provides a special aesthetic to your character.
+88234	Pink Weapon Effect II (7g)	This item provides a special aesthetic to your character.
+88235	Pink Weapon Effect II (Permanent)	This item provides a special aesthetic to your character.
+88236	Pink Armor Effect II (7g)	This item provides a special aesthetic to your character.
+88237	Pink Armor Effect II (Permanent)	This item provides a special aesthetic to your character.
+88238	White Weapon Effect II (7g)	This item provides a special aesthetic to your character.
+88239	White Weapon Effect II (Permanent)	This item provides a special aesthetic to your character.
+88240	White Armor Effect II (7g)	This item provides a special aesthetic to your character.
+88241	White Armor Effect II (Permanent)	This item provides a special aesthetic to your character.
+88242	Green Weapon Effect III (7g)	This item provides a special aesthetic to your character.
+88243	Green Weapon Effect III (Permanent)	This item provides a special aesthetic to your character.
+88244	Green Armor Effect III (7g)	This item provides a special aesthetic to your character.
+88245	Green Armor Effect III (Permanent)	This item provides a special aesthetic to your character.
+88246	Red Weapon Effect III (7g)	This item provides a special aesthetic to your character.
+88247	Red Weapon Effect III (Permanent)	This item provides a special aesthetic to your character.
+88248	Red Armor Effect III (7g)	This item provides a special aesthetic to your character.
+88249	Red Armor Effect III (Permanent)	This item provides a special aesthetic to your character.
+88250	Blue Weapon Effect III (7g)	This item provides a special aesthetic to your character.
+88251	Blue Weapon Effect III (Permanent)	This item provides a special aesthetic to your character.
+88252	Light Blue Armor Effect III (7g)	This item provides a special aesthetic to your character.
+88253	Light Blue Armor Effect III (Permanent)	This item provides a special aesthetic to your character.
+88254	Yellow Weapon Effect III (7g)	This item provides a special aesthetic to your character.
+88255	Yellow Weapon Effect III (Permanent)	This item provides a special aesthetic to your character.
+88256	Yellow Armor Effect III (7g)	This item provides a special aesthetic to your character.
+88257	Yellow Armor Effect III (Permanent)	This item provides a special aesthetic to your character.
+88902	Kashmir Bundle	This bundle allows you to decorate your private shop in a unique way.
+88910	Orange Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88911	Yellow Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88912	Blue Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88913	Red Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88914	Green Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88915	Violet Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88916	Blue Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88917	Orange Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88918	White Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88919	Yellow Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88920	Red Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88921	Green Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88922	Critical Struggle	Dragon God will bless you with:	Right click to receive the blessing.
+88923	Piercing Fight	Dragon God will bless you with:	Right click to receive the blessing.
+88924	Dragon God Attack	Dragon God will bless you with:	Right click to receive the blessing.
+88925	Defense of the Dragon God	Dragon God will bless you with:	Right click to receive the blessing.
+88926	Dragon God intelligence	Dragon God will bless you with:	Right click to receive the blessing.
+88927	Life Dragon God	Dragon God will bless you with:	Right click to receive the blessing.
+88928	Speed Attack Elixir	Dragon God will bless you with:	Right click to receive the blessing.
+88929	Pozione Verde(G) (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88930	Blue Dew (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88931	Orange Dew (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88932	Yellow Dew (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88933	Red Dew (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88934	Green Dew (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88935	Critical Struggle (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88936	Piercing Fight (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88937	Dragon God Attack (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88938	Defense of the Dragon God (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88939	Dragon God intelligence (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88940	Life Dragon God (Permanent)	Dragon God will bless you with:	Right click to receive the blessing.
+88941	Blue Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88942	Orange Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88943	Yellow Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88944	Red Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88945	Green Dew	Dragon God will bless you with:	Right click to receive the blessing.
+88946	Orange Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88947	Yellow Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88948	Blue Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88949	Red Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88950	Green Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88951	Violet Ampoule	Dragon God will bless you with:	Right click to receive the blessing.
+88952	Critical Struggle	Dragon God will bless you with:	Right click to receive the blessing.
+88953	Piercing Fight	Dragon God will bless you with:	Right click to receive the blessing.
+88954	Dragon God Attack	Dragon God will bless you with:	Right click to receive the blessing.
+88955	Defense of the Dragon God	Dragon God will bless you with:	Right click to receive the blessing.
+88956	Dragon God intelligence	Dragon God will bless you with:	Right click to receive the blessing.
+88957	Life Dragon God	Dragon God will bless you with:	Right click to receive the blessing.
+88958	Soul Parchment	With this scroll you make your soul evolve one level
+88959	Enchant Item	It removes the bonuses from one of your items and adds more
+88960	Special Snack	Through this bite you can improve a bonus of your pet's choice.	Drag the bite over the pet icon to use it.
+88961	Enchant Alchemy	Remove bonuses from one of your dragon stones and apply new ones
+88962	Enchant Costumes Stole	Remove bonuses from one of your stole costumes and apply new ones. The variables are random and are based on the grade of the stole
+88963	Enchant Costumes	Remove bonuses from one of your costumes and apply new ones
+88964	Strengthens Talismans	Legendary sphere, If a talisman already has 4 attributes this allows you to add the last bonus.
+88965	Enchant Talismans	Removes bonuses from the talisman and applies new ones. The variables are random
+88966	Reinforces Talismans	It will add a new bonus to your talisman (up to a maximum of 4 bonuses).
+88967	Pet Chest	Contains pet eggs	Right click to choose your pet.
+88968	Potion of Beauty	This Beauty Potion is used to purchase Pet and Mount skins from an NPC.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Zeus stone	This item allows you to reset the cooldown time of the runes dungeon.
+89101	Ticket of the Runes	This ticket grants you access to the runes dungeon.
+89102	Rune soul	You can exchange 10 rune souls for 1 Divine Key.	Right click to change.
+89103	Divine key	This key is used in mode 1 of the rune dungeon. It is also used on the top floor of the runes dungeon.	Right-click to use it in mode 1. Drag on the Rune Stone to destroy it on the top floor of the Rune Dungeon.
+89104	Key of the Green Orcs	This item is used to unlock a seal in the Orc Dungeon.
+89105	Key of the Black Orcs	This item is used to unlock the last bridge in the Orc Dungeon.
+89106	Ticket of the Orcs	This item is used to enter the Orc Dungeon.
+89107	Ticket of the Runes	This ticket grants you access to the runes dungeon.
+89108	Earrings of Harmony (2h)	Increase the chance of a piercing hit for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89109	Love Bracelet (2h)	Increases the collection of experience points during battle for both spouses by a maximum of 20% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89110	Earrings of Love (2h)	Increase the chance of critical hits for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89111	Harmony Bracelet (2h)	Reduces the attack power of enemy monsters on both spouses by a maximum of 15% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89112	Necklace of Love (2h)	Increases the attack power for both spouses by a maximum of 40 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89113	Necklace of Harmony (2h)	Increases defence of both spouses by a maximum of 30 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89114	Earrings of Harmony (8h)	Increase the chance of a piercing hit for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89115	Love Bracelet (8h)	Increases the collection of experience points during battle for both spouses by a maximum of 20% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89116	Earrings of Love (8h)	Increase the chance of critical hits for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89117	Harmony Bracelet (8h)	Reduces the attack power of enemy monsters on both spouses by a maximum of 15% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89118	Necklace of Love (8h)	Increases the attack power for both spouses by a maximum of 40 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89119	Necklace of Harmony (8h)	Increases defence of both spouses by a maximum of 30 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89120	Earrings of Harmony (Permanent)	Increase the chance of a piercing hit for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89121	Love Bracelet (Permanent)	Increases the collection of experience points during battle for both spouses by a maximum of 20% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89122	Earrings of Love (Permanent)	Increase the chance of critical hits for both spouses by a maximum of 8% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89123	Harmony Bracelet (Permanent)	Reduces the attack power of enemy monsters on both spouses by a maximum of 15% for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89124	Necklace of Love (Permanent)	Increases the attack power for both spouses by a maximum of 40 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+89125	Necklace of Harmony (Permanent)	Increases defence of both spouses by a maximum of 30 for 3 hours, if worn by one of them. The effect of the item depends on the percentage of love points. If a couple has, for example, 50% love points, the maximum effect is reduced by half.
+90000	Certificate of Reversal	Use the Certificate of Reversal to remove bonuses from a Shoulder Sash.
+164401	Magic Of The Biologist	With this item it is possible to reset the bonus of some biologist missions.
+164402	Papyrus Chaegirab	With this papyrus it is possible to buy items from the Biologist.
+164406	Rainbow Elixir	This item allows you to change the color of one of your skills.
+164407	Shining potion	This Potion is used to purchase weapon and armor effects from an NPC.
+164408	Fruit of the Gods	Sweet tasting fruit from the Dragon God Garden. It is used to refine an item of equipment.
+164409	Elixir of the Gods	The bottle contains a mysterious luminous liquid. It is used to refine an item of equipment.
+164410	Soul of Truth	A good soul forever imprisoned in a glass sphere. It is used to refine an item of equipment.
+164411	Book of Truth	Powerful volume whose title seems to sparkle. It is used to refine an item of equipment.
+164412	Divine Flower	Sacred flower from the Dragon God Garden. It is used to refine an item of equipment.
+164413	Piece of Sword Goad	With this item it is possible to craft Poisonous Sword from +9 to Epic rank.
+164414	Piece of the Demon's Blade	With this item it is possible to craft Lion Sword from +9 to Epic rank.
+164415	Piece of Soul Stealing Blade	With this item it is possible to craft Grudge Sword from +9 to Epic rank.
+164416	Blue Dragon Bow Piece	With this item it is possible to craft Crow Steel Bow from +9 to Epic rank.
+164417	Fan Piece of Ecstasy	With this item it is possible to craft Bamboo Bell from +9 to Epic rank.
+164418	Piece of Siamese Knife	With this item it is possible to craft Devil Wing Chakram from +9 to Epic rank.
+164419	Shining Potion	This Potion is used to purchase weapon and armor effects from an NPC.
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min

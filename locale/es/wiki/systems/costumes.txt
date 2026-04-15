@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Transferir			Encantar disfraz		Especial C.E 5%		  Especial C.E+ 10%			Especial B.R.
+
+[X_PADDING=12]Por cada disfraz que compres del NPC "Confucio", de lo contrario, puedes comprarlo en la Tienda de artículos o el Pase de batalla tendrá 3
+[X_PADDING=12]Bono normal con aleatorio %(porcentaje) 
+[X_PADDING=12]La bonificación normal se puede cambiar con un disfraz de Encantar.
+[X_PADDING=12]Es posible agregar solo 2 bonificaciones especiales para cada disfraz, los elementos que requiere son 2:
+[X_PADDING=20]1. Encantamiento de traje especial (max 5%)
+[X_PADDING=20]2. Encantamiento de traje especial+ (max 10%)
+
+[X_PADDING=12] Las bonificaciones que se pueden insertar con el encantamiento de traje especial son:
+[X_PADDING=20]- Fuerte contra las piedras de Metin
+[X_PADDING=20]- Fuerte contra los monstruos
+[X_PADDING=20]- Fuerza contra los jefes
+[X_PADDING=20]- Resistencia contra medios humanos
+[X_PADDING=20]- Fuerza contra medios humanos
+
+[X_PADDING=12](El bono especial se puede eliminar con un bono especial Eliminar)
+
+[X_PADDING=12]Puedes transferir bonificaciones de un disfraz a otro usando el NPC "Theowahdan" y teniendo el objeto 
+[X_PADDING=12]Transferencia de bonificación de vestuario.
+
+[X_PADDING=12]Cuando el panel de la aduana de transferencia de bonificación esté abierto, aparecerá 4 ranuras:
+[X_PADDING=20]1.A la izquierda se va a poner el disfraz viejo.
+[X_PADDING=20]2.En la parte superior se pondrá l'item "Traje de bonificación de transferencia".
+[X_PADDING=20]3.A la derecha va el disfraz al que quieres transferir el bono.
+[X_PADDING=20]4.En la parte inferior puedes ver el nuevo disfraz con un bono antiguo.
+
+[X_PADDING=12]Atención si tu antiguo disfraz tiene un bono especial al transferir el bono especial
+[X_PADDING=12]van a ser quitados y el viejo traje destruido.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DISFRAZES ADICIONALES QUE PUEDEN SER EN VARIOS TIPOS DE TRAJES
+
+[X_PADDING=12]  Disfraces:
+[X_PADDING=20]- Max. HP +2000
+[X_PADDING=20]- Max. SP +800
+[X_PADDING=20]- El daño será absorbido por SP 8%
+[X_PADDING=20]-  El daño será absorbido por HP 8%
+[X_PADDING=20]- Valor de ataque +50 
+[X_PADDING=20]- Probabilidad de bonificación de EXP 15%
+[X_PADDING=20]- Probabilidad de caída de objeto doble 15%
+
+[X_PADDING=12]  Peinados:
+[X_PADDING=20]- Velocidad de ataque +8%
+[X_PADDING=20]- Probabilidad de golpes criticos +8%
+[X_PADDING=20]- Probabilidad de golpes penetrantes +8%
+[X_PADDING=20]- Resistencia contra medios humanos 10%
+[X_PADDING=20]- Probabilidad de doble caída de Yang +15%
+[X_PADDING=20]- HP Regeneración  +15%
+[X_PADDING=20]- SP Regeneración +15%
+
+[X_PADDING=12]  Atuendo de arma:
+[X_PADDING=20]- Inteligencia +10
+[X_PADDING=20]- Fuerza+10
+[X_PADDING=20]- Agilidad +10
+[X_PADDING=20]- Vitalidad +10
+[X_PADDING=20]- Fuerza contra los nomuertos  +15%
+[X_PADDING=20]- Fuerza contra demonios +15%
+[X_PADDING=20]- Fuerza contra orcos    +15%
+[X_PADDING=20]- Fuerza contra animales +15%
+[X_PADDING=20]- Fuerza contra medio humanos +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

@@ -1,0 +1,1349 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	Diese Truhe enthalt einen zufalligen +5-Geiststein.
+49021	Spirit Sword (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49022	Spirit Dagger (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49023	Spirit Bow (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49024	Spirit Glaive (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49025	Spirit Bell (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49026	Spirit Fan (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49027	Spirit Costume (F) (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+49028	Spirit Costume (M) (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+85112	Spirit Stole (inf)	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+71056	Helper Scroll	Dieser Gegenstand ist nur für diejenigen verfugbar, die die Rolle des Helfers haben.
+89001	Gutschein	Gutschein im Wert von 1 Drachenmünzen.
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+89002	Gutschein	Gutschein im Wert von 2 Drachenmünzen.
+70027	Mistyc Blessing scroll	Item refine prob 100%
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+89003	Gutschein	Gutschein im Wert von 3 Drachenmünzen.
+89004	Gutschein	Gutschein im Wert von 50 Drachenmünzen.
+89005	Gutschein	Gutschein im Wert von 100 Drachenmünzen.
+89006	Gutschein	Gutschein im Wert von 500 Drachenmünzen.
+89007	Gutschein	Gutschein im Wert von 1000 Drachenmünzen.
+50001	Item-Shop	In der Brust befindet sich:
+100000	Elixier der Zeit (K)	Füllt die Laufzeit eines Drachensteins auf.
+100001	Elixier der Zeit (M)	Füllt die Laufzeit eines Drachensteins auf.
+100002	Elixier der Zeit (G)	Füllt die Laufzeit eines Drachensteins auf.
+100100	Drachenzange	Nützliches Werkzeug, das die Erfolgsaussichten beim Entfernen des Drachensteins vergrößert.
+100300	Grüne Drachenbohne	Die magische Bohne erhöht die Stufe deines Drachensteins. Das Verstärken kann fehlschlagen.
+100400	Blaue Drachenbohne	Die magische Bohne erhöht die Wahrscheinlichkeit, den Drachenstein um eine Stufe zu verbessern.
+100500	Rosa Drachenbohne	Die Wahrscheinlichkeit einer erfolgreichen Verbesserung des Drachensteins um eine Stufe steigt um 10%.
+11901	Smoking	Ein eleganter Anzug, den man bei der Hochzeit trägt.
+11902	Smoking	Ein eleganter Anzug, den man bei der Hochzeit trägt.
+11903	Brautkleid	Ein besonderes Kleid, das eine Frau bei ihrer Hochzeit trägt.
+11904	Brautkleid	Ein besonderes Kleid, das eine Frau bei ihrer Hochzeit trägt.
+18900	Rotflammenstein	Verstärkt die Boni deines Gürtels.
+25040	Segensschriftrolle	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn seine Verbesserung fehlschlägt. In diesem Fall wird lediglich seine Qualität um 1 verringert.
+25041	Magischer Stein	Ein Klumpen des legendären Metalls, das die besten Chancen beim Verbessern eines Gegenstandes gewährt. Der verbesserte Gegenstand kann außerdem weder zerstört noch verschlechtert werden.
+25100	Geiststein-Schriftrolle	Die Schriftrolle ermöglicht es dir, den Geiststein aus einer Waffe oder Rüstung zu entfernen. Ein Splitter bleibt dabei zurück.
+27600	Lagerfeuer	Holzstücke, die für ein Lagerfeuer zusammengetragen wurden.
+27610	Fischkugel	Diese magische Kugel verrät dir, welcher Fisch an deinem Angelhaken hängt.
+27620	Fischereibuch	Ein Buch, mit dem du 3 Tage lang die doppelte Anzahl seltener Fische fängst.
+27803	Zander	Ein gewöhnlicher Fisch, der normalerweise in Teichen zu Hause ist.
+27804	Mandarinfisch	Ein sehr schmackhafter Fisch.
+27805	Großer Zander	Ein äußerst fettes Exemplar eines Zanders.
+27806	Karpfen	Ein großer, silberfarbener Fisch.
+27807	Lachs	Ein Fisch, der während seiner Paarungszeit nach Hause zurückkehrt.
+27808	Graskarpfen	Ein Karpfen, der sich gewöhnlich von Gras ernährt.
+27809	Bachforelle	Ein schillernder Fisch, der mit dem Lachs verwandt ist.
+27810	Aal	Ein langer, dünner Fisch, der einer Schlange ähnelt. Kraft und Ausdauer sind seine Markenzeichen.
+27811	Regenbogenforelle	Ein Fisch mit einem regenbogenfarbenen Rücken.
+27812	Flussforelle	Ein Süßwasserfisch, der in dieser Gegend sehr verbreitet ist.
+27813	Rotfeder	Ein schwarmlebender, rötlich schimmernder Fisch.
+27814	Barsch	Ein Fisch, der als „Hai der Seen“ bekannt ist.
+27815	Tenchi	Eine Barbenart, die nur in sauberen Gewässern lebt.
+27816	Wels	Ein Fisch mit charakteristisch großem Maul und katzenartigen „Schnurrhaaren“.
+27817	Schmerle	Ein Fisch, der gewöhnlich in seichten, schlammigen Gewässern lebt.
+27818	Lotusfisch	Ein großer Süßwasserfisch, der von Mischnahrung lebt.
+27819	Ayu	Ein dem Stint verwandter Fisch, der in Küstennähe und in Mündungsgebieten lebt.
+27820	Stint	Ein Winterfisch, der meist beim Eisfischen gefangen wird.
+27821	Shiri	Ein elegant geformter Fisch in schillernden Farben.
+27822	Spiegelkarpfen	Eine einheimische Karpfenart.
+27823	Goldfisch	Ein selten vorkommender, golden glänzender Fisch.
+27824	Schlangenkopffisch	Ein Raubfisch, der in tropischen Süßgewässern lebt.
+27825	Skygazer	Ein Fisch, der nur in fließenden Gewässern vorkommt.
+27826	Königskrabbe	Diese Krabbenart wird aufgrund ihrer Größe auch Monsterkrabbe genannt.
+27827	Yabbie-Krebs	Diese Krabbenart eher nachtaktiv und verbleibt tagsüber in ihrem Versteck.
+27833	Toter Zander	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27834	Toter Mandarinfisch	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27835	Toter großer Zander	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27836	Toter Karpfen	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27837	Toter Lachs	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27838	Toter Graskarpfen	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27839	Tote Bachforelle	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27840	Toter Aal	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27841	Tote Regenbogenforelle	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27842	Tote Flussforelle	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27843	Tote Rotfeder	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27844	Toter Barsch	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27845	Toter Tenchi	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27846	Toter Wels	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27847	Tote Schmerle	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27848	Toter Lotusfisch	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27849	Toter Ayu	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27850	Toter Stint	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27851	Toter Shiri	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27852	Toter Spiegelkarpfen	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27853	Toter Goldfisch	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27854	Toter Schlangenkopffisch	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27855	Toter Skygazer	Dieser Fisch eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27856	Tote Königskrabbe	Dieser Krabbe eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27857	Toter Yabbie-Krebs	Dieser Krebs eignet sich hervorragend, um über dem offenen Feuer gegrillt zu werden.
+27987	Muschel	Eine Muschel mit einer schönen Schale. Sie kann eine kostbare Perle enthalten.
+27990	Steinstück	Durch seine geringe Größe lässt sich dieses Stück leicht transportieren, kann aber dennoch vielseitig verwendet werden.
+27992	Weiße Perle	Der schneeweiße Schatz aus dem Inneren einer Muschel.
+27993	Blaue Perle	Ein prachtvoller, tiefblauer Schatz aus dem Inneren einer Muschel.
+27994	Blutrote Perle	Der lohfarbene Schatz aus dem Inneren einer Muschel.
+30179	Gewundener Schlüssel	Dieser magische Schlüssel aktiviert das Portal zum Tempel des Drachen.
+30270	Drachensteinsplitter	Fragment eines seltenen Drachensteins
+30311	Seelenkristall-Schlüssel	Der filigran gearbeitete Schlüssel mit einem blauen Seelenkristall öffnet das Tor zur 2. Ebene der Devil's Catacomb.
+30312	Fratzen-Totem	Diese Holztafel mit eingeritzter Fratze dient als Schlüssel zur 6. Ebene der Devil's Catacomb.
+30320	Schrumpfkopf	Dieser Dämonenschrumpfkopf öffnet das Siegel zur 2. Ebene der Devil's Catacomb.
+30321	Schrumpfkopf	Dieser Dämonenschrumpfkopf öffnet das Siegel zur 2. Ebene der Devil's Catacomb.
+30325	Arachnidenschlüssel	Öffnet den Zugang zur Bruthöhle der Baroness. Zerfällt nach 24 Stunden. Kann nur vom Gruppenanführer verwendet werden.
+30327	Arachnidenflöte	Das Lied dieses Instruments lockt die Spinnenbaroness an.
+30329	Goldenes Zahnrad	Löst den verborgenen Mechanismus in der Stele der Isfet aus.
+30330	Stein der Maat	Maat sorgt als Göttin der Gerechtigkeit für Ordnung im Chaos.
+30331	Frostschlüssel	Der Schlüssel ist so kalt wie Eis und öffnet den Zugang zum dritten Stock von Nemeres Warte. Kann nur von Schamanen benutzt werden.
+30332	Nordstern	Siegelstein aus purem Eis. Öffnet den Zugang zum sechsten Stock von Nemeres Warte.
+30333	Eisblumenschlüssel	Der Schlüssel aus Eis öffnet den Zugang zum neunten Stock von Nemeres Warte.
+30341	Drachenfeuerring	Eine energiegeladene Aura umgibt dich. Dieser aus Drachenfeuer geschmiedete Ring wird die Statuen in Meleys Hort im Nu zerstören.
+30505	Smaragdverzierung	Element zur Veredelung deiner Waffe
+30506	Saphir-Gravurmesser	Werkzeug zur Veredelung deiner Waffe
+30512	Rotdrachenstahl	Leder aus Drachenhaut ist extrem leicht und flexibel, doch nahezu unzerstörbar. Wird wie Metall verarbeitet und dient zur Herstellung von Rüstungen.
+30518	Goldgarn	Magische Garnrolle aus flüssigem Gold. Kann zusammen mit einem Edelstein zu kostbarem Schmuck verarbeitet werden.
+30519	Goldhaken	Besteht aus purem Gold und kann zusammen mit einem Edelstein zu kostbarem Schmuck verarbeitet werden.
+30520	Goldschnalle	Besteht aus purem Gold und kann zusammen mit einem Edelstein zu kostbarem Schmuck verarbeitet werden.
+30613	Stein der Dryaden	In diesem geheimnisvoll grün-schimmernden Stein ist die Seele einer Dryade, eines Baumgeistes, eingeschlossen. Die Dryade kennt die geheimen Worte, die dir den Zutritt zum Erebos ermöglichen.
+30616	Titandioxid	Der prismatische Kristall dient zur Veredelung eines Ausrüstungsgegenstandes.
+30617	Achat	Der geheimnisvoll schimmernder Schmuckstein dient zur Veredelung eines Ausrüstungsgegenstandes.
+30618	Mondstein	Der tropfenförmige Edelstein hält einen Funken Mondlicht in sich gefangen. Dient zur Veredelung eines Ausrüstungsgegenstandes.
+33031	Elementblüte	Blumenförmiger Edelstein zur Verbesserung deiner Elementtalismane
+39001	Magischer Stein	Dieser Stein gewährt die größte Erfolgschance bei der Itemverbesserung. Der Gegenstand kann außerdem weder zerstört noch verschlechtert werden. Dieses Item ist handelbar.
+39007	Schmiede-Handbuch	Das Buch ist mit der Seele eines alten Schmieds verbunden. Es erhöht es die Chance auf eine Gegenstandsverbesserung. Dieses Item ist handelbar.
+39008	Exorzismus-Schriftrolle	Befreit dich vom Fluch des bösen Geistes, wenn das Lernen fehlschlägt. Mithilfe dieser Rolle kannst du ein weiteres Fertigkeitsdokument an einem Tag lesen. Dieses Item ist handelbar.
+39022	Schriftrolle des Drachen	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn seine Verbesserung fehlschlägt. Lediglich die Qualität wird um eine Stufe verringert. Zudem erhöht sich die Wahrscheinlichkeit einer erfolgreichen Verbesserung um 10 %. Dieses Item ist handelbar.
+39027	Stein-Handbuch	Entfernt alle zerbrochenen Steine aus einem Gegenstand. Somit erhältst du einen weiteren Versuch, eine Waffe oder Rüstung zu verbessern. Dieses Item ist handelbar.
+39030	Konzentriertes Lesen	Erhöht die Chance auf eine Verbesserung deines Talents beim Lesen des nächsten Buches (oder Seelensteins) um den Faktor 2,5. Dieses Item ist handelbar.
+39039	Elixier der Sonne (G)	Füllt deine TP automatisch auf. Enthält 7.000.000 TP. Dieses Item ist handelbar.
+39042	Elixier des Mondes (G)	Füllt deine MP automatisch auf. Enthält 15.000 MP. Dieses Item ist handelbar.
+39063	Gayahandel zurücksetzen	Setzt den Gayahandel vor dem Ablauf von 5 Stunden zurück und schüttet sofort neue wertvolle Items aus.
+39064	Gayahandelerweiterung	Erweitert den Gayahandel, beginnend vom ersten Feld der zweiten Reihe links, um einen weiteren Platz für ein wertvolles Itemangebot.
+40108	Risserzahn-Klinge+	Ein Waffenskin, das dein Schwert zu Halloween in eine Kettensäge verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40109	Risserzahn-Dolch+	Ein Waffenskin, das deinen Dolch zu Halloween in eine Kettensäge verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40110	Risserzahn-Bogen+	Ein Waffenskin, das deinen Bogen zu Halloween in eine doppelte Kettensäge verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40111	Risserzahn-Glefe+	Ein Waffenskin, das dein Zweihandschwert zu Halloween in eine Stabkettensäge verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40112	Risserzahn-Glocke+	Ein Waffenskin, das deine Glocke zu Halloween in einen Kettensägen-Morgenstern verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40113	Risserzahn-Fächer+	Ein Waffenskin, das deinen Fächer zu Halloween in einen Kettensägenfächer verwandelt. Verleiht dir mind. einen zufälligen Bonus.
+40129	Aquarusklinge	Waffenskin, der dein Schwert mit solidem, irisierend blauem Wasser umhüllt
+40130	Aquarusdolch	Waffenskin, der deinen Dolch mit solidem, irisierend blauem Wasser umhüllt
+40131	Aquarusbogen	Waffenskin, der deinen Bogen mit solidem, irisierend blauem Wasser umhüllt
+40132	Aquarusglefe	Waffenskin, der deinen Zweihänder mit solidem, irisierend blauem Wasser umhüllt
+40133	Aquarusglocke	Waffenskin, der deine Glocke mit solidem, irisierend blauem Wasser umhüllt
+40134	Aquarusfächer	Waffenskin, der deinen Fächer mit solidem, irisierend blauem Wasser umhüllt
+41029	Wüstenkämpfer (Bonus)	Kriegsgewand für Männer, um der menschenfeindlichen Wüste zu trotzen. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41030	Wüstenkämpferin (Bonus)	Kriegsgewand für Frauen, um der menschenfeindlichen Wüste zu trotzen. Item ist handelbar.
+41117	Musketier-Kostüm	Extravaganter Anzug im Stil der Musketiere
+41118	Dienstmädchenuniform	Schwarzes Kleid mit weißer Schürze im Stil eines französischen Dienstmädchens.
+41119	Salsa-Anzug	Hautenger, orange-schwarzer Anzug für lateinamerikanischen Tänzer
+41120	Salsa-Kleid	Hautenges, rotes Tanzkleid mit schwarzen Handschuhen
+41121	Gentleman-Anzug	Eleganter Anzug für Herren mit gutem Benehmen
+41122	Cocktailkleid	Himmelblaues Kleid mit Schleife und passenden Riemchensandalen
+41125	Kürbis-Smoking	Ein klassischer Hingucker - zu gegebenem Anlass neu interpretiert.
+41126	Kürbis-Kleid	Ein klassischer Hingucker - zu gegebenem Anlass neu interpretiert.
+41129	Musketier-Kostüm+	Extravaganter Anzug im Stil der Musketiere. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41130	Dienstmädchenuniform+	Schwarzes Kleid mit weißer Schürze im Stil einer französischen Dienstmädchenuniform. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41131	Salsa-Anzug+	Hautenger, orange-schwarzer Anzug für lateinamerikanischen Tänzer. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41132	Salsa-Kleid+	Hautenges, rotes Tanzkleid mit schwarzen Handschuhen. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41133	Gentleman-Anzug+	Eleganter Anzug für Herren mit gutem Benehmen. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41134	Cocktailkleid+	Himmelblaues Kleid mit Schleife und  passenden Riemchensandalen. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+41135	Kürbis-Smoking (Bonus)	Ein klassischer Hingucker - zu gegebenem Anlass neu interpretiert. Dieses Kostüm verleiht dir einen zufälligen Bonus.
+41136	Kürbis-Kleid (Bonus)	Ein klassischer Hingucker - zu gegebenem Anlass neu interpretiert. Dieses Kostüm verleiht dir einen zufälligen Bonus.
+41307	Kobragewand (m)	Schwarzschimmerndes Gewand mit Schlangensymbolen
+41308	Kobragewand (w)	Schwarzschimmerndes Gewand mit Schlangensymbolen
+41309	Kobragewand+ (m)	Schwarzschimmerndes Gewand mit Schlangensymbolen. Verleiht dir mindestens einen zufälligen Bonus.
+41310	Kobragewand+ (w)	Schwarzschimmerndes Gewand mit Schlangensymbolen. Verleiht dir mindestens einen zufälligen Bonus.
+41311	Wüstenkämpfer (schwarz)	Schwarzes Kriegsgewand für Männer.
+41312	Wüstenkämpferin (schw.)	Schwarzes Kriegsgewand für Frauen.
+41313	Wüstenkämpfer+ (schwarz)	Schwarzes Kriegsgewand für Männer. Verleiht dir mindestens einen zufälligen Bonus. Item ist handelbar.
+41314	Wüstenkämpferin+ (schw.)	Schwarzes Kriegsgewand für Frauen. Verleiht dir mindestens einen zufälligen Bonus.
+41315	Azraels Rüstung (m)	Stählerne Rüstung des berüchtigten Dämonenfürsten
+41316	Azraels Rüstung (w)	Stählerne Rüstung des berüchtigten Dämonenfürsten
+41317	Azraels Rüstung+ (m)	Stählerne Rüstung des berüchtigten Dämonenfürsten. Verleiht dir mindestens einen zufälligen Bonus.
+41318	Azraels Rüstung+ (w)	Stählerne Rüstung des berüchtigten Dämonenfürsten. Verleiht dir mindestens einen zufälligen Bonus.
+41324	Mondsternkämpfer	Kriegsgewand mit Mondstern-Emblem für Männer
+41325	Mondsternkämpferin	Kriegsgewand mit Mondstern-Emblem für Frauen
+41326	Mondsternkämpfer+	Kriegsgewand mit Mondstern-Emblem für Männer. Verleiht dir mindestens einen zufälligen Bonus.
+41327	Mondsternkämpferin+	Kriegsgewand mit Mondstern-Emblem für Frauen. Verleiht dir mindestens einen zufälligen Bonus.
+41528	Wüstenprinz (rot)	Ein Kriegergewand aus rotem Stoff, für Anführer gemacht.
+41529	Wüstenprinz (blau)	Ein Kriegergewand aus blauem Stoff, für Anführer gemacht.
+45053	Musketier-Frisur	Gepflegte blonde Kurzhaarfrisur für den perfekten Musketier-Look.
+45054	Dienstmädchenhaube	Blonder Pagenschnitt mit Dienstmädchenhaube.
+45055	Mini-Iro	Auffallender Kurzhaarschnitt im Irokesen-Stil.
+45056	Salsa-Knoten	Elegante Hochsteckfrisur mit roter Blume.
+45057	Bogarthut	Klassischer Filzhut im Humphrey-Bogart-Stil.
+45065	Musketier-Frisur+	Gepflegte blonde Kurzhaarfrisur für den perfekten Musketier-Look. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45066	Dienstmädchenhaube+	Blonder Pagenschnitt mit Dienstmädchenhaube. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45067	Mini-Iro+	Auffallender Kurzhaarschnitt im Irokesen-Stil. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45068	Salsa-Knoten+	Elegante Hochsteckfrisur mit roter Blume. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45069	Bogarthut+	Klassischer Filzhut im Humphrey-Bogart-Stil. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45070	Blumenfrisur+	Süße Flechtfrisur mit buntem Blumenschmuck. Verleiht dir mind. einen zufälligen Bonus. Item ist handelbar.
+45135	Kobrafrisur (m)	Zum Kobragewand passende Kopfbedeckung
+45136	Kobrafrisur (w)	Zum Kobragewand passende Kopfbedeckung
+45147	Schwarzer Turban (m)	Eine Kopfbedeckung aus schwarzem Stoff für Männer.
+45148	Schwarzer Turban (w)	Eine Kopfbedeckung aus schwarzem Stoff für Frauen.
+45149	Schwarzer Turban+ (m)	Eine Kopfbedeckung aus schwarzem Stoff für Männer. Verleiht dir mindestens einen zufälligen Bonus. Item ist handelbar.
+45150	Schwarzer Turban+ (w)	Eine Kopfbedeckung aus schwarzem Stoff für Frauen. Verleiht dir mindestens einen zufälligen Bonus.
+45151	Azraels Helm (m)	Kopfbedeckung mit der Fratze des berüchtigten Dämonenfürsten.
+45152	Azraels Helm (w)	Kopfbedeckung mit der Fratze des berüchtigten Dämonenfürsten.
+45153	Azraels Helm+ (m)	Kopfbedeckung mit der Fratze des berüchtigten Dämonenfürsten. Verleiht dir mindestens einen zufälligen Bonus.
+45154	Azraels Helm+ (w)	Kopfbedeckung mit der Fratze des berüchtigten Dämonenfürsten. Verleiht dir mindestens einen zufälligen Bonus.
+45160	Mondsternfrisur (m)	Hochgebundene Rastazöpfe, rot-weiß eingefärbt.
+45161	Mondsternfrisur (w)	Hochgebundene Rastazöpfe, rot-weiß eingefärbt, mit Stirnband.
+45198	Brauner Turban	Ein edler, brauner Turban aus widerstandsfähigem Stoff für den Kämpfer.
+45199	Weißer Turban	Ein edler, weißer Turban aus widerstandsfähigem Stoff für den Kämpfer.
+45200	Braunes Kopftuch	Ein braunes Kopftuch aus leichtem Stoff für die Kämpferin.
+45201	Weißes Kopftuch	Ein weißes Kopftuch aus leichtem Stoff für die Kämpferin.
+45202	Brauner Turban+	Ein edler, brauner Turban aus widerstandsfähigem Stoff für den Kämpfer. Verleiht dir mindestens einen zufälligen Bonus.
+45203	Weißer Turban+	Ein edler, weißer Turban aus widerstandsfähigem Stoff für den Kämpfer. Verleiht dir mindestens einen zufälligen Bonus.
+45240	Braunes Kopftuch+	Ein braunes Kopftuch aus leichtem Stoff für die Kämpferin. Verleiht dir mindestens einen zufälligen Bonus.
+45241	Grünes Kopftuch+	Ein grünes Kopftuch aus leichtem Stoff für die Kämpferin. Verleiht dir mindestens einen zufälligen Bonus.
+50010	Socke	Eine aus fester Schafswolle angefertigte, warme Socke.
+50011	Mondlicht-Schatztruhe	Ein Möbelstück mit reichhaltiger, eindrucksvoller Verzierung. Wenn Mondlicht auf diese Truhe fällt, geschehen übernatürliche Dinge.
+50053	Militär-Pferdebuch	Sobald du die Qualifikationsprüfung der Profis beim Stallburschen bestanden hast, ermöglicht dir diese Lizenz, dein Pferd zu rufen.
+50054	Heu	Getrocknete Gräser für die Fütterung eines Anfängerpferdes.
+50055	Karotte	Das gängige Futter der Pferde, die längere Strecken zurücklegen müssen.
+50056	Roter Ginseng	Dieser mit heißem Wasserdampf behandelter Ginseng ist das ideale Futter für erfahrene Kriegspferde.
+50070	Oberork-Truhe	Die Truhe des Orkhäuptlings. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50071	Truhe dunkler Anführer	Die Truhe des dunklen Anführers. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50073	Königsspinnentruhe	Die Truhe der Königsspinne. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50076	Truhe Wüstenschildkröte	Die Truhe der Riesenwüstenschildkröte. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50077	Neunschwanztruhe	Die Truhe des Neunschwanzes. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50078	Truhe des gelben Tigers	Die Truhe des gelben Tigergeistes. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50079	Flammenkönigtruhe	Die Truhe des Flammenkönigs. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50080	Truhe des roten Drachen	Die Truhe des roten Drachen. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50082	Sensenmanntruhe	Die Truhe des Sensenmanns. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50084	Schlüsselstein	Diesen Stein umgibt eine energiegeladene Aura. Er wirkt gegen Siegel-Magie.
+50097	Truhe des Azrael	Dämonische Kräfte halten diese Truhe verschlossen. Es müssen sich wertvolle Schätze darin verbergen.
+50187	Lehrlingstruhe I	Dein Begrüßungsgeschenk enthält eine Grundausstattung für den optimalen Start ins Abenteuer.
+50188	Lehrlingstruhe II	Diese Truhe lässt sich erst öffnen, wenn du Level 10 erreicht hast.
+50189	Lehrlingstruhe III	Diese Truhe lässt sich erst öffnen, wenn Du Level 20 erreicht hast.
+50190	Expertentruhe I	Diese Truhe lässt sich erst öffnen, wenn du Level 30 erreicht hast.
+50191	Expertentruhe II	Diese Truhe lässt sich erst öffnen, wenn du Level 40 erreicht hast.
+50192	Expertentruhe III	Diese Truhe lässt sich erst öffnen, wenn du Level 50 erreicht hast.
+50193	Meistertruhe I	Diese Truhe lässt sich erst öffnen, wenn du Level 60 erreicht hast.
+50194	Meistertruhe II	Diese Truhe lässt sich erst öffnen, wenn du Level 75 erreicht hast.
+50195	Meistertruhe III	Diese Truhe lässt sich erst öffnen, wenn du Level 100 erreicht hast.
+50196	Großmeistertruhe	Diese Truhe lässt sich erst öffnen, wenn du Level 120 erreicht hast.
+50212	Lehrlingstruhe I	Dein Begrüßungsgeschenk enthält eine Grundausstattung für den optimalen Start ins Abenteuer.
+50213	Lehrlingstruhe I	Dein Begrüßungsgeschenk enthält eine Grundausstattung für den optimalen Start ins Abenteuer.
+50259	Cor Draconis (Antik)	Das kristallene Drachenherz birgt die Seele, den Drachenstein, in sich.
+50266	Jotun Thrym-Truhe	Die Truhe von Jotun Thrym. Das schwere Schloss weist darauf hin, dass sie etwas Wertvolles enthalten muss.
+50270	Truhe der Königin Meley	Diese Truhe wurde aus dem Hort der Drachenkönigin Meley geborgen. Sie birgt einen wahrhaft königlichen Schatz. Dieses Item ist handelbar.
+50271	Truhe der Drachenwächter	Diese Truhe enthält einige seltene, seit Jahrhunderten verschollen geglaubte Schätze der unzähligen Drachenwächter. Dieses Item ist handelbar.
+50301	Sun-zi-Kriegskunst	Das erste der drei Bücher der Kriegsstrategie - es verstärkt die Führungskraft seines Besitzers. Das Buch verschwindet nach dem Lesen.
+50302	Wu-zi-Kriegskunst	Das zweite der drei Bücher der Kriegsstrategie - es verstärkt die Führungskraft seines Besitzers. Das Buch verschwindet nach dem Lesen.
+50303	WeiLiao-zi Kriegskunst	Das dritte der drei Bücher der Kriegsstrategie - es verstärkt die Führungskraft seines Besitzers. Das Buch verschwindet nach dem Lesen.
+50307	Missionsbuch (leicht)	Enthält eine leichte Aufgabe, die bei erfolgreichem Abschluss belohnt wird.
+50308	Missionsbuch (normal)	Enthält eine normale Aufgabe, die bei erfolgreichem Abschluss belohnt wird.
+50309	Missionsbuch (schwer)	Enthält eine schwere Aufgabe, die bei erfolgreichem Abschluss belohnt wird.
+50310	Missionsbuch (Experte)	Das in braunes Leder gebundene Werk enthält eine Mission, die nur von den Erfahrenen des Landes gelöst werden kann.
+50314	Buch der Verwandlung	Das erfolgreiche Studium des Buches erhöht die Verwandlungsfertigkeit. Das Buch verschwindet nach dem Lesen.
+50315	Buch fort. Verwandlung	Das erfolgreiche Studium des Buches erhöht die Verwandlungsfertigkeit. Das Buch verschwindet nach dem Lesen.
+50316	Buch exp. Verwandlung	Das erfolgreiche Studium des Buches erhöht die Verwandlungsfertigkeit. Das Buch verschwindet nach dem Lesen.
+50323	Büchertruhe Konter	Diese Truhe enthält ein zufälliges Fertigkeitsbuch zum Erlernen von Konterfertigkeiten.
+50324	Büchertruhe Boost	Diese Truhe enthält ein zufälliges Fertigkeitsbuch zum Erlernen von Boostfertigkeiten.
+50401	Dreiwege-Schnittbuch	Die Lektüre dieses Buches ermöglicht es, den Dreiwege-Schnitt zu meistern. Das Buch verschwindet nach dem Lesen.
+50402	Schwertwirbelbuch	Die Lektüre dieses Buches ermöglicht es, den Schwertwirbel zu meistern. Das Buch verschwindet nach dem Lesen.
+50403	Buch Kampfrausch	Die Lektüre dieses Buches ermöglicht es, den Kampfrausch zu meistern. Das Buch verschwindet nach dem Lesen.
+50404	Schwertaura-Buch	Die Lektüre dieses Buches ermöglicht es, die Aura des Schwertes zu meistern. Das Buch verschwindet nach dem Lesen.
+50405	Buch des Sausens	Die Lektüre dieses Buches ermöglicht es, das Sausen zu meistern. Das Buch verschwindet nach dem Lesen.
+50406	Lebenswille-Buch	Die Lektüre dieses Buches ermöglicht es, den Lebenswillen zu meistern. Das Buch verschwindet nach dem Lesen.
+50416	Buch Durchschlag	Die Lektüre dieses Buches ermöglicht es, den Durchschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50417	Buch d. heftigen Schlags	Die Lektüre dieses Buches ermöglicht es, den heftigen Schlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50418	Buch des Stampfens	Die Lektüre dieses Buches ermöglicht es, das Stampfen zu meistern. Das Buch verschwindet nach dem Lesen.
+50419	Buch d. starken Körpers	Die Lektüre dieses Buches ermöglicht es, den starken Körper zu meistern. Das Buch verschwindet nach dem Lesen.
+50420	Schwertschlag-Buch	Die Lektüre dieses Buches ermöglicht es, den Schwertschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50421	Schwertzirkelbuch	Die Lektüre dieses Buches ermöglicht es, den Schwertzirkel zu meistern. Das Buch verschwindet nach dem Lesen.
+50431	Hinterhalt-Buch	Die Lektüre dieses Buches ermöglicht es, den Hinterhalt zu meistern. Das Buch verschwindet nach dem Lesen.
+50432	Blitzangriff-Buch	Die Lektüre dieses Buches ermöglicht es, den Blitzangriff zu meistern. Das Buch verschwindet nach dem Lesen.
+50433	Degenwirbel-Buch	Die Lektüre dieses Buches ermöglicht es, den Degenwirbel zu meistern. Das Buch verschwindet nach dem Lesen.
+50434	Tarn-Buch	Die Lektüre dieses Buches ermöglicht es, das Tarnen zu meistern. Das Buch verschwindet nach dem Lesen.
+50435	Giftwolken-Buch	Die Lektüre dieses Buches ermöglicht es, die Giftwolke zu meistern. Das Buch verschwindet nach dem Lesen.
+50436	Schleichendes-Gift-Buch	Die Lektüre dieses Buches ermöglicht es, Schleichendes Gift zu meistern. Das Buch verschwindet nach dem Lesen.
+50446	Schussfolgenbuch	Die Lektüre dieses Buches ermöglicht es, den wiederholten Schuss zu meistern. Das Buch verschwindet nach dem Lesen.
+50447	Pfeilregen-Buch	Die Lektüre dieses Buches ermöglicht es, den Pfeilregen zu meistern. Das Buch verschwindet nach dem Lesen.
+50448	Feuerpfeil-Buch	Die Lektüre dieses Buches ermöglicht es, die Feuerpfeile zu meistern. Das Buch verschwindet nach dem Lesen.
+50449	Buch federleichter Gang	Die Lektüre dieses Buches ermöglicht es, den federleichten Gang zu meistern. Das Buch verschwindet nach dem Lesen.
+50450	Giftpfeil-Buch	Die Lektüre dieses Buches ermöglicht es, den Giftpfeil zu meistern. Das Buch verschwindet nach dem Lesen.
+50451	Funkenschlagbuch	Die Lektüre dieses Buches ermöglicht es, den Funkenschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50461	Fingerschlag-Buch	Die Lektüre dieses Buches ermöglicht es, den Fingerschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50462	Drachenwirbel-Buch	Die Lektüre dieses Buches ermöglicht es, den Drachenwirbel zu meistern. Das Buch verschwindet nach dem Lesen.
+50463	Buch verzauberte Klinge	Die Lektüre dieses Buches ermöglicht es, die verzauberte Klinge zu meistern. Das Buch verschwindet nach dem Lesen.
+50464	Furcht-Buch	Die Lektüre dieses Buches ermöglicht es, die Furcht zu meistern. Das Buch verschwindet nach dem Lesen.
+50465	Buch verzaub. Rüstung	Die Lektüre dieses Buches ermöglicht es, die verzauberte Rüstung zu meistern. Das Buch verschwindet nach dem Lesen.
+50466	Zauberaufhebungs-Buch	Die Lektüre dieses Buches ermöglicht es, das Aufheben eines Zaubers zu meistern. Das Buch verschwindet nach dem Lesen.
+50476	Buch d. dunklen Schlags	Die Lektüre dieses Buches ermöglicht es, den dunklen Schlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50477	Flammenschlag-Buch	Die Lektüre dieses Buches ermöglicht es, den Flammenschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50478	Buch der Geistflamme	Die Lektüre dieses Buches ermöglicht es, den Geist der Flamme zu meistern. Das Buch verschwindet nach dem Lesen.
+50479	Buch d. dunklen Schutzes	Die Lektüre dieses Buches ermöglicht es, den dunklen Schutz zu meistern. Das Buch verschwindet nach dem Lesen.
+50480	Geistschlag-Buch	Die Lektüre dieses Buches ermöglicht es, den Geistschlag zu meistern. Das Buch verschwindet nach dem Lesen.
+50481	Buch des dunklen Steins	Die Lektüre dieses Buches ermöglicht es, den dunklen Stein zu meistern. Das Buch verschwindet nach dem Lesen.
+50491	Buch d. flieg. Talismans	Die Lektüre dieses Buches ermöglicht es, den fliegenden Talisman zu meistern. Das Buch verschwindet nach dem Lesen.
+50492	Buch d. Drachenschießens	Die Lektüre dieses Buches ermöglicht es, das Drachenschießen zu meistern. Das Buch verschwindet nach dem Lesen.
+50493	Drachengebrüll-Buch	Die Lektüre dieses Buches ermöglicht es, das Drachengebrüll zu meistern. Das Buch verschwindet nach dem Lesen.
+50494	Buch des Segnens	Die Lektüre dieses Buches ermöglicht es, das Segnen zu meistern. Das Buch verschwindet nach dem Lesen.
+50495	Buch des Reflektierens	Die Lektüre dieses Buches ermöglicht es, das Reflektieren zu meistern. Das Buch verschwindet nach dem Lesen.
+50496	Drachenhilfe-Buch	Die Lektüre dieses Buches ermöglicht es, die Hilfe des Drachen zu meistern. Das Buch verschwindet nach dem Lesen.
+50506	Blitzwurf-Buch	Die Lektüre dieses Buches ermöglicht es, die den Blitzwurf zu meistern. Das Buch verschwindet nach dem Lesen.
+50507	Buch von Blitzen	Die Lektüre dieses Buches ermöglicht es, das Beschwören von Blitzen zu meistern. Das Buch verschwindet nach dem Lesen.
+50508	Blitzkrallen-Buch	Die Lektüre dieses Buches ermöglicht es, die Blitzkralle zu meistern. Das Buch verschwindet nach dem Lesen.
+50509	Buch des Heilens	Die Lektüre dieses Buches ermöglicht es, die Fähigkeiten der Heilung zu meistern. Das Buch verschwindet nach dem Lesen.
+50510	Buch der Schnelligkeit	Die Lektüre dieses Buches ermöglicht es, die Fähigkeit der Geschwindigkeit zu meistern. Das Buch verschwindet nach dem Lesen.
+50511	Buch des Angriffs	Die Lektüre dieses Buches ermöglicht es, den Angriff zu meistern. Das Buch verschwindet nach dem Lesen.
+50513	Seelenstein	Der legendäre Stein, der verwendet wird, um die Großmeisterfertigkeiten zu erhöhen. Der Stein verschwindet nach dem Benutzen.
+50516	Schwertwirbel-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Schwertwirbel zu verringern.
+50517	Hinterhalt-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Hinterhalt zu verringern.
+50518	Fingerschlag-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Fingerschlag zu verringern.
+50519	Drachenschießen-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Drachenschießen zu verringern.
+50520	Durchschlag-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden von Durchschlag zu verringern.
+50521	Feuerpfeil-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Feuerpfeil zu verringern.
+50522	Dunkler Schlag-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Dunkler Schlag zu verringern.
+50523	Blitz beschwören-Konter	Dieses Buch lehrt dich die Fertigkeit, den Schaden durch Blitz heraufbeschwören zu verringern.
+50560	Schwertwirbel-Boost	Dieses Buch lehrt dich die Fertigkeit, Schwertwirbel zu verstärken.
+50561	Hinterhalt-Boost	Dieses Buch lehrt dich die Fertigkeit, Hinterhalt zu verstärken.
+50562	Fingerschlag-Boost	Dieses Buch lehrt dich die Fertigkeit, Fingerschlag zu verstärken.
+50563	Drachenschießen-Boost	Dieses Buch lehrt dich die Fertigkeit, Drachenschießen zu verstärken.
+50564	Durchschlag-Boost	Dieses Buch lehrt dich die Fertigkeit, Durchschlag zu verstärken.
+50565	Feuerpfeil-Boost	Dieses Buch lehrt dich die Fertigkeit, Feuerpfeil zu verstärken.
+50566	Dunkler Schlag-Boost	Dieses Buch lehrt dich die Fertigkeit, Dunkler Schlag zu verstärken.
+50567	Blitz beschwören-Boost	Dieses Buch lehrt dich die Fertigkeit, Blitz heraufbeschwören zu verstärken.
+50621	Diamant	Der härteste bekannte Edelstein, der in ein Schmuckstück eingearbeitet werden kann.
+50622	Bernstein	Ein klarer Schmuckstein aus fossilem Harz, der oftmals honig- oder goldfarben glänzt.
+50623	Fossilholz	Ein wertvolles Holz, das Schmuckgegenständen eine hohe Stabilität verleihen kann.
+50624	Kupfer	Ein gut formbares Edelmetall, aus dem Schmuck erstellt oder Münzen geprägt werden können. Es wird zudem für die Bronzeherstellung benötigt.
+50625	Silber	Ein hell schimmerndes Edelmetall, das zur Herstellung von Schmuckgegenständen verwendet wird.
+50626	Gold	Das warm schimmernde, edle Metall zählt zu den ersten, die von Menschen verarbeitet wurden. Noch heute ist es bei der Schmuckherstellung beliebt.
+50627	Jade	Ein wertvolles Mineral, das bereits seit über 5000 Jahren genutzt wird. Es ist bei der Schmuckerstellung sehr beliebt.
+50628	Ebenholz	Das schwarze, sehr harte Holz gehört zu den wertvollsten Holzarten. Es wird oftmals bei der Schmuckherstellung verwendet.
+50629	Perle	Eine sanft schillernde Schönheit aus Perlmutt, oftmals die Zierde von Schmuckgegenständen.
+50630	Weißgold	Eine stabile, weiß getönte Goldlegierung, die bei der Herstellung von Schmuckgegenständen äußerst beliebt ist.
+50631	Kristall	Sehr harte Steine aus kristallinem Quarz, die in unterschiedlichen Farben auftreten können. Sie werden oft zur Schmuckherstellung verwendet.
+50632	Amethyst	Ein beliebter Quarz, der in unterschiedlichen Violetttönen auftreten kann. Er ist in der Schmuckherstellung äußerst beliebt.
+50633	Himmelsträne	Zu kleinen Kristallen erstarrte Regentropfen. Sie können bei der Schmuckherstellung verwendet werden.
+50926	Schmuckstein	Sammle Schmucksteine und lasse sie vom Gayahändler zu kostbaren Gaya schleifen.
+51001	Energiesplitter	Splitter eines Energiekristalls. 30 Stück lassen sich zu einem Kristall schmelzen.
+51002	Energiekristall	Dieser Kristall erhöht für zwei Stunden deine Boni.
+52040	Wilder Löwe	Das Siegel ruft deinen Wilden Löwen herbei.
+53010	Leonidas	Mit diesem Siegel rufst du dein Löwenbaby, Leonidas, herbei. Das Pet verleiht dir | +15% Magie-/Nahkampfangriff | +1500 TP
+53011	Khan	Mit diesem Siegel rufst du dein Tigerjunges, Khan, herbei. Das Pet verleiht dir | +15% Magie-/Nahkampfangriff | +1500 TP
+53012	Porkie	Mit diesem Siegel rufst du deinen Frischling, Porkie, herbei. Das Pet verleiht dir | +15% Magie-/Nahkampfangriff | +1500 TP
+53013	Rufus	Mit diesem Siegel rufst du deinen Wolfswelpen, Rufus, herbei. Das Pet verleiht dir | +15% Magie-/Nahkampfangriff | +1500 TP
+53017	Jadephönix	Das Siegel ruft den anmutigen Jadephönix herbei. Das Pet verleiht dir | +15% Magie-/Nahkampfangriff | +50% Chance auf EXP-Bonus
+53256	Bonsai	Das Siegel ruft Bonsai, deinen Kriegerwinzling, herbei.
+54043	Lehrlingstruhe I	Dein Begrüßungsgeschenk enthält eine Grundausstattung für den optimalen Start ins Abenteuer.
+55008	Pergament der Pet-Namen	Ziehe das Pergament auf dein Pet, um den Namen deines Pets zu ändern.
+55009	Pet-Bücherkiste	Enthält ein zufällig ausgewähltes Pet-Fertigkeitsbuch.
+55010	Widerstand (Krieger)	Nach Erlernen dieser Fertigkeit erhöht das Pet deinen Widerstand gegen Krieger-Angriffe.
+55011	Widerstand (Sura)	Nach Erlernen dieser Fertigkeit erhöht das Pet deinen Widerstand gegen Sura-Angriffe.
+55012	Widerstand (Ninja)	Nach Erlernen dieser Fertigkeit erhöht das Pet deinen Widerstand gegen Ninja-Angriffe.
+55013	Widerstand (Schamane)	Nach Erlernen dieser Fertigkeit erhöht das Pet deinen Widerstand gegen Schamanen-Angriffe.
+55401	Affenei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55402	Spinnenei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55403	Ei des Razador	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55404	Ei des Nemere	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55405	Blaues Drachenei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55406	Rotes Drachenei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55407	Azraelchens Ei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55408	Moppelhenkerchen-Ei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55409	Baby-Baashidos Ei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55410	Nessie-Ei	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55411	Ei des Exedyar	Wenn du dein Pet schlüpfen lassen möchtest, klicke mit der rechten Maustaste auf das Ei.
+55701	Kleiner Affe	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55702	Kleine Spinne	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55703	Kleiner Razador	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55704	Kleiner Nemere	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55705	Kleiner Drache	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die Taste "P", um die UI für dein Pet aufzurufen.
+55706	Kleine Meley	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55707	Azraelchen	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55708	Moppelhenkerchen	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55709	Baby Baashido	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55710	Nessie	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+55711	Exedyars Brut	Rufe dein Pet mit einem rechten Mausklick. Drücke dann die "P"-Taste, um die UI für dein Pet aufzurufen.
+70031	Traktat zur Fechtkunst	Diese grundlegende Abhandlung zum Waffenhandwerk beschäftigt sich unter anderem mit den Möglichkeiten und Schwachstellen der menschlichen Anatomie.
+70038	Tapferkeitsumhang	Ein farbiger Umhang, der sämtliche Monster anlockte. Mit diesem bewiesen Krieger einst ihre Tapferkeit.
+70039	Schmiede-Handbuch	Das Buch ist mit der Seele eines alten Schmieds verbunden. Bei Nutzung vermag es die Chance der Gegenstandsverbesserung zu erhöhen.
+70063	Kostüm verwandeln	Entfernt die Boni von einem deiner Kostüme und fügt neue hinzu. Mit etwas Glück verändert sich dabei die Anzahl der Boni. (Bis max. 3)
+70064	Kostüm verzaubern	Entfernt die Boni von einem deiner Kostüme und fügt neue hinzu.
+70065	Kostümbonitransfer	Überträgt die Boni von einem Kostüm auf ein anderes. Dabei wird eines der Kostüme zerstört.
+70102	Zen-Bohne	Senkt die böse und hebt die gute Gesinnung eines Charakters.
+70104	Verwandlungskugel	Mit Hilfe dieser Kugel kannst du dich in ein Monster verwandeln.
+70105	Verwandlungskugel	Mit Hilfe dieser Kugel kannst du dich in ein Monster verwandeln.
+70106	Verwandlungskugel	Mit Hilfe dieser Kugel kannst du dich in ein Monster verwandeln.
+70107	Verwandlungskugel	Mit Hilfe dieser Kugel kannst du dich in ein Monster verwandeln.
+70201	Bleichmittel	Bringt die Originalhaarfarbe zurück. Gebleichte Haare können erneut gefärbt werden.
+70202	Weißes Haarfärbemittel	Färbt das Haar nachhaltig weiß. Eine Färbung kann alle drei Level erfolgen.
+70203	Blondes Haarfärbemittel	Färbt das Haar nachhaltig blond. Eine Färbung kann alle drei Level erfolgen.
+70204	Rotes Haarfärbemittel	Färbt das Haar nachhaltig rot. Eine Färbung kann alle drei Level erfolgen.
+70205	Braunes Haarfärbemittel	Färbt das Haar nachhaltig braun. Eine Färbung kann alle drei Level erfolgen.
+70206	Schwarz Haarfärbemittel	Färbt das Haar nachhaltig schwarz. Eine Färbung kann alle drei Level erfolgen.
+70301	Verlobungsring	Ein Ring, der von Verliebten getragen wird.
+70302	Ehering	Ein Ring, der von Verheirateten getragen wird.
+70602	Seelenpergament (100%)	Entwickle mit diesem Pergament deine Seele sicher um eine Stufe weiter.
+70603	Seelenpergament	Entwickle mit diesem Pergament deine Seele um bis zu zwei Stufen weiter. Versuch kann fehlschlagen.
+71001	Exorzismus-Schriftrolle	Befreit dich vom Fluch des bösen Geistes, wenn das Lernen fehlschlägt. Mit Hilfe dieser Rolle kannst du ein weiteres Fertigkeitsdokument an einem Tag lesen.
+71002	Status-Neuverteilung	Die Anwendung dieses Gegenstandes ermöglicht es dir, deine Statuspunkte neu zu verteilen. So kannst du die Entwicklung deines Charakters in eine andere Richtung lenken.
+71032	Schriftrolle des Drachen	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn seine Verbesserung fehlschlägt. Es wird nur die Qualität um eine Stufe verringert. Zudem erhöht sich die Wahrscheinlichkeit einer erfolgreichen Verbesserung um 10 %.
+71035	Elixier des Forschers	Steigert die Qualität gesammelter Forschungsobjekte und damit auch ihre Annahmewahrscheinlichkeit. Gilt nicht für Quests auf Yohara.
+71048	Wandelzauber	Dieser Zauber kann das Geschlecht deines Spielercharakters ändern.
+71054	Tinktur der Reiche	Bietet die Möglichkeit, in einem anderen Reich ins Exil zu gehen.
+71055	Tinktur des Namens	Gibt dir die Möglichkeit, einen neuen Namen für deinen Charakter zu wählen.
+71075	Haarfarbe (weiß)	Färbt deine Haare dauerhaft weiß.
+71076	Haarfarbe (Blond)	Färbt deine Haare dauerhaft blond.
+71077	Haarfarbe (rot)	Färbt deine Haare dauerhaft rot.
+71078	Haarfarbe (braun)	Färbt deine Haare dauerhaft braun.
+71079	Haarfarbe (schwarz)	Färbt deine Haare dauerhaft schwarz.
+71083	Stein-Handbuch	Entfernt alle zerbrochenen Steine aus einem Gegenstand. Somit erhältst du einen weiteren Versuch, Waffe oder Rüstung zu verbessern.
+71084	Gegenstand verzaubern	Entfernt die Boni eines deiner Gegenstände und fügt neue hinzu. Gilt nur für die Boni 1-5.
+71093	Verwandlungskugel	Mit Hilfe dieser Kugel kannst du dich in ein Monster verwandeln.
+71094	Konzentriertes Lesen	Erhöht die Chance auf eine Verbesserung deines Talents beim Lesen des nächsten Buches (oder Seelensteins) um den Faktor 2,5.
+71099	Ring der Nachfolge	Ermächtigt den Anführer einer Gilde seinen Nachfolger zu bestimmen und übergibt die Führung an diesen.
+71100	Lehrwechselzertifikat	Du kannst deine Lehre hinter dir lassen und eine neue beginnen.
+71103	Neuverteilung (VIT)	Setzt deine Vitalität auf 1 zurück und erlaubt dir, deine Punkte neu zu verteilen.
+71104	Neuverteilung (INT)	Setzt deine Intelligenz auf 1 zurück und erlaubt dir, deine Punkte neu zu verteilen.
+71105	Neuverteilung (STR)	Setzt deine Stärke auf 1 zurück und erlaubt dir, deine Punkte neu zu verteilen.
+71106	Neuverteilung (DEX)	Setzt deine Beweglichkeit auf 1 zurück und erlaubt dir, deine Punkte neu zu verteilen.
+71107	Frucht des Lebens	Erhöht die Rangpunkte um 2000 (Abklingzeit: 8 Stunden).
+71123	Drachenschuppe	Drachenschuppen gehören zu den härtesten bekannten Materialien.
+71124	Weißer Löwe	Tiere mit weißem Fell sind äußerst selten und werden von vielen Kulturen als Träger außergewöhnlicher Kräfte verehrt.
+71125	Kriegskeiler	Böse Tiergeister zu bändigen, bedarf erheblicher magischer Künste.
+71126	Streitwolf	Böse Tiergeister zu bändigen, bedarf erheblicher magischer Künste.
+71127	Sturmtiger	Böse Tiergeister zu bändigen, bedarf erheblicher magischer Künste.
+71128	Schlachtenlöwe	Böse Tiergeister zu bändigen, bedarf erheblicher magischer Künste.
+71129	Drachenkralle	Der Anblick dieser furchterregenden Kralle weckt Erinnerungen...
+71137	Königstiger (blau)	Der Zauber des Siegels ruft dein Reittier, den majestätischen Königstiger (blau), herbei.
+71138	Königstiger (rot)	Der Zauber des Siegels ruft dein Reittier, den majestätischen Königstiger (rot), herbei.
+71139	Königstiger (gold)	Der Zauber des Siegels ruft dein Reittier.
+71140	Königstiger (grün)	Der Zauber des Siegels ruft dein Reittier, den majestätischen Königstiger (grün), herbei.
+71141	Königstiger (grau)	Der Zauber des Siegels ruft dein Reittier, den majestätischen Königstiger (grau), herbei.
+71142	Königstiger (weiß)	Der Zauber des Siegels ruft dein Reittier, den majestätischen Königstiger (weiß), herbei.
+71149	Ring der tödlichen Macht	Verleiht dir eine Zeit lang +30% EXP, +20% Abwehrchance gegen Sura, +20% Abwehrchance gegen Schamanen, +20% Abwehrchance gegen Lykaner, +30% Stärke gegen Monster, +10% Maximum-TP und +10% Maximum-MP.
+71151	Grüner Zauber	Entfernt die Boni eines deiner Gegenstände und fügt neue hinzu. Kann nur bei Waffen und Rüstungen bis Level 30 angewendet werden. Nicht handelbar.
+71161	Equus Purpur	Siegel für eines der wunderschönen und äußerst seltenen Purpurpferde.
+71164	Komet	Mit diesem Siegel rufst du dein Rentier, Komet, herbei.
+71165	Polarprädator	Mit diesem Siegel rufst du deinen kampflustigen Polarprädator herbei.
+71166	Panzerpanda	Mit diesem Siegel rufst du deinen gepanzerten Panda herbei.
+71171	Einhorn	Mit diesem Siegel rufst du dein Einhorn herbei.
+71172	Nachtmahr	Mit diesem Siegel rufst du dein Nachtmahr herbei.
+71176	Schwarzer Panther	Das Siegel ruft deinen geheimnisvollen schwarzen Panther herbei.
+71177	Leopard	Das Siegel ruft deinen mutigen Leoparden herbei.
+71182	Muffin (braun)	Mit diesem Siegel rufst du Muffin, das gefürchtete Kampfhühnchen, herbei.
+71183	Nugget (braun)	Mit diesem Siegel rufst du Nugget, das schreckliche Kampfhähnchen, herbei.
+71184	Muffin (blau)	Mit diesem Siegel rufst du Muffin, das gefürchtete Kampfhühnchen, herbei.
+71185	Nugget (blau)	Mit diesem Siegel rufst du Nugget, das schreckliche Kampfhähnchen, herbei.
+71186	Muffin (grün)	Mit diesem Siegel rufst du Muffin, das gefürchtete Kampfhühnchen, herbei.
+71187	Nugget (grün)	Mit diesem Siegel rufst du Nugget, das schreckliche Kampfhähnchen, herbei.
+71192	Donner	Mit diesem Siegel rufst du dein Rentier Donner herbei. Es erhöht deine Bewegungsgeschwindigkeit um 20 und das Sammeln von Erfahrung um 30%.
+71193	Blitzen	Mit diesem Siegel rufst du dein Rentier Blitzen herbei. Es erhöht deine Bewegungsgeschwindigkeit um 20 und das Sammeln von Erfahrung um 30%.
+71197	Nugget (marine)	Mit diesem Siegel rufst du Nugget, das schreckliche Kampfhähnchen, herbei.
+71198	Muffin (rosa)	Mit diesem Siegel rufst du Muffin, das gefürchtete Kampfhühnchen, herbei.
+71221	Nirwana-Drache	Das Siegel ruft deinen Nirwana-Drachen herbei.
+71222	Samsara-Drache	Das Siegel ruft deinen Samsara-Drachen herbei.
+71223	Manni	Das Siegel ruft ein mächtiges Mammut herbei.
+71224	Manu	Das Siegel ruft ein mächtiges Mammut herbei.
+71225	Spektralross	Das Siegel ruft dein strahlendes Reittier herbei.
+71226	Ross Nocturnos	Das Siegel ruft dein nachtschwarzes Reittier herbei.
+71227	Mondschatten	Dieses Siegel ruft das knöcherne Streitross Mondschatten herbei.
+71228	Silberstern	Dieses Siegel ruft das knöcherne Streitross Silberstern herbei.
+71250	Weiße Sphinx	Das Siegel ruft dein ebenso weißes wie weises Reittier herbei.
+71251	Steinerne Sphinx	Das Siegel ruft dein ebenso steinernes wie stoisches Reittier herbei.
+72301	Segensschriftrolle	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn seine Verbesserung fehlschlägt. In diesem Fall wird lediglich seine Qualität um 1 verringert.
+72309	Schmiede-Handbuch	Das Buch ist mit der Seele eines alten Schmiedes verbunden. Bei Nutzung kann es die Chance der Gegenstandsverbesserung erhöhen.
+72310	Exorzismus-Schriftrolle	Befreit dich vom Fluch des bösen Geistes, wenn das Lernen fehlschlägt. Mit Hilfe dieser Rolle kannst du ein weiteres Fertigkeitsdokument an einem Tag lesen.
+72314	Schriftrolle des Drachen	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn dessen Verbesserung fehlschlägt. Lediglich die Qualität wird um eine Stufe verringert. Zudem erhöht sich die Wahrscheinlichkeit einer erfolgreichen Verbesserung um 10 %.
+72319	Inventarerweiterung	Verwende diesen Gegenstand, um dein Inventar zu erweitern. Handelbar.
+72320	Inventarerweiterung	Verwende diesen Gegenstand, um dein Inventar zu erweitern.
+72725	Elixier der Sonne (G)	Füllt deine TP automatisch auf. Enthält 7.000.000 TP.
+72729	Elixier des Mondes (G)	Füllt deine MP automatisch auf. Enthält 15.000 MP.
+73001	Modische Frisur (rot)	Eine modische Frisur, die ein charakteristisches Äußeres schafft.
+73002	Modische Frisur (hell)	Eine modische Frisur, die ein charakteristisches Äußeres schafft.
+73003	Modische Frisur (blau)	Eine modische Frisur, die ein charakteristisches Äußeres schafft.
+73004	Modische Frisur (braun)	Eine modische Frisur, die ein charakteristisches Äußeres schafft.
+73005	Stirntuch	Kurzes Haar, das von einem Stirntuch gebändigt wird.
+73006	Stirntuch	Kurzes Haar, das von einem Stirntuch gebändigt wird.
+73007	Stirntuch	Kurzes Haar, das von einem Stirntuch gebändigt wird.
+73008	Stirntuch	Kurzes Haar, das von einem Stirntuch gebändigt wird.
+73009	Lange Haare (schwarz)	Eine beeindruckende Frisur mit prachtvollem, schwarzem Haar.
+73010	Lange Haare (rot)	Eine beeindruckende Frisur mit prachtvollem, rotem Haar.
+73011	Lange Haare (braun)	Eine beeindruckende Frisur mit prachtvollem, braunem Haar.
+73012	Lange Haare (grün)	Eine beeindruckende Frisur mit prachtvollem, grünem Haar.
+73251	Pferdeschwanz (braun)	Langes Haar, das zu einem Zopf gebunden ist.
+73252	Pferdeschwanz (grün)	Langes Haar, das zu einem Zopf gebunden ist.
+73253	Pferdeschwanz (blau)	Langes Haar, das zu einem Zopf gebunden ist.
+73254	Pferdeschwanz (hell)	Langes Haar, das zu einem Zopf gebunden ist.
+73255	Schulterlanges Haar(rot)	Eine natürlich wirkende Frisur mit schulterlangem Haar.
+73256	Schulterlanges Haar(br.)	Eine natürlich wirkende Frisur mit schulterlangem Haar.
+73257	Schulterlanges Haar/hell	Eine natürlich wirkende Frisur mit schulterlangem Haar.
+73258	Schulterlanges Haar/lila	Eine natürlich wirkende Frisur mit schulterlangem Haar.
+73259	Kurzhaarfrisur (rot)	Eine praktische Kurzhaarfrisur, die etwas Bedrohliches vermittelt.
+73260	Kurzhaarfrisur (blau)	Eine praktische Kurzhaarfrisur, die etwas Bedrohliches vermittelt.
+73261	Kurzhaarfrisur (schwarz)	Eine praktische Kurzhaarfrisur, die etwas Bedrohliches vermittelt.
+73262	Kurzhaarfrisur (blond)	Eine praktische Kurzhaarfrisur, die etwas Bedrohliches vermittelt.
+73501	Sportliche Frisur (hell)	Eine extravagante Kurzhaarfrisur.
+73502	Sportliche Frisur(braun)	Eine extravagante Kurzhaarfrisur.
+73503	Sportliche Frisur(blond)	Eine extravagante Kurzhaarfrisur.
+73504	Sportliche Frisur (grün)	Eine extravagante Kurzhaarfrisur.
+73505	Charisma-Frisur (weiß)	Eine charismatische Frisur mit langem Haar.
+73506	Charisma-Frisur (rot)	Eine charismatische Frisur mit langem Haar.
+73507	Charisma-Frisur(schwarz)	Eine charismatische Frisur mit langem Haar.
+73508	Charisma-Frisur(violett)	Eine charismatische Frisur mit langem Haar.
+73509	Langer Zopf (weiß)	Eine traditionelle Zopffrisur
+73510	Langer Zopf (blau)	Eine traditionelle Zopffrisur
+73511	Langer Zopf (schwarz)	Eine traditionelle Zopffrisur
+73512	Langer Zopf (braun)	Eine traditionelle Zopffrisur
+73751	Edle Frisur (braun)	Eine edel wirkende Frisur mit zurückgehaltenem Haar.
+73752	Edle Frisur (schwarz)	Eine edel wirkende Frisur mit zurückgehaltenem Haar.
+73753	Edle Frisur (blau)	Eine edel wirkende Frisur mit zurückgehaltenem Haar.
+73754	Edle Frisur (hell)	Eine edel wirkende Frisur mit zurückgehaltenem Haar.
+73755	Halblanges Haar (braun)	Elegant getragenes, glattes Haar.
+73756	Halblanges Haar(schwarz)	Elegant getragenes, glattes Haar.
+73757	Halblanges Haar (blond)	Elegant getragenes, glattes Haar.
+73758	Halblanges Haar(violett)	Elegant getragenes, glattes Haar.
+73759	Alte Haartracht (braun)	Langes Haar, auf traditionelle Art getragen.
+73760	Alte Haartracht (hell)	Langes Haar, auf traditionelle Art getragen.
+73761	Alte Haartracht(violett)	Langes Haar, auf traditionelle Art getragen.
+73762	Alte Haartracht (rot)	Langes Haar, auf traditionelle Art getragen.
+74001	Modische Frisur (rot)	Eine Frisur, die dir ein unverwechselbares Äußeres verleiht
+74002	Modische Frisur (hell)	Eine Frisur, die dir ein markantes Äußeres verleiht
+74003	Modische Frisur (blau)	Eine Frisur, die dir ein markantes Äußeres verleiht
+74004	Modische Frisur (braun)	Eine Frisur, die dir ein markantes Äußeres verleiht
+74005	Stirntuch (rot)	Kurze braune Haare mit einem roten Stirnband.
+74006	Stirntuch(braun kariert)	Kurze blonde Haare mit einem hellen Stirnband.
+74007	Stirntuch (blau)	Kurze blaue Haare mit einem braunen Stirnband
+74008	Stirntuch (grün kariert)	Kurze grüne Haare mit einem grünen Stirnband
+74009	Lange Haare (schwarz)	Eine Frisur, die ein beeindruckendes Äußeres verleiht
+74010	Lange Haare (rot)	Eine Frisur, die ein beeindruckendes Äußeres verleiht
+74011	Lange Haare (braun)	Eine Frisur, die ein beeindruckendes Äußeres verleiht
+74012	Lange Haare (grün)	Eine Frisur, die ein beeindruckendes Äußeres verleiht
+74013	Afro für Krieger	Verleiht einem Krieger einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74014	Afro für Krieger	Verleiht einem Krieger einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74015	Samurai-Helm für Krieger	Verleiht einem Krieger einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74016	Samurai-Helm für Krieger	Verleiht einem Krieger einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74017	Fez für Krieger	Eine rote Kopfbedeckung für männliche Krieger. (Dauer 7 Tage)
+74018	Keffiyeh für Krieger	Ein Kopftuch für männliche Krieger. (Dauer 7 Tage)
+74019	Turban für Krieger	Eine Kopfbedeckung aus feinstem Stoff für männliche Krieger. (Dauer 7 Tage)
+74020	Kürbismaske-Krieger (m)	Eine Maske für den Krieger in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+74251	Pferdeschwanz (braun)	Langes braunes, zu einem Zopf gebundenes Haar - eine unter Frauen sehr beliebte Frisur
+74252	Pferdeschwanz (grün)	Langes grünes, zu einem Zopf gebundenes Haar - eine unter Frauen sehr beliebte Frisur
+74253	Pferdeschwanz (blau)	Langes blaues, zu einem Zopf gebundenes Haar - eine unter Frauen sehr beliebte Frisur
+74254	Pferdeschwanz (hell)	Langes helles, zu einem Zopf gebundenes Haar - eine unter Frauen sehr beliebte Frisur
+74255	Schulterlanges Haar(rot)	Eine freche, ausgefallene Frisur
+74256	Schulterlanges Haar(br.)	Eine freche, ausgefallene Frisur
+74257	Schulterlanges Haar/hell	Eine freche, ausgefallene Frisur
+74258	Schulterlanges Haar/lila	Eine freche, ausgefallene Frisur
+74259	Kurzhaarfrisur (rot)	Rotes, fransiges Haar im Ninja-Look
+74260	Kurzhaarfrisur (blau)	Blaues, fransiges Haar im Ninja-Look
+74261	Kurzhaarfrisur (schwarz)	Schwarzes, fransiges Haar im Ninja-Look
+74262	Kurzhaarfrisur (blond)	Blondes, fransiges Haar im Ninja-Look
+74263	Afro für Ninja (w)	Verleiht einem weiblichen Ninja einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74264	Afro für Ninja (w)	Verleiht einem weiblichen Ninja einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74265	Blumenhut für Ninja (w)	Verleiht einem weiblichen Ninja einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74266	Blumenhut für Ninja (w)	Verleiht einem weiblichen Ninja einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74267	Sandmaske für Ninja (w)	Ein Gesichtsschleier aus einem sehr wertvollen Stoff für weibliche Ninja. (Dauer 7 Tage)
+74268	Wüstenschal f. Ninja (w)	Ein Wüstenschal für weibliche Ninja aus einem edlen Stoff. (Dauer 7 Tage)
+74269	Turban für Ninja (w)	Eine Kopfbedeckung aus feinstem Stoff für weibliche Ninja. (Dauer 7 Tage)
+74270	Kürbismaske-Ninja (w)	Eine Maske für den weiblichen Ninja in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+74501	Sportliche Frisur (hell)	Eine militärisch wirkende Kurzhaarfrisur
+74502	Sportliche Frisur(braun)	Eine militärisch wirkende Kurzhaarfrisur
+74503	Sportliche Frisur(blond)	Eine militärisch wirkende Kurzhaarfrisur
+74504	Sportliche Frisur (grün)	Eine militärisch wirkende Kurzhaarfrisur
+74505	Charisma-Frisur (weiß)	Eine Frisur, die deinen individuellen Charakter unterstreicht
+74506	Charisma-Frisur (rot)	Eine Frisur, die deinen individuellen Charakter unterstreicht
+74507	Charisma-Frisur(schwarz)	Eine Frisur, die deinen individuellen Charakter unterstreicht
+74508	Charisma-Frisur(violett)	Eine Frisur, die deinen individuellen Charakter unterstreicht
+74509	Langer Zopf (weiß)	Zopf im alten Stil, der einst ein Symbol der Reichen war
+74510	Langer Zopf (blau)	Zopf im alten Stil, der einst ein Symbol der Reichen war
+74511	Langer Zopf (schwarz)	Zopf im alten Stil, der einst ein Symbol der Reichen war
+74512	Langer Zopf (braun)	Zopf im alten Stil, der einst ein Symbol der Reichen war
+74513	Afro für Sura (m)	Verleiht einem männlichen Sura einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74514	Afro für Sura (m)	Verleiht einem männlichen Sura einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74515	Samurai-Helm f. Sura (m)	Verleiht einem männlichen Sura einen TP-Bonus von 1%. Ersetzt vorhandene Frisur  (Dauer 7 Tage).
+74516	Samurai-Helm f. Sura (m)	Verleiht einem männlichen Sura einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74517	Fez für Sura (m)	Eine rote Kopfbedeckung für männliche Sura. (Dauer 7 Tage)
+74518	Keffiyeh für Sura (m)	Ein Kopftuch für männliche Sura. (Dauer 7 Tage)
+74519	Turban für Sura (m)	Eine Kopfbedeckung aus feinstem Stoff für männliche Sura. (Dauer 7 Tage)
+74520	Kürbismaske-Sura (m)	Eine Maske für den Sura in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+74521	Modische Frisur (grau)	Eine Frisur, die dir ein markantes Äußeres verleiht
+74522	Stirntuch	Kurzes Haar, das von einem Stirntuch gebändigt wird.
+74523	Lange Haare (blond)	Eine beeindruckende Frisur mit prachtvollem, blondem Haar.
+74524	Modische Frisur (gold)	Modisches goldbraunes, von einem Band geziertes Haar.
+74525	Stirntuch (schwarz)	Eine zerzaust wirkende Frisur, durch ein Stirntuch im Zaum gehalten
+74526	Lange Haare (rubinrot)	Prachtvolles, rubinrotes Haar
+74527	Pferdeschwanz (rot)	Langes Haar, das zu einem Zopf gebunden ist.
+74528	Schulterlanges Haar/aqua	Eine dezente Frisur mit einem blauen Stirntuch
+74529	Kurzhaarfrisur (braun)	Eine praktische Kurzhaarfrisur, die ein düsteres Äußeres verleiht.
+74530	Pferdeschwanz (rot)	Langes rotes, zu einem Zopf gebundenes Haar - eine unter Frauen sehr beliebte Frisur
+74531	Schulterlanges Haar/schw	Eine freche, ausgefallene Frisur
+74532	Kurzhaarfrisur (grau)	Eine praktische Kurzhaarfrisur, die etwas Bedrohliches vermittelt.
+74533	Sportliche Frisur (schw)	Eine militärisch wirkende Kurzhaarfrisur
+74534	Charisma-Frisur (blond)	Eine Frisur, die deinen individuellen Charakter unterstreicht.
+74535	Langer Zopf (pink)	Zopf im alten Stil, der einst ein Symbol der Reichen war.
+74536	Sportliche Frisur (lila)	Eine extravagante Kurzhaarfrisur
+74537	Charisma-Frisur (blond)	Eine charismatische Frisur mit langem Haar
+74538	Langer Zopf (royal)	Zopf im alten Stil, der einst ein Symbol der Reichen war.
+74539	Edle Frisur (violett)	Eine edel wirkende Frisur mit zurückgehaltenem Haar
+74540	Halblanges Haar (dunkel)	Eine elegante Schamanenfrisur
+74541	Alte Haartracht (weiß)	Langes Haar, auf traditionelle Art getragen.
+74542	Edle Frisur (rot)	Eine mit einer Schmetterlings-Haarnadel elegant geschmückte Hochsteckfrisur
+74543	Halblanges Haar (weiß)	Elegant getragenes, glattes Haar
+74544	Alte Haartracht(schwarz)	Eine feminine Frisur mit langem, stufig geschnittenem Haar
+74545	Stammeszöpfe+ (rot)	Mit roten Holzperlen verzierte Zöpfe, die die Stammeszugehörigkeit markieren.
+74546	Stammeszöpfe+ (gelb)	Mit gelben Holzperlen verzierte Zöpfe, die die Stammeszugehörigkeit markieren.
+74547	Stammeszöpfe+ (blau)	Mit blauen Holzperlen verzierte Zöpfe, die die Stammeszugehörigkeit markieren.
+74548	Stammeszöpfe+ (violett)	Mit violetten Holzperlen verzierte Zöpfe, die die Stammeszugehörigkeit markieren.
+74549	Stammeszöpfe+ (grün)	Mit grünen Holzperlen verzierte Zöpfe, die die Stammeszugehörigkeit markieren.
+74550	Stirnschutz+ (gold)	Verzierter Kopfschutz mit passendem traditionellem Haarschmuck.
+74551	Stirnschutz+ (schwarz)	Verzierter Kopfschutz mit passendem traditionellem Haarschmuck.
+74552	Stirnschutz+ (rot)	Verzierter Kopfschutz mit passendem traditionellem Haarschmuck.
+74553	Stirnschutz+ (blau)	Verzierter Kopfschutz mit passendem traditionellem Haarschmuck.
+74554	Stirnschutz+ (weiß)	Verzierter Kopfschutz mit passendem traditionellem Haarschmuck.
+74555	Kopfschutz+ (gold)	Aufwändig gearbeiteter Kopf- und Schläfenschutz mit traditionellem Haarschmuck.
+74556	Kopfschutz+ (schwarz)	Aufwändig gearbeiteter Kopf- und Schläfenschutz mit traditionellem Haarschmuck.
+74557	Kopfschutz+ (rot)	Aufwändig gearbeiteter Kopf- und Schläfenschutz mit traditionellem Haarschmuck.
+74558	Kopfschutz+ (blau)	Aufwändig gearbeiteter Kopf- und Schläfenschutz mit traditionellem Haarschmuck.
+74559	Kopfschutz+ (grün)	Aufwändig gearbeiteter Kopf- und Schläfenschutz mit traditionellem Haarschmuck.
+74751	Edle Frisur (braun)	Eine mit einer Schmetterlings-Haarnadel elegant geschmückte Hochsteckfrisur
+74752	Edle Frisur (schwarz)	Eine mit einer Schmetterlings-Haarnadel elegant geschmückte Hochsteckfrisur
+74753	Edle Frisur (blau)	Eine mit einer Schmetterlings-Haarnadel elegant geschmückte Hochsteckfrisur
+74754	Edle Frisur (hell)	Eine mit einer Schmetterlings-Haarnadel elegant geschmückte Hochsteckfrisur
+74755	Halblanges Haar (braun)	Eine elegante Schamanenfrisur
+74756	Halblanges Haar(schwarz)	Eine elegante Schamanenfrisur
+74757	Halblanges Haar (blond)	Eine elegante Schamanenfrisur
+74758	Halblanges Haar(violett)	Eine elegante Schamanenfrisur
+74759	Alte Haartracht (braun)	Eine feminine Frisur mit langem, stufig geschnittenem Haar
+74760	Alte Haartracht (hell)	Eine feminine Frisur mit langem, stufig geschnittenem Haar
+74761	Alte Haartracht(violett)	Eine feminine Frisur mit langem, stufig geschnittenem Haar
+74762	Alte Haartracht (rot)	Eine feminine Frisur mit langem, stufig geschnittenem Haar
+74763	Afro für Schamanin	Verleiht einer Schamanin einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74764	Afro für Schamanin	Verleiht einer Schamanin einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74765	Blumenhut für Schamanin	Verleiht einer Schamanin einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74766	Blumenhut für Schamanin	Verleiht einer Schamanin einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+74767	Sandmaske für Schamanin	Ein Gesichtsschleier aus einem sehr wertvollen Stoff für weibliche Schamanen. (Dauer 7 Tage)
+74768	Wüstenschal f. Schamanin	Ein Wüstenschal aus einem edlen Stoff für weibliche Schamanen. (Dauer 7 Tage)
+74769	Turban für Schamanin	Eine Kopfbedeckung aus feinstem Stoff für weibliche Schamanen. (Dauer 7 Tage)
+74770	Kürbismaske-Schamane (w)	Eine Maske für den weiblichen Schamanen in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+75001	Modische Frisur (rot)	Modisches rotes, von einem Band geziertes Haar.
+75002	Modische Frisur (hell)	Modisches helles, von einem Band geziertes Haar.
+75003	Modische Frisur (blau)	Modisches blaues, von einem Band geziertes Haar.
+75004	Modische Frisur (braun)	Modisches braunes, von einem Band geziertes Haar.
+75005	Stirntuch (braun)	Eine zerzaust wirkende Frisur, durch ein Stirntuch im Zaum gehalten
+75006	Stirntuch (blond)	Eine zerzaust wirkende Frisur, durch ein Stirntuch im Zaum gehalten
+75007	Stirntuch (blau)	Eine zerzaust wirkende Frisur, durch ein Stirntuch im Zaum gehalten
+75008	Stirntuch (grün)	Eine zerzaust wirkende Frisur, durch ein Stirntuch im Zaum gehalten
+75009	Lange Haare (schwarz)	Prachtvolles, schwarzes Haar
+75010	Lange Haare (rot)	Prachtvolles, rotes Haar
+75011	Lange Haare (braun)	Prachtvolles, braunes Haar
+75012	Lange Haare (grün)	Prachtvolles, grünes Haar
+75013	Afro für Kriegerin	Verleiht einer Kriegerin einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75014	Afro für Kriegerin	Verleiht einer Kriegerin einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75015	Blumenhut für Kriegerin	Verleiht einer Kriegerin einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75016	Blumenhut für Kriegerin	Verleiht einer Kriegerin einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75017	Sandmaske für Kriegerin	Ein Gesichtsschleier aus einem sehr wertvollen Stoff für Kriegerinnen. (Dauer 7 Tage)
+75018	Wüstenschal f. Kriegerin	Ein Wüstenschal für weibliche Krieger aus einem edlen Stoff. (Dauer 7 Tage)
+75019	Turban für Kriegerin	Eine Kopfbedeckung aus feinstem Stoff für weibliche Krieger. (Dauer 7 Tage)
+75020	Kürbismaske-Krieger (w)	Eine Maske für den weiblichen Krieger in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+75201	Pferdeschwanz (braun)	Eine Frisur, bei der die Haare am Hinterkopf zusammengebunden sind
+75202	Pferdeschwanz (grün)	Eine Frisur, bei der die Haare am Hinterkopf zusammengebunden sind
+75203	Pferdeschwanz (blau)	Eine Frisur, bei der die Haare am Hinterkopf zusammengebunden sind
+75204	Pferdeschwanz (hell)	Eine Frisur, bei der die Haare am Hinterkopf zusammengebunden sind
+75205	Schulterlanges Haar(rot)	Eine dezente Frisur mit einem weißen Stirntuch
+75206	Schulterlanges Haar(br.)	Eine dezente Frisur mit einem grünen Stirntuch
+75207	Schulterlanges Haar/hell	Eine dezente Frisur mit einem hellen Stirntuch
+75208	Schulterlanges Haar/lila	Eine dezente Frisur mit einem rotem Stirntuch
+75209	Kurzhaarfrisur (rot)	Eine Frisur, die ein düsteres Äußeres verleiht
+75210	Kurzhaarfrisur (blau)	Eine Frisur, die ein düsteres Äußeres verleiht
+75211	Kurzhaarfrisur (schwarz)	Eine Frisur, die ein düsteres Äußeres verleiht
+75212	Kurzhaarfrisur (blond)	Eine Frisur, die ein düsteres Äußeres verleiht
+75213	Afro für Ninja (m)	Verleiht einem männlichen Ninja einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75214	Afro für Ninja (m)	Verleiht einem männlichen Ninja einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75215	Samurai-Helm Ninja (m)	Verleiht einem männlichen Ninja einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75216	Samurai-Helm Ninja (m)	Verleiht einem männlichen Ninja einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75217	Fez für Ninja (m)	Eine rote Kopfbedeckung für männliche Ninja. (Dauer 7 Tage)
+75218	Keffiyeh für Ninja (m)	Ein Kopftuch für männliche Ninja. Schützt gegen Wüstenstürme. (Dauer 7 Tage)
+75219	Turban für Ninja (m)	Eine Kopfbedeckung aus feinstem Stoff für männliche Ninja. (Dauer 7 Tage)
+75220	Kürbismaske-Ninja (m)	Eine Maske für den Ninja in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+75401	Sportliche Frisur (hell)	Eine extravagante Frisur, die typisch für weibliche Sura ist
+75402	Sportliche Frisur(braun)	Eine extravagante Frisur, die typisch für weibliche Sura ist
+75403	Sportliche Frisur(blond)	Eine extravagante Frisur, die typisch für weibliche Sura ist
+75404	Sportliche Frisur (grün)	Eine extravagante Frisur, die typisch für weibliche Sura ist
+75405	Charisma-Frisur (weiß)	Schlohweißes, langes Haar im eigensinnigen Stil
+75406	Charisma-Frisur (rot)	Rotes, langes Haar im eigensinnigen Stil
+75407	Charisma-Frisur(schwarz)	Rabenschwarzes, langes Haar im eigensinnigen Stil
+75408	Charisma-Frisur(violett)	Violettes, langes Haar im eigensinnigen Stil
+75409	Langer Zopf (weiß)	Eine Zopffrisur
+75410	Langer Zopf (blau)	Eine Zopffrisur
+75411	Langer Zopf (schwarz)	Eine Zopffrisur
+75412	Langer Zopf (braun)	Eine Zopffrisur
+75413	Afro für Sura (w)	Verleiht einem weiblichen Sura einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75414	Afro für Sura (w)	Verleiht einem weiblichen Sura einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75415	Blumenhut für Sura (w)	Verleiht einem weiblichen Sura einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75416	Blumenhut für Sura (w)	Verleiht einem weiblichen Sura einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75417	Sandmaske für Sura (w)	Ein Gesichtsschleier aus einem sehr wertvollen Stoff für weibliche Sura. (Dauer 7 Tage)
+75418	Wüstenschal für Sura (w)	Ein Wüstenschal aus einem edlen Stoff für weibliche Suras. (Dauer 7 Tage)
+75419	Turban für Sura (w)	Eine Kopfbedeckung aus feinstem Stoff für weibliche Sura. (Dauer 7 Tage)
+75420	Kürbismaske-Sura (w)	Eine Maske für den weiblichen Sura in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+75601	Edle Frisur (braun)	Ein modischer Schnitt, der dem Schamanen einen edlen Ausdruck verleiht
+75602	Edle Frisur (schwarz)	Ein modischer Schnitt, der dem Schamanen einen edlen Ausdruck verleiht
+75603	Edle Frisur (blau)	Ein modischer Schnitt, der dem Schamanen einen edlen Ausdruck verleiht
+75604	Edle Frisur (hell)	Ein modischer Schnitt, der dem Schamanen einen edlen Ausdruck verleiht
+75605	Halblanges Haar (braun)	Glattes, braunes Haar
+75606	Halblanges Haar(schwarz)	Glattes, schwarzes Haar
+75607	Halblanges Haar (blond)	Glattes, blondes Haar
+75608	Halblanges Haar(violett)	Glattes, violettes Haar
+75609	Alte Haartracht (braun)	Alte Haartracht der Krieger - die braunen Haare sind zu einem Zopf gebunden
+75610	Alte Haartracht (hell)	Alte Haartracht der Krieger - die hellen Haare sind zu einem Zopf gebunden
+75611	Alte Haartracht(violett)	Alte Haartracht der Krieger - die violetten Haare sind zu einem Zopf gebunden
+75612	Alte Haartracht (rot)	Alte Haartracht der Krieger - die roten Haare sind zu einem Zopf gebunden
+75613	Afro für Schamanen	Verleiht einem Schamanen einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75614	Afro für Schamanen	Verleiht einem Schamanen einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75615	Samurai-Helm Schamanen	Verleiht einem Schamanen einen TP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75616	Samurai-Helm Schamanen	Verleiht einem Schamanen einen MP-Bonus von 1%. Ersetzt vorhandene Frisur (Dauer 7 Tage).
+75617	Fez für Schamanen	Eine rote Kopfbedeckung für männliche Schamanen. (Dauer 7 Tage)
+75618	Keffiyeh für Schamanen	Ein Kopftuch für männliche Schamanen. Schützt gegen Wüstenstürme. (Dauer 7 Tage)
+75619	Turban für Schamanen	Eine Kopfbedeckung aus feinstem Stoff für männliche Schamanen. (Dauer 7 Tage)
+75620	Kürbismaske-Schamane (m)	Eine Maske für den Schamanen in Form eines Kürbisses. Attribute und Dauer werden durch Zufall bestimmt. Sie ersetzt bereits vorhandene Frisuren.
+76001	Status-Neuverteilung	Die Anwendung dieses Gegenstandes ermöglicht es dir, deine Statuspunkte neu zu verteilen. So kannst du die Entwicklung deines Charakters in eine andere Richtung lenken. Nicht handelbar.
+76002	Schrumpfkopf	Dieser Dämonenschrumpfkopf öffnet das Siegel zur 3. Ebene der Devil's Catacomb. Nicht handelbar.
+76007	Tapferkeitsumhang	Ein farbiger Umhang, der sämtliche Monster anlockte. Mit diesem bewiesen Krieger einst ihre Tapferkeit. Nicht handelbar.
+76016	Segensschriftrolle	Beseitigt das Risiko, einen Gegenstand zu zerstören, wenn seine Verbesserung fehlschlägt. In diesem Fall wird lediglich seine Qualität um 1 verringert. Nicht handelbar.
+76023	Grüner Zauber	Entfernt die Boni eines deiner Gegenstände und fügt neue hinzu. Kann nur bei Waffen und Rüstungen bis Level 40 angewendet werden. Item aus Leveltruhe, nicht handelbar.
+76025	Windschuhe	Mit diesem Gegenstand kannst du dich dem Kerker des Tempels von Ochao stellen.
+79501	Pfeilköcher	Ein Köcher, der dich 24 Stunden lang mit unendlich vielen Pfeilen versorgt. Schaden nimmt auch bei Distanzschüssen nicht ab.
+79502	Pfeilköcher	Ein Köcher, der dich 7 Tage lang mit unendlich vielen Pfeilen versorgt. Schaden nimmt auch bei Distanzschüssen nicht ab.
+79503	Pfeilköcher	Ein Köcher, der dich mit unendlich vielen Pfeilen für den Kampf versorgt. Schaden nimmt auch bei Distanzschüssen nicht ab.
+79504	Pfeilköcher	Ein Köcher, der dich mit unendlich vielen Pfeilen für den Kampf versorgt. Schaden nimmt auch bei Distanzschüssen nicht ab.
+85001	Herrscherband (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85002	Herrscherband (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85003	Herrscherband (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85004	Herrscherband (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85005	Meisterband (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85006	Meisterband (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85007	Meisterband (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85008	Meisterband (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85011	Fürstenband (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85012	Fürstenband (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85013	Fürstenband (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85014	Fürstenband (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85015	Königsband (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85016	Königsband (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85017	Königsband (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85018	Königsband (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85071	Band des Chou (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85072	Band des Chou (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85073	Band des Chou (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85074	Band des Chou (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85075	Band der Mao (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85076	Band der Mao (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85077	Band der Mao (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85078	Band der Mao (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85079	Band des Yu (einfach)	Dieses Band nimmt 1% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85080	Band des Yu (fein)	Dieses Band nimmt 5% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85081	Band des Yu (edel)	Dieses Band nimmt 10% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+85082	Band des Yu (maßgef.)	Dieses Band nimmt 11~25% der Boni von der Waffe oder Rüstung auf, die du dafür einsetzt.
+90000	Urkunde der Umkehr	Benutze die Urkunde der Umkehr, um Boni wieder vom Schulterband zu entfernen.
+10951	Weißes Segel	Dieses Item lässt dich in den Schiffsverteidigungs Dungeon.
+10954	Feuer Kristall	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Feuer Talisman.
+10955	Eis Kristall	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Eis Talisman.
+10956	Kristall der Dunkelheit	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Dunklen Talisman.
+10957	Blitz Kristall	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Blitz Talisman.
+10958	Wind Kristall	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Wind Talisman.
+10959	Erd Kristall	Dieser Kristall wird benutzt um dinge zu kaufen oder zum upgraden des Erd.
+10960	1st Platz Gold Alloy Truhe	Belohnung 1st Klassifiziert Gold Liga.
+10961	1st Platz Silver Alloy Truhe	Belohnung 1st Klassifiziert Silver Liga.
+10962	1st Platz Bronze Alloy Truhe	Belohnung 1st Klassifiziert Bronze Liga.
+10963	2nd Platz Gold Alloy Truhe	Belohnung 2st Klassifiziert Gold Liga.
+10964	2nd Platz Silver Alloy Truhe	Belohnung 2st Klassifiziert Silver Liga.
+10965	2nd Platz Bronze Alloy Truhe	Belohnung 2st Klassifiziert Bronze Liga.
+10966	3rd Platz Gold Alloy Truhe	Belohnung 3st Klassifiziert Gold Liga.
+10967	3rd Platz Silver Alloy Truhe	Belohnung 3st Klassifiziert Silver Liga.
+10968	3rd Platz Bronze Alloy Truhe	Belohnung 3st Klassifiziert Bronze Liga.
+18901	Roter Flammen Stein (Permanent)	Entwickelt deinen Gürtel Bonus.	Dauer: Unendlich
+27798	Frischwasser Shrimp	Köder um einen großen Fisch zu fangen.	Erhöt die chance einen Seltenen Fisch zu finden um 20%.
+27799	Fishknochen	Die knochen von einem Fisch
+27800	Paste	Ein leichter Billiger Köder	Erhöt die chance einen Seltenen Fisch zu fangen um 5%.
+27801	Wurm	Populärer köder zum Fische fangen	Erhöt die chance einen Seltenen Fisch zu fangen um 8%.
+27802	Elritze	Köder der einen Großen Fisch anlockt.	Erhöt die chance einen Seltenen Fisch zu fangen um 12%.
+27863	Gegrillter Zander	Ess diesen Fisch um diesen Bonus zu erhalten :
+27864	Gegrillter Mandarinfish	Ess diesen Fisch um diesen Bonus zu erhalten:
+27865	Gegrillter Großer Zander	Ess diesen Fisch um diesen Bonus zu erhalten:
+27866	Gegrillter Karpfen	Ess diesen Fisch um diesen Bonus zu erhalten:
+27867	Gegrillter Salmonelle	Ess diesen Fisch um diesen Bonus zu erhalten:
+27868	Gegrillter Graskarpfen	Ess diesen Fisch um diesen Bonus zu erhalten:
+27869	Gegrillter Saibling	Ess diesen Fisch um diesen Bonus zu erhalten:
+27870	Gegrillter Aal	Ess diesen Fisch um diesen Bonus zu erhalten:
+27871	Gegrillter Regenbogenforelle	Ess diesen Fisch um diesen Bonus zu erhalten:
+27872	Gegrillter Seeforelle	Ess diesen Fisch um diesen Bonus zu erhalten:
+27873	Gegrillter Rotfeder	Ess diesen Fisch um diesen Bonus zu erhalten:
+27874	Gegrillter Flussbarsch	Ess diesen Fisch um diesen Bonus zu erhalten:
+27875	Gegrillter Schleie	Ess diesen Fisch um diesen Bonus zu erhalten:
+27876	Gegrillter Wels	Ess diesen Fisch um diesen Bonus zu erhalten:
+27877	Gegrillter Schmelle	Ess diesen Fisch um diesen Bonus zu erhalten:
+27878	Gegrillter Lotus Fisch	Ess diesen Fisch um diesen Bonus zu erhalten:
+27879	Gegrillter Süßfisch	EEss diesen Fisch um diesen Bonus zu erhalten:
+27880	Gegrillter Stinte	Ess diesen Fisch um diesen Bonus zu erhalten:
+27881	Gegrillter Shiri	Ess diesen Fisch um diesen Bonus zu erhalten:
+27882	Gegrillter Spiegelkarpfen	Ess diesen Fisch um diesen Bonus zu erhalten:
+27883	Gegrillter Goldfisch	Ess diesen Fisch um diesen Bonus zu erhalten:
+27884	Gegrillter Schlangenkopf	Ess diesen Fisch um diesen Bonus zu erhalten:
+27885	Gegrillter Chanodichthys	Ess diesen Fisch um diesen Bonus zu erhalten:
+27886	Gegrillter Rote Königskrabbe	Ess diesen Fisch um diesen Bonus zu erhalten:
+27887	Gegrillter Auster	Ess diesen Fisch um diesen Bonus zu erhalten:
+30002	Dunkler Farn	Es könnte für den Biologen interessant sein.
+30003	Chaegirab ring	Es könnte für den Biologen interessant sein.
+30004	Metin Kristall	Es könnte für den Biologen interessant sein.
+30005	Purified Core	Es könnte für den Biologen interessant sein.
+30006	Ork Zahn	Es könnte für den Biologen interessant sein.
+30015	Dämonenandenken	Es könnte für den Biologen interessant sein.
+30047	Fluchsammlung	Es könnte für den Biologen interessant sein.
+30050	Eiskugel	Es könnte für den Biologen interessant sein.
+30094	Yang Bag Klein	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 5.000 und 15.000 yang.
+30095	Yang Bag Mittel	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 10.000 und 30.000 yang.
+30096	Yang Bag Groß	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 15.000 und 45.000 yang.
+30097	Yang Bag Klein	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 5.000 und 15.000 yang.
+30098	Yang Bag Mittel	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 10.000 und 30.000 yang.
+30099	Yang Bag Groß	Du wirst mit Rechtsklick Yang von diesem sack erhalten zwischen 15.000 und 45.000 yang.
+30165	Zelkova Holzast	Es könnte für den Biologen interessant sein.
+30166	Tugyi's Tafel	Es könnte für den Biologen interessant sein.
+30167	Roter geister ast	Es könnte für den Biologen interessant sein.
+30168	Notiz der Anfürer	Es könnte für den Biologen interessant sein.
+30251	Juwel der Missgunst	Es könnte für den Biologen interessant sein.
+30252	Juwel der Weisheit	Es könnte für den Biologen interessant sein.
+30255	Traktat des Feuers	Das item wird benutzt zum Upgraden vom Feuer Talisman.
+30256	Traktat des Blitzes	Das item wird benutzt zum Upgraden vom Blitz Talisman.
+30257	Traktat der Erde	Das item wird benutzt zum Upgraden vom Earth Talisman.
+30258	Traktat des Eises	Das item wird benutzt zum Upgraden vom Eis Talisman.
+30259	Traktat des Windes	Das item wird benutzt zum Upgraden vom Wind Talisman.
+30260	Traktat der Dunkelheit	Das item wird benutzt zum Upgraden vom Talisman der Dunkelheit.
+30271	Stück eines Metinsteins	Das item wird benutzt zum Upgraden vom equipment.
+30273	Mystisches Zertifikat	Das item wird benutzt zum Upgraden vom equipment.
+30274	Antikes Zertifikat	Das item wird benutzt zum Upgraden vom equipment.
+30275	Episches Zertifikat	Das item wird benutzt zum Upgraden vom equipment.
+30276	Legendäres Zertifikat	Das Item wird benutzt zum Upgraden vom Equipment.
+30277	Götterkristall	Du kannst 100 Götterkristalle gegen 1 Götterkristall+ eintauschen.	Klicken Sie mit der rechten Maustaste, um sie zu transformieren.
+30278	Götterkristall+	Dieser Gegenstand wird für Verbesserungen, Herstellung und verschiedene NPC-Käufe verwendet.
+30279	Solarkristall	Du kannst 100 Einheiten Solarkristall gegen 1 Solarkristall+ eintauschen.	Klicken Sie mit der rechten Maustaste, um sie zu transformieren.
+30280	Solarkristall+	Dieser Gegenstand wird für Verbesserungen, Herstellung und verschiedene NPC-Käufe verwendet.
+30282	Horn von Razador	Dieser Gegenstand wird verwendet, um Ausrüstungsgegenstände aufzuwerten.
+30283	Horn von Nemere	Dieser Gegenstand wird verwendet, um Ausrüstungsgegenstände aufzuwerten.
+30284	Geistloser Stein	Dieser Gegenstand wird für Verbesserungen und verschiedene Käufe von NPCs verwendet.
+30516	Antike Epaulette	Gegenstand zur Verbesserung der Ausrüstung.
+30524	Flammenstein	Gegenstand zur Verbesserung der Ausrüstung.
+30525	Eisflammenstein	Gegenstand zur Verbesserung der Ausrüstung.
+30587	Lila Stoff	Gegenstand zur Verbesserung der Ausrüstung.
+30602	Blauer Farbstoff	Gegenstand zur Verbesserung der Ausrüstung.
+30610	Mithril	Gegenstand zur Verbesserung der Ausrüstung.
+30612	Robuste Kordeln	Artikel zur Verbesserung der Ausrüstung.
+30614	Schwarzer Farbstoff	Gegenstand zur Verbesserung der Ausrüstung.
+30615	Weißer Farbstoff	Gegenstand zur Verbesserung der Ausrüstung.
+30623	Schleimphiole leer	Dieser Gegenstand wird im Schleim-Dungeon verwendet und muss nach dem Ablegen auf den Schleim gezogen werden.
+30624	Phiole voller Schleim	Dieser Gegenstand wird im Schleim-Dungeon verwendet und muss nach dem Ablegen auf den Feuerstein gezogen werden.
+30625	Stück Menhirschleim	Dieser Gegenstand wird verwendet, um den Schleim-Dungeon zu bekämpfen.
+30798	Ankh-Kreuz	Mit diesem Gegenstand kannst du dich dem Verlies der Pyramiden stellen.
+30800	Stück Pergament 1	Dieser Gegenstand wird verwendet, um den zweiten Stock des Pyramiden-Dungeons zu überwinden
+30801	Stück Pergament 2	Dieser Gegenstand wird verwendet, um den zweiten Stock des Pyramiden-Dungeons zu überwinden
+30802	Stück Pergament 3	Dieser Gegenstand wird verwendet, um den zweiten Stock des Pyramiden-Dungeons zu überwinden
+30803	Stück Pergament 4	Dieser Gegenstand wird verwendet, um den zweiten Stock des Pyramiden-Dungeons zu überwinden
+30804	Salbeiband	Dieser Gegenstand wird im Pyramiden-Dungeon verwendet.
+30805	Antiker Schlüssel	Dieser Gegenstand wird im Pyramiden-Dungeon verwendet.
+30806	Antike Truhe	Dieser Gegenstand wird im Pyramiden-Dungeon verwendet.
+39015	Stein des Schmieds	Mit diesem Stein ist es möglich, einen Gegenstand beim Schmied zu kaufen
+39048	Truhe des Krieger	Pakets mit nützlichen Büchern für Krieger.
+39050	Truhe des Ninja	Pakets mit nützlichen Büchern für Ninja.
+39052	Truhe des Suren	Pakets mit nützlichen Büchern für die Sure.
+39054	Truhe des Shamamo	Pakets mit nützlichen Büchern für Schamanen.
+39065	Yang (20kk)	Enthält 20kk Yang.
+39066	Yang (40kk)	Enthält 40kk Yang.
+39067	Yang (70kk)	Enthält 70kk Yang.
+39068	Yang (15kk)	Enthält 15kk Yang.
+39069	Yang (10kk)	Enthält 10kk Yang.
+39070	Yang (30kk)	Enthält 30kk Yang.
+39071	Yang (5kk)	Enthält 5kk Yang.
+39072	Yang (25kk)	Enthält 25kk Yang.
+39073	Yang (35kk)	Enthält 35kk Yang.
+39074	Yang (55kk)	Enthält 55kk Yang.
+39075	Yang (50kk)	Enthält 50kk  Yang.
+39076	Yang (100kk)	Enthält 100kk Yang.
+39077	Yang (150kk)	Enthält 150kk Yang.
+39079	Yang (80kk)	Enthält 80kk Yang.
+39080	Yang (130kk)	Enthält 130kk Yang.
+39081	Yang (230kk)	Enthält 230kk Yang.
+39082	Yang (120kk)	Enthält 120kk Yang.
+39083	Yang (220kk)	Enthält 220kk Yang.
+40004	Eeks Ring	Ein mit geheimen Zutaten hergestellter Ring, der dir besondere Boni verleiht.
+40095	Fächer des Dunklen Zodiac	Ein Waffenskin, der im Battle Pass-Shop gekauft werden kann.
+40096	Dunkle Zodiac Glocke	Ein Waffenskin, der im Battle Pass Shop gekauft werden kann.
+40097	Glefe des Dunklen Zodiac	Ein Waffenskin, der im Battle Pass-Shop gekauft werden kann.
+40098	Bogen des Dunklen Zodiac	Ein Waffenskin, der im Battle Pass-Shop gekauft werden kann.
+40099	Dunkler Zodiac Dolch	Ein Waffenskin, der im Battle Pass Shop gekauft werden kann.
+40100	Schwert des dunklen Zodiac	Ein Waffenskin, der im Battle Pass Shop gekauft werden kann.
+40143	Forscherelixier +	Dieses Elixier erhöht die Qualität der Gegenstände und setzt die Wartezeit zurück.
+40144	Forscherelixier	Dieses Elixier setzt die Wartezeit zurück.
+40192	Dunkles Zodiac Kostüm (f)	Zodiac-Kostüm mit Effekten, die zu den Waffen passen.
+40193	Dunkles Zodiac Kostüm (m)	Zodiac Kostüm mit Effekten passend zu den Waffen.
+40194	Dunkles Zodiac Kostüm (f)	Zodiac-Kostüm mit Effekten, die zu den Waffen passen.
+40195	Dunkles Zodiac Kostüm (m)	Zodiac Kostüm mit Effekten passend zu den Waffen.
+40196	Dunkles Zodiac Kostüm (m)	Zodiac Kostüm mit Effekten passend zu den Waffen.
+40197	Dunkles Zodiac Kostüm (f)	Zodiac-Kostüm mit Effekten, die zu den Waffen passen.
+40198	Dunkles Zodiac Kostüm (m)	Zodiac Kostüm mit Effekten passend zu den Waffen.
+40199	Dunkles Zodiac Kostüm (f)	Zodiac-Kostüm mit Effekten, die zu den Waffen passen.
+45242	Schwarze Zöpfe + (m)	Spezielle Zöpfe, die zum Sternzeichen-Kostüm passen.
+45243	Schwarze Zöpfe + (f)	Spezielle Zöpfe, die zum Sternzeichen-Kostüm passen.
+46003	Halbmondkriegerin (f)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46004	Halbmondkriegerin (m)	Dieser Artikel kann nur von der Unterstützungsschamy getragen werden.
+46005	Azraels Rüstung (f)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46006	Azraels Rüstung (m)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46007	Wüstenkrieger (f)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46008	Wüstenkrieger (m)	Dieser Artikel kann nur von der Unterstützungsschamy getragen werden.
+46303	Azraels Helm (f)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46304	Azraels Helm (m)	Dieser Gegenstand kann nur von der Unterstützungsschamy getragen werden.
+46307	Salsa Haar	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+46308	Mini Irokese	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+46601	Riptooth Fächer	Dieser Artikel kann nur vom Support Shamy getragen werden.
+46602	Riptooth Glocke	Dieser Artikel kann nur vom Support Shamy getragen werden.
+46603	Aquarian Fächer	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+46604	Wassermannglocke	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+46605	Sugary Glocke	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+46606	Frosted Fächer	Dieser Artikel kann nur von der Trägerschamy getragen werden.
+50063	Razadors Truhe	Diese Truhe wurde aus der Roten Drachenfestung geborgen. Es enthält einen wahrhaft großartigen Schatz.
+50064	Nemeres Truhe	Diese Truhe wurde aus Nemeres Wachtturm geborgen. Es enthält einen wahrhaft großartigen Schatz.
+50065	Eishexentruhe	Die Eishexentruhe. Diese Truhe enthält etwas Wertvolles.
+50066	Kostbare Truhe	Diese Truhe enthält wertvolle Gegenstände für deine Ausrüstung.	Es kann Schärpenkostüme und andere nützliche Gegenstände für Kostüme enthalten.
+50067	Tägliche Geschenktruhe	Diese Truhe enthält einige fantastische Preise.
+50069	Geisterbaumlord Truhe	Diese Truhe enthält etwas Wertvolles.
+50072	Ork Labyrinth	Truhe Diese Truhe enthält etwas Wertvolles.
+50074	Truhe der Baronin	Diese Truhe enthält etwas Wertvolles.
+50075	Schleimkönigin-Truhe	Diese Truhe enthält etwas Wertvolles.
+50081	Große Geisterbaum-Truhe	Diese Truhe enthält etwas Wertvolles.
+50098	Beran-Setaous Truhe	Diese Truhe wurde aus der Grotte des Exils geborgen. Es enthält einen wahrhaft großartigen Schatz.
+50099	Elementar-Truhe	Diese Truhe enthält Gegenstände, die benötigt werden, um die Talismane zu verbessern.
+50100	Haru-Truhe	Harus Brust.	Diese Truhe enthält etwas Wertvolles.
+50101	Eien Truhe	Eiens Truhe.	Diese Truhe enthält etwas Wertvolles.
+50102	Buncho-Truhe	Bunchos Truhe.	Diese Truhe enthält etwas Wertvolles.
+50138	Mahon Truhe	Mahons Truhe.	Diese Truhe enthält etwas Wertvolles.
+50139	Bo-Truhe	Bos Truhe.	Diese Truhe enthält etwas Wertvolles.
+50140	Goo-Pae-Truhe	Goo-Pae-Truhe.	Diese Truhe enthält etwas Wertvolles.
+50141	Chuong-Truhe	Chuongs Brust.	Diese Truhe enthält etwas Wertvolles.
+50142	Brutale Commander-Truhe	Diese Truhe enthält etwas Wertvolles.
+50143	Truhe der Fähigkeiten	Die Truhe der Fähigkeiten enthält Bücher für Standardfähigkeiten.
+50203	Hydras Truhe	Diese Truhe enthält etwas Wertvolles.
+50204	Ochaos Truhe	Diese Truhe enthält etwas Wertvolles.
+50254	Truhe der Finsternis	Die gewichtige Truhe verbirgt die vermeintlich vergessenen Reichtümer der Dunklen Nation.
+50285	Truhe des Herrschers En-Tai	Die Truhe des Herrschers En-Tai enthält wertvolle Belohnungen.
+50333	Buch der Göttlichen Kraft	Verbessere die göttliche Kraft. Durch dieses Buch können Sie die Standardfertigkeit Göttliche Kraft verbessern.
+50334	Gold Meisterbuch	Verbessere die göttliche Macht. Durch dieses Buch können Sie die Standardfähigkeit Yang sammeln verbessern.
+50335	Monster Hunter Book	Verbessere die göttliche Macht. Durch dieses Buch können Sie die Standard-Monsterjäger-Fertigkeit verbessern.
+50336	Buch der Lebenskraft	Verbessere die göttliche Kraft. Durch dieses Buch können Sie die Standardfähigkeit der Lebenskraft verbessern.
+50525	Perfekter Seelensteina	Mit diesem Perfekten Stein kannst du deine Fähigkeiten mit nur einem Stein vom Großmeister-Rang auf den Perfekten Großmeister-Rang verbessern. Der Stein verschwindet nach Gebrauch.
+50526	Stone of Soul Boost	Mit diesem legendären Stein kannst du die Großmeister-Fertigkeiten der Boost-Fertigkeiten verbessern. Der Stein verschwindet nach Gebrauch.
+50527	Stein der Seelen Gegenangriff	Mit diesem legendären Stein kannst du die Großmeister-Fertigkeiten der Gegenangriff-Fertigkeiten verbessern. Der Stein verschwindet nach Gebrauch.
+50634	Seelenkristall	Ein Kristall, so rein wie die Seele. Es kann als Zubehör eingesetzt werden.
+50635	Rubin	Roter Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.
+50636	Granat	Orange Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.
+50637	Smaragd	Grüner Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.
+50638	Saphir	Blauer Edelstein	mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.
+50639	Turmalin	Dieser magische Edelstein schimmert in allen Farben des Regenbogens. Es kann als Zubehör eingesetzt werden.
+50640	Kyanit	Ein blau-roter Edelstein mit einzigartigem Schliff. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50672	Bernstein (permanent)	Ein klarer Edelstein aus versteinertem Harz, der in Honig- oder Goldtönen glänzt.	Dauer: unendlich
+50673	Fossiles Holz (permanent)	Ein wertvolles Holz, das Schmuckstücken Stabilität verleihen kann.	Dauer: unendlich
+50674	Kupfer (permanent)	Ein formbares Edelmetall, das zur Herstellung von Schmuck und Münzen verwendet werden kann. Es wird auch für die Herstellung von Bronze benötigt.	Dauer: unendlich
+50675	Silber (permanent)	Glänzendes Edelmetall, das zur Schmuckherstellung verwendet wird. Es kann zu silbernen Accessoires verarbeitet werden.	Dauer: unendlich
+50676	Gold (permanent)	Goldenes Metall zur Herstellung von Schmuck. Es kann zu goldenen Accessoires verarbeitet werden.	Dauer: unendlich
+50677	Jade (permanent)	Ein wertvolles Mineral, das seit über 5000 Jahren verwendet wird. Es kann zu Accessoires und Schmuck verarbeitet werden.	Dauer: unendlich
+50678	Ebenholz (permanent)	Dieses schwarze, harte Holz zählt zu den wertvollsten Hölzern überhaupt. Es kann zu Accessoires und Schmuck verarbeitet werden.	Dauer: unendlich
+50679	Perle (permanent)	Wird zur Herstellung von Schmuck verwendet. Es kann zu Accessoires und Schmuck verarbeitet werden.	Dauer: unendlich
+50680	Weißgold (permanent)	Eine harte, weiße Goldlegierung, die häufig für Schmuck verwendet wird.	Dauer: unendlich
+50681	Crystal (permanent)	Ein harter Stein aus kristallinem Quarz, der in verschiedenen Farben zu finden ist. Wird oft für Schmuck verwendet.	Dauer: unendlich
+50682	Amethyst (Permanent)	Ein beliebter Quarz, der in verschiedenen Violetttönen zu finden ist. Es wird oft zur Schmuckherstellung verwendet.	Dauer: unendlich
+50683	Himmelsträne (permanent)	Kristallisierter Regen vom Himmel. Es kann zur Herstellung von Schmuck verwendet werden.	Dauer: unendlich
+50684	Seelenkristall (permanent)	Ein Kristall, so rein wie die Seele. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50685	Rubin (permanent)	Roter Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50686	Granat (permanent)	Orangefarbener Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50687	Smaragd (Permanent)	Grüner Edelstein mit einem einzigartigen Finish. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50688	Saphir (permanent)	Blauer Edelstein mit einzigartigem Finish. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50689	Turmalin (permanent)	Dieser magische Edelstein schimmert in allen Farben des Regenbogens. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+50690	Kyanit (permanent)	Ein blau-roter Edelstein mit einzigartigem Schliff. Es kann als Zubehör eingesetzt werden.	Dauer: unendlich
+53025	Leopard Cub	Dieses Siegel erinnert an Ihren süßen Babyleoparden.
+53026	Leonidas Signet(15d)	Mit diesem Siegel können Sie Ihr 15 Tage altes Leonidas Löwenjunges nennen.
+53027	Leonidas Signet(30d)	Mit diesem Siegel können Sie Ihr 30 Tage altes Leonidas Löwenjunges nennen.
+53028	Leonidas-Siegel (Permanent)	Mit diesem Siegel kannst du Permanent Leonidas beschwören.
+53029	Nogai Signet (15d)	Mit diesem Siegel kannst du einen 15 Tage Nogaj nennen.
+53030	Nogai Signet (30d)	Mit diesem Siegel können Sie einen 30 Tage Nogaj nennen.
+53031	Nogai-Siegel (Permanent)	Mit diesem Siegel kannst du Permanent Nogaj beschwören.
+53248	Donnie (15d)	Mit diesem Siegel nennst du Donnie, deinen Albtraumhasen.
+53249	Donnie (30d)	Mit diesem Siegel nennst du Donnie, deinen Albtraumhasen.
+53250	Donnie (permanent)	Mit diesem Siegel nennst du Donnie, deinen Albtraumhasen.
+53251	Frank (15d)	Mit diesem Siegel nennst du Frank, deinen Albtraumhasen.
+53252	Frank (30d)	Mit diesem Siegel nennst du Frank, deinen Albtraumhasen.
+53253	Frank (permanent)	Mit diesem Siegel nennst du Frank, deinen Albtraumhasen.
+53263	Gryph	Dieses Siegel beschwört Griffy, beschwört dein Greif-Haustier.
+53264	Nogai	Dieses Siegel beschwört Nogai, beschwört dein Greif-Haustier.
+53282	Allsehende Feuerkatze	Mit diesem Siegel beschwört er die allsehende Feuerkatze.
+53283	Allsehende Eiskatze	Mit du eine allsehende Frostkatze.
+55002	Transportbox	Indem Sie Ihr Haustier in die Transportbox legen, machen Sie es verkehrsfähig.
+55003	Young Pet Book	Dieses Buch wird für die Entwicklung von Haustieren verwendet.
+55004	Wild Pet Book	Dieses Buch wird für die Entwicklung von Haustieren verwendet.
+55005	Valiant Pet Book	Dieses Buch wird für die Entwicklung von Haustieren verwendet.
+55014	Kritisches Schadensbuch (PvM)	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den im PVM verursachten kritischen Schaden.
+55015	Starkes Buch gegen Metin	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den Schaden, der Metin-Felsen zugefügt wird.
+55016	Starkes Buch gegen Boss	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den Schaden, der den Bossen zugefügt wird.
+55017	Buch der Intuition	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den XP-Bonuswert.
+55018	Yangs Drop-Buch	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier die Chance, Yang fallen zu lassen.
+55019	Angriffs-/Magiewertbuch	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den Angriffs-/Magieschaden.
+55020	Körperangriffs-Blockbuch	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier die Chance, körperliche Angriffe abzuwehren.
+55021	Buch Körperangriff reflektieren	Nach dem Erlernen dieser Fertigkeit erhöht das Haustier den erlittenen Schaden des Spielers, der auf den Gegner reflektiert wird.
+56001	Verbesserungstrank (5%)	Dieser Trank erhöht die Chance, einen Gegenstand um 5% aufzuwerten.	Dieser Gegenstand wird auch verwendet, um Gegenstände vom Schmied zu kaufen.
+56002	Verbesserungstrank (10%)	Dieser Trank erhöht die Chance, einen Gegenstand um 10% zu verbessern.	Dieser Gegenstand wird auch verwendet, um Gegenstände vom Schmied zu kaufen.
+56003	Verbesserungstrank (15%)	Dieser Trank erhöht die Chance, einen Gegenstand um 15% zu verbessern.
+70058	Ring der Macht (15d)	Ein mit geheimen Zutaten hergestellter Ring, der dir 15 Tage lang besondere Boni gewährt.
+70059	Ring of Power (30d)	Ein Ring aus geheimen Zutaten, der dir 30 Tage lang besondere Boni gewährt.
+70060	Ring der Macht (permanent)	Ein aus geheimen Zutaten hergestellter Ring, der dir permanente Spezialboni verleiht.
+70401	Kostüme verzaubern	Entferne Boni von einem deiner Kostüme und wende neue an.
+70402	Hexenkostüme Spezial (5%)	Füge einem deiner Kostüme einen Spezialbonus (bis maximal 2) hinzu.
+70403	Hexen-Spezialkostüme (10%)	Füge einem deiner Kostüme einen Spezialbonus (bis zu maximal 2) hinzu.
+70404	Spezialbonus entfernen	Entfernt einen Spezialbonus Ihrer Wahl von einem Ihrer Kostüme.
+70604	Freeze-Bonus	Wenn Sie diesen Gegenstand auf einem Ausrüstungsgegenstand mit vorhandenen Boni verwenden, wird ein zufällig ausgewählter Bonus eingefroren.
+70605	Wiedereinfrieren-Bonus	Mit diesem Gegenstand können Sie den zufällig gewählten eingefrorenen Bonus ändern.
+70606	Auftaubonus	Mit diesem Gegenstand kannst du ein Ausrüstungsteil auftauen, das einen Einfrierbonus hat.
+70610	Battle Pass-Gutschein	Dieser Gegenstand wird verwendet, um Kostüme im Battle Pass-Shop zu kaufen.
+70611	Battle Pass	Dieser Gegenstand aktiviert den Battle Pass.
+70612	Kostbarer Diamant	Dieser wertvolle Diamant wird verwendet, um Waffen-Skins, Rüstungen und Haare von einem NPC zu kaufen.
+70613	Trank der Schönheit	Dieser Schönheitstrank wird verwendet, um Haustier- und Reittier-Skins von einem NPC zu kaufen.
+70614	Trank der Schönheit	Dieser Schönheitstrank wird verwendet, um Haustier- und Reittier-Skins von einem NPC zu kaufen.
+71025	Stein des Schmieds	Mit diesem Stein kannst du das Schmiedbuch beim Schmied kaufen.
+71085	Gegenstand verstärken	Füge einem deiner Gegenstände 5 Boni hinzu.
+71135	Halbmondring (7d)	Ein Ring mit einer kunstvoll gearbeiteten Gravur in Form eines Halbmonds.
+71136	Mighty Lolly (7d)	Ein aus geheimen Zutaten hergestellter Lutscher, der dir besondere Boni verleiht.
+71148	Ring der Willenskraft (30d)	Ein mit geheimen Zutaten hergestellter Ring, der dir besondere Boni verleiht.
+71153	Trank der Weisheit (1h)	Drachengott segnet dich mit: Rechtsklick, um den Segen zu erhalten.
+71174	Razador-Ticket	Wenn Sie dem Wächter das Razador-Ticket übergeben, erhalten Sie die Erlaubnis, die Festung des Roten Drachen zu betreten.
+71175	Nemere-Ticket	Wenn Sie dem Wächter das Nemere-Ticket übergeben, erhalten Sie die Erlaubnis, den Nemere-Wachturm zu betreten.
+71188	Magic Lolly (15d)	Ein mit geheimen Zutaten hergestellter Lutscher, der dir besondere Boni verleiht.
+71203	Warrior's Chest	Warrior Pack mit 10 zufällig ausgewählten Fertigkeitsbüchern.
+71204	Ninja-Truhe	Ninja-Paket mit 10 zufällig ausgewählten Fertigkeitsbüchern.
+71205	Sure's Chest	Surah-Paket mit 10 zufällig ausgewählten Fertigkeitsbüchern.
+71206	Schamanos Truhe	Schamanenpaket mit 10 zufällig ausgewählten Fertigkeitsbüchern.
+71229	Manny (30d)	Das Siegel erinnert an ein mächtiges 30-Tage-Mammut.
+71231	Weißer Löwe (30d)	Tiere mit weißem Fell sind sehr selten und viele Kulturen verehren sie, weil sie glauben, dass sie bemerkenswerte Kräfte besitzen.
+71233	Spektralross (30d)	Dieses Siegel beschwört dein glänzendes Reittier.
+71234	Magic Lolly (30d)	Ein mit geheimen Zutaten hergestellter Lutscher, der dir besondere Boni verleiht.
+71235	Magic Lolly (permanent)	Ein mit geheimen Zutaten hergestellter Lutscher, der dir besondere Boni verleiht.
+71252	Drake	Dieses Reittier ist nur im BattlePass zu finden.
+71253	Manny (Permanent)	Das Siegel erinnert an ein mächtiges permanentes Mammut.
+71254	Weißer Löwe (permanent)	Tiere mit weißem Fell sind sehr selten und viele Kulturen verehren sie, weil sie glauben, dass sie bemerkenswerte Kräfte besitzen.
+71255	Spektralross (permanent)	Dieses Siegel beschwört Euer glänzendes Reittier.
+72001	Erfahrungsring (1h)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+72002	Erfahrungsring (3h)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+72006	Handschuhe des Diebes (1h)	Drachengott wird dich segnen mit:	Rechtsklick, um den Segen zu erhalten.
+72013	Angelbuch (30m)	Drachengott segnet dich mit:	Rechtsklick um den Segen zu erhalten.
+72014	Angelbuch (1h)	Drachengott segnet dich mit:	Rechtsklick, um den Segen zu erhalten.
+72015	Angelbuch (permanent)	Drachengott wird Sie	segnen mit: Rechtsklick, um den Segen zu erhalten.
+72044	Buch des Anführers (1h)	Drachengott wird Sie	segnen mit: Rechtsklick, um den Segen zu erhalten.
+72726	Sonnenelixier (E)	Füllt automatisch deine HP auf. Enthält unendliche HP.
+72730	Mondelixier (E)	Füllt deine SP automatisch auf. Enthält unendliche SP.
+80019	Gelber dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80022	Roter dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80023	Hellblauer dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80024	Grüner dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80025	Lila dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80026	Oranger dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+80027	Blauer dünner Stoff	Ein Schulterband wird aus diesem Material hergestellt.
+84999	Enchant Costumes Stole	Entferne Boni von einem deiner gestohlenen Kostüme und wende neue an. Die Variablen sind zufällig und basieren auf der Qualität der Stola.
+85019	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85020	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85021	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85022	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85023	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85024	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85025	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85026	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85027	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85028	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85029	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85030	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85031	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85032	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85033	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85034	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85035	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85036	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85037	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85038	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85039	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85040	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85041	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85042	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85043	Costumes Lord Sash (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85044	Costumes Lord Sash (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85045	Costumes Lord Sash (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85046	Costumes Lord Sash (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85047	Costumes Sash di Yu (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85048	Costumes Sash di Yu (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85049	Costumes Sash di Yu (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85050	Costumes Sash di Yu (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85051	Costumes Sash di Mao (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85052	Costumes Sash di Mao (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85053	Costumes Sash di Mao (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85054	Costumes Sash di Mao (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85055	Costumes Sash Reale (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85056	Costumes Sash Reale (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85057	Costumes Sash Reale (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85058	Costumes Sash Reale (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85059	Costumes Sash Principe (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85060	Costumes Sash Principe (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85061	Costumes Sash Principe (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85062	Costumes Sash Principe (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85063	Costumes Sash Maestro (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85064	Costumes Sash Maestro (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85065	Costumes Sash Maestro (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85066	Costumes Sash Maestro (custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85067	Costumes Sash di Chou (basic)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85068	Costumes Sash di Chou (fine)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85069	Costumes Sash di Chou (noble)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85070	Costumes Sash di Chou(custom)	Dieser Gegenstand ist ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+85083	Flügel des Teufels	Bei diesem Gegenstand handelt es sich um ein gestohlenes Kostüm, das deinem Charakter zusätzliche Boni verleiht.
+86050	Verstärkt Talismane	Es fügt Ihrem Talisman einen neuen Bonus hinzu (bis zu maximal 4 Boni).
+86051	Talismane verzaubern	Entfernt Boni vom Talisman und wendet neue an. Die Variablen sind zufällig.
+86052	Stärkt Talismane	Legendäre Sphäre, Wenn ein Talisman bereits 4 Attribute hat, können Sie damit den letzten Bonus hinzufügen.
+86053	Splitter der gelben Perle	Du kannst 10 gelbe Perlensplitter in 1 gelbe Perle ändern.	Rechtsklick zum Ändern.
+86054	Grüner Perlensplitter	Du kannst 10 Grünperlensplitter gegen 1 Grüne Perle tauschen. Rechtsklick zum Ändern.
+86055	Purpurperlensplitter	Du kannst 10 Purpurperlensplitter in 1 Purpurperle verwandeln.	Rechtsklick zum Ändern.
+86056	Gelbe Perle	Eine sehr seltene Perle, die verwendet wird, um das Haustier zu entwickeln.
+86057	Grüne Perle	Eine sehr seltene Perle, die verwendet wird, um das Haustier zu entwickeln.
+86058	Purpurperle	Eine sehr seltene Perle, die verwendet wird, um das Haustier zu entwickeln.
+86060	Zodiac verzaubern	Entfernt Boni von Eurer Zodiac-Waffe und -Rüstung und wendet neue an.
+86062	Alchemie verzaubern	Entferne Boni von einem deiner Drachensteine ??und wende neue an.
+86066	Stück Zauberstein	Mit diesem Artikel, der zum Schmied geht, können Sie den Zauberstein kaufen.
+86067	Grober Talisman	Dieser Gegenstand wird zur Verbesserung von Talismanen verwendet.
+86071	Protein Snack (2d)	Mit diesem Biss können Sie Ihr Haustier wiederbeleben oder die Lebensdauer verlängern. Sie erhalten eine neue Dauer von: 2g.	Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+86072	Protein Snack (4d)	Mit diesem Biss können Sie Ihr Haustier wiederbeleben oder die Lebensdauer verlängern. Sie erhalten eine neue Dauer von: 4g.	Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+86073	Protein Snack (8d)	Mit diesem Biss können Sie Ihr Haustier wiederbeleben oder die Lebensdauer verlängern. Sie erhalten eine neue Dauer von: 6g.	Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+86074	Protein Snack Divine (Permanent)	Mit diesem Biss können Sie Ihr Haustier wiederbeleben oder die Lebensdauer verlängern. Es erhält eine neue unendliche Dauer.	Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+86075	Spezial-Snack	Durch diesen Biss kannst du einen Bonus deiner Wahl verbessern. Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+86076	Zurücksetzen Haustier aktivieren	Mit diesem Gegenstand können Sie eine Fertigkeit Ihres Haustiers vergessen. Um es zu benutzen, müssen Sie Ihr Haustier rufen lassen.
+86077	Zurücksetzen Haustier aktivieren (S)	Mit diesem Gegenstand können Sie alle Fähigkeiten Ihres Haustiers vergessen. Um es zu benutzen, müssen Sie Ihr Haustier rufen lassen.
+86080	Bonus-Stola entfernen	Mit diesem Item können Sie die Boni Ihrer Stola entfernen. Ziehen Sie den Gegenstand über die Stola, um seine Boni zu entfernen.
+88001	Support Shamy Lord Sash	Dieser Artikel kann nur vom unterstützenden Shamy getragen werden.
+88005	Support Shamy Red Sash	Dieser Artikel kann nur vom unterstützenden Shamy getragen werden.
+88009	Support Shamy Black Sash	Dieser Artikel kann nur von der unterstützenden Shamy getragen werden.
+88010	Monkey Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88011	Monkey Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88012	Spider Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88013	Spider Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88014	Razador Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88015	Razador Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88016	Nemere Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88017	Nemere Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88018	Dragon Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88019	Dragon Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88020	Meley Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88021	Meley Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88022	Azrael Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88023	Azrael Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88024	Fat Executor Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88025	Fat Mini Executor Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88026	Baashido baby Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88027	Baashido baby Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88028	Nessie Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88029	Nessie Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88030	Exedyar Costumes (7d)	This item provides a special aesthetic for your pet for 7 days.
+88031	Exedyar Costumes (Permanent)	This item provides a special aesthetic to your pet permanently.
+88035	Support Shamy white Sash	This item can only be worn by the supporting shamy.
+88039	Support Shamy Sash by Chou	This item can only be worn by the supporting shamy.
+88110	Löwenkostüme (7d)	Dieser Gegenstand verleiht deinem Reittier 7 Tage lang eine besondere Ästhetik.
+88111	Löwenkostüme (permanent)	Dieser Gegenstand verleiht deinem Reittier dauerhaft eine besondere Ästhetik.
+88112	Drachenkostüme (7d)	Dieser Gegenstand verleiht deinem Reittier 7 Tage lang eine besondere Ästhetik.
+88113	Drachenkostüme (permanent)	Dieser Gegenstand verleiht deinem Reittier dauerhaft eine besondere Ästhetik.
+88114	Elefantenkostüme (7d)	Dieser Gegenstand verleiht deinem Reittier 7 Tage lang eine besondere Ästhetik.
+88115	Elefantenkostüme (permanent)	Dieser Gegenstand verleiht deinem Reittier dauerhaft eine besondere Ästhetik.
+88116	Panda-Kostüme (7d)	Dieser Gegenstand verleiht deinem Reittier 7 Tage lang eine besondere Ästhetik.
+88117	Panda-Kostüme (permanent)	Dieser Gegenstand verleiht deinem Reittier dauerhaft eine besondere Ästhetik.
+88210	Schwarzwaffeneffekt I (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88211	Schwarzwaffeneffekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88212	Schwarze Rüstung Effekt I (7W)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88213	Schwarze Rüstung Effekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88214	Rosa Waffeneffekt I (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88215	Rosa Waffeneffekt I (permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88216	Rosa Rüstung Effekt I (7d)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88217	Pink Armor Effect I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88218	Orange Waffeneffekt I (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88219	Orange Waffeneffekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88220	Orange Rüstung Effekt I (7W)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88221	Orange Rüstung Effekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88222	Grüner Waffeneffekt I (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88223	Grüner Waffeneffekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88224	Grüne Rüstung Effekt I (7W)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88225	Grüner Rüstungseffekt I (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88226	Lila Waffeneffekt II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88227	Lila Waffeneffekt II (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88228	Lila Rüstungseffekt II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88229	Lila Rüstungseffekt II (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88230	Blauer Waffeneffekt II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88231	Blauer Waffeneffekt II (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88232	Blauer Rüstungseffekt II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88233	Blauer Rüstungseffekt II (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88234	Pink Weapon Effect II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88235	Pink Weapon Effect II (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88236	Pink Armor Effect II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88237	Pink Armor Effect II (Permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88238	Weißer Waffeneffekt II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88239	Weißer Waffeneffekt II (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88240	White Armor Effect II (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88241	White Armor Effect II (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88242	Grüner Waffeneffekt III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88243	Grüner Waffeneffekt III (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88244	Green Armor Effect III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88245	Grüner Rüstungseffekt III (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88246	Roter Waffeneffekt III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88247	Roter Waffeneffekt III (permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88248	Red Armor Effect III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88249	Red Armor Effect III (Permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88250	Blauer Waffeneffekt III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88251	Blauer Waffeneffekt III (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88252	Hellblauer Rüstungseffekt III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88253	Hellblauer Rüstungseffekt III (Permanent)	Dieser Gegenstand verleiht Ihrem Charakter eine besondere Ästhetik.
+88254	Gelber Waffeneffekt III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88255	Gelber Waffeneffekt III (Permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88256	Yellow Armor Effect III (7d)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88257	Yellow Armor Effect III (Permanent)	Dieser Gegenstand verleiht deinem Charakter eine besondere Ästhetik.
+88902	Kaschmir Bundle	Mit diesem Bundle können Sie Ihren privaten Shop auf einzigartige Weise dekorieren.
+88910	Orange Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88911	Gelbe Ampullen	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88912	Blue Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88913	Rote Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88914	Grüne Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88915	Violete Ampoule	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88916	Blauer Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88917	Oranger Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88918	Weißer Tau	Drachengott wird dich segnen mit:	Rechtsklick um den Segen zu erhalten.
+88919	Gelber Tau	Drachengott wird dich segnen mit:	Rechtsklick um den Segen zu erhalten.
+88920	Roer Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88921	Grüner Tau	Drachengott wird dich segnen mit:	Rechtsklick um den Segen zu erhalten.
+88922	Kritischer Kampf	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88923	Durchdringender Kampf	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88924	Dragon God Attack	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88925	Verteidigung des Drachengottes	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88926	Drachengott-Intelligenz	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88927	Life Dragon God	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88928	Speed Attack Elixier	Drachengott wird dich segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88929	Pozione Verde(L) (Permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88930	Blauer Tau (Permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88931	Orangener Tau (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88932	Gelber Tau (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88933	Roter Tau (Permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88934	Grüner Tau (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88935	Kritischer Kampf (Permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88936	Durchdringender Kampf (Permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88937	Drachengott-Angriff (permanent)	Drachengott segnet Sie mit:	Rechtsklick, um den Segen zu erhalten.
+88938	Verteidigung des Drachengottes (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88939	Drachengott-Intelligenz (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88940	Leben Drachengott (permanent)	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88941	Blauer Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88942	Oranger Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88943	Gelber Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88944	Roter Tau	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88945	Grüner Tau	Drachengott wird dich segnen mit:	Rechtsklick um den Segen zu erhalten.
+88946	Orange Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88947	Gelber Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick um den Segen zu erhalten.
+88948	Blue Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88949	Red Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88950	Grüne Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88951	Violet Ampulle	Drachengott wird Sie segnen mit:	Rechtsklick um den Segen zu erhalten.
+88952	Kritischer Kampf	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88953	Durchdringender Kampf	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88954	Drachengott-Angriff	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88955	Verteidigung des Drachengottes	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88956	Drachengott-Intelligenz	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88957	Leben Drachengott	Drachengott wird Sie segnen mit:	Rechtsklick, um den Segen zu erhalten.
+88958	Seelen-Pergament	Mit dieser Schriftrolle entwickelst du deine Seele um eine Ebene
+88959	Enchant Item	Entfernt die Boni von einem deiner Items und fügt weitere hinzu
+88960	Spezial-Snack	Durch diesen Biss kannst du einen Bonus deiner Wahl verbessern.	Ziehen Sie den Biss über das Haustiersymbol, um ihn zu verwenden.
+88961	Alchemie verzaubern	Entferne Boni von einem deiner Drachensteine ??und wende neue an
+88962	Enchant Costumes	Stole Entferne Boni von einem deiner gestohlenen Kostüme und wende neue an. Die Variablen sind zufällig und basieren auf dem Grad der Stola
+88963	Kostüme verzaubern	Entferne Boni von einem deiner Kostüme und wende neue an
+88964	Stärkt Talismane	Legendäre Sphäre, Wenn ein Talisman bereits 4 Attribute hat, können Sie den letzten Bonus hinzufügen.
+88965	Talismane verzaubern	Entfernt Boni vom Talisman und wendet neue an. Die Variablen sind zufällig
+88966	Verstärkt Talismane	Es fügt Ihrem Talisman einen neuen Bonus hinzu (bis zu maximal 4 Boni).
+88967	Haustier-Truhe	Enthält Haustier-Eier Rechtsklicken Sie, um Ihr Haustier auszuwählen.
+88968	Trank der Schönheit	Dieser Schönheitstrank wird verwendet, um Haustier- und Reittier-Skins von einem NPC zu kaufen.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Zeus-Stein	Mit diesem Gegenstand kannst du die Abklingzeit des Runen-Dungeons zurücksetzen.
+89101	Ticket der Runen	Dieses Ticket gewährt dir Zugang zum Runen-Dungeon.
+89102	Runenseele	Du kannst 10 Runenseelen gegen 1 Göttlichen Schlüssel eintauschen.	Rechtsklick zum Ändern.
+89103	Göttlicher Schlüssel	Dieser Schlüssel wird im Modus 1 des Runen-Dungeons verwendet. Es wird auch im obersten Stockwerk des Runen-Dungeons verwendet.	Klicken Sie mit der rechten Maustaste, um es in Modus 1 zu verwenden. Ziehen Sie den Runenstein, um ihn im obersten Stockwerk des Runen-Dungeons zu zerstören.
+89104	Schlüssel der Grünen Orks	Dieser Gegenstand wird verwendet, um ein Siegel im Ork-Dungeon freizuschalten.
+89105	Schlüssel der Schwarzen Orks	Dieser Gegenstand wird verwendet, um die letzte Brücke im Ork-Dungeon freizuschalten.
+89106	Ticket der Orks	Dieser Gegenstand wird verwendet, um den Ork-Dungeon zu betreten.
+89107	Ticket der Runen	Dieses Ticket gewährt dir Zugang zum Runen-Dungeon.
+89108	Ohrringe der Harmonie (2h)	Erhöht die Chance auf einen durchdringenden Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn einer von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89109	Liebesarmband (2h)	Erhöht das Sammeln von Erfahrungspunkten während des Kampfes für beide Ehepartner um maximal 20% für 3 Stunden, wenn es von einem von beiden getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89110	Ohrringe der Liebe (2h)	Erhöht die Chance auf kritische Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn sie von einem von beiden getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89111	Harmonie-Armband (2h)	Verringert die Angriffskraft feindlicher Monster auf beide Ehepartner 3 Stunden lang um maximal 15%, wenn sie von einem von ihnen getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89112	Halskette der Liebe (2h)	Erhöht die Angriffskraft beider Ehepartner um maximal 40 für 3 Stunden, wenn sie von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89113	Halskette der Harmonie (2h)	Erhöht die Verteidigung beider Ehepartner 3 Stunden lang um maximal 30, wenn sie von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89114	Ohrringe der Harmonie (8h)	Erhöht die Chance auf einen durchdringenden Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn einer von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89115	Liebesarmband (8h)	Erhöht das Sammeln von Erfahrungspunkten während des Kampfes für beide Ehepartner um maximal 20% für 3 Stunden, wenn es von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89116	Ohrringe der Liebe (8h)	Erhöht die Chance auf kritische Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn sie von einem von beiden getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89117	Harmonie-Armband (8h)	Verringert die Angriffskraft feindlicher Monster auf beide Ehepartner 3 Stunden lang um maximal 15%, wenn sie von einem von ihnen getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89118	Halskette der Liebe (8h)	Erhöht die Angriffskraft beider Ehepartner um maximal 40 für 3 Stunden, wenn sie von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89119	Halskette der Harmonie (8h)	Erhöht die Verteidigung beider Ehepartner 3 Stunden lang um maximal 30, wenn sie von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89120	Ohrringe der Harmonie (permanent)	Erhöht die Chance auf einen durchdringenden Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn einer von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89121	Liebesarmband (permanent)	Erhöht die Sammlung von Erfahrungspunkten während des Kampfes für beide Ehepartner um maximal 20% für 3 Stunden, wenn sie von einem von ihnen getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89122	Ohrringe der Liebe (permanent)	Erhöht die Chance auf kritische Treffer für beide Ehepartner um maximal 8% für 3 Stunden, wenn sie von einem von beiden getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89123	Harmoniearmband (permanent)	Verringert die Angriffskraft feindlicher Monster auf beiden Ehepartnern 3 Stunden lang um maximal 15%, wenn sie von einem von ihnen getragen werden. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89124	Halskette der Liebe (permanent)	Erhöht die Angriffskraft beider Ehepartner 3 Stunden lang um maximal 40, wenn sie von einem von beiden getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+89125	Halskette der Harmonie (permanent)	Erhöht die Verteidigung beider Ehepartner 3 Stunden lang um maximal 30, wenn sie von einem von ihnen getragen wird. Die Wirkung des Gegenstands hängt vom Prozentsatz der Liebespunkte ab. Hat ein Paar beispielsweise 50 % Liebespunkte, reduziert sich die maximale Wirkung um die Hälfte.
+164401	Magie des Biologen	Mit diesem Gegenstand ist es möglich, den Bonus einiger Biologen-Missionen zurückzusetzen.
+164402	Papyrus Chaegirab	Mit diesem Papyrus ist es möglich, Gegenstände vom Biologen zu kaufen.
+164406	Regenbogenelixier	Mit diesem Gegenstand kannst du die Farbe einer deiner Fähigkeiten ändern.
+164407	Glänzender Trank	Dieser Trank wird verwendet, um Waffen- und Rüstungseffekte von einem NPC zu kaufen.
+164408	Frucht der Götter	Süß schmeckende Frucht aus dem Drachengott-Garten. Es wird verwendet, um einen Ausrüstungsgegenstand zu veredeln.
+164409	Götterelixier	Die Flasche enthält eine geheimnisvoll leuchtende Flüssigkeit. Es wird verwendet, um einen Ausrüstungsgegenstand zu veredeln.
+164410	Seele der Wahrheit	Eine gute Seele, die für immer in einer Glaskugel gefangen gehalten wird. Es wird verwendet, um einen Ausrüstungsgegenstand zu veredeln.
+164411	Buch der Wahrheit	Kraftvoller Band, dessen Titel zu funkeln scheint. Es wird verwendet, um einen Ausrüstungsgegenstand zu veredeln.
+164412	Göttliche Blume	Heilige Blume aus dem Drachengott-Garten. Es wird verwendet, um einen Ausrüstungsgegenstand zu veredeln.
+164413	Schwertstachelteil	Mit diesem Gegenstand ist es möglich, Giftschwert von +9 bis zum epischen Rang herzustellen.
+164414	Teil der Dämonenklinge	Mit diesem Gegenstand ist es möglich, ein Löwenschwert von +9 bis zum epischen Rang herzustellen.
+164415	Stück Seelenstehlende	Klinge Mit diesem Gegenstand ist es möglich, ein Grollschwert von +9 bis zum epischen Rang herzustellen.
+164416	Blauer Drachenbogenteil	Mit diesem Gegenstand ist es möglich, Krähenstahlbogen von +9 bis zum epischen Rang herzustellen.
+164417	Fan Piece of Ecstasy	Mit diesem Gegenstand ist es möglich, Bambusglocke von +9 bis zum epischen Rang herzustellen.
+164418	Stück Siammesser	Mit diesem Gegenstand ist es möglich, Devil Wing Chakram von +9 bis zum epischen Rang herzustellen.
+164419	Glänzender Trank	Dieser Trank wird verwendet, um Waffen- und Rüstungseffekte von einem NPC zu kaufen.
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min

@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]T. B. Traje			 Encan. Traje			Jolla C. S. 5%		  Jolla C. S. 10%			Remover B. S.
+
+[X_PADDING=12]Em cada Traje que você comprar do NPC Confucio ou que você comprar no Item Shop ou no Battle Pass, ele terá 3
+[X_PADDING=12]bônus normais totalmente aleatórios com porcentagens aleatórias.
+[X_PADDING=12]Os bônus normais podem ser invertidos com um encantamento de Traje.
+[X_PADDING=12]É possível inserir no máximo 2 bônus especiais para cada Traje, os itens necessários são 2:
+[X_PADDING=20]1. Jolla Traje Especial (máx 5%)
+[X_PADDING=20]2. Jolla Traje Especial+ (máx 10%)
+
+[X_PADDING=12]Os bônus que podem ser obtidos com o Jolla Traje Especial são:
+[X_PADDING=20]- Forte Contra Metin
+[X_PADDING=20]- Forte Contra Mostros
+[X_PADDING=20]- Forte contra Boss
+[X_PADDING=20]- Resistência Semi-Humanos
+[X_PADDING=20]- Forte Contra Semi-Humanos
+
+[X_PADDING=12](Os bônus especiais também podem ser removidos com um bônus especial de remoção)
+
+[X_PADDING=12]É possível transferir os bônus de um Traje para outro indo até o NPC Theowahdan e possuindo o item
+[X_PADDING=12]Transfer Bonus Costume.
+
+[X_PADDING=12]Quando o painel de transferência de bônus de Traje estiver aberto, haverá 4 slots:
+[X_PADDING=20]1. À esquerda deve ser inserido o traje antigo.
+[X_PADDING=20]2. O item Transfer Bonus Costume deve ser inserido no topo.
+[X_PADDING=20]3. À direita, insira o Traje para onde deseja que os bônus do Traje antigo sejam transferidos.
+[X_PADDING=20]4. O novo Traje é mostrado abaixo com os bônus do Traje Antigo.
+
+[X_PADDING=12]Cuidado se o seu traje antigo tem bônus especiais, fazendo o transferimento de bônus especiais
+[X_PADDING=12]eles são removidos e o traje antigo será destruído.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BÔNUS NORMAIS QUE PODEM OCORRER EM VÁRIOS TIPOS DE TRAJES
+
+[X_PADDING=12]Traje de Armadura:
+[X_PADDING=20]- Máx. HP +2000
+[X_PADDING=20]- Máx. SP +800
+[X_PADDING=20]- Dano absorvido de SP 8%
+[X_PADDING=20]- Dano absorvido de HP 8%
+[X_PADDING=20]- Valor de Ataque +50
+[X_PADDING=20]- Chance de bônus EXP 15%
+[X_PADDING=20]- Chance de Dropar Dobro de Objetos 15%
+
+[X_PADDING=12]Cabelos:
+[X_PADDING=20]- Velocidade de Ataque +8%
+[X_PADDING=20]- Chance de Golpes Críticos +8%
+[X_PADDING=20]- Chance de Golpes Perfurantes +8%
+[X_PADDING=20]- Resistência Semi-Humanos 10%
+[X_PADDING=20]- Chance de Dropar Gold +15%
+[X_PADDING=20]- Regeneração de HP +15%
+[X_PADDING=20]- Regeneração de SP +15%
+
+[X_PADDING=12]Skin Arma:
+[X_PADDING=20]- Inteligência +10
+[X_PADDING=20]- Força +10
+[X_PADDING=20]- Destreza +10
+[X_PADDING=20]- Vitalidade +10
+[X_PADDING=20]- Forte contra Mortos-Vivos +15%
+[X_PADDING=20]- Forte contra Demônios +15%
+[X_PADDING=20]- Forte  contra Orcs +15%
+[X_PADDING=20]- Forte contra Animais +15%
+[X_PADDING=20]- Forte Contra Semi-Humanos +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

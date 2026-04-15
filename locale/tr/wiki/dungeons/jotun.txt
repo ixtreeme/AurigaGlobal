@@ -1,0 +1,30 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/jotun.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 110.
+[X_PADDING=12]*Maksimum giris seviyesi: 115.
+[X_PADDING=12]*Giris bileti: Orman perisi tasi.
+[X_PADDING=12]*Tür: Tek veya grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30613.tga; Y=15; X=478]
+[X_PADDING=466]Orman perisi tasi.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Beklem süresi: 1 saat 30 dakika
+[X_PADDING=12]*Bir gruba katilirsan herkes 1 bilete sahip olmali.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Özel lobi zindani
+[X_PADDING=12]*Önerilen bonus: Orklara karsi güç
+[X_PADDING=12]*Irk: Toprak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]1. ASAMA
+[X_PADDING=20]1. Bagjanamu'yu öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]2. ASAMA
+[X_PADDING=20]1. Jotun Thrym'i öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=304; CENTER_ALIGN]

@@ -1,0 +1,34 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BONUSURILE EªARFE:
+[X_PADDING=20]1. Acest sistem permite echiparea unei eºarfe indiferent de nivelul
+[X_PADDING=20]caracterului.
+[X_PADDING=20]2. Eºarfele pot absorbi toate bonusurile armelor ºi al armurilor cu excepþia bonusurilor
+[X_PADDING=20]speciale adãugate de grade. Procentul de absorbire depinde de gradul sãu ºi de
+[X_PADDING=20]calitatea acesteia.
+[X_PADDING=20]3. Pentru a absorbi bonusurile pe o eºarfã va trebui sã mergi la NPC-ul Theowahdan din
+[X_PADDING=20]Satul Minunilor.
+[X_PADDING=20]4. Vei putea achiziþiona o eºarfã de primul grad de la NPC-ul Theowahdane cu ajutorul 
+[X_PADDING=20]Pânzelor Fine pe care le poþi dropa la Metine
+[X_PADDING=20]5. Cu ajutorul item-ului Eliminã Bonus Eºarfã vei putea elimina bonusurile absorbite.
+
+[X_PADDING=12]ÎMBUNATAÞIREA UNEI EªARFE:
+[X_PADDING=20]1. Pentru a îmbunãtãþi va trebui sã mergi la NPC-ul Theowahdane ºi sã alegi opþiunea Combinã.
+[X_PADDING=20]2. A doua eºarfã va fi mereu distrusã indiferent de rezultatul îmbunãtãþirii. În cazul în
+[X_PADDING=20]care ambele au bonusuri, bonusurile considerate vor fi cele de pe prima eºarfã deoarece a
+[X_PADDING=20]doua este consideratã material de îmbunãtãþire.
+
+[X_PADDING=12]GRADURILE EªARFELOR:
+[X_PADDING=20;COLOR=58ADFF]GRAD          PERCENTUALA ABSORBÞIE
+[X_PADDING=20]Simplã		   1%
+[X_PADDING=20]Finã				5%
+[X_PADDING=20]Nobilã			10%
+[X_PADDING=20]Pe Mãsurã	 11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=260; X=323]
+[IMG=icon/item/90000.tga; Y=283; X=345]
+[X_PADDING=325]Eliminã B. Eºarfã
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=345; CENTER_ALIGN]

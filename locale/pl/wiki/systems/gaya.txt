@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya to waluta, która umozliwia kazdemu graczowi kupowanie przedmiotów w sklepie Gaya.
+[X_PADDING=12]2. Gaya mozesz zdobyc od NPC Gaya
+[X_PADDING=12]3. Aby zdobyc 1 Gaye, potrzebujesz 10 Gemów oraz od +0 do +3 Kamien Duszy.
+[X_PADDING=12]4. Na udoskonalenie Gemów jest zawsze w 100%.
+[X_PADDING=12]5. Aby otworzyc Sklep Gaya, przejdz do Npc Sklep Gaya.
+[X_PADDING=12]6. Sklep Gaya ma 9 dostepnych slotów, z których 6 bedzie zablokowanych, mozesz odblokowac sloty
+[X_PADDING=12]kupujac przedmiot Ampliam.
+[X_PADDING=12]7.Sklep Gaya aktualizuje sie automatycznie co 5 godzin, mozesz recznie aktualizowac Sklep Gaya
+[X_PADDING=12]kupujac przedmiot Reset Sklepu Gaya.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GDZIE ZNALEZC GEMY
+
+[X_PADDING=12]1. Gemy mozesz znalezc na wyprawach lub od wladców na róznych mapach.
+[X_PADDING=12]2. Duza ilosc gemów znajdziesz w skrzyni królowej Meley.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Gemy										 Ampliam. Sklep gaya							 Res. Neg. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

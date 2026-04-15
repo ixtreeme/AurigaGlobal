@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[CENTER_ALIGN]Auf Stufe 70 erscheint eine Mission, und wenn Sie darauf klicken, wird das Runenfenster freigeschaltet.
+
+[X_PADDING=12]Die Runentafel besteht aus 6 normalen Runen plus 1 Spezial, jede Rune hat besondere Kraft.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Ares' Rune Eras Rune Apollos Rune
+
+
+
+
+
+
+[X_PADDING=80]Afrodites Rune Poseidons Rune Atenas Rune
+
+
+
+
+
+
+[X_PADDING=238]Zeus' Rune
+
+[X_PADDING=12]Die normalen Runen haben eine maximale Kraft von 100 %, plus ihre Kraft ist hoch plus der Prozentsatz ihrer
+[X_PADDING=12]Boni werden höher sein.
+
+[X_PADDING=12]Max. Prozentsatz der normalen Runen:
+[X_PADDING=20]- Afrodites Rune: Stark gegen Metinsteine ??15% - Beweglichkeit +15
+[X_PADDING=20]- Apollos Rune: Stark gegen Bosse 15% - Stärke +15
+[X_PADDING=20]- Atenas Rune: Mittlerer Schaden [PVM] 12% - Angriffswert +150
+[X_PADDING=20]- Rune der Ära: Max SP +1200 - Intelligenz +15
+[X_PADDING=20]- Poseidons Rune: Stark gegen Monster +15% - 15% Chance auf kritische Treffer [PVM]
+[X_PADDING=20]- Ares' Rune: max. HP +2500 - Vitalität +15
+
+[X_PADDING=12]Die spezielle Rune, die die Rune des Zeus wäre, wird automatisch aktiviert, wenn alle normalen Runen
+[X_PADDING=12]mindestens 50 % der verfügbaren Leistung.
+
+[X_PADDING=12]Die Rune des Zeus gewährt dem Charakter, wenn er aktiv ist, die folgenden Boni:
+[X_PADDING=20]- Stark gegen halbe Menschen 10 %
+[X_PADDING=20]- Halber menschlicher Widerstand 10 %
+
+[X_PADDING=12]Wenn eine normale Rune unter 50% fällt, erlischt die Rune von Zeus
+[X_PADDING=12]automatisch.
+
+[X_PADDING=12]Außerdem erscheint ein Spezialeffekt auf dem Charakter, wenn alle normalen Runen mindestens 60 % Stärke haben.
+[X_PADDING=12](Der Effekt kann auch über das Runenfenster ausgeschaltet werden).
+
+[X_PADDING=12]Es ist möglich, die Kraft der Runen mit der Runenflasche aufzuladen, die im Laden erhältlich ist
+[X_PADDING=12]im Runenfenster.
+[X_PADDING=12]Die Runenflasche wird nur mit Runenfragmenten erhältlich sein, die ihr nur im Runen-Dungeon fallen lässt.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Runenflasche (P) Runenflasche (M) Runenflasche (G) Fragm. Rune
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

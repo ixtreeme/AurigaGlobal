@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]OMUZ KUSAGI KOSTÜMÜ:
+[X_PADDING=20]1. Omuz Kusak Sistemi, seviye 1 ve üzeri oyuncularin yeni bir parça giymelerini saglar
+[X_PADDING=20]ekipman.
+[X_PADDING=20]2. Omuz Kusagi, özel silah bonuslari disinda TÜM silah ve zirh bonuslarini emebilir
+[X_PADDING=20]ve Mistik zirh. Absorpsiyon yüzdesi kalite derecesine baglidir.
+[X_PADDING=20]Omuz Kanadinin kalitesi ne kadar yüksek olursa, emme yüzdesi de o kadar yüksek olur.
+[X_PADDING=20]3. Bonuslari girmek için haritadaki NPC Theowahdan'a gitmelisiniz.
+[X_PADDING=20]Wonder Village.
+[X_PADDING=20]4.Thin Fabrics ile NPC Theowahdan'dan 1. rütbe Omuz Kusagi satin alabilirsiniz.
+[X_PADDING=20]metinden düseceksin.
+[X_PADDING=20]5. Kostüm bonus kaldirma ögesini kullanarak bir Omuz Kusagindaki bonuslari kaldirabilirsiniz.
+
+[X_PADDING=12]BIR EFSUNUN IYILESTIRILMESI
+[X_PADDING=20]1. Bir Omuz Kusagini yükseltmek için NPC Theowahdan'a gidin ve Kombinasyon'a tiklayin.
+[X_PADDING=20]2. Yükseltme, basarili olsun ya da olmasin, takilan ikinci Omuz Kusagini HER ZAMAN imha eder.
+[X_PADDING=20]iflas durumunda. Her iki Omuz Kanadinda da ikramiye olmasi durumunda, bunlar
+[X_PADDING=20]toplanacaklar, ancak yalnizca ilk Omuz Kanadi'ninkiler dikkate alinacak, çünkü bu
+[X_PADDING=20]aslinda iyilestirilmistir. Ikincisi, yalnizca "iyilestirme için nesne" islevine sahiptir.
+
+[X_PADDING=12]MUHTEMEL KANAT DERECELERI:
+[X_PADDING=20;COLOR=58ADFF]DEGREES          BONUS EMIS YÜZDESI
+[X_PADDING=20]Basit       1%
+[X_PADDING=20]Zarif          5%
+[X_PADDING=20]Asil          10%
+[X_PADDING=20]Kisiye Özel     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Remove B. Sash
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 85.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Ticket: Ticket of Nemere.
+[X_PADDING=12]*Type: Solo and Party
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Ticket of Nemere
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 50 minuten.
+[X_PADDING=12]*Abklingzeit: 1 hour
+[X_PADDING=12]*Wenn Sie einer Gruppe beitreten, muss jeder ein Ticket haben.
+[X_PADDING=12]*Sie können über die Karte zugreifen: Lobby Dungeon.
+[X_PADDING=12]*Empfohlener Bonus: Stark gg Eis
+[X_PADDING=12]*Element der Monster: Eis
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE EBENE
+[X_PADDING=20]1. Tötet alle monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE EBENE
+[X_PADDING=20]1. Findet den richten Frost Key.
+[X_PADDING=20]2. Klickt auf den Frost Key um in die nächste Ebene zu gelangen.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE EBENE
+[X_PADDING=20]1. Tötet alle monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE EBENE
+[X_PADDING=20]1. Tötet alle monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÜNFTE EBENE
+[X_PADDING=20]1. Du musst die Arktischen Würfel in der richtigen Reihenfolge mit den Nordsternen freigeschaltet, die von Monstern fallen gelassen werden.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECHSTE EBENE
+[X_PADDING=20]1. Tötet monsters.
+[X_PADDING=20]2. Zerstöre das Metin der Kälte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIEBTE EBENE
+[X_PADDING=20]1. Findet und töte den richtigen Szel.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ACHTE EBENE
+[X_PADDING=20]1. Finden Sie den richtigen Eisblumenschlüssel.
+[X_PADDING=20]2. Klicken sie auf den Eisblumenschlüssel um die nächste Ebene betreten zu können
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]NEUNTE EBENE
+[X_PADDING=20]1. Zerstöre die Norddrachensäule.
+[X_PADDING=20]2. Redet mit dem Wald Tiger
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]LETZTE EBENE
+[X_PADDING=20]1. Töte Nemere.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

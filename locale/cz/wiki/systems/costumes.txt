@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Prevod			 Ocarovat Kostým		Speciální C.E 5%		  Speciální C.E+ 10%			Special B.R.
+
+[X_PADDING=12]Za každý kostým který si koupil od NPC "Confucio" jiné mužou být porízené z Item Shopu nebo z Battle Passu budou 3
+[X_PADDING=12]Normální bonus s náhodnými %(percentage) 
+[X_PADDING=12]Normální bonusy mužou být zmeneny pomocí Ocarovat Kostým .
+[X_PADDING=12]Je možné pridat jen 2 speciální bonusy na každý kostým, potrebné predmety jsou 2:
+[X_PADDING=20]1. Speciální Ocarování Kostýmu (max 5%)
+[X_PADDING=20]2. Speciální Ocarování Kostýmu+ (max 10%)
+
+[X_PADDING=12] Bonusy které mužou být vloženy Speciálním Ocarováním Kostýmu jsou:
+[X_PADDING=20]- Silný proti Kamenum Metin
+[X_PADDING=20]- Silný proti Príšerám
+[X_PADDING=20]- Silný proti Bossum
+[X_PADDING=20]- Odolnost vuci Pololidem
+[X_PADDING=20]- Silný proti Pololidem
+
+[X_PADDING=12](Speciální bonusy mužou být odstraneny pomocí Odstranení Speciálního Ocarování)
+
+[X_PADDING=12]Mužeš vymenit bonusy kostýmu použitím "Theowahdan" NPC a musíte mít predmet 
+[X_PADDING=12]Výmena Bonusu Kostýmu.
+
+[X_PADDING=12]Když se panel výmeny kostýmu otevre objeví se 4 sloty:
+[X_PADDING=20]1.Do leva dáte starý kostým.
+[X_PADDING=20]2.Nahoru dáte "Výmena Bonusu Kostýmu".
+[X_PADDING=20]3.Do prava dáte kostým na který chcete aby se bonusy vymenili .
+[X_PADDING=20]4.Dole uvidíte nový kostým se starými bonusy .
+
+[X_PADDING=12]Pozor pokud má starý kostým speciální bonus tak výmenou tento speciální bonus 
+[X_PADDING=12]bude odstranen a starý kostým znicen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSY KOSTÝMU MUŽOU MÍT RUZNÉ DRUHY KOSTÝMU
+
+[X_PADDING=12]  Kostýmy:
+[X_PADDING=20]- Max. ZB +2000
+[X_PADDING=20]- Max. MB +800
+[X_PADDING=20]- Poškození bude absorbováno MB 8%
+[X_PADDING=20]- Poškození bude absorbováno ZB 8%
+[X_PADDING=20]- Útocné poškození +50 
+[X_PADDING=20]- Šance na získání bonusových EXP 15%
+[X_PADDING=20]- Šance na dvojnásobné dropnutí predmetu 15%
+
+[X_PADDING=12]  Úcesy:
+[X_PADDING=20]- Rychlost Útoku +8%
+[X_PADDING=20]- Šance na Kritický Útok +8%
+[X_PADDING=20]- Šance na Pronikavý Zásah +8%
+[X_PADDING=20]- Odolnost vuci Pololidem 10%
+[X_PADDING=20]- Šance na dvojnásobné dropnutí Yangu +15%
+[X_PADDING=20]- ZB Regenerace +15%
+[X_PADDING=20]- MB Regenerace +15%
+
+[X_PADDING=12]  Kostým Zbrane:
+[X_PADDING=20]- Inteligence +10
+[X_PADDING=20]- Síla +10
+[X_PADDING=20]- Pohyblivost +10
+[X_PADDING=20]- Vitalita +10
+[X_PADDING=20]- Silný proti Nemrtvím  +15%
+[X_PADDING=20]- Silný proti Dáblu  +15%
+[X_PADDING=20]- Silný proti Orkum   +15%
+[X_PADDING=20]- Silný proti Zvíratum  +15%
+[X_PADDING=20]- Silný proti Pololidem +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 40.
+[X_PADDING=12]*Maximum szint: 100.
+[X_PADDING=12]*Típus: Egyedül és Csapatban.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 50 perc.
+[X_PADDING=12]*A dungeon elérheto: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Éloholtak elleni ero
+[X_PADDING=12]*Szörnyek eleme: Sötétség.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Pusztítsd el az összes ellenséget.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Pusztítsd el az összes ellenséget. Majd a Démon királyt.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet
+[X_PADDING=20]1. Pusztítsd el az Ördög metinjét. 
+[X_PADDING=20]2. Pusztísd el a helyes Bukás metinjét.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik emelet
+[X_PADDING=20]1. Pusztítsd el az ellenséget, így szerezhetsz kulcsot.
+[X_PADDING=20]2. Tüntesd el az 5 oszlopot a kulcsokkal.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Ötödik emelet
+[X_PADDING=20]1. Kill the Proud Demon King.
+[X_PADDING=20]2. Use the Blacksmith to upgrade any item or click on it to proceed to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Hatodik emelet
+[X_PADDING=20]1. Pusztítsd el az összes Halál metinjét.
+[X_PADDING=20]2. Ha az összes metin elpusztult, a terem teli lesz számos szörnnyel, és megjelenik egy Gyilkosság metinje. El kell pusztítani a metint, amiben egy Ismeretlen öreg láda található.
+[X_PADDING=20]3. Jobb klikk nyitja ki a dobozt, ami egy térképet tartalmaz. Ez lehet üres, de mindaddig kell metineket ütni, amíg a megfelelo térképet meg nem találod. (zin-sa-gui)
+[X_PADDING=20]4. Jobb klikk a Zin-Sa-Gui térképre hogy a következo emeletre menj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Hetedik emelet
+[X_PADDING=20]1. Addig kell ölni a szörnyeket, amíg Zin-Bong-In-kulcsot nem találsz. 
+[X_PADDING=20]2. A megfelelo kulcs nyitja a terem végén lévo kotáblát, ami a 8. emeletre portál.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Nyolcadik emelet
+[X_PADDING=20]1. Öld meg a Kaszást. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

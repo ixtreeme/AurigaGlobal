@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 75.
+[X_PADDING=12]*Maximum level: 95.
+[X_PADDING=12]*Ticket: Shrunken Head.
+[X_PADDING=12]*Type: Solo and Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Shrunken Head
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 40 minutes.
+[X_PADDING=12]*Cooldown: 1 hour.
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Undead .
+[X_PADDING=12]*Element of monsters: Dark.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Kill monsters to drop Soul Crystal Key. 
+[X_PADDING=20]2. Drag the Soul Crystal Key to the Kud Statue to proceed to the next stage.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR
+[X_PADDING=20]1. Destroy the correct Metin of Retaliation.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD FLOOR
+[X_PADDING=20]1. Kill the correct Tartaros.
+[X_PADDING=20]2. Drag the Grimace Totem onto the Basalt Obelisk.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH FLOOR
+[X_PADDING=20]1. Kill Charon.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIFTH FLOOR
+[X_PADDING=20]1. Kill Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

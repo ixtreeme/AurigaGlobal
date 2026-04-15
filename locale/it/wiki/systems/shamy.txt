@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/shamy.png]
+[CENTER_ALIGN]Il sistema shamy support è un sistema che ti permette di evocare uno shamano/a che buffa in automatico il tuo
+[CENTER_ALIGN]personaggio.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]1. L'icona del pannello dello shamy support è situata di lato all'inventario oppure puoi aprire il pannello
+[X_PADDING=12]premendo il tasto X.
+
+[X_PADDING=12]2. Per sbloccare il pannello dello shamy support avrai bisogno dell'item Sblocco Support Drago oppure dell'item
+[X_PADDING=12]Sblocco Support Cura.
+
+[X_PADDING=12]3. Se possiedi uno dei due item e ci clicchi con il tasto destro sopra si aprirà un pannello dove ti chiederà di
+[X_PADDING=12]inserire il nome e di scegliere il sesso del tuo shamy support.
+
+[X_PADDING=12]4. Lo shamy support partirà sempre dal livello 1 e può arrivare al livello 120, più sarà alto più la percentuale
+[X_PADDING=12]del suo buff sarà alta. Lo shamy support accumula esperianza solo quando è evocato e vengono uccisi i mostri.
+
+[X_PADDING=12]5. Lo shamy support partirà sempre con un'equipaggiamento preimpostato, avrai la possibilità di cambiare
+[X_PADDING=12]l'estetica del tuo shamano/a aprendo il negozio situato nel pannello.
+
+[X_PADDING=12]6. Non possono essere evocati 2 shamy support insieme, e non è possibile evocarli nelle guerre tra gilde.
+
+[X_PADDING=12]7. Puoi cambiare nome al tuo shamano/a usando l'item Magia del Nome.
+
+[X_PADDING=12]8. Puoi cambiare sesso al tuo shamano/a usando l'item Pergamena della Trasformazione.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Sblocco Cura						  Sblocco Drago						 Magia del Nome						  Perg. Transf.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

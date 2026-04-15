@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Pruvodce pro zacátecníky.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]ZACÁTEK:
+[X_PADDING=12]Leveluj na Mape 1 alespon do úrovne 25–30. Mezitím nic Metin kameny pro požehnání a vylepšovací predmety.
+[X_PADDING=20]Nezapomen na Brutální Kapitány – mužeš od nich získat 30 zbran.
+[X_PADDING=20]Na úrovni 26 se vyplatí koupit si u NPC brnení (lvl 26) a helmu (lvl 21), které lze snadno vylepšit na +9.
+
+[X_PADDING=12;COLOR=ffff00]LVL 30:
+[X_PADDING=12]Prejdi na Mapu 2 pro další levelování a farmení. Pokud máš dobré vybavení (brnení, helmu, zbran lvl 30), ani Metiny lvl 45 nebudou problém.
+[X_PADDING=20]Pri farmení nezapomen na dungeony! Využij casový rámec a dokonci je,
+[X_PADDING=20]abys získal hodnotné mounty, peta a další.
+[X_PADDING=20]Z ork Metin kamenu budeš potrebovat brnení lvl 42 a štít lvl 41 pro prežití na další mape!
+
+[X_PADDING=12;COLOR=ffff00]LVL 50:
+[X_PADDING=20]V této fázi bys mel mít peta a alespon 6 mountu v inventári – každý dungeon ti dá 2.
+[X_PADDING=20]Leveluj až do lvl 65 a nezapomen na Open Bosse – mužeš z nej získat legendární bonusovace!
+[X_PADDING=20]Budeš potrebovat zbran lvl 65, která na +9 dává +55% sílu proti dáblum.
+[X_PADDING=20]Od Open Bosse mužeš získat i lvl 65 brnení – je nezbytné pro vstup na další mapu.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Herní pravidla!!
+
+[FONT_SIZE=18;COLOR=00ff00] Pravidla chatu a chování
+[X_PADDING=12]ZAKÁZÁNO obtežovat, vyhrožovat nebo urážet jiné hráce!
+[X_PADDING=12]ZAKÁZÁNA politická nebo náboženská provokace na globálním chatu!
+[X_PADDING=12]ZAKÁZÁNO spamování v chatu – vcetne opakujících se zpráv a reklamy!
+
+[FONT_SIZE=18;COLOR=00ff00] Úcet a bezpecnost údaju
+[X_PADDING=12]Za bezpecnost svého úctu jsi ODPOVEDNÝ TY! Nikomu nedávej své prihlašovací údaje!
+[X_PADDING=12]Clenové týmu NIKDY nepožadují tvé heslo – pokud se to stane, okamžite to nahlas!
+[X_PADDING=12]ZAKÁZÁNO prihlašovat se na úcet jiného hráce – i když ti dá prihlašovací údaje!
+
+[FONT_SIZE=18;COLOR=00ff00] Podpora a GM tým
+[X_PADDING=12]ZAKÁZÁNO obtežovat GMy nebo je kontaktovat bezduvodne! Použij ticket systém nebo fórum.
+[X_PADDING=12]Rozhodnutí GM je konecné. Pokud nesouhlasíš, požádej slušne o prezkoumání.
+
+[FONT_SIZE=18;COLOR=00ff00] Zneužívání a rovnost
+[X_PADDING=12]ZAKÁZÁNO používat jakýkoli software nebo nástroje, které poskytují výhodu (napr. boty, speedhack, zoomhack).
+[X_PADDING=12]ZAKÁZÁNO zneužívat chyby jiných hrácu, napr. v obchodu nebo PvP.
+[X_PADDING=12]ZAKÁZÁNA manipulace systému PvP arén, eventu nebo map.
+
+[FONT_SIZE=18;COLOR=00ff00] Obchodování, obchody a hacky
+[X_PADDING=12]ZAKÁZÁN meziserverový obchod!
+[X_PADDING=12]ZAKÁZÁNA falešná nebo zavádející reklama v obchodech (napr. 1 yang = 1kk)!
+[X_PADDING=12]JAKÝKOLIV hack nebo makro software je PRÍSNE ZAKÁZÁN!
+[X_PADDING=12]ZAKÁZÁNO prodávat predmety nebo úcet za skutecné peníze!
+[X_PADDING=12]ZAKÁZÁNO podvádet nebo získat výhodu nepoctivým obchodem!
+
+[FONT_SIZE=18;COLOR=00ff00] Využívání bugu a hlášení
+[X_PADDING=12]Pokud najdeš chybu, MÁŠ POVINNOST ji nahlásit – zneužití je PRÍSNE ZAKÁZÁNO!
+[X_PADDING=12]Zneužívání chyb ohrožuje bezpecnost serveru a bude tvrde potrestáno!
+
+[FONT_SIZE=18;COLOR=00ff00] Obecné zákazy
+[X_PADDING=12]ZAKÁZÁNO používat vulgární výrazy, šírit nenávist nebo rasismus – jsme všichni lidé!
+[X_PADDING=12]TVUJ úcet NESMÍ používat nikdo jiný – ani tvuj kamarád!
+[X_PADDING=12]ZAKÁZÁNA reklama jiných serveru nebo jejich propagace!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]PORUŠENÍ TECHTO PRAVIDEL MUŽE VÉST K TRVALÉMU HARDWARE BANU!
+[X_PADDING=12]

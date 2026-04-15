@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]Na Auriga jsou 4 nové stupne vylepšení:
+[X_PADDING=20]- Epický
+[X_PADDING=20]- Legendární
+[X_PADDING=20]- Staroveký
+[X_PADDING=20]- Mýtický
+
+[X_PADDING=12]1. Když jsou nekteré predmety vylepšeny až na +9, bude možné je epicizovat o 4 stupne.
+[X_PADDING=12]2. Když je predmet epicizován, je k nemu pridán nový bonus nebo jsou vylepšena procenta
+[X_PADDING=12]bonusu již existujících.
+
+[X_PADDING=12;FONT_SIZE=14]ITEMS THAT CAN BE EPICIZED:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ZBRANE:
+[X_PADDING=28]- Jedovatý Mec + 9
+[X_PADDING=28]- Lví Mec+9
+[X_PADDING=28]- Mec Zášti+9
+[X_PADDING=28]- Ocelový Luk Vran+9
+[X_PADDING=28]- Chakram Krídla Dábla+9
+[X_PADDING=28]- Zvon Orchidejí+9
+[X_PADDING=28]- Mec Zverokruhu+9
+[X_PADDING=28]- Cepel Zverokruhu+9
+[X_PADDING=28]- Halapartna Zverokruhu+9
+[X_PADDING=28]- Luk Zverokruhu+9
+[X_PADDING=28]- Dýka Zverokruhu+9
+[X_PADDING=28]- Vejír Zverokruhu+9
+[X_PADDING=28]- Zvon Zverokruhu+9
+[X_PADDING=28]- Kyanitový Mec+9
+[X_PADDING=28]- Kyanitový Mec+9
+[X_PADDING=28]- Kyanitová Cepel+9
+[X_PADDING=28]- Kyanitový Luk+9
+[X_PADDING=28]- kyanitová Dýka+9
+[X_PADDING=28]- Kyanitový Vejír+9
+[X_PADDING=28]- Kyanitový Zvon+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRNENÍ:
+[X_PADDING=28]- Kyanitové Brnení+9
+[X_PADDING=28]- Kyanitové Plátové Brnení +9
+[X_PADDING=28]- Kyanitový Oblek+9
+[X_PADDING=28]- Kyanite Oblecení+9
+[X_PADDING=28]- Brnení Zverokruhu+9
+[X_PADDING=28]- Plátové Brnení Zverokruhu+9
+[X_PADDING=28]- Oblek Zverokruhu+9
+[X_PADDING=28]- Oblecení Zverokruhu+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* HELMY:
+[X_PADDING=28]- Šerá Drací Helma+9
+[X_PADDING=28]- Helma Šestihranného Draka+9
+[X_PADDING=28]- Helma Bourlivého Draka+9
+[X_PADDING=28]- Vznešená Drací Helma+9
+[X_PADDING=28]- Drací Ocelová Helma+9
+[X_PADDING=28]- Drací Šupinová Helma+9
+[X_PADDING=28]- Drací Kapuce+9
+[X_PADDING=28]- Drací Klobouk+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ŠTÍTY:
+[X_PADDING=28]- Sokolský Štít+9
+[X_PADDING=28]- Hranatý Lví Štít+9
+[X_PADDING=28]- Tygrí Štít+9
+[X_PADDING=28]- Štít z Dracích Šupin+9
+[X_PADDING=28]- Štít Trech Císaru+9
+[X_PADDING=28]- Titánský Štít+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* NÁRAMKY:
+[X_PADDING=28]- Náramek Krystalu Duše+9
+[X_PADDING=28]- Kyanitový Náramek+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* NÁHRDELNÍKY:
+[X_PADDING=28]- Retízek Krystalu Duše+9
+[X_PADDING=28]- Kyanitový Náhrdelník+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* NAUŠNICE:
+[X_PADDING=28]- Náušnice Krystalu Duše+9
+[X_PADDING=28]- Kyanitové Náušnice+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BOTY:
+[X_PADDING=28]- Ohnivé Boty+9
+[X_PADDING=28]- Boty Oceánu+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

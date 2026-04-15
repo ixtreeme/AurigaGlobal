@@ -1,0 +1,101 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]Completando alcune missioni in gioco viene regalato un Cassa dei Pet, cliccando sul di lei vi chiederà di
+[X_PADDING=12]scegliere quale uovo di pet preferite:
+[X_PADDING=20]- Uovo di Scimmia
+[X_PADDING=20]- Uovo di Ragno
+[X_PADDING=20]- Uovo di Razador
+[X_PADDING=20]- Uovo di Nemere
+[X_PADDING=20]- Uovo di Drago Blu
+[X_PADDING=20]- Uovo di Drago Rosso
+[X_PADDING=20]- Uovo di Baashido Bebé
+[X_PADDING=20]- Uovo di Boia Paffuto
+[X_PADDING=20]- Uovo di Nessie
+[X_PADDING=20]- Uovo di Azraeluccio
+[X_PADDING=20]- Uovo di Exdyar
+
+[X_PADDING=12]Cliccando con il tasto destro sul vostro uovo vi chiederà di scegliere il nome prima di schiudere il pet
+[X_PADDING=12]dall'uovo (usando la Pergamena del Nome è possibile cambiare il nome del proprio pet).
+[X_PADDING=12]Quando il pet sarà uscito dall'uovo avrà 2 giorni di vita è sarà livello 1.
+
+[X_PADDING=12]Per aumentare la vita del pet c'è bisogno del Boccone Divino, reperibile da 2g nell'NPC Bottegaia.
+
+[X_PADDING=12]Quando il pet uscirà dall'uovo avra 3 bonus (questi bonus usciranno con percentuali casuali):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Forte vs Mostri
+[X_PADDING=20]- Danni Medi[PVM]
+
+[X_PADDING=12]E' possibile aumentare le percentuali dei bonus standard del pet con un Boccone Speciale.
+[X_PADDING=12](Attenzione l'aumento di percentuale di un bonus standard potrebbe fallire).
+
+[X_PADDING=12]Il pet ha 3 processi di sviluppo:
+[X_PADDING=20]1. Da Cucciolo a Selvatico
+[X_PADDING=20]2. Da Selvatico a Coraggioso
+[X_PADDING=20]3. Da Coraggioso a Eroico
+
+[X_PADDING=12]Gli sviluppi del pet si suddividono in questo modo:
+[X_PADDING=20]CUCCIOLO:
+[X_PADDING=28]- Livello 1 a 40 senza nessuna richiesta di item
+[X_PADDING=20]CUCCIOLO --> SELVATICO:
+[X_PADDING=28]Livello 41 a 60
+[X_PADDING=28]- 10 Libro del Pet Cucciolo
+[X_PADDING=28]- 10 Perla Bianca
+[X_PADDING=28]- 3 Perla Gialla
+[X_PADDING=20]SELVATICO --> CORAGGIOSO:
+[X_PADDING=28]- Lv 61 a lv 80
+[X_PADDING=28]- 10 Libro del Pet Selvatico
+[X_PADDING=28]- 10 Perla Blu
+[X_PADDING=28]- 3 Perla Verde
+[X_PADDING=20]CORAGGIOSO --> EROICO:
+[X_PADDING=28]- Lv 81 a 100
+[X_PADDING=28]- 10 Libro del Pet Coraggioso
+[X_PADDING=28]- 10 Perla Rossa
+[X_PADDING=28]- 3 Perla Viola
+
+[X_PADDING=12]Grado Selvatico si sblocca la prima slot abilità.
+[X_PADDING=12]Grado Coraggioso si sblocca la seconda slot abilità.
+[X_PADDING=12]Grado Eroico si sblocca la terza slot abilità.
+
+[X_PADDING=12]Inoltre il pet fornirà nuovi bonus quando invecchia, più il pet sarà vecchio più il valore dei suoi bonus sarà alto.
+[X_PADDING=20]Da 1 a 10 giorni di vita il pet darà i seguenti bonus:
+[X_PADDING=28]- Max. HP +500
+[X_PADDING=28]- Resistenza Mostri 2%
+[X_PADDING=28]- Resistenza ai Mezziuomini 2%
+[X_PADDING=20]Da 11 a 25 giorni il pet darà i seguenti bonus:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Resistenza Mostri 4%
+[X_PADDING=28]- Resistenza ai Mezziuomini 4%
+[X_PADDING=20]Da 26 a 47 giorni il pet darà i seguenti bonus:
+[X_PADDING=28]- Max. HP +2100
+[X_PADDING=28]- Resistenza Mostri 7%
+[X_PADDING=28]- Resistenza ai Mezziuomini 7%
+[X_PADDING=20]Da 48 a 59 giorni il pet darà i seguenti bonus:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistenza Mostri 10%
+[X_PADDING=28]- Resistenza ai Mezziuomini 10%
+[X_PADDING=20]Da 60 giorni in poi:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistenza Mostri 10%
+[X_PADDING=28]- Resistenza ai Mezziuomini 10%
+[X_PADDING=28]- E si sbloccherà la quarta slot abilità
+
+[X_PADDING=12]Abilità che possono essere insegnate al pet:
+[X_PADDING=20]- Possibilità nei colpi critici[PvM] 10%
+[X_PADDING=20]- Forte contro Metin 10%
+[X_PADDING=20]- Forte contro Boss 10%
+[X_PADDING=20]- Resistanza Ninja 10%
+[X_PADDING=20]- Resistenza Sura 10%
+[X_PADDING=20]- Resistenza Guerriero 10%
+[X_PADDING=20]- Resistenza Shamano 10%
+[X_PADDING=20]- Possibilità sul EXP bonus 20%
+[X_PADDING=20]- Possibilità di lasciar cadere YANG 20%
+[X_PADDING=20]- Valore attacco/magico 10%
+[X_PADDING=20]- Possibilità blocco attacco corporale 10%
+[X_PADDING=20]- Possibilità di riflettere un attacco corporale 10%
+
+[X_PADDING=12]E' possibile far dimenticare un'abilità a scelta del pet usando il libro Reset Abilità Pet e inoltre è possibile far dimenticare
+[X_PADDING=12]tutte le abilità al pet usando il libro Reset Abilità Pet (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Nivel mínimo: 70.
+[X_PADDING=12]*Nivel maximo: 120.
+[X_PADDING=12]*Ticket: Entrada de las Runas.
+[X_PADDING=12]*Type: Solo y en grupo
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Entrada de las runas		Zeus Piedra
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 1 hora y 30 minutos
+[X_PADDING=12]*Enfriamiento: 2 horas (usando la Piedra Zeus es posible restablecer el tiempo de enfriamiento).
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Special Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra Rune Monsters
+[X_PADDING=12]*Elemento de monstruos: Hielo - Oscuro - Fuego - Rayo - Tierra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata a todos los monstruos para poder destruir el Metin of Runes.
+[X_PADDING=20]2. Destruye todos los Metin of Runes en el orden correcto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO (Uno de los 3 modos puede salir al azar)
+[X_PADDING=20]* 1.Mata a todos los monstruos y destruye todos los Metin of Runes para que aparezca Haru. Cuando aparece el jefe,
+[X_PADDING=20]solo el líder del grupo puede dañarlo hasta que el jefe alcance el 70% de su HP, una vez que alcance el 70% de su HP, 
+[X_PADDING=20]El resto del grupo puede hacer daño al jefe.
+
+[X_PADDING=20]* 2. Mata monstruos para encontrar 10 Rune Soul, las Rune Souls irán directamente al inventario del líder del grupo.
+[X_PADDING=20]Una vez que haya encontrado las 10 Rune Souls, simplemente haga clic en una de ellas para que aparezcan en el inventario.
+[X_PADDING=20]del líder del grupo la Llave de la Piedra. Haga clic en la Llave de la Piedra para pasar a la siguiente fase.
+
+[X_PADDING=20]* 3. Cuando Haru tenga el 60% de su HP ya no será posible dañarlo, destruye el Metin de las Runas
+[X_PADDING=20]para hacer daño al jefe. Cuando Buncho baje al 20% de su HP, ya no será posible dañarlo.,
+[X_PADDING=20]Mata a 100 monstruos para poder hacer daño al jefe. (Atención Haru cuando su HP alcanza el 20% su daño se duplica)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO (Uno de los 3 modos puede salir al azar)
+[X_PADDING=20]* 1.Mata a todos los monstruos y destruye todos los Metin of Runes para que aparezca Buncho. Cuando aparece el jefe,
+[X_PADDING=20]solo el líder del grupo puede dañarlo hasta que el jefe alcance el 70% de su HP, una vez que alcance el 70% de su HP
+[X_PADDING=20]El resto del grupo puede hacer daño al jefe.
+
+[X_PADDING=20]* 2. Mata monstruos para encontrar 10 Rune Soul, las Rune Souls irán directamente al inventario del líder del grupo.
+[X_PADDING=20]Una vez que haya encontrado las 10 Rune Souls, simplemente haga clic en una de ellas para que aparezcan en el inventario.
+[X_PADDING=20]del líder del grupo la Llave de la Piedra. Haga clic en la Llave de la Piedra para pasar a la siguiente fase.
+
+[X_PADDING=20]* 3. Cuando Buncho tenga el 60% de su HP ya no será posible dañarlo, destruye el Metin de las Runas
+[X_PADDING=20]para hacer daño al jefe. Cuando Buncho baje al 20% de su HP, ya no será posible dañarlo,
+[X_PADDING=20]Mata a 100 monstruos para poder hacer daño al jefe. (Atención Buncho cuando su HP alcanza el 20% su daño se duplica)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO (Uno de los 3 modos puede salir al azar)
+[X_PADDING=20]* 1.Mata a todos los monstruos y destruye todos los Metin of Runes para que aparezca Eien. Cuando aparece el jefe,
+[X_PADDING=20]solo el líder del grupo puede dañarlo hasta que el jefe alcance el 70% de su HP, una vez que alcance el 70% de su HP
+[X_PADDING=20]El resto del grupo puede hacer daño al jefe..
+              
+[X_PADDING=20]* 2. Mata monstruos para encontrar 10 Rune Soul, las Rune Souls irán directamente al inventario del líder del grupo.
+[X_PADDING=20]Una vez que haya encontrado las 10 Rune Souls, simplemente haga clic en una de ellas para que aparezcan en el inventario.
+[X_PADDING=20]del líder del grupo la Llave de la Piedra. Haga clic en la Llave de la Piedra para pasar a la siguiente fase.
+              
+[X_PADDING=20]* 3. Cuando Eien tenga el 60% de su HP ya no será posible dañarlo, destruye el Metin de las Runas
+[X_PADDING=20]para hacer daño al jefe. Cuando Buncho baje al 20% de su HP, ya no será posible dañarlo,
+[X_PADDING=20]Mata a 100 monstruos para poder hacer daño al jefe. (Atención Eien cuando su HP alcanza el 20% su daño se duplica)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PISO
+[X_PADDING=20]1. Destruye todos los Metin of Runes para hacer daño a Haru.
+[X_PADDING=20]2. Mata a Haru.
+[X_PADDING=20]3. Mata monstruos para poder encontrar la llave de la piedra.
+[X_PADDING=20]4. Destruye la piedra rúnica arrastrando la llave de las piedras sobre ella para dañar a Buncho.
+[X_PADDING=20]5. Mata a Buncho.
+[X_PADDING=20]6. Ataca al jefe Eien, pero ten cuidado cuando su vida esté al 50% no recibirá más daño.
+[X_PADDING=20]7. Para seguir haciendo daño al jefe Eien, primero mata a los monstruos.
+[X_PADDING=20]8. Ataca al jefe Eien, pero ten cuidado cuando su vida esté al 10% no recibirá más daño.
+[X_PADDING=20]9. Para seguir infligiendo daño al jefe Eien, destruye el Metin de Runas.
+[X_PADDING=20]10. Mata a Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

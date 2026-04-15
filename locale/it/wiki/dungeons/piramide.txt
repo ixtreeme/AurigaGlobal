@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 105.
+[X_PADDING=12]*Livello massimo: 120.
+[X_PADDING=12]*Biglietto: Croce di Ankh.
+[X_PADDING=12]*Genere: Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Croce di Ankh
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 30 minuti.
+[X_PADDING=12]*Il cooldown è di 1 ora e 30 minuti.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon Speciale.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte vs Terra.
+[X_PADDING=12]*L'elemento dei mostri: Terra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMO PIANO
+[X_PADDING=20]1. Distruggi la Pietra di Wadjet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDO PIANO
+[X_PADDING=20]1. Uccidi i mostri per trovare i 4 pezzi della pergamena.
+[X_PADDING=20]2. Trovati i 4 pezzi della pergamena clicca sull'Antico Sigillo per distruggerlo (chi clicca sul sigillo deve avere tutti
+[X_PADDING=20]e 4 pezzi della pergamena nel suo inventario).
+[X_PADDING=20]3. Uccidi il Servo di Anubi.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZO PIANO
+[X_PADDING=20]1. Distruggi le Pietra del faraone corretta.
+[X_PADDING=20]2. Uccidi Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO PIANO
+[X_PADDING=20]1. Per superare il piano devi passare attraverso 24 portali.
+[X_PADDING=20]2. Uccidi il Ra corretto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PIANO
+[X_PADDING=20]1. Uccidi i mostri per trovare la Fascia Saggia.
+[X_PADDING=20]2. Trascina la Fascia Saggia sull'Efiggie di Anubi corretto per distruggerlo.
+[X_PADDING=20]3. Distruggi la Pietra di Ankh per trovare la Fascia Saggia.
+[X_PADDING=20]4. Trascina la Fascia Saggia sull'Efiggie di Anubi corretto per distruggerlo.
+[X_PADDING=20]3. Uccidi i mostri per trovare la Fascia Saggia.
+[X_PADDING=20]4. Trascina la Fascia Saggia sull'Efiggie di Anubi corretto per distruggerlo.
+[X_PADDING=20]5. Distruggi le Pietre di Ankh per trovare l'ultima Fascia Saggia.
+[X_PADDING=20]6. Trascina la Fascia Saggia sull'ultima Effigide di Anubi per distruggerla.
+[X_PADDING=20]7. Uccidi Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SESTO PIANO
+[X_PADDING=20]1. Uccidi tutti i mostri.
+[X_PADDING=20]2. Clicca sulla Chiave Ankh per ricevere l'Antica Chiave.
+[X_PADDING=20]3. Trascina l'Antica Chiave sul Pilastro del wadjet per distruggerlo.
+[X_PADDING=20]4. Distruggi la Pietra della Sfinge.
+[X_PADDING=20]5. Clicca sull'ultima Chiave Ankh per ricevere l'Antica Chiave.
+[X_PADDING=20]6. Trascina l'Antica Chiave sull'ultimo Pilastro del wadjet per distruggerlo.
+[X_PADDING=20]7. Uccidi la Sfinge.
+[X_PADDING=20]8. Distruggi il Tesoro della Sfinge per ricevere la ricompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

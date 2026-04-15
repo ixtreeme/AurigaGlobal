@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]1. Otwierajac prywatny czat miedzy 2 graczami, powinienes byc w stanie zobaczyc przycisk Tlumacza Google na górze
+[X_PADDING=12]2. Jesli przycisk jest aktywny, wiadomosc w innym jezyku zostanie automatycznie przetlumaczona na Twój jezyk
+[X_PADDING=12]3. Jesli przycisk jest dezaktywowany, otrzymasz wiadomosc w oryginalnym jezyku, bez tlumaczenia
+
+[X_PADDING=12](Uwaga, automatyczne tlumaczenie dziala tylko dla prywatnej wiadomosci).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

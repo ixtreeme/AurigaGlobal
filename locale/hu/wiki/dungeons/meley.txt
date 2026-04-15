@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 75.
+[X_PADDING=12]*Maximum szint: 120.
+[X_PADDING=12]*Típus: Céh.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Idõ limit 1 óra.
+[X_PADDING=12]*Újratöltés: 3 óra.
+[X_PADDING=12]*A dungeon elérhetõ: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Tûz erõ.
+[X_PADDING=12]*Szörnyek eleme: Tûz.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elsõ fázis
+[X_PADDING=20]Ebben a körben a térkép közepén található oszlopokat kell sebezni addig, ameddig mindegyik TP-je a 75%-ára nem csökken.  
+[X_PADDING=20]Ezt számos ellenséges szörny próbálja megakadályozni. 
+[X_PADDING=20]Amint egy oszlop elvesztette a TP-je 25%-át, a színe megváltozik és nem lehet sebezni tovább. 
+[X_PADDING=20]Ha mindegyik oszlop színe megváltozott, a szörnyek eltûnnek és indul a 2. kör. 
+[X_PADDING=20]Eközben az összes szörny eltûnik és nem tudsz interaktolni a szobrokkal.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második fázis
+[X_PADDING=20]Az elõzõ körhöz hasonlóan az oszlopokat kell sebezni addig, ameddig mindegyik TP-je az 50%-ára nem csökkent.
+[X_PADDING=20]Ezt nehezíti, hogy bizonyos idõközönként 4db Sárkánytojás jelenik meg az oszlopok körül,
+[X_PADDING=20]amik sérthetetlenséget biztosítanak az oszlopoknak, így nem lehet õket sebezni - ezeket el kell pusztítani, ha megjelennek. 
+[X_PADDING=20]Amint egy oszlop elvesztette a TP-je 50%-át, a színe megváltozik és nem lehet sebezni tovább. 
+[X_PADDING=20]Ha mindegyik oszlop színe megváltozott, a szörnyek eltûnnek és indul a 3. kör.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik fázis
+[X_PADDING=20]Ebben a körben továbbra is az oszlopokat kell sebezni, ameddig a TP-jük teljesen el nem fogy. Ezt az elõzõ körhöz hasonlóan Sárkánytojások,  
+[X_PADDING=20]rengeteg agresszív szörny és 4db Sárkányfigyelõ Idall nehezíti. Az utóbbi 4 szörnyet még a kör befejezése elõtt  
+[X_PADDING=20]meg kell ölni, különben a "run" nem lesz teljesíthetõ. Ahogy a korábbiakban is, ha van egy tojás a szobrok körül 
+[X_PADDING=20]a szobrok nem sebezhetõek. Amint egy oszlop elvesztette a teljes életerejét, a színe kékre változik és nem lehet sebezni tovább. Ha mindegyik oszlop színe megváltozott,
+[X_PADDING=20]akkor a Sárkánytûz-gyûrû segítségével el kell pusztítani õket, amiket a szörnyek megölésével szerezhetsz.
+[X_PADDING=20]Egy játékos csak egy oszlopot pusztíthat el. Amint a gyûrût ráhúztátok egy szoborra, a színe zöldre változik.
+[X_PADDING=20]Ha mindegyik szobor színe zöldre változik: a szörnyek eltûnnek és indul a 4. kör.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik fázis
+[X_PADDING=20]A 4 oszlop utoljára megtámadja Meley-t, aki ekkor elmenekül. 
+[X_PADDING=20]Ezután megjelenik az Arany sárkányláda.png Arany sárkányláda, ahol a "run" résztvevõi felvehetik a jutalmukat.
+[X_PADDING=20]Választható jutalmak: Meley királynõ ládája, Sárkányfigyelõ-láda.
+
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CASI DI FALLIMENTO (ELIMINIAMO QUESTA PARTA)
+[X_PADDING=20]Il tempo massimo di completamento è 1 ora. Oltre a questa limitazione, il gruppo potrà fallire nel caso in cui: non
+[X_PADDING=20]venissero uccisi i Guardiani dei Draghi entro la fine della fase 3. le Uova respawnassero prima di aver trascinato
+[X_PADDING=20]tutti gli Anelli sulle Statue.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RICOMPENSA (ELIMINIAMO QUESTA PARTA)
+[X_PADDING=20]Tutti i partecipanti riceveranno una ricompensa, in caso di riuscita. I giocatori potranno scegliere tra un 2 Bauli:
+[X_PADDING=20]Baule della Regina Meley e Baule Guardiano dei Draghi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. Sie können das Offline-Shop-Panel öffnen, indem Sie auf das Bundle-Symbol auf der Minikarte klicken oder drücken
+[X_PADDING=12]die Y-Taste.
+[X_PADDING=12]2. Der Offline-Shop besteht aus 9 Abschnitten:
+[X_PADDING=20]Ich. Mein Geschäft
+[X_PADDING=20]II. Liste der Geschäfte
+[X_PADDING=20]III. Lagerhaus
+[X_PADDING=20]IV. Meine Angebote
+[X_PADDING=20]V. Suche
+[X_PADDING=20]VI. Meine Suche
+[X_PADDING=20]VII. Gespeicherte Suche
+[X_PADDING=20]VIII. Meine Auktionen
+[X_PADDING=20]IX. Auktionen im Gange
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNKTIONALITÄT DER VERSCHIEDENEN ABSCHNITTE
+
+[X_PADDING=12]1. Mein Shop: In diesem Bereich können Sie Ihren Offline-Shop erstellen, rechts oben finden Sie eine Vorschau des
+[X_PADDING=12]Shop, den Sie verwenden werden, durch Klicken auf die Pfeile können Sie auch die speziellen Shops auswählen, aber seien Sie vorsichtig,
+[X_PADDING=12]Um die Spezialgeschäfte zu nutzen, benötigen Sie 1 Kaschmirbündel.
+
+[X_PADDING=12]2. Store-Liste: In diesem Abschnitt können Sie alle aktiven Offline-Stores anzeigen.
+
+[X_PADDING=12]3. Lager: In diesem Abschnitt finden Sie alle Artikel, die Sie nicht verkauft haben, und die Einnahmen aus den Verkäufen.
+
+[X_PADDING=12]4. Le mie offerte: in questa sezione sono elencate tutte le offerte che hai effetuato.
+
+[X_PADDING=12]5. Suche: In diesem Bereich können Sie mit den verschiedenen Filtern gezielt suchen.
+
+[X_PADDING=12]6. Meine Suchen: In diesem Abschnitt sehen Sie alle von Ihnen durchgeführten Suchen.
+
+[X_PADDING=12]7. Gespeicherte Suchen: In diesem Abschnitt werden alle gespeicherten Suchfilter aufgelistet.
+
+[X_PADDING=12]8. Meine Auktionen: In diesem Abschnitt können Sie eine Auktion erstellen oder den Status einer Ihrer laufenden Auktionen überprüfen.
+
+[X_PADDING=12]9. Laufende Auktionen: In diesem Abschnitt werden alle noch laufenden Auktionen aufgelistet.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OTHERS
+
+[X_PADDING=12]1. Sie können das Aussehen Ihres Shops im Abschnitt Mein Shop ändern, um das Aussehen Ihres Shops zu ändern
+[X_PADDING=12]shop benötigen Sie das Cashmere Bundle.
+[X_PADDING=12]2. Du findest das Cashmere Bundle im Gaya Shop oder bei diversen Events.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Cashmere Bundle.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

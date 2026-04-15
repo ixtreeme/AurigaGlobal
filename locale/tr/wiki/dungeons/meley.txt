@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 75.
+[X_PADDING=12]*Maksimum giris seviyesi: 120.
+[X_PADDING=12]*Tür: Tek veya grup.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 1 saat.
+[X_PADDING=12]*Beklem süresi: 3 saat.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Ates'in Gücü.
+[X_PADDING=12]*Irk: Ates.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]1. ASAMA
+[X_PADDING=20]Tüm heykellerin canini % 75 'e indirene kadar hasar vurmak zorundasin. 
+[X_PADDING=20]Grup, bu asama boyunca çok sayida çetenin ortaya çikmasiyla engellenecektir..
+[X_PADDING=20]Bir heykel HP'nin %25'ini kaybettiginde renk degistirir ve artik hasar alamaz.
+[X_PADDING=20]Tüm heykeller renk degistirdiginde 2. asama'ya geçeceksiniz. 
+[X_PADDING=20]Bu geçis sirasinda odadaki çeteler kaybolacak ve Heykellerle etkilesime geçemeyeceksiniz.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]2. ASAMA
+[X_PADDING=20]Bu asamada,heykellerin canini % 50'ye indirene kadar hasar vurmak zorundasin.
+[X_PADDING=20]Bu sefer, oyuncu grubu daha fazla sayida çetenin ortaya çikmasi tarafindan engellenecek ve dahasi,
+[X_PADDING=20]Yumurtalar Heykellere karsi bagisikligi garanti edecek, bu nedenle heykellerin hp'si ancak yumurta olmadiginda azaltilabilir.. 
+[X_PADDING=20]Heykellerin cani %50'ye bir kez daha hasar almayacak. 
+[X_PADDING=20]Tüm Heykeller tekrar renk degistirdiginde 3. asamaya geçeceksiniz..
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]3. ASAMA
+[X_PADDING=20]Bu asamada, HP bitene kadar Heykellere basmaniz gerekecek. Önceki asamanin ayni Yumurtalari görünecek, 
+[X_PADDING=20]daha da fazla sayida çete ve dört Dragon Watcher Idall . Bu çeteler önce ortadan kaldirilmalidir.
+[X_PADDING=20]bu asamanin sonu, aksi takdirde çalismayi bitirmek mümkün olmayacaktir. Önceki asamada oldugu gibi, odada Yumurta varsa,
+[X_PADDING=20]Heykellere Auriga verilemez. Heykeller HP'nin %0'ina ulastiginda mavi olur. Bu noktada, onu yok etmeniz gerekecek.
+[X_PADDING=20]Dungeon canavarlari tarafindan birakilan bir Dragonfire Ring'in üzerine sürükleyerek heykeller.
+[X_PADDING=20]Her oyuncu yalnizca bir Heykeli yok edebilir. Yüzügü sürüklediginizde Heykel yesil olur:
+[X_PADDING=20]Heykel yesil olur: tüm heykeller renk degistirdiginde üçüncü asama sona erer.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]4. ASAMA
+[X_PADDING=20]Her asama sona erdiginde, Heykeller Meley'e saldiracak: üçüncü asama sona erecek, heykeller son darbeyi indirecek ve Meley
+[X_PADDING=20]kaçacak. Oyuncular artik ödüllerini NPC Altin Ejderha Sandigi ile etkilesime girerek alabilecekler.
+[X_PADDING=20]Bu hapishaneyi tamamladiktan sonra herhangi bir katilimci 2 sandiktan birini seçebilir: Kraliçe Meley'in Sandigi ve Ejderha Gözcü Sandigi
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IFLAS DAVALARI
+[X_PADDING=20]Maksimum tamamlanma süresi 1 saattir. Bu sinirlamaya ek olarak, grup asagidaki durumlarda basarisiz olabilir:
+[X_PADDING=20]Ejderha Muhafizlari 3. asamanin sonunda öldürülmedi. Yumurtalar sürüklenmeden önce yeniden dogdu
+[X_PADDING=20]Heykellerdeki tüm Yüzükler.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÖDÜL
+[X_PADDING=20]Basari durumunda tüm katilimcilar bir ödül alacaktir. Oyuncular 2 Sandik arasindan seçim yapabilecekler:
+[X_PADDING=20]Kraliçe Meley Sandigi ve Ejderha Koruyucu Sandigi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

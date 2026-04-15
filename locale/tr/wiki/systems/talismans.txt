@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Ates Tilsimi								 Buz Tilsimi								Toprak Tilsimi
+
+
+
+
+
+
+[X_PADDING=81] Karanlik Tilsimi							  Rüzgar Tilsimi						   Simsek Tilsimi
+
+[CENTER_ALIGN]Tilsim, kisiye yeni bonuslar verebilir, bunlari maksimum +30'a yükseltmek mümkündür.
+[CENTER_ALIGN]Yonah npc'sinden tilsim +0 almak mümkün olacak.
+
+[X_PADDING=12]Tilsim üzerine maksimum 5 bonus eklemek mümkün olacaktir:
+[X_PADDING=20]1. Ilk bonustan dördüncü bonusa kadar Güçlendirme Tilsimi esyasina ihtiyaç vardir.
+[X_PADDING=20]2. Besinci bonusu eklemek için Tilsimi Güçlendirir esyasina ihtiyaç vardir.
+[X_PADDING=20]3. Tilsimdaki bonuslari degistirmek için Enchant Talisman ögesine ihtiyaciniz olacak.
+
+[X_PADDING=12] Tilsimda olabilecek olasi bonuslar:
+[X_PADDING=20]- Kiliç Savunmasindan Kopus %5 
+[X_PADDING=20]- Çift El Savunmasindan Kopus %5
+[X_PADDING=20]- Biçak Savunmasindan Kopus 5%
+[X_PADDING=20]- Ok Savunmasinin Kirilmasi 5%
+[X_PADDING=20]- Yelpaze Savunmasindan Kopus 5%
+[X_PADDING=20]- Çan Savunmasindan Kopus 5%
+[X_PADDING=20]- Yari Insan Direnci 10%
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü 10%
+[X_PADDING=20]- Canavarlara Karsi Güçlü 15%
+[X_PADDING=20]- Metinlere Karsi Güçlü  15%
+[X_PADDING=20]- Patronlara Karsi Güçlü 15%
+[X_PADDING=20]- Karanlik Direnci 15%
+[X_PADDING=20]- Dünya Direnci 15%
+[X_PADDING=20]- Buz Direnci 15%
+[X_PADDING=20]- Ates Direnci 15%
+[X_PADDING=20]- Rüzgar Direnci 15%
+[X_PADDING=20]- Simsek Direnci 15%
+[X_PADDING=20]- Rün Canavarlarina Karsi Güçlü 20% 
+
+[X_PADDING=12]Baslangiç ??zindanlarindan item alarak +10'a kadar tilsimi yükseltmek mümkün, 11+'dan +30'a kadar Sandigi düsürmeniz gerekecek
+[X_PADDING=12]Tilsimin yükseltilmesi için gerekli nesnelerin içeride çikacagi yer
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Tilsim Güçlendirme								 Tilsim Efsun Nesnesi								Tilsimi Güçlendirme
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

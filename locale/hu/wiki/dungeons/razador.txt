@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 85.
+[X_PADDING=12]*Maximum szint: 100.
+[X_PADDING=12]*Belépo: Razador Belépo
+[X_PADDING=12]*Típus: Egyedül és Csapatban.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Razador Belépo
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 50 perc.
+[X_PADDING=12]*Újratöltés: 1 óra
+[X_PADDING=12]*Ha csapatban lépsz be, mindenkinek kell belépo.
+[X_PADDING=12]*A dungeon elérheto: Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Tuz ero.
+[X_PADDING=12]*Szörnyek eleme: Tuz.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Beszélj Am-heh szurdok Gorge-al, hogy megnyissa az elso zónát. A zóna végezte után beszélj Am-heh szurdokkal ismét, és egy új zóna fog megnyilni.
+[X_PADDING=20]És újra, egészen addig amíg nem teleportál minket Am-heh szurdok a Foszörny szobájába.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]MIKÖZBEN A DUNGEONBAN VAGY:
+[X_PADDING=20]1. Öld addig a szörnyeket, amíg nem kapsz Arany fogaskereket, majd húzd rá a második zóna közepén lévo Isfet emlékkövére.
+[X_PADDING=20]2. Öld meg Ignitort.
+[X_PADDING=20]3. Öld meg az összes szörnyet.
+[X_PADDING=20]4. Öld addig a szörnyeket, amíg nem kapsz Maat követ, majd húzd rá Isfet emlékkövére. Ezekbol 7 darab van és meg kell találni a helyes sorrendet.
+[X_PADDING=20]5. Pusztítsd el a Tisztítótuz metinjét.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Öld meg Razadort.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

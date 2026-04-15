@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 70.
+[X_PADDING=12]*Livello massimo: 120.
+[X_PADDING=12]*Biglietto: Biglietto delle Rune.
+[X_PADDING=12]*Genere: Solo e Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Biglietto Rune		Pietra di Zeus
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 1 ora e 5 minuti.
+[X_PADDING=12]*Il cooldown è di 2 ore (utilizzando la Pietra di Zeus è possibile resettare il tempo d'attesa).
+[X_PADDING=12]*Nel caso in cui si entra con il gruppo, ognuno deve avere il biglietto.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon Speciale.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte contro Mostri delle Rune.
+[X_PADDING=12]*L'elemento dei mostri: Ghiaccio - Oscurità - Fuoco - Lampo - Terra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMO PIANO
+[X_PADDING=20]1. Uccidi tutti i mostri per poter distruggere le Metin delle Rune.
+[X_PADDING=20]2. Distruggi tutte le Metin delle Rune nell'ordine corretto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDO PIANO (Possono uscire una delle 3 modalità in modo casuale)
+[X_PADDING=20]* 1. Uccidi tutti i mostri e distruggi tutte le Metin delle Rune per far comparire Haru. Quando compare il
+[X_PADDING=20]boss solo il capo gruppo può fargli danno finché il boss non arriva al 70% dei suoi HP, arrivati al 70%
+[X_PADDING=20]dei suoi HP il resto del gruppo potrà fare danno al boss.
+
+[X_PADDING=20]* 2. Uccidi i mostri per trovare 10 Anima di Runa, le Anime di Runa andranno direttamente nell'inventario del
+[X_PADDING=20]capo gruppo. Trovate le 10 Anime di Runa basterà cliccare su una di essa per far comparire nell'inventario
+[X_PADDING=20]del capo gruppo la Chiave Divina. Clicca sulla Chiave Divina per proseguire con la prossima fase.
+
+[X_PADDING=20]* 3. Quando Buncho avrà il 60% dei suoi HP non sarà più possibile fargli danno, distruggi le Metin delle Rune
+[X_PADDING=20]per poter fare danno al boss. Quando Buncho scende al 20% dei suoi HP non sarà più possibile fargli danno,
+[X_PADDING=20]uccidi 100 mostri per poter fare danno al boss. (Attenzione Buncho quando arriva al 20% dei suoi HP il suo
+[X_PADDING=20]danno si raddoppia)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZO PIANO (Possono uscire una delle 3 modalità in modo casuale)
+[X_PADDING=20]* 1. Uccidi tutti i mostri e distruggi tutte le Metin delle Rune per far comparire Haru. Quando compare il
+[X_PADDING=20]boss solo il capo gruppo può fargli danno finché il boss non arriva al 70% dei suoi HP, arrivati al 70%
+[X_PADDING=20]dei suoi HP il resto del gruppo potrà fare danno al boss.
+
+[X_PADDING=20]* 2. Uccidi i mostri per trovare 10 Anima di Runa, le Anime di Runa andranno direttamente nell'inventario del
+[X_PADDING=20]capo gruppo. Trovate le 10 Anime di Runa basterà cliccare su una di essa per far comparire nell'inventario
+[X_PADDING=20]del capo gruppo la Chiave Divina. Clicca sulla Chiave Divina per proseguire con la prossima fase.
+
+[X_PADDING=20]* 3. Quando Buncho avrà il 60% dei suoi HP non sarà più possibile fargli danno, distruggi le Metin delle Rune
+[X_PADDING=20]per poter fare danno al boss. Quando Buncho scende al 20% dei suoi HP non sarà più possibile fargli danno,
+[X_PADDING=20]uccidi 100 mostri per poter fare danno al boss. (Attenzione Buncho quando arriva al 20% dei suoi HP il suo
+[X_PADDING=20]danno si raddoppia)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO PIANO (Possono uscire una delle 3 modalità in modo casuale)
+[X_PADDING=20]* 1. Uccidi tutti i mostri e distruggi tutte le Metin delle Rune per far comparire Haru. Quando compare il
+[X_PADDING=20]boss solo il capo gruppo può fargli danno finché il boss non arriva al 70% dei suoi HP, arrivati al 70%
+[X_PADDING=20]dei suoi HP il resto del gruppo potrà fare danno al boss.
+
+[X_PADDING=20]* 2. Uccidi i mostri per trovare 10 Anima di Runa, le Anime di Runa andranno direttamente nell'inventario del
+[X_PADDING=20]capo gruppo. Trovate le 10 Anime di Runa basterà cliccare su una di essa per far comparire nell'inventario
+[X_PADDING=20]del capo gruppo la Chiave Divina. Clicca sulla Chiave Divina per proseguire con la prossima fase.
+
+[X_PADDING=20]* 3. Quando Buncho avrà il 60% dei suoi HP non sarà più possibile fargli danno, distruggi le Metin delle Rune
+[X_PADDING=20]per poter fare danno al boss. Quando Buncho scende al 20% dei suoi HP non sarà più possibile fargli danno,
+[X_PADDING=20]uccidi 100 mostri per poter fare danno al boss. (Attenzione Buncho quando arriva al 20% dei suoi HP il suo
+[X_PADDING=20]danno si raddoppia)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PIANO
+[X_PADDING=20]1. Distruggi tutte le Metin delle Rune per poter fare danno ad Haru.
+[X_PADDING=20]2. Uccidi Haru.
+[X_PADDING=20]3. Uccidi i mostri per poter trovare la Chiave Divina.
+[X_PADDING=20]4. Distruggi la Pietra delle Rune trascinando sopra la Chiave Divina per poter fare danno a Buncho.
+[X_PADDING=20]5. Uccidi Buncho.
+[X_PADDING=20]6. Attacca il boss Eien, ma attenzione quando la sua vita sarà al 50% non prenderà più danno.
+[X_PADDING=20]7. Per poter continuare a fare danno al boss Eien uccidi prima i mostri.
+[X_PADDING=20]8. Attacca il boss Eien, ma attenzione quando la sua vita sarà al 10% non prenderà più danno.
+[X_PADDING=20]9. Per poter continuare a fare danno al boss Eien distruggi le Metin delle Rune.
+[X_PADDING=20]10. Uccidi Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=934; CENTER_ALIGN]

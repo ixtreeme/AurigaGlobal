@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 75.
+[X_PADDING=12]*Livello massimo: 120.
+[X_PADDING=12]*Genere: Gilda.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 1 ora.
+[X_PADDING=12]*Il cooldown è di 3 ore.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte vs Fuoco.
+[X_PADDING=12]*L'elemento dei mostri: Fuoco.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 1 - COLPIRE LE STATUE
+[X_PADDING=20]Come primo obiettivo, i giocatori dovranno infliggere danni alle Statue presenti nella stanza fino al raggiungimento
+[X_PADDING=20]del 75% dei loro HP. Il gruppo sarà ostacolato dallo spawn di numerosi mob durante tutta la durata di questa fase.
+[X_PADDING=20]Tutte le statue cambieranno colore. Quando una statua perde il 25% degli HP, diventa di colore rosso chiaro e non
+[X_PADDING=20]potrà più essere danneggiata. Quando si passerà alla fase 2. Durante questo passaggio i mob presenti nella stanza
+[X_PADDING=20]spariranno e non si potrà interagire con le Statue.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 2 - UOVA DI DRAGO
+[X_PADDING=20]In questa fase occorrerà colpire nuovamente le Statue, fino al raggiungimento del 50% dei loro HP. Stavolta il
+[X_PADDING=20]gruppo di giocatori sarà ostacolato dallo spawn di un numero maggiore di mob e inoltre, dalla comparsa di quattro
+[X_PADDING=20]Uova di Drago con funzione specifica: le Uova garantiscono l'immunità al danno alle Statue, quindi le uova
+[X_PADDING=20]andranno distrutte ogni volta che respawneranno. Raggiunto il 50% degli HP le Statue, ancora una volta
+[X_PADDING=20]diventeranno indistruttibili. Quando tutte le Statue cambieranno nuovamente colore, si passerà alla fase 3.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 3 - GUARDIANI DEI DRAGHI
+[X_PADDING=20]In questa fase occorrerà colpire ancora le Statue finché non finiranno gli HP. Compariranno le stesse Uova della
+[X_PADDING=20]fase precedente, un numero ancora maggiore di mob e quattro Idall Guardiano dei Draghi. Questi Guardiani devono
+[X_PADDING=20]essere eliminati prima della conclusione di questa fase, in caso contrario il dungeon fallirà. Anche stavolta,
+[X_PADDING=20]se saranno presenti Uova nella stanza, le Statue non potranno essere danneggiate. Quando le Statue raggiungeranno
+[X_PADDING=20]lo 0% di HP, diventeranno di colore blu. A questo punto si dovranno distruggere le Statue trascinandovi sopra
+[X_PADDING=20]l'Anello Fuoco dei Draghi, droppabili dai mostri del dungeon. Una volta trascinato l'Anello, la Statua diventa verde:
+[X_PADDING=20]la terza fase si concluderà nel momento in cui tutte le statue cambieranno il colore.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FASE 4 - UCCIDERE IL DRAGO
+[X_PADDING=20]Ad ogni conclusione di uno step, le Statue attaccheranno Meley: conclusa la terza fase le Statue infliggeranno l'ultimo
+[X_PADDING=20]colpo e Meley fuggirà. I giocatori potranno, a questo punto, ricevere la loro ricompensa interagendo con l'NPC Baule d'Oro
+[X_PADDING=20]dei Draghi.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CASI DI FALLIMENTO
+[X_PADDING=20]Il tempo massimo di completamento è 1 ora. Oltre a questa limitazione, il gruppo potrà fallire nel caso in cui: non
+[X_PADDING=20]venissero uccisi i Guardiani dei Draghi entro la fine della fase 3. le Uova respawnassero prima di aver trascinato
+[X_PADDING=20]tutti gli Anelli sulle Statue.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RICOMPENSA
+[X_PADDING=20]Tutti i partecipanti riceveranno una ricompensa, in caso di riuscita. I giocatori potranno scegliere tra un 2 Bauli:
+[X_PADDING=20]Baule della Regina Meley e Baule Guardiano dei Draghi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

@@ -1,0 +1,3727 @@
+MAP_NAME_25	Zimowa Kraina
+MAP_NAME_26	Zamarznieta Wioska
+CUBE_CATEGORY43	Bron Efekt
+CUBE_CATEGORY44	Zbroje Efekt
+MAP_NAME_369	Triton Dungeon
+CUBE_CATEGORY45	Zwierzak
+BELT	Belt
+LELEKGOMB_EVENT	Soul Orb (Alternative drop)
+EASTER_EVENT	EASTER EVENT
+GOLDEN_FROG_EVENT	Golden Frog
+TANAKA_EVENT	Tanaka Event
+VALENTIN_EVENT	Valentine event (Metinsote can spawn valentine boss)
+POLYMORPH_AFFECT_TOOLTIP	Polymorph Marble	SNA
+AFFECTSHOWER_REMOVE_TEXT	|Eemoji/key_lclick|e - Click for remove affect
+AFFECT_REMOVE_QUESTION	Do you want to remove %s?
+CHEST_LOOT_SEGGBE	|Eemoji/key_alt|e + |Eemoji/key_lclick|e |cFFFBB497 Chest loot view |r
+BATTLE_PASS_JAN	January
+BATTLE_PASS_FEB	February
+BATTLE_PASS_MAR	March
+BATTLE_PASS_APR	April
+BATTLE_PASS_MAJ	May
+BATTLE_PASS_JUN	June
+BATTLE_PASS_JUL	July
+BATTLE_PASS_AUG	August
+BATTLE_PASS_SEP	September
+BATTLE_PASS_OKT	October
+BATTLE_PASS_NOV	November
+BATTLE_PASS_DEC	December
+MAP_NAME_18	Owl Dungeon
+CUBE_CATEGORY46	Wierzchowiec
+CUBE_CATEGORY47	Kostium Szarfy
+MIKI_EVENT	Santa Claus Event
+KARI_EVENT	Christmas Event
+DUPLA_SZILI_EVENT	Double Metin Shard
+COIN_EVENT	Auriga Coin (10m) Alternative Drop
+DUPLA_BOSS_PONT_EVENT	Double Boss Points (Open Boss)
+DUPLA_RUN_PONT_EVENT	Double Run Points
+CUBE_CATEGORY48	Fryzury
+CUBE_CATEGORY49	Zbroje Kostiumowe
+BUPLA_RUN_BOSS_LOOT_EVENT	Dupla Dungeon Boss Drop
+CUBE_CATEGORY50	Bron Kostiumowa
+REFINE_CURRENT_PERCENTAGE	[i] Biezacy procent: %d%%
+TOOLTIP_AFFECT_VOTEFORBONUS	Glosuj na bonus
+LOGIN_FAILURE_UPDATE	Musisz zaktualizowac gre.
+MULTIPLE_BUY_PRICE	Cena: %s Yang
+MULTIPLE_BUYS	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e Aby korzystac z wielu zakupow.
+GAME_NOT_LOADED	Gra sie laduje, spróbuj ponownie wkrótce.
+EMPTY_SLOT	%d. wolne miejsce
+MAP_NAME_362	Monkey Jungle
+PARTY_SKILL_SP_REGEN	Regeneracja PE +%.0f%%
+GUILDVOTE_CHANGEMASTER_RESULT2	Gildia zostala ci dostarczona [%s].
+PET_CANNOT_BE_EVOLVED	Nie mozesz jeszcze ewoluowac tego zwierzaka.
+SKILL_SELECT_1A	Cialo
+SKILL_SELECT_1B	Umysl
+SKILL_SELECT_2A	Ostrze
+SKILL_SELECT_2B	Luk
+SKILL_SELECT_3A	Bron
+SKILL_SELECT_3B	Czarna magia
+SKILL_SELECT_4A	Smok
+SKILL_SELECT_4B	Leczenie
+SKILL_SELECT_DIALOG1	Musisz wybrac doktryne!
+SKILL_SELECT_DIALOG2	Chcesz nauczyc sie stylu: %s?
+ACCE_ABSORB_COST	Cena absorpcji: %d
+ACCE_ALREADY_REGISTER	Przedmiot ten zosta³ ju¿ u¿yty.
+ACCE_DEL_ABSORDITEM	Absorbowaæ i tym samym zniszczyæ przedmiot?
+ACCE_DEL_SERVEITEM	Szarfa 2 ulegnie zniszczeniu, jeœli kombinacja siê nie powiedzie.
+ACCE_DEL_SERVEITEM2	Szarfa 2 ulegnie zniszczeniu, jeœli kombinacja siê nie powiedzie.
+ACCE_INITEM	Przeci¹gnij przedmioty do okienka.
+ACCE_MAXGRADE	To posiada ju¿ stopieñ unikatowy.
+ACCE_MAX_DRAINRATE	Maksymalny stopieñ absorpcji
+ACCE_NOTABSORBITEM	Nie mo¿esz u¿ywaæ broni/zbroi, które zosta³y ju¿ absorbowane.
+ACCE_NOT_SEALITEM	Nie mo¿esz u¿ywaæ przedmiotu przywi¹zanego do duszy.
+ACCE_NOT_USINGITEM	Nie mo¿esz kombinowaæ wyposa¿onego przedmiotu.
+ACCE_NOT_WINDOWOPEN	Nie mo¿esz u¿yæ przedmiotu przy otwartym okienku kombinacji.
+ACCE_POSSIBLE_ACCE	Mo¿esz u¿ywaæ tylko szarf.
+ACCE_POSSIBLE_ACCEITEM	Mo¿esz ekstrahowaæ bonusy tylko z broni i zbroi.
+AFF_LOVE_POINT	Punkty Mi³osne: %d%%
+ALIGNMENT_NAME	Punkty Rangi:
+ATTACK_ERROR_UNKNOWN	Nieznany b³¹d podczas ataku: %s
+ATTENDANCE_REWARD_QUESTION	Czy chcesz otrzymaæ swoj¹ nagrodê?
+ATTR_6TH_7TH_ADD_QUESTION1	Nie mo¿esz u¿yæ tego przedmiotu w trakcie dodawania bonusu.
+ATTR_6TH_7TH_ADD_QUESTION2	Czy naprawdê chcesz dodaæ bonus?
+ATTR_6TH_7TH_CHANGE_FAIL	Bonusu nie mo¿na zmieniæ.
+ATTR_6TH_7TH_DESC1	a. Musisz wybraæ materia³y potrzebne do dodania 6. lub 7. bonusu do przedmiotu.
+ATTR_6TH_7TH_DESC2	b. Ka¿dy od³amek zwiêksza szansê na sukces o 2%.
+ATTR_6TH_7TH_DESC3	c. U¿yj suplementu, by dodatkowo zwiêkszyæ szansê na sukces.
+ATTR_6TH_7TH_DESC4	d. Dodanie bonusu trwa 24 godziny. NPC zatrzymuje przedmiot, do którego ma zostaæ dodany bonus. Gdy proces zostanie ukoñczony, mo¿esz odebraæ swój przedmiot.
+ATTR_6TH_7TH_POSSIBILITY	Mo¿esz dodaæ jeden dodatkowy bonus.
+ATTR_6TH_7TH_TOTAL_SUCCESS_PERCENT	Szansa na sukces: %.1f%%
+AURA_DRAIN_PER	Stopnieñ absorpcji %.1f%%
+AURA_EVOLUTION_GOLD	[Aura] Za ma³o Yang do rozwoju.
+AURA_IMPOSSIBLE_ABSORBITEM	[Aura] Nie mo¿na przenieœæ ju¿ wiêcej bonusów.
+AURA_IMPOSSIBLE_EQUIPITEM	[Aura] Nie mo¿na przenieœæ wyposa¿onych przedmiotów.
+AURA_IMPOSSIBLE_EVOLUTION_ITEM	[Aura] Nie mo¿na rozwin¹æ.
+AURA_IMPOSSIBLE_EVOLUTION_ITEMCOUNT	[Aura] Za ma³o przedmiotów do rozwoju.
+AURA_IMPOSSIBLE_GROWTHITEM	[Aura] Nie mo¿na ulepszyæ.
+AURA_IMPOSSIBLE_REFINEITEM	[Aura] Mo¿liwe s¹ tylko: szata aury, naszyjnik, kolczyk i bransoleta.
+AURA_IMPOSSIBLE_SEALITEM	[Aura] Nie mo¿na przenieœæ przywi¹zanych do duszy przedmiotów.
+AURA_ITEM_NEED_REGISTER	[Aura] Trzeba dodaæ przedmioty.
+AURA_LEVEL_STEP	Pz. %d (poziom %d)
+AURA_MAX_LEVEL	[Aura] Szata aury posiada maks. poziom.
+AURA_NOTICE_DEL_ABSORDITEM	[Aura] Przeniesiony przedmiot ulegnie zniszczeniu.
+AURA_OPEN_OTHER_WINDOW	Nie mo¿esz tego zrobiæ, gdy otwarte jest okno ulepszeñ, rozwoju lub transferu parametrów.
+AURA_POSSIBLE_AURAITEM	[Aura] Mo¿liwa jest jedynie szata aury.
+AURA_POSSIBLE_REGISTER_AURAITEM	[Aura] Najpierw trzeba dodaæ szatê aury.
+AURA_TITLE_ABSORB	Przenieœ parametry na szatê aury
+AURA_TITLE_EVOLUTION	Rozwiñ szatê aury
+AURA_TITLE_GROWTH	Ulepsz szatê aury
+AURA_TOOLTIP_EXP	PD (%d%% / 100%%)
+AURA_TOOLTIP_LEVEL	Pz. %d (Poziom %d) (stopnieñ absorpcji %.1f%%)
+AURA_TOOLTIP_NEED_YANG	%s Yang
+AURA_TOOLTIP_NEXT	Nowoœæ
+AURA_TOOLTIP_NOW	Aktualne
+AURA_TOOLTIP_RESOURCE	Towar u¿ytkowy
+AURA_TOOLTIP_RESOURCE_ITEM	%s * %d
+AUTO_TOOLTIP_LINE1	Umiejêtnoœci: Wybierz umiejêtnoœci do walki i przeci¹gnij je na sloty. (Premium)
+AUTO_TOOLTIP_LINE2	Wskazówka: Pod ka¿d¹ umiejêtnoœci¹ mo¿esz edytowaæ czas trwania aktywacji (w sek.)
+AUTO_TOOLTIP_LINE3	Mikstury: Wybierz mikstury do walki i przeci¹gnij je na sloty. (Premium)
+AUTO_TOOLTIP_LINE4	Wskazówka: Mikstury P¯ i PE zostan¹ aktywowane, gdy wartoœæ w % podana pod mikstur¹ spadnie poni¿ej danego poziomu.
+AUTO_TOOLTIP_TITLE	Auto £owy - Pomoc
+BATTLE_POINT	Punkty walki
+BEAD	Animosfera
+BEAD_TIME_REMAINING_TO_GET	Animosfera zostanie na³adowana za: %d min.
+BNW_COIN	Moneta Proroka
+BUY_LIMIT_LEVEL	Limit zakupu: %s
+CANNOT_ATTACK_DEST_IN_SAFE	Przeciwnik jest za daleko.
+CANNOT_ATTACK_SELF_IN_SAFE	Nie mogê zaatakowaæ.
+CANNOT_EQUIP_IN_EXCHANGE	Nie mo¿esz zmieniaæ wyposa¿enia podczas handlowania.
+CANNOT_EQUIP_IN_SHOP	Nie mo¿esz zdj¹æ za³o¿onego ekwipunku podczas handlu.
+CANNOT_OPEN_PRIVATE_SHOP_IN_SAFE_AREA	Nie mo¿esz otworzyæ prywatnego sklepu w miejscu publicznym.
+CANNOT_SHOOT_DEST_IN_SAFE	Wróg jest za daleko.
+CANNOT_SHOOT_EMPTY_ARROW	Potrzebujê Strza³y.
+CANNOT_SHOOT_SELF_IN_SAFE	Nie mogê tego zrobiæ.
+CANNOT_SKILL_APPROACH	Na pewno nie mogê podejœæ bli¿ej.
+CANNOT_SKILL_ATTACK	Nie mogê zaatakowaæ.
+CANNOT_SKILL_BLUE	Gdy aktywna jest Dusza Purpurowego Wilka, nie mo¿esz u¿yæ Duszy Wilka Indygo.
+CANNOT_SKILL_DEST_IN_SAFE	Wróg jest za daleko.
+CANNOT_SKILL_EQUIP_FISHING_ROD	Nie z³apiesz ¿adnej ryby bez za³o¿onej wêdki.
+CANNOT_SKILL_HAVE_TO_RIDE	Potrzebujê Konia zanim bêdê móg³ tego u¿yæ.
+CANNOT_SKILL_NEED_EMPTY_BOTTLE	Nie mam Pustej Butelki.
+CANNOT_SKILL_NEED_POISON_BOTTLE	Nie mam Butelki Z Trucizn¹.
+CANNOT_SKILL_NEED_TARGET	Kto jest celem?
+CANNOT_SKILL_NOT_ENOUGH_HP	Mam za ma³o Punktów ¯ycia!
+CANNOT_SKILL_NOT_ENOUGH_SP	Mam za ma³o Punktów Energii!
+CANNOT_SKILL_NOT_HORSE_SKILL	Nie mogê tego u¿yæ podczas jazdy konnej.
+CANNOT_SKILL_NOT_MATCHABLE_WEAPON	Nie mogê u¿yæ tej umiejêtnoœci z t¹ broni¹.
+CANNOT_SKILL_NOT_YET_LEARN	Nie opanowa³em tej umiejêtnoœci.
+CANNOT_SKILL_ONLY_FOR_ALLIANCE	To dzia³a tylko na cz³onków grupy.
+CANNOT_SKILL_ONLY_FOR_CORPSE	To dzia³a tylko na martwych ludzi.
+CANNOT_SKILL_RED	Gdy aktywna jest Dusza Wilka Indygo, nie mo¿esz u¿yæ Duszy Purpurowego Wilka.
+CANNOT_SKILL_REMOVE_FISHING_ROD	Nie mogê u¿yæ tej umiejêtnoœci z Wêdk¹.
+CANNOT_SKILL_SELF_IN_SAFE	Nie mogê zaatakowaæ z tego miejsca.
+CANNOT_SKILL_USE_SELF	Nie mogê tego u¿yæ na sobie.
+CANNOT_SKILL_WAIT_COOLTIME	Nie mogê jeszcze u¿yæ tej Umiejêtnoœci.
+CANNOT_USE	Nie mo¿esz go u¿yæ.
+CANNOT_WHISPER_DEST_REFUSE	%s zablokowa³ mo¿liwoœæ szeptania.	SA
+CANNOT_WHISPER_NOT_LOGON	%s nie jest zalogowany.	SA
+CANNOT_WHISPER_SELF_REFUSE	Nie mo¿esz pisaæ do innych gdy masz zablokowane szeptanie.	SNA
+CATEGORY_ARMOR_ARMOR_BODY	Zbroje
+CATEGORY_ARMOR_ARMOR_HEAD	He³my
+CATEGORY_ARMOR_ARMOR_SHIELD	Tarcze
+CATEGORY_COSTUMES	Kostiumy
+CATEGORY_COSTUMES_COSTUME_BODY	Kostiumy
+CATEGORY_COSTUMES_COSTUME_HAIR	Fryzury
+CATEGORY_COSTUMES_COSTUME_WEAPON	Wizerunki broni
+CATEGORY_COSTUMES_ETC	Inne
+CATEGORY_COSTUMES_SASH	Szarfy
+CATEGORY_DRAGON_STONE	Alchemia Smoczych Kamieni
+CATEGORY_DRAGON_STONE_DRAGON_DIAMOND	Diament
+CATEGORY_DRAGON_STONE_DRAGON_GARNET	Granat
+CATEGORY_DRAGON_STONE_DRAGON_JADE	Jadeit
+CATEGORY_DRAGON_STONE_DRAGON_ONYX	Onyks
+CATEGORY_DRAGON_STONE_DRAGON_RUBY	Rubin
+CATEGORY_DRAGON_STONE_DRAGON_SAPPHIRE	Szafir
+CATEGORY_DRAGON_STONE_ETC	Inne
+CATEGORY_EQUIPMENT_ARMOR	Wyposa¿enie
+CATEGORY_EQUIPMENT_JEWELRY	Bi¿uteria
+CATEGORY_EQUIPMENT_WEAPON	Broñ
+CATEGORY_ETC	Inne
+CATEGORY_ETC_ETC	Inne
+CATEGORY_ETC_EVENT	Eventowe przedmioty
+CATEGORY_ETC_GIFTBOX	Skrzynie | Pud³a
+CATEGORY_ETC_MATRIMORY	Œlub
+CATEGORY_ETC_PARTI	Ksiêgi Sztuki Wojny
+CATEGORY_ETC_POLYMORPH	Kula Polimorfii
+CATEGORY_ETC_RECIPE	Wytwarzanie mikstur
+CATEGORY_ETC_SEAL	Zwi¹zanie duszy
+CATEGORY_FISHING_PICK	£owienie | Górnictwo
+CATEGORY_FISHING_PICK_EQUIPMENT_PICK	Kilofy
+CATEGORY_FISHING_PICK_ETC	Inne
+CATEGORY_FISHING_PICK_FISHING_POLE	Wêdki
+CATEGORY_FISHING_PICK_FOOD	Ryby
+CATEGORY_FISHING_PICK_PICK_BOOK	Przewodniki do górnictwa
+CATEGORY_FISHING_PICK_STONE	Rudy
+CATEGORY_JEWELRY_ARMOR_EAR	Kolczyki
+CATEGORY_JEWELRY_ARMOR_FOOTS	Buty
+CATEGORY_JEWELRY_ARMOR_NECK	Naszyjniki
+CATEGORY_JEWELRY_ARMOR_PENDANT	Talizman
+CATEGORY_JEWELRY_ARMOR_WRIST	Bransolety
+CATEGORY_JEWELRY_ITEM_BELT	Pasy
+CATEGORY_MOUNT_PET	Wierzchowce | Zwierzaki
+CATEGORY_MOUNT_PET_CHARGED_PET	Zwierzaki
+CATEGORY_MOUNT_PET_EGG	Jaja zwierzaków
+CATEGORY_MOUNT_PET_FREE_PET	Zwierzaki, które mo¿na levelowaæ
+CATEGORY_MOUNT_PET_MOUNT	Wierzchowce
+CATEGORY_POTION	Eliksiry
+CATEGORY_POTION_ABILITY	Przedmioty u¿ytkowe
+CATEGORY_POTION_ETC	Inne
+CATEGORY_POTION_HAIRDYE	Farby do w³osów
+CATEGORY_SKILL	Umiejêtnoœci
+CATEGORY_SKILL_BOOK_OF_OBLIVION	Ksiêgi Zapomnienia
+CATEGORY_SKILL_ETC	Inne
+CATEGORY_SKILL_PAHAE	Riposta | Dopalacz
+CATEGORY_SKILL_SKILL_BOOK	Ksiêgi umiejêtnoœci
+CATEGORY_TUNING	Ulepszenia
+CATEGORY_TUNING_ETC	Inne
+CATEGORY_TUNING_RESOURCE	Materia³y
+CATEGORY_TUNING_STONE	Kamienie Duszy
+CATEGORY_UNIQUE	Przedmioty specjalne
+CATEGORY_UNIQUE_ABILITY	Dobra konsumpcyjne
+CATEGORY_UNIQUE_ETC	Inne
+CATEGORY_WEAPON_WEAPON_ARROW	Strza³y
+CATEGORY_WEAPON_WEAPON_BELL	Dzwony
+CATEGORY_WEAPON_WEAPON_BOW	£uki
+CATEGORY_WEAPON_WEAPON_CLAW	Pazury
+CATEGORY_WEAPON_WEAPON_DAGGER	Sztylety
+CATEGORY_WEAPON_WEAPON_FAN	Wachlarze
+CATEGORY_WEAPON_WEAPON_MOUNT_SPEAR	W³ócznie
+CATEGORY_WEAPON_WEAPON_QUIVER	Ko³czany
+CATEGORY_WEAPON_WEAPON_SWORD	Broñ jednorêczna
+CATEGORY_WEAPON_WEAPON_TWO_HANDED	Broñ oburêczna
+CHANGE_ALREADY_REGISTER	[Transmutacja] Przedmiot ten zosta³ ju¿ zarejestrowany.
+CHANGE_LOOK_CHANGE_ITEM	Czy chcesz transmutowaæ ten przedmiot?
+CHANGE_LOOK_CHECK_OUT_REGISTER_ITEM	[Transmutacja] Usuñ najpierw przedmiot, na który chcesz u¿yæ transmutacji.
+CHANGE_LOOK_COST	Cena za transmutacjê: %s Yang
+CHANGE_LOOK_DEL_ITEM	Przyjêty przedmiot zostanie usuniêty.
+CHANGE_LOOK_DO_NOT_CHANGE_LOOK_ITEM	[Transmutacja] Nie mo¿esz transmutowaæ tego przedmiotu.
+CHANGE_LOOK_DO_NOT_EQUIP_ITEM	[Transmutacja] Nie mo¿esz transmutowaæ tego przedmiotu, gdy jest za³o¿ony.
+CHANGE_LOOK_DO_NOT_REGISTER_ITEM	[Transmutacja] Przedmiotu nie mo¿na zarejestrowaæ.
+CHANGE_LOOK_DO_NOT_SEAL_ITEM	[Transmutacja] Przedmiot jest przywi¹zany do duszy.
+CHANGE_LOOK_INSERT_CHANGE_LOOK_ITEM	[Transmutacja] Zarejestruj przedmiot, który chcesz transmutowaæ.
+CHANGE_LOOK_INSERT_ITEM	[Transmutacja] Najpierw musisz zarejestrowaæ przedmiot.
+CHANGE_LOOK_NEED_MONEY	Masz za ma³o Yang lub za ma³o przedmiotów.
+CHANGE_LOOK_OPEN_OTHER_WINDOW	[Transmutacja] Nie mo¿na przeprowadziæ akcji, jeœli otwarte jest okno "Transmutacja".
+CHANGE_LOOK_TITLE	Transmutacja
+CHANGE_LOOK_TITLE2	Polimorfia Wierzchowca
+CHANGE_PET_PLEASE_APPEND_FIRST	Najpierw musisz wybraæ zwierzaka.
+CHANGE_TOOLTIP2_LINE1	Dodaj po lewej przedmiot docelowy, a po prawej - materia³.
+CHANGE_TOOLTIP2_LINE2	Kliknij na haczyk, aby u¿yæ Yang lub kartê polimorfii do zmiany wygl¹du twojego wierzchowca.
+CHANGE_TOOLTIP2_LINE3	Karta polimorfii zmienia wygl¹d twojego wierzchowca bez koniecznoœci wydawania Yang. (Podczas procesu karta ulegnie zniszczeniu.)
+CHANGE_TOOLTIP2_LINE4	Jeœli zmienisz wygl¹d wierzchowca z ograniczeniem czasowym, to ograniczenie to nie zostanie zresetowane.
+CHANGE_TOOLTIP2_LINE5	Jeœli docelowy wierzchowiec jest nielimitowany czasowo, a wierzchowiec na materia³ posiada ograniczenie czasowe, to zmieniony wygl¹d wierzchowca utrzyma siê do koñca limitu czasowego wierzchowca na materia³.
+CHANGE_TOOLTIP_LINE1	Po³ó¿ przedmiot do transmutacji po lewej stronie.
+CHANGE_TOOLTIP_LINE2	Po³ó¿ inny przedmiot po prawej stronie.
+CHANGE_TOOLTIP_LINE3	Jeœli aktywujesz transmutacjê (V), zmieni siê wygl¹d przedmiotu
+CHANGE_TOOLTIP_LINE4	znajduj¹cego siê po lewej stronie i zostan¹ odjête Yang.
+CHANGE_TOOLTIP_LINE5	Jeœli u¿yjesz tego przedmiotu,
+CHANGE_TOOLTIP_LINE6	mo¿esz transmutowaæ swoje przedmioty, bez u¿ycia Yang.
+CHANGE_TOOLTIP_TITLE	Transmutacja
+CHANNEL	Kana³
+CHANNELING_CANNOT_LOGOUT	Nie mo¿esz wróciæ do okna logowania.
+CHANNEL_EMPTY_SERVER	Brak Serwera
+CHANNEL_NORMAL	Kana³ %d
+CHANNEL_NOTIFY_FULL	Ten Kana³ jest pe³ny! Proszê wybraæ inny.
+CHANNEL_NOT_FIND_INFO	Brak informacji o tym kanale.
+CHANNEL_PVP	Wolny pojedynek
+CHANNEL_SELECT_CHANNEL	Wybierz Kana³
+CHANNEL_SELECT_REGION	Wybierz region.
+CHANNEL_SELECT_SERVER	Wybierz serwer
+CHANNEL_STATUS_BUSY	Czêsto odwiedzany
+CHANNEL_STATUS_FULL	Pe³ny
+CHANNEL_STATUS_OFFLINE	Nieznany
+CHANNEL_STATUS_RECOMMENDED	Zalecane
+CHANNEL_STATUS_VACANT	Niska
+CHANNEL_TEST_SERVER	Test server
+CHANNEL_TEST_SERVER_ADDR	Test %s:%d
+CHARACTER_CREATE_MODE	Utwórz postaæ
+CHARACTER_NAME	Nazwa
+CHARACTER_SELECT_MODE	Wybierz postaæ
+CHARGE_BEAD_QUESTION	Wymagane Animosfery: %d. Chcesz kontynuowaæ?
+CHAT_ALL	Wszystko
+CHAT_BLOCK	Blok
+CHAT_DICE_INFO	Rzut
+CHAT_GUILD	Gildia
+CHAT_INFORMATION	Info
+CHAT_INSULT_STRING	To zdanie zawiera niepoprawne s³owa.
+CHAT_LOG	Poka¿ stare wiadomoœci [L]
+CHAT_LOG_TITLE	Protokó³ wiadomoœci
+CHAT_NORMAL	Normalne
+CHAT_NOTICE	Serwer
+CHAT_PARTY	Grupa
+CHAT_SEND_CHAT	Wyœlij wiadomoœæ
+CHAT_SEND_MEMO	Wyœlij szept [Shift+Enter]
+CHAT_SHOUT	Wo³aj
+CHAT_SHOUT_LIMIT	Mo¿esz wo³aæ tylko co 15 sekund.
+CHAT_WHISPER	Szeptanie
+CHEQUE_SYSTEM_DO_NOT_DROP_MONEY	Nie mo¿esz upuœciæ pieniêdzy.
+CHEQUE_SYSTEM_PICK_WON	Otrzyma³eœ %d Won.
+CHEQUE_SYSTEM_SELL_PRICE	[Cena sprzeda¿y]
+CHEQUE_SYSTEM_UNIT_WON	Won
+CHEQUE_SYSTEM_UNIT_YANG	Yang
+CHEQUE_SYSTEM_WON	%s Won
+CHEQUE_SYSTEM_YANG	%s Yang
+CLEAR_FLOOR	Poziom
+CLEAR_TIME	Czas
+ClosePetChangeWndButton	Zamknij
+COMB_ACCE_IS_CONTINUE_PROCESS	Chcesz kontynuowaæ?
+COMB_ACCE_WARNING_MESSAGE	Orygina³ zostanie zniszczony przy sukcesie lub czêœciowym sukcesie. Transfer mo¿e siê nie udaæ. Stopieñ absorpcji zostanie zmniejszony przy pora¿ce lub czêœciowym sukcesie.
+COMB_ACCE_WARNING_MESSAGE1	Orygina³ zostanie zniszczony przy sukcesie lub czêœciowym sukcesie.
+COMB_ACCE_WARNING_MESSAGE2	Transfer mo¿e siê nie udaæ.
+COMB_ACCE_WARNING_MESSAGE3	Stopieñ absorpcji zostanie zmniejszony przy pora¿ce lub czêœciowym sukcesie.
+COMB_ACCE_WILL_REMOVE_MATERIAL	Orygina³ zostanie zniszczony przy sukcesie lub czêœciowym sukcesie.
+COMB_ALREADY_APPEND	Przedmiot ten zosta³ ju¿ wybrany.
+COMB_CANT_APPEND_ITEM	Nie mo¿na u¿yæ tego przedmiotu.
+COMB_CANT_APPEND_SEALED_ITEM	Nie mo¿esz u¿ywaæ przedmiotu przywi¹zanego do duszy.
+COMB_CANT_BASE_ITEM	Szarfa, która posiada ju¿ bonus, nie mo¿e byæ odbiorc¹.
+COMB_CANT_MATCH_DRAINRATE	Stopieñ absorpcji obydwu przedmiotów musi byæ identyczny, aby transferowaæ bonus.
+COMB_CANT_MATCH_GRADE	Poziom obydwu przedmiotów musi byæ identyczny, aby transferowaæ bonus.
+COMB_CANT_MATERIAL_ITEM	Orygina³ musi posiadaæ bonus.
+COMB_COST	Cena: %s
+COMB_IS_CONTINUE_PROCESS	Chcesz kontynuowaæ?
+COMB_NOTICE	Nie mo¿esz otworzyæ prywatnego sklepu podczas wymiany ksi¹g.
+COMB_NOTICE_NOT_OPEN	Nie mo¿esz wymieniæ ksi¹g, gdy masz otwarty prywatny sklep.
+COMB_NOT_ALL_SLOT_APPEND_ITEM	Aby transferowaæ bonusy, potrzebujesz orygina³u, odbiorcy oraz przedmiot transferu.
+COMB_NOT_FULL_BOOK	Nie, tak to nie ubijemy interesu. Ju¿ ci przecie¿ wyt³umaczy³em, ¿e chcê 10 ksi¹g, aby dokonaæ wymiany.
+COMB_NOT_ITEM_IN_INVENTORY	Nie mo¿esz u¿ywaæ za³o¿onych przedmiotów.
+COMB_NOT_MEDIUM_ITEM	Nie mo¿na u¿yæ tego przedmiotu.
+COMB_WILL_REMOVE_MATERIAL	Orygina³ zostanie zniszczony w przypadku sukcesu.
+CREATE_ERROR_GM_NAME	Nie jesteœ upowa¿niony do u¿ycia ,GM‘ w swojej nazwie postaci.
+CREATE_ERROR_INSULT_NAME	Ta nazwa jest niepoprawna.
+CREATE_ERROR_LIMIT_LEVEL	Twoja postaæ musi znajdowaæ siê przynajmniej na poziomie 80.
+CREATE_ERROR_TIME_LIMIT	Mo¿esz tworzyæ now¹ postaæ tylko co 30 sek.
+CREATE_ERROR_WRONG_STRING	Ta nazwa postaci jest niedozwolona.
+CREATE_EXIST_SAME_NAME	Nazwa jest ju¿ w u¿yciu.
+CREATE_FAILURE	Nie mo¿esz stworzyæ postaci
+CREATE_FULL	Nie mo¿esz tworzyæ wiêcej postaci.
+CREATE_GM_NAME	GM
+CREATE_INPUT_NAME	Wybierz nazwê.
+CREATE_PLUS_STAT	Nadal pozosta³y punkty statusu.
+CUBE_CATEGORY_ACCESSORY	Bi¿uteria
+CUBE_CATEGORY_ARMOR	Zbroja
+CUBE_CATEGORY_BELT	Pasy
+CUBE_CATEGORY_ETC	Itp.
+CUBE_CATEGORY_EVENT	Event
+CUBE_CATEGORY_WEAPON	Broñ
+CUBE_MAKE_CONFIRM_QUESTION_1	Co najmniej jeden u¿yty przedmiot jest wyj¹tkowo cenny (ma wiêcej ni¿ %d bonusów).
+CUBE_MAKE_CONFIRM_QUESTION_2	Czy naprawdê chcesz kontynuowaæ?
+CUBE_NOT_ENOUGH_GOLD	Za ma³o Yang do wytworzenia.
+CUBE_NOT_ENOUGH_MATERIAL	Za ma³o materia³u do wytworzenia.
+CUBE_PLEASE_SELECT	Nie wybrano przedmiotów.
+CZ_REWARD_QUESTION_COMPLETE	Chcesz zrealizowaæ to pole?
+CZ_REWARD_TOOLTIP_10GAN	Insygnia Zodiaku
+CZ_REWARD_TOOLTIP_10GAN_COUNT	Liczba w ekwipunku
+CZ_REWARD_TOOLTIP_10GAN_NEED_COUNT	Wymagana liczba
+CZ_REWARD_TOOLTIP_12ZI	Insygnia Stra¿nika
+CZ_REWARD_TOOLTIP_12ZI_COUNT	Liczba w ekwipunku
+CZ_REWARD_TOOLTIP_12ZI_NEED_COUNT	Wymagana liczba
+CZ_REWARD_TOOLTIP_ALL_BOX	Gwiezdny Skarb
+CZ_REWARD_TOOLTIP_CAN_GET_ALL_BOX	Kliknij tutaj, aby w ramach nagrody odebraæ swój Gwiezdny Skarb.
+CZ_REWARD_TOOLTIP_CAN_GET_GREEN_BOX	Kliknij tutaj, aby w ramach nagrody odebraæ swój Skarb Aventurin.
+CZ_REWARD_TOOLTIP_CAN_GET_YELLOW_BOX	Kliknij tutaj, aby w ramach nagrody odebraæ swój Skarb Aureolin.
+CZ_REWARD_TOOLTIP_COMPLETABLE	Zrealizuj
+CZ_REWARD_TOOLTIP_GREEN_BOX	Skarb Aventurin
+CZ_REWARD_TOOLTIP_GREEN_BOX_COMP_CNT	Zrealizowane Skarby Aventurin: %d
+CZ_REWARD_TOOLTIP_WEEKLY	Dzieñ
+CZ_REWARD_TOOLTIP_WEEKLY_FRI	Pi¹tek
+CZ_REWARD_TOOLTIP_WEEKLY_MON	Poniedzia³ek
+CZ_REWARD_TOOLTIP_WEEKLY_SAT	Sobota
+CZ_REWARD_TOOLTIP_WEEKLY_SAT_SUN	Sobota/Niedziela
+CZ_REWARD_TOOLTIP_WEEKLY_THU	Czwartek
+CZ_REWARD_TOOLTIP_WEEKLY_TUE	Wtorek
+CZ_REWARD_TOOLTIP_WEEKLY_WED	Œroda
+CZ_REWARD_TOOLTIP_YELLOW_BOX	Skarb Aureolin
+CZ_REWARD_TOOLTIP_YELLOW_BOX_COMP_CNT	Zrealizowane Skarby Aureolin: %d
+DAY	d
+DETAILS_10	Si³a vs Pot. Pustyni
+DETAILS_11	Si³a vs Insektom
+DETAILS_14	Przeciêtne Obra¿enia
+DETAILS_15	Odp. na Przeciê.Obr.
+DETAILS_16	Obra¿. umiejêtnoœci
+DETAILS_17	Odpornoœæ na obra¿. umiej.
+DETAILS_19	Magiczny Atak
+DETAILS_20	Szansa na Cios Kryt.
+DETAILS_21	Przeszyw. Cios
+DETAILS_22	Odp. na Przesz. Cios
+DETAILS_23	Odp. na Przesz. Cios
+DETAILS_24	Odp. na B³yskawice
+DETAILS_25	Odp. na Lód
+DETAILS_26	Odp. na Mrok
+DETAILS_27	Odp. na Ogieñ
+DETAILS_28	Odp. na Wiatr
+DETAILS_29	Odp. na Ziemiê
+DETAILS_3	Si³a vs Orkom
+DETAILS_30	Moc B³yskawic
+DETAILS_31	Moc Lodu
+DETAILS_32	Moc Mroku
+DETAILS_33	Moc Ognia
+DETAILS_34	Moc Wiatru
+DETAILS_35	Moc Ziemi
+DETAILS_36	Si³a vs Wojownikom
+DETAILS_37	Si³a vs Ninja
+DETAILS_38	Si³a vs Sura
+DETAILS_39	Si³a vs Szamanom
+DETAILS_4	Si³a vs Nieumar³ym
+DETAILS_40	Si³a vs Likanom
+DETAILS_41	Obrona vs Wojownikom
+DETAILS_42	Obrona vs Ninja
+DETAILS_43	Obrona vs Sura
+DETAILS_44	Obrona vs Szamanom
+DETAILS_45	Obrona vs Likanom
+DETAILS_46	Odpornoœæ na Miecz
+DETAILS_47	Odp. na Br. Dwurêczn¹
+DETAILS_48	Odpornoœæ na Sztylet
+DETAILS_49	Odpornoœæ na Szpon
+DETAILS_5	Si³a vs Potworom
+DETAILS_50	Odpornoœæ na Dzwon
+DETAILS_51	Odpornoœæ na Wachlarz
+DETAILS_52	Odpornoœæ na Strza³
+DETAILS_53	Szansa na Omdlenie
+DETAILS_54	Szansa na Spowolnie.
+DETAILS_55	Szansa na Zatrucie
+DETAILS_56	Odp. na Truciznê
+DETAILS_57	Atak Krwawienia
+DETAILS_58	Odp. Atak Krw.
+DETAILS_6	Si³a vs Potw. Zodiaku
+DETAILS_7	Si³a vs Zwierzêtom
+DETAILS_76	Odp. na Magiê
+DETAILS_77	Antymagia
+DETAILS_8	Si³a vs Mistykom
+DETAILS_9	Si³a vs Diab³om
+DETAILS_ATTBONUS_BELL	Z³amanie Dzwonu
+DETAILS_ATTBONUS_BOW	Z³amanie Strza³y
+DETAILS_ATTBONUS_CLAW	Z³amanie Szponów
+DETAILS_ATTBONUS_DAGGER	Z³amanie Sztyletu
+DETAILS_ATTBONUS_FAN	Z³amanie Wachlarza
+DETAILS_ATTBONUS_SWORD	Z³amanie Miecza
+DETAILS_ATTBONUS_TWOHAND	Z³amanie Broni oburêcznej
+DETAILS_RESIST_MOUNT_FALL	Odpornoœæ na Upadek
+DETAILS_TITLE	Szczegó³y
+DETAILS_TOOLTIP_1	Si³a w walce z LudŸmi: zadaje wiêcej obra¿eñ Ludziom.
+DETAILS_TOOLTIP_10	Si³a w walce z potworami pustyni: zadaje wiêksze obra¿enia potworom pustyni.
+DETAILS_TOOLTIP_11	Si³a w walce z insektami: zadaje wiêksze obra¿enia insektom.
+DETAILS_TOOLTIP_12	Zwiêksza twoj¹ si³ê ataku.
+DETAILS_TOOLTIP_13	Zwiêksza twoj¹ si³ê obrony.
+DETAILS_TOOLTIP_14	Zwiêksza przeciêtne obra¿enia, które zadajesz przeciwnikom podczas ataku
+DETAILS_TOOLTIP_15	Odpornoœæ na przeciêtne obra¿enia: zmniejsza obra¿enia, które odnosisz podczas ataku.
+DETAILS_TOOLTIP_16	Zwiêksza obra¿enia zadawane przez umiejêtnoœæ.
+DETAILS_TOOLTIP_17	Odpornoœæ na obra¿enia umiejêtnoœci: zmniejsza obra¿enia, które odnosisz wskutek umiejêtnoœci.
+DETAILS_TOOLTIP_18	Zwiêksza zarówno fizyczn¹ jak i magiczn¹ si³ê ataku.
+DETAILS_TOOLTIP_19	Zwiêksza obra¿enia, które zadajesz przeciwnikom za pomoc¹ magicznych ataków.
+DETAILS_TOOLTIP_2	Odpornoœæ na Ludzi: zmniejsza obra¿enia zadawane przez Ludzi.
+DETAILS_TOOLTIP_20	Zwiêksza szansê na zadanie ciosu krytycznego.
+DETAILS_TOOLTIP_21	Szansa na przeszywaj¹cy cios: zwiêksza szansê na zadanie przeszywaj¹cego ciosu.
+DETAILS_TOOLTIP_24	Zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_25	Zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_26	Odpornoœæ na mrok: zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_27	Zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_28	Zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_29	Zmniejsza obra¿enia zadawane przez okreœlone potwory.
+DETAILS_TOOLTIP_3	Si³a w walce z orkami: zadaje wiêksze obra¿enia orkom.
+DETAILS_TOOLTIP_30	Zwiêksza obra¿enia, które zadajesz za pomoc¹ b³yskawic.
+DETAILS_TOOLTIP_31	Zwiêksza obra¿enia, które zadajesz za pomoc¹ lodu.
+DETAILS_TOOLTIP_32	Zwiêksza obra¿enia, które zadajesz za pomoc¹ mroku.
+DETAILS_TOOLTIP_33	Zwiêksza obra¿enia, które zadajesz za pomoc¹ ognia.
+DETAILS_TOOLTIP_34	Zwiêksza obra¿enia, które zadajesz za pomoc¹ wiatru.
+DETAILS_TOOLTIP_35	Zwiêksza obra¿enia, które zadajesz za pomoc¹ ziemi.
+DETAILS_TOOLTIP_36	Si³a w walce z wojownikami: zadaje wiêksze obra¿enia wojownikom.
+DETAILS_TOOLTIP_37	Si³a w walce z ninja: zadaje wiêksze obra¿enia ninja.
+DETAILS_TOOLTIP_38	Si³a w walce z sura: zadaje wiêksze obra¿enia sura.
+DETAILS_TOOLTIP_39	Si³a w walce z szamanami: zadaje wiêksze obra¿enia szamanom.
+DETAILS_TOOLTIP_4	Si³a w walce z nieumar³ymi: zadaje wiêksze obra¿enia nieumar³ym.
+DETAILS_TOOLTIP_40	Si³a w walce z likanami: zadaje wiêksze obra¿enia likanom.
+DETAILS_TOOLTIP_41	Odpornoœæ na Wojowników: zmniejsza obra¿enia, które odnosisz z rêki Wojowników.
+DETAILS_TOOLTIP_42	Odpornoœæ na Ninja: zmniejsza obra¿enia, które odnosisz z rêki Ninja.
+DETAILS_TOOLTIP_43	Odpornoœæ na Sura: zmniejsza obra¿enia, które odnosisz z rêki Sura.
+DETAILS_TOOLTIP_44	Odpornoœæ na Szamanów: zmniejsza obra¿enia, które odnosisz z rêki Szamanów.
+DETAILS_TOOLTIP_45	Odpornoœæ na Likanów: zmniejsza obra¿enia, które odnosisz z rêki Likanów.
+DETAILS_TOOLTIP_46	Zmniejsza obra¿enia zadawane mieczem.
+DETAILS_TOOLTIP_47	Zmniejsza obra¿enia zadawane broni¹ dwurêczn¹.
+DETAILS_TOOLTIP_48	Zmniejsza obra¿enia zadawane sztyletem.
+DETAILS_TOOLTIP_49	Zmniejsza obra¿enia zadawane szponem.
+DETAILS_TOOLTIP_5	Si³a w walce z potworami: zadaje wiêksze obra¿enia potworom.
+DETAILS_TOOLTIP_50	Zmniejsza obra¿enia zadawane dzwonem.
+DETAILS_TOOLTIP_51	Zmniejsza obra¿enia zadawane wachlarzem.
+DETAILS_TOOLTIP_52	Zmniejsza obra¿enia zadawane ³ukiem i strza³ami.
+DETAILS_TOOLTIP_53	Zwiêksza szansê wywo³ania u przeciwnika efektu omdlenia.
+DETAILS_TOOLTIP_54	Zwiêksza szansê na spowolnienie przeciwnika.
+DETAILS_TOOLTIP_55	Zwiêksza szansê na zatrucie przeciwnika.
+DETAILS_TOOLTIP_56	Zmniejsza obra¿enia zadawane trucizn¹.
+DETAILS_TOOLTIP_57	Zwiêksza szansê na wykonanie ataku krwawienia.
+DETAILS_TOOLTIP_58	Odpornoœæ na atak krwawienia: zmniejsza obra¿enia zadawane atakiem krwawienia.
+DETAILS_TOOLTIP_59	Przy trafieniu absorbuje P¯ przeciwnika.
+DETAILS_TOOLTIP_6	Si³a w walce z potworami Zodiaku: zadaje wiêksze obra¿enia potworom Zodiaku.
+DETAILS_TOOLTIP_60	Przy trafieniu absorbuje PE przeciwnika.
+DETAILS_TOOLTIP_61	Przyspiesza regeneracjê twoich punktów ¿ycia.
+DETAILS_TOOLTIP_62	Przyspiesza regeneracjê twoich punktów energii.
+DETAILS_TOOLTIP_63	Szansa na blok ciosów: zwiêksza szansê na unikniêcie ataku z krótkiego dystansu.
+DETAILS_TOOLTIP_64	Szansa na unikniêcie strza³y: zwiêksza szansê na unikniêcie strza³y lub d³ugodystansowego ataku potwora.
+DETAILS_TOOLTIP_65	Szansa na odbicie ciosu: czêœæ obra¿eñ od ciosu jest odbijana do przeciwnika.
+DETAILS_TOOLTIP_66	Regeneracja P¯ przy zabiciu: zabicie przeciwnika podwy¿sza twoje punkty ¿ycia.
+DETAILS_TOOLTIP_67	Regeneracja PE przy zabiciu: zabicie przeciwnika podwy¿sza twoje punkty energii.
+DETAILS_TOOLTIP_68	Szansa na otrzymanie podwójnego doœwiadczenia: zwiêksza szansê na bonusowe PD po pokonaniu przeciwnika.
+DETAILS_TOOLTIP_69	Szansa na drop podwójnej iloœci Yang: zwiêksza szansê na otrzymanie podwójnej iloœci Yang.
+DETAILS_TOOLTIP_7	Si³a w walce ze zwierzêtami: zadaje wiêksze obra¿enia dzikim zwierzêtom.
+DETAILS_TOOLTIP_70	Szansa na drop przedmiotów: zwiêksza szansê na podwójny ³up przedmiotów.
+DETAILS_TOOLTIP_76	Zmniejsza obra¿enia odnoszone wskutek magicznych ataków.
+DETAILS_TOOLTIP_77	Zmniejsza odpornoœæ na magiê twojego przeciwnika.
+DETAILS_TOOLTIP_8	Si³a w walce z mistykami: zadaje wiêksze obra¿enia mistykom.
+DETAILS_TOOLTIP_9	Si³a w walce z diab³ami: zadaje wiêksze obra¿enia diab³om.
+DETAILS_TOOLTIP_ATTBONUS_BELL	Z³amanie Odpornoœci na Dzwony: zmniejsza odpornoœæ na dzwony przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_BOW	Z³amanie Odpornoœci na Strza³y: zmniejsza odpornoœæ na strza³y przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_CLAW	Z³amanie Odpornoœci na Szpony: zmniejsza odpornoœæ na szpony przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_DAGGER	Z³amanie Odpornoœci na Sztylety: zmniejsza odpornoœæ na sztylety przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_FAN	Z³amanie Odpornoœci na Wachlarze: zmniejsza odpornoœæ na wachlarze przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_SWORD	Z³amanie Odpornoœci na Miecze: zmniejsza odpornoœæ na miecze przeciwnika.
+DETAILS_TOOLTIP_ATTBONUS_TWOHAND	Z³amanie Odpornoœci na Bronie oburêczne: zmniejsza odpornoœæ na bronie oburêczne przeciwnika.
+DETAILS_TOOLTIP_RESIST_MOUNT_FALL	Odpornoœæ na Upadek: zmniejsza ryzyko upadku z wierzchowca.
+DONT_USE_ITEM_WHEN_SHOW_CONFIRM	Nie mo¿esz przemieszczaæ przedmiotów w trakcie zapytania.
+DO_NOT_INSERT_UPBRINGING_PET	Nie mo¿na wybraæ aktywnego zwierzaka.
+DO_YOU_BUY_ITEM1	Czy chcesz kupiæ %s za %s?
+DO_YOU_BUY_ITEM2	Czy chcesz kupiæ %s (%s szt.) za %s?
+DO_YOU_BUY_ITEM3	Czy chcesz kupiæ przedmiot %s za %s Yang?
+DO_YOU_BUY_ITEM4	Czy chcesz kupiæ przedmiot %s (%s szt.) za %s Yang?
+DO_YOU_DROP_MONEY	Czy chcesz upuœciæ %d Yang?
+DO_YOU_SELL_ITEM1	Czy chcesz sprzedaæ %s za %s?
+DO_YOU_SELL_ITEM2	Czy chcesz sprzedaæ %s (%s szt.) za %s?
+DRAGON_SOUL_CANNOT_REFINE	Nie mo¿esz uszlachetniæ tego Smoczego Kamienia.
+DRAGON_SOUL_CANNOT_REFINE_MORE	Ten Smoczy Kamieñ osi¹gn¹³ ju¿ najwy¿szy poziom.
+DRAGON_SOUL_EQUIP_WARNING1	Usuniêcie Smoczego Kamienia nie jest prost¹ spraw¹.
+DRAGON_SOUL_EQUIP_WARNING2	Chcesz mimo to kontynuowaæ?
+DRAGON_SOUL_EXPIRED	Wygas³y Smoczy Kamieñ
+DRAGON_SOUL_INVALID_DRAGON_SOUL	To nieprawid³owy Smoczy Kamieñ.
+DRAGON_SOUL_IS_NOT_DRAGON_SOUL	To nie jest Smoczy Kamieñ.
+DRAGON_SOUL_NOT_DRAGON_SOUL_REFINE_STONE	To nieprawid³owy Smoczy Kamieñ.
+DRAGON_SOUL_NOT_ENOUGH_MATERIAL	Nie posiadasz wystarczaj¹co materia³u do uszlachetnienia.
+DRAGON_SOUL_NOT_ENOUGH_MATERIAL2	Dla swojego: %s\n potrzebujesz: %s %dx
+DRAGON_SOUL_NOT_ENOUGH_MONEY	Masz za ma³o Yang, by zmieniæ bonus.
+DRAGON_SOUL_NOT_MATCHED_SLOT	Ten Smoczy Kamieñ nie pasuje do tego slotu.
+DRAGON_SOUL_STEP_LEVEL1	Jakoœæ: matowy,
+DRAGON_SOUL_STEP_LEVEL2	Jakoœæ: przejrzysty,
+DRAGON_SOUL_STEP_LEVEL3	Jakoœæ: bez skazy,
+DRAGON_SOUL_STEP_LEVEL4	Jakoœæ: znakomity,
+DRAGON_SOUL_STEP_LEVEL5	Jakoœæ: wyborny,
+DRAGON_SOUL_STRENGTH	Poziom: +%d	SA
+DRAGON_SOUL_UNEQUIP_WARNING1	Smoczy Kamieñ mo¿e ulec zniszczeniu.
+DRAGON_SOUL_UNEQUIP_WARNING2	Chcesz mimo to kontynuowaæ?
+DRAGON_SOUL_UNMATCHED_SLOT	To nieprawid³owy slot.
+DROP_ITEM_FAILURE_EQUIP_ITEM	Nie mo¿esz upuœciæ za³o¿onych przedmiotów.
+DROP_ITEM_FAILURE_PRIVATE_SHOP	Nie mo¿esz upuœciæ przedmiotu z ekwipunku, jeœli otworzy³eœ prywatny sklep.
+DROP_MONEY_FAILURE_1000_OVER	Mo¿esz upuœciæ maksimum 999 Yang.
+DS_SYSTEM_MSG_1	Potrzebujesz %s%d razy.
+DUTCH_AUCTION_CLOSE_OTHER_WINDOW	Zamknij wszystkie okna, zanim otworzysz aukcjê b³yskawiczn¹.
+EMOTION_ALCOHOL	Na zdrowie!
+EMOTION_ANGRY	Denerwowaæ
+EMOTION_ATTRACTIVE	Uwodziæ
+EMOTION_BANTER	Drwiæ
+EMOTION_BUSY	Stres
+EMOTION_CALL	Rozmowa telefoniczna
+EMOTION_CELEBRATION	Impreza
+EMOTION_CHARGING	Do³adowanie
+EMOTION_CHEERS_1	Powitanie 1
+EMOTION_CHEERS_2	Powitanie 2
+EMOTION_CHEERUP	Rozweselaæ
+EMOTION_CHOOSE_ONE	Wybierz cel
+EMOTION_CLAP	Klaszcz
+EMOTION_CLAP_KISS	Poca³unek
+EMOTION_CONGRATULATION	Zgoda
+EMOTION_DANCE_1	Taniec 1
+EMOTION_DANCE_2	Taniec 2
+EMOTION_DANCE_3	Taniec 3
+EMOTION_DANCE_4	Taniec 4
+EMOTION_DANCE_5	Taniec 5
+EMOTION_DANCE_6	Gumsan Style
+EMOTION_DANCE_7	Samba
+EMOTION_DOZE	Drzemka
+EMOTION_EXERCISE	Rozgrzewka
+EMOTION_FORGIVE	Wybaczyæ
+EMOTION_FRENCH_KISS	Francuski poca³unek
+EMOTION_HUNGRY	G³ód
+EMOTION_JOY	Radoœæ
+EMOTION_LETTER	List mi³osny
+EMOTION_NOSAY	Zaniemówiæ
+EMOTION_PUSH_UP	Pompki
+EMOTION_SAD	Smutek
+EMOTION_SELFIE	Selfie
+EMOTION_SHY	Odmowa
+EMOTION_SIREN	Syrena
+EMOTION_SLAP	Uderzenie
+EMOTION_WEATHER_1	S³oñce
+EMOTION_WEATHER_2	Têcza
+EMOTION_WEATHER_3	Ksiê¿yc
+EMOTION_WHIRL	Zamieszanie
+EMPIRE_A	Królestwo Shinsoo
+EMPIRE_B	Królestwo Chunjo
+EMPIRE_C	Królestwo Jinno
+EMPIRE_SELECT_MODE	Wybierz królestwo
+EXCHANGE_CANNOT_GIVE	Nie mo¿esz handlowaæ tym przedmiotem.
+EXCHANGE_CANT_EDIT_MONEY	Nie mo¿esz teraz zmieniæ kwoty.
+EXCHANGE_FAILURE_EQUIP_ITEM	Nie mo¿esz wymieniæ ubranych przedmiotów.
+EXCHANGE_MONEY	Kwota
+EXCHANGE_TITLE	Handluj z %s (%d)
+EXINVEN_USE_ITEM_FAIL_FALL_SHORT	Potrzebujesz jeszcze Rozszerzenia Ekwipunku: %d
+EXINVEN_USE_ITEM_FAIL_FOURTH_PAGE_STAGE_MAX	Twój ekwipunek posiada ju¿ maksymaln¹ iloœæ rozszerzeñ.
+EXINVEN_USE_ITEM_QUESTION	Czy chcesz powiêkszyæ swój ekwipunek u¿ywaj¹c %d Rozszerzeñ Ekwipunku?
+FISHING_FAILURE	Straci³eœ przynêtê.
+FISHING_NOTIFY1	Wygl¹da na to, ¿e na haczyku jest %s.
+FISHING_NOTIFY2	Wygl¹da³o na to, ¿e %s wisi na haku.
+FISHING_RENEWAL_CANNOT_EMOTION	Podczas wêdkowania nie mo¿esz okazywaæ emocji.
+FISHING_RENEWAL_CANNOT_OPEN_1	Podczas wêdkowania nie mo¿esz tego otworzyæ.
+FISHING_RENEWAL_CANNOT_OPEN_2	Nie mo¿esz wykonaæ tej akcji podczas wêdkowania.
+FISHING_RENEWAL_QUESTION	Ryba wziê³a. Chcesz j¹ z³owiæ?
+FISHING_RENEWAL_TIMEOUT	Minê³o za du¿o czasu. Ryba siê zerwa³a.
+FISHING_SUCCESS1	Zdoby³eœ %s!
+FISHING_SUCCESS2	Wy³owi³eœ %s!
+FISHING_UNKNOWN	Coœ nadzia³o siê na haczyk, ale nie widzisz, co to jest.
+FISHING_WRONG_PLACE	Nie mo¿esz tu ³owiæ ryb.
+FLOWER_EVENT_USE_ITEM_TEXT1	Czy chcesz wymieniæ aktywny efekt?
+FLOWER_EVENT_USE_ITEM_TEXT2	Próba mo¿e zakoñczyæ siê niepowodzeniem i kwiat wtedy zwiêdnie.
+FOR_FEMALE	dla kobiet	
+FOR_MALE	dla mê¿czyzn	
+FRAGMENT_COMB_COST	Koszty po³¹czenia: %s
+GAME_CANNOT_MINING	Nie mo¿esz wydobywaæ surowców podczas jazdy konnej.
+GAME_CANNOT_PICK_ITEM	Nie mo¿esz podnieœæ tego Przedmiotu, nie ty go zdoby³eœ.
+GAME_GUILDWAR_NOW_JOIN	Czy chcesz do³¹czyæ do wojny gildii?
+GAME_INIT_ERROR_CURSOR	Kursor nie mo¿e zostaæ utworzony.
+GAME_INIT_ERROR_DIRECTX	Aby gra mog³a ruszyæ musi byæ zainstalowany DirectX 8.1 .\nZainstaluj DirectX 8.1 lub nowszy.
+GAME_INIT_ERROR_GRAPHICS_BAD_PERFORMANCE	¯adne graficzne urz¹dzenie nie zosta³o znalezione.\nSprawdŸ, czy twoja karta VGA jest aktualnie zainstalowana.
+GAME_INIT_ERROR_GRAPHICS_NOT_EXIST	Nie mo¿na by³o uruchomiæ karty graficznej.\nSprawdŸ czy masz kartê VGA.\nAlternatywniem mo¿esz aktywowaæ akceleracjê sprzêtow¹.\n(Ustaw suwak akceleracji sprzêtowej na maks. \nPanel Sterowania->Ekran->Ustawienia->Zaawansowane->Rozwi¹zywanie Problemów)
+GAME_INIT_ERROR_GRAPHICS_NOT_SUPPORT_32BIT	Karta graficzna w komputerze nie obs³uguje trybu ekranowego w trybie 32bit.\nUstaw tryb 16 bitowy lub u¿yj trybu pe³noekranowego.
+GAME_INIT_ERROR_ITEM_PROTO	Brak danych o Przedmiotach.\nZainstaluj grê jeszcze raz.
+GAME_INIT_ERROR_MAIN_WINDOW	Gra nie mog³a zostaæ uruchomiona w okienku
+GAME_INIT_ERROR_MOB_PROTO	Brak danych o Potworach.\nZainstaluj grê jeszcze raz.
+GAME_INIT_ERROR_NETWORK	Nie mo¿na by³o uruchomiæ urz¹dzeñ sieciowych.\nSprawdŸ swoje ustawienia internetowe.
+GEM_SYSTEM_ADD_SLOT	Wymagany przedmiot: %s.\nCzy chcesz u¿yæ teraz %d, aby odblokowaæ kolejny slot?
+GEM_SYSTEM_BUY_ITEM	Czy chcesz kupiæ ten przedmiot?
+GEM_SYSTEM_NAME	Gaya
+GEM_SYSTEM_NOT_ENOUGHT_REFRESHITEM	[Gaya] Masz za ma³o 'Reset Sklepu Gaya'.
+GEM_SYSTEM_NOT_ENOUGH_HP_GEM	[Gaya] Masz za ma³o Gaya.
+GEM_SYSTEM_NO_MORE_ADDSLOT	[Gaya] Nie mo¿esz dodaæ wiêcej slotów.
+GEM_SYSTEM_OPEN_GEMSHOP	[Gaya] Otwórz najpierw Sklep Gaya.
+GEM_SYSTEM_PICK_GEM	[Gaya] Iloœæ Gaya: %d
+GEM_SYSTEM_REFRESH_SHOP_ITEMS	Czy chcesz zresetowaæ?
+GIVEUP_QUESTION	Czy naprawdê chcesz siê poddaæ?
+GUILDBANK_CLEARBANK	Uwaga: magazyn gildii musi zostaæ opró¿niony!
+GUILDBANK_DONT_MONEY_OUT	Nie masz Yang w banku gildii!
+GUILDBANK_GOLD_IN	Wp³ata
+GUILDBANK_GOLD_OUT	Wyp³ata
+GUILDBANK_ITEM_IN	W³ó¿
+GUILDBANK_ITEM_OUT	Wyjmij
+GUILDBANK_MONEYIN	Wp³aæ Yang
+GUILDBANK_MONEYOUT	Wyp³aæ Yang
+GUILDBANK_NOTUSE	Nie masz uprawnieñ do tego.
+GUILDBANK_NOT_ENOUGH_MONEY	Masz za ma³o Yang do wp³aty.
+GUILDBANK_OVER_INCOME	Osi¹gniêto limit konta.
+GUILDBANK_OVER_MONEY	Konto gildii jest pe³ne.
+GUILDLAND_ABANDON	Zrezygnuj z obszaru gildii.
+GUILDLAND_ACCEPT	Tak
+GUILDLAND_DONTHAVE_LAND	Nie posiadasz ¿adnego obszaru gildii.
+GUILDLAND_NOT	Nie
+GUILDLIST_APPLICANT	Czy chcesz z³o¿yæ podanie?
+GUILDMARK_UPLOADER_ERROR_128_HEIGHT	Wysokoœæ nie ma 128px.
+GUILDMARK_UPLOADER_ERROR_12_HEIGHT	Wysokoœæ nie ma 12px.
+GUILDMARK_UPLOADER_ERROR_16_WIDTH	Szerokoœæ nie ma 16px.
+GUILDMARK_UPLOADER_ERROR_64_WIDTH	Szerokoœæ nie ma 64px.
+GUILDMARK_UPLOADER_ERROR_FILE_FORMAT	Gra nie obs³uguje tego obrazka.
+GUILDMARK_UPLOADER_ERROR_PATH	Przenieœ plik do folderu upload/ w g³ównym katalogu gry Metin2.
+GUILDMARK_UPLOADER_ERROR_SELECT	Plik z obrazkiem nie zosta³ wybrany.
+GUILDWAR_ALL	Walki (W)
+GUILDWAR_CTF_TITLE	Walka o flagi
+GUILDWAR_DRAW	Remis (R)
+GUILDWAR_GAINSCORE_FIFTY	50 punktów
+GUILDWAR_GAINSCORE_HUNDRED	100 punktów
+GUILDWAR_GAINSCORE_THIRTY	30 punktów
+GUILDWAR_GAMETIME_SIXTY	60 min.
+GUILDWAR_GAMETIME_TEN	10 min.
+GUILDWAR_GAMETIME_THIRTY	30 min.
+GUILDWAR_INPUT_OTHERGUILD	Podaj gildiê przeciwnika
+GUILDWAR_LADDER	Punkty rangi
+GUILDWAR_LIMIT_MEMBER_FIVE	Minimum uczestników wynosi 5.
+GUILDWAR_LOSE	Pora¿ki (P)
+GUILDWAR_NORMAL_TITLE	Pole Bitwy
+GUILDWAR_OVER_MEMBERCOUNT	Osi¹gn¹³eœ limit cz³onków gildii.
+GUILDWAR_QUESTION_LINE_1	Gildia %s wypowiedzia³a wojnê twojej Gildii.
+GUILDWAR_QUESTION_LINE_2	Akceptujesz? (%s)
+GUILDWAR_RANKING	Ranga
+GUILDWAR_RECODE_ALL	%d W, %d Z, %d P, %d R
+GUILDWAR_SELECT_MEMBER_COUNT	Wybierz iloœæ uczestników
+GUILDWAR_TYPE_DEFENSE	Tarcza bojowa
+GUILDWAR_TYPE_TIGER	Zag³ada
+GUILDWAR_TYPE_TIME	Atak czasowy
+GUILDWAR_UNKNOWN_TITLE	...
+GUILDWAR_WARP_TITLE	Walka na arenie
+GUILDWAR_WIN	Zwyciêstwa (Z)
+GUILDWAR_WIN_FIVE	Piêæ rund
+GUILDWAR_WIN_ONE	Jedna runda
+GUILDWAR_WIN_THREE	Trzy rundy
+GUILDWINDOW_BUTTON_BANKGOLDINFO	Log Magazynu Gildii
+GUILDWINDOW_BUTTON_BASEABANDON	Zrezygnuj z obszaru gildii.
+GUILDWINDOW_BUTTON_BASEDEAL	Sprzedaj obszar gildii
+GUILDWINDOW_BUTTON_BOARD	Notatka gildii
+GUILDWINDOW_BUTTON_CHANGEMASTER	Zmieñ lidera gildii
+GUILDWINDOW_BUTTON_DECLARE	Wypowiedzenie wojny
+GUILDWINDOW_BUTTON_DONATE	Wp³ata
+GUILDWINDOW_BUTTON_GOLDIN	Wp³ata
+GUILDWINDOW_BUTTON_GOLDOUT	Wyp³ata
+GUILDWINDOW_BUTTON_GRADE	Zarz¹dzanie prawami
+GUILDWINDOW_BUTTON_GUILDLIST	Lista gildii
+GUILDWINDOW_BUTTON_HEALGSP	Przywróæ Moc Smoka
+GUILDWINDOW_BUTTON_INFO	Informacje o gildii
+GUILDWINDOW_BUTTON_LANDINFO	Informacje o obszarze
+GUILDWINDOW_BUTTON_MARK	Wgraj logo gildii
+GUILDWINDOW_BUTTON_MEMBER	Cz³onkowie
+GUILDWINDOW_BUTTON_OFFER	Wp³aæ PD
+GUILDWINDOW_BUTTON_OUTMEMBER	Usuñ cz³onka gildii
+GUILDWINDOW_BUTTON_SKILL	Umiejêtnoœci gildii
+GUILDWINDOW_BUTTON_SYMBOL	Wgraj flagê gildii
+GUILDWINDOW_BUY_GUILD_LAND	Zakup obszaru
+GUILDWINDOW_CHANGE_BLACKSMITH	Zmieñ profesjê
+GUILDWINDOW_CHANGE_OBJECT	Przebudowa
+GUILDWINDOW_CHANGE_SMELTER	Przebudowa pieca
+GUILDWINDOW_CREATE_OBJECT	Budowa budynku
+GUILDWINDOW_DEAL_GUILD_LAND	Sprzeda¿ obszaru
+GUILDWINDOW_GRADE_BANK	Mo¿e u¿ywaæ banku gildii oraz magazynu gildii
+GUILDWINDOW_GRADE_DRIVEOUTAUTHORITY	Mo¿e usuwaæ cz³onków gildii z gildii
+GUILDWINDOW_GRADE_GRADENAME	Nazwa rangi
+GUILDWINDOW_GRADE_GRADENUMBER	Numer rangi
+GUILDWINDOW_GRADE_GUILDWAR	Mo¿e wybieraæ cz³onków gildii, którzy mog¹ wzi¹æ udzia³ w wojnie jako wojownicy
+GUILDWINDOW_GRADE_INVITEAUTHORITY	Mo¿e przyj¹æ gracza do gildii
+GUILDWINDOW_GRADE_NOTICEAUTHORITY	Mo¿e przypi¹æ notatkê gildii
+GUILDWINDOW_GRADE_SKILLAUTHORITY	Mo¿e u¿ywaæ umiejêtnoœci gildii
+GUILDWINDOW_INFO_LEVEL10	Zwiêk. maks. licz. cz³onków
+GUILDWINDOW_INFO_LEVEL15	Taniej: Moc Smoka
+GUILDWINDOW_INFO_LEVEL20	Bank: Zwolnienie od podatku
+GUILDWINDOW_INFO_LEVEL5	+5% PD na dotacjê gildii
+GUILDWINDOW_LIST_ALL	Wszystkie Królestwa
+GUILDWINDOW_LIST_ALREADY_REGISTER	[Gildia] Z³o¿y³eœ ju¿ podanie.
+GUILDWINDOW_LIST_APPLICANT_LIST	Lista kandydatów
+GUILDWINDOW_LIST_CHRACTER_JOB	Klasa
+GUILDWINDOW_LIST_CHRACTER_LV	Poziom
+GUILDWINDOW_LIST_CHRACTER_NAME	Nazwa postaci
+GUILDWINDOW_LIST_CHRACTER_SUB_JOB	Profesja
+GUILDWINDOW_LIST_EMPIRE_A	Shinsoo
+GUILDWINDOW_LIST_EMPIRE_B	Chunjo
+GUILDWINDOW_LIST_EMPIRE_C	Jinno
+GUILDWINDOW_LIST_GUILDMEMBER	Cz³onek
+GUILDWINDOW_LIST_GUILD_LIST	Lista gildii
+GUILDWINDOW_LIST_GUILD_LV	Poziom
+GUILDWINDOW_LIST_GUILD_NAME	Gildia
+GUILDWINDOW_LIST_INPUT_GUILDNAME	[Gilda] Wpisz nazwê gildii
+GUILDWINDOW_LIST_LADDER	Punkty rangi
+GUILDWINDOW_LIST_NOTPROMOTEGUILD	[Gildia] Ta gildia nie przeprowadza naboru.
+GUILDWINDOW_LIST_PROMOTE_GUILD	Podanie
+GUILDWINDOW_LIST_PROMOTE_GUILD_LIST	Lista gildii
+GUILDWINDOW_LIST_RANKING	Pozycja
+GUILDWINDOW_LIST_RANKING_COUNT	Pozycja
+GUILDWINDOW_LIST_REGISTER	Podania
+GUILDWINDOW_LIST_REGISTER_GUILD	Z³ó¿ podanie do gildii
+GUILDWINDOW_LIST_SEARCH	Szukaj
+GUILDWINDOW_LIST_SELECT_GUILD	[Gildia] Wybierz gildiê, aby z³o¿y do niej podanie.
+GUILDWINDOW_PROMOTE_REFRESH	Werbowanie
+GUILDWINDOW_PROMOTE_REGISTER	Werbowanie
+GUILDWINDOW_SP_RECOVER	Moc Smoka
+GUILDWINDOW_UPGRADE_ALTEROFPOWER	Rozbudowa o³tarza
+GUILDWINDOW_UPGRADE_GUILDBANK	Rozbudowa banku
+GUILD_ATTENDANCE_FAIL_ALREADY	Dzisiaj wzi¹³eœ ju¿ udzia³.
+GUILD_ATTENDANCE_FAIL_JOIN_TIME	Nie mo¿esz teraz wzi¹æ udzia³u. Udzia³ bêdzie zawsze resetowany o godz. 5:00.
+GUILD_BANKINFO_CLOSE	Zamknij
+GUILD_BANKINFO_NAME	Cz³onek gildii
+GUILD_BANKINFO_TYPE	Przedmiot/Waluta
+GUILD_BANKINFO_USETYPE	Akcja
+GUILD_BANK_CLOSE	Zamknij
+GUILD_BANK_INFO	Log Magazynu Gildii
+GUILD_BOARD_ID	Cz³onek gildii
+GUILD_BOARD_TEXT	Wiadomoœæ
+GUILD_BUILDING_FIX_CHANGE	Czy naprawdê chcesz zmieniæ pozycjê?
+GUILD_BUILDING_FIX_CHANGE_GOLD	Koszt: 1 000 000 Yang
+GUILD_BUILDING_FIX_DELETE	Czy naprawdê chcesz skasowaæ obiekt?
+GUILD_BUILDING_FIX_NEED_BUILDING	Brak budynku.
+GUILD_BUILDING_GRADE	Ranga
+GUILD_BUILDING_NAME	Nazwa Budynku
+GUILD_CANNOT_HEAL_GSP_ANYMORE	Energia Ducha Smoka jest ju¿ w pe³ni zregenerowana.
+GUILD_COMMENT	Napisz
+GUILD_CREATE_ERROR_INSULT_NAME	Nazwa Gildii jest niepoprawna.
+GUILD_DEFAULT_GRADE	Cz³onkowie Gildii
+GUILD_DELETE	Usuñ
+GUILD_DEPOSIT	Depozyt
+GUILD_DONATE_FAIL_NOT_ENOUGH_HIGH_ITEM	Masz za ma³o kuponów wysokich wp³at.
+GUILD_DONATE_FAIL_NOT_ENOUGH_INVENTORY	Twój ekwipunek jest pe³ny. Nie mo¿esz wp³aciæ.
+GUILD_DONATE_FAIL_NOT_ENOUGH_MIDDLE_ITEM	Masz za ma³o kuponów œrednich wp³at.
+GUILD_DONATE_FAIL_NOT_ENOUGH_YANG	Za ma³o Yang.
+GUILD_DONATE_QUESTION_HIGH	Czy chcesz dokonaæ wysokiej wp³aty?
+GUILD_DONATE_QUESTION_MIDDLE	Czy chcesz dokonaæ œredniej wp³aty?
+GUILD_DONATE_QUESTION_NORMAL	Czy chcesz dokonaæ ma³ej wp³aty?
+GUILD_DO_YOU_HEAL_GSP	Czy chcesz odnowiæ za %d Yang %d Ducha Smoka?
+GUILD_DO_YOU_JOIN	zaprasza Ciê do swojej Gildii. Chcesz do niej do³¹czyæ?
+GUILD_DRAGONLAIR_MIN	Min.
+GUILD_DRAGONLAIR_PARTY_ALL	Ogólna lista najlepszych
+GUILD_DRAGONLAIR_PARTY_LINE_FOUR	od 11. miejsca: 100 Gaya
+GUILD_DRAGONLAIR_PARTY_LINE_HELP	Pomoc
+GUILD_DRAGONLAIR_PARTY_LINE_ONE	1. miejsce: 400 Gaya
+GUILD_DRAGONLAIR_PARTY_LINE_THREE	4. - 10. miejsce: 200 Gaya
+GUILD_DRAGONLAIR_PARTY_LINE_TWO	2. - 3. miejsce: 300 Gaya
+GUILD_DRAGONLAIR_PARTY_MEMBER	Cz³onek
+GUILD_DRAGONLAIR_PARTY_NOW	Tygodniowa lista najlepszych
+GUILD_DRAGONLAIR_PARTY_PAST	Poprzednia lista najlepszych
+GUILD_DRAGONLAIR_PARTY_TIME	Czas
+GUILD_DRAGONLAIR_PARTY_TOOLTIP_TITLE	Nagroda
+GUILD_DRAGONLAIR_RANKING_FAIL	PORA¯KA
+GUILD_DRAGONLAIR_RANKING_NONE	NOWOŒÆ
+GUILD_DRAGONLAIR_RANKING_SUCCESS	SUKCES
+GUILD_DRAGONLAIR_SECOND	Sek.
+GUILD_EMPTY_AREA	Wolna Ziemia
+GUILD_ENEMY_GUILD_NAME	Nazwa Gildii wroga
+GUILD_FACILITY	Przybudówka
+GUILD_GEM	Klejnot
+GUILD_HEADQUARTER	Budynek G³ówny
+GUILD_HEAL_GSP	Regeneracja Ducha Smoka
+GUILD_INFO_ENEMY_GUILD_EMPTY	Nikt
+GUILD_MARK_NOT_ENOUGH_LEVEL	Potrzebny przynajmniej 3 poziom
+GUILD_MARK_UPLOAD_NOTICE	Poczekaj, aby zarejestrowaæ logo gildii.
+GUILD_MEMBER_JOB	Klasa
+GUILD_MEMBER_KNIGHT	Wojownik
+GUILD_MEMBER_LEVEL	Poziom
+GUILD_MEMBER_NAME	Cz³onek gildii
+GUILD_MEMBER_RANK	Ranga
+GUILD_MEMBER_SPECIFIC_GRAVITY	Wp³acone PD
+GUILD_NAME	Nazwa Gildii
+GUILD_NOT_ENOUGH_MATERIAL	Nie masz wystarczaj¹cej iloœci surowców na t¹ budowlê.
+GUILD_NOT_ENOUGH_MONEY	Nie masz wystarczaj¹cej iloœci Yang na t¹ budowlê.
+GUILD_NO_NOTICE_PERMISSION	Nie masz praw do tworzenia og³oszeñ.
+GUILD_OBJECT	Obiekty
+GUILD_OFFER_EXP	PD do przekazania
+GUILD_SHORT_EXP	Za ma³o Punktów Doœwiadczenia.
+GUILD_TILE_BASEINFO	Informacje o obszarze
+GUILD_TILE_BOARD	Notatka gildii
+GUILD_TILE_GRADE	Zarz¹dzanie Prawami
+GUILD_TILE_INFO	Informacje o Gildii
+GUILD_TILE_MEMBER	Cz³onek
+GUILD_TILE_SKILL	Umiejêtnoœci Gildii
+GUILD_USE_MASTER_ONLY	Tylko lider gildii ma takie prawo.
+GUILD_VILLAGE_01	Miryang
+GUILD_VILLAGE_02	Songpa
+GUILD_VILLAGE_03	Daeyami
+GUILD_WAR1	Obszar Wojny Gildii
+GUILD_WAR2	Obszar Wojny Gildii
+GUILD_WAR3	Obszar Wojny Gildii
+GUILD_WAR4	Obszar Wojny Gildii
+GUILD_WAR_GAINSCORE_FIFTY	50 punktów
+GUILD_WAR_GAINSCORE_HUNDRED	100 punktów
+GUILD_WAR_GAINSCORE_THIRTY	30 punktów
+GUILD_WAR_GAMETIME_SIXTY	60 min.
+GUILD_WAR_GAMETIME_TEN	10 min.
+GUILD_WAR_GAMETIME_THIRTY	30 min.
+GUILD_WAR_LIMIT_30MIN	Czas: 30 Minut
+GUILD_WAR_REWARD_POTION	Nagroda: Zwyciêzca otrzymuje Miksturê
+GUILD_WAR_SELECT_WAR	Wybierz rodzaj walki
+GUILD_WAR_TYPE_DEFENSE	Tarcza bojowa
+GUILD_WAR_TYPE_DIE	Walka na arenie
+GUILD_WAR_TYPE_FLAG	Walka o flagi
+GUILD_WAR_TYPE_NORMAL	Pole bitwy
+GUILD_WAR_TYPE_TIGER	Zag³ada
+GUILD_WAR_TYPE_TIME	Atak czasowy
+GUILD_WAR_USE_BATTLE_MAP	Miejsce: Teatr Wojny Gildii
+GUILD_WAR_USE_NORMAL_MAP	Miejsce: Normalna Mapa
+GUILD_WAR_WIN_CHECK_SCORE	Najlepszy wynik wygrywa Wojnê.
+GUILD_WAR_WIN_FIVE	Piêæ rund
+GUILD_WAR_WIN_ONE	Jedna runda
+GUILD_WAR_WIN_TAKE_AWAY_FLAG1	Zdob¹dŸ Flagê przeciwnika
+GUILD_WAR_WIN_TAKE_AWAY_FLAG2	i dostarcz j¹ do swojej bazy.
+GUILD_WAR_WIN_THREE	Trzy rundy
+GUILD_WAR_WIN_WIPE_OUT_GUILD	Pokonaj wszystkich wrogów by wygraæ.
+GUILD_WITHDRAW	Wycofaj siê
+GUILD_YOU_DO_NOT_JOIN	Nie jesteœ cz³onkiem ¿adnej Gildii.
+HORSE_HEALTH0	Martwy
+HORSE_HEALTH1	G³odny
+HORSE_HEALTH2	Wyg³odzony
+HORSE_HEALTH3	Pe³ny
+HORSE_LEVEL1	Koñ Zwyk³y
+HORSE_LEVEL2	Koñ Bojowy
+HORSE_LEVEL3	Koñ Wojskowy
+HOUR	h
+HOW_MANY_ITEM_DO_YOU_DROP1	Czy chcesz upuœciæ %s?
+HOW_MANY_ITEM_DO_YOU_DROP2	Czy chcesz upuœciæ %s %d?
+INPUT_MATRIX_CARD_NUMBER	Wpisz numer karty Matrix.
+INPUT_MATRIX_CARD_TITLE	Karta Matrix
+INPUT_PRIVATE_CODE_DIALOG_DESCRIPTION	WprowadŸ kod usuniêcia z zarz¹dzania kontem.
+INPUT_PRIVATE_CODE_DIALOG_TITLE	Usuwanie postaci
+INVENTORY_DO_NOT_PACK_WARP_SCROLL	Zwoje powrotu nie mog¹ byæ ³¹czone.
+INVENTORY_REALLY_USE_ITEM	Na pewno chcesz zastosowaæ ten przedmiot?
+INVENTORY_REALLY_USE_ITEM2	Czy na pewno chcesz u¿yæ tego przedmiotu?
+INVENTORY_REALLY_USE_PET_BAG_ITEM	Na pewno chcesz wsadziæ swojego zwierzaka do klatki transportowej?
+INVENTORY_REALLY_USE_PET_BAG_TAKE_OUT	Chcesz otworzyæ klatkê transportow¹?
+INVENTORY_REALLY_USE_PET_FEEDSTUFF_ITEM	Chcesz daæ przedmiot %s zwierzakowi %s?
+IS_NOT_PET_CHANGE_ITEM	To nie jest przedmiot: zaczaruj zwierzaka.
+IS_NOT_PET_ITEM	To nie jest zwierzak.
+JOB_ASSASSIN	Ninja
+JOB_ASSASSIN0	Brak
+JOB_ASSASSIN1	Ninja Ostrza
+JOB_ASSASSIN2	Ninja £uku
+JOB_SHAMAN	Szaman
+JOB_SHAMAN0	Brak
+JOB_SHAMAN1	Szaman Mocy Smoka
+JOB_SHAMAN2	Szaman Mocy Leczenia
+JOB_SURA	Sura
+JOB_SURA0	Brak
+JOB_SURA1	Sura Broni
+JOB_SURA2	Sura Magii
+JOB_WARRIOR	Wojownik
+JOB_WARRIOR0	Brak
+JOB_WARRIOR1	Wojownik Mocy Cia³a
+JOB_WARRIOR2	Wojownik Mocy Duchowej
+JOB_WOLFMAN	Likan
+JOB_WOLFMAN0	Likan Amator
+JOB_WOLFMAN1	Instynkt
+JOB_WOLFMAN2	N.A.
+KEYCHANGE_DONT_SAVE_EXIT	Zamkn¹æ bez zapisywania?
+KEYCHANGE_IMPOSSIBLE_CHANGE	[CTRL], [ALT], [SHIFT] s¹ tutaj niedozwolone!
+KEYCHANGE_SAVE_EXIT	Zapisaæ i zamkn¹æ?
+KEY_0	0
+KEY_0_LALT	ALT + 0
+KEY_0_LCONTROL	CTRL + 0
+KEY_0_LSHIFT	SHIFT + 0
+KEY_1	1
+KEY_1_LALT	ALT + 1
+KEY_1_LCONTROL	CTRL + 1
+KEY_1_LSHIFT	SHIFT + 1
+KEY_2	2
+KEY_2_LALT	ALT + 2
+KEY_2_LCONTROL	CTRL + 2
+KEY_2_LSHIFT	SHIFT + 2
+KEY_3	3
+KEY_3_LALT	ALT + 3
+KEY_3_LCONTROL	CTRL + 3
+KEY_3_LSHIFT	SHIFT + 3
+KEY_4	4
+KEY_4_LALT	ALT + 4
+KEY_4_LCONTROL	CTRL + 4
+KEY_4_LSHIFT	SHIFT + 4
+KEY_5	5
+KEY_5_LALT	ALT + 5
+KEY_5_LCONTROL	CTRL + 5
+KEY_5_LSHIFT	SHIFT + 5
+KEY_6	6
+KEY_6_LALT	ALT + 6
+KEY_6_LCONTROL	CTRL + 6
+KEY_6_LSHIFT	SHIFT + 6
+KEY_7	7
+KEY_7_LALT	ALT + 7
+KEY_7_LCONTROL	CTRL + 7
+KEY_7_LSHIFT	SHIFT + 7
+KEY_8	8
+KEY_8_LALT	ALT + 8
+KEY_8_LCONTROL	CTRL + 8
+KEY_8_LSHIFT	SHIFT + 8
+KEY_9	9
+KEY_9_LALT	ALT + 9
+KEY_9_LCONTROL	CTRL + 9
+KEY_9_LSHIFT	SHIFT + 9
+KEY_A	A
+KEY_ADD	+
+KEY_A_LALT	ALT + A
+KEY_A_LCONTROL	CTRL + A
+KEY_A_LSHIFT	SHIFT + A
+KEY_B	B
+KEY_B_LALT	ALT + B
+KEY_B_LCONTROL	CTRL + B
+KEY_B_LSHIFT	SHIFT + B
+KEY_C	C
+KEY_COMMA	,
+KEY_COMMA_LALT	ALT + ,
+KEY_COMMA_LCONTROL	CTRL + ,
+KEY_COMMA_LSHIFT	SHIFT + ,
+KEY_C_LALT	ALT + C
+KEY_C_LCONTROL	CTRL + C
+KEY_C_LSHIFT	SHIFT + C
+KEY_D	D
+KEY_DOWN	DÓ£
+KEY_D_LALT	ALT + D
+KEY_D_LCONTROL	CTRL + D
+KEY_D_LSHIFT	SHIFT + D
+KEY_E	E
+KEY_E_LALT	ALT + E
+KEY_E_LCONTROL	CTRL + E
+KEY_E_LSHIFT	SHIFT + E
+KEY_F	F
+KEY_F1	F1
+KEY_F10	F10
+KEY_F10_LALT	ALT + F10
+KEY_F10_LCONTROL	CTRL + F10
+KEY_F10_LSHIFT	SHIFT + F10
+KEY_F1_LALT	ALT + F1
+KEY_F1_LCONTROL	CTRL + F1
+KEY_F1_LSHIFT	SHIFT + F1
+KEY_F2	F2
+KEY_F2_LALT	ALT + F2
+KEY_F2_LCONTROL	CTRL + F2
+KEY_F2_LSHIFT	SHIFT + F2
+KEY_F3	F3
+KEY_F3_LALT	ALT + F3
+KEY_F3_LCONTROL	CTRL + F3
+KEY_F3_LSHIFT	SHIFT + F3
+KEY_F4	F4
+KEY_F4_LALT	ALT + F4
+KEY_F4_LCONTROL	CTRL + F4
+KEY_F4_LSHIFT	SHIFT + F4
+KEY_F5	F5
+KEY_F5_LALT	ALT + F5
+KEY_F5_LCONTROL	CTRL + F5
+KEY_F5_LSHIFT	SHIFT + F5
+KEY_F6	F6
+KEY_F6_LALT	ALT + F6
+KEY_F6_LCONTROL	CTRL + F6
+KEY_F6_LSHIFT	SHIFT + F6
+KEY_F7	F7
+KEY_F7_LALT	ALT + F7
+KEY_F7_LCONTROL	CTRL + F7
+KEY_F7_LSHIFT	SHIFT + F7
+KEY_F8	F8
+KEY_F8_LALT	ALT + F8
+KEY_F8_LCONTROL	CTRL + F8
+KEY_F8_LSHIFT	SHIFT + F8
+KEY_F9	F9
+KEY_F9_LALT	ALT + F9
+KEY_F9_LCONTROL	CTRL + F9
+KEY_F9_LSHIFT	SHIFT + F9
+KEY_F_LALT	ALT + F
+KEY_F_LCONTROL	CTRL + F
+KEY_F_LSHIFT	SHIFT + F
+KEY_G	G
+KEY_GRAVE	`
+KEY_GRAVE_LALT	ALT + `
+KEY_GRAVE_LCONTROL	CTRL + `
+KEY_GRAVE_LSHIFT	SHIFT + `
+KEY_G_LALT	ALT + G
+KEY_G_LCONTROL	CTRL + G
+KEY_G_LSHIFT	SHIFT + G
+KEY_H	H
+KEY_H_LALT	ALT + H
+KEY_H_LCONTROL	CTRL + H
+KEY_H_LSHIFT	SHIFT + H
+KEY_I	I
+KEY_I_LALT	ALT + I
+KEY_I_LCONTROL	CTRL + I
+KEY_I_LSHIFT	SHIFT + I
+KEY_J	J
+KEY_J_LALT	ALT + J
+KEY_J_LCONTROL	CTRL + J
+KEY_J_LSHIFT	SHIFT + J
+KEY_K	K
+KEY_K_LALT	ALT + K
+KEY_K_LCONTROL	CTRL + K
+KEY_K_LSHIFT	SHIFT + K
+KEY_L	L
+KEY_LALT	ALT
+KEY_LCONTROL	CTRL
+KEY_LEFT	LEWO
+KEY_LSHIFT	SHIFT
+KEY_L_LALT	ALT + L
+KEY_L_LCONTROL	CTRL + L
+KEY_L_LSHIFT	SHIFT + L
+KEY_M	M
+KEY_M_LALT	ALT + M
+KEY_M_LCONTROL	CTRL + M
+KEY_M_LSHIFT	SHIFT + M
+KEY_N	N
+KEY_NUMLOCK	NUMLOCK
+KEY_NUMPAD0	NUMPAD 0
+KEY_NUMPAD1	NUMPAD 1
+KEY_NUMPAD2	NUMPAD 2
+KEY_NUMPAD3	NUMPAD 3
+KEY_NUMPAD4	NUMPAD 4
+KEY_NUMPAD5	NUMPAD 5
+KEY_NUMPAD6	NUMPAD 6
+KEY_NUMPAD7	NUMPAD 7
+KEY_NUMPAD8	NUMPAD 8
+KEY_NUMPAD9	NUMPAD 9
+KEY_N_LALT	ALT + N
+KEY_N_LCONTROL	CTRL + N
+KEY_N_LSHIFT	SHIFT + N
+KEY_O	O
+KEY_O_LALT	ALT + O
+KEY_O_LCONTROL	CTRL + O
+KEY_O_LSHIFT	SHIFT + O
+KEY_P	P
+KEY_PERIOD	.
+KEY_PERIOD_LALT	ALT + .
+KEY_PERIOD_LCONTROL	CTRL + .
+KEY_PERIOD_LSHIFT	SHIFT + .
+KEY_PGDN	PAGE DOWN
+KEY_PGUP	PAGE UP
+KEY_P_LALT	ALT + P
+KEY_P_LCONTROL	CTRL + P
+KEY_P_LSHIFT	SHIFT + P
+KEY_Q	Q
+KEY_Q_LALT	ALT + Q
+KEY_Q_LCONTROL	CTRL + Q
+KEY_Q_LSHIFT	SHIFT + Q
+KEY_R	R
+KEY_RIGHT	PRAWO
+KEY_R_LALT	ALT + R
+KEY_R_LCONTROL	CTRL + R
+KEY_R_LSHIFT	SHIFT + R
+KEY_S	S
+KEY_SPACE	SPACJA
+KEY_SUBTRACT	-
+KEY_SYSRQ	PRT SCN
+KEY_S_LALT	ALT + S
+KEY_S_LCONTROL	CTRL + S
+KEY_S_LSHIFT	SHIFT + S
+KEY_T	T
+KEY_TAB	TAB
+KEY_T_LALT	ALT + T
+KEY_T_LCONTROL	CTRL + T
+KEY_T_LSHIFT	SHIFT + T
+KEY_U	U
+KEY_UP	GÓRA
+KEY_U_LALT	ALT + U
+KEY_U_LCONTROL	CTRL + U
+KEY_U_LSHIFT	SHIFT + U
+KEY_V	V
+KEY_V_LALT	ALT + V
+KEY_V_LCONTROL	CTRL + V
+KEY_V_LSHIFT	SHIFT + V
+KEY_W	W
+KEY_W_LALT	ALT + W
+KEY_W_LCONTROL	CTRL + W
+KEY_W_LSHIFT	SHIFT + W
+KEY_X	X
+KEY_X_LALT	ALT + X
+KEY_X_LCONTROL	CTRL + X
+KEY_X_LSHIFT	SHIFT + X
+KEY_Y	Y
+KEY_Y_LALT	ALT + Y
+KEY_Y_LCONTROL	CTRL + Y
+KEY_Y_LSHIFT	SHIFT + Y
+KEY_Z	Z
+KEY_Z_LALT	ALT + Z
+KEY_Z_LCONTROL	CTRL + Z
+KEY_Z_LSHIFT	SHIFT + Z
+LEADER_NAME	Nazwa lidera
+LEFT_TIME	Pozosta³y Czas
+LIMIT_LEVEL_GUILD	Poziom gildii: %d
+LOGIN_CONNECT_FAILURE	B³¹d podczas ³¹czenia siê z serwerem.
+LOGIN_CONNECT_SUCCESS	Zosta³eœ po³¹czony z serwerem.
+LOGIN_CONNETING	Prosimy o cierpliwoœæ. Trwa ³¹czenie z serwerem.
+LOGIN_FAILURE_ALREAY	Twoje konto jest ju¿ po³¹czone.
+LOGIN_FAILURE_BACKEND_ERR	Wyst¹pi³ b³¹d. Skontaktuj siê z supportem.
+LOGIN_FAILURE_BE_SAME_KEY	Problem z rejestracj¹.
+LOGIN_FAILURE_BLOCK_ID	To konto zosta³o zablokowane.
+LOGIN_FAILURE_BLOCK_LOGIN	Zamkniêty serwer: Serwer Zamkniêty - proszê wybraæ inny!
+LOGIN_FAILURE_COUNTRY_ERR	Kod kraju jest niepoprawny.\nSkontaktuj siê z supportem.
+LOGIN_FAILURE_INTEGRTING	To konto jest ³¹czone. Spróbuj ponownie póŸniej.
+LOGIN_FAILURE_IOVATION_ERR	Wyst¹pi³ b³¹d. Zwróæ siê proszê do supportu.
+LOGIN_FAILURE_NOBILL	Twoje konto nie ma czasu gry.
+LOGIN_FAILURE_NOT_EXIST_ID	Nieprawid³owa nazwa konta lub has³o.
+LOGIN_FAILURE_NOT_MAIL_CONFIRM	Konieczna jest weryfikacja drog¹ mailow¹.
+LOGIN_FAILURE_REPAIR_ID	Dla tego konta w³aœnie przywrócono przedmioty.
+LOGIN_FAILURE_SAMELOGIN	Ktoœ po³¹czy³ siê za pomoc¹ Twojego konta.
+LOGIN_FAILURE_SHUTDOWN	Serwer nie jest jeszcze otwarty.
+LOGIN_FAILURE_STEAM_SESSION	Sesja wygas³a. Prosimy o zrestartowanie klienta.
+LOGIN_FAILURE_TNT_SESSION	Nie mo¿na otworzyæ klienta gry. Uruchom ponownie launchera i zaloguj siê.
+LOGIN_FAILURE_TOO_MANY_USER	Nie mo¿esz siê po³¹czyæ, poniewa¿ za du¿o graczy jest online.
+LOGIN_FAILURE_UNKNOWN	Nie mo¿esz siê zarejestrowaæ z nieznanych powodów.
+LOGIN_FAILURE_WEB_BLOCK	Twoje konto zosta³o zablokowane na stronie www. Proszê sprawdziæ swoj¹ pocztê e-mail.
+LOGIN_FAILURE_WRONG_MATRIX_CARD_NUMBER	Wpisa³eœ nieprawid³owy numer.
+LOGIN_FAILURE_WRONG_MATRIX_CARD_NUMBER_TRIPLE	Wybra³eœ z³y numer trzy razy. /n Twoje po³¹czenie zostanie zerwane.
+LOGIN_FAILURE_WRONG_PASSWORD	Nieprawid³owa nazwa konta lub has³o.
+LOGIN_INPUT_ID	Podaj swoje ID.
+LOGIN_INPUT_PASSWORD	Wpisz swoje has³o.
+LOGIN_PROCESSING	Logowanie...
+LUCKY_BOX_DIALOG_RECV_TEXT	Czy chcesz przyj¹æ przedmiot?
+LUCKY_BOX_DIALOG_RETRY_TEXT	Czy chcesz spróbowaæ szczêœcia?
+MAILBOX_FAIL_USE_TIME_LIMIT	Trwa aktualizacja skrzynki pocztowej. Spróbuj ponownie póŸniej.
+MAILBOX_POST_ALL_DELETE_FAIL_EMPTY	Brak wiadomoœci
+MAILBOX_POST_ALL_DELETE_QUESTION1	Chcesz usun¹æ wszystkie wiadomoœci?
+MAILBOX_POST_ALL_DELETE_QUESTION2	Wiadomoœci z za³¹cznikiem nie zostan¹ usuniête.
+MAILBOX_POST_ALL_GET_ITEMS_FAIL_EMPTY	Nie masz ¿adnych wiadomoœci z za³¹cznikiem w skrzynce odbiorczej.
+MAILBOX_POST_ALL_GET_ITEMS_QUESTION	Czy chcesz odebraæ za³¹cznik? (Po potr¹ceniu 5% podatku za Yang)
+MAILBOX_POST_DELETE_FAIL_EXIST_ITEMS	Wiadomoœæ nie zosta³a usuniêta. Odbierz najpierw znajduj¹cy siê tam za³¹cznik.
+MAILBOX_POST_DELETE_QUESTION	Czy na pewno chcesz usun¹æ tê wiadomoœæ?
+MAILBOX_POST_GET_ITEMS_NOT_ENOUGHT_INVENTORY	Przedmioty nie zosta³y przyjête. Twój ekwipunek jest pe³ny.
+MAILBOX_POST_GET_ITEMS_QUESTION	Czy chcesz odebraæ za³¹cznik? (Po potr¹ceniu 5% podatku za Yang)
+MAILBOX_POST_GET_ITEMS_WON_OVERFLOW	Nie mo¿esz przyj¹æ wiêcej Won.
+MAILBOX_POST_GET_ITEMS_YANG_OVERFLOW	Nie mo¿esz przyj¹æ wiêcej Yang.
+MAILBOX_POST_GM_ARRIVE	Wiadomoœæ GM
+MAILBOX_POST_NOT_CONFIRM_INFO_1	Nieprzeczytane wiadomoœci: %d
+MAILBOX_POST_NOT_CONFIRM_INFO_2	Brak za³¹cznika: %d / Z za³¹cznikiem: %d
+MAILBOX_POST_READ_BLOCK	Czy na pewno chcesz zablokowaæ: %s?
+MAILBOX_POST_WRITE_ALREADY_ITEM	Mo¿esz wys³aæ tylko jeden przedmiot w wiadomoœci.
+MAILBOX_POST_WRITE_CAN_NOT_SPLIT_ITEM	Podziel najpierw na³o¿one przedmioty w ekwipunku, zanim do³¹czysz jeden z przedmiotów do wiadomoœci.
+MAILBOX_POST_WRITE_CONFIRM_FAIL	Nieznany odbiorca. Wiadomoœæ nie zosta³a wys³ana.
+MAILBOX_POST_WRITE_CONFIRM_FULL_MAILBOX	Skrzynka pocztowa odbiorcy jest pe³na. Wiadomoœæ nie zosta³a wys³ana.
+MAILBOX_POST_WRITE_LEVEL_LIMIT	Mo¿esz wysy³aæ wiadomoœci od poziomu 20.
+MAILBOX_POST_WRITE_MONEY_NOT_ENOUGHT	Masz za ma³o Yang, aby wys³aæ wiadomoœæ.
+MAILBOX_POST_WRITE_NAME_CHECK	PotwierdŸ nazwê odbiorcy, klikaj¹c na "SprawdŸ odbiorcê".
+MAILBOX_POST_WRITE_NAME_EMPTY	Podaj nazwê odbiorcy.
+MAILBOX_POST_WRITE_QUESTION1	Czy chcesz teraz wys³aæ wiadomoœæ do: %s?
+MAILBOX_POST_WRITE_QUESTION2	Op³ata za dostawê: %d Yang
+MAILBOX_POST_WRITE_SEND_FAIL_EMPTY_NAME	Podaj nazwê odbiorcy.
+MAILBOX_POST_WRITE_SEND_FAIL_EMPTY_TITLE	Podaj temat.
+MAILBOX_POST_WRITE_SEND_MONEY_TITLE	Pieni¹dze
+MAILBOX_POST_WRITE_WRONG_ITEM	Nie mo¿esz wysy³aæ przedmiotów przywi¹zanych do duszy.
+MAILBOX_POST_WRITE_WRONG_MESSAGE	Ta wiadomoœæ zawiera niedozwolone s³owa.
+MAILBOX_POST_WRITE_WRONG_TITLE	Temat zawiera niedozwolone s³owa.
+MALL_CANNOT_INSERT	Nie mo¿esz umieœciæ Przedmiotu.
+MALL_PASSWORD_TITLE	Has³o
+MAP_A1	Strefa Yongan
+MAP_A2	Dolina Seungryong
+MAP_A2_1	
+MAP_A3	Strefa Yayang
+MAP_AG	Jungrang
+MAP_B1	Strefa Joan
+MAP_B2	Dolina Imji
+MAP_B3	Strefa Bokjung
+MAP_BATTLE_FIELD	Strefa Walki
+MAP_BAY	Nefrytowa Zatoka
+MAP_BAYBLACKSAND	Nefrytowa Zatoka
+MAP_BG	Waryong
+MAP_BOSS_AWAKEN_DAWNMIST	PB: Zaklêty Las
+MAP_BOSS_AWAKEN_FLAME	PB: Twierdza Czerwonego Smoka
+MAP_BOSS_AWAKEN_SKIPIA	PB: Grota Wygnañców
+MAP_BOSS_AWAKEN_SNOW	PB: Stra¿nica Nemere
+MAP_BOSS_CRACK_DAWNMIST	SZC: Zaklêty Las
+MAP_BOSS_CRACK_FLAME	SZC: Twierdza Czerwonego Smoka
+MAP_BOSS_CRACK_SKIPIA	SZC: Grota Wygnañców
+MAP_BOSS_CRACK_SNOW	SZC: Stra¿nica Nemere
+MAP_BOSS_LABYRINTH	P³askowy¿ Iluzji
+MAP_C1	Strefa Pyungmoo
+MAP_C2	Dolina Bangsan
+MAP_C3	Strefa Bakra
+MAP_CAPE	Przyl¹dek Smoczego Ognia
+MAP_CAPEDRAGONHEAD	Przyl¹dek Smoczego Ognia
+MAP_CG	Imha
+MAP_CZ_DUNGEON	Œwi¹tynia Zodiaku
+MAP_DAWN	Klif Gautama
+MAP_DAWNMISTWOOD	Klif Gautama
+MAP_DAWNMIST_DUNGEON_01	Zaklêty Las
+MAP_DEFENSE_WAVE	Obrona statku
+MAP_DEFENSE_WAVE_PORT	Port
+MAP_DESERT	Pustynia Yongbi
+MAP_DEVILCATACOMB	Diabelskie Katakumby
+MAP_DEVILTOWER1	Wie¿a Demonów
+MAP_DUEL	Arena Treningowa
+MAP_E	Kolonia
+MAP_EMPIREWAR01	Walka o Zamek
+MAP_EMPIREWAR02	Walka o Zamek
+MAP_EMPIREWAR03	Walka o Zamek
+MAP_FLAME	Doyyumhwan
+MAP_GUILD_01	Jungrang
+MAP_GUILD_02	Waryong
+MAP_GUILD_03	Imha
+MAP_GUILD_PVE	Pa³ac Króla Smoków
+MAP_HOLYPLACE_DESERT	Wojna Królestw - Pustynna Kraina
+MAP_HOLYPLACE_FLAME	Wojna Królestw - Ognista Ziemia
+MAP_HOLYPLACE_ICE	Wojna Królestw - Lodowa Ziemia
+MAP_MILGYO	Œwi¹tynia Hwang
+MAP_MILGYO_A	
+MAP_MINIBOSS_01	Niebieski loch – pz. 40-80
+MAP_MINIBOSS_02	Czerwony loch – od pz. 81
+MAP_MISTS_OF_ISLAND	Wyspa Mg³y
+MAP_MONKEY_DUNGEON	Hasun Dong
+MAP_MONKEY_DUNGEON2	Jungsun Dong
+MAP_MONKEY_DUNGEON3	Sangsun Dong
+MAP_MONKEY_DUNGEON_11	Hasun Dong
+MAP_MONKEY_DUNGEON_12	Hasun Dong
+MAP_MONKEY_DUNGEON_13	Hasun Dong
+MAP_MT_THUNDER	Gromiste Góry
+MAP_MT_TH_DUNGEON_01	Œwi¹tynia Ochao
+MAP_NUSLUCK	Kraina Gigantów
+MAP_NUSLUCK01	Kraina Gigantów
+MAP_N_DESERT_01	Pustynia Yongbi
+MAP_N_DESERT_02	
+MAP_N_FLAME_01	Ognista Ziemia
+MAP_N_FLAME_02	
+MAP_N_FLAME_DRAGON	Schronienie Meley
+MAP_N_FLAME_DUNGEON_01	Twierdza Czerwonego Smoka
+MAP_N_SNOWM_01	Góra Sohan
+MAP_N_SNOWM_02	
+MAP_N_SNOW_DUNGEON_01	Stra¿nica Nemere
+MAP_N_THREEWAY	Dolina Seungryong
+MAP_OXEVENT	Konkurs OX
+MAP_PATHWAY_DESERT_01	Wojna Królestw - Pustynna Kraina
+MAP_PATHWAY_DESERT_02	Wojna Królestw - Pustynna Kraina
+MAP_PATHWAY_DESERT_03	Wojna Królestw - Pustynna Kraina
+MAP_PATHWAY_FLAME_01	Wojna Królestw - Ognista Ziemia
+MAP_PATHWAY_FLAME_02	Wojna Królestw - Ognista Ziemia
+MAP_PATHWAY_FLAME_03	Wojna Królestw - Ognista Ziemia
+MAP_PATHWAY_ICE_01	Wojna Królestw - Lodowa Ziemia
+MAP_PATHWAY_ICE_02	Plac Zabaw
+MAP_PATHWAY_ICE_03	Wojna Królestw - Lodowa Ziemia
+MAP_SKELTOWER	Wie¿a Gumsan
+MAP_SKIPIA_DUNGEON_01	Grota Wygnañców
+MAP_SKIPIA_DUNGEON_011	
+MAP_SKIPIA_DUNGEON_012	
+MAP_SKIPIA_DUNGEON_013	
+MAP_SKIPIA_DUNGEON_02	Grota Wygnañców
+MAP_SKIPIA_DUNGEON_021	
+MAP_SKIPIA_DUNGEON_022	
+MAP_SKIPIA_DUNGEON_023	
+MAP_SKIPIA_DUNGEON_BOSS	Œwi¹tynia Smoka
+MAP_SKIPIA_DUNGEON_BOSS_1	Loch Paj¹ków 1
+MAP_SKIPIA_DUNGEON_BOSS_2	Loch Paj¹ków 2
+MAP_SKIPIA_DUNGEON_BOSS_3	Loch Paj¹ków 3
+MAP_SNOW	Góra Sohan
+MAP_SPIDER	Kuahlo Dong
+MAP_SPIDERDUNGEON	Loch Paj¹ków 1
+MAP_SPIDERDUNGEON_02	Loch Paj¹ków 2
+MAP_SPIDERDUNGEON_02_1	Loch Paj¹ków 2
+MAP_SPIDERDUNGEON_03	Loch Paj¹ków 3
+MAP_SUNGZI	Wojna Królestw
+MAP_SUNGZI_DESERT_01	Wojna Królestw - Pustynny Kraj
+MAP_SUNGZI_DESERT_HILL_01	Wojna Królestw - Pustynny Kraj
+MAP_SUNGZI_DESERT_HILL_02	Wojna Królestw - Pustynny Kraj
+MAP_SUNGZI_DESERT_HILL_03	Wojna Królestw - Pustynny Kraj
+MAP_SUNGZI_FLAME_HILL_01	Wojna Królestw - Ognista Ziemia
+MAP_SUNGZI_FLAME_HILL_02	Wojna Królestw - Ognista Ziemia
+MAP_SUNGZI_FLAME_HILL_03	Wojna Królestw - Ognista Ziemia
+MAP_SUNGZI_SNOW	Wojna Królestw - Lodowa Ziemia
+MAP_SUNGZI_SNOW_PASS01	Wojna Królestw - Lodowa Ziemia
+MAP_SUNGZI_SNOW_PASS02	Wojna Królestw - Lodowa Ziemia
+MAP_SUNGZI_SNOW_PASS03	Wojna Królestw - Lodowa Ziemia
+MAP_T1	Obszar Wojny Gildii
+MAP_T2	Obszar Wojny Gildii
+MAP_T3	Obszar Wojny Gildii
+MAP_T4	Obszar Wojny Gildii
+MAP_TEMPLE	Œwi¹tynia Hwang
+MAP_THUNDER	Gromiste Góry
+MAP_TREE	Lungsam
+MAP_TRENT	Las Duchów
+MAP_TRENT02	Czerwony Las
+MAP_TRENT02_A	Czerwony Las
+MAP_TRENT_A	
+MAP_WEDDING_01	Mapa Wesela
+MAP_WL	Wê¿owe Pole
+MAP_WL_01	Wê¿owe Pole
+MC_ACCUMULATION_COUNT	Zebrane karty potwora: %d
+MC_ALTER_TEXT	Poziom misji %d
+MC_CARD_FALL_SHORT	Za ma³o zarejestrowanych kart.
+MC_CARD_SHUFFLE	Czy chcesz przetestowaæ karty?
+MC_INIT_ITEM_FALL_SHORT	Potrzebujesz %d kart(y) resetu.
+MC_MISSION_FAIL_MSG	Brak aktywnych misji lub limit przekroczony.
+MC_MISSION_INIT	Czy chcesz zresetowaæ misjê do poziomu 1?
+MC_MISSION_NO_CLEAR	Najpierw musisz zakoñczyæ misjê.
+MC_MOTION_BUTTON_OVER_MSG	Opcja ta jest dostêpna dopiero od 2. gwiazdy.
+MC_POLY_BUTTON_OVER_MSG	Opcja ta jest dostêpna dopiero od 3. gwiazdy.
+MC_POLY_FAIL	Nie mo¿esz siê transformowaæ.
+MC_POLY_QUESTION	Czy chcesz siê transformowaæ w tego potwora?
+MC_PROMOTION_MAX	Nie mo¿esz ju¿ przeprowadziæ ulepszenia.
+MC_PROMOTION_QUESTION	Chcesz zwiêkszyæ poziom?
+MC_QUESTION_BUTTON_DESC1	Reset jest mo¿liwy tylko 6 razy w ci¹gu 24 godzin.
+MC_QUESTION_BUTTON_DESC2	Ka¿dy kolejny reset wymaga wiêcej kart resetu.
+MC_QUESTION_BUTTON_DESC3	Kliknij tutaj, by wyœwietli³ siê pozosta³y czas regeneracji.
+MC_REWARD_FAIL	Masz za ma³o miejsca w ekwipunku.
+MC_REWARD_MISSION	Czy chcesz teraz otrzymaæ swoj¹ kartê potwora?
+MC_SHUFFLE_NO_ITEM	Nie masz karty resetu.
+MC_TIME	Czas regeneracji: %s
+MC_TRADE_QUESTION	Odjête karty: %d Czy chcesz kontynuowaæ?
+MC_USE_ITEM_FAIL	Nie mo¿na dodaæ tej karty.
+MC_USE_ITEM_QUESTION	Czy chcesz dodaæ tê kartê potwora?
+MC_WARP_BUTTON_OVER_MSG	Opcja ta jest dostêpna dopiero od 4. gwiazdy.
+MC_WARP_FAIL	Nie mo¿esz ju¿ siê teleportowaæ.
+MC_WARP_LIMIT_LEVEL	Aktualnie masz za niski poziom, by móc siê teleportowaæ.
+MC_WARP_QUESTION	Czy chcesz siê teleportowaæ to obszaru tego potwora?
+MD_POPUP_MSG_1	Mo¿esz wejœæ tylko ze Œwi¹tyni Zodiaku.
+MD_POPUP_MSG_2	Stra¿nicy Zodiaku musz¹ zregenerowaæ swoj¹ moc.\nDaj im trochê czasu.
+MD_SYSTEM_MSG_1	Nie jesteœ zombie. Gdy jesteœ martwy, nie mo¿esz walczyæ.
+MEDAL_OF_HONOR	Medal Mêstwa
+MEDAL_OF_HONOR_SYSTEM_PICK	Otrzymany przedmiot: Medal Mêstwa x %d
+MESSENGER_ADD_BLOCK_FRIEND	Dodaj
+MESSENGER_ADD_FRIEND	Dodaj Przyjaciela
+MESSENGER_BLOCK	Zablokowany
+MESSENGER_DO_YOU_ACCEPT_ADD_FRIEND_1	%s doda³ Ciê jako przyjaciela.
+MESSENGER_DO_YOU_ACCEPT_ADD_FRIEND_2	Zaakceptowaæ?
+MESSENGER_DO_YOU_DELETE	Usun¹æ?
+MESSENGER_DO_YOU_DELETE_PHONE_NUMBER	Czy chcesz usun¹æ numer telefonu komórkowego?
+MESSENGER_DO_YOU_MOVE	Czy chcesz kontynuowaæ?
+MESSENGER_EMPTY_LIST	Pusto
+MESSENGER_FAMILY	Rodzina
+MESSENGER_FRIEND	Znajomi
+MESSENGER_GUILD	Gildia
+MESSENGER_INPUT_MOBILE_AUTHORITY_DESCRIPTION	WprowadŸ numer potwierdzaj¹cy, który zosta³ wys³any na twój telefon komórkowy.
+MESSENGER_INPUT_MOBILE_AUTHORITY_TITLE	WprowadŸ numer potwierdzaj¹cy
+MESSENGER_INPUT_MOBILE_PHONE_NUMBER_1	WprowadŸ numer telefonu komórkowego do wysy³ania wiadomoœci tekstowych.
+MESSENGER_INPUT_MOBILE_PHONE_NUMBER_2	Czy chcesz teraz wprowadziæ numer?
+MESSENGER_INPUT_MOBILE_PHONE_NUMBER_TITLE	WprowadŸ numer telefonu komórkowego.
+MESSENGER_SEND_MOBILE_MESSAGE_TITLE	Wyœlij wiadomoœæ.
+METIN_TEST	
+MINIGAMEUI_CALENDAR	Kalendarz eventowy
+MINIGAME_FISH_EVENT_ADD_ACCEPT	Chcesz to dodaæ?
+MINIGAME_FISH_EVENT_DROP_ACCEPT	Czy na pewno chcesz upuœciæ ten przedmiot?
+MINIGAME_FISH_EVENT_REWARD_MSG	Otrzymujesz: %s.
+MINIGAME_FISH_EVENT_USE_ACCEPT	Chcesz to u¿yæ?
+MINIMAP	Otwórz Mini Mapê
+MINIMAP_CANNOT_SEE	Nie mo¿na zobaczyæ Mini Mapy.
+MINIMAP_CAN_NOT_SHOW_AREAMAP	Podgl¹d Mapy nie mo¿e zostaæ ukazany.
+MINIMAP_DEC_SCALE	Oddal
+MINIMAP_INC_SCALE	Przybli¿
+MINIMAP_OBSERVER_COUNT	%d obserwatorów
+MINIMAP_OPEN_INGAMEEVENT	Eventy
+MINIMAP_SHOW_AREAMAP	Otwórz Du¿¹ Mapê
+MINI_GAME_BNW_DONATE_QUESTION1	Czy chcesz wp³aciæ?
+MINI_GAME_BNW_DONATE_QUESTION2	Jedna wp³ata zu¿ywa 15 monet proroka.
+MINI_GAME_BNW_FONT	Arial:15
+MINI_GAME_BNW_GAME_GIVEUP_MSG1	Czy na pewno chcesz przerwaæ grê?
+MINI_GAME_BNW_GAME_GIVEUP_MSG2	Pamiêtaj o tym, gdy wygrasz, otrzymasz nagrody.
+MINI_GAME_BNW_GAME_RESULT_DRAW	Remis! Iloœæ otrzymanych monet proroka: %d
+MINI_GAME_BNW_GAME_RESULT_LOSE	Pora¿ka! Iloœæ otrzymanych monet proroka: %d
+MINI_GAME_BNW_GAME_RESULT_SCORE	Wynik koñcowy: %d
+MINI_GAME_BNW_GAME_RESULT_WIN	Zwyciêstwo! Iloœæ otrzymanych monet proroka: %d
+MINI_GAME_BNW_NOT_ENOUGH_INVEN	Masz za ma³o miejsca w ekwipunku.
+MINI_GAME_BNW_NOT_ENOUGH_ITEM	Potrzebujesz do grania taliê kart tarota.
+MINI_GAME_BNW_NOT_ENOUGH_YANG	Za ma³o Yang, by rozpocz¹æ grê.
+MINI_GAME_BNW_RESULT_DRAW1	Twoja kart jest tak samo silna.
+MINI_GAME_BNW_RESULT_DRAW2	Remis!
+MINI_GAME_BNW_RESULT_LOSE1	Twoja karta jest s³absza.
+MINI_GAME_BNW_RESULT_LOSE2	Pora¿ka!
+MINI_GAME_BNW_RESULT_WIN1	Twoja karta jest silniejsza.
+MINI_GAME_BNW_RESULT_WIN2	Zwyciêstwo!
+MINI_GAME_BNW_START_QUESTION	Aby zagraæ potrzebujesz 30 000 Yang i taliê kart tarota. Czy chcesz wzi¹æ udzia³ w Bitwie Proroków?
+MINI_GAME_CATCHKING_CHALLENGE_TOOLTIP1	Jeœli u¿yjesz kilku przedmiotów: %s, otrzymasz w nagrodê liczbê skrzyñ odpowiadaj¹c¹ liczbie u¿ytych talii.
+MINI_GAME_CATCHKING_CHALLENGE_TOOLTIP2	Maksymalna liczba talii królewskich, których mo¿na u¿yæ: %d.
+MINI_GAME_CATCHKING_HELP_MSG1	Wielka szkoda! Twoja karta jest ni¿sza.\nNie otrzymujesz punktów. Wybierz now¹ kartê ze swojej talii.
+MINI_GAME_CATCHKING_HELP_MSG2	Dobra robota! Karty maj¹ tê sam¹ wartoœæ.\n To koniec twojej kolejki. Wybierz now¹ kartê ze swojej talii.
+MINI_GAME_CATCHKING_HELP_MSG3	Znakomicie! Twoja karta jest wy¿sza.\nOdkryj kolejn¹ kartê.
+MINI_GAME_CATCHKING_HELP_MSG4	Karta [5] le¿a³a w zasiêgu twojej odkrytej karty.\nNiestety nie otrzymujesz ¿adnych punktów. Wybierz teraz swojego króla [K].
+MINI_GAME_CATCHKING_POPUP_CATCH_FAIL	Król uciek³! Gra dobieg³a koñca. \nJe¿eli masz co najmniej 10 punktów, mo¿esz odebraæ swoj¹ wygran¹.
+MINI_GAME_CATCHKING_POPUP_REWARD_FAIL	Nie mo¿esz odebraæ wygranej.
+MINI_GAME_CATCHKING_SEARCH_NUMBER5	W pobli¿u jest [5].
+MINI_GAME_CATCHKING_START_QUESTION	Za tê rundê zap³acisz: %d Yang oraz %s: %d szt.\nCzy chcesz teraz zagraæ?
+MINI_GAME_CATCHKING_TOOLTIP_CARD1	Mo¿e schwytaæ nastêpuj¹ce karty: [1]
+MINI_GAME_CATCHKING_TOOLTIP_CARD2	Mo¿e schwytaæ nastêpuj¹ce karty: [1], [2]
+MINI_GAME_CATCHKING_TOOLTIP_CARD3	Mo¿e schwytaæ nastêpuj¹ce karty: [1], [2], [3]
+MINI_GAME_CATCHKING_TOOLTIP_CARD4	Mo¿e schwytaæ nastêpuj¹ce karty: [1], [2], [3], [4]
+MINI_GAME_CATCHKING_TOOLTIP_CARD5	Mo¿e schwytaæ nastêpuj¹ce karty: [1], [2], [3], [4], [5]\nJe¿eli inna [5] bêdzie graniczyæ z twoj¹ odkryt¹ kart¹,\n rozdanie zakoñczy siê i nie otrzymasz ¿adnych punktów.
+MINI_GAME_CATCHKING_TOOLTIP_CARD6	Mo¿e schwytaæ nastêpuj¹ce karty: [K]
+MINI_GAME_CATCHKING_TOOLTIP_SCORE1	%s: 550 lub wiêcej
+MINI_GAME_CATCHKING_TOOLTIP_SCORE2	%s: 400 do 549
+MINI_GAME_CATCHKING_TOOLTIP_SCORE3	%s: 10 do 399
+MINI_GAME_CATCHKING_TOOLTIP_SCORE4	Jeœli odkryjesz wszystkie karty w rzêdzie, otrzymasz 10 dodatkowych punktów.
+MINI_GAME_GIVEUP_QUESTION	Na pewno chcesz przerwaæ grê? Nie otrzymasz wtedy nagrody.
+MINI_GAME_NOTICE_1	Kliknij na "Rzuæ", by ustaliæ, kto zacznie.
+MINI_GAME_NOTICE_10	Ha! Uda³o ci siê zbiæ komputer!
+MINI_GAME_NOTICE_11	Co za pech! Komputer ciê zbi³.
+MINI_GAME_NOTICE_12	Uda³o ci siê wyrzuciæ Yut lub Mo i otrzymujesz dodatkowy ruch.
+MINI_GAME_NOTICE_13	Gra dobieg³a koñca. Odbierz swoj¹ nagrodê.
+MINI_GAME_NOTICE_2	Rzuæ pa³eczkami Yut.
+MINI_GAME_NOTICE_3	Komputer rzuca pa³eczkami Yut, by ustaliæ, kto zacznie grê.
+MINI_GAME_NOTICE_4	Komputer osi¹gn¹³ ni¿szy lub taki sam wynik i mo¿e zaczynaæ.
+MINI_GAME_NOTICE_5	Uda³o ci siê osi¹gn¹æ ni¿szy wynik, wiêc mo¿esz zaczynaæ.
+MINI_GAME_NOTICE_6	Twój rzut: %s. Posuñ siê o nastêpuj¹c¹ liczbê pól: %d.
+MINI_GAME_NOTICE_7	Twój rzut: %s. Musisz cofn¹æ siê o 1 pole.
+MINI_GAME_NOTICE_8	Rzut: %s
+MINI_GAME_NOTICE_9	Trwa kolejka komputera.
+MINI_GAME_RUMI_DISCARD_QUESTION	Na pewno chcesz wyrzuciæ tê kartê?
+MINI_GAME_RUMI_EXIT_QUESTION	Chcesz zakoñczyæ swoj¹ rundê gry i otrzymaæ wygran¹?\nTwoje punkty i pozosta³e karty zostan¹ zresetowane.
+MINI_GAME_RUMI_START_QUESTION	Aby zagraæ, musisz uiœciæ op³atê w wysokoœci %d Yang. Ponadto potrzebujesz %d x zestaw kart.\nChcesz zacz¹æ grê?
+MINI_GAME_YUTNORI_COM_WIN	Czasami siê przegrywa, a czasami wygrywaj¹ inni.
+MINI_GAME_YUTNORI_PC_WIN	I am the czempion!
+MINI_GAME_YUTNORI_PC_WIN_SCORE	Punktacja: %d
+MINI_GAME_YUTNORI_RETHROW_BUTTON	Rzuæ
+MINI_GAME_YUTNORI_RETHROW_POPUP	Ale fart! Mo¿esz rzuciæ jeszcze raz.
+MINI_GAME_YUTNORI_SCORE_FONT	Tahoma:24b
+MINI_GAME_YUTNORI_START_QUESTION	Aby zagraæ w Yutnori, potrzebujesz %d Yang i %d planszê do Yutnori. \n Chcesz zagraæ teraz?
+MINUTE	m
+MISTS_ISLAND_BUFF_MSG_01	Energia +2
+MISTS_ISLAND_BUFF_MSG_02	Szanse na drop przedmiotu +10%
+MISTS_ISLAND_BUFF_MSG_03	Si³a, inteligencja, witalnoœæ, zrêcznoœæ +3
+MISTS_ISLAND_BUFF_MSG_04	Szansa na drop Yang +10%
+MISTS_ISLAND_BUFF_MSG_05	Bonus kostiumu zwiêkszony o 3%
+MISTS_ISLAND_INFO_01	Masz za niski poziom.
+MISTS_ISLAND_INFO_02	Za ma³o Yang.
+MISTS_ISLAND_INFO_03	Obecnie nie odbywa siê ¿adna bitwa.
+MISTS_ISLAND_MSG_01	%s zosta³ zniszczony przez %s!
+MISTS_ISLAND_MSG_02	%s podbi³ %s!
+MISTS_ISLAND_MSG_03	%s zaj¹³ %s!
+MISTS_ISLAND_MSG_04	%s zaatakowa³ %s!
+MISTS_ISLAND_MSG_05	%s wzmocni³a %s do poziomu %d!
+MISTS_ISLAND_MSG_06	%s pojawi³ siê na bolu bitwy!
+MISTS_ISLAND_QUESTION_01	Czy chcesz opuœciæ Bitwê Piêciu Relikwiarzy?
+MISTS_ISLAND_QUESTION_02	Czy chcesz siê teleportowaæ do niedawno zaatakowanego relikwiarza? \n Koszt: %s Yang
+MISTS_ISLAND_TOOLTIP_01	[%s]
+MISTS_ISLAND_TOOLTIP_02	Zajmowane królestwo: %s
+MISTS_ISLAND_TOOLTIP_03	Poziom ulepszenia: +%d
+MISTS_ISLAND_TOOLTIP_04	Buff zajêcia: %s
+MISTS_ISLAND_TOOLTIP_05	Podbijanie relikwiarzy
+MISTS_ISLAND_TOOLTIP_06	1. Aby przej¹æ relikwiarz, nale¿y go najpierw zniszczyæ.
+MISTS_ISLAND_TOOLTIP_07	2. Królestwo, które po 1 min. stoczy³o najwiêcej walk w pobli¿u, podbija relikwiarz.
+MISTS_ISLAND_TOOLTIP_08	3. Po 3 min. pojawia siê relikwiarz w kolorze królestwa, które go podbi³o.
+MISTS_ISLAND_TOOLTIP_09	4. Im d³u¿ej relikwiarz jest pod kontrol¹ królestwa, tym trudniej go zniszczyæ.
+MONETARY_UNIT0	Yang
+MONETARY_UNIT1	Dziesiêæ Tysiêcy
+MONETARY_UNIT2	Sto Miliardów
+MONEY_INPUT_DIALOG_SELLPRICE	Cena sprzeda¿y:
+MOVE_CHANNEL_99	CH0
+MOVE_CHANNEL_CANCEL	Anuluj
+MOVE_CHANNEL_NOTICE	Jesteœ po³¹czony z kana³em %d.
+MOVE_CHANNEL_NOT_MOVE	Nie mo¿esz zmieniæ swojego kana³u.
+MOVE_CHANNEL_SELECT	OK
+MOVE_CHANNEL_TITLE	Wybór kana³u
+MOVE_ITEM_FAILURE_PRIVATE_SHOP	Nie mo¿esz przesuwaæ przedmiotów, jeœli masz otwarty prywatny sklep.
+MUSIC_EMPTY_MUSIC_LIST	Brak muzyki w tle.
+MUSIC_METIN2_DEFAULT_THEMA	Standardowa muzyka Metin2
+MUSIC_NOT_SELECT_MUSIC	Plik z muzyk¹ nie zosta³ wybrany.
+NEEFD_REST	Musisz najpierw odpocz¹æ.
+NOT_YET_SUPPORT	Nie jest obs³ugiwany
+OPEN_THE_SPECIAL_ACTION_KIT	%s dodano do emocji.
+OPTION_PVPMODE_CANNOT_SET_GUILD_MODE	Aby aktywowaæ ten tryb musisz nale¿eæ do jakiejœ Gildii.
+OPTION_PVPMODE_NOT_SUPPORT	Nie mo¿esz wybraæ tej konfiguracji w Trybie PvP.
+OPTION_PVPMODE_PROTECT	Musisz mieæ co najmniej %d poziom, aby móc zmieniæ tryb PvP.
+PARTY_ANSWER_TIMEOVER	Zaproszenie zosta³o odrzucone.
+PARTY_BONUS_ATTACKER	Wartoœæ Ataku: +%d	SA
+PARTY_BONUS_BERSERKER	Szybkoœæ Ataku: +%d	SA
+PARTY_BONUS_BUFFER	Czas Trwania: +%d	SA
+PARTY_BONUS_DEFENDER	Obrona: +%d%%	SA
+PARTY_BONUS_EXP	Bonus DOŒ: %d%%	SA
+PARTY_BONUS_SKILL_MASTER	Max PE: +%d%%	SA
+PARTY_BONUS_TANKER	Max P¯: +%d	SA
+PARTY_BREAK_UP	Usuñ Grupê
+PARTY_DO_YOU_ACCEPT	chce do³¹czyæ do grupy.
+PARTY_DO_YOU_JOIN	zaprasza Ciê do swojej grupy. Czy chcesz przyj¹æ zaproszenie?
+PARTY_EXP_DISTRIBUTION_MODE	Podzia³ DOŒ
+PARTY_EXP_DISTRIBUTION_MODE_LEVEL	zale¿y od poziomu
+PARTY_EXP_DISTRIBUTION_MODE_LEVEL_TOOLTIP	Cz³onkowie grupy o wy¿szym poziomie otrzymuj¹ wiêcej PD.
+PARTY_EXP_DISTRIBUTION_MODE_PARITY	równo
+PARTY_EXP_DISTRIBUTION_MODE_PARITY_TOOLTIP	Wszyscy otrzymuj¹ tak¹ sam¹ iloœæ PD.
+PARTY_HEAL_ALL_MEMBER	Odnów wszystko.
+PARTY_INCREASE_AREA_150	Zasiêg grupy zwiêkszony o wspó³czynnik 1,5.	SNA
+PARTY_INCREASE_AREA_200	Zasiêg grupy zwiêkszony o wspó³czynnik 2.	SNA
+PARTY_LEAVE	Opuœæ grupê
+PARTY_LONGTIME_BONUS_EXP	Bonus DOŒ za d³ug¹ grê grupow¹: +%d%%	SA
+PARTY_MATCH_CANCEL	Wyszukiwanie grupy do [%s] zosta³a anulowana.
+PARTY_MATCH_FAIL_FULL_MEMBER	Twoja grupa nie mo¿e przyj¹æ wiêcej cz³onków.
+PARTY_MATCH_FAIL_IMPOSSIBLE_MAP	Nie mo¿esz zarejestrowaæ siê do tego lochu.
+PARTY_MATCH_FAIL_LEVEL	Masz za niski poziom.
+PARTY_MATCH_FAIL_MEMBER_NOT_CONDITION	Cz³onek %s nie spe³nia wymagañ.
+PARTY_MATCH_FAIL_NONE_MAP_INDEX	Wybierz najpierw loch.
+PARTY_MATCH_FAIL_NOT_LEADER	Tylko lider grupy mo¿e przeprowadziæ rejestracjê.
+PARTY_MATCH_FAIL_NO_ITEM	Masz za ma³o %s.
+PARTY_MATCH_SEARCHING	Szukaj
+PARTY_MATCH_START	Twoja grupa zosta³a pomyœlnie zarejestrowana do lochu: [%s]!
+PARTY_MEMBER_OFFLINE	[Offline]
+PARTY_RECALL_MEMBER	Wezwij cz³onka grupy.
+PARTY_REGEN_BONUS	Bonus za P¯- + PE regeneracja: +%d%%	SA
+PARTY_REQUEST_DENIED	Odrzucono zaproszenie.
+PARTY_RK_CATEGORY_CZ_CHICKEN	Ranking Stra¿nika Yu
+PARTY_RK_CATEGORY_CZ_COW	Ranking Stra¿nika Chou
+PARTY_RK_CATEGORY_CZ_DOG	Ranking Stra¿nika Xu
+PARTY_RK_CATEGORY_CZ_DRAGON	Ranking Stra¿nika Chen
+PARTY_RK_CATEGORY_CZ_HORSE	Ranking Stra¿nika Wu
+PARTY_RK_CATEGORY_CZ_MONKEY	Ranking Stra¿nika Shen
+PARTY_RK_CATEGORY_CZ_MOUSE	Ranking Stra¿nika Zi
+PARTY_RK_CATEGORY_CZ_PIG	Ranking Stra¿nika Hai
+PARTY_RK_CATEGORY_CZ_RABBIT	Ranking Stra¿niczki Mao
+PARTY_RK_CATEGORY_CZ_SHEEP	Ranking Stra¿nika Wei
+PARTY_RK_CATEGORY_CZ_SNAKE	Ranking Stra¿niczki Si
+PARTY_RK_CATEGORY_CZ_TIGER	Ranking Stra¿nika Yin
+PARTY_SET_ATTACKER	Ustanów jako Atakuj¹cego.
+PARTY_SET_BERSERKER	Ustanów jako Berserker.
+PARTY_SET_BUFFER	Ustanów jako Blokuj¹cego.
+PARTY_SET_DEFENDER	Ustanów jako Obroñcê.
+PARTY_SET_NORMAL	Wycofaj bonus.
+PARTY_SET_SKILL_MASTER	Ustanów jako Mistrza Umiejêtnoœci.
+PARTY_SET_TANKER	Ustanów jako Walcz¹cego W Zwarciu.
+PARTY_SKILL_ATTACKER	Podstawowa Wartoœæ Ataku +%.0f
+PARTY_SKILL_BERSERKER	Szybkoœæ Ataku +%.0f
+PARTY_SKILL_BUFFER	Czas trwania +%.0f
+PARTY_SKILL_DEFENDER	Obrona jako obroñca +%.0f
+PARTY_SKILL_HP_REGEN	Regeneracja P¯ +%.0f%%
+PARTY_SKILL_PARTY_AREA	Zasiêg Grupy +%d%%
+PARTY_SKILL_SKILL_MASTER	Max. PE jako Mistrza Umiejêtnoœci +%.0f
+PARTY_SKILL_TANKER	Max P¯ +%.0f
+PARTY_SKILL_WARP	Mo¿liwe wezwanie cz³onków grupy.
+PASSWORD_TITLE	Has³o do magazynu
+PET_ATTR_CHANGE_DIALOG_TEXT	Czy chcesz teraz zmieniæ atrybuty swojego zwierzaka?\n Przedmiot "Zaczaruj zwierzaka" zostanie przy tym zu¿yty.\n Proces mo¿e siê nie udaæ.
+PET_ATTR_CHANGE_USE	Nie mo¿na przeprowadziæ tej akcji, podczas zmiany atrybutów zwierzaka.
+PET_ATTR_DETERMINE_TYPE1	Typ zwierzaka 1: niezdara. Niezbyt silny.\nZ czasem mo¿esz ulepszaæ jego umiejêtnoœci.
+PET_ATTR_DETERMINE_TYPE2	Typ zwierzaka 2: ciekawski. Niezbyt silny.\nWierny towarzysz, którego umiejêtnoœci zwiêkszaj¹ siê z czasem.
+PET_ATTR_DETERMINE_TYPE3	Typ zwierzaka 3: pe³en werwy. Przeciêtnie silny.\nJednak z czasem mo¿esz ulepszaæ jego umiejêtnoœci.
+PET_ATTR_DETERMINE_TYPE4	Typ zwierzaka 4: odwa¿ny. Przeciêtnie silny.\nWierny towarzysz, którego umiejêtnoœci jeszcze zwiêksz¹ siê z czasem.
+PET_ATTR_DETERMINE_TYPE5	Typ zwierzaka 5: szalenie odwa¿ny. Silny.\nZ czasem mo¿esz ulepszaæ jeszcze bardziej jego umiejêtnoœci.
+PET_ATTR_DETERMINE_TYPE6	Typ zwierzaka 6: legendarny. Silny.\nWierny towarzysz, którego umiejêtnoœci nawet z czasem siê ulepsz¹.
+PET_ATTR_DETERMINE_TYPE7	Typ zwierzaka 7: mityczny. Bardzo silny.\nZ czasem rozwinie swój ca³y potencja³.
+PET_ATTR_DETERMINE_TYPE8	Typ zwierzaka 8: pryzmatyczny. Ekstremalnie silny.\nWierny towarzysz, na którym zawsze mo¿esz polegaæ.
+PET_BAG_DESC	%s
+PET_CANNOT_FEED_CUBEOPEN	Nie mo¿esz karmiæ swojego zwierzaka przy otwartym okienku uszlachetnienia.
+PET_CAN_NOT_ATTRCHANGE_BECUASE_LIFE_TIME_END	Nie mo¿esz zmieniæ atrybutów zmar³ego zwierzaka.
+PET_CAN_NOT_EGG_ITEM_USE	Nie mo¿esz otworzyæ inkubatora, gdy handlujesz lub masz otwarty magazyn lub prywatny sklep.
+PET_CAN_NOT_FEED_SPLIT_ITEM	Nie mo¿esz wstawiæ w to okienko podzielonego przedmiotu.
+PET_CAN_NOT_FEED_TYPE	W taki sposób nie mo¿esz karmiæ zwierzaka. Spróbuj inn¹ akcjê.
+PET_CAN_NOT_OPEN_EVOL_BUTTON	Aby wytrenowaæ zwierzaka na nastêpny etap rozwoju, musi osi¹gn¹æ poziom %d.
+PET_CAN_NOT_OPEN_EVOL_BUTTON_EXP_LACK	Aby wytrenowaæ zwierzaka na nastêpny etap rozwoju, zwierzak ten musi posiadaæ 100% doœwiadczenia.
+PET_CAN_NOT_OPEN_EVOL_BUTTON_LEVEL_MAX	Twój zwierzak osi¹gn¹³ ju¿ najwy¿szy etap rozwoju.
+PET_CAN_NOT_OPEN_SHOP_BECAUSE_SUMMON	Nie mo¿esz otworzyæ prywatnego sklepu, gdy przywo³asz swojego zwierzaka.
+PET_CAN_NOT_OPEN_SPECIAL_EVOL_BUTTON	Aby wytrenowaæ zwierzaka na nastêpny etap rozwoju, wiek zwierzaka musi wynosiæ min. %d dni.
+PET_CAN_NOT_SUMMON_BECAUSE_LIFE_TIME_END	Nie mo¿esz przywo³aæ swojego zwierzaka, jeœli jego czas up³yn¹³.
+PET_CAN_NOT_USE_BAG	Nie mo¿esz u¿yæ klatki transportowej, poniewa¿ czas trwania twojego zwierzaka dobieg³ ju¿ koñca.
+PET_EMPTY_SKILL_SLOT_USE_ITEM	Zwierzak nie posiada umiejêtnoœci do resetu.
+PET_HATCHING_ACCEPT	Chcesz nazwaæ swojego zwierzaka "%s"?
+PET_HATCHING_MONEY	Cena: %s
+PET_HATCHING_WINDOW_OPEN_CAN_NOT_USE	Nie mo¿esz dokonywaæ interakcji, gdy inkubator jest otwarty.
+PET_INFORMATION_STAGE1	M³ody
+PET_INFORMATION_STAGE2	Dziki
+PET_INFORMATION_STAGE3	Dzielny
+PET_INFORMATION_STAGE4	Heroiczny
+PET_INFO_EXP	Aktualne doœwiadczenie:
+PET_INFO_ITEM_EXP	Przedmiot EXP obecnie
+PET_INFO_NEXT_EXP	Pozosta³e doœwiadczenie:
+PET_INFO_NEXT_ITEM_EXP	Przedmiot EXP pozosta³o
+PET_MSG_NOT_ENOUGH_MONEY	Nie masz wystarczaj¹cej iloœci Yang.
+PET_NAME_CHANGE_ACCEPT	Czy chcesz zmieniæ nazwê swojego zwierzaka na "%s"?
+PET_NAME_MIN	Podana nazwa jest za krótka.
+PET_REVIVE_FAIL_EMPTY_PET_SLOT	Nie ma zwierzaka do wskrzeszenia.
+PET_REVIVE_FAIL_NOT_ENOUGHT_MATERIAL	Nie masz wystarczaj¹co materia³ów.
+PET_REVIVE_UI_MATERIAL_COUNT	%d/%d
+PET_SKILL_DELETE_QUESTION_DLG_MSG	Umiejêtnoœci s¹ teraz dostêpne.
+PET_SKILL_DELETE_QUESTION_DLG_MSG1	Reset umiejêtnoœci twojego zwierzaka jest nieodwracalny.
+PET_SKILL_DELETE_QUESTION_DLG_MSG2	Chcesz kontynuowaæ?
+PET_SKILL_LEARN_FAIL_CONDITIONS	Twój zwierzak jest za m³ody lub ma za niski poziom. Tylko bohaterskie zwierzaki mog¹ nabywaæ umiejêtnoœci.
+PET_SKILL_LEARN_QUESTION_DLG_MSG	Chcesz rozpocz¹æ bohaterski trening ze zwierzakiem "%s"?
+PET_SKILL_TOOLTIP_DURATION	Czas trwania: %d sekund
+PET_SKILL_TOOLTIP_FEATHER	Zwierzak aktywuje bezszelestny chód z %d%% szans¹ na %.1f sek.\n Atak %d - %d	SAA
+PET_SKILL_TOOLTIP_HEAL	Gdy twoje P¯ spadn¹ poni¿ej 20%%, otrzymujesz \n %d%% szansy na podwy¿szenie swoich P¯ o %d.	SAA
+PET_SKILL_TOOLTIP_INVINVIBILITY	Twoja postaæ posiada %d%% szansy na nieœmiertelnoœæ,\n gdy Twoje P¯ spadn¹ poni¿ej 10%%. \n Czas trwania efektu: %.1f sek.	SAA
+PET_SKILL_TOOLTIP_REMOVAL	Natychmiastowo usuwa takie efekty jak trucizna, spowolnienie \n lub krwawienie z prawdopodobieñstwem %d%%, jeœli dotycz¹ one twojej postaci.	SAN
+PET_SKILL_UPGRADE_QUESTION_DLG_MSG1	Bohaterski trening - nastêpny poziom?
+PET_SKILL_UPGRADE_QUESTION_DLG_MSG2	Koszty: %s
+PET_TOOLTIP_COSTUME_BONUS	
+PET_TOOLTIP_DEF	Obrona
+PET_TOOLTIP_HP	P¯
+PET_TOOLTIP_LEVEL	Poziom
+PET_TOOLTIP_LIFETIME_OVER	Up³yn¹³
+PET_TOOLTIP_SKILL_BONUS_VALUE	w bohaterskim treningu
+PET_TOOLTIP_SKILL_CUR_LEVEL	Poziom: %d
+PET_TOOLTIP_SKILL_NEXT_LEVEL	Nastêpny poziom: %d (maks. %d)
+PET_TOOLTIP_SP	PE
+PET_TOOLTIP_TRADABLE	Zdatne do handlu
+PET_TOOLTUP_SKILL	%s (poziom %d)
+PICK_ITEM_TITLE	Numer Przedmiotu
+PICK_MONEY_TITLE	Kwota
+PRIVATESHOPSEARCH_ABLITY_POTION	Rosa
+PRIVATESHOPSEARCH_ACCESSORY_SOCKET	Delikatne sukno
+PRIVATESHOPSEARCH_ARMOR	Wyposa¿enie
+PRIVATESHOPSEARCH_ARROW	Strza³y
+PRIVATESHOPSEARCH_BELL	Dzwony
+PRIVATESHOPSEARCH_BELT	Pasy
+PRIVATESHOPSEARCH_BLEND	Mikstury
+PRIVATESHOPSEARCH_BLOOD_PEARL	Krwawa Per³a
+PRIVATESHOPSEARCH_BLUE_PEARL	Niebieska Per³a
+PRIVATESHOPSEARCH_BODY	Zbroje
+PRIVATESHOPSEARCH_BOW	£uki
+PRIVATESHOPSEARCH_BUYTIME	Chcesz kupiæ wybrany przedmiot?
+PRIVATESHOPSEARCH_CLAW	Szpony
+PRIVATESHOPSEARCH_CLEAR_POTION	Eliksiry
+PRIVATESHOPSEARCH_COSTUME	Kostiumy
+PRIVATESHOPSEARCH_COSTUMEBODY	Kostium
+PRIVATESHOPSEARCH_COSTUMEHAIR	Fryzura
+PRIVATESHOPSEARCH_COSTUME_ACCE	Szarfy
+PRIVATESHOPSEARCH_COSTUME_MOUNT	Wierzchowiec
+PRIVATESHOPSEARCH_CRYSTAL	Kryszta³
+PRIVATESHOPSEARCH_DAGGER	Sztylety
+PRIVATESHOPSEARCH_DEAD	martwe
+PRIVATESHOPSEARCH_DETACHMENT	Ksiêga obróbki kamienia
+PRIVATESHOPSEARCH_DIAMOND	Diament
+PRIVATESHOPSEARCH_DS	Alchemia smoczych kamieni
+PRIVATESHOPSEARCH_DS_BLACK	Onyks
+PRIVATESHOPSEARCH_DS_BLUE	Szafir
+PRIVATESHOPSEARCH_DS_GREEN	Jadeit
+PRIVATESHOPSEARCH_DS_RED	Rubin
+PRIVATESHOPSEARCH_DS_WHITE	Diament
+PRIVATESHOPSEARCH_DS_YELLOW	Granat
+PRIVATESHOPSEARCH_EAR	Kolczyki
+PRIVATESHOPSEARCH_FAN	Wachlarze
+PRIVATESHOPSEARCH_FISH	Ryby
+PRIVATESHOPSEARCH_FOOTS	Buty
+PRIVATESHOPSEARCH_GEM	Klejnoty
+PRIVATESHOPSEARCH_GIFTBOX	Pud³a z prezentami
+PRIVATESHOPSEARCH_HEAD	He³my
+PRIVATESHOPSEARCH_LIVE	¿ywe
+PRIVATESHOPSEARCH_MATERIAL	Materia³y
+PRIVATESHOPSEARCH_METIN	Kamienie Duszy
+PRIVATESHOPSEARCH_NECK	Naszyjniki
+PRIVATESHOPSEARCH_NEED_ITEM_BUY	Nie mo¿esz kupiæ bez odpowiedniego przedmiotu.
+PRIVATESHOPSEARCH_NEED_ITEM_FIND	Nie mo¿esz szukaæ bez odpowiedniego przedmiotu.
+PRIVATESHOPSEARCH_NODELAY_POTION	Przedmioty P¯
+PRIVATESHOPSEARCH_ORE	Ruda
+PRIVATESHOPSEARCH_PET	System zwierzaków
+PRIVATESHOPSEARCH_PETAGG	Jaja zwierzaków
+PRIVATESHOPSEARCH_PETSKILLBOOK	Ksiêgi Zwierza
+PRIVATESHOPSEARCH_PICK	Kilofy
+PRIVATESHOPSEARCH_POTION	Mikstury
+PRIVATESHOPSEARCH_QUEST	Misja
+PRIVATESHOPSEARCH_QUIVER	Ko³czany
+PRIVATESHOPSEARCH_RESOURCE	Ulepszanie przedmiotów
+PRIVATESHOPSEARCH_ROD	£owienie
+PRIVATESHOPSEARCH_SELECTITEM	Wybrano przedmiot
+PRIVATESHOPSEARCH_SHIELD	Tarcze
+PRIVATESHOPSEARCH_SKILLBOOK	Ksiêgi umiejêtnoœci
+PRIVATESHOPSEARCH_SKILLFORGET	Ksiêga zapomnienia
+PRIVATESHOPSEARCH_SPECIAL	Inne
+PRIVATESHOPSEARCH_STONE	Od³amek Energii
+PRIVATESHOPSEARCH_SWORD	Miecze jednorêczne
+PRIVATESHOPSEARCH_TREASUREBOX	Skrzynie
+PRIVATESHOPSEARCH_TUNING	Zwoje
+PRIVATESHOPSEARCH_TWOSWORD	Miecze oburêczne
+PRIVATESHOPSEARCH_UNIQUE	Unikat
+PRIVATESHOPSEARCH_USEITEM	Towary u¿ytkowe
+PRIVATESHOPSEARCH_USESPECIAL	Inne
+PRIVATESHOPSEARCH_WEAPON	Broñ
+PRIVATESHOPSEARCH_WHITE_PEARL	Bia³a Per³a
+PRIVATESHOPSEARCH_WRIST	Bransolety
+PRIVATE_SHOP_CANNOT_SELL_ITEM	Nie mo¿esz sprzedaæ tego przedmiotu w prywatnym sklepie.
+PRIVATE_SHOP_CLOSE_QUESTION	Czy chcesz zamkn¹æ prywatny sklep?
+PRIVATE_SHOP_INPUT_NAME_DIALOG_TITLE	Wpisz nazwê swojego Sklepu.
+PRIVATE_SHOP_INPUT_PRICE_DIALOG_TITLE	Cena
+PVP_LEVEL1	Beginner
+PVP_LEVEL2	Friendly
+PVP_LEVEL3	Good
+PVP_LEVEL4	Noble
+PVP_LEVEL5	Chivalrous
+PVP_LEVEL6	Warlike
+PVP_LEVEL7	Heroic
+PVP_LEVEL8	Dangerous
+PVP_LEVEL9	Fearsome
+PVP_LEVEL10	Demonic
+PVP_LEVEL11	DEMON
+PVP_LEVEL12	GOD
+PVP_LEVEL13	ILLUMINATE
+PVP_LEVEL14	SAGE
+PVP_LEVEL15	HAX
+PVP_LEVEL16	HACKER
+PVP_LEVEL17	OVERKILL
+PVP_LEVEL18	OVERLORD
+PVP_LEVEL19	DESTROYER
+PVP_LEVEL20	GODMODE
+PVP_LEVEL21	HEAVEN GOD
+PVP_MODE_GUILD	PvP - gildia aktywowana
+PVP_MODE_KILL	PvP - tryb wolny aktywowany
+PVP_MODE_NORMAL	PvP - tryb pokojowy aktywowany.
+PVP_MODE_PROTECT	Aktywowano ochronê przed PvP
+PVP_MODE_REVENGE	PvP - tryb wrogi aktywowany
+PVP_OPTION_KILL	Wolny
+PVP_OPTION_NORMAL	Pokojowy
+PVP_OPTION_PROTECT	Ochrona
+PVP_OPTION_REVENGE	Wrogi
+PVP_TOURNAMENT_DO_NOT_AUTO	Podczas turnieju PvP nie mo¿na korzystaæ z funkcji automatycznego ataku.
+QUEST_APPEND	Otrzymano Now¹ Misjê.
+QUEST_HOUR	godz.
+QUEST_MIN	Min.
+QUEST_SEC	Sek.
+QUEST_TIMEOVER	Koniec czasu
+QUEST_UNLIMITED_TIME	Brak limitu czasowego.
+QUEST_ZEROSEC	0 Sek.
+QUICKSLOT_REGISTER_DISABLE_ITEM	Ten Przedmiot nie mo¿e zostaæ dodany do Szybkiego Pola Dostêpu.
+RANKING	Ranga
+RANKING_BOARD_MEMBER	Cz³onkowie
+RECEIVE_MESSAGE	%s wys³a³ Ci wiadomoœæ.
+REFINE_COST	Cena za Ulepszenie: %d Yang
+REFINE_DESTROY_WARNING	Ten przedmiot mo¿e zostaæ zniszczony podczas uszlachetnienia.
+REFINE_DESTROY_WARNING_WITH_BONUS_PERCENT_1	Czy na pewno chcesz ulepszyæ przedmiot?
+REFINE_DESTROY_WARNING_WITH_BONUS_PERCENT_2	Przy niepowodzeniu twój przedmiot zostanie zniszczony. Czy chcesz kontynuowaæ?
+REFINE_DOWN_GRADE_WARNING	Przedmiot mo¿e zostaæ zdegradowany w ten sposób.
+REFINE_DO_YOU_SEPARATE_METIN	Czy chcesz usun¹æ wszystkie Kamienie Duszy?
+REFINE_ELEMENT_CHANGE_TEXT	%s posiada teraz ¿ywio³: %s!
+REFINE_ELEMENT_DOWNGRADE_TEXT	Zosta³ zmniejszony poziom zaczarowania ¿ywio³u.
+REFINE_ELEMENT_EXIST	Przedmiot posiada ju¿ inny ¿ywio³.
+REFINE_ELEMENT_GRADE_MAX	Maksymalny poziom zaczarowania ¿ywio³u zosta³ ju¿ osi¹gniêty.
+REFINE_ELEMENT_NOT_ENOUGHT_GRADE	Zaczarowanie ¿ywio³u jest dostêpne tylko dla broni +7 lub wy¿szej.
+REFINE_ELEMENT_NOT_ENOUGHT_YANG	Za ma³o Yang.
+REFINE_ELEMENT_NOT_EXSIT	Nie mo¿na u¿ywaæ z tym przedmiotem.
+REFINE_ELEMENT_TEXT_DARK	Mrok +%d
+REFINE_ELEMENT_TEXT_EARTH	Ziemia +%d
+REFINE_ELEMENT_TEXT_ELECT	B³yskawica +%d
+REFINE_ELEMENT_TEXT_FIRE	Ogieñ +%d
+REFINE_ELEMENT_TEXT_ICE	Lód +%d
+REFINE_ELEMENT_TEXT_WIND	Wiatr +%d
+REFINE_ELEMENT_UPGRADE_FAIL_TEXT	Zaczarowanie ¿ywio³u nie powiod³a siê!
+REFINE_ELEMENT_UPGRADE_SUCCESS_TEXT	Zaczarowanie ¿ywio³u powiod³o siê!
+REFINE_FAILURE	Oj, nie uda³o siê. Zawiedliœmy.
+REFINE_FAILURE_CAN_NOT_ATTACH0	%s nie mo¿e zostaæ uwzglêdniony w tym Przedmiocie.
+REFINE_FAILURE_DEL_ITEM	Uszlachetnienie nie powiod³o siê. Przedmiot zosta³ zniszczony.
+REFINE_FAILURE_EQUIP_ITEM	Nie mo¿esz ulepszaæ za³o¿onych przedmiotów.
+REFINE_FAILURE_GRADE_DOWN	Uszlachetnienie nie powiod³o siê. Stopieñ przedmiotu zosta³ obni¿ony.
+REFINE_FAILURE_KEEP_GRADE	Uszlachetnienie nie powiod³o siê.\nNa szczêœcie twój przedmiot zosta³ zachowany.
+REFINE_FAILURE_METIN_INSEPARABLE_ITEM	¯aden Kamieñ Duszy nie mo¿e zostaæ wyjêty.
+REFINE_FAILURE_NEED_BETTER_SCROLL	Potrzebujesz lepszego Zwoju.
+REFINE_FAILURE_NO_GOLD_SOCKET	Nie ma Z³otej Kieszeni by uwzglêdniæ %s .
+REFINE_FAILURE_NO_MORE_SOCKET	Nie mo¿esz zrobiæ wiêcej Kieszeni.
+REFINE_FAILURE_NO_SOCKET0	Nie ma slotu, w którym mo¿na umieœciæ %s.
+REFINE_FAILURE_SOCKET_DISABLE_ITEM	Nie mo¿esz zrobiæ ¿adnych Kieszeni w tym Przedmiocie.
+REFINE_FAILURE_UPGRADE_DISABLE_ITEM	Ten Przedmiot nie mo¿e zostaæ ulepszony.
+REFINE_SUCCESS	Przedmiot zosta³ ulepszony.
+REFINE_SUCCESS_PROBALITY	Szansa na Ulepszenie %d%%
+REFINE_WARNING2	Czy chcesz kontynuowaæ?
+RESTART_POPUP_GIVEUP_MIST_ISLAND	Poleg³eœ w Bitwie Piêciu Relikwiarzy.\n Teraz wracasz do wioski.
+REVIVE_QUESTION	Chcesz wskrzesiæ: %s? Liczba Pryzmatów O¿ywienia: %d szt.
+REVIVE_SELF_QUESTION	Chcesz dokonaæ wskrzeszenia? Liczba Pryzmatów O¿ywienia: %d szt.
+ROULETTE_REWARD_TEXT	Otrzymano przedmiot
+SAFEBOX_ERROR	Wprowadzi³eœ z³e has³o.
+SAFEBOX_NEED_CHANGE_PASSWORD	Twoje has³o wygas³o.\nWybierz nowe.
+SAFEBOX_SELL_DISABLE_SAFEITEM	Nie mo¿esz sprzedaæ ¿adnego z zachowanych Przedmiotów.
+SAFEBOX_UNAVILABLE_PASSWORD_01	Nie mo¿esz u¿yæ tego has³a.
+SAFEBOX_UNAVILABLE_PASSWORD_02	Twoje has³o musi siê sk³adaæ co najmniej z %d znaków.
+SAFEBOX_UNAVILABLE_PASSWORD_03	Poda³eœ/aœ swoje obecne has³o. Wybierz nowe has³o.
+SAFEBOX_UNAVILABLE_PASSWORD_04	Twoje has³o nie mo¿e zawieraæ %d takich samych lub nastêpuj¹cych po sobie cyfr.
+SAFEBOX_UNAVILABLE_PASSWORD_05	Znaki specjalne s¹ niedozwolone. Dozwolone znaki: a-z, A-Z, 0-9
+SAFEBOX_WRONG_PASSWORD	Has³a musz¹ byæ identyczne.
+SCREENSHOT_SAVE1	jest zapisany w
+SCREENSHOT_SAVE2	Plik ze zrzutem obrazu
+SCREENSHOT_SAVE_FAILURE	Niepomyœlny zapis zrzutu obrazu.
+SECOND	Sek
+SECOND_CONFIRM_PET_FEED_QUESTION_1	Twój przedmiot posiada %d lub wiêcej bonusów.
+SECOND_CONFIRM_PET_FEED_QUESTION_2	Czy na pewno chcesz nakarmiæ nim swojego zwierzaka?
+SECOND_CONFIRM_SELL_ITEM_QUESTION_1	Twój przedmiot posiada %d lub wiêcej bonusów.
+SECOND_CONFIRM_SELL_ITEM_QUESTION_2	Czy na pewno chcesz go sprzedaæ?
+SELECT_ATTR_NOTICE	Nie mo¿esz otworzyæ prywatnego sklepu, gdy u¿ywasz Zaczarowanie przedmiotu+.
+SELECT_ATTR_NOT_OPEN	Nie mo¿esz u¿yæ Zaczarowanie przedmiotu+, gdy masz otwarty prywatny sklep.
+SELECT_ATTR_NOT_SELECT	Zdecyduj, czy chcesz zachowaæ czy wymieniæ bonusy.
+SELECT_CAN_NOT_DELETE	Nie mo¿esz usun¹æ postaci.
+SELECT_CAN_NOT_DELETE_ATTR67	Nie mo¿esz usun¹æ swojej postaci,\n gdy trwa dodawanie bonusu.
+SELECT_CAN_NOT_DELETE_GUILD_MEMBER	Nie mo¿esz usun¹æ swojej postaci, dopóki ona jest cz³onkiem gildii.
+SELECT_CAN_NOT_DELETE_HAVE_SEALED_ITEM	Nie mo¿esz usun¹æ swojej postaci, poniewa¿ posiada ona przedmiot przywi¹zany do duszy.
+SELECT_CAN_NOT_DELETE_LAST_CHAR_SAFEBOX	Nie mo¿esz usun¹æ swojej jedynej postaci, poniewa¿ w twoim magazynie znajduj¹ siê jeszcze przedmioty.
+SELECT_CAN_NOT_DELETE_LIMITE_LEVEL	Mo¿esz usun¹æ swoj¹ postaæ tylko do maksymalnie poziomu 69.
+SELECT_CAN_NOT_DELETE_MARRIAGE	Nie mo¿esz usun¹æ postaci, która jest w zwi¹zku ma³¿eñskim.
+SELECT_CAN_NOT_DELETE_PRIVATE_CODE_ERROR	Kod do usuniêcia by³ niepoprawny.
+SELECT_CAN_NOT_DELETE_REMAIN_TIME	Nie mo¿esz usun¹æ tej postaci bezpoœrednio po jej stworzeniu. Czas oczekiwania: %s
+SELECT_CHANGED_NAME	Zmieni³eœ nazwê postaci.
+SELECT_CHANGE_FAILURE_ALREADY_EXIST_NAME	Ta nazwa postaci ju¿ istnieje.
+SELECT_CHANGE_FAILURE_STRANGE_INDEX	Spróbuj ponownie.
+SELECT_CHANGE_FAILURE_STRANGE_NAME	To jest nieprawid³owa nazwa postaci.
+SELECT_CHANGE_NAME_TITLE	Zmieñ nazwê postaci.
+SELECT_DELEING	Rozpoczêcie usuwania...
+SELECT_DELETED	Usuwanie pomyœlne.
+SELECT_DO_YOU_DELETE_REALLY	Czy chcesz kontynuowaæ?
+SELECT_EMPTY_SLOT	To jest wolne pole.
+SELECT_GM_NAME	GM
+SELECT_INPUT_CHANGING_NAME	WprowadŸ now¹ nazwê postaci.
+SELECT_NOT_JOIN_GUILD	Brak Gildii
+SERVER_NOTIFY_CLOSED	Zamkniêty serwer: prawo wstêpu maj¹ tylko konta utworzone przed zamkniêciem serwera.
+SERVER_STATUS_CLOSE	ZAMKNIÊTY
+SERVER_STATUS_NEW	NOWOŒÆ
+SERVER_STATUS_SPECIAL	SPECYJALNY
+SHOP_BUY_INFO	Wybierz z wystawy przedmiot, który chcesz kupiæ.
+SHOP_CANNOT_SELL_EQUIPMENT	Nie mo¿esz sprzedawaæ ubranych przedmiotów.
+SHOP_CANNOT_SELL_ITEM	Ten Przedmiot nie mo¿e zostaæ sprzedany.
+SHOP_ERROR_UNKNOWN	Nieznany B³¹d Sklepu: %s
+SHOP_EXCEED_LIMIT_TODAY	Przekroczy³eœ ju¿ swój limit dzienny na u¿ycie punktów.
+SHOP_INVALID_POS	Ten Przedmiot nie mo¿e zostaæ tu u¿yty.
+SHOP_INVENTORY_FULL	Nie ma miejsca w ekwipunku.
+SHOP_LIMITED_DATA_LOADING	Aktualnie trwa wczytywanie danych. Spróbuj ponownie póŸniej.
+SHOP_LIMITED_ITEM_REMAIN_COUNT	Pozosta³e przedmioty: %d
+SHOP_LIMITED_PURCHASE_OVER	Wyprzedano
+SHOP_LIMIT_TODAY	Limit dzienny: %d / %d
+SHOP_MY_BATTLE_POINT	Punkty walki: %d
+SHOP_MY_MEDAL_OF_HONOR	Medal Mêstwa: %d
+SHOP_NOT_ENOUGH_10TH_COIN	Masz za ma³o monet jubileuszowych.
+SHOP_NOT_ENOUGH_BATTLE_POINT	Masz za ma³o punktów walki.
+SHOP_NOT_ENOUGH_BNW	Masz za ma³o monet proroka.
+SHOP_NOT_ENOUGH_GUILD_LEVEL	Poziom gildii jest za niski.
+SHOP_NOT_ENOUGH_MEDAL_OF_HONOR	Za ma³o Medali Mêstwa.
+SHOP_NOT_ENOUGH_MONEY	Niewystarczaj¹ca iloœæ Yang
+SHOP_NOT_ENOUGH_MONEY_EX	Nie posiadasz wystarczaj¹co Yang.
+SHOP_SELL_INFO	Wybierz w oknie ekwipunku przedmiot, który chcesz sprzedaæ.
+SHOP_SOLDOUT	Wyprzedany
+SHOT_ERROR_UNKNOWN	Nieznany b³¹d podczas ataku z dystansu: %s
+SKILL_BLEEDING	Krwawienie
+SKILL_BOHO	Odbicie
+SKILL_CANNOT_LEVEL_UP_ANYMORE_BY_BOOK	Potrzebujesz DOŒ do nauki tej Umiejêtnoœci.
+SKILL_CANNOT_LEVEL_UP_ANYMORE_BY_STAT	Potrzebujesz Ksiêgi do nauki tej Umiejêtnoœci.
+SKILL_CHEONGEUN	Silne Cia³o
+SKILL_CRITICAL	Cios Krytyczny
+SKILL_ENCHANT_POISON	Dodaj Truciznê
+SKILL_EUNHYEONG	Krycie Siê
+SKILL_FAINT	Omdlenie
+SKILL_FIND_TRAP	Szukaj Pu³apki
+SKILL_FIRE	Podpalenie
+SKILL_FISHMIND	Kula rybaka jest aktywna
+SKILL_GAMJI	Z³ap
+SKILL_GEOMGYEONG	Aura Miecza
+SKILL_GICHEON	Pomoc Smoka
+SKILL_GIGONG	Rotacja Chi
+SKILL_GONGPO	Strach
+SKILL_GRADE_NAME_GRAND_MASTER	%s Wielki Mistrz
+SKILL_GRADE_NAME_MASTER	%s Mistrz
+SKILL_GRADE_NAME_PERFECT_MASTER	%s Perfekcyjny Mistrz
+SKILL_GROUP_ASSASSIN_1	Ostrze
+SKILL_GROUP_ASSASSIN_2	£uk
+SKILL_GROUP_HORSE	Jazda
+SKILL_GROUP_SHAMAN_1	Smok
+SKILL_GROUP_SHAMAN_2	Leczenie
+SKILL_GROUP_SURA_1	Broñ
+SKILL_GROUP_SURA_2	Magia
+SKILL_GROUP_WARRIOR_1	Cia³o
+SKILL_GROUP_WARRIOR_2	Umys³
+SKILL_GWIGEOM	Czarowane Ostrze
+SKILL_GYEONGGONG	Bezszelestny Chód
+SKILL_HEUKSIN	Mroczna Ochrona
+SKILL_HOSIN	B³ogos³awieñstwo
+SKILL_INC_ATKSPD	Zwiêkszona Szybkoœæ Ataku
+SKILL_INC_MOVSPD	Zwiêkszona Szybkoœæ Ruchu
+SKILL_JEOJU	Kl¹twa
+SKILL_JEONGEOP	Leczenie
+SKILL_JEONGWI	Berserk
+SKILL_JEONSINBANGEO	Ca³kowita Obrona
+SKILL_JEONSINGONGGYEOK	Ca³kowity Atak
+SKILL_JEUNGRYEOK	Atak +
+SKILL_JEUNGSOK	Szybkoœæ +
+SKILL_JUMAGAP	Czarowana Zbroja
+SKILL_KWAESOK	Szybkoœæ
+SKILL_MUYEONG	Ognisty Duch
+SKILL_NEED_EMPTY_BOTTLE	Nie mam Pustej Butelki.
+SKILL_NEED_POISON_BOTTLE	Nie mam Butelki z Trucizn¹
+SKILL_ONLY_FOR_GUILD_WAR	Mo¿esz u¿ywaæ tej Umiejêtnoœci tylko podczas Wojny Gildii.
+SKILL_PABEOP	Rozproszenie Magii
+SKILL_POWERFUL_STRIKE	Atak Osza³amiaj¹cy
+SKILL_SEOMGWANG	Bomba B³yskawic
+SKILL_SLEEP	Uœpienie
+SKILL_SLOW	Spowolnienie
+SKILL_STUN	Og³uszenie
+SKILL_SUHO	Stra¿nik
+SKILL_SUMMON_DESCRIPTION	Szansa na Przywo³anie: %d%%
+SKILL_TOOLTIP_INT	Inteligencja
+SKILL_TOOLTIP_LEVEL	Poziom
+SKILL_TOXICDIE	Otrucie
+SKILL_TOXICPOWER	Zwiêkszona Wartoœæ Ataku Trucizn¹
+SKILL_TUSOK	Uderzenie Ducha
+SOUL_ITEM_TOOLTIP_APPLY	Aktywowano efekt
+SOUL_ITEM_TOOLTIP_BLUE1	Czas gry:%d/%d min. 
+SOUL_ITEM_TOOLTIP_BLUE2	Po osi¹gniêciu czasu gry obra¿enia umiejêtnoœci wzrastaj¹ o x%.1f
+SOUL_ITEM_TOOLTIP_COMMON	Nie dotyczy: PvP, polimorfia
+SOUL_ITEM_TOOLTIP_RED1	Czas gry:%d/%d min. 
+SOUL_ITEM_TOOLTIP_RED2	Po osi¹gniêciu czasu gry obra¿enia ataku wzrastaj¹ o x%.1f
+SOUL_ITEM_TOOLTIP_REMAIN_COUNT	Pozosta³e ataki: %d
+SOUL_ITEM_TOOLTIP_REMOVE_TIME	Dusza wygaœnie za
+SOUL_ITEM_TOOLTIP_UNAPPLIED	Nie aktywowano efektu
+SOUL_REFINE_FAILURE	Rozwój nie powiód³ siê.
+SOUL_REFINE_SUCCESS	Rozwój zakoñczy³ siê powodzeniem!
+STAT_MINUS_CON	Dostosowanie Witalnoœci (Pozosta³a szansa: %d)
+STAT_MINUS_DEX	Dostosowanie Zrêcznoœci (Pozosta³a Szansa: %d)
+STAT_MINUS_INT	Dostosowanie Inteligencji (Pozosta³¹ szansa: %d)
+STAT_MINUS_STR	Dostosowanie Si³y (Pozosta³¹ szansa: %d)
+STAT_TOOLTIP_CON	Podwy¿sza P¯ i Obronê
+STAT_TOOLTIP_DEX	Podwy¿sza atak i uniki
+STAT_TOOLTIP_INT	Podwy¿sza PE, atak magiczny i obronê.
+STAT_TOOLTIP_STR	Podwy¿sza Wartoœæ Ataku i Uszkodzeñ
+SYMBOLLIST_TITLE	Zarejestruj Flagê Gildii
+TARGET_BUTTON_ACCEPT_FIGHT	Zgoda
+TARGET_BUTTON_AVENGE	Zemsta
+TARGET_BUTTON_BLOCK	Zablokuj
+TARGET_BUTTON_BLOCK_REMOVE	Odblokuj
+TARGET_BUTTON_BUILDING_DESTROY	Zniszcz
+TARGET_BUTTON_DISMOUNT	Zsi¹dŸ
+TARGET_BUTTON_EMOTION_ALLOW	Emocje
+TARGET_BUTTON_EXCHANGE	Handel
+TARGET_BUTTON_EXCLUDE	Wyklucz
+TARGET_BUTTON_EXIT_OBSERVER	Zakoñcz Tryb Obserwatora
+TARGET_BUTTON_FIGHT	Pojedynek
+TARGET_BUTTON_FRIEND	Przyjaciel
+TARGET_BUTTON_INVITE_GUILD	Zapr. Gildii
+TARGET_BUTTON_INVITE_PARTY	Zapr. Grupy
+TARGET_BUTTON_LEAVE_PARTY	Opuœæ Grupê
+TARGET_BUTTON_REQUEST_ENTER_PARTY	Do³¹cz do Grupy
+TARGET_BUTTON_REVIVE	Wskrzeszenie
+TARGET_BUTTON_VIEW_EQUIPMENT	Zbroja
+TARGET_BUTTON_WHISPER	Szept
+TARGET_LEVEL_BOSS	Boss
+TARGET_LEVEL_KING	Stopieñ 5.
+TARGET_LEVEL_KNIGHT	Stopieñ 3.
+TARGET_LEVEL_PAWN	Stopieñ 1.
+TARGET_LEVEL_S_KNIGHT	Stopieñ 4.
+TARGET_LEVEL_S_PAWN	Stopieñ 2.
+TARGET_TOOLTIP_ATTACK_COUNT	£¹czna iloœæ punktów: %d
+TASKBAR_ATTACK	Atak
+TASKBAR_AUTO	atakuj automatycznie
+TASKBAR_CAMERA	Kamera
+TASKBAR_EXP	Doœwiadczenie
+TASKBAR_HP	P¯
+TASKBAR_MOVE	Ruch
+TASKBAR_SKILL	Umiejêtnoœæ
+TASKBAR_SP	PE
+TASKBAR_ST	ST
+TENTH_COIN	Moneta jubileuszowa
+TENTH_EVENT_ASK_EXCHANGE	Potrzebujesz flag jubileuszowych: %d Czy chcesz kontynuowaæ?
+THING_COUNT	wszystko
+TOOLTIP_AFFECT_ATT_GRADE_DOWN	Redukcja obra¿eñ	SNA
+TOOLTIP_AFFECT_CONFUSION	Zosta³eœ og³uszony.
+TOOLTIP_AFFECT_CRITICAL_GRADE_DOWN	Redukcja szansy na cios krytyczny	SNA
+TOOLTIP_AFFECT_CZ_UNLIMIT_ENTER	Znak Stra¿nika	SNA
+TOOLTIP_AFFECT_DEFENSEWAVE_LASER	Nie uda³o siê przerwaæ hydro-promienia.
+TOOLTIP_AFFECT_DEF_GRADE_DOWN	Redukcja obrony	SNA
+TOOLTIP_AFFECT_ELECTRIC_SHOCK	B³yskawica
+TOOLTIP_AFFECT_FISHING_GOLD_TUNA	Bonus Z³otego Tuñczyka	SNA
+TOOLTIP_AFFECT_FISHING_MOVE_SPEED_DOWN	Mokre szaty\nSzybkoœæ ruchu -50	SNA
+TOOLTIP_AFFECT_LATE_SUMMER_EVENT_BUFF	Dusze (%d/20)	SA
+TOOLTIP_AFFECT_LATE_SUMMER_EVENT_PRIMIUM_BUFF	Cenne Dusze (%d/150)	SA
+TOOLTIP_AFFECT_MI_BUFF	Buff zajêcia \n%s
+TOOLTIP_AFFECT_MOUNT_FALL	Upadek z wierzchowca	SNA
+TOOLTIP_AFFECT_POLYMORPH	Polimorfia	SNA
+TOOLTIP_AFFECT_RCAST_SPEED	Wyd³u¿enie czasu regeneracji	SNA
+TOOLTIP_AFFECT_RED_DRAGONLAIR_BUFF	Odpornoœæ na obra¿enia umiejêtnoœci +15% | Odpornoœæ na normalne obra¿enia od ataku +15%
+TOOLTIP_AFFECT_RESEARCHER_ELIXIR	Eliksir Poszukiwacza	SNA
+TOOLTIP_AFFECT_RHP_REGEN	Brak mo¿liwoœci odpoczynku	SNA
+TOOLTIP_AFFECT_SAFEBOX_BUFF_01	Bonus magazynu\n +3% PD	SNA
+TOOLTIP_AFFECT_SAFEBOX_BUFF_02	Bonus magazynu\n+20 obrona	SNA
+TOOLTIP_AFFECT_SAFEBOX_BUFF_03	Bonus magazynu\n+1% punkt ¿ycia	SNA
+TOOLTIP_AFFECT_SAFEBOX_BUFF_04	Bonus magazynu\n+3% si³a w walce z potworami	SNA
+TOOLTIP_ALIGNMENT_DAMAGE_BONUS	Niski ranking powoduje zwiêkszenie zadawanych obra¿eñ.	SNA
+TOOLTIP_ANTI_CRITICAL_PCT	Odpornoœæ na cios krytyczny +%d%%	SA
+TOOLTIP_ANTI_PENETRATE_PCT	Odpornoœæ na przeszywaj¹cy cios +%d%%	SA
+TOOLTIP_ANTI_SELL	Nie mo¿e zostaæ sprzedany w Magazynie
+TOOLTIP_APPLY_ACCEDRAIN_RATE	Stopnieñ absorpcji: %d%%	SA
+TOOLTIP_APPLY_ATTBONUS_ANIMAL	Silny przeciwko Zwierzêtom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_ASSASSIN	Silny przeciwko Ninja +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_BELL	Z³amanie Odpornoœci na Dzwony +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_BOW	Z³amanie Odpornoœci na Strza³y +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_CLAW	Z³amanie Odpornoœci na Szpony +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_CZ	Si³a w walce z potworami Zodiaku +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_DAGGER	Z³amanie Odpornoœci na Sztylety: +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_DESERT	Sila/Obrona przeciwko pustynnym potworom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_DEVIL	Si³a w walce z diab³ami +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_FAN	Z³amanie Odpornoœci na Wachlarze +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_HUMAN	Silny przeciwko Ludziom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_INSECT	Si³a w walce z insektami +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_MILGYO	Silny przeciwko Mistykom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_MONSTER	Silny przeciwko Potworom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_ORC	Silny przeciwko Orkom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_SHAMAN	Silny przeciwko Szamanom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_SURA	Silny przeciwko Sura +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_SWORD	Z³amanie Odpornoœci na Miecze: +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_TWOHAND	Z³amanie Odpornoœci na Broñ oburêczn¹ +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_UNDEAD	Silny przeciwko Nieumar³ym +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_WARRIOR	Silny przeciwko Wojownikom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_WOLFMAN	Silny przeciwko Likanom + %d%%	SA
+TOOLTIP_APPLY_BLEEDING_PCT	Atak krwawienia + %d%%	SA
+TOOLTIP_APPLY_BLEEDING_REDUCE	Odpornoœæ na Atak Krwawienia + %d%%	SA
+TOOLTIP_APPLY_BLOCK	Szansa na blok ciosów %d%%	SA
+TOOLTIP_APPLY_COMBAT_SP_RECOVER	Odzyskiwanie PE przez 5 sekund podczas Bitwy %d	SA
+TOOLTIP_APPLY_CRITICAL_PCT	Szansa na cios krytyczny +%d%%	SA
+TOOLTIP_APPLY_DAMAGE_SP_RECOVER	Szansa na odzyskanie PE: %d%%	SA
+TOOLTIP_APPLY_DODGE	Szansa na unikniêcie Strza³y: %d%%	SA
+TOOLTIP_APPLY_ENCHANT_DARK	Si³a Mroku +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_DARK2	Si³a Mroku +%d%% ~ +%d%%
+TOOLTIP_APPLY_ENCHANT_EARTH	Si³a Ziemi +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_EARTH2	Si³a Ziemi +%d%% ~ +%d%%
+TOOLTIP_APPLY_ENCHANT_ELECT	Si³a B³yskawic +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_ELECT2	Si³a B³yskawic +%d%% ~ +%d%%
+TOOLTIP_APPLY_ENCHANT_FIRE	Si³a Ognia +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_FIRE2	Si³a Ognia +%d%% ~ +%d%%
+TOOLTIP_APPLY_ENCHANT_ICE	Si³a Lodu +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_ICE2	Si³a Lodu +%d%% ~ +%d%%
+TOOLTIP_APPLY_ENCHANT_WIND	Si³a Wiatru +%d%%	SA
+TOOLTIP_APPLY_ENCHANT_WIND2	Si³a Wiatru +%d%% ~ +%d%%
+TOOLTIP_APPLY_EXP_DOUBLE_BONUS	Szansa na Bonus DOŒ: %d%%	SA
+TOOLTIP_APPLY_GOLD_DOUBLE_BONUS	Szansa na podwójn¹ iloœæ Yang: %d%%	SA
+TOOLTIP_APPLY_IMMUNE_FALL	Niewra¿liwy na Upadek	SNA
+TOOLTIP_APPLY_IMMUNE_SLOW	Odpornoœæ na Spowolnienia	SNA
+TOOLTIP_APPLY_IMMUNE_STUN	Odpornoœæ na Omdlenia	SNA
+TOOLTIP_APPLY_ITEM_DROP_BONUS	Szansa na podwójn¹ iloœæ Przedmiotów: %d%%	SA
+TOOLTIP_APPLY_KILL_HP_RECOVER	Szansa na odzyskanie P¯: %d%%	SA
+TOOLTIP_APPLY_KILL_SP_RECOVER	Szansa na odzyskanie PE: %d%%	SA
+TOOLTIP_APPLY_MANA_BURN_PCT	%d%% Szansa na kradzie¿ PE	SA
+TOOLTIP_APPLY_MAX_HP_PCT	Maks. P¯ +%d%%	SA
+TOOLTIP_APPLY_MAX_SP_PCT	Maks. PE +%d%%	SA
+TOOLTIP_APPLY_NOAFFECT	Brak efektu
+TOOLTIP_APPLY_NO_DEATH_PENALTY	Nie tracisz Punktów Doœwiadczenia podczas wznawiania gry w miejscu œmierci.	SNA
+TOOLTIP_APPLY_NO_DEATH_PENALTY_PLUS	Bóg Smoków rozpostar³ nad Tob¹ chroni¹ce skrzyd³a. Jeœli zostaniesz o¿ywiony na pok³adzie, nie stracisz punktów doœwiadczenia.	SNA
+TOOLTIP_APPLY_PENETRATE_PCT	Szansa na przeszywaj¹ce Uderzenie: %d%%	SA
+TOOLTIP_APPLY_POISON_PCT	Szansa na Otrucie %d%%	SA
+TOOLTIP_APPLY_POISON_REDUCE	Odpornoœæ na Trucizny: %d%%	SA
+TOOLTIP_APPLY_POTION_BONUS	Mikstury %d%% efekt podniesiony	SA
+TOOLTIP_APPLY_REFLECT_CURSE	Szansa na odbicie Kl¹twy: %d%%	SA
+TOOLTIP_APPLY_REFLECT_MELEE	%d%% Szansa na odbicie Ciosu	SA
+TOOLTIP_APPLY_RESIST_ASSASSIN	Odpornoœæ na Ninja: %d%%	SA
+TOOLTIP_APPLY_RESIST_BELL	Odpornoœæ na Dzwony: %d%%	SA
+TOOLTIP_APPLY_RESIST_CLAW	Odpornoœæ na Szpony +%d%%	SA
+TOOLTIP_APPLY_RESIST_DAGGER	Odpornoœæ na Sztylety: %d%%	SA
+TOOLTIP_APPLY_RESIST_FAN	Odpornoœæ na Wachlarze: %d%%	SA
+TOOLTIP_APPLY_RESIST_HUMAN	Odpornoœæ na Ludzi %d%%	SA
+TOOLTIP_APPLY_RESIST_MOUNT_FALL	Odpornoœæ na Upadek +%d%%	SA
+TOOLTIP_APPLY_RESIST_SHAMAN	Odpornoœæ na Szamanów: %d%%	SA
+TOOLTIP_APPLY_RESIST_SURA	Odpornoœæ na Sura: %d%%	SA
+TOOLTIP_APPLY_RESIST_SWORD	Odpornoœæ na Miecze: %d%%	SA
+TOOLTIP_APPLY_RESIST_TWOHAND	Odpornoœæ na Broñ Dwurêczn¹: %d%%	SA
+TOOLTIP_APPLY_RESIST_WARRIOR	Odpornoœæ na Wojowników: %d%%	SA
+TOOLTIP_APPLY_RESIST_WIND	Odpornoœæ na Wiatr: %d%%	SA
+TOOLTIP_APPLY_RESIST_WOLFMAN	Odpornoœæ na Atak Likanów + %d%%	SA
+TOOLTIP_APPLY_SKILL_BOOK_BONUS	Szansa na pomyœln¹ naukê zwiêkszona o wspó³czynnik 2.5	SNA
+TOOLTIP_APPLY_SKILL_BOOK_NO_DELAY	Jeœli trening siê nie powiedzie, mo¿esz od razu spróbowaæ ponownie.	SNA
+TOOLTIP_APPLY_SLOW_PCT	Szansa na Spowolnienie %d%%	SA
+TOOLTIP_APPLY_STEAL_HP	%d%% obra¿eñ bêdzie dodanych do P¯	SA
+TOOLTIP_APPLY_STEAL_SP	%d%% obra¿eñ bêdzie dodanych do PE	SA
+TOOLTIP_APPLY_STUN_PCT	Szansa na Omdlenie %d%%	SA
+TOOLTIP_ARMOR	Zbroja
+TOOLTIP_ARROW	Strza³a
+TOOLTIP_ASSASSIN	Ninja
+TOOLTIP_ATTBONUS_STONE	+%d%% si³y przeciwko kamieniom Metin	SA
+TOOLTIP_ATT_GRADE	Wartoœæ Ataku +%d	SA
+TOOLTIP_ATT_SPEED	Szybkoœæ Ataku +%d%%	SA
+TOOLTIP_ATT_SPEED_SLOW	Zmniejszona Szybkoœæ Ataku	SNA
+TOOLTIP_AUTO_POTION_HP	Eliksir S³oñca
+TOOLTIP_AUTO_POTION_REST	Pozosta³o: %.2f%%
+TOOLTIP_AUTO_POTION_SP	Eliksir Ksiê¿yca
+TOOLTIP_AUTO_POTION_USING	Aktywny
+TOOLTIP_AUTO_SYSTEM_PRIMIUM	Auto £owy	SNA
+TOOLTIP_BATTLE_POTION	Mikstura Pojedynku Strefy Walki	SNA
+TOOLTIP_BOW_DISTANCE	Zasiêg £uku +%dm	SA
+TOOLTIP_BUYPRICE	%s
+TOOLTIP_CAST_SPEED	Szybkoœæ Zaklêcia +%d%%	SA
+TOOLTIP_CON	Witalnoœæ +%d	SA
+TOOLTIP_COSTUME_ATTR_BONUS	Bonus kostiumu %d%%	SA
+TOOLTIP_DAMAGE_HP_RECOVERY	Absorbuje obra¿enia do %d%% jako P¯	SA
+TOOLTIP_DAMAGE_SP_RECOVERY	Absorbuje obra¿enia do %d%% jako PE	SA
+TOOLTIP_DEF_GRADE	Obrona +%d	SA
+TOOLTIP_DEX	Zrêcznoœæ +%d	SA
+TOOLTIP_DS_SET	Zestaw efektu SSK	SNA
+TOOLTIP_EAR	Kolczyki
+TOOLTIP_ENERGY	Energia %d	SA
+TOOLTIP_ETC	I tak dalej
+TOOLTIP_EXP_BONUS_EVENT	PD +%d%%	SA
+TOOLTIP_FIFTH_ATTRIBUTE_BONUS	5. dodany bonus +%d%%	SA
+TOOLTIP_FIRST_ATTRIBUTE_BONUS	1. dodany bonus +%d%%	SA
+TOOLTIP_FISHINGROD_EXP	Punkty %d / %d
+TOOLTIP_FISHINGROD_LEVEL	Poziom: %d
+TOOLTIP_FISHINGROD_UPGRADE1	Daj Rybakowi,
+TOOLTIP_FISHINGROD_UPGRADE2	aby dostaæ
+TOOLTIP_FISHINGROD_UPGRADE3	Ulepszon¹ Wêdkê.
+TOOLTIP_FISH_LEN	D³ugoœæ: %.2fcm
+TOOLTIP_FOURTH_ATTRIBUTE_BONUS	4. dodany bonus +%d%%	SA
+TOOLTIP_GUILD_SKILL_ACCEL	Przyspieszenie +%d	SA
+TOOLTIP_GUILD_SKILL_BLESS	B³ogos³awieñstwo Boga Smoków +%d	SA
+TOOLTIP_GUILD_SKILL_BLOOD	Krew Boga Smoków +%d	SA
+TOOLTIP_GUILD_SKILL_BUNNO	Furia Boga Smoków +%d%%	SA
+TOOLTIP_GUILD_SKILL_JUMUN	Magiczna Pomoc +%d%%	SA
+TOOLTIP_GUILD_SKILL_SEONGHWI	Œwiêta Zbroja +%d	SA
+TOOLTIP_HALLOWEEN_EVENT_BUFF	+20% PD | +5% dropu przedmiotu | +10% si³a w walce z potworami	SNA
+TOOLTIP_HELMET	He³m
+TOOLTIP_HIT_BUFF_ENCHANT_DARK	Otrzymujesz moc mroku na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_ENCHANT_EARTH	Otrzymujesz moc ziemi na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_ENCHANT_ELEC	Otrzymujesz moc b³yskawic na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_ENCHANT_FIRE	Otrzymujesz moc ognia na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_ENCHANT_ICE	Otrzymujesz moc lodu na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_ENCHANT_WIND	Otrzymujesz moc wiatru na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_DARK	Otrzymujesz odpornoœæ na mrok na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_EARTH	Otrzymujesz odpornoœæ na ziemiê na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_ELEC	Otrzymujesz odpornoœæ na b³yskawice na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_FIRE	Otrzymujesz odpornoœæ na ogieñ na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_ICE	Otrzymujesz odpornoœæ na lód na %d sek. w walce	SA
+TOOLTIP_HIT_BUFF_RESIST_WIND	Otrzymujesz odpornoœæ na wiatr na %d sek. w walce	SA
+TOOLTIP_HP_REGEN	Regeneracja P¯: +%d%%	SA
+TOOLTIP_INT	Inteligencja +%d	SA
+TOOLTIP_ITEM_ATT_GRADE	Wartoœæ Ataku: %d
+TOOLTIP_ITEM_ATT_POWER	Wartoœæ Ataku: %d - %d
+TOOLTIP_ITEM_ATT_POWER_ONE_ARG	Wartoœæ Ataku: %d
+TOOLTIP_ITEM_ATT_POWER_REFINE	Wartoœæ Ataku: %d - %d (+%d)
+TOOLTIP_ITEM_ATT_SPEED	Szybkoœæ Ataku: %s
+TOOLTIP_ITEM_DEF_GRADE	Obrona %d
+TOOLTIP_ITEM_FAST	Szybki
+TOOLTIP_ITEM_LIMIT_CON	Górna granica Witalnoœci: %d
+TOOLTIP_ITEM_LIMIT_DEX	Górny limit Zrêcznoœci: %d
+TOOLTIP_ITEM_LIMIT_INT	Górna granica Inteligencji: %d
+TOOLTIP_ITEM_LIMIT_LEVEL	Od Poziomu: %d
+TOOLTIP_ITEM_LIMIT_STR	Górna granica Si³y: %d
+TOOLTIP_ITEM_MAGIC_ATT_POWER	Wartoœæ Magicznego Ataku: %d - %d
+TOOLTIP_ITEM_MAGIC_ATT_POWER_ONE_ARG	Wartoœæ Magicznego Ataku: %d
+TOOLTIP_ITEM_MAGIC_DEF_POWER	Magiczna Obrona %d
+TOOLTIP_ITEM_NORMAL	Normalny
+TOOLTIP_ITEM_SLOW	Wolny
+TOOLTIP_ITEM_VERY_FAST	Bardzo szybki
+TOOLTIP_ITEM_VERY_SLOW	Bardzo wolny
+TOOLTIP_ITEM_WEARABLE_JOB	[ Do ubrania ]
+TOOLTIP_LOTTERY_STEP_NUMBER	%d
+TOOLTIP_LOTTO_NUMBER	Szczêœliwy Numer: %d
+TOOLTIP_MAGIC_ATTBONUS_PER	Magiczny atak +%d%%	SA
+TOOLTIP_MAGIC_ATT_GRADE	Wartoœæ Magicznego Ataku: +%d	SA
+TOOLTIP_MAGIC_DEF_GRADE	Magiczna Obrona: +%d	SA
+TOOLTIP_MALL_AUTOLOOT	Rêka, która automatycznie podnosi upuszczone Yang.	SNA
+TOOLTIP_MALL_DEFBONUS	Obrona: +%d%%	SA
+TOOLTIP_MALL_DEFBONUS_STATIC	Obrona	SNA
+TOOLTIP_MALL_EXPBONUS	Punkty Doœwiadczenia: +%d%%	SA
+TOOLTIP_MALL_EXPBONUS_P_STATIC	iCafe DOŒ Bonus +%d%%	SA
+TOOLTIP_MALL_EXPBONUS_STATIC	Zwiêksza zdobywanie PD o 50%	SNA
+TOOLTIP_MALL_FISH_MIND	Szansa schwytania rzadkiej ryby zostanie podwojona.	SNA
+TOOLTIP_MALL_GOLDBONUS	Szansa na drop Yang zwiêkszona o %d%%	SA
+TOOLTIP_MALL_GOLDBONUS_STATIC	Szansa znalezienia Yang zostanie podwojona	SNA
+TOOLTIP_MALL_ITEMBONUS	Szansa na dropy przedmiotów zwiêkszona o %d%%	SA
+TOOLTIP_MALL_ITEMBONUS_P_STATIC	iCafe szansa na zdobycie przedmiotów plus %.1f%%	SA
+TOOLTIP_MALL_ITEMBONUS_STATIC	Zwiêkszono szansê na dropy przedmiotów o 200%.	SNA
+TOOLTIP_MALL_MARRIAGE_FAST	Punkty Mi³oœci szybciej siê regeneruj¹.	SNA
+TOOLTIP_MALL_SAFEBOX	Zwiêkszona pojemnoœæ Magazynu	SNA
+TOOLTIP_MAX_HP	Max P¯: +%d	SA
+TOOLTIP_MAX_HP_PCT	Max P¯: +%d%%	SA
+TOOLTIP_MAX_SP	Max PE: +%d	SA
+TOOLTIP_MAX_SP_PCT	Max PE: +%d%%	SA
+TOOLTIP_MAX_STAMINA	Max Wytrzyma³oœæ: +%d	SA
+TOOLTIP_MEMORIZED_POSITION	%s (%d, %d)
+TOOLTIP_MEMORIZED_POSITION_ERROR	BRAK NAZWY (%d, %d)
+TOOLTIP_MORE_THEN_HP90_DAMAGE_REDUCE	Jeœli masz powy¿ej 90%% P¯, doznajesz obra¿enia ni¿sze o %d%%.	SA
+TOOLTIP_MOV_SPEED	Szybkoœæ Ruchu %d%%	SA
+TOOLTIP_NECK	Naszyjnik
+TOOLTIP_NEED_ALL_SP	Wymagane PE: Max
+TOOLTIP_NEED_GSP	Wymagany Duch Smoka: %d
+TOOLTIP_NEED_HP	Wymagane P¯: %d
+TOOLTIP_NEED_HP_PER_SEC	P¯ / sek.: %d
+TOOLTIP_NEED_SKILL_POINT	Wymagane Punkty Umiejêtnoœci:
+TOOLTIP_NEED_SP	Wymagane PE: %d
+TOOLTIP_NEED_SP_PER_SEC	PE / Sek.: %d
+TOOLTIP_NEXT_SKILL_LEVEL_1	Nastêpny Poziom: %d (Max %d)
+TOOLTIP_NEXT_SKILL_LEVEL_2	Nastêpny Poziom: %d (Max %d-%d)
+TOOLTIP_NORMAL_DAMAGE_GUARD	%d%% szans na zablokowanie obra¿eñ od ataku	SA
+TOOLTIP_NORMAL_HIT_DAMAGE_BONUS	Œrednie Obra¿enia: %d%%	SA
+TOOLTIP_NORMAL_HIT_DAMAGE_BONUS_BOSS_OR_MORE	Obra¿enia od ataku przeciwko bossom +%d%%	SA
+TOOLTIP_NORMAL_HIT_DEFEND_BONUS	Odpornoœæ na Obra¿enia: %d%%	SA
+TOOLTIP_NORMAL_HIT_DEFEND_BONUS_BOSS_OR_MORE	Obra¿enia od ataku bossów -%d%%	SA
+TOOLTIP_PARTY_INFO_GRADE_UP1	Wiêcej ni¿ %d Cz³onków Grupy
+TOOLTIP_PARTY_INFO_GRADE_UP2	Poziom Ataku +%d
+TOOLTIP_PARTY_INFO_GRADE_UP3	Poziom Obrony +%d
+TOOLTIP_PARTY_INFO_HEAL_18_LEVEL	Regeneracja P¯/PE wszystkich Cz³onków Grupy przez 60 minut.
+TOOLTIP_PARTY_INFO_HEAL_40_LEVEL	Regeneracja P¯/PE wszystkich Cz³onków Grupy przez 30 minut.
+TOOLTIP_PARTY_INFO_RECALL_12_LEVEL	Musisz poczekaæ 3 minuty po œmierci cz³onka grupy.
+TOOLTIP_PARTY_INFO_RECALL_20_LEVEL	Mo¿esz przywo³aæ cz³onków grupy, którzy s¹ na tym samym serwerze.
+TOOLTIP_PARTY_INFO_SET_ATTACKER	Poziom Ataku +(iloœæ cz³onków grupy/2) Napastnik %d mo¿e byæ wybrany.
+TOOLTIP_PARTY_INFO_SET_TANKER	Poziom Obrony +(iloœæ cz³onków grupy) 1 Walcz¹cy Ostrzem mo¿e byæ wybrany.
+TOOLTIP_PARTY_SKILL_LEVEL	Aktualny Poziom: %d
+TOOLTIP_PARTY_TITLE_GRADE_UP	[Atak/Obrona ulepszony]
+TOOLTIP_PARTY_TITLE_HEAL	[przywróæ]
+TOOLTIP_PARTY_TITLE_INFO_BONUS_EXP	Jeœli masz wiêcej ni¿ %d Cz³onków Grupy, dostajesz %d%% Bonus DOŒ .
+TOOLTIP_PARTY_TITLE_MEMBER_BONUS_EXP	[Bonus DOŒ]
+TOOLTIP_PARTY_TITLE_RECALL	[Przywo³aj]
+TOOLTIP_PARTY_TITLE_SET_ATTACKER	[Ustanów Napastnika]
+TOOLTIP_PARTY_TITLE_SET_TANKER	[Ustanów Walcz¹cego Ostrzem]
+TOOLTIP_PEPSI_EVENT	5% bonusu PD i 5% zwiêkszonej szansy na zdobywanie przedmiotów.	SNA
+TOOLTIP_PICK_EXP	Punkty: %d / %d
+TOOLTIP_PICK_LEVEL	Poziom: %d
+TOOLTIP_PICK_UPGRADE1	Daj to Drwalowi
+TOOLTIP_PICK_UPGRADE2	aby dostaæ
+TOOLTIP_PICK_UPGRADE3	ulepszony Kilof.
+TOOLTIP_POTION_CURE	Usuñ negatywne skutki.
+TOOLTIP_POTION_MIN	Min.
+TOOLTIP_POTION_PLUS_ATTACK_SPEED	Szybkoœæ Ataku +%d
+TOOLTIP_POTION_PLUS_ATTBONUS_MONSTER	BONUS ATAKU POTWORÓW: +%d%%
+TOOLTIP_POTION_PLUS_ATT_POINT	ATAK: +%d
+TOOLTIP_POTION_PLUS_ATT_POINT_PER	ATAK: +%d%%
+TOOLTIP_POTION_PLUS_DEF_POINT	OBRONA: +%d
+TOOLTIP_POTION_PLUS_DEX_POINT	ZRÊ: +%d
+TOOLTIP_POTION_PLUS_EXP_BONUS	PD: +%d%%
+TOOLTIP_POTION_PLUS_HIT_DEFEND_POINT	ODPORNOŒÆ NA OBRA¯ENIA: +%d%%
+TOOLTIP_POTION_PLUS_HP_PERCENT	P¯ +%d%%
+TOOLTIP_POTION_PLUS_HP_POINT	P¯ +%d
+TOOLTIP_POTION_PLUS_MOVING_SPEED	Szybkoœæ Ruchu +%d
+TOOLTIP_POTION_PLUS_RESIST_DARK	ODPORNOŒÆ NA MROK: +%d%%
+TOOLTIP_POTION_PLUS_RESIST_EARTH	ODPORNOŒÆ NA ZIEMIÊ: +%d%%
+TOOLTIP_POTION_PLUS_RESIST_ICE	ODPORNOŒÆ NA LÓD: +%d%%
+TOOLTIP_POTION_PLUS_RESIST_MAGIC	ODPORNOŒÆ NA MAGIÊ: +%d%%
+TOOLTIP_POTION_PLUS_SP_PERCENT	PE +%d%%
+TOOLTIP_POTION_PLUS_SP_POINT	PE +%d
+TOOLTIP_POTION_PLUS_STR_POINT	SI£A: +%d
+TOOLTIP_POTION_SEC	Sek.
+TOOLTIP_POTION_TIME	Czas trwania:
+TOOLTIP_PVP_TOURNAMENT_ENTER	Uczestnictwo w turnieju PvP
+TOOLTIP_PVP_TOURNAMENT_EXPBONUS	Turniej PvP PD +%d%%	SA
+TOOLTIP_REQUIREMENT_21_LEVEL	Musisz osi¹gn¹æ Poziom 21.
+TOOLTIP_REQUIREMENT_41_LEVEL	Musisz osi¹gn¹æ Poziom 41.
+TOOLTIP_REQUIREMENT_LEVEL	Musisz osi¹gn¹æ Poziom %d.
+TOOLTIP_REQUIREMENT_SKILL_LEVEL	%s Poziom %d wymagany.
+TOOLTIP_REQUIREMENT_STAT_LEVEL	%s %d wymagany
+TOOLTIP_RESIST_BOW	Odpornoœæ na Strza³y +%d%%	SA
+TOOLTIP_RESIST_DARK	Odpornoœæ na mrok +%d%%	SA
+TOOLTIP_RESIST_EARTH	Odpornoœæ na ziemiê +%d%%	SA
+TOOLTIP_RESIST_ELEC	Odpornoœæ na B³yskawice: +%d%%	SA
+TOOLTIP_RESIST_FIRE	Odpornoœæ na Ogieñ: +%d%%	SA
+TOOLTIP_RESIST_ICE	Odpornoœæ na lód +%d%%	SA
+TOOLTIP_RESIST_MAGIC	Odpornoœæ na Magiê: +%d%%	SA
+TOOLTIP_RESIST_MAGIC_REDUCTION	Antymagia o +%d%%	SA
+TOOLTIP_REST_USABLE_COUNT	Pozosta³o: %d
+TOOLTIP_SEALED	Przywi¹zanie do duszy
+TOOLTIP_SEASON_PVE_BUFF	Zwiêksza o 40% obra¿enia PvE przez 10 min.	SNA
+TOOLTIP_SEASON_RANKING_BUFF	Zwiêksza o 20% punkty rangi przez 10 min.	SNA
+TOOLTIP_SECOND_ATTRIBUTE_BONUS	2. dodany bonus +%d%%	SA
+TOOLTIP_SELLPRICE	Cena: %s
+TOOLTIP_SET_ITEM	Bonus zestawu	SNA
+TOOLTIP_SHAMAN	Szaman
+TOOLTIP_SHIELD	Tarcza
+TOOLTIP_SHOES	Buty
+TOOLTIP_SKILL	Umiejêtnoœci	SNA
+TOOLTIP_SKILLBOOK_NAME	Ksiêga Umiejêtnoœci
+TOOLTIP_SKILL_AFFECT_ATT_GRADE	Wartoœæ Ataku: +
+TOOLTIP_SKILL_AFFECT_ATT_POWER	Wartoœæ Ataku:
+TOOLTIP_SKILL_AFFECT_ATT_SPEED	Szybkoœæ Ataku: +
+TOOLTIP_SKILL_AFFECT_DEF_GRADE	Obrona:
+TOOLTIP_SKILL_AFFECT_DODGE	Wartoœæ Ataku przeciwnika: -
+TOOLTIP_SKILL_AFFECT_HEAL	Regeneracja P¯:
+TOOLTIP_SKILL_AFFECT_MOV_SPEED	Szybkoœæ Ruchu: +
+TOOLTIP_SKILL_AFFECT_REFLECT_MELEE	Szansa na odbicie ataku:
+TOOLTIP_SKILL_AFFECT_RESIST_NORMAL	Odpornoœæ na Obra¿enia:
+TOOLTIP_SKILL_COOL_TIME	Odnowa: 
+TOOLTIP_SKILL_DAMAGE_AMSEOP	Obra¿enia od zasadzki +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_BIPABU	Obra¿enia od lataj¹cego talizmanu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_BONUS	Obra¿enie Umiejêtnoœci: %d%%	SA
+TOOLTIP_SKILL_DAMAGE_BONUS_BOSS_OR_MORE	Obra¿enia od umiejêtnoœci przeciwko bossom +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_BYEURAK	Obra¿enia od przywo³ania b³yskawicy +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_CHAIN	Obra¿enia od burzowego szponu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_CHARYUN	Obra¿enia od wiruj¹cego sztyletu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_CHAYEOL	Obra¿enia od rozdarcia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GEOMPUNG	Obra¿enia od uderzenia miecza +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GIGONGCHAM	Obra¿enia od duchowego uderzenia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GIGUNG	Obra¿enia od zatrutej strza³y +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GONGDAB	Obra¿enia od wilczego skoku +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GUNGSIN	Obra¿enia od szybkiego ataku +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_GYOKSAN	Obra¿enia od walniêcia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_HWAJO	Obra¿enia od ognistej strza³y +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_HWAYEOMPOK	Obra¿enia od ognistego uderzenia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_KWANKYEOK	Obra¿enia od deszczu strza³ +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_MAHWAN	Obra¿enia od mrocznej sfery +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_MARYUNG	Obra¿enia od mrocznego uderzenia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_NOEJEON	Obra¿enia od b³yskawicznego rzutu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_PABEOB	Obra¿enia od rozproszenia magii +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_PAERYONG	Obra¿enia od smoczego skowytu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_PALBANG	Obra¿enia od wiru miecza +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_PASWAE	Obra¿enia od szponu wilka +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_SALPOONG	Obra¿enia od wilczego tchu +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_SAMYEON	Obra¿enia od trzystronnego ciêcia +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_SANGONG	Obra¿enia od truj¹cej chmury +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_SWAERYUNG	Obra¿enia od uderzenia palcem +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_TANHWAN	Obra¿enia od szar¿y +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_YEONSA	Obra¿enia od powtarzalnego strza³u +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_YONGBI	Obra¿enia od strzelaj¹cego smoka +%d%%	SA
+TOOLTIP_SKILL_DAMAGE_YONGKWON	Obra¿enia od smoczego wiru +%d%%	SA
+TOOLTIP_SKILL_DEFEND_BONUS	Odpornoœæ na Obra¿enia Umiejêtnoœci %d%%	SA
+TOOLTIP_SKILL_DEFEND_BONUS_BOSS_OR_MORE	Obra¿enia od umiejêtnoœci bossów -%d%%	SA
+TOOLTIP_SKILL_DURATION	Czas trwania: %d sek.
+TOOLTIP_SKILL_DURATION_INCREASE_EUNHYUNG	Czas trwania krycia siê +%d sek.	SA
+TOOLTIP_SKILL_DURATION_INCREASE_GEOMKYUNG	Czas trwania aury miecza +%d sek.	SA
+TOOLTIP_SKILL_DURATION_INCREASE_GYEONGGONG	Czas trwania bezszelestnego chodu +%d sek.	SA
+TOOLTIP_SKILL_DURATION_INCREASE_JEOKRANG	Czas trwania duszy purpurowego wilka +%d sek.	SA
+TOOLTIP_SKILL_FORGET_BOOK_NAME	Ksiêga Zapomnienia
+TOOLTIP_SKILL_LEVEL	Aktualny Poziom: %d
+TOOLTIP_SKILL_LEVEL_MASTER	Aktualny Poziom: %d (Mistrz)
+TOOLTIP_SKILL_LEVEL_WITH_MAX	Aktualny Poziom: %d (Max %d)
+TOOLTIP_SOCKET_EMPTY	Pusty
+TOOLTIP_SOCKET_REFINABLE_ITEM	[Przedmiot ze slotem]
+TOOLTIP_SP_REGEN	Regeneracja PE: +%d%%	SA
+TOOLTIP_STR	Si³a: +%d	SA
+TOOLTIP_SURA	Sura
+TOOLTIP_THIRD_ATTRIBUTE_BONUS	3. dodany bonus +%d%%	SA
+TOOLTIP_TIME_CHARGER_FIX	£adowanie czasu %d sek.	SA
+TOOLTIP_TIME_CHARGER_PER	£adowanie czasu %d%%	SA
+TOOLTIP_UNIQUE	Unikat
+TOOLTIP_UNSEAL_LEFT_TIME	Oderwanie od duszy za: %dH %dM
+TOOLTIP_USE_SKILL_AMSEOP_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu zasadzki	SA
+TOOLTIP_USE_SKILL_BIPABU_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji lataj¹cego talizmanu: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_BIPABU_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji lataj¹cego talizmanu: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_BYEURAK_HP_ABSORB	Absorbujesz do %d%% P¯ przy u¿yciu przywo³ania b³yskawicy.	SA
+TOOLTIP_USE_SKILL_CHAIN_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu burzowego szponu	SA
+TOOLTIP_USE_SKILL_CHARYUN_STUN	Wiruj¹cy sztylet ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_CHAYEOL_CRITICAL_PCT	Na %d sek. zwiêksza szansê na atak krytyczny przy u¿yciu rozdarcia	SA
+TOOLTIP_USE_SKILL_CHAYEOL_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu rozdarcia	SA
+TOOLTIP_USE_SKILL_CHEONGRANG_CASTING_SPEED	Na %d sek. zwiêksza szybkoœæ zaklêcia przy u¿yciu duszy wilka Indygo	SA
+TOOLTIP_USE_SKILL_CHEONGRANG_MOV_SPEED	Na %d sek. zwiêksza szybkoœæ ruchu przy u¿yciu duszy wilka Indygo	SA
+TOOLTIP_USE_SKILL_CHUNKEON_CASTING_SPEED	Na %d sek. zwiêksza szybkoœæ zaklêcia przy u¿yciu silnego cia³a	SA
+TOOLTIP_USE_SKILL_GEOMPUNG_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji uderzenia miecza: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_GEOMPUNG_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji uderzenia miecza: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_GICHEON_ATT_GRADE_BONUS	Na %d sek. zwiêksza bonus do ataku przy u¿yciu pomocy smoka	SA
+TOOLTIP_USE_SKILL_GIGONGCHAM_STUN	Duchowe uderzenie ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_GIGUNG_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu zatrutej strza³y	SA
+TOOLTIP_USE_SKILL_GIHYEOL_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu woli ¿ycia	SA
+TOOLTIP_USE_SKILL_GONGDAB_KNOCKBACK	Wilczy skok ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_GONGDAB_STUN	Wilczy skok ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_GUNGSIN_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji szybkiego ataku: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_GUNGSIN_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji szybkiego ataku: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_GWIGEOM_DEF_BONUS	Na %d sek. otrzymujesz bonus do obrony przy u¿yciu czarowanego ostrza	SA
+TOOLTIP_USE_SKILL_GYOKSAN_KNOCKBACK	Walniêcie ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_HOSIN_DEF_BONUS	Na %d sek. otrzymujesz bonus do obrony przy u¿yciu b³ogos³awieñstwa	SA
+TOOLTIP_USE_SKILL_HWAYEOMPOK_KNOCKBACK	Ogniste uderzenie ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_JEOKRANG_DEF_BONUS	Na %d sek. otrzymujesz bonus do obrony przy u¿yciu duszy purpurowego wilka	SA
+TOOLTIP_USE_SKILL_JEONGEOP_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu leczenia	SA
+TOOLTIP_USE_SKILL_JEUNGRYEOK_DEF_BONUS	Na %d sek. otrzymujesz bonus do obrony przy u¿yciu ataku+	SA
+TOOLTIP_USE_SKILL_KWANKYEOK_KNOCKBACK	Deszcz strza³ ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_KWANKYEOK_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji deszczu strza³: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_KWANKYEOK_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji deszczu strza³: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_MAHWAN_STUN	Mroczna sfera ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_MANASHILED_CASTING_SPEED	Na %d sek. zwiêksza szybkoœæ zaklêcia przy u¿yciu mrocznej ochrony	SA
+TOOLTIP_USE_SKILL_MARYUNG_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji mrocznego uderzenia: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_MARYUNG_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji mrocznego uderzenia: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_MUYEONG_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu ognistego ducha	SA
+TOOLTIP_USE_SKILL_NOEGEOM_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu krêgu mieczy	SA
+TOOLTIP_USE_SKILL_NOEJEON_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji b³yskawicznego rzutu: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_NOEJEON_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji b³yskawicznego rzutu: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_PABEOB_STUN	Rozproszenie magii ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_PAERYONG_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu smoczego skowytu	SA
+TOOLTIP_USE_SKILL_PALBANG_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu wiru miecza	SA
+TOOLTIP_USE_SKILL_PASWAE_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji szponu wilka: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_PASWAE_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji szponu wilka: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_PASWAE_SP_ABSORB	Absorbuje %d%% PE przy u¿yciu szponu wilka	SA
+TOOLTIP_USE_SKILL_SALPOONG_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji wilczego tchu: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_SALPOONG_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji wilczego tchu: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_SAMYEON_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji trzystronnego ciêcia: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_SAMYEON_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji trzystronnego ciêcia: -%d sek. z 20%% szans	SA
+TOOLTIP_USE_SKILL_SAMYEON_STUN	Trzystronne ciêcie ma %d%% szans na og³uszenie przeciwnika	SA
+TOOLTIP_USE_SKILL_SANGONG_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu truj¹cej chmury	SA
+TOOLTIP_USE_SKILL_SEOMJEON_KNOCKBACK	Wolno dzia³aj¹ca trucizna ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_SWAERYUNG_KNOCKBACK	Uderzenie palcem ma %d%% szans na oddanie przeciwnikowi	SA
+TOOLTIP_USE_SKILL_TERROR_ATT_GRADE_BONUS	Na %d sek. otrzymujesz bonus do ataku przy u¿yciu strachu	SA
+TOOLTIP_USE_SKILL_TUSOK_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu duchowego ciosu	SA
+TOOLTIP_USE_SKILL_YEONSA_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu powtarzalnego strza³u	SA
+TOOLTIP_USE_SKILL_YONGBI_HP_ABSORB	Absorbuje %d%% P¯ przy u¿yciu strzelaj¹cego smoka	SA
+TOOLTIP_USE_SKILL_YONGKWON_NEXT_COOLTIME_DECREASE_10PER	Czas regeneracji smoczego wiru: -%d sek. z 10%% szans	SA
+TOOLTIP_USE_SKILL_YONGKWON_NEXT_COOLTIME_DECREASE_20PER	Czas regeneracji smoczego wiru: -%d sek. z 20%% szans	SA
+TOOLTIP_WARRIOR	Wojownik
+TOOLTIP_WEAPON	Broñ
+TOOLTIP_WOLFMAN	Likan
+TOOLTIP_WRISTLET	Bransoleta
+UI_ACCEPT	Akceptuj
+UI_BOLD_FONT	Tahoma:12b
+UI_CANCEL	Anuluj
+UI_CLOSE	Zamknij
+UI_DEF_FONT	Tahoma:12
+UI_DEF_FONT_LARGE	Tahoma:14
+UI_DEF_FONT_SMALL	Tahoma:9
+UI_DENY	Odrzuæ
+UI_ITEM	Przedmiot
+UI_LEFT_TIME	Pozosta³y Czas: %d Sek.
+UI_NEXT	Kontynuuj
+UI_NEXTPAGE	Dalej
+UI_NOCONTENTS	Brak Zawartoœci
+UI_NONAME	Brak Nazwy
+UI_OK	OK
+UI_POS_UNKNOWN	Nieznane Po³o¿enie
+UI_PREVPAGE	Wróæ
+UI_UNKNOWN	Nieznany
+UNLIMIT_ENTER_CZ_QUESTION	Mo¿esz wejœæ do Œwi¹tyni Zodiaku na %d min. Chcesz u¿yæ tego przedmiotu?
+UPDATE_TIME	Data
+UPLOAD_MARK_CHECK_NEED_RECONNECT	Wgrywanie musi zostaæ ponownie rozpoczête.
+UPLOAD_MARK_UPLOAD_NEED_RECONNECT	Wgrywanie musi zostaæ ponownie rozpoczête.
+USE_ITEM_BUTTON_01	Anuluj
+USE_ITEM_BUTTON_02	WejdŸ
+USE_ITEM_FAILURE_PRIVATE_SHOP	Nie mo¿esz u¿ywaæ przedmiotów, jeœli otworzy³eœ prywatny sklep.
+USE_ITEM_POPUP_01	Zakoñczy³a siê Bitwa Piêciu Relikwiarzy. \n Nastêpna bitwa:
+USE_ITEM_QUESTION_01	Czy chcesz wzi¹æ udzia³ w Bitwê Piêciu Relikwiarzy?
+USE_ITEM_QUESTION_02	Czy chcesz wróciæ do miejsca, gdzie zosta³eœ zabity?\n Koszt to %s Yang.
+USE_ITEM_QUESTION_03	Zostaniesz teleportowany do losowej lokalizacji. Chcesz wejœæ?
+USE_SKILL_ERROR_UNKNOWN	Nieznany B³¹d Umiejêtnoœci: %s
+NEW_DETAILS_1	Odpornosc na pól ludzi
+NEW_DETAILS_1_TOOLTIP	Odpornosc na pól ludzi: Zmniejsza obrazenia zadawane przez pól ludzi.
+NEW_DETAILS_2	Obrona talizmanu
+NEW_DETAILS_2_TOOLTIP	Obrona talizmanu: Zmniejsza bonusy talizmanu.
+NEW_DETAILS_5	Silny przeciwko zodiakom
+NEW_DETAILS_5_TOOLTIP	Silny przeciwko zodiakom: Zwieksza obrazenia zadawane potworom zodiaku.
+NEW_DETAILS_6	Silny przeciwko metinom
+NEW_DETAILS_6_TOOLTIP	Silny przeciwko metinom: Zwieksza obrazenia zadawane metinom.
+NEW_DETAILS_7	Silny przeciwko wladcom
+NEW_DETAILS_7_TOOLTIP	Silny przeciwko wladcom: Zwieksza obrazenia zadawabe wladcom.
+NEW_DETAILS_8	Odpornosc na potwory
+NEW_DETAILS_8_TOOLTIP	Odpornosc na potwory: Zmniejsza obrazenia zadawane przez potwory.
+NEW_DETAILS_9	Szansa na krytyczne uderzenie (PVM)
+NEW_DETAILS_10	Odpornosc na miecze
+NEW_DETAILS_10_TOOLTIP	Odpornosc na miecze: Zmniejsza obrazenia otrzymywane przez miecze.
+NEW_DETAILS_11	Odpornosc na bron dwureczna
+NEW_DETAILS_11_TOOLTIP	Odpornosc na bron dwureczna: Zmniejsza obrazenia otrzymywane przez bron dwureczna.
+NEW_DETAILS_12	Odpornosc na sztylety
+NEW_DETAILS_12_TOOLTIP	Odpornosc na sztylety: Zmniejsza obrazenia otrzymywane przez sztylety.
+NEW_DETAILS_13	Odpornosc na strzaly
+NEW_DETAILS_13_TOOLTIP	Odpornosc na strzaly: Zmniejsza obrazenia otrzymywane przez strzaly.
+NEW_DETAILS_14	Odpornosc na wachlarze
+NEW_DETAILS_14_TOOLTIP	Odpornosc na wachlarze: Zmniejsza obrazenia otrzymywane przez wachlarze.
+NEW_DETAILS_15	Odpornosc na dzwony
+NEW_DETAILS_15_TOOLTIP	Odpornosc na dzwony: Zmniejsza obrazenia otrzymywane przez dzwony.
+NEW_DETAILS_16	Silny przeciwko runicznym potworom
+NEW_DETAILS_16_TOOLTIP	Silny przeciwko runicznym potworom: Zwieksza obrazenia zadawane runicznym potworom.
+NEW_DETAILS_17	Wartosc ataku
+NEW_DETAILS_17_TOOLTIP	Wartosc ataku
+PET_MISSING1_1	Mlody
+PET_MISSING1_2	Dziki
+PET_MISSING1_3	Odwazny
+PET_MISSING1_4	Heroiczny
+COOLDOWN_IN_PROGRESS	Musisz poczekac!
+PERMANENT_EFFECT	Staly
+TARGET_INFO_RACE_RUNE	Runa
+CUBE_LOSE_BONUSES_ALERT	Kontynuujac stracisz bonus w przedmiocie, jestes pewny?
+ACCE_FAILURE_CLEAN	Zadne bonusy nie moga byc usuniete.
+ACCE_DO_YOU_CLEAN	Czy chcesz usunac wszystkie mozliwe bonusy?
+ACCE_REFINE_COST	Cena absorpcji: %s
+ACCE_ABSORB_CHANCE	Szansa na absorpcje: %d%%
+ACCE_ABSORB_CHANCE2	Szansa absorpcji: %d%% ~ %d%%
+MAP_SAVEPOINT_NAME_0	Nieznany
+MAP_SAVEPOINT_NAME_214	Wioski
+MAP_SAVEPOINT_NAME_70	Dolina trolli
+MAP_SAVEPOINT_NAME_69	Pola Serpi
+MAP_SAVEPOINT_NAME_72	Grota wygnanców av1
+MAP_SAVEPOINT_NAME_73	Grota wygnanców av2
+MAP_SAVEPOINT_NAME_67	Lungsam
+MAP_SAVEPOINT_NAME_68	Czerwony las
+MAP_SAVEPOINT_NAME_64	Dolina Seungryong
+MAP_SAVEPOINT_NAME_65	Swiatynia Hwang
+MAP_SAVEPOINT_NAME_62	Doyyumhwaji
+MAP_SAVEPOINT_NAME_104	Podziemie 1
+MAP_SAVEPOINT_NAME_71	Podziemie 2
+MAP_SAVEPOINT_NAME_217	Podziemie 3
+MAP_SAVEPOINT_NAME_219	Normalna poczekalnia
+MAP_SAVEPOINT_NAME_215	Specjalna poczekalnia
+MAP_SAVEPOINT_NAME_61	Góra sohan
+MAP_SAVEPOINT_NAME_63	Pustynia Yongbi
+MAP_SAVEPOINT_NAME_303	Nefrytowa Zatoka
+MAP_SAVEPOINT_NAME_304	Góry grzmotów
+MAP_SAVEPOINT_NAME_302	Klif Guatama
+MAP_SAVEPOINT_NAME_301	Przyladek smoczego ognia
+MAP_SAVEPOINT_NAME_210	Runo
+SAVEPOINT_TELEPORTDIALOG	Czy chcesz sie przeniesc do tej lokacji?
+SAVEPOINT_EMPTYITDIALOG	Czy chcesz wyczyscic ten slot?
+SAVEPOINT_SAVEDIALOG	Chesz zapisac ta pozycje?
+SAVEPOINT_EMPTY	[ Pusty ]
+SAVEPOINT_SAVE	Zapisz
+SAVEPOINT_EMPTYIT	Wyczysc
+SAVEPOINT_GO	Teleport
+ATLASINFO_QUESTIONDIALOG1	Czy chcesz sie przeniesc do %s?
+ATLASINFO_QUESTIONDIALOG2	Cena: 1.000.000 Yang
+WIKI_SUBCATEGORY_SUPPORT	WSPARCIE
+WIKI_CATEGORY_COMPANY	COMPANY
+WIKI_SUBCATEGORY_FASTKEY	Armors
+WIKI_SUBCATEGORY_FASTKEY1	Weapons
+WIKI_SUBCATEGORY_RUNES	RUNE
+WIKI_SUBCATEGORY_D_ORCMAZE	LABIRYNT ORKÓW
+WIKI_SUBCATEGORY_D_MELMA	SLIME DUNGEON
+WIKI_SUBCATEGORY_D_ARACNIDI	KOMNATA BARONÓWNY
+WIKI_SUBCATEGORY_D_DEVILSTOWER	WIEZA DEMONÓW
+WIKI_SUBCATEGORY_D_RUNE	RUNE DUNGEON
+WIKI_SUBCATEGORY_D_CATACOMBE	PIEKIELNE KATAKUMBY
+WIKI_SUBCATEGORY_D_BERAN	KOMNATA SMOKA
+WIKI_SUBCATEGORY_D_MELEY	SCHRONIENIE MELEY
+WIKI_SUBCATEGORY_D_NEMERE	STRAZNICA NEMERE
+WIKI_SUBCATEGORY_D_RAZADOR	TWIERDZA CZERWONEGO SMOKA
+WIKI_SUBCATEGORY_D_OCHAO	SWIATYNIA OCHAO
+WIKI_SUBCATEGORY_D_JOTUN	POKÓJ JOTUNA
+WIKI_SUBCATEGORY_D_NAVE	OBRONA STATKU
+WIKI_SUBCATEGORY_D_PIRAMIDE	PIRAMIDA TUTANCHAMONA
+MASK_HP	HP: %s / %s
+WIKI_SUBCATEGORY_EARRINGS	KOLCZYKI
+WIKI_SUBCATEGORY_BRACELET	BRANSOLETY
+WIKI_SUBCATEGORY_NECKLACE	NASZYJNIKI
+WIKI_SUBCATEGORY_SHOES	BUTY
+WIKI_CATEGORY_CHESTS	SKRZYNIE
+WIKI_SUBCATEGORY_CHESTS	OF BOSS SKRZYNIE WLADCÓW
+WIKI_SUBCATEGORY_DUNGEONS	SKRZYNIE Z WYPRAW
+WIKI_SUBCATEGORY_EVENT_CHESTS	SKRZYNIE EVENTOWE
+WIKI_SUBCATEGORY_ALTERNATIVE_CHESTS	ALTERNATIVE
+WIKI_CATEGORY_BOSSES	WLADCY
+WIKI_SUBCATEGORY_LV1_75	LV 1-75
+WIKI_SUBCATEGORY_LV76_100	LV 76-100
+WIKI_SUBCATEGORY_LV100	LV 100+
+WIKI_CATEGORY_MONSTERS	POTWORY
+WIKI_CATEGORY_METINSTONES	KAMIENIE METIN
+WIKI_CATEGORY_SYSTEMS	SYSTEMY
+WIKI_SUBCATEGORY_REACTION_EVENT	Event reakcji
+WIKI_SUBCATEGORY_SHAMY	SUPPORTO SHAMY
+WIKI_SUBCATEGORY_DRAGONALCHEMY	ALCHEMIA
+WIKI_SUBCATEGORY_SHOULDER_SASH	SZARFY
+WIKI_SUBCATEGORY_EPIC_SYSTEM	EPICKI SYSTEM
+WIKI_SUBCATEGORY_COSTUME_SASH	SZARFA KOSTIUMOWA
+WIKI_SUBCATEGORY_COSTUMES	KOSTIUMY
+WIKI_SUBCATEGORY_BATTLEPASS	KARNET BOJOWY
+WIKI_SUBCATEGORY_BOOST	WZMOCNIENIE UMIEJETNOSCI
+WIKI_SUBCATEGORY_PASSIVE	UMIEJETNOSCI PASYWNE 
+WIKI_SUBCATEGORY_BIOLOGIST	BIOLOG
+WIKI_SUBCATEGORY_ANTIFARM	ANTI-FARM
+WIKI_SUBCATEGORY_FREEZE	BONUS FREEZE
+WIKI_SUBCATEGORY_GAYA	GAYA
+WIKI_SUBCATEGORY_GUILD	GILDIA
+WIKI_SUBCATEGORY_OFFLINESHOP	SKLEP OFFLINE
+WIKI_SUBCATEGORY_SKILL_COLOR	KOLOR UMIEJETNOSCI
+WIKI_CATEGORY_DUNGEONS	WYPRAWY
+WIKI_SUBCATEGORY_HAIRSTYLES	FRYZURY
+WIKI_SUBCATEGORY_PET	ZWIERZAK
+WIKI_SUBCATEGORY_PET_COSTUMES	KOSTIUMY ZWIERZAKA
+WIKI_SUBCATEGORY_ANIME	ANIME
+WIKI_SUBCATEGORY_MOUNT	WIERZCHOWIEC
+WIKI_SUBCATEGORY_MOUNT_COSTUMES	KOSTIUMY WIERZCHOWCA
+WIKI_CATEGORY_COSTUMES	KOSTIUMY
+WIKI_CATEGORY_EVENTS	WYDARZENIA
+WIKI_CATEGORY_GUIDES	Evolution
+WIKI_REFINEINFO_YANG_COSTS	Koszt w yang
+WIKI_REFINEINFO_UPGRADE_COSTS	Koszt ulepszenia
+WIKI_REFINEINFO_ITEM_LEVEL	Lv %i
+WIKI_CHESTINFO_ORIGIN	Origin
+WIKI_CHESTINFO_CONTENTOF	Zawiera: %s
+WIKI_CHESTINFO_COMMON_DROP	Pospolity drop
+WIKI_MONSTERINFO_DROPLISTOF	Lista dropu %s
+WIKI_MONSTERINFO_LEVEL	Lv: %i
+WIKI_MONSTERINFO_IMMUNE_TO	Odporny na: %s
+WIKI_MONSTERINFO_DMG_HP	Min Dmg%s | Max dmg.:%s | Max HP: %s
+WIKI_MONSTERINFO_GOLD_EXP	Yang min.: %s | Yang max.: %s | EXP: %s
+WIKI_MONSTERINFO_RESISTANCES	Odpornosci:
+WIKI_MONSTERINFO_IMMUNE_NOTHING	brak
+WIKI_MONSTERINFO_STATISTICSOF	Statystyki %s
+WIKI_ITEMINFO_OPTAINEDFROM	Dostepne od:
+WIKI_ITEMINFO_REFINEINFO	Doprecyzuj informacje %s
+WIKI_TITLENAME	Wiki
+WIKI_SUBCATEGORY_BELTS	PASY
+WIKI_SUBCATEGORY_TALISMANS	TALIZMANY
+WIKI_SUBCATEGORY_STOLE	STOLE
+WIKI_SUBCATEGORY_STOLE_COSTUMES	STOLE COSTUMES
+WIKI_SUBCATEGORY_WEAPONS_EFFECT	EFEKTY BRONI
+WIKI_SUBCATEGORY_ARMORS_EFFECT	EFEKTY ZBROJI
+WIKI_SUBCATEGORY_TRANSLATE	TLUMACZ
+WIKI_SUBCATEGORY_LV76_105	LV. 76-105
+WIKI_SUBCATEGORY_SHIELD	TARCZE
+WIKI_SUBCATEGORY_HELMET	HELMY
+WIKI_SUBCATEGORY_ARMOR	ZBROJE
+WIKI_SUBCATEGORY_WEAPONS	BRONIE
+WIKI_CATEGORY_EQUIPEMENT	EKWIPUNEK
+WIKI_SEARCH_OVERLAY_TEXT	SZUKAJ
+WIKI_EXACT_SEARCH_TEXT	DOKLADNE SZUKANIE
+WIKI_MONSTERINFO_DAMAGE	obrazenia: %s-%s
+WIKI_MONSTERINFO_DEFENSE	obrona: %s
+WIKI_MONSTERINFO_EXP	Exp: %s
+WIKI_MONSTERINFO_MAINRACE	Rasa: %s
+WIKI_MONSTERINFO_MAX_HP	Max HP: %s
+WIKI_MONSTERINFO_NO_RACE	Brak
+WIKI_MONSTERINFO_RACE_ANIMAL	Zwierzeta
+WIKI_MONSTERINFO_RACE_UNDEAD	Nieumarle
+WIKI_MONSTERINFO_RACE_DEVIL	Diably
+WIKI_MONSTERINFO_RACE_HUMAN	Pól ludzie
+WIKI_MONSTERINFO_RACE_ORC	Orki
+WIKI_MONSTERINFO_RACE_MILGYO	Mistycy
+WIKI_MONSTERINFO_RACE_TREE	Drzewa
+WIKI_MONSTERINFO_RACE_ELEC	Blyskawica
+WIKI_MONSTERINFO_RACE_FIRE	Ogien
+WIKI_MONSTERINFO_RACE_ICE	Lód
+WIKI_MONSTERINFO_RACE_WIND	Wiatr
+WIKI_MONSTERINFO_RACE_EARTH	Ziemia
+WIKI_MONSTERINFO_RACE_DARK	Mrok
+WIKI_MONSTERINFO_RACE_METIN	Kamienie metin
+WIKI_MONSTERINFO_STONE_NAME	Kamien Duchowy
+WIKI_MONSTERINFO_SUBRACE	Pod-rasa: %s
+WIKI_MONSTERINFO_IMMUNE_STUN	Ogluszenie
+WIKI_MONSTERINFO_IMMUNE_SLOW	Spowolnienie
+WIKI_MONSTERINFO_IMMUNE_CURSE	Klatwe
+WIKI_MONSTERINFO_IMMUNE_POISON	Otrucie
+WIKI_MONSTERINFO_IMMUNE_TERROR	Terror
+IDRA_TEXT1	Zabij Hydre
+IDRA_TEXT2	Zniszcz skarb
+IDRA_TEXT3	Poczekaj %d : %d
+IDRA_TEXT4	Zniszcz jajka
+IDRA_TEXT5	Czekaj %d : %d
+IDRA_TEXT6	Repair the three
+IDRA_TEXT7	Uwolniles statek
+IDRA_TEXT8	Zabij Królowa
+IDRA_TEXT9	-:-
+IDRA_TEXT10	%d
+SUPPORTINCUBATRICE_DIALOG1	Wprowadzona nazwa jest nieprawidlowa!
+GAMEMOD_DIALOG1	Mlody
+GAMEMOD_DIALOG2	Dziki
+GAMEMOD_DIALOG3	Odwazny
+GAMEMOD_DIALOG4	Heroiczny
+GAMEMOD_DIALOG5	%s (g) e %s (o)
+WHISPERMANAGER_DIALOG1	Angielski
+WHISPERMANAGER_DIALOG2	Rumunski
+WHISPERMANAGER_DIALOG3	Wloski
+WHISPERMANAGER_DIALOG4	Turecki
+WHISPERMANAGER_DIALOG5	Niemiecki
+WHISPERMANAGER_DIALOG6	Polski
+WHISPERMANAGER_DIALOG7	Portugalski
+WHISPERMANAGER_DIALOG8	Hiszpanski
+WHISPERMANAGER_DIALOG9	Czeski
+WHISPERMANAGER_DIALOG10	Bulgarski
+WHISPERMANAGER_DIALOG11	WSZYSTKIE
+PETSYSTEM_DIALOG1	Exp : %d of %d
+PETSYSTEM_DIALOG2	Exp : %.2f%%
+PETSYSTEM_DIALOG3	ExpI : %d of %d
+PETSYSTEM_DIALOG4	ExpI : %.2f%%
+PETFEED_DIALOG1	Nie mozna wstawic nakladajacych sie obiektów.
+PETFEED_DIALOG2	Wybrany %s.
+PETINCUBATRICE_DIALOG1	Nazwa twojego zwierzaka jest nieprawidlowa.
+PETINCUBATRICE_DIALOG2	Musisz posiadac: %s.
+PETINCUBATRICE_DIALOG3	Inkubator: %s.
+PETINCUBATRICE_DIALOG4	Jajo malpiszona
+PETINCUBATRICE_DIALOG5	Jajo pajaka
+PETINCUBATRICE_DIALOG6	Jajo razadora
+PETINCUBATRICE_DIALOG7	Jajo Nemere
+PETINCUBATRICE_DIALOG8	Jajo niebieskiego smoka
+PETINCUBATRICE_DIALOG9	Jajo czerwonego smoka
+PETINCUBATRICE_DIALOG10	Jajo azraela
+PETINCUBATRICE_DIALOG11	Jajo grubego kata
+PETINCUBATRICE_DIALOG12	Jajo malego bashido
+PETINCUBATRICE_DIALOG13	Jajo nessie
+PETINCUBATRICE_DIALOG14	Jajo exedyara
+UIMARKETSYS_DIALOG1	Broken: %d
+UIMARKETSYS_DIALOG2	Kod NPC: %d
+UIMARKETSYS_DIALOG3	Kod tytulu: %d
+SUPPORT_DIALOG1	Jestes pewny ze chcesz usunac wybrany objekt?
+SUPPORT_DIALOG2	Musisz najpierw przyzwac wsparcie zeby to zrobic!
+SUPPORT_DIALOG3	Nie mozesz uzyc tego przedmiotu.
+SUPPORT_DIALOG4	Przedmiot jest na inna plec!
+SUPPORT_DIALOG5	Dodanie objektu spowoduje utrate bonusów. Czy chcesz kontynuowac?
+PETSPECIAL_QUESTION1	Czy chcesz wlozyc zwierzaka do klatki?
+PETSPECIAL_QUESTION2	Chcesz nakarmic swojego zwierzaka?
+PVP_DUEL_TIME_REMAINING	Pozostaly czas: [%s]
+AFFECT_NEW_POTION31	Cape Book
+APPLY_PARTY_DROPEXP	Wszyscy czlonkowie grupy beda zdobywac %d%% wiecej punktów doswiadczenia	SA
+SLOTNAME_10	Przedmiot PVM
+SLOTNAME_11	Przedmiot PVP
+TOOLTIP_PETSKILL_1	Odpornosc (Wojownik)
+TOOLTIP_PETSKILL_2	Odpornosc (Sura)
+TOOLTIP_PETSKILL_3	Odpornosc (Ninja)
+TOOLTIP_PETSKILL_4	Odpornosc (Szaman)
+TOOLTIP_PETSKILL_5	Obrazenia krytyczne (PvM)
+TOOLTIP_PETSKILL_6	Silny przeciwko potworom
+TOOLTIP_PETSKILL_7	Silny przeciwko wladcom
+TOOLTIP_PETSKILL_8	Penetracja
+TOOLTIP_PETSKILL_9	Drop Yang
+TOOLTIP_PETSKILL_10	Wartosc Ataku/Magicznego ataku
+TOOLTIP_PETSKILL_11	Szansa na blok ciosu
+TOOLTIP_PETSKILL_12	Szansa na odbicie ciosu
+TOOLTIP_NEW_POTION30	Zwieksza szanse na zlapanie ryby o 20% jezeli jest to rzadka ryba.
+AFFECT_NEW_POTION30	Ksiega wedkarska
+TOOLTIP_APPLY_FISHING_RARE	%d%% wieksze prawdopodobienstwo zlapania rzadkiej ryby	SA
+TOOLTIP_ROD_FISHING	%d%% wieksza szansa na zlapanie ryb.
+TOOLTIP_FISH_USE_TIME	Czas trwania: %d minutes
+TOOLTIP_ANTIDROP	|Eemoji/anti_drop|e
+TOOLTIP_ANTISAFEBOX	|Eemoji/anti_safebox|e
+TOOLTIP_ANTISELL	|Eemoji/anti_sell|e
+TOOLTIP_ANTISHOP	|Eemoji/anti_shop|e
+SLOTNAME_1	Nakladka na zbroje
+SLOTNAME_2	Fryzura
+SLOTNAME_3	Nakladka na wierzchowca
+SLOTNAME_4	Nakladka na szarfe
+SLOTNAME_5	Nakladka na bron
+SLOTNAME_6	Nakladka na zwierzaka
+SLOTNAME_7	Wierzchowiec
+SLOTNAME_8	Efekt zbroji
+SLOTNAME_9	Efekt bronii
+TEXT_CHANNEL	%s, CH%d
+CH_99_NAME	%s, Ogólny
+TOOLTIP_BONUS_UNKNOWN	Unknown
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_ANIMAL	Silny przeciwko zwierzetom
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_ORC	Silny przeciwko orkom
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_UNDEAD	Silny przeciwko nieumarlym
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_DEVIL	Silny przeciwko diablom
+TOOLTIP_DUNGEON_APPLY_RESIST_FIRE	Odpornosc na ogien
+TOOLTIP_DUNGEON_APPLY_RESIST_ELEC	Odpornosc na blyskawice
+TOOLTIP_DUNGEON_APPLY_RESIST_ICE	Odpornosc na lód
+TOOLTIP_DUNGEON_APPLY_RESIST_WIND	Odpornosc na wiatr
+TOOLTIP_DUNGEON_APPLY_RESIST_EARTH	Odpornosc na ziemie
+TOOLTIP_DUNGEON_APPLY_RESIST_DARK	Odpornosc na mrok
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_ELEC	Silny na blyskawice
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_FIRE	Silny na ogien
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_ICE	Silny na lód
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_WIND	Silny na wiatr
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_EARTH	Silny na ziemie
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_DARK	Silny na mrok
+TOOLTIP_DUNGEON_APPLY_DESIGN_1	Silny na Blyskawice, Mrok, Lód, Ogien, Ziemie
+TOOLTIP_DUNGEON_APPLY_ATTBONUS_RUNE	Silny przeciwko runicznym potworom
+TOOLTIP_APPLY_DESIGN_1	Silny na blyskawice, mrok, lód %d%%	SA
+AFFECT_NEW_POTION24	Kolczyki Armony
+AFFECT_NEW_POTION25	Bransoleta Milosci
+AFFECT_NEW_POTION26	Kolczyki Milosci
+AFFECT_NEW_POTION27	Bransoleta Armony
+AFFECT_NEW_POTION28	Naszyjnik Milosci
+AFFECT_NEW_POTION29	Naszyjnik Armony
+PET_TOOLTIP_LV	Lv: %d
+PET_TOOLTIP_BNS1	PZ: +%s%%
+PET_TOOLTIP_BNS2	Silny przeciwko potworom: +%s%%
+PET_TOOLTIP_BNS3	Srednie obrazenia[PVM]: +%s%%
+DS_TIME_CHARGE	Pozostaly czas: %d%% (sec %d) di %d%% (sec %d)
+BIOLOGIST_ALERT2	Aby kontynuowac musisz odebrac nagrode.
+BIOLOGIST_ALERT3	Ukonczyles misje, teraz mozesz odebrac nagrode.
+BIOLOGIST_ALERT4	Aby otrzymac nagrode, musisz najpierw oddac wszystkie wymagane przedmioty.
+BIOLOGIST_CONFIRM_TYPE1	Czy na pewno chcesz zaakceptowac wybrany bonus?
+BIOLOGIST_ALERT_TYPE1	Aby wyplacic nagrode, musisz kliknac jeden z ponizszych bonusów.
+BIOLOGIST_REWARD_TYPE0	Otrzymasz nastepujace bonusy:
+BIOLOGIST_REWARD_TYPE1	Bedziesz musial wybrac jeden z ponizszych bonusów:
+BIOLOGIST_WAIT_FINISH	Czas oczekiwania Biologa zakonczyl sie.
+BIOLOGIST_WAIT	Nastepne oddanie: %s
+BIOLOGIST_COUNT	%d/%d
+BIOLOGIST_MISSION_NAME_1	Zab orka
+BIOLOGIST_MISSION_NAME_2	Ksiega klatw
+BIOLOGIST_MISSION_NAME_3	Pamiatka po demonie
+BIOLOGIST_MISSION_NAME_4	Matowy lód
+BIOLOGIST_MISSION_NAME_5	Konary zelkova
+BIOLOGIST_MISSION_NAME_6	Certyfikat Tugyisa
+BIOLOGIST_MISSION_NAME_7	Czerwony konar drzewa
+BIOLOGIST_MISSION_NAME_8	Notatka przywódcy
+BIOLOGIST_MISSION_NAME_9	Klejnot wrogosci
+BIOLOGIST_MISSION_NAME_10	Klejnot madrosci
+BIOLOGIST_MISSION_NAME_11	Ciemne paprocie
+BIOLOGIST_MISSION_NAME_12	Pierscienie Chaegirab
+BIOLOGIST_MISSION_NAME_13	Krysztaly metin
+BIOLOGIST_MISSION_NAME_14	Oczyszczone rdzenie
+BIOLOGIST_MISSION_NAME_15	Lv 150 mission
+BIOLOGIST_MISSION_NAME_16	Lv 160 mission
+BATTLE_PASS_PROCENT	Procent: %.1f%%
+BATTLE_PASS_ALERT1	Nie masz aktywnego karnetu bojowego, potrzebujesz ten przedmiot by go aktywowac.
+BATTLE_PASS_OK	OK
+BATTLE_PASS_STATUS	Status: %s%s|h|r
+BATTLE_PASS_INACTIVE	Nieaktywny
+BATTLE_PASS_ACTIVE	W toku
+BATTLE_PASS_COMPLETED	Ukonczono
+BATTLE_PASS_UNKNOWN_NAME	Nieznana nazwa
+BATTLE_PASS_NAME	Nazwa: %s
+BATTLE_PASS_COUNTQUEST	Pozostale misje: %s
+BATTLE_PASS_COUNTQUEST_COMPELTED	Ukonczone misje: %s
+BATTLE_PASS_REMAINING_TIME	Pozostaly czas: %s
+PETBOX_RIMUOVE	Jestes pewny ze chcesz wyciagnac zwierzaka?
+BUY_GAYA_ITEM	Chcesz kupic ten przedmiot?
+PETSKILLNAME_1	Odpornosc (wojownik)
+PETSKILLNAME_2	Odpornosc (sura)
+PETSKILLNAME_3	Odpornosc (ninja)
+PETSKILLNAME_4	Odpornosc (szaman)
+PETSKILLNAME_5	Obrazenia krytyczne (PvM)
+PETSKILLNAME_6	Silny przeciwko metinom
+PETSKILLNAME_7	Silny przeciwko wladcom
+PETSKILLNAME_8	Bonus doswiadczenia
+PETSKILLNAME_9	Drop Yang
+PETSKILLNAME_10	Wartosc ataku/magicznego ataku
+PETSKILLNAME_11	Szansa na blok ciosu
+PETSKILLNAME_12	Szansa na odbicie ciosu
+PETBOX_DESC1	Statystyki:
+PETBOX_DESC2	Wiek: %d dni, %d godzina i %d minut
+PETBOX_DESC3	Lv: %d
+PETBOX_DESC4	Ewolucja: %s
+PETBOX_DESC5	PZ: %s%%
+PETBOX_DESC6	Silny przeciwko potworom: %s%%
+PETBOX_DESC7	Srednie obrazenia (Tylko na potworach): %s%%
+PETBOX_DESC8A	Skill slot 1: Zablokowany
+PETBOX_DESC9A	Skill slot 2: Zablokowany
+PETBOX_DESC10A	Skill slot 3: Zablokowany
+PETBOX_DESC11A	Skill slot 4: Zablokowany
+PETBOX_DESC8B	Skill slot 1: Pusty
+PETBOX_DESC9B	Skill slot 2: Pusty
+PETBOX_DESC10B	Skill slot 3: Pusty
+PETBOX_DESC11B	Skill slot 4: Pusty
+PETBOX_DESC8C	Skill slot 1: %s (%d)
+PETBOX_DESC9C	Skill slot 2: %s (%d)
+PETBOX_DESC10C	Skill slot 3: %s (%d)
+PETBOX_DESC11C	Skill slot 4: %s (%d)
+PET_EVOLUTION1	Mlody
+PET_EVOLUTION2	Dziki
+PET_EVOLUTION3	Odwazny
+PET_EVOLUTION4	Heroiczny
+SUBTEXT_OFFLINESHOP_TEXT15	Nazwa:
+SUBTEXT_OFFLINESHOP_TEXT16	Cena:
+CLOSE_AUCTION	Zamknij
+CUBE_CATEGORY1	Bronie
+CUBE_CATEGORY2	Zbroje
+CUBE_CATEGORY3	Bizuteria
+CUBE_CATEGORY4	Inne
+CUBE_CATEGORY5	PET
+CUBE_CATEGORY6	Klejnoty Lv. 100 [PvP]
+CUBE_CATEGORY7	Pasy [PvP]
+CUBE_CATEGORY8	Pasy [PvM]
+CUBE_CATEGORY9	Mount
+HATSZOG_LADA_EVENT	Hexagon chest
+CUBE_CATEGORY10	ETC
+CUBE_CATEGORY11	Bronie Lv. 80 [PvP]
+CUBE_CATEGORY12	Bronie Lv. 90 [PvP]
+CUBE_CATEGORY13	Bronie Lv. 100 [PvP]
+CUBE_CATEGORY14	Bronie Lv. 105 [PvM]
+CUBE_CATEGORY15	Zbroje Lv. 80 [PvM]
+CUBE_CATEGORY16	Zbroje Lv. 90 [PvM]
+CUBE_CATEGORY17	Zbroje Lv. 110 [PvM]
+CUBE_CATEGORY18	Zbroje Lv. 90 [PvP]
+CUBE_CATEGORY19	Zbroje Lv. 105 [PvP]
+CUBE_CATEGORY20	Zbroje Lv. 110 [PvP]
+CUBE_CATEGORY21	Buty Lv. 105 [PvP]
+CUBE_CATEGORY22	Buty Lv. 100 [PvM]
+CUBE_CATEGORY23	Helmy Lv. 115 [PvP]
+CUBE_CATEGORY24	Helmy Lv. 80 [PvM]
+CUBE_CATEGORY25	Helmy Lv. 95 [PvM]
+CUBE_CATEGORY26	Helmy Lv. 105 [PvP]
+CUBE_CATEGORY27	Wierzchowiec (Permanentny)
+CUBE_CATEGORY28	Zwierzak (Permanentny)
+CUBE_CATEGORY29	Tworzenie klejnotów
+CUBE_CATEGORY30	Tworzenie klejnotów 1
+CUBE_CATEGORY31	Tworzenie klejnotów 2
+CUBE_CATEGORY32	Tworzenie klejnotów 3
+CUBE_CATEGORY33	Tworzenie klejnotów 4
+CUBE_CATEGORY34	Tworzenie klejnotów 5
+CUBE_CATEGORY35	Tworzenie klejnotów 6
+CUBE_CATEGORY36	Tworzenie klejnotów 7
+CUBE_CATEGORY37	Tworzenie klejnotów 8
+CUBE_CATEGORY38	Tworzenie klejnotów 9
+CUBE_CATEGORY39	Tworzenie klejnotów 10
+CUBE_CATEGORY40	Tworzenie klejnotów 11
+CUBE_CATEGORY41	Tworzenie klejnotów 12
+CUBE_CATEGORY42	Tworzenie klejnotów 13
+CUBE_CATEGORY999	Inne
+SYSTEM_OPTION_CPU_TILING_1	Tryb graficzny CPU moze poprawic szybkosc slabszego komputera.
+SYSTEM_OPTION_CPU_TILING_2	W przypadku problemów z grafika wybierz opcje System lub "CONFIG.exe".
+SYSTEM_OPTION_CPU_TILING_3	i przelacza sie w tryb graficzny GPU.
+SYSTEM_OPTION_GPU_TILING_1	Tryb graficzny GPU moze spowolnic predkosc na slabszym komputerze.
+SYSTEM_OPTION_GPU_TILING_2	W przypadku problemów z grafika wybierz opcje System lub "CONFIG.exe".
+SYSTEM_OPTION_GPU_TILING_3	i przelacza sie w tryb graficzny CPU.
+SYSTEM_OPTION_TILING_EXIT	Aby zmienic tryb graficzny, gra musi zostac zrestartowana.
+PETSKILL_COOLDOWN	Czas odnowienia: %s sec
+PETSKILL_HP	Reset PZ: %s
+PETSKILL_INVICIBLE	Niepokonany: %s sec
+ITEM_PRICE_TITLE	[ Cena ]
+ITEM_IS_WORTH	%d |Eemoji/%s|e %s
+ITEM_IS_FREE	Darmowy
+DO_YOU_BUY_ITEM_NORMAL	Czy chcesz kupic %d %s?
+CHATTING_SETTING_LEFT1	Kliknij filtr prawym przyciskiem myszy, aby go usunac.
+CHATTING_SETTING_LEFT2	Nie mozna usunac filtra ogólnego.
+CHAT_TYPE_INFO_EXP	Exp
+CHAT_TYPE_INFO_ITEM	Przedmiot
+CHAT_TYPE_INFO_VALUE	Wartosc
+CHATTING_SETTING_ADD	Dodaj karte
+CHATTING_SETTING_ADD_MAX	Osiagnales limit.
+CHATTING_SETTING_CHANGE_TITLE_NAME	Czy chcesz zapisac nazwe tego czatu?
+CHATTING_SETTING_CHANGE_TITLE_NOT	Nie mozesz zmienic nazwy ogólnego czatu.
+CHATTING_SETTING_CHANGE_TITLE_NOT2	Nazwa nie moze zawierac spacji.
+CHATTING_SETTING_CHANGE_TITLE_NOT3	Nazwa nie moze zawierac wiecej niz 6 znaków.
+CHATTING_SETTING_CHANGE_TITLE_NOT4	Nazwa jest pusta.
+CHATTING_SETTING_SETTING	Ustawienia
+TOOLTIP_DOUBLE_DROP_ITEM	Podwójna szansa na drop	SNA
+TOOLTIP_IRR_WEAPON_DEFENSE	%d%% przebicie odpornosci na bronie	SA
+EMOTION_SIRENA	Buzzer
+EMOTION_CALL	Call
+EMOTION_CHARGING	Charging
+EMOTION_CELEBRATION	Celebration
+EMOTION_WEATHER	Weather
+EMOTION_ALCOHOL	Alcohol
+EMOTION_HUNGRY	Hungry
+EMOTION_SELFIE	Selfie
+EMOTION_PUSHUP	Pushup
+EMOTION_EXERCISE	Exercise
+EMOTION_DOZE	Doze
+EMOTION_DANCE_7	Dance 7
+WINDOW_TXT1	Lv min: %s
+WINDOW_TXT2	Lv max: %s
+WINDOW_TXT3	Nie posiadasz wymaganych przedmiotów aby wejsc.
+WINDOW_TXT4	Potrzebne przedmioty:
+WINDOW_TXT5	Czy chcesz sie przeniesc na ta mape %s?
+WINDOW_TXT6	Nie masz wystarczajacej ilosci Yang!
+DAILYGIFT_TXT1	Dzien %d
+DAILYGIFT_TXT2	Odbierz
+DAILYGIFT_TXT3	Dzienna nagroda:
+QUESTION_DLG_CHANGELANGUAGE	Czy chcesz zmienic jezyk?
+QUESTION_DLG_REMOVEACC	Czy chcesz usunac %s?
+MINIMAP_SHOW_BLOCKPVP	Zablokuj podglad ekwipunku w pojedynku [F10]
+MINIMAP_SHOW_UNBLOCKPVP	Odblokuj podglad ekwipunku w pojedynku [F10]
+SKILL_CHANGE_AVAILABLE	Mozliwe zmiany: %d
+DUEL_MINIWINDOW_OVER_SLOT	Klikajac na ten obrazek, mozesz otworzyc glówny panel pojedynków.
+PET_MINIWINDOW_OVER_SLOT	Wcisniecie "P" lub klikniecie tego slotu moze otworzyc glówny panel zwierzaka.
+RENDER_TITLE	Preview
+MINIMAP_SHOW_WIKI	Wiki [H]
+MINIMAP_SHOW_DUNGEONINFO	Informacje o wyprawach [F7]
+MINIMAP_SHOW_DAILYGIFT	Dzienny prezent
+MINIMAP_SHOW_BIOLOGIST	Misje Biologa
+MINIMAP_SHOW_TELEPORT	Teleport [F5]
+MINIMAP_SHOW_SAVEPOINT	Zapisz pozycje [F11]
+MINIMAP_SHOW_OFFLINESHOP	Sklep offline [Y]
+RUNE_IS_UNLOCKED1	SUSANOO SYSTEM UNLOCKED!
+RUNE_IS_UNLOCKED2	Read the letter before use!
+TOOLTIP_APPLY_STOLA_COSTUME1A	Silny przeciwko potworom - min: %d%% e max: %d%%
+TOOLTIP_APPLY_STOLA_COSTUME2A	Silny przeciwko metinom - min: %d%% e max: %d%%
+TOOLTIP_APPLY_STOLA_COSTUME2B	Witalnosc - min: +%d e max: +%d
+TOOLTIP_APPLY_STOLA_COSTUME3A	Silny przeciwko wladcom - min: %d%% e max: %d%%
+TOOLTIP_APPLY_STOLA_COSTUME3B	Inteligencja - min: +%d e max: +%d
+TOOLTIP_APPLY_STOLA_COSTUME4A	Silny przeciwko Pól ludziom - min: %d%% e max: %d%%
+TOOLTIP_APPLY_STOLA_COSTUME5A	Odpornosc na Pól ludzi - min: %d%% e max: %d%%
+TOOLTIP_APPLY_STOLA_COSTUME5B	Sila - min: +%d e max: +%d
+TOOLTIP_APPLY_STOLA_COSTUME6A	Max. PZ - min: +%d e max: +%d
+GRADE_STOLA	[Grade: %d]
+SUPPORT_ERR1	Aby to zrobic, musisz wezwac wsparcie!
+SUPPORT_ERR2	Mozesz uzyc tylko przedmioty, które moga byc wyposazone przez szamanów.
+SUPPORT_ERR3	Nie mozesz uzyc tego przedmiotu.
+SUPPORT_ERR4	Przedmiot do ubrania przez inna plec!
+SUPPORT_CONFIRM	czy chcialbys kontynuowac?
+SUPPORT_CONFIRM2	Czy na pewno chcesz usunac wybrany obiekt?
+SUPPORT_CONFIRM3	Czy chcialbys wymienic?
+AFFECT_NEW_POTION1	Pomaranczowe Ampulki
+AFFECT_NEW_POTION2	Zólte Ampulki
+AFFECT_NEW_POTION3	Niebieskie Ampulki
+AFFECT_NEW_POTION4	Czerwone Ampulki
+AFFECT_NEW_POTION5	Zielone Ampulki
+AFFECT_NEW_POTION6	Fioletowe Ampulki
+AFFECT_NEW_POTION7	Niebieska Rosa
+AFFECT_NEW_POTION8	Pomaranczowa Rosa
+AFFECT_NEW_POTION9	Biala Rosa
+AFFECT_NEW_POTION10	Zólta Rosa
+AFFECT_NEW_POTION11	Czerwona Rosa
+AFFECT_NEW_POTION12	Zielona Rosa
+AFFECT_NEW_POTION13	Przeszywajace Uderzenie
+AFFECT_NEW_POTION14	Krytyczne uderzenie
+AFFECT_NEW_POTION15	Atak Boga Smoków
+AFFECT_NEW_POTION16	Obrona Boga Smoków
+AFFECT_NEW_POTION17	Inteligencja Boga Smoków
+AFFECT_NEW_POTION18	Zycie Boga Smoków
+AFFECT_NEW_POTION19	Mikstura szybkosci ataku
+AFFECT_NEW_POTION20	Zielona Mikstura(G) (inf)
+AFFECT_NEW_POTION21	Mikstura madrosci
+AFFECT_NEW_POTION22	P. madrosci
+AFFECT_NEW_POTION23	Rekawica zlodzieja
+NEW_POTION_STATUS_0	[Zablokowany]
+NEW_POTION_STATUS_1	[Aktywny]
+RUNE_POWER	Moc: %d%%
+RUNE_POWER_CHARGE	Pozostala moc: %d%% di %d%%
+RUNE_ACTIVATE	Czy chcesz aktywowac %s?
+RUNE_DEACTIVATE	Czy chcesz deaktywowac %s?
+RUNE_ACTIVATE_ALL	Czy chcesz aktywowac wszystkie dostepne Sharingan?
+RUNE_DEACTIVATE_ALL	Czy chcesz wylaczyc wszystkie dostepne Sharingan?
+RUNE_CHARGE	Chcesz zwiekszyc moc %s con %s?
+RUNE_ACTIVATED_1	Jedna lub wiecej twoich Sharingan jest/sa aktywne/aktywne.
+RUNE_ACTIVATED_2	Wszystkie twoje Sharingan sa aktywne.
+RUNE_LOCKED	System Susanoo zostanie odblokowany po osiagnieciu poziomu 42.
+MAP_NAME_357	Starozytna Piramida
+AFFECT_SKILL_QUESTION	Are you sure you want to disable skill affection?
+AFFECT_DROP_QUESTION1	Czy na pewno chcesz wylaczyc drop na tym koncie?
+AFFECT_DROP_QUESTION2	Czy na pewno chcesz aktywowac drop na tym koncie?
+TOOLTIP_DROP_BLOCK	Drop dla tego konta jest wylaczony. Kliknij tutaj, aby go aktywowac.
+TOOLTIP_DROP_UNBLOCK	Drop na tym koncie jest aktywowany. Kliknij tutaj, aby go dezaktywowac.
+TOOLTIP_APPLY_ATTBONUS_RUNE	+%d%% Silny przeciwko runicznym potworom	SA
+MAP_NAME_218	Runiczna wyprawa
+UI_CHOOSE_LANGUAGE	Wybierz jezyk:
+UI_END	End
+UI_GETIN	Enter now
+WHISPER_ADMIN_SEND_MESSAGE	Wyslij wiadomosc
+WHISPER_ADMIN_CLEAR_MESSAGE	Usun tekst
+WHISPER_ADMIN_CANCEL_ACTION	Zakonczenie akcji
+WHISPER_ADMIN_LEN_TEXT	[i] Minimum / maksimum znaków: |cFF7cff00%d|r / |cFFff0000%d|r
+WHISPER_ADMIN_CUR_LANG	[i] Wybrany jezyk: |cFFffce00[%s]
+WHISPER_ADMIN_TITLE_NAME	GM: Wyslij wiadomosc szeptem dla królestwa.
+WHISPER_ADMIN_MESSAGE	[Server] : [%s] : %s
+WHISPER_ADMIN_MESSAGE2	[Server] : [%s] :%s
+WHISPER_ADMIN_QUESTION_SEND	Czy jestes pewny ze chcesz wyslac ta wiadomosc?
+WHISPER_ADMIN_CANNOT_SEND_MESSAGE	Nie mozesz odpowiedziec systemowi.
+KASMIR_MARKET_PRIVATESHOP_0	Standardowy
+KASMIR_MARKET_PRIVATESHOP_1	Tysiac i jedna noc
+KASMIR_MARKET_PRIVATESHOP_2	Mistrz grilla
+KASMIR_MARKET_PRIVATESHOP_3	Lowca skarbów
+KASMIR_MARKET_PRIVATESHOP_4	Maly plomyk
+KASMIR_MARKET_PRIVATESHOP_5	Handlarz bronii
+KASMIR_MARKET_PRIVATESHOP_6	Handlarz zbroji
+KASMIR_MARKET_PRIVATESHOP_7	Alchemik
+KASMIR_PAKET_STANDART	Standardowy
+KASMIR_PAKET_FIRE	Ogien
+KASMIR_PAKET_ICE	Lód
+KASMIR_PAKET_PAPER	Papirus
+KASMIR_PAKET_RIBON	Wstega
+KASMIR_PAKET_WING	Skrzydla
+MINIMAP_BOSS_RESPAWN_TIME	Respawn: %d min.
+ALERT_SASH_REMOVE_ATTR	Czy jestes pewny ze chcesz kontynuowac?
+TOOLTIP_APPLY_ATTBONUS_MEDI_PVM	Srednie obrazenia [PVM] %d%%	SA
+TOOLTIP_APPLY_PVM_CRITICAL_PCT	+%d%% szansy na krytyczne uderzenie (PVM)	SA
+PET_ASK_LEARN	Czy jestes pewny ze chcesz kontynuowac?
+PET_APPLY_MAX_HP_PCT	PZ max. +%s%%	SA
+PET_APPLY_ATTBONUS_MONSTER	Silny przeciwko potworom +%s%%	SA
+PET_APPLY_MEDI_PVM	Srednie obrazenia [PVM] +%s%%	SA
+PET_TIME_TOOLTIP	Czas: %d Dni %d Godziny %d Minuty
+PET_TIME_TOOLTIP_INF	Czas trwania: Nieskonczony
+PET_TIME_GUI	Czas: %d (d) %d (h) %d (m)
+PET_TIME_GUI_OLD	Czas: %s / %s Godzin
+ALERT_REVIVE_PET	Czy jestes pewien ze chcesz nakarmic zwierzaka?
+DS_SET_INFO	Aktywuj 6 Smoczych Kamieni +6, aby skorzystac z nastepujacych bonusów:
+ASK_SEX_CHOOSE	Najpierw musisz wybrac plec !
+COMB_ALERT	Specjalne bonusy zostana usuniete!
+COMB_ALERT1	Aby to zrobic, musisz dodac zwój transferu do swojego slotu.
+COMB_ALERT2	Najpierw musisz dodac kostium, z którego beda pobierane bonusy.
+COMB_ALERT3	Mozesz przenosic bonusy tylko z kostiumów.
+COMB_ALERT4	Mozesz przenosic bonusy tylko z tego samego rodzaju strojów.
+COMB_ALERT5	Mozesz przenosic bonusy tylko z kostiumów na cialo.
+COMB_ALERT6	Mozesz przenosic bonusy tylko z tego samego rodzaju stroju.
+COMB_ALERT7	Kostium musi miec co najmniej jeden normalny bonus!
+VIEW_RENDERING	Nacisnij |Eemoji/key_ctrl|e, aby wyswietlic podglad.
+DUEL_BLOCK_CHANGE_ITEM	[x] Zmien przedmiot
+DUEL_BLOCK_BUFF	[x] Buff
+DUEL_BLOCK_POTION_RED	[x] Czerwona mikstura
+DUEL_BLOCK_HORSE_MOUNT	[x] Kon/Wierzchowiec
+DUEL_BLOCK_PET	[x] Zwierzak
+DUEL_BLOCK_POLY	[x] Poli
+DUEL_BLOCK_PARTY	[x] Grupa
+DUEL_BLOCK_EXCHANGE	[x] Handel
+DUEL_TARGET_NAME	Walcz z:
+DUEL_MONEY_ADD	[i] Dodaj
+DUEL_MONEY_CANCEL	[i] Anuluj
+DUEL_MONEY_TITLE	[i] Obstawiaj pieniadze
+DUEL_MONEY_CURRENT	Prawdziwe pieniadze: 
+DUEL_VICTIM_ERROR	<Avviso> Nie mozesz tego zrobic, jesli nie zaakceptuje lub odmówi.
+DUEL_MONEY_ERROR_1	<Avviso> Mozna wprowadzic tylko jeden numer.
+DUEL_MONEY_ERROR_2	<Avviso> Wpisana liczba jest mniejsza lub równa 0.
+DUEL_MONEY_ERROR_3	<Avviso> Wpisana ilosc jest wieksza niz ilosc, która masz w ekwipunku.
+DUEL_TITLENAME	Zarzadzaj ekwipunkiem wyswietlanym w pojedynku
+DUEL_EQUIP_BLOCK	Zablokuj
+DUEL_EQUIP_UNBLOCK	Odblokuj
+DUEL_TITLENAME_EQUIP	Ekwipunek przeciwnika:
+DUEL_CHOOSE_BLOCK	Wybierz, co chcesz zablokowac:
+DUEL_INFO_1	Pg. Name:
+DUEL_INFO_2	Nazwa gildi:
+DUEL_INFO_3	Lv:
+DUEL_INFO_4	Czas gry:
+DUEL_INFO_5	Zwyciezca zakladu:
+DUEL_INFO_6	Detale przeciwnika:
+DUEL_LIVE_VICTIM_LEVEL	Lv:
+DUEL_LIVE_VICTIM_NAME	Nazwa:
+COMMON_SKILL_143A	Zwieksz wartosc ataku: %d%%
+COMMON_SKILL_143B	Zwieksz wartosc magicznego ataku with: %d%%
+COMMON_SKILL_144	Zwieksz drop yang za pomoca: %d%%
+COMMON_SKILL_145	Zwieksz swoja sile przeciwko potworom za pomoca: %d%%
+COMMON_SKILL_146	Zwieksz punkty zycia za pomoca: %d
+NEW_EXCHANGE_ADDED	%s dodano %s.
+NEW_EXCHANGE_YOU_READY	%s Czy jestes gotowy na handel.
+NEW_EXCHANGE_YOU_ACCEPT	%s Zaakceptuj handel.
+NEW_EXCHANGE_ACCEPT	%s %s Akceptuje handel.
+NEW_EXCHANGE_YOU_ABORT	%s Zatrzymaj handel..
+NEW_EXCHANGE_ABORT	%s %s Przerwij handel.
+NEW_EXCHANGE_LEVEL	Lv. %d
+NEW_EXCHANGE_ALERT1	Oddajesz rzeczy za nic w zamian,
+NEW_EXCHANGE_ALERT2	i nie bedziesz w stanie odzyskac Yang ani przedmiotów.
+EXCHANGE_TITLE	handluj z %s
+EXCHANGE_TITLE_LEVEL	handluj z %s (%d)
+USE_200_ITEMS	|Eemoji/key_rclick|e + |Eemoji/key_ctrl|e Aby wykorzystac caly stos.
+INFO_INCREASE_CHAR_STAT	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e Aby zwiekszyc o 10 punktów.
+BATTLE_PASS_JAN20	Grudzien 2021
+SKILL_COLOR_SELECT_FIRST	Najpierw wybierz kolor.
+SKILL_COLOR_PICK_TOOLTIP	Wybierz zadany kolor dla %s. (HEX Code : %s)
+SKILL_COLOR_PRESET_TOOLTIP_TITLE	Zaprogramowany kolor
+SKILL_COLOR_PRESET_TOOLTIP_1	Mozesz zapisac wybrany kolor dla swoich umiejetnosci.
+SKILL_COLOR_PRESET_TOOLTIP_2	Zapisz wybrany kolor i jesli potrzebujesz koloru ponownie
+SKILL_COLOR_PRESET_TOOLTIP_3	wystarczy wybrac kod koloru z listy.
+SKILL_COLOR_CUSTOM_HEX_CODE_TOOLTIP_TITLE	Kod koloru
+SKILL_COLOR_CUSTOM_HEX_CODE_TOOLTIP_1	Mozesz wstawic wlasny kolor za pomoca kodu.
+SKILL_COLOR_CUSTOM_HEX_CODE_TOOLTIP_2	Przyklad #FFFFFF (White)
+SKILL_COLOR_DO_YOU_RESET	Chcesz przywrócic kolor swojej umiejetnosci?
+SKILL_COLOR_DO_YOU_CHANGE	Chcesz zmienic kolor swoich umiejetnosci?
+SKILL_COLOR_SELECT_PRESET	Wybierz kolor.
+SKILL_COLOR_SELECT_PRESET_NONE	Nie zapisano koloru.
+SKILL_COLOR_CANNOT_SAVE	Nie mozesz zapisac innych kolorów.
+SOUL_ITEM_TOOLTIP_APPLY	Efekt jest aktywowany.
+SOUL_ITEM_TOOLTIP_BLUE1	Czas gry: %d/%d min. 
+SOUL_ITEM_TOOLTIP_BLUE2	Zwiekszone obrazenia umiejetnosci x%.1f for time played
+SOUL_ITEM_TOOLTIP_COMMON	Nie dla PvP, Transformacja
+SOUL_ITEM_TOOLTIP_RED1	Czas gry: %d/%d min. 
+SOUL_ITEM_TOOLTIP_RED2	Zwiekszone obrazenia od ataku x%.1f for the time played
+SOUL_ITEM_TOOLTIP_REMAIN_COUNT	Pozostale ataki: %d
+SOUL_ITEM_TOOLTIP_REMOVE_TIME	The spirit falls in
+SOUL_ITEM_TOOLTIP_UNAPPLIED	Efekt nie jest aktywowany'''
+SOUL_REFINE_FAILURE	Ulepszanie nie powiodlo sie.
+SOUL_REFINE_SUCCESS	Ulepszanie powiodlo sie.
+ENVANTER_KEY_NEED	Potrzebujesz wiecej kluczy %s.
+ENVANTER_EXPANS_1	Czy chcesz rozszerzyc swój ekwipunek za pomoca kluczy %s?
+SHOP_NOT_ENOUGH_ITEM	Nie masz wystarczajacej liczby przedmiotów, aby kupic przedmiot.
+SELECT_YES_GUILD	Nazwa gildii: %s
+EMPIRE_SELECT	Wybierz
+EMPIRE_SELECT_MODE	Wybór królestwa
+CHARACTER_CREATE_MODE	Stwórz postac
+CHARACTER_SELECT_MODE	Wybierz postac
+CHARACTER_CREATE_MALE	Mezczyzna
+CHARACTER_CREATE_FEMALE	Kobieta
+CHARACTER_CREATE_APPEARANCE1	Wyglad 1
+CHARACTER_CREATE_APPEARANCE2	Wyglad 2
+INTRO_SELECT_LEVEL	Lv. %d
+GRADE_CIANITE_EPIC	[Klasa Epicka]
+GRADE_CIANITE_LEGG	[Klasa Legendarna]
+GRADE_CIANITE_ANTIC	[Klasa Antyczna]
+GRADE_CIANITE_MISTC	[Klasa Mistyczna]
+REFINE_ERROR_ADD_PERC_STONES	[Refine] Nie mozesz dodac mikstury, aby zwiekszyc wskaznik sukcesu kamieni.
+REFINE_COST_UPGRADE	[i] Koszty Ulepszen
+REFINE_CURRENT_ITEM	[i] Biezacy przedmiot
+REFINE_NEXT_ITEM	[i] Nastepny przedmiot
+REFINE_NEED_ITEMS	[i] Wymagany przedmiot
+REFINE_PERCENTAGE_LOW	+5%
+REFINE_PERCENTAGE_MEDIUM	+10%
+REFINE_PERCENTAGE_EXTRA	+15%
+REFINE_INCREASE_PERCENTAGE	[Extra + %d%%]
+REFINE_ERROR_ITEM_VNUM	[Enhancement] Nie mozesz dodac tego przedmiotu.
+REFINE_ERROR_ITEM_COUNT	[Enhancement] Mozesz dodac tylko 1 miksture wzmacniajaca na typ.
+REFINE_ERROR_ITEM_OVERFLOW_PERCENTAGE	[Wzmocnienie]Obecny calkowity procent wynosi 100%.
+REFINE_ERROR_ADD_PERC_STONES	[Wzmocnienie] Nie mozna zwiekszyc wskaznika sukcesu mikstur.
+HIDE_COSTUME	Ukryj Kostium
+SHOW_COSTUME	Pokaz Kostium
+UI_CHANNEL_GO	Zmien
+UI_CHANNEL_CLOSE	Zamknij
+UI_CHANNEL_CHOOSE	Wybierz CH
+UI_CHANNEL_REFRESH	Odswiez
+UI_CHANNEL_YET_ON_THIS_CH	Jestes juz na tym samym CH.
+TOOLTIP_APPLY_ATTBONUS_ELEC	Sila blyskawic +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_FIRE	Sila ognia +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_ICE	Sila lodu +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_WIND	Sila wiatru +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_EARTH	Sila ziemi +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_DARK	Sila mroku +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_SPADA	Odpornosc na miecz +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_SPADONE	Odpornosc na bron dwureczna +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_PUGNALE	Odpornosc na sztylety +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_FRECCIA	Odpornosc na strzaly +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_VENTAGLIO	Odpornosc na wachlarze +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_CAMPANA	Odpornosc na dzwony +%d%%	SA
+TOOLTIP_APPLY_RESIST_MEZZIUOMINI	Odpornosc na pól ludzi %d%%	SA
+TOOLTIP_APPLY_DEF_TALISMAN	Obrona: +%d	SA
+TOOLTIP_APPLY_ATTBONUS_FORT_ZODIAC	Silny przeciwko potworom zodiaku +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_DESERT	Sila/Obrona przeciwko pustynnym potworom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_INSECT	Silny przeciwko insektom +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_IRR_ARTIGLIO	Odpornosc na szpony +%d%%	SA
+SUPPORT_SKILL_VALUE	Wartosc umiejetnosci
+SUPPORT_CHAR_TITLE	Wsparcie szamana 
+LOCALIZATION_TITLE	Save location System
+LOCALIZATION_DESC_BTN_EDIT	[i] Edytuj nazwe lokalizacji
+LOCALIZATION_SAVE	Zapisz
+UPDATE_GAYA_MARKET	Czy chcesz zaktualizowac sklep Gaya ?
+EXPAND_GAYA	Chcesz poszerzyc sklep Gaya??
+GAYA_SYSTEM_UNIT_GAYA	Gaya
+CHEQUE_SYSTEM_UNIT_YANG	Yang
+TIME_MIN_SEC	%dMin:%dSec
+TIME_MIN	%dMin
+CANNOT_CHANGE_FIGHT_MODE	Nie mozesz zmienic trybu walki z tej mapy.
+DEFANCE_WAWE_MAST_TEXT	Masz statku
+DEFANCE_WAWE_GAUGE_TOOLTIP	HP: 990000000 /990000000
+LOCALIZATION_TELEPORT	Teleport
+LOCALIZATION_EDIT	Zapisz
+LOCALIZATION_CANCEL	Anuluj
+LOCALIZATION_CHANGE_NAME	Zapisz nazwe lokalizacji
+TARGET_INFO_DAMAGE	Obrazenia : %s - %s
+TARGET_INFO_DEFENSE	Obrona : %s
+TARGET_INFO_EXP	Exp : %s
+TARGET_INFO_MAINRACE	Rasa : %s
+TARGET_INFO_MAX_HP	Max. PZ : %s
+TARGET_INFO_NO_ITEM_TEXT	Brak dostepnych przedmiotów.
+TARGET_INFO_NO_RACE	Pusty
+TARGET_INFO_RACE_METIN	Metin
+TARGET_INFO_RACE_ANIMAL	Zwierzeta
+TARGET_INFO_RACE_DARK	Mrok
+TARGET_INFO_RACE_DEVIL	Diably
+TARGET_INFO_RACE_EARTH	Ziemia
+TARGET_INFO_RACE_ELEC	Blyskawice
+TARGET_INFO_RACE_FIRE	Ogien
+TARGET_INFO_RACE_HUMAN	Pól ludzie
+TARGET_INFO_RACE_ICE	Lód
+TARGET_INFO_RACE_MILGYO	Mistycy 
+TARGET_INFO_RACE_ORC	Orki
+TARGET_INFO_RACE_UNDEAD	Nieumarli
+TARGET_INFO_RACE_WIND	Wiatr
+TARGET_INFO_STONE_NAME	Kamien duchowy
+TARGET_INFO_SUBRACE	Podgatunek : %s
+SWITCHBOT_TITLE	Switchbot
+SWITCHBOT_START	Start
+SWITCHBOT_STOP	Stop
+SWITCHBOT_EMPTY_ATTR	- Pusto -
+SWITCHBOT_SELECT_ATTR	Wybierz bonus
+SWITCHBOT_CLEAR_ATTR	Wyczysc
+SWITCHBOT_CONFIGURATION_TITLE	Zapisane ustawienia
+SWITCHBOT_SAVE_BUTTON	Otwórz pamiec
+SWITCHBOT_SAVE	Zapisz
+SWITCHBOT_LOAD_CONFIGURATION	Zaladuj
+SWITCHBOT_CLEAR_CONFIGURATION	Wyczysc
+SASH_REFINE_COST	Cena absorpcji: %d
+SASH_ABSORB_CHANCE	Szansa absorpcji: %d%%
+SASH_ABSORB_CHANCE2	Procent absorpcji: %d%% ~ %d%%
+SASH_DO_YOU_CLEAN	Czy chcesz usunac wszystkie dostepne bonusy??
+SASH_FAILURE_CLEAN	Zadne bonusy nie moga zostac usuniete.
+SASH_DEL_SERVEITEM	Szarfa 2 zostanie zniszczona, jesli kombinacja sie nie powiedzie.
+SASH_DEL_ABSORDITEM	Czy pochlaniasz przedmiot, niszczac go w procesie??
+LOGIN_FAILURE_WRONG_VERSION	Twoja wersja klienta jest nieaktualna. Prosze napraw to!
+AUTO_TOOLTIP_LINE5	Wskazówka: czas trwania innych mikstur jest wyrazony w sekundach.
+DETAILS_1	Silny przeciwko pól ludziom
+DETAILS_12	Wartosc ataku/magicznego ataku
+DETAILS_59	obrazen pochlonietych przez PZ
+DETAILS_60	obrazen pochlonietych przez PM
+DETAILS_61	Regeneracja PZ
+DETAILS_62	Regeneracja PM
+DETAILS_63	Szansa na blok ciosu
+DETAILS_64	Szansa na unik strzal
+DETAILS_65	Szansa na odbicie ciosu
+DETAILS_66	mozliwosci regeneracji PZ
+DETAILS_67	mozliwosci regeneracji PM
+DETAILS_68	Doswiadczenie
+DETAILS_69	Wieksza szansa na drop Yang
+DETAILS_70	Wieksza szansa na drop przedmiotów
+DETAILS_71	Atak/Magiczny atak
+DETAILS_72	Magiczna obrona
+DETAILS_79	Srednie obrazenia[PVM]
+DETAILS_CATE_1	PVM BONUS
+DETAILS_CATE_2	PVP BONUS
+DETAILS_CATE_3	BONUSY ZYWIOLÓW
+DETAILS_CATE_4	OFENSYWNE BONUSY
+DETAILS_CATE_5	DEFENSYWNE BONUSY
+DETAILS_CATE_6	BONUSOWE STATYSTYKI
+DETAILS_CATE_7	ALTERNATYWNE BONUSY
+FINDM_BUTTON_01	Anuluj
+FINDM_BUTTON_02	Ulepsz
+FINDM_POPUP_01	Nie masz wszystkich przedmiotów potrzebnych do rozpoczecia mini-gry.
+FINDM_POPUP_02	Nie masz dosc %s.
+FINDM_POPUP_03	Nie mozna go juz uzywac.
+FINDM_POPUP_04	To juz najlepsza nagroda.
+FINDM_POPUP_05	Nie masz wystarczajaco duzo Yang na mini-gre.
+FINDM_POPUP_06	Jesli nie odwrócisz ich w ciagu %d sekund, trzy karty zostana automatycznie odwrócone.
+FINDM_QUESTION_01	Uzyjesz %d Yang i %s.\nKontynuowac?
+FINDM_QUESTION_02	Spróbuj ponownie i uzyj %s %d?
+FINDM_QUESTION_03	Nagroda: %s
+FINDM_QUESTION_04	Nowa próba? Jesli sie nie powiedzie, aktualna nagroda nadal pozostaje twoja.
+FINDM_QUESTION_05	Ukoncz gre i zdobadz nagrode?
+FINDM_TOOLTIP_01	Jesli nie dokonasz wyboru w okreslonym czasie, trzy karty zostana automatycznie odwrócone.
+GUILDLAND_ABANDON_VOTE	Porzuc swoja ziemie gildii [%s].
+GUILDLAND_ABANDON_VOTE_RESULT1	Zrezygnuj z ziemi gildii [%s].
+GUILDLAND_ABANDON_VOTE_RESULT2	Ziemia gildii zostala oddana.
+GUILDLAND_ABANDON_VOTE_RESULT3	Wynik ankiety:
+GUILDLAND_ABANDON_VOTE_RESULT4	Ankieta jest niewazna.
+GUILDLAND_ABANDON_VOTE_TEXT	Czy na pewno chcesz rozpoczac ankiete?
+GUILDLAND_ABANDON_VOTE_TEXT1	Czy glosujesz za przeniesieniem ziemi gildii??
+GUILDLAND_DEAL	Sprzedaj ziemie gildii
+GUILDLAND_DEAL_TEXT1	Gildia [%s] chce sprzedac
+GUILDLAND_DEAL_TEXT2	ich ziemie gildii za %s Yang.
+GUILDLAND_DEAL_TEXT3	Czy akceptujesz oferte?
+GUILDLAND_DELA_VOTE	Gildia [%s] chce kupic nasza ziemie.
+GUILDLAND_DELA_VOTE_RESULT1	Sprzedaz ziemi gildii [%s].
+GUILDLAND_DELA_VOTE_RESULT2	Ankieta zakonczyla sie.
+GUILDLAND_DELA_VOTE_RESULT3	Wynik ankiety sprzedazy ziemi:
+GUILDLAND_DELA_VOTE_RESULT4	Ankieta jest niewazna.
+GUILDLAND_DELA_VOTE_TEXT	Jakiej gildii chcesz sprzedac ziemie gildii?
+GUILDLAND_DELA_VOTE_TEXT1	Czy glosujesz za sprzedaza ziemi gildii?
+GUILDLAND_VOTE_TEXT	Czy chcesz przekazac ziemie [%s]?
+GUILDVOTE_CHANGEMASTER	Zmien lidera gildii
+GUILDVOTE_CHANGEMASTER_RESULT1	Gildia zostala skutecznie sprzedana.
+GUILDVOTE_CHANGEMASTER_RESULT3	Przekaz gildie czlonkowi [%s].
+GUILDVOTE_CHANGEMASTER_RESULT4	Ankieta jest niewazna.
+GUILDVOTE_CHANGEMASTER_RESULT5	Nowy lider gildii: %s
+GUILDVOTE_CHANGEMASTER_TEXT1	Czy chcesz podarowac gildie [%s]?
+GUILDVOTE_CHANGEMASTER_TEXT2	
+GUILDVOTE_CHANGEMASTER_TEXT3	Czy naprawde chcesz zrezygnowac z przywództwa w gildii?
+GUILDVOTE_CHANGEMASTER_TEXT4	
+GUILDVOTE_CHANGEMASTER_VOTETEXT1	Przekaz gildie czlonkowi [%s].
+GUILDVOTE_CHANGEMASTER_VOTETEXT2	Glosy za sprzedaza gildii?
+GUILDVOTE_MEMBEROUT	Wypedz czlonka
+GUILDVOTE_MEMBEROUT_AUTH	Nie masz uprawnien do wykonania tej czynnosci.
+GUILDVOTE_MEMBEROUT_NOMAL	Czy na pewno chcesz wyrzucic tego czlonka?
+GUILDVOTE_MEMBEROUT_RESULT1	Usuniety czlonek: [%s]
+GUILDVOTE_MEMBEROUT_RESULT2	Wynik ankiety
+GUILDVOTE_MEMBEROUT_RESULT3	Zostales wyrzucony z gildii [%s].
+GUILDVOTE_MEMBEROUT_RESULT4	Wynik ankiety
+GUILDVOTE_MEMBEROUT_RESULT5	Ankieta jest niewazna.
+GUILDVOTE_MEMBEROUT_TEXT1	Czy chcesz rozpoczac ankiete przeciwko [%s]?
+GUILDVOTE_MEMBEROUT_TEXT2	Ankieta: Wyrzucic tego czlonka z gildii?
+GUILDVOTE_MEMBEROUT_VOTETEXT1	Ankieta: czy [%s] powinien zostac usuniety z gildii?
+GUILDVOTE_MEMBEROUT_VOTETEXT2	
+GUILDVOTE_NO	Przeciwko
+GUILDVOTE_OK	Za
+GUILDVOTE_RESULT_AGGRE_MEMBER	Za: %d
+GUILDVOTE_RESULT_ALL_MEMBER	Wzielo udzial: %d
+GUILDVOTE_RESULT_OPPESE_MEMBER	Przeciwko: %d
+GUILDVOTE_RESULT_TIME	%d dni %d godzin %d minut %d sekund
+GUILDVOTE_SELECT_ONE	Wybierz postac.
+GUILDWINDOW_BUTTON_BASEDEALVOTE	Ankieta.
+GUILDWINDOW_BUTTON_VOTECHECK	Sprawdz ankiete
+LOGIN_FAILURE_NOT_AVAIL	Twoje konto zostalo zablokowane.
+TASKBAR_ANTIEXP	Pierscien antyexp
+TOOLTIP_DRAGON_SOUL_DECK1	Alchemia Smoczych Kamieni	SNA
+TOOLTIP_DRAGON_SOUL_DECK2	Alchemia Smoczych Kamieni	SNA
+TOOLTIP_FISHINGROD_UPGRADE4	Teraz idz do rybaka
+TOOLTIP_FISHINGROD_UPGRADE5	kup nowy model
+TOOLTIP_FISHINGROD_UPGRADE6	wedki!
+TOOLTIP_FISHINGROD_UPGRADE7	Ta wedka jest najlepsza!
+TOOLTIP_MALL_ATTBONUS	Atak/Magiczny atak +%d%%	SA
+TOOLTIP_MALL_ATTBONUS_STATIC	Atak/Magiczny atak	SNA
+TOOLTIP_MELEE_MAGIC_ATTBONUS_PER	Atak/Magiczny atak +%d%%	SA
+TOOLTIP_APPLY_ATTBONUS_METIN	Silny przeciwko metinom %d%%	SA
+TOOLTIP_APPLY_ATTBONUS_BOSS	Silny przeciwko wladcom %d%%	SA
+TOOLTIP_APPLY_RESIST_MONSTER	Odpornosc na potwory %d%%	SA
+INPUT_PIN_CODE_DIALOG_TITLE	Kod pin
+SELECT_WRONG_PIN_CODE	Zly kod pin!
+SELECT_NOT_MATCH_PIN_CODE	Dwa kody PIN nie pasuja do siebie.
+PIN_CODE_TOOLTIP_LINE1	Czy zmieniles juz kod PIN swojej postaci?
+PIN_CODE_TOOLTIP_LINE2	Jesli nie, Twoje haslo to „0000”.
+PIN_CODE_TOOLTIP_LINE3	Mozesz zmienic swój kod PIN w pamieci.
+PIN_CODE_TOOLTIP_LINE4	Jesli zgubiles kod postaci, bedziesz musial poprosic
+PIN_CODE_TOOLTIP_LINE5	o jego odzyskanie za posrednictwem oficjalnej strony internetowej.
+OFFLINESHOP_TOOLTIP_RIGHT_CLICK_FOR_SALE	|Eemoji/key_rclick|e Sprzedaj
+OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING	Nie mozesz tego zrobic podczas tworzenia sklepu.
+OFFLINESHOP_CREATE_SHOP_NO_NAME_INSERTED	Musisz podac nazwe sklepu.
+OFFLINESHOP_CREATE_SHOP_INVALID_DURATION	Musisz podac czas trwania sklepu.
+OFFLINESHOP_CREATE_SHOP_NO_ITEMS_INSERTED	Musisz wystawic co najmniej jeden przedmiot, aby utworzyc sklep.
+OFFLINESHOP_ITEMS_COUNT_TEXT	( %d items)
+OFFLINESHOP_BUILDING_LEFT_CLICK_EDIT_PRICE	|Eemoji/key_lclick|e Zmien cene
+OFFLINESHOP_BUILDING_LEFT_CLICK_CTRL_REMOVE_ITEM	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e Usun
+OFFLINESHOP_DAY_TEXT	%d Dni
+OFFLINESHOP_HOUR_TEXT	%d Godziny
+OFFLINESHOP_MINUTE_TEXT	%d Minuty
+OFFLINESHOP_OPEN_SHOP_LEFT_CLICK_BUY_ITEM	|Eemoji/key_lclick|e Kup
+OFFLINESHOP_OPEN_SHOP_LEFT_CLICK_MAKE_OFFER	|Eemoji/key_lclick|e + |Eemoji/key_ctrl|e Zlóz oferte
+OFFLINESHOP_BUY_ITEM_QUESTION_ACCEPT	Kup
+OFFLINESHOP_BUY_ITEM_QUESTION_CANCEL	Anuluj
+OFFLINESHOP_BUY_ITEM_QUESTION_COUNT	Chcesz kupic %s x %d za %d yang?
+OFFLINESHOP_BUY_ITEM_QUESTION_COUNT2	Chcesz kupic %s x %d za %d yang?
+OFFLINESHOP_BUY_ITEM_QUESTION	Chcesz kupic %s za %d yang?
+OFFLINESHOP_BUY_ITEM_QUESTION2	Chcesz kupic %s za %d yang?
+OFFLINESHOP_EDIT_SHOPNAME_DESCRIPTION	Wpisz nowa nazwe:
+OFFLINESHOP_EDIT_SHOPNAME_TITLE	Zmien nazwe
+OFFLINESHOP_EDIT_SHOPNAME_TOOLTIP	Zmien nazwe
+OFFLINESHOP_NAME_SUGGESTION_UNSELECT	Wybierz przedmiot.
+OFFLINESHOP_TYPE_COMBOBOX_NOSET	Select the tipo.
+OFFLINESHOP_TYPE_COMBOBOX_WEAPON	Bronie
+OFFLINESHOP_TYPE_COMBOBOX_ARMOR	Zbroje
+OFFLINESHOP_TYPE_COMBOBOX_METIN	Kamienie
+OFFLINESHOP_TYPE_COMBOBOX_FISH	Ryby
+OFFLINESHOP_TYPE_COMBOBOX_SKILLBOOK	Ksiazki
+OFFLINESHOP_TYPE_COMBOBOX_BLEND	Ulepszacze
+OFFLINESHOP_TYPE_COMBOBOX_DS	Alchemia
+OFFLINESHOP_TYPE_COMBOBOX_RING	Pierscionki
+OFFLINESHOP_TYPE_COMBOBOX_BELT	Pasy
+OFFLINESHOP_TYPE_COMBOBOX_COSTUME	Kostiumy
+OFFLINESHOP_TYPE_COMBOBOX_METIN	Kamienie
+OFFLINESHOP_TYPE_COMBOBOX_GIFTBOX	Skrzynie
+OFFLINESHOP_TYPE_COMBOBOX_REFINE	item Upp
+OFFLINESHOP_COMBOBOX_WEAPON_SWORD	Miecz
+OFFLINESHOP_COMBOBOX_WEAPON_DAGGER	Sztylet
+OFFLINESHOP_COMBOBOX_WEAPON_BOW	Luk
+OFFLINESHOP_COMBOBOX_WEAPON_TWO_HANDED	Bron dwureczna
+OFFLINESHOP_COMBOBOX_WEAPON_BELL	Dzwon
+OFFLINESHOP_COMBOBOX_WEAPON_FAN	Wachlarz
+OFFLINESHOP_COMBOBOX_WEAPON_CLAW	Szpon
+OFFLINESHOP_COMBOBOX_ARMOR_BODY	Zbroja
+OFFLINESHOP_COMBOBOX_ARMOR_HEAD	Helm
+OFFLINESHOP_COMBOBOX_ARMOR_SHIELD	Tarcza
+OFFLINESHOP_COMBOBOX_ARMOR_WRIST	Bransoleta
+OFFLINESHOP_COMBOBOX_ARMOR_FOOTS	Buty
+OFFLINESHOP_COMBOBOX_ARMOR_NECK	Naszyjnik
+OFFLINESHOP_COMBOBOX_ARMOR_EAR	Kolczyki
+OFFLINESHOP_COMBOBOX_COSTUME_BODY	Kostium
+OFFLINESHOP_COMBOBOX_COSTUME_HAIR	Fryzura
+OFFLINESHOP_COMBOBOX_COSTUME_MOUNT	Wierzchowiec
+OFFLINESHOP_COMBOBOX_COSTUME_ACCE	Szarfa
+OFFLINESHOP_COMBOBOX_COSTUME_WEAPON	Nakladka na bron
+OFFLINESHOP_ATTR_UNSET	Wybierz bonus.
+OFFLINESHOP_ATTR_MAX_HP	Max PZ
+OFFLINESHOP_ATTR_MAX_SP	Max PM
+OFFLINESHOP_ATTR_CON	WIT
+OFFLINESHOP_ATTR_INT	INT
+OFFLINESHOP_ATTR_STR	SIL
+OFFLINESHOP_ATTR_DEX	ZRE
+OFFLINESHOP_ATTR_ATT_SPEED	Szybkosc ataku
+OFFLINESHOP_ATTR_MOV_SPEED	Szybkosc ruchu
+OFFLINESHOP_ATTR_CAST_SPEED	Szybkosc zaklec
+OFFLINESHOP_ATTR_HP_REGEN	Regeneracja PZ
+OFFLINESHOP_ATTR_SP_REGEN	Regeneracja PM
+OFFLINESHOP_ATTR_APPLY_POISON_PCT	Szansa na otrucie
+OFFLINESHOP_ATTR_APPLY_STUN_PCT	Szansa na omdlenie
+OFFLINESHOP_ATTR_APPLY_SLOW_PCT	Szansa na spowolnienie
+OFFLINESHOP_ATTR_APPLY_CRITICAL_PCT	Szansa na krytyczny cios
+OFFLINESHOP_ATTR_APPLY_PENETRATE_PCT	Szansa na przeszywajacy cios
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_WARRIOR	Silny przeciwko wojownikom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_ASSASSIN	Silny przeciwko Ninja
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_SURA	Silny przeciwko Sura
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_SHAMAN	Silny przeciwko Szaman
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_MONSTER	Silny przeciwko Potworom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_HUMAN	Silny przeciwko Pól ludziom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_ANIMAL	Silny przeciwko Zwierzetom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_ORC	Silny przeciwko Orkom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_MILGYO	Silny przeciwko Mistykom
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_UNDEAD	Silny przeciwko Nieumarlym
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_DEVIL	Silny przeciwko Diablom
+OFFLINESHOP_ATTR_APPLY_STEAL_HP	Obrazenia zostana zaabsorbowane przez PZ
+OFFLINESHOP_ATTR_APPLY_STEAL_SP	Obrazenia zostana zaabsorbowane przez PM
+OFFLINESHOP_ATTR_APPLY_MANA_BURN_PCT	Szansa na kradziez PM 
+OFFLINESHOP_ATTR_APPLY_DAMAGE_SP_RECOVER	Szansa na odzyskanie PM
+OFFLINESHOP_ATTR_APPLY_BLOCK	Szansa na blok ciosu
+OFFLINESHOP_ATTR_APPLY_DODGE	Szansa na unik ciosu
+OFFLINESHOP_ATTR_APPLY_RESIST_SWORD	Odpornosc na miecze
+OFFLINESHOP_ATTR_APPLY_RESIST_TWOHAND	Odpornosc na bron dwureczna
+OFFLINESHOP_ATTR_APPLY_RESIST_DAGGER	Odpornosc na sztylety
+OFFLINESHOP_ATTR_APPLY_RESIST_BELL	Odpornosc na dzwony
+OFFLINESHOP_ATTR_APPLY_RESIST_FAN	Odpornosc na wachlarze
+OFFLINESHOP_ATTR_RESIST_BOW	Odpornosc na strzaly
+OFFLINESHOP_ATTR_RESIST_FIRE	Odpornosc na ogien
+OFFLINESHOP_ATTR_RESIST_ELEC	Odpornosc na blyskawice
+OFFLINESHOP_ATTR_RESIST_MAGIC	Odpornosc na magie
+OFFLINESHOP_ATTR_APPLY_RESIST_WIND	Odpornosc na wiatr
+OFFLINESHOP_ATTR_APPLY_REFLECT_MELEE	Szansa na odbicie ciosu
+OFFLINESHOP_ATTR_APPLY_REFLECT_CURSE	Szansa na odbicie magicznego ataku
+OFFLINESHOP_ATTR_APPLY_POISON_REDUCE	Odpornosc na trucizny
+OFFLINESHOP_ATTR_APPLY_KILL_SP_RECOVER	Szansa na odnowienie PM po zabiciu
+OFFLINESHOP_ATTR_APPLY_EXP_DOUBLE_BONUS	Szansa na podwojenie doswiadczenia
+OFFLINESHOP_ATTR_APPLY_GOLD_DOUBLE_BONUS	Szansa na podwojenie szansy na yang
+OFFLINESHOP_ATTR_APPLY_ITEM_DROP_BONUS	Szansa na podwojenie dropu przedmiotów
+OFFLINESHOP_ATTR_APPLY_POTION_BONUS	Zwiekszenie efektu mikstury
+OFFLINESHOP_ATTR_APPLY_KILL_HP_RECOVER	Szansa na odnowienie HP po zabiciu
+OFFLINESHOP_ATTR_APPLY_IMMUNE_STUN	Odpornosc na omdlenia
+OFFLINESHOP_ATTR_APPLY_IMMUNE_SLOW	Odpornosc na spowolnienia
+OFFLINESHOP_ATTR_APPLY_IMMUNE_FALL	Odpornosc na upadek
+OFFLINESHOP_ATTR_BOW_DISTANCE	Zwiekszony zasieg luku
+OFFLINESHOP_ATTR_DEF_GRADE	Obrona
+OFFLINESHOP_ATTR_ATT_GRADE	Wartosc ataku
+OFFLINESHOP_ATTR_MAGIC_ATT_GRADE	Wartosc magicznego ataku
+OFFLINESHOP_ATTR_MAGIC_DEF_GRADE	Magiczna obrona
+OFFLINESHOP_ATTR_MAX_STAMINA	Odpornosc
+OFFLINESHOP_ATTR_MALL_ATTBONUS	Wartosc ataku
+OFFLINESHOP_ATTR_MALL_DEFBONUS	Obrona
+OFFLINESHOP_ATTR_MALL_EXPBONUS	Szansa na podwójna ilosc dosw.
+OFFLINESHOP_ATTR_MALL_ITEMBONUS	Szansa na podwójny drop Yang
+OFFLINESHOP_ATTR_MALL_GOLDBONUS	Szansa na podwójny drop przedmiotów
+OFFLINESHOP_ATTR_SKILL_DAMAGE_BONUS	Obrazenia umiejetnosci
+OFFLINESHOP_ATTR_NORMAL_HIT_DAMAGE_BONUS	Srednie obrazenia
+OFFLINESHOP_ATTR_SKILL_DEFEND_BONUS	Odpornosc na umiejetnosci
+OFFLINESHOP_ATTR_NORMAL_HIT_DEFEND_BONUS	Srednia odpornosc
+OFFLINESHOP_ATTR_MALL_EXPBONUS_P_STATIC	iCafe EXP-Bonus
+OFFLINESHOP_ATTR_MALL_ITEMBONUS_P_STATIC	iCafe Szansa na upuszczenie przedmiotu
+OFFLINESHOP_ATTR_APPLY_RESIST_WARRIOR	Odpornosc na Wojownika
+OFFLINESHOP_ATTR_APPLY_RESIST_ASSASSIN	Odpornosc na Ninje
+OFFLINESHOP_ATTR_APPLY_RESIST_SURA	Odpornosc na Sure
+OFFLINESHOP_ATTR_APPLY_RESIST_SHAMAN	Odpornosc na Szamana
+OFFLINESHOP_ATTR_APPLY_MAX_HP_PCT	Max PZ %%
+OFFLINESHOP_ATTR_APPLY_MAX_SP_PCT	Max PM %%
+OFFLINESHOP_ATTR_ENERGY	Energy
+OFFLINESHOP_ATTR_COSTUME_ATTR_BONUS	Bonusy Kostiumowe
+OFFLINESHOP_ATTR_MAGIC_ATTBONUS_PER	Nie uzywany
+OFFLINESHOP_ATTR_MELEE_MAGIC_ATTBONUS_PER	Nie uzywany
+OFFLINESHOP_ATTR_RESIST_ICE	Odpornosc na lód
+OFFLINESHOP_ATTR_RESIST_EARTH	Odpornosc na ziemie
+OFFLINESHOP_ATTR_RESIST_DARK	Odpornosc na mrok
+OFFLINESHOP_ATTR_ANTI_CRITICAL_PCT	Odpornosc na cios krytyczny
+OFFLINESHOP_ATTR_ANTI_PENETRATE_PCT	Odpornosc na przeszywajacy cios
+OFFLINESHOP_ATTR_APPLY_BLEEDING_PCT	Szansa na krwawienie
+OFFLINESHOP_ATTR_APPLY_BLEEDING_REDUCE	Odpornosc na krwawienie
+OFFLINESHOP_ATTR_APPLY_ATTBONUS_WOLFMAN	Silny przeciwko Likanom
+OFFLINESHOP_ATTR_APPLY_RESIST_CLAW	Odpornosc na szpony
+OFFLINESHOP_ATTR_APPLY_RESIST_WOLFMAN	Odpornosc przeciwko Likanom
+OFFLINESHOP_ATTR_RESIST_MAGIC_REDUCTION	Redukcja odpornosci na magie
+OFFLINESHOP_ATTR_RES	Body Resistance
+OFFLINESHOP_ATTR_HARDNESS_GRADE	Twardosc
+OFFLINESHOP_RARITY_ITEM_UNSET	Wybierz rzadkosc.
+OFFLINESHOP_NO_FILTER_ACTIVE_MESSAGE	Nie masz wlaczonych zadnych filtrów wyszukiwania.
+OFFLINESHOP_SEARCH_FILTER_NAME_NOSET	Musisz podac nazwe, aby filtrowac wedlug nazwy.
+OFFLINESHOP_SEARCH_RARITY_ERROR	Aby uzyc filtra wedlug rzadkosci, musisz wybrac rzadkosc.
+OFFLINESHOP_SEARCH_PRICE_ERROR	Podales nieprawidlowy zakres poziomów.
+OFFLINESHOP_SEARCH_PRICE_LEVEL	Podales nieprawidlowy zakres cen.
+OFFLINESHOP_MY_PATTERN_INSERT_NAME_DESC	Wpisz nazwe filtra
+OFFLINESHOP_MY_PATTERN_INSERT_NAME_TITLE	Zapisz filtr
+OFFLINESHOP_PATTERN_SAVED_SUCCESS	Filtr dodany do zapisanych filtrów.
+OFFLINESHOP_SAFEBOX_TOOLTIP_GETITEM	|Eemoji/key_lclick|e Podnies
+OFFLINESHOP_SHOP_SAFEBOX_QUESTION_GET_ITEM_COUNT	Czy chcesz otrzymac %s x %d z magazynu sklepu?
+OFFLINESHOP_SHOP_SAFEBOX_QUESTION_GET_ITEM	Czy chcesz wyplacic %s z magazynu sklepu?
+OFFLINESHOP_SHOP_SAFEBOX_ACCEPT	Akceptuj
+OFFLINESHOP_SAFEBOX_CANCEL	Anuluj
+OFFLINESHOP_SAFEBOX_GET_VALUTE_TITLE	Odrzuc
+OFFLINESHOP_MAKE_OFFER_TITLE	Prywatna oferta
+OFFLINESHOP_CANCEL_OFFER_QUESTION_ACCEPT	Akceptuj
+OFFLINESHOP_CANCEL_OFFER_QUESTION_CANCEL	Anuluj
+OFFLINESHOP_CANCEL_OFFER_QUESTION	Chcesz anulowac oferte?
+OFFLINESHOP_MY_OFFER_OFFER_TEXT	Oferta : %s
+OFFLINESHOP_ACCEPT_OFFER_QUESTION	Chcesz przyjac oferte?
+OFFLINESHOP_ACCEPT_OFFER_QUESTION_ACCEPT	Tak
+OFFLINESHOP_ACCEPT_OFFER_QUESTION_CANCEL	Nie
+OFFLINESHOP_CREATE_AUCTION_INVALID_PRICE	Musisz podac prawidlowa baze aukcji.
+OFFLINESHOP_AUCTION_MIN_RAISE	Minimalna podwyzka to %s yang.
+OFFLINESHOP_AUCTION_MAKE_OFFER	Oferta aukcyjna
+OFFLINESHOP_SCRIPTFILE_CREATE_TEXT	Stwórz
+OFFLINESHOP_SCRIPTFILE_CLOSE_SHOP_TEXT	Zamknij
+OFFLINESHOP_SCRIPTFILE_CLOSE_AUCTION_TEXT	Zamknij
+OFFLINESHOP_CANCEL_OFFER_QUESTION	Chcesz anulowac oferte?
+OFFLINESHOP_CANCEL_OFFER_QUESTION_ACCEPT	Tak
+OFFLINESHOP_CANCEL_OFFER_QUESTION_CANCEL	Nie
+OFFLINESHOP_MYOFFERS_CANCEL_BUTTON_TEXT	Anuluj
+OFFLINESHOP_SCRIPTFILE_RESET_FILTER_TEXT	Resetuj wszystko
+OFFLINESHOP_SCRIPTFILE_START_SEARCH_TEXT	Rozpocznij wyszukiwanie
+OFFLINESHOP_SCRIPTFILE_SAVE_AS_PATTERN_TEXT	Zapisz filtr
+OFFLINESHOP_WEAR_WARRIOR	Wojownik
+OFFLINESHOP_WEAR_ASSASSIN	Ninja
+OFFLINESHOP_WEAR_SURA	Sura
+OFFLINESHOP_WEAR_SHAMAN	Szaman
+OFFLINESHOP_WEAR_WOLFMAN	Lycan
+OFFLINESHOP_TOOLTIP_WEAR_INFO	Zdatny do noszenia : 
+OFFLINESHOP_TOOLTIP_NAME_INFO	Nazwa : 
+OFFLINESHOP_TOOLTIP_PRICE_INFO	Cena : 
+OFFLINESHOP_TOOLTIP_LEVEL_INFO	Lv : 
+OFFLINESHOP_TOOLTIP_TYPE_INFO	Typ : 
+OFFLINESHOP_TOOLTIP_ATTR_INFO	Bonusy : 
+OFFLINESHOP_TOOLTIP_RARITY_INFO	Rzadkosc : 
+OFFLINESHOP_SEARCH_RISE_LIMIT	Osiagnieto limit obiektów ( %d pozycji)
+OFFLINESHOP_TOOLTIP_LEFT_CLICK_MAKE_OFFER	|Eemoji/key_lclick|e zlóz oferte
+RARITY_ITEM_COMMON	Zwykly przedmiot
+RARITY_ITEM_EPIC	Epicki przedmiot
+RARITY_ITEM_LEGENDARY	Legendarny przedmiot
+RARITY_ITEM_ANTIQUE	Antyczny przedmiot
+RARITY_ITEM_MISTIC	Mistyczny przedmiot
+DUNGEON_INFO_TYPE0	Nieznany
+DUNGEON_INFO_TYPE1	Prywatny
+DUNGEON_INFO_TYPE2	Globalny
+DUNGEON_INFO_ORGANIZATION0	Nic
+DUNGEON_INFO_ORGANIZATION1	Grupa
+DUNGEON_INFO_ORGANIZATION2	Gildia
+DUNGEON_INFO_NONE	Nic
+DUNGEON_INFO_DO_YOU_TELEPORT	Chcesz teleportowac %s?
+DUNGEON_INFO_STATUS0	Dostepny
+DUNGEON_INFO_STATUS1	W trakcie
+DUNGEON_INFO_STATUS2	Zamkniety
+DUNGEON_LEVEL_LIMIT_MAX_PASS	Poziom za wysoki!
+DUNGEON_LEVEL_LIMIT_MIN_PASS	Poziom za niski!
+MAP_NAME_0	Nieznany
+MAP_NAME_27	Slime
+MAP_NAME_66	Wieza demonów
+MAP_NAME_208	Beran
+MAP_NAME_209	Swiatynia Ochao
+MAP_NAME_210	Zaczarowany las
+MAP_NAME_212	Meley
+MAP_NAME_216	Piekielne Katakumby
+MAP_NAME_217	Baronówna pajaków
+MAP_NAME_351	Razador
+MAP_NAME_352	Nemere
+MAP_NAME_353	Obrona statku
+MAP_NAME_355	Labirynt Orków
+ITEMSHOP_BUY	Buy
+ITEMSHOP_DRAGONCOINT	Dragon Coins
+ITEMSHOP_PRICE	|Eishop/mini_coin|e %s Coins
+ITEMSHOP_PRICE_ONLY_TEXT	%s Coins
+ITEMSHOP_PRICE_WITH_DISCOUNT	|Eishop/mini_coin|e |cffFF7B7B%s Coins (%d%%)
+ITEMSHOP_BUY_TEXT	Do you want buy |cffF7BD48%s|r ?
+ITEMSHOP_BUY_TEXT_COUNT	Do you want buy |cffF7BD48%sx%d|r ?
+ITEMSHOP_BUY_COIN	HOME
+ITEMSHOP_PURCHASES	PURCHASES
+ITEMSHOP_HOTITEMS	|Eishop/hot|eHOT ITEMS
+ITEMSHOP_OFFERS	|Eishop/offer|e OFFERS
+ITEMSHOP_ITEMSEARCH_DEFAULT_TEXT	Search item on itemshop...
+PURCHASES_DATE	Date
+PURCHASES_ACCOUNTID	ID Account
+PURCHASES_IP	IP
+PURCHASES_ITEMBOUGHT	Item Bought
+PURCHASES_PRICE	Price
+PURCHASES_PRICE_TEXT	|Eishop/mini_coin|e |cffF7BD48%s Dragon Coins
+CATEGORY_0_NAME	Special Items
+CATEGORY_0_SUB_0_NAME	Costume Event
+CATEGORY_0_SUB_1_NAME	Battle Pass
+CATEGORY_0_SUB_2_NAME	Special
+CATEGORY_1_NAME	LvL Up
+CATEGORY_1_SUB_0_NAME	Sword
+CATEGORY_1_SUB_1_NAME	Two-Handed
+CATEGORY_1_SUB_2_NAME	Dagger
+CATEGORY_1_SUB_3_NAME	Bell
+CATEGORY_1_SUB_4_NAME	Fan
+CATEGORY_1_SUB_5_NAME	Bow
+CATEGORY_2_NAME	Item Upgrade
+CATEGORY_2_SUB_0_NAME	Warrior
+CATEGORY_2_SUB_1_NAME	Assassin
+CATEGORY_2_SUB_2_NAME	Sura
+CATEGORY_2_SUB_3_NAME	Shaman
+CATEGORY_3_NAME	Accessories
+CATEGORY_3_SUB_0_NAME	Helmet
+CATEGORY_3_SUB_1_NAME	Shield
+CATEGORY_3_SUB_2_NAME	Earring
+CATEGORY_3_SUB_3_NAME	Bracelet
+CATEGORY_3_SUB_4_NAME	Necklace
+CATEGORY_3_SUB_5_NAME	Shoes
+CATEGORY_3_SUB_6_NAME	Belt
+CATEGORY_3_SUB_7_NAME	Talisman
+CATEGORY_4_NAME	Costume
+CATEGORY_4_SUB_0_NAME	Weapon
+CATEGORY_4_SUB_1_NAME	Costume
+CATEGORY_4_SUB_2_NAME	Hair
+CATEGORY_4_SUB_3_NAME	Sash
+CATEGORY_5_NAME	Animals
+CATEGORY_4_SUB_4_NAME	Weapon Effect
+CATEGORY_4_SUB_5_NAME	Body Effect
+CATEGORY_4_SUB_6_NAME	Mount/Pet Costume
+CATEGORY_5_SUB_0_NAME	Pet
+CATEGORY_5_SUB_1_NAME	Mount
+CATEGORY_6_NAME	Other Items
+CATEGORY_6_SUB_0_NAME	Other Items
+CATEGORY_6_SUB_1_NAME	Dungeons
+CATEGORY_6_SUB_2_NAME	Marriage
+CATEGORY_7_NAME	Other Items
+CATEGORY_7_SUB_0_NAME	Time Item
+CATEGORY_7_SUB_1_NAME	Refine Item
+CATEGORY_8_NAME	Other items
+CATEGORY_8_SUB_0_NAME	Strengthening
+CATEGORY_8_SUB_1_NAME	Improving
+CATEGORY_9_NAME	Upgrade Items
+CATEGORY_10_NAME	Special Packs
+YES	Yes
+NPC_SEARCH	Npc Search
+NPC_SEARCH_TEXT	Spawns on the following maps:
+MOUNT_SOHAN_MAP_NAME	Mounth Sohan
+MOUNT_DOYUMHWAN_MAP_NAME	Doyumhwan
+MOUNT_YONGBI_MAP_NAME	Yongbi Desert
+TOURNAMENT_ALL_CHARACTER	All Character
+NORMAL_EVENT_TIME	From: %s To: %s
+PVP_EVENT_TIME	Starts at: %s
+NONE_AFFECT	None Affect
+EVENT_COLORFULL_TEXT	|cFF84A5B9%s|h|r
+ALL_KINGDOMS	|cFF97AE99All Kingdoms:|h|r
+RED_KINGDOM	|cFFFBB497Red Kingdom:|h|r
+BLUE_KINGDOM	|cFF8CADDBBlue Kingdom:|h|r
+YELLOW_KINGDOM	|cFFFDE696Yellow Kingdom:|h|r
+EVENT_TOOLTIP_TITLE	Events on %s:
+EVENT_TOOLTIP_DOESNT_HAVE_EVENT	No events on this day.
+DOUBLE_BOSS_LOOT_EVENT	Double Boss Loot
+DOUBLE_METIN_LOOT_EVENT	Double Metin Loot
+DOUBLE_MISSION_BOOK_EVENT	Double Mission Book Loot
+DUNGEON_COOLDOWN_EVENT	Dungeon Cooldown
+DUNGEON_TICKET_LOOT_EVENT	Dungeon Ticket Drop
+EMPIRE_WAR_EVENT	Empire War (Lv %d - Lv %d)
+MOONLIGHT_EVENT	Moonlight Chests
+TOURNAMENT_EVENT	PvP Tournament(%s - Lv %d - Lv %d)
+WHELL_OF_FORTUNE_EVENT	Whell of Fortune
+HALLOWEEN_EVENT	Halloween Event
+EVENT_MANAGER_WINDOW_TITLE	Event Calendar: %s - %d
+ALL_CHANNEL	All Channel
+ONLY_CHANNEL	Only Channel %d
+BONUS_EVENT	Bonus Event:
+BONUS_END_IN	Ends in %s
+BONUS_START_IN	Start in %s
+BONUS_NEXT_EVENT	|Eemoji/key_rclick|e - Next Event
+ITEM_DROP_EVENT	Item Drop Event: %d%%
+YANG_DROP_EVENT	Yang Drop Event: %d%%
+EXP_EVENT	Exp Drop Event: %d%%
+EVENT_MONTH_1	January
+EVENT_MONTH_2	February
+EVENT_MONTH_3	March
+EVENT_MONTH_4	April
+EVENT_MONTH_5	May
+EVENT_MONTH_6	June
+EVENT_MONTH_7	July
+EVENT_MONTH_8	August
+EVENT_MONTH_9	September
+EVENT_MONTH_10	October
+EVENT_MONTH_11	November
+EVENT_MONTH_12	December
+NEW_AFFECT_VOTE4BUFF	Vote4Buff	SNA
+NEW_AFFECT_AUTO_METIN_FARM	Premium Metinfarm	SNA
+TOOLTIP_MAX_HP_S	HP
+TOOLTIP_ATT_GRADE_S	Wartosc ataku+
+TOOLTIP_APPLY_ATTBONUS_HUMAN_S	Silny przeciwko Pólludziom
+TOOLTIP_SKILL_DAMAGE_BONUS_S	Obrazenia umiejetnosci
+TOOLTIP_NORMAL_HIT_DAMAGE_BONUS_S	Srednie obrazenia
+TOOLTIP_APPLY_ATTBONUS_METIN_RAZOR93	Silny przeciwko Metinom
+TOOLTIP_APPLY_GOLD_DOUBLE_BONUS_S	Drop yangów
+TOOLTIP_APPLY_ITEM_DROP_BONUS_S	Drop przedmiotów
+TOOLTIP_APPLY_ATTBONUS_BOSS_RAZOR93	Silny przeciwko Bossom
+TOOLTIP_APPLY_ATTBONUS_MONSTER_S	Silny przeciwko Potworom
+TOOLTIP_ATT_GRADE_S_S	Wartosc ataku+ (%)
+TOOLTIP_APPLY_EXP_DOUBLE_BONUS_S	Premia EXP
+TOOLTIP_AGAINST_EVERYONE	Odpornosc na Wojownika, Ninje, Sure i Szamana
+GAME_PICK_MONEY	%d yang 
+TOOLTIP_MALL_ATTBONUS_GUILD	Támadó érték (%)

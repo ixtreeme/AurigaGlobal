@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]O Battle Pass é um sistema que oferece uma série de missões com recompensas exclusivas.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA
+
+[X_PADDING=12]1. O ícone do painel Battle Pass está localizado ao lado do inventário ou você pode abrir o painel pressionando a tecla F8.
+[X_PADDING=12]2. Para desbloquear o painel, você precisará do item Battle Pass.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISSÕES E PRÊMIOS
+
+[X_PADDING=12]1. O Battle Pass consiste em 10 missões.
+[X_PADDING=12]2. Cada missão deve ser concluída em 25 dias.
+[X_PADDING=12]3. Você pode ver o progresso de uma missão à direita do painel.
+[X_PADDING=12]4. Quando uma missão é concluída, você recebe uma recompensa especial.
+[X_PADDING=12]5. Quando todas as missões forem concluídas clicando no botão "Prêmio" (o botão com as moedas que se encontram na
+[X_PADDING=12]segunda página) você receberá vários vouchers Battle Pass.
+[X_PADDING=12]6. O Voucher Battle Pass permite que você compre itens na loja Battle Pass.
+[X_PADDING=12]7. Todos os itens na loja do Battle Pass são exclusivos, então quando o Battle Pass do mês expirar, não será mais 
+[X_PADDING=12]possível comprá-los.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

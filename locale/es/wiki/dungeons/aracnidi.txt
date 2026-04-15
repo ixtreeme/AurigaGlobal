@@ -1,0 +1,32 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/aracnidi.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 60.
+[X_PADDING=12]*Nivel maximo: 80.
+[X_PADDING=12]*Ticket: Llave de los arácnidos.
+[X_PADDING=12]*Type: Solo y en grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30324.tga; Y=15; X=478]
+[X_PADDING=459]Llave de los arácnidos
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 30 minutos.
+[X_PADDING=12]*Enfriamiento: 40 minutos.
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra los animales.
+[X_PADDING=12]*Elemento de monstruos: Tierra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Mata al barón araña.
+[X_PADDING=20]2. Haga clic en el silbato de los arácnidos para pasar a la siguiente fase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Para dañar a la baronesa araña, primero destruye los huevos de araña.
+[X_PADDING=20]2. Mata a la baronesa araña.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=332; CENTER_ALIGN]

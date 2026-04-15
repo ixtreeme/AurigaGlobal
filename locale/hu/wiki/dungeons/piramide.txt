@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 105.
+[X_PADDING=12]*Maximum szint: 120.
+[X_PADDING=12]*Belépo: Ankh Kereszt.
+[X_PADDING=12]*Típus: Csapat.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=461]Ankh Kereszt
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 30 perc.
+[X_PADDING=12]*Újratöltés: 1 óra és 30 perc
+[X_PADDING=12]*A dungeon elérheto: Speciális Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Föld ero.
+[X_PADDING=12]*Element of monsters: Föld.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Pusztítsd el az összes Wadjet Metinjét.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet
+[X_PADDING=20]1. Ölj szörnyeket, hogy megtalálj 4 darab pergament-et.
+[X_PADDING=20]2. Ha megvan mind a 4 pergament, klikkelj rá az Osi pecsétre, hogy elpusztítsd .(Csak az tudja elpusztítani
+[X_PADDING=20]akinek a leltárában van mind a 4 pergament).
+[X_PADDING=20]3. Öld meg Anubis szolgálóit.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet
+[X_PADDING=20]1. Pusztítsd el a helyes Fáraó Metinjét.
+[X_PADDING=20]2. Öld meg Bastet-et.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik emelet
+[X_PADDING=20]1. HOgy tovább haladhass, átkell menned 24 portálon keresztül.
+[X_PADDING=20]2. Öld meg a helyes Ra-t.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Ötödik emelet
+[X_PADDING=20]1. Ölj szörnyeket, hogy megtaláld a Bölcs Szalagot.
+[X_PADDING=20]2. Húzd rá a Bölcs Szalagot Anubis képmására, hogy elpusztítsd azt.
+[X_PADDING=20]3. Pusztítsd el Ankh Metinjét, hogy Bölcs Szalaghoz juss.
+[X_PADDING=20]4. Húzd rá a Bölcs Szalagot Anubis képmására, hogy elpusztítsd azt.
+[X_PADDING=20]3. Ölj szörnyeket, hogy megtaláld a Bölcs Szalagot.
+[X_PADDING=20]4. Húzd rá a Bölcs Szalagot Anubis képmására, hogy elpusztítsd azt.
+[X_PADDING=20]5. Pusztítsd el Ankh Metinjét, hogy az utolsó Bölcs Szalaghoz juss.
+[X_PADDING=20]6. Húzd rá a Bölcs Szalagot Anubis utolsó képmására, hogy elpusztítsd azt.
+[X_PADDING=20]7. Öld meg Anubist.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Hatodik emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet.
+[X_PADDING=20]2. Klikkelj rá az Ankh Kulcsra, hogy egy Osi Kulcsot kapj.
+[X_PADDING=20]3. Húzd rá az Osi Kulcsot Wadjet Pillérre, hogy elpusztítsd azt.
+[X_PADDING=20]4. Pusztítsd el Szphinx Metinjét.
+[X_PADDING=20]5. Kattints rá az utolsó Ankh Kulcsra, hogy egy Osi Kulcsot kapj.
+[X_PADDING=20]6. Húzd rá az Osi Kulcsot az utolsó Wadjet Pillérre, hogy elpusztítsd azt.
+[X_PADDING=20]7. Öld meg a Szphinxet.
+[X_PADDING=20]8. Pusztítsd el Szphinx Kincsét, hogy jutalomban részesülj.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]Al completar algunas misiones en el juego, recibirás un cofre de mascotas, al hacer clic en él se te pedirá que
+[X_PADDING=12]elige qué huevo de mascota prefieres:
+[X_PADDING=20]- Huevo de mono
+[X_PADDING=20]- Huevo de araña
+[X_PADDING=20]- Huevo de Razador
+[X_PADDING=20]- Huevo de Nemere
+[X_PADDING=20]- Huevo de dragón azul
+[X_PADDING=20]- Huevo de dragón rojo
+[X_PADDING=20]- Huevo Baashido Bebé
+[X_PADDING=20]- Huevo de verdugo gordito
+[X_PADDING=20]- Huevo de nessie
+[X_PADDING=20]- Huevo de Mini azrael
+[X_PADDING=20]- Huevo Exdyar
+
+[X_PADDING=12]Al hacer clic con el botón derecho en su huevo, se le pedirá que elija el nombre antes de incubar a la mascota.
+[X_PADDING=12]del huevo (con el desplazamiento de nombres es posible cambiar el nombre de su mascota).
+[X_PADDING=12]Cuando la mascota haya eclosionado tendrá 2 días de vida y estará en el nivel 1.
+[X_PADDING=12]Para aumentar la vida de la mascota necesitas el Divine Boccone, disponible a partir de 2g en NPC Shopkeeper.
+
+[X_PADDING=12]Cuando la mascota nazca tendrá 3 bonificaciones (estas bonificaciones saldrán con porcentajes aleatorios):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Fuerza contra monstruos
+[X_PADDING=20]- Daño de media[PVM]
+
+[X_PADDING=12]Es posible aumentar los porcentajes de las bonificaciones estándar para mascotas con un Mordisco especial.
+[X_PADDING=12](Tenga en cuenta que el aumento porcentual de una bonificación estándar podría fallar).
+
+[X_PADDING=12]La mascota tiene 3 procesos de desarrollo:
+[X_PADDING=20]1. De cachorro a salvaje
+[X_PADDING=20]2. De salvaje a bravo
+[X_PADDING=20]3. De valiente a heroico
+
+[X_PADDING=12]Los desarrollos de mascotas se dividen de la siguiente manera:
+[X_PADDING=20]PERRITOS:
+[X_PADDING=28]- Nivel 1 a 40 sin necesidad de artículo
+[X_PADDING=20]CACHORROS -> SALVAJE:
+[X_PADDING=28]Nivel 41 a 60
+[X_PADDING=28]- 10 libro de mascota de cachorro
+[X_PADDING=28]- 10 Perla Blanca
+[X_PADDING=28]- 3 Perla amarilla
+[X_PADDING=20]Salvaje --> BRAVO:
+[X_PADDING=28]- Lv 61 a lv 80
+[X_PADDING=28]- 10 Libro de mascotas salvajes
+[X_PADDING=28]- 10 Perla Azul
+[X_PADDING=28]- 3 Perla Verde
+[X_PADDING=20]BRAVO -> HEROICO:
+[X_PADDING=28]- Nivel 81 a 100
+[X_PADDING=28]- 10 Libro de mascotas bravo
+[X_PADDING=28]- 10 Perla Roja
+[X_PADDING=28]- 3 perla morada
+
+[X_PADDING=12]Rango salvaje desbloquea el primer espacio de habilidad.
+[X_PADDING=12]Rango Bravo desbloquea el segundo espacio de habilidad.
+[X_PADDING=12]Rango heroico desbloquea el tercer espacio de habilidad.
+
+[X_PADDING=12]Además, la mascota proporcionará nuevas bonificaciones a medida que envejece, cuanto mayor sea la mascota, mayor será el valor de sus bonificaciones.
+[X_PADDING=20]De 1 a 10 días la mascota dará las siguientes bonificaciones:
+[X_PADDING=28]- Max. HP +500
+[X_PADDING=28]- Resistencia monstruos 2%
+[X_PADDING=28]- Resistencia mediohumanos 2%
+[X_PADDING=20]De 11 a 25 días la mascota dará las siguientes bonificaciones:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Resistencia monstruos 4%
+[X_PADDING=28]- Resistencia mediohumanos 4%
+[X_PADDING=20]De 26 a 47 días la mascota dará las siguientes bonificaciones:
+[X_PADDING=28]- Max. HP +2100
+[X_PADDING=28]- Resistencia monstruos 7%
+[X_PADDING=28]- Resistencia mediohumanos 7%
+[X_PADDING=20]De 48 a 59 días la mascota dará las siguientes bonificaciones:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistencia monstruos 10%
+[X_PADDING=28]- Resistencia mediohumanos 10%
+[X_PADDING=20]A partir de los 60 días:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistencia monstruos 10%
+[X_PADDING=28]- Resistencia mediohumanos 10%
+[X_PADDING=28]- Y la cuarta ranura de habilidad se desbloqueará.
+
+[X_PADDING=12]Habilidades que se le pueden enseñar a la mascota:
+[X_PADDING=20]- Probabilidad de golpe crítico[PvM] 10%
+[X_PADDING=20]- Fuerza contra piedras de Metin 10%
+[X_PADDING=20]- Fuerza contra jefes 10%
+[X_PADDING=20]- Resistencia ninjas 10%
+[X_PADDING=20]- Resistencia suras 10%
+[X_PADDING=20]- Resistencia guerreros 10%
+[X_PADDING=20]- Resistencia chamán 10%
+[X_PADDING=20]- Probabilidad de bonificación de EXP 20%
+[X_PADDING=20]- Probabilidad de soltar una cantidad doble de yang 20%
+[X_PADDING=20]- Valor de ataque / Magico 10%
+[X_PADDING=20]- Probabilidad de bloquear ataques físicos 10%
+[X_PADDING=20]- Probabilidad de reflejar ataques físicos. 10%
+
+[X_PADDING=12]Es posible hacer olvidar una habilidad elegida por la mascota usando el libro Restablecer las habilidades de las mascotas y también es posible hacerla olvidar.
+[X_PADDING=12]todas las habilidades de mascotas usando el libro (S) Restablecer habilidades de mascotas.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

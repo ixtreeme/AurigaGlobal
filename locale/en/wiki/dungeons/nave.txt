@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 105.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: White Sail.
+[X_PADDING=12]*Type: Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]White Sail
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 30 minutes.
+[X_PADDING=12]*Cooldown: 1 hour and 30 minutes
+[X_PADDING=12]*You can access from the map: Special Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Ice Power.
+[X_PADDING=12]*Element of monsters: Ice.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST PHASE
+[X_PADDING=20]1. The party leader must click on the rudder to start the dungeon.
+[X_PADDING=20]2. Defend the ship's mast at 02:30.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND PHASE
+[X_PADDING=20]1. Kill the Siren Queen.
+[X_PADDING=20]2. Kill the first Hydra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD PHASE
+[X_PADDING=20]1. Defend the ship's mast for 01:30.
+[X_PADDING=20]2. Kill the second Hydra.
+[X_PADDING=20]3. Repair the ship's mast by clicking on the Repair Woods.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH PHASE
+[X_PADDING=20]1. Defend the ship's mast for 01:30.
+[X_PADDING=20]2. Destroy the Hydra Eggs in order to do damage to the Hydra.
+[X_PADDING=20]3. Kill the last Hydra.
+[X_PADDING=20]4. Destroy the Hydra Treasure to receive the reward.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

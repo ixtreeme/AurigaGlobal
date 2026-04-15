@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Das Farbsystem der Fähigkeit gibt dir die Erlaubnis, die Farbe einer Fähigkeit zu ändern
+
+[X_PADDING=12]1.Du kannst die Farbe einer Fähigkeit nur ändern, wenn sie auf P . ist
+[X_PADDING=12]2. Du kannst die Farbe einer Fähigkeit nur ändern, wenn du den Gegenstand Regenbogenelixier hast .
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Regenbogen elixir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES SYSTEMS
+
+[X_PADDING=12]1.Wenn eine Fertigkeit P erreicht, indem Sie das Fertigkeitsfenster über dem Fertigkeitssymbol bei P öffnen, wird ein farbiger Kreis angezeigt.
+[X_PADDING=12]2. Ein Klick auf den Kreis mit der linken Maustaste öffnet das Panel des Skill-Farbsystems.
+[X_PADDING=12]3. Jede Fertigkeit kann gleichzeitig in 5 verschiedenen Farben eingefärbt werden. Sie können die verschiedenen Farben auswählen, indem Sie auf das klicken
+[X_PADDING=12]Zahlen am unteren Rand des Panels.
+[X_PADDING=12]4. Wann immer Sie die Farbe einer Ihrer Fähigkeiten ändern möchten, benötigen Sie ein Regenbogen-Elixier
+[X_PADDING=12]5.Mit dem Pfeil rechts im Bedienfeld können Sie die 3 verfügbaren Optionen verwenden, Farbe speichern, Farbe einfügen mit
+[X_PADDING=12]Hex-Code und verwenden Sie die vordefinierte Farbe.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

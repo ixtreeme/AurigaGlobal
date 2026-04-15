@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA BIOLOGO
+
+[X_PADDING=12]1. O ícone do painel do biólogo está localizado no minimapa.
+[X_PADDING=12]2. Bônus permanentes são concedidos para completar as missões do biólogo.
+[X_PADDING=12]3. Você pode comprar os itens necessários para as missões indo ao biólogo na Vila Maravilha.
+[X_PADDING=12]4. Você pode habilitar uma notificação no painel do biólogo quando o tempo de espera acabar.
+[X_PADDING=12]5. Você pode usar o Elixir do Pesquisador para reiniciar o tempo de espera.
+[X_PADDING=12]6. Você pode usar o Elixir+ do Pesquisador para reiniciar o tempo de espera e melhorar a qualidade dos itens quando
+[X_PADDING=12]eles são entregues ao biólogo.
+[X_PADDING=12]7. Você pode usar o item mágico do Biólogo para alterar o bônus escolhido nas missões de level 105 e 110.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISSÕES E PRÊMIOS
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

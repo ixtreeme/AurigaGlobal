@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Cu ajutorul acestui sistem poþi schimba culorile abilitãþilor.
+
+[X_PADDING=12]1. Pentru a putea schimba culorile unei abilitãþi, aceasta trebuie sã fie P.
+[X_PADDING=12]2. Pe lângã asta va trebuii sã deþii un Elixir Curcubeu.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Elixir Curcubeu
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Atunci când o abilitate este la P va apãrea un cerc colorat în stânga icoanei al abilitãþii.
+[X_PADDING=12]2. Clicând pe acel cerc se va deschide fereastra acestui sistem.
+[X_PADDING=12]3. Orice abilitate poate fi coloratã cu maxim 5 culori în acelaºi timp, culorile pot fi alese
+[X_PADDING=12]clicând pe panoul colorat.
+[X_PADDING=12]4. De fiecare datã când schimbi culoarea unei abilitãþi vei avea nevoie de un Elixir Curcubeu.
+[X_PADDING=12]5. Apãsând pe fereastra din dreapta ferestrei vor apãrea 3 opþiuni: salveazã culoarea, introdu o culoare
+[X_PADDING=12]prin codul ei de HEX ºi foloseºte culoarea de default.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

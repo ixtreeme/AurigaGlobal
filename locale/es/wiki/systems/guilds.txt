@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]El sistema de clasificación del gremio consta de 3 ligas:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Liga de oro								   Liga de plata							 Liga de bronce
+
+
+[X_PADDING=12]Puedes abrir el panel de clasificación del gremio haciendo clic en el ícono al lado del inventario o presionando la tecla F6.
+
+[X_PADDING=12]Para ingresar a una liga necesitas un mínimo de trofeos:
+[X_PADDING=20]1. Se requieren 50 trofeos de la Liga de Oro
+[X_PADDING=20]2. Trofeos de la Liga de Plata requeridos 30
+[X_PADDING=20]3. Trofeos de la Liga de Bronce requeridos 5
+
+[X_PADDING=12]Para cada liga hay plazas limitadas (quien tenga más trofeos podrá permanecer en una liga):
+[X_PADDING=20]1. Liga de Oro League  7 plazas
+[X_PADDING=20]2. Liga de plata  12  plazas
+[X_PADDING=20]3. Liga de bronce 21 plazas
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Puntos y premios para las distintas ligas:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* LIGA DE ORO:
+
+[X_PADDING=28]- Puntaje:
+[X_PADDING=36]-> Gana +3 trofeos / + 15KK para cada miembro del gremio
+[X_PADDING=36]-> Derrota -3 trofeo / -5kk a cada miembro del gremio
+[X_PADDING=36]-> Empate +1 trofeo / + 5kk a cada miembro del gremio
+
+[X_PADDING=28]- Bonificación de fin de temporada (duración de temporada de 25 días):
+[X_PADDING=36]-> 1 lugar: 180kk + 1er cofre de la liga de oro P para cada miembro del gremio
+[X_PADDING=36]-> 2do puesto: Cofre de la liga de oro de 100kk + 2do P para cada miembro del gremio
+[X_PADDING=36]-> 3er puesto: 70kk + 3er Cofre P Gold League para cada miembro del gremio
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* LIGA DE PLATA:
+
+[X_PADDING=28]- Puntaje:
+[X_PADDING=36]-> Gana +3 trofeos / + 5KK para cada miembro del gremio
+[X_PADDING=36]-> Derrota -2 trofeo
+[X_PADDING=36]-> Empate +1 trofeo / + 2kk a cada miembro del gremio
+
+[X_PADDING=28]- Bonificación de fin de temporada (duración de temporada de 25 días):
+[X_PADDING=36]-> 1 lugar: 100kk + 1er Cofre de liga de plata P para cada miembro del gremio
+[X_PADDING=36]-> 2do lugar: 70kk + 2do cofre de liga de plata P para cada miembro del gremio
+[X_PADDING=36]-> 3er lugar: 40kk + 3er Cofre de la liga de plata P para cada miembro del gremio
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* LIGA BRONCE:
+
+[X_PADDING=28]- Puntaje:
+[X_PADDING=36]-> Victoria +3 trofeos
+[X_PADDING=36]-> Derrota -1 trofeo
+[X_PADDING=36]-> Empate +1 trofeo
+
+[X_PADDING=28]- Bonificación de fin de temporada (duración de temporada de 25 días):
+[X_PADDING=36]-> 1er lugar: 50kk + 1er cofre de la liga de bronce P para cada miembro del gremio
+[X_PADDING=36]-> 2do lugar: 30kk + 2do cofre de la liga de bronce P para cada miembro del gremio
+[X_PADDING=36]-> 3er lugar: 10kk + 3er cofre de la liga de bronce P para cada miembro del gremio
+
+[X_PADDING=12]PREMIO VICTORIA:
+[X_PADDING=20]- Si un gremio gana varias guerras, puede recibir otras recompensas especiales:
+[X_PADDING=20]- 5 gana 1 Gaya para cada miembro del gremio.
+[X_PADDING=20]- 10 gana 3 Gaya para cada miembro del gremio.
+[X_PADDING=20]- 15 gana 15 Gaya para cada miembro del gremio.
+[X_PADDING=20]- Puedes comprobar el estado de las victorias de tu gremio en el panel de información del gremio.
+
+[X_PADDING=12]OTROS DETALLES:
+[X_PADDING=20]1. Solo puedes declarar la guerra a otro gremio cuando tu gremio tenga al menos el nivel 2.
+[X_PADDING=20]2. Cada gremio para declarar una guerra debe tener al menos 8 miembros en su gremio.
+[X_PADDING=20]3. Al final de la temporada, todos los gremios volverán a tener 0 trofeos.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

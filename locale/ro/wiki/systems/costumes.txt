@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]T. B. Costume			 Vrãjeºe Costum			 Ada. C. S. (5%)		   Ada. C. S. (10%)		Eliminã Bonus S.
+
+[X_PADDING=12]Orice costum vei achiziþiona de la NPC-ul Confucius, din item-shop sau battlepass va primi 3 bonusuri normale
+[X_PADDING=12]aleatoriu cu valori aleatoriu.
+[X_PADDING=12]Bonusurile normale pot fi schimba cu Vrãjeºte Costum.
+[X_PADDING=12]Vei putea adãuga maxim 2 bonusuri special cu unul dintre urmãtoarele iteme:
+[X_PADDING=20]1. Adaugã Costum Special (max 5%)
+[X_PADDING=20]2. Adaugã Costum Special (max 10%)
+
+[X_PADDING=12]Bonusurile speciale ce pot fi adãugate sunt:
+[X_PADDING=20]- Tare împotriva Monºtrilor
+[X_PADDING=20]- Tare împotriva Metinelor
+[X_PADDING=20]- Tare împotriva ªefilor
+[X_PADDING=20]- Tare vs Semi-Oameni
+[X_PADDING=20]- Rezistenþã la Semi-Oameni
+
+[X_PADDING=12](Bonusurile speciale pot fi eliminate cu Eliminã Bonus Special)
+
+[X_PADDING=12]Cu ajutorul NPC-ului Theowahdan vei putea transfera bonusurile de pe un costum pe altul
+[X_PADDING=12]cu item-ul Transferã Bonus Costume.
+
+[X_PADDING=12]În fereastra de transfer bonusuri sunt 4 slot-uri:
+[X_PADDING=20]1. În cel din stânga va trebui sã adaugi costumul de pe care sã se ia bonusurile.
+[X_PADDING=20]2. În cel de sus va trebui sã adaugi Transferã Bonus Costume.
+[X_PADDING=20]3. În cel din dreapta va trebui sã adaugi costumul pe care sã fie transferate bonusurile.
+[X_PADDING=20]4. În cel de jos va fi rezultatul.
+
+[X_PADDING=12]Atenþie deoarece dacã costumul de pe care doreºti sã transferi bonusurile are bonusuri
+[X_PADDING=12]speciale, acestea vor fi pierdute iar costumul va fi distrus dupã proces.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSURILE NORMALE CARE POT IEªI PE COSTUME
+
+[X_PADDING=12]Costume Armuri:
+[X_PADDING=20]- Max. PV +2000
+[X_PADDING=20]- Max. PM +800
+[X_PADDING=20]- 8% daune vor fi absorbite de PM
+[X_PADDING=20]- 8% daune vor fi absorbite de PV
+[X_PADDING=20]- Valoarea atacului +50
+[X_PADDING=20]- ªansã 15% la bonus-EXP
+[X_PADDING=20]- ªansã 15% de a arunca de 2 ori mai multe obiecte
+
+[X_PADDING=12]Frizuri:
+[X_PADDING=20]- Vitezã de atac: +8%
+[X_PADDING=20]- ªansa de loviturã criticã +8%
+[X_PADDING=20]- ªansã 8% la lovituri pãtrunzãtoare
+[X_PADDING=20]- Rezistenþã la Semi-Oameni 10%
+[X_PADDING=20]- ªansã de a arunca mai mult Yang +15%
+[X_PADDING=20]- Regenerarea PV +15%
+[X_PADDING=20]- Regenerarea PM +15%
+
+[X_PADDING=12]Costume Arme:
+[X_PADDING=20]- Inteligenþã +10
+[X_PADDING=20]- Putere +10
+[X_PADDING=20]- Dexteritate +10
+[X_PADDING=20]- Vitalitate +10
+[X_PADDING=20]- Tare împotriva Vampirilor +15%
+[X_PADDING=20]- Tare împotriva Diavolilor +15%
+[X_PADDING=20]- Tare împotriva Orcilor +15%
+[X_PADDING=20]- Tare împotriva Animalelor +15%
+[X_PADDING=20]- Tare împotriva Semi-Oamenilor +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BONUSY ŠERPY:
+[X_PADDING=20]1. Systém šerp umožnuje hrácum úrovne 1 a výše nosit nový kus
+[X_PADDING=20]výzbroje.
+[X_PADDING=20]2. Šerpa muže absorbovat VŠECHNY bonusy na zbrane a brnení krome speciálních bonusu na zbrane
+[X_PADDING=20]a Mýtické brnení. Procento absorpce závisí na stupni kvality
+[X_PADDING=20]šerpy, cím vyšší je kvalita, tím vyšší je procento absorpce.
+[X_PADDING=20]3. Chcete-li pridat bonusy, musíte jít k NPC Theowahdan na mape
+[X_PADDING=20]Wonder Village.
+[X_PADDING=20]4.Šerpu 1. úrovne si mužete zakoupit od NPC Theowahdan pomocí Tenkých vláken, které
+[X_PADDING=20] dropneš z metinu.
+[X_PADDING=20]5. Bonusy z šerpy mužete odstranit pomocí predmetu Odebrání bonusu šerpy.
+
+[X_PADDING=12]VYLEPŠENÍ ŠERPY:
+[X_PADDING=20]1. Chcete-li vylepšit šerpu, prejdete k NPC Theowahdan a kliknete na kombinace.
+[X_PADDING=20]2. Vylepšení VŽDY znicí vloženou druhou šerpu, at úspešné nebo v
+[X_PADDING=20]V prípade, že jsou v obou šerpách bonusy, nebudou,
+[X_PADDING=20]se scítat, ale budou brány v úvahu pouze ty z první šerpy, protože to je ta  
+[X_PADDING=20]šerpa, která bude vylepšena. Druhá má jedinou funkci „objekt potrebný k zlepšení“.
+
+[X_PADDING=12]MOŽNÉ STUPNE ŠERP :
+[X_PADDING=20;COLOR=58ADFF]ÚROVNE          PROCENTA BONUSOVÉ ABSORPCE
+[X_PADDING=20]Obycejná       1%
+[X_PADDING=20]Jemná           5%
+[X_PADDING=20]Noblesní          10%
+[X_PADDING=20]Uživatelská     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Odebrání bonusu šerpy
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

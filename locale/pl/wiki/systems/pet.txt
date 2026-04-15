@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]Po ukonczeniu niektórych misji w grze otrzymasz Skrzynie Zwierzaków, po kliknieciu na nia zostaniesz poproszony o
+[X_PADDING=12]wybranie jajka zwierzka które chcesz:
+[X_PADDING=20]- Jajo Malpiszona
+[X_PADDING=20]- Jajo Pajaka
+[X_PADDING=20]- Jajo Razadora
+[X_PADDING=20]- Jajo Nemere
+[X_PADDING=20]- Jajo Niebieskiego Smoka
+[X_PADDING=20]- Jajo Czerownego Smoka
+[X_PADDING=20]- Jajo Baashido
+[X_PADDING=20]- Jajo Grubego Kata
+[X_PADDING=20]- Jajo Nessie
+[X_PADDING=20]- Jajo Malego Azraela
+[X_PADDING=20]- Jajo Exdyara
+
+[X_PADDING=12]Klikniecie prawym przyciskiem myszy na jajko poprosi Cie o wybranie imienia przed wykluciem zwierzaka
+[X_PADDING=12]z jajka (za pomoca Zwoju imienia mozna zmienic imie swojego zwierzaka).
+[X_PADDING=12]Po wykluciu zwierzaka bedzie mialo 2 dni zycia i osiagnie 1. poziom.
+[X_PADDING=12]Aby wydluzyc zycie zwierzaka, potrzebujesz Boska Odzywka, dostepnego u NPC Sklepikarz.
+
+[X_PADDING=12]Gdy zwierzak sie wykluje, bedzie mial 3 bonusy (te bonusy beda mialy losowe wartosci procentowe):
+[X_PADDING=20]- PZ
+[X_PADDING=20]- Silny przeciwko potworom
+[X_PADDING=20]- Srednie obrazenia[PVM]
+
+[X_PADDING=12]Mozliwe jest zwiekszenie procentu standardowych premii zwierzaka za pomoca Specjalnego Przekaska.
+[X_PADDING=12](Uwazaj, ze procentowy wzrost standardowej premii moze sie nie powiesc).
+
+[X_PADDING=12]Zwierzak ma 3 procesy rozwojowe:
+[X_PADDING=20]1. Od mlodego do dzikiego
+[X_PADDING=20]2. Od dzikiego do odwaznego
+[X_PADDING=20]3. Od odwaznego do heroicznego
+
+[X_PADDING=12]Rozwój zwierzaków dzieli sie w nastepujacy sposób:
+[X_PADDING=20]MLODY:
+[X_PADDING=28]- Poziom od 1 do 40 bez przedmiotu wymaganego
+[X_PADDING=20]MLODY--> DZIKI:
+[X_PADDING=28]Level 41 do 60
+[X_PADDING=28]- 10 Ksiag mlodego zwierzaka
+[X_PADDING=28]- 10 Bialych perel
+[X_PADDING=28]- 3 Zóltych perel
+[X_PADDING=20]DZIKI --> ODWAZNY:
+[X_PADDING=28]- Lv 61 do lv 80
+[X_PADDING=28]- 10 Ksiag dzikiego zwierzaka
+[X_PADDING=28]- 10 Niebieskich perel
+[X_PADDING=28]- 3 Zielonych perel
+[X_PADDING=20]ODWAZNY --> HEROICZNY:
+[X_PADDING=28]- Lv 81 do 100
+[X_PADDING=28]- 10 Ksiag odwaznego zwierzaka
+[X_PADDING=28]- 10 Czerwonych perel
+[X_PADDING=28]- 3 Fioletowych perel
+
+[X_PADDING=12]Rozwój zwierzaka Dziki odblokowuje pierwsze miejsce na umiejetnosc.
+[X_PADDING=12]Rozwój zwierzaka Odwazny odblokowuje drugie miejsce na umiejetnosc.
+[X_PADDING=12]Rozwój zwierzaka Heroiczny odblokowuje trzecie miejsce na umiejetnosc.
+
+[X_PADDING=12]Ponadto zwierzak bedzie zapewnial nowe bonusy w miare starzenia sie, im starszy bedzie pet, tym wyzsza bedzie wartosc jego bonusów.
+[X_PADDING=20]Od 1 do 10 dni zwierzak bedzie dawal nastepujace bonusy:
+[X_PADDING=28]- Max. HP +500
+[X_PADDING=28]- Odpornosc na potwory 2%
+[X_PADDING=28]- Odpornosc na Pól ludzi 2%
+[X_PADDING=20]Od 11 do 25 dni zwierzak bedzie dawal nastepujace bonusy:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Odpornosc na potwory 4%
+[X_PADDING=28]- Odpornosc na Pól ludzi 4%
+[X_PADDING=20] Od 26 do 47 dni zwierzak bedzie dawal nastepujace bonusy:
+[X_PADDING=28]- Max. HP +2100
+[X_PADDING=28]- Odpornosc na potwory 7%
+[X_PADDING=28]- Odpornosc na Pól ludzi 7%
+[X_PADDING=20]Od 48 do 59 dni zwierzak bedzie dawal nastepujace bonusy:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Odpornosc na potwory 10%
+[X_PADDING=28]- Odpornosc na Pól ludzi  10%
+[X_PADDING=20]Od 60 dni wzwyz:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Odpornosc na potwory 10%
+[X_PADDING=28]- Odpornosc na Pól ludzi  10%
+[X_PADDING=28]- I czwarty slot umiejetnosci zostanie odblokowany
+
+[X_PADDING=12]Umiejetnosci, których mozna nauczyc zwierzaka:
+[X_PADDING=20]- Szansa na cios krytyczny[PvM] 10%
+[X_PADDING=20]- Silny przeciwko metinom 10%
+[X_PADDING=20]- Silny przeciwko wladcom 10%
+[X_PADDING=20]- Odpornosc na Ninja 10%
+[X_PADDING=20]- Odpornosc na Sura 10%
+[X_PADDING=20]- Odpornosc na Wojownika 10%
+[X_PADDING=20]- Odpornosc na Szamana 10%
+[X_PADDING=20]- Szansa na bonus dosw. 20%
+[X_PADDING=20]- Szansa na podwójna ilosc Yang 20%
+[X_PADDING=20]- Wartosc Ataku/Magicznego Ataku 10%
+[X_PADDING=20]- Szansa na blok ciosów 10%
+[X_PADDING=20]- Szansa na odbicie ciosu 10%
+
+[X_PADDING=12]Mozliwe jest, aby zapomniec o wybranej przez zwierzaka umiejetnosci za pomoca ksiegi Reset umiejetnosci zwierzaka, a takze mozna zapomniec
+[X_PADDING=12]wszystkie umiejetnosci zwierzaka za pomoca ksiegi Reset Umiejetnosci Zwierzaka (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

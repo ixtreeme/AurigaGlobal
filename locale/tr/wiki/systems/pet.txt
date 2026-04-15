@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12]Bazi oyun içi görevleri tamamladiginizda size bir Pet Chest verilir, üzerine tiklamaniz sizden bunu yapmanizi isteyecektir.
+[X_PADDING=12]hangi evcil hayvan yumurtasini tercih ettiginizi seçin:
+[X_PADDING=20]- Maymun Yumurtasi
+[X_PADDING=20]- Örümcek Yumurtasi
+[X_PADDING=20]- Razador Yumurtasi
+[X_PADDING=20]- Nemere Yumurtasi
+[X_PADDING=20]- Mavi Ejderha Yumurtasi
+[X_PADDING=20]- Kirmizi Ejderha Yumurtasi
+[X_PADDING=20]- Bebek Basshido Yumurtasi
+[X_PADDING=20]- Tombik Cellat Yumurtasi
+[X_PADDING=20]- Nessie Yumurtasi
+[X_PADDING=20]- Minik Azrail Yumurtasi
+[X_PADDING=20]- Exadyar Yumurtasi
+
+[X_PADDING=12]Yumurtaniza sag tiklamak, evcil hayvani yumurtadan çikarmadan önce adi seçmenizi isteyecektir.
+[X_PADDING=12]yumurtadan (Ad Parsömeni kullanarak evcil hayvaninizin adini degistirmek mümkündür).
+[X_PADDING=12]Evcil hayvan yumurtadan çiktiginda 2 gün yasayacak ve 1. seviye olacaktir.
+[X_PADDING=12]Pet'in ömrünü uzatmak için NPC Shopkeeper'da 2g'den temin edilebilen Divine Boccone'a ihtiyaciniz var.
+
+[X_PADDING=12]Pet yumurtadan çiktiginda 3 bonusu olacaktir (bu bonuslar rastgele yüzdelerle çikacaktir):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Canavarlara Karsi Güçlü
+[X_PADDING=20]- Ortalama Hasar[PVM]
+
+[X_PADDING=12]Özel Isirik ile standart pet bonuslarinin yüzdelerini artirmak mümkündür.
+[X_PADDING=12](Standart bir bonusun yüzde artisinin basarisiz olabilecegine dikkat edin).
+
+[X_PADDING=12]Evcil hayvanin 3 gelisim süreci vardir:
+[X_PADDING=20]1. Yavrudan Vahsiye
+[X_PADDING=20]2. Vahsiden Cesura
+[X_PADDING=20]3. Cesurdan Kahramana
+
+[X_PADDING=12]Evcil hayvan gelistirmeleri su sekilde bölünmüstür:
+[X_PADDING=20]YAVRULAR:
+[X_PADDING=28]- 1'den 40'a kadar hiçbir öge gerektirmeden
+[X_PADDING=20]YAVRU--> VAHSI:
+[X_PADDING=28]41'den 60'a kadar seviye
+[X_PADDING=28]- 10 Vahsi Pet Kitabi
+[X_PADDING=28]- 10 Beyaz Inci
+[X_PADDING=28]- 3 Sari Inci
+[X_PADDING=20]VAHSI --> CESUR:
+[X_PADDING=28]- Sv 61 ila lv 80
+[X_PADDING=28]- 10 Vahsi Evcil Hayvan Kitabi
+[X_PADDING=28]- 10 Mavi Inci
+[X_PADDING=28]- 3 Yesi Inci
+[X_PADDING=20]CESUR --> KAHRAMAN:
+[X_PADDING=28]-Sv 81 ila 100
+[X_PADDING=28]- 10 Cesur Evcil Hayvan Kitabi
+[X_PADDING=28]- 10 Kirmizi Inci
+[X_PADDING=28]- 3 Mor Inci
+
+[X_PADDING=12]Vahsi Seviyesi, ilk beceri yuvasinin kilidini açar.
+[X_PADDING=12]Cesur Seviyesi ikinci beceri yuvasinin kilidini açar.
+[X_PADDING=12]Kahraman Seviyesi üçüncü beceri yuvasinin kilidini açar.
+
+[X_PADDING=12]Ayrica pet yaslandikça yeni bonuslar saglayacak, pet yaslandikça bonuslarinin degeri de artacaktir.
+[X_PADDING=20]1 ila 10 günlük evcil hayvan asagidaki bonuslari verecektir
+[X_PADDING=28]- Max. HP +500
+[X_PADDING=28]- Canavar Savunmasi 2%
+[X_PADDING=28]- Yari Insan Savunmasi 2%
+[X_PADDING=20]11 ila 25 gün arasinda evcil hayvan asagidaki bonuslari verecektir:
+[X_PADDING=28]- Max. HP +1200
+[X_PADDING=28]- Canavar Savunmasi 4%
+[X_PADDING=28]- Yari Insan Savunmasi 4%
+[X_PADDING=20] 26 ila 47 gün arasinda evcil hayvan asagidaki bonuslari verecektir:
+[X_PADDING=28]- Max. HP +2100
+[X_PADDING=28]- Canavar Savunmasi 7%
+[X_PADDING=28]- Yari Insan Savunmasi 7%
+[X_PADDING=20]48 ila 59 gün arasinda evcil hayvan asagidaki bonuslari verecektir:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Canavar Savunmasi 10%
+[X_PADDING=28]- Yari Insan Savunmasi 10%
+[X_PADDING=20]60 günden itibaren:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Canavar Savunmasi 10%
+[X_PADDING=28]- Yari Insan Savunmasi 10%
+[X_PADDING=28]- Ve dördüncü beceri yuvasinin kilidi açilacak
+
+[X_PADDING=12]Evcil hayvana ögretilebilecek beceriler:
+[X_PADDING=20]- Kritik Vurus Sansi[PvM] %10
+[X_PADDING=20]- Metin taslarina karsi güçlü %10
+[X_PADDING=20]- Patronlara Karsi Güçlü 10%
+[X_PADDING=20]- Ninja Direnci %10
+[X_PADDING=20]- Sura Direnci 10%
+[X_PADDING=20]- Savasçi Direnci 10%
+[X_PADDING=20]- Saman Direnci 10%
+[X_PADDING=20]- EXP bonusu sansi 20%
+[X_PADDING=20]- CIki kat yang düsürme sansi 20%
+[X_PADDING=20]- Büyülü/Yakin dövüs saldirisi 10%
+[X_PADDING=20]- Fiziksel saldirilari Engelleme Sansi 10%
+[X_PADDING=20]- Fiziksel saldirilari yansitma sansi 10%
+
+[X_PADDING=12]Evcil Hayvan Becerilerini Sifirla kitabini kullanarak evcil hayvanin tercih ettigi bir beceriyi unutturmak ve unutturmak da mümkündür.
+[X_PADDING=12]Tüm evcil hayvan becerileri, Evcil Hayvan Becerilerini Sifirla kitabini (S) kullanarak.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

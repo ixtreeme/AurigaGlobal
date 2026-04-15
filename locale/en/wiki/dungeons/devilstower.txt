@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 40.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Type: Solo and Party.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Time limit 50 minutes.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Undead
+[X_PADDING=12]*Element of monsters: Dark.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Kill all monsters.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR
+[X_PADDING=20]1. Kill the Demon King.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD FLOOR
+[X_PADDING=20]1. Destroy the Metin of Devil.
+[X_PADDING=20]2. Destroy the Metin of Fall correct.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FOURTH FLOOR
+[X_PADDING=20]1. Find 5 Key Stone.
+[X_PADDING=20]2. Drag the Key Stone to the Seals to move to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIFTH FLOOR
+[X_PADDING=20]1. Kill the Proud Demon King.
+[X_PADDING=20]2. Use the Blacksmith to upgrade any item or click on it to proceed to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SIXTH FLOOR
+[X_PADDING=20]1. Destroy all the Metins of Death
+[X_PADDING=20]2. Destroy the Metin of Murder  to drop the  Unknown Old Chest.
+[X_PADDING=20]3. You need to click on the Unknown Old Chest to find the Zin-San-Gui map.
+[X_PADDING=20]4. Right-click on the Zin-Sa-Gui map to go to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEVENTH FLOOR
+[X_PADDING=20]1. Find the Zin-Bong-In Key.
+[X_PADDING=20]2. Drag the Zin-Bong-In Key to Sa-Soe to move to the next floor.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]EIGHTH FLOOR
+[X_PADDING=20]1.  kill the Death Reaper. 
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=620; CENTER_ALIGN]

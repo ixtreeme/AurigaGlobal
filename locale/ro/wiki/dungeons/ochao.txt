@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/ochao.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 100.
+[X_PADDING=12]*Nivel maxim: 115.
+[X_PADDING=12]*Permis: Permis Ochao.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/76025.tga; Y=15; X=478]
+[X_PADDING=463]Permis Ochao
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 30 de minute.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Diavolilor.
+[X_PADDING=12]*Elementul monºtrilor: Vânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. Omoarã 100 de monºtrii.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 2-A ETAPA
+[X_PADDING=20]1. Va trebuie sã omori Lordul Ochao care se aflã în centrul hãrþii.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 3-A ETAPA
+[X_PADDING=20]1. Distruge cele 4 Metine Eliberãrii care se aflã în camera din mijloc.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 4-A ETAPA
+[X_PADDING=20]1. Omoarã Lordul Puternic Ochao, îl poþi gãsi în aceeaºi camerã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

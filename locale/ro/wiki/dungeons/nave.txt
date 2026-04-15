@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 105.
+[X_PADDING=12]*Nivel maxim: 120.
+[X_PADDING=12]*Permis: Pânzã albã.
+[X_PADDING=12]*Tip: Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=471]Pânzã albã
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 30 de minute.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby Special.
+[X_PADDING=12]*Bonusul care conteazã este: Puterea Gheþii.
+[X_PADDING=12]*Elementul monºtrilor: Gheaþã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. ªeful grupului va trebuii sã dea click pe Timonã pentru a începe dungeon-ul.
+[X_PADDING=20]2. Apãrã nava pentru 02:30 minute.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 2-A ETAPA
+[X_PADDING=20]1. Omoarã Regina Sirenã.
+[X_PADDING=20]2. Omoarã primul Idra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 3-A ETAPA
+[X_PADDING=20]1. Apãrã nava pentru 01:30 minute.
+[X_PADDING=20]2. Omoarã al 2-lea Idra.
+[X_PADDING=20]3. Reparã catârgul clickând pe Lemne pentru Reparaþii.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 4-A ETAPA
+[X_PADDING=20]1.  Apãrã nava pentru 01:30 minute.
+[X_PADDING=20]2. Distruge Ouãle Hydra pentru a lua invincibilitatea Idrei.
+[X_PADDING=20]3. Omoarã ultima Idra.
+[X_PADDING=20]4. Distruge Comoara Hydra pentru a primi recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

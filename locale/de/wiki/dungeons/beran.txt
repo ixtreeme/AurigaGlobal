@@ -1,0 +1,28 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/beran.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ANFORDERUNGEN:
+[X_PADDING=12]*Minimum level: 80.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Ticket: Gewunderner Schlüssel.
+[X_PADDING=12]*Type: Einzeln und Gruppe.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30179.tga; Y=15; X=478]
+[X_PADDING=462]Gewunderner Schlüssel
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 30 minuten.
+[X_PADDING=12]*Cooldown: 1 Stunde und 30 Minuten.
+[X_PADDING=12]*Wenn du einer Gruppe beitrittst, muss jeder ein Ticket haben.
+[X_PADDING=12]*Sie können über die Karte zugreifen: Dungeon Lobby.
+[X_PADDING=12]*Empfohlene Bonus: Stark gegen Blitz.
+[X_PADDING=12]*Element der Monster; Blitz.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE PHASE
+[X_PADDING=20]1. Zerstöre alle Metin Steine um Beran-Setaou schaden zu können.
+[X_PADDING=20]2. Töte Beran-Setaou.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=278; CENTER_ALIGN]

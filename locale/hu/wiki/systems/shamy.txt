@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]A shamy rendszer támogatása, annak rendszere lehetové teszi számodra, hogy megidézz egy sámánt, aki automatikusan buffot ad
+[CENTER_ALIGN]az oldaladra.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12] 1. Szégyenletes támogató panel ikonja a leltár mellett található, vagy megnyithatja a panelt
+[X_PADDING=12]megnyomja az X gombot.
+
+[X_PADDING=12]2. A sámán támogatás paneljének feloldásához rendelkeznie kell az Sárkány ero kiszabadítás vagy a Gyógyító ero kiszabadítás elemmel
+[X_PADDING=12]a Gyógyító erú feloldása.
+
+[X_PADDING=12]3. Ha rendelkezik ezekkel az elemekkel, kattintson rá a jobb gombbal, megjelenik egy panel, ahol megkérdezi
+[X_PADDING=12]név beillesztéséhez és a támogató sámán nemének kiválasztásához.
+
+[X_PADDING=12]4. A shamy támogatás minden alkalommal az 1 -es szintrol indul, és képes lesz elérni a 120 -as szintet, annál magasabb lesz a százalékos arány
+[X_PADDING=12]növekedni fog. A támogató sámán csak akkor veszi az xp -t, ha felidézik és szörnyeket ölnek meg.
+
+[X_PADDING=12]5. A sámán alapfelszereléssel indul, és választhat
+[X_PADDING=12] esztétikáját a panelen található üzlet megnyitásával.
+
+[X_PADDING=12]6. Lehetetlen összehívni 2 sámán támogatót, és lehetetlen összehívni oket a Céh háborúra
+
+[X_PADDING=12]7. A sámán nevét megváltoztathatja a név varázsa elem használatával.
+
+[X_PADDING=12]8. A Sámán nemét a Transzformáció tekercse tárgy segítségével módosíthatja.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Gyógyító ero kiszabadítás						  Sárkány ero kiszabadítás						 Név varázsa					  Transzformáció tekercse.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

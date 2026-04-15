@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talismã de Fogo								 Talismã de Gelo								Talismã da Terra
+
+
+
+
+
+
+[X_PADDING=81]Talismã da Escuridão								  Talismã de Vento								   Talismã de Relâmpago
+
+[CENTER_ALIGN]Talismãs são itens que fornecem novos bônus ao personagem, eles podem ser aprimorados em até +30.
+[CENTER_ALIGN]Será possível comprar um talismã + 0 do NPC Yonah.
+
+[X_PADDING=12]Nos talismãs será possível inserir no máximo 5 bônus:
+[X_PADDING=20]1. Do primeiro ao quarto bônus é necessário o item Fortalecer Talisamã.
+[X_PADDING=20]2. Para entrar no quinto bônus, você precisa do item Reforçar Talismã.
+[X_PADDING=20]3. Para alterar os bônus em um talismã, você precisa do item Encanta Talismã.
+
+[X_PADDING=12]Bônus que podem sair em um talismã:
+[X_PADDING=20]- Interrupção Defesa de Espada 5%
+[X_PADDING=20]- Interrupção Defesa de Espadão 5%
+[X_PADDING=20]- Interrupção Defesa de Punhal 5%
+[X_PADDING=20]- Interrupção Defesa de Flecha 5%
+[X_PADDING=20]- Interrupção Defesa de Leque 5%
+[X_PADDING=20]- Interrupção Defesa de Sino 5%
+[X_PADDING=20]- Resistência Semi-Humanos 10%
+[X_PADDING=20]- Forte contra Semi-Humanos 10%
+[X_PADDING=20]- Forte contra Monstros 15%
+[X_PADDING=20]- Forte contra Metin 15%
+[X_PADDING=20]- Forte contra Boss 15%
+[X_PADDING=20]- Resistência Escuridão 15%
+[X_PADDING=20]- Resistência Terra 15%
+[X_PADDING=20]- Resistência Gelo 15%
+[X_PADDING=20]- Resistência Fogo 15%
+[X_PADDING=20]- Resistência Vento 15%
+[X_PADDING=20]- Resistência Relâmpago 15%
+[X_PADDING=20]- Forte contra Monstros das Runas 20% 
+
+[X_PADDING=12]É possível aprimorar os talismãs em até +10 dropando itens nas masmorras iniciais, de +11 a +30 precisa dropar no Baú
+[X_PADDING=12]Elemental onde dentro sairão os itens necessários para a aprimoração do talismã.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=584; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=584; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=584; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=594; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=594; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=594; X=400]
+
+
+
+
+
+[X_PADDING=82]Fortalecer Talismã								 Encanta Talismã								Reforçar Talismã
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]

@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum Giris Seviyesi: 85.
+[X_PADDING=12]*Maksimium Giris Seviyesi: 100.
+[X_PADDING=12]*Giris Bileti: Razador Bileti.
+[X_PADDING=12]*Tür: Tek veya Grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Razador Bileti
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 50 dakika.
+[X_PADDING=12]*Bekleme süresi: 1 saat
+[X_PADDING=12]*Bir gruba katilirsaniz Herkesin bir bileti olmalidir.
+[X_PADDING=12]*Haritadan erisebilirsiniz: lobi zindani.
+[X_PADDING=12]*Önerilen bonus: atesin gücü.
+[X_PADDING=12]*Irk: Ates.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Ilk köprünün kilidini açmak için Maw of am-heh heykeli ile konus. Bir köprünün tamamlanmasindan sonra, Am-heh ile tekrar konusun ve yeni bir köprü açilacaktir.
+[X_PADDING=20]yine yeni bir köprü açilacak.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZINDANIN MODU:
+[X_PADDING=20]1. Direkleri yok etmek için dogru Altin disli çarki kullanin.
+[X_PADDING=20]2. Ignator'i Öldür.
+[X_PADDING=20]3. Tüm canavarlari öldür.
+[X_PADDING=20]4. Direkleri yok etmek için Maat taslarini bul.
+[X_PADDING=20]5. Cehennem atesi metnini yok et.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. Razadoru öldür
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

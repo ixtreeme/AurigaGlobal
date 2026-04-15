@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 75.
+[X_PADDING=12]*Nivel maxim: 95.
+[X_PADDING=12]*Permis: Cap Mumificat.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Cap Mumificat
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 40 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 1 orã.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Vampirilor.
+[X_PADDING=12]*Elementul monºtrilor: Întuneric.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMUL ETAJ
+[X_PADDING=20]1. Omoarã monºtrii pentru a dropa Cheie Suflet Cristalizat.
+[X_PADDING=20]2. Foloseºte Cheia Suflet Cristalizat pentru a deschide Statuia Kud.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 2
+[X_PADDING=20]1. Distruge Metinul Rãsplatei corect.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 3
+[X_PADDING=20]1. Omoarã-l pe adevãratul Tartaros pentru a dropa Totem Schimonosit.
+[X_PADDING=20]2. Foloseºte Totemul Schimonosit pentru a deschide Obeliscul Bazalt.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 4
+[X_PADDING=20]1. Omoarã-l pe Charon.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMUL ETAJ
+[X_PADDING=20]1. Omoarã-l pe Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

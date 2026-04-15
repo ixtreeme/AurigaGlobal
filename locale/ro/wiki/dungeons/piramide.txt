@@ -1,0 +1,60 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/piramide.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 105.
+[X_PADDING=12]*Nivel maxim: 120.
+[X_PADDING=12]*Permis: Crucea lui Ankh.
+[X_PADDING=12]*Tip: Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30799.tga; Y=15; X=478]
+[X_PADDING=460]Crucea l. Ankh
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este 1 orã ºi 30 de minute.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby Special.
+[X_PADDING=12]*Bonusul care conteazã este: Puterea Pãmântului.
+[X_PADDING=12]*Elementul monºtrilor: Pãmânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMUL ETAJ
+[X_PADDING=20]1. Distruge Piatra Wadjet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 2
+[X_PADDING=20]1. Omoarã monºtri pentru a dropa cele 4 bucãþi de pergament.
+[X_PADDING=20]2. Odatã ce ai cele 4 bucãþi în inventar, dã click pe Sigiliul Antic.
+[X_PADDING=20]3. Omoarã-l pe Slujitorul lui Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 3
+[X_PADDING=20]1. Distruge Piatra Faraonului.
+[X_PADDING=20]2. Omoarã-l pe Bastet.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 4
+[X_PADDING=20]1. Pentru a ajunge în camera lui Ra va trebuii sã treci prin 24 de portale.
+[X_PADDING=20]2. Omoarã-l pe Ra-ul adevãrat.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 5
+[X_PADDING=20]1. Omoarã toþi monºtrii pentru a dropa Bandã de salvie.
+[X_PADDING=20]2. Distruge Eficia de Anubis corectã cu ajutorul Bandanei.
+[X_PADDING=20]3. Distruge Metinul lui Ankh pentru a dropa Bandã de salvie.
+[X_PADDING=20]4. Distruge Eficia de Anubis corectã cu ajutorul Bandanei.
+[X_PADDING=20]3. Omoarã toþi monºtrii pentru a dropa Bandã de salvie.
+[X_PADDING=20]4. Distruge Eficia de Anubis corectã cu ajutorul Bandanei.
+[X_PADDING=20]5. Distruge Metinul lui Ankh pentru a dropa ultima Bandã de salvie.
+[X_PADDING=20]6. Distruge Eficia de Anubis corectã cu ajutorul Bandanei.
+[X_PADDING=20]7. Omoarã-l pe Anubis.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 6
+[X_PADDING=20]1. Omoarã toþi monºtrii.
+[X_PADDING=20]2. Dã click pe Cheia Ankh pentru a primi Cheia Strãveche.
+[X_PADDING=20]3. Distruge Stâlpul Wadjetului cu ajutorul Cheii.
+[X_PADDING=20]4. Distruge Piatra Sfinxului.
+[X_PADDING=20]5. Dã click pe ultima Cheia Ankh pentru a primi Cheia Strãveche.
+[X_PADDING=20]6. Distruge Stâlpul Wadjetului cu ajutorul Cheii.
+[X_PADDING=20]7. Omoarã Sfinx-ul.
+[X_PADDING=20]8. Distruge Comoara Sfinxului pentru a primi recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=670; CENTER_ALIGN]

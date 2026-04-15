@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12]Néhány játékon belüli küldetés teljesítése után kisállatládát kapsz, és rákattintva rákérdez
+[X_PADDING=12] válassza ki, hogy melyik petét részesíti elonyben:
+[X_PADDING=20]- Majomtojás
+[X_PADDING=20]- Póktojás
+[X_PADDING=20]- Razadori tojás
+[X_PADDING=20]- Nemere tojása
+[X_PADDING=20]- Kék sárkánytojás
+[X_PADDING=20]- Vörös sárkánytojás
+[X_PADDING=20]- Baashido Baby Egg
+[X_PADDING=20]- Chubby Executioner Egg
+[X_PADDING=20]- Nessie tojás
+[X_PADDING=20]- Mini azrael tojás
+[X_PADDING=20]- Exdyar tojás
+
+[X_PADDING=12]A tojásra kattintva jobb egérgombbal rákérdezhet, hogy válassza ki a nevet, mielott keltetné a háziállatot
+[X_PADDING=12] a tojásból (a Name Scroll segítségével megváltoztathatja kedvencének nevét).
+[X_PADDING=12] Amikor a kisállat kikelt, 2 napig kell élnie, és az 1. szint lesz.
+[X_PADDING=12]A háziállat élettartamának növeléséhez szüksége van a Divine Boccone -ra, amely 2 g -tól kapható az NPC Shopkeeperben.
+
+[X_PADDING=12]Amikor a kisállat kikel, 3 bónusz lesz (ezek a bónuszok véletlenszeru százalékokkal kerülnek ki):
+[X_PADDING=20]- TP
+[X_PADDING=20]- Szörnyek elleni ero
+[X_PADDING=20]- Átlagos károk [PVM]
+
+[X_PADDING=12]Speciális harapással növelheto a standard bónuszok százalékos aránya.
+[X_PADDING=12] (Vigyázzon, hogy a standard bónusz százalékos növekedése sikertelen lehet).
+
+[X_PADDING=12] Az állatnak 3 fejlesztési folyamata van:
+[X_PADDING=20] 1. Kiskutyától a vadig
+[X_PADDING=20] 2. A vadtól a bátorig
+[X_PADDING=20] 3. Bátorból hosiesbe
+
+[X_PADDING=12] Az állatok fejlodése a következoképpen oszlik meg:
+[X_PADDING=20] KUTYÁK:
+[X_PADDING=28]- 1–40. Szint, nincs szükség elemre
+[X_PADDING=20] KUTYÁK-> VAD:
+[X_PADDING=28] 41–60. Szint
+[X_PADDING=28]- 10 kölyökkutya-könyv
+[X_PADDING=28]- 10 Fehér gyöngy
+[X_PADDING=28]- 3 sárga gyöngy
+[X_PADDING=20] Vad -> Bátor:
+[X_PADDING=28]- 61–80
+[X_PADDING=28]- 10 Vadállatkönyv
+[X_PADDING=28]- 10 Kék gyöngy
+[X_PADDING=28]- 3 zöld gyöngy
+[X_PADDING=20] BÁTOR -> HOSÖK:
+[X_PADDING=28]- 81–100
+[X_PADDING=28]- 10 bátor állatkönyv
+[X_PADDING=28]- 10 Red Pearl
+[X_PADDING=28]- 3 Lila gyöngy
+
+[X_PADDING=12] A Vad Rank megnyitja az elso készségnyílást.
+[X_PADDING=12] A Bátor Rank kinyitja a második készségnyílást.
+[X_PADDING=12] A Hos Rank megnyitja a harmadik készségnyílást.
+
+[X_PADDING=12] Ezenkívül a kisállat új bónuszokat biztosít, ahogy öregszik, minél idosebb lesz, annál magasabb lesz a bónuszok értéke.
+[X_PADDING=20] 1-10 napos korig az állat a következo bónuszokat kapja:
+[X_PADDING=28]- Max. TP +500
+[X_PADDING=28]- Szörnyek elleni védelem 2%
+[X_PADDING=28]- Félemberek elleni védelem 2%
+[X_PADDING=20]11 és 25 nap között az állat a következo bónuszokat kapja:
+[X_PADDING=28]- Max. TP +1200
+[X_PADDING=28]- Szörnyek elleni védelem 4%
+[X_PADDING=28]- Félemberek elleni védelem 4%
+[X_PADDING=20] 26 és 47 nap között az állat a következo bónuszokat kapja:
+[X_PADDING=28]- Max. TP +2100
+[X_PADDING=28]- Szörnyek elleni védelem 7%
+[X_PADDING=28]- Félemberek elleni védelem 7%
+[X_PADDING=20]48 és 59 nap között az állat a következo bónuszokat kapja:
+[X_PADDING=28]- Max. TP +3000
+[X_PADDING=28]- Szörnyek elleni védelem 10%
+[X_PADDING=28]- Félemberek elleni védelem 10%
+[X_PADDING=20]60 naptól kezdve:
+[X_PADDING=28]- Max. TP +3000
+[X_PADDING=28]- Szörnyek elleni védelem 10%
+[X_PADDING=28]- Félemberek elleni védelem 10%
+[X_PADDING=28]- És a negyedik készségnyílás kinyílik
+
+[X_PADDING=12]A háziállatra tanítható készségek:
+[X_PADDING=20]- Kritikus csapás esélye[PvM] 10%
+[X_PADDING=20]- Metinek elleni ero 10%
+[X_PADDING=20]- Foszörnyek elleni ero 10%
+[X_PADDING=20]- Ninja Ellenállás10%
+[X_PADDING=20]- Sura Ellenállás10%
+[X_PADDING=20]- Harcos Ellenállás10%
+[X_PADDING=20]- Sámán Ellenállás10%
+[X_PADDING=20]- EXP bónusz esélye 20%
+[X_PADDING=20]- Dupla mennyiségu yang dobásának esélye 20%
+[X_PADDING=20]- Támadó/Mágikus érték 10%
+[X_PADDING=20]- Esély a testi támadás kivédésére 10%
+[X_PADDING=20]- Esély a testi támadások visszaverésére 10%
+
+[X_PADDING=12]A kedvtelésbol tartott állatok választott készségét el lehet felejteni az Állat -készségek visszaállítása könyv használatával, és azt is el lehet felejteni
+[X_PADDING=12] minden háziállat -készség a háziállat -készségek visszaállítása könyv (S) használatával.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

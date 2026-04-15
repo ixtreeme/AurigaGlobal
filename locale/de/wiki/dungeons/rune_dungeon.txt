@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 70.
+[X_PADDING=12]*Maximum level: 120.
+[X_PADDING=12]*Ticket: Ticket der Runen.
+[X_PADDING=12]*Type: Alleine und im Team
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Ticket of the Runes		Zeus Stone
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*TZeitlimit 1 Stunde und 30 Minuten
+[X_PADDING=12]*Abklingzeit: 2 Stunden (Mit dem Zeus-Stein ist es möglich, die Abklingzeit zurückzusetzen).
+[X_PADDING=12]*Wenn du einer Gruppe beitrittst, muss jeder ein Ticket haben
+[X_PADDING=12]*Sie können über die Karte zugreifen: Spezieller Lobby-Dungeon.
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Runenmonster
+[X_PADDING=12]*Element der Monster: Eis - Dunkel - Feuer - Blitz - Erde.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄHREND DES DUNGEON-LAUFS
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE EBENE
+[X_PADDING=20]1. Töte alle Monster, um dan Metin der Runen zerstören zu können.
+[X_PADDING=20]2. Zerstöre alle Metin der Runen in der richtigen Reihenfolge.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE EBENE (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Töte alle Monster und zerstöre alle Metin der Runen, um Haru erscheinen zu lassen. Wenn der Chef erscheint,
+[X_PADDING=20]nur der Gruppenführer kann ihm Schaden zufügen, bis der Boss 70% seiner HP erreicht, sobald er 70% seiner TP erreicht hat,
+[X_PADDING=20]der Rest der Gruppe kann dem Boss Schaden zufügen
+
+[X_PADDING=20]* 2. Töte Monster, um 10 Runenseelen zu finden. Die Runenseelen gehen direkt in das Inventar des Gruppenleiters.
+[X_PADDING=20]Wenn du die 10 Runenseelen gefunden hast, klicke einfach auf eine davon, damit sie im Inventar erscheinen
+[X_PADDING=20]des Gruppenleiters den Schlüssel des Steins. Klicken Sie auf den Schlüssel zum Stein, um zur nächsten Phase zu gelangen.
+
+[X_PADDING=20]* 3. Wenn Haru 60 % seiner TP hat, ist es nicht mehr möglich, ihm Schaden zuzufügen, zerstöre den Metin der Runen
+[X_PADDING=20]um dem Boss Schaden zuzufügen. Wenn Buncho auf 20 % seiner TP sinkt, ist es nicht mehr möglich, ihm Schaden zuzufügen.
+[X_PADDING=20]Töte 100 Monster, um dem Boss Schaden zuzufügen. (Achtung Haru, wenn seine TP 20% erreicht, verdoppelt sich der Schaden)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE EBENE (Einer der 3 Modi kann zufällig herauskommen)
+[X_PADDING=20]* 1.Töte alle Monster und zerstöre alle Metin der Runen, um Buncho erscheinen zu lassen. Wenn der Chef erscheint,
+[X_PADDING=20]nur der Gruppenführer kann ihm Schaden zufügen, bis der Boss 70% seiner HP erreicht, sobald er 70% seiner TP erreicht hat
+[X_PADDING=20]der Rest der Gruppe kann dem Boss Schaden zufügen.
+
+[X_PADDING=20]* 2. Töte Monster, um 10 Runenseelen zu finden. Die Runenseelen gehen direkt in das Inventar des Gruppenleiters.
+[X_PADDING=20]Wenn du die 10 Runenseelen gefunden hast, klicke einfach auf eine davon, damit sie im Inventar erscheinen
+[X_PADDING=20]des Gruppenleiters den Schlüssel des Steins. Klicken Sie auf den Schlüssel zum Stein, um zur nächsten Phase zu gelangen.
+
+[X_PADDING=20]* 3. Wenn Buncho 60% seiner TP hat, ist es nicht mehr möglich, ihm Schaden zuzufügen, zerstöre den Metin der Runen
+[X_PADDING=20]um dem Boss Schaden zuzufügen. Wenn Buncho auf 20 % seiner TP sinkt, ist es nicht mehr möglich, ihm Schaden zuzufügen.
+[X_PADDING=20]Töte 100 Monster, um dem Boss Schaden zuzufügen. (Achtung Buncho, wenn seine TP 20% erreicht, verdoppelt sich der Schaden)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE EBENE (One of the 3 modes can come out randomly)
+[X_PADDING=20]* 1.Töte alle Monster und zerstöre alle Metin der Runen, um Eien erscheinen zu lassen. Wenn der Chef erscheint,
+[X_PADDING=20]nur der Gruppenführer kann ihm Schaden zufügen, bis der Boss 70% seiner HP erreicht, sobald er 70% seiner TP erreicht hat
+[X_PADDING=20]der Rest der Gruppe kann dem Boss Schaden zufügen.
+
+[X_PADDING=20]* 2. Töte Monster, um 10 Runenseelen zu finden. Die Runenseelen gehen direkt in das Inventar des Gruppenleiters.
+[X_PADDING=20]Wenn du die 10 Runenseelen gefunden hast, klicke einfach auf eine davon, damit sie im Inventar erscheinen
+[X_PADDING=20]des Gruppenleiters den Schlüssel des Steins. Klicken Sie auf den Schlüssel zum Stein, um zur nächsten Phase zu gelangen.
+              
+[X_PADDING=20]* 3. Wenn Eien 60 % seiner TP hat, ist es nicht mehr möglich, ihm Schaden zuzufügen, zerstöre das Metin der Runen
+[X_PADDING=20]um dem Boss Schaden zuzufügen. Wenn Buncho auf 20 % seiner TP sinkt, ist es nicht mehr möglich, ihm Schaden zuzufügen
+[X_PADDING=20]Töte 100 Monster, um dem Boss Schaden zuzufügen. (Achtung Eien, wenn seine TP 20% erreicht, verdoppelt sich sein Schaden)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FÜNFTE EBENE
+[X_PADDING=20]1. Zerstöre alle Metin der Runen, um Haru Schaden zuzufügen.
+[X_PADDING=20]2. Töte Haru.
+[X_PADDING=20]3. Töte Monster, um den Schlüssel zum Stein zu finden.
+[X_PADDING=20]4. Zerstöre den Runenstein, indem du den Schlüssel zu den Steinen darüber ziehst, um Buncho Schaden zuzufügen.
+[X_PADDING=20]5. Töte Buncho.
+[X_PADDING=20]6. Greifen Sie den Boss Eien an, aber seien Sie vorsichtig, wenn sein Leben bei 50% liegt, er wird nicht mehr Schaden erleiden.
+[X_PADDING=20]7. Um dem Boss Eien weiterhin Schaden zuzufügen, töte zuerst die Monster.
+[X_PADDING=20]8. Greife den Boss Eien an, aber sei vorsichtig, wenn sein Leben bei 10% liegt, erleidet er nicht mehr Schaden.
+[X_PADDING=20]9. Um Boss Eien weiterhin Schaden zuzufügen, zerstöre den Metin der Runen.
+[X_PADDING=20]10. Töte Eien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

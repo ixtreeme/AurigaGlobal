@@ -1,0 +1,12 @@
+1	Resistência (Guerreiro)	jijoong	PASSIVE	Resistência a ataques de Guerreiros (passiva)	0
+2	Resistência (Sura)	jijoong	PASSIVE	Resistência a ataques de Suras (passiva)	0
+3	Resistência (Ninja)	jijoong	PASSIVE	Resistência a ataques de Ninjas (passiva)	0
+4	Resistência (Xamã)	jijoong	PASSIVE	Resistência a ataques de Xamãs (passiva)	0
+5	Dano crítico (PvM)	banya	PASSIVE	Aumenta o dano crítico causado no PVM (passiva)	0
+6	Forte contra metin	cheonryeong	PASSIVE	Aumenta o dano causado a Metin (passiva)	0
+7	Forte contra o chefe	choehoenbimu	PASSIVE	Aumenta o dano causado em Bosses (passiva)	0
+8	Olho de Falcão	stealmp	PASSIVE	A taxa de queda de Exp aumenta (passiva)	0
+9	Queda de Yang	gold_drop	PASSIVE	Aumento da taxa de queda de Yang (passiva)	0
+10	Ataque / valor mágico	pacheon	PASSIVE	Aumento do Valor de Ataque (passiva)	0
+11	Bloco a. corporal	block	PASSIVE	Dano físico é bloqueado (passiva)	0
+12	Ref. A. corporal	reflect_melee	PASSIVE	Dano sofrido é reflectido de volta ao inimigo (passiva)	0

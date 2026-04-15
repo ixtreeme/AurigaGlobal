@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12;CENTER_ALIGN]System zamrozenia bonusów sklada sie z 3 przedmiotów:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Zamrozenie Bonusu							 Ponowne Zamrozenie Bonusu.							Odtajanie Bonusu
+
+[X_PADDING=12;CENTER_ALIGN]Jesli przeniesiesz Zamrozenie Bonusu na dowolny przedmiot wyposazenia, który ma bonusy, zostanie on zamrozony
+[X_PADDING=12;CENTER_ALIGN]calkowicie losowo. bonusów Talizmanu nie mozna zamrozic.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Uwazaj, gdy bonus zostanie zamrozony, nie ma wplywu na twoja postac dopóki nie zostanie rozmrozony
+[X_PADDING=12]nie bedzie mozna ulepszyc, stworzyc i wchlonac przedmiotu na naramiennej szarfie.
+
+[X_PADDING=12]Bonusy, których nie mozna zamrozic to:
+[X_PADDING=20]Srednie Obrazenia
+[X_PADDING=20]Obrazenia Umiejetnosci
+[X_PADDING=20]Podwójnu Bonus Silny przeciwko Pól ludziom (Na przyklad jesli masz Miecz Trytona z podwójnym bonem na Pól ludzi
+[X_PADDING=20]uzywajac Zamrozenia Bonusu nie zostanie on zamrozony).
+
+[X_PADDING=12]Ponowne Zamrozenie Bonusu jest uzywany, gdy masz juz zamrozony bonus w przedmiocie, który nam sie nie podoba,
+[X_PADDING=12]a nastepnie spróbuj zamrozic nowy bonus, zawsze losowo.
+
+[X_PADDING=12]Odtajanie Bonusu sluzy  do odmrazania bonusu, który mamy na jednym z naszych przedmiotów.
+[X_PADDING=12]Gdy bonus zostanie rozmrozony, bedzie mozna dokonac ulepszen, stworzyc i ponownie wchlonac przedmiot
+[X_PADDING=12]do szarfy, a postac odzyskuje skutecznosc tego bonusu.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

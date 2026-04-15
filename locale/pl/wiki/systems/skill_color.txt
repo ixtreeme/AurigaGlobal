@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]System kolorów umiejetnosci pozwala ci zmieniac kolor swoich umiejetnosci
+
+[X_PADDING=12]1. Mozesz zmienic kolor umiejetnosci tylko wtedy, gdy jest na P
+[X_PADDING=12]2. Mozesz zmienic kolor zdolnosci tylko wtedy, gdy masz przedmiot Teczowy Eliksir.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Teczowy Eliksir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]1. Kiedy umiejetnosc osiagnie poziom P, poprzez otwarcie panelu umiejetnosci nad ikona umiejetnosci w P, pojawi sie kolorowe kólko.
+[X_PADDING=12]2. Klikniecie kólka lewym przyciskiem myszy otworzy panel systemu kolorów umiejetnosci.
+[X_PADDING=12]3. Kazda umiejetnosc moze byc jednoczesnie pokolorowana na 5 róznych kolorów, mozesz wybrac rózne kolory, klikajac
+[X_PADDING=12]numery na dole panelu.
+[X_PADDING=12]4. Zawsze, gdy bedziesz chcial zmienic kolor jednej ze swoich umiejetnosci, bedziesz potrzebowac Teczowy Eliksir
+[X_PADDING=12]5. Za pomoca strzalki znajdujacej sie po prawej stronie panelu mozesz skorzystac z 3 dostepnych opcji, zapisac kolor, wstawic kolor za pomoca
+[X_PADDING=12]kodu szesnastkowego i uzyj predefiniowanego koloru.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

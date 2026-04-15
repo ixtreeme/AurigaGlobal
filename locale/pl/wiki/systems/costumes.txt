@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Transfer			 Wzmocnienie Kostiumu	  	Specialne W.K. 5%		  Specjalne W.K.+ 10%			Special B.R.
+
+[X_PADDING=12]Kazdy kostium, który kupisz od NPC „Confucio”,w sklepie z przedmiotami lub z przepustki bojowej bedzie mial 3
+[X_PADDING=12]normalne bonusy z losowymi %
+[X_PADDING=12]Normalne bonusy mozna zmienic za pomoca Zaczarowania Kostiumu .
+[X_PADDING=12]Do kazdego kostiumu mozna dodac tylko 2 specjalne bonusy, wymagane przedmioty to 2:
+[X_PADDING=20]1. Specjalne Wzmocnienie Kostiumu (max 5%)
+[X_PADDING=20]2. Specjalne Wzmocnienie Kostiumu (max 10%)
+
+[X_PADDING=12]  Bonusy, które mozna wstawic za pomoca specjalnego wzmocnienia kostiumu, to:
+[X_PADDING=20]- Silny przeciwko kamieniom Metin
+[X_PADDING=20]- Silny przeciwko potworom
+[X_PADDING=20]- Silny przeciwko wladcom
+[X_PADDING=20]- Odpornosc przeciwko Pól ludziom
+[X_PADDING=20]- Silny przeciwko Pól ludziom
+
+[X_PADDING=12](Specjalny bonus mozna usunac za pomoca specjalnego usuwania bonusu)
+
+[X_PADDING=12]Mozesz przenosic bonusy z jednego kostiumu na drugi, uzywajac NPC „Theowahdan” i majac przedmiot
+[X_PADDING=12]Transfer kostiumowych bonusów
+
+[X_PADDING=12]Gdy panel przeniesienia bonusów kostiumu bedzie otwarty pojawia sie 4 sloty:
+[X_PADDING=20]1.Po lewej jest miejsce na stary kostium.
+[X_PADDING=20]2.Na górze jest miejsce na Transfer Kostiumowych Bonusów.
+[X_PADDING=20]3.Po prawej miejsce na kostium do którego chcesz przeniesc bonusy .
+[X_PADDING=20]4.Na dole jest podglad nowego kostiumu ze starymi bonusami.
+
+[X_PADDING=12]Uwaga, jezeli twój stary kostium ma specjalny bonus w trakcie transferu
+[X_PADDING=12]to bonus zostanie usuniety a kostium zniszczony.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSy KOSTIUMÓW, KTÓRE MOGA BYC NA RÓZNYCH RODZAJACH KOSTIUMÓW
+
+[X_PADDING=12]  Kostiumy:
+[X_PADDING=20]- Max. PZ +2000
+[X_PADDING=20]- Max. PM +800
+[X_PADDING=20]- Obrazenia beda zaabsorbowane do PM 8%
+[X_PADDING=20]- Obrazenia beda zaabsorbowane do PZ 8%
+[X_PADDING=20]- Wartosc Ataku +50 
+[X_PADDING=20]- Szansa na bonus dosw. 15%
+[X_PADDING=20]- Szansa na podwójna ilosc przedmiotów 15%
+
+[X_PADDING=12]  Fryzury:
+[X_PADDING=20]- Szybkosc ataku +8%
+[X_PADDING=20]- Szansa na cios krytyczny +8%
+[X_PADDING=20]- Szansa na przeszywajacy cios +8%
+[X_PADDING=20]- Odpornosc przeciwko Pól ludziom 10%
+[X_PADDING=20]- Szansa na podwójna ilosc Yang +15%
+[X_PADDING=20]- Regeneracja PZ  +15%
+[X_PADDING=20]- Regeneracja PM +15%
+
+[X_PADDING=12]  Nakladki na bronie:
+[X_PADDING=20]- Inteligencja +10
+[X_PADDING=20]- Sila +10
+[X_PADDING=20]- Zrecznosc +10
+[X_PADDING=20]- Witalnosc +10
+[X_PADDING=20]- Silny przeciwko Nieumarlym  +15%
+[X_PADDING=20]- Silny przeciwko Diablom +15%
+[X_PADDING=20]- Silny przeciwko Orkom    +15%
+[X_PADDING=20]- Silny przeciwko Zwierzetom +15%
+[X_PADDING=20]- Silny przeciwko Pól ludziom +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talismán de fuego								 Talismán de Hielo								Talismán de Tierra
+
+
+
+
+
+
+[X_PADDING=81] Talismán de oscuridad							  Talismán de viento						   Talismán de relámpago
+
+[CENTER_ALIGN]El talismán es un elemento que puede otorgar nuevas bonificaciones al personaje, es posible actualizarlas a un máximo de +30.
+[CENTER_ALIGN]Será posible comprar un talismán +0 de npc Yonah.
+
+[X_PADDING=12]En el talismán será posible insertar un máximo de 5 bonificaciones:
+[X_PADDING=20]1. Desde la primera hasta la cuarta bonificación, es necesario el artículo Refuerzo de talismán.
+[X_PADDING=20]2. Para agregar la quinta bonificación, se necesita el artículo Fortalece el talismán.
+[X_PADDING=20]3. Para cambiar las bonificaciones en un talismán, necesitará el artículo Encantar talismán.
+
+[X_PADDING=12] Posibles bonificaciones que pueden estar en el talismán:
+[X_PADDING=20]- Rotura Defensa de espada  5%
+[X_PADDING=20]- Rotura de defensa a dos manos 5%
+[X_PADDING=20]- Rotura de defensa de daga 5%
+[X_PADDING=20]- Rotura de defensa de flecha 5%
+[X_PADDING=20]- Receso de defensa de los fan 5%
+[X_PADDING=20]- Ruptura de Bell Defense 5%
+[X_PADDING=20]- Resistencia mediohumanos 10%
+[X_PADDING=20]- Fuerza contra los mediohumanos 10%
+[X_PADDING=20]- Fuerza contra monstruos 15%
+[X_PADDING=20]- Fuerza contra metines  15%
+[X_PADDING=20]- Fuerza contra jefes 15%
+[X_PADDING=20]- Resistencia a la oscuridad 15%
+[X_PADDING=20]- Resistencia a la tierra 15%
+[X_PADDING=20]- Resistencia al hielo 15%
+[X_PADDING=20]- Resistencia al fuego 15%
+[X_PADDING=20]- Resistencia al viento 15%
+[X_PADDING=20]- Resistencia al rayo 15%
+[X_PADDING=20]- Fuerte contra monstruos de runas 20% 
+
+[X_PADDING=12]Es posible actualizar el talismán hasta +10 obteniendo elementos de las mazmorras iniciales, de 11+ a +30 habrá que soltar el cofre
+[X_PADDING=12]Elemental donde saldrán por dentro los objetos necesarios para la mejora del talismán.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Refuerza el talismán.								 Encantar talismán.								Fortalece Talisman.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

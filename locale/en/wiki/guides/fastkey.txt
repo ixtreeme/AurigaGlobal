@@ -1,0 +1,12 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/fastkey.png]
+[CENTER_ALIGN;FONT_SIZE=24]Armor Upgrade
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=30; CENTER_ALIGN]
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/emoji/wari.tga; Y=50; X=12]
+[IMG=d:/ymir work/ui/wiki/emoji/ninja.tga; Y=460; X=12]
+[IMG=d:/ymir work/ui/wiki/emoji/sura.tga; Y=870; X=12]
+[IMG=d:/ymir work/ui/wiki/emoji/sami.tga; Y=1280; X=12]

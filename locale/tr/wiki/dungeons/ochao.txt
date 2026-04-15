@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/ochao.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum giris seviyesi: 100.
+[X_PADDING=12]*Maksimum giris seviyesi: 115.
+[X_PADDING=12]*Giris Bileti: Ochao Bileti.
+[X_PADDING=12]*Tür: Tek veya grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/76025.tga; Y=15; X=478]
+[X_PADDING=460]Ochao Bileti.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Beklem süresi: 1 saat 30 dakika
+[X_PADDING=12]*Bir gruba katilirsan herkes 1 bilete sahip olmali.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Orklara karsi güç.
+[X_PADDING=12]*Irk: Rüzgar.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZIDNAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]1. ASAMA
+[X_PADDING=20]1. 100 canavar öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]2. ASAMA
+[X_PADDING=20]1. Haritanin orta odasinda bulunan Lord Ochao'yu öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]3. ASAMA
+[X_PADDING=20]1. Haritanin orta odasinda bulunan 4 ochao metinini yok edin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]4. ASAMA	
+[X_PADDING=20]1. Haritanin orta odasinda bulunan Güçlü Ochao Krali'ni öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

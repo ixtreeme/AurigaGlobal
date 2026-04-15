@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Transfer			 Kostüm Efsunu		Özel C.E 5%		  Özel C.E+ 10%			Special B.R.
+
+[X_PADDING=12]NPC "Konfiçyüs"'dan satin aldiginiz her kostüm için aksi takdirde Item Shop'tan satin alinabilir veya Battle Pass 3'e sahip olacaktir.
+[X_PADDING=12]Rastgele %(yüzde) ile normal bonus
+[X_PADDING=12]Normal bonus, bir Kostüm Efsunu ile degistirilebilir.
+[X_PADDING=12]Her kostüm için sadece 2 özel bonus eklemek mümkündür, ihtiyaç duydugu itemler 2'dir:
+[X_PADDING=20]1. Özel Kostüm Efsunu (en fazla %5)
+[X_PADDING=20]2. Özel Kostüm Efsunu+ (en fazla %10)
+
+[X_PADDING=12] Özel Kostüm Efsunu ile eklenebilecek bonuslar sunlardir:
+[X_PADDING=20]- Metin Taslarina Karsi Güçlü
+[X_PADDING=20]- Canavarlara Karsi Güçlü
+[X_PADDING=20]- Patronlara Karsi Güçlü
+[X_PADDING=20]- Yari Insan Savunmasi
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü
+
+[X_PADDING=12](Özel bonus, Özel Bonus Kaldirma ile kaldirilabilir)
+
+[X_PADDING=12]"Theowahdan" NPC'sini kullanarak ve esyaya sahip olarak bonuslari bir kostümden digerine aktarabilirsiniz.
+[X_PADDING=12]Kostüm Bonus Transfer
+
+[X_PADDING=12]Bonus transfer paneli açildiginda 4 slot görünecektir:
+[X_PADDING=20]1.Sola eski kostümü giydirilir.
+[X_PADDING=20]2. En üste "Kostüm Bonus Transfer" ögesi konulacak.
+[X_PADDING=20]3. Saga, bonusu aktarmak istediginiz kostüme gider.
+[X_PADDING=20]4. Altta eski bonuslu yeni kostümü görebilirsiniz.
+
+[X_PADDING=12]Eski kendi kostümünüzün özel bonusu varsa dikkat edin, özel bonusu transfer ederken
+[X_PADDING=12]kaldirilacak ve eski kostüm yok edilecek.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ÇESITLI KOSTÜMLERDE OLABILECEK BONUS KOSTÜMLER
+
+[X_PADDING=12]  Costumes:
+[X_PADDING=20]- Max. HP +2000
+[X_PADDING=20]- Max. SP +800
+[X_PADDING=20]- SP Absorbe Sansi 8%
+[X_PADDING=20]- Hp Absorbe Sansi 8%
+[X_PADDING=20]- Saldiri Degeri +50 
+[X_PADDING=20]- Exp Bonus Sansi 15%
+[X_PADDING=20]- Iki Kat Esya Düsme Sansi 15%
+
+[X_PADDING=12]  Saç Stili:
+[X_PADDING=20]- Saldiri Hizi +8%
+[X_PADDING=20]- Kritik Vurus Sansi +8%
+[X_PADDING=20]- Delici Vurus Sansi +8%
+[X_PADDING=20]- Yari Insan Savunmasi 10%
+[X_PADDING=20]- Iki Kat Yang Sansi +15%
+[X_PADDING=20]- Hp Yenileme Sansi  +15%
+[X_PADDING=20]- Sp Yenileme Sansi +15%
+
+[X_PADDING=12]  Weapon Skin:
+[X_PADDING=20]- Zeka +10
+[X_PADDING=20]- Güç +10
+[X_PADDING=20]- Çeviklik +10
+[X_PADDING=20]- Canlilik +10
+[X_PADDING=20]- Ölümsüzlere Karsi Güçlü  +15%
+[X_PADDING=20]- Seytanlara Karsi Güçlü +15%
+[X_PADDING=20]- Orklara Karsi Güçlü   +15%
+[X_PADDING=20]- Hayvanlara Karsi Güçlü +15%
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

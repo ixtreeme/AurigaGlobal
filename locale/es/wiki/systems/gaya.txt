@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya es una moneda que permite a cualquier jugador comprar artículos en la Tienda Gaya.
+[X_PADDING=12]2. Puede obtener Gaya de Merchants of Gaya npc.
+[X_PADDING=12]3. Para obtener 1 Gaya necesitas 10 gemas más una piedra espiritual de +0 a +3.
+[X_PADDING=12]4. El refinamiento de las gemas es siempre del 100%.
+[X_PADDING=12]5. Para abrir la Tienda Gaya, vaya a la Tienda Npc Gaya.
+[X_PADDING=12]6. La Tienda Gaya tiene 9 ranuras disponibles de las cuales 6 estarán bloqueadas, puede desbloquear las ranuras
+[X_PADDING=12]comprando el artículo Ampliam. Tienda Gaya del Npc Mecante di Gaya.
+[X_PADDING=12]7. La Tienda Gaya se actualiza automáticamente cada 5 horas, puede actualizar la Tienda Gaya manualmente
+[X_PADDING=12]comprando el artículo Gaya Reset Tienda en Gaya comerciante npc.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DONDE ENCONTRAR LAS GEMAS
+
+[X_PADDING=12]1. Puedes encontrar gemas en las mazmorras o jefes de los distintos mapas.
+[X_PADDING=12]2. Puedes encontrar una gran cantidad de gemas en el cofre de la reina Meley.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Gemas										 Ampliam. Tienda Gaya							 Res. Neg. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

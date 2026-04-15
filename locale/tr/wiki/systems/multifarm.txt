@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Bu sistem ile sadece 2 karakter ile farm mümkün olacaktir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BILGI
+
+[X_PADDING=12]1. Ilk 2 açik istemcide düsüs mevcut olacak, üçüncü istemci açildiginda düsüs otomatik olarak engellenecek
+[X_PADDING=12]yani sadece xp kazanabilir
+[X_PADDING=12]2. Sol üstteki simgeye tiklayarak bir karaktere düsürmeyi etkinlestirmek ve devre disi birakmak mümkün olacaktir.
+[X_PADDING=12]3. Düsüs yalnizca Wonder Village haritasinda etkinlestirilebilir ve devre disi birakilabilir ve bekleme süresi için beklemeniz gerekir.
+[X_PADDING=12] 5 saniye.
+[X_PADDING=12]4. Açik 2'den fazla istemciniz varsa ve üçüncü istemciye geçisi etkinlestirirseniz, ilk istemciye geçisi otomatik olarak devre disi birakirsiniz ve
+[X_PADDING=12]diger açik istemciler için sayisal sirayla böyle devam eder.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

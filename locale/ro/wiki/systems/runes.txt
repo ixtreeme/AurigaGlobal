@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMELOR
+
+[CENTER_ALIGN]La nivelul 70 vei primi o scrisoare, deschizând-o se va debloca panoul runelor.
+
+[X_PADDING=12]Panoul runelor este format din 6 rune normale plus una specialã, fiecare din ele conþine o putere specialã.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Runa lui Ares									Rune lui Hera								  Runa lui Apollo
+
+
+
+
+
+
+[X_PADDING=84]Runa lui Aphr.								 Runa lui Poseid.							   Runa lui Athena
+
+
+
+
+
+
+[X_PADDING=236]Runa lui Zeus
+
+[X_PADDING=12]Runele normale au o putere maximã de 100%, cu cât este mai mare puterea acestora cu atât valorile
+[X_PADDING=12]bonusurilor oferite vor fi mai mari.
+
+[X_PADDING=12]Valorile maxime ale runelor:
+[X_PADDING=20]- Runa lui Aphrodite: Tare împotriva Metinelor 15% - Dexteritate +15
+[X_PADDING=20]- Runa lui Apollo: Tare împotriva ªefilor 15% - Putere +15
+[X_PADDING=20]- Runa lui Athena: Paguba medie [PVM] 12% - Valoare de atac +150
+[X_PADDING=20]- Runa lui Hera: Max. PM +1200 - Inteligenþã +15
+[X_PADDING=20]- Runa lui Poseidon: Tare împotriva Monºtrilor +15% - 15% posibilitate de a cauza daune critice (PVM)
+[X_PADDING=20]- Runa lui Ares: Max. PV +2500 - Vitalitate +15
+
+[X_PADDING=12]Runa specialã este Runa lui Zeus, atunci când toate runele sunt activate ºi au cel puþin 50% putere
+[X_PADDING=12]rãmasã, aceasta se va activa automat.
+
+[X_PADDING=12]Atunci când Runa lui Zeus este activatã vei primi:
+[X_PADDING=20]- Tare împotriva Semi-Oamenilor 10%
+[X_PADDING=20]- Rezistenþã la Semi-Oameni 10%
+
+[X_PADDING=12]Atunci când puterea unei rune normale va scãdea sub 50%, în cazul în care Runa lui Zeus este activatã
+[X_PADDING=12]va fi dezactivatã în mod automat.
+
+[X_PADDING=12]Pe lânga asta, atunci când toate runele normale au minim 60% putere caracterul va primi un efect.
+[X_PADDING=12](Acesta poate fi dezactivat din fereastra runelor).
+
+[X_PADDING=12]Pentru a reîncãrca puterea unei rune vei avea nevoie de o Sticlã Rune, aceasta poate fi achiziþionatã
+[X_PADDING=12]din magazinul care se regãseºte în panoul runelor.
+[X_PADDING=12]Pentru a achiziþiona Sticlã Rune vei avea nevoie de Fragmente de Rune ce pot fi dropate în Rune Dungeon.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=43]Sticlã Rune (S)						 Sticlã Rune (M)						 Sticlã Rune (L)							Fragm. Runã
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

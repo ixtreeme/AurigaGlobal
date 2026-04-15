@@ -1,0 +1,34 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]CINTURÓN DE HOMBRO ADICIONAL:
+[X_PADDING=20]1. El sistema Faja de hombro permite a los jugadores de nivel 1 y superior usar una nueva pieza
+[X_PADDING=20]del equipo.
+[X_PADDING=20]2. Faja de hombro puede absorber TODAS las bonificaciones de armas y armaduras, excepto las bonificaciones de armas especiales
+[X_PADDING=20]y armadura mística. El porcentaje de absorción depende de su grado de calidad.
+[X_PADDING=20]de la banda de hombro, cuanto mayor es la calidad, mayor es el porcentaje de absorción.
+[X_PADDING=20]3. Para ingresar a las bonificaciones debes dirigirte al NPC Theowahdan en el mapa
+[X_PADDING=20]Wonder Village.
+[X_PADDING=20]4.Puedes comprar una faja de hombro de primer rango del NPC Theowahdan con las telas finas que
+[X_PADDING=20]caerás de metin.
+[X_PADDING=20]5. Puede eliminar las bonificaciones de una Faja de hombro con el objeto de bonificación de eliminación de robos.
+
+[X_PADDING=12]MEJORAMIENTO DE UNA ESTOLA:
+[X_PADDING=20]1. Para actualizar un Shoulder Sash, ve al NPC Theowahdan y haz clic en Combination.
+[X_PADDING=20]2. La actualización SIEMPRE destruye la segunda banda de hombro insertada, ya sea con éxito o no
+[X_PADDING=20]en caso de quiebra. En caso de que haya bonificaciones en ambos Shoulder Sash, no
+[X_PADDING=20]se sumarán, pero solo se considerarán los de la primera banda de hombro, ya que esto es lo que
+[X_PADDING=20]es realmente mejorado. El segundo tiene la única función de "objeto de mejora".
+[X_PADDING=12]POSIBLES GRADOS DE CINTURA:
+[X_PADDING=20;COLOR=58ADFF]GRADOS PORCENTAJE DE ABSORCIÓN ADICIONAL
+[X_PADDING=20]Básico       1%
+[X_PADDING=20]Fino          5%
+[X_PADDING=20]Noble          10%
+[X_PADDING=20]Personalizado     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Quitar B. Faja
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

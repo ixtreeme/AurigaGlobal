@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Con questo sistema sarà possibile droppare solo con 2 personaggi.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMAZIONI
+
+[X_PADDING=12]1. I primi 2 client aperti avranno il drop disponibile, aprendo il terzo client gli sarà bloccato il drop automaticamente e
+[X_PADDING=12]quindi potrà solo expare.
+[X_PADDING=12]2. Sarà possibile attivare e disattivare il drop ad un personaggio cliccando sull'icona in alto a sinistra.
+[X_PADDING=12]3. Il drop può essere attivato e disattivato solo nella mappa Villaggio delle Meraviglie e bisogna attendere un cooldown
+[X_PADDING=12]di 5 secondi.
+[X_PADDING=12]4. Se si hanno aperti più di 2 client e si attiva il drop al terzo client automaticamente si disattiva il drop al primo client, e
+[X_PADDING=12]così via in ordine numerico per altri client aperti.
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/melma.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 45.
+[X_PADDING=12]*Nivel maximo: 65.
+[X_PADDING=12]*Ticket: Trozo de limo de menhir.
+[X_PADDING=12]*Type: Solo y en grupo
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30625.tga; Y=15; X=478]
+[X_PADDING=459]Trozo de limo de menhir
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 30 minutos.
+[X_PADDING=12]*Enfriamiento: 40 minutos.
+[X_PADDING=12]*Si te unes a un grupo, todos deben tener un boleto.
+[X_PADDING=12]*Puedes acceder desde el mapa: Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Fuerte contra los animales.
+[X_PADDING=12]*Elemento de monstruos: Tierra.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. Destruye el limo Metin.
+[X_PADDING=20]2. Mata a 103 monstruos.
+[X_PADDING=20]3. Haga clic en la piedra de limo.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Destruye 4 Metin Slime y recoge el Vial de Slime vacío.
+[X_PADDING=20]2. Arrastra el frasco de limo vacío sobre el limo para recolectar algunos.
+[X_PADDING=20]3. Arrastra el frasco lleno de limo hasta la piedra de sello.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Mata a 103 monstruos.
+[X_PADDING=20]2. Mata a Slime Queen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=403; CENTER_ALIGN]

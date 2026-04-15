@@ -1,0 +1,67 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/anime.png]
+[X_PADDING=12;CENTER_ALIGN]Cu ajutorul acestui sistem vei putea folosi itemele suflet, aceastea vor adãuga caracterului bonusuri temporare
+[X_PADDING=12;CENTER_ALIGN]daunelor fizice cât ºi daunele abilitãþilor.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=67; X=378]
+[IMG=icon/item/70504.tga; Y=87; X=100]
+[IMG=icon/item/70509.tga; Y=87; X=400]
+
+
+
+
+
+
+[X_PADDING=81]  Suflet Oneiric																							   Suflet Ceresc
+
+[X_PADDING=12]SUFLETELE ONEIRICE ªI CEREªTI
+[X_PADDING=20]- Sufletele oneirice cresc daunele fizice.
+[X_PADDING=20]- Sufletele cereºti cresc daunele abilitãþilor.
+[X_PADDING=20]- Mãririle sunt acordate sub forma unui numãr definit, terminat acest numãr nu va mai avea
+[X_PADDING=20]nici un efect.
+
+[X_PADDING=12]Daunele mãrite nu vor avea nici un efect în duele ºi atunci când eºti transformat.
+[X_PADDING=12]Atacurile de pe mount ºi cal nu vor creºte dacã atacul este cãtre un alt jucãtor.
+
+[X_PADDING=12]Pentru a reîncãrca un suflet va trebuii sã aºtepþi 60 de minute în joc, iar atunci când va putea fi
+[X_PADDING=12]refolositã culoarea descrierii acestuia va fi verda, dacã nu va culoarea va fi roºie.
+[X_PADDING=12]Dupã aproximativ o orã de timp offline consecutiv, sufletul se va descãrca ºi va trebuie sã îl
+[X_PADDING=12]încarci din nou.
+[X_PADDING=12]Începând cu gradul multicolor, cu cât trece mai mult timp cu atât vor creºte daunele: prima mãrire va creºte
+[X_PADDING=12]cu 2/3 din încãrcarea maximã, iar al-2lea în cazul în care este prezent la maxim.
+[X_PADDING=12]Începând cu gradul prismatic sufletul va oferi 2 "mãriri", scãzând la gradul precedent
+[X_PADDING=12](500 loviri cu daunele multiplicate cu 2.5 iar celelalte 500 cu daunele multiplicate cu 1.8, de exemplu).
+[X_PADDING=12]Dacã sufletul este de grad luminat, acesta nu se va descãrca dacã eºti offline.
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=374; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]GRADELE SUFLETELOR
+
+[X_PADDING=12]Sufletele sunt de 5 grade diferite, in baza cãrora se va schimba valoarea mãririi a daunelor primite
+[X_PADDING=12]ºi numãrul disponibil de lovituri.
+
+[IMG=d:/ymir work/ui/wiki/systems/ro/soul_table.png; Y=462; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=558; CENTER_ALIGN]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CUM POÞI CREªTE GRADUL UNUI SUFLET
+
+[X_PADDING=12]- Pentru a îmbunãtãþi gradul unui suflet vei avea nevoie de Pergament Spirit, acesta funcþioneazã ca un
+[X_PADDING=12]Pergament Binecuvântat, trebuie sã îl pui pe suflet.
+[X_PADDING=12]- Existã ºi Pergament Spirit (100%), cu acesta îmbunãtãþirea va avea succes 100%.
+[X_PADDING=12]- În cazul în care îmbunãtãþirea eºueazã, sufletul rãmâne acelaºi iar pergamentul va fi distrus. Iar toate
+[X_PADDING=12]caracteristicile sufletului vor rãmâne aceleaºi.
+[X_PADDING=12]- În cazul în care îmbunãtãþirea are succes, gradul sufletului va fi crescut, iar caracteristicile acestuia
+[X_PADDING=12]vor fi resetate ºi descãrcatã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=700; CENTER_ALIGN]

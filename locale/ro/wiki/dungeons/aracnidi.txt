@@ -1,0 +1,32 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/aracnidi.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 60.
+[X_PADDING=12]*Nivel maxim: 80.
+[X_PADDING=12]*Permis: Cheia Arahnidelor.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30324.tga; Y=15; X=478]
+[X_PADDING=460]Cheia Arahnid.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 40 de minute.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Animalelor.
+[X_PADDING=12]*Elementul monºtrilor: Vânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA
+[X_PADDING=20]1. Omoarã Regele Pãianjen, acesta îþi va dropa Fluierul Arahnidelor.
+[X_PADDING=20]2. Dã click pe Fluierul Arahnidelor pentru a trece la urmãtoarea etapã.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]A 2-A ETAPA
+[X_PADDING=20]1. Distruge Ouãle de Pãianjen.
+[X_PADDING=20]2. Omoarã Regina Pãianjen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=332; CENTER_ALIGN]

@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]HERHANGI BIR CEZA'DAN KAÇINMAK
+[CENTER_ALIGN;FONT_SIZE=24]IÇIN OYUN KURALLARINI OKUMAYA
+[CENTER_ALIGN;FONT_SIZE=24]VE UYMAYA DAVET EDERIZ.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12]1. HESAP VE ÜRÜN SATISI
+[X_PADDING=20]Gerçek varliklar için hesap ve ürün satisi'na (like: paysafe, paypall, bitcoin, sofrot, etc.)
+[X_PADDING=20]müsade edilemez. Kesinlikle yasaktir, ayrica diger sunucular arasi ticaret yapilmasina izin verilmez.
+
+[X_PADDING=12]2. HAKARET
+[X_PADDING=20]Herhangi bir oyuncuya hakaret etmek kesinlikle yasaktir.Oyunun temasina uygun olmayan bir dilin 
+[X_PADDING=20]kullanilmasi da yasaktir.: küfür, oyun disi tehditler. Personele yönelik hakaretler, oyun ve forum
+[X_PADDING=20]hesabinin aninda kalici olarak engellenmesine yol açar.
+[X_PADDING=20](Tedbirler isin ciddiyetine göre degerlendirilir.)
+
+[X_PADDING=12]3. BUG
+[X_PADDING=20]Tüm kullanicilari, herhangi bir hatayi bir personel üyesine derhal bildirmeye tesvik ediyoruz.
+[X_PADDING=20]Oyunun normal seyrini etkileyen her türlü hata kullanimi veya suistimali cezalandirilacaktir.
+
+[X_PADDING=12]4. HILE
+[X_PADDING=20]Hack/bot veya diger yasa disi yazilimlarin kullanimi kesinlikle yasaktir.
+[X_PADDING=20]Herhangi bir girisim kalici engelleme ile cezalandirilacaktir.
+
+[X_PADDING=12]5. HESAP GÜVENLIGI VE ÖZEL BILGILER
+[X_PADDING=20]BwMt2 personeli, hesap paylasimi nedeniyle hesap veya esya kaybi durumunda hiçbir sorumluluk kabul etmez.
+[X_PADDING=20](Hesaplarinizi/esyalarinizi paylasmamanizi tavsiye ederiz.)
+[X_PADDING=20]Ayrica özel bilgilerinizi kimseyle paylasmamanizi tavsiye ederiz.
+[X_PADDING=20](Birinin baska bir kullanici bilgilerini açiga çikarmasi durumunda görevliler onu cezalandiracaktir.)
+
+[X_PADDING=12]6. REKLAM
+[X_PADDING=20]Oyun veya Discord sunucumuzda diger sunucularin reklamini yapmaya yönelik
+[X_PADDING=20]her türlü girisim cezalandirilacaktir.
+
+[X_PADDING=12]7. PERSONEL ÜYELERI
+[X_PADDING=20]Tüm kullanicilarimizi personelin seçim ve talimatlarina uymaya ve saygi duymaya davet ediyoruz.
+[X_PADDING=20]ihlali durumunda agir ceza riski vardir.

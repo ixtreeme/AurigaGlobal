@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Színezés rendszer engedélyezi a képességeid színének megváltoztatását
+
+[X_PADDING=12]1. A képesség színét kizárólag a P szint elérése után tudod módosítani.
+[X_PADDING=12]2. Egy képesség színét csak Szivárvány elixír tárgy birtokában tudod módosítani.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Szivárány elixír.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+
+[X_PADDING=12]1. Amint egy képesség eléri a P szintet, a képesség panelnél a képesség felett megfog jelenni egy icon színezett körrel.
+[X_PADDING=12]2. Bal klikkelve a körre megnyílik egy panel a szín kiválasztásához.
+[X_PADDING=12]3. Minden egyes képesség 5 különbözo színre állítható egyszerre, több féle variációhoz klikkelj
+[X_PADDING=12]a panel alján található számokra.
+[X_PADDING=12]4. Amikor megszeretnéd változtatni a képességet színéd, szükséged lesz Szivárvány elixír nevu tárgyra.
+[X_PADDING=12]5. A nyíl használatával, ami a panel jobb oldalán található, kiválaszthatod, hogy mented a színt,
+[X_PADDING=12]Hexadecimális kódot illesztesz be vagy egy elore meghatározott színt állítasz be.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

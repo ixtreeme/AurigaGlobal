@@ -1,0 +1,1568 @@
+1	Ai nevoie de cel puþin %s puncte status disponibile.
+2	Ai primit %s puncte de experienþã.
+3	Ai primit %s Yang.
+4	Ai primit %s Gaya.
+5	Nu ai nici un mount.
+6	Deja ai completat acest Battle Pass.
+7	Te rugãm sã contactezi un membru din staff cu codul: errBattlePass01.
+8	Deja ai un Battle Pass activ.
+9	Nu poþi folosi asta pe %s, e doar pentru itemele zodiac.
+10	Nu poþi folosi asta pe %s, e doar pentru itemele normale.
+11	Previzualizarea echipamentul-ui în duel deja este blocatã.
+12	Previzualizarea echipamentul-ui în duel a fost blocatã.
+13	Previzualizarea echipamentul-ui în duel deja este deblocatã.
+14	Previzualizarea echipamentul-ui în duel a fost deblocatã.
+15	Ai schimbat culoarea abilitãþii tale.
+16	Nu ai nici un schimb disponibil.
+17	%s te-a provocat la duel!
+18	Costumul eºarfã poate fi craftat doar cu un alt costum eºarfã.
+19	Eºarfa poate fi combinatã doar cu o altã eºarfã.
+20	%s nu poate fi îmbunãtãþit(ã).
+21	Bonusurile de pe %s au fost schimbate.
+22	%s poate fi folosit doar pe costumele eºarfã.
+23	<Sistem Suport> Nu ai destul spaþiu în inventar.
+24	<Sistem Suport> Nu poþi face asta în timp ce negociezi!
+25	<Sistem Suport> Ai primit suport-ul!
+26	<Sistem Suport> Eroare la setarea valorilor.
+27	Efectul %s a expirat.
+28	Efectul %s a fost dezactivat.
+29	Efectul %s a fost activat.
+30	<Susanoo System> %s nu are nici o putere pentru a putea fi activatã.
+31	<Susanoo System> %s a fost activatã.
+32	<Susanoo System> %s a fost dezactivat(ã).
+33	<Susanoo System> Puterea de pe %s deja este la maxim.
+34	<Susanoo System> Puterea de pe %s a fost mãritã cu %s%.
+35	<Susanoo System> Slot-ul pentru %s nu e gol.
+36	<Anti Farm> Poþi schimba statusul drop-ului doar din oraº.
+37	<Anti Farm> Nu ai nici un drop-slot liber pentru al putea activa pe acest cont.
+38	<Anti Farm> Drop-ul acestui cont deja este activat.
+39	<Anti Farm> Drop-ul acestui cont deja este dezactivat.
+40	<Anti Farm> Drop-ul acestui cont a fost activat.
+41	<Anti Farm> Drop-ul acestui cont a fost dezactivat.
+42	<Anti Farm> Cererea a fost efectuatã.
+43	<Anti Farm> Cererea va fi efectuatã în %s secund(ã/e).
+44	<Anti Farm> Deja existã o cerere în curs. Aºteaptã!
+45	Ai nevoie de un Pachet Cashmere pentru a putea deschide acest magazin.
+46	Stilul titlul-ui ales este invalid.
+47	Ai distrus %s.
+48	Nu poþi folosi teleporterul dintr-un dungeon.
+49	Nu poþi folosi salveazã coordonatele într-un dungeon.
+50	Acest nume deja este folosit. Alege altul!
+51	Trebuie sã aºtepþi încã %s ore ºi %s minute pentru a putea învãþa aceastã abilitate.
+52	Antrenamentul a eºuat.
+53	Pentru a îmbunãtãþi abilitatea unui pet, trebuie mai întâi sã îl evoci.
+54	Pet-ul încã nu cunoaºte aceastã abilitate.
+55	Pet-ul deja cunoaºte aceastã abilitate.
+56	Abilitatea pet-ului tãu a atins nivelul: %s.
+57	Pet-ul tãu a învãþat o nouã abilitate.
+58	Aceastã abilitate este deja la maxim.
+59	Pet-ul trebuie sã aibe maxim-ul de experienþã pentru a-l putea evolua.
+60	Ai nevoie de %s %s pentru a continua.
+61	Îmbunãtãþirea bonusului a avut succes.
+62	Îmbunãtãþirea bonusului a eºuat.
+63	Acest bonus numai poate fi îmbunãtãþit.
+64	Înainte trebuie sã evoci pet-ul cel puþin odatã!
+65	Ai crescut durata pet-ului.
+66	Îl poþi folosi doar pe pet.
+67	Trimite pet-ul acasã pentru a-l putea hrãni.
+68	Pet-ul poate avea maxim 1 an, cu excepþia cã poþi folosi Biscuitele Divin (perm).
+69	Pet-ul tãu deja e de duratã infinitã.
+70	Poþi elimina doar bonusurile unei pe eºarfe.
+71	Aceastã eºarfã nu are nici un bonus ce poate fi eliminat.
+72	Bonusurile eºarfei au fost eliminate.
+73	Poþi schimba doar bonusurile unei pe pietre dragon.
+74	Bonusurile pietrei dragon au fost schimbate.
+75	Poþi schimba doar bonusurile unei pe pietre dragon miticã excelentã.
+76	Trebuie sã dezactivezi alchimia pentru a putea continua.
+77	Experienþa a fost blocatã.
+78	Experienþa a fost deblocatã.
+79	<Schimbã Bonusurile> Înainte trebuie sã adaugi costumul de pe care vei vor fi luate bonusurile.
+80	<Transferã Bonusurile> Fereastra este deja deschisã.
+81	<Transferã Bonusurile> Deja ai fereastra unui alt sistem deschisã. Închide aceea ºi redeschide asta.
+82	<Transferã Bonusurile> Fereastra nu este deschisã.
+83	<Transferã Bonusurile> Trage itemele în fereastrã.
+84	<Transferã Bonusurile> Bonusurile au fost transferite pe Costumul 1!
+85	<Transferã Bonusurile> Pentru a face asta trebuie mai întâi sã Pergamentul Transferã în slot-ul sãu.
+86	Al 2-lea costum trebuie sã aibe cel puþin un bonus.
+87	Acest item deja are numãrul maxim de bonusuri speciale.
+88	Nu poþi avea de douã ori aceelaºi bonus special.
+89	Acest item nu are nici un bonus special ce poate fi eliminat.
+90	Ai eliminat un bonus special.
+91	Trebuie sã aºtepþi încã %s ore ºi %s minute.
+92	Pentru a putea îmbunãtãþi abilitãþile pasive trebuie sã fii minim nivel 90.
+93	Trebuie mai întâi sã înveþi abilitatea principalã la
+94	maxim pentru a putea îmbunãtãþi boost-ul acesteia.
+95	%s Blocheazã TEST-SERVER: (%s%)
+96	%s Eschiveazã TEST-SERVER: (%s%)
+97	Poþi folosi acest colorant pânã la nivelul: %s.
+98	Specia de peºte pescuit: %s, %s.
+99	În %s secund(ã/e) vei putea refolosi binecuvântarea.
+100	Timp rãmas: %s secund(ã/e).
+101	Aveþi %s minute la dispoziþie. (Rãmân %s minute).
+102	Ai primit |cFF00FF00%s|r |cFFFF0000 x |r %s.
+103	În %s secund(ã/e) vei fi deconectat.
+104	%s a consumat %s SP.
+105	Negoþul cu %s a avut succes.
+106	%s te-a invitat în grup.
+107	%s a refuzat invitaþia.
+108	%s e deconectat.
+109	%s a câºtigat duelul!
+110	%s a câºtigat.
+111	Ai nevoie de: %s.
+112	Ai hrãnit calul cu %s.
+113	%s va fi teleportat.
+114	Breasla %s nu existã!
+115	Lupta cu %s a început!
+116	%s a fost prãjit.
+117	Mineralul rafinat a dispãrut din: %s.
+118	L-ai provocat pe %s la luptã.
+119	Breasla %s a fost creeatã.
+120	<Breaslã> %s a utilizat (SP: %s, SP necesar: %s) la %s.
+121	<Breaslã> Ai donat %s puncte experienþã breslei.
+122	<Breaslã> Donaþia de experienþã nu a avut succes.
+123	<Breaslã> Ai refãcut %s puncte Spirit Dragon.
+124	<Breaslã> %s a refuzat rãzboiul.
+125	<Breaslã> Breasla %s a fost creeatã.
+126	<Breaslã> Nu deþii destul Yang.
+127	<Breaslã> Nu ai permisiunea pentru a scrie un anunþ.
+128	<Breaslã> Persoana nu poate fi gãsitã.
+129	<Breaslã> Breasla a fost constrânsã sã se retragã.
+130	<Breaslã> Breasla nu existã.
+131	<Breaslã> Doar ºeful breslei poate folosi fond-urile breslei.
+132	<Breaslã> Crearea breslei a eºuat.
+133	<Breaslã> Nu ai permisiunea pentru a îmbunãtãþi o abilitate a breslei.
+134	<Breaslã> Poþi folosi abilitãþile breslei doar în rãzboi.
+135	<Breaslã> Numele ales nu este valid.
+136	<Breaslã> Nu poþi creea breasla.
+137	<Breaslã> Trebuie sã aºtepþi încã %s or(ã/e) înainte sã îl poþi invita în breaslã.
+138	<Breaslã> Nu face parte din breaslã.
+139	<Breaslã> Nu poþi scoate un membru al breslei.
+140	<Breaslã> Nu poþi invita jucãtori în breaslã.
+141	<Breaslã> Nu poþi schimba Liderul breslei.
+142	<Breaslã> Nu poþi schimba permisiunile membrilor.
+143	<Breaslã> Nu poþi schimba permisiunea.
+144	<Breaslã> Aceastã putere poate fi folositã doar de ºeful breslei.
+145	<Breaslã> Trebuie ca breasla sã aibe minim %s membri pentru a putea declara rãzboi.
+146	<Breaslã> Rãzboiul a fost anulat.
+147	<Breaslã> În timpul rãzboiul-ui nu se primesc beneficii.
+148	<Breaslã> Nu poþi invita jucãtorii unui alt regat.
+149	<Breaslã> Nu poate fi desemnat ca lider.
+150	<Breaslã> Nu ai permisiunea sã alegi Liderul breslei.
+151	<Breaslã> Nu deþii destul Yang.
+152	<Breaslã> Punctele au crescut la %s.
+153	<Breaslã> %s nu are destule puncte pentru a putea þine un rãzboi.
+154	<Breaslã> Ai ºters mesajul.
+155	<Breaslã> Jucãtorul nu se aflã pe CH-ul: %s (CH: %s).
+156	<Breaslã> nu este conectat.
+157	<Breaslã> Breasla deja se aflã într-un rãzboi.
+158	<Breaslã> Nu sunt destui membri pentru a putea declara rãzboi.
+159	<Breaslã> Breasla nu are destule puncte pentru a putea declara rãzboi.
+160	<Breaslã> Breasla nu deþine destule fonduri.
+161	<Breaslã> Un jucãtor poate face parte maxim dintr-o breaslã.
+162	<Breaslã> Nu eºti autorizat sã inviþi jucãtori în breaslã.
+163	<Breaslã> Nu poþi invita acest jucãtor.
+164	<Breaslã> Refacerea punctelor Spirit Dragon a eºuat.
+165	<Breaslã> Nu deþii destule puncte Spirit Dragon (%s, %s).
+166	<Breaslã> Douã bresle nu pot avea aceelaºi nume.
+167	<Breaslã> Breasla a intrat în rãzboi.
+168	<Breaslã> Breasla deja se aflã în rãzboi.
+169	<Breaslã> Breasla e pe cale sã intre în rãzboi.
+170	<Breaslã> Suma este invalidã.
+171	<Breaslã> Numele gradului conþine caractere ce nu sunt permise.
+172	<Breaslã> Breasla nu are destul aur pentru a putea lupta într-un rãzboi.
+173	<Breaslã> Experienþa donatã este mai mare decât cea necesarã.
+174	<Breaslã> Nu eºti autorizat sã modifici un grad.
+175	<Breaslã> Nu eºti autorizat sã modifici numele unui grad.
+176	<Breaslã> Nu eºti autorizat sã schimbi un poziþia.
+177	<Breaslã> Breasla a atins numãrul maxim de membri.
+178	<Breaslã> Încã nu poþi folosi abilitatea.
+179	<Breaslã> Vei putea creea o altã breaslã în %s zile.
+180	<Breaslã> Trebuie sã aºtepþi încã %s zile pentru a putea invita în breaslã.
+181	<Breaslã> Breasla a fost eliminatã, vei putea crea alta în %s zile.
+182	<Messenger> L-ai ºters pe %s din lista prietenilor.
+183	<Messenger> L-ai adãugat pe %s ca prieten.
+184	<Messenger> Nu poþi adãuga un GM ca prieten.
+185	<Administrator Depozit> Eºti prea departe.
+186	<Administrator Depozit> Parola veche este greºitã.
+187	<Administrator Depozit> Nu poþi muta acest obiect.
+188	<Administrator Depozit> Parolã greºitã.
+189	<Administrator Depozit> Trebuie sã aºtepþi 10 secunde dupã ce ai deschis un magazin.
+190	<Administrator Depozit> Trebuie sã aºtepþi 10 secunde dupã ce ai închis depozitul.
+191	<Administrator Depozit> Aºteaptã 10 secunde înainte de al redeschide.
+192	<Grup> %s a refuzat cererea.
+193	<Grup> Ai intrat în Grupul lui %s.
+194	<Grup> Diferenþa maximã dintre nivele este de 30.
+195	<Grup> Poþi trimite o cerere doar dacã nu eºti spectator.
+196	<Grup> Nu poþi invita jucãtori din alte regate.
+197	<Grup> Nu te poþi autoesclude.
+198	<Grup> Nu poþi face asta.
+199	<Grup> Nu poþi invita alþi jucãtori.
+200	<Grup> Nu poþi intra în grup dacã ºeful Grupului nu este conectat.
+201	<Grup> Nu poþi intra în grup
+202	<Grup> Nimeni nu poate pãrãsi Grupul din aceastã mapã.
+203	<Grup> Nimeni nu poate pãrãsi Grupul din aceastã mapã.
+204	<Grup> Nimeni nu poate pãrãsi Grupul de aici.
+205	<Grup> Nu poþi scoate un membru când eºti într-un dungeon.
+206	<Grup> Doar ºeful Grupului poate face asta.
+207	<Grup> ªeful Grupului nu poate fi schimbat.
+208	<Grup> Din cauza unor probleme cu server-ul, nu poþi face asta acum.
+209	<Grup> Nu a fost gãsit.
+210	<Grup> %s a pãrãsit Grupul.
+211	<Grup> Doar ºeful Grupului poate folosi abilitãþile.
+212	<Grup> Grupul nu poate rãspunde.
+213	<Grup> Grupul a fost ºters.
+214	<Grup> Nu poþi face o grupã cu jucãtor al cãre-i diferenþã dintre nivelul lui ºi al tãu este mai mare de 30.
+215	<Grup> Ai fost invitat în grup.
+216	<Grup> Ai fost dat afarã din grup.
+217	<Grup> Jucãtorul dorit nu poate fi gãsit.
+218	<Grup> Doar ºeful poate invita membri în grup.
+219	<Grup> Nu poþi chema membrii.
+220	<Grup> Grupul are maximul de membrii.
+221	Noua rundã va începe în 10 secunde.
+222	În 10 secunde va începe duelul.
+223	Veþi fi teleportaþi în 10 secunde în sat.
+224	Timpul a scãzut, în 10 secunde veþi fi teleportaþi în sat.
+225	Alege un numãr de la 1 la 50.
+226	Nu poþi avea mai mult de %s Yang.
+227	Informaþii despre progresul fiecãrui regat.
+228	Ai introdus o valoare greºitã.
+229	Nu poþi adauga pietre de aceelaºi tip.
+230	Nu poþi adauga alte pietre!
+231	Nivelul abilitãþii tale este prea mic.
+232	Nu deþii destul Yang.
+233	Nu ai obiectele necesare.
+234	Trebuie sã aºtepþi %s secund(ã/e).
+235	Încã nu te poþi ridica.
+236	Deja ai un magazin deschis, numai poþi deschide altul.
+237	Nu poþi deschide un magazin între timp ce eºti transformat.
+238	Construcþia a eºuat.
+239	Clãdirea nu a fost construitã. 
+240	Eºti pe cale sã te întorci la fereastra de login. Aºteaptã.
+241	Perioada plãþii va expira în %s minut(e).
+242	Nu te poþi cãsãtori farã inel.
+243	ªansã de drop Obiecte actualã: %s%.
+244	ªansã de drop Yang actualã: %s%.
+245	ªansã de drop x10 Yang actualã: %s%.
+246	ªansã de drop Exp actualã: %s%.
+247	Nu ai destule puncte experienþã pentru a putea citi cartea.
+248	Peºtele a dispãrut în apa adâncã.
+249	Undiþa a atins maximul de puncte: %s. 
+250	Scorul maxim a fost atins. 
+251	Pentru a extrage minerale trebuie sã foloseºti un târnacop.
+252	Trebuie sã ai un târnacop.
+253	Punctele au crescut. (%s/%s)
+254	Încã nu poþi studia aceastã carte. 
+255	Ai participat ca spectator în rãzboiul breslelor.
+256	Nu poþi negocia în aceastã modalitate.
+257	Daune suplimentare: %s.
+258	Fonduri insuficiente.
+259	Fonduri insuficiente. Suma actualã: %s necesarã: %s.
+260	Binecuvântare primitã de la monarh.
+261	Nu eºti monarh.
+262	Corpul meu este plin de Ki.
+263	Aproape am terminat antrenamentul.
+264	Da, foarte încet dar farã oprire.
+265	Aceastã abilitate numai poate fi îmbunãtãþitã mai mult de atât.
+266	Aceastã comandã nu existã.
+267	Nu e online.
+268	Breasla nu existã.
+269	Trebuie sã ai cel puþin %s forþã.
+270	Aceastã zonã aparþine unui alt regat ºi nu poate fi restituitã.
+271	Nu eºti membrul unei bresle.
+272	Ca într-un somn?
+273	Poþi trece târnacop-ul la nivelul urmãtor cu ajutorul lui Deockbae.
+274	%s nu ai destul Yang.
+275	Nu te poþi transforma.
+276	Informaþii despre progres: morþi %s.
+277	Nu poþi schimba momeala.
+278	Ai nevoie de o undiþã.
+279	Undiþa a atins maximul de puncte.
+280	Acum poate fi îmbunãtãþã, mergi la pescar.
+281	Pune o momealã!
+282	Ai pus %s ca momealã.
+283	Punctele undiþei au crescut: %s/%s.
+284	Peºtele nu poate fi folosit.
+285	Nu ai puncte disponibile.
+286	Nu ai destule puncte disponibile.
+287	Nu ai destule puncte SP.
+288	Eºti prea aproape.
+289	Eºti prea departe.
+290	Aproape am terminat de citit.
+291	Nu poþi face asta chiar acum.
+292	Nu poþi negocia acum pentru-cã ai alte ferestre deschise.
+293	%s nu poate negocia în acest moment.
+294	Nu poþi negocia acum pentru-cã ai alte ferestre deschise.
+295	Cine s-a conectat la acest cont. Vei fi deconectat în 3 secund(ã/e).
+296	Nu poþi deschide depozitul pentru-cã ai alte ferestre deschise.
+297	Nu existã alte slot-uri ce pot fi rafinate.
+298	Întâi trebuie sã adaugi un slot cu ajutorul Diamantului.
+299	Adversarul s-a deconectat.
+300	Duelul nu poate începe.
+301	Duelul a început.
+302	Unul dintre oponenþi s-a deconectat.
+303	Nu poþi folosi asta aici.
+304	Antrenamentul a avut succes.
+305	Nu poate fi îmbunãtãþit(ã).
+306	Nivelul acestei abilitãþi este prea mare.
+307	Nu poþi citi aceastã carte.
+308	Nu poþi adãuga alte bonusuri.
+309	Nu mai poþi extrage.
+310	%s nu poate fi folosit(ã) într-un dungeon.
+311	Nu poate fi înlocuit(ã) cu aceeaºi coafurã.
+312	Nu poþi folosi abilitatea deoarece eºti transformat.
+313	Nu poþi îmbunãtãþi abilitatea deoarece eºti transformat.
+314	Nu poþi îmbunãtãþi statusul deoarece eºti transformat.
+315	Nu poþi schimba itemele deoarece eºti transformat.
+316	Ai terminat antrenamentul. Mergi la Sinseon.
+317	Nu ai reuºit sã te transformi.
+318	Te simþi pregãtit? Este o tecnologie greu de înþeles.
+319	Încep sã înþeleg tactica cititã.
+320	E un antrenament greu? E singura modalitate pentru a îmbunãtãþi abilitãþile.
+321	Obiectul aruncat va dispãrea în %s secund(e/ã).
+322	Nu poþi îmbunãtãþi combo sub nivelul 30.
+323	Nu poþi îmbunãtãþi combo sub nivelul 50.
+324	Nu poþi îmbunãtãþi combo mai mult de atât.
+325	Trebuie sã fii minim nivel %s.
+326	Eºti pe cale sã schimbi personajul. Aºteaptã.
+327	Îþi eliberezi mintea. Valorea binelui ºi rãului a crescut cu %s. 
+328	Nu ai chemat calul.
+329	Calul a fost înviat.
+330	Înainte trebuie sã cobori de pe mount.
+331	Ai trimis acasã mount-ul.
+332	Înainte trebuie sã chemi mount-ul.
+333	Nu deþii nici un cal.
+334	Calul tãu este prea obosit.
+335	Calul tãu a murit.
+336	Înainte trebuie sã cobori de pe cal. 
+337	Acest accesoriu numai poate fi îmbunãtãþit cu pietre.
+338	Acest item nu poate fi echipat.
+339	Înainte trebuie sã adaugi încã %s bonusuri normale. (%s/%s)
+340	Piatra a fost adãugatã.
+341	Piatra s-a spart.
+342	Introdu toate comenzile.
+343	Subcomanda comenzii nu este validã.
+344	În acest loc nu poþi aprinde focul.
+345	Foarte, foarte stabil. Exact ca un scriitor. 
+346	Nu poþi aprinde un foc în apã.
+347	Crearea a eºuat.
+348	Nu existã nici o limitã privind poþiunile.
+349	Limita poþiunilor: %s.
+350	Ai nevoie de alte materiale pentru a putea creea poþiunea.
+351	Agaþã o momealã pentru a putea pescuii.
+352	Trebuie sã ai minim %s dexteritate.
+353	Nu poþi arunca acest obiect.
+354	Acest item nu are nici un bonus ce poate fi schimbat.
+355	Nu poþi cãlãri atunci când eºti transformat.
+356	Nu poþi face asta deoare eºti mort.
+357	%s nu are alte slot-uri disponibile.
+358	Titlul magazinul-ui nu este corect.
+359	Nu ai nici o sticlã goalã.
+360	Acest item nu are nici o piatrã de eliminat.
+361	Deja ai fost recompensat.
+362	Limita de utilizare a fost depãºitã.
+363	Sintaxã: warp la <nume jucãtor> 
+364	Aduþi aminte cã în timpul luptei nu poþi folosi poþiuni speciale.
+365	%s nu are destul loc liber în inventar.
+366	Nu ai destul loc liber în inventar.
+367	CH-ul la care eºti conectat e diferit de cel al jucãtorul-ui: %s - %s.
+368	%s are comerþul blocat.
+369	%s deja negociazã cu altcineva.
+370	%s are cererea de prietenie blocatã.
+371	Jucãtorul nu este online.
+372	Nu te poþi teleporta în aceastã zonã.
+373	Cufãrul a explodat... ai pierdut puncte din viaþã.
+374	În cufãr se aflã: %s %s.
+375	În cufãr se aflã: %s.
+376	Fumul verde iese din cufãr otrãvindu-þi corpul.
+377	Fumul verde iese din cufãr iar tu îl respiri cu calm... foarte lent...
+378	Din cufãr a ieºit un monstru!
+379	Fumul roºu iese din cufãr otrãvindu-þi corpul.
+380	Din cufãr a ieºit un grup de monºtri!
+381	Eºti prea departe de magazin.
+382	Poate fi folosit(ã) doar de bãrbaþi.
+383	Poate fi folosit(ã) doar de femei.
+384	Mulþumitã binecuvântãrii Zeului Dragon nu ai pierdut puncte de experienþã.
+385	Nu ai destule spaþii libere în inventarul curelelor.
+386	Rafinarea a eºuat.
+387	Rafinarea a avut succes.
+388	Acest monstru nu poate fi evocat.
+389	Îmbunãtãþirea a avut succes.
+390	Îmbunãtãþirea a eºuat.
+391	Nu poþi schimba bonusurile, trebuie sã aºtepþi %s minut(e) (rãmase: %s).
+392	Ai schimbat bonusurile.
+393	Nu ai înþeles antrenamentul.
+394	Ai înþeles antrenamentul ºi ai primit un punct cãlãrie.
+395	Cufãrul era gol.
+396	Nu poþi efectua aceastã operaþiune!
+397	Ai eºuat antrenamentul! Duhul rãului te bântuie.
+398	Nu poþi antrena aceastã abilitate.
+399	Punctele abilitãþii au fost resetate.
+400	Nu poþi reseta punctele acestei abilitãþi.
+401	Obiectul: %s a fost livrat.
+402	%s nu este negociabil(ã).
+403	Acest item nu este negociabil.
+404	Trebuie sã fii minim nivel %s pentru a face asta.
+405	Nu ai nivelul minim cerut.
+406	Nu poþi deschide un magazin cu valoare superioarã la %s Yang.
+407	Nu îþi rãmâne mult de aºteptat.
+408	Aceastã cheie nu este cea corectã.
+409	Nu deþii masca emoþiilor.
+410	Nu poþi cãlãri cu aceastã îmbrãcãminte.
+411	Trebuie sã fii minim nivel %s pentru a putea scrie în chat-ul strigã.
+412	Nu ai pierdut puncte de experienþã.
+413	Nu ai pierdut puncte rang.
+414	Chat-ul tãu a fost blocat pentru %s minut(e).
+415	Vei fi teleportat în ultima locaþie.
+416	%s nu poate fi vândut(ã).
+417	%s nu poate fi îmbunãtãþit(ã) cu %s.
+418	Se pare cã %s nu funcþioneazã aici.
+419	%s nu poate fi ataºat(ã) pe arme.
+420	%s nu poate fi ataºat(ã) pe armuri.
+421	Abilitatea a atins grad-ul Marele Maestru.
+422	Aceastã abilitate este de nivel superior. Nu o poþi învãþa.
+423	Aceastã abilitate nu poate fi îmbunãtãþitã prin cãrþi.
+424	Aceastã abilitate nu poate fi îmbunãtãþitã.
+425	Doar brãþãrile, cerceii ºi colierele pot fi rafinate.
+426	O poþi folosi doar pe un host autorizat.
+427	Nu poþi îmbunãtãþi acest item.
+428	Acest accesoriu nu are alte slot-uri disponibile pentru a adauga un alt rafinat.
+429	Aceastã carte este prea greu de înþeles.
+430	Cunoºti deja aceastã abilitate perfect.
+431	Trebuie sã fii minim nivel %s pentru a înþelege aceastã carte.
+432	Ai nevoie de acordul lui %s.
+433	Deja eºti în preajma acestei locaþii. Numai trebuie sã îl foloseºti.
+434	Încã nu te poþi miºca, de aceea nu poþi folosi pergamentul reîntoarcerii.
+435	Încã nu poþi citi, reîncearcã mai târziu.
+436	Ai schimbat momeala cu %s.
+437	Deja eºti transformat.
+438	Breasla ta a declarat rãzboi.
+439	Numai poþi citi.
+440	Rãzboiul a luat sfârºit.
+441	Nu poþi face asta deoarece faci parte dintr-un grup.
+442	Efectul existã deja.
+443	Peºtele a dispãrut.
+444	%s a dispãrut fãrã sã fii lãsat vreo urmã.
+445	Nu poþi face asta cu un jucãtor de aceelaºi sex.
+446	Continuii sã învãþ...
+447	Ah, ultima paginã. Antrenament aproape încheiat.
+448	În puþin vei fi teleportat în afara mapei.
+449	Nu poþi construi aceastã clãdire. Nu deþi toate materialele necesare.
+450	Ceva este în neregulã cu acest item. (Cod: staff str001)
+451	Ceva este în neregulã cu acest item. (Cod: staff str002)
+452	Ataºamentul a avut succes. 
+453	Ataºamentul a eºuat.
+454	Nu deþii destul(e) %s (%s, %s).
+455	Numele ales este invalid.
+456	Lupta a fost anulatã.
+457	Scoica era goalã. 
+458	În scoicã se aflã: bucatã de piatrã.
+459	În scoicã se aflã: perlã albã.
+460	În scoicã se aflã: perlã albastrã.
+461	În scoicã se aflã: perlã roºie.
+462	Aceastã clãdire nu existã.
+463	Acest jucãtor nu existã.
+464	Foarte bine! Continuã sã insiºti.
+465	Ai eliberat spiritul rãului. Acum poþi citi o altã carte.
+466	Nu poþi hrãni un cal mort.
+467	Calul tãu nu este mort.
+468	Trebuie sã ai cel puþin %s inteligenþã.
+469	Poþi face asta în %s secund(ã/e).
+470	Extracþia a avut succes.
+471	Extracþia a eºuat.
+472	Extracþia a fost anulatã.
+473	Chat-ul tãu a fost blocat.
+474	Chat-ul tãu a fost deblocatã.
+475	Chat-ul tãu a fost blocat pentru %s or(ã/e), %s minut(e) ºi %s secund(ã/e).
+476	Chat-ul tãu a fost blocat pentru %s or(ã/e) ºi %s secund(ã/e).
+477	Chat-ul tãu a fost blocat pentru %s minut(e) ºi %s secund(ã/e).
+478	Chat-ul tãu a fost blocat pentru %s secund(ã/e).
+479	Nu poþi citi acum. Reîncearcã mai târziu.
+480	Nu sunt aºchii de extras.
+481	Trebuie sã ai cel puþin %s vitalitate.
+482	Deconectarea a fost anulatã.
+483	Eºti pe cale sã schimbi personajul.
+484	Trebuie sã updatezi client-ul pentru a juca într-un mod corect.
+485	Nu poþi merge la jucãtorii dintr-un alt regat.
+486	Nu eºti în nici un grup.
+487	Grupul colaboreazã... a-þi primit un bonus de experienþã.
+488	Liderul Grupului nu este online.
+489	Nu poþi folosi asta aici.
+490	Rãzboaie în curs între bresle:
+491	Nu poþi folosi aceastã nuanþã.
+492	Pentru a completa antrenamentul, trebuie sã citeºti încã %s cãrþi.
+493	<Breaslã> Reîncearcã mai tarziu.
+494	Aceastã funcþie poate fi folositã doar în propriul castel.
+495	Acest item nu este pentru tip-ul tãu de caracter.
+496	Acest item poate fi folosit doar de celãlalt sex.
+497	Aceastã funcþie poate fi folositã doar de monarh.
+498	Poþi transfera doar jucãtorii din propriul regat.
+499	Nu o poþi face deoarece %s e pe CH-ul: %s, iar tu pe CH: %s.
+500	%s a fost chemat.
+501	%s nu e conectat sau nu existã.
+502	Nu poþi îmbunãtãþi iteme atunci când ai negoþul/magazinul/depozitul deschise.
+503	Nu poþi deschide un magazin deoarece ai armura pe tine.
+504	Fereastra este deja deschisã. Încearcã sã te reconectezi.
+505	Nu ai toate materialele necesarie.
+506	Întâi trebuie sã deschizi fereastra de craft.
+507	<Breaslã> Liderul breslei adverse nu este conectat.
+508	Trebuie sã mai aºtepþi pentru a o/îl putea refolosi.
+509	You can only place permanent mounts in the mount inventory.
+510	Reîncearcã mai târziu.
+511	<PvP> Deja ai un duel în curs.
+512	<PvP> %s a refuzat duelul.
+513	<PvP> Adversarul s-a deconectat iar duelul a fost anulat.
+514	<PvP> Tu cât ºi adversarul tãu veþi primi înapoi suma pariatã.
+515	<PvP> Ai învins %s Yang plus suma pariatã de tine.
+516	<PvP> Aceastã funcþie a fost blocatã în duel.
+517	<PvP> %s a blocat aceastã funcþie în duelul cu tine.
+518	<PvP> %s a blocat buff-ul în duel.
+519	Nu poþi adãuga iteme blocate.
+520	Poþi absorba doar bonusurile armelor ºi al armurilor.
+521	Îmbunãtãþirea a avut succes. Noua ratã de absorbþie: %s%.
+522	Creaþia a avut succes.
+523	Creaþia a eºuat.
+524	Nu deþii destul Gaya.
+525	Ai nevoie de %s %s.
+526	Tãierea a avut succes.
+527	Tãierea a eºuat.
+528	Nu te poþi teleporta în acest moment!
+529	Coordonatele x: %s, y: %s sunt inexistente.
+530	Nu poþi salva coordonatele deoarece eºti în modalitatea spectator.
+531	Nu poþi salva coordonatele acestei mape.
+532	Deja cãlãreºti.
+533	Nu poþi detaºa o piatrã în timpul unei îmbunãtãþiri!
+534	Ai detaºat %s cu succes.
+535	Din detaºarea pietrei a ieºit %s.
+536	Detaºarea pietrei dragon a eºuat.
+537	Nu poþi detaºa piatra dragon în acest moment.
+538	Deja echipezi acest tip de piatrã.
+539	Nu ai destul spaþiu liber în inventarul special.
+540	Nu poþi ordina itemele atunci când ai fereastra unui alt sistem deschisã.
+541	Nu poþi vinde un item ce este echipat.
+542	Se arunc zarurile pentru: %s
+543	%s a dat: %s
+544	%s a dat %s. (%s - %s)
+545	Ai dat %s. (%s - %s)
+546	|cFFFFD700[LEVEL UP]|r %s a atins nivelul %s.
+547	Regatul %s a pierdut lupta.
+548	%s a terminat battle pass-ul %s.
+549	Lipsesc %s minut(e) pânã ce vor ajunge monºtrii.
+550	Monºtrii au început sã atace castelul.
+551	Monºtrii se îndreaptã cãtre castelul regatului %s.
+552	Vor ataca castelul în 10 minute.
+553	%s sunt în luptã pentru flacãrã.
+554	%s au reuscit sã treacã mai departe.
+555	De acum aveþi la dispoziþie 30 de minute pentru a cuceri flacãra.
+556	Timpul s-a scurs iar flacãra a dispãrut.
+557	Flacãra a apãrut pe teritoriul celor din %s.
+558	%s a cucerit flacãra.
+559	%s a pierdut rãzboiul.
+560	%s a cucerit toate flãcãrile.
+561	Monarh-ul a schimbat taxele.
+562	În viitor %s din orice vânzare vor merge cãtre tezaurul regatului.
+563	Breasla %s a declarat rãzboi breslei %s.
+564	În scurt timp se va desfãºura rãzboiul dintre %s ºi %s.
+565	Rãzboiul dintre %s ºi %s a început.
+566	%s a învins rãzboiul împotriva breslei %s.
+567	Rãzboiul dintre %s ºi %s s-a încheiat la egalitate.
+568	Rãzboiul dintre %s ºi %s s-a încheiat.
+569	Noul monarh al regatlui %s este %s!
+570	A apãrut o eroare criticã pe server, acesta se va restarta automat.
+571	Shutdown-ul a fost pornit, vei fi deconectat(ã) în 10 secunde.
+572	Te vei putea reconecta în 5 minute.
+573	Drop-ul de %s al breslei %s a fost crescut cu %s%.
+574	Drop-ul de %s al breslei %s a revenit la normalitate.
+575	Drop-ul de %s al celor din %s a fost crescut cu %s%.
+576	Drop-ul de %s al celor din %s a revenit la normalitate.
+577	Eºti pe cale sã fii deconectat(ã) de la server în %s secund(ã/e).
+578	Serverul va fi închis în %s secund(ã/e).
+579	În 10 secunde veþi primi rãspunsul.
+580	Rãspunsul corect a fost: O.
+581	Rãspunsul corect a fost: X.
+582	Cine a rãspuns greºit va fi teleportat afarã în 5 secunde.
+583	Pregãteºte-te pentru urmãtoarea întrebare!
+584	Întrebare: 
+585	Mergi pe O dacã e adevãrat(ã) sau pe X daca e fals(ã).
+586	În puþin veþi fi teleportaþi în oraº.
+587	Monarh-ul regatului %s a folosit binecuvântarea ºi a reîncãrcat HP-ul ºi SP-ul tuturor cetãþenilor.
+588	Monarh-ul regatului %s a folosit puterea sa pentru a creºte atacul tuturor cetãþenilor cu 10%.
+589	Monarh-ul regatului %s a folosit puterea sa pentru a creºte apãrarea tuturor cetãþenilor cu 10%.
+590	Scor actual: Shinsoo (%s), Chunjo (%s), Jinno (%s).
+591	Puterea rãului se strânge în jurul altarului.
+592	Monºtrii par sã se retragã.
+593	Monºtrii au început retragerea... în puþin vei fi teleportat în oraº.
+594	ªeful a apãrut. Aveþi 30 de minute la dispoziþie pentru a-l ucide.
+595	Aþi omorât ºeful, în puþin veþi fi teleportaþi în oraº.
+596	ªeful s-a retras, în puþin veþi fi teleportaþi în oraº.
+597	Yonggari va muri în %s secund(ã/e).
+598	Ai %s de secunde la dispoziþie pentru a distruge statuiile.
+599	Lupta împotriva lui Meley, regina dragonilor a început!
+600	Uºa s-a deschis. Ai la dispoziþie %s minut(e).
+601	Felicitãri ai învins-o pe Meley, regina dragonilor.
+602	În %s minut(e) ºi %s secund(e).
+603	Dungeon-ul nu poate fi deschis, te rugãm sã contactezi staff-ul.
+604	%s puncte au fost restituite breslei.
+605	Timpul a expirat, în curând vei fi teleportat în afara temniþei.
+606	Pentru securitatea ta vei fi teleportat în afara mapei în %s secund(e).
+607	Nu poþi adãuga prieteni atunci când ai o misiune deschisã.
+608	Întrebarea %s a fost adevãratã.
+609	Întrebarea %s a fost falsã .
+610	Numãrul total de întrebãri: %s.
+611	Nu te poþi teleporta în acea mapã.
+612	%s este conectat pe CH-ul: %s iar tu pe CH-ul %s.
+613	Ai trimis o cerere de teleport.
+614	%s deja se aflã prin preajma ta.
+615	Eºti online de %s or(ã/e).
+616	Închide conexiunea cât mai repede ºi ia o pauzã pentru sãnãtatea ta.
+617	Deja eºti obosit de la joc.
+618	Timpul tãu offline este de %s or(ã/e) ºi %s minut(e).
+619	Timpul tãu online este de %s or(ã/e) ºi %s minut(e).
+620	Nu deþii destul(e) %s.
+621	Limita maximã este de 100%.
+622	Deja ai crescut odatã.
+623	Nu poþi extrage timpul unei pietre dragon echipatã.
+624	Extragerea timpul a eºuat.
+625	Extragerea timpul a avut succes.
+626	Nu ai destul spaþiu liber în inventarul alchimiei.
+627	Aceastã piatrã dragon numai poate fi îmbunãtãþitã mai mult de atât.
+628	Aceastã piatrã dragon nu este de aceelaºi tip/grad.
+629	Îmbunãtãþirea a avut succes.
+630	Îmbunãtãþirea a eºuat.
+631	Nu poþi negocia atunci când ai o misiune deschisã.
+632	%s nu poate primi cereri deoarece are o .misiune deschisã
+633	<Breaslã> Breasla este momentan în rãzboi.
+634	<Breaslã> Breasla a atins numãrul maxim de membri.
+635	Momentan sunt %s Yang în trezoreria regatului %s.
+636	CH-ul ales este offline.
+637	S-ar putea sã fie lupte în desfãºurare.
+638	Dacã te rãzgândeºti întoarce-te la gardian.
+639	Chat-ul tãu a fost blocat.
+640	<Administrator Depozit> Acest item nu poate fi depozitat.
+641	<Administrator Depozit> Nu ai destul spaþiu liber.
+642	Îþi trebuie %s pentru a face asta.
+643	Pietrele dragon pot fi doar în inventarul alchimiei.
+644	Nu ai destul spaþiu liber în inventarul alchimiei.
+645	Acest item nu e compatibil cu inventarul special.
+646	Acest item nu e compatibil cu inventarul alchimiei.
+647	Nu te poþi teleporta în acest momenta. Reîncearcã mai târziu.
+648	Grupul nu poate fi închis într-un dungeon.
+649	<Breaslã> Nu poþi da afarã un membru atunci când breasla e în rãzboi.
+650	<Breaslã> Breasla a atins nivelul maxim (%s).
+651	Server-ul va fi închis în 10 minute.
+652	<Biolog> Trebuie sã fii minim nivel %s pentru a continua.
+653	<Biolog> Trebuie sã aºtepþi %s zi(le), %s or(ã/e), %s minut(e), %s secund(e) pentru a face asta.
+654	<Biolog> Nu ai obiectul necesar.
+655	<Biolog> Deja ai terminat toate misiunile.
+656	Nu poþi vinde un item care este blocat temporar.
+657	Poþi pescuii doar în apã.
+658	Vei schimba CH-ul în %s secund(e).
+659	Fereastra îmbunãtãþirei a eºarfelor deja este deschisã.
+660	Întâi trebuie sã închizi fereastra de absorbire a eºarfelor.
+661	Întâi trebuie sã închizi fereastra de îmbunãtãþirei a eºarfelor.
+662	Poþi îmbunãtãþi doar eºarfe de aceelaºi grad.
+663	Aceastã eºarfã deja are maximul ratei de absorbþie (%s).
+664	Încã nu eºti calificat pentru a folosi alchimia.
+665	%s nu poate fi îmbunãtãþit cu %s.
+666	%s numai poate fi îmbunãtãþit(ã).
+667	Acest item nu poate fi folosit în timpul unui duel.
+668	În aceastã zonã nu sunt permise magazinele.
+669	Nu îl poþi folosi deoarece nu eºti încã calificat pentru a folosi alchimia.
+670	%s a fost reîncãrcat(ã) cu %s secund(e).
+671	Reîncãrcarea pentru %s a eºuat.
+672	Acest obiect nu poate fi folosit deoarece soþul/soþia este într-un duel.
+673	Detectorul nu a gãsit nici o piatrã metin.
+674	Deja ai atins maximul punctelor de rang (%s).
+675	%s funcþioneazã doar pe arme ºi armuri.
+676	%s nu are nici un slot.
+677	Ai adãugat un bonus special.
+678	Pietrele+3 pot fi ºterse prin %s.
+679	Piatra nu poate fi ºtearsã prin %s.
+680	Nu poþi ºterge un bonus blocat al unui costum sau al unei pietre dragon.
+681	Poate fi folosit(ã) doar pe talismane.
+682	Poate fi folosit(ã) doar pe iteme sub nivelul %s.
+683	Poate fi folosit(ã) doar pe arme ºi armuri.
+684	Acest obiect nu poate fi folosit pe talismane.
+685	Acest suflet nu este destul de încãrcat.
+686	Acest suflet nu are destule hit-uri disponibile.
+687	Nu poþi muta item-ul din switchbot deoarece nu ai destul spaþiu în inventar.
+688	Nu îl/o poþi folosi în aceastã zonã.
+689	Nu poþi folosi acest item atunci când ai o misiune deschisã.
+690	Nu poþi muta item-ul deoarece switchbot-ul este activat.
+691	Bonusurile acestui item nu pot fi schimbate cu ajutorul switchbot-ului.
+692	Nu poþi ridica acest obiect deoarece ai o misiune deschisã.
+693	Nu poþi echipa asta atunci când cãlãreºti.
+694	Tip-ul armei tale este diferit de cel al acestui costum.
+695	Nu ai nici un slot liber pentru a echipa acest item.
+696	Nu poþi folosi acest item deoarece nu eºti cãsãtorit(ã).
+697	Nu poþi deschide fereastra de craft atunci când ai alte ferestre deschise.
+698	Drop-ul de %s actual al regatului este de %s.
+699	Drop-ul de %s actual al breslelor este de %s.
+700	Drop-ul de %s actual al jucãtorilor este de %s
+701	Toþi membrii breslei adverse sunt deconectaþi.
+702	Dacã într-un minut nu se conecteazã nimeni atunci rãzboiul va lua sfârºit.
+703	Limita de timp a expirat. Rãzboiul s-a sfârºit la egalitate.
+704	Nunta s-a terminat. Vei fi teleportat în afara mapei.
+705	Breasla %s a luat steag-ul breslei %s.
+706	Unul dintre luptãtori s-a deconectat.
+707	Duelul s-a terminat din cauza unei probleme necunoscute.
+708	Duelul s-a terminat deoarece unul dintre luptãtori are probleme.
+709	%s (%s) : %s (%s)
+710	Rãzboiul nu poate începe în acest moment.
+711	Breasla deja are o cerere de rãzboi în curs.
+712	<Biolog> Acest obiect este în condiþii tocmai bune.
+713	<Biolog> Acest obiect nu este în condiþii tocmai bune.
+714	<Biolog> Felicitãri, ai completat aceastã misiune.
+715	Nu poþi retrage premiul!
+716	Sintaxã corectã: /channel (numãrul ch-ului)
+717	CH-ul ales nu este valid.
+718	Deja te aflii pe CH-ul: %s.
+719	Nu te poþi conecta la acel CH.
+720	Nu poþi schimba CH-ul deoarece te afli într-un dungeon.
+721	Nu ai ridicat recompensa în ultimile 24 de ore, aceasta este recompensa.
+722	<PvP> Nu poþi începe duelul deoarece ceva nu este ok cu suma pariatã.
+723	Nu existã nici un jucãtor cu acest nume conectat.
+724	Sintaxã corectã: /monarch_tax (1-50)
+725	Sintaxã corectã: /mmob (nume monstru)
+726	Aceastã comandã este disponibilã doar în propriul regat.
+727	Pe slot-ul %s din inventar este %s.
+728	Slot-ul %s al inventar-ului este gol.
+729	Trebuie sã chemi pet-ul pentru a continua.
+730	Nu poþi evolua pet-ul acum.
+731	Nu poþi deschide depozitul atunci când eºti într-un dungeon sau într-o mapã de rãzboi.
+732	Nu poþi folosi un mount atunci când eºti transformat.
+733	Nume %s, id %s.
+734	Sistemul Gaya momentan este dezactivat.
+735	Nu poþi deschide un magazin atunci când ai alte ferestre deschise (ex. negoþ).
+736	Acest monstru nu existã.
+737	Te-ai teleportat pe coordonatele: x(%s), y(%s).
+738	Item-ul: %s nu e valid.
+739	Item-ul: %s nu existã.
+740	Nu poþi primi iteme deoarece ai o misiune deschisã.
+741	Nu te poþi transforma deoarece cãlãreºti.
+742	Pet-ul tãu a atins nivelul maxim.
+743	Abilitatea pet-ului tãu a atins nivelul %s.
+744	Abilitatea pet-ului tãu deja este nivel maxim.
+745	Pet-ul tãu a învãþat o nouã abilitate.
+746	Pet-ul tãu nu poate învãþa alte abilitãþi.
+747	Pet-ul tãu a evoluat la nivelul %s.
+748	Pet-ul tãu deja a evoluat la nivelul maxim.
+749	Trebuie sã aºtepþi încã %s secund(ã/e) înainte sã poþi folosi aceastã abilitate.
+750	Poþi folosi aceastã abilitate doar atunci când HP-ul tãu este minim 20%.
+751	Ai restaurat HP-ul.
+752	Ai devenit invincibil.
+753	Ai eliminat efectele negative.
+754	Switchbot-ul a fost oprit deoarece numai ai Schimbã Bonus.
+755	Switchbot-ul a fost oprit deoarece nu ai destul Yang.
+756	Ai schimbat PIN-ul.
+757	Flag: nume (%s), valoare (%s).
+758	Flag: nume (%s), status (%s), valoare (%s).
+759	<Negoþ> Eroare necunoscutã.
+760	<Breaslã> Ai câºtigat %s Yang.
+761	<Breaslã> Ai pierdut %s Yang.
+762	Nu existã nici un rank înregistrat.
+763	<Sistem Suport> Acest nume este deja folosit. Alege altul!
+764	<Sistem Suport> Trebuie sã chemi suport-ul al cãrui nume doreºti sã îl schimbi.
+765	<Sistem Suport> Ai schimbat numele cu succes.
+766	<Sistem Suport> Trebuie sã chemi suport-ul al cãrui sex doreºti sã îl schimbi.
+767	<Sistem Suport> Ai schimbat sexul cu succes.
+768	Ai nevoie de %s Yang.
+769	I-ai dat pet-ului un nume.
+770	Eroare la setarea numelui.
+771	<Teleporter> Trebuie sã fii cel puþin nivel %s pentru a continua.
+772	<Teleporter> Trebuie sã fii maxim nivel %s pentru a continua.
+773	<Teleporter> Trebuie sã deþii cel puþin %s Yang pentru a continua.
+774	Doar game admin-ul îl/o poate folosi.
+775	Text-ul nu este valid.
+776	Reîncearcã în 5 secunde.
+777	Nu existã nici un battle pass cu ID-ul: %s.
+778	Nu existã nici un battle pass cu numele: %s.
+779	Battle pass-ul %s nu are nici un premiu.
+780	Nici un battle pass nu este activ.
+781	Buff-ul (%s) al lui %s a fost blocat.
+782	Nu poþi reordina inventar-ul deoarece ai fereastrã de magazin deschisã.
+783	Nu poþi absorbi bonusurile acestui item, deoarece are un bonus îngheþat.
+784	Nu poþi îmbunãtãþi acest item deoarece are un bonus îngheþat.
+785	Pentru a putea folosi acest item trebuie sã ai o curea echipatã.
+786	Nu poþi folosi acest item deoarece eºti pe cale sã îmbunãtãþeºti cureaua.
+787	Trebuie sã trimiþi pet-ul acasã.
+788	Durata pet-ului a fost resetatã.
+789	Aceastã cutie deja conþine un pet.
+790	Trebuie sã evoci pet-ul cel puþin odatã pentru a-l putea pune în cutie.
+791	Nu îl/o poþi folosi pe acest item.
+792	Item-ul trebuie sã aibe minim 5 bonusuri.
+793	Acest item deja are un bonus îngheþat.
+794	Acest item nu are nici un bonus îngheþat.
+795	Acest item nu are nici un bonus blocat.
+796	Deja echipezi acest tip de piatrã dragon.
+797	Felicitãri, ai finalizat cu succes cãutarea.
+798	Nu poþi folosi emoþiile deoarece cãlãreºti.
+799	Nu poþi folosi emoþiile deoarece soþul/soþia cãlãreºte.
+800	%s nu e în aceeaºi mapã.
+801	%s este un PcBang.
+802	%s un este un PcBang.
+803	%s e pe CH-ul: %s, iar tu pe CH-ul: %s.
+804	Teleportare cerutã.
+805	Te-ai teleportat pe coordonatele: mapã(%s), x(%s), y(%s).
+806	Nu poþi ºterge iteme atunci când suport-ul tãu este evocat.
+807	Nu poþi face asta deoarece pet-ul tãu este evocat.
+808	Jucãtori totali: %s. [Shinsoo(%s), Chunjo(%s), Jinno(%s), server(%s)]
+809	Ai depãºit limita Yang-ului. Yang-ul a fost resetat.
+810	Blocarea chat-ului a fost cerutã.
+811	Item-ul este inexistent.
+812	Numãr actual de participanþi: %s.
+813	Învingãtorii au fost înregistraþi.
+814	Învingãtorii nu au fost înregistraþi.
+815	Nu poþi deschide fereastra de craft deoarece ai alte ferestre deschise.
+816	Nu poþi îmbunãtãþi acest item deoarece are un bonus îngheþat.
+817	Craft-ul a eºuat.
+818	Craft-ul a avut succes.
+819	Nu deþii toate materiale necesare.
+820	Nu existã nimeni cu chat-ul blocat.
+821	Nu poþi merge în acea zonã.
+822	Eºarfa poate fi craftatã doar cu o altã eºarfã.
+823	Ai nevoie de %s pentru a face asta.
+824	%s te-a provocat la duel.
+825	Nu poþi creea acest magazin.
+826	Nu poþi schimba numele acestui magazin.
+827	Închiderea magazinul-ui este imposibilã.
+828	Deschiderea magazinul-ui este imposibilã.
+829	Închiderea magazinul-ui tãu nu este posibiliã.
+830	Adãugare item-ului în magazin nu este posibiliã.
+831	Nu poþi cumpãra acest item.
+832	Nu poþi ºterge acest item.
+833	Nu poþi modifica acest item.
+834	Nu poþi ºterge ultimul item al magazinul-ui. Poþi închide magazinul apãsând pe Închide.
+835	Cãutarea este imposibilã.
+836	Poþi efectua o cãutare la fiecare 2 secunde. Însã nu poþi cauta încã.
+837	Oferta a fost creeatã cu succes.
+838	Este imposibil sã faci aceastã ofertã.
+839	Este imposibilã acceptarea acestei oferte.
+840	Nu poþi deschide depozitul magazinul-ui.
+841	Nu poþi retrage acest item.
+842	Nu poþi retrage Yang din depozitul magazinul-ui.
+843	nu este folositã.
+844	Ai primit item-ul.
+845	Nu este posibilã trimiterea listei de licitaþii.
+846	Licitaþia nu poate fi deschisã.
+847	Licitaþia nu poate fi creatã.
+848	Nu poþi face aceastã ofertã.
+849	Nu poþi face asta acum.
+850	Nu poate fi folosit(ã) pe talismane.
+851	Ai nevoie de cel puþin %s puncte disponibile.
+852	Nu poþi cãlãri în aceastã mapã.
+853	%s conþine deja un pet.
+854	Înainte de asta trebuie sã trimiþi pet-ul acasã.
+855	Pet-ul a fost bãgat în %s.
+856	%s este goalã.
+857	Ai extras pet-ul din %s.
+858	Trebuie sã evoci pet-ul cel puþin odatã pentru a face asta.
+859	Nu îl/o poþi adãuga pe acest item deoarece are rafinate infinite.
+860	Nu îl/o poþi adãuga pe acest item deoarece are rafinate limitate.
+861	Misiunea va fi deblocatã când vei atinge nivelul %s.
+862	Nu ai nici un Elixir Cercetãtor.
+863	Nu ai nici un Elixir Cercetãtor+.
+864	Obiectul nu este în condiþii bune, Biologul nu poate face nici o cercetare.
+865	Obiectul este în condiþii bune, Biologul a început cercetarea.
+866	Nu deþii obiectul de care are nevoie Biologul.
+867	Deja ai terminat toate misiunile Biologul-ui.
+868	Ai terminat ultima misiune a Biologul-ui, felicitãri!
+869	Urmãtoarea misiune a Biologul-ui va fi deblocatã la nivelul %s.
+870	Biologul te-a binecuvântat cu unul sau mai multe bonusuri deoarece ai completat misiunea.
+871	Biologul încã nu a terminat cercetarea ultimul-ui obiect primit.
+872	Momentan nu ai nici o misiune al Biologul-ui, a cãre-i îi poþi schimba bonusurile.
+873	Bonusul a fost schimbat.
+874	Suma trebuie sã fie în numere.
+875	Suma nu poate fi mai micã de 0.
+876	Suma doritã este peste limitã.
+877	Nu ai destul Yang.
+878	Victima nu are aceastã sumã de Yang în inventar.
+879	Suma pe care victima o are în inventar plus suma pariatã este mai mare decât limita.
+880	Victima nu are aceastã sumã de Yang în inventar.
+881	Acum eºti în duel.
+882	Victima se aflã deja într-un duel.
+883	Victima nu are aceastã sumã de Yang în inventar.
+884	Vizualizarea echipamentul-ui este deja blocatã.
+885	Vizualizarea echipamentul-ui a fost blocatã.
+886	Vizualizarea echipamentul-ui este deja deblocatã.
+887	Vizualizarea echipamentul-ui a fost deblocatã.
+888	Victima deja are o cerere de duel în curs. Reîncearcã în %s secund(ã/e).
+889	%s încearcã sã te provoace la duel, dar deja ai o cerere de duel în curs.
+890	Doar ºeful breslei poate face asta.
+891	Trebuie sã fii cãsãtorit(ã) pentru a putea folosi acest item.
+892	Aceastã eºarfã nu poate fi îmbunãtãþitã mai mult de atât.
+893	Acest efect existã deja.
+894	Nu poþi pescuii aici.
+895	Ai nevoie de o undiþã pentru a putea pescuii.
+896	S-a agãþat %s.
+897	Ceva s-a agãþat dar nu se ºtie ce.
+898	Ai schimbat momeala actualã cu %s.
+899	Trebuie sã ai minim un slot liber pentru a putea pescuii.
+900	Acest efect este deja în utilizare.
+901	%s a fost dezactivat(ã).
+902	Doar ºeful Grupului îl/o poate folosi.
+903	%s a primit %s.
+904	%s s-a unit lumii fantastice, Auriga-Global.
+905	Trebuie sã distrugeþi toate pietrele metin pentru
+906	a ridica invincibilitatea ºefului.
+907	Trebuie sã distrugeþi toþi monºtrii pentru
+908	Acum toþi membrii Grupului pot ataca ºeful.
+909	<Navã de luptã> SOS! Copacul navei a fost omorât.
+910	<Navã de luptã> Toþi participanþii vor fi teleportaþi!
+911	ªeful breslei %s a dat comandã breslei %s lui %s.
+912	Concursul OX a început!
+913	Pentru a participa trebuie sã vorbeºti cu Uriel.
+914	Înscrierile la concursul OX au fost închise!
+915	Numai vor fi acceptaþi alþi concurenþi, pot venii doar ca spectatori.
+916	Premiile au fost accordate câºtigãtorilor!
+917	Concursul OX s-a încheiat, în puþin veþi fi teleportaþi în oraº.
+918	%s a învins-o pe Regina Slime.
+919	Grupul lui %s l-au învins pe Nemere.
+920	%s l-a învins pe Nemere.
+921	Grupul lui %s l-au învins pe Beran-Setaou.
+922	%s l-a învins pe Beran-Setaou.
+923	Grupul care se afla în Templul Dragonului a eºuat. Timpul a expirat.
+924	Templul Dragonului este din nou deschis.
+925	Breasla %s a învins locul %s în liga de aur.
+926	Breasla %s a învins locul %s în liga de argint.
+927	Breasla %s a învins locul %s în liga de bronz.
+928	Grupul lui %s a învins-o pe Regina Slime.
+929	%s a învins-o pe Regina Slime!
+930	Omorâþi toþi monºtrii al acestui etaj.
+931	Catacombele vor fi închise pentru %s minut(e).
+932	Catacombele sunt din nou deschise!
+933	Un grup de eroi a eliberat catacombele de Azrael!
+934	Grupul lui %s a eliberat Templul Ochao!
+935	%s a eliberat Templul Ochao!
+936	Grupul lui %s a eliberat Temniþa Pãianjenilor!
+937	%s a eliberat Temniþa Pãianjenilor!
+938	ªeful numai este invincibil.
+939	ªeful a apãrut, doar ºeful grupului îi va putea scade
+940	viaþa pânã la 70%.
+941	Te rugãm sã contactezi staff-ul cu referinþa: rune020.
+942	Te rugãm sã contactezi staff-ul cu referinþa: rune021.
+943	Te rugãm sã contactezi staff-ul cu referinþa: rune022.
+944	Te rugãm sã contactezi staff-ul cu referinþa: rune024.
+945	Te rugãm sã contactezi staff-ul cu referinþa: rune025.
+946	Timpul a expirat, din pãcate a-þi eºuat. Veþi fi teleportaþi
+947	în afara dungeonul-ui.
+948	Te rugãm sã contactezi staff-ul cu referinþa: rune001.
+949	Aveþi la dispoziþie %s minut(e) pentru a ucide toþi monºtrii ºi
+950	pietrele metin de pe acest etaj. Pietrele metin nu vor primii daune
+951	pânã când nu veþi elimina toþi monºtri.
+952	În 3 secunde veþi fi teleportaþi la al 3-lea etaj.
+953	În 3 secunde veþi fi teleportaþi la al 4-lea etaj.
+954	Pentru a continua sã puteþi scade viaþa ºefului trebuie sã ucideþi toþi monºtri.
+955	Pentru a continua sã puteþi scade viaþa ºefului trebuie sã ucideþi toate pietrele.
+956	În 3 secunde veþi fi teleportaþi la ultimul etaj.
+957	Aveþi la dispoziþie %s minut(e) pentru a dropa 10 suflete runice.
+958	Doar ºeful grupului le poate dropa.
+959	Aveþi la dispoziþie %s minut(e) pentru a ucide ºeful.
+960	Pentru a apãrea trebuie întâi sã ucideþi toþi monºtri si pietrele metin.
+961	Aveþi la dispoziþie %s minut(e) pentru a completa acest etaj. Pentru a putea
+962	face daune ºefului trebuie mai întâi sã ucideþi toate pietrele metin.
+963	Felicitãri, a-þi completat dungeonul!
+964	În 30 de secunde veþi fi teleportaþi.
+965	A-þi omorât ºeful. Acum trebuie sã scadeþi viaþa
+966	ªefului la cel puþin 50%.
+967	A-þi distrus ultima statuie. Acum trebuie sã ucideþi ºeful.
+968	A-þi distrus o statue, rãmân: %s de distrus.
+969	A-þi omorât ºeful. Pentru a putea continua sã atãcaþi ºeful
+970	trebuie sã distrugeþi statuiile cu Cheie Divinã.
+971	Cheile pot fi dropate la monºtri.
+972	A-þi omorât ultima piatrã metin. Acum trebuie sã ucideþi ºeful.
+973	A-þi omorât încã o piatrã metin, rãmân: %s de ucis.
+974	Te rugãm sã contactezi staff-ul cu referinþa: rune023.
+975	A-þi omorât toþi monºtrii. Acum trebuie sã ucideþi toate pietrele metin.
+976	Câte unul pe rând, gãsiþi metinul deblocat.
+977	Te rugãm sã contactezi staff-ul cu referinþa: rune002.
+978	A-þi omorât încã o piatrã metin, rãmân: %s de ucis.
+979	A-þi omorât ultima piatrã metin.
+980	În 3 secunde veþi fi teleportaþi la al 2-lea etaj.
+981	Te rugãm sã contactezi staff-ul cu referinþa: rune003
+982	Te rugãm sã contactezi staff-ul cu referinþa: rune004
+983	Te rugãm sã contactezi staff-ul cu referinþa: rune005
+984	Mai aveþi un minut la dispoziþie pentru a restabili pacea!
+985	Mai aveþi %s minut(e) pentru a restabili pacea!
+986	A-þi eºuat, veþi fi teleportaþi în afara dungeonul-ui.
+987	Învinge-l pe Rãul Azrael pentru a restabili pacea!
+988	Felicitãri, ai restabilit pacea!
+989	În 10 secunde vei fi teleportat la Gardianul Oraºului.
+990	Aveþi la dispoziþie %s minut(e) de timp
+991	pentru a completa dungeonul!
+992	Timpul a expirat, veþi fi teleportaþi în afara dungeonul-ui.
+993	În puþin veþi fi teleportaþi la urmãtorul etaj.
+994	Doar ºeful grupului poate trage obiectul.
+995	Gãsiþi metinul corect pentru a trece la urmãtorul nivel!
+996	Metinul corect a fost distrus!
+997	În puþin veþi fi teleportaþi la urmãtorul etaj.
+998	Metinul distrus este fals.
+999	Gãsiþi-l pe realul Tartaros ºi ucideþi-l pentru a continua!
+1000	Adevãratul Tartaros a fost ucis!
+1001	Puneþi obiectul pe Totem pentru a trece la urmãtorul etaj!
+1002	Acest Tartaros era o iluzie.
+1003	În puþin veþi fi teleportaþi la urmãtorul etaj.
+1004	Ucideþi-l pe Charon pentru a continua!
+1005	Charon a fost ucis!
+1006	În puþin veþi fi teleportaþi la urmãtorul etaj.
+1007	Ucideþi-l pe Azrael!
+1008	Felicitãri, a-þi eliberat catacombele de Azrael!
+1009	În 30 de secunde veþi fi teleportaþi.
+1010	L-aþi ucis pe Regele Demonilor,
+1011	În puþin veþi urca le etajul 4.
+1012	În puþin va apãrea metinul, aºteptaþi...
+1013	Ucideþi piatra metin corectã pentru a trece la urmãtorul etaj.
+1014	Ceva nu este în regulã. Contacteazã staff-ul cu cota: Beran001.
+1015	Metinul corect a fost ucis, în puþin veþi fi teleportaþi la urmãtorul etaj.
+1016	Acest metin era o iluzie...
+1017	Deschideþi toate sigiliile pentru a urca mai departe.
+1018	Aveþi 20 de minuti la dispoziþie.
+1019	Aveþi încã %s minut(e) pentru a deschide sigiliile.
+1020	Timpul a expirat, a-þi eºuat.
+1021	Toate sigiliile au fost deschise.
+1022	În puþin veþi fi teleportaþi la urmãtorul etaj.
+1023	A rãmas doar încã un sigiliu de deschis.
+1024	Au rãmas încã %s sigilii de deschis.
+1025	Învingeþi-l pe Demonul rege mândru pentru a elibera unul dintre fierari.
+1026	Unul dintre fierari a fost eliberat.
+1027	În puþin veþi fi teleportaþi la etajul ºapte.
+1028	Gãsiþi mapa corectã pentru a trece mai departe.
+1029	A-þi gãsit mapa corectã,
+1030	în puþin veþi fi teleportaþi la etajul opt.
+1031	Gãsiþi cheia corectã pentru a trece mai departe.
+1032	Sigilul a fost deschis,
+1033	în puþin veþi fi teleportaþi la etajul nouã.
+1034	Ucideþi-l pe Îngerul cu Coasã pentru a elibera turnul.
+1035	În 30 de secunde veþi fi teleportaþi în afara turnului.
+1036	Beran este invincibil atât timp cât pietrele metin sunt în viaþã, dar grãbeºte-te altfel te va distruge el!
+1037	Veþi fi teleportaþi în 30 de secunde.
+1038	Timpul a expirat.
+1039	Verrete riportati fuori dal dungeon.
+1040	Timpul a expirat, din pãcate a-þi eºuat. Veþi fi teleportaþi în
+1041	afara dungeonul-ui.
+1042	Te rugãm sã contactezi staff-ul cu codul: orchi001.
+1043	Întoarce-te unde sunt podurile, unul dintre ele s-a deblocat.
+1044	Distruge toate Metinule Umbrei.
+1045	În 3 secunde vei fi teleportat în camera ºefului.
+1046	Trebuie sã ucideþi toate pietrele metin pentru a putea face daune ºefului.
+1047	Acum foloseºte Cheia orcilor verzi pentru a distruge Sigiliul orcilor.
+1048	Acum trebuie sã îl ucideþi pe ªeful orc.
+1049	Foloseºte Cheia orcilor negri pentru a distruge Poarta Destinului.
+1050	Te rugãm sã contactezi staff-ul cu codul: orchi002.
+1051	Acum ªeful poate fi atacat.
+1052	Pietre metin rãmase de distrus: %s.
+1053	Atenþie: ªeful Orc Spirit a devenit mai puternic.
+1054	Felicitãri, a-þi completat dungeonul!
+1055	În 30 de secunde veþi fi teleportaþi afarã.
+1056	Aveþi la dispoziþie %s minute pentru a completa dungeonul.
+1057	Ucideþi monºtrii pentru a dropa Cheia orcilor verzi, în acest
+1058	fel veþi putea distruge Sigiliul orcilor. Mergeþi înspre mijlocul
+1059	mapei ºi eliberaþi podul.
+1060	Ucidel pe marele Razador pentru a completa dungeonul.
+1061	Toþi membrii grupului trebuie sã fi atins minim nivelul 120.
+1062	în caz contrat, nu puteþi continua.
+1063	Timp rãmas: %s minut(e).
+1064	%s a eliberat Turnul Demonilor!
+1065	Timpul a expirat. În 10 secunde veþi fi teleportaþi
+1066	la uºile Forþãreaþei.
+1067	În 10 secunde veþi fi teleportaþi la Am-heh.
+1068	Felicitãri, a-þi eliberat Turnul!
+1069	Misiune: Mergi în ringul demonilor
+1070	ºi ucidei.
+1071	Misiune: Gãseºte Roata de Aur, ºi pune-o pe Stelele Isfet.
+1072	Misiune: Mergi în ringul demonilor
+1073	ºi ucidei.
+1074	Misiune: Ucide-l pe Ignitor, gardianul focului.
+1075	Misiune: Gãseºte Pietrele Maat ºi deschide cele
+1076	7 Stele Isfet în ordinea corectã.
+1077	Dacã greºeºti ordinea Piatra Maat va
+1078	dispãrea dar Steaua va rãmâne.
+1079	Misiune: Doar cei ce nu au fricã de foc,
+1080	vor putea ucide Metinul-Focul Iadului.
+1081	Toþi Demonii au fost învinºi.
+1082	Vorbeºte cu Am-heh pentru a trece la urmãtoarea misiune.
+1083	Steaua Isfet a fost distrusã.
+1084	Ignitor, gardianul focului, a fost ucis.
+1085	Sigiliile au fost distruse.
+1086	Metinul-Focul Iadului a fost distrus.
+1087	Marele Razador a fost distrus.
+1088	Toþi luptãtorii vor fi teleportaþi în 30 de secunde.
+1089	Omoarã toþi monºtrii acestui etaj pentru a trece mai departe.
+1090	Toþi monºtrii au fost omorâþi.
+1091	Au rãmas: %s monºtri.
+1092	Gãsi adevãrata Cheie a Gerului omorând monºtri.
+1093	Aceastã Cheie a Gerului era falsã.
+1094	Ai gãsit adevãrata Cheie a Gerului.
+1095	A fost generat un alt val de monºtri dar
+1096	de data aceasta sunt însosiþi de dal Lordul Gheþii ºi Szel.
+1097	În puþin veþi fi teleportaþi la urmãtorul etaj.
+1098	Gãsiþi Steaua nordului omorând monºtri.
+1099	Când o gãsiþi puneþi-o pe, unul dintre cele %s Cuburi de Gheaþã pentru a încerca sã îl distrugeþi.
+1100	Atenþie: Fiecare cub are propria stea.
+1101	Atenþie: Dacã vei încearca sã deschizi cu cubul cu steaua greºitã, steaua va dispãrea.
+1102	Atenþie: Deci în acest caz va trebuii sã cauþi o altã stea.
+1103	Când toate cuburile vor fi distruse, veþi putea continua.
+1104	Cubul de Gheaþã a fost distrus.
+1105	Aceasta nu era steaua acestui cub.
+1106	Toate Cuburile de Gheaþã au fost distruse.
+1107	Distrugeþi Metinul Gheþii pentru a continua.
+1108	Metinul Gheþii a fost distrus.
+1109	Ucideþi-l pe adevãratul Szel.
+1110	Aceasta era doar o iluzie.
+1111	Toate iluziile au fost ucide. Ucideþi-l pe adevãratul Szel.
+1112	L-aþi omorât pe Szel.
+1113	Aceastã Cheie Floare de Gheaþã era falsã.
+1114	Ai gãsit adevãrata Cheie Floare de Gheaþã.
+1115	Distrugeþi Pilonul Dragon din Nord pentru a continua.
+1116	A apãrut Leul de Gheaþã.
+1117	ºeful grupului trebuie sã vorbeascã cu el pentru a continua.
+1118	Vorbeºte cu el pentru a continua.
+1119	Ucideþi-l pe temutul Nemere pentru a elibera turnul.
+1120	Vei fi teleportat în afara dungeonul-ui în 60 de secunde.
+1121	Timpul a expirat.
+1122	Grupul lui %s a eliberat nava de Idra!
+1123	%s a eliberat catacombele de Azreal!
+1124	Grupul lui %s a eliberat Turnul Demonilor!
+1125	Timpul a expirat, din pãcate a-þi eºuat. Veþi fi
+1126	teleportaþi în afara dungeonul-ui.
+1127	Ucideþi-l pe Regele Pãianjen pentru a dropa Flautul Arahnid.
+1128	Aveþi la dispoziþie %s minute pentru a completa dungeonul.
+1129	Nu poþi face asta.
+1130	Foloseºte Flautul Arahnid pentru a chema Regina Pãianjenilor.
+1131	Pentru a face daune Reginei trebuie mai întâi sã
+1132	omorâþi toate Ouãle de Pãianjen!
+1133	Te rugãm sã contactezi staff cu codul: spider001.
+1134	A-þi omorât toate Ouãle de Pãianjen, acum ucideþi Regina Pãianjenilor.
+1135	Te rugãm sã contactezi staff cu codul: spider002.
+1136	Felicitãri, a-þi restaurat pacea!
+1137	În 30 de secunde veþi fi teleportaþi în afara dungeonul-ui.
+1138	A-þi distrus metinul!
+1139	Monºtrii sunt pe cale sã ajungã!
+1140	Omorâþii pe toþi!
+1141	Încã %s pietre Metin!
+1142	A-þi distrus toate pietrele Metin.
+1143	Luaþi Flaconul ºi colectaþi câteva mostre de nãmol din nãmolul care a apãrut.
+1144	Acum pune Flaconul pe sigiliu!
+1145	Puterea rãului a dispãrut!
+1146	A-þi terminat dungeonul cu succes!
+1147	Veþi fi teleportaþi în afara dungeonul-ui în
+1148	30 de secunde.
+1149	Omorâþi pietrele metin pentru a obþine Flaconul.
+1150	Omorâþi monºtrii care vor apãrea!
+1151	A-þi ucis toþi monºtrii!
+1152	A apãrut un sigiliu
+1153	controlaþi-l!
+1154	Pregãtiþi-vã!
+1155	Regina este pe cale sã ajungã!
+1156	Aveþi încã %s minute la dispoziþie!
+1157	Timpul este pe cale sã expire!
+1158	Aproape a-þi eºuat!
+1159	Vei fi teleportat în afara dungeonul-ui!
+1160	Distrugeþi piatra metin în 4 minute
+1161	altfel veþi fi teleportaþi în afara dungeonul-ui.
+1162	Veþi continua în câteva secunde.
+1163	A-þi eºuat!
+1164	Ucideþi monºtri pentru a face rost de bucãþi de pergament, iar atunci când veþi avea 4
+1165	descifraþi sigiliul Antic!
+1166	Descifraþi sigiliul Antic!
+1167	Era o vrajã prin care Slujitorul lui Anubis a fost invocat, ucideþi-l!
+1168	Veþi fi teleportaþi la urmãtorul etaj în câteva clipe.
+1169	Gãsiþi adevãrata Piatra a Faraonului si distrugeþi-o în maxim 20 minuti!
+1170	Faceþi atenþie deoarece ceva se aflã în interiorul lor!
+1171	Aceasta era piatra Metin corectã!
+1172	Bastet va ajunge imediat!
+1173	Aceasta era o iluzie!
+1174	Aceastã piatrã Metin era o iluzio.
+1175	Veþi fi teleportaþi la urmãtorul etaj în câteva clipe.
+1176	Gasiþi calea de ieºire din acest labirint!
+1177	Iar la sfârºit va trebuie sã îl omorâþi pe adevãratul Ra!
+1178	Acesta era adevãratul Ra.
+1179	Veþi fi teleportaþi la urmãtorul etaj în câteva secunde.
+1180	Acest Ra era doar o iluzie!
+1181	Distrugeþi toate Eficiile de Anubis, dar atenþie, au propriul mecanism!
+1182	Trebuie sã fie distruse în ordinea corectã!
+1183	Eficiul de Anubis a fost distrus!
+1184	Distrugeþi Piatra lui Ankh pentru a obþine un alt obiect!
+1185	Trebuie sã distrugeþi celelalte Eficii ale lui Anubis.
+1186	Fantastic! Monºtrii sunt pe cale sã ajungã! Unul dintre ei are un alt obiect!
+1187	Trebuie sã distrugeþi celelalte Eficii ale lui Anubis.
+1188	Fantastic, dar acum, fiþi foarte atenþi,
+1189	adevãratul Anubis este pe cale sã ajungã!
+1190	Veþi fi teleportaþi în câteva clipe.
+1191	Distrugeþi Stâlpul Wadjetului pentru a invoca adevãratul ºef!
+1192	Ucideþi toþi monºtrii!
+1193	Vraja a dispãrut, ridicaþi Cheia Ankh ºi puneþi-o pe Stâlpul Wadjetului.
+1194	Imediat va apãrea Piatra Sfinxului,
+1195	aceasta poate regenera monºtrii.
+1196	dar dacã o distrugeþi în maxim 5 minute, nu va regenera nimic!
+1197	--------------------------------------------------------------
+1198	Vraja a dispãrut, ridicaþi Cheia Ankh ºi puneþi-o pe Stâlpul Wadjetului.
+1199	Sunteþi prea lenþi, monºtrii v-au vãzut ºi vor
+1200	ajunge la momente, omorâþii!
+1201	A apãrut Stâlpul Rãsãritului!
+1202	Distrugeþi-l în 3 minute altfel dungeonul va sfârºi aici!
+1203	Sfinx numai are nici o putere pentru a folosi magiile,
+1204	distrugeþi-l!
+1205	A-þi eºuat!
+1206	Sfinxul a fost protejat!
+1207	A-þi reuºit, felicitãri!
+1208	Ridicaþi-vã recompensa!
+1209	Dungeon-ul va fi închis automat în 3 minute.
+1210	Timpul a expirat, din pãcate a-þi eºuat. Veþi fi teleportaþi în
+1211	afara dungeonul-ui.
+1212	A-þi distrus un Metin Eliberãrii, a rãmas %s de distrus.
+1213	A-þi distrus un Metin Eliberãrii, au rãmas %s de distrus.
+1214	A-þi distrus toate Metinele Eliberãrii, felicitãri.
+1215	Lordul Puternic Ochao a apãrut, gasiþi-l ºi omorâþi-l!
+1216	Acum trebuie sã distrugeþi cele 4 Metine Eliberãrii.
+1217	Felicitãri, a-þi restaurat pacea!
+1218	În 30 de secunde veþi fi teleportaþi în afara dungeonul-ui.
+1219	Aveþi la dispoziþie %s minute pentru a completa dungeonul.
+1220	Omorâþi 100 de monºtri.
+1221	Mergeþi înspre centrul mapei pentru a-l gãsi pe
+1222	Lordul Ochao ºi ucideþi-l.
+1223	Au rãmas %s monºtri de omorât.
+1224	A rãmas un monstru de omorât.
+1225	Felicitãri, a-þi restaurat pacea în pãdure!
+1226	În 30 de secunde veþi fi teleportaþi în afara dungeonul-ui.
+1227	Timpul a expirat.
+1228	În câteva secunde veþi fi teleportaþi afarã.
+1229	SOS! Catârgul s-a rupt, iar nava se scufundã. Acum vei fi teleportat afarã.
+1230	A apãrut portalul! A-þi apãrat catârgul cu succes, distrugeþi comoara acum.
+1231	Grupul lui %s a eliberat nava de Idra!
+1232	Valul 4: în timp ce apãraþi catârgul, omorâþi-l pe Hydra.
+1233	A-þi apãrat catârgul cu succes. Foarte bine! Pregãtiþi-vã pentru urmãtorul val.
+1234	Valul 3: în timp ce apãraþi catârgul, omorâþi-l pe Hydra.
+1235	A-þi apãrat catârgul cu succes. Foarte bine! Pregãtiþi-vã pentru urmãtorul val.
+1236	Ondata 2: în timp ce apãraþi catârgul, omorâþi-l pe Hydra.
+1237	Valul va începe într-un minut.
+1238	Primul val va dura 150 secunde. Apãraþi catârgul cu toate forþele.
+1239	%s a completa dungeonul Rune!
+1240	Metinul a fost distrus, în puþin veþi fi teleportaþi la urmãtorul etaj.
+1241	Trebuie sã omorâþi încã %s monºtri pentru a continua.
+1242	Grupul lui %s l-au învins pe Razador.
+1243	%s la învins pe Razador.
+1244	Nu poþi muta un item echipat în depozit.
+1245	Pentru a putea schimba numele trebuie sã pãrãseºti grupa.
+1246	Poþi aprinde un foc odatã la 60 de secunde.
+1247	Vei fi desconectat în 3 secunde. Ai folosit un item atunci când aveai o misiune deschisã !!!
+1248	%s nu are destul spaþiu liber.
+1249	<Grup> %s a acceptat invitaþia.
+1250	Aveþi 40 de minute la dispoziþie pentru a completa Turnul Demonilor.
+1251	Timpul a expirat a-þi eºuat.
+1252	În 30 de minute veþi fi teleportaþi în afara camerei.
+1253	Eliberaþi camera lui Beran-Setaou!
+1254	Daunele acestuia, cât ºi regenerarea vieþii sunt influenþate de pietrele Metin.
+1255	Felicitãri, a-þi eliberat camera!
+1256	%s l-a învins pe Beran-Setaou!
+1257	Grupul lui %s l-au învins pe Beran-Setaou!
+1258	Felicitãri, a-þi eliberat turnul de Nemere!
+1259	Aceasta era doar iluzia lui Szel.
+1260	În 30 de secunde veþi fi teleportaþi în afara turnului lui Nemere.
+1261	În 30 de secunde veþi fi teleportaþi afarã.
+1262	Aceastã bucatã era falsã de aceea a fost distrusã. Fã rost de cea corectã.
+1263	Felicitãri, l-aþi învins pe Razador.
+1264	Aceastã Piatrã Maat nu e compatibilã cu acest sigiliu.
+1265	Sigiliul a fost deschis.
+1266	Eliberaþi camera de Bagjanamu.
+1267	Jotun Thrym a apãrut în camera, omorâþi-l!
+1268	Grupul lui %s a restaurat pacea în pãdure!
+1269	%s a restaurat pacea în pãdure!
+1270	Grupul lui %s a eliberat piramida!
+1271	%s a eliberat piramida!
+1272	Grupul lui %s a eliberat teritoriul de Orci!
+1273	%s a eliberat teritoriul de Orci!
+1274	Au rãmas %s demoni de ucis.
+1275	Ceva nu este în regulã. Contacteazã staff-ul cu codul: Beran002.
+1276	Dragonul numai este invincibil.
+1277	Au rãmas %s pietre Metine de distrus.
+1278	A rãmas o piatrã Metin de distrus.
+1279	Atât timp cât pietrele Metin sunt în viaþã, Dragonul va fi invincibil.
+1280	În 30 de secunde veþi fi teleportaþi în afara dungeonul-ui.
+1281	Omorând monºtri veþi putea dropa Cheie Suflet Cristalizat cu care
+1282	veþi putea deschis Statuia lui Kud pentru a trece la urmãtorul etaj.
+1283	Grupul lui %s a completat dungeonul Rune!
+1284	<Gilda> Breasla a pierdut %s puncte.
+1285	Puteti face acest lucru la fiecare 10 secunde maximum.
+1286	Puteti salva o pozitie la fiecare 10 secunde maximum.
+1287	Sunteti deja aproape de aceasta locatie.
+1288	Nu va puteti teleporta în timp ce va aflati într-o temnita.
+1289	Caracterele speciale nu sunt permise.
+1290	Puteti face acest lucru la fiecare 30 de secunde maximum.
+1291	Au rãmas %s pietre de distrus.
+1292	Acest articol este compatibil numai cu inventarul special.
+1293	Costumul eºarfã poate fi craftat doar cu un alt costum eºarfã de acelaºi tip.
+1294	%s poate fi folosit(ã) doar pe suflete.
+1295	Probabilitatea bonusului dungeon actual a fost schimbatã cu %s%.
+1296	Provoacã daune Statuilor pânã la %s% din HP!
+1297	Ouãle Dragonului au apãrut, trebuie sã le distrugeþi.
+1298	Statuile ºi-au pierdut invincibilitatea.
+1299	Gardianii Idall au apãrut, trebuie sã-i distrugeþi.
+1300	Aveþi la dispoziþie 20 de secunde pentru a distruge statuile tragând Inelele Dragonului de Foc pe ele.
+1301	Grupul lui %s au învins-o pe Meley!
+1302	%s a învins-o pe Meley!
+1303	Evenimentul de crãciun a început!
+1304	Evenimentul de crãciun s-a încheiat.
+1305	Evenimentul de crãciun este activat.
+1306	Îl poþi deschide doar atunci când evenimentul de crãciun este activat.
+1307	Trebuie sã aºtepþi!
+1308	Gasiþi bulgãrele adevãrat ºi distrugeþi-l!
+1309	Acesta a fost adevãratul bulgãre de zãpada, fii atent pentru ca ajung monºtrii!
+1310	Ucide monºtri pâna gasiþi cheia potrivitã.
+1311	Acest bulgãre de zãpada a fost doar o iluzie.
+1312	Ai gãsit cheia! Deschide Piatra Magicã a Tarii Minunilor cu aceastã cheie.
+1313	Vorbeºte cu Moº Crãciun!
+1314	Acest cufãr a fost doar o iluzie!
+1315	Acum trebuie sã omori toþi monºtrii.
+1316	Ei bine, acum gãseºte cufãrul regal!
+1317	Fantomele lui Moº Crãciun au furat cadourile... ia-le înapoi!
+1318	Perfect, pune-le în geanta lui Moº Crãciun!
+1319	Acum distruge toþi bulgarele de zapada.
+1320	Acesta a fost adevãratul bulgãre de zãpada!
+1321	Ei bine, lipsesc alte %s cadouri.
+1322	Perfect, lipseºte ultimul cadou.
+1323	Acesta este cufãrul potrivit!
+1324	Acum trebuie sã ucizi Fantoma Crãciunului.
+1325	Ei bine, acum distruge Piatra de Crãciun!
+1326	Ai gãsit primul articol!
+1327	Acum ucide Fantoma de Crãciun pentru a primi un alt articol.
+1328	Ai gãsit al doilea articol!
+1329	Acum distruge toate Pietrele de Crãciun.
+1330	Foarte bine, acum vorbeºte cu Moº Crãciun!
+1331	Foarte bine, acum deschide Monumentul Misterios!
+1332	Foarte bine, acum ucide bradul rau de Crãciun!
+1333	Grupul %s a eliberat Satul Îngheþat!
+1334	%s a eliberat Satul Îngheþat!
+1335	Distruge toate Pietrele Winterland în 5 minute altfel
+1336	urmatorii ºefi care vor veni vor fi mult mai puternici!
+1337	Atenþie! Vraja zãpezii ºi magia fulgilor de zãpada sunt
+1338	foarte importante, aºa cã asigurã-te sã le ai în inventar!
+1339	Ucide toþi monºtrii pentru a continua!
+1340	Acum deschide Uºa îngheþatã trãgând Magia Fulgului de Nea pe ea.
+1341	Acum trebuie sã-l ucizi pe Demonul Zãpezii!
+1342	Acum distruge prima parte a Monumentului Îngheþat
+1343	tragând vraja zãpezii peste el.
+1344	Atenþie! Vraja de zãpada este foarte importantã, aºa cã asigurã-te sã o ai în inventar!
+1345	Acum distruge a doua parte a Monumentului Îngheþat
+1346	tragând vraja zãpezii peste.
+1347	Distruge toate Pietrele Winterland pentru a continua!
+1348	Acum distruge ultima parte a Monumentului Îngheþat.
+1349	Gasiþi ciorapul regal de Crãciun furat.
+1350	Acest ciorap de Crãciun furat a fost o iluzie.
+1351	Felicitãri, Ciorapul de Crãciun corect care a fost furat a fost gãsit!
+1352	Acum trebuie sã îl utilizaþi pentru a continua.
+1353	Copacii au fost descoperiþi! Trebuie sã îi decorezi pe toþi!
+1354	Acum trebuie sã-l ucizi pe ajutorul blestemat al lui Moº Crãciun.
+1355	Foloseºte Decorul de Crãciun pentru a împodobi unul dintre brazi!
+1356	Foarte bine, acum trebuie sã-l ucizi pe Fantoma lui Moº Crãciun!
+1357	Grupul %s a eliberat Tara Îngheþatã!
+1358	%s au eliberat Tara Îngheþatã!
+1359	Ai nevoie de Vrãjeºte Talisman pentru a adãuga al cincilea bonus.
+1360	Poþi îmbunãtãþi doar iteme sub nivelul 90 la acest fierar.
+2001	Fierarul are un punct negru pe frunte?  
+2002	NPC-ul Soon ?ine o carte în mâna?  
+2003	Sabia Lunii Pline +9 poate fi cumparata de la un NPC?  
+2004	Pe?tele de Lotus la Gratar ofera +25% EXP timp de 30 de minute?  
+2005	Comerciantul Gaya ?ine o carte în mâna?  
+2006	Auriga-Global este cel mai bun server?  
+2007	Ampula Ro?ie ofera +10% putere împotriva semi-oamenilor?  
+2008	Ampula Galbena ofera +10% putere împotriva metinurilor?  
+2009	Accesoriile Cristalului Sufletului pot fi îmbunata?ite pâna la +13?  
+2010	NPC-ul Thusa poarta o agrafa în par?  
+2011	Armele de nivel 75 pot fi îmbunata?ite pâna la +13?  
+2012	Exista Roua Alba (permanenta)?  
+2013	Talismanul Focului poate fi îmbunata?it pâna la +30?  
+2014	Exista o po?iune care ofera +15% ?ansa de succes la îmbunata?ire?  
+2015	Talismanul Focului +30 poate fi utilizat de la nivelul 70?  
+2016	Po?i ob?ine oase de pe?te din pietrele metin?  
+2017	Pescarul poarta o e?arfa mov?  
+2018	Comerciantul de arme are parul blond?  
+2019	Exista o Piatra care ofera +35% Daune Medii?  
+2020	Materialul sub?ire este utilizat pentru a cumpara armuri de umar?  
+2021	Piatra Inteligen?ei +5 ofera +10 inteligen?a?  
+2022	Manny (permanent) poate fi îmbunata?it pâna la +9?  
+2023	Elixirul Soarelui (permanent) poate fi cumparat de la Comerciantul Gaya?  
+2024	Cumpararea unui obiect din alt regat costa dublu?  
+2025	Po?i alerga purtând un smoking?  
+2026	Elixirul Lunii (permanent) poate fi cumparat de la Comerciantul Gaya?  
+2027	Toata alchimia poate fi rafinata dintr-un singur clic?  
+2028	5 Elixire Curcubeu sunt necesare pentru a colora perfect o abilitate?  
+2029	Mantaua Curajului atrage to?i mobii spre tine?  
+2030	Fierarul ?ine ciocanul în mâna stânga?  
+2031	La Vânzatorul General po?i cumpara Voucher de Monede Dragon?  
+2032	Regatul Shinsoo are un steag albastru?  
+2033	Colierul de Cianit poate fi creat la NPC-ul Uriel?  
+2034	Biologul solicita o Carte a Blestemelor pentru misiunea de nivel 40?  
+2035	[SGM]Profiq Ninja Caracter?  
+2036	Hisztis este promotorul oficial al Auriga?  
+2037	Pozi?ia caracterului poate fi salvata cu tasta F11?  
+2038	Din cauza blocarii multifarm, daca 3 clien?i sunt deschi?i, al 3-lea client nu va primi dropuri?  
+2039	Cheia Învârtita este necesara pentru a intra în Templul Ochao?  
+2040	www.Auriga-Global.cc este site-ul corect al serverului?  
+2041	Daca 3 clien?i sunt deschi?i, to?i 3 primesc dropuri?  
+2042	NPC-ul Uriel poarta cizme?  
+2043	Paznicul Ora?ului (NPC) are barba maro?  
+2044	Capitanul (NPC) ?ine arma în mâna stânga?  
+2045	Batrâna (NPC) are ochii deschi?i?  
+2046	Comandantul de Lupta (NPC) are musta?a?  
+2047	Armele de nivel 65 la +9 ofera +55% putere împotriva demonilor?  
+2048	Nu exista un NPC Pescar pe Harta 2?  
+2049	Te po?i teleporta la ?efi facând clic pe ei pe harta mare?  
+2050	Scutul celor Trei Împara?i poate fi îmbunata?it pâna la +9?  
+2051	%s a intrat în Sala Dragonilor!
+2052	Dragonul Albastru s-a întors!
+2053	[LEVEL UP]%s a atins nivelul 35 [Dungeon deblocata] Ork Dungeon
+2054	[LEVEL UP]%s a atins nivelul 45 [Dungeon deblocata] Slime Dungeon
+2055	[LEVEL UP]%s Atins nivelul 50 [Map deblocata]: Ice Empire
+2056	[LEVEL UP]%s a atins nivelul 65 [Map deblocata] Ice Cave
+2057	[LEVEL UP]%s a atins nivelul 75 [Dungeon deblocata] Beran-Setaou
+2058	[LEVEL UP]%s Atins nivelul 85 [Map deblocata]:Dark Forest
+2059	[LEVEL UP]%s Atins nivelul 90 [Dungeon deblocata]: Ochao Dungeon
+2060	[LEVEL UP]%s Atins nivelul 100
+2061	[LEVEL UP]%s Atins nivelul 110
+2062	[LEVEL UP]%s Atins nivelul 120
+2063	[LEVEL UP]%s Atins nivelul 130
+2064	[!!!!MAX LVL!!!!]%s A ajuns la nivelul 140. Felicitari lui din partea echipei Auriga!
+2065	evenimentul Ladá Lumina Lunii a început!
+2066	evenimentul Ladá Lumina Lunii s-a terminat!
+2067	Evenimentul dublu Bucat? de piatrá metin a început.
+2068	Evenimentul dublu Bucat? de piatrá metin sa încheiat.
+2069	Evenimentul de eliminare MD sa încheiat
+2070	Evenimentul de eliminare MD a început.
+2071	|cff00A8EB[ItemShop]|r |cffFFFFFFItemShop was update!|r
+2072	|cff00A8EB[ItemShop]|r |cffFFFFFFYou don't have enought dragon coin!|r
+2073	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%sx%d|r |cffFFFFFFfor|e |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2074	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%s|r |cffFFFFFFfor|r |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2075	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the weekly purchase count. Max Count Per Week: %d|r
+2076	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the monthly purchase count. Max Count Per Month: %d|r
+2077	[SYSTEM]You must be seat on the mount before using the mount costume!
+2078	Bonus event is active!
+2079	Bonus event is done
+2080	Double Boss Loot event is active!
+2081	Double Boss Loot event is done!
+2082	Double Metin Loot event is active
+2083	Double Metin Loot event is done
+2084	Double Mission Book event is active
+2085	Double Mission Book event is done
+2086	Dungeon Cooldown event is active!
+2087	Dungeon Cooldown event is done!
+2088	Dungeon Ticket event is active!
+2089	Dungeon Ticket event is done!
+2090	MoonLight event is active!
+2091	MoonLight event is done!
+2092	%s and her/his group killed Hydra!
+2093	%s killed the Hydra!
+2094	The NPC has appeared, talk to her to let you continue.
+2095	Kill the BOSS to free the NPC.
+2096	Kill the Great Hydra to complete the Dungeon.
+2100	Can the Drake mount only be obtained with DC?
+2101	Does Blue Dew grant 100 attack points?
+2102	Is the Guardian standing with his back to the building?
+2103	Is the Dagger Combat Instructor next to the Mental Combat Instructor?
+2104	Is Uriel standing in front of the Dragon Power Instructor?
+2105	Does the Alchemist hit his own back?
+2106	Does Biologist Chaegirab wear red glasses?
+2107	Does the Female General Store NPC wear a blue hair tie?
+2108	Does the Blacksmith have an eight-pack?
+2109	Is there a spear at the Old Woman’s house?
+2110	Are there Helper NPCs on the server?
+2111	Does the offline shop remain open for 45 days?
+2112	Can P-Skills be purchased from Gaya?
+2113	Is there a Wikipedia page for the server?
+2114	Is the Orcs NPC located in the level 35-50 map?
+2115	Can the Demon Tower Guard only be found on Map 1?
+2116	Does the Weapon Merchant NPC have a hair tie in their hair?
+2117	Does the Wisdom Belt +9 grant a 60% EXP bonus?
+2118	Does Profiq’s Pepsi have unlimited duration?
+2119	Does Eek’s Ring provide 20% for all bonuses?
+2120	Can the Shrunken Head only be obtained with DC?
+2121	Does White Dew have unlimited duration?
+2122	Is there exactly one blue-leafed tree on the Event Map?
+2123	Are all tree trunks brown on the Event Map?
+2124	Does Lee Chung hold a spear in his right hand?
+2125	Can a bamboo tree be found on Map 1?
+2126	Does Yellow Dew provide 10% PVM average damage bonus?
+2127	Does Soon wear glasses?
+2128	Does the Old Woman NPC have a small red handbag?
+2129	Can the Enhancement Potion (20%) be purchased from Thusa NPC?
+2130	Can offers be made in the Offline Shop?
+2131	Can the name of a pet be changed?
+2132	Is there a pirate ship on Map 1?
+2133	Are there 16 boss monsters on Map 1?
+2134	Does every character receive an Anti-EXP ring?
+2135	Is there grass on the Event Map?
+2136	Is one of the statues on the Event Map sitting in a cross-legged position?
+2137	Can anyone enter the Event Map?
+2138	Can all dungeon entry tickets be obtained from Lee Chung?
+2139	Does the Female General Store NPC wear patterned clothing?
+2140	Is there a door behind Thusa NPC?
+2141	Are all items sold by the Weapon Merchant already at +9?
+2142	Do 100 Sun Crystals give 1 Sun Crystal+?
+2143	Does the Alchemy Enchanter require 200 Dragon Stone Shards?
+2144	Can Magic Stones only be dropped from Metin Stones?
+2145	Can +4 stones be bought at the General Store?
+2146	Can a White Lion+0 be upgraded to +13?
+2147	Does the Fruit of Life grant 200 reputation points?
+2148	Can reputation be increased up to 25,000 points?
+2149	Can you invite a player from another empire into your group?
+2150	Da clic pe NPC pentru a continua!
+2151	%s ?i echipa sa au eliberat Temni?a Bufni?ei!
+2152	%s a eliberat Temni?a Bufni?ei!
+2153	Ucide-l pe BOSS pentru ca NPC-ul sa apara ?i sa te lase sa continui.
+2154	Ucide-l pe BOSSUL FINAL pentru a încheia temni?a.
+2155	Ucide toate mon?trii pentru a putea deteriora Poarta Destinului!
+2156	Poarta nu mai este invulnerabila!
+2157	Gase?te ?i distruge piatra metin.
+2158	Statuia Regelui Maimu?a este invulnerabila!
+2159	Po?i sa o rane?ti doar daca folose?ti suli?a pe ea.
+2160	Ob?ine 5 suli?e pentru a distruge statuia!
+2161	Ucide puternicul Rege Maimu?a pentru a termina temni?a.
+2162	Ai distrus cu succes statuia Regelui Maimu?a.
+2163	Vei fi teleportat la ?ef în 10 secunde.
+2164	%s ?i echipa lui au eliberat jungla Regelui Maimu?a!
+2165	%s a eliberat jungla Regelui Maimu?a!
+2067	[LEVEL UP] %s a atins nivelul %d
+2168	|cff00A8EB[AUTO EVENT]|r: %s event is active, Location: Event Map
+2169	|cff00A8EB[AUTO EVENT]|r: %s event has ended!
+2170	|cff00A8EB[AUTO EVENT]|r: %s will start in 5 minutes, location: Teleport ? Cities: Event Map!
+2171	You cannot use teleport in a dungeon map. Please wait for the automatic teleport.
+2176	|cFFFFD700 recompensa câ?tigatorului :|cff0cf03d %s |r
+2177	|cFF0cf03d %s|r |cFFFFD700 buca?i|r
+2178	|cFF63fff5 Nimeni nu a ghicit raspunsul corect|r |cFFff63fc[%s]|r|cFF63fff5 de aceea Adminul a închis-o.|r
+2179	|cFFff63fc [Quiz]|r |cFFFFD700 Scrie NUMARUL CORECT în chatul global! Primul câ?tiga! Ai la dispozi?ie 60 de secunde!|r
+2180	|cFFff63fc [Quiz]|r |cFF63fff5Timpul a expirat. Raspunsul corect |r|cFFff63fc[%s]|r |r|cFF63fff5 a fost|r
+2181	|cFFFFD700 Câ?tigatorul: |cff0cf03d [%s]|r |cFFFFD700 Raspunsul corect: |r|cff0cf03d%s |r|cFFFFD700 Recompensa a fost acordata automat.
+2182	|cFFff63fc [Quiz|]|r|cFFFFD700Ma gândesc la un numar între 1 ?i 100|r
+2183	|cFFff63fc [Quiz]]|r|cFFFFD700Ma gândesc la un numar între 1 ?i 1000|r
+2185	Grupul lui %s a finalizat cu succes Temni?a Co?marului!
+2186	%s a finalizat cu succes Temni?a Co?marului!
+2187	Ucide-l pe puternicul Agares
+2188	The Hexagonal Chest event has begun!
+2189	The Hexagonal Chest event has ended!
+2190	|cFFFFD700 [WORLDBOSS]|r %s has slain the Dragon Queen Meley on the Fire Map.
+2191	|cFFFFD700 [WORLDBOSS]|r %s has slain the Desert Wraith in the Desert.
+2192	The Double Run Boss drop event has begun.
+2193	The Double Run Boss drop event has ended!
+2194	|cFF0cf03dThe Event map is now open, entry at Map1|r|cFFff63fc at Uriel|r|cFF0cf03d. Hurry, it will close soon!|r
+2195	|cFF0cf03dThe Event map is now closed, no one can enter anymore!|r
+2220	The Santa Claus event has begun!
+2221	The Santa Claus event has ended!
+2222	The Christmas event has begun, the Auriga-Global team wishes you a Merry Christmas <3!
+2223	The Christmas event has ended!
+2224	The Double Metin Shard drop event has begun!
+2225	The Double Metin Shard drop event has ended!
+2226	Auriga Coin Drop has begun!
+2227	Auriga Coin Drop has ended!
+2228	The Double Boss Point event has begun!
+2229	The Double Boss Point event has ended!
+2230	The Double Run Point event has begun!
+2231	The Double Run Point event has ended!
+2232	The Desert World Boss can respawn at any moment on CH%d!
+2233	The Desert World Boss will spawn in %d hour(s) on CH%d!
+2234	The Desert World Boss will spawn in %d minute(s) on CH%d!
+2235	Less than 1 minute until the Desert World Boss spawns on CH%d!
+2236	The Desert World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2237	The Meley World Boss has been defeated! It will respawn in 8 hours on CH%d!
+2238	The Meley World Boss can respawn at any moment on CH%d!
+2239	The Meley World Boss will spawn in %d hour(s) on CH%d!
+2240	The Meley World Boss will spawn in %d minute(s) on CH%d!
+2241	Less than 1 minute until the Meley World Boss spawns on CH%d!

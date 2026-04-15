@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. By opening the private chat between 2 players, you should be able to see the button for Google translate at the top
+[X_PADDING=12]2. If the button is active the message of another language will automatically translate to your language
+[X_PADDING=12]3. If the button it's deactivated u will receive the message in the original language,so without being translated
+
+[X_PADDING=12](Attention the automatic translated work only for the private message).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

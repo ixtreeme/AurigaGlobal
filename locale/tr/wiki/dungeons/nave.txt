@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum Giris Seviyesi: 105.
+[X_PADDING=12]*Maksimum Giris Seviyesi: 120.
+[X_PADDING=12]*Giris Bileti: Hydra Tasi
+[X_PADDING=12]*Tür: Grup
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]Hydra Tasi
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Bekleme süresi: 1 saat 30 dakika
+[X_PADDING=12]*Haritadan erisebilirsiniz: Özel lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Buz gücü.
+[X_PADDING=12]*Irk: Buz.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Parti lideri zindani baslatmak için dümene tiklamalidir.
+[X_PADDING=20]2. 02:30'da geminin diregini savun.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. Siren Kraliçesini öldür.
+[X_PADDING=20]2.Ilk Hydra'yi öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÜÇÜNCÜ ASAMA
+[X_PADDING=20]1. Geminin diregini 01:30'da savun.
+[X_PADDING=20]2. Ikinci Hydra'yi öldür.
+[X_PADDING=20]3. Onarim gövdesine tiklayarak geminin diregini onarin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DÖRDÜNCÜ ASAMA
+[X_PADDING=20]1. Geminin diregini 01:30'da savun.
+[X_PADDING=20]2. Hydra'ya Auriga vermek için Hydra yumurtalarini yok edin.
+[X_PADDING=20]3. Son Hydra'yi öldür.
+[X_PADDING=20]4. Ödülü almak için Hydra hazinesini yok et.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

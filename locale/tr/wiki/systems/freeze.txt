@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[X_PADDING=12;CENTER_ALIGN]Bonus dondurma sistemi 3 ögeden olusur:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Bonus Dondurma							 Bonus'u tekrar dondur.							Scongela Bonus
+
+[X_PADDING=12;CENTER_ALIGN]Bonus Dondurmayi bonuslari olan herhangi bir ekipman ögesine tasirsaniz, dondurulur.
+[X_PADDING=12;CENTER_ALIGN]tamamen rastgele bir bonus. Tilsim bonuslari dondurulamaz.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Bir bonus donduruldugunda, karakteriniz üzerinde hiçbir etkisi olmadigina ve çözülene kadar dikkatli olun.
+[X_PADDING=12]Bir Omuz Kusagi üzerindeki esyayi gelistirmek, islemek ve özümsemek mümkün olmayacaktir.
+
+[X_PADDING=12]Dondurulamayan bonuslar sunlardir:
+[X_PADDING=20]Ortalama Hasar
+[X_PADDING=20]Beceri Hasari
+[X_PADDING=20]Yari insanlara karsi Çifte Güçlü (örnegin, halihazirda
+[X_PADDING=20]bonusun dondurulmadigi bonusu dondur).
+
+[X_PADDING=12]Yeniden Dondurma Bonusu, begenmedigimiz bir ögede zaten donmus bir bonusunuz oldugunda kullanilir,
+[X_PADDING=12]ve sonra her zaman rastgele yeni bir bonusu dondurmaya çalisin.
+
+[X_PADDING=12]Buz Çözme Bonusu, ürünlerimizden birinde bulunan bir bonusun buzunu çözmek için kullanilir.
+[X_PADDING=12]Bonus çözüldügünde, iyilestirmeler yapmak, zanaat yapmak ve ögeyi tekrar özümsemek mümkün olacak.
+[X_PADDING=12]ve karakter bu bonusun etkinligini yeniden kazanir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

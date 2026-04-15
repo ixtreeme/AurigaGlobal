@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ALCHEMY SHOP
+
+[X_PADDING=12]1. Cor Draconis (Antyczny) mozesz kupic w sklepie alchemicznym znajdujacym sie w panelu alchemicznym za pomoca Odlamków Smoczych
+[X_PADDING=12]d. Kamieni.
+[X_PADDING=12]2. Eliksiry czasu mozesz kupic w sklepie alchemicznym znajdujacym sie w panelu alchemicznym za pomoca Odlamków Smoczych
+[X_PADDING=12]d. Kamieni.
+[X_PADDING=12]3. Fasolki zielone,rózowe,niebieskie mozesz kupic w sklepie alchemicznym znajdujacym sie w panelu alchemicznym za pomoca
+[X_PADDING=12]Odlamków Smoczych Kamieni.
+[X_PADDING=12]4. Smocze cegi mozesz kupic w sklepie alchemicznym znajdujacym sie w panelu alchemicznym za pomoca
+[X_PADDING=12]Odlamków Smoczych Kamieni.
+[X_PADDING=12]5. Zaczarowanie alchemi mozesz kupic w sklepie alchemicznym znajdujacym sie w panelu alchemicznym za pomoca
+[X_PADDING=12]Cor Draconis (antyczne) lub wydropic na róznych wyprawach.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]CLASS
+
+[X_PADDING=12]1. Na Auriga sa tylko 3 klasy alchemii Antyczna/Legendarna/Mityczna.
+[X_PADDING=12]2. Do poprawy klasy kamienia potrzebne sa 2 kamienie tego samego typu i klasy.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEGREE OF CLARITY
+
+[X_PADDING=12]1. Istnieje 5 stopni jakosci: matowa, przejrzysta, bez skazy, znakomity i wyborny.
+[X_PADDING=12]2. Aby poprawic stopien jakosci kamienia, potrzebne sa dwa kamienie tego samego rodzaju i tego samego stopnia
+[X_PADDING=12]clarity.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LEVEL
+
+[X_PADDING=12]1. Smocze kamienie moga byc ulepszane do poziomu +6.
+[X_PADDING=12]2. Smocze kamienie moga byc ulepszane za pomoca zielonej/niebieskiej/rózowej fasolki.
+[X_PADDING=12]3. Róznice miedzy fasolami to procent szansy na ulepszenie, zielona ma najnizszy, niebieska sredni
+[X_PADDING=12]a fioletowa najwyzszy.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Czas trwania smoczych kamieni
+
+[X_PADDING=12]1. Maksymalnyh czas trwania smoczego kamienia to 24 godziny.
+[X_PADDING=12]2. Gdy czas kamienia dobiegnie konca kamien nie znika.
+[X_PADDING=12]3. Aby uzupelnic czas smoczego kamienia, mozesz kupic w sklepie alchemicznym Eliksir Czasu.
+[X_PADDING=12]4. Jest mozliwe usuniecie smoczego kamienia ze smoczej alchemi za pomoca Smoczych Ceg, wyciaganie kamienia zawsze
+[X_PADDING=12]konczy sie powodzeniem.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSY SMOCZYCH KAMIENI
+
+[X_PADDING=12]1. Antyczne i legendarne smocze kamienie zawsze maja 2 stale bonusy bazowe.
+[X_PADDING=12]2. Mityczne Smocze Kamienie zawsze maja 3 stale bonusy bazowe.
+[X_PADDING=12]3. Zmiana bonusów smoczego kamienia jest mozliwa tylko wtedy, gdy jest on klasy mitycznej i ma jakosc Wyborny.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RÓZNE BONUSY, KTÓRE MOGA WYJSC NA SMOCZE KAMIENIE
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Wskazane bonusy odnosza sie do Mitycznej alchemii, Wyborna +6)
+
+
+[X_PADDING=52]DIAMENT :
+[X_PADDING=60]- Inteligencja +16
+[X_PADDING=60]- Odpornosc na lód 20%
+[X_PADDING=60]- Silny na lód 20%
+[X_PADDING=60]- Silny przeciwko Surom 24%
+[X_PADDING=60]- Odpornosc przeciwko Surom 24%
+[X_PADDING=60]- max PZ. +32%
+[X_PADDING=60]- Regeneracja MP 16%
+[X_PADDING=60]- Wartosc magicznego ataku +24
+[X_PADDING=60]- Magiczna obrona +24
+
+
+[X_PADDING=52]RUBIN :
+[X_PADDING=60]- Sila +16
+[X_PADDING=60]- Odpornosc na ogien 20%
+[X_PADDING=60]- Silny na ogien 20%
+[X_PADDING=60]- Silny przeciwko Wojownikom 24%
+[X_PADDING=60]- Odpornosc przeciwko Wojownikom 24%
+[X_PADDING=60]- Szansa na podwójna ilosc yang 26%
+[X_PADDING=60]- Regeneracja PZ +16%
+[X_PADDING=60]- Odpornosc na obrazenia 24%
+[X_PADDING=60]- Obrona +320
+
+
+[X_PADDING=52]JADEIT :
+[X_PADDING=60]- Punkty Many +1000
+[X_PADDING=60]- Odpornosc na wiatr 20%
+[X_PADDING=60]- Silny na wiatr 20%
+[X_PADDING=60]- Odpornosc przeciwko potworom 20%
+[X_PADDING=60]- Obrazenia umiejetnosci 24%
+[X_PADDING=60]- Odp. na obrazenia umiejetnosci 24%
+[X_PADDING=60]- Wartosc ataku +480
+[X_PADDING=60]- Silny przeciwko potworom 20%
+[X_PADDING=60]- Szansa na podwójna ilosc przedmiotów 20%
+
+
+[X_PADDING=52]SZAFIR :
+[X_PADDING=60]- Zrecznosc +16
+[X_PADDING=60]- Odpornosc na ziemie 20%
+[X_PADDING=60]- Silny na ziemie 20%
+[X_PADDING=60]- Silny przeciwko ninja 24%
+[X_PADDING=60]- Odpornosc przeciwko ninja 24%
+[X_PADDING=60]- Silny przeciwko metinom 20%
+[X_PADDING=60]- max PM. +32%
+[X_PADDING=60]- Szansa na odzyskanie PZ 16%
+[X_PADDING=60]- Szansa na odzyskanie PM. 16%
+
+
+[X_PADDING=52]GRANAT :
+[X_PADDING=60]- Punkty Zycia +3500
+[X_PADDING=60]- Odpornosc na blyskawice 20%
+[X_PADDING=60]- Silny na blyskawice 20%
+[X_PADDING=60]- Silny przeciwko Szamanom 24%
+[X_PADDING=60]- Odpornosc przeciwko Szamanom 24%
+[X_PADDING=60]- Silny przeciwko wladcom 20%
+[X_PADDING=60]- Max. PZ +4800
+[X_PADDING=60]- Szansa na bonus dosw. 26%
+[X_PADDING=60]- Srednie obrazenia 24%
+
+
+[X_PADDING=52]ONYKS :
+[X_PADDING=60]- Witalnosc +16
+[X_PADDING=60]- Odpornosc na mrok 20%
+[X_PADDING=60]- Silny na mrok 20%
+[X_PADDING=60]- Szansa na unik strzal 16%
+[X_PADDING=60]- Odpornosc na przeszywajacy cios 16%
+[X_PADDING=60]- Odpornosc na cios krytyczny +16%
+[X_PADDING=60]- Szansa na odbicie ciosu 16%
+[X_PADDING=60]- Szansa na blok ciosu 16%
+[X_PADDING=60]- Max. PM +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]COMPLETE ALCHEMICAL BONUS SET
+
+[X_PADDING=12]1. Ukonczenie calego kola alchemicznego kamieniami +6 automatycznie aktywuje bonus zestawu alchemicznego.
+[X_PADDING=12]2. W lewym górnym rogu,gdy ikona bonusu zestawu alchemicznego jest czerwona, bonus zestawu nie jest aktywny.
+[X_PADDING=12]2. W lewym górnym rogu, gdy ikona bonusu zestawu alchemicznego jest zielona, bonus zestawu jest aktywny.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OFEROWANE BONUSY:
+
+[X_PADDING=12]1. Silny przeciwko metinom +10%
+[X_PADDING=12]2. Silny przeciwko potoworom +10%
+[X_PADDING=12]3. Max. PZ +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

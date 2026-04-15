@@ -1,0 +1,76 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Fire Talisman								 Ice Talisman								Earth Talisman
+
+
+
+
+
+
+[X_PADDING=81] Dark Talisman							  Wind Talisman							   Lightning Talisman
+
+[CENTER_ALIGN]The talisman are item can give new bonuses at the personage,its possible to upgrade those to a max of +30.
+[CENTER_ALIGN]Is going to be possible to buy a talisman +0 from npc Yonah.
+
+[X_PADDING=12]On the talisman  will be possible to insert a maximum of 5 bonuses:
+[X_PADDING=20]1. From the first to the fourth bonus there is a need of the item Reinforce Talisman.
+[X_PADDING=20]2. For adding the fifth bonus there is need of the item Strengthens Talisman.
+[X_PADDING=20]3. For changing bonuses at a talisman will need the item Enchant Talisman.
+
+[X_PADDING=12] Possible bonuses that can be on the talisman:
+[X_PADDING=20]- Sword Defense break 5%
+[X_PADDING=20]- Two-handed Defense break 5%
+[X_PADDING=20]- Dagger Defense break 5%
+[X_PADDING=20]- Arrow Defense break 5%
+[X_PADDING=20]- Fan Defense break 5%
+[X_PADDING=20]- Bell Defense break 5%
+[X_PADDING=20]- Half Human Resistance 10%
+[X_PADDING=20]- Strong against Half Humans 10%
+[X_PADDING=20]- Strong against Monsters 15%
+[X_PADDING=20]- Strong against Metins  15%
+[X_PADDING=20]- Strong Against Bosses 15%
+[X_PADDING=20]- Darkness Resistance 15%
+[X_PADDING=20]- Earth Resistance 15%
+[X_PADDING=20]- Ice Resistance 15%
+[X_PADDING=20]- Fire Resistance 15%
+[X_PADDING=20]- Wind Resistance 15%
+[X_PADDING=20]- Lightning Resistance 15%
+[X_PADDING=20]- Strong against Monsters of runes 20% 
+
+[X_PADDING=12]Its possible to upgrade the talisman until +10 by getting items from starting dungeons,from 11+ to +30 there will need to drop the Chest
+[X_PADDING=12]Elementary where the objects necessary for the upgrade of the talisman will come out inside.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Reinforce Talisman.								 Enchant Talisman.								Strengthens Talisman.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

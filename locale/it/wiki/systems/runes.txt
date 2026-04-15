@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[CENTER_ALIGN]Al livello 70 comparirà una missione e cliccandoci sopra sbloccherà il pannello delle rune.
+
+[X_PADDING=12]Il pannello delle rune è composto da 6 rune normali più 1 runa speciale, ogni runa contiene un potere speciale.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Runa di Ares									  Runa di Era								    Runa di Apollo
+
+
+
+
+
+
+[X_PADDING=80]Runa di Afrodite							   Runa di Poseid.							     Runa di Atena
+
+
+
+
+
+
+[X_PADDING=238]Runa di Zeus
+
+[X_PADDING=12]Le rune normali hanno un potere massimo fino al 100%, più il loro potere è alto più le percentuali dei
+[X_PADDING=12]suoi bonus saranno alte.
+
+[X_PADDING=12]Percentuali massime delle rune normali:
+[X_PADDING=20]- Runa di Afrodite: Forte contro metin 15% - Destrezza +15
+[X_PADDING=20]- Runa di Apollo: Forte contro Boss 15% - Forza +15
+[X_PADDING=20]- Runa di Atena: Danni Medi[PVM] 12% - Valore d'attacco +150
+[X_PADDING=20]- Runa di Era: Max. MP +1200 - Intelligenza +15
+[X_PADDING=20]- Runa di Poseidone: Forte contro Mostri +15% - 15% di possibilità nei colpi critici [PVM]
+[X_PADDING=20]- Runa di Ares: Max. HP +2500 - Vitalità +15
+
+[X_PADDING=12]La runa speciale che sarebbe la Runa di Zeus si attiva automaticamente quando tutte le rune normali hanno
+[X_PADDING=12]almeno il 50% di potere disponibile.
+
+[X_PADDING=12]La Runa di Zeus quando è attiva fornisce al personaggio i seguenti bonus:
+[X_PADDING=20]- Forte contro Mezziuomini 10%
+[X_PADDING=20]- Resistenza Mezziuomini 10%
+
+[X_PADDING=12]Quando una qualsiasi runa normale il suo potere scende al di sotto del 50% la Runa di Zeus si spegne
+[X_PADDING=12]automaticamente.
+
+[X_PADDING=12]Inoltre quando tutte le rune normali hanno almeno il 60% di potere compare un effetto speciale sul personaggio.
+[X_PADDING=12](L'effetto può essere anche disattivato dal pannello delle rune).
+
+[X_PADDING=12]E' possibile ricaricare il potere delle rune usando la Bottiglia delle Rune acquistabile nel negozio situato
+[X_PADDING=12]nel pannello delle rune.
+[X_PADDING=12]Sarà possibile acquistare la Bottiglia delle Rune solo con Fammenti Runatici che dropperai solo nel Dungeon Rune.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Bottig. Rune (P)					  Bottig. Rune (M)					  Bottig. Rune (G)						  Framm. Rune
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

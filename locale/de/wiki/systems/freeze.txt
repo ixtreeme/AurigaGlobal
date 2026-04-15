@@ -1,0 +1,63 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[X_PADDING=12;CENTER_ALIGN]Das Bonus-Freeze-System besteht aus 3 Elementen:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 56; X=378]
+[IMG=icon/item/70604.tga; Y = 66; X=100]
+[IMG=icon/item/70605.tga; Y = 66; X=250]
+[IMG=icon/item/70606.tga; Y = 66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Bonus einfrieren								 Bon erneut einfrieren.								Scongela-Bonus
+
+[X_PADDING=12;CENTER_ALIGN]Wenn du das Bonus-Einfrieren auf einen Ausrüstungsgegenstand mit Boni verschiebst, wird er eingefroren
+[X_PADDING=12;CENTER_ALIGN]ein völlig zufälliger Bonus. Talisman-Boni können nicht eingefroren werden.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Achtung, wenn ein Bonus eingefroren ist, hat er keine Auswirkungen auf deinen Charakter und bis er aufgetaut ist
+[X_PADDING=12]Es wird nicht möglich sein, den Gegenstand an einer Schulterschärpe zu verbessern, herzustellen und zu absorbieren.
+
+[X_PADDING=12]Boni, die nicht eingefroren werden können, sind:
+[X_PADDING=20]Mittelschwerer Schaden
+[X_PADDING=20]Fähigkeitsschaden
+[X_PADDING=20]Doppelt stark gegen Halbmenschen (zum Beispiel wenn wir ein Tritonenschwert mit Doppelhalbmenschen haben, die bereits die
+[X_PADDING=20]Bonus einfrieren, der Bonus wird nicht eingefroren).
+
+[X_PADDING=12]Der Refreeze-Bonus wird verwendet, wenn Sie bereits einen eingefrorenen Bonus auf den Gegenstand haben, der uns nicht gefällt.
+[X_PADDING=12]und versuche dann immer zufällig einen neuen Bonus einzufrieren.
+
+[X_PADDING=12]Der Auftaubonus wird verwendet, um einen Bonus aufzutauen, den wir auf einen unserer Gegenstände haben.
+[X_PADDING=12]Wenn der Bonus aufgetaut ist, ist es möglich, den Gegenstand wieder zu verbessern, herzustellen und zu absorbieren
+[X_PADDING=12]auf einer Schulterschärpe und der Charakter erhält die Wirksamkeit dieses Bonus zurück.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

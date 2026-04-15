@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[CENTER_ALIGN]At lvl 70,will appear a mission,and by clicking on it will unlock the runes panel.
+
+[X_PADDING=12]The runes panel consist in 6 normal runes plus 1 special,every rune have special power.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Ares's rune								  Era's rune								    Apollo's rune
+
+
+
+
+
+
+[X_PADDING=80]Afrodite's rune							   Poseidon's rune							     Atena's rune
+
+
+
+
+
+
+[X_PADDING=238]Zeus's rune
+
+[X_PADDING=12]The normal runes have a max power of 100%,plus their power is high plus the percentage of their 
+[X_PADDING=12]bonuses will be higher.
+
+[X_PADDING=12]Max percentuage of normals runes:
+[X_PADDING=20]- Afrodite's rune: Strong against Metin stones 15% - Agility +15
+[X_PADDING=20]- Apollo's rune: Strong Against Bosses 15% - Strength +15
+[X_PADDING=20]-  Atena's rune: Medium damage [PVM] 12% - attack value +150
+[X_PADDING=20]- Era's rune: Max SP  +1200 - Intelligence +15
+[X_PADDING=20]- Poseidon's rune: Strong against Monsters +15% - 15% chance of critical hit [PVM]
+[X_PADDING=20]- Ares's rune: Max. HP +2500 - Vitality +15
+
+[X_PADDING=12]The special rune that would be the Rune of Zeus is automatically activated when all normal runes have
+[X_PADDING=12]at least 50% of available power.
+
+[X_PADDING=12]The Rune of Zeus when active grants the character the following bonuses:
+[X_PADDING=20]- Strong Against Half Humans 10%
+[X_PADDING=20]- Half Humans Resistance 10%
+
+[X_PADDING=12]When any normal rune its power falls below 50% the rune of Zeus is extinguished
+[X_PADDING=12]automatically.
+
+[X_PADDING=12]Also, when all normal runes have at least 60% power, a special effect appears on the character.
+[X_PADDING=12](The effect can also be turned off from the runes panel).
+
+[X_PADDING=12]It is possible to recharge the power of the runes using the Rune Bottle that can be purchased in the shop located
+[X_PADDING=12]in the runes panel.
+[X_PADDING=12]The Rune Bottle will only be available for purchase with Runatic Fragments that you will only drop in the Rune Dungeon.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Rune bottle (P)					  Rune bottle (M)					  Rune bottle (G)						  Fragm. Rune
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

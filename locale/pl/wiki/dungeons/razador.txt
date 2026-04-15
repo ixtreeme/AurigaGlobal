@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 85.
+[X_PADDING=12]*Maksymalny poziom: 100.
+[X_PADDING=12]*Przepustka: Przepustka Razadora
+[X_PADDING=12]*Typ: Solo lub w grupie.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Przepustka Razadora
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]INFORMACJE:
+[X_PADDING=12]*Limit czasu: 50 minut.
+[X_PADDING=12]*Cooldown: 1 godzina
+[X_PADDING=12]*Jesli idziesz w grupie, kazdy musi miec przepustke.
+[X_PADDING=12]*Mozesz uzyskac dostep z: Poczekalni Wypraw.
+[X_PADDING=12]*Dzialajacy bonus; Sila Ognia
+[X_PADDING=12]*Zywiol: Ogien.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIETRO
+[X_PADDING=20]1. Porozmawiaj z Gardziela Am-Heha aby odblokowac pierwszy most. Po zakonczeniu zadania na wyspie porozmawiaj jeszcze raz,
+[X_PADDING=20]zeby odblokowac kolejne przejscie.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZADANIA:
+[X_PADDING=20]1. Znajdz prawidlowa Zlota Zebatke, aby odblokowac Stele Isfet.
+[X_PADDING=20]2. Pokonaj Ignatora.
+[X_PADDING=20]3. Pokonaj wszystkie potwory.
+[X_PADDING=20]4. Zdobadz Kamienie Maat, aby zniszczyc Stele Isfet
+[X_PADDING=20]5. Zniszcz Metina Purgatorium.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIETRO
+[X_PADDING=20]1. Pokonaj Razadora.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

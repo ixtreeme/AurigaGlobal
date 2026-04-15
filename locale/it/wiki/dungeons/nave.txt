@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 105.
+[X_PADDING=12]*Livello massimo: 120.
+[X_PADDING=12]*Biglietto: Vela Bianca.
+[X_PADDING=12]*Genere: Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]Vela Bianca
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 30 minuti.
+[X_PADDING=12]*Il cooldown è di 1 ora e 30 minuti.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon Speciale.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte vs Ghiaccio.
+[X_PADDING=12]*L'elemento dei mostri: Ghiaccio.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA FASE
+[X_PADDING=20]1. Il capo gruppo deve cliccare sul timone per far partire il dungeon.
+[X_PADDING=20]2. Difendi l'albero della nave per 02:30 minuti.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDA FASE
+[X_PADDING=20]1. Uccidi la Regina delle sirene.
+[X_PADDING=20]2. Uccidi il primo Idra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZA FASE
+[X_PADDING=20]1. Difendi l'albero della nave per 01:30 minuti.
+[X_PADDING=20]2. Uccidi il secondo Idra.
+[X_PADDING=20]3. Ripara l'albero della nave cliccando sui Legni di Riparazione.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTA FASE
+[X_PADDING=20]1. Difensi la nave per 01:30 minuti.
+[X_PADDING=20]2. Distruggi le Uova di Idra per fare danno all'Idra.
+[X_PADDING=20]3. Uccidi l'ultimo Idra.
+[X_PADDING=20]4. Distruggi il Tesoro di Idra per ricevere la ricompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

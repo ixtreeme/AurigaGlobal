@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. I Gaya sono una valuta che permette ad ogni giocatore di acquistare item nel Negozio Gaya.
+[X_PADDING=12]2. Puoi ottenere Gaya dall'npc Mercanti di Gaya.
+[X_PADDING=12]3. Per ottenere 1 Gaya hai bisogno di 10 Gemme più una pietra spirituale da +0 a +3.
+[X_PADDING=12]4. Il raffinamento delle Gemme è sempre al 100%.
+[X_PADDING=12]5. Per aprire il Negozio di Gaya vai dall'npc Negozio di Gaya.
+[X_PADDING=12]6. Il Negozio di Gaya ha 9 slot disponibili di cui 6 saranno bloccate, puoi sbloccare le slot
+[X_PADDING=12]acquistando l'item Ampliam. Negozio di Gaya dall'npc Mecante di Gaya.
+[X_PADDING=12]7. Il Negozio di Gaya si aggiorna automaticamente ogni 5 ore, puoi aggiornare il Negozio di Gaya manualmente
+[X_PADDING=12]acquistando l'item Resetta Negozio di Gaya dall'npc Mecante di Gaya.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DOVE TROVARE LE GEMME
+
+[X_PADDING=12]1. Puoi trovare le Gemme nei dungeon o boss delle varie mappe.
+[X_PADDING=12]2. Puoi trovare una grande quantità di Gemme nel Baule della Regina Meley.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Gemma										 Ampl. N. Gaya								 Res. Neg. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

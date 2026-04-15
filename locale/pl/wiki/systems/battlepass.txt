@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Karnet bojowy to system szeregu misji z ekskluzywnymi nagrodami.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]1. Ikona panelu Karnetu Bojowego znajduje sie obok ekwipunku lub mozesz otworzyc panel, naciskajac klawisz F8.
+[X_PADDING=12]2. Aby odblokowac panel, potrzebujesz Karnetu Bojowego.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISJE I NAGRODY
+
+[X_PADDING=12]1. Karnet Bojowy sklada sie z 10 misji
+[X_PADDING=12]2. Kazda misja musi byc ukonczona w przeciagu 25 dni
+[X_PADDING=12]3. Mozesz zobaczyc postep misji po prawej stronie panelu.
+[X_PADDING=12]4. Po ukonczeniu misji otrzymasz specjalna nagrode.
+[X_PADDING=12]5. Po ukonczeniu wszystkich misji, klikajac przycisk „Nagroda” (przycisk z monetami znajdujacymi sie na
+[X_PADDING=12]drugiej stronie) otrzymasz kilka kuponów Karnetu Bojowego.
+[X_PADDING=12]6. Kupon Karnetu Bojowego umozliwia kupowanie przedmiotów w sklepie Karnetu Bojowego.
+[X_PADDING=12]7. Wszystkie przedmioty w sklepie Karnetu Bojowego sa ekskluzywne, wiec póki Karnet Bojowy  miesiaca nie wygasnie,
+[X_PADDING=12]mozna je kupic.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

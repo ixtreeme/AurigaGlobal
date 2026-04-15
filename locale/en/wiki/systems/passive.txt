@@ -1,0 +1,94 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/passive.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. The passive skill system provides a percentage of defense against a given skill.
+[X_PADDING=12]2. Passive skills are located in the skill panel in the passive section.
+[X_PADDING=12]3. Passive skills can be upgraded from level 115 onwards.
+[X_PADDING=12]4. Passive skills are upgraded up to M10 with the Counterattack books you'll find in the
+[X_PADDING=12]Forzieri books counterattack.
+[X_PADDING=12]5. Passive skills are upgraded from G1 to P with the Soulstone Boost.
+
+[X_PADDING=12](Beware the booster with books and Soulstone Boost may fail, so it is advisable to use the readings).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PASSIVE SKILLS THAT CAN BE ENHANCED
+
+[X_PADDING=12]1. Sword Spin
+[X_PADDING=12]2. Spirit Strike 
+[X_PADDING=12]3. Ambush
+[X_PADDING=12]4. Fire Arrow
+[X_PADDING=12]5. Dark Strike
+[X_PADDING=12]6. Finger Strike
+[X_PADDING=12]7. Summon Lightning
+[X_PADDING=12]8. Shooting Dragon
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=298; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PERCENTAGES OF ENHANCEMENT
+
+[X_PADDING=12;COLOR=58ADFF]Skill level          Increase % Skill
+[X_PADDING=12]1                            1,2%
+[X_PADDING=12]2                            1,4%
+[X_PADDING=12]3                            1,9%
+[X_PADDING=12]4                            2,4%
+[X_PADDING=12]5                            2,9%
+[X_PADDING=12]6                            3,4%
+[X_PADDING=12]7                            3,8%
+[X_PADDING=12]8                            4,3%
+[X_PADDING=12]9                            4,8%
+[X_PADDING=12]10                          5,3%
+
+[X_PADDING=12;COLOR=58ADFF]Skill level          Increase % Skill
+[X_PADDING=12]M1                         12,0%
+[X_PADDING=12]M2                         12,5%
+[X_PADDING=12]M3                         13,0%
+[X_PADDING=12]M4                         13,4%
+[X_PADDING=12]M5                         13,9%
+[X_PADDING=12]M6                         14,4%
+[X_PADDING=12]M7                         15,1%
+[X_PADDING=12]M8                         15,8%
+[X_PADDING=12]M9                         16,6%
+[X_PADDING=12]M10                       17,3%
+
+[X_PADDING=12;COLOR=58ADFF]Skill level          Increase % Skill
+[X_PADDING=12]G1                         19,7%
+[X_PADDING=12]G2                         20,4%
+[X_PADDING=12]G3                         21,1%
+[X_PADDING=12]G4                         21,8%
+[X_PADDING=12]G5                         22,6%
+[X_PADDING=12]G6                         23,5%
+[X_PADDING=12]G7                         24,5%
+[X_PADDING=12]G8                         25,4%
+[X_PADDING=12]G9                         26,4%
+[X_PADDING=12]G10                       27,6%
+[X_PADDING=12]P                           30,0%
+
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_01.sub; Y=354; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_01.sub; Y=354; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_01.sub; Y=354; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_01.sub; Y=354; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_01.sub; Y=354; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_01.sub; Y=354; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_01.sub; Y=354; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_01.sub; Y=354; X=490]
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_02.sub; Y=498; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_02.sub; Y=498; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_02.sub; Y=498; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_02.sub; Y=498; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_02.sub; Y=498; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_02.sub; Y=498; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_02.sub; Y=498; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_02.sub; Y=498; X=490]
+[IMG=d:/ymir work/ui/skill/passive/p_palbang_03.sub; Y=642; X=210]
+[IMG=d:/ymir work/ui/skill/passive/p_gigongcham_03.sub; Y=642; X=250]
+[IMG=d:/ymir work/ui/skill/passive/p_amseup_03.sub; Y=642; X=290]
+[IMG=d:/ymir work/ui/skill/passive/p_hwajo_03.sub; Y=642; X=330]
+[IMG=d:/ymir work/ui/skill/passive/p_maryeong_03.sub; Y=642; X=370]
+[IMG=d:/ymir work/ui/skill/passive/p_swaeryeong_03.sub; Y=642; X=410]
+[IMG=d:/ymir work/ui/skill/passive/p_yongpa_03.sub; Y=642; X=450]
+[IMG=d:/ymir work/ui/skill/passive/p_byeorak_03.sub; Y=642; X=490]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=796; CENTER_ALIGN]

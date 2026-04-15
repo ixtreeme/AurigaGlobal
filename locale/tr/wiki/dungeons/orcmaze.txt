@@ -1,0 +1,37 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/orcmaze.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum Giris Seviyesi: 35.
+[X_PADDING=12]*Maksimum Giris Seviyesi: 60.
+[X_PADDING=12]*Giris Bileti: Ork Bileti.
+[X_PADDING=12]*Tür: Tek veya Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89106.tga; Y=15; X=478]
+[X_PADDING=459]Ork Bileti
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Zaman siniri 30 dakika.
+[X_PADDING=12]*Bekleme süresi 40 dakika.
+[X_PADDING=12]*Bir gruba katilirsaniz Herkesin bir bileti olmalidir.
+[X_PADDING=12]*Haritadan erisebilirsiniz: Lobi zindani.
+[X_PADDING=12]*Önerilen bonus: Hayvanlara karsi güçlü.
+[X_PADDING=12]*Irk: Toprak
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Yesil Ork anahtarini birakmak için orklari öldür.
+[X_PADDING=20]2. Yesil Ork anahtarini köprünün sonunda bulunan direge yerlestir.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. Tüm gölge metinlerini yok et.
+[X_PADDING=20]2. Ork sefini öldür.
+[X_PADDING=20]3. Üçüncü köprünün kilidini açmak için siyah Ork anahtarini diregin üzerine sürükleyin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÜÇÜNCÜ ASAMA
+[X_PADDING=20]1. Patrona Auriga verebilmek için tüm gölge metinlerini yok et.
+[X_PADDING=20]2. Dirilmis ork sefini öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=390; CENTER_ALIGN]

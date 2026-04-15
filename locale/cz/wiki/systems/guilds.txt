@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]Systém hodnocení cechu se skládá ze 3 lig:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Zlatá liga								   Stríbrná liga							Bronzová liga
+
+
+[X_PADDING=12]Panel hodnocení cechu mužete otevrít kliknutím na ikonu vedle inventáre nebo stisknutím klávesy F6.
+
+[X_PADDING=12]Pro vstup do ligy potrebujete trofeje:
+[X_PADDING=20]1. Zlatá liga vyžaduje 50 trofejí
+[X_PADDING=20]2. Stríbrná liga vyžaduje 30 trofejí
+[X_PADDING=20]3. Bronzová liga vyžaduje 5 trofejí
+
+[X_PADDING=12]Pro každou ligu je omezený pocet míst (kdo má nejvíce trofejí, muže zustat v lize):
+[X_PADDING=20]1. Zlatá liga 7 míst
+[X_PADDING=20]2. Stríbrná liga 12 míst
+[X_PADDING=20]3. Bronzová liga 21 míst
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Body a ceny pro ruzných lig:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* ZLATÁ LIGA:
+
+[X_PADDING=28]- Skóre:
+[X_PADDING=36]-> Výhra +3 trofeje / + 15KK pro každého clena cechu
+[X_PADDING=36]-> Prohra -3 trofeje / -5kk každému clenovi cechu
+[X_PADDING=36]-> Remíza +1 trofej / + 5kk každému clenovi cechu
+
+[X_PADDING=28]- Bonus na konci sezóny (25denní trvání sezóny):
+[X_PADDING=36]-> 1 místo: 180 kk + Truhla Zlaté ligy za první místo pro každého clena cechu
+[X_PADDING=36]-> 2. místo: 100 kk + Truhla Zlaté ligy za druhé místo pro každého clena cechu
+[X_PADDING=36]-> 3. místo: 70 kk + Truhla Zlaté ligy za tretí místo pro každého clena cechu
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* STRÍBRNÁ LIGA:
+
+[X_PADDING=28]- Skóre:
+[X_PADDING=36]-> Výhra +3 trofeje / + 5KK pro každého clena cechu
+[X_PADDING=36]-> Porážka -2 trofeje
+[X_PADDING=36]-> Remíza +1 trofej / + 2kk každému clenovi cechu
+
+[X_PADDING=28]- Bonus na konci sezóny (25denní trvání sezóny):
+[X_PADDING=36]-> 1 místo: 100 kk + Truhla Stríbrné ligy za první místo pro každého clena cechu
+[X_PADDING=36]-> 2. místo: 70 kk + Truhla Stríbrné ligy za druhé místo pro každého clena cechu
+[X_PADDING=36]-> 3. místo: 40 kk + Truhla Stríbrné ligy za tretí místo pro každého clena cechu
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRONZE LEAGUE:
+
+[X_PADDING=28]- Skóre:
+[X_PADDING=36]-> Výhra +3 trofeje
+[X_PADDING=36]-> Porážka -1 trofej
+[X_PADDING=36]-> Remíza +1 trofej
+
+[X_PADDING=28]- Bonus na konci sezóny (25denní trvání sezóny):
+[X_PADDING=36]-> 1. místo: 50 kk + Truhla Bronzové ligy za první místo pro každého clena cechu
+[X_PADDING=36]-> 2. místo: 30 kk + Truhla Bronzové ligy za druhé místo pro každého clena cechu
+[X_PADDING=36]-> 3. místo: 10 kk + Truhla Bronzové ligy za tretí místo každému clenovi cechu
+
+[X_PADDING=12]VICTORY AWARD:
+[X_PADDING=20]- Pokud cech vyhraje nekolik válek, muže získat další speciální odmeny:
+[X_PADDING=20]- 5 výher 1 Gaya každému clenovi cechu.
+[X_PADDING=20]- 10 výher 3 Gaya každému clenovi cechu.
+[X_PADDING=20]- 15 výher 15 Gaya každému clenovi cechu.
+[X_PADDING=20]- Stav vítezství svého cechu mužete zkontrolovat na informacním panelu cechu.
+
+[X_PADDING=12]DALŠÍ DETAILY:
+[X_PADDING=20]1. Válku mužete vyhlásit jinému cechu, pouze pokud je váš cech alespon na úrovni 2.
+[X_PADDING=20]2. Každý cech k vyhlášení války musí mít alespon 8 clenu.
+[X_PADDING=20]3. Na konci sezóny se všechny cechy vrátí k 0 trofejím.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

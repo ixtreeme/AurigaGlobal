@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SYSTEM BIOLOGA
+
+[X_PADDING=12]1. Ikona systemu Biologa jest przy minimapie
+[X_PADDING=12]2. Za ukonczenie misji Biologa otrzymamy stale bonusy
+[X_PADDING=12]3. Przedmioty wymagane do misji mozesz kupic u biologa w Cudownej Wiosce.
+[X_PADDING=12]4. Mozesz wlaczyc powiadomienie w panelu biologa, gdy czas oczekiwania sie skonczy.
+[X_PADDING=12]5. Mozesz uzyc Eliksiru Poszukiwacza, aby zresetowac czas odnowienia.
+[X_PADDING=12]6. Mozesz uzyc Eliksiru Poszukiwacza +, aby zresetowac czas odnowienia i poprawic jakosc przedmiotów, gdy
+[X_PADDING=12]sa dostarczane do biologa.
+[X_PADDING=12]7. Mozesz uzyc przedmiotu Magia Biologa, aby zmienic bonusy wybrane w misjach poziomu 105 i 110.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISJE I NAGRODY
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

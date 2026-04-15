@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BONUS SHOULDER SASH:
+[X_PADDING=20]1. The Shoulder Sash System allows players of level 1 and above to wear a new piece
+[X_PADDING=20]of equipment.
+[X_PADDING=20]2. Shoulder Sash can absorb ALL weapon and armor bonuses except special weapon bonuses
+[X_PADDING=20]and Mystical armor. The percentage of absorption depends on its degree of quality
+[X_PADDING=20]of the Shoulder Sash , the higher the quality, the higher the percentage of absorption.
+[X_PADDING=20]3. To enter the bonuses you have to go to the NPC Theowahdan on the map
+[X_PADDING=20]Wonder Village.
+[X_PADDING=20]4.You can purchase a 1st rank Shoulder Sash from NPC Theowahdan with the Thin Fabrics that
+[X_PADDING=20]you will drop from metin.
+[X_PADDING=20]5. You can remove bonuses from a Shoulder Sash using the remove stole bonus item.
+
+[X_PADDING=12]MIGLIORAMENTO DI UNA STOLA:
+[X_PADDING=20]1. To upgrade a Shoulder Sash, go to the NPC Theowahdan and click on Combination.
+[X_PADDING=20]2. The upgrade ALWAYS destroys the second Shoulder Sash inserted, whether successful or not
+[X_PADDING=20]in case of bankruptcy. In case there are bonuses in both Shoulder Sash , they do not
+[X_PADDING=20]they will add up, but only those of the first Shoulder Sash will be considered, as this is what
+[X_PADDING=20]is actually improved. The second has the sole function of "object for improvement".
+
+[X_PADDING=12]POSSIBLE DEGREES OF SASH :
+[X_PADDING=20;COLOR=58ADFF]DEGREES          PERCENTAGE OF BONUS ABSORPTION
+[X_PADDING=20]Basic       1%
+[X_PADDING=20]Fine           5%
+[X_PADDING=20]Noble          10%
+[X_PADDING=20]Custom     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Remove B. Sash
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

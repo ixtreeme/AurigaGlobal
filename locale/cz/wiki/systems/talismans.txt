@@ -1,0 +1,75 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Talisman ohne								 Talisman ledu								Talisman zeme
+
+
+
+
+
+
+[X_PADDING=81] Talisman temnoty							  Talisman vetru							   Talisman blesku
+
+[CENTER_ALIGN]Talismany dávají ruzné bonusy, je možné je vylepšit až na úroven +30.
+[CENTER_ALIGN]Talismany +0 je možné koupit u NPC Yonah.
+
+[X_PADDING=12]Talisman muže mít maximálne 5 bonusu:
+[X_PADDING=20]1. Od prvního do ctvrtého bonusu je potreba predmet Zesílení talismanu.
+[X_PADDING=20]2. Pro pridání pátého bonusu je potreba predmet Speciální zesílení talismanu.
+[X_PADDING=20]3. Pro zmenu bonusu u talismanu budete potrebovat predmet Zacarovat talisman.
+
+[X_PADDING=12] Možné bonusy, které mohou být na talismanu:
+[X_PADDING=20]- Proražení obrany mecem 5%
+[X_PADDING=20]- Proražení obrany obourucním mecem 5%
+[X_PADDING=20]- Proražení obrany dýkou 5%
+[X_PADDING=20]- Proražení obrany šípem 5%
+[X_PADDING=20]- Proražení obrany vejírem 5%
+[X_PADDING=20]- Proražení obrany zvonem 5%
+[X_PADDING=20]- Odolnost proti pololidem 10% 
+[X_PADDING=20]- Silný proti pololidem 10%
+[X_PADDING=20]- Silný proti príšerám 15%
+[X_PADDING=20]- Silný proti metinum  15%
+[X_PADDING=20]- Silný proti bossum 15%
+[X_PADDING=20]- Odolnost vuci temnote 15%
+[X_PADDING=20]- Odolnost vuci Zemi 15%
+[X_PADDING=20]- Odolnost vuci ledu 15%
+[X_PADDING=20]- Odolnost vuci ohni 15%
+[X_PADDING=20]- Odolnost vuci vetru 15%
+[X_PADDING=20]- Odolnost vuci bleskum 15%
+[X_PADDING=20]- Silný proti runovým príšerám 20% 
+
+[X_PADDING=12]Je možné upgradovat talisman do +10 získáváním predmetu ze startovních dungeonu, od 11+ do +30 bude potreba dropnout Truhla
+[X_PADDING=12] živlu v, které se anchází predmety nezbytné pro upgrade talismanu.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Zesílení talismanu.								 Zacarovat talisman.								Speciální zesílení talismanu.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

@@ -1,0 +1,32 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/aracnidi.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 60.
+[X_PADDING=12]*Maximum level: 80.
+[X_PADDING=12]*Ticket: Arachnids Key.
+[X_PADDING=12]*Type: Solo and Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30324.tga; Y=15; X=478]
+[X_PADDING=459]Arachnids Key
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 30 minutes.
+[X_PADDING=12]*Cooldown: 40 minutes.
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Animals.
+[X_PADDING=12]*Element of monsters: Earth.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FISRT PHASE
+[X_PADDING=20]1. Kill the Spider Baron.
+[X_PADDING=20]2. Click on the Arachnids Whistle to proceed to the next phase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND PHASE
+[X_PADDING=20]1. In order to do damage to the Spider Baroness, first destroy the Spider Eggs.
+[X_PADDING=20]2. Kill the Spider Baroness.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=332; CENTER_ALIGN]

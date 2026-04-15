@@ -1,0 +1,75 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/talismans_system.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=30; X=378]
+[IMG=icon/item/9600.tga; Y=40; X=100]
+[IMG=icon/item/9830.tga; Y=40; X=250]
+[IMG=icon/item/10060.tga; Y=40; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=114; X=378]
+[IMG=icon/item/10290.tga; Y=124; X=100]
+[IMG=icon/item/10520.tga; Y=124; X=250]
+[IMG=icon/item/10750.tga; Y=124; X=400]
+
+
+
+
+
+[X_PADDING=85]Feuer Talisman								Eis Talisman								Earth Talisman
+
+
+
+
+
+
+[X_PADDING=81] Dunkler Talisman							  Wind Talisman							   Lightning Talisman
+
+[CENTER_ALIGN]Der Talisman ist ein Gegenstand, der der Persönlichkeit neue Boni verleihen kann, es ist möglich, diese auf maximal +30 zu verbessern.
+[CENTER_ALIGN]Es wird möglich sein, einen Talisman +0 von NPC Yonah zu kaufen.
+
+[X_PADDING=12]Auf dem Talisman können maximal 5 Boni eingefügt werden:
+[X_PADDING=20]1.Vom ersten bis zum vierten Bonus wird der Gegenstand Talisman verstärken benötigt.
+[X_PADDING=20]2. Um den fünften Bonus hinzuzufügen, wird der Gegenstand Stärkt Talisman benötigt.
+[X_PADDING=20]3. Um Boni bei einem Talisman zu ändern, benötigen Sie den Gegenstand Talisman verzaubern.
+
+[X_PADDING=12] Bonis die der Talisman haben kann:
+[X_PADDING=20]- Schwert Verteidigungs Bruch 5%
+[X_PADDING=20]- Zweihand Verteidigung Bruch 5%
+[X_PADDING=20]- Dolch Verteidigung Bruch 5%
+[X_PADDING=20]- Pfeil Verteidigung Bruch 5%
+[X_PADDING=20]- Fächer Verteidigung Bruch 5%
+[X_PADDING=20]- Glocke Verteidigung Bruch 5%
+[X_PADDING=20]- Halbmenschen Resistenz 10%
+[X_PADDING=20]- Stark gegen Halbmenschen 10%
+[X_PADDING=20]- Stark gegen Monster 15%
+[X_PADDING=20]- Stark gegen Metins  15%
+[X_PADDING=20]- Stark gegen Bosse 15%
+[X_PADDING=20]- Dunkelheits Resistenz 15%
+[X_PADDING=20]- Erd Resistenz 15%
+[X_PADDING=20]- Eis Resistenz 15%
+[X_PADDING=20]- Feuer Resistenz 15%
+[X_PADDING=20]- Wind Resistenz 15%
+[X_PADDING=20]- Blitz Resistenz 15%
+[X_PADDING=20]- Stark gegen Runen Monster 20% 
+
+[X_PADDING=12]Es ist möglich, den Talisman bis +10 zu verbessern, indem man Gegenstände aus den Start-Dungeons erhält, von 11+ auf +30 muss die Truhe fallengelassen werden
+[X_PADDING=12]Elementar, wo die für die Aufrüstung des Talismans erforderlichen Gegenstände im Inneren herauskommen.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=571; X=378]
+[IMG=icon/item/rafforza_talismani.tga; Y=581; X=100]
+[IMG=icon/item/incanta_talismani.tga; Y=581; X=250]
+[IMG=icon/item/marmo_talismano.tga; Y=581; X=400]
+
+
+
+
+
+[X_PADDING=82]Talisman Boni Hinzufügen.								 Talisman Verzaubern.								Strengthens Talisman.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=658; CENTER_ALIGN]

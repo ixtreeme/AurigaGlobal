@@ -1,0 +1,37 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/orcmaze.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 35.
+[X_PADDING=12]*Maximum level: 60.
+[X_PADDING=12]*Ticket: Ticket of the Orcs.
+[X_PADDING=12]*Type: Solo and Party.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89106.tga; Y=15; X=478]
+[X_PADDING=459]Ticket of the Orcs
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 30 minutes.
+[X_PADDING=12]*Cooldown: 40 minutes.
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Strong against Animals.
+[X_PADDING=12]*Element of monsters: Earth.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST PHASE
+[X_PADDING=20]1. Kill the orcs to drop the Green Orc Key.
+[X_PADDING=20]2. Insert the Green Orc Key into the seal found at the end of the bridge.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND PHASE
+[X_PADDING=20]1. Destroy all of the Metin of Shadow
+[X_PADDING=20]2. Kill the Chief Orc.
+[X_PADDING=20]3. Drag the Black Orc Key onto the seal to unlock the third bridge.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]THIRD PHASE
+[X_PADDING=20]1. Destroy all the Metin of Shadow to be able to do damage to the boss.
+[X_PADDING=20]2. Kill the Reborn Chief Orc.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=390; CENTER_ALIGN]

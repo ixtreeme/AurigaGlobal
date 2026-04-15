@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES SYSTEMS
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y = 31; X=434]
+[IMG=icon/item/70065.tga; Y = 51; X=56]
+[IMG=icon/item/70401.tga; Y = 51; X=156]
+[IMG=icon/item/70402.tga; Y = 51; X=256]
+[IMG=icon/item/70403.tga; Y = 51; X=356]
+[IMG=icon/item/70404.tga; Y = 51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]C. B. Verzauberungskostüm übertragen Special C.E. 5% Special C.E+ 10% Special B.R.
+
+[X_PADDING=12]Für jedes Kostüm, das du beim NPC "Confucio" kaufst, kann es ansonsten im Item-Shop gekauft werden oder der Battle Pass hat 3
+[X_PADDING=12]Normaler Bonus mit zufälligem %(Prozentsatz)
+[X_PADDING=12]Der normale Bonus kann mit einem Verzauberungskostüm getauscht werden.
+[X_PADDING=12]Es ist möglich, nur 2 Spezialboni für jedes Kostüm hinzuzufügen, die erforderlichen Gegenstände sind 2:
+[X_PADDING=20]1. Spezielle Kostümverzauberung (max. 5%)
+[X_PADDING=20]2. Spezielle Kostümverzauberung+ (max. 10%)
+
+[X_PADDING=12] Die Boni, die mit der Spezialkostümverzauberung eingefügt werden können, sind:
+[X_PADDING=20]- Stark gegen Metinsteine
+[X_PADDING=20]- Stark gegen Monster
+[X_PADDING=20]- Stark gegen Bosse
+[X_PADDING=20]- Widerstand gegen Halbmenschen
+[X_PADDING=20]- Stark gegen halbe Menschen
+
+[X_PADDING=12](Der Sonderbonus kann mit einem Sonderbonus-Entfernen entfernt werden)
+
+[X_PADDING=12]Du kannst Boni von einem Kostüm auf ein anderes übertragen, indem du den NPC „Theowahdan“ verwendest und den Gegenstand hast
+[X_PADDING=12]Kostüm-Bonustransfer.
+
+[X_PADDING=12]Wenn das Panel des Bonustransfer-Zolls geöffnet ist, erscheinen 4 Slots:
+[X_PADDING=20]1.Links wird das alte Kostüm platziert.
+[X_PADDING=20]2.Oben wird das Element "Transfer Bonus Kostüm" platziert.
+[X_PADDING=20]3.Rechts befindet sich das Kostüm, mit dem Sie den Bonus überweisen möchten.
+[X_PADDING=20]4.Unten ist das neue Kostüm mit altem Bonus zu sehen.
+
+[X_PADDING=12]Achtung, wenn Ihr altes eigenes Kostüm einen Sonderbonus hat, indem Sie den Sonderbonus übertragen
+[X_PADDING=12]werden entfernt und das alte Kostüm zerstört.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y = 444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS-KOSTÜME, DIE AUF VERSCHIEDENEN KOSTÜMEN SEIN KÖNNEN
+
+[X_PADDING=12] Kostüme:
+[X_PADDING=20] - max. HP +2000
+[X_PADDING=20] - max. SP +800
+[X_PADDING=20]- Schaden wird von SP 8% absorbiert
+[X_PADDING=20]- Schaden wird von HP 8% absorbiert
+[X_PADDING=20]- Angriffswert +50
+[X_PADDING=20]- Chance auf EXP-Bonus 15 %
+[X_PADDING=20]- Chance auf doppelten Item-Drop von 15%
+
+[X_PADDING=12] Frisuren:
+[X_PADDING=20]- Angriffsgeschwindigkeit +8%
+[X_PADDING=20]- Chance auf kritische Treffer +8%
+[X_PADDING=20]- Chance auf einen durchdringenden Treffer +8 %
+[X_PADDING=20]- Widerstand gegen Halbmenschen 10%
+[X_PADDING=20]- Chance auf doppeltes Yang-Drop +15%
+[X_PADDING=20]- HP-Regeneration +15%
+[X_PADDING=20]- SP-Regeneration +15%
+
+[X_PADDING=12] Waffen-Skin:
+[X_PADDING=20]- Intelligenz +10
+[X_PADDING=20]- Stärke +10
+[X_PADDING=20]- Beweglichkeit +10
+[X_PADDING=20]- Vitalität +10
+[X_PADDING=20]- Stark gegen Untote +15%
+[X_PADDING=20]- Stark gegen Devil's +15%
+[X_PADDING=20]- Stark gegen Orks +15%
+[X_PADDING=20]- Stark gegen Tiere +15%
+[X_PADDING=20]- Stark gegen Halbmenschen +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

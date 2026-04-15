@@ -1,0 +1,88 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[CENTER_ALIGN]No level 70, uma missão aparecerá e clicar nela para desbloquear o painel de runas.
+
+[X_PADDING=12]O painel de runas consiste em 6 runas normais mais 1 runa especial, cada runa contém um poder especial.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Runa de Ares									  Runa de Hera								    Runa de Apolo
+
+
+
+
+
+
+[X_PADDING=80]Runa de Afrodite							   Runa de Poseidon							     Runa de Atenas
+
+
+
+
+
+
+[X_PADDING=238]Runa do Zeus
+
+[X_PADDING=12]As runas normais têm um poder máximo de até 100%, quanto maior for seu poder, maiores as porcentagens de
+[X_PADDING=12]seus bônus serão altos.
+
+[X_PADDING=12]Percentuais máximos de runas normais:
+[X_PADDING=20]- Runa de Afrodite: Forte contra metin 15% - Destreza +15
+[X_PADDING=20]- Runa de Apolo: Forte contra Boss 15% - Força +15
+[X_PADDING=20]- Runa de Atenas: Dano Médio[PVM] 12% - Valor de ataque +150
+[X_PADDING=20]- Runa de Hera: Máx. SP +1200 - Intelligência +15
+[X_PADDING=20]- Runa de Poseidon: Forte contra Monstros +15% - 15% de chances golpes críticos [PVM]
+[X_PADDING=20]- Runa de Ares: Máx. HP +2500 - Vitalidade +15
+
+[X_PADDING=12]A runa especial que seria a Runa de Zeus é ativada automaticamente quando todas as runas normais
+[X_PADDING=12]pelo menos 50% da energia disponível.
+
+[X_PADDING=12]A Runa de Zeus, quando ativa, concede ao personagem os seguintes bônus:
+[X_PADDING=20]- Forte contra Semi-Humanos 10%
+[X_PADDING=20]- Resistência Semi-Humanos 10%
+
+[X_PADDING=12]Quando qualquer runa normal seu poder cai abaixo de 50%, a runa de Zeus é extinta
+[X_PADDING=12]automaticamente.
+
+[X_PADDING=12]Além disso, quando todas as runas normais têm pelo menos 60% do poder, um efeito especial aparece no personagem.
+[X_PADDING=12](O efeito também pode ser desligado no painel de runas).
+
+[X_PADDING=12]É possível recarregar o poder das runas usando a Garrafa Rune que pode ser comprada na loja localizada
+[X_PADDING=12]no painel de runas.
+[X_PADDING=12]A Garrafa de Runa só estará disponível para compra com Fragmentos de Runa, que só dropa no Calabouço Rúnico.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Garrafa de Runa (P)					  Garrafa de Runa (M)					  Garrafa de Runa (G)						  Fragmentos de Runa
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

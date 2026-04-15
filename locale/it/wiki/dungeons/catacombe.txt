@@ -1,0 +1,41 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/catacombe.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUISITI:
+[X_PADDING=12]*Livello minimo: 75.
+[X_PADDING=12]*Livello massimo: 95.
+[X_PADDING=12]*Biglietto: Testa Ristretta.
+[X_PADDING=12]*Genere: Solo e Gruppo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30320.tga; Y=15; X=478]
+[X_PADDING=462]Testa Ristretta
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTRE INFORMAZIONI:
+[X_PADDING=12]*Il limite di tempo è di 40 minuti.
+[X_PADDING=12]*Il cooldown è di 1 ora.
+[X_PADDING=12]*Nel caso in cui si entra con il gruppo, ognuno deve avere il biglietto.
+[X_PADDING=12]*Si può accedere tramite la mappa: Lobby Dungeon.
+[X_PADDING=12]*Il bonus che vale sui mostri: Forte contro Zombie.
+[X_PADDING=12]*L'elemento dei mostri: Oscurità.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SVOLGIMENTO DEL DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMO PIANO
+[X_PADDING=20]1. Uccidi i mostri per droppare la Chiave Crist. d. Anime.
+[X_PADDING=20]2. Trascina la Chiave Crist. d. Anime sulla Statua di Kud per proseguire con la prossima fase.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECONDO PIANO
+[X_PADDING=20]1. Distruggi la Metin della Ritorsione corretta.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERZO PIANO
+[X_PADDING=20]1. Uccidi il Tartaros corretto.
+[X_PADDING=20]2. Trascina il Totem della Smorfia sull'Obelisco di Basalto.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUARTO PIANO
+[X_PADDING=20]1. Uccidi Charon.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]QUINTO PIANO
+[X_PADDING=20]1. Uccidi Azrael.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=440; CENTER_ALIGN]

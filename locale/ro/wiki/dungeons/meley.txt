@@ -1,0 +1,56 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 75.
+[X_PADDING=12]*Nivel maxim: 120.
+[X_PADDING=12]*Tip: Breaslã.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 1 orã.
+[X_PADDING=12]*Timpul de aºteptare este de 3 ore.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Puterea Focului.
+[X_PADDING=12]*Elementul monºtrilor: Foc.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA ETAPA - COLPIRE LE STATUE
+[X_PADDING=20]Ca prim scop, participanþii vor trebuie sã scadã PV-ul Statuilor pânã la 75%. Acest lucru nu va fi uºor deoarece
+[X_PADDING=20]vor fi invocaþi monºtri puternici în tot acest timp. Atunci când o statuie va trece de la o etapã la alta
+[X_PADDING=20]aceasta îºi va schimba culoarea. Atunci când o statuie pierde 25% din PV, va deveni de culoare roºu clar ºi
+[X_PADDING=20]va deveni invincibilã. Când va trece la etapa 2 monºtrii vor dispãrea ºi nu vei mai putea interacþiona cu
+[X_PADDING=20]Statuile.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAPA 2 - UOALE DE DRAGON
+[X_PADDING=20]În aceastã etapã, participanþii vor trebuie din nou sã scadã PV-ul Statuilor pânã la 50%. Dar tura aceasta va fi
+[X_PADDING=20]ºi mai greu deoarece vor fi invocaþi monºtri mai puternici ºi pe lângã ei vor apãrea ºi 4 Ouã de Dragon.
+[X_PADDING=20]Ouãle de Dragon fac ca Statuile sã devinã invincibile, de aceea oricând vor apãrea Ouã va trebuii mai întâi
+[X_PADDING=20]sã le distrugi. Îndatã ce Statuile ajung la 50% din PV-ul lor, vor deveni din nou invincibile. Iar atunci
+[X_PADDING=20]culoarea lor se va schimba din nou, vei trece la urmãtoarea etapã.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAPA 3 - GARDIANII DRAGONULUI
+[X_PADDING=20]În aceastã etapã, participanþii vor trebuie din nou sã scadã PV-ul Statuilor pânã la 0%. De data aceastã vor
+[X_PADDING=20]apãrea din nou Ouãle din etapa trecutã, un numãr mai mare de monºtrii ºi 4 Gardieni Dragon Idall. Aceºti
+[X_PADDING=20]gardieni trebuie sã fie omorâþi înainte de a completa aceastã etapã, în caz contrariu vei eºua dungeon-ul.
+[X_PADDING=20]ªi de aceastã datã la 0% PV Statuile vor deveni de culoare albastrã. Pentru a le putea distruge va trebuii
+[X_PADDING=20]sã foloseºti Inel Focul Dragonului, ce pot fi dropate de la monºtri. De îndatã ce pui Inelul pe Statuie,
+[X_PADDING=20]aceasta va deveni de culoare verde. Odatã ce toate Statuile vor fi de culoare verde vei putea trece
+[X_PADDING=20]la urmãtoarea etapã.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMA ETAPA
+[X_PADDING=20]La fiecare completare a unei etape, Statuile vor ataca Dragonul Meley, iar la completarea ultimei etape
+[X_PADDING=20]acesta va fugi. Iar acum participanþii îºi vor putea lua recompensa de la NPC-ul Cufãr Dragon Auriu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CAZURI DE EªUARE
+[X_PADDING=20]Limita de timp este de 1 orã. Pe lângã asta vei eºua dungeon-ul dacã Gardienii Dragon Idall nu vor fi
+[X_PADDING=20]omorâþi înainte de a completa ultima etapã sau dacã Ouãle vor fi invocate înainte de a pune Inelele
+[X_PADDING=20]pe Statui.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]RECOMPENSA
+[X_PADDING=20]În cazul în care dungeon-ul va fi completat toþi participanþii vor fi recompensaþi. Aceºtia vor putea alege
+[X_PADDING=20]dintre: Cufãr Regina Meley ºi Cufãr Gardã Dragon.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

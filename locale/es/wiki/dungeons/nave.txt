@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUERIMIENTOS:
+[X_PADDING=12]*Nivel mínimo: 105.
+[X_PADDING=12]*Nivel maximo: 120.
+[X_PADDING=12]*Ticket: White Sail.
+[X_PADDING=12]*Type: Grupo.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]White Sail
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTRA INFORMACIÓN:
+[X_PADDING=12]*Límite de tiempo 30 minutos.
+[X_PADDING=12]*Enfriamiento: 1 hora y 30 minutos
+[X_PADDING=12]*Puedes acceder desde el mapa: Special Lobby Dungeon.
+[X_PADDING=12]*Bono recomendado: Poder de hielo.
+[X_PADDING=12]*Elemento de monstruos: Hielo.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIENTRAS CORRE LA MAZMORRA
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMER PISO
+[X_PADDING=20]1. El líder del grupo debe hacer clic en el timón para iniciar la mazmorra.
+[X_PADDING=20]2. Defiende el mástil del barco a las 02:30.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEGUNDO PISO
+[X_PADDING=20]1. Mata a la Reina de las Sirenas.
+[X_PADDING=20]2. Mata a la primera hidra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TERCER PISO
+[X_PADDING=20]1. Defiende el mástil del barco a la 01:30.
+[X_PADDING=20]2. Mata a la segunda hidra.
+[X_PADDING=20]3. Repare el mástil del barco haciendo clic en Reparar maderas.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CUARTO PISO
+[X_PADDING=20]1. Defiende el mástil del barco a la 01:30.
+[X_PADDING=20]2. Destruye los Huevos de Hidra para dañar a la Hidra.
+[X_PADDING=20]3. Mata a la última hidra.
+[X_PADDING=20]4. Destruye el tesoro de Hydra para recibir la recompensa.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

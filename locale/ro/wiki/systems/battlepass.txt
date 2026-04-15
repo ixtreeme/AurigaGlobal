@@ -1,0 +1,27 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/battlepass.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Battlepass e un sistem ce conþine o serie de misiuni cu recompense exclusive.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA
+
+[X_PADDING=12]1. Icoana panoului Battlepass se aflã în partea stângã a inventarului sau poate fi deschisã apãsând F8.
+[X_PADDING=12]2. Pentru a debloca panoul Battlepass vei avea nevoie de item-ul Battle Pass.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=106; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISIUNILE ªI RECOMPENSELE
+
+[X_PADDING=12]1. Battlepass-ul este format din 10 misiuni.
+[X_PADDING=12]2. Orice misiune va trebuii completatã în maxim 25 de zile.
+[X_PADDING=12]3. În dreapta panoului vei putea gãsi statusul oricãrei misiuni.
+[X_PADDING=12]4. Atunci când termini o misiune vei primi o recompensã specialã.
+[X_PADDING=12]5. Când toate misiunile au fost completate va trebuie sã dai click pe butonul "Premiu" (butonul cu monezile care se
+[X_PADDING=12]aflã pe pagina a2-a) pentru a primit diverse Vouchere Battlepass.
+[X_PADDING=12]6. Cu voucherele Battlepass vei putea achiziþiona iteme în magazinul Battlepass.
+[X_PADDING=12]7. Toate itemele care se aflã în magazinul Battlepass sunt exclusive, deci dacã se terminã Battlepass-ul lunii
+[X_PADDING=12]nu va mai fi posibil achiziþia acelor iteme.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=279; CENTER_ALIGN]

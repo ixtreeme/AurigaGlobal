@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Guia para iniciantes.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]INÍCIO:
+[X_PADDING=12]Progrida no Map1 pelo menos até o nível 25–30. Durante isso, quebre Metins para conseguir Pergaminhos de Bênção e itens de melhoria.
+[X_PADDING=20]Não esqueça dos Capitães Brutais — eles dropam armas de nível 30.
+[X_PADDING=20]No nível 26, vale a pena comprar do NPC uma armadura nível 26 e um capacete nível 21, que podem ser facilmente aprimorados para +9.
+
+[X_PADDING=12;COLOR=ffff00]NÍVEL 30:
+[X_PADDING=12]Vá para o Map2 para evoluir e farmar. Se tiver bons equipamentos (armadura, capacete e arma nível 30), os Metins de nível 45 não serão problema.
+[X_PADDING=20]Durante o farm, não esqueça das dungeons! Aproveite o tempo para completá-las,
+[X_PADDING=20]para obter montarias, pets e outros itens valiosos.
+[X_PADDING=20]Dos Metins Orcs, você vai precisar de uma armadura nível 42 e escudo nível 41 para sobreviver no próximo mapa.
+
+[X_PADDING=12;COLOR=ffff00]NÍVEL 50:
+[X_PADDING=20]Quando chegar aqui, deve ter um pet e pelo menos 6 montarias no inventário, pois cada dungeon dá 2.
+[X_PADDING=20]Progrida até o nível 65 e não esqueça do Open Boss — ele pode dar bônus lendários valiosos!
+[X_PADDING=20]Você precisará de uma arma nível 65 que, ao ser aprimorada para +9, concede +55% de poder contra demônios.
+[X_PADDING=20]Também pode conseguir uma armadura nível 65 no Open Boss, essencial para o próximo mapa.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Regras do Jogo!!
+
+[FONT_SIZE=18;COLOR=00ff00] Regras de chat e comportamento
+[X_PADDING=12]É PROIBIDO assediar, ameaçar ou insultar outros jogadores!
+[X_PADDING=12]É PROIBIDO provocar assuntos políticos ou religiosos no canal global!
+[X_PADDING=12]É PROIBIDO spam no chat — incluindo mensagens repetidas e propagandas!
+
+[FONT_SIZE=18;COLOR=00ff00] Segurança de conta e dados
+[X_PADDING=12]VOCÊ é responsável pela segurança da sua conta! Não compartilhe seus dados de login!
+[X_PADDING=12]Os membros da equipe NUNCA pedirão sua senha — se isso acontecer, denuncie imediatamente!
+[X_PADDING=12]É PROIBIDO acessar a conta de outro jogador, mesmo que ele forneça os dados.
+
+[FONT_SIZE=18;COLOR=00ff00] Staff e suporte
+[X_PADDING=12]É PROIBIDO incomodar ou chamar os GMs sem motivo! Use o sistema de tickets ou o fórum.
+[X_PADDING=12]As decisões dos GMs são finais. Em caso de disputa, peça uma revisão educadamente.
+
+[FONT_SIZE=18;COLOR=00ff00] Exploração e justiça
+[X_PADDING=12]É PROIBIDO usar programas ou ferramentas que dêem vantagem (bot, speedhack, zoomhack, etc.).
+[X_PADDING=12]É PROIBIDO explorar bugs ou a inação de outros jogadores (ex.: comércio, PvP).
+[X_PADDING=12]É PROIBIDO manipular intencionalmente sistemas de PvP, eventos ou mapas.
+
+[FONT_SIZE=18;COLOR=00ff00] Comércio, lojas e hacks
+[X_PADDING=12]É PROIBIDO comércio entre servidores!
+[X_PADDING=12]É PROIBIDO anúncios falsos ou enganosos nas lojas (ex.: 1 yang = 1kk)!
+[X_PADDING=12]Qualquer programa de hack, incluindo macros, é ESTRITAMENTE PROIBIDO!
+[X_PADDING=12]É PROIBIDO vender ou oferecer seus itens ou conta por dinheiro real!
+[X_PADDING=12]É PROIBIDO enganar ou obter vantagem injusta no comércio!
+
+[FONT_SIZE=18;COLOR=00ff00] Bugs e denúncias
+[X_PADDING=12]Se encontrar um bug, você DEVE denunciá-lo — é ESTRITAMENTE PROIBIDO explorá-lo!
+[X_PADDING=12]Explorar bugs ameaça a segurança do servidor e é severamente punido!
+
+[FONT_SIZE=18;COLOR=00ff00] Proibições gerais
+[X_PADDING=12]É PROIBIDO usar linguagem ofensiva, incitar ódio ou discriminação — somos todos humanos!
+[X_PADDING=12]Ninguém pode usar sua conta além de você — nem mesmo seus amigos!
+[X_PADDING=12]É PROIBIDO promover ou linkar outros servidores!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]QUEBRAR AS REGRAS PODE RESULTAR EM BANIMENTO PERMANENTE DE HARDWARE!
+[X_PADDING=12]

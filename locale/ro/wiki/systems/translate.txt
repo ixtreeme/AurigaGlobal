@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Deschizând fereastra mesajelor private în partea de sus vei gãsi butonul Traducãtor Google.
+[X_PADDING=12]2. Dacã butonul este activat, mesajele pe care le primeºti într-o altã limbã vor fi traduse automat în limba ta.
+[X_PADDING=12]3. Dacã butonul este dezactivat, vei primi mesajul original.
+
+[X_PADDING=12](Atenþie traducerea automatã funcþioneazã doar pentru mesajele private).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]

@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/ochao.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ANFORDERUNGEN:
+[X_PADDING=12]*Minimum level: 100.
+[X_PADDING=12]*Maximum level: 115.
+[X_PADDING=12]*Ticket: Ochao Ticket.
+[X_PADDING=12]*Type: Einzeln und Gruppe
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/76025.tga; Y=15; X=478]
+[X_PADDING=460]Ochao Ticket.
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WEITERE INFORMATIONEN:
+[X_PADDING=12]*Zeitlimit 30 minuten.
+[X_PADDING=12]*Wartezeit: 1 Stunde und 30 minuten
+[X_PADDING=12]*In einer gruppe brauchen alle ein Ticket.
+[X_PADDING=12]*Du kannst darauf zugreifen auf: Dungeon Lobby.
+[X_PADDING=12]*Empfohlener Bonus: Stark gegen Orks.
+[X_PADDING=12]*Element der Monster: Wind.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WÄREND DEM DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ERSTE PHASE
+[X_PADDING=20]1. Töte 100 Monster.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ZWEITE PHASE
+[X_PADDING=20]1. Töte Lord Ochao in der Mitte der Karte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRITTE PHASE
+[X_PADDING=20]1. Zerstöre 4 metins Ochao in der Mitte der Karte.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]VIERTE PHASE
+[X_PADDING=20]1. Töte den Starken Ochao Lord in der Mitte der Karte.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

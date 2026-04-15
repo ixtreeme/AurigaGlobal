@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]Das Unterstützungs-Shamy-System ist ein System, das Ihnen die Möglichkeit bietet, einen Schamanen zu beschwören, der automatisch Buffs gibt
+[CENTER_ALIGN]zu deinem pg.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES SYSTEMS
+
+[X_PADDING=12]1.Das Symbol für das beschämende Support-Panel befindet sich neben dem Inventar oder Sie können das Panel öffnen
+[X_PADDING=12]Drücken der X-Taste.
+
+[X_PADDING=12]2.Um das Panel der Schamanenunterstützung freizuschalten, benötigen Sie den Gegenstand Unlock support Dragon Force oder Unlock support Healing Force
+[X_PADDING=12]Schalte die Unterstützung der Heilkraft frei
+
+[X_PADDING=12]3 Wenn Sie eines dieser Elemente haben, indem Sie mit der rechten Maustaste darauf klicken, erscheint ein Feld, in dem Sie fragen werden
+[X_PADDING=12]um einen Namen einzugeben und das Geschlecht Ihres Unterstützungsschamanen auszuwählen.
+
+[X_PADDING=12]4.Der Support Shamy beginnt jedes Mal ab Level 1 und kann Level 120 erreichen, je höher der Level, desto höher der Prozentsatz
+[X_PADDING=12]wird steigen. Der Unterstützungsschamane nimmt nur XP, wenn er beschworen wird und wenn Monster getötet werden.
+
+[X_PADDING=12]5. Der Schamane beginnt mit einer Grundausrüstung, Sie haben die Wahl
+[X_PADDING=12]die Ästhetik von ihm/ihr durch das Öffnen des auf dem Panel befindlichen Ladens.
+
+[X_PADDING=12]6. Es ist unmöglich, 2 Schamanenunterstützung zusammen zu beschwören, und es ist unmöglich, sie in Guild Wars zu beschwören
+
+[X_PADDING=12]7. Sie können den Namen Ihres Schamanen ändern, indem Sie den Gegenstand Magie des Namens verwenden.
+
+[X_PADDING=12]8. Sie können das Geschlecht Ihres Schamanen ändern, indem Sie den Gegenstand Schriftrolle der Transformation verwenden.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Heilschami Freischalten						 Drachenschami Freischalten					 Magie des Namens					 Rolle der Transformation.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

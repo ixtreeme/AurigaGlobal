@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]A céh ranglétra rendszer 3 ligát tartalmaz:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Arany Liga								   Ezüst Liga							 Bronz Liga
+
+
+[X_PADDING=12]A céh ranglétra megnyitásához kattints az ikonra a leltárad mellett, vagy nyomd meg az F6 gombot.
+
+[X_PADDING=12]Hogy belépj a ligába, legalább az alábbi trófeákra lesz szükséged:
+[X_PADDING=20]1. Arany Liga trófea szükséges: 50
+[X_PADDING=20]2. Ezüst Liga trófea szükséges: 30
+[X_PADDING=20]3. Bronz Liga trófea szükséges: 5
+
+[X_PADDING=12]Minden ligában limitált helyezések vannak (akinek a legtöbb trófeája van, az marad a ligában):
+[X_PADDING=20]1. Arany Liga  7 helyezés
+[X_PADDING=20]2. Ezüst 12   helyezés
+[X_PADDING=20]3. Bronz Liga 21 helyezés
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Pontok és nyeremények a különbözo ligákra:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* ARANY LIGA:
+
+[X_PADDING=28]- Pontozás:
+[X_PADDING=36]-> Gyozelem: +3 trófea / + 15KK minden egyes céh tagnak
+[X_PADDING=36]-> Vereség: -3 trófea / -5kk minden egyes céh tagnak
+[X_PADDING=36]-> Döntetlen: +1 trófea / + 5kk minden egyes céh tagnak
+
+[X_PADDING=28]- Szezon végéig tartó bónuszok (25 napig tart egy szezon):
+[X_PADDING=36]-> 1. Helyezés: 180kk + 1. P Arany Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 2. Helyezés: 100kk + 2. P Arany Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 3. Helyezés: 70kk + 3. P Arany Liga Láda minden egyes céh tagnak
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* EZÜST LIGA:
+
+[X_PADDING=28]- Pontozás:
+[X_PADDING=36]-> Gyozelem: +3 trófea / + 5KK minden egyes céh tagnak
+[X_PADDING=36]-> Vereség: -2 trófea
+[X_PADDING=36]-> Döntetlen: +1 trófea / + 2kk minden egyes céh tagnak
+
+[X_PADDING=28]- Szezon végéig tartó bónuszok (25 napig tart egy szezon):
+[X_PADDING=36]-> 1 Helyezés: 100kk + 1. P Ezüst Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 2nd Helyezés: 70kk + 2. P Ezüst Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 3rd Helyezés: 40kk + 3. P Ezüst Liga Láda minden egyes céh tagnak
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRONZ LIGA:
+
+[X_PADDING=28]- Pontozás:
+[X_PADDING=36]-> Gyúzelem: +3 trófea
+[X_PADDING=36]-> Vereség: -1 trófea
+[X_PADDING=36]-> Döntetlen: +1 trófea
+
+[X_PADDING=28]- Szezon végéig tartó bónuszok (25 napig tart egy szezon):
+[X_PADDING=36]-> 1. Helyezés: 50kk + 1st P Bronz Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 2. Helyezés: 30kk + 2nd P Bronz Liga Láda minden egyes céh tagnak
+[X_PADDING=36]-> 3. Helyezés: 10kk + 3rd P Bronz Liga Láda minden egyes céh tagnak
+
+[X_PADDING=12]GYOZELMI DÍJ:
+[X_PADDING=20]- Ha egy céh több háborút is megnyer, egyéb speciális nyereményeket is kaphatnak:
+[X_PADDING=20]- 5 gyozelem 1 Gaya minden egyes céh tagnak.
+[X_PADDING=20]- 10 gyozelem 3 Gaya minden egyes céh tagnak.
+[X_PADDING=20]- 15 gyozelem 15 Gaya minden egyes céh tagnak.
+[X_PADDING=20]- A céhed gyozelmeit a céh infó panelen tudod megtekinteni.
+
+[X_PADDING=12]EGYÉB RÉSZLETEK:
+[X_PADDING=20]1. Csak akkor tudsz másik céhet háborúra hívni, ha legalább 2-es szintu a céhed!
+[X_PADDING=20]2. Minden céhnek legalább 8 tagja kell legyen, mielött háborút hírdet!
+[X_PADDING=20]3. A szezonok végén minden céh visszakerül 0 trófeára.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

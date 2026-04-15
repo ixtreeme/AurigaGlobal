@@ -1,0 +1,17 @@
+1	A Boss Gyilkos	Hátravan: %s	Mob: |cffff9d9d|H|h%s|h|r	Öld meg a |cffff9d9d|H|h%s-t|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+2	A PvP Király	Hátravan: %s	Minimum szint: |cffff9d9d|H|h%s+|h|r	Melyik játékost: |cffff9d9d|H|h[Lv.%s+]|h|r	Ölj játékosokat hogy befejezd	a küldetést és jutalmat magkapd
+5	Tudok varázsolni ?!!	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Használj |cffff9d9d|H|h%s-at|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+6	Sell the item	Item to sell: %s	Item: |cffff9d9d|H|h%s|h|r	Sell |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+8	Refine the item	Item to refine: %s	Item: |cffff9d9d|H|h%s|h|r	Refine |cffff9d9d|H|h%s|h|r to	finish the quest and	receive the reward.
+9	Kuchiyose Nagymester	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Pusztítsd el |cffff9d9d|H|h%s-t|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+10	A Bolond Gyûjtögetõ	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Gyûjts |cffff9d9d|H|h%s-vet|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+11	Cook the fish	Amount: %s	Cook: Any	Cook any fish to	finish the quest and	receive the reward.
+12	A Nagy Ho-Ho	Hátravan: %s	Hal: |cffff9d9d|H|hMinden|h|r	Fogj |cffff9d9d|H|hbármilyen halat|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+14	Collect Yang	Yang to collect: %s	Collect: Any	Collect Yang to	finish the quest and	receive the reward.
+15	Run Rémálom	Hátravan: %s	Melyik: Összes	Teljesíts |cffff9d9d|H|h300 Runt|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+17	Milyen idõ van kint ?	Hátravan Perc: %s	 	Maradj online |cffff9d9d|H|h10.000 Percet|h|r	 hogy befejezd a küldetést és a jutalmat	magkapd.
+18	Chateljünk Ezerrel	Hátravan Hívás: %s	Melyik: Hívás "!"	Írjál |cffff9d9d|H|h20.000x|h|r a Global Chatbe hogy	befejezd a küldetést és a jutalmat	magkapd.
+19	KK Láda Mánia	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Gyûjts |cffff9d9d|H|hKK Ládát|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+20	A Szilánkok Ereje	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Gyûjts |cffff9d9d|H|h%s-ot|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+21	Az Idõutazó	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Használj |cffff9d9d|H|h%s-t|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.
+22	Az igazi Kovács Kõ	Hátravan: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Használj |cffff9d9d|H|hMágikus követ|h|r hogy	befejezd a küldetést és a jutalmat	magkapd.

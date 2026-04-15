@@ -1,0 +1,44 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]Ogni costume stola parte con 6 bonus già preimpostati:
+[X_PADDING=20]- Forte contro Mostri
+[X_PADDING=20]- Forte contro Metin
+[X_PADDING=20]- Forte contro Boss
+[X_PADDING=20]- Forte contro Mezziuomini
+[X_PADDING=20]- Resistenza Mezziuomini
+[X_PADDING=20]- Max. HP
+
+[X_PADDING=12]Il costume stola ha 4 gradi e in base al grado le percentuali massime dei bonus aumentano.
+
+[X_PADDING=12]Percentuali massime dei bonus:
+[X_PADDING=20]- Forte contro Mostri +20%
+[X_PADDING=20]- Forte contro Metin 20%
+[X_PADDING=20]- Forte contro Boss 20%
+[X_PADDING=20]- Forte contro Mezziuomini +15%
+[X_PADDING=20]- Resistenza Mezziuomini 15%
+[X_PADDING=20]- Max. HP +3000
+
+[X_PADDING=12]Per cambiare le percentuali del costume stola c'è bisogno dell'item Incanta Costume Stola.
+
+[X_PADDING=12]Per aumentare il grado del costume stola c'è bisogno di combinarla dall'NPC Theowahdan, un costume stola può
+[X_PADDING=12]essere combinato solo con la stessa tipologia di stola e con lo stesso grado.
+[X_PADDING=12](Attenzione la combinazione rimescola le percentuali dei bonus in base al nuovo grado e c'è il rischio che
+[X_PADDING=12]la combinazione potrebbe fallire).
+[X_PADDING=12]E' possibile trasferire i bonus di un costume stola ad un altro costume stola con l'item Transfer Bonus Costume
+[X_PADDING=12]recandosi da Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y=376; X=100]
+[IMG=icon/item/70065.tga; Y=376; X=400]
+
+
+
+
+
+[X_PADDING=81]Incanta C. Stola																						   T. Bon. Costum.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

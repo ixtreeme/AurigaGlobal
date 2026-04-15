@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+
+[X_PADDING=12]1. Mozesz otworzyc panel sklepu offline, klikajac ikone zestawu znajdujaca sie na minimapie lub naciskajac
+[X_PADDING=12]klawisz Y.
+[X_PADDING=12]2. Sklep offline sklada sie z 9 sekcji:
+[X_PADDING=20]I. Mój Sklep
+[X_PADDING=20]II. Lista sklepów
+[X_PADDING=20]III. Magazyn
+[X_PADDING=20]IV. Moje oferty
+[X_PADDING=20]V.  Wyszukiwarka
+[X_PADDING=20]VI. Moje wyszukiwania
+[X_PADDING=20]VII. Zapisane wyszukiwania
+[X_PADDING=20]VIII. Moje aukcje
+[X_PADDING=20]IX. Aukcje w toku
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNKCJONALNOSC RÓZNYCH SEKCJI
+
+[X_PADDING=12]1.Mój sklep: w tej sekcji mozesz stworzyc swój sklep offline, w prawym górnym rogu znajdziesz podglad sklepu,
+[X_PADDING=12]z którego bedziesz korzystac, klikajac strzalki mozesz równiez wybrac sklepy specjalne, ale badz ostrozny,
+[X_PADDING=12]aby skorzystac ze specjalnych sklepów bedziesz potrzebowal Pakiet kaszmiru.
+
+[X_PADDING=12]2. Lista sklepów: W tej sekcji mozesz przejrzec wszystkie aktywne sklepy offline.
+
+[X_PADDING=12]3. Magazyn: w tej sekcji znajduja sie wszystkie przedmioty, których nie sprzedales oraz przychody ze sprzedazy.
+
+[X_PADDING=12]4. Moje oferty: ta sekcja zawiera wszystkie zlozone przez Ciebie oferty.
+
+[X_PADDING=12]5. Wyszukiwanie: w tej sekcji mozesz uzyc róznych filtrów, aby przeprowadzic ukierunkowane wyszukiwanie.
+
+[X_PADDING=12]6. Moje wyszukiwania: w tej sekcji mozesz zobaczyc wszystkie swoje wyszukiwania.
+
+[X_PADDING=12]7. Zapisane wyszukiwania: Wszystkie zapisane filtry wyszukiwania sa wymienione w tej sekcji.
+
+[X_PADDING=12]8. Moje aukcje: w tej sekcji mozesz stworzyc aukcje lub sprawdzic status jednej z Twoich aukcji w toku.
+
+[X_PADDING=12]9. Aukcje w toku: w tej sekcji wymienione sa wszystkie aukcje w toku.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INNE
+
+[X_PADDING=12]1. Mozesz zmienic wyglad swojego sklepu w sekcji Mój sklep, aby zmienic wyglad swojego
+[X_PADDING=12]sklepu bedziesz potrzebowac Pakiet Kaszmiru
+[X_PADDING=12]2. Pakiet kaszmiru mozna znalezc w sklepie Gaya lub podczas róznych wydarzen.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Pakiet Kaszmiru
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

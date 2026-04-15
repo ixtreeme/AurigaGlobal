@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURE OF THE SYSTEM
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya are a currency that allows any player to purchase items in the Gaya Shop.
+[X_PADDING=12]2. You can get Gaya from the Merchants of Gaya npc.
+[X_PADDING=12]3. To get 1 Gaya you need 10 Gems plus a +0 to +3 Spirit Stone.
+[X_PADDING=12]4. Gem refinement is always 100%.
+[X_PADDING=12]5. To open the Gaya Shop, go to the Npc Gaya Shop.
+[X_PADDING=12]6. The Gaya Shop has 9 slots available of which 6 will be locked, you can unlock the slots
+[X_PADDING=12]by purchasing the item Ampliam. Gaya shop from the Npc Mecante di Gaya.
+[X_PADDING=12]7. The Gaya Shop updates automatically every 5 hours, you can update the Gaya Shop manually
+[X_PADDING=12]by purchasing the Gaya Reset Shop item from the Gaya Mecante npc.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHERE TO FIND THE GEMS
+
+[X_PADDING=12]1. You can find Gems in the dungeons or bosses of the various maps.
+[X_PADDING=12]2. You can find a large amount of Gems in Queen Meley's Chest.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=99]Gems										 Ampliam. Gaya shop							 Res. Neg. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

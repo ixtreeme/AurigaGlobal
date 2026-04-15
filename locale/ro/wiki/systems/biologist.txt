@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Panoul poate fi deschis cu ajutorul imaginei aflate pe mini-mapã.
+[X_PADDING=12]2. Completând misiunile vei primi bonusuri permanente.
+[X_PADDING=12]3. Itemele de care ai nevoie pentru misiuni pot fi cumpãrate de la Biologul din Satul Minunilor.
+[X_PADDING=12]4. Poþi activa opþiunea de a primi o notificare atunci când timpul de aºteptare s-a terminat.
+[X_PADDING=12]5. Poþi folosi Elixirul cercetãtorului+ pentru a nu aºtepta.
+[X_PADDING=12]6. Poþi folosi Elixirul cercetãtorului+ pentru a nu aºtepta cât ºi pentru a creºte ºansa de succes
+[X_PADDING=12]a calitãþii item-ului.
+[X_PADDING=12]7. Cu ajutorul Magiei Biologului vei putea schimba bonusul ales în misiunile de nivel 105 ºi 110.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISIUNI ªI RECOMPENSE
+
+[IMG=d:/ymir work/ui/wiki/systems/ro/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

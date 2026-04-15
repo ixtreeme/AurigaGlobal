@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Beginner's Guide.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]START:
+[X_PADDING=12]Level up on Map1 until at least level 25–30. During this, smash Metin Stones to get Blessing Scrolls and upgrade materials.
+[X_PADDING=20]Don’t skip Brutal Captains – they can drop level 30 weapons.
+[X_PADDING=20]At level 26, it’s worth buying a level 26 armor and level 21 helmet from the NPC, which you can easily upgrade to +9.
+
+[X_PADDING=12;COLOR=ffff00]LVL 30:
+[X_PADDING=12]Go to Map2 for further leveling and farming. If you have solid gear (armor, helmet, level 30 weapon), level 45 Metins won’t be an issue.
+[X_PADDING=20]While farming, don’t forget the dungeons! Use the time limit and complete them
+[X_PADDING=20]to earn valuable mounts, pets, and more.
+[X_PADDING=20]From Orc Metins, you’ll need a level 42 armor and level 41 shield to survive on the next map!
+
+[X_PADDING=12;COLOR=ffff00]LVL 50:
+[X_PADDING=20]By now, you should have at least one pet and six mounts in your mount inventory — each dungeon gives you two.
+[X_PADDING=20]Level up to 65 and don’t forget about the Open Boss – you can obtain valuable legendary bonus adders from it!
+[X_PADDING=20]You’ll need a level 65 weapon; once upgraded to +9, it gives +55% Devil Damage.
+[X_PADDING=20]You can also obtain level 65 armor from the Open Boss – essential for accessing the next map.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Game Rules!!
+
+[FONT_SIZE=18;COLOR=00ff00] Chat and Behavior Rules
+[X_PADDING=12]It is FORBIDDEN to harass, threaten, or insult other players!
+[X_PADDING=12]Political or religious provocations on global chat are FORBIDDEN!
+[X_PADDING=12]Chat spamming – including repeated messages or advertisements – is FORBIDDEN!
+
+[FONT_SIZE=18;COLOR=00ff00] Account and Data Security
+[X_PADDING=12]YOU are responsible for your account's safety! Never share your login details!
+[X_PADDING=12]Staff will NEVER ask for your password – if someone does, report it immediately!
+[X_PADDING=12]Accessing another player’s account is FORBIDDEN, even with their permission.
+
+[FONT_SIZE=18;COLOR=00ff00] Staff and Support
+[X_PADDING=12]Do NOT harass or constantly call GMs! Use the ticket system or the forum.
+[X_PADDING=12]A GM’s decision is final. If there is a dispute, you may politely request a review.
+
+[FONT_SIZE=18;COLOR=00ff00] Exploits and Fair Play
+[X_PADDING=12]Using any programs or tools that provide unfair advantage (e.g. bots, speedhack, zoomhack) is STRICTLY FORBIDDEN!
+[X_PADDING=12]It is FORBIDDEN to exploit other players’ mistakes or inaction (e.g. in trade or PvP).
+[X_PADDING=12]Deliberate manipulation of PvP arenas, events, or map mechanics is FORBIDDEN!
+
+[FONT_SIZE=18;COLOR=00ff00] Trading, Shops and Hacks
+[X_PADDING=12]Cross-server trading is FORBIDDEN!
+[X_PADDING=12]Posting FALSE or misleading shop descriptions (e.g. 1 yang = 1kk) is FORBIDDEN!
+[X_PADDING=12]ANY use of hack programs, including macros, is STRICTLY FORBIDDEN!
+[X_PADDING=12]It is FORBIDDEN to sell or trade your items/account for real money!
+[X_PADDING=12]Scamming or gaining unfair advantage in trade is FORBIDDEN!
+
+[FONT_SIZE=18;COLOR=00ff00] Bug Usage and Reporting
+[X_PADDING=12]If you find a bug, you are REQUIRED to report it – exploiting it is STRICTLY FORBIDDEN!
+[X_PADDING=12]Abusing bugs threatens server stability and will result in SEVERE PENALTIES!
+
+[FONT_SIZE=18;COLOR=00ff00] General Restrictions
+[X_PADDING=12]Offensive language, hate speech, or racism is FORBIDDEN – we are all human!
+[X_PADDING=12]NO ONE else may use your account – not even friends!
+[X_PADDING=12]Advertising, promoting, or linking other servers is FORBIDDEN!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]BREAKING THESE RULES MAY RESULT IN A PERMANENT HARDWARE BAN!
+[X_PADDING=12]

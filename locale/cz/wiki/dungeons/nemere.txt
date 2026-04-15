@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]POŽADAVKY:
+[X_PADDING=12]*Minimální level: 85.
+[X_PADDING=12]*Maximální level: 100.
+[X_PADDING=12]*Propustka: Nemerova propustka.
+[X_PADDING=12]*Typ: Sám nebo ve skupine.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Nemerova propustka
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DALŠÍ INFORMACE:
+[X_PADDING=12]*Casový limit 50 minut.
+[X_PADDING=12]*Cooldown: 1 hodina.
+[X_PADDING=12]*Každý ve skupine musí mít propustku.
+[X_PADDING=12]*Do mapy se dá dostat skrz: Lobby Dungeon.
+[X_PADDING=12]*Doporucený bonus: Síla proti ledu.
+[X_PADDING=12]*Element príšer: Led.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]NÁVOD
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRVNÍ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUHÉ PATRO
+[X_PADDING=20]1. Najdi správný Mrazivý klíc.
+[X_PADDING=20]2. Klikni na Mrazivý klíc, pro presunutí do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRETÍ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CTVRTÉ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PÁTÉ PATRO
+[X_PADDING=20]1. Odemkni Akrtické kostky ve správném poradí použitím Severky, která padá z monster.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ŠESTÉ PATRO
+[X_PADDING=20]1. Zabíj všechny monstra.
+[X_PADDING=20]2. Znic Metin chladu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEDMÉ PATRO
+[X_PADDING=20]1. Najdi a zabíj správného Szela.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]OSMÉ PATRO
+[X_PADDING=20]1. Najdete správný Klíc mrazivého kvetu.
+[X_PADDING=20]2. Klikni na   Klíc mrazivého kvetu, pro presunutí do dalšího patra.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DEVÁTÉ PATRO
+[X_PADDING=20]1. Znic Sloup severního draka.
+[X_PADDING=20]2. Promluv si s Zamraženým lvem.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DESÁTÉ PATRO
+[X_PADDING=20]1. Zabíj Nemera.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

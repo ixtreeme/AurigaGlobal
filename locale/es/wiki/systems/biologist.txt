@@ -1,0 +1,20 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/biologist.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA BIOLÓGICO
+
+[X_PADDING=12]1. El icono del panel de biólogos se encuentra en el minimapa.
+[X_PADDING=12]2. Se otorgan bonificaciones permanentes por completar las misiones del biólogo.
+[X_PADDING=12]3. Puedes comprar los artículos necesarios para las misiones yendo al biólogo en Wonder Village.
+[X_PADDING=12]4. Puede habilitar una notificación en el panel de biólogos cuando se acabe el tiempo de espera.
+[X_PADDING=12]5. Puede habilitar una notificación en el panel de biólogo Puede usar el Elixir del investigador para restablecer el tiempo de reutilización.
+[X_PADDING=12]6. Puede usar Elixir de investigador + para restablecer el tiempo de reutilización y mejorar la calidad de los elementos cuando
+[X_PADDING=12]se entregan al biólogo.
+[X_PADDING=12]7. Puedes usar el objeto Magia del biólogo para cambiar la bonificación elegida en las misiones de nivel 105 y 110..
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=134; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MISIONES Y PREMIOS
+
+[IMG=d:/ymir work/ui/wiki/systems/en/biologist_table.png; Y=186; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=380; CENTER_ALIGN]

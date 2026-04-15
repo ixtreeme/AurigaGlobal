@@ -1,0 +1,57 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/meley.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 75.
+[X_PADDING=12]*Maksymalny poziom: 120.
+[X_PADDING=12]*Typ: Wyprawa Gildyjna.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Limit czasu: 1 godzina
+[X_PADDING=12]*Cooldown: 3 godziny.
+[X_PADDING=12]*Mo¿esz uzyskaæ dostêp z: Poczekalni Wypraw.
+[X_PADDING=12]*Dzia³aj¹cy bonus: Si³a ognia
+[X_PADDING=12]*¯ywio³:Ogieñ.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=160; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIÊTRO
+[X_PADDING=20]Pierwszym zadaniem jest zadawanie obra¿eñ statuom, a¿ ich P¯ spradnie do poziomu 75%. 
+[X_PADDING=20]W tym czasie, dostêp do statu³ bêdzie blokowany przez pojawiaj¹ce siê potwory.
+[X_PADDING=20]Kiedy statu³a straci 25% P¯, zmieni swój kolor i nie bêdzie mo¿na jej atakowaæ.
+[X_PADDING=20]Kiedy wszystkie statu³y zmieni¹ kolor, nast¹pi przeniesienie na kolejne piêtro. 
+[X_PADDING=20]W trakcie przeniesienia, potwory znikn¹, i niemo¿liwa bêdzie interakcja ze statuami.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIÊTRO
+[X_PADDING=20]Na tym piêtrze, trzeba biæ statuy tak d³ugo, a¿ ich P¯ spadnie do poziomu 50%.
+[X_PADDING=20]Tym razem, bêdzie pojawiaæ siê wiêcej potworów, oraz pojawi¹ siê Jaja
+[X_PADDING=20]Jaja blokuj¹ zadawanie obra¿eñ statuom, wiêc nie mo¿na jej atakowaæ gdy jakiekolwiek z nich jest na mapie. 
+[X_PADDING=20]Kiedy ich P¯ spadnie do 50%, znowu nie mo¿na ich atakowaæ. 
+[X_PADDING=20]W momencie gdy wszystkie kolumny bêd¹ mia³y 50% P¯, nast¹pi teleportacja na kolejne piêtro.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRZECIE PIÊTRO
+[X_PADDING=20]Na tym piêtrze mo¿na zniszczyæ do koñca statuy. Znowu pojawi¹ siê Jaja Smoka, 
+[X_PADDING=20]Wiêksza iloœæ potworów oraz Smoczy Stra¿nicy Idall . Wszyscy musz¹ byæ pokonani przed koñcem
+[X_PADDING=20]tego piêtra, inaczej niemo¿liwe bêdzie przejœcie dalej. Tak jak poprzednio, w momecie gdy na mapie s¹ Jaja Smoka, 
+[X_PADDING=20]statuy nie mog¹ zostaæ uderzone. Kiedy P¯ statuy spadnie do 0, zrobi siê niebieska. W tym momencie mo¿na je zniszczyæ
+[X_PADDING=20]poprzez przeniesienie na nie Pierœcienia Smoczego Ognia.
+[X_PADDING=20]Ka¿dy gracz mo¿e zniszczyæ tylko jedn¹ statuê. Po przeniesieniu Pierœcienia, statua staje siê zielona.
+[X_PADDING=20]Teleportacja na kolejne piêtro nast¹pi w momencie, w którym wszystkie statuy s¹ zielone.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CZWARTE PIÊTRO
+[X_PADDING=20]Na pocz¹tku piêtra, statuy zaatakuj¹ bossa, i po ostatnim uderzeniu Meley
+[X_PADDING=20]ucieknie. Gracze bêd¹ mogli wybraæ swoj¹ nagrodê poprzez rozmowê z NPC Z³ota Smocza Skrzynia
+[X_PADDING=20]Po zakoñczeniu wyprawy, ka¿dy uczestnik mo¿e wybraæ jedn¹ z dwóch skrzyñ:Skrzyniê Sm. Stra¿ników lub Skrzyniê Królowej Meley
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRZYPADKI UPADLOSCI
+[X_PADDING=20]Maksymalny czas realizacji to 1 godzina. Oprócz tego ograniczenia, grupa moze upasc w przypadku, gdy:
+[X_PADDING=20]Smoczy Straznicy nie zostali zabici do konca fazy 3. Jajka odradzaly sie, zanim przeciagnely
+[X_PADDING=20]wszystkie Pierscienie na Posagi.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]NAGRODA
+[X_PADDING=20]Wszyscy uczestnicy otrzymaja nagrode w przypadku sukcesu. Gracze beda mogli wybrac pomiedzy 2 skrzyniami:
+[X_PADDING=20]Skrzynia Królowej Meley i Skrzynia Straznika Smoków.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=660; CENTER_ALIGN]

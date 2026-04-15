@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/freeze.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12;CENTER_ALIGN]Il sistema congela bonus è formato da 3 item:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=56; X=378]
+[IMG=icon/item/70604.tga; Y=66; X=100]
+[IMG=icon/item/70605.tga; Y=66; X=250]
+[IMG=icon/item/70606.tga; Y=66; X=400]
+
+
+
+
+
+
+[X_PADDING=82]Congela Bonus								 Ricongela Bon.								Scongela Bonus
+
+[X_PADDING=12;CENTER_ALIGN]Spostando il Congela Bonus su un qualsiasi item del equipaggiamento che ha dei bonus, viene congelato
+[X_PADDING=12;CENTER_ALIGN]un bonus in modo totalmente casuale. I bonus dei talismani non possono essere congelati.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/freezed_bonus.png; Y=174; CENTER_ALIGN]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[X_PADDING=12]Attenzione quando un bonus è congelato non ha efficacia sul vostro personaggio e finché non verrà scongelato
+[X_PADDING=12]non sarà possibile migliorare, craftare e assorbire l’item su una stola.
+
+[X_PADDING=12]I bonus che non possono essere congelati sono:
+[X_PADDING=20]Danni Medi
+[X_PADDING=20]Danni Abilità 
+[X_PADDING=20]Doppi Forte contro Mezziuomini (per esempio se abbiamo una Spada Tritone con già doppi mezziuomini usando il
+[X_PADDING=20]congela bonus quel bonus non viene congelato).
+
+[X_PADDING=12]Il Ricongela Bonus viene usato nel momento in cui si ha già un bonus congelato sull’item che a noi non piace,
+[X_PADDING=12]e quindi si riprova a congelare un nuovo bonus sempre in modo casuale.
+
+[X_PADDING=12]Lo Scongela Bonus serve per scongelare un bonus che abbiamo su un nostro item.
+[X_PADDING=12]Quando viene scongelato il bonus sarà possibile effettuare i miglioramenti, craftare e assorbire di nuovo l’item
+[X_PADDING=12]su una stola, e il personaggio riacquista l’efficacia di quel bonus.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=650; CENTER_ALIGN]

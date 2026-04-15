@@ -1,0 +1,7 @@
+title subImage
+version 2.0
+image "loading.jpg"
+left 0
+top 0
+right 1280
+bottom 720

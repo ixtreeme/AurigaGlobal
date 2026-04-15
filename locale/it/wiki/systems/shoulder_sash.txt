@@ -1,0 +1,35 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]BONUS STOLE:
+[X_PADDING=20]1. Il Sistema delle Stole permette ai giocatori di livello 1 e superiore di indossare un nuovo pezzo
+[X_PADDING=20]di equipaggiamento.
+[X_PADDING=20]2. Le stole possono assorbire TUTTI bonus di armi e armature tranne i bonus speciali di armi
+[X_PADDING=20]e armature di grado Epicizzato. La percentuale di assorbimento dipende dal suo grado di qualità 
+[X_PADDING=20]della stola, più la qualità è alta e maggiore sarà la percentuale di assorbimento.
+[X_PADDING=20]3. Per inserire i bonus è necessario recarsi dall'NPC Theowahdan presente nella mappa
+[X_PADDING=20]Villaggio delle Meraviglie.
+[X_PADDING=20]4. Puoi acquistare una stola di primo grado dall'NPC Theowahdan con le Stoffe Sottili che
+[X_PADDING=20]dropperai dalle metin.
+[X_PADDING=20]5. Puoi rimuovere i bonus da una stola usando l'item rimuovi bonus stola.
+
+[X_PADDING=12]MIGLIORAMENTO DI UNA STOLA:
+[X_PADDING=20]1. Per potenziare una Stola bisogna recarsi dall'NPC Theowahdan e cliccare su Combinazione.
+[X_PADDING=20]2. Il potenziamento distrugge SEMPRE la seconda stola inserita, sia in caso di successo, sia
+[X_PADDING=20]in caso di fallimento. Nel caso in cui in entrambe le stole siano presenti dei bonus, essi non
+[X_PADDING=20]si sommeranno, ma verranno considerati solo quelli della prima stola, in quanto è questa che
+[X_PADDING=20]viene effettivamente migliorata. La seconda ha la sola funzione di "oggetto per il miglioramento".
+
+[X_PADDING=12]POSSIBILI GRADI DI UNA STOLA:
+[X_PADDING=20;COLOR=58ADFF]GRADI          PERCENTUALE ASSORBIMENTO BONUS
+[X_PADDING=20]Semplice       1%
+[X_PADDING=20]Sottile           5%
+[X_PADDING=20]Nobile          10%
+[X_PADDING=20]Su Misura     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]Rimuovi B. Stola
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[X_PADDING=12]Ao completar algumas missões no jogo, você receberá uma Baú; ao clicar no Baú, ele solicitará que você
+[X_PADDING=12]escolha qual ovo de estimação você prefere:
+[X_PADDING=20]- Ovo de Macaco
+[X_PADDING=20]- Ovo de Aranha
+[X_PADDING=20]- Ovo de Razador
+[X_PADDING=20]- Ovo de Nemere
+[X_PADDING=20]- Ovo de Dragão Azul
+[X_PADDING=20]- Ovo de Dragão Vermelho
+[X_PADDING=20]- Ovo de Baashido Bebê
+[X_PADDING=20]- Ovo de Boia Paffuto
+[X_PADDING=20]- Ovo de Nessie
+[X_PADDING=20]- Ovo de Azraeluccio
+[X_PADDING=20]- Ovo de Exdyar
+
+[X_PADDING=12]Clicar com o botão direito no seu ovo irá pedir-lhe para escolher o nome antes de chocar o Pet
+[X_PADDING=12]do ovo (usando o Pergaminho do Nome é possível alterar o nome do seu Pet).
+[X_PADDING=12]Quando o Pet eclodir, ele terá 3 dias de vida e estará no nível 1.
+[X_PADDING=12]Para aumentar a vida do pet você precisa do Mordida Divina, disponível para aumentar em 2d no NPC Bottegaia.
+
+[X_PADDING=12]Quando o Pet nascer, ele terá 3 bônus (esses bônus sairão com porcentagens aleatórias):
+[X_PADDING=20]- HP
+[X_PADDING=20]- Forte vs Monstros
+[X_PADDING=20]- Dano Médio[PVM]
+
+[X_PADDING=12]É possível aumentar as porcentagens dos bônus padrão do animal de estimação com uma Mordida Especial.
+[X_PADDING=12](Cuidado, o aumento percentual de um bônus padrão pode falhar).
+
+[X_PADDING=12]O Pet tem 3 processos de desenvolvimento:
+[X_PADDING=20]1. Do Filhote ao Selvagem
+[X_PADDING=20]2. De Selvagem para Valente
+[X_PADDING=20]3. De Valente a Heróico
+
+[X_PADDING=12]Os desenvolvimentos dos Pet são divididos da seguinte forma:
+[X_PADDING=20]FILHOTE:
+[X_PADDING=28]- Level 1 a 40 sem qualquer pedido de item
+[X_PADDING=20]FILHOTE -> SELVAGEM:
+[X_PADDING=28]Level 41 a 60
+[X_PADDING=28]- 10 Livro de Pet Filhote
+[X_PADDING=28]- 10 Pérola Branca
+[X_PADDING=28]- 3 Pérola Amarela
+[X_PADDING=20]SELVAGEM -> VALENTE:
+[X_PADDING=28]- Lv 61 a lv 80
+[X_PADDING=28]- 10 Livro de Pet Selvagem
+[X_PADDING=28]- 10 Pérola Azul
+[X_PADDING=28]- 3 Pérola Verde
+[X_PADDING=20]CORAJOSO -> HERÓICO:
+[X_PADDING=28]- Lv 81 a 100
+[X_PADDING=28]- 10 Livro de Pet Corajoso
+[X_PADDING=28]- 10 Pérola Vermelha
+[X_PADDING=28]- 3 Pérola Roxa
+
+[X_PADDING=12]Modo Selvagem desbloqueia o primeiro slot de habilidade..
+[X_PADDING=12]Modo Corajoso desbloqueia o segundo slot de habilidade.
+[X_PADDING=12]Modo Heróico desbloqueia o terceiro slot de habilidade.
+
+[X_PADDING=12]Além disso, o Pet fornecerá novos bônus à medida que envelhece, quanto mais velho for o Pet, maior será o valor de seus bônus.
+[X_PADDING=20]De 1 a 10 dias de idade o animal receberá os seguintes bônus:
+[X_PADDING=28]- Máx. HP +500
+[X_PADDING=28]- Resistência Monstros 2%
+[X_PADDING=28]- Resistência Semi-Humanos 2%
+[X_PADDING=20]De 11 a 25 dias o pet dará os seguintes bônus:
+[X_PADDING=28]- Máx. HP +1200
+[X_PADDING=28]- Resistência Monstros 4%
+[X_PADDING=28]- Resistência Semi-Humanos 4%
+[X_PADDING=20]De 26 a 47 dias o pet dará os seguintes bônus:
+[X_PADDING=28]- Máx. HP +2100
+[X_PADDING=28]- Resistência Monstros 7%
+[X_PADDING=28]- Resistência Semi-Humanos 7%
+[X_PADDING=20]De 48 a 59 dias o pet dará os seguintes bônus:
+[X_PADDING=28]- Máx. HP +3000
+[X_PADDING=28]- Resistência Monstros 10%
+[X_PADDING=28]- Resistência Semi-Humanos 10%
+[X_PADDING=20]De 60 dias em diante:
+[X_PADDING=28]- Max. HP +3000
+[X_PADDING=28]- Resistência Monstros 10%
+[X_PADDING=28]- Resistência Semi-Humanos 10%
+[X_PADDING=28]- O quarto slot de habilidade desbloqueia
+
+[X_PADDING=12]Habilidades que podem ser ensinadas ao Pet:
+[X_PADDING=20]- Chance de Golpes Críticos[PvM] 10%
+[X_PADDING=20]- Forte contra Metin 10%
+[X_PADDING=20]- Forte contra Boss 10%
+[X_PADDING=20]- Resistência Ninja 10%
+[X_PADDING=20]- Resistência Sura 10%
+[X_PADDING=20]- Resistência Guerriero 10%
+[X_PADDING=20]- Resistência Xamã 10%
+[X_PADDING=20]- Chance de bônus EXP 20%
+[X_PADDING=20]- Chance de Dropar Gold 20%
+[X_PADDING=20]- Valor de Ataque/Mágico 10%
+[X_PADDING=20]- Chance de Bloquear Ataque Físico 10%
+[X_PADDING=20]- Chance de Refletir Ataque Físico 10%
+
+[X_PADDING=12]É possível fazer esquecer uma habilidade de escolha do Pet usando o livro Reset Pet Skills e também é possível fazê-lo esquecer
+[X_PADDING=12]todas as habilidades do Pet usando o livro Reset Pet Skills (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1144; CENTER_ALIGN]

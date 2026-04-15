@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+
+[X_PADDING=12]Su Auriga sono presenti 4 nuovi gradi di miglioramento:
+[X_PADDING=20]- Epico
+[X_PADDING=20]- Leggendario
+[X_PADDING=20]- Antico 
+[X_PADDING=20]- Mistico
+
+[X_PADDING=12]1. Quando alcuni item vengono uppati fino a +9 sarà possibile epicizzarli in 4 gradi.
+[X_PADDING=12]2. Quando un'item viene epicizzato si aggiunge ad esso un nuovo bonus fisso oppure va a migliorare le percentuali
+[X_PADDING=12]dei bonus fissi già presenti.
+
+[X_PADDING=12;FONT_SIZE=14]ITEM CHE POSSONO ESSERE EPICIZZATI:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMI:
+[X_PADDING=28]- Spada Velenosa+9
+[X_PADDING=28]- Spada del Leone+9
+[X_PADDING=28]- Spada del Rancore+9
+[X_PADDING=28]- Arco d'Acciaio Corvino+9
+[X_PADDING=28]- Chakram Ali di Diavolo+9
+[X_PADDING=28]- Campana Orchidea+9
+[X_PADDING=28]- Spada dello Zodiaco+9
+[X_PADDING=28]- Lama dello Zodiaco+9
+[X_PADDING=28]- Glaive dello Zodiaco+9
+[X_PADDING=28]- Arco dello Zodiaco+9
+[X_PADDING=28]- Pugnale Zodiaco+9
+[X_PADDING=28]- Ventaglio dello Zodiaco+9
+[X_PADDING=28]- Campana dello Zodiaco+9
+[X_PADDING=28]- Spada di Cianite+9
+[X_PADDING=28]- Lama di Cianite+9
+[X_PADDING=28]- Spadone di Cianite+9
+[X_PADDING=28]- Arco di Cianite+9
+[X_PADDING=28]- Pugnali di Cianite+9
+[X_PADDING=28]- Ventaglio di Cianite+9
+[X_PADDING=28]- Campana di Cianite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ARMATURE:
+[X_PADDING=28]- Armatura di Cianite+9
+[X_PADDING=28]- Corazza di Cianite+9
+[X_PADDING=28]- Abito di Cianite+9
+[X_PADDING=28]- Vestito di Cianite+9
+[X_PADDING=28]- Armatura dello Zodiaco+9
+[X_PADDING=28]- Corazza dello Zodiaco+9
+[X_PADDING=28]- Abito dello Zodiaco+9
+[X_PADDING=28]- Vestito dello Zodiaco+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ELMI:
+[X_PADDING=28]- Elmo Drago Scuro+9
+[X_PADDING=28]- Elmo Drago Magico+9
+[X_PADDING=28]- Elmo Drago del Vento+9
+[X_PADDING=28]- Elmo Drago Divino+9
+[X_PADDING=28]- Elmo d'acc. draconico+9
+[X_PADDING=28]- Elmo Corazzato del Drago+9
+[X_PADDING=28]- Copricapo del Drago+9
+[X_PADDING=28]- Cappello del Drago+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SCUDI:
+[X_PADDING=28]- Scudo di Falco+9
+[X_PADDING=28]- Scudo Angolare Leonino+9
+[X_PADDING=28]- Scudo di Tigre+9
+[X_PADDING=28]- Scudo Squame di Drago+9
+[X_PADDING=28]- Scudo dei Tre Re+9
+[X_PADDING=28]- Scudo dei Titani+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRACCIALI:
+[X_PADDING=28]- Bracciale Cristallo delle Anime+9
+[X_PADDING=28]- Bracciale di Cianite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* COLLANE:
+[X_PADDING=28]- Collana Cristallo delle Anime+9
+[X_PADDING=28]- Collana di Cianite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ORECCHINI:
+[X_PADDING=28]- Orecchini Cristallo delle Anime+9
+[X_PADDING=28]- Orecchini di Cianite+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* SCARPE:
+[X_PADDING=28]- Scarpe del Fuoco+9
+[X_PADDING=28]- Scarpe Oceano+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

@@ -1,0 +1,43 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/costume_sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTUR DES SYSTEMS
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y = 10; X=446]
+
+[X_PADDING=12]Jedes gestohlene Kostüm beginnt mit 6 voreingestellten Boni:
+[X_PADDING=20]- Stark gegen Monster
+[X_PADDING=20]- Stark gegen Metinsteine
+[X_PADDING=20]- Stark gegen Bosse
+[X_PADDING=20]- Stark gegen halben Menschen
+[X_PADDING=20]- Halber menschlicher Widerstand
+[X_PADDING=20] - max. PS
+
+[X_PADDING=12]Das gestohlene Kostüm hat 4 Ränge und basierend auf dem Rang erhöhen sich die maximalen Bonusprozentsätze.
+
+[X_PADDING=12]Maximaler Prozentsatz von Boni:
+[X_PADDING=20]- Stark gegen Monster +20%
+[X_PADDING=20]- Stark gegen Metinsteine ??20%
+[X_PADDING=20]- Stark gegen Bosse 20 %
+[X_PADDING=20]- Stark gegen halben Menschen +15%
+[X_PADDING=20]- Halber menschlicher Widerstand 15%
+[X_PADDING=20] - max. HP +3000
+
+[X_PADDING=12]Um die Prozentsätze der Kostümstola zu ändern, benötigst du den Gegenstand Kostümstola verzaubern.
+
+[X_PADDING=12]Um den Rang des gestohlenen Kostüms zu erhöhen, musst du es vom NPC Theowahdan kombinieren, ein gestohlenes Kostüm kann
+[X_PADDING=12]nur mit dem gleichen Stolatyp und mit der gleichen Qualität kombiniert werden.
+[X_PADDING=12](Achtung, die Kombination mischt die Bonusprozentsätze entsprechend dem neuen Rang und es besteht die Gefahr, dass
+[X_PADDING=12]die Kombination kann fehlschlagen).
+[X_PADDING=12]Mit dem Gegenstand Bonuskostüm übertragen ist es möglich, die Boni eines gestohlenen Kostüms auf ein anderes Kostüm zu übertragen
+[X_PADDING=12]nach Theowahdan.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=356; X=378]
+[IMG=icon/item/84999.tga; Y = 376; X=100]
+[IMG=icon/item/70065.tga; Y = 376; X=400]
+
+
+
+
+
+[X_PADDING=81]Das verzauberte Kostüm hat Boni übernommen
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=436; CENTER_ALIGN]

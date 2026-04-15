@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]System rankingowy gildii sklada sie z 3 lig:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Zlota Liga								   Srebrna Liga							 Brazowa Liga
+
+
+[X_PADDING=12]Mozesz otworzyc panel rankingu gildii, klikajac ikone obok ekwipunku lub naciskajac klawisz F6.
+
+[X_PADDING=12]Aby wejsc do ligi potrzebujesz minimum trofeów:
+[X_PADDING=20]1. Zlota Liga wymaga 50 trofeów
+[X_PADDING=20]2. Srebrna Liga wymaga 30 trofeów
+[X_PADDING=20]3. Brazowa Liga wymaga 5 trofeów
+
+[X_PADDING=12]Dla kazdej ligi sa ograniczone miejsca (kto ma najwiecej trofeów, bedzie mógl pozostac w lidze):
+[X_PADDING=20]1. Zlota Liga 7 miejsc
+[X_PADDING=20]2. Srebrna Liga 12 miejsc
+[X_PADDING=20]3. Brazowa Liga 21 miejsc
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Punkty i nagrody dla róznych lig:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* ZLOTA LIGA:
+
+[X_PADDING=28]- PUNKTY:
+[X_PADDING=36]-> Wygrana +3 trofea / + 15KK dla kazdego czlonka gildii
+[X_PADDING=36]-> Porazka -3 trofea / - 5kk dla kazdego czlonka gildii
+[X_PADDING=36]-> Remis +1 trofeum / + 5kk dla kazdego czlonka gildii
+
+[X_PADDING=28]- Bonus na koniec sezonu (25 dni trwania sezonu):
+[X_PADDING=36]-> 1 miejsce: 180kk + 1. M Skrzynia Zlotej Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 2. miejsce: 100kk + 2. M Skrzynia Zlotej Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 3. miejsce: 70kk + 3. M skrzynia Zlotej Ligi dla kazdego czlonka gildii
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* SREBRNA LIGA:
+
+[X_PADDING=28]- Punkty:
+[X_PADDING=36]-> Wygrama +3 trofea / + 5kk dla kazdego czlonka gildii
+[X_PADDING=36]-> Porazka -2 trofea
+[X_PADDING=36]-> Draw +1 trofeum / + 2kk dla kazdego czlonka gildii
+
+[X_PADDING=28]- Bonus na koniec sezonu (25 dni trwania sezonu):
+[X_PADDING=36]-> 1 miejsce: 100kk + 1. M skrzynia  Srebrnej Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 2 miejsce: 70kk + 2. M skrzynia  Srebrnej Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 3 miejsce: 40kk + 3. M skrzynia  Srebrnej Ligi dla kazdego czlonka gildii
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* BRAZOWA LIGA:
+
+[X_PADDING=28]- Punkty:
+[X_PADDING=36]-> Wygrana +3 trofea
+[X_PADDING=36]-> Porazka -1 trofeum
+[X_PADDING=36]-> Remis +1 trofeum
+
+[X_PADDING=28]- Bonus na koniec sezonu (25 dni trwania sezonu):
+[X_PADDING=36]-> 1. miejsce: 50kk + 1. M Brazowa Skrzynia Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 2. miejsce: 30kk + 2. M Brazowa Skrzynia Ligi dla kazdego czlonka gildii
+[X_PADDING=36]-> 3. miejsce: 10kk + 3. M Brazowa Skrzynia Ligi dla kazdego czlonka gildii
+
+[X_PADDING=12]NAGRODA ZWYCIESTWA:
+[X_PADDING=20]- Jesli gildia wygra kilka wojen, moze otrzymac inne nagrody specjalne:
+[X_PADDING=20]- 5 wygranych -  1 Gaya dla kazdego czlonka gildii.
+[X_PADDING=20]- 10 wygranych -  3 Gaya dla kazdego czlonka gildii.
+[X_PADDING=20]- 15 wygranych -  15 Gaya dla kazdego czlonka gildii.
+[X_PADDING=20]- Mozesz sprawdzic status zwyciestw swojej gildii w panelu informacyjnym gildii.
+
+[X_PADDING=12]INNE SZCZEGÓLY:
+[X_PADDING=20]1. Mozesz wypowiedziec wojne innej gildii tylko wtedy, gdy Twoja gildia ma co najmniej 2 poziom.
+[X_PADDING=20]2. Kazda gildia, aby wypowiedziec wojne, musi miec co najmniej 8 czlonków w swojej gildii.
+[X_PADDING=20]3. Pod koniec sezonu wszystkie gildie powróca do 0 trofeów.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

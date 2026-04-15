@@ -1,0 +1,58 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nemere.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]GEREKSINIMLER:
+[X_PADDING=12]*Minimum Giris Seviyesi: 85.
+[X_PADDING=12]*Maksimum Giris Seviyesi: 100.
+[X_PADDING=12]*Giris Bileti: Nemere bileti.
+[X_PADDING=12]*Tür: Tek veya Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71175.tga; Y=15; X=478]
+[X_PADDING=458]Nemere bileti
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]DIGER BILGILER:
+[X_PADDING=12]*Zaman siniri 50 dakika.
+[X_PADDING=12]*Bekleme Süresi: 1 saat
+[X_PADDING=12]*Bir gruba katilirsaniz herkesin bir bileti olmalidir.
+[X_PADDING=12]*Haritadan erisebilirsiniz: lobi zindani.
+[X_PADDING=12]*Önerilen bonus: buzun gücü
+[X_PADDING=12]*Irk: Buz
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ZINDAN IÇERISINDE
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BIRINCI ASAMA
+[X_PADDING=20]1. Tüm canavarlari öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]IKINCI ASAMA
+[X_PADDING=20]1. Dogru donma anahtarini bulun.
+[X_PADDING=20]2. Bir sonraki kata gitmek için buz anahtarina tiklayin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ÜÇÜNCÜ ASAMA
+[X_PADDING=20]1. Tüm canavarlari öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DÖRDÜNCÜ ASAMA
+[X_PADDING=20]1. Tüm canavarlari öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]BESINCI ASAMA
+[X_PADDING=20]1. Canavarlardan düsüreceginiz Kuzey yildizlarini kullanarak kutup küplerini dogru sirayla açin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ALTINCI ASAMA
+[X_PADDING=20]1. Tüm canavarlari öldür.
+[X_PADDING=20]2. Ayaz metnini yok et.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]YEDINCI ASAMA
+[X_PADDING=20]1. Dogru Szel'i Bul ve öldür.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SEKIZINCI ASAMA
+[X_PADDING=20]1. Dogru buz çiçegi anahtarini bulun.
+[X_PADDING=20]2. Bir sonraki kata gitmek için buz anahtarina sag tiklayin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DOKUZUNCU ASAMA
+[X_PADDING=20]1. Kuzey Ejderha sütununu yok et.
+[X_PADDING=20]2. Ayaz Aslanla konus.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ONUNCU ASAMA
+[X_PADDING=20]1. Nemere'yi Öldür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=662; CENTER_ALIGN]

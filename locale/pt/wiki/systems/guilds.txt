@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/guild.png]
+[CENTER_ALIGN]O sistema de Ranking da guilda consiste em 3 ligas:
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=25; X=378]
+[IMG=d:/ymir work/ui/wiki/systems/common/gold.png; Y=30; X=92]
+[IMG=d:/ymir work/ui/wiki/systems/common/silver.png; Y=30; X=242]
+[IMG=d:/ymir work/ui/wiki/systems/common/bronze.png; Y=30; X=392]
+
+
+
+
+
+
+[X_PADDING=95]Liga Ouro									   Liga Prata									 Lega Bronze
+
+
+[X_PADDING=12]Você pode abrir o painel de classificação da guilda clicando no ícone ao lado do inventário ou pressionando a tecla F6.
+
+[X_PADDING=12]Para entrar em uma liga, você precisa de um mínimo de troféus:
+[X_PADDING=20]1. Liga Ouro são necessários 50  troféus
+[X_PADDING=20]2. Liga Prata são necessários 30  troféus
+[X_PADDING=20]3. Liga Bronze são necessários 5  troféus
+
+[X_PADDING=12]Para cada liga há vagas limitadas, quem tiver mais troféus poderá ficar em uma liga.
+[X_PADDING=20]1. Liga Ouro vagas 7
+[X_PADDING=20]2. Liga Prata vagas 12
+[X_PADDING=20]3. Liga Bronze vagas 21
+
+[X_PADDING=12;FONT_SIZE=14;COLOR=58ADFF]Pontos e prêmios para as várias ligas:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=FFD100]* LIGA DE OURO:
+
+[X_PADDING=28]- Pontuação:
+[X_PADDING=36]-> Vitória +3 troféus / + 15KK para cada membro da guilda
+[X_PADDING=36]-> Derrota -3 troféus / -5kk para cada membro da guilda
+[X_PADDING=36]-> Empate +1 troféu / +5kk para cada membro da guilda
+
+[X_PADDING=28]- Prêmio final de temporada (duração da temporada de 25 dias):
+[X_PADDING=36]-> 1 Lugar: 180kk + Baú Liga de Ouro 1°P para cada membro da guilda
+[X_PADDING=36]-> 2 Lugar: 100kk + Baú Liga de Ouro 2°P para cada membro da guilda
+[X_PADDING=36]-> 3 Lugar: 70kk + Baú Liga de Ouro 3°P para cada membro da guilda
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=CFCFCF]* LIGA DE PRATA:
+
+[X_PADDING=28]- Punteggio:
+[X_PADDING=36]-> Vitória +3 troféus / +5KK para cada membro da guilda
+[X_PADDING=36]-> Derrota -2 troféus / nenhuma penalidade de Gold pela a derrota
+[X_PADDING=36]-> Empate +1 troféu / +2kk para cada membro da guilda
+
+[X_PADDING=28]- Prêmio final de temporada (duração da temporada de 25 dias):
+[X_PADDING=36]-> 1 Lugar: 100kk + Baú Liga de Prata 1°P para cada membro da guilda
+[X_PADDING=36]-> 2 Lugar: 70kk + Baú Liga de Prata 2°P para cada membro da guilda
+[X_PADDING=36]-> 3 Lugar: 40kk + Baú Liga de Prata 3°P para cada membro da guilda
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=9C4C00]* LIGA DE BRONZE:
+
+[X_PADDING=28]- Punteggio:
+[X_PADDING=36]-> Vitória +3 troféus
+[X_PADDING=36]-> Derrota -1 troféus
+[X_PADDING=36]-> Empate +1 troféu
+
+[X_PADDING=28]- Prêmio final de temporada (duração da temporada de 25 dias):
+[X_PADDING=36]-> 1 Lugar: 50kk + Baú Liga de Bronze 1°P para cada membro da guilda
+[X_PADDING=36]-> 2 Lugar: 30kk + Baú Liga de Bronze 2°P para cada membro da guilda
+[X_PADDING=36]-> 3 Lugar: 10kk + Baú Liga de Bronze 3°P para cada membro da guilda
+
+[X_PADDING=12]PRÊMIO VITÓRIA:
+[X_PADDING=20]- Se uma guilda vencer várias guerras, ela pode receber outras recompensas especiais:
+[X_PADDING=20]- 5 vitórias 1 Gaya para cada membro da guilda.
+[X_PADDING=20]- 10 vitórias 3 Gaya para cada membro da guilda.
+[X_PADDING=20]- 15 vitórias 15 Gaya para cada membro da guilda.
+[X_PADDING=20]- Você pode verificar o status des vitórias da sua guilda no painel de informações da guilda.
+
+[X_PADDING=12]OUTROS DETALHES:
+[X_PADDING=20]1. Você só pode declarar guerra a outra guilda quando sua guilda for de pelo menos level 2.
+[X_PADDING=20]2. Cada guilda para declarar uma guerra deve ter pelo menos 8 membros.
+[X_PADDING=20]3. No final da temporada, todas as guildas retornarão a 0 troféus.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=868; CENTER_ALIGN]

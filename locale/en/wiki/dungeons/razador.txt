@@ -1,0 +1,38 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/razador.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]REQUIREMENTS:
+[X_PADDING=12]*Minimum level: 85.
+[X_PADDING=12]*Maximum level: 100.
+[X_PADDING=12]*Ticket: Razador Ticket
+[X_PADDING=12]*Type: Solo and Party
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/71174.tga; Y=15; X=478]
+[X_PADDING=457]Razador Ticket
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Time limit 50 minutes.
+[X_PADDING=12]*Cooldown: 1 hour
+[X_PADDING=12]*If you join a group everyone must have a ticket.
+[X_PADDING=12]*You can access from the map: Lobby Dungeon.
+[X_PADDING=12]*Recommended bonus: Fire Power.
+[X_PADDING=12]*Element of monsters: Fire.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]WHILE RUNNING THE DUNGEON
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]FIRST FLOOR
+[X_PADDING=20]1. Talk to the Maw of Am-heh Gorge to unlock the first bridge. Upon completion of a bridge, talk to Am-heh again and a new bridge will unlock.
+[X_PADDING=20]again and a new bridge will unlock.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]MODE OF THE DUNGEON:
+[X_PADDING=20]1. Find the right Golden Cog Wheel to destroy the Isfet Stele.
+[X_PADDING=20]2. Kill Ignator.
+[X_PADDING=20]3. Kill all monsters.
+[X_PADDING=20]4. Find the Maat Stones to destroy the Isfet Steles
+[X_PADDING=20]5. Destroy the Purgatory Fire Metin.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]SECOND FLOOR
+[X_PADDING=20]1. Kill Razador.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=401; CENTER_ALIGN]

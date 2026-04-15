@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/shamy.png]
+[CENTER_ALIGN]O sistema de suporte xamã é um sistema que permite convocar um xamã que automaticamente buffa seu
+[CENTER_ALIGN]personagem.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[X_PADDING=12]1. O ícone do painel de suporte xamã está localizado próximo ao inventário ou você pode abrir o painel
+[X_PADDING=12]pressionando a tecla X.
+
+[X_PADDING=12]2. Para desbloquear o painel de suporte xamã você precisará do item Dragon Support Unlock ou o item
+[X_PADDING=12]Unlock Support Cura.
+
+[X_PADDING=12]3. Se você tiver um dos dois itens e clicar com o botão direito sobre ele, um painel será aberto onde solicitará que você
+[X_PADDING=12]digite o nome e escolha o gênero de seu suporte xamã.
+
+[X_PADDING=12]4. O suporte xamã sempre começará no level 1 e pode ir até o level 120, quanto maior o level maior será o percentual
+[X_PADDING=12]de seu Buff. O suporte Sxamã apenas acumula experiência quando evocado e os monstros são mortos.
+
+[X_PADDING=12]5. O suporte xamã sempre começará com um equipamento predefinido, você terá a possibilidade de alterar
+[X_PADDING=12]a estética do seu xamã abrindo a loja localizada no painel.
+
+[X_PADDING=12]6. 2 suportes xamãs não podem ser evocados juntos, e não podem ser evocados em guerras de guilda.
+
+[X_PADDING=12]7. Você pode alterar o nome do seu xamã usando o item Name Magic.
+
+[X_PADDING=12]8. Você pode alterar o gênero do seu xamã usando o item Pergaminho da Transformação.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=308; X=428]
+[IMG=icon/item/30263.tga; Y=318; X=60]
+[IMG=icon/item/30264.tga; Y=318; X=190]
+[IMG=icon/item/164403.tga; Y=318; X=320]
+[IMG=icon/item/164404.tga; Y=318; X=450]
+
+
+
+
+
+[X_PADDING=45]Unlock Cura						  Unlock Drago						 Magic Name						  Perg. Transf.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=392; CENTER_ALIGN]

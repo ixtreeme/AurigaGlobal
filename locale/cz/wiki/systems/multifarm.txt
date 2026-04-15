@@ -1,0 +1,21 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/farm.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]S tímto systémem bude dropovat predmety pouze s 2 postavy.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=26; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]INFORMACE
+
+[X_PADDING=12]1. První 2 otevrení klienti budou mít drop k dispozici, otevrením tretího klienta bude drop automaticky blokován
+[X_PADDING=12]takže muže získávat pouze xp.
+[X_PADDING=12]2. Kliknutím na ikonu vlevo nahore bude možné na postavu drop aktivovat a deaktivovat.
+[X_PADDING=12]3. Drop lze aktivovat a deaktivovat pouze na mape Wonder Village a musíte pockat na cooldown
+[X_PADDING=12] 5 sekund.
+[X_PADDING=12]4. Pokud máte otevreno více než 2 klienty a povolíte drop na tretího klienta, automaticky zakážete drop na prvního klienta atd.
+[X_PADDING=12]v císelném poradí pro ostatní otevrené klienty..
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=12]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_yes.png; Y=180; X=192]
+[IMG=d:/ymir work/ui/wiki/systems/common/drop_no.png; Y=180; X=372]
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=286; CENTER_ALIGN]

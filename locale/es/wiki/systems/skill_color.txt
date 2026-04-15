@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]El sistema de colores de la habilidad te da permiso para cambiar el color de una habilidad.
+
+[X_PADDING=12]1. Puedes cambiar el color de una habilidad solo cuando está en P
+[X_PADDING=12]2. Puedes cambiar el color de una habilidad solo si tienes el artículo Elixir arcoíris.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Elixir arcoiris.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUCTURA DEL SISTEMA
+
+[X_PADDING=12]1. Cuando una habilidad llega a P al abrir el panel de habilidades sobre el icono de habilidad en P, aparecerá un círculo de color.
+[X_PADDING=12]2. Al hacer clic en el círculo con el botón izquierdo del mouse, se abrirá el panel del sistema de colores de habilidades.
+[X_PADDING=12]3. Cada habilidad se puede colorear en 5 colores diferentes al mismo tiempo, puede elegir los distintos colores haciendo clic en el
+[X_PADDING=12]números en la parte inferior del panel.
+[X_PADDING=12]4. Siempre que quieras cambiar el color de una de tus habilidades, necesitarás tener un Elixir Arcoíris.
+[X_PADDING=12]5. Usando la flecha ubicada a la derecha del panel puede usar las 3 opciones disponibles, guardar color, insertar color con
+[X_PADDING=12]Código hexadecimal y utilice el color predefinido.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

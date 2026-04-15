@@ -1,0 +1,83 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/epic.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTEMU
+
+[X_PADDING=12]Na Auriga sa 4 nowe stopnie ulepszen:
+[X_PADDING=20]- Epicki
+[X_PADDING=20]- Legendarny
+[X_PADDING=20]- Antyczny
+[X_PADDING=20]- Mistyczny
+
+[X_PADDING=12]1. Gdy niektóre przedmioty zostana ulepszone do +9, bedzie mozna je ulepszac w 4 stopniach.
+[X_PADDING=12]2. Kiedy przedmiot jest epicki, dodawany jest nowy staly bonus lub poprawiane sa wartosci procentowe
+[X_PADDING=12]obecnych juz stalych bonusów.
+
+[X_PADDING=12;FONT_SIZE=14]PRZEDMIOTY KTÓRE MOGA BYC ULEPSZANE:
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRONIE:
+[X_PADDING=28]- Zatruty Miecz + 9
+[X_PADDING=28]- Lwi Miecz+9
+[X_PADDING=28]- Miecz Zalu+9
+[X_PADDING=28]- Stalowy Luk Kruka+9
+[X_PADDING=28]- Skrzydla Demona Chakr.+9
+[X_PADDING=28]- Bambusowy Dzwon+9
+[X_PADDING=28]- Miecz Zodiaku+9
+[X_PADDING=28]- Ostrze Zodiaku+9
+[X_PADDING=28]- Wlócznia Zodiaku+9
+[X_PADDING=28]- Luk Zodiaku+9
+[X_PADDING=28]- Sztylety Zodiaku+9
+[X_PADDING=28]- Wachlarz Zodiaku+9
+[X_PADDING=28]- Dzwon Zodiaku+9
+[X_PADDING=28]- Cyjanitowy Miecz+9
+[X_PADDING=28]- Cyjanitowe Ostrze+9
+[X_PADDING=28]- Cyjanitowa Wlócznia+9
+[X_PADDING=28]- Cyjanitowy Luk+9
+[X_PADDING=28]- Cyjanitowe Sztylety+9
+[X_PADDING=28]- Cyjanitowy Wachlarz+9
+[X_PADDING=28]- Cyjanitowy Dzwon+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* ZBROJE:
+[X_PADDING=28]- Cyjanitowa Zbroja Plyt.+9
+[X_PADDING=28]- Cyjanitowa Zbroja +9
+[X_PADDING=28]- Cyjanitowa Szata+9
+[X_PADDING=28]- Cyjanitowe Ubranie+9
+[X_PADDING=28]- Zbroja Zodiaku+9
+[X_PADDING=28]- Zbroja Plyt. Zodiaku+9
+[X_PADDING=28]- Szata Zodiaku+9
+[X_PADDING=28]- Ubranie Zodiaku+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* HELMY:
+[X_PADDING=28]- Helm Mrocznego Smoka+9
+[X_PADDING=28]- Helm Zakletego Smoka+9
+[X_PADDING=28]- Helm Burzowego Smoka+9
+[X_PADDING=28]- Helm Wznioslego Smoka+9
+[X_PADDING=28]- Helm Smoczej Stali+9
+[X_PADDING=28]- Helm Luski Smoka+9
+[X_PADDING=28]- Smoczy Kaptur+9
+[X_PADDING=28]- Smocza Czapka+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* TARCZE:
+[X_PADDING=28]- Sokola Tarcza+9
+[X_PADDING=28]- Lwia Tarcza+9
+[X_PADDING=28]- Tygrysa Tarcza+9
+[X_PADDING=28]- Smocza Tarcza+9
+[X_PADDING=28]- Tarcza Trzech Wladców+9
+[X_PADDING=28]- Tarcza Tytanów+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BRANSOLETY:
+[X_PADDING=28]- Bransoleta Krysztalu Duszy+9
+[X_PADDING=28]- Cyjanitowa Bransoleta+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* NASZYJNIKI:
+[X_PADDING=28]- Naszyjnik Krysztalu Duszy+9
+[X_PADDING=28]- Cyjanitowy Naszyjnik+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* KOLCZYKI:
+[X_PADDING=28]- Kolczyki Krysztalu Duszy+9
+[X_PADDING=28]- Cyjanitowe Kolczyki+9
+
+[X_PADDING=20;FONT_SIZE=14;COLOR=58ADFF]* BUTY:
+[X_PADDING=28]- Ogniste Buty+9
+[X_PADDING=28]- Buty Oceanu+9
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=980; CENTER_ALIGN]

@@ -1,0 +1,30 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/jotun.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 100.
+[X_PADDING=12]*Nivel maxim: 115.
+[X_PADDING=12]*Permis: Piatra Driadelor.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/30613.tga; Y=15; X=478]
+[X_PADDING=460]Piatra Driadelor
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 30 minute.
+[X_PADDING=12]*Timpul de aºteptare este de 30 de minute.
+[X_PADDING=12]*În cazul în care se acceseazã în grup, fiecare membru al grupei trebuie sã aibe permisul.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby Special.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Orcilor.
+[X_PADDING=12]*Elementul monºtrilor: Pãmânt.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMA FAZA
+[X_PADDING=20]1. Omoarã-l pe Bagjanamu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMA FAZA
+[X_PADDING=20]1. Omoarã-l pe Jotun Thrym.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=304; CENTER_ALIGN]

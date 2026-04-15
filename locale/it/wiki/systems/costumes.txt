@@ -1,0 +1,84 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/it/costumes.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUTTURA DEL SISTEMA
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=34]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=134]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=234]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=334]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=31; X=434]
+[IMG=icon/item/70065.tga; Y=51; X=56]
+[IMG=icon/item/70401.tga; Y=51; X=156]
+[IMG=icon/item/70402.tga; Y=51; X=256]
+[IMG=icon/item/70403.tga; Y=51; X=356]
+[IMG=icon/item/70404.tga; Y=51; X=456]
+
+
+
+
+
+
+[X_PADDING=40]T. B. Costume			 Incan. Costume			Strega C. S. 5%		  Strega C. S. 10%			Rimuovi B. S.
+
+[X_PADDING=12]Su ogni costume che si acquista dall'NPC Confucio oppure che si compra nell'item shop o Battle Pass uscirà con 3
+[X_PADDING=12]bonus normali totalmente casuali con percentuali casuali.
+[X_PADDING=12]I bonus normali possono essere girari con un Incanta Costume.
+[X_PADDING=12]E' possibile inserire massimo 2 bonus speciali ad ogni costume, gli item che richiede sono 2:
+[X_PADDING=20]1. Strega Costume Speciale (max 5%)
+[X_PADDING=20]2. Strega Costume Speciale+ (max 10%)
+
+[X_PADDING=12]I bonus che possono essere inseriti con gli Strega Costumi Speciali sono:
+[X_PADDING=20]- Forte Contro Metin
+[X_PADDING=20]- Forte Contro Mostri
+[X_PADDING=20]- Forte contro Boss
+[X_PADDING=20]- Forte Contro Mezziuomini
+[X_PADDING=20]- Resistenza Mezziuomini
+
+[X_PADDING=12](I bonus speciali possono anche essere rimossi con un Rimuovi Bonus Speciale)
+
+[X_PADDING=12]E' possibile trasferire i bonus da un costume all'altro recandosi dall'NPC Theowahdan e possedere l'item
+[X_PADDING=12]Transfer Bonus Costume.
+
+[X_PADDING=12]Quando il pannello del trasferisci bonus costume è aperto saranno presenti 4 slot:
+[X_PADDING=20]1. A sinistra va inserito il vecchio costume.
+[X_PADDING=20]2. In alto va inserito l'item Transfer Bonus Costume.
+[X_PADDING=20]3. A destra va inserito il costume dove si vuole che vengano trasferiti i bonus del vecchio costume.
+[X_PADDING=20]4. In basso viene mostrato il nuovo costume con i bonus del vecchio costume.
+
+[X_PADDING=12]Attenzione se il vostro costume vecchio ha bonus speciali facendo il trasferimento i bonus speciali
+[X_PADDING=12]vengono rimossi e il costume vecchio viene distrutto.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=444; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUS NORMALI CHE POSSONO USCIRE NEI VARI TIPI DI COSTUME
+
+[X_PADDING=12]Costume Armatura:
+[X_PADDING=20]- Max. HP +2000
+[X_PADDING=20]- Max. MP +800
+[X_PADDING=20]- Danni assorbiti da MP 8%
+[X_PADDING=20]- Danni assorbiti da HP 8%
+[X_PADDING=20]- Valore d'attacco +50
+[X_PADDING=20]- Possibilità sul EXP bonus 15%
+[X_PADDING=20]- Prossibilità di far cadere il doppio degli oggetti 15%
+
+[X_PADDING=12]Capigliatura:
+[X_PADDING=20]- Velocità d'attacco: +8%
+[X_PADDING=20]- Possibilità nei colpi critici +8%
+[X_PADDING=20]- Possibilità su colpi che trafiggono +8%
+[X_PADDING=20]- Resistenza ai Mezziuomini 10%
+[X_PADDING=20]- Possibilità di lasciar cadere Yang +15%
+[X_PADDING=20]- Rigenerazione HP +15%
+[X_PADDING=20]- Rigenerazione MP +15%
+
+[X_PADDING=12]Costume Arma:
+[X_PADDING=20]- Intelligenza +10
+[X_PADDING=20]- Forza +10
+[X_PADDING=20]- Destrezza +10
+[X_PADDING=20]- Vitalità +10
+[X_PADDING=20]- Forte contro Zombie +15%
+[X_PADDING=20]- Forte contro Diavolo +15%
+[X_PADDING=20]- Forte  contro Orchi +15%
+[X_PADDING=20]- Forte contro Animali +15%
+[X_PADDING=20]- Forte contro Mezziuomini +10%
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=845; CENTER_ALIGN]

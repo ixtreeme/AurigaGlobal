@@ -1,0 +1,45 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/shamy.png]
+[CENTER_ALIGN]Sistemul de buff suport, îþi permite evocarea unui ºaman(cã) care îþi va da buff în
+[CENTER_ALIGN]mod automat.
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Icoana ferestrei al buff-ului suport se aflã lângã inventar în partea stângã ºi de asemenea
+[X_PADDING=12]poate fi deschis apãsând X.
+
+[X_PADDING=12]2. Vei avea nevoie de itemul Deblocaþi Suportul Leac sau Deblocaþi Suportul Dragon pentru a
+[X_PADDING=12]primi un suport.
+
+[X_PADDING=12]3. Dacã deþii unul dintre aceste iteme dã click dreapta pe el ºi îþi va apãrea o fereastrã unde
+[X_PADDING=12]te va întreba ce nume doreºti sã aibe suport-ul cât ºi sexul acestuia.
+
+[X_PADDING=12]4. Suport-ul va începe mereu de la nivelul 1 ºi poate fi crescut pânã la nivelul 120, cu cât
+[X_PADDING=12]este mai mare nivelul acestuia, cu atât valorile buff-urilor vor fi mai mare.
+
+[X_PADDING=12]5. Suport-ul va primi la creearea acestuia un echipament presetat, dar vei avea posibilitatea
+[X_PADDING=12]sã schimbi estetica acestuia cu ajutorul itemelor din magazinul care se aflã în fereastra sistemului.
+
+[X_PADDING=12]6. Nu pot fi chemate 2 suport-uri în acelaºi timp, iar în rãzboiul breslelor nu poate fi folosit.
+
+[X_PADDING=12]7. Dacã doreºti sã îi schimbi numele vei avea nevoie de Magia Numelui.
+
+[X_PADDING=12]8. Dacã doreºti sã îi schimbi sexul vei avea nevoie de Pergament Transformare.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=318; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=318; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=318; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=318; X=428]
+[IMG=icon/item/30263.tga; Y=328; X=60]
+[IMG=icon/item/30264.tga; Y=328; X=190]
+[IMG=icon/item/164403.tga; Y=328; X=320]
+[IMG=icon/item/164404.tga; Y=328; X=450]
+
+
+
+
+
+[X_PADDING=45]Deblocaþi Leac						  Debl. Dragon						   Magia Numelui						 Perg. Transfor.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=400; CENTER_ALIGN]

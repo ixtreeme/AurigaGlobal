@@ -1,0 +1,61 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[X_PADDING=12]1. Você pode abrir o painel da loja offline clicando no ícone do pacote localizado no minimapa ou pressionando
+[X_PADDING=12]a tecla Y.
+[X_PADDING=12]2. A loja offline consiste em 9 seções:
+[X_PADDING=20]I. Minha loja
+[X_PADDING=20]II. Lista de lojas
+[X_PADDING=20]III. Armazém
+[X_PADDING=20]IV. Minhas ofertas
+[X_PADDING=20]V. Pesquisa 
+[X_PADDING=20]VI. Minhas pesquisas
+[X_PADDING=20]VII. Pesquisas salvas
+[X_PADDING=20]VIII. Meus leilões
+[X_PADDING=20]IX. Leilões em andamento
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNCIONALIDADE DAS VÁRIAS SEÇÕES
+
+[X_PADDING=12]1. Minha loja: nesta seção você pode criar sua loja offline, no canto superior direito você encontrará uma prévia da
+[X_PADDING=12]loja que você vai usar, clicando nas setas você também pode escolher as lojas especiais, mas tenha cuidado,
+[X_PADDING=12]para usar as lojas especiais, você precisará de 1 Pacote de Cashmere.
+
+[X_PADDING=12]2. Lista de lojas: nesta seção, você pode ver todas as lojas off-line ativas.
+
+[X_PADDING=12]3. Armazém: nesta seção estão todos os itens que você não vendeu e os valores recebido com as vendas.
+
+[X_PADDING=12]4. Minhas ofertas: esta seção lista todas as ofertas que você fez.
+
+[X_PADDING=12]5. Pesquisa: nesta seção você pode usar os vários filtros para fazer uma pesquisa direcionada.
+
+[X_PADDING=12]6. Minhas pesquisas: nesta seção você pode ver todas as pesquisas que você fez.
+
+[X_PADDING=12]7. Pesquisas salvas: Todos os filtros de pesquisa salvos são listados nesta seção.
+
+[X_PADDING=12]8. Meus leilões: nesta seção você pode criar um leilão ou verificar o status de um de seus leilões em andamento.
+
+[X_PADDING=12]9. Leilões em andamento: esta seção relaciona todos os leilões ainda em andamento.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OUTROS
+
+[X_PADDING=12]1. Você pode escolher alterar a aparência da sua loja na seção Minha loja, para alterar a aparência da sua
+[X_PADDING=12]loja, você precisará do Pacote de Cashmere.
+[X_PADDING=12]2. Você pode encontrar o pacote de cashmere na Gaya Shop ou em vários eventos.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=233]Pacote Cashmere
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

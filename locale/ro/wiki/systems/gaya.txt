@@ -1,0 +1,36 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/gaya.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+[IMG=d:/ymir work/ui/wiki/systems/common/gaya.png; Y=10; X=446]
+
+[X_PADDING=12]1. Gaya este o nouã valutã care poate fi folositã pentru a achiziþiona din Magazinul Gaya.
+[X_PADDING=12]2. Poþi obþine Gaya de la NPC-ul Negustor Gaya.
+[X_PADDING=12]3. Pentru a obþine 1 Gaya vei avea nevoie de 10 Pietre Lucioase ºi o piatrã spirit +0 - +3.
+[X_PADDING=12]4. Rafinarea Pietrelor Lucioase are ºansã de reuºitã 100%.
+[X_PADDING=12]5. Magazinul poate fi gãsit la NPC-ul Piaþã Gaya.
+[X_PADDING=12]6. Magazinul are 9 slot-uri disponibile, din care 6 vor fi deblocate automat, pe celelalte
+[X_PADDING=12]va trebui sã le deschizi tu cu Extinde Piaþa Gaya ce pot fi gãsite la NPC-ul Negustor Gaya.
+[X_PADDING=12]7. Magazinul se actualizeazã automat odatã la 5 ore, dar îl poþi actualiza automat folosind
+[X_PADDING=12]Actualizeazã Piaþa Gaya ce poate fi gãsit la magazinul NPC-ului Negustor Gaya.
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]UNDE POÞI GASI PIETRE LUCIOASE
+
+[X_PADDING=12]1. Acestea pot fi dropate în dungeon-uri ºi la majoritatea ªefilor normali.
+[X_PADDING=12]2. În Cufãr Regina Meley poþi gãsi o sumã mare de pietre lucioase.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=230; X=378]
+[IMG=icon/item/50926.tga; Y=240; X=100]
+[IMG=icon/item/39064.tga; Y=240; X=250]
+[IMG=icon/item/39063.tga; Y=240; X=400]
+
+
+
+
+
+[X_PADDING=84]Piatrã Lucioasã									Ext. P. Gaya									  Act. P. Gaya
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=314; CENTER_ALIGN]
+

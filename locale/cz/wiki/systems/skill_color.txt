@@ -1,0 +1,29 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/skillcolor.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]Systém barev schopností vám udeluje oprávnení menit barvu schopnosti
+
+[X_PADDING=12]1. Barvu schopnosti mužete zmenit pouze tehdy, když je na P
+[X_PADDING=12]2. Barvu schopnosti mužete zmenit pouze tehdy, pokud máte predmet Duhový elixír.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=32; X=456]
+[IMG=icon/item/164406.tga; Y=42; X=478]
+
+
+
+[X_PADDING=462]Duhový elixír.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=114; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12]1. Když schopnost dosáhne P otevrením panelu dovedností nad ikonou schopnosti na P, tak se objeví barevný kruh.
+[X_PADDING=12]2. Kliknutím na kruh levým tlacítkem myši se otevre panel systému barev schopností.
+[X_PADDING=12]3. Každá dovednost muže být vybarvena soucasne v 5 ruzných barvách, barvy si mužete vybrat kliknutím
+[X_PADDING=12]na císla ve spodní cásti panelu.
+[X_PADDING=12]4. Kdykoli budete chtít zmenit barvu jedné ze svých schopností, budete potrebovat Duhový elixír.
+[X_PADDING=12]5. Pomocí šipky umístené na pravé strane panelu mužete použít 3 dostupné možnosti, uložit barvu, vložit barvu
+[X_PADDING=12]pomocí hexadecimálního kódu a použít preddefinovanou barvu.
+
+[IMG=d:/ymir work/ui/wiki/systems/it/skill_color.png; Y=264; CENTER_ALIGN]
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=734; CENTER_ALIGN]

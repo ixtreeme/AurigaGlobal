@@ -1,0 +1,502 @@
+quest gmpanel begin 
+	state start begin
+		when letter with pc . is_gm ( ) begin
+			send_letter("GM panel ")
+	end
+	when button or info begin
+	    say_title( "GM panel: ")
+		say("")
+	    say("Válaszd ki, mit szeretnél csinálni!")
+		say("")
+		local a = select (  "Szorzó beállítása ", "Havazás beállítása ", "Nappal-éjszaka beállítása ", "Eventek beállítása", "Teleportálás ", "Mégse ")
+		if a == 6 then
+		send_letter("GM panel ")
+		end
+		if a == 4 then
+		say_title( "GM panel: ")
+			say(" ")
+			say("Egyszerre akár több eventet is bekapcsolhatsz!")
+			say(" ")
+			wait()
+			local e = select ( "Holdfény láda","Hatszög láda","Foci-event","Húsvéti-event","Karácsonyi-event","Valentín-event","Vidám óra-event","Mégse","Halloween-event","Alternív drop","Mégse" )
+			if e == 1 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a holdfény láda eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("holdxla", 0)
+					notice_all("Holdfény kincsesláda event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("holdxla", 1)
+					notice_all("Holdfény kincsesláda event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 2 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Hatszögû kincsesláda eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("hatszoglada", 0)
+					notice_all("Hatszögû kincsesláda event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("hatszoglada", 1)
+					notice_all("Hatszögû kincsesláda event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 3 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Foci eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("focdxla", 0)
+					notice_all("Foci event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("focdxla", 1)
+					notice_all("Foci event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 4 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Húsvéti eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("husvtoj", 0)
+					notice_all("Húsvéti event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("husvtoj", 1)
+					notice_all("Húsvéti event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 5 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Karácsonyi eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("zokniasd", 0)
+					game.set_event_flag("xmas_tree", 0)
+					notice_all("Karácsonyi event befejezõdõtt.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("zokniasd", 1)
+					game.set_event_flag("xmas_tree", 3)
+					notice_all("Karácsonyi event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 6 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Valentin eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("valentin", 0)
+					notice_all("Valentin event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("valentin", 1)
+					notice_all("Valentin event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 7 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Vidám órát?")
+				say(" ")
+				say_reward("1 óráig lesz:")
+				say_reward("-Holdfény kincsesláda")
+				say_reward("-Hatszögû kincsesláda")
+				say_reward("-500% exp")
+				local b = select ( "Bekapcsolom az eventet!", "Mégse" )
+				if b == 2 then
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("holdxla", 1)
+					game.set_event_flag("hatszoglada", 1)
+					command( "priv_empire 0 4:exp 500 1")
+					notice_all("Vidám óra elkezdõdött!")
+					notice_all("Mostantól számított 1 órában a következõk lesznek:")
+					notice_all("Hatszögû és Holdfény kincsesláda, +500% exp!")
+					server_timer("vidamorat", 60*60)
+					send_letter("GM panel ")
+				end
+			end
+			if e == 8 then
+				send_letter("GM panel ")
+			end
+			if e == 9 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam a Halloween eventet?")
+				say(" ")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("hwewx", 0)
+					notice_all("Halloween event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("hwewx", 1)
+					notice_all("Halloween event elkezdõdött!")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 10 then
+				say_title( "GM panel: ")
+				say(" ")
+				say("Bekapcsoljam az Alternatív drop eventet?")
+				say("-Optadó és csere (1-4) ")
+				say("-Kutatói és Bájitali növényláda")
+				say("-Fejlõdõk ládája")
+				say("-Kosztüm ládák (Milon, Athéné) ")
+				say("")
+				say_reward("Addig lesz aktív, míg itt ki")
+				say_reward("Nem kapcsolod!")
+				local b = select ( "Bekapcsolom az eventet!" , "Kikapcsolom az eventet!" , "Mégse" )
+				if b == 3 then
+					send_letter("GM panel ")
+				end
+				if b == 2 then 
+					game.set_event_flag("quest_drop_a", 0)
+					notice_all("Alternatív drop event befejezõdött.")
+					send_letter("GM panel ")
+				end
+				if b == 1 then 
+					game.set_event_flag("quest_drop_a", 1)
+					notice_all("Alternatív drop event elkezdõdött!")
+					notice_all("-Optadó és csere (1-4) ")
+					notice_all("-Kutatói és Bájitali növényláda")
+					notice_all("-Fejlõdõk ládája")
+					notice_all("-Kosztüm ládák (Milon, Athéné) ")
+					send_letter("GM panel ")
+				end
+			end
+			if e == 10 then
+				send_letter("GM panel ")
+			end
+		end
+		if a == 1 then
+		say_title( "GM panel: ")
+		say("")
+		say("Válassz mennyiséget!")
+		say("A szorzó 24 órára szól!")
+	    local b = select("250 szorzó ","500 szorzó ","750 szorzó ","1000 szorzó ","Szorzó kikapcsolása","Mégse")
+		if b == 6 then
+		send_letter("GM panel ")
+		end
+		if b == 1 then
+		command( "priv_empire 0 1: 250 24 ")
+		command( "priv_empire 0 2: 250 24 ")
+		command( "priv_empire 0 4: 250 24 ")
+		send_letter("GM panel ")
+		end
+		if b == 2 then
+		command( "priv_empire 0 1: 500 24 ")
+		command( "priv_empire 0 2: 500 24 ")
+		command( "priv_empire 0 4: 500 24 ")
+		send_letter("GM panel ")
+		end
+		if b == 3 then
+		command( "priv_empire 0 1: 750 24 ")
+		command( "priv_empire 0 2: 750 24 ")
+		command( "priv_empire 0 4: 750 24 ")
+		send_letter("GM panel ")
+		end
+		if b == 4 then
+		command( "priv_empire 0 1: 1000 24 ")
+		command( "priv_empire 0 2: 1000 24 ")
+		command( "priv_empire 0 4: 1000 24 ")
+		send_letter("GM panel ")
+		end
+		if b == 5 then
+		command( "priv_empire 0 1: 0 24 ")
+		command( "priv_empire 0 2: 0 24 ")
+		command( "priv_empire 0 4: 0 24 ")
+		send_letter("GM panel ")
+		end
+		end
+		if a == 2 then
+		say_title( "GM panel: ")
+		say( "Szeretnéd a havazást beállítani a szerveren? ")
+		local c = select ( "Havazás bekapcsolása ", "Havazás kikapcsolása ", "Mégse ")
+		if c == 3 then
+		send_letter("GM panel ")
+		end
+		if c == 1 then
+		command( "e xmas_snow 1 ")
+		send_letter("GM panel ")
+		end
+		if c == 2 then
+		command( "e xmas_snow 0 ")
+		send_letter("GM panel ")
+		end
+		end
+		if a == 3 then
+		say_title( "GM panel: ")
+		say( "Válaszd ki, hogy nappal, vagy éjszaka ")
+		say( "legyen a szerveren! ")
+		local d = select ( "Nappal ", "Éjszaka ", "Mégse ")
+		if d == 3 then
+		send_letter("GM panel ")
+		end
+		if d == 1 then
+		command( "x 2 ")
+		send_letter("GM panel ")
+		end
+		if d == 2 then
+		command( "x 1 ")
+		send_letter("GM panel ")
+		end
+		end
+		if a == 5 then
+		say_title( "GM panel: ")
+		say("Hova szeretnél menni?")
+	local s = select("Falvak","Lungsam(erdõk)","Pók kazamaták ","Lélek barlang ","Metinkõ mappok","Más helyek","Mégse")
+		if s == 7 then
+			send_letter("GM panel ")
+		end
+		if s == 5 then
+			say_title( "GM panel: ")
+			local xny1 = select("Kékek Metinmapja","Sárgák Metinmapja","Pirosak Metinmapja","Mégse")
+			if xny1 == 4 then
+				send_letter("GM panel ")
+			end
+			if xny1 == 3 then
+				say_title( "GM panel: ")
+				say("Pirosak metinmapjára teleportállak...")
+				wait()
+				pc.warp(972800,102400)
+			end
+			if xny1 == 2 then
+				say_title( "GM panel: ")
+				say("Sárgák metinmapjára teleportállak...")
+				wait()
+				pc.warp(972800,153600)
+			end
+			if xny1 == 1 then
+				say_title( "GM panel: ")
+				say("Kékek metinmapjára teleportállak...")
+				wait()
+				pc.warp(921600,153600)
+			end
+		end
+		if s == 1 then
+		say_title( "GM panel: ")
+	local ss = select("Kék map1","Kék map2","Piros map1","Piros map2","Sárga map1","Sárga map2","Mégsem ")
+	if ss == 1 then
+		say_title( "GM panel: ")
+		say("Pyungmoo területre teleportállak...")
+		wait()
+		pc.warp(969600,278400)
+	elseif ss == 2 then
+		say_title( "GM panel: ")
+		say("Bakra területre teleportállak...")
+		wait()
+		pc.warp(873100,242600)
+	elseif ss == 3 then
+		say_title( "GM panel: ")
+		say("Yongan területre teleportállak...")
+		wait()
+		pc.warp(469300,964200)
+	elseif ss == 4 then
+		say_title( "GM panel: ")
+		say("Jayang területre teleportállak...")
+		wait()
+		pc.warp(360800,877600)
+	elseif ss == 5 then
+		say_title( "GM panel: ")
+		say("Joan területre teleportállak...")
+		wait()
+		pc.warp(55700,157900)
+	elseif ss == 6 then
+		say_title( "GM panel: ")
+		say("Bokjung területre teleportállak...")
+		wait()
+		pc.warp(138500,234900)
+	elseif ss == 7 then
+		send_letter("GM panel ")
+	end
+	elseif s == 2 then
+		say_title( "GM panel: ")
+	local sss = select("Szellem erdõ ","Vörös erdõ ","Vörös erdõ vége","Mégse ")
+	if sss == 1 then
+		say_title( "GM panel: ")
+		say("Szellem erdõbe teleportállak...")
+		wait()
+		pc.warp(288700,5700)
+	elseif sss == 2 then
+		say_title( "GM panel: ")
+		say("Vörös erdõbe teleportállak...")
+		wait()
+		pc.warp(1119900,70800)
+	elseif sss == 3 then
+		say_title( "GM panel: ")
+		say("Vörös erdõ végére teleportállak...")
+		wait()
+		pc.warp(1118100,8600)
+	elseif sss == 4 then
+		send_letter("GM panel ")
+	end
+	elseif s == 3 then
+		say_title( "GM panel: ")
+	local zindan = select("Pók kazamata 1. szint ","Pók kazamata 2. szint","Mégse ")
+		if zindan == 1 then
+		say_title( "GM panel: ")
+		say("Pók kazamata 1. szintjére teleportállak...")
+		wait()
+		pc.warp(59800,497300)
+	elseif zindan == 2 then
+		say_title( "GM panel: ")
+		say("Pók kazamata 2. szintjére teleportállak...")
+		wait()
+		pc.warp(704100,464100)	
+	elseif zindan == 3 then
+		send_letter("GM panel ")
+	end
+	elseif s == 4 then
+	local h = select ( "Barlang1 ", "Barlang2 ", "Barlang2 vége", "Mégse ")
+		if h == 4 then
+		send_letter("GM panel ")
+		end
+		if h == 1 then
+		say_title( "GM panel: ")
+		say("Barlang 1-be teleportállak...")
+		wait()
+		pc.warp(1000,1207800)
+		end
+		if h == 2 then
+		say_title( "GM panel: ")
+		say("Barlang 2-be teleportállak...")
+		wait()
+		pc.warp(241700,1274900)
+		end
+		if h == 3 then
+		say_title( "GM panel: ")
+		say("Barlang 2 végébe teleportállak...")
+		wait()
+		pc.warp(180000,1220800)
+		end
+	elseif s == 6 then
+	say_title( "GM panel: ")
+	local sssssss = select("Seungryong völgy","Sohan hegy ","Yongbi sivatag ","Tûzföld","Óriások Földje ","Démon torony","OX map","Mégse","GM map","Kereskedõ map","PvP map","Mégse ")
+	if sssssss == 1 then
+		say_title( "GM panel: ")
+		say("Seungryong völgybe teleportállak...")
+		wait()
+		pc.warp(336000,755600)
+	elseif sssssss == 2 then
+		say_title( "GM panel: ")
+		say("Sohan hegyre teleportállak...")
+		wait()
+		pc.warp(436400,215600)
+	elseif sssssss == 3 then
+		say_title( "GM panel: ")
+		say("Yongbi sivatagba teleportállak...")
+		wait()
+		pc.warp(296800,547400)
+	elseif sssssss == 4 then
+		say_title( "GM panel: ")
+		say("Tûzföldre teleportállak...")
+		wait()
+		pc.warp(600800,687400)
+	elseif sssssss == 5 then
+		say_title( "GM panel: ")
+		say("Óriások Földjére teleportállak...")
+		wait()
+		pc.warp(829900,763300)
+	elseif sssssss == 6 then
+		say_title( "GM panel: ")
+		say("Démon toronyhoz teleportállak...")
+		wait()
+		pc.warp(590500,110500)
+	elseif sssssss == 7 then
+		say_title( "GM panel: ")
+		say("OX mapra teleportállak...")
+		wait()
+		command("go ox")
+	elseif sssssss == 8 then
+		send_letter("GM panel ")
+	elseif sssssss == 9 then
+		say_title( "GM panel: ")
+		say("GM mapra teleportállak...")
+		wait()
+		pc.warp(17600,6100)
+	elseif sssssss == 10 then
+		say_title( "GM panel: ")
+		say("Kereskedõ mapra teleportállak...")
+		wait()
+		pc.warp(86606300,87612000)
+	elseif sssssss == 11 then
+		say_title( "GM panel: ")
+		say("PvP mapra teleportállak...")
+		wait()
+		pc.warp(444400,444400)
+	elseif sssssss == 12 then
+		send_letter("GM panel ")
+	end
+		end
+				end
+		end
+	end
+end

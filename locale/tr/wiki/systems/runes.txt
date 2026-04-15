@@ -1,0 +1,89 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SISTEMIN YAPISI
+
+[CENTER_ALIGN]70 lvl'de bir görev görünecek ve üzerine tiklayarak rünler panelinin kilidini açacaktir.
+
+[X_PADDING=12]Rünler paneli 6 normal rün arti 1 özelden olusur, her rün özel güce sahiptir.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=80; X=378]
+[IMG=icon/item/32x32/88970.tga; Y=90; X=100]
+[IMG=icon/item/32x32/88971.tga; Y=90; X=250]
+[IMG=icon/item/32x32/88972.tga; Y=90; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=78]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=228]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=164; X=378]
+[IMG=icon/item/32x32/88973.tga; Y=174; X=100]
+[IMG=icon/item/32x32/88974.tga; Y=174; X=250]
+[IMG=icon/item/32x32/88975.tga; Y=174; X=400]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=248; X=228]
+[IMG=icon/item/32x32/88976.tga; Y=258; X=250]
+
+
+
+
+
+
+[X_PADDING=87]Ares Rünü								  Era Rünü								   Apollo Rünü
+
+
+
+
+
+
+[X_PADDING=80]Afrodit Rünü							  Poseidon Rünü							     Atena Rünü
+
+
+
+
+
+
+[X_PADDING=238]Zeus Rünü
+
+[X_PADDING=12]Normal rünlerin maksimum gücü %100'dür, ayrica güçleri yüksektir arti rünlerinin yüzdesi yüksektir. 
+[X_PADDING=12]bonuslar daha yüksek olacaktir.
+
+[X_PADDING=12]Normal rünlerin maksimum yüzdesi:
+[X_PADDING=20]- Afrodit Rünü: Metin taslarina karsi güçlü %15 - Çeviklik +15
+[X_PADDING=20]- Apollo Rünü: Patronlara Karsi Güçlü %15 - Güç +15
+[X_PADDING=20]- Atena Rünü: Ortalama hasar [PVM] %12 - saldiri degeri +150
+[X_PADDING=20]- Era Rünü: Maks SP +1200 - Zeka +15
+[X_PADDING=20]- Poseidon Rünü: Canavarlara karsi güçlü +%15 - %15 kritik vurus sansi [PVM]
+[X_PADDING=20]- Ares Rünü: Maks. HP +2500 - Canlilik +15
+
+[X_PADDING=12]Zeus Rünü olacak özel rün, tüm normal rünler bittiginde otomatik olarak etkinlestirilir.
+[X_PADDING=12]mevcut gücün en az %50'si.
+
+[X_PADDING=12]Zeus Rune aktif oldugunda karaktere asagidaki bonuslari verir:
+[X_PADDING=20]- Yari Insanlara Karsi Güçlü %10
+[X_PADDING=20]- Yari Insan Direnci %10
+
+[X_PADDING=12]Herhangi bir normal rün gücü %50'nin altina düstügünde Zeus rünü söner.
+[X_PADDING=12]otomatik olarak.
+
+[X_PADDING=12]Ayrica, tüm normal rünler en az %60 güce sahip oldugunda, karakter üzerinde özel bir efekt belirir.
+[X_PADDING=12](Efekt ayrica rünler panelinden de kapatilabilir).
+
+[X_PADDING=12]Bulunan dükkandan satin alinabilen Rune Sisesini kullanarak rünlerin gücünü sarj etmek mümkündür.
+[X_PADDING=12]rünler panelinde.
+[X_PADDING=12]Rün Sisesi, yalnizca Rün Zindanina düseceginiz Rün Parçalari ile satin alinabilir.
+
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=38]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=168]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=298]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=667; X=428]
+[IMG=icon/item/88977.tga; Y=677; X=60]
+[IMG=icon/item/88978.tga; Y=677; X=190]
+[IMG=icon/item/88979.tga; Y=677; X=320]
+[IMG=icon/item/88980.tga; Y=677; X=450]
+
+
+
+
+
+[X_PADDING=40]Rün sisesi (P)					 Rün sisesi (M)					  Rün sisesi (G)						 Rün Parçasi
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=750; CENTER_ALIGN]

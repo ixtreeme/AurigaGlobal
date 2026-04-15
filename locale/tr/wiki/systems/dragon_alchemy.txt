@@ -1,0 +1,165 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SIMYA MARKETI
+
+[X_PADDING=12]1. Cor Draconis'i (Antik) Simya panelinde bulunan simya dükkanindan Stone Splinters ile satin alabilirsiniz.
+[X_PADDING=12]d. Ejderha.
+[X_PADDING=12]2. Zaman Iksirlerini Tas Parçalayicilarla Simya Panelinde bulunan Simya Magazasindan satin alabilirsiniz.
+[X_PADDING=12]d. Ejderha.
+[X_PADDING=12]3. Simya panelinde bulunan simya dükkanindan yesil, mavi ve pembe fasulye satin alabilirsiniz.
+[X_PADDING=12]Tas Ayirici d. Ejderha.
+[X_PADDING=12]4. Ejderha Kiskaçlarini, Tas Parçalayicili Simya Panelinde bulunan Simya Magazasindan satin alabilirsiniz.
+[X_PADDING=12]d. Ejderha
+[X_PADDING=12]5. Simya Efsun Nesnesini Cor Draconis ile Simya Panelinde bulunan Simya Magazasindan satin alabilirsiniz.
+[X_PADDING=12](Antik) veya onlari çesitli zindanlara birakin.
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SINIF
+
+[X_PADDING=12]1. Auriga'de sadece 3 sinif var. Antik, Efsanevi ve Mitsi.
+[X_PADDING=12]2. Bir tasin sinifini yükseltmek için ayni tip ve siniftan 2 tasa ihtiyaç vardir.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SAFLIK DERECESI
+
+[X_PADDING=12]1. 5 derece netlik vardir: Mat, Parlak, Tertemiz, Mükemmel ve Kusursuz..
+[X_PADDING=12]2. Bir tasin Saflik derecesini arttirmak için ayni tip ve ayni derecede iki tasa ihtiyaç vardir.
+[X_PADDING=12]Saflik
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SEVIYE
+
+[X_PADDING=12]1. Ejderha Taslari +6'ya kadar yükseltilebilir.
+[X_PADDING=12]2. Taslar yesil, mavi veya pembe olabilir.
+[X_PADDING=12]3. Çesitli fasulyeler arasindaki fark, sans yüzdesidir, yesil fasulye en düsük yüzdeye sahipken, bu yüzdedir.
+[X_PADDING=12]en yüksek pembe.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]EJDERHA TASI SÜRESI
+
+[X_PADDING=12]1. Her ejderha tasinin maksimum süresi 24 saattir.
+[X_PADDING=12]2. Ejderha tasinin süresi doldugunda tas kaybolmaz.
+[X_PADDING=12]3. Zaman Iksiri Simya Magazasinda tasi yeniden doldurmak için satin alinabilir.
+[X_PADDING=12]4. Ejderha Masasini kullanarak bir ejderha tasini simyadan çikarmak mümkündür, tas her zaman
+[X_PADDING=12]%100 basari.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]EJDERHA TASLARININ BONUSLARI
+
+[X_PADDING=12]1. Antik ve Efsanevi Ejderha Taslari her zaman 2 temel sabit bonusa sahiptir.
+[X_PADDING=12]2. Efsanevi Ejderha Taslari her zaman 3 temel sabit bonusa sahiptir.
+[X_PADDING=12]3. Bir ejderha tasinin bonuslarini ancak Mitsi sinifinda ve Kusursuz seviyesinde oldugunda degistirmek mümkündür.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]EJDERHA TASLARINDA ÇIKABILECEK ÇESITLI BONUSLAR
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Belirtilen bonuslar Mitsi simya, Kusursuz +6) ile ilgilidir.
+
+
+[X_PADDING=52]ELMAS :
+[X_PADDING=60]- Zeka +16
+[X_PADDING=60]- Buz Direnci 20%
+[X_PADDING=60]- Buz Gücü 20%
+[X_PADDING=60]- Suralara Karsi Güçlü 24%
+[X_PADDING=60]- Suralara Karsi Savunma 24%
+[X_PADDING=60]- Max HP. +32%
+[X_PADDING=60]- SP Yenileme 16%
+[X_PADDING=60]- Büyülü Saldiri Degeri +24
+[X_PADDING=60]- Büyü Savunmasi +24
+
+
+[X_PADDING=52]YAKUT :
+[X_PADDING=60]- Güç +16
+[X_PADDING=60]- Ates Direnci 20%
+[X_PADDING=60]- Ates Gücü 20%
+[X_PADDING=60]- Savasçilara Karsi Güçlü 24%
+[X_PADDING=60]- Savasçilara Karsi Savunma 24%
+[X_PADDING=60]- Iki Kat Yang Düsme Sansi 26%
+[X_PADDING=60]- HP Yenileme +16%
+[X_PADDING=60]- Ortalama Aurigaa Direnis 24%
+[X_PADDING=60]- Savunma +320
+
+
+[X_PADDING=52]YESIM :
+[X_PADDING=60]- SP +1000
+[X_PADDING=60]- Rüzgar Direnci 20%
+[X_PADDING=60]- Rüzgar Gücü 20%
+[X_PADDING=60]- Canavar Direnci 20%
+[X_PADDING=60]- Beceri Hasari 24%
+[X_PADDING=60]- Beceri Hasarina Karsi Koyma 24%
+[X_PADDING=60]- Saldiri Degeri +480
+[X_PADDING=60]- Canavarlara Karsi Güçlü 20%
+[X_PADDING=60]- Iki Kat Esya Düsme Sansi 20%
+
+
+[X_PADDING=52]SAFIR :
+[X_PADDING=60]- Çeviklik +16
+[X_PADDING=60]- Toprak Direnci 20%
+[X_PADDING=60]- Toprak Gücü 20%
+[X_PADDING=60]- Ninjalara Karsi Güçlü 24%
+[X_PADDING=60]- Ninjalara Karsi Savunma 24%
+[X_PADDING=60]- Metin Taslarina Karsi Güçlü 20%
+[X_PADDING=60]- Max SP. +32%
+[X_PADDING=60]- Hp Üretimi 16%
+[X_PADDING=60]- Sp Üretimi. 16%
+
+
+[X_PADDING=52]GARNET :
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Lightning Resistance 20%
+[X_PADDING=60]- Power of Lightning 20%
+[X_PADDING=60]- Strong Against Shaman 24%
+[X_PADDING=60]- Defence Against Shaman 24%
+[X_PADDING=60]- Strong Against Bosses 20%
+[X_PADDING=60]- Max. HP +4800
+[X_PADDING=60]- Chance of EXP bonus 26%
+[X_PADDING=60]- Average Damage 24%
+
+
+[X_PADDING=52]ONYX :
+[X_PADDING=60]- Canlilik +16
+[X_PADDING=60]- Karanlik Direnci 20%
+[X_PADDING=60]- Karanlik Gücü 20%
+[X_PADDING=60]- Oklardan Korunma Sansi 16%
+[X_PADDING=60]- Delici Vurus Direnci 16%
+[X_PADDING=60]- Kritik Vurus Direnci +16%
+[X_PADDING=60]- Yakin dövüs vuruslarini yansitma sansi 16%
+[X_PADDING=60]- Yakin dövüs vuruslarini bloklama sansi 16%
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]TAM SIMYASAL BONUS SETI
+
+[X_PADDING=12]1. Simya çarkinin tamamini +6 tasla tamamlamak, simya seti bonusunu otomatik olarak etkinlestirir.
+[X_PADDING=12]2. Set bonusu aktif degilse, simya set bonus simgesi kirmizi oldugunda sol üst.
+[X_PADDING=12]2. Set bonusu aktifse simya set bonusu simgesi yesil oldugunda sol üst.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]SAGLANAN BONUSLAR:
+
+[X_PADDING=12]1. Metin taslarina karsi güçlü +%10
+[X_PADDING=12]2. Canavarlara karsi güçlü +%10
+[X_PADDING=12]3. Max. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

@@ -1,0 +1,42 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/nave.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]WYMAGANIA:
+[X_PADDING=12]*Minimalny poziom: 105.
+[X_PADDING=12]*Maksymalny poziom: 120.
+[X_PADDING=12]*Przepustka: Bialy Zagiel.
+[X_PADDING=12]*Typ: Tylko w grupie.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/10951.tga; Y=15; X=478]
+[X_PADDING=468]Bialy Zagiel
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]OTHER INFORMATION:
+[X_PADDING=12]*Limit czasowy: 30 minut.
+[X_PADDING=12]*Cooldown: 1 godzina i 30 minut
+[X_PADDING=12]*Mozesz uzyskac dostep ze: Specjalnej Poczekalni Wypraw.
+[X_PADDING=12]*Dzialajacy bonus: Sila Lodu
+[X_PADDING=12]*Zywiol:Lód.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=170; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]PRZEBIEG INSTANCJI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PIERWSZE PIETRO
+[X_PADDING=20]1. Lider musi nacisnac na ster, aby rozpoczac wyprawe.
+[X_PADDING=20]2. Bron masztu przez 02 minuty i 30 sekund.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]DRUGIE PIETRO
+[X_PADDING=20]1. Pokonaj Królowa Syren.
+[X_PADDING=20]2. Pokonaj pierwsza glowe Hydry.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]TRZECIE PIETRO
+[X_PADDING=20]1. Bron masztu przez 1 minute i 30 sekund.
+[X_PADDING=20]2. Pokonaj druga glowe Hydry.
+[X_PADDING=20]3. Napraw masz uzywajac Drewna Masztu.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]CZWARTE PIETRO
+[X_PADDING=20]1. Bron masztu przez 1 minute i 30 sekund.
+[X_PADDING=20]2. Zniszcz Jaja Hydry aby móc atakowac Hydre.
+[X_PADDING=20]3. Pokonaj ostatnia glowe Hydry.
+[X_PADDING=20]4. Zniszcz Skarb Hydry aby otrzymac przedmioty.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=452; CENTER_ALIGN]

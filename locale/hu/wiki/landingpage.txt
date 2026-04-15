@@ -1,0 +1,64 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/hu/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Útmutató a kezdoknek.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]KEZDÉS:
+[X_PADDING=12]Fejlõdj Map1-en legalább szint 25–30-ig. Közben üsd a Metinköveket áldástekercsekért és fejlesztõ tárgyakért.
+[X_PADDING=20]Ne hagyd ki a Brutális Kapitányokat sem – tõlük 30-as szintû fegyvert szerezhetsz.
+[X_PADDING=20]26-os szinten érdemes venni az NPC-tõl egy 26-os vértet és egy 21-es sisakot, amiket könnyen felhúzhatsz +9-re.
+
+[X_PADDING=12;COLOR=ffff00]LVL 30:
+[X_PADDING=12]Menj Map2-re fejlõdni és farmolni. Ha jó felszerelésed van (vért, sisak, 30-as fegyver), a 45-ös szintû Metin sem jelent gondot.
+[X_PADDING=20]Farmolás közben ne feledkezz meg a dungeonökrõl sem! Használd ki az idõkeretet, és teljesítsd õket,
+[X_PADDING=20]hogy megszerezhesd az értékes mountokat, peteket stb.
+[X_PADDING=20]Az Ork Metinkövekbõl szükséged lesz 42-es vértre és 41-es pajzsra, hogy a következõ mapon túlélj!
+
+[X_PADDING=12;COLOR=ffff00]LVL 50:
+[X_PADDING=20]Mire ideérsz, legyen egy peted és legalább 6 mountod a mount-inventoridban – hiszen minden dungeon 2-t ad.
+[X_PADDING=20]Fejlõdj 65-ös szintig, és ne feledkezz meg az Open Boss-ról sem – értékes legendás bónuszolókat szerezhetsz tõle!
+[X_PADDING=20]Szükséged lesz egy 65-ös fegyverre, amely +9-re fejlesztve +55% Ördög elleni erõt biztosít.
+[X_PADDING=20]65-ös vértet is szerezhetsz az Open Boss-tól – ez elengedhetetlen a következõ térképre való belépéshez.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Játékszabályok!!
+
+[FONT_SIZE=18;COLOR=00ff00] Chat és viselkedési szabályok
+[X_PADDING=12]TILOS más játékosok zaklatása, fenyegetése vagy becsmérlése!
+[X_PADDING=12]TILOS a politikai vagy vallási témájú provokáció a globális csatornán!
+[X_PADDING=12]TILOS spammelni a chatben – ideértve az ismétlõdõ üzeneteket és reklámokat is!
+
+[FONT_SIZE=18;COLOR=00ff00] Fiók- és adatbiztonság
+[X_PADDING=12]Az accountod biztonságáért TE vagy a felelõs! Ne add meg senkinek a belépési adataidat!
+[X_PADDING=12]A staff-tagok SOHA nem kérik el a jelszavad – ha ilyet tapasztalsz, azonnal jelentsd!
+[X_PADDING=12]TILOS más játékos fiókjába belépni, még akkor is, ha õ megadja az adatokat.
+
+[FONT_SIZE=18;COLOR=00ff00] Staff és támogatás
+[X_PADDING=12]TILOS a GM-ek zaklatása vagy indokolatlan hívogatása! Használj ticket rendszert vagy fórumot.
+[X_PADDING=12]A GM döntése végleges. Ha vitás helyzet van, kulturált módon kérheted az ügy újravizsgálatát.
+
+[FONT_SIZE=18;COLOR=00ff00] Kihasználás és egyenlõség
+[X_PADDING=12]TILOS mindenféle program vagy eszköz használata, amely elõnyt biztosít (pl. bot, speedhack, zoomhack).
+[X_PADDING=12]TILOS kihasználni más játékos hibáját vagy tétlenségét, pl. kereskedelemben vagy PvP-ben.
+[X_PADDING=12]TILOS a PvP arénák, eventek vagy mapok rendszereinek szándékos manipulálása.
+
+[FONT_SIZE=18;COLOR=00ff00] Kereskedelem,Bolthasználat és Hackek
+[X_PADDING=12]TILOS a szerverek közötti kereskedelem!
+[X_PADDING=12]TILOS hamis vagy megtévesztõ hirdetést tenni a boltokba (pl. 1 yang = 1kk)!
+[X_PADDING=12]MINDEN hackprogram, ideértve a macro használatát is, SZIGORÚAN TILOS!
+[X_PADDING=12]TILOS valós pénzért eladni vagy árulni a tárgyaidat vagy az accountodat!
+[X_PADDING=12]TILOS másokat átverni vagy csalással elõnyt szerezni kereskedelem során.
+
+[FONT_SIZE=18;COLOR=00ff00] Bughasználat és jelentés
+[X_PADDING=12]Ha bugot találsz, KÖTELES VAGY jelenteni – a kihasználása SZIGORÚAN TILOS!
+[X_PADDING=12]A hibák kihasználása a szerver biztonságát veszélyezteti, és szigorú büntetést von maga után!
+
+[FONT_SIZE=18;COLOR=00ff00] Általános tiltások
+[X_PADDING=12]TILOS trágár szavak használata, gyûlöletkeltés vagy faji megkülönböztetés – mind emberek vagyunk!
+[X_PADDING=12]SENKI MÁS nem használhatja az accountodat – még ha a barátod is!
+[X_PADDING=12]TILOS más szerverek reklámozása, promózása vagy linkelése!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]A FENTIEK MEGSZEGÉSE AKÁR VÉGLEGES HARDWARE TILTÁSSAL IS JÁRHAT!
+[X_PADDING=12]

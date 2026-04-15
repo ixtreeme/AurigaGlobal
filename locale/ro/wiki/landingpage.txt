@@ -1,0 +1,63 @@
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rules.png]
+[CENTER_ALIGN;FONT_SIZE=24]Yeni Baslayanlar Kilavuzu.
+[CENTER_ALIGN;FONT_SIZE=24]
+[CENTER_ALIGN;FONT_SIZE=24]
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=76; CENTER_ALIGN]
+
+[X_PADDING=12;COLOR=ffff00]BASLANGIÇ:
+[X_PADDING=12]Map1'de en az 25–30 seviyeye kadar gelis. Bu sirada Metin Taslarini vurarak kutsama parsömenleri ve gelistirme esyalari topla.
+[X_PADDING=20]Zorlu Kaptanlari da unutma – onlardan 30 seviyelik silah alabilirsin.
+[X_PADDING=20]26. seviyede NPC’den 26 seviyelik zirh ve 21 seviyelik migfer almak faydalidir; bunlari +9’a kolayca yükseltebilirsin.
+
+[X_PADDING=12;COLOR=ffff00]LVL 30:
+[X_PADDING=12]Map2’ye gidip gelis ve farm yap. Iyi zirh, migfer ve 30 seviyelik silahin varsa, 45 seviyelik Metinler sorun olmaz.
+[X_PADDING=20]Farm yaparken zindanlari da unutma! Süreyi iyi kullan ve tamamla,
+[X_PADDING=20]degerli binekler, evcil hayvanlar vb. kazanmak için.
+[X_PADDING=20]Ork Metinlerinden, sonraki haritada hayatta kalabilmek için 42 seviyelik zirh ve 41 seviyelik kalkan gerekecek.
+
+[X_PADDING=12;COLOR=ffff00]LVL 50:
+[X_PADDING=20]Buraya geldiginde bir evcil hayvanin ve mount envanterinde en az 6 binegin olmali – çünkü her zindan 2 tane verir.
+[X_PADDING=20]65 seviyeye kadar gelis ve Open Boss’u unutma – ondan degerli efsanevi bonuslar kazanabilirsin!
+[X_PADDING=20]+9’a yükseltilmis 65 seviyelik bir silah ihtiyacin olacak; bu, seytanlara karsi +%55 güç verir.
+[X_PADDING=20]Ayrica Open Boss’tan 65 seviyelik bir zirh da alabilirsin – bu, sonraki harita için zorunludur.
+
+[CENTER_ALIGN;FONT_SIZE=24]!!Oyun Kurallari!!
+
+[FONT_SIZE=18;COLOR=00ff00] Sohbet ve Davranis Kurallari
+[X_PADDING=12]Diger oyunculari taciz etmek, tehdit etmek veya hakaret etmek YASAKTIR!
+[X_PADDING=12]Global kanalda siyasi veya dini provokasyon yapmak YASAKTIR!
+[X_PADDING=12]Sohbette spam yapmak – tekrar eden mesajlar ve reklamlar dahil – YASAKTIR!
+
+[FONT_SIZE=18;COLOR=00ff00] Hesap ve Veri Güvenligi
+[X_PADDING=12]Hesabinin güvenliginden SEN sorumlusun! Giris bilgilerini kimseyle paylasma!
+[X_PADDING=12]Yetkili personel asla sifreni istemez – böyle bir durumla karsilasirsan hemen bildir!
+[X_PADDING=12]Baska oyuncunun hesabina girmek YASAKTIR, hesabin sahibi izin verse bile.
+
+[FONT_SIZE=18;COLOR=00ff00] Yetkili Personel ve Destek
+[X_PADDING=12]GM’leri taciz etmek veya sebepsiz yere rahatsiz etmek YASAKTIR! Ticket sistemi veya forumu kullan.
+[X_PADDING=12]GM kararlari kesindir. Anlasmazlik durumunda kibarca tekrar inceleme talep edebilirsin.
+
+[FONT_SIZE=18;COLOR=00ff00] Haksiz Avantaj ve Adalet
+[X_PADDING=12]Bot, speedhack, zoomhack gibi avantaj saglayan program veya araçlari kullanmak YASAKTIR.
+[X_PADDING=12]Baska oyuncularin hatalarini veya hareketsizligini (ticaret, PvP vb.) kötüye kullanmak YASAKTIR.
+[X_PADDING=12]PvP arenalari, etkinlikleri veya haritalarin sistemlerini kasitli olarak manipüle etmek YASAKTIR.
+
+[FONT_SIZE=18;COLOR=00ff00] Ticaret, Magaza Kullanimi ve Hileler
+[X_PADDING=12]Sunucular arasi ticaret YASAKTIR!
+[X_PADDING=12]Magazalarda yanlis veya yaniltici reklam yapmak (örnegin 1 yang = 1kk) YASAKTIR!
+[X_PADDING=12]Her türlü hile programi, makro kullanimi dahil, KESINLIKLE YASAKTIR!
+[X_PADDING=12]Gerçek para karsiliginda esya veya hesap satmak YASAKTIR!
+[X_PADDING=12]Ticarette dolandiricilik veya haksiz avantaj saglamak YASAKTIR!
+
+[FONT_SIZE=18;COLOR=00ff00] Hata Kullanimi ve Bildirimi
+[X_PADDING=12]Bug bulursan, BUNU BILDIRMEK ZORUNDASIN – bug kullanimi KESINLIKLE YASAKTIR!
+[X_PADDING=12]Bug kullanimi sunucunun güvenligini tehlikeye atar ve agir ceza alirsin!
+
+[FONT_SIZE=18;COLOR=00ff00] Genel Yasaklar
+[X_PADDING=12]Küfürlü, nefret dolu veya ayrimci dil kullanmak YASAKTIR – hepimiz insaniz!
+[X_PADDING=12]Hesabini baskasi kullanamaz – arkadaslarin bile olsa!
+[X_PADDING=12]Diger sunuculari tanitmak, reklamini yapmak veya link vermek YASAKTIR!
+
+[X_PADDING=12]
+[CENTER_ALIGN;FONT_SIZE=16;COLOR=ff0000]BU KURALLARIN IHLALI KESINLIKLE DONANIM ENGELI (HARDWARE BAN) ILE SONUÇLANABILIR!
+[X_PADDING=12]

@@ -1,0 +1,81 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/rune_dungeon.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]KÖVETELMÉNYEK:
+[X_PADDING=12]*Minimum szint: 70.
+[X_PADDING=12]*Maximum szint: 120.
+[X_PADDING=12]*Belépo: Rúnák belépoje
+[X_PADDING=12]Típus: Egyedül és Csapatban.
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=456]
+[IMG=icon/item/89100.tga; Y=15; X=478]
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=5; X=376]
+[IMG=icon/item/89101.tga; Y=15; X=398]
+[X_PADDING=384]Rúnák belépoje		Zeusz Ko
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]EGYÉB INFORMÁCIÓ:
+[X_PADDING=12]*Ido limit 1 óra and 30 perc
+[X_PADDING=12]*Újratöltés: 2 óra (Zeusz Kovel resetelni lehet az újratöltés idejét).
+[X_PADDING=12]*Ha csapatban lépsz be, mindenkinek kell belépo.
+[X_PADDING=12]*A dungeon elérheto: Speciális Dungeon váró.
+[X_PADDING=12]*Ajánlott bónusz: Rúna szörnyek elleni ero
+[X_PADDING=12]*Szörnyek eleme: Jég - Sötétség - Tuz - Villám - Föld.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]MIKÖZBEN A DUNGEONBAN VAGY
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Elso emelet
+[X_PADDING=20]1. Ölj meg minden szörnyet, hogy utána elpusztíthasd a Rúnák Metinjét.
+[X_PADDING=20]2. Pusztítsd el az összes Rúnák Metinjét a megfelelo sorrendben.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Második emelet (2.-3.-4. emelet random jöhet)
+[X_PADDING=20]* 1. Ölj meg minden szörnyet, majd utána pusztítsd el az összes Rúnák Metinjét, hogy Haru leéledjen. Miután a boss megjelent,
+[X_PADDING=20]kizárólag a csapat vezetoje tudja sebezni, egészen addig amíg Haru el nem éri az életerejének 70%-át, amint eléri életerejének 70%-át, 
+[X_PADDING=20]a csapat többi tagja is sebezheti a bosst.
+
+[X_PADDING=20]* 2. Ölj meg minden szörnyet, hogy megtalálj 10 Rúna Lelket, a Rúna Lelkek a csapat vezeto leltárjába kerülnek.
+[X_PADDING=20]Amint megszereztétek a 10db Rúna Lelket, jobb klikkeljetek az egyikre, hogy a csapat vezeto leltárjába kerüljön a Ko Kulcsa.
+[X_PADDING=20]Jobb klikk a Ko Kulcsára, hogy tovább menjetek.
+
+[X_PADDING=20]* 3. Amint Haru eléri életerejének 60%-át, nem lehet többé sebezni, elkell pusztítani az összes Rúnák Metinjét,
+[X_PADDING=20]ahhoz, hogy sebezni tudjátok. Amint Haru 20% TP-re esik, többé nem lehet sebezni.
+[X_PADDING=20]Öljetek meg 100 szörnyet, hogy sebezni tudjátok a bosst. (Figyelem!! Haru 20% TP-nél dupla annyi sebzést oszt ki!)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Harmadik emelet (2.-3.-4. emelet random jöhet)
+[X_PADDING=20]* 1. Ölj meg minden szörnyet, majd utána pusztítsd el az összes Rúnák Metinjét, hogy Buncho leéledjen. Miután a boss megjelent,
+[X_PADDING=20]kizárólag a csapat vezetoje tudja sebezni, egészen addig amíg Haru el nem éri az életerejének 70%-át, amint eléri életerejének 70%-át, 
+[X_PADDING=20]a csapat többi tagja is sebezheti a bosst.
+
+[X_PADDING=20]* 2. Ölj meg minden szörnyet, hogy megtalálj 10 Rúna Lelket, a Rúna Lelkek a csapat vezeto leltárjába kerülnek.
+[X_PADDING=20]Amint megszereztétek a 10db Rúna Lelket, jobb klikkeljetek az egyikre, hogy a csapat vezeto leltárjába kerüljön a Ko Kulcsa.
+[X_PADDING=20]Jobb klikk a Ko Kulcsára, hogy tovább menjetek.
+
+[X_PADDING=20]* 3. Amint Buncho eléri életerejének 60%-át, nem lehet többé sebezni, elkell pusztítani az összes Rúnák Metinjét,
+[X_PADDING=20]ahhoz, hogy sebezni tudjátok. Amint Buncho 20% TP-re esik, többé nem lehet sebezni.
+[X_PADDING=20]Öljetek meg 100 szörnyet, hogy sebezni tudjátok a bosst. (Figyelem!! Buncho 20% TP-nél dupla annyi sebzést oszt ki!)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Negyedik emelet (2.-3.-4. emelet random jöhet)
+[X_PADDING=20]* 1. Ölj meg minden szörnyet, majd utána pusztítsd el az összes Rúnák Metinjét, hogy Eien leéledjen. Miután a boss megjelent,
+[X_PADDING=20]kizárólag a csapat vezetoje tudja sebezni, egészen addig amíg Haru el nem éri az életerejének 70%-át, amint eléri életerejének 70%-át, 
+[X_PADDING=20]a csapat többi tagja is sebezheti a bosst.
+              
+[X_PADDING=20]* 2. Ölj meg minden szörnyet, hogy megtalálj 10 Rúna Lelket, a Rúna Lelkek a csapat vezeto leltárjába kerülnek.
+[X_PADDING=20]Amint megszereztétek a 10db Rúna Lelket, jobb klikkeljetek az egyikre, hogy a csapat vezeto leltárjába kerüljön a Ko Kulcsa.
+[X_PADDING=20]Jobb klikk a Ko Kulcsára, hogy tovább menjetek.
+              
+[X_PADDING=20]* 3. Amint Eien eléri életerejének 60%-át, nem lehet többé sebezni, elkell pusztítani az összes Rúnák Metinjét,
+[X_PADDING=20]ahhoz, hogy sebezni tudjátok. Amint Eien 20% TP-re esik, többé nem lehet sebezni.
+[X_PADDING=20]Öljetek meg 100 szörnyet, hogy sebezni tudjátok a bosst. (Figyelem!! Eien 20% TP-nél dupla annyi sebzést oszt ki!)
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]Ötödik emelet
+[X_PADDING=20]1. Pusztítsátok el az összes Rúnák Metinjét, hogy Haru sebezheto legyen.
+[X_PADDING=20]2. Öld meg Haru-t.
+[X_PADDING=20]3. Ölj szörnyeket, hogy megtaláld a Ko Kulcsot.
+[X_PADDING=20]4. Pusztítsd el a Rúna Követ úgy, hogy ráhúzod a Ko Kulcsot, és így sebezhetové válik Buncho.
+[X_PADDING=20]5. Öld meg Buncho-t.
+[X_PADDING=20]6. Támadd meg Eien-t, de vigyázz, mert amint az életereje 50% alá esik, nem kap több sebzést.
+[X_PADDING=20]7. Ahhoz, hogy tovább tudd sebezni Eien-t, megkell ölnöd az összes szörnyet eloször.
+[X_PADDING=20]8. Támadd meg Eien-t, de vigyázz, mert amint az életereje 10% alá esik, nem kap több sebzést.
+[X_PADDING=20]9. Ahhoz, hogy tovább tudd sebezni Eien-t, elkell pusztítanod az összes Rúnák Metinjét.
+[X_PADDING=20]10. Öld meg Eient.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=864; CENTER_ALIGN]

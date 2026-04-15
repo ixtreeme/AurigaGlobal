@@ -1,0 +1,62 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/offlineshop.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUCTURA SISTEMULUI
+
+[X_PADDING=12]1. Poþi deschide fereastra magazinului offline clickând pe sacul situat pe mini-mapã sau
+[X_PADDING=12]apãsând Y.
+[X_PADDING=12]2. Magazinul este format din 9 opþiuni:
+[X_PADDING=20]I. Magazinul meu
+[X_PADDING=20]II. Lista magazinelor
+[X_PADDING=20]III. Depozit
+[X_PADDING=20]IV. Ofertele mele
+[X_PADDING=20]V. Cautã
+[X_PADDING=20]VI. Cãutãrile mele
+[X_PADDING=20]VII. Cãutãri salvate
+[X_PADDING=20]VIII. Licitaþiile mele
+[X_PADDING=20]IX. Licitaþii în desfãºurare
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=184; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]FUNCÞIONALITAÞILE OPÞIUNILOR
+
+[X_PADDING=12]1. Magazinul meu: aceastã opþiune îþi permite creearea magazinului offline, sus în stânga ferestrei vei vedea
+[X_PADDING=12]previzualizarea magazinului, pe care îl poþi modifica dar atenþie pentru asta vei avea nevoie
+[X_PADDING=12]de 1 Kashmir.
+
+[X_PADDING=12]2. Lista magazinelor: în aceastã fereastrã vei vedea lista tuturor magazinelor active.
+
+[X_PADDING=12]3. Depozit: în aceastã fereastrã vei gãsi itemele nevândute ºi poþi retrage suma vânzãrilor.
+
+[X_PADDING=12]4. Ofertele mele: în aceastã fereastrã vei vedea lista tuturor ofertelor fãcute de tine.
+
+[X_PADDING=12]5. Cautã: aceastã opþiune îþi permite sã cauþi un item anume prin magazine.
+
+[X_PADDING=12]6. Cãutãrile mele: în aceastã fereastrã vei vedea lista tuturor cãutãrilor fãcute de tine.
+
+[X_PADDING=12]7. Cãutãri salvate:aceastã opþiune îþi permite sã salvezi o cãutare.
+
+[X_PADDING=12]8. Licitaþiile mele: aceastã opþiune îþi permite creearea unei licitaþii sau vederea statusului a licitaþiei.
+
+[X_PADDING=12]9. Licitaþii în desfãºurare: în aceastã fereastrã vei vedea lista tuturor licitaþilor care sunt active.
+
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=482; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ALTELE
+
+[X_PADDING=12]1. Poþi schimba estetica propriului magazin dar pentru asta vei avea nevoie de
+[X_PADDING=12]1 Kashmir.
+[X_PADDING=12]2. Kashmir-ul poate fi gãsit în Magazinul Gaya sau poate fi recompensã la anumite evente.
+
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=583; X=228]
+[IMG=icon/item/88901.tga; Y=593; X=250]
+
+
+
+
+
+[X_PADDING=248]Kashmir
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=668; CENTER_ALIGN]
+

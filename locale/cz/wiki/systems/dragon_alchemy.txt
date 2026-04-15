@@ -1,0 +1,166 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/dragonstone.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]OBCHOD S ALCHYMIÍ
+
+[X_PADDING=12]1. Cor Draconis (Staroveký) mužete zakoupit v obchode s alchymií, který se nachází v panelu s 
+[X_PADDING=12]drací alchymií.
+[X_PADDING=12]2. Casové elixíry mužete zakoupit v obchode s alchymií, který se nachází v panelu s
+[X_PADDING=12]drací alchymií.
+[X_PADDING=12]3. Zelené, modré a ružové fazole mužete zakoupit v obchode s alchymií, který se nachází v panelu s
+[X_PADDING=12]drací alchymií.
+[X_PADDING=12]4. Drací klešte mužete zakoupit v obchode s alchymií, který se nachází v panelu s
+[X_PADDING=12]drací alchymií.
+[X_PADDING=12]5. Zacarovat alchymii mužete zakoupit obchode s alchymií, který se nachází v panelu s drací alchymií, zakoupit ji
+[X_PADDING=12]mužete pomocí Cor Draconis (Staroveký) nebo je dropnout v dungeonech .
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=156; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]TRÍDY
+
+[X_PADDING=12]1. Na Auriga existují pouze 3 trídy. Staroveký, Legendární a Mýtický.
+[X_PADDING=12]2. Pro vylepšení trídy kamene jsou zapotrebí 2 kameny stejného typu a trídy.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=246; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STUPENE CISTOTY
+
+[X_PADDING=12]1. K dispozici je 5 stupnu cistoty: Matný, Cistý, Bezchybný, Briliantní a Excelentní.
+[X_PADDING=12]2. Ke zlepšení stupne cistoty kamene jsou zapotrebí dva kameny stejného typu a stejného stupne
+[X_PADDING=12]cistoty.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=348; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]LEVELY
+
+[X_PADDING=12]1. Drací kameny lze vylepšit až na +6.
+[X_PADDING=12]2. Kameny lze vylepšit zelenou, modrou nebo ružovou fazolí.
+[X_PADDING=12]3. Rozdíl mezi ruznými fazolemi je procento na vylepšení, zelené fazole mají nejnižší procento,
+[X_PADDING=12]zatímco nejvyšší mají fialové.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=462; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]TRVÁNÍ DRACÍCH KAMENU
+
+[X_PADDING=12]1. Každý drací kámen má maximální trvání 24 hodin.
+[X_PADDING=12]2. Když vyprší cas dracího kamene, kámen nezmizí.
+[X_PADDING=12]3. Casové elixíry lze zakoupit k doplnení casu kamene v obchode s alchymií.
+[X_PADDING=12]4. Je možné odstranit drací kámen z alchymie pomocí Dracích kleští, kámen je vždy
+[X_PADDING=12]odstranen se 100% úspechem.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=588; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]BONUSY DRACÍCH KAMENU
+
+[X_PADDING=12]1. Staroveké a legendární drací kameny mají vždy 2 základní pevné bonusy.
+[X_PADDING=12]2. Mýtické drací kameny mají vždy 3 základní pevné bonusy.
+[X_PADDING=12]3. Bonusy dracího kamene je možné zmenit, pouze tehdy pokud je v Mýtické tríde a má vynikající stupen.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=690; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RUZNÉ BONUSY, KTERÉ MOHOU DRACÍ KAMENY OBSAHOVAT
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF](Uvedené bonusy se vztahují k Mýtické alchemii, Excelentní +6)
+
+
+[X_PADDING=52]DIAMANT :
+[X_PADDING=60]- Inteligence +16
+[X_PADDING=60]- Odolnost vuci ledu 20%
+[X_PADDING=60]- Síla proti ledu 20%
+[X_PADDING=60]- Silný proti surum 24%
+[X_PADDING=60]- Šance na obranu proti útokum suru 24%
+[X_PADDING=60]- max HP. +32%
+[X_PADDING=60]- MB regenerace 16%
+[X_PADDING=60]- Magická hodnota útoku +24
+[X_PADDING=60]- Magická obrana +24
+
+
+[X_PADDING=52]RUBÍN :
+[X_PADDING=60]- Síla +16
+[X_PADDING=60]- Odolnost vuci ohni 20%
+[X_PADDING=60]- Síla proti ohni 20%
+[X_PADDING=60]- Silný proti válecníkum 24%
+[X_PADDING=60]- Šance na obranu proti útokum válecníku 24%
+[X_PADDING=60]- Šance na dvojnásobný drop yangu 26%
+[X_PADDING=60]- HP Regenerace +16%
+[X_PADDING=60]- Prumerná odolnost proti škode 24%
+[X_PADDING=60]- Obrana +320
+
+
+[X_PADDING=52]NEFRIT :
+[X_PADDING=60]- MB +1000
+[X_PADDING=60]- Odolnost vuci vetru 20%
+[X_PADDING=60]- Síla proti vetru 20%
+[X_PADDING=60]- Odolnost proti príšerám 20%
+[X_PADDING=60]- Poškození schopností 24%
+[X_PADDING=60]- Odolnost proti poškození schopností 24%
+[X_PADDING=60]- Hodnota útoku +480
+[X_PADDING=60]- Silný proti príšerám 20%
+[X_PADDING=60]- Šance na dvojnásobný drop 20%
+
+
+[X_PADDING=52]SAFÍR :
+[X_PADDING=60]- Pohyblivost +16
+[X_PADDING=60]- Odolnost vuci zemi 20%
+[X_PADDING=60]- Síla proti zemi 20%
+[X_PADDING=60]- Silný proti ninjum 24%
+[X_PADDING=60]- Šance na obranu proti útokum ninju 24%
+[X_PADDING=60]- Silný proti metinum 20%
+[X_PADDING=60]- max MB. +32%
+[X_PADDING=60]- šance obnovit HP 16%
+[X_PADDING=60]- Šance obnovit MB. 16%
+
+
+[X_PADDING=52]GARNET :
+[X_PADDING=60]- HP +3500
+[X_PADDING=60]- Odolnost vuci blesku 20%
+[X_PADDING=60]- Síla proti blesku 20%
+[X_PADDING=60]- Silný proti šamanum 24%
+[X_PADDING=60]- Šance ubránit se útokum šamanu 24%
+[X_PADDING=60]- Silný proti bossum 20%
+[X_PADDING=60]- Max. HP +4800
+[X_PADDING=60]- Šance na bonusové EXP 26%
+[X_PADDING=60]- Prumerná škoda 24%
+
+
+[X_PADDING=52]ONYX :
+[X_PADDING=60]- Vitalita +16
+[X_PADDING=60]- Odolnost vuci temnote 20%
+[X_PADDING=60]- Síla proti temnote 20%
+[X_PADDING=60]- Šance vyhnout se šípum 16%
+[X_PADDING=60]- Odolnost proti pronikavým zásahum 16%
+[X_PADDING=60]- Odolnost proti kritickým zásahum +16%
+[X_PADDING=60]- Šance odvrátit telesný útok 16%
+[X_PADDING=60]- Šance odrazit prímý telesný útok 16%
+[X_PADDING=60]- Max. MP +2400
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1627; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]KOMPLETNÍ ALCHEMICKÁ BONUSOVÁ SADA
+
+[X_PADDING=12]1. Dokoncení celého alchymistického kola o +6 kamenu automaticky aktivuje bonus alchymistické sady.
+[X_PADDING=12]2. Vlevo nahore, když je ikona alchymistického bonusu cervená, bonus není aktivní.
+[X_PADDING=12]2. Vlevo nahore, když je ikona alchymistického bonusu zelená, bonus je aktivní.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1731; CENTER_ALIGN]
+
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]POSKYTNUTÉ BONUSY:
+
+[X_PADDING=12]1. Silný proti metinum +10%
+[X_PADDING=12]2. Silný proti príšerám +10%
+[X_PADDING=12]3. Max. HP +1000
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1832; CENTER_ALIGN]
+
+[IMG=icon/item/115400.tga; Y=778; X=12]
+[IMG=icon/item/125400.tga; Y=925; X=12]
+[IMG=icon/item/135400.tga; Y=1070; X=12]
+[IMG=icon/item/145400.tga; Y=1213; X=12]
+[IMG=icon/item/155400.tga; Y=1357; X=12]
+[IMG=icon/item/165400.tga; Y=1502; X=12]

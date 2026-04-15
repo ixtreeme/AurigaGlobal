@@ -1,0 +1,100 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/pet.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]STRUKTURA SYSTÉMU
+
+[X_PADDING=12]Splnením nekterých misí ve hre obdržíte Bednu Mazlícka, kliknutím se vás to zeptá aby jste
+[X_PADDING=12]si vybrali vejce mazlícka které preferujete:
+[X_PADDING=20]- Opicí vejce
+[X_PADDING=20]- Pavoucí vejce
+[X_PADDING=20]- Vejce Razadora
+[X_PADDING=20]- Vejce Nemera
+[X_PADDING=20]- Vejce Modrého Draka
+[X_PADDING=20]- Vejce Cerveného Draka
+[X_PADDING=20]- Vejce Baashido
+[X_PADDING=20]- Vejce Obtloustlého Kata
+[X_PADDING=20]- Vejce Nessie
+[X_PADDING=20]- Vejce Mini Azraela
+[X_PADDING=20]- Vejce Exdyara
+
+[X_PADDING=12]Kliknutím pravého tlacítka na vejce se vás to zeptá jaké jméno chcete pred tím než se mazlícek vylíhne
+[X_PADDING=12]z vejce (použitím Svitku Jména mužete zmenit jméno mazlícka).
+[X_PADDING=12]Když se mazlícek vylíhne tak bude žít 2 dny a bude level 1.
+[X_PADDING=12]Pro zvýšení životnosti mazlícka potrebujete Božského Zákusku, dostupný od 2g v NPC Vedoucí Obchodu.
+
+[X_PADDING=12]Když se mazlícek vylíhne bude mít 3 bonusy (tyto bonusy budou mít náhodné procenta):
+[X_PADDING=20]- ZB
+[X_PADDING=20]- Silný proti Príšerám
+[X_PADDING=20]- Prumerné poškození[PVM]
+
+[X_PADDING=12]Je možné zvýšit procenta základních bonusu pomocí Speciální Tycinky.
+[X_PADDING=12](Pozor procentak zvýšení základních bonusu mužou selhat).
+
+[X_PADDING=12]Mazlícci mají 3 rozvojové procesy:
+[X_PADDING=20]1. Z Mládete na Divoký
+[X_PADDING=20]2. Z Divokého na Statecný
+[X_PADDING=20]3. Ze Statecného na Hrdinský
+
+[X_PADDING=12]Rozvoj mazlícku je rozdeleno mezi:
+[X_PADDING=20]MLÁDE:
+[X_PADDING=28]- Level 1 do 40 není potreba žádný predmet
+[X_PADDING=20]MLÁDE --> DIVOKÝ:
+[X_PADDING=28]Level 41 do 60
+[X_PADDING=28]- 10 Kniha Mládete
+[X_PADDING=28]- 10 Bílá Perla
+[X_PADDING=28]- 3 Žlutá Perla
+[X_PADDING=20]DIVOKÝ --> STATECNÝ:
+[X_PADDING=28]- Lv 61 do lv 80
+[X_PADDING=28]- 10 Kniha Divokého Mazlícka
+[X_PADDING=28]- 10 Modrá Perla
+[X_PADDING=28]- 3 Zelená Perla
+[X_PADDING=20]STATECNÝ --> HRDINSÝ:
+[X_PADDING=28]- Lv 81 do 100
+[X_PADDING=28]- 10 Kniha Statecného Mazlícka
+[X_PADDING=28]- 10 Cervená Perla
+[X_PADDING=28]- 3 Fialová Perla
+
+[X_PADDING=12]Divoký odemkne první schopnost.
+[X_PADDING=12]Statecný odemkne druhou schopnost.
+[X_PADDING=12]Hrdinsý odemkne tretí schopnost.
+
+[X_PADDING=12]Pridáním, mazlícek odbrží nové bonusy cím je starší, cím starší mazlícek, tím vetší hodnoty bonusu budou.
+[X_PADDING=20]Od 1 do 10 dnu dostane mazlícek následující bonusy:
+[X_PADDING=28]- Max. ZB +500
+[X_PADDING=28]- Obrana proti Príšerám 2%
+[X_PADDING=28]- Obrana proti Pololidem 2%
+[X_PADDING=20]Od 11 do 25 dnu dostane mazlícek následující bonusy:
+[X_PADDING=28]- Max. ZB +1200
+[X_PADDING=28]- Obrana proti Príšerám 4%
+[X_PADDING=28]- Obrana proti Pololidem 4%
+[X_PADDING=20]Od 26 do 47 dnu dostane mazlícek následující bonusy:
+[X_PADDING=28]- Max. ZB +2100
+[X_PADDING=28]- Obrana proti Príšerám 7%
+[X_PADDING=28]- Obrana proti Pololidem 7%
+[X_PADDING=20]Od 48 do 59 dnu dostane mazlícek následující bonusy:
+[X_PADDING=28]- Max. ZB +3000
+[X_PADDING=28]- Obrana proti Príšerám 10%
+[X_PADDING=28]- Obrana proti Pololidem 10%
+[X_PADDING=20]Od 60 dnu a výš:
+[X_PADDING=28]- Max. ZB +3000
+[X_PADDING=28]- Obrana proti Príšerám 10%
+[X_PADDING=28]- Obrana proti Pololidem 10%
+[X_PADDING=28]- A odemkne se ctvrtá schopnost
+
+[X_PADDING=12]Schopnosti které se muže mazlícek naucit:
+[X_PADDING=20]- Šance na Kritický Útok [PvM] 10%
+[X_PADDING=20]- Silný proti Kamenum Metin 10%
+[X_PADDING=20]- Silný proti Bossum 10%
+[X_PADDING=20]- Obrana proti Ninjum 10%
+[X_PADDING=20]- Obrana proti Surum 10%
+[X_PADDING=20]- Obrana proti Válecníkum 10%
+[X_PADDING=20]- Obrana proti Šamanum 10%
+[X_PADDING=20]- Šance na získání více EXP 20%
+[X_PADDING=20]- Šance na dvojnásobné dropnutí yang 20%
+[X_PADDING=20]- Útocné/Magické poškození 10%
+[X_PADDING=20]- Šance zablokovat telesné poškození 10%
+[X_PADDING=20]- Šance odrazit telesné poškození 10%
+
+[X_PADDING=12]Je možné aby mazlícek zapomnel schopnost pomocí Obnovi Schopnosti Mazlícka a je možné ho úplne zapomenout
+[X_PADDING=12]všechny schopnosti pomocí Obnovi Schopnosti Mazlícka (S).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=1174; CENTER_ALIGN]

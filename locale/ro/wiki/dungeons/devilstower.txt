@@ -1,0 +1,50 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/ro/devilstower.png]
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]CERINÞE:
+[X_PADDING=12]*Nivel minim: 40.
+[X_PADDING=12]*Nivel maxim: 100.
+[X_PADDING=12]*Tip: Singur ºi Grup.
+
+
+[X_PADDING=12;COLOR=0xffd700;FONT_SIZE=15]ALTE INFORMAÞII:
+[X_PADDING=12]*Limita de timp este de 50 de minute.
+[X_PADDING=12]*Se poate accesa din harta: Dungeon Lobby.
+[X_PADDING=12]*Bonusul care conteazã este: Tare împotriva Vampirilor.
+[X_PADDING=12]*Elementul monºtrilor: Întuneric.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=147; CENTER_ALIGN]
+
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]DEFSAªURAREA DUNGEON-ULUI
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]PRIMUL ETAJ
+[X_PADDING=20]1. Omoarã toþi monºtrii.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 2
+[X_PADDING=20]1. Omoarã Demonul Rege.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 3
+[X_PADDING=20]1. Distruge Metinul Diavolului.
+[X_PADDING=20]2. Distruge Metinul Dizgraþiei corect.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 4
+[X_PADDING=20]1. Dropeazã 5 Piatre Cheie ucizând monºtri.
+[X_PADDING=20]2. Deschide Sigiliile vechi cu ajutorul cheilor pentru a urca la urmãtorul etaj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 5
+[X_PADDING=20]1. Omoarã Demonul rege mândru.
+[X_PADDING=20]2. Foloseºte Fierarul pentru a îmbunãtãþi un item sau vorbeºte cu el pentru a urca la urmãtorul etaj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 6
+[X_PADDING=20]1. Distruge Metinele Morþii.
+[X_PADDING=20]2. Distruge Metinul Crimelor pentru a dropa Lada veche necunoscutã.
+[X_PADDING=20]3. Deschide Lada veche necunoscutã pentru a primi Harta Zin-Sa-Gui.
+[X_PADDING=20]4. Foloseºte Harta Zin-Sa-Gui pentru a trece la urmãtorul etaj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ETAJUL 7
+[X_PADDING=20]1. Omoarã monºtrii pentru a dropa Cheia Zin-Bong-In.
+[X_PADDING=20]2. Deschide statuia cu ajutorul Cheii Zin-Bong-In pentru a trece la urmãtorul etaj.
+
+[X_PADDING=12;COLOR=ef4f00;FONT_SIZE=15]ULTIMUL ETAJ
+[X_PADDING=20]1. Omoarã Îngerul cu Coasã.
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=584; CENTER_ALIGN]

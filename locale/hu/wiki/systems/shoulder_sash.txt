@@ -1,0 +1,34 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/sash.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]RENDSZER FELÉPÍTÉSE
+[IMG=d:/ymir work/ui/wiki/systems/common/theowahdan.png; Y=10; X=446]
+
+[X_PADDING=12]VÁLLPÁNT BÓNUSZ:
+[X_PADDING=20]1. A Vállpánt rendszer lehetové teszi az 1 -es és magasabb szintu játékosok számára, 
+[X_PADDING=20]hogy új felszerelést viseljenek.
+[X_PADDING=20]2. A Vállpánt rendszer MINDEN fegyver- és páncélbónuszt képes elnyelni, kivéve a speciális fegyverbónuszokat
+[X_PADDING=20]és a misztikus páncélt. Az abszorpció százalékos aránya a Vállpánt minoségi fokától függ,
+[X_PADDING=20]minél magasabb a minoség, annál magasabb az abszorpció százalékos aránya.
+[X_PADDING=20]3. A bónuszok megadásához el kell menni az NPC Theowahdanba a Wonder Village térképen.
+[X_PADDING=20]4. Megvásárolhatja az NPC Theowahdan elso rangú vállpántját a vékony szövetekkel,
+[X_PADDING=20] amelyeket metinbol szerezhet.
+[X_PADDING=20]5. Eltávolíthatja a bónuszokat a vállpántról az ellopott bónusz elem használatával.
+
+[X_PADDING=12]VÁLLPÁNT JAVÍTÁSA:
+[X_PADDING=20]1. A Vállpánt frissítéséhez menjen az NPC Theowahdanba, és kattintson a Kombináció lehetoségre.
+[X_PADDING=20]2. A frissítés MINDIG megsemmisíti a behelyezett második vállpántot, akár sikeres, akár nem
+[X_PADDING=20]csod esetén. Abban az esetben, ha mindkét vállpántban vannak bónuszok, akkor nincs
+[X_PADDING=20]összeadódás, de csak az elso Vállpántokét vesszük figyelembe, mivel ez az
+[X_PADDING=20]valójában javult. A második kizárólagos funkciója a "javítandó objektum".
+
+[X_PADDING=12]A VÁLLPÁNT LEHETSÉGES FOKAI:
+[X_PADDING=20;COLOR=58ADFF]A BÓNUSZ ELSZÍVÁSÁNAK FOKOZATAI
+[X_PADDING=20]Alapv       1%
+[X_PADDING=20]Finom           5%
+[X_PADDING=20]Nemes          10%
+[X_PADDING=20]Egyedi     11~25%
+[IMG=d:/ymir work/ui/wiki/rahmen.tga; Y=273; X=323]
+[IMG=icon/item/90000.tga; Y=293; X=345]
+[X_PADDING=325]B. Vállpánt eltávolítása
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=355; CENTER_ALIGN]

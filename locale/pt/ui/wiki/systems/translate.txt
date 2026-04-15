@@ -1,0 +1,11 @@
+
+[BANNER_IMG = d:/ymir work/ui/wiki/banners/en/translate.png]
+[CENTER_ALIGN;FONT_SIZE=18;COLOR=58ADFF]ESTRUTURA DO SISTEMA
+
+[X_PADDING=12]1. Ao abrir o chat privado entre 2 jogadores, o botão Google Translate está localizado na parte superior.
+[X_PADDING=12]2. Se o botão estiver ativo, as mensagens de outro idioma serão traduzidas automaticamente para o seu idioma.
+[X_PADDING=12]3. Se o botão estiver desativado, as mensagens chegarão no idioma original, portanto sem serem traduzidas.
+
+[X_PADDING=12](Atenção tradução automática só funciona em mensagens privadas).
+
+[IMG=d:/ymir work/ui/wiki/divider_long.tga; Y=98; CENTER_ALIGN]
