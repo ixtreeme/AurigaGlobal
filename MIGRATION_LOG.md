@@ -1595,3 +1595,93 @@
   - `char.cpp` is now the final large `CHARACTER` implementation file
   - extraction is deferred to the next dedicated session
 - next target: `char.cpp`
+
+## Phase 8 - Step 8.17 char.cpp audit / slice plan
+- planned slices:
+  - `S1 PointSystem`
+    - `GetRealPoint`
+    - `SetRealPoint`
+    - `GetPolymorphPoint`
+    - `GetPoint`
+    - `GetLimitPoint`
+    - `SetPoint`
+    - `GetAllowedGold`
+    - `CheckMaximumPoints`
+    - `PointChange`
+    - `ApplyPoint`
+    - `SendPetLevelUpEffect`
+  - `S2 StatSystem`
+    - `ComputeBattlePoints`
+    - `ComputePoints`
+    - remaining `Compute*` / stat recompute helpers
+  - `S3 SessionSystem`
+    - constructor / destructor shell extraction
+    - `Initialize`
+    - `Create`
+    - `Destroy`
+    - `Show`
+    - `Save`
+    - `SaveReal`
+    - `FlushDelayedSaveItem`
+    - `Disconnect`
+  - `S4 NetworkSyncSystem`
+    - `MainCharacterPacket`
+    - `PointsPacket`
+    - `UpdatePacket`
+    - remaining packet / sync senders from `char.cpp`
+  - `S5 MovementSystem`
+    - `SetPosition`
+    - rotation / sync / stop / goto / move
+    - `SendMovePacket`
+    - warp / follow / return helpers
+  - `S6 SocialSystem`
+    - party / guild / marriage / dungeon / war map / wedding map bindings
+    - `SetParty`
+    - `RequestToParty`
+    - `AcceptToParty`
+    - `PartyInvite*`
+    - `SetGuild`
+    - `GetMarryPartner`
+  - `S7 CombatSystem`
+    - remaining combat-side helpers still in `char.cpp`
+    - target / stone / revive / berserk / godspeed / killer / duel / combo blocks
+  - `S8 AffectSystem`
+    - remaining status / polymorph / quest-affect style helpers still in `char.cpp`
+  - `S9 Item / Inventory / Mount / DragonSoul / Activity extensions`
+    - safebox / mall / mount inventory
+    - acce / battle pass / offline message / coin helpers
+  - `S10 PlayerRuntimeSystem`
+    - uncategorized runtime / chat / misc wrappers left at the end
+- note:
+  - extraction will proceed slice-by-slice with build gate and commit after each green checkpoint
+  - large methods stay on surgical copy-first handling when needed
+- next: `S1 PointSystem`
+
+## Phase 8 - Step 8.17 char.cpp -> PointSystem
+- completed slice `S1 PointSystem`
+- created:
+  - `SRC/Server/GameServer/ecs/systems/PointSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/PointSystem.cpp`
+- moved:
+  - `GetRealPoint`
+  - `SetRealPoint`
+  - `GetPolymorphPoint`
+  - `GetPoint`
+  - `GetLimitPoint`
+  - `SetPoint`
+  - `GetAllowedGold`
+  - `CheckMaximumPoints`
+  - `PointChange`
+  - `SendPetLevelUpEffect`
+  - `ApplyPoint`
+- note:
+  - the first `PointSystem` build surfaced only local integration issues:
+    - wrong relative include path for `Poly/Constants.h`
+    - unqualified `min(...)` calls after relocation
+  - both were fixed in-place and the slice built cleanly without rollback
+- after char.cpp Slice S1: `2049`
+- char.cpp status after slice:
+  - line count: `9200`
+  - `CHARACTER::` body count: `326`
+- build: success
+- next: `S2 StatSystem`
