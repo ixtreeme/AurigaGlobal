@@ -315,6 +315,42 @@ uint8_t GetPKMode(entt::entity e)
     return PK_MODE_PROTECT;
 }
 
+
+void ForgetMyAttacker(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->ForgetMyAttacker();
+    }
+}
+
+void AggregateMonster(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->AggregateMonster();
+    }
+}
+
+void AggregateMonsterPlus(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->AggregateMonsterPlus();
+    }
+}
+
+void AttractRanger(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->AttractRanger();
+    }
+}
+
+void PullMonster(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->PullMonster();
+    }
+}
+
 } // namespace CombatSystem
 
 // char_battle.cpp slice BE1 moved into CombatSystem.cpp
@@ -658,6 +694,61 @@ struct FuncPullMonster
 		}
 	}
 };
+
+
+// char_battle.cpp slice BE2a moved into CombatSystem.cpp
+
+void CHARACTER::ForgetMyAttacker()
+{
+	LPSECTREE pSec = GetSectree();
+	if (pSec)
+	{
+		FuncForgetMyAttacker f(this);
+		pSec->ForEachAround(f);
+	}
+	ReviveInvisible(5);
+}
+
+void CHARACTER::AggregateMonster()
+{
+	LPSECTREE pSec = GetSectree();
+	if (pSec)
+	{
+		FuncAggregateMonster f(this);
+		pSec->ForEachAround(f);
+	}
+}
+
+#ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
+void CHARACTER::AggregateMonsterPlus()
+{
+	LPSECTREE pSec = GetSectree();
+	if (pSec)
+	{
+		FuncAggregateMonsterPlus f(this);
+		pSec->ForEachAround(f);
+	}
+}
+#endif
+void CHARACTER::AttractRanger()
+{
+	LPSECTREE pSec = GetSectree();
+	if (pSec)
+	{
+		FuncAttractRanger f(this);
+		pSec->ForEachAround(f);
+	}
+}
+
+void CHARACTER::PullMonster()
+{
+	LPSECTREE pSec = GetSectree();
+	if (pSec)
+	{
+		FuncPullMonster f(this);
+		pSec->ForEachAround(f);
+	}
+}
 
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)

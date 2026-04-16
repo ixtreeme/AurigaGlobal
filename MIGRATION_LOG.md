@@ -1459,3 +1459,22 @@
 - after char_battle.cpp Slice BE1: `2126`
 - build: success
 - next: slice BE2 (`aggro / attraction methods`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BE2a:
+  - moved:
+    - `ForgetMyAttacker`
+    - `AggregateMonster`
+    - `AggregateMonsterPlus`
+    - `AttractRanger`
+    - `PullMonster`
+  - helper surface cleanup:
+    - `FuncForgetMyAttacker`
+    - `FuncAggregateMonster`
+    - `FuncAggregateMonsterPlus`
+    - `FuncAttractRanger`
+    - `FuncPullMonster`
+    now remain only in `CombatSystem.cpp`
+- after char_battle.cpp Slice BE2a: `2106`
+- build: success
+- next: slice BE2b (`UpdateAggrPointEx` / `UpdateAggrPoint` / `ChangeVictimByAggro`)

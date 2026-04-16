@@ -33,6 +33,11 @@ bool IsKillerMode(entt::entity e);
 void UpdateKillerMode(entt::entity e);
 void SetPKMode(entt::entity e, uint8_t bPKMode);
 uint8_t GetPKMode(entt::entity e);
+void ForgetMyAttacker(entt::entity e);
+void AggregateMonster(entt::entity e);
+void AggregateMonsterPlus(entt::entity e);
+void AttractRanger(entt::entity e);
+void PullMonster(entt::entity e);
 
 } // namespace CombatSystem
 
