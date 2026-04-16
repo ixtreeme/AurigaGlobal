@@ -2433,3 +2433,21 @@
   - `CHARACTER::` body count: `122`
 - build: success
 - next: `S11c-3b Acce block and remaining inventory-edit helpers`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-1a runtime/social setter accessors`
+- moved:
+  - `SetShop`, `SetExchange`, `SetRegen`
+  - `GetMarryPartner`, `SetMarryPartner`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `regen.h`
+- note:
+  - the first post-move build failed with a single incomplete-type error on `regen`
+  - fixed in-place by adding `regen.h`; no rollback was needed
+- after char.cpp Slice S11d-c-1a: `1813`
+- char.cpp status after slice:
+  - line count: `4954`
+  - `CHARACTER::` body count: `117`
+- build: success
+- next: `S11c-3b Acce block or another small runtime/session accessor batch`

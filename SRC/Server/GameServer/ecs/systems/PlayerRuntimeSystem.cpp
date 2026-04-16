@@ -16,6 +16,7 @@
 #include "../../item.h"
 #include "../../mob_manager.h"
 #include "../../questmanager.h"
+#include "../../regen.h"
 #include "../../skill_power.h"
 #include "../../../common/rune_length.h"
 #ifdef ENABLE_ANTICHEAT
@@ -1031,3 +1032,40 @@ void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
     UpdatePacket();
 }
 #endif
+
+void CHARACTER::SetShop(LPSHOP pkShop)
+{
+    if ((m_pkShop = pkShop)) {
+        SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
+    }
+    else
+    {
+        REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
+        SetShopOwner(nullptr);
+    }
+}
+
+void CHARACTER::SetExchange(CExchange* pkExchange)
+{
+    m_pkExchange = pkExchange;
+}
+
+void CHARACTER::SetRegen(LPREGEN pkRegen)
+{
+    m_pkRegen = pkRegen;
+    if (pkRegen != nullptr) {
+        regen_id_ = pkRegen->id;
+    }
+    m_fRegenAngle = GetRotation();
+    m_posRegen = GetXYZ();
+}
+
+LPCHARACTER CHARACTER::GetMarryPartner() const
+{
+    return m_pkChrMarried;
+}
+
+void CHARACTER::SetMarryPartner(LPCHARACTER ch)
+{
+    m_pkChrMarried = ch;
+}

@@ -2142,22 +2142,7 @@ void CHARACTER::UpdateCharacter(uint32_t dwPulse)
 
 }
 
-void CHARACTER::SetShop(LPSHOP pkShop)
-{
-	if ((m_pkShop = pkShop)) {
-		SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
-	}
-	else
-	{
-		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
-		SetShopOwner(nullptr);
-	}
-}
 
-void CHARACTER::SetExchange(CExchange* pkExchange)
-{
-	m_pkExchange = pkExchange;
-}
 
 void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
 {
@@ -2465,15 +2450,6 @@ void CHARACTER::SetWeddingMap(marriage::WeddingMap* pMap)
 		m_pWeddingMap->IncMember(this);
 }
 
-void CHARACTER::SetRegen(LPREGEN pkRegen)
-{
-	m_pkRegen = pkRegen;
-	if (pkRegen != nullptr) {
-		regen_id_ = pkRegen->id;
-	}
-	m_fRegenAngle = GetRotation();
-	m_posRegen = GetXYZ();
-}
 
 bool CHARACTER::OnIdle()
 {
@@ -3849,15 +3825,6 @@ void CHARACTER::SyncPacket()
 	PacketAround(buf.read_peek(), buf.size());
 }
 
-LPCHARACTER CHARACTER::GetMarryPartner() const
-{
-	return m_pkChrMarried;
-}
-
-void CHARACTER::SetMarryPartner(LPCHARACTER ch)
-{
-	m_pkChrMarried = ch;
-}
 
 // ADD_REFINE_BUILDING
 int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
