@@ -1317,3 +1317,17 @@
 - after char_battle.cpp Slice BB1 extraction: `2160`
 - build: success
 - next: slice BB2 (`Damage()` helper-surface split)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BB2a:
+  - duplicated `Damage()` helper surface into `CombatSystem.cpp` without removing the legacy definitions from `char_battle.cpp` yet:
+    - `ProcessStoneSpawnStep`
+    - `CalcReferenceBowHitDamage`
+    - `CalcReferenceBasicHitDamage`
+    - `CalcReferenceNormalHitDamage`
+  - note:
+    - the first helper-surface attempt accidentally pulled reward/exp globals (`AdjustExpByLevel` and friends) into the copy window and produced a duplicate-symbol link failure
+    - the helper copy window was narrowed to the pure `Damage()` support block only, after which the build gate passed
+- after char_battle.cpp Slice BB2a extraction: `2160`
+- build: success
+- next: slice BB2b (`Damage()` body relocation)

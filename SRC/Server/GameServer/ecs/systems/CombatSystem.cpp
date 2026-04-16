@@ -1223,3 +1223,230 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 //    false		: not dead yet
 //
 
+// char_battle.cpp slice BB2a helper surface moved into CombatSystem.cpp
+
+static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+static void ProcessStoneSpawnStep(LPCHARACTER ch)
+{
+	if (!ch || !ch->IsStone() || ch->GetMaxHP() <= 0)
+		return;
+
+	const int iPercent = (ch->GetHP() * 100) / ch->GetMaxHP();
+	const uint32_t dwVnum = number(
+		MIN(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed),
+		MAX(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed));
+
+	int wantStep = 0;
+	if (iPercent <= 10) wantStep = 10;
+	else if (iPercent <= 20) wantStep = 9;
+	else if (iPercent <= 30) wantStep = 8;
+	else if (iPercent <= 40) wantStep = 7;
+	else if (iPercent <= 50) wantStep = 6;
+	else if (iPercent <= 60) wantStep = 5;
+	else if (iPercent <= 70) wantStep = 4;
+	else if (iPercent <= 80) wantStep = 3;
+	else if (iPercent <= 90) wantStep = 2;
+	else if (iPercent <= 99) wantStep = 1;
+	else return;
+
+	for (int step = ch->GetMaxSP() + 1; step <= wantStep; ++step)
+	{
+		ch->SetMaxSP(step);
+		ch->SendMovePacket(FUNC_ATTACK, 0, ch->GetX(), ch->GetY(), 0);
+
+		CHARACTER_MANAGER::instance().SelectStone(ch);
+
+		if (step == 10 || step == 9)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1500, ch->GetY() - 1500, ch->GetX() + 1500, ch->GetY() + 1500);
+		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1000, ch->GetY() - 1000, ch->GetX() + 1000, ch->GetY() + 1000);
+		else if (step == 5 || step == 4 || step == 2)
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 500, ch->GetY() - 500, ch->GetX() + 500, ch->GetY() + 500);
+
+		CHARACTER_MANAGER::instance().SelectStone(nullptr);
+	}
+
+	ch->UpdatePacket();
+}
+#endif
+static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+{
+	if (!pAttacker || !pVictim)
+		return 0;
+
+	LPITEM pkBow = nullptr;
+	LPITEM pkArrow = nullptr;
+
+	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
+		return 0;
+
+	int64_t dam = CalcArrowDamage(pAttacker, pVictim, pkBow, pkArrow);
+	if (dam <= 0)
+		return 0;
+
+	int32_t lValue = pVictim->GetPoint(POINT_RESIST_BOW);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+	lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+	lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+
+	if (lValue < 0)
+		lValue = 0;
+	if (lValue > 100)
+		lValue = 100;
+
+	dam = dam * (100 - lValue) / 100;
+
+#ifdef ENABLE_SOUL_SYSTEM
+	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
+#endif
+
+	if (pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+
+#ifdef ENABLE_MEDI_PVM
+	if (pVictim->IsNPC())
+		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
+#endif
+
+	dam = dam * (100 - std::min((int64_t)99, pVictim->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+
+	return std::max<int64_t>(0, dam);
+}
+
+static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+{
+	if (!pAttacker || !pVictim)
+		return 0;
+
+	int64_t dam = 0;
+
+	LPITEM pkWeapon = pAttacker->GetWear(WEAR_WEAPON);
+	if (pkWeapon && pkWeapon->GetType() == ITEM_WEAPON && pkWeapon->GetSubType() == WEAPON_BOW)
+		dam = CalcReferenceBowHitDamage(pAttacker, pVictim);
+	else
+		dam = CalcReferenceNormalHitDamage(pAttacker, pVictim);
+
+	if (dam <= 0)
+		return 0;
+
+	const int64_t skillBonus = std::max<int64_t>(0, pAttacker->GetPoint(POINT_SKILL_DAMAGE_BONUS));
+	if (skillBonus)
+		dam = dam * (100 + skillBonus) / 100;
+
+	return dam;
+}
+static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+{
+	if (!pAttacker || !pVictim)
+		return 0;
+
+	int64_t dam = CalcMeleeDamage(pAttacker, pVictim);
+	if (dam <= 0)
+		return 0;
+
+	LPITEM pkWeapon = pAttacker->GetWear(WEAR_WEAPON);
+	if (pkWeapon)
+	{
+		int32_t lValue = 0;
+
+		switch (pkWeapon->GetSubType())
+		{
+		case WEAPON_SWORD:
+			lValue = pVictim->GetPoint(POINT_RESIST_SWORD);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADA);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		case WEAPON_TWO_HANDED:
+			lValue = pVictim->GetPoint(POINT_RESIST_TWOHAND);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADONE);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		case WEAPON_DAGGER:
+#ifdef ENABLE_WOLFMAN_CHARACTER
+		case WEAPON_CLAW:
+#endif
+			lValue = pVictim->GetPoint(POINT_RESIST_DAGGER);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		case WEAPON_BELL:
+			lValue = pVictim->GetPoint(POINT_RESIST_BELL);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_CAMPANA);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		case WEAPON_FAN:
+			lValue = pVictim->GetPoint(POINT_RESIST_FAN);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_VENTAGLIO);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		case WEAPON_BOW:
+			lValue = pVictim->GetPoint(POINT_RESIST_BOW);
+#ifdef ENABLE_NEW_BONUS_TALISMAN
+			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+#endif
+#ifdef ENABLE_NEW_COMMON_BONUSES
+			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+#endif
+			break;
+
+		default:
+			lValue = 0;
+			break;
+		}
+
+		if (lValue < 0)
+			lValue = 0;
+		if (lValue > 100)
+			lValue = 100;
+
+		dam = dam * (100 - lValue) / 100;
+	}
+
+	dam = static_cast<int64_t>(pAttacker->GetAttMul() * static_cast<double>(dam) + 0.5);
+
+#ifdef ENABLE_SOUL_SYSTEM
+	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
+#endif
+
+	if (pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+
+#ifdef ENABLE_MEDI_PVM
+	if (pVictim->IsNPC())
+		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
+#endif
+
+	dam = dam * (100 - std::min((int64_t)99, pVictim->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+
+	return std::max<int64_t>(0, dam);
+}
+
