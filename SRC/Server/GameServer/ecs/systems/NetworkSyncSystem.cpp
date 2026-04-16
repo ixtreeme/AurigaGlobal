@@ -7,11 +7,14 @@
 
 #include "../../char.h"
 #include "../../char_manager.h"
+#include "../../buffer_manager.h"
 #include "../../desc.h"
 #include "../../guild.h"
 #include "../../item.h"
 #include "../../mob_manager.h"
 #include "../../packet.h"
+#include "../../party.h"
+#include "../../sectree.h"
 #include "../AIHelpers.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -29,6 +32,8 @@ static inline LPCHARACTER LegacyCharOf(entt::entity e)
 
     return CHARACTER_MANAGER::instance().Find(vid->value);
 }
+
+extern bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
 
 namespace
 {
@@ -101,6 +106,399 @@ void PointsPacket(entt::entity e)
 }
 
 } // namespace NetworkSyncSystem
+
+namespace {
+void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot)
+{
+    pack.bHeader = HEADER_GC_MOVE;
+    pack.bFunc = bFunc;
+    pack.bArg = bArg;
+    pack.dwVID = dwVID;
+    pack.dwTime = dwTime ? dwTime : get_dword_time();
+    pack.bRot = bRot;
+    pack.lX = x;
+    pack.lY = y;
+    pack.dwDuration = dwDuration;
+}
+
+struct FuncClearSync
+{
+    void operator()(LPCHARACTER ch)
+    {
+        assert(ch != NULL);
+        ch->SetSyncOwner(nullptr, false);
+    }
+};
+}
+
+void CHARACTER::EncodeInsertPacket(LPENTITY entity)
+{
+    LPDESC d;
+    if (!(d = entity->GetDesc()))
+        return;
+
+    LPCHARACTER ch = (LPCHARACTER)entity;
+    ch->SendGuildName(GetGuild());
+
+#ifdef ENABLE_SOUL_SYSTEM
+    TAffectFlag sendAffectFlag = m_afAffectFlag;
+    if (sendAffectFlag.IsSet(AFF_SOUL_RED) && sendAffectFlag.IsSet(AFF_SOUL_BLUE))
+    {
+        sendAffectFlag.Reset(AFF_SOUL_RED);
+        sendAffectFlag.Reset(AFF_SOUL_BLUE);
+        sendAffectFlag.Set(AFF_SOUL_MIX);
+    }
+#endif
+
+    TPacketGCCharacterAdd pack;
+    pack.header = HEADER_GC_CHARACTER_ADD;
+    pack.dwVID = m_vid;
+    pack.bType = GetCharType();
+    pack.angle = GetRotation();
+    pack.x = GetX();
+    pack.y = GetY();
+    pack.z = GetZ();
+    pack.wRaceNum = GetRaceNum();
+    if ((pack.wRaceNum >= 20101 && pack.wRaceNum <= 20109) || IsPet()
+#ifdef __NEWPET_SYSTEM__
+        || IsNewPet()
+#endif
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+        || m_bIsMount == true
+#endif
+        )
+    {
+#ifdef ENABLE_MULTI_NAMES
+        pack.transname = false;
+#endif
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+        if (m_bIsMount == true) {
+            pack.bMovingSpeed = GetLimitPoint(POINT_MOV_SPEED);
+        }
+        else {
+            pack.bMovingSpeed = IsPC() ? GetLimitPoint(POINT_MOV_SPEED) : 150;
+        }
+#else
+        pack.bMovingSpeed = 150;
+#endif
+    }
+    else {
+#ifdef ENABLE_MULTI_NAMES
+        pack.transname = true;
+#endif
+        pack.bMovingSpeed = GetLimitPoint(POINT_MOV_SPEED);
+    }
+    pack.bAttackSpeed = GetLimitPoint(POINT_ATT_SPEED);
+#ifdef ENABLE_SOUL_SYSTEM
+    pack.dwAffectFlag[0] = sendAffectFlag.bits[0];
+    pack.dwAffectFlag[1] = sendAffectFlag.bits[1];
+#else
+    pack.dwAffectFlag[0] = m_afAffectFlag.bits[0];
+    pack.dwAffectFlag[1] = m_afAffectFlag.bits[1];
+#endif
+
+    pack.bStateFlag = m_bAddChrState;
+
+    int iDur = 0;
+    if (m_posDest.x != pack.x || m_posDest.y != pack.y) {
+        iDur = (m_dwMoveStartTime + m_dwMoveDuration) - get_dword_time();
+        if (iDur <= 0) {
+            pack.x = m_posDest.x;
+            pack.y = m_posDest.y;
+        }
+    }
+
+    d->Packet(&pack, sizeof(pack));
+    if (IsPC() == true || m_bCharType == CHAR_TYPE_NPC) {
+        TPacketGCCharacterAdditionalInfo addPacket;
+        addPacket.dwLevel = 0;
+        addPacket.sAlignment = 0;
+        addPacket.dwMountVnum = 0;
+#ifdef ENABLE_MULTI_LANGUAGE
+        addPacket.bLanguage = 0;
+#endif
+        if (!IsPC()) {
+            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
+        }
+
+        addPacket.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
+        addPacket.dwVID = m_vid;
+        addPacket.bPKMode = m_bPKMode;
+        addPacket.bEmpire = m_bEmpire;
+        addPacket.dwGuildID = 0;
+        strlcpy(addPacket.name, GetName(), sizeof(addPacket.name));
+        addPacket.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
+        addPacket.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
+        addPacket.awPart[CHR_EQUIPPART_HEAD] = GetPart(PART_HEAD);
+        addPacket.awPart[CHR_EQUIPPART_HAIR] = GetPart(PART_HAIR);
+#ifdef ENABLE_RUNE_SYSTEM
+        addPacket.awPart[CHR_EQUIPPART_RUNE] = GetPart(PART_RUNE);
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+        addPacket.awPart[CHR_EQUIPPART_ACCE] = GetPart(PART_ACCE);
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+        addPacket.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetPart(PART_EFFECT_BODY);
+        addPacket.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetPart(PART_EFFECT_WEAPON);
+#endif
+        if (IsPC()) {
+            addPacket.dwLevel = GetLevel();
+            addPacket.dwMountVnum = GetMountVnum();
+            addPacket.dwGuildID = GetGuild() ? GetGuild()->GetID() : 0;
+            addPacket.sAlignment = m_iAlignment / 10;
+
+#ifdef __SKILL_COLOR_SYSTEM__
+            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
+#endif
+        }
+#ifdef __NEWPET_SYSTEM__
+        if (IsNewPet()) {
+            addPacket.dwLevel = GetLevel();
+        }
+#endif
+        d->Packet(&addPacket, sizeof(TPacketGCCharacterAdditionalInfo));
+    }
+
+    if (iDur) {
+        TPacketGCMove pack;
+        EncodeMovePacket(pack, GetVID(), FUNC_MOVE, 0, m_posDest.x, m_posDest.y, iDur, 0, (GetRotation() / 5));
+        d->Packet(&pack, sizeof(pack));
+
+        TPacketGCWalkMode p;
+        p.vid = GetVID();
+        p.header = HEADER_GC_WALK_MODE;
+        p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+
+        d->Packet(&p, sizeof(p));
+    }
+
+    if (entity->IsType(ENTITY_CHARACTER) && GetDesc()) {
+        LPCHARACTER ch = (LPCHARACTER)entity;
+        if (ch->IsWalking()) {
+            TPacketGCWalkMode p;
+            p.vid = ch->GetVID();
+            p.header = HEADER_GC_WALK_MODE;
+            p.mode = ch->m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+            GetDesc()->Packet(&p, sizeof(p));
+        }
+    }
+
+    if (GetMyShop()) {
+        TPacketGCShopSign p;
+        p.bHeader = HEADER_GC_SHOP_SIGN;
+        p.dwVID = GetVID();
+#ifdef KASMIR_PAKET_SYSTEM
+        p.bShopKasmirTitle = m_bKasmirPaketBaslik;
+#endif
+        strlcpy(p.szSign, m_stShopSign.c_str(), sizeof(p.szSign));
+
+        d->Packet(&p, sizeof(TPacketGCShopSign));
+    }
+
+    if (entity->IsType(ENTITY_CHARACTER)) {
+        sys_log(3, "EntityInsert %s (RaceNum %d) (%d %d) TO %s",
+            GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ((LPCHARACTER)entity)->GetName());
+    }
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    if (IsPC() && entity->IsType(ENTITY_CHARACTER))
+    {
+        LPCHARACTER viewer = (LPCHARACTER)entity;
+        if (viewer->IsPC() && viewer->GetDesc())
+            UpdateMountInventoryCountOverhead(viewer);
+    }
+#endif
+}
+
+void CHARACTER::EncodeRemovePacket(LPENTITY entity)
+{
+    if (entity->GetType() != ENTITY_CHARACTER)
+        return;
+
+    LPDESC d;
+
+    if (!(d = entity->GetDesc()))
+        return;
+
+    TPacketGCCharacterDelete pack;
+
+    pack.header = HEADER_GC_CHARACTER_DEL;
+    pack.id = m_vid;
+
+    d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
+
+    if (entity->IsType(ENTITY_CHARACTER))
+        sys_log(3, "EntityRemove %s(%d) FROM %s", GetName(), (uint32_t)m_vid, ((LPCHARACTER)entity)->GetName());
+}
+
+LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
+{
+    ENTITY_MAP::iterator it = m_map_view.begin();
+
+    for (; it != m_map_view.end(); ++it)
+    {
+        if (!it->first->IsType(ENTITY_CHARACTER))
+            continue;
+
+        LPCHARACTER tch = (LPCHARACTER)it->first;
+
+        if (bFindPCOnly && tch->IsNPC())
+            continue;
+
+        if (!strcasecmp(tch->GetName(), c_pszName))
+            return tch;
+    }
+
+    return nullptr;
+}
+
+bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
+{
+    if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE))
+        return false;
+
+    if (ch)
+    {
+        if (!battle_is_attackable(ch, this))
+        {
+            SendDamagePacket(ch, 0, DAMAGE_BLOCK);
+            return false;
+        }
+    }
+
+    if (ch == this)
+    {
+        sys_err("SetSyncOwner owner == this (%p)", this);
+        return false;
+    }
+
+    if (!ch)
+    {
+        if (bRemoveFromList && m_pkChrSyncOwner)
+        {
+            m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
+        }
+
+        if (m_pkChrSyncOwner)
+            sys_log(1, "SyncRelease %s %p from %s", GetName(), this, m_pkChrSyncOwner->GetName());
+
+        m_pkChrSyncOwner = nullptr;
+    }
+    else
+    {
+        if (!IsSyncOwner(ch))
+            return false;
+
+        if (DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY()) > 250)
+        {
+            sys_log(1, "SetSyncOwner distance over than 250 %s %s", GetName(), ch->GetName());
+
+            if (m_pkChrSyncOwner == ch)
+                return true;
+
+            return false;
+        }
+
+        if (m_pkChrSyncOwner != ch)
+        {
+            if (m_pkChrSyncOwner)
+            {
+                sys_log(1, "SyncRelease %s %p from %s", GetName(), this, m_pkChrSyncOwner->GetName());
+                m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
+            }
+
+            m_pkChrSyncOwner = ch;
+            m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.push_back(this);
+
+            static const timeval zero_tv = { 0, 0 };
+            SetLastSyncTime(zero_tv);
+
+            sys_log(1, "SetSyncOwner set %s %p to %s", GetName(), this, ch->GetName());
+        }
+
+        m_fSyncTime = get_float_time();
+    }
+
+    TPacketGCOwnership pack;
+
+    pack.bHeader = HEADER_GC_OWNERSHIP;
+    pack.dwOwnerVID = ch ? ch->GetVID() : 0;
+    pack.dwVictimVID = GetVID();
+
+    PacketAround(&pack, sizeof(TPacketGCOwnership));
+    return true;
+}
+
+void CHARACTER::ClearSync()
+{
+    SetSyncOwner(nullptr);
+    std::for_each(m_kLst_pkChrSyncOwned.begin(), m_kLst_pkChrSyncOwned.end(), FuncClearSync());
+    m_kLst_pkChrSyncOwned.clear();
+}
+
+bool CHARACTER::IsSyncOwner(LPCHARACTER ch) const
+{
+    if (m_pkChrSyncOwner == ch)
+        return true;
+
+    if (get_float_time() - m_fSyncTime >= 3.0f)
+        return true;
+
+    return false;
+}
+
+bool CHARACTER::BuildUpdatePartyPacket(TPacketGCPartyUpdate& out)
+{
+    if (!GetParty())
+        return false;
+
+    memset(&out, 0, sizeof(out));
+
+    out.header = HEADER_GC_PARTY_UPDATE;
+    out.pid = GetPlayerID();
+    if (GetMaxHP() <= 0)
+        out.percent_hp = 0;
+    else
+        out.percent_hp = MINMAX((int64_t)0, GetHP() * 100 / GetMaxHP(), (int64_t)100);
+    out.role = GetParty()->GetRole(GetPlayerID());
+
+    sys_log(1, "PARTY %s role is %d", GetName(), out.role);
+
+    LPCHARACTER l = GetParty()->GetLeaderCharacter();
+
+    if (l && DISTANCE_APPROX(GetX() - l->GetX(), GetY() - l->GetY()) < PARTY_DEFAULT_RANGE)
+    {
+        out.affects[0] = GetParty()->GetPartyBonusExpPercent();
+        out.affects[1] = GetPoint(POINT_PARTY_ATTACKER_BONUS);
+        out.affects[2] = GetPoint(POINT_PARTY_TANKER_BONUS);
+        out.affects[3] = GetPoint(POINT_PARTY_BUFFER_BONUS);
+        out.affects[4] = GetPoint(POINT_PARTY_SKILL_MASTER_BONUS);
+        out.affects[5] = GetPoint(POINT_PARTY_HASTE_BONUS);
+        out.affects[6] = GetPoint(POINT_PARTY_DEFENDER_BONUS);
+    }
+
+    return true;
+}
+
+void CHARACTER::SyncPacket()
+{
+    TEMP_BUFFER buf;
+
+    TPacketCGSyncPositionElement elem;
+
+    elem.dwVID = GetVID();
+    elem.lX = GetX();
+    elem.lY = GetY();
+
+    TPacketGCSyncPosition pack;
+
+    pack.bHeader = HEADER_GC_SYNC_POSITION;
+    pack.wSize = sizeof(TPacketGCSyncPosition) + sizeof(elem);
+
+    buf.write(&pack, sizeof(pack));
+    buf.write(&elem, sizeof(elem));
+
+    PacketAround(buf.read_peek(), buf.size());
+}
 
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 {

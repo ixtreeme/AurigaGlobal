@@ -2828,3 +2828,35 @@
   - `CHARACTER::` body count: `47`
 - build: success
 - next: `S11e-1 NetworkSync` or `S11d-c-4c Initialize`
+
+## Phase 8 - Step 8.17 char.cpp -> NetworkSyncSystem (continued)
+- completed slice `S11e-1 NetworkSync`
+- moved:
+  - `EncodeInsertPacket`
+  - `EncodeRemovePacket`
+  - `FindCharacterInView`
+  - `SetSyncOwner`
+  - `ClearSync`
+  - `IsSyncOwner`
+  - `BuildUpdatePartyPacket`
+  - `SyncPacket`
+- note:
+  - the first attempt used free `NetworkSyncSystem::` helpers with `entt::entity`, but this immediately hit 20+ protected/private access errors against `CHARACTER` internals and was rolled back
+  - the successful retry moved the bodies as direct `CHARACTER::` definitions into [NetworkSyncSystem.cpp](/E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp), preserving member access while still emptying the slice from `char.cpp`
+  - helper surface added for the successful retry: `buffer_manager.h`, `party.h`, `sectree.h`, local `EncodeMovePacket`, and a forward declaration for `battle_is_attackable`
+- after char.cpp Slice S11e-1: `1724`
+- char.cpp status after slice:
+  - line count: `2610`
+  - `CHARACTER::` body count: `39`
+- build: success
+- next: `S11e-3 CombatSystem`, `S11e-4 MountSystem`, or `S11d-c-4c Initialize`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- attempted slice `S11e-4 mount/pet skin`
+- result: rolled back
+- note:
+  - the first relocation pass inserted the moved mount bodies into a bad structural position inside [MountSystem.cpp](/E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp), which caused 20+ syntax errors on build
+  - rollback restored the last green checkpoint after `S11e-1`
+  - next retry should split the mount block into smaller sub-batches and first verify the exact insertion boundary in `MountSystem.cpp`
+- build after rollback: success
+- next: `S11e-3 CombatSystem`, `S11e-4 MountSystem` retry, or `S11d-c-4c Initialize`
