@@ -2842,18 +2842,6 @@ EVENTFUNC(recovery_event)
 	}
 }
 
-EVENTFUNC(save_event);
-
-void CHARACTER::StartSaveEvent()
-{
-	if (m_pkSaveEvent)
-		return;
-
-	char_event_info* info = AllocEventInfo<char_event_info>();
-
-	info->ch = this;
-	m_pkSaveEvent = event_create(save_event, info, save_event_second_cycle);
-}
 
 void CHARACTER::MonsterLog(const char* format, ...)
 {
@@ -4018,28 +4006,6 @@ void CHARACTER::CheckTarget()
 
 	if (DISTANCE_APPROX(GetX() - m_pkChrTarget->GetX(), GetY() - m_pkChrTarget->GetY()) >= 4800)
 		SetTarget(nullptr);
-}
-
-void CHARACTER::SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y)
-{
-	m_posWarp.x = x * 100;
-	m_posWarp.y = y * 100;
-	m_lWarpMapIndex = lMapIndex;
-}
-
-void CHARACTER::SaveExitLocation()
-{
-	m_posExit = GetXYZ();
-	m_lExitMapIndex = GetMapIndex();
-}
-
-void CHARACTER::ExitToSavedLocation()
-{
-	sys_log(0, "ExitToSavedLocation");
-	WarpSet(m_posWarp.x, m_posWarp.y, m_lWarpMapIndex);
-
-	m_posExit.x = m_posExit.y = m_posExit.z = 0;
-	m_lExitMapIndex = 0;
 }
 
 // fixme
@@ -6357,48 +6323,6 @@ uint8_t CHARACTER::IncreaseMountCounter()
 bool CHARACTER::IsRiding() const
 {
 	return IsHorseRiding() || GetMountVnum();
-}
-
-bool CHARACTER::CanWarp() const
-{
-	const int iPulse = thecore_pulse();
-	const int limit_time = PASSES_PER_SEC(g_nPortalLimitTime);
-
-	if ((iPulse - GetSafeboxLoadTime()) < limit_time)
-		return false;
-
-	if ((iPulse - GetExchangeTime()) < limit_time)
-		return false;
-
-	if ((iPulse - GetMyShopTime()) < limit_time)
-		return false;
-
-	if ((iPulse - GetRefineTime()) < limit_time)
-		return false;
-
-	if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
-#ifdef ENABLE_ACCE_SYSTEM
-		|| IsAcceOpen()
-#endif
-#ifdef __ATTR_TRANSFER_SYSTEM__
-		|| IsAttrTransferOpen()
-#endif
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-		|| GetWheelDestiny()
-#endif
-
-		)
-		return false;
-
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (GetOfflineShopGuest() || GetAuctionGuest())
-		return false;
-
-	if (iPulse - GetOfflineShopUseTime() < limit_time)
-		return false;
-#endif
-
-	return true;
 }
 
 uint32_t CHARACTER::GetNextExp() const

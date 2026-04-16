@@ -1823,3 +1823,23 @@
   - `CHARACTER::` body count: `281`
 - build: success
 - next: `S7 SessionSystem disconnect/show/warp audit`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem (continued)
+- completed slice `S7a SessionSystem (save event + warp state prelude)`
+- moved:
+  - `StartSaveEvent`
+  - `SetWarpLocation`
+  - `SaveExitLocation`
+  - `ExitToSavedLocation`
+  - `CanWarp`
+- note:
+  - this sub-slice intentionally excluded the larger execution paths (`WarpSet`, `WarpEnd`, `WarpToPID`, `StartWarpNPCEvent`, `Show`, `Disconnect`)
+  - helper surface added:
+    - `config.h`
+    - `EVENTFUNC(save_event);`
+- after char.cpp Slice S7a: `1986`
+- char.cpp status after slice:
+  - line count: `7254`
+  - `CHARACTER::` body count: `276`
+- build: success
+- next: `S7b SessionSystem warp execution paths`
