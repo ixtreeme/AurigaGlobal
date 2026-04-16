@@ -2243,3 +2243,20 @@
   - `CHARACTER::` body count: `161`
 - build: success
 - next: `S11d-b runtime packet/accessor batch`
+
+## Phase 8 - Step 8.17 char.cpp -> NetworkSyncSystem (continued)
+- completed slice `S11d-b runtime packet helpers`
+- moved:
+  - `EffectPacket`
+  - `SpecificEffectPacket`
+  - `SendEquipment`
+  - `ConfirmWithMsg`
+- note:
+  - this slice stayed on direct packet/equipment view helpers only and intentionally left `SyncPacket` and the larger channel-switch flow in `char.cpp`
+  - the first post-removal build passed without rollback or header follow-up
+- after char.cpp Slice S11d-b2: `1855`
+- char.cpp status after slice:
+  - line count: `6708`
+  - `CHARACTER::` body count: `157`
+- build: success
+- next: `S11d-b simple runtime getter batch`

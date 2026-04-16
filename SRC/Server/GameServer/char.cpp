@@ -3732,28 +3732,6 @@ void CHARACTER::SetChangeEmpireCount()
 	std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
 }
 
-void CHARACTER::EffectPacket(uint8_t enumEffectType)
-{
-	TPacketGCSpecialEffect p;
-
-	p.header = HEADER_GC_SEPCIAL_EFFECT;
-	p.type = enumEffectType;
-	p.vid = GetVID();
-
-	PacketAround(&p, sizeof(TPacketGCSpecialEffect));
-}
-
-void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
-{
-	TPacketGCSpecificEffect p;
-
-	p.header = HEADER_GC_SPECIFIC_EFFECT;
-	p.vid = GetVID();
-	memcpy(p.effect_file, filename, MAX_EFFECT_FILE_NAME);
-
-	PacketAround(&p, sizeof(TPacketGCSpecificEffect));
-}
-
 int CHARACTER::GetPolymorphPower() const
 {
 	if (test_server)
@@ -3920,43 +3898,6 @@ void CHARACTER::DetermineDropMetinStone()
 	}
 } */
 
-void CHARACTER::SendEquipment(LPCHARACTER ch)
-{
-	TPacketViewEquip p;
-	p.header = HEADER_GC_VIEW_EQUIP;
-	p.vid = GetVID();
-
-#ifdef EQUIP_ENABLE_VIEW_SASH
-#ifdef ENABLE_COSTUME_PET
-	int pos[23] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR,	WEAR_UNIQUE1,
-				WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, WEAR_COSTUME_PET_SKIN, WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
-	for (int i = 0; i < 23; i++)
-#else
-	int pos[22] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR,	WEAR_UNIQUE1,
-					WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, /*WEAR_COSTUME_PET_SKIN,*/ WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
-	for (int i = 0; i < 22; i++)
-#endif
-#else
-	int pos[16] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
-					WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT };
-	for (int i = 0; i < 16; i++)
-#endif
-	{
-		LPITEM item = GetWear(pos[i]);
-		if (item) {
-			p.equips[i].vnum = item->GetVnum();
-			p.equips[i].count = item->GetCount();
-
-			memcpy(p.equips[i].alSockets, item->GetSockets(), sizeof(p.equips[i].alSockets));
-			memcpy(p.equips[i].aAttr, item->GetAttributes(), sizeof(p.equips[i].aAttr));
-		}
-		else {
-			p.equips[i].vnum = 0;
-		}
-	}
-	ch->GetDesc()->Packet(&p, sizeof(p));
-}
-
 bool CHARACTER::CanSummon(int iLeaderShip)
 {
 	return ((iLeaderShip >= 20) || ((iLeaderShip >= 12) && ((m_dwLastDeadTime + 180) > get_dword_time())));
@@ -4110,21 +4051,6 @@ LPCHARACTER CHARACTER::GetMarryPartner() const
 void CHARACTER::SetMarryPartner(LPCHARACTER ch)
 {
 	m_pkChrMarried = ch;
-}
-
-void CHARACTER::ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID)
-{
-	if (!IsPC())
-		return;
-
-	TPacketGCQuestConfirm p;
-
-	p.header = HEADER_GC_QUEST_CONFIRM;
-	p.requestPID = dwRequestPID;
-	p.timeout = iTimeout;
-	strlcpy(p.msg, szMsg, sizeof(p.msg));
-
-	GetDesc()->Packet(&p, sizeof(p));
 }
 
 int CHARACTER::GetPremiumRemainSeconds(uint8_t bType) const
