@@ -24,6 +24,7 @@
 #include "../../party.h"
 #include "../../pvp.h"
 #include "../../questmanager.h"
+#include "../../safebox.h"
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
 #include "../../shop.h"
@@ -1024,4 +1025,258 @@ void CHARACTER::Disconnect(const char* c_pszReason)
         GetDesc()->BindCharacter(nullptr);
 
     M2_DESTROY_CHARACTER(this);
+}
+
+float CHARACTER::GetDistanceFromSafeboxOpen() const
+{
+    return DISTANCE_APPROX(GetX() - m_posSafeboxOpen.x, GetY() - m_posSafeboxOpen.y);
+}
+
+void CHARACTER::SetSafeboxOpenPosition()
+{
+    m_posSafeboxOpen = GetXYZ();
+}
+
+CSafebox* CHARACTER::GetSafebox() const
+{
+    return m_pkSafebox;
+}
+
+void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
+{
+    if (!*pszPassword || strlen(pszPassword) > SAFEBOX_PASSWORD_MAX_LEN)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 188, "");
+#endif
+        return;
+    }
+    else if (m_pkSafebox)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 189, "");
+#endif
+        return;
+    }
+
+    int iPulse = thecore_pulse();
+
+    if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(10))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 190, "");
+#endif
+        return;
+    }
+#ifndef __OPEN_SAFEBOX_CLICK__
+    else if (GetDistanceFromSafeboxOpen() > 1000)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 185, "");
+#endif
+        return;
+    }
+#endif
+    else if (m_bOpeningSafebox)
+    {
+        sys_log(0, "Overlapped safebox load request from %s", GetName());
+        return;
+    }
+
+    SetSafeboxLoadTime();
+    m_bOpeningSafebox = true;
+
+    TSafeboxLoadPacket p;
+    p.dwID = GetDesc()->GetAccountTable().id;
+    strlcpy(p.szLogin, GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+    strlcpy(p.szPassword, pszPassword, sizeof(p.szPassword));
+
+    db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_LOAD, GetDesc()->GetHandle(), &p, sizeof(p));
+}
+
+void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
+{
+    bool bLoaded = false;
+
+    SetOpenSafebox(true);
+
+    if (m_pkSafebox)
+        bLoaded = true;
+
+    if (!m_pkSafebox)
+        m_pkSafebox = M2_NEW CSafebox(this, iSize, dwGold);
+    else
+        m_pkSafebox->ChangeSize(iSize);
+
+    m_iSafeboxSize = iSize;
+
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
+    p.bSize = iSize;
+
+    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (!bLoaded)
+    {
+        for (int i = 0; i < iItemCount; ++i, ++pItems)
+        {
+            if (!m_pkSafebox->IsValidPosition(pItems->pos))
+                continue;
+
+            LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+
+            if (!item)
+            {
+                sys_err("cannot create item vnum %d id %u (name: %s)", pItems->vnum, pItems->id, GetName());
+                continue;
+            }
+
+            item->SetSkipSave(true);
+            item->SetSockets(pItems->alSockets);
+            item->SetAttributes(pItems->aAttr);
+
+            if (!m_pkSafebox->Add(pItems->pos, item))
+                M2_DESTROY_ITEM(item);
+            else
+                item->SetSkipSave(false);
+        }
+    }
+}
+
+void CHARACTER::ChangeSafeboxSize(uint8_t bSize)
+{
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
+    p.bSize = bSize;
+
+    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (m_pkSafebox)
+        m_pkSafebox->ChangeSize(bSize);
+
+    m_iSafeboxSize = bSize;
+}
+
+void CHARACTER::CloseSafebox()
+{
+    if (!m_pkSafebox)
+        return;
+
+    if (!IsPC() || !GetDesc())
+    {
+        sys_err("CloseSafebox skipped: invalid owner (name=%s vid=%u race=%u ispc=%d desc=%p)",
+            GetName(),
+            static_cast<uint32_t>(GetVID()),
+            GetRaceNum(),
+            IsPC(),
+            GetDesc());
+
+        M2_DELETE(m_pkSafebox);
+        m_pkSafebox = nullptr;
+        m_bOpeningSafebox = false;
+        return;
+    }
+
+    SetOpenSafebox(false);
+    m_pkSafebox->Save();
+
+    M2_DELETE(m_pkSafebox);
+    m_pkSafebox = nullptr;
+
+    ChatPacket(CHAT_TYPE_COMMAND, "CloseSafebox");
+
+    SetSafeboxLoadTime();
+    m_bOpeningSafebox = false;
+
+    Save();
+}
+
+CSafebox* CHARACTER::GetMall() const
+{
+    return m_pkMall;
+}
+
+void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
+{
+    bool bLoaded = false;
+
+    if (m_pkMall)
+        bLoaded = true;
+
+    if (!m_pkMall)
+        m_pkMall = M2_NEW CSafebox(this, 3 * SAFEBOX_PAGE_SIZE, 0);
+    else
+        m_pkMall->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
+
+    m_pkMall->SetWindowMode(MALL);
+
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_MALL_OPEN;
+    p.bSize = 3 * SAFEBOX_PAGE_SIZE;
+
+    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (!bLoaded)
+    {
+        for (int i = 0; i < iItemCount; ++i, ++pItems)
+        {
+            if (!m_pkMall->IsValidPosition(pItems->pos))
+                continue;
+
+            LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+
+            if (!item)
+            {
+                sys_err("cannot create item vnum %d id %u (name: %s)", pItems->vnum, pItems->id, GetName());
+                continue;
+            }
+
+            item->SetSkipSave(true);
+            item->SetSockets(pItems->alSockets);
+            item->SetAttributes(pItems->aAttr);
+
+            if (!m_pkMall->Add(pItems->pos, item))
+                M2_DESTROY_ITEM(item);
+            else
+                item->SetSkipSave(false);
+        }
+    }
+}
+
+void CHARACTER::CloseMall()
+{
+    if (!m_pkMall)
+        return;
+
+    m_pkMall->Save();
+
+    M2_DELETE(m_pkMall);
+    m_pkMall = nullptr;
+
+    ChatPacket(CHAT_TYPE_COMMAND, "CloseMall");
+}
+
+void CHARACTER::QuerySafeboxSize()
+{
+    if (m_iSafeboxSize == -1)
+    {
+        DBManager::instance().ReturnQuery(QID_SAFEBOX_SIZE,
+            GetPlayerID(),
+            nullptr,
+            "SELECT size FROM safebox%s WHERE account_id = %u",
+            get_table_postfix(),
+            GetDesc()->GetAccountTable().id);
+    }
+}
+
+void CHARACTER::SetSafeboxSize(int iSize)
+{
+    sys_log(1, "SetSafeboxSize: %s %d", GetName(), iSize);
+    m_iSafeboxSize = iSize;
+    DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u", get_table_postfix(), iSize / SAFEBOX_PAGE_SIZE, GetDesc()->GetAccountTable().id);
+}
+
+int CHARACTER::GetSafeboxSize() const
+{
+    return m_iSafeboxSize;
 }

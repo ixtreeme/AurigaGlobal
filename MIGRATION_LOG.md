@@ -1928,3 +1928,31 @@
   - `CHARACTER::` body count: `270`
 - build: success
 - next: `S10 SessionSystem safebox/mall batch audit`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem (continued)
+- completed slice `S10a SessionSystem (safebox/mall/session storage)`
+- moved:
+  - `GetDistanceFromSafeboxOpen`
+  - `SetSafeboxOpenPosition`
+  - `GetSafebox`
+  - `ReqSafeboxLoad`
+  - `LoadSafebox`
+  - `ChangeSafeboxSize`
+  - `CloseSafebox`
+  - `GetMall`
+  - `LoadMall`
+  - `CloseMall`
+  - `QuerySafeboxSize`
+  - `SetSafeboxSize`
+  - `GetSafeboxSize`
+- helper surface:
+  - `safebox.h`
+- note:
+  - the safebox helper-surface pass built green before the body move
+  - the body relocation batch built cleanly in one pass without rollback or follow-up header fixes
+- after char.cpp Slice S10a: `1958`
+- char.cpp status after slice:
+  - line count: `6458`
+  - `CHARACTER::` body count: `257`
+- build: success
+- next: `S10b MountSystem mount-inventory batch audit`
