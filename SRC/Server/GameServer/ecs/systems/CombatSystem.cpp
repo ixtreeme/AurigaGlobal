@@ -1416,6 +1416,43 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 
 
 
+// char_battle.cpp slice BD2a helper surface duplicated into CombatSystem.cpp
+
+static uint32_t __GetPartyExpNP(const uint32_t level)
+{
+	if (!level || level > PLAYER_EXP_TABLE_MAX)
+		return 14000;
+	return party_exp_distribute_table[level];
+}
+
+
+static uint32_t AdjustExpByLevel_Combat(const LPCHARACTER ch, const uint32_t exp)
+{
+	if (PLAYER_MAX_LEVEL_CONST < ch->GetLevel())
+	{
+		double ret = 0.95;
+		double factor = 0.1;
+
+		for (int64_t i = 0; i < ch->GetLevel() - 100; ++i)
+		{
+			if ((i % 10) == 0)
+				factor /= 2.0;
+
+			ret *= 1.0 - factor;
+		}
+
+		ret = ret * static_cast<double>(exp);
+
+		if (ret < 1.0)
+			return 1;
+
+		return static_cast<uint32_t>(ret);
+	}
+
+	return exp;
+}
+
+
 // char_battle.cpp slice BC1 moved into CombatSystem.cpp
 
 static int __GetExpLossPerc(const uint32_t level)

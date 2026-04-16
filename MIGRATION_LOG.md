@@ -1503,3 +1503,14 @@
 - after char_battle.cpp Slice BE2b: `2097`
 - build: success
 - next: final heavy slices (`DistributeHP` / `DistributeExp` / `Dead`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BD2a:
+  - duplicated exp helper surface into `CombatSystem.cpp` for the upcoming exp-distribution relocation:
+    - `__GetPartyExpNP`
+    - `AdjustExpByLevel`
+  - note:
+    - `AdjustExpByLevel` had to be duplicated under a local `CombatSystem`-side name to avoid a duplicate external symbol while the legacy source copy still exists in `char_battle.cpp`
+- after char_battle.cpp Slice BD2a: `2097`
+- build: success
+- next: slice BD2b (`DistributeHP` + `DistributeExp`)
