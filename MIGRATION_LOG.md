@@ -1299,3 +1299,21 @@
 - after char_battle.cpp Slice BA extraction: `2169`
 - build: success
 - next: slice BB (`damage / stun / death-state resolution`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BB1:
+  - moved stun / death helper bodies:
+    - `IsStun`
+    - `Stun`
+    - `IsDead`
+    - `SetLastAttacked`
+    - `SendDamagePacket`
+  - helper surface moved with the slice:
+    - `StunEvent`
+    - `FuncSetLastAttacked`
+  - integration note:
+    - `dead_event` / `SCharDeadEventInfo` stayed with `char_battle.cpp` because `Dead()` still owns that lifecycle slice
+    - `Damage()` remains pending and will be split further because the body exceeds the 500-line slice limit by a large margin
+- after char_battle.cpp Slice BB1 extraction: `2160`
+- build: success
+- next: slice BB2 (`Damage()` helper-surface split)

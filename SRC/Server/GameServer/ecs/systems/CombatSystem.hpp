@@ -14,6 +14,10 @@ bool Shoot(entt::entity attacker, uint8_t attackType);
 void SetVictim(entt::entity attacker, entt::entity victim);
 entt::entity GetVictim(entt::entity attacker);
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from);
+bool IsStun(entt::entity e);
+void Stun(entt::entity e);
+bool IsDead(entt::entity e);
+void SetLastAttacked(entt::entity e, uint32_t tick);
 
 } // namespace CombatSystem
 

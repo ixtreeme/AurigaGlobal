@@ -162,6 +162,38 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
     return entt::null;
 }
 
+bool IsStun(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->IsStun();
+    }
+
+    return false;
+}
+
+void Stun(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->Stun();
+    }
+}
+
+bool IsDead(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->IsDead();
+    }
+
+    return true;
+}
+
+void SetLastAttacked(entt::entity e, uint32_t tick)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->SetLastAttacked(tick);
+    }
+}
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
@@ -1021,4 +1053,173 @@ LPCHARACTER CHARACTER::GetProtege() const // ȣؾ
 
 	return nullptr;
 }
+
+// char_battle.cpp slice BB1 moved into CombatSystem.cpp
+
+bool CHARACTER::IsStun() const
+{
+	if (IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN))
+		return true;
+
+	return false;
+}
+
+EVENTFUNC(StunEvent)
+{
+	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+
+	if (info == nullptr)
+	{
+		sys_err("StunEvent> <Factor> Null pointer");
+		return 0;
+	}
+
+	LPCHARACTER ch = info->ch;
+
+	if (ch == nullptr) { // <Factor>
+		return 0;
+	}
+	ch->m_pkStunEvent = nullptr;
+	ch->Dead();
+	return 0;
+}
+
+void CHARACTER::Stun()
+{
+	if (IsStun())
+		return;
+
+	if (IsDead())
+		return;
+
+	if (!IsPC() && m_pkParty)
+	{
+		m_pkParty->SendMessage(this, PM_ATTACKED_BY, 0, 0);
+	}
+
+	sys_log(1, "%s: Stun %p", GetName(), this);
+
+	PointChange(POINT_HP_RECOVERY, -GetPoint(POINT_HP_RECOVERY));
+	PointChange(POINT_SP_RECOVERY, -GetPoint(POINT_SP_RECOVERY));
+
+	CloseMyShop();
+
+	event_cancel(&m_pkRecoveryEvent); // ȸ ̺Ʈ δ.
+
+	TPacketGCStun pack;
+	pack.header = HEADER_GC_STUN;
+	pack.vid = m_vid;
+	PacketAround(&pack, sizeof(pack));
+
+	SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+
+	if (m_pkStunEvent)
+		return;
+
+	char_event_info* info = AllocEventInfo<char_event_info>();
+
+	info->ch = this;
+
+	m_pkStunEvent = event_create(StunEvent, info, PASSES_PER_SEC(3));
+}
+
+bool CHARACTER::IsDead() const
+{
+	if (m_pointsInstant.position == POS_DEAD)
+		return true;
+
+	return false;
+}
+
+struct FuncSetLastAttacked
+{
+	FuncSetLastAttacked(uint32_t dwTime) : m_dwTime(dwTime)
+	{
+	}
+
+	void operator () (LPCHARACTER ch)
+	{
+		ch->SetLastAttacked(m_dwTime);
+	}
+
+	uint32_t m_dwTime;
+};
+
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
+{
+	if (!pkAttacker || !pkAttacker->IsPC())
+		return;
+
+	if (iDamage <= 0)
+		iDamage = 1;
+
+	const VID vid = pkAttacker->GetVID();
+
+	TDamageMap::iterator it = m_map_kDamage.find(vid);
+	if (it == m_map_kDamage.end())
+		m_map_kDamage.insert(TDamageMap::value_type(vid, TBattleInfo(iDamage, 0)));
+	else
+		it->second.iTotalDamage += iDamage;
+
+	// hogy Dead() vissza tudja keresni a killert, ha kell
+	m_dwKillerPID = pkAttacker->GetPlayerID();
+}
+
+
+#endif
+void CHARACTER::SetLastAttacked(uint32_t dwTime)
+{
+	if (!m_pkMobInst)
+		return;
+	assert(m_pkMobInst != NULL);
+
+	m_pkMobInst->m_dwLastAttackedTime = dwTime;
+	m_pkMobInst->m_posLastAttacked = GetXYZ();
+}
+
+void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag)
+{
+	if (IsPC() == true || (pAttacker->IsPC() == true && pAttacker->GetTarget() == this))
+	{
+		TPacketGCDamageInfo damageInfo;
+		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
+
+		damageInfo.header = HEADER_GC_DAMAGE_INFO;
+		damageInfo.dwVID = (uint32_t)GetVID();
+		damageInfo.flag = DamageFlag;
+		damageInfo.damage = Damage;
+#ifdef ENABLE_TARGET_DAMAGE_RAZOR93
+		PacketAround(&damageInfo, sizeof(TPacketGCDamageInfo));
+		return;
+#endif
+
+		if (GetDesc() != nullptr)
+		{
+			GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+
+		if (pAttacker->GetDesc() != nullptr)
+		{
+			pAttacker->GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+
+		if (GetArenaObserverMode() == false && GetArena() != nullptr) {
+			GetArena()->SendPacketToObserver(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+	}
+}
+
+//
+// CHARACTER::Damage ޼ҵ this  ԰ Ѵ.
+//
+// Arguments
+//    pAttacker		: 
+//    dam		: 
+//    EDamageType	:   ΰ?
+//
+// Return value
+//    true		: dead
+//    false		: not dead yet
+//
 
