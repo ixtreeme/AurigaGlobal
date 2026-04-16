@@ -2223,3 +2223,23 @@
   - `CHARACTER::` body count: `175`
 - build: success
 - next: `S11a combo/chat counter helper batch`
+
+## Phase 8 - Step 8.17 char.cpp -> CombatSystem (continued)
+- completed slice `S11a combo/chat counter helpers`
+- moved:
+  - `SetComboSequence`, `GetComboSequence`
+  - `SetLastComboTime`, `GetLastComboTime`
+  - `SetValidComboInterval`, `GetValidComboInterval`
+  - `GetComboIndex`
+  - `IncreaseComboHackCount`, `ResetComboHackCount`
+  - `SkipComboAttackByTime`, `GetSkipComboAttackByTime`
+  - `ResetChatCounter`, `IncreaseChatCounter`, `GetChatCounter`
+- note:
+  - this slice intentionally left `GetMountCounter`, `ResetMountCounter`, `IncreaseMountCounter` and `IsRiding` in `char.cpp` for the later mount/runtime batch
+  - the post-removal build passed cleanly without helper-surface changes or rollback
+- after char.cpp Slice S11a-b: `1859`
+- char.cpp status after slice:
+  - line count: `6782`
+  - `CHARACTER::` body count: `161`
+- build: success
+- next: `S11d-b runtime packet/accessor batch`

@@ -7015,3 +7015,84 @@ void CHARACTER::SetRevive(bool mode)
 		m_pkMobInst->m_IsRevive = mode;
 }
 
+void CHARACTER::SetComboSequence(uint8_t seq)
+{
+	m_bComboSequence = seq;
+}
+
+uint8_t CHARACTER::GetComboSequence() const
+{
+	return m_bComboSequence;
+}
+
+void CHARACTER::SetLastComboTime(uint32_t time)
+{
+	m_dwLastComboTime = time;
+}
+
+uint32_t CHARACTER::GetLastComboTime() const
+{
+	return m_dwLastComboTime;
+}
+
+void CHARACTER::SetValidComboInterval(int interval)
+{
+	m_iValidComboInterval = interval;
+}
+
+int CHARACTER::GetValidComboInterval() const
+{
+	return m_iValidComboInterval;
+}
+
+uint8_t CHARACTER::GetComboIndex() const
+{
+	return m_bComboIndex;
+}
+
+void CHARACTER::IncreaseComboHackCount(int k)
+{
+	m_iComboHackCount += k;
+
+	if (m_iComboHackCount >= 10)
+	{
+		if (GetDesc())
+			if (GetDesc()->DelayedDisconnect(number(2, 7)))
+			{
+				sys_log(0, "COMBO_HACK_DISCONNECT: %s count: %d", GetName(), m_iComboHackCount);
+				LogManager::instance().HackLog("Combo", this);
+			}
+	}
+}
+
+void CHARACTER::ResetComboHackCount()
+{
+	m_iComboHackCount = 0;
+}
+
+void CHARACTER::SkipComboAttackByTime(int interval)
+{
+	m_dwSkipComboAttackByTime = get_dword_time() + interval;
+}
+
+uint32_t CHARACTER::GetSkipComboAttackByTime() const
+{
+	return m_dwSkipComboAttackByTime;
+}
+
+void CHARACTER::ResetChatCounter()
+{
+	m_bChatCounter = 0;
+	m_bMountCounter = 0;
+}
+
+uint8_t CHARACTER::IncreaseChatCounter()
+{
+	return ++m_bChatCounter;
+}
+
+uint8_t CHARACTER::GetChatCounter() const
+{
+	return m_bChatCounter;
+}
+
