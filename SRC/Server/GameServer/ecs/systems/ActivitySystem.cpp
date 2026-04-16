@@ -13,6 +13,7 @@
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../locale_service.h"
+#include "../../mining.h"
 #include "../../packet.h"
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
@@ -563,6 +564,129 @@ void CHARACTER::fishing_new_catch_failed()
 void CHARACTER::fishing_catch_decision(uint32_t itemVnum)
 {
     ActivitySystem::CatchDecision(AIHelpers::EcsOf(this), itemVnum);
+}
+
+void CHARACTER::mining_take()
+{
+    m_pkMiningEvent = nullptr;
+}
+
+void CHARACTER::mining_cancel()
+{
+    if (m_pkMiningEvent)
+    {
+        sys_log(0, "XXX MINING CANCEL");
+        event_cancel(&m_pkMiningEvent);
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 472, "");
+#endif
+    }
+}
+
+void CHARACTER::mining(LPCHARACTER chLoad)
+{
+    if (m_pkMiningEvent)
+    {
+        mining_cancel();
+        return;
+    }
+
+    if (!chLoad)
+        return;
+
+    if (GetMapIndex() != chLoad->GetMapIndex() || DISTANCE_APPROX(GetX() - chLoad->GetX(), GetY() - chLoad->GetY()) > 1000)
+        return;
+
+    if (mining::GetRawOreFromLoad(chLoad->GetRaceNum()) == 0)
+        return;
+
+    LPITEM pick = GetWear(WEAR_WEAPON);
+
+    if (!pick || pick->GetType() != ITEM_PICK)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 252, "");
+#endif
+        return;
+    }
+
+    int count = number(5, 15);
+
+    TPacketGCDigMotion p;
+    p.header = HEADER_GC_DIG_MOTION;
+    p.vid = GetVID();
+    p.target_vid = chLoad->GetVID();
+    p.count = count;
+
+    PacketAround(&p, sizeof(p));
+
+    m_pkMiningEvent = mining::CreateMiningEvent(this, chLoad, count);
+}
+
+void CHARACTER::fishing()
+{
+    if (m_pkFishingEvent)
+    {
+        fishing_take();
+        return;
+    }
+
+    {
+        LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(GetMapIndex());
+
+        int x = GetX();
+        int y = GetY();
+
+        LPSECTREE tree = pkSectreeMap->Find(x, y);
+        uint32_t dwAttr = tree->GetAttribute(x, y);
+
+        if (IS_SET(dwAttr, ATTR_BLOCK))
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 657, "");
+#endif
+            return;
+        }
+    }
+
+    LPITEM rod = GetWear(WEAR_WEAPON);
+
+    if (!rod || rod->GetType() != ITEM_ROD)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 281, "");
+#endif
+        return;
+    }
+
+    if (0 == rod->GetSocket(2))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 351, "");
+#endif
+        return;
+    }
+
+    float fx, fy;
+    GetDeltaByDegree(GetRotation(), 400.0f, &fx, &fy);
+
+    m_pkFishingEvent = fishing::CreateFishingEvent(this);
+}
+
+void CHARACTER::fishing_take()
+{
+    LPITEM rod = GetWear(WEAR_WEAPON);
+    if (rod && rod->GetType() == ITEM_ROD)
+    {
+        using fishing::fishing_event_info;
+        if (m_pkFishingEvent)
+        {
+            struct fishing_event_info* info = dynamic_cast<struct fishing_event_info*>(m_pkFishingEvent->info);
+
+            if (info)
+                fishing::Take(info, this);
+        }
+    }
 }
 
 #endif

@@ -2375,3 +2375,21 @@
   - `CHARACTER::` body count: `144`
 - build: success
 - next: `S11c-1 ActivitySystem mining/fishing wrapper batch`
+
+## Phase 8 - Step 8.17 char.cpp -> ActivitySystem (continued)
+- completed slice `S11c-1 mining / fishing wrappers`
+- moved:
+  - `mining_take`, `mining_cancel`, `mining`
+  - `fishing`, `fishing_take`
+- helper surface:
+  - `ActivitySystem.cpp`
+    - `mining.h`
+- note:
+  - the first build failed with 5 duplicate-definition linker errors because the wrappers had already been added to `ActivitySystem.cpp` while the original bodies were still present in `char.cpp`
+  - fixed in-place by removing the exact `char.cpp` line range after re-auditing the block boundaries; no rollback was needed
+- after char.cpp Slice S11c-1: `1837`
+- char.cpp status after slice:
+  - line count: `6445`
+  - `CHARACTER::` body count: `139`
+- build: success
+- next: `S11c-2 PlayerRuntimeSystem BattlePass / offline helper batch`
