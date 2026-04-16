@@ -1802,3 +1802,24 @@
   - `CHARACTER::` body count: `285`
 - build: success
 - next: `S6 SessionSystem save/logout sub-slice audit`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem
+- completed slice `S6 SessionSystem (save/persist block)`
+- created:
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+- moved:
+  - `Save`
+  - `CreatePlayerProto`
+  - `SaveReal`
+  - `FlushDelayedSaveItem`
+- note:
+  - the first session-slice build failed below rollback threshold because the new file was missing the descriptor/sectree/string helper surface (`desc_client.h`, `sectree.h`, `utils.h`)
+  - after that fix, one lingering duplicate `CreatePlayerProto` body was still present in `char.cpp`; it was removed surgically and the slice then built cleanly
+  - `Disconnect`, `Show`, and `StartSaveEvent` were intentionally left for a later dedicated session block
+- after char.cpp Slice S6: `1991`
+- char.cpp status after slice:
+  - line count: `7313`
+  - `CHARACTER::` body count: `281`
+- build: success
+- next: `S7 SessionSystem disconnect/show/warp audit`
