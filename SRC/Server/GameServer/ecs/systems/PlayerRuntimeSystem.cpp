@@ -2273,3 +2273,82 @@ void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
     m_pkShopSafebox = pk;
 }
 #endif
+
+#ifdef ENABLE_RANKING
+long long CHARACTER::GetRankPoints(int iArg)
+{
+    if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
+        return 0;
+
+    return m_lRankPoints[iArg];
+}
+
+void CHARACTER::SetRankPoints(int iArg, long long lPoint)
+{
+    if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
+        return;
+
+    m_lRankPoints[iArg] = lPoint;
+    Save();
+}
+
+void CHARACTER::RankingSubcategory(int iArg)
+{
+    if (!GetDesc())
+        return;
+
+    if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
+        return;
+
+    TPacketGCRankingTable p;
+    int j = 0;
+
+    char szQuery1[1024] = { 0 };
+    snprintf(szQuery1, sizeof(szQuery1), "SELECT account_id, level, name, r%d FROM player.player%s WHERE account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=account_id) AND name not in(SELECT mName FROM common.gmlist%s) ORDER BY r%d desc, level desc, name asc LIMIT 50", iArg, get_table_postfix(), get_table_postfix(), get_table_postfix(), iArg);
+    std::unique_ptr<SQLMsg> pRes1(DBManager::instance().DirectQuery(szQuery1));
+    uint32_t iRes = pRes1->Get()->uiNumRows;
+    if (iRes > 0) {
+        MYSQL_ROW data;
+        while ((data = mysql_fetch_row(pRes1->Get()->pSQLResult))) {
+            int col = 1;
+            p.list[j].iPosition = j;
+            p.list[j].iRealPosition = 0;
+            p.list[j].iLevel = atoi(data[col++]);
+            strlcpy(p.list[j].szName, data[col++], sizeof(p.list[j].szName));
+            p.list[j].iPoints = atoi(data[col]);
+            j += 1;
+        }
+    }
+
+    if (j < MAX_RANKING_LIST) {
+        for (int i = j; i < MAX_RANKING_LIST; i++) {
+            p.list[i].iPosition = i;
+            p.list[i].iRealPosition = 0;
+            p.list[i].iLevel = 0;
+            p.list[i].iPoints = 0;
+            strlcpy(p.list[i].szName, "", sizeof(p.list[i].szName));
+        }
+    }
+
+    char szQuery2[1024] = { 0 };
+    if (GetGMLevel() > GM_PLAYER) {
+        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, GetName());
+    }
+    else {
+        snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res WHERE name not in(SELECT mName FROM common.gmlist) ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, GetName());
+    }
+    std::unique_ptr<SQLMsg> pRes2(DBManager::instance().DirectQuery(szQuery2));
+    iRes = pRes2->Get()->uiNumRows;
+    if (iRes > 0) {
+        j = MAX_RANKING_LIST - 1;
+        MYSQL_ROW data = mysql_fetch_row(pRes2->Get()->pSQLResult);
+        p.list[j].iPosition = j;
+        p.list[j].iRealPosition = atoi(data[1]);
+        p.list[j].iLevel = atoi(data[4]);
+        p.list[j].iPoints = atoi(data[2]);
+        strlcpy(p.list[j].szName, GetName(), sizeof(p.list[j].szName));
+    }
+
+    GetDesc()->Packet(&p, sizeof(p));
+}
+#endif

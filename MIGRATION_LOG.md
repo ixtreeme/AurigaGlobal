@@ -2600,3 +2600,18 @@
   - `CHARACTER::` body count: `105`
 - build: success
 - next: `S11d-c-1b duel retry`, `S11d-c-2 proto/parts/rank`, or another isolated runtime batch
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-2a rank helpers`
+- moved:
+  - `GetRankPoints`
+  - `SetRankPoints`
+  - `RankingSubcategory`
+- note:
+  - kept the `ENABLE_RANKING` guard boundary intact and moved the full ranking packet/query block together to avoid splitting the SQL packet path
+- after char.cpp Slice S11d-c-2a: `1789`
+- char.cpp status after slice:
+  - line count: `4586`
+  - `CHARACTER::` body count: `102`
+- build: success
+- next: `S11d-c-2b/c proto/parts`, `S11d-c-1b duel retry`, or another isolated runtime batch
