@@ -1493,3 +1493,13 @@
 - after char_battle.cpp Slice BE3: `2101`
 - build: success
 - next: slice BD2 or BC5 (`DistributeHP` / `DistributeExp` / `Dead`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BE2b:
+  - moved:
+    - `UpdateAggrPointEx`
+    - `UpdateAggrPoint`
+    - `ChangeVictimByAggro`
+- after char_battle.cpp Slice BE2b: `2097`
+- build: success
+- next: final heavy slices (`DistributeHP` / `DistributeExp` / `Dead`)

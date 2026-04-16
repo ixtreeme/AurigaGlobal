@@ -981,6 +981,137 @@ void CHARACTER::CheckLeaderboardSkillMobChanges()
 
 #endif
 
+// char_battle.cpp slice BE2b moved into CombatSystem.cpp
+
+void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int dam, CHARACTER::TBattleInfo& info)
+{
+	// Ư ŸԿ   ö󰣴
+	switch (type)
+	{
+	case DAMAGE_TYPE_NORMAL_RANGE:
+		dam = (int)(dam * 1.2f);
+		break;
+
+	case DAMAGE_TYPE_RANGE:
+		dam = (int)(dam * 1.5f);
+		break;
+
+	case DAMAGE_TYPE_MAGIC:
+		dam = (int)(dam * 1.2f);
+		break;
+
+	default:
+		break;
+	}
+
+	// ڰ    ʽ ش.
+	if (pAttacker == GetVictim())
+		dam = (int)(dam * 1.2f);
+
+	info.iAggro += dam;
+
+	if (info.iAggro < 0)
+		info.iAggro = 0;
+
+	//sys_log(0, "UpdateAggrPointEx for %s by %s dam %d total %d", GetName(), pAttacker->GetName(), dam, total);
+	if (GetParty() && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
+	{
+		LPPARTY pParty = GetParty();
+
+		//     ϴ
+		int iPartyAggroDist = dam;
+
+		if (pParty->GetLeaderPID() == GetVID())
+			iPartyAggroDist /= 2;
+		else
+			iPartyAggroDist /= 3;
+
+		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, pAttacker->GetVID());
+	}
+
+	ChangeVictimByAggro(info.iAggro, pAttacker);
+}
+
+void CHARACTER::UpdateAggrPoint(LPCHARACTER pAttacker, EDamageType type, int dam)
+{
+	if (IsDead() || IsStun())
+		return;
+
+	TDamageMap::iterator it = m_map_kDamage.find(pAttacker->GetVID());
+
+	if (it == m_map_kDamage.end())
+	{
+		m_map_kDamage.insert(TDamageMap::value_type(pAttacker->GetVID(), TBattleInfo(0, dam)));
+		it = m_map_kDamage.find(pAttacker->GetVID());
+	}
+
+	UpdateAggrPointEx(pAttacker, type, dam, it->second);
+}
+
+void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
+{
+	if (get_dword_time() - m_dwLastVictimSetTime < 3000) // 3ʴ ٷѴ
+		return;
+
+	if (pNewVictim == GetVictim())
+	{
+		if (m_iMaxAggro < iNewAggro)
+		{
+			m_iMaxAggro = iNewAggro;
+			return;
+		}
+
+		// Aggro  
+		TDamageMap::iterator it;
+		TDamageMap::iterator itFind = m_map_kDamage.end();
+
+		for (it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
+		{
+			if (it->second.iAggro > iNewAggro)
+			{
+				LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+
+				if (ch && !ch->IsDead() && DISTANCE_APPROX(ch->GetX() - GetX(), ch->GetY() - GetY()) < 5000)
+				{
+					itFind = it;
+					iNewAggro = it->second.iAggro;
+				}
+			}
+		}
+
+		if (itFind != m_map_kDamage.end())
+		{
+			m_iMaxAggro = iNewAggro;
+#ifdef __DEFENSE_WAVE__
+			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
+			{
+				SetVictim(CHARACTER_MANAGER::instance().Find(itFind->first));
+			}
+#else
+			SetVictim(CHARACTER_MANAGER::instance().Find(itFind->first));
+#endif
+			m_dwStateDuration = 1;
+		}
+	}
+	else
+	{
+		if (m_iMaxAggro < iNewAggro)
+		{
+			m_iMaxAggro = iNewAggro;
+#ifdef __DEFENSE_WAVE__
+			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
+			{
+				SetVictim(pNewVictim);
+			}
+#else
+			SetVictim(pNewVictim);
+#endif
+			m_dwStateDuration = 1;
+		}
+	}
+}
+
+
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
     // migrated from CHARACTER::Attack
