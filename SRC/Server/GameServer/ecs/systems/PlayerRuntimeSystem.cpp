@@ -18,6 +18,7 @@
 #include "../../log.h"
 #include "../../marriage.h"
 #include "../../mob_manager.h"
+#include "../../new_offlineshop.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
 #include "../../skill_power.h"
@@ -2154,5 +2155,121 @@ bool CHARACTER::Update_Inven()
         ChatPacket(CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
         return false;
     }
+}
+#endif
+
+bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
+{
+    const int iPulse = thecore_pulse();
+
+    if (test_server)
+        bSendMsg = true;
+
+    if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(limittime))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        if (bSendMsg) {
+            ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
+        }
+#endif
+        return true;
+    }
+
+    if (bCheckShopOwner)
+    {
+        if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+            || GetWheelDestiny()
+#endif
+            )
+        {
+#ifdef TEXTS_IMPROVEMENT
+            if (bSendMsg) {
+                ChatPacketNew(CHAT_TYPE_INFO, 236, "");
+            }
+#endif
+            return true;
+        }
+    }
+    else
+    {
+        if (GetExchange() || GetMyShop() || IsOpenSafebox() || IsCubeOpen()
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+            || GetWheelDestiny()
+#endif
+            )
+        {
+#ifdef TEXTS_IMPROVEMENT
+            if (bSendMsg) {
+                ChatPacketNew(CHAT_TYPE_INFO, 236, "");
+            }
+#endif
+            return true;
+        }
+    }
+
+    if (iPulse - GetExchangeTime() < PASSES_PER_SEC(limittime))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        if (bSendMsg) {
+            ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
+        }
+#endif
+        return true;
+    }
+
+    if (iPulse - GetMyShopTime() < PASSES_PER_SEC(limittime))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        if (bSendMsg) {
+            ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
+        }
+#endif
+        return true;
+    }
+
+    if (iPulse - GetRefineTime() < PASSES_PER_SEC(limittime))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        if (bSendMsg) {
+            ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
+        }
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+void CHARACTER::Say(const std::string& s)
+{
+    struct ::packet_script packet_script;
+
+    packet_script.header = HEADER_GC_SCRIPT;
+    packet_script.skin = 1;
+    packet_script.src_size = s.size();
+    packet_script.size = packet_script.src_size + sizeof(struct packet_script);
+
+    TEMP_BUFFER buf;
+
+    buf.write(&packet_script, sizeof(struct packet_script));
+    buf.write(&s[0], s.size());
+
+    if (IsPC())
+    {
+        GetDesc()->Packet(buf.read_peek(), buf.size());
+    }
+}
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
+{
+    if (m_pkShopSafebox && pk == nullptr)
+        m_pkShopSafebox->SetOwner(nullptr);
+
+    else if (m_pkShopSafebox == nullptr && pk)
+        pk->SetOwner(this);
+
+    m_pkShopSafebox = pk;
 }
 #endif

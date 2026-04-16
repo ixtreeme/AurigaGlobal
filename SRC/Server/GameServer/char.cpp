@@ -3809,114 +3809,7 @@ void CHARACTER::PayRefineFee(int64_t iTotalMoney)
 // END_OF_ADD_REFINE_BUILDING
 
 //Hack 1aÁö¸¦ A§ÇN A1A©.
-bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
-{
-	const int iPulse = thecore_pulse();
 
-	if (test_server)
-		bSendMsg = true;
-
-	if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(limittime))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (bSendMsg) {
-			ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
-		}
-#endif
-		return true;
-	}
-
-	//°A·!°ü·A Ac A1A©
-	if (bCheckShopOwner)
-	{
-		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-			|| GetWheelDestiny()
-#endif
-			)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			if (bSendMsg) {
-				ChatPacketNew(CHAT_TYPE_INFO, 236, "");
-			}
-#endif
-			return true;
-		}
-	}
-	else
-	{
-		if (GetExchange() || GetMyShop() || IsOpenSafebox() || IsCubeOpen()
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-			|| GetWheelDestiny()
-#endif
-			)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			if (bSendMsg) {
-				ChatPacketNew(CHAT_TYPE_INFO, 236, "");
-			}
-#endif
-			return true;
-		}
-	}
-
-	//PREVENT_PORTAL_AFTER_EXCHANGE
-	//±3E- EÄ 1A°LA1A©
-	if (iPulse - GetExchangeTime() < PASSES_PER_SEC(limittime))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (bSendMsg) {
-			ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
-		}
-#endif
-		return true;
-	}
-	//END_PREVENT_PORTAL_AFTER_EXCHANGE
-
-	//PREVENT_ITEM_COPY
-	if (iPulse - GetMyShopTime() < PASSES_PER_SEC(limittime))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (bSendMsg) {
-			ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
-		}
-#endif
-		return true;
-	}
-
-	if (iPulse - GetRefineTime() < PASSES_PER_SEC(limittime))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (bSendMsg) {
-			ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", limittime);
-		}
-#endif
-		return true;
-	}
-	//END_PREVENT_ITEM_COPY
-
-	return false;
-}
-
-void CHARACTER::Say(const std::string& s)
-{
-	struct ::packet_script packet_script;
-
-	packet_script.header = HEADER_GC_SCRIPT;
-	packet_script.skin = 1;
-	packet_script.src_size = s.size();
-	packet_script.size = packet_script.src_size + sizeof(struct packet_script);
-
-	TEMP_BUFFER buf;
-
-	buf.write(&packet_script, sizeof(struct packet_script));
-	buf.write(&s[0], s.size());
-
-	if (IsPC())
-	{
-		GetDesc()->Packet(buf.read_peek(), buf.size());
-	}
-}
 
 //------------------------------------------------
 //------------------------------------------------
@@ -4114,16 +4007,6 @@ void CHARACTER::RankingSubcategory(int iArg)
 #endif
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
-{
-	if (m_pkShopSafebox && pk == nullptr)
-		m_pkShopSafebox->SetOwner(nullptr);
-
-	else if (m_pkShopSafebox == nullptr && pk)
-		pk->SetOwner(this);
-
-	m_pkShopSafebox = pk;
-}
 #endif
 
 

@@ -2584,3 +2584,19 @@
   - `CHARACTER::` body count: `108`
 - build: success
 - next: `S11d-c-1b duel/session setter retry` or another small runtime/session accessor batch
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-1b-b runtime anti-hack / dialogue / shop-safebox helpers`
+- moved:
+  - `IsHack`
+  - `Say`
+  - `SetShopSafebox`
+- note:
+  - the first post-move build failed with two incomplete-type errors for `offlineshop::CShopSafebox`
+  - fixed in-place by extending the helper surface with `new_offlineshop.h`; rollback was not needed
+- after char.cpp Slice S11d-c-1b-b: `1792`
+- char.cpp status after slice:
+  - line count: `4682`
+  - `CHARACTER::` body count: `105`
+- build: success
+- next: `S11d-c-1b duel retry`, `S11d-c-2 proto/parts/rank`, or another isolated runtime batch
