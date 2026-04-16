@@ -2976,3 +2976,28 @@
   - `CHARACTER::` body count: `2`
 - build: success
 - next: `S11d-c-4c Initialize` then `S11d-c-4d Create`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-4c/d Initialize + Create`
+- moved:
+  - `Initialize`
+  - `Create`
+- helper surface:
+  - added local ECS state helpers to `PlayerRuntimeSystem.cpp`:
+    - `EcsEntityOf`
+    - `HasCombatState`
+    - `HasIdleState`
+    - `EnterIdleState`
+  - added component surface:
+    - `ecs/components/combat_components.hpp`
+    - `ecs/components/movement_components.hpp`
+  - added `crc32.h` for `GetCRC32`
+- note:
+  - `Initialize` was the last large `CHARACTER::` body in `char.cpp`
+  - after this slice, `char.cpp` retained only ctor/dtor shells plus file-scope helpers/events
+- after char.cpp Slice S11d-c-4c/d: `1677`
+- char.cpp status after slice:
+  - line count: `915`
+  - `CHARACTER::` body count: `0`
+- build: success
+- next: `char.cpp` file-scope helper/event sweep, then ctor/dtor shells and deletion

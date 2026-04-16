@@ -10,14 +10,17 @@
 #include "../../buffer_manager.h"
 #include "../../battle_pass.h"
 #include "../../banword.h"
+#include "../../crc32.h"
 #include "../../db.h"
 #include "../../desc_client.h"
 #include "../../dungeon.h"
 #include "../../ecs/EntityFactory.hpp"
 #include "../../ecs/AIHelpers.hpp"
 #include "../../ecs/Registry.hpp"
+#include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
 #include "../../ecs/components/identity_components.hpp"
+#include "../../ecs/components/movement_components.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
 #include "../../guild_manager.h"
@@ -57,6 +60,42 @@ EVENTFUNC(kill_ore_load_event);
 
 namespace
 {
+inline entt::entity EcsEntityOf(const CHARACTER* ch)
+{
+    if (!ch)
+        return entt::null;
+
+    return CVIDRegistry::Instance().Find(ch->GetVID());
+}
+
+inline bool HasCombatState(const CHARACTER* ch)
+{
+    const entt::entity e = EcsEntityOf(ch);
+    return e != entt::null && g_registry.valid(e) &&
+        g_registry.all_of<ecs::CombatActiveTag>(e);
+}
+
+inline bool HasIdleState(const CHARACTER* ch)
+{
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return true;
+
+    return !g_registry.all_of<ecs::CombatActiveTag>(e) &&
+        !g_registry.all_of<ecs::MovementDestination>(e);
+}
+
+inline void EnterIdleState(CHARACTER* ch)
+{
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.remove<ecs::CombatActiveTag>(e);
+    g_registry.remove<ecs::CombatTarget>(e);
+    g_registry.remove<ecs::MovementDestination>(e);
+}
+
 #ifdef ENABLE_PVP_ADVANCED
 int GetDuelImpl(const CHARACTER* ch, const char* type)
 {
@@ -4153,3 +4192,391 @@ void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 }
 #endif
 #endif
+
+void CHARACTER::Initialize()
+{
+    CEntity::Initialize(ENTITY_CHARACTER);
+
+    m_bNoOpenedShop = true;
+#ifdef ENABLE_EVENT_MANAGER
+    m_bDungeonTicketExtraMetin = false;
+#endif
+
+#ifdef ENABLE_MAP1_SKILL_MOB
+    m_bSkillHit = false;
+#endif
+    m_bOpeningSafebox = false;
+    m_lastAlignmentGrade = 255;
+    m_alignBonusHP = 0;
+    m_alignBonusMonster = 0;
+    m_alignBonusHuman = 0;
+    m_alignBonusMetin = 0;
+    m_alignBonusBoss = 0;
+    m_alignBonusPvm = 0;
+    m_alignBonusNormal = 0;
+    m_alignBonusSkill = 0;
+    m_alignAppliedHP = 0;
+    m_alignAppliedMonster = 0;
+    m_alignAppliedHuman = 0;
+    m_alignAppliedMetin = 0;
+    m_alignAppliedBoss = 0;
+    m_alignAppliedPvm = 0;
+    m_alignAppliedNormal = 0;
+    m_alignAppliedSkill = 0;
+
+    m_fSyncTime = get_float_time() - 3;
+    m_dwPlayerID = 0;
+#ifdef __NEWPET_SYSTEM__
+    m_stImmortalSt = 0;
+    m_newpetskillcd[0] = 0;
+    m_newpetskillcd[1] = 0;
+    m_newpetskillcd[2] = 0;
+    m_newpetskillcd[3] = 0;
+#endif
+    m_dwKillerPID = 0;
+#ifdef __SEND_TARGET_INFO__
+    dwLastTargetInfoPulse = 0;
+#endif
+    m_iMoveCount = 0;
+
+    m_pkRegen = nullptr;
+    regen_id_ = 0;
+    m_posRegen.x = m_posRegen.y = m_posRegen.z = 0;
+    m_posStart.x = m_posStart.y = 0;
+    m_posDest.x = m_posDest.y = 0;
+    m_fRegenAngle = 0.0f;
+
+    m_pkMobData = nullptr;
+    m_pkMobInst = nullptr;
+
+    m_pkShop = nullptr;
+    m_pkChrShopOwner = nullptr;
+    m_pkMyShop = nullptr;
+    m_pkExchange = nullptr;
+    m_pkParty = nullptr;
+    m_pkPartyRequestEvent = nullptr;
+
+    m_pGuild = nullptr;
+
+    m_pkChrTarget = nullptr;
+
+    m_pkMuyeongEvent = nullptr;
+#ifdef ENABLE_NEW_GYEONGGONG_SKILL
+    m_pkGyeongGongEvent = nullptr;
+#endif
+    m_pkWarpNPCEvent = nullptr;
+    m_pkDeadEvent = nullptr;
+    m_pkStunEvent = nullptr;
+    m_pkSaveEvent = nullptr;
+    m_pkRecoveryEvent = nullptr;
+    m_pkTimedEvent = nullptr;
+    m_pkFishingEvent = nullptr;
+    m_pkWarpEvent = nullptr;
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    m_pkBattlePassStayOnlineEvent = nullptr;
+#endif
+
+    m_pkMiningEvent = nullptr;
+
+    m_pkPoisonEvent = nullptr;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    m_pkBleedingEvent = NULL;
+#endif
+    m_pkFireEvent = nullptr;
+    m_pkAffectEvent = nullptr;
+    m_afAffectFlag = TAffectFlag(0, 0);
+
+    m_pkDestroyWhenIdleEvent = nullptr;
+
+    m_pkChrSyncOwner = nullptr;
+
+    memset(&m_points, 0, sizeof(m_points));
+    memset(&m_pointsInstant, 0, sizeof(m_pointsInstant));
+    memset(&m_quickslot, 0, sizeof(m_quickslot));
+
+    m_bCharType = CHAR_TYPE_MONSTER;
+
+    SetPosition(POS_STANDING);
+
+    m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
+
+    EnterIdleState(this);
+    m_dwStateDuration = 1;
+
+    m_dwLastAttackTime = get_dword_time() - 20000;
+
+    m_bAddChrState = 0;
+#if defined(BL_OFFLINE_MESSAGE)
+    dwLastOfflinePMTime = 0;
+#endif
+    m_pkChrStone = nullptr;
+
+    m_pkSafebox = nullptr;
+    m_iSafeboxSize = -1;
+    m_iSafeboxLoadTime = 0;
+
+    m_pkMountInventory = nullptr;
+    m_bMountInventoryLoaded = false;
+
+    m_pkMall = nullptr;
+    m_iMallLoadTime = 0;
+
+    m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;
+    m_lWarpMapIndex = 0;
+
+    m_posExit.x = m_posExit.y = m_posExit.z = 0;
+    m_lExitMapIndex = 0;
+
+    m_pSkillLevels = nullptr;
+
+    m_dwMoveStartTime = 0;
+    m_dwMoveDuration = 0;
+
+    m_dwFlyTargetID = 0;
+
+    m_dwNextStatePulse = 0;
+
+    m_dwLastDeadTime = get_dword_time() - 180000;
+
+    m_bSkipSave = false;
+
+    m_bItemLoaded = false;
+
+    m_bHasPoisoned = false;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    m_bHasBled = false;
+#endif
+    m_pkDungeon = nullptr;
+    m_iEventAttr = 0;
+
+    m_kAttackLog.dwVID = 0;
+    m_kAttackLog.dwTime = 0;
+
+    m_bNowWalking = m_bWalking = false;
+    ResetChangeAttackPositionTime();
+
+    m_bDetailLog = false;
+    m_bMonsterLog = false;
+
+    m_bDisableCooltime = false;
+
+    m_iAlignment = 0;
+    m_iRealAlignment = 0;
+
+    m_iKillerModePulse = 0;
+    m_bPKMode = PK_MODE_PEACE;
+
+    m_dwQuestNPCVID = 0;
+    m_dwQuestByVnum = 0;
+    m_pQuestItem = nullptr;
+
+    m_szMobileAuth[0] = '\0';
+
+    m_dwUnderGuildWarInfoMessageTime = get_dword_time() - 60000;
+
+    m_bUnderRefine = false;
+
+    m_dwRefineNPCVID = 0;
+
+    m_dwPolymorphRace = 0;
+
+    m_bStaminaConsume = false;
+
+    ResetChainLightningIndex();
+
+    m_dwMountVnum = 0;
+    m_chHorse = nullptr;
+    m_chRider = nullptr;
+
+    m_pWarMap = nullptr;
+    m_pWeddingMap = nullptr;
+    m_bChatCounter = 0;
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    m_lastBeltMountCount = -999;
+#endif
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+    m_pkOfflineShop = nullptr;
+    m_pkShopSafebox = nullptr;
+    m_pkAuction = nullptr;
+    m_pkAuctionGuest = nullptr;
+    m_pkOfflineShopGuest = nullptr;
+    m_bIsLookingOfflineshopOfferList = false;
+#endif
+
+    ResetStopTime();
+#ifdef ENABLE_GAYA_SYSTEM
+    LOAD_GAYA();
+#endif
+    m_dwLastVictimSetTime = get_dword_time() - 3000;
+    m_iMaxAggro = -100;
+
+    m_bSendHorseLevel = 0;
+    m_bSendHorseHealthGrade = 0;
+    m_bSendHorseStaminaGrade = 0;
+
+    m_dwLoginPlayTime = 0;
+
+    m_pkChrMarried = nullptr;
+
+    m_posSafeboxOpen.x = -1000;
+    m_posSafeboxOpen.y = -1000;
+
+    m_dwLastSkillTime = get_dword_time();
+
+    memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
+
+    m_isinPCBang = false;
+
+    m_pArena = nullptr;
+    m_nPotionLimit = quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count");
+
+    m_isOpenSafebox = 0;
+
+    m_iRefineTime = 0;
+
+    m_iSeedTime = 0;
+    m_iExchangeTime = 0;
+    m_iMyShopTime = 0;
+
+    m_deposit_pulse = 0;
+
+    m_strNewName = "";
+
+    m_known_guild.clear();
+
+    m_dwLogOffInterval = 0;
+
+    m_bComboSequence = 0;
+    m_dwLastComboTime = 0;
+    m_bComboIndex = 0;
+    m_iComboHackCount = 0;
+    m_dwSkipComboAttackByTime = 0;
+
+    m_dwMountTime = 0;
+
+    m_dwLastGoldDropTime = 0;
+#ifdef ENABLE_NEWSTUFF
+    m_dwLastBoxUseTime = 0;
+    m_dwLastBuySellTime = 0;
+#endif
+
+    m_bIsLoadedAffect = false;
+    cannot_dead = false;
+
+#ifdef __PET_SYSTEM__
+    m_petSystem = nullptr;
+    m_bIsPet = false;
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+    m_newpetSystem = nullptr;
+    m_bIsNewPet = false;
+    m_eggvid = 0;
+#endif
+    m_fAttMul = 1.0f;
+    m_fDamMul = 1.0f;
+
+    m_pointsInstant.iDragonSoulActiveDeck = -1;
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    m_mountSystem = nullptr;
+    m_bIsMount = false;
+#endif
+
+#ifdef ENABLE_ANTI_CMD_FLOOD
+    m_dwCmdAntiFloodCount = 0;
+    m_dwCmdAntiFloodPulse = 0;
+#endif
+    memset(&m_tvLastSyncTime, 0, sizeof(m_tvLastSyncTime));
+    m_iSyncHackCount = 0;
+#ifdef ENABLE_NEW_FISHING_SYSTEM
+    m_pkFishingNewEvent = nullptr;
+    m_bFishCatch = 0;
+    m_dwLastCatch = 0;
+    m_dwCatchFailed = 0;
+#endif
+#ifdef ENABLE_RANKING
+    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
+        m_lRankPoints[i] = 0;
+#endif
+
+#ifdef ENABLE_ATTR_COSTUMES
+    attrdialog_remove = 0;
+#endif
+#ifdef ENABLE_BATTLE_PASS
+    m_listBattlePass.clear();
+    m_bIsLoadedBattlePass = false;
+
+    m_dwBattlePassEndTime = 0;
+
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    m_pkStayOnlineEvent = nullptr;
+#endif
+
+#endif
+    m_stName = "";
+
+#ifdef __SKILL_COLOR_SYSTEM__
+    memset(&m_dwSkillColor, 0, sizeof(m_dwSkillColor));
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+    m_bAcceCombination = false;
+    m_bAcceAbsorption = false;
+#endif
+
+#ifdef __HIDE_COSTUME_SYSTEM__
+    m_bHideBodyCostume = false;
+    m_bHideHairCostume = false;
+#ifdef ENABLE_ACCE_SYSTEM
+    m_bHideAcceCostume = false;
+#endif
+    m_bHideWeaponCostume = false;
+#endif
+#ifdef ENABLE_NEW_PET_EDITS
+    petenchant = 0;
+#endif
+#ifdef KASMIR_PAKET_SYSTEM
+    m_bKasmirPaketBaslik = 0;
+    m_bKasmirPaketDurum = false;
+#endif
+    isInvincible = false;
+    m_iGoToXYTime = 0;
+#ifdef ENABLE_SAVEPOINT_SYSTEM
+    m_iSavePointTime = 0;
+#endif
+#ifdef ENABLE_SORT_INVEN
+    m_iSortInv1Time = 0;
+    m_iSortInv2Time = 0;
+#endif
+#ifdef ENABLE_LIMIT_BUY_SPEED
+    m_iLastBuyTime = 0;
+#endif
+#ifdef __DUNGEON_INFO_SYSTEM__
+    dungeonDamage.clear();
+#endif
+#ifdef ENABLE_SPAM_CHECK
+    m_iLastUnlock = 0;
+    m_iLastDSRefine = 0;
+#endif
+#ifdef ENABLE_ANTICHEAT
+    m_firstReward = 0;
+    m_rewardCount = 0;
+    m_checkRepeated = 0;
+    m_dropitemcount = 0;
+    m_lastdropitem = 0;
+#endif
+#ifdef ENABLE_BLOCK_MULTIFARM
+    m_pkDropEvent = nullptr;
+#endif
+}
+
+void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
+{
+    static int s_crc = 172814;
+
+    char crc_string[128 + 1];
+    snprintf(crc_string, sizeof(crc_string), "%s%p%d", c_pszName, this, ++s_crc);
+    m_vid = VID(vid, GetCRC32(crc_string, strlen(crc_string)));
+    if (isPC)
+        m_stName = c_pszName;
+}
