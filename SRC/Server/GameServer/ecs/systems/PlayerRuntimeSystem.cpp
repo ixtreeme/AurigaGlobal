@@ -3084,3 +3084,68 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
         m_triggerOnClick.pFunc(this, pkChrCauser);
     }
 }
+
+void CHARACTER::DestroyPvP()
+{
+    if (GetDesc() != nullptr)
+    {
+        const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
+
+        int moneyBet = GetQuestFlag(szTableStaticPvP[8]);
+        int isDuel = GetQuestFlag(szTableStaticPvP[9]);
+
+        if (isDuel != 0)
+        {
+            if (moneyBet > 0)
+            {
+                PointChange(POINT_GOLD, moneyBet, true);
+            }
+
+            char szBuf[CHAT_MAX_LEN + 1];
+            snprintf(szBuf, sizeof(szBuf), "BINARY_Duel_Delete");
+            ChatPacket(CHAT_TYPE_COMMAND, szBuf);
+
+            for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
+            {
+                SetQuestFlag(szTableStaticPvP[i], 0);
+            }
+        }
+    }
+}
+
+void CHARACTER::RestartAtSamePos()
+{
+    if (m_bIsObserver)
+        return;
+
+    EncodeRemovePacket(this);
+    EncodeInsertPacket(this);
+
+    ENTITY_MAP::iterator it = m_map_view.begin();
+
+    while (it != m_map_view.end())
+    {
+        LPENTITY entity = (it++)->first;
+
+        EncodeRemovePacket(entity);
+        if (!m_bIsObserver)
+            EncodeInsertPacket(entity);
+
+        if (entity->IsType(ENTITY_CHARACTER))
+        {
+            LPCHARACTER lpChar = (LPCHARACTER)entity;
+            if (lpChar->IsPC() || lpChar->IsNPC() || lpChar->IsMonster())
+            {
+                if (!entity->IsObserverMode())
+                    entity->EncodeInsertPacket(this);
+            }
+        }
+        else
+        {
+            if (!entity->IsObserverMode())
+            {
+                entity->EncodeInsertPacket(this);
+            }
+        }
+    }
+}

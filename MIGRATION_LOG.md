@@ -2733,3 +2733,18 @@
   - `CHARACTER::` body count: `76`
 - build: success
 - next: `S11d-c-1b-d channel/block setters` or `S11d-c-4a DestroyPvP/RestartAtSamePos`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-4a DestroyPvP/RestartAtSamePos`
+- moved:
+  - `DestroyPvP`
+  - `RestartAtSamePos`
+- note:
+  - kept the lifecycle slice to the two short bodies first and left `Destroy`, `Initialize`, and `Create` for later copy-first work
+  - `RestartAtSamePos` now lives beside the already-moved packet/runtime helpers it depends on
+- after char.cpp Slice S11d-c-4a: `1769`
+- char.cpp status after slice:
+  - line count: `3109`
+  - `CHARACTER::` body count: `74`
+- build: success
+- next: `S11d-c-4b Destroy`, `S11e-1 NetworkSync`, or `S11d-c-1b-d channel/block setters`
