@@ -1956,3 +1956,24 @@
   - `CHARACTER::` body count: `257`
 - build: success
 - next: `S10b MountSystem mount-inventory batch audit`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- completed slice `S10b MountSystem (mount inventory session bridge)`
+- moved:
+  - `GetMountInventory`
+  - `QueryMountInventory`
+  - `LoadMountInventory`
+  - `SendMountInventory`
+- helper surface:
+  - `db.h`
+  - `item_manager.h`
+  - `MountInventory.h`
+- note:
+  - the helper-surface pass built green before the body move
+  - the first relocation build failed below rollback threshold because the moved `CHARACTER::` bodies were still placed inside the `MountSystem` namespace block; moving them back to file scope fixed the slice in-place
+- after char.cpp Slice S10b: `1954`
+- char.cpp status after slice:
+  - line count: `6391`
+  - `CHARACTER::` body count: `253`
+- build: success
+- next: `S10c title/name/display packet batch audit`

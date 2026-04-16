@@ -5,11 +5,14 @@
 #include "../../config.h"
 #include "../../char.h"
 #include "../../char_manager.h"
+#include "../../db.h"
 #include "../../packet.h"
 #include "../../guild.h"
 #include "../../vector.h"
 #include "../../questmanager.h"
 #include "../../item.h"
+#include "../../item_manager.h"
+#include "../../MountInventory.h"
 #include "../../horsename_manager.h"
 #include "../../locale_service.h"
 #include "../../arena.h"
@@ -134,6 +137,89 @@ void SendHorseInfo(entt::entity owner)
     if (ch)
         ch->SendHorseInfo();
 }
+
+} // namespace MountSystem
+
+CMountInventory* CHARACTER::GetMountInventory() const
+{
+    return m_pkMountInventory;
+}
+
+void CHARACTER::QueryMountInventory()
+{
+    if (m_bMountInventoryLoaded || !GetDesc())
+        return;
+
+    DBManager::instance().ReturnQuery(QID_MOUNT_INVENTORY_LOAD,
+        GetPlayerID(),
+        nullptr,
+        "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
+        "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
+        "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5 "
+        "FROM account_mount_inventory WHERE account_id=%u ORDER BY slot",
+        GetDesc()->GetAccountTable().id);
+}
+
+void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& items)
+{
+    if (m_bMountInventoryLoaded)
+        return;
+
+    const int iHeight = 16;
+    m_pkMountInventory = M2_NEW CMountInventory(this, iHeight);
+
+    for (const auto& entry : items)
+    {
+        LPITEM item = ITEM_MANAGER::instance().CreateItem(entry.vnum, entry.count, entry.id);
+        if (!item)
+            continue;
+
+        item->SetSkipSave(true);
+        item->SetSockets(entry.alSockets);
+        item->SetAttributes(entry.aAttr);
+
+        if (!m_pkMountInventory->Add(entry.slot, item, true))
+            M2_DESTROY_ITEM(item);
+    }
+
+    m_bMountInventoryLoaded = true;
+    SendMountInventory();
+    ComputePoints();
+}
+
+void CHARACTER::SendMountInventory()
+{
+    if (!GetDesc() || !m_pkMountInventory)
+        return;
+
+    std::vector<TMountInventoryItemTable> items;
+    m_pkMountInventory->CollectItems(items);
+
+    TPacketGCMountInventory header{};
+    header.bHeader = HEADER_GC_MOUNT_INVENTORY;
+    header.size = sizeof(TPacketGCMountInventory) + static_cast<uint16_t>(items.size() * sizeof(TMountInventoryItemData));
+    header.bWidth = m_pkMountInventory->GetWidth();
+    header.bHeight = m_pkMountInventory->GetSize();
+    header.wCount = static_cast<uint16_t>(items.size());
+
+    TEMP_BUFFER buf;
+    buf.write(&header, sizeof(header));
+
+    for (const auto& entry : items)
+    {
+        TMountInventoryItemData data{};
+        data.wSlot = entry.slot;
+        data.dwVnum = entry.vnum;
+        data.dwCount = entry.count;
+        memcpy(data.alSockets, entry.alSockets, sizeof(data.alSockets));
+        memcpy(data.aAttr, entry.aAttr, sizeof(data.aAttr));
+        buf.write(&data, sizeof(data));
+    }
+
+    GetDesc()->Packet(buf.read_peek(), buf.size());
+}
+
+namespace MountSystem {
 
 bool CanUseHorseSkill(entt::entity owner)
 {
