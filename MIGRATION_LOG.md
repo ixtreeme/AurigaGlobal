@@ -1381,3 +1381,14 @@
 - after char_battle.cpp Slice BC1: `2157`
 - build: success
 - next: slice BC2 (`RewardGold`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC2:
+  - moved:
+    - `RewardGold`
+  - note:
+    - `RewardGold` was isolated cleanly from the larger reward/drop slice because it does not depend on the instant-inventory reward helpers or the dead-event lifecycle
+    - `Reward()` remains the next major BC blocker and still owns the rare-drop / reward-item helper surface in `char_battle.cpp`
+- after char_battle.cpp Slice BC2: `2156`
+- build: success
+- next: slice BC3 (`Reward`)
