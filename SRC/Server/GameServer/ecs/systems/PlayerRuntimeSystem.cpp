@@ -38,6 +38,7 @@
 #endif
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
+EVENTFUNC(drop_event);
 EVENTFUNC(kill_ore_load_event);
 
 namespace
@@ -3149,3 +3150,219 @@ void CHARACTER::RestartAtSamePos()
         }
     }
 }
+
+#ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
+bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
+{
+    if (!IsPC() || !GetDesc() || !CanWarp())
+        return false;
+
+    int32_t x = GetX();
+    int32_t y = GetY();
+
+    int32_t lAddr = newAddr;
+    int32_t lMapIndex = GetMapIndex();
+    uint16_t wPort = newPort;
+
+    if (lMapIndex >= 10000)
+    {
+        sys_err("Invalid change channel request from dungeon %d!", lMapIndex);
+        return false;
+    }
+
+    if (g_bChannel == 99)
+    {
+        sys_err("%s attempted to change channel from CH99, ignoring req.", GetName());
+        return false;
+    }
+
+    Stop();
+    Save();
+
+    if (GetSectree())
+    {
+        GetSectree()->RemoveEntity(this);
+        ViewCleanup();
+        EncodeRemovePacket(this);
+    }
+
+    m_lWarpMapIndex = lMapIndex;
+    m_posWarp.x = x;
+    m_posWarp.y = y;
+
+    sys_log(0, "ChangeChannel %s, %ld %ld map %ld to port %d", GetName(), x, y, GetMapIndex(), wPort);
+
+    TPacketGCWarp p;
+
+    p.bHeader = HEADER_GC_WARP;
+    p.lX = x;
+    p.lY = y;
+    p.lAddr = lAddr;
+    p.wPort = wPort;
+
+    GetDesc()->Packet(&p, sizeof(p));
+
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s Port%d Map%ld x%ld y%ld", GetName(), wPort, GetMapIndex(), x, y);
+    LogManager::instance().CharLog(this, 0, "CHANGE_CH", buf);
+
+    return true;
+}
+
+EVENTINFO(switch_channel_info)
+{
+    DynamicCharacterPtr ch;
+    int secs;
+    int32_t newAddr;
+    uint16_t newPort;
+    switch_channel_info()
+        : ch(),
+        secs(0),
+        newAddr(0),
+        newPort(0)
+    {
+    }
+};
+
+EVENTFUNC(switch_channel)
+{
+    switch_channel_info* info = dynamic_cast<switch_channel_info*>(event->info);
+    if (!info)
+    {
+        sys_err("No switch channel event info!");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (!ch)
+    {
+        sys_err("No char to work on for the switch.");
+        return 0;
+    }
+
+    if (!ch->GetDesc())
+        return 0;
+
+    if (info->secs > 0)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ch->ChatPacketNew(CHAT_TYPE_INFO, 658, "%d", info->secs);
+#endif
+        --info->secs;
+        return PASSES_PER_SEC(1);
+    }
+
+    ch->SwitchChannel(info->newAddr, info->newPort);
+    ch->m_pkTimedEvent = nullptr;
+    return 0;
+}
+
+bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
+{
+    if (IsHack(false, true, 10))
+        return false;
+
+    switch_channel_info* info = AllocEventInfo<switch_channel_info>();
+    info->ch = this;
+    info->secs = CanWarp() && !IsPosition(POS_FIGHTING) ? 3 : 10;
+    info->newAddr = newAddr;
+    info->newPort = newPort;
+
+    m_pkTimedEvent = event_create(switch_channel, info, 1);
+    return true;
+}
+#endif
+
+#ifdef ENABLE_BLOCK_MULTIFARM
+void CHARACTER::BlockProcessed()
+{
+    if (!m_pkDropEvent) {
+        sys_err("<drop_event> process failed, event is null.");
+    }
+    else {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 42, "");
+#endif
+        event_cancel(&m_pkDropEvent);
+        m_pkDropEvent = nullptr;
+        sys_log(0, "<drop_event> processed.");
+    }
+}
+
+void CHARACTER::BlockDrop()
+{
+    if (!IsPC()) {
+        return;
+    }
+
+    if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 36, "");
+#endif
+        return;
+    }
+
+    if (m_pkDropEvent) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 44, "");
+#endif
+        return;
+    }
+
+    drop_event_info* info = AllocEventInfo<drop_event_info>();
+    info->ch = this;
+    info->time = get_global_time() + 5;
+    info->drop = false;
+    m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+#ifdef TEXTS_IMPROVEMENT
+    ChatPacketNew(CHAT_TYPE_INFO, 43, "%d", 5);
+#endif
+}
+
+void CHARACTER::UnblockDrop()
+{
+    if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 36, "");
+#endif
+        return;
+    }
+
+    if (m_pkDropEvent) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 44, "");
+#endif
+        return;
+    }
+
+    drop_event_info* info = AllocEventInfo<drop_event_info>();
+    info->ch = this;
+    info->time = get_global_time() + 5;
+    info->drop = true;
+    m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+#ifdef TEXTS_IMPROVEMENT
+    ChatPacketNew(CHAT_TYPE_INFO, 43, "%d", 5);
+#endif
+}
+
+void CHARACTER::SetDropStatus()
+{
+    if (!IsPC())
+        return;
+
+    std::string login = GetDesc()->GetAccountTable().login;
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
+    if (msg->Get()->uiNumRows != 0) {
+        MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+        int32_t r = atoi(row[0]);
+        if (r == 1) {
+            RemoveAffect(AFFECT_DROP_BLOCK);
+            AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+        }
+        else {
+            RemoveAffect(AFFECT_DROP_UNBLOCK);
+            AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+        }
+    }
+}
+#endif

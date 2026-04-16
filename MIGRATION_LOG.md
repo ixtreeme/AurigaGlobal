@@ -2748,3 +2748,23 @@
   - `CHARACTER::` body count: `74`
 - build: success
 - next: `S11d-c-4b Destroy`, `S11e-1 NetworkSync`, or `S11d-c-1b-d channel/block setters`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-1b-d channel/block setters`
+- moved:
+  - `SwitchChannel`
+  - `StartChannelSwitch`
+  - `BlockProcessed`
+  - `BlockDrop`
+  - `UnblockDrop`
+  - `SetDropStatus`
+- note:
+  - the channel switch event surface (`switch_channel_info`, `switch_channel`) was moved together with the two channel methods
+  - the first removal pass left a truncated tail in `char.cpp`; this was corrected in-place before building, so no rollback was needed
+  - the block-setter sub-batch needed one additional helper-surface fix: `EVENTFUNC(drop_event);` forward declaration in `PlayerRuntimeSystem.cpp`
+- after char.cpp Slice S11d-c-1b-d: `1762`
+- char.cpp status after slice:
+  - line count: `2928`
+  - `CHARACTER::` body count: `68`
+- build: success
+- next: `S11d-c-4b Destroy` or `S11e-1 NetworkSync`
