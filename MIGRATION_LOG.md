@@ -2506,6 +2506,20 @@
 - build: success
 - next: `S11c-3b-3 Acce material/refine branch or another medium runtime batch`
 
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3b-3a Acce material add/remove`
+- moved:
+  - `AddAcceMaterial`
+  - `RemoveAcceMaterial`
+- note:
+  - kept `CanRefineAcceMaterials`, `RefineAcceMaterials`, and `CleanAcceAttr` separate so the actual refine path can be validated independently from the material-slot mutation logic
+- after char.cpp Slice S11c-3b-3a: `1801`
+- char.cpp status after slice:
+  - line count: `4489`
+  - `CHARACTER::` body count: `105`
+- build: success
+- next: `S11c-3b-3b CanRefineAcceMaterials / CleanAcceAttr`
+
 ## Phase 8 - Step 8.17 char.cpp rollback note
 - attempted slice:
   - `S11d-c-1b-b duel flag wrappers`
