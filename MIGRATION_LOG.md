@@ -2195,3 +2195,31 @@
   - `CHARACTER::` body count: `190`
 - build: success
 - next: `S11d-b misc runtime/session accessor audit`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-b proto/mob-table accessors`
+- moved:
+  - `GetMobTable`
+  - `IsRaceFlag`
+  - `GetMobDamageMin`
+  - `GetMobDamageMax`
+  - `GetMobDamageMultiply`
+  - `GetMobDropItemVnum`
+  - `IsSummonMonster`
+  - `GetSummonVnum`
+  - `GetPolymorphItemVnum`
+  - `GetMonsterDrainSPPoint`
+  - `GetMobRank`
+  - `GetMobSize`
+  - `GetMobAttackRange`
+  - `GetMobBattleType`
+  - `ResetPlayTime`
+- note:
+  - this slice stayed on mob/proto getter logic only and intentionally left the larger `SetPlayerProto`, `SetProto` and part/costume display methods in `char.cpp`
+  - the first post-removal build passed without rollback or helper-surface fixes
+- after char.cpp Slice S11d-b1: `1873`
+- char.cpp status after slice:
+  - line count: `6863`
+  - `CHARACTER::` body count: `175`
+- build: success
+- next: `S11a combo/chat counter helper batch`
