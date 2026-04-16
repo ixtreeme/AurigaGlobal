@@ -2417,3 +2417,19 @@
   - `CHARACTER::` body count: `125`
 - build: success
 - next: `S11c-3 PlayerRuntimeSystem / ItemSystem acce-inventory-misc batch`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3a inventory / soul / skill-color helpers`
+- moved:
+  - `CanTakeInventoryItem`
+  - `GetSoulItemDamage`
+  - `SetSkillColor`
+- note:
+  - split `S11c-3` into a smaller compile-safe sub-batch because the `Acce` block remains monolithic and significantly larger than the surrounding helpers
+  - the `Acce` batch is still pending as a separate follow-up extraction
+- after char.cpp Slice S11c-3a: `1818`
+- char.cpp status after slice:
+  - line count: `4986`
+  - `CHARACTER::` body count: `122`
+- build: success
+- next: `S11c-3b Acce block and remaining inventory-edit helpers`

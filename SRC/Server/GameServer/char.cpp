@@ -5141,37 +5141,6 @@ void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 
 
 //__ENABLE_NEW_OFFLINESHOP__
-bool CHARACTER::CanTakeInventoryItem(LPITEM item, TItemPos* cell)
-{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ChatPacket(CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");//INGAME_DEBUG_RAZOR93
-#endif
-	// DONT TOUCH MY iEmpty integer THANKS.
-	int iEmpty = -1;
-
-	if (item->IsDragonSoul())
-	{
-		cell->window_type = DRAGON_SOUL_INVENTORY;
-		cell->cell = iEmpty = GetEmptyDragonSoulInventory(item);
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
-	{
-		cell->window_type = EXTRA_INVENTORY;
-		cell->cell = iEmpty = GetEmptyExtraInventory(item);
-	}
-#endif
-
-
-	else
-	{
-		cell->window_type = INVENTORY;
-		cell->cell = iEmpty = GetEmptyInventory(item->GetSize());
-	}
-
-	return iEmpty != -1;
-}
 
 
 #ifdef ENABLE_SORT_INVEN
@@ -5532,63 +5501,7 @@ bool CHARACTER::Update_Inven()
 }
 #endif
 
-#ifdef ENABLE_SOUL_SYSTEM
-int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSoulType)
-{
-	if (!pkVictim)
-		return 0;
 
-	if (!IsPC() || IsPolymorphed() || pkVictim->IsPC())
-		return 0;
-
-	if (bSoulType >= SOUL_MAX_NUM)
-		return 0;
-
-	const CAffect* pAffect = FindAffect(AFFECT_SOUL_RED + bSoulType);
-	int iDamageAdd = 0;
-	if (pAffect)
-	{
-		LPITEM soulItem = FindItemByID(pAffect->lSPCost);
-		if (soulItem)
-		{
-			int iCurrentMinutes = (soulItem->GetSocket(2) / 10000);
-			int iCurrentStrike = (soulItem->GetSocket(2) % 10000);
-
-			int valueIndex = MINMAX(3, 2 + (iCurrentMinutes / 60), 5);
-			float fDamageIncrease = float(soulItem->GetValue(valueIndex) / 10.0f);
-
-			iDamageAdd = (fDamageIncrease * iDamage) - iDamage;
-			int iNextStrikes = iCurrentStrike - 1;
-			if (iNextStrikes <= 0)
-			{
-				iCurrentMinutes = MINMAX(0, iCurrentMinutes - 60, 180);
-				iNextStrikes = soulItem->GetValue(2);
-
-				if (iCurrentMinutes < 60)
-				{
-					soulItem->Lock(false);
-					soulItem->SetSocket(1, false);
-					RemoveAffect(const_cast<CAffect*>(pAffect));
-				}
-
-				soulItem->SetSocket(2, 0);
-				soulItem->StartSoulItemEvent();
-			}
-
-			soulItem->SetSocket(2, (iCurrentMinutes * 10000 + iNextStrikes));
-		}
-	}
-
-	return iDamageAdd;
-}
-#endif
-
-#ifdef __SKILL_COLOR_SYSTEM__
-void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
-	memcpy(m_dwSkillColor, dwSkillColor, sizeof(m_dwSkillColor));
-	UpdatePacket();
-}
-#endif
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 EVENTFUNC(stay_online_event)
