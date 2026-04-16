@@ -1418,3 +1418,16 @@
 - after char_battle.cpp Slice BC3b: `2140`
 - build: success
 - next: slice BC4 (`ItemDropPenalty` / `RegisterDamageForExp` / `Dead`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC4:
+  - moved:
+    - `ItemDropPenalty`
+  - helper surface moved with the slice:
+    - `TItemDropPenalty`
+    - `aItemDropPenalty_kor`
+  - note:
+    - `FPartyAlignmentCompute` intentionally stayed in `char_battle.cpp` because it is only tied to the still-pending `Dead()` alignment branch
+- after char_battle.cpp Slice BC4: `2139`
+- build: success
+- next: slice BC5 (`Dead`)

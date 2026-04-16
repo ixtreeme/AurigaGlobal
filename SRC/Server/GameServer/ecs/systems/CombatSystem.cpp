@@ -218,6 +218,14 @@ void Reward(entt::entity victim, bool bItemDrop)
     }
 }
 
+
+void ItemDropPenalty(entt::entity victim, entt::entity killer)
+{
+    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+        ch->ItemDropPenalty(LegacyCharOf(killer));
+    }
+}
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
@@ -514,6 +522,208 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 		sys_log(0, "DEATH_PENALTY(%s) EXP_LOSS: %d percent %d%%", GetName(), iLoss, __GetExpLossPerc(GetLevel()));
 
 		PointChange(POINT_EXP, -iLoss, true);
+	}
+}
+
+
+// char_battle.cpp slice BC4 moved into CombatSystem.cpp
+
+struct TItemDropPenalty
+{
+	int iInventoryPct;		// Range: 1 ~ 1000
+	int iInventoryQty;		// Range: --
+	int iEquipmentPct;		// Range: 1 ~ 100
+	int iEquipmentQty;		// Range: --
+};
+
+TItemDropPenalty aItemDropPenalty_kor[9] =
+{
+	{   0,   0,  0,  0 },	// 
+	{   0,   0,  0,  0 },	// 
+	{   0,   0,  0,  0 },	// 
+	{   0,   0,  0,  0 },	// 
+	{   0,   0,  0,  0 },	// 
+	{  25,   1,  5,  1 },	// 
+	{  50,   2, 10,  1 },	// 
+	{  75,   4, 15,  1 },	// 
+	{ 100,   8, 20,  1 },	// п
+};
+
+void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
+{
+
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (GetGMLevel() > GM_PLAYER) {
+		return;
+	}
+#endif
+
+	if (GetMyShop())
+		return;
+
+	if (GetLevel() < 50)
+		return;
+
+	if (CBattleArena::instance().IsBattleArenaMap(GetMapIndex()) == true)
+	{
+		return;
+	}
+
+	struct TItemDropPenalty* table = &aItemDropPenalty_kor[0];
+
+	if (GetLevel() < 10)
+		return;
+
+	uint8_t iAlignIndex;
+
+	if (GetRealAlignment()		<= 4999)		iAlignIndex = 0;
+	else if (GetRealAlignment() <= 14999)		iAlignIndex = 1;
+	else if (GetRealAlignment() <= 19999)		iAlignIndex = 2;
+	else if (GetRealAlignment() <= 29999)		iAlignIndex = 3;
+	else if (GetRealAlignment() <= 49999)		iAlignIndex = 4;
+	else if (GetRealAlignment() <= 74999)		iAlignIndex = 5;
+	else if (GetRealAlignment() <= 99999)		iAlignIndex = 6;
+	else if (GetRealAlignment() <= 124999)		iAlignIndex = 7;
+	else if (GetRealAlignment() <= 174999)		iAlignIndex = 8;
+	else if (GetRealAlignment() <= 249999)		iAlignIndex = 9;
+	else if (GetRealAlignment() <= 499999)		iAlignIndex = 10;
+	else if (GetRealAlignment() <= 749999)		iAlignIndex = 11;
+	else if (GetRealAlignment() <= 999999)		iAlignIndex = 12;
+	else if (GetRealAlignment() <= 1499999)		iAlignIndex = 13;
+	else if (GetRealAlignment() <= 2499999)		iAlignIndex = 14;
+	else if (GetRealAlignment() == 2500000)		iAlignIndex = 15;
+	else return;
+
+	std::vector<std::pair<LPITEM, int> > vec_item;
+	LPITEM pkItem;
+	int	i;
+	bool isDropAllEquipments = false;
+
+	TItemDropPenalty& r = table[iAlignIndex];
+	sys_log(0, "%s align %d inven_pct %d equip_pct %d", GetName(), iAlignIndex, r.iInventoryPct, r.iEquipmentPct);
+
+	bool bDropInventory = r.iInventoryPct >= number(1, 1000);
+	bool bDropEquipment = r.iEquipmentPct >= number(1, 100);
+	bool bDropAntiDropUniqueItem = false;
+
+	if ((bDropInventory || bDropEquipment) && IsEquipUniqueItem(UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY))
+	{
+		bDropInventory = false;
+		bDropEquipment = false;
+		bDropAntiDropUniqueItem = true;
+	}
+
+	if (bDropInventory) // Drop Inventory
+	{
+		std::vector<uint8_t> vec_bSlots;
+
+		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
+			if (GetInventoryItem(i))
+				vec_bSlots.push_back(i);
+
+		if (!vec_bSlots.empty())
+		{
+			std::random_device rd;
+			std::mt19937 g(rd());
+			std::shuffle(vec_bSlots.begin(), vec_bSlots.end(), g);
+			int iQty = std::min((int)vec_bSlots.size(), r.iInventoryQty);
+
+			if (iQty)
+				iQty = number(1, iQty);
+
+			for (i = 0; i < iQty; ++i)
+			{
+				pkItem = GetInventoryItem(vec_bSlots[i]);
+
+				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+					continue;
+
+				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				vec_item.emplace_back(pkItem->RemoveFromCharacter(), INVENTORY);
+			}
+		}
+		/*else if (iAlignIndex == 8)
+			isDropAllEquipments = true;*/
+	}
+
+	if (bDropEquipment) // Drop Equipment
+	{
+		std::vector<uint8_t> vec_bSlots;
+
+		for (i = 0; i < WEAR_MAX_NUM; ++i)
+			if (GetWear(i))
+				vec_bSlots.push_back(i);
+
+		if (!vec_bSlots.empty())
+		{
+			std::random_device rd;
+			std::mt19937 g(rd());
+			std::shuffle(vec_bSlots.begin(), vec_bSlots.end(), g);
+			int iQty;
+
+			if (isDropAllEquipments)
+				iQty = vec_bSlots.size();
+			else
+				iQty = std::min((int)vec_bSlots.size(), number(1, r.iEquipmentQty));
+
+			if (iQty)
+				iQty = number(1, iQty);
+
+			for (i = 0; i < iQty; ++i)
+			{
+				pkItem = GetWear(vec_bSlots[i]);
+
+				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+					continue;
+
+				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+			}
+		}
+	}
+
+	if (bDropAntiDropUniqueItem)
+	{
+		LPITEM pkItem;
+
+		pkItem = GetWear(WEAR_UNIQUE1);
+
+		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		{
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
+			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+		}
+
+		pkItem = GetWear(WEAR_UNIQUE2);
+
+		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		{
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
+			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+		}
+	}
+
+	{
+		PIXEL_POSITION pos;
+		pos.x = GetX();
+		pos.y = GetY();
+
+		unsigned int i;
+
+		for (i = 0; i < vec_item.size(); ++i)
+		{
+			LPITEM item = vec_item[i].first;
+			int window = vec_item[i].second;
+
+			item->AddToGround(GetMapIndex(), pos);
+			item->StartDestroyEvent();
+
+			sys_log(0, "DROP_ITEM_PK: %s %d %d from %s", item->GetName(), pos.x, pos.y, GetName());
+			LogManager::instance().ItemLog(this, item, "DEAD_DROP", (window == INVENTORY) ? "INVENTORY" : ((window == EQUIPMENT) ? "EQUIPMENT" : ""));
+
+			pos.x = GetX() + number(-7, 7) * 20;
+			pos.y = GetY() + number(-7, 7) * 20;
+		}
 	}
 }
 

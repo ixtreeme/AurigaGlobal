@@ -21,6 +21,7 @@ void SetLastAttacked(entt::entity e, uint32_t tick);
 void DeathPenalty(entt::entity e, uint8_t bTown);
 void RewardGold(entt::entity victim, entt::entity attacker);
 void Reward(entt::entity victim, bool bItemDrop);
+void ItemDropPenalty(entt::entity victim, entt::entity killer);
 
 } // namespace CombatSystem
 
