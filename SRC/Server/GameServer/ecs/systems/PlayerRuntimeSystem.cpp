@@ -14,6 +14,7 @@
 #include "../../dungeon.h"
 #include "../../gm.h"
 #include "../../item.h"
+#include "../../item_manager.h"
 #include "../../mob_manager.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
@@ -1178,4 +1179,137 @@ bool CHARACTER::AcceIsSameGrade(int32_t lGrade)
 
     bool bReturn = (pkItemMaterial[0]->GetValue(ACCE_GRADE_VALUE_FIELD) == lGrade ? true : false);
     return bReturn;
+}
+
+uint32_t CHARACTER::GetAcceCombinePrice(int32_t lGrade
+#ifdef ENABLE_STOLE_COSTUME
+    , bool isCostume
+#endif
+)
+{
+    uint32_t dwPrice;
+    switch (lGrade)
+    {
+    case 2:
+    {
+#ifdef ENABLE_STOLE_COSTUME
+        dwPrice = isCostume ? COSTUME_STOLE_GRADE_2_PRICE : ACCE_GRADE_2_PRICE;
+#else
+        dwPrice = ACCE_GRADE_2_PRICE;
+#endif
+    }
+    break;
+    case 3:
+    {
+#ifdef ENABLE_STOLE_COSTUME
+        dwPrice = isCostume ? COSTUME_STOLE_GRADE_3_PRICE : ACCE_GRADE_3_PRICE;
+#else
+        dwPrice = ACCE_GRADE_2_PRICE;
+#endif
+    }
+    break;
+    case 4:
+    {
+#ifdef ENABLE_STOLE_COSTUME
+        dwPrice = isCostume ? 0 : ACCE_GRADE_4_PRICE;
+#else
+        dwPrice = ACCE_GRADE_2_PRICE;
+#endif
+    }
+    break;
+    default:
+    {
+#ifdef ENABLE_STOLE_COSTUME
+        dwPrice = isCostume ? COSTUME_STOLE_GRADE_1_PRICE : ACCE_GRADE_1_PRICE;
+#else
+        dwPrice = ACCE_GRADE_1_PRICE;
+#endif
+    }
+    break;
+    }
+
+    return dwPrice;
+}
+
+uint8_t CHARACTER::CheckEmptyMaterialSlot()
+{
+    const LPITEM* pkItemMaterial = GetAcceMaterials();
+    for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
+    {
+        if (!pkItemMaterial[i])
+            return i;
+    }
+
+    return 255;
+}
+
+void CHARACTER::GetAcceCombineResult(uint32_t& dwItemVnum, uint32_t& dwMinAbs, uint32_t& dwMaxAbs)
+{
+    const LPITEM* pkItemMaterial = GetAcceMaterials();
+
+    if (m_bAcceCombination)
+    {
+        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
+        {
+            int32_t lVal = pkItemMaterial[0]->GetValue(ACCE_GRADE_VALUE_FIELD);
+            if (lVal == 4)
+            {
+                dwItemVnum = pkItemMaterial[0]->GetOriginalVnum();
+                dwMinAbs = pkItemMaterial[0]->GetSocket(ACCE_ABSORPTION_SOCKET);
+                uint32_t dwMaxAbsCalc = (dwMinAbs + ACCE_GRADE_4_ABS_RANGE > ACCE_GRADE_4_ABS_MAX ? ACCE_GRADE_4_ABS_MAX : (dwMinAbs + ACCE_GRADE_4_ABS_RANGE));
+                dwMaxAbs = dwMaxAbsCalc;
+            }
+            else
+            {
+                uint32_t dwMaskVnum = pkItemMaterial[0]->GetOriginalVnum();
+                TItemTable* pTable = ITEM_MANAGER::instance().GetTable(dwMaskVnum + 1);
+                if (pTable)
+                    dwMaskVnum += 1;
+
+                dwItemVnum = dwMaskVnum;
+                switch (lVal)
+                {
+                case 2:
+                {
+                    dwMinAbs = ACCE_GRADE_3_ABS;
+                    dwMaxAbs = ACCE_GRADE_3_ABS;
+                }
+                break;
+                case 3:
+                {
+                    dwMinAbs = ACCE_GRADE_4_ABS_MIN;
+                    dwMaxAbs = ACCE_GRADE_4_ABS_MAX_COMB;
+                }
+                break;
+                default:
+                {
+                    dwMinAbs = ACCE_GRADE_2_ABS;
+                    dwMaxAbs = ACCE_GRADE_2_ABS;
+                }
+                break;
+                }
+            }
+        }
+        else
+        {
+            dwItemVnum = 0;
+            dwMinAbs = 0;
+            dwMaxAbs = 0;
+        }
+    }
+    else
+    {
+        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
+        {
+            dwItemVnum = pkItemMaterial[0]->GetOriginalVnum();
+            dwMinAbs = pkItemMaterial[0]->GetSocket(ACCE_ABSORPTION_SOCKET);
+            dwMaxAbs = dwMinAbs;
+        }
+        else
+        {
+            dwItemVnum = 0;
+            dwMinAbs = 0;
+            dwMaxAbs = 0;
+        }
+    }
 }

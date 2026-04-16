@@ -2466,3 +2466,21 @@
   - `CHARACTER::` body count: `113`
 - build: success
 - next: `S11c-3b-2 Acce price/result helper batch`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3b-2 Acce price/result helpers`
+- moved:
+  - `GetAcceCombinePrice`
+  - `CheckEmptyMaterialSlot`
+  - `GetAcceCombineResult`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `item_manager.h`
+- note:
+  - kept the heavy material/refine branch isolated for a later slice; this sub-batch only covers deterministic price/result calculation helpers
+- after char.cpp Slice S11c-3b-2: `1806`
+- char.cpp status after slice:
+  - line count: `4735`
+  - `CHARACTER::` body count: `110`
+- build: success
+- next: `S11d-c-1b or S11c-3b-3 depending on helper-surface risk`
