@@ -1439,3 +1439,23 @@
 - after char_battle.cpp Slice BD1: `2138`
 - build: success
 - next: slice BD2 (`DistributeHP` helper surface audit)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BE1:
+  - moved:
+    - `GetAlignment`
+    - `GetRealAlignment`
+    - `GetAlignmentGrade`
+    - `ApplyAlignmentBonus`
+    - `UpdateAlignment`
+    - `SetKillerMode`
+    - `IsKillerMode`
+    - `UpdateKillerMode`
+    - `SetPKMode`
+    - `GetPKMode`
+  - note:
+    - the first cut also removed the aggro helper functors used by the still-pending monster-attraction methods
+    - those helper structs were duplicated back into `char_battle.cpp`, while the moved copies stay in `CombatSystem.cpp` for the future aggro slice
+- after char_battle.cpp Slice BE1: `2126`
+- build: success
+- next: slice BE2 (`aggro / attraction methods`)

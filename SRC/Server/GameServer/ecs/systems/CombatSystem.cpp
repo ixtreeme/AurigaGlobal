@@ -234,7 +234,431 @@ void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
     }
 }
 
+
+uint32_t GetAlignment(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->GetAlignment();
+    }
+
+    return 0;
+}
+
+uint32_t GetRealAlignment(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->GetRealAlignment();
+    }
+
+    return 0;
+}
+
+uint8_t GetAlignmentGrade(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->GetAlignmentGrade();
+    }
+
+    return 0;
+}
+
+void ApplyAlignmentBonus(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->ApplyAlignmentBonus();
+    }
+}
+
+void UpdateAlignment(entt::entity e, uint32_t amount)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->UpdateAlignment(amount);
+    }
+}
+
+void SetKillerMode(entt::entity e, bool isOn)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->SetKillerMode(isOn);
+    }
+}
+
+bool IsKillerMode(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->IsKillerMode();
+    }
+
+    return false;
+}
+
+void UpdateKillerMode(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->UpdateKillerMode();
+    }
+}
+
+void SetPKMode(entt::entity e, uint8_t bPKMode)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->SetPKMode(bPKMode);
+    }
+}
+
+uint8_t GetPKMode(entt::entity e)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        return ch->GetPKMode();
+    }
+
+    return PK_MODE_PROTECT;
+}
+
 } // namespace CombatSystem
+
+// char_battle.cpp slice BE1 moved into CombatSystem.cpp
+
+uint32_t CHARACTER::GetAlignment() const
+{
+	return m_iAlignment;
+}
+
+uint32_t CHARACTER::GetRealAlignment() const
+{
+	return m_iRealAlignment;
+}
+
+//void CHARACTER::ShowAlignment(bool bShow)
+//{
+//	if (bShow)
+//	{
+//		if (m_iAlignment != m_iRealAlignment)
+//		{
+//			m_iAlignment = m_iRealAlignment;
+//			UpdatePacket();
+//		}
+//	}
+//	else
+//	{
+//		if (m_iAlignment != 0)
+//		{
+//			m_iAlignment = 0;
+//			UpdatePacket();
+//		}
+//	}
+//}
+
+uint8_t CHARACTER::GetAlignmentGrade() const
+{
+	uint32_t a = GetRealAlignment() / 10;
+
+	if (a <= 4999) return 0;
+	if (a <= 14999) return 1;
+	if (a <= 19999) return 2;
+	if (a <= 29999) return 3;
+	if (a <= 49999) return 4;
+	if (a <= 74999) return 5;
+	if (a <= 99999) return 6;
+	if (a <= 124999) return 7;
+	if (a <= 174999) return 8;
+	if (a <= 249999) return 9;
+	if (a <= 499999) return 10;
+	if (a <= 749999) return 11;
+	if (a <= 999999) return 12;
+	if (a <= 1499999) return 13;
+	if (a <= 2499999) return 14;
+	if (a <= 2999999) return 15;
+	if (a <= 3499999) return 16;
+	if (a <= 3999999) return 17;
+	if (a <= 4499999) return 18;
+	if (a <= 4999999) return 19;
+	return 20;
+}
+
+
+void CHARACTER::ApplyAlignmentBonus()
+{
+	if (!IsPC()) return;
+	const uint8_t g = GetAlignmentGrade();
+
+	static const int hp[21] = { 500,1000,1500,2000,2500,4000,6000,8000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,45000,50000,60000 };
+	static const int mon[21] = { 1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85 };
+	static const int hum[21] = { 1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85 };
+	static const int met[21] = { 0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,70 };
+	static const int boss[21] = { 0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,65 };
+	static const int pvm[21] = { 0,0,0,0,0,5,5,5,5,5,10,10,15,20,25,30,35,40,45,50,60 };
+	static const int normal[21] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45 };
+	static const int skill[21] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45 };
+	// grade nem vltozott -> a cache j, nem kell jraszmolni
+	if (g == m_lastAlignmentGrade)
+		return;
+
+	// cache frissts (ezek tllnek ComputePoints kztt)
+	m_alignBonusHP = hp[g];
+	m_alignBonusMonster = mon[g];
+	m_alignBonusHuman = hum[g];
+	m_alignBonusMetin = met[g];
+	m_alignBonusBoss = boss[g];
+	m_alignBonusPvm = pvm[g];
+	m_alignBonusNormal = normal[g];
+	m_alignBonusSkill = skill[g];
+
+	m_lastAlignmentGrade = g;
+}
+
+void CHARACTER::UpdateAlignment(uint32_t iAmount)
+{
+	//if (!IsPC()) return;
+	const uint8_t oldGrade = GetAlignmentGrade();
+	bool bShow = false;
+
+	if (m_iAlignment == m_iRealAlignment)
+		bShow = true;
+
+	if (m_iAlignment != m_iRealAlignment)
+		m_iAlignment = m_iRealAlignment;
+
+	uint32_t i = m_iAlignment / 10;
+
+	m_iRealAlignment = UMINMAX(0, m_iRealAlignment + iAmount, 50000000);
+	const uint8_t newGrade = GetAlignmentGrade();
+	if (oldGrade != newGrade)
+	{
+		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
+	}
+	if (bShow)
+	{
+		m_iAlignment = m_iRealAlignment;
+
+		if (i != m_iAlignment / 10)
+			UpdatePacket();
+	}
+
+}
+//void CHARACTER::UpdateAlignment(uint32_t iAmount)
+//{
+//	const uint8_t oldGrade = GetAlignmentGrade();
+//
+//	m_iRealAlignment = UMINMAX(0, m_iRealAlignment + iAmount, 2500000);
+//
+//	if (m_iAlignment != m_iRealAlignment)
+//		m_iAlignment = m_iRealAlignment;
+//
+//
+//	const uint8_t newGrade = GetAlignmentGrade();
+//
+//	if (oldGrade != newGrade)
+//		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
+//	else
+//		UpdatePacket();   
+//}
+
+
+void CHARACTER::SetKillerMode(bool isOn)
+{
+	if ((isOn ? ADD_CHARACTER_STATE_KILLER : 0) == IS_SET(m_bAddChrState, ADD_CHARACTER_STATE_KILLER))
+		return;
+
+	if (isOn)
+		SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
+	else
+		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
+
+	m_iKillerModePulse = thecore_pulse();
+	UpdatePacket();
+	sys_log(0, "SetKillerMode Update %s[%d]", GetName(), GetPlayerID());
+}
+
+bool CHARACTER::IsKillerMode() const
+{
+	return IS_SET(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
+}
+
+void CHARACTER::UpdateKillerMode()
+{
+	if (!IsKillerMode())
+		return;
+
+	if (thecore_pulse() - m_iKillerModePulse >= PASSES_PER_SEC(30))
+		SetKillerMode(false);
+
+}
+
+void CHARACTER::SetPKMode(uint8_t bPKMode)
+{
+	if (bPKMode >= PK_MODE_MAX_NUM)
+		return;
+
+	if (m_bPKMode == bPKMode)
+		return;
+
+	if (bPKMode == PK_MODE_GUILD && !GetGuild())
+		bPKMode = PK_MODE_FREE;
+
+	m_bPKMode = bPKMode;
+	UpdatePacket();
+	sys_log(0, "PK_MODE: %s %d", GetName(), m_bPKMode);
+}
+
+uint8_t CHARACTER::GetPKMode() const
+{
+	return m_bPKMode;
+}
+
+struct FuncForgetMyAttacker
+{
+	LPCHARACTER m_ch;
+	FuncForgetMyAttacker(LPCHARACTER ch)
+	{
+		m_ch = ch;
+	}
+	void operator()(LPENTITY ent)
+	{
+		if (ent->IsType(ENTITY_CHARACTER))
+		{
+			LPCHARACTER ch = (LPCHARACTER)ent;
+			if (ch->IsPC())
+				return;
+			if (ch->m_kVIDVictim == m_ch->GetVID())
+				ch->SetVictim(nullptr);
+		}
+	}
+};
+
+struct FuncAggregateMonster
+{
+	LPCHARACTER m_ch;
+	FuncAggregateMonster(LPCHARACTER ch)
+	{
+		m_ch = ch;
+	}
+	void operator()(LPENTITY ent)
+	{
+		if (ent->IsType(ENTITY_CHARACTER))
+		{
+			LPCHARACTER ch = (LPCHARACTER)ent;
+			if (ch->IsPC())
+				return;
+			if (!ch->IsMonster())
+				return;
+			if (ch->GetVictim())
+				return;
+
+			//if (number(1, 100) <= 50) // ӽ÷ 50% Ȯ  ´
+			if (DISTANCE_APPROX(ch->GetX() - m_ch->GetX(), ch->GetY() - m_ch->GetY()) < 7000)
+				if (ch->CanBeginFight())
+					ch->BeginFight(m_ch);
+		}
+	}
+};
+#ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
+struct FuncAggregateMonsterPlus
+{
+	LPCHARACTER m_ch;
+	FuncAggregateMonsterPlus(LPCHARACTER ch)
+	{
+		m_ch = ch;
+	}
+	void operator()(LPENTITY ent)
+	{
+		if (ent->IsType(ENTITY_CHARACTER))
+		{
+			LPCHARACTER ch = (LPCHARACTER)ent;
+			if (ch->IsPC())
+				return;
+			if (!ch->IsMonster())
+				return;
+			if (ch->GetVictim())
+				return;
+
+			const int AGGRO_RANGE = 14000;
+
+			if (DISTANCE_APPROX(ch->GetX() - m_ch->GetX(), ch->GetY() - m_ch->GetY()) < AGGRO_RANGE)
+				if (ch->CanBeginFight())
+					ch->BeginFight(m_ch);
+
+		}
+	}
+};
+#endif
+struct FuncAttractRanger
+{
+	LPCHARACTER m_ch;
+	FuncAttractRanger(LPCHARACTER ch)
+	{
+		m_ch = ch;
+	}
+
+	void operator()(LPENTITY ent)
+	{
+		if (ent->IsType(ENTITY_CHARACTER))
+		{
+			LPCHARACTER ch = (LPCHARACTER)ent;
+			if (ch->IsPC())
+				return;
+			if (!ch->IsMonster())
+				return;
+			if (ch->GetVictim() && ch->GetVictim() != m_ch)
+				return;
+			if (ch->GetMobAttackRange() > 150)
+			{
+				int iNewRange = 150;//(int)(ch->GetMobAttackRange() * 0.2);
+				if (iNewRange < 150)
+					iNewRange = 150;
+
+				ch->AddAffect(AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - ch->GetMobAttackRange(), AFF_NONE, 3 * 60, 0, false);
+			}
+		}
+	}
+};
+
+struct FuncPullMonster
+{
+	LPCHARACTER m_ch;
+	int m_iLength;
+	FuncPullMonster(LPCHARACTER ch, int iLength = 300)
+	{
+		m_ch = ch;
+		m_iLength = iLength;
+	}
+
+	void operator()(LPENTITY ent)
+	{
+		if (ent->IsType(ENTITY_CHARACTER))
+		{
+			LPCHARACTER ch = (LPCHARACTER)ent;
+			if (ch->IsPC())
+				return;
+			if (!ch->IsMonster())
+				return;
+			//if (ch->GetVictim() && ch->GetVictim() != m_ch)
+			//return;
+			float fDist = DISTANCE_APPROX(m_ch->GetX() - ch->GetX(), m_ch->GetY() - ch->GetY());
+			if (fDist > 3000 || fDist < 100)
+				return;
+
+			float fNewDist = fDist - m_iLength;
+			if (fNewDist < 100)
+				fNewDist = 100;
+
+			float degree = GetDegreeFromPositionXY(ch->GetX(), ch->GetY(), m_ch->GetX(), m_ch->GetY());
+			float fx;
+			float fy;
+
+			GetDeltaByDegree(degree, fDist - fNewDist, &fx, &fy);
+			int32_t tx = (int32_t)(ch->GetX() + fx);
+			int32_t ty = (int32_t)(ch->GetY() + fy);
+
+			ch->Sync(tx, ty);
+			ch->Goto(tx, ty);
+			ch->CalculateMoveDuration();
+
+			ch->SyncPacket();
+		}
+	}
+};
+
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {

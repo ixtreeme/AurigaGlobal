@@ -23,6 +23,16 @@ void RewardGold(entt::entity victim, entt::entity attacker);
 void Reward(entt::entity victim, bool bItemDrop);
 void ItemDropPenalty(entt::entity victim, entt::entity killer);
 void DistributeSP(entt::entity victim, entt::entity killer, int iMethod);
+uint32_t GetAlignment(entt::entity e);
+uint32_t GetRealAlignment(entt::entity e);
+uint8_t GetAlignmentGrade(entt::entity e);
+void ApplyAlignmentBonus(entt::entity e);
+void UpdateAlignment(entt::entity e, uint32_t amount);
+void SetKillerMode(entt::entity e, bool isOn);
+bool IsKillerMode(entt::entity e);
+void UpdateKillerMode(entt::entity e);
+void SetPKMode(entt::entity e, uint8_t bPKMode);
+uint8_t GetPKMode(entt::entity e);
 
 } // namespace CombatSystem
 
