@@ -5,6 +5,7 @@
 #include "../../char.h"
 #include "../../char_manager.h"
 #include "../../config.h"
+#include "../../constants.h"
 #include "../../desc.h"
 #include "../../buffer_manager.h"
 #include "../../db.h"
@@ -12,6 +13,7 @@
 #include "../../gm.h"
 #include "../../mob_manager.h"
 #include "../../questmanager.h"
+#include "../../skill_power.h"
 #ifdef ENABLE_ANTICHEAT
 #include "../../hwidmanager.h"
 #endif
@@ -540,3 +542,58 @@ void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 {
     m_dwPlayStartTime = get_dword_time() - dwTimeRemain;
 }
+
+int CHARACTER::GetPremiumRemainSeconds(uint8_t bType) const
+{
+    if (bType >= PREMIUM_MAX_NUM)
+        return 0;
+
+    return m_aiPremiumTimes[bType] - get_global_time();
+}
+
+void CHARACTER::UpdateDepositPulse()
+{
+    m_deposit_pulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);
+}
+
+bool CHARACTER::CanDeposit() const
+{
+    return (m_deposit_pulse == 0 || (m_deposit_pulse < thecore_pulse()));
+}
+
+uint32_t CHARACTER::GetNextExp() const
+{
+    if (PLAYER_MAX_LEVEL_CONST < GetLevel())
+        return 2500000000u;
+    else
+        return exp_table[GetLevel()];
+}
+
+#ifdef __NEWPET_SYSTEM__
+uint32_t CHARACTER::PetGetNextExp() const
+{
+    if (IsNewPet()) {
+        if (120 < GetLevel())
+            return 2500000000;
+        else
+            return exppet_table[GetLevel()];
+    }
+    return 0;
+}
+#endif
+
+int CHARACTER::GetSkillPowerByLevel(int level, bool bMob) const
+{
+    return CTableBySkill::instance().GetSkillPowerByLevelFromType(GetJob(), GetSkillGroup(), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
+}
+
+#ifdef ENABLE_WHISPER_ADMIN_SYSTEM
+std::string CHARACTER::GetLang() {
+    auto language = GetDesc()->GetLanguage();
+    std::string langs[] = { "en","en","ro","it","tr","de","pl","pt","es","cz","hu" };
+    if (language == 0)
+        return langs[language + 1];
+    else
+        return langs[language];
+}
+#endif

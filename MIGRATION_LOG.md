@@ -2260,3 +2260,27 @@
   - `CHARACTER::` body count: `157`
 - build: success
 - next: `S11d-b simple runtime getter batch`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-b simple runtime getters`
+- moved:
+  - `GetPremiumRemainSeconds`
+  - `UpdateDepositPulse`
+  - `CanDeposit`
+  - `GetNextExp`
+  - `PetGetNextExp`
+  - `GetSkillPowerByLevel`
+  - `GetLang`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `constants.h`
+    - `skill_power.h`
+- note:
+  - the first removal pass hit a tab-formatted `GetSkillPowerByLevel` signature in `char.cpp`; rerunning the latin1-safe block removal with the exact signature fixed the slice without rollback
+  - after the signature correction the post-removal build passed cleanly
+- after char.cpp Slice S11d-b3: `1848`
+- char.cpp status after slice:
+  - line count: `6661`
+  - `CHARACTER::` body count: `150`
+- build: success
+- next: `S11e mount/social/session accessor triage`

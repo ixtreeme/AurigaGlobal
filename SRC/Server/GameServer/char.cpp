@@ -4053,14 +4053,6 @@ void CHARACTER::SetMarryPartner(LPCHARACTER ch)
 	m_pkChrMarried = ch;
 }
 
-int CHARACTER::GetPremiumRemainSeconds(uint8_t bType) const
-{
-	if (bType >= PREMIUM_MAX_NUM)
-		return 0;
-
-	return m_aiPremiumTimes[bType] - get_global_time();
-}
-
 // ADD_REFINE_BUILDING
 int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
 {
@@ -4213,15 +4205,6 @@ void CHARACTER::Say(const std::string& s)
 }
 
 //------------------------------------------------
-void CHARACTER::UpdateDepositPulse()
-{
-	m_deposit_pulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);	// 5o?
-}
-
-bool CHARACTER::CanDeposit() const
-{
-	return (m_deposit_pulse == 0 || (m_deposit_pulse < thecore_pulse()));
-}
 //------------------------------------------------
 
 ESex GET_SEX(LPCHARACTER ch)
@@ -4312,24 +4295,7 @@ bool CHARACTER::IsRiding() const
 	return IsHorseRiding() || GetMountVnum();
 }
 
-uint32_t CHARACTER::GetNextExp() const
-{
-	if (PLAYER_MAX_LEVEL_CONST < GetLevel())
-		return 2500000000u;
-	else
-		return exp_table[GetLevel()];
-}
-
 #ifdef __NEWPET_SYSTEM__
-uint32_t CHARACTER::PetGetNextExp() const
-{
-	if (IsNewPet()) {
-		if (120 < GetLevel())
-			return 2500000000;
-		else
-			return exppet_table[GetLevel()];
-	} return 0;
-}
 #endif
 
 #ifdef ENABLE_RANKING
@@ -4433,10 +4399,6 @@ void CHARACTER::RankingSubcategory(int iArg)
 }
 #endif
 
-int	CHARACTER::GetSkillPowerByLevel(int level, bool bMob) const
-{
-	return CTableBySkill::instance().GetSkillPowerByLevelFromType(GetJob(), GetSkillGroup(), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
-}
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
 {
@@ -6350,15 +6312,6 @@ uint32_t CHARACTER::GetMountSkinVnum() {
 #endif
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
-std::string CHARACTER::GetLang() {
-
-	auto language = GetDesc()->GetLanguage();
-	std::string langs[] = { "en","en","ro","it","tr","de","pl","pt","es","cz","hu" };
-	if (language == 0)
-		return langs[language + 1];
-	else
-		return langs[language];
-}
 #endif
 
 int32_t CHARACTER::SetInvincible(bool arg) {
