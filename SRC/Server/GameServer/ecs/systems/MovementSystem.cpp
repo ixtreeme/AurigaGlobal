@@ -3,10 +3,12 @@
 #include "MovementSystem.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 #include "../../char.h"
 #include "../../char_manager.h"
 #include "../../desc_client.h"
+#include "../../dungeon.h"
 #include "../../packet.h"
 #include "../../motion.h"
 #include "../../vector.h"
@@ -709,4 +711,142 @@ void CHARACTER::SetPosition(int pos)
 	}
 
 	m_pointsInstant.position = pos;
+}
+const int aiRecoveryPercents[10] = { 1, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
+
+EVENTFUNC(recovery_event)
+{
+	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+	if (info == nullptr)
+	{
+		sys_err("recovery_event> <Factor> Null pointer");
+		return 0;
+	}
+
+	LPCHARACTER	ch = info->ch;
+
+	if (ch == nullptr) {
+		return 0;
+	}
+
+	if (!ch->IsPC())
+	{
+		if (ch->IsAffectFlag(AFF_POISON))
+			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
+
+#ifdef ENABLE_WOLFMAN_CHARACTER
+		if (ch->IsAffectFlag(AFF_BLEEDING))
+			return PASSES_PER_SEC(MAX(1, ch->GetMobTable().bRegenCycle));
+#endif
+
+#ifdef ENABLE_DS_RUNE
+		if (ch->GetMobTable().dwVnum == 3996) {
+			LPDUNGEON target = ch->GetDungeon();
+			if (target) {
+				if (target->GetFlag("floor") == 5) {
+					ch->DistributeSP(ch);
+					if (ch->GetMaxHP() <= ch->GetHP())
+						return PASSES_PER_SEC(3);
+
+					int iPercent = 0;
+					int iAmount = 0;
+
+					{
+						iPercent = 2;
+						iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+					}
+
+					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
+					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					ch->PointChange(POINT_HP, iAmount, false);
+					return PASSES_PER_SEC(10);
+				}
+			}
+		}
+		else if (ch->GetMobTable().dwVnum == 8202) {
+			LPDUNGEON target = ch->GetDungeon();
+			if (target) {
+				if (target->GetFlag("floor") == 1) {
+					ch->DistributeSP(ch);
+					if (ch->GetMaxHP() <= ch->GetHP())
+						return PASSES_PER_SEC(3);
+
+					int iPercent = 0;
+					int iAmount = 0;
+
+					{
+						iPercent = 2;
+						iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+					}
+
+					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
+					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					ch->PointChange(POINT_HP, iAmount, false);
+					return PASSES_PER_SEC(10);
+				}
+			}
+		}
+#endif
+
+		if (!ch->IsDoor())
+		{
+			ch->MonsterLog("HP_REGEN +%d", std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100));
+			ch->PointChange(POINT_HP, std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100));
+		}
+
+		if (ch->GetHP() >= ch->GetMaxHP())
+		{
+			ch->m_pkRecoveryEvent = nullptr;
+			return 0;
+		}
+
+		return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
+	}
+	else
+	{
+		ch->CheckTarget();
+		ch->UpdateKillerMode();
+
+		if (ch->IsAffectFlag(AFF_POISON) == true)
+		{
+			return 3;
+		}
+#ifdef ENABLE_WOLFMAN_CHARACTER
+		if (ch->IsAffectFlag(AFF_BLEEDING))
+			return 3;
+#endif
+		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
+
+		ch->DistributeSP(ch);
+
+		if (ch->GetMaxHP() <= ch->GetHP())
+			return PASSES_PER_SEC(3);
+
+		int iPercent = 0;
+		int iAmount = 0;
+
+		{
+			iPercent = aiRecoveryPercents[std::min(9, iSec)];
+			iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+		}
+
+		iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
+
+		sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+
+		ch->PointChange(POINT_HP, iAmount, false);
+		return PASSES_PER_SEC(3);
+	}
+}
+void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot)
+{
+	pack.bHeader = HEADER_GC_MOVE;
+	pack.bFunc = bFunc;
+	pack.bArg = bArg;
+	pack.dwVID = dwVID;
+	pack.dwTime = dwTime ? dwTime : get_dword_time();
+	pack.bRot = bRot;
+	pack.lX = x;
+	pack.lY = y;
+	pack.dwDuration = dwDuration;
 }

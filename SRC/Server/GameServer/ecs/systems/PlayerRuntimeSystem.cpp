@@ -4580,3 +4580,201 @@ void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
     if (isPC)
         m_stName = c_pszName;
 }
+
+LPCHARACTER DynamicCharacterPtr::Get() const {
+    LPCHARACTER p = nullptr;
+    if (is_pc) {
+        p = CHARACTER_MANAGER::instance().FindByPID(id);
+    }
+    else {
+        p = CHARACTER_MANAGER::instance().Find(id);
+    }
+    return p;
+}
+
+DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
+    if (character == nullptr) {
+        Reset();
+        return *this;
+    }
+    if (character->IsPC()) {
+        is_pc = true;
+        id = character->GetPlayerID();
+    }
+    else {
+        is_pc = false;
+        id = character->GetVID();
+    }
+    return *this;
+}
+
+CHARACTER::CHARACTER()
+{
+    Initialize();
+}
+
+CHARACTER::~CHARACTER()
+{
+    Destroy();
+}
+
+EVENTFUNC(kill_ore_load_event)
+{
+    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+    if (info == nullptr)
+    {
+        sys_err("kill_ore_load_even> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    ch->m_pkMiningEvent = nullptr;
+    M2_DESTROY_CHARACTER(ch);
+    return 0;
+}
+
+ESex GET_SEX(LPCHARACTER ch)
+{
+    switch (ch->GetRaceNum())
+    {
+    case MAIN_RACE_WARRIOR_M:
+    case MAIN_RACE_SURA_M:
+    case MAIN_RACE_ASSASSIN_M:
+    case MAIN_RACE_SHAMAN_M:
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    case MAIN_RACE_WOLFMAN_M:
+#endif
+        return SEX_MALE;
+
+    case MAIN_RACE_ASSASSIN_W:
+    case MAIN_RACE_SHAMAN_W:
+    case MAIN_RACE_WARRIOR_W:
+    case MAIN_RACE_SURA_W:
+        return SEX_FEMALE;
+    }
+
+    return SEX_MALE;
+}
+
+EVENTFUNC(destroy_when_idle_event)
+{
+    const auto info = dynamic_cast<char_event_info*>(event->info);
+    if (info == nullptr)
+    {
+        sys_err("destroy_when_idle_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    if (ch->GetVictim())
+    {
+        return PASSES_PER_SEC(300);
+    }
+
+    sys_log(1, "DESTROY_WHEN_IDLE: %s", ch->GetName());
+
+    ch->m_pkDestroyWhenIdleEvent = nullptr;
+    M2_DESTROY_CHARACTER(ch);
+    return 0;
+}
+
+#ifdef ENABLE_BLOCK_MULTIFARM
+EVENTFUNC(drop_event)
+{
+    drop_event_info* info = dynamic_cast<drop_event_info*>(event->info);
+    if (!info) {
+        sys_err("<drop_event> event is null.");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+    if (!ch) {
+        sys_err("<drop_event> ch is null.");
+        return 0;
+    }
+
+    LPDESC d = ch->GetDesc();
+    if (!d) {
+        sys_err("<drop_event> %s have no desc connector.", ch->GetName());
+        return 0;
+    }
+
+    time_t diff = info->time - get_global_time();
+    if (diff > 0) {
+#ifdef TEXTS_IMPROVEMENT
+        ch->ChatPacketNew(CHAT_TYPE_INFO, 43, "%d", diff);
+#endif
+    }
+    else {
+        std::string login = ch->GetDesc()->GetAccountTable().login;
+        std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
+        if (msg->Get()->uiNumRows > 0) {
+            MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+            int iStatus = atoi(row[0]);
+            bool already = false;
+            if (info->drop) {
+                if (iStatus == 1) {
+                    already = true;
+#ifdef TEXTS_IMPROVEMENT
+                    ch->ChatPacketNew(CHAT_TYPE_INFO, 38, "");
+#endif
+                }
+                else {
+                    int c = 0;
+                    std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT COUNT(*) FROM account.antifarm WHERE hwid='%s' and status=1", d->GetHwid()));
+                    if (msg2->Get()->uiNumRows > 0) {
+                        MYSQL_ROW row2 = mysql_fetch_row(msg2->Get()->pSQLResult);
+                        c = atoi(row2[0]);
+                    }
+
+                    if (c >= 2) {
+                        already = true;
+#ifdef TEXTS_IMPROVEMENT
+                        ch->ChatPacketNew(CHAT_TYPE_INFO, 37, "");
+#endif
+                    }
+                    else {
+                        ch->RemoveAffect(AFFECT_DROP_BLOCK);
+                        ch->AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+#ifdef TEXTS_IMPROVEMENT
+                        ch->ChatPacketNew(CHAT_TYPE_INFO, 40, "");
+#endif
+                    }
+                }
+            }
+            else {
+                if (iStatus == 0) {
+                    already = true;
+#ifdef TEXTS_IMPROVEMENT
+                    ch->ChatPacketNew(CHAT_TYPE_INFO, 39, "");
+#endif
+                }
+                else {
+                    ch->RemoveAffect(AFFECT_DROP_UNBLOCK);
+                    ch->AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+#ifdef TEXTS_IMPROVEMENT
+                    ch->ChatPacketNew(CHAT_TYPE_INFO, 41, "");
+#endif
+                }
+            }
+
+            if (!already) {
+                iStatus = iStatus == 1 ? 0 : 1;
+                std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("UPDATE account.antifarm SET status=%d WHERE login='%s'", iStatus, login.c_str()));
+            }
+        }
+
+        ch->BlockProcessed();
+    }
+
+    return PASSES_PER_SEC(1);
+}
+#endif

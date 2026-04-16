@@ -3001,3 +3001,32 @@
   - `CHARACTER::` body count: `0`
 - build: success
 - next: `char.cpp` file-scope helper/event sweep, then ctor/dtor shells and deletion
+
+## Phase 8 - Step 8.17 char.cpp file-scope sweep + deletion
+- moved to `PlayerRuntimeSystem.cpp`:
+  - `DynamicCharacterPtr::Get`
+  - `DynamicCharacterPtr::operator=(LPCHARACTER)`
+  - `CHARACTER::CHARACTER()`
+  - `CHARACTER::~CHARACTER()`
+  - `kill_ore_load_event`
+  - `GET_SEX`
+  - `destroy_when_idle_event`
+  - `drop_event`
+- moved to `MovementSystem.cpp`:
+  - `recovery_event`
+  - `aiRecoveryPercents`
+  - `EncodeMovePacket`
+- removed as dead/local-only file-scope content with `char.cpp` deletion:
+  - `battle_pass_stay_online_event`
+  - `stay_online_event`
+  - `SendI18nChatPacket`
+  - `update_mount_count_event_info`
+  - `UpdateMountCountEvent`
+  - local ECS state helpers that no longer had call sites in `char.cpp`
+- note:
+  - the first `char.cpp` delete build hit the expected stale translation-unit issue once; a follow-up build after regeneration completed cleanly
+  - `MovementSystem.cpp` needed one post-move surface correction: `dungeon.h`, `<algorithm>`, and `std::min/std::max` in the transplanted `recovery_event`
+- char.cpp: DELETED
+- after char.cpp DELETED: `1658`
+- build: success
+- next: `char.h` cleanup and deletion
