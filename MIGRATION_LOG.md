@@ -1685,3 +1685,21 @@
   - `CHARACTER::` body count: `326`
 - build: success
 - next: `S2 StatSystem`
+
+## Phase 8 - Step 8.17 char.cpp -> StatSystem
+- completed slice `S2 StatSystem`
+- created:
+  - `SRC/Server/GameServer/ecs/systems/StatSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/StatSystem.cpp`
+- moved:
+  - `ComputeBattlePoints`
+  - `ComputePoints`
+- note:
+  - the first incremental build after adding `StatSystem.cpp` produced unresolved externals because MSBuild had not emitted the new object yet
+  - one `--clean-first` build re-synchronized the target, after which the normal build gate also passed cleanly
+- after char.cpp Slice S2: `2047`
+- char.cpp status after slice:
+  - line count: `8624`
+  - `CHARACTER::` body count: `324`
+- build: success
+- next: `S3 SessionSystem`
