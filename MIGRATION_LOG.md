@@ -1871,3 +1871,26 @@
   - `CHARACTER::` body count: `272`
 - build: success
 - next: `S7c SessionSystem show path helper audit`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem (continued)
+- completed slice `S7c SessionSystem (show path + HWID gate)`
+- moved:
+  - `Show`
+- helper surface:
+  - `NormalizeMapIndex`
+  - `CheckAndHandleSameHwid`
+  - `battle_pass_stay_online_event_session`
+  - `cmd.h`
+  - `start_position.h`
+  - `battle_pass.h`
+  - `mob_manager.h`
+- note:
+  - the helper-surface pass built green before the body move
+  - the first post-move build failed below rollback threshold because `SessionSystem.cpp` still only had a forward declaration for `CMobInstance`; adding `mob_manager.h` fixed the slice in-place
+  - the original `battle_pass_stay_online_event` remains in `char.cpp` for now as non-`CHARACTER::` file-scope content; only the `Show` path now points at the session-local event copy
+- after char.cpp Slice S7c: `1972`
+- char.cpp status after slice:
+  - line count: `6786`
+  - `CHARACTER::` body count: `271`
+- build: success
+- next: `S7d SessionSystem disconnect path`

@@ -4,6 +4,7 @@
 
 #include "../../char.h"
 #include "../../char_manager.h"
+#include "../../cmd.h"
 #include "../../config.h"
 #include "../../db.h"
 #include "../../desc.h"
@@ -13,18 +14,132 @@
 #include "../../log.h"
 #include "../../map_location.h"
 #include "../../marriage.h"
+#include "../../mob_manager.h"
 #include "../../packet.h"
 #include "../../p2p.h"
 #include "../../questmanager.h"
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
+#include "../../start_position.h"
 #include "../../utils.h"
+#ifdef ENABLE_BATTLE_PASS
+#include "../../battle_pass.h"
+#endif
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
 #endif
 
 EVENTFUNC(save_event);
 extern bool IS_SUMMONABLE_ZONE(int map_index);
+
+namespace {
+
+inline int32_t NormalizeMapIndex(int32_t mapIndex)
+{
+    if (mapIndex > 10000)
+        mapIndex /= 10000;
+
+    return mapIndex;
+}
+
+bool CheckAndHandleSameHwid(LPCHARACTER ch)
+{
+    if (!ch || !ch->IsPC())
+        return false;
+
+    DESC* desc = ch->GetDesc();
+    if (!desc)
+        return false;
+
+    const char* selfHwid = desc->GetHwid();
+    const char* selfHost = desc->GetHostName();
+
+    if (!selfHwid || !*selfHwid)
+        return false;
+
+    if (!selfHost || !*selfHost)
+        return false;
+
+    int32_t normalizedMapIndex = NormalizeMapIndex(ch->GetMapIndex());
+    bool duplicateFound = false;
+
+    CHARACTER_MANAGER::instance().for_each_pc([&](LPCHARACTER other)
+        {
+            if (duplicateFound || !other || other == ch)
+                return;
+
+            if (!other->IsPC())
+                return;
+
+            DESC* otherDesc = other->GetDesc();
+            if (!otherDesc)
+                return;
+
+            int32_t otherMapIndex = NormalizeMapIndex(other->GetMapIndex());
+            if (otherMapIndex != normalizedMapIndex)
+                return;
+
+            const char* otherHwid = otherDesc->GetHwid();
+            const char* otherHost = otherDesc->GetHostName();
+
+            if (!otherHwid || !*otherHwid)
+                return;
+
+            if (!otherHost || !*otherHost)
+                return;
+
+            if (strcmp(selfHwid, otherHwid) == 0 && strcmp(selfHost, otherHost) == 0)
+                duplicateFound = true;
+        });
+
+    if (duplicateFound)
+    {
+        char notice[256];
+        snprintf(notice, sizeof(notice),
+            "[EVENTMAP]%s 2 karakterrel probalt belepni event mapra!",
+            ch->GetName());
+
+        BroadcastNotice(notice);
+        ch->WarpSet(983500, 265200, 41);
+        return true;
+    }
+
+    return false;
+}
+
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+EVENTFUNC(battle_pass_stay_online_event_session)
+{
+    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+    if (!info || !info->ch)
+        return 0;
+
+    LPCHARACTER ch = info->ch;
+
+    if (!ch->GetDesc())
+        return PASSES_PER_SEC(60);
+
+    const uint8_t bBattlePassId = ch->GetBattlePassId();
+    if (!bBattlePassId)
+        return PASSES_PER_SEC(60);
+
+    uint32_t dwNotUsed = 0;
+    uint32_t dwCount = 0;
+    if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
+        return PASSES_PER_SEC(60);
+
+    if (ch->IsCompletedMission(STAY_ONLINE_MINUTES))
+        return PASSES_PER_SEC(60);
+
+    if (ch->GetMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
+        return PASSES_PER_SEC(60);
+
+    ch->UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
+    return PASSES_PER_SEC(60);
+}
+#endif
+
+} // namespace
 
 bool CAN_ENTER_ZONE(const LPCHARACTER& ch, int map_index)
 {
@@ -616,5 +731,133 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
                 ChatPacket(CHAT_TYPE_PARTY, "sent find position packet for teleport");
         }
     }
+    return true;
+}
+
+bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion/* = false */)
+{
+    if (IsPC())
+    {
+        const int32_t normalizedTargetMapIndex = NormalizeMapIndex(lMapIndex);
+
+        if (normalizedTargetMapIndex == 1 && CheckAndHandleSameHwid(this))
+        {
+            const uint32_t startMapIndex = EMPIRE_START_MAP(GetEmpire());
+            const uint32_t startX = EMPIRE_START_X(GetEmpire());
+            const uint32_t startY = EMPIRE_START_Y(GetEmpire());
+
+            if (startMapIndex && startX && startY)
+            {
+                sys_log(0, "HWID MAP1 restriction: %s moved to start map (%u, %u, %u)", GetName(), startMapIndex, startX, startY);
+                lMapIndex = static_cast<int32_t>(startMapIndex);
+                x = static_cast<int32_t>(startX);
+                y = static_cast<int32_t>(startY);
+            }
+        }
+    }
+
+    LPSECTREE sectree = SECTREE_MANAGER::instance().Get(lMapIndex, x, y);
+
+    if (!sectree)
+    {
+        sys_log(0, "cannot find sectree by %dx%d mapindex %d", x, y, lMapIndex);
+        return false;
+    }
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    if (!m_pkBattlePassStayOnlineEvent)
+    {
+        char_event_info* info = AllocEventInfo<char_event_info>();
+        info->ch = this;
+        m_pkBattlePassStayOnlineEvent = event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60));
+    }
+#endif
+
+    SetMapIndex(lMapIndex);
+
+    bool bChangeTree = false;
+
+    if (!GetSectree() || GetSectree() != sectree)
+        bChangeTree = true;
+
+    if (bChangeTree)
+    {
+        if (GetSectree())
+            GetSectree()->RemoveEntity(this);
+
+        ViewCleanup();
+    }
+#ifdef LEADERBOARD_RAZOR93
+    if (GetMapIndex() == 41)
+    {
+        SendLeaderboardData();
+        SendLeaderboardDataSkillMob(this);
+        SendLeaderboardDataGuild();
+    }
+#endif
+    if (!IsNPC())
+    {
+        sys_log(0, "SHOW: %s %dx%dx%d", GetName(), x, y, z);
+        if (GetStamina() < GetMaxStamina())
+            StartAffectEvent();
+    }
+    else if (m_pkMobData)
+    {
+        m_pkMobInst->m_posLastAttacked.x = x;
+        m_pkMobInst->m_posLastAttacked.y = y;
+        m_pkMobInst->m_posLastAttacked.z = z;
+    }
+
+    if (bShowSpawnMotion)
+    {
+        SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+        m_afAffectFlag.Set(AFF_SPAWN);
+    }
+
+    SetXYZ(x, y, z);
+
+    m_posDest.x = x;
+    m_posDest.y = y;
+    m_posDest.z = z;
+
+    m_posStart.x = x;
+    m_posStart.y = y;
+    m_posStart.z = z;
+
+    if (bChangeTree)
+    {
+        EncodeInsertPacket(this);
+        sectree->InsertEntity(this);
+
+        UpdateSectree();
+    }
+    else
+    {
+        ViewReencode();
+        sys_log(0, "      in same sectree");
+    }
+
+    REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+
+    SetValidComboInterval(0);
+    ComputePoints();
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    if (IsPC())
+    {
+        for (const auto& it : m_map_view)
+        {
+            LPENTITY ent = it.first;
+            if (!ent || !ent->IsType(ENTITY_CHARACTER))
+                continue;
+
+            LPCHARACTER viewer = (LPCHARACTER)ent;
+            if (viewer == this)
+                continue;
+
+            if (viewer->IsPC() && viewer->GetDesc())
+                UpdateMountInventoryCountOverhead(viewer);
+        }
+    }
+#endif
+
     return true;
 }
