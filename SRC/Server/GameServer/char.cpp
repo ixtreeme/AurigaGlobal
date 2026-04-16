@@ -943,8 +943,6 @@ void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_
 //#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
-bool CHARACTER::IsNextMountPulse() const { return (m_mountPulse == 0 || (m_mountPulse < thecore_pulse())); }
-void CHARACTER::UpdateMountPulse() { m_mountPulse = thecore_pulse() + THECORE_SECS_TO_PASSES(1); }
 
 template <typename ...Args>
 void SendI18nChatPacket(CHARACTER* ch, uint8_t type, const char* format, Args ... args)
@@ -1414,26 +1412,6 @@ EVENTFUNC(destroy_when_idle_event)
 }
 
 
-uint8_t CHARACTER::GetMountCounter() const
-{
-	return m_bMountCounter;
-}
-
-void CHARACTER::ResetMountCounter()
-{
-	m_bMountCounter = 0;
-}
-
-uint8_t CHARACTER::IncreaseMountCounter()
-{
-	return ++m_bMountCounter;
-}
-
-// ¸»AI3a ´U¸Y°ÍA» A¸°í AÖ3a?
-bool CHARACTER::IsRiding() const
-{
-	return IsHorseRiding() || GetMountVnum();
-}
 
 #ifdef __NEWPET_SYSTEM__
 #endif
@@ -1567,180 +1545,9 @@ EVENTFUNC(stay_online_event)
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-void CHARACTER::MountSummon(LPITEM mountItem)
-{
-#define MOUNT_SYSTEM_FIX_POLY
-#ifdef MOUNT_SYSTEM_FIX_POLY
-	if (IsPolymorphed() == true)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 732, "");
-#endif
-		return;
-	}
-#endif	
-	if (GetMapIndex() == 113)
-		return;
 
-	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
-		return;
 
-	CMountSystem* mountSystem = GetMountSystem();
-	uint32_t mobVnum = 0;
 
-	if (!mountSystem || !mountItem)
-		return;
-
-#ifdef __CHANGELOOK_SYSTEM__	
-	if (mountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = mountItem->GetValue(1);
-	}
-	else
-		mobVnum = mountItem->GetValue(1);
-#else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
-#endif
-
-	if (IsHorseRiding())
-		StopRiding();
-
-	if (GetHorse())
-		HorseSummon(false);
-
-	mountSystem->Summon(mobVnum, mountItem, false);
-}
-
-void CHARACTER::MountUnsummon(LPITEM mountItem)
-{
-	CMountSystem* mountSystem = GetMountSystem();
-	uint32_t mobVnum = 0;
-
-	if (!mountSystem || !mountItem)
-		return;
-
-#ifdef __CHANGELOOK_SYSTEM__	
-	if (mountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = mountItem->GetValue(1);
-	}
-	else
-		mobVnum = mountItem->GetValue(1);
-#else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
-#endif
-
-	if (GetMountVnum() == mobVnum)
-		mountSystem->Unmount(mobVnum);
-
-	mountSystem->Unsummon(mobVnum);
-}
-
-void CHARACTER::CheckMount()
-{
-	CMountSystem* mountSystem = GetMountSystem();
-	LPITEM mountItem = GetWear(WEAR_COSTUME_MOUNT);
-	uint32_t mobVnum = 0;
-
-	if (!mountSystem || !mountItem)
-		return;
-
-#ifdef __CHANGELOOK_SYSTEM__	
-	if (mountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = mountItem->GetValue(1);
-	}
-	else
-		mobVnum = mountItem->GetValue(1);
-#else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
-#endif
-
-	if (mountSystem->CountSummoned() == 0)
-	{
-		mountSystem->Summon(mobVnum, mountItem, false);
-	}
-}
-
-bool CHARACTER::IsRidingMount()
-{
-	return (GetWear(WEAR_COSTUME_MOUNT) || FindAffect(AFFECT_MOUNT));
-}
-#endif
-
-#ifdef ENABLE_COSTUME_PET
-void CHARACTER::UpdatePetSkin() {
-	if (!m_petSystem)
-		return;
-
-	m_petSystem->UpdatePetSkin();
-}
-
-uint32_t CHARACTER::GetPetSkinVnum() {
-	LPITEM item = GetWear(WEAR_COSTUME_PET_SKIN);
-	return item != nullptr ? item->GetValue(0) : 0;
-}
-#endif
-
-#ifdef ENABLE_COSTUME_MOUNT
-void CHARACTER::UpdateMountSkin() {
-	if (!m_mountSystem)
-		return;
-
-	m_mountSystem->UpdateMountSkin();
-
-	if (IsRiding()) {
-		LPITEM item = GetWear(WEAR_COSTUME_MOUNT);
-		if (!item)
-			return;
-
-		uint32_t mobVnum = 0;
-#ifdef __CHANGELOOK_SYSTEM__
-		if (item->GetTransmutation())
-		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(item->GetTransmutation());
-			if (itemTable)
-				mobVnum = itemTable->alValues[1];
-			else
-				mobVnum = item->GetValue(1);
-		}
-		else
-			mobVnum = item->GetValue(1);
-#else
-		if (item->GetValue(1) != 0)
-			mobVnum = item->GetValue(1);
-#endif
-
-		m_mountSystem->Unmount(mobVnum);
-		m_mountSystem->Mount(mobVnum, item);
-	}
-}
-
-uint32_t CHARACTER::GetMountSkinVnum() {
-	LPITEM item = GetWear(WEAR_COSTUME_MOUNT_SKIN);
-	return item != nullptr ? item->GetValue(0) : 0;
-}
-#endif
-
-#ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 #endif
 
 #ifdef ENABLE_BLOCK_MULTIFARM
@@ -1840,67 +1647,6 @@ EVENTFUNC(drop_event)
 
 #endif
 
-void CHARACTER::ComputeMountInventoryBonuses()
-{
-	std::map<uint8_t, int32_t> mount_bonus_map;
-
-	CMountInventory* mi = GetMountInventory();
-	if (!mi)
-		return;
-
-	const auto& valid_items = CMountInventoryHelper::GetAllowedItems();
-	const int total = mi->GetWidth() * mi->GetSize();
-
-	for (int pos = 0; pos < total; ++pos)
-	{
-		LPITEM item = mi->Get(pos);
-		if (!item)
-			continue;
-
-		const uint32_t vnum = item->GetVnum();
-		if (!valid_items.contains(vnum))
-			continue;
-
-		const TItemTable* proto = item->GetProto();
-		if (!proto)
-			continue;
-
-		// 1) item_proto apply 
-		for (const auto& apply : proto->aApplies)
-		{
-			if (apply.bType == APPLY_NONE || apply.lValue == 0)
-				continue;
-
-			if (apply.bType >= MAX_APPLY_NUM)
-				continue;
-
-			const uint8_t pointType = aApplyInfo[apply.bType].bPointType;
-			if (pointType != POINT_NONE)
-				mount_bonus_map[pointType] += apply.lValue;
-		}
-
-		// 2) item attribute 
-		const TPlayerItemAttribute* attrs = item->GetAttributes();
-		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-		{
-			const uint8_t bType = attrs[i].bType;
-			const int16_t sVal = attrs[i].sValue;
-
-			if (bType == APPLY_NONE || sVal == 0)
-				continue;
-
-			if (bType >= MAX_APPLY_NUM)
-				continue;
-
-			const uint8_t pointType = aApplyInfo[bType].bPointType;
-			if (pointType != POINT_NONE)
-				mount_bonus_map[pointType] += sVal;
-		}
-	}
-
-	for (const auto& it : mount_bonus_map)
-		PointChange(it.first, it.second);
-}
 
 
 

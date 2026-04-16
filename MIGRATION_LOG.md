@@ -2901,3 +2901,57 @@
   - `CHARACTER::` body count: `24`
 - build: success
 - next: `S11e-4a mount counters`, `S11d-c-4c Initialize`, or `S11d-c-4d Create`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- completed slice `S11e-4a mount counters`
+- moved:
+  - `IsNextMountPulse`
+  - `UpdateMountPulse`
+  - `GetMountCounter`
+  - `ResetMountCounter`
+  - `IncreaseMountCounter`
+  - `IsRiding`
+- note:
+  - the retry was inserted only after re-verifying the physical end-of-file boundary in `MountSystem.cpp`
+  - `IsNextMountPulse` and `UpdateMountPulse` were re-homed under the same `ENABLE_FAKE_SHOP_HEADER` / `DISABLE_CORE_PULSE_RAZOR93` guard pair they already use in `char.h`
+- after char.cpp Slice S11e-4a: `1695`
+- char.cpp status after slice:
+  - line count: `1828`
+  - `CHARACTER::` body count: `18`
+- build: success
+- next: `S11e-4b mount summon`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- completed slice `S11e-4b mount summon`
+- moved:
+  - `MountSummon`
+  - `MountUnsummon`
+  - `CheckMount`
+  - `IsRidingMount`
+- note:
+  - the retry added the missing full-type surface `MountSystem.h` to `MountSystem.cpp` so `m_mountSystem` calls no longer compiled against an incomplete type
+  - the first mount retry failure earlier in the session was not repeated; the file-scope insertion point remained stable after the counter batch
+- after char.cpp Slice S11e-4b: `1691`
+- char.cpp status after slice:
+  - line count: `1775`
+  - `CHARACTER::` body count: `14`
+- build: success
+- next: `S11e-4c pet/mount skin`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- completed slice `S11e-4c pet/mount skin`
+- moved:
+  - `UpdatePetSkin`
+  - `GetPetSkinVnum`
+  - `UpdateMountSkin`
+  - `GetMountSkinVnum`
+  - `ComputeMountInventoryBonuses`
+- note:
+  - `MountSystem.cpp` needed `mount_inventory_helper.h` and `PetSystem.h` helper surface before the final pet/skin batch
+  - the source-side cleanup also removed the empty `ENABLE_COSTUME_PET` / `ENABLE_COSTUME_MOUNT` shells that were left behind in `char.cpp` after the destination-side copy
+- after char.cpp Slice S11e-4c: `1686`
+- char.cpp status after slice:
+  - line count: `1657`
+  - `CHARACTER::` body count: `9`
+- build: success
+- next: `S11d-c-4c Initialize`, `S11d-c-4d Create`, or a final residual sweep
