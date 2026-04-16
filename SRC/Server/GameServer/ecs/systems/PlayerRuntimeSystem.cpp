@@ -3,10 +3,15 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "../../char.h"
+#include "../../char_manager.h"
 #include "../../config.h"
 #include "../../desc.h"
 #include "../../buffer_manager.h"
+#include "../../db.h"
+#include "../../dungeon.h"
+#include "../../gm.h"
 #include "../../mob_manager.h"
+#include "../../questmanager.h"
 #ifdef ENABLE_ANTICHEAT
 #include "../../hwidmanager.h"
 #endif
@@ -234,3 +239,173 @@ uint8_t CHARACTER::GetCharType() const
 {
     return m_bCharType;
 }
+
+uint8_t CHARACTER::GetGMLevel() const
+{
+    if (test_server)
+        return GM_IMPLEMENTOR;
+
+    return m_pointsInstant.gm_level;
+}
+
+void CHARACTER::SetGMLevel()
+{
+    if (GetDesc())
+        m_pointsInstant.gm_level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
+    else
+        m_pointsInstant.gm_level = GM_PLAYER;
+}
+
+BOOL CHARACTER::IsGM() const
+{
+    if (m_pointsInstant.gm_level != GM_PLAYER)
+        return true;
+
+    return test_server ? true : false;
+}
+
+uint32_t CHARACTER::GetAID() const
+{
+    char szQuery[1024 + 1];
+    uint32_t dwAID = 0;
+
+    snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+    if (msg->Get()->uiNumRows == 0)
+        return 0;
+
+    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+    str_to_number(dwAID, row[0]);
+    return dwAID;
+}
+
+void CHARACTER::SetQuestNPCID(uint32_t vid)
+{
+    m_dwQuestNPCVID = vid;
+}
+
+LPCHARACTER CHARACTER::GetQuestNPC() const
+{
+    return CHARACTER_MANAGER::instance().Find(m_dwQuestNPCVID);
+}
+
+void CHARACTER::SetQuestItemPtr(LPITEM item)
+{
+    m_pQuestItem = item;
+}
+
+void CHARACTER::ClearQuestItemPtr()
+{
+    m_pQuestItem = nullptr;
+}
+
+LPITEM CHARACTER::GetQuestItemPtr() const
+{
+    return m_pQuestItem;
+}
+
+LPDUNGEON CHARACTER::GetDungeonForce() const
+{
+    if (m_lWarpMapIndex > 10000)
+        return CDungeonManager::instance().FindByMapIndex(m_lWarpMapIndex);
+
+    return m_pkDungeon;
+}
+
+void CHARACTER::SetBlockMode(uint8_t bFlag)
+{
+    m_pointsInstant.bBlockMode = bFlag;
+
+    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", m_pointsInstant.bBlockMode);
+
+    SetQuestFlag("game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
+    SetQuestFlag("game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
+    SetQuestFlag("game_option.block_guild_invite", bFlag & BLOCK_GUILD_INVITE ? 1 : 0);
+    SetQuestFlag("game_option.block_whisper", bFlag & BLOCK_WHISPER ? 1 : 0);
+    SetQuestFlag("game_option.block_messenger_invite", bFlag & BLOCK_MESSENGER_INVITE ? 1 : 0);
+    SetQuestFlag("game_option.block_party_request", bFlag & BLOCK_PARTY_REQUEST ? 1 : 0);
+}
+
+void CHARACTER::SetBlockModeForce(uint8_t bFlag)
+{
+    m_pointsInstant.bBlockMode = bFlag;
+    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", m_pointsInstant.bBlockMode);
+}
+
+bool CHARACTER::IsGuardNPC() const
+{
+    return IsNPC() && (GetRaceNum() == 11000 || GetRaceNum() == 11002 || GetRaceNum() == 11004);
+}
+
+int CHARACTER::GetQuestFlag(const std::string& flag) const
+{
+    int ret = 0;
+    quest::CQuestManager& q = quest::CQuestManager::instance();
+    quest::PC* pPC = q.GetPC(GetPlayerID());
+    if (pPC)
+        ret = pPC->GetFlag(flag);
+
+    return ret;
+}
+
+void CHARACTER::SetQuestFlag(const std::string& flag, int value)
+{
+    quest::CQuestManager& q = quest::CQuestManager::instance();
+    quest::PC* pPC = q.GetPC(GetPlayerID());
+    pPC->SetFlag(flag, value);
+}
+
+#ifdef ENABLE_VOTE4BUFF
+long long CHARACTER::GetVoteCoin()
+{
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%d';", GetDesc()->GetAccountTable().id));
+    if (pMsg->Get()->uiNumRows == 0)
+        return 0;
+    MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+    long long coin = 0;
+    str_to_number(coin, row[0]);
+    return coin;
+}
+
+void CHARACTER::SetVoteCoin(long long amount)
+{
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%d';", amount, GetDesc()->GetAccountTable().id));
+}
+#endif
+
+#ifdef ENABLE_ITEMSHOP
+uint32_t CHARACTER::GetDragonCoin()
+{
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", GetDesc()->GetAccountTable().id));
+    if (pMsg->Get()->uiNumRows == 0)
+        return 0;
+    MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+    uint32_t dc = 0;
+    str_to_number(dc, row[0]);
+    return dc;
+}
+
+void CHARACTER::SetDragonCoin(uint32_t amount)
+{
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", amount, GetDesc()->GetAccountTable().id));
+}
+
+void CHARACTER::SetProtectTime(const std::string& flagname, int value)
+{
+    auto it = m_protection_Time.find(flagname);
+    if (it != m_protection_Time.end())
+        it->second = value;
+    else
+        m_protection_Time.insert(make_pair(flagname, value));
+}
+
+int CHARACTER::GetProtectTime(const std::string& flagname) const
+{
+    auto it = m_protection_Time.find(flagname);
+    if (it != m_protection_Time.end())
+        return it->second;
+    return 0;
+}
+#endif

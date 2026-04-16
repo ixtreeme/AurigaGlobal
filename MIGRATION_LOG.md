@@ -2161,3 +2161,37 @@
   - `CHARACTER::` body count: `211`
 - build: success
 - next: `S11d runtime/identity trivial accessors audit`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d runtime/identity trivial accessors`
+- moved:
+  - GM/account/runtime:
+    - `GetGMLevel`, `SetGMLevel`, `IsGM`
+    - `GetAID`
+  - quest/runtime pointers:
+    - `SetQuestNPCID`, `GetQuestNPC`
+    - `SetQuestItemPtr`, `ClearQuestItemPtr`, `GetQuestItemPtr`
+    - `GetDungeonForce`
+  - block / quest flag helpers:
+    - `SetBlockMode`, `SetBlockModeForce`, `IsGuardNPC`
+    - `GetQuestFlag`, `SetQuestFlag`
+  - account coin / protection helpers:
+    - `GetVoteCoin`, `SetVoteCoin`
+    - `GetDragonCoin`, `SetDragonCoin`
+    - `SetProtectTime`, `GetProtectTime`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `char_manager.h`
+    - `db.h`
+    - `dungeon.h`
+    - `gm.h`
+    - `questmanager.h`
+- note:
+  - this batch intentionally stayed on pointer/account/flag accessors and avoided the larger proto, state-machine and packet-heavy lifecycle blocks
+  - the first post-removal build passed without rollback or follow-up compile fixes
+- after char.cpp Slice S11d-a: `1888`
+- char.cpp status after slice:
+  - line count: `7003`
+  - `CHARACTER::` body count: `190`
+- build: success
+- next: `S11d-b misc runtime/session accessor audit`
