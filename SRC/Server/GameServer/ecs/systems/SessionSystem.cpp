@@ -6,15 +6,39 @@
 #include "../../char_manager.h"
 #include "../../config.h"
 #include "../../db.h"
+#include "../../desc.h"
 #include "../../desc_client.h"
 #include "../../item.h"
 #include "../../item_manager.h"
+#include "../../log.h"
+#include "../../map_location.h"
 #include "../../marriage.h"
+#include "../../packet.h"
+#include "../../p2p.h"
 #include "../../questmanager.h"
 #include "../../sectree.h"
+#include "../../sectree_manager.h"
 #include "../../utils.h"
+#ifdef ENABLE_SWITCHBOT
+#include "../../new_switchbot.h"
+#endif
 
 EVENTFUNC(save_event);
+extern bool IS_SUMMONABLE_ZONE(int map_index);
+
+bool CAN_ENTER_ZONE(const LPCHARACTER& ch, int map_index)
+{
+    switch (map_index)
+    {
+    case 301:
+    case 302:
+    case 303:
+    case 304:
+        if (ch->GetLevel() < 90)
+            return false;
+    }
+    return true;
+}
 
 void CHARACTER::Save()
 {
@@ -248,5 +272,349 @@ bool CHARACTER::CanWarp() const
         return false;
 #endif
 
+    return true;
+}
+
+bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
+{
+    if (!IsPC())
+        return false;
+
+    uint32_t lAddr;
+    int32_t lMapIndex;
+    uint16_t wPort;
+
+#ifdef ENABLE_GENERAL_CH
+    uint8_t ch = GetDesc() ? GetDesc()->GetAccountTable().bChannel : 0;
+    if (!CMapLocation::instance().Get(ch, x, y, lMapIndex, lAddr, wPort)) {
+        sys_err("cannot find map location index %d x %d y %d name %s", lMapIndex, x, y, GetName());
+        return false;
+    }
+
+    if (lPrivateMapIndex >= 10000) {
+        if (lPrivateMapIndex / 10000 != lMapIndex) {
+            sys_err("Invalid map index %d, must be child of %d", lPrivateMapIndex, lMapIndex);
+            return false;
+        }
+
+        lMapIndex = lPrivateMapIndex;
+    }
+#else
+    if (!CMapLocation::instance().Get(x, y, lMapIndex, lAddr, wPort))
+    {
+        sys_err("cannot find map location index %d x %d y %d name %s", lMapIndex, x, y, GetName());
+        return false;
+    }
+
+    if (lPrivateMapIndex >= 10000)
+    {
+        if (lPrivateMapIndex / 10000 != lMapIndex)
+        {
+            sys_err("Invalid map index %d, must be child of %d", lPrivateMapIndex, lMapIndex);
+            return false;
+        }
+
+        lMapIndex = lPrivateMapIndex;
+    }
+#endif
+
+    Stop();
+    Save();
+
+    if (GetSectree())
+    {
+        GetSectree()->RemoveEntity(this);
+        ViewCleanup();
+
+        EncodeRemovePacket(this);
+    }
+
+    m_lWarpMapIndex = lMapIndex;
+    m_posWarp.x = x;
+    m_posWarp.y = y;
+
+    sys_log(0, "WarpSet %s %d %d current map %d target map %d", GetName(), x, y, GetMapIndex(), lMapIndex);
+
+    TPacketGCWarp p;
+
+    p.bHeader = HEADER_GC_WARP;
+    p.lX = x;
+    p.lY = y;
+    p.lAddr = lAddr;
+    p.wPort = wPort;
+
+#ifdef ENABLE_SWITCHBOT
+    CSwitchbotManager::Instance().SetIsWarping(GetPlayerID(), true);
+
+    if (p.wPort != mother_port)
+    {
+        CSwitchbotManager::Instance().P2PSendSwitchbot(GetPlayerID(), p.wPort);
+    }
+#endif
+
+    GetDesc()->Packet(&p, sizeof(TPacketGCWarp));
+
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s MapIdx %ld DestMapIdx%ld DestX%ld DestY%ld Empire%d", GetName(), GetMapIndex(), lPrivateMapIndex, x, y, GetEmpire());
+    LogManager::instance().CharLog(this, 0, "WARP", buf);
+
+    return true;
+}
+
+void CHARACTER::WarpEnd()
+{
+    if (test_server)
+        sys_log(0, "WarpEnd %s", GetName());
+
+    if (m_posWarp.x == 0 && m_posWarp.y == 0)
+        return;
+
+    int32_t index = m_lWarpMapIndex;
+
+    if (index > 10000)
+        index /= 10000;
+
+    if (!map_allow_find(index))
+    {
+        sys_err("location %d %d not allowed to login this server", m_posWarp.x, m_posWarp.y);
+#ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
+        GoHome();
+#else
+        GetDesc()->SetPhase(PHASE_CLOSE);
+#endif
+        return;
+    }
+
+    sys_log(0, "WarpEnd %s %d %u %u", GetName(), m_lWarpMapIndex, m_posWarp.x, m_posWarp.y);
+
+    Show(m_lWarpMapIndex, m_posWarp.x, m_posWarp.y, 0);
+    Stop();
+
+    m_lWarpMapIndex = 0;
+    m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;
+
+    {
+        TPacketGGLogin p;
+
+        p.bHeader = HEADER_GG_LOGIN;
+        strlcpy(p.szName, GetName(), sizeof(p.szName));
+        p.dwPID = GetPlayerID();
+        p.bEmpire = GetEmpire();
+        p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(GetX(), GetY());
+        p.bChannel = g_bChannel;
+
+        P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
+    }
+}
+
+namespace {
+    class FuncCheckWarp
+    {
+    public:
+        FuncCheckWarp(LPCHARACTER pkWarp)
+        {
+            m_lTargetY = 0;
+            m_lTargetX = 0;
+
+            m_lX = pkWarp->GetX();
+            m_lY = pkWarp->GetY();
+
+            m_bInvalid = false;
+            m_bEmpire = pkWarp->GetEmpire();
+
+            char szTmp[64];
+
+            if (3 != sscanf(pkWarp->GetName(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
+            {
+                if (number(1, 100) < 5)
+                    sys_err("Warp NPC name wrong : vnum(%d) name(%s)", pkWarp->GetRaceNum(), pkWarp->GetName());
+
+                m_bInvalid = true;
+
+                return;
+            }
+
+            m_lTargetX *= 100;
+            m_lTargetY *= 100;
+
+            m_bUseWarp = true;
+
+            if (pkWarp->IsGoto())
+            {
+                LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(pkWarp->GetMapIndex());
+                m_lTargetX += pkSectreeMap->m_setting.iBaseX;
+                m_lTargetY += pkSectreeMap->m_setting.iBaseY;
+                m_bUseWarp = false;
+            }
+        }
+
+        bool Valid()
+        {
+            return !m_bInvalid;
+        }
+
+        void operator()(LPENTITY ent)
+        {
+            if (!Valid())
+                return;
+
+            if (!ent->IsType(ENTITY_CHARACTER))
+                return;
+
+            LPCHARACTER pkChr = (LPCHARACTER)ent;
+
+            if (!pkChr->IsPC())
+                return;
+
+            int iDist = DISTANCE_APPROX(pkChr->GetX() - m_lX, pkChr->GetY() - m_lY);
+
+            if (iDist > 300)
+                return;
+
+            if (m_bEmpire && pkChr->GetEmpire() && m_bEmpire != pkChr->GetEmpire())
+                return;
+
+            if (pkChr->IsHack())
+                return;
+
+            if (!pkChr->CanHandleItem(false, true))
+                return;
+
+            if (m_bUseWarp)
+                pkChr->WarpSet(m_lTargetX, m_lTargetY);
+            else
+            {
+                pkChr->Show(pkChr->GetMapIndex(), m_lTargetX, m_lTargetY);
+                pkChr->Stop();
+            }
+        }
+
+        bool m_bInvalid;
+        bool m_bUseWarp;
+        int32_t m_lX;
+        int32_t m_lY;
+        int32_t m_lTargetX;
+        int32_t m_lTargetY;
+        uint8_t m_bEmpire;
+    };
+}
+
+EVENTFUNC(warp_npc_event)
+{
+    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+    if (info == nullptr)
+    {
+        sys_err("warp_npc_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = info->ch;
+
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    if (!ch->GetSectree())
+    {
+        ch->m_pkWarpNPCEvent = nullptr;
+        return 0;
+    }
+
+    FuncCheckWarp f(ch);
+    if (f.Valid())
+        ch->GetSectree()->ForEachAround(f);
+
+    return passes_per_sec / 2;
+}
+
+void CHARACTER::StartWarpNPCEvent()
+{
+    if (m_pkWarpNPCEvent)
+        return;
+
+    if (!IsWarp() && !IsGoto())
+        return;
+
+    char_event_info* info = AllocEventInfo<char_event_info>();
+
+    info->ch = this;
+
+    m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
+}
+
+bool CHARACTER::WarpToPID(uint32_t dwPID)
+{
+    LPCHARACTER victim;
+    if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
+    {
+        int mapIdx = victim->GetMapIndex();
+        if (IS_SUMMONABLE_ZONE(mapIdx))
+        {
+            if (CAN_ENTER_ZONE(this, mapIdx))
+            {
+                WarpSet(victim->GetX(), victim->GetY());
+            }
+            else
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+#endif
+                return false;
+            }
+        }
+        else
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+#endif
+            return false;
+        }
+    }
+    else
+    {
+        CCI* pcci = P2P_MANAGER::instance().FindByPID(dwPID);
+
+        if (!pcci)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 371, "");
+#endif
+            return false;
+        }
+
+        if (pcci->bChannel != g_bChannel)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
+#endif
+            return false;
+        }
+        else if (false == IS_SUMMONABLE_ZONE(pcci->lMapIndex))
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+#endif
+            return false;
+        }
+        else
+        {
+            if (!CAN_ENTER_ZONE(this, pcci->lMapIndex))
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+#endif
+                return false;
+            }
+
+            TPacketGGFindPosition p;
+            p.header = HEADER_GG_FIND_POSITION;
+            p.dwFromPID = GetPlayerID();
+            p.dwTargetPID = dwPID;
+            pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
+
+            if (test_server)
+                ChatPacket(CHAT_TYPE_PARTY, "sent find position packet for teleport");
+        }
+    }
     return true;
 }

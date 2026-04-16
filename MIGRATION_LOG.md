@@ -1843,3 +1843,31 @@
   - `CHARACTER::` body count: `276`
 - build: success
 - next: `S7b SessionSystem warp execution paths`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem (continued)
+- completed slice `S7b SessionSystem (warp execution paths)`
+- moved:
+  - `WarpSet`
+  - `WarpEnd`
+  - `StartWarpNPCEvent`
+  - `WarpToPID`
+- helper surface:
+  - `CAN_ENTER_ZONE`
+  - `FuncCheckWarp`
+  - `warp_npc_event`
+  - `IS_SUMMONABLE_ZONE` forward declaration
+  - `map_location.h`
+  - `p2p.h`
+  - `packet.h`
+  - `sectree_manager.h`
+  - `log.h`
+  - `desc.h`
+- note:
+  - the first S7b build failed below rollback threshold because the original `warp_npc_event` and `StartWarpNPCEvent` bodies were still present in `char.cpp`
+  - after surgically removing that duplicate block, the slice built cleanly with no rollback
+- after char.cpp Slice S7b: `1976`
+- char.cpp status after slice:
+  - line count: `6952`
+  - `CHARACTER::` body count: `272`
+- build: success
+- next: `S7c SessionSystem show path helper audit`
