@@ -13,9 +13,13 @@
 #include "../../desc_client.h"
 #include "../../dungeon.h"
 #include "../../ecs/EntityFactory.hpp"
+#include "../../ecs/AIHelpers.hpp"
 #include "../../ecs/Registry.hpp"
+#include "../../ecs/components/dirty_components.hpp"
+#include "../../ecs/components/identity_components.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
+#include "../../guild_manager.h"
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../log.h"
@@ -32,6 +36,7 @@
 #include "../../regen.h"
 #include "../../safebox.h"
 #include "../../shop.h"
+#include "../../start_position.h"
 #include "../../skill_power.h"
 #include "../../target.h"
 #include "../../war_map.h"
@@ -45,6 +50,7 @@
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
 EVENTFUNC(drop_event);
+EVENTFUNC(destroy_when_idle_event);
 EVENTFUNC(kill_ore_load_event);
 
 namespace
@@ -2807,6 +2813,288 @@ void CHARACTER::Destroy()
 
     if (m_bMonsterLog)
         CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+}
+
+void CHARACTER::ResetPoint(int iLv)
+{
+    uint8_t bJob = GetJob();
+
+    PointChange(POINT_LEVEL, iLv - GetLevel());
+
+    SetRealPoint(POINT_ST, JobInitialPoints[bJob].st);
+    SetPoint(POINT_ST, GetRealPoint(POINT_ST));
+
+    SetRealPoint(POINT_HT, JobInitialPoints[bJob].ht);
+    SetPoint(POINT_HT, GetRealPoint(POINT_HT));
+
+    SetRealPoint(POINT_DX, JobInitialPoints[bJob].dx);
+    SetPoint(POINT_DX, GetRealPoint(POINT_DX));
+
+    SetRealPoint(POINT_IQ, JobInitialPoints[bJob].iq);
+    SetPoint(POINT_IQ, GetRealPoint(POINT_IQ));
+
+    SetRandomHP((iLv - 1) * number(JobInitialPoints[GetJob()].hp_per_lv_begin, JobInitialPoints[GetJob()].hp_per_lv_end));
+    SetRandomSP((iLv - 1) * number(JobInitialPoints[GetJob()].sp_per_lv_begin, JobInitialPoints[GetJob()].sp_per_lv_end));
+
+    int iLvl = iLv;
+#ifdef ENABLE_STATUS_MAX_344_POINTS
+    if (iLvl > 0)
+        iLvl -= 1;
+#endif
+    PointChange(POINT_STAT, (MINMAX(1, iLvl, g_iStatusPointGetLevelLimit) * 3) + GetPoint(POINT_LEVEL_STEP) - GetPoint(POINT_STAT));
+
+    ComputePoints();
+
+    PointChange(POINT_HP, GetMaxHP() - GetHP());
+    PointChange(POINT_SP, GetMaxSP() - GetSP());
+
+    PointsPacket();
+
+    LogManager::instance().CharLog(this, 0, "RESET_POINT", "");
+}
+
+void CHARACTER::GiveRandomSkillBook()
+{
+    LPITEM item = AutoGiveItem(50300);
+
+    if (nullptr != item)
+    {
+        extern const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
+        uint32_t dwSkillVnum = 0;
+        if (!number(0, 1))
+            dwSkillVnum = GetRandomSkillVnum(GetJob());
+        else
+            dwSkillVnum = GetRandomSkillVnum();
+        item->SetSocket(0, dwSkillVnum);
+    }
+}
+
+void CHARACTER::ToggleMonsterLog()
+{
+    m_bMonsterLog = !m_bMonsterLog;
+
+    if (m_bMonsterLog)
+    {
+        CHARACTER_MANAGER::instance().RegisterForMonsterLog(this);
+    }
+    else
+    {
+        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+    }
+}
+
+void CHARACTER::SendGreetMessage()
+{
+    auto v = DBManager::instance().GetGreetMessage();
+
+    for (auto it = v.begin(); it != v.end(); ++it)
+    {
+        ChatPacket(CHAT_TYPE_NOTICE, it->c_str());
+    }
+}
+
+void CHARACTER::BeginStateEmpty()
+{
+    MonsterLog("!");
+}
+
+int CHARACTER::ChangeEmpire(uint8_t empire)
+{
+    if (GetEmpire() == empire)
+        return 1;
+
+    char szQuery[1024 + 1];
+    uint32_t dwAID;
+    uint32_t dwPID[4];
+    memset(dwPID, 0, sizeof(dwPID));
+
+    snprintf(szQuery, sizeof(szQuery),
+        "SELECT id, pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+    if (msg->Get()->uiNumRows == 0)
+        return 0;
+
+    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+    str_to_number(dwAID, row[0]);
+    str_to_number(dwPID[0], row[1]);
+    str_to_number(dwPID[1], row[2]);
+    str_to_number(dwPID[2], row[3]);
+    str_to_number(dwPID[3], row[4]);
+
+    for (int i = 0; i < 4; ++i)
+    {
+        snprintf(szQuery, sizeof(szQuery), "SELECT guild_id FROM guild_member%s WHERE pid=%u", get_table_postfix(), dwPID[i]);
+        std::unique_ptr<SQLMsg> guildMsg(DBManager::instance().DirectQuery(szQuery));
+        if (guildMsg->Get()->uiNumRows > 0)
+        {
+            uint32_t dwGuildID = 0;
+            MYSQL_ROW guildRow = mysql_fetch_row(guildMsg->Get()->pSQLResult);
+            str_to_number(dwGuildID, guildRow[0]);
+            if (CGuildManager::instance().FindGuild(dwGuildID) != nullptr)
+                return 2;
+        }
+    }
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (marriage::CManager::instance().IsEngagedOrMarried(dwPID[i]) == true)
+            return 3;
+    }
+
+    snprintf(szQuery, sizeof(szQuery), "UPDATE player_index%s SET empire=%u WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
+        get_table_postfix(), empire, GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+
+    std::unique_ptr<SQLMsg> updateMsg(DBManager::instance().DirectQuery(szQuery));
+    if (updateMsg->Get()->uiAffectedRows <= 0)
+        return 0;
+
+    const entt::entity e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+        emp.value = empire;
+        ++emp.changeCount;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    SetChangeEmpireCount();
+#ifdef ENABLE_BUG_FIXES
+    SetEmpire(empire);
+    UpdatePacket();
+#endif
+    return 999;
+}
+
+int CHARACTER::GetChangeEmpireCount() const
+{
+    char szQuery[1024 + 1];
+    uint32_t dwAID = GetAID();
+
+    if (dwAID == 0)
+        return 0;
+
+    snprintf(szQuery, sizeof(szQuery), "SELECT change_count FROM change_empire WHERE account_id = %u", dwAID);
+    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
+    if (msg->Get()->uiNumRows == 0)
+        return 0;
+
+    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+    uint32_t count = 0;
+    str_to_number(count, row[0]);
+    return count;
+}
+
+void CHARACTER::SetChangeEmpireCount()
+{
+    char szQuery[1024 + 1];
+    uint32_t dwAID = GetAID();
+
+    if (dwAID == 0)
+        return;
+
+    int count = GetChangeEmpireCount();
+    const entt::entity e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+        emp.changeCount = static_cast<uint32_t>(count + 1);
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    if (count == 0)
+    {
+        ++count;
+        snprintf(szQuery, sizeof(szQuery), "INSERT INTO change_empire VALUES(%u, %d, NOW())", dwAID, count);
+    }
+    else
+    {
+        ++count;
+        snprintf(szQuery, sizeof(szQuery), "UPDATE change_empire SET change_count=%d WHERE account_id=%u", count, dwAID);
+    }
+
+    std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
+}
+
+void CHARACTER::MountVnum(uint32_t vnum)
+{
+    if (m_dwMountVnum == vnum)
+        return;
+    if ((m_dwMountVnum != 0) && (vnum != 0))
+        MountVnum(0);
+
+    m_dwMountVnum = vnum;
+    m_dwMountTime = get_dword_time();
+
+    if (m_bIsObserver)
+        return;
+
+    m_posDest.x = m_posStart.x = GetX();
+    m_posDest.y = m_posStart.y = GetY();
+    EncodeInsertPacket(this);
+
+    ENTITY_MAP::iterator it = m_map_view.begin();
+
+    while (it != m_map_view.end())
+    {
+        LPENTITY entity = (it++)->first;
+        EncodeInsertPacket(entity);
+    }
+
+    SetValidComboInterval(0);
+    SetComboSequence(0);
+
+    ComputePoints();
+}
+
+int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
+{
+    CGuild* pGuild = GetRefineGuild();
+    if (pGuild)
+    {
+        if (pGuild == GetGuild())
+            return iCost * iMultiply * 9 / 10;
+
+        LPCHARACTER chRefineNPC = CHARACTER_MANAGER::instance().Find(m_dwRefineNPCVID);
+        if (chRefineNPC && chRefineNPC->GetEmpire() != GetEmpire())
+            return iCost * iMultiply * 3;
+
+        return iCost * iMultiply;
+    }
+    else
+        return iCost;
+}
+
+void CHARACTER::PayRefineFee(int64_t iTotalMoney)
+{
+    int64_t iFee = iTotalMoney / 10;
+    CGuild* pGuild = GetRefineGuild();
+
+    int64_t iRemain = iTotalMoney;
+
+    if (pGuild)
+    {
+        if (pGuild != GetGuild())
+        {
+            pGuild->RequestDepositMoney(this, iFee);
+            iRemain -= iFee;
+        }
+    }
+
+    PointChange(POINT_GOLD, -iRemain);
+}
+
+void CHARACTER::StartDestroyWhenIdleEvent()
+{
+    if (m_pkDestroyWhenIdleEvent)
+        return;
+
+    char_event_info* info = AllocEventInfo<char_event_info>();
+
+    info->ch = this;
+
+    m_pkDestroyWhenIdleEvent = event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300));
 }
 
 void CHARACTER::SetPlayerProto(const TPlayerTable* t)

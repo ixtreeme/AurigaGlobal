@@ -2782,3 +2782,28 @@
   - `CHARACTER::` body count: `67`
 - build: success
 - next: `S11e-5 final PlayerRuntime remainder` or `S11e-1 NetworkSync`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11e-5 final PlayerRuntime remainder`
+- moved:
+  - `ResetPoint`
+  - `GiveRandomSkillBook`
+  - `ToggleMonsterLog`
+  - `SendGreetMessage`
+  - `BeginStateEmpty`
+  - `ChangeEmpire`
+  - `GetChangeEmpireCount`
+  - `SetChangeEmpireCount`
+  - `MountVnum`
+  - `ComputeRefineFee`
+  - `PayRefineFee`
+  - `StartDestroyWhenIdleEvent`
+- note:
+  - helper surface was extended first with `guild_manager.h`, `start_position.h`, `ecs/AIHelpers.hpp`, and the missing ECS component headers for the empire sync branch
+  - the only post-move fixes were renaming the helper call to `AIHelpers::EcsOf(this)` and adding the missing ECS component includes; rollback was not needed
+- after char.cpp Slice S11e-5: `1748`
+- char.cpp status after slice:
+  - line count: `2494`
+  - `CHARACTER::` body count: `55`
+- build: success
+- next: `S11e-1 NetworkSync`, `S11e-2 MovementSystem`, or `S11d-c-4c Initialize`
