@@ -2505,3 +2505,20 @@
   - `CHARACTER::` body count: `107`
 - build: success
 - next: `S11c-3b-3 Acce material/refine branch or another medium runtime batch`
+
+## Phase 8 - Step 8.17 char.cpp rollback note
+- attempted slice:
+  - `S11d-c-1b-b duel flag wrappers`
+  - `GetDuel`, `SetDuel`
+- result:
+  - rolled back to the previous green checkpoint
+- reason:
+  - the line-range cut intersected adjacent packet-broadcast logic and broke block/preprocessor balance around the surrounding section in `char.cpp`
+  - the first failing build produced well over the rollback threshold with cascading local-function and mismatched-block errors
+- current safe checkpoint after rollback:
+  - count: `1803`
+  - `char.cpp` line count: `4686`
+  - `char.cpp` `CHARACTER::` body count: `107`
+- next:
+  - re-attempt `GetDuel` / `SetDuel` only with signature-aware brace matching
+  - or skip directly to another isolated batch such as `SetShopSafebox` / `Acce material-refine` preparation after a fresh helper-surface pass
