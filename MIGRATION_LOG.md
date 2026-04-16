@@ -2768,3 +2768,17 @@
   - `CHARACTER::` body count: `68`
 - build: success
 - next: `S11d-c-4b Destroy` or `S11e-1 NetworkSync`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-4b CHARACTER::Destroy method`
+- moved:
+  - `Destroy`
+- note:
+  - although the method measured above the direct-move threshold, the helper surface was completed first and the body then moved in one pass without a rollback
+  - the only post-move fix was adding `ecs/Registry.hpp` so the existing `EntityFactory::Destroy(g_registry, e)` branch resolves in `PlayerRuntimeSystem.cpp`
+- after char.cpp Slice S11d-c-4b: `1761`
+- char.cpp status after slice:
+  - line count: `2732`
+  - `CHARACTER::` body count: `67`
+- build: success
+- next: `S11e-5 final PlayerRuntime remainder` or `S11e-1 NetworkSync`

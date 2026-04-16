@@ -12,6 +12,8 @@
 #include "../../db.h"
 #include "../../desc_client.h"
 #include "../../dungeon.h"
+#include "../../ecs/EntityFactory.hpp"
+#include "../../ecs/Registry.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
 #include "../../item.h"
@@ -21,16 +23,20 @@
 #include "../../mining.h"
 #include "../../mob_manager.h"
 #include "../../MountSystem.h"
+#include "../../MountInventory.h"
 #include "../../new_offlineshop.h"
 #include "../../New_PetSystem.h"
 #include "../../PetSystem.h"
+#include "../../party.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
+#include "../../safebox.h"
 #include "../../shop.h"
 #include "../../skill_power.h"
 #include "../../target.h"
 #include "../../war_map.h"
 #include "../../wedding.h"
+#include "../../DragonSoul.h"
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
 #ifdef ENABLE_ANTICHEAT
@@ -2582,6 +2588,225 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     default:
         return 0;
     }
+}
+
+void CHARACTER::Destroy()
+{
+    {
+        entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        if (e != entt::null)
+            EntityFactory::Destroy(g_registry, e);
+    }
+
+    CloseMyShop();
+
+    if (m_pkRegen)
+    {
+        if (m_pkDungeon) {
+            if (m_pkDungeon->IsValidRegen(m_pkRegen, regen_id_)) {
+                --m_pkRegen->count;
+            }
+        }
+        else {
+            --m_pkRegen->count;
+        }
+        m_pkRegen = nullptr;
+    }
+
+    if (m_pkDungeon)
+    {
+        SetDungeon(nullptr);
+    }
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (m_mountSystem)
+    {
+        m_mountSystem->Destroy();
+        delete m_mountSystem;
+
+        m_mountSystem = nullptr;
+    }
+
+    if (GetMountVnum())
+    {
+        RemoveAffect(AFFECT_MOUNT);
+        RemoveAffect(AFFECT_MOUNT_BONUS);
+    }
+    HorseSummon(false);
+#endif
+#ifdef __PET_SYSTEM__
+    if (m_petSystem)
+    {
+        m_petSystem->Destroy();
+        delete m_petSystem;
+
+        m_petSystem = nullptr;
+    }
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+    if (m_newpetSystem)
+    {
+        m_newpetSystem->Destroy();
+        delete m_newpetSystem;
+
+        m_newpetSystem = nullptr;
+    }
+#endif
+
+    HorseSummon(false);
+
+    if (GetRider())
+        GetRider()->ClearHorseInfo();
+
+    if (GetDesc())
+    {
+        GetDesc()->BindCharacter(nullptr);
+    }
+
+    if (m_pkExchange)
+        m_pkExchange->Cancel();
+
+    SetVictim(nullptr);
+
+    if (GetShop())
+    {
+        GetShop()->RemoveGuest(this);
+        SetShop(nullptr);
+    }
+
+    ClearStone();
+    ClearSync();
+    ClearTarget();
+
+    if (nullptr == m_pkMobData)
+    {
+        DragonSoul_CleanUp();
+        ClearItem();
+    }
+
+    LPPARTY party = m_pkParty;
+    if (party)
+    {
+        if (party->GetLeaderPID() == GetVID() && !IsPC())
+        {
+            M2_DELETE(party);
+        }
+        else
+        {
+            party->Unlink(this);
+
+            if (!IsPC())
+                party->Quit(GetVID());
+        }
+
+        SetParty(nullptr);
+    }
+
+    if (m_pkMobInst)
+    {
+        M2_DELETE(m_pkMobInst);
+        m_pkMobInst = nullptr;
+    }
+
+    m_pkMobData = nullptr;
+
+    if (m_pkSafebox)
+    {
+        M2_DELETE(m_pkSafebox);
+        m_pkSafebox = nullptr;
+    }
+
+    if (m_pkMall)
+    {
+        M2_DELETE(m_pkMall);
+        m_pkMall = nullptr;
+    }
+
+    for (TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.begin(); it != m_map_buff_on_attrs.end(); it++)
+    {
+        if (nullptr != it->second)
+        {
+            M2_DELETE(it->second);
+        }
+    }
+    m_map_buff_on_attrs.clear();
+
+    m_set_pkChrSpawnedBy.clear();
+
+    StopMuyeongEvent();
+#ifdef ENABLE_NEW_GYEONGGONG_SKILL
+    StopGyeongGongEvent();
+#endif
+    event_cancel(&m_pkWarpNPCEvent);
+    event_cancel(&m_pkRecoveryEvent);
+    event_cancel(&m_pkDeadEvent);
+    event_cancel(&m_pkSaveEvent);
+    event_cancel(&m_pkTimedEvent);
+    event_cancel(&m_pkStunEvent);
+    event_cancel(&m_pkFishingEvent);
+    event_cancel(&m_pkPoisonEvent);
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    event_cancel(&m_pkBleedingEvent);
+#endif
+    event_cancel(&m_pkFireEvent);
+    event_cancel(&m_pkPartyRequestEvent);
+    event_cancel(&m_pkWarpEvent);
+#ifdef ENABLE_NEW_FISHING_SYSTEM
+    event_cancel(&m_pkFishingNewEvent);
+#endif
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    if (m_pkBattlePassStayOnlineEvent)
+    {
+        event_cancel(&m_pkBattlePassStayOnlineEvent);
+        m_pkBattlePassStayOnlineEvent = nullptr;
+    }
+#endif
+
+    event_cancel(&m_pkMiningEvent);
+#ifdef ENABLE_BLOCK_MULTIFARM
+    if (m_pkDropEvent) {
+        event_cancel(&m_pkDropEvent);
+        m_pkDropEvent = nullptr;
+    }
+#endif
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    event_cancel(&m_pkStayOnlineEvent);
+#endif
+
+    for (auto it = m_mapMobSkillEvent.begin(); it != m_mapMobSkillEvent.end(); ++it)
+    {
+        LPEVENT pkEvent = it->second;
+        event_cancel(&pkEvent);
+    }
+    m_mapMobSkillEvent.clear();
+#ifdef __DUNGEON_INFO_SYSTEM__
+    dungeonDamage.clear();
+#endif
+    ClearAffect();
+
+    event_cancel(&m_pkDestroyWhenIdleEvent);
+
+    if (m_pSkillLevels)
+    {
+        M2_DELETE_ARRAY(m_pSkillLevels);
+        m_pSkillLevels = nullptr;
+    }
+
+    if (m_pkMountInventory)
+    {
+        M2_DELETE(m_pkMountInventory);
+        m_pkMountInventory = nullptr;
+    }
+    m_bMountInventoryLoaded = false;
+
+    CEntity::Destroy();
+
+    if (GetSectree())
+        GetSectree()->RemoveEntity(this);
+
+    if (m_bMonsterLog)
+        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
 }
 
 void CHARACTER::SetPlayerProto(const TPlayerTable* t)
