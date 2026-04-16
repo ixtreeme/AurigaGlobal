@@ -1223,6 +1223,30 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 //    false		: not dead yet
 //
 
+// char_battle.cpp slice BB2b1 map helpers moved into CombatSystem.cpp
+
+#ifdef __ENABLE_BERAN_ADDONS_
+bool IsBeranMap(int lMapIndex)
+{
+	int lMinIndex = 208 * 10000, lMaxIndex = 208 * 10000 + 10000;
+	if (((lMapIndex >= lMinIndex) && (lMapIndex < lMaxIndex)) || (lMapIndex == 208))
+		return true;
+
+	return false;
+}
+#endif
+
+#ifdef __ENABLE_SPIDER_ADDONS_
+bool IsSpiderMap(int lMapIndex)
+{
+	int lMinIndex = 217 * 10000, lMaxIndex = 217 * 10000 + 10000;
+	if (((lMapIndex >= lMinIndex) && (lMapIndex < lMaxIndex)) || (lMapIndex == 217))
+		return true;
+
+	return false;
+}
+#endif
+
 // char_battle.cpp slice BB2a helper surface moved into CombatSystem.cpp
 
 static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);

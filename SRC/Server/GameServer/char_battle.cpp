@@ -2755,28 +2755,6 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 }
 
-#ifdef __ENABLE_BERAN_ADDONS_
-bool IsBeranMap(int lMapIndex)
-{
-	int lMinIndex = 208 * 10000, lMaxIndex = 208 * 10000 + 10000;
-	if (((lMapIndex >= lMinIndex) && (lMapIndex < lMaxIndex)) || (lMapIndex == 208))
-		return true;
-
-	return false;
-}
-#endif
-
-#ifdef __ENABLE_SPIDER_ADDONS_
-bool IsSpiderMap(int lMapIndex)
-{
-	int lMinIndex = 217 * 10000, lMaxIndex = 217 * 10000 + 10000;
-	if (((lMapIndex >= lMinIndex) && (lMapIndex < lMaxIndex)) || (lMapIndex == 217))
-		return true;
-
-	return false;
-}
-#endif
-
 bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // returns true if dead
 {
 #ifdef DISABLE_PC_ATTACK_PC_ON_MAPIDEX1

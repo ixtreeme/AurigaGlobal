@@ -1346,3 +1346,12 @@
   - next required approach:
     - split `Damage()` more finely before relocation
     - first extract internal sub-blocks or helper subroutines from `Damage()` instead of cutting the full method body in one pass
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BB2b1:
+  - moved map helpers that `Damage()` depends on:
+    - `IsBeranMap`
+    - `IsSpiderMap`
+- after char_battle.cpp Slice BB2b1: `2160`
+- build: success
+- next: slice BB2b2 (`Damage()` copy-first relocation)
