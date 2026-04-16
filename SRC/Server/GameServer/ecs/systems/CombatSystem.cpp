@@ -12,6 +12,7 @@
 #include "../components/identity_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
+#include "../AIHelpers.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include "../Registry.hpp"
@@ -6838,5 +6839,179 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	dam = dam * (100 - std::min((int64_t)99, pVictim->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
+}
+
+bool CHARACTER::IsAggressive() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+void CHARACTER::SetAggressive()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE);
+	AIHelpers::SetAggressive(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsCoward() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_COWARD) || AIHelpers::IsCoward(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+void CHARACTER::SetCoward()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_COWARD);
+	AIHelpers::SetCoward(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsBerserker() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_BERSERK))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
+		return flags->isBerserk;
+
+	return false;
+}
+
+bool CHARACTER::IsStoneSkinner() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_STONESKIN))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
+		return flags->isStoneSkinner;
+
+	return false;
+}
+
+bool CHARACTER::IsGodSpeeder() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_GODSPEED))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
+		return flags->isGodSpeed;
+
+	return false;
+}
+
+bool CHARACTER::IsDeathBlower() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_DEATHBLOW))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
+		return flags->isDeathBlower;
+
+	return false;
+}
+
+bool CHARACTER::IsReviver() const
+{
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_REVIVE))
+		return true;
+
+	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
+		return flags->isReviver;
+
+	return false;
+}
+
+void CHARACTER::SetNoAttackShinsu()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU);
+	AIHelpers::SetNoAttackShinsu(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackShinsu() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+void CHARACTER::SetNoAttackChunjo()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO);
+	AIHelpers::SetNoAttackChunjo(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackChunjo() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+void CHARACTER::SetNoAttackJinno()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO);
+	AIHelpers::SetNoAttackJinno(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsNoAttackJinno() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+void CHARACTER::SetAttackMob()
+{
+	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB);
+	AIHelpers::SetAttackMob(AIHelpers::EcsOf(this), true);
+}
+
+bool CHARACTER::IsAttackMob() const
+{
+	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+}
+
+int CHARACTER::GetHPPct() const
+{
+	if (GetMaxHP() <= 0)
+		return 0;
+
+	return static_cast<int>((static_cast<int64_t>(GetHP()) * 100) / static_cast<int64_t>(GetMaxHP()));
+}
+
+bool CHARACTER::IsBerserk() const
+{
+	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsBerserk : false;
+}
+
+void CHARACTER::SetBerserk(bool mode)
+{
+	if (m_pkMobInst != nullptr)
+		m_pkMobInst->m_IsBerserk = mode;
+}
+
+bool CHARACTER::IsGodSpeed() const
+{
+	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsGodSpeed : false;
+}
+
+void CHARACTER::SetGodSpeed(bool mode)
+{
+	if (m_pkMobInst == nullptr)
+		return;
+
+	m_pkMobInst->m_IsGodSpeed = mode;
+
+	if (mode == true)
+		SetPoint(POINT_ATT_SPEED, 250);
+	else
+		SetPoint(POINT_ATT_SPEED, m_pkMobData->m_table.sAttackSpeed);
+}
+
+bool CHARACTER::IsDeathBlow() const
+{
+	return number(1, 100) <= m_pkMobData->m_table.bDeathBlowPoint;
+}
+
+bool CHARACTER::IsRevive() const
+{
+	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsRevive : false;
+}
+
+void CHARACTER::SetRevive(bool mode)
+{
+	if (m_pkMobInst != nullptr)
+		m_pkMobInst->m_IsRevive = mode;
 }
 

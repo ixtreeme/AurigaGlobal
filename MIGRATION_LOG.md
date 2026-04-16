@@ -2029,3 +2029,135 @@
   - `CHARACTER::` body count: `236`
 - build: success
 - next: `S11a combat + AI helper audit`
+
+## Phase 8 - Step 8.17 char.cpp S11 audit
+- status: `planned`
+- current baseline:
+  - global `LPCHARACTER|CHARACTER::` count: `1934`
+  - `char.cpp` line count: `7369`
+  - `char.cpp` `CHARACTER::` body count: `236`
+- categorized remaining bodies:
+  - `S11a CombatSystem / AI / combat wrappers`
+    - `SetStone`, `ClearStone` overloads, `ClearTarget`, `SetTarget`, `BroadcastTargetPacket`, `CheckTarget`, `Return`, `Follow`
+    - `IsChangeAttackPosition`, `ReviveInvisible`
+    - AI flag wrappers:
+      - `IsAggressive`, `SetAggressive`
+      - `IsCoward`, `SetCoward`
+      - `IsBerserker`, `IsStoneSkinner`, `IsGodSpeeder`, `IsDeathBlower`, `IsReviver`
+      - `CowardEscape`
+      - `SetNoAttackShinsu`, `IsNoAttackShinsu`
+      - `SetNoAttackChunjo`, `IsNoAttackChunjo`
+      - `SetNoAttackJinno`, `IsNoAttackJinno`
+      - `SetAttackMob`, `IsAttackMob`
+    - combat state / mob-instance helpers:
+      - `GetHPPct`
+      - `IsBerserk`, `SetBerserk`
+      - `IsGodSpeed`, `SetGodSpeed`
+      - `IsDeathBlow`
+      - `IsRevive`, `SetRevive`
+      - combo/chat counters:
+        - `SetComboSequence`, `GetComboSequence`
+        - `SetLastComboTime`, `GetLastComboTime`
+        - `SetValidComboInterval`, `GetValidComboInterval`
+        - `GetComboIndex`, `IncreaseComboHackCount`, `ResetComboHackCount`
+        - `SkipComboAttackByTime`, `GetSkipComboAttackByTime`
+        - `ResetChatCounter`, `IncreaseChatCounter`, `GetChatCounter`
+  - `S11b AffectSystem / status / polymorph`
+    - `SetPolymorph`, `GetPolymorphPower`
+    - `SetInvincible`, `GetInvincible`
+    - `IncreaseMobHP`, `IncreaseMobRigHP`
+    - remaining regen / recover / status-affect wrappers discovered during sweep
+  - `S11c ActivitySystem / PlayerRuntimeSystem subsystem helpers`
+    - mining / fishing wrappers:
+      - `mining_take`, `mining_cancel`, `mining`, `fishing`, `fishing_take`
+    - battle pass / offline message / currency / rune:
+      - `EnsureFreeBattlePassActive`, `LoadBattlePass`, `CancelStayOnlineEvent`
+      - `HasBattlePassBoost`, `GetBattlePassAdjustedTotal`, `ApplyBattlePassBoostRecalc`
+      - `GetMissionProgress`, `IsCompletedMission`, `UpdateMissionProgress`
+      - `GetBattlePassId`, `GetSecondsTillNextMonth`
+      - `SendOfflineMessage`, `ReadOfflineMessages`
+      - `GetRuneEffect`, `GetVoteCoin`, `SetVoteCoin`, `GetDragonCoin`, `SetDragonCoin`
+      - `SetProtectTime`, `GetProtectTime`
+    - acce / inventory edit / soul-item helpers:
+      - `OpenAcce`, `CloseAcce`, `ClearAcceMaterials`, `AcceIsSameGrade`
+      - `GetAcceCombinePrice`, `CheckEmptyMaterialSlot`, `GetAcceCombineResult`
+      - `AddAcceMaterial`, `RemoveAcceMaterial`, `CanRefineAcceMaterials`
+      - `RefineAcceMaterials`, `CleanAcceAttr`
+      - `CanTakeInventoryItem`, `EditMyInven`, `EditMyExtraInven`, `Update_Inven`
+      - `GetSoulItemDamage`, `SetSkillColor`
+  - `S11d PlayerRuntimeSystem / identity / desc / runtime getters-setters`
+    - lifecycle/session-owned:
+      - `Initialize`, `Create`, `Destroy`, `DestroyPvP`
+      - `RestartAtSamePos`, `SetPosition`, `ResetPlayTime`, `MonsterLog`, `ChatPacket`
+      - `StartStateMachine`, `StopStateMachine`, `UpdateStateMachine`, `SetNextStatePulse`, `UpdateCharacter`
+      - `SetShop`, `SetExchange`, `SetDungeon`, `SetWarMap`, `SetWeddingMap`, `SetRegen`
+      - `OnIdle`, `OnMove`, `OnClick`
+    - identity / proto / mob table:
+      - `SetPlayerProto`, `SetProto`, `GetMobTable`, `IsRaceFlag`
+      - `GetMobDamageMin`, `GetMobDamageMax`, `GetMobDamageMultiply`
+      - `GetMobDropItemVnum`, `IsSummonMonster`, `GetSummonVnum`
+      - `GetPolymorphItemVnum`, `GetMonsterDrainSPPoint`, `GetMobRank`
+      - `GetMobSize`, `GetMobAttackRange`, `GetMobBattleType`
+      - `SetPart`, `GetPart`, `GetOriginalPart`
+      - `GetGMLevel`, `SetGMLevel`, `IsGM`
+      - quest / block / npc / duel / partner:
+        - `SetQuestNPCID`, `GetQuestNPC`, `SetQuestItemPtr`, `ClearQuestItemPtr`, `GetQuestItemPtr`
+        - `GetDungeonForce`, `SetBlockMode`, `SetBlockModeForce`, `IsGuardNPC`
+        - `GetQuestFlag`, `SetQuestFlag`
+        - `GetDuel`, `SetDuel`, `GetMarryPartner`, `SetMarryPartner`
+      - misc runtime:
+        - `EffectPacket`, `SpecificEffectPacket`, `SendEquipment`, `ConfirmWithMsg`
+        - `GetPremiumRemainSeconds`, `IsHack`, `Say`
+        - `UpdateDepositPulse`, `CanDeposit`
+        - `GetNextExp`, `PetGetNextExp`
+        - `GetRankPoints`, `SetRankPoints`, `RankingSubcategory`
+        - `GetSkillPowerByLevel`, `SetShopSafebox`
+        - `SwitchChannel`, `StartChannelSwitch`
+        - `GetLang`, `BlockProcessed`, `BlockDrop`, `UnblockDrop`, `SetDropStatus`
+  - `S11e SessionSystem / MovementSystem / MountSystem / final remainder`
+    - packet/view/session wrappers:
+      - `EncodeInsertPacket`, `EncodeRemovePacket`, `FindCharacterInView`
+      - `SetSyncOwner`, `ClearSync`, `IsSyncOwner`
+      - `BuildUpdatePartyPacket`, `GetLeadershipSkillLevel`
+      - `SetNowWalking`, `StartStaminaConsume`, `StopStaminaConsume`
+      - `IsStaminaConsume`, `IsStaminaHalfConsume`, `ResetStopTime`, `GetStopTime`
+      - `ResetPoint`, `GiveRandomSkillBook`, `ToggleMonsterLog`, `SendGreetMessage`, `BeginStateEmpty`
+      - `ChangeEmpire`, `GetChangeEmpireCount`, `SetChangeEmpireCount`, `GetAID`
+      - `DetermineDropMetinStone`, `CanSummon`, `MountVnum`, `SyncPacket`
+      - `ComputeRefineFee`, `PayRefineFee`, `GoHome`, `StartDestroyWhenIdleEvent`
+      - `GetMountCounter`, `ResetMountCounter`, `IncreaseMountCounter`, `IsRiding`
+      - `MountSummon`, `MountUnsummon`, `CheckMount`, `IsRidingMount`
+      - `UpdatePetSkin`, `GetPetSkinVnum`, `UpdateMountSkin`, `GetMountSkinVnum`
+      - `ComputeMountInventoryBonuses`
+- next planned slice:
+  - `S11a CombatSystem / AI / combat wrappers`
+
+## Phase 8 - Step 8.17 char.cpp -> CombatSystem (continued)
+- completed slice `S11a combat + AI helper wrappers`
+- moved:
+  - AI flag wrappers:
+    - `IsAggressive`, `SetAggressive`
+    - `IsCoward`, `SetCoward`
+    - `IsBerserker`, `IsStoneSkinner`, `IsGodSpeeder`, `IsDeathBlower`, `IsReviver`
+    - `SetNoAttackShinsu`, `IsNoAttackShinsu`
+    - `SetNoAttackChunjo`, `IsNoAttackChunjo`
+    - `SetNoAttackJinno`, `IsNoAttackJinno`
+    - `SetAttackMob`, `IsAttackMob`
+  - mob-instance combat wrappers:
+    - `GetHPPct`
+    - `IsBerserk`, `SetBerserk`
+    - `IsGodSpeed`, `SetGodSpeed`
+    - `IsDeathBlow`
+    - `IsRevive`, `SetRevive`
+- helper surface:
+  - `CombatSystem.cpp`
+    - `../AIHelpers.hpp`
+- note:
+  - this slice intentionally skipped the larger `CowardEscape`, target, stone and follow/return bodies to keep the first S11 combat batch preprocessor-safe
+  - all moved methods built green on the first post-removal build without rollback
+- after char.cpp Slice S11a: `1909`
+- char.cpp status after slice:
+  - line count: `7168`
+  - `CHARACTER::` body count: `211`
+- build: success
+- next: `S11d runtime/identity trivial accessors audit`
