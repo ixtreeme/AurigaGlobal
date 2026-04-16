@@ -2630,3 +2630,18 @@
   - `CHARACTER::` body count: `100`
 - build: success
 - next: `S11d-c-2b SetPart/GetPart/GetOriginalPart`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-2b part accessors`
+- moved:
+  - `SetPart`
+  - `GetPart`
+  - `GetOriginalPart`
+- note:
+  - kept the full costume-hide / stole / weapon-costume branches together so the returned visual-part logic stays in one translation unit
+- after char.cpp Slice S11d-c-2b: `1784`
+- char.cpp status after slice:
+  - line count: `4386`
+  - `CHARACTER::` body count: `97`
+- build: success
+- next: `S11d-c-2c SetPlayerProto` and `S11d-c-2d SetProto`
