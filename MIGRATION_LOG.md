@@ -1894,3 +1894,37 @@
   - `CHARACTER::` body count: `271`
 - build: success
 - next: `S7d SessionSystem disconnect path`
+
+## Phase 8 - Step 8.17 char.cpp -> SessionSystem (continued)
+- completed slice `S7d SessionSystem (disconnect path)`
+- moved:
+  - `Disconnect`
+- helper surface:
+  - `arena.h`
+  - `guild.h`
+  - `messenger_manager.h`
+  - `pcbang.h`
+  - `party.h`
+  - `pvp.h`
+  - `shop.h`
+  - `target.h`
+  - `OrcsDungeon.h`
+  - `TritonTempleDungeon.h`
+  - `ValentineDungeon.h`
+  - `RuneDungeon.h`
+  - `PyramidDungeonRazor93.h`
+  - `NightmareDungeonRazor93.h`
+  - `Halloween2022Dungeon.h`
+  - `VikingDungeon.h`
+  - `EasterDungeon.h`
+  - `new_offlineshop.h`
+  - `new_offlineshop_manager.h`
+- note:
+  - the helper-surface pass built green before the body move
+  - the first post-move build failed below rollback threshold because `SessionSystem.cpp` still only had forward declarations for `CShop` and `CParty`; adding `shop.h` and `party.h` fixed the slice in-place
+- after char.cpp Slice S7d: `1971`
+- char.cpp status after slice:
+  - line count: `6666`
+  - `CHARACTER::` body count: `270`
+- build: success
+- next: `S10 SessionSystem safebox/mall batch audit`

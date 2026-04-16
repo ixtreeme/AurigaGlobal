@@ -9,21 +9,44 @@
 #include "../../db.h"
 #include "../../desc.h"
 #include "../../desc_client.h"
+#include "../../arena.h"
+#include "../../guild.h"
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../log.h"
 #include "../../map_location.h"
 #include "../../marriage.h"
+#include "../../messenger_manager.h"
 #include "../../mob_manager.h"
 #include "../../packet.h"
+#include "../../pcbang.h"
 #include "../../p2p.h"
+#include "../../party.h"
+#include "../../pvp.h"
 #include "../../questmanager.h"
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
+#include "../../shop.h"
 #include "../../start_position.h"
+#include "../../target.h"
 #include "../../utils.h"
 #ifdef ENABLE_BATTLE_PASS
 #include "../../battle_pass.h"
+#endif
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+#include "../../OrcsDungeon.h"
+#include "../../TritonTempleDungeon.h"
+#include "../../ValentineDungeon.h"
+#include "../../RuneDungeon.h"
+#include "../../PyramidDungeonRazor93.h"
+#include "../../NightmareDungeonRazor93.h"
+#include "../../Halloween2022Dungeon.h"
+#include "../../VikingDungeon.h"
+#include "../../EasterDungeon.h"
+#endif
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+#include "../../new_offlineshop.h"
+#include "../../new_offlineshop_manager.h"
 #endif
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
@@ -860,4 +883,145 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 #endif
 
     return true;
+}
+
+void CHARACTER::Disconnect(const char* c_pszReason)
+{
+    assert(GetDesc() != NULL);
+
+    sys_log(0, "DISCONNECT: %s (%s)", GetName(), c_pszReason ? c_pszReason : "unset");
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    COrcsDungeon::instance().OnPlayerDisconnect(this);
+    CTritonTempleDungeon::instance().OnPlayerDisconnect(this);
+    CValentineDungeon::instance().OnPlayerDisconnect(this);
+    CRuneDungeon::instance().OnPlayerDisconnect(this);
+    CPyramidDungeonRazor93::instance().OnPlayerDisconnect(this);
+    CNightmareDungeonRazor93::instance().OnPlayerDisconnect(this);
+    CHalloween2022Dungeon::instance().OnPlayerDisconnect(this);
+    CVikingDungeon::instance().OnPlayerDisconnect(this);
+    CEasterDungeon::instance().OnPlayerDisconnect(this);
+#endif
+    if (GetShop())
+    {
+        GetShop()->RemoveGuest(this);
+        SetShop(nullptr);
+    }
+
+    if (GetArena() != nullptr)
+    {
+        GetArena()->OnDisconnect(GetPlayerID());
+    }
+
+    if (GetParty() != nullptr)
+    {
+        GetParty()->UpdateOfflineState(GetPlayerID());
+    }
+
+    marriage::CManager::instance().Logout(this);
+
+    TPacketGGLogout p;
+    p.bHeader = HEADER_GG_LOGOUT;
+    strlcpy(p.szName, GetName(), sizeof(p.szName));
+    P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogout));
+    LogManager::instance().CharLog(this, 0, "LOGOUT", "");
+
+#ifdef ENABLE_PCBANG_FEATURE
+    {
+        int32_t playTime = GetRealPoint(POINT_PLAYTIME) - m_dwLoginPlayTime;
+        LogManager::instance().LoginLog(false, GetDesc()->GetAccountTable().id, GetPlayerID(), GetLevel(), GetJob(), playTime);
+
+        if (0)
+            CPCBangManager::instance().Log(GetDesc()->GetHostName(), GetPlayerID(), playTime);
+    }
+#endif
+
+    if (m_pWarMap)
+        SetWarMap(nullptr);
+
+    if (m_pWeddingMap)
+        SetWeddingMap(nullptr);
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+    offlineshop::GetManager().RemoveSafeboxFromCache(GetPlayerID());
+    offlineshop::GetManager().RemoveGuestFromShops(this);
+
+    if (m_pkAuctionGuest)
+        m_pkAuctionGuest->RemoveGuest(this);
+
+    if (GetOfflineShop())
+        SetOfflineShop(nullptr);
+
+    SetShopSafebox(nullptr);
+
+    m_pkAuction = nullptr;
+    m_pkAuctionGuest = nullptr;
+    m_bIsLookingOfflineshopOfferList = false;
+#endif
+
+    if (GetGuild())
+        GetGuild()->LogoutMember(this);
+
+    quest::CQuestManager::instance().LogoutPC(this);
+
+#ifdef ENABLE_PVP_ADVANCED
+    DestroyPvP();
+#endif
+
+    if (GetParty())
+        GetParty()->Unlink(this);
+
+    if (IsStun() || IsDead())
+    {
+        DeathPenalty(0);
+        PointChange(POINT_HP, 50 - GetHP());
+    }
+
+    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(this);
+
+    if (!CHARACTER_MANAGER::instance().FlushDelayedSave(this))
+        SaveReal();
+
+    FlushDelayedSaveItem();
+
+    SaveAffect();
+    m_bIsLoadedAffect = false;
+
+#ifdef ENABLE_BATTLE_PASS
+    auto it = m_listBattlePass.begin();
+    while (it != m_listBattlePass.end())
+    {
+        TPlayerBattlePassMission* pkMission = *it++;
+
+        if (pkMission->bIsUpdated)
+            db_clientdesc->DBPacket(HEADER_GD_SAVE_BATTLE_PASS, 0, pkMission, sizeof(TPlayerBattlePassMission));
+
+        if (pkMission)
+            M2_DELETE(pkMission);
+    }
+    m_bIsLoadedBattlePass = false;
+#endif
+
+    m_bSkipSave = true;
+
+    quest::CQuestManager::instance().DisconnectPC(this);
+
+    CloseSafebox();
+    CloseMall();
+
+    CPVPManager::instance().Disconnect(this);
+    CTargetManager::instance().Logout(GetPlayerID());
+    MessengerManager::instance().Logout(GetName());
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (GetMountVnum())
+    {
+        RemoveAffect(AFFECT_MOUNT);
+        RemoveAffect(AFFECT_MOUNT_BONUS);
+    }
+#endif
+
+    if (GetDesc())
+        GetDesc()->BindCharacter(nullptr);
+
+    M2_DESTROY_CHARACTER(this);
 }
