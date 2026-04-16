@@ -17,8 +17,12 @@
 #include "../../item_manager.h"
 #include "../../log.h"
 #include "../../marriage.h"
+#include "../../mining.h"
 #include "../../mob_manager.h"
+#include "../../MountSystem.h"
 #include "../../new_offlineshop.h"
+#include "../../New_PetSystem.h"
+#include "../../PetSystem.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
 #include "../../skill_power.h"
@@ -2573,4 +2577,164 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     default:
         return 0;
     }
+}
+
+void CHARACTER::SetPlayerProto(const TPlayerTable* t)
+{
+    if (!GetDesc() || !*GetDesc()->GetHostName())
+        sys_err("cannot get desc or hostname");
+    else
+        SetGMLevel();
+
+    m_bCharType = CHAR_TYPE_PC;
+
+    m_dwPlayerID = t->id;
+
+    m_iAlignment = t->lAlignment;
+    m_iRealAlignment = t->lAlignment;
+
+    m_points.voice = t->voice;
+
+    m_points.skill_group = t->skill_group;
+
+    m_pointsInstant.bBasePart = t->part_base;
+    SetPart(PART_HAIR, t->parts[PART_HAIR]);
+#ifdef ENABLE_ACCE_SYSTEM
+    SetPart(PART_ACCE, t->parts[PART_ACCE]);
+#endif
+
+    m_points.iRandomHP = t->sRandomHP;
+    m_points.iRandomSP = t->sRandomSP;
+
+    if (m_pSkillLevels) {
+        M2_DELETE_ARRAY(m_pSkillLevels);
+    }
+
+    m_pSkillLevels = M2_NEW TPlayerSkill[SKILL_MAX_NUM];
+    memcpy(m_pSkillLevels, t->skills, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+#ifdef ENABLE_BATTLE_PASS
+    m_dwBattlePassEndTime = t->dwBattlePassEndTime;
+#endif
+
+    if (t->lMapIndex >= 10000)
+    {
+        m_posWarp.x = t->lExitX;
+        m_posWarp.y = t->lExitY;
+        m_lWarpMapIndex = t->lExitMapIndex;
+    }
+
+    SetRealPoint(POINT_PLAYTIME, t->playtime);
+    m_dwLoginPlayTime = t->playtime;
+    SetRealPoint(POINT_ST, t->st);
+    SetRealPoint(POINT_HT, t->ht);
+    SetRealPoint(POINT_DX, t->dx);
+    SetRealPoint(POINT_IQ, t->iq);
+
+    SetPoint(POINT_ST, t->st);
+    SetPoint(POINT_HT, t->ht);
+    SetPoint(POINT_DX, t->dx);
+    SetPoint(POINT_IQ, t->iq);
+
+    SetPoint(POINT_STAT, t->stat_point);
+    SetPoint(POINT_SKILL, t->skill_point);
+    SetPoint(POINT_SUB_SKILL, t->sub_skill_point);
+    SetPoint(POINT_HORSE_SKILL, t->horse_skill_point);
+
+    SetPoint(POINT_STAT_RESET_COUNT, t->stat_reset_count);
+
+    SetPoint(POINT_LEVEL_STEP, t->level_step);
+    SetRealPoint(POINT_LEVEL_STEP, t->level_step);
+
+    SetRace(t->job);
+
+    SetLevel(t->level);
+    SetExp(t->exp);
+    SetGold(t->gold);
+#ifdef ENABLE_GAYA_SYSTEM
+    SetGaya(t->gaya);
+#endif
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    Set_Inventory_Point(t->envanter);
+#endif
+
+    SetMapIndex(t->lMapIndex);
+    SetXYZ(t->x, t->y, t->z);
+
+    ComputePoints();
+
+    SetHP(t->hp);
+    SetSP(t->sp);
+    SetStamina(t->stamina);
+
+#ifndef ENABLE_GM_FLAG_IF_TEST_SERVER
+    if (!test_server)
+#endif
+    {
+#ifdef ENABLE_GM_FLAG_FOR_LOW_WIZARD
+        if (GetGMLevel() > GM_PLAYER)
+#else
+        if (GetGMLevel() > GM_LOW_WIZARD)
+#endif
+        {
+            m_afAffectFlag.Set(AFF_YMIR);
+            m_bPKMode = PK_MODE_PROTECT;
+        }
+    }
+
+    if (GetLevel() < PK_PROTECT_LEVEL)
+        m_bPKMode = PK_MODE_PROTECT;
+
+    m_stMobile = t->szMobile;
+
+    SetHorseData(t->horse);
+
+    if (GetHorseLevel() > 0)
+        UpdateHorseDataByLogoff(t->logoff_interval);
+
+    memcpy(m_aiPremiumTimes, t->aiPremiumTimes, sizeof(t->aiPremiumTimes));
+
+    m_dwLogOffInterval = t->logoff_interval;
+
+    sys_log(0, "PLAYER_LOAD: %s PREMIUM %d %d, LOGGOFF_INTERVAL %u PTR: %p", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, this);
+
+    if (GetGMLevel() != GM_PLAYER)
+    {
+        LogManager::instance().CharLog(this, GetGMLevel(), "GM_LOGIN", "");
+        sys_log(0, "GM_LOGIN(gmlevel=%d, name=%s(%d), pos=(%d, %d)", GetGMLevel(), GetName(), GetPlayerID(), GetX(), GetY());
+    }
+
+#ifdef ENABLE_RANKING
+    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
+        m_lRankPoints[i] = t->lRankPoints[i];
+#endif
+
+#ifdef __PET_SYSTEM__
+    if (m_petSystem)
+    {
+        m_petSystem->Destroy();
+        delete m_petSystem;
+    }
+
+    m_petSystem = M2_NEW CPetSystem(this);
+#endif
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (m_mountSystem)
+    {
+        m_mountSystem->Destroy();
+        delete m_mountSystem;
+    }
+
+    m_mountSystem = M2_NEW CMountSystem(this);
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+    if (m_newpetSystem)
+    {
+        m_newpetSystem->Destroy();
+        delete m_newpetSystem;
+    }
+
+    m_newpetSystem = M2_NEW CNewPetSystem(this);
+#endif
 }

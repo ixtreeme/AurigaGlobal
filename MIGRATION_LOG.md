@@ -2645,3 +2645,17 @@
   - `CHARACTER::` body count: `97`
 - build: success
 - next: `S11d-c-2c SetPlayerProto` and `S11d-c-2d SetProto`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-2c SetPlayerProto`
+- moved:
+  - `SetPlayerProto`
+- note:
+  - helper surface was extended first with `mining.h`, `PetSystem.h`, `MountSystem.h`, and `New_PetSystem.h`
+  - measurement was below the copy-first threshold, so the method was moved directly after the helper-surface build passed
+- after char.cpp Slice S11d-c-2c: `1783`
+- char.cpp status after slice:
+  - line count: `4222`
+  - `CHARACTER::` body count: `96`
+- build: success
+- next: `S11d-c-2d SetProto`
