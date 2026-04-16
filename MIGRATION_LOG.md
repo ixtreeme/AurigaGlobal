@@ -3030,3 +3030,24 @@
 - after char.cpp DELETED: `1658`
 - build: success
 - next: `char.h` cleanup and deletion
+
+## Phase 8 - char.h deletion attempt
+- result: rolled back
+- attempted action:
+  - deleted `SRC/Server/GameServer/char.h`
+  - rebuilt `GameServer`
+- blocker:
+  - the first rebuild produced well over the rollback threshold with missing-header failures across roughly the full server surface, including gameplay units, quest bindings, dungeon code, ECS systems, and shared component headers
+  - this confirms `char.h` is still the live owning interface for the full `CHARACTER` class, not just an `LPCHARACTER` typedef/include shim
+  - a safe deletion now requires a dedicated interface-splitting pass rather than batch include replacement
+- rollback:
+  - restored `SRC/Server/GameServer/char.h`
+  - build returned to green
+- status:
+  - `char.cpp`: deleted
+  - `char.h`: retained
+  - Phase 8 cpp-body migration: complete
+  - Phase 8 header deletion: deferred
+- next:
+  - split `char.h` into forward-decl / interface layers in a dedicated follow-up pass
+  - replace broad `#include "char.h"` usage incrementally before re-attempting deletion
