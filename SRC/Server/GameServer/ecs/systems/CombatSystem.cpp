@@ -7096,3 +7096,365 @@ uint8_t CHARACTER::GetChatCounter() const
 	return m_bChatCounter;
 }
 
+void CHARACTER::SetStone(LPCHARACTER pkChrStone)
+{
+	m_pkChrStone = pkChrStone;
+
+	if (m_pkChrStone)
+	{
+		if (!pkChrStone->m_set_pkChrSpawnedBy.contains(this))
+			pkChrStone->m_set_pkChrSpawnedBy.insert(this);
+	}
+}
+
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+struct FuncDeadSpawnedByStone
+{
+	LPCHARACTER m_pkKiller;
+
+	FuncDeadSpawnedByStone(LPCHARACTER pkKiller)
+		: m_pkKiller(pkKiller)
+	{
+	}
+
+	void operator () (LPCHARACTER ch)
+	{
+		if (m_pkKiller && m_pkKiller->IsPC())
+			ch->RegisterDamageForExp(m_pkKiller, 1);
+
+		ch->Dead(nullptr);
+		ch->SetStone(nullptr);
+	}
+};
+#else
+struct FuncDeadSpawnedByStone
+{
+	void operator () (LPCHARACTER ch)
+	{
+		ch->Dead(nullptr);
+		ch->SetStone(nullptr);
+	}
+};
+#endif
+
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+void CHARACTER::ClearStone(LPCHARACTER pkKiller)
+{
+	if (!m_set_pkChrSpawnedBy.empty())
+	{
+		FuncDeadSpawnedByStone f(pkKiller);
+		std::for_each(m_set_pkChrSpawnedBy.begin(), m_set_pkChrSpawnedBy.end(), f);
+		m_set_pkChrSpawnedBy.clear();
+	}
+
+	if (!m_pkChrStone)
+		return;
+
+	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
+	m_pkChrStone = nullptr;
+}
+#else
+void CHARACTER::ClearStone()
+{
+	if (!m_set_pkChrSpawnedBy.empty())
+	{
+		FuncDeadSpawnedByStone f;
+		std::for_each(m_set_pkChrSpawnedBy.begin(), m_set_pkChrSpawnedBy.end(), f);
+		m_set_pkChrSpawnedBy.clear();
+	}
+
+	if (!m_pkChrStone)
+		return;
+
+	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
+	m_pkChrStone = nullptr;
+}
+#endif
+
+void CHARACTER::ClearTarget()
+{
+	if (m_pkChrTarget)
+	{
+		m_pkChrTarget->m_set_pkChrTargetedBy.erase(this);
+		m_pkChrTarget = nullptr;
+	}
+
+	TPacketGCTarget p;
+
+	p.header = HEADER_GC_TARGET;
+	p.dwVID = 0;
+	p.bHPPercent = 0;
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+	p.iMinHP = 0;
+	p.iMaxHP = 0;
+#endif
+
+	CHARACTER_SET::iterator it = m_set_pkChrTargetedBy.begin();
+
+	while (it != m_set_pkChrTargetedBy.end())
+	{
+		LPCHARACTER pkChr = *(it++);
+		pkChr->m_pkChrTarget = nullptr;
+
+		if (!pkChr->GetDesc())
+		{
+			sys_err("%s %p does not have desc", pkChr->GetName(), get_pointer(pkChr));
+			abort();
+		}
+
+		pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+	}
+
+	m_set_pkChrTargetedBy.clear();
+}
+
+void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
+{
+	if (m_pkChrTarget == pkChrTarget)
+		return;
+
+	if (m_pkChrTarget)
+		m_pkChrTarget->m_set_pkChrTargetedBy.erase(this);
+
+	m_pkChrTarget = pkChrTarget;
+
+	TPacketGCTarget p;
+	p.header = HEADER_GC_TARGET;
+
+	if (m_pkChrTarget)
+	{
+		m_pkChrTarget->m_set_pkChrTargetedBy.insert(this);
+		p.dwVID = m_pkChrTarget->GetVID();
+
+#ifdef __VIEW_TARGET_PLAYER_HP__
+		if ((m_pkChrTarget->GetMaxHP() <= 0))
+		{
+			p.bHPPercent = 0;
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+			p.iMinHP = 0;
+			p.iMaxHP = 0;
+#endif
+		}
+		else if (m_pkChrTarget->IsPC() && !m_pkChrTarget->IsPolymorphed())
+		{
+			p.bHPPercent = MINMAX(0, m_pkChrTarget->GetHPPct(), 100);
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+			p.iMinHP = m_pkChrTarget->GetHP();
+			p.iMaxHP = m_pkChrTarget->GetMaxHP();
+#endif
+		}
+#else
+		if ((m_pkChrTarget->IsPC() && !m_pkChrTarget->IsPolymorphed()) || (m_pkChrTarget->GetMaxHP() <= 0))
+			p.bHPPercent = 0;
+#endif
+		else
+		{
+			if (m_pkChrTarget->GetRaceNum() == 20101 ||
+				m_pkChrTarget->GetRaceNum() == 20102 ||
+				m_pkChrTarget->GetRaceNum() == 20103 ||
+				m_pkChrTarget->GetRaceNum() == 20104 ||
+				m_pkChrTarget->GetRaceNum() == 20105 ||
+				m_pkChrTarget->GetRaceNum() == 20106 ||
+				m_pkChrTarget->GetRaceNum() == 20107 ||
+				m_pkChrTarget->GetRaceNum() == 20108 ||
+				m_pkChrTarget->GetRaceNum() == 20109)
+			{
+				LPCHARACTER owner = m_pkChrTarget->GetVictim();
+
+				if (owner)
+				{
+					int iHorseHealth = owner->GetHorseHealth();
+					int iHorseMaxHealth = owner->GetHorseMaxHealth();
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+					if (iHorseMaxHealth)
+					{
+						p.bHPPercent = MINMAX(0, iHorseHealth * 100 / iHorseMaxHealth, 100);
+						p.iMinHP = 100;
+						p.iMaxHP = 100;
+					}
+					else
+					{
+						p.bHPPercent = 100;
+						p.iMinHP = 100;
+						p.iMaxHP = 100;
+					}
+				}
+				else
+				{
+					p.bHPPercent = 100;
+					p.iMinHP = 100;
+					p.iMaxHP = 100;
+				}
+			}
+			else
+			{
+				if (m_pkChrTarget->GetMaxHP() <= 0)
+				{
+					p.bHPPercent = 0;
+					p.iMinHP = 0;
+					p.iMaxHP = 0;
+				}
+				else
+				{
+					p.bHPPercent = std::min((m_pkChrTarget->GetHP() * 100) / m_pkChrTarget->GetMaxHP(), (int64_t)100);
+					p.iMinHP = m_pkChrTarget->GetHP();
+					p.iMaxHP = m_pkChrTarget->GetMaxHP();
+				}
+			}
+		}
+	}
+	else
+	{
+		p.dwVID = 0;
+		p.bHPPercent = 0;
+		p.iMinHP = 0;
+		p.iMaxHP = 0;
+	}
+#else
+					if (iHorseMaxHealth)
+						p.bHPPercent = MINMAX(0, iHorseHealth * 100 / iHorseMaxHealth, 100);
+
+					else
+						p.bHPPercent = 100;
+}
+				else
+					p.bHPPercent = 100;
+			}
+			else
+			{
+				if (m_pkChrTarget->GetMaxHP() <= 0)
+					p.bHPPercent = 0;
+				else
+					p.bHPPercent = MINMAX(0, (m_pkChrTarget->GetHP() * 100) / m_pkChrTarget->GetMaxHP(), 100);
+			}
+		}
+	}
+	else
+	{
+		p.dwVID = 0;
+		p.bHPPercent = 0;
+	}
+#endif
+#ifdef ELEMENT_TARGET
+	p.bElement = 0;
+	if (m_pkChrTarget) {
+		if (m_pkChrTarget->IsPC()) {
+			LPITEM item = m_pkChrTarget->GetWear(WEAR_PENDANT);
+			if (item) {
+				uint32_t vnum = item->GetVnum();
+				if (vnum >= 10750 && vnum <= 10950) {
+					p.bElement = 1;
+				}
+				else if (vnum >= 9600 && vnum <= 9800) {
+					p.bElement = 2;
+				}
+				else if (vnum >= 9830 && vnum <= 10030) {
+					p.bElement = 3;
+				}
+				else if (vnum >= 10520 && vnum <= 10720) {
+					p.bElement = 4;
+				}
+				else if (vnum >= 10060 && vnum <= 10260) {
+					p.bElement = 5;
+				}
+				else if (vnum >= 10290 && vnum <= 10490) {
+					p.bElement = 6;
+				}
+			}
+		}
+		else if (m_pkChrTarget->IsMonster() || m_pkChrTarget->IsStone()) {
+			if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ELEC)) {
+				p.bElement = 1;
+			}
+			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_FIRE)) {
+				p.bElement = 2;
+			}
+			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ICE)) {
+				p.bElement = 3;
+			}
+			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_WIND)) {
+				p.bElement = 4;
+			}
+			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_EARTH)) {
+				p.bElement = 5;
+			}
+			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_DARK)) {
+				p.bElement = 6;
+			}
+		}
+	}
+#endif
+	GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+}
+
+void CHARACTER::BroadcastTargetPacket()
+{
+	if (m_set_pkChrTargetedBy.empty())
+		return;
+
+	TPacketGCTarget p;
+
+	p.header = HEADER_GC_TARGET;
+	p.dwVID = GetVID();
+
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+	if (GetMaxHP() <= 0)
+	{
+		p.bHPPercent = 0;
+		p.iMinHP = 0;
+		p.iMaxHP = 0;
+	}
+	else
+	{
+		p.bHPPercent = std::min((GetHP() * 100) / GetMaxHP(), (int64_t)100);
+		p.iMinHP = GetHP();
+		p.iMaxHP = GetMaxHP();
+	}
+#else
+	if (IsPC())
+		p.bHPPercent = 0;
+	else if (GetMaxHP() <= 0)
+		p.bHPPercent = 0;
+	else
+		p.bHPPercent = MINMAX(0, GetHPPct(), 100);
+#endif
+
+	CHARACTER_SET::iterator it = m_set_pkChrTargetedBy.begin();
+
+	while (it != m_set_pkChrTargetedBy.end())
+	{
+		LPCHARACTER pkChr = *it++;
+
+		if (!pkChr->GetDesc())
+		{
+			sys_err("%s %p does not have desc", pkChr->GetName(), get_pointer(pkChr));
+			abort();
+		}
+
+		pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+	}
+}
+
+void CHARACTER::CheckTarget()
+{
+	if (!m_pkChrTarget)
+		return;
+
+	if (DISTANCE_APPROX(GetX() - m_pkChrTarget->GetX(), GetY() - m_pkChrTarget->GetY()) >= 4800)
+		SetTarget(nullptr);
+}
+
+bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
+{
+	if (!IsNPC())
+		return true;
+
+	uint32_t dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
+
+	if (DISTANCE_APPROX(GetX() - target->GetX(), GetY() - target->GetY()) >
+		AI_CHANGE_ATTACK_POISITION_DISTANCE + GetMobAttackRange())
+		dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
+
+	return get_dword_time() - m_dwLastChangeAttackPositionTime > dwChangeTime;
+}
+

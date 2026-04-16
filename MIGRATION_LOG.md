@@ -2856,7 +2856,28 @@
 - result: rolled back
 - note:
   - the first relocation pass inserted the moved mount bodies into a bad structural position inside [MountSystem.cpp](/E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp), which caused 20+ syntax errors on build
-  - rollback restored the last green checkpoint after `S11e-1`
-  - next retry should split the mount block into smaller sub-batches and first verify the exact insertion boundary in `MountSystem.cpp`
+- rollback restored the last green checkpoint after `S11e-1`
+- next retry should split the mount block into smaller sub-batches and first verify the exact insertion boundary in `MountSystem.cpp`
 - build after rollback: success
 - next: `S11e-3 CombatSystem`, `S11e-4 MountSystem` retry, or `S11d-c-4c Initialize`
+
+## Phase 8 - Step 8.17 char.cpp -> CombatSystem (continued)
+- completed slice `S11e-3a target/stone helpers`
+- moved:
+  - `SetStone`
+  - `ClearStone(LPCHARACTER)`
+  - `ClearStone()`
+  - `ClearTarget`
+  - `SetTarget`
+  - `BroadcastTargetPacket`
+  - `CheckTarget`
+  - `IsChangeAttackPosition`
+- note:
+  - the `FuncDeadSpawnedByStone` helper moved together with the two `ClearStone` variants
+  - the only post-move fixes were replacing two unqualified `min(...)` calls with `std::min(...)` inside `CombatSystem.cpp`
+- after char.cpp Slice S11e-3a: `1709`
+- char.cpp status after slice:
+  - line count: `2240`
+  - `CHARACTER::` body count: `31`
+- build: success
+- next: `S11e-3b Return/Follow`, `S11e-3c coward/drop helpers`, or `S11e-4a mount counters`
