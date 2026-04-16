@@ -2807,3 +2807,24 @@
   - `CHARACTER::` body count: `55`
 - build: success
 - next: `S11e-1 NetworkSync`, `S11e-2 MovementSystem`, or `S11d-c-4c Initialize`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11e-2 stamina/GoHome`
+- moved:
+  - `SetNowWalking`
+  - `StartStaminaConsume`
+  - `StopStaminaConsume`
+  - `IsStaminaConsume`
+  - `IsStaminaHalfConsume`
+  - `ResetStopTime`
+  - `GetStopTime`
+  - `GoHome`
+- note:
+  - this slice landed in `MovementSystem.cpp`, not `PlayerRuntimeSystem.cpp`, because the methods are movement-state and stamina control rather than generic runtime helpers
+  - helper surface was extended first with `start_position.h` and `unique_item.h`
+- after char.cpp Slice S11e-2: `1740`
+- char.cpp status after slice:
+  - line count: `2422`
+  - `CHARACTER::` body count: `47`
+- build: success
+- next: `S11e-1 NetworkSync` or `S11d-c-4c Initialize`

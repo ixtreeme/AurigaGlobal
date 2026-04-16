@@ -2232,84 +2232,12 @@ int CHARACTER::GetLeadershipSkillLevel() const
 	return GetSkillLevel(SKILL_LEADERSHIP);
 }
 
-void CHARACTER::SetNowWalking(bool bWalkFlag)
-{
-	//if (m_bNowWalking != bWalkFlag || IsNPC())
-	if (m_bNowWalking != bWalkFlag)
-	{
-		if (bWalkFlag)
-		{
-			m_bNowWalking = true;
-			m_dwWalkStartTime = get_dword_time();
-		}
-		else
-		{
-			m_bNowWalking = false;
-		}
 
-		//if (m_bNowWalking)
-		{
-			TPacketGCWalkMode p;
-			p.vid = GetVID();
-			p.header = HEADER_GC_WALK_MODE;
-			p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
 
-			PacketView(&p, sizeof(p));
-		}
 
-		if (IsNPC())
-		{
-			if (m_bNowWalking)
-				MonsterLog("°E´Â´U");
-			else
-				MonsterLog("¶Ú´U");
-		}
 
-		//sys_log(0, "%s is now %s", GetName(), m_bNowWalking?"walking.":"running.");
-	}
-}
 
-void CHARACTER::StartStaminaConsume()
-{
-	if (m_bStaminaConsume)
-		return;
-	PointChange(POINT_STAMINA, 0);
-	m_bStaminaConsume = true;
-	//ChatPacket(CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
-	if (IsStaminaHalfConsume())
-		ChatPacket(CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
-	else
-		ChatPacket(CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
-}
 
-void CHARACTER::StopStaminaConsume()
-{
-	if (!m_bStaminaConsume)
-		return;
-	PointChange(POINT_STAMINA, 0);
-	m_bStaminaConsume = false;
-	ChatPacket(CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
-}
-
-bool CHARACTER::IsStaminaConsume() const
-{
-	return m_bStaminaConsume;
-}
-
-bool CHARACTER::IsStaminaHalfConsume() const
-{
-	return IsEquipUniqueItem(UNIQUE_ITEM_HALF_STAMINA);
-}
-
-void CHARACTER::ResetStopTime()
-{
-	m_dwStopTime = get_dword_time();
-}
-
-uint32_t CHARACTER::GetStopTime() const
-{
-	return m_dwStopTime;
-}
 
 
 bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
@@ -2550,10 +2478,6 @@ ESex GET_SEX(LPCHARACTER ch)
 	return SEX_MALE;
 }
 
-void CHARACTER::GoHome()
-{
-	WarpSet(EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
-}
 
 EVENTFUNC(destroy_when_idle_event)
 {
