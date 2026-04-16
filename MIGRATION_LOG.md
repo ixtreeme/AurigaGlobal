@@ -1764,3 +1764,41 @@
   - `CHARACTER::` body count: `302`
 - build: success
 - next: `S5 SessionSystem / SocialSystem candidate audit`
+
+## Phase 8 - Step 8.17 char.cpp -> SocialSystem
+- completed slice `S5 SocialSystem`
+- created:
+  - `SRC/Server/GameServer/ecs/systems/SocialSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/SocialSystem.cpp`
+- moved:
+  - `SetParty`
+  - `RequestToParty`
+  - `DenyToParty`
+  - `AcceptToParty`
+  - `PartyInvite`
+  - `PartyInviteAccept`
+  - `PartyInviteDeny`
+  - `PartyJoin`
+  - `IsPartyJoinableCondition`
+  - `IsPartyJoinableMutableCondition`
+  - `SetGuild`
+  - `GetMarriageBonus`
+  - `GetRefineGuild`
+  - `IsRefineThroughGuild`
+  - `HasReviverInParty`
+  - `SendGuildName` overloads
+- helper surface:
+  - `TPartyJoinEventInfo`
+  - `party_request_event`
+  - `party_invite_event`
+  - `__party_can_join_by_level`
+  - `FFindReviver`
+- note:
+  - the first social build failed below rollback threshold because the new file was missing `config.h`, so `passes_per_sec` was not visible for the party event creation path
+  - adding the include fixed the slice in-place; no rollback was required
+- after char.cpp Slice S5: `1997`
+- char.cpp status after slice:
+  - line count: `7453`
+  - `CHARACTER::` body count: `285`
+- build: success
+- next: `S6 SessionSystem save/logout sub-slice audit`
