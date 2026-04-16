@@ -226,6 +226,14 @@ void ItemDropPenalty(entt::entity victim, entt::entity killer)
     }
 }
 
+
+void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
+{
+    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+        ch->DistributeSP(LegacyCharOf(killer), iMethod);
+    }
+}
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
@@ -450,6 +458,88 @@ int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/
 
 	return iArrowCount;
 }
+// char_battle.cpp slice BD1 moved into CombatSystem.cpp
+
+void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
+{
+	if (pkKiller->GetSP() >= pkKiller->GetMaxSP())
+		return;
+
+	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
+	bool bMoving = (get_dword_time() - GetLastMoveTime()) < 3000;
+
+	if (iMethod == 1)
+	{
+		int num = number(0, 3);
+
+		if (!num)
+		{
+			int iLvDelta = GetLevel() - pkKiller->GetLevel();
+			int iAmount = 0;
+
+			if (iLvDelta >= 5)
+				iAmount = 10;
+			else if (iLvDelta >= 0)
+				iAmount = 6;
+			else if (iLvDelta >= -3)
+				iAmount = 2;
+
+			if (iAmount != 0)
+			{
+				iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+
+				if (iAmount >= 11)
+					CreateFly(FLY_SP_BIG, pkKiller);
+				else if (iAmount >= 7)
+					CreateFly(FLY_SP_MEDIUM, pkKiller);
+				else
+					CreateFly(FLY_SP_SMALL, pkKiller);
+
+				pkKiller->PointChange(POINT_SP, iAmount);
+			}
+		}
+	}
+	else
+	{
+		if (pkKiller->GetJob() == JOB_SHAMAN || (pkKiller->GetJob() == JOB_SURA && pkKiller->GetSkillGroup() == 2))
+		{
+			int iAmount;
+
+			if (bAttacking)
+				iAmount = 2 + GetMaxSP() / 100;
+			else if (bMoving)
+				iAmount = 3 + GetMaxSP() * 2 / 100;
+			else
+				iAmount = 10 + GetMaxSP() * 3 / 100; // 
+
+			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+			pkKiller->PointChange(POINT_SP, iAmount);
+		}
+		else
+		{
+			int iAmount;
+
+			if (bAttacking)
+				iAmount = 2 + pkKiller->GetMaxSP() / 200;
+			else if (bMoving)
+				iAmount = 2 + pkKiller->GetMaxSP() / 100;
+			else
+			{
+				// 
+				if (pkKiller->GetHP() < pkKiller->GetMaxHP())
+					iAmount = 2 + (pkKiller->GetMaxSP() / 100); //   á
+				else
+					iAmount = 9 + (pkKiller->GetMaxSP() / 100); // ⺻
+			}
+
+			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+			pkKiller->PointChange(POINT_SP, iAmount);
+		}
+	}
+}
+
+
+
 // char_battle.cpp slice BC1 moved into CombatSystem.cpp
 
 static int __GetExpLossPerc(const uint32_t level)

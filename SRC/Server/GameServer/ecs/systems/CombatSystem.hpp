@@ -22,6 +22,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown);
 void RewardGold(entt::entity victim, entt::entity attacker);
 void Reward(entt::entity victim, bool bItemDrop);
 void ItemDropPenalty(entt::entity victim, entt::entity killer);
+void DistributeSP(entt::entity victim, entt::entity killer, int iMethod);
 
 } // namespace CombatSystem
 

@@ -1431,3 +1431,11 @@
 - after char_battle.cpp Slice BC4: `2139`
 - build: success
 - next: slice BC5 (`Dead`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BD1:
+  - moved:
+    - `DistributeSP`
+- after char_battle.cpp Slice BD1: `2138`
+- build: success
+- next: slice BD2 (`DistributeHP` helper surface audit)
