@@ -1355,3 +1355,16 @@
 - after char_battle.cpp Slice BB2b1: `2160`
 - build: success
 - next: slice BB2b2 (`Damage()` copy-first relocation)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BB2b2:
+  - moved:
+    - `Damage`
+  - note:
+    - the first full-body cut attempt had previously failed because the surrounding helper/preprocessor surface was incomplete
+    - after `BB2a` and `BB2b1`, the exact brace-matched `Damage()` block could be moved as a `CHARACTER::` migration-window body into `CombatSystem.cpp`
+    - one follow-up fix was required:
+      - add forward declarations for `ProcessStoneSpawnStep` and the `CalcReference*` helpers before the relocated body in `CombatSystem.cpp`
+- after char_battle.cpp Slice BB2b2: `2158`
+- build: success
+- next: slice BC (`death / reward / drop lifecycle`)
