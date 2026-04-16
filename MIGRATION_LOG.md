@@ -2690,3 +2690,18 @@
   - `CHARACTER::` body count: `90`
 - build: success
 - next: `S11d-c-3b/c runtime click/chat` or `S11d-c-1b-d channel/block setters`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-3b ChatPacket/MonsterLog`
+- moved:
+  - `MonsterLog`
+  - `ChatPacket`
+- note:
+  - destination-side bodies were added first, but the first build only failed with duplicate linker symbols because the source-side blocks were still present
+  - fixed by brace-matched surgical removal of the two exact `char.cpp` method bodies, then rebuilding green without rollback
+- after char.cpp Slice S11d-c-3b: `1775`
+- char.cpp status after slice:
+  - line count: `3321`
+  - `CHARACTER::` body count: `79`
+- build: success
+- next: `S11d-c-3c OnIdle/OnMove/OnClick`
