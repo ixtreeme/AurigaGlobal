@@ -1178,3 +1178,124 @@
 - build: success
 - next target:
   - `char_battle.cpp` -> `CombatSystem`
+
+## Phase 8 - Step 8.14 char_battle.cpp audit
+- line count: `6441`
+- `CHARACTER::` body count: `56`
+- slices planned:
+  - `BA` attack / targeting / ranged helper surface
+  - `BB` damage / stun / death-state resolution
+  - `BC` reward / death lifecycle / drop penalty
+  - `BD` exp / HP-SP distribution / reward helpers
+  - `BE` alignment / PK / aggro / monster attraction / leaderboard leftovers
+- methods per slice:
+  - `BA`:
+    - `CanBeginFight`
+    - `BeginFight`
+    - `CanFight`
+    - `CreateFly`
+    - `Attack`
+    - `GetArrowAndBow`
+    - `UseArrow`
+    - `Shoot`
+    - `FlyTarget`
+    - `GetNearestVictim`
+    - `SetVictim`
+    - `GetVictim`
+    - `GetProtege`
+    - helper surface:
+      - `ProcessStoneSpawnStep`
+      - `CalcReferenceBasicHitDamage`
+      - `CalcReferenceBowHitDamage`
+      - `CalcReferenceNormalHitDamage`
+      - `CFuncShoot`
+  - `BB`:
+    - `IsStun`
+    - `Stun`
+    - `IsDead`
+    - `SetLastAttacked`
+    - `SendDamagePacket`
+    - `Damage`
+    - helper surface:
+      - `StunEvent`
+      - `FuncSetLastAttacked`
+      - `IsBeranMap`
+      - `IsSpiderMap`
+  - `BC`:
+    - `DeathPenalty`
+    - `RewardGold`
+    - `Reward`
+    - `ItemDropPenalty`
+    - `Dead`
+    - `RegisterDamageForExp`
+    - helper surface:
+      - `__GetPartyExpNP`
+      - `__GetExpLossPerc`
+      - `__UpdateBattlePassCollectProgress`
+      - `__TryAutoGiveRewardItem`
+      - `__GiveRewardItemToCharacterOrDrop`
+      - `TItemDropPenalty`
+      - `aItemDropPenalty_kor`
+      - `FPartyAlignmentCompute`
+  - `BD`:
+    - `DistributeSP`
+    - `DistributeHP`
+    - `DistributeExp`
+    - helper surface:
+      - `GiveExp` overloads
+      - `rate_t`
+      - `SDamageInfo`
+  - `BE`:
+    - `SendLeaderboardData`
+    - `SendLeaderboardDataSkillMob`
+    - `SendLeaderboardDataGuild`
+    - `FetchTop10SkillMob`
+    - `CheckLeaderboardSkillMobChanges`
+    - `GetAlignment`
+    - `GetRealAlignment`
+    - `GetAlignmentGrade`
+    - `ApplyAlignmentBonus`
+    - `UpdateAlignment`
+    - `SetKillerMode`
+    - `IsKillerMode`
+    - `UpdateKillerMode`
+    - `SetPKMode`
+    - `GetPKMode`
+    - `ForgetMyAttacker`
+    - `AggregateMonster`
+    - `AggregateMonsterPlus`
+    - `AttractRanger`
+    - `PullMonster`
+    - `UpdateAggrPointEx`
+    - `UpdateAggrPoint`
+    - `ChangeVictimByAggro`
+    - helper surface:
+      - `FuncForgetMyAttacker`
+      - `FuncAggregateMonster`
+      - `FuncAggregateMonsterPlus`
+      - `FuncAttractRanger`
+      - `FuncPullMonster`
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BA:
+  - attack / targeting / ranged bodies moved:
+    - `CanBeginFight`
+    - `BeginFight`
+    - `CanFight`
+    - `CreateFly`
+    - `Attack`
+    - `GetArrowAndBow`
+    - `UseArrow`
+    - `Shoot`
+    - `FlyTarget`
+    - `GetNearestVictim`
+    - `SetVictim`
+    - `GetVictim`
+    - `GetProtege`
+  - helper surface moved with the slice:
+    - `CFuncShoot`
+  - integration note:
+    - the global battle include surface and `LegacyCharOf`/entity bridge were added to `CombatSystem.cpp` before relocating the first bodies
+- after char_battle.cpp Slice BA extraction: `2169`
+- build: success
+- next: slice BB (`damage / stun / death-state resolution`)
