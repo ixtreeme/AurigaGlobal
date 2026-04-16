@@ -1556,3 +1556,42 @@
   - `char2.cpp`
   - `char.cpp`
 - next target: audit `char_manager.cpp`
+
+## Phase 8 - char_manager.cpp processed
+- audit:
+  - line count: `2237`
+  - `CHARACTER::` body count: `0`
+- result:
+  - no extraction was needed
+  - `char_manager.cpp` stays in place because it still owns the live `CHARACTER_MANAGER` implementation
+  - `CHARACTER_MANAGER` remains widely referenced from runtime code and extracted ECS system files
+- after char_manager.cpp processed: `2067`
+- next target: `char2.cpp`
+
+## Phase 8 - char2.cpp -> PlayerRuntimeSystem
+- created:
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+- moved `CHARACTER::` bodies:
+  - `ChatPacketNew`
+  - `SetQuestDamage`
+  - `GetQuestDamage`
+  - `ProcessCheatCheck`
+  - `ClearCheatChecks`
+- note:
+  - the first deletion build hit the expected stale translation-unit issue after `char2.cpp` removal
+  - one `--clean-first` build resolved the stale project state
+- `char2.cpp`: DELETED
+- build: success
+- after char2.cpp DELETED: `2062`
+- remaining `char*.cpp` targets:
+  - `char.cpp`
+  - `char_manager.cpp`
+
+## Phase 8 - char.cpp audit
+- line count: `10297`
+- `CHARACTER::` body count: `337`
+- note:
+  - `char.cpp` is now the final large `CHARACTER` implementation file
+  - extraction is deferred to the next dedicated session
+- next target: `char.cpp`
