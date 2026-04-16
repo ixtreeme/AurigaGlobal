@@ -2615,3 +2615,18 @@
   - `CHARACTER::` body count: `102`
 - build: success
 - next: `S11d-c-2b/c proto/parts`, `S11d-c-1b duel retry`, or another isolated runtime batch
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-1b-c duel flag wrappers`
+- moved:
+  - `GetDuel`
+  - `SetDuel`
+- note:
+  - retried with a strict per-function surgical path: destination-side `Impl` helpers were added and build-verified first, then `GetDuel` and `SetDuel` were cut independently from `char.cpp`
+  - the line after each removed closing brace was verified before the cut; this avoided the earlier adjacent-block corruption rollback
+- after char.cpp Slice S11d-c-1b-c: `1787`
+- char.cpp status after slice:
+  - line count: `4513`
+  - `CHARACTER::` body count: `100`
+- build: success
+- next: `S11d-c-2b SetPart/GetPart/GetOriginalPart`

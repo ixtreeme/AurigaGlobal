@@ -32,6 +32,86 @@
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
 
+namespace
+{
+#ifdef ENABLE_PVP_ADVANCED
+int GetDuelImpl(const CHARACTER* ch, const char* type)
+{
+    const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
+
+    int m_nDuelTable[] = { (ch->GetQuestFlag(szTableStaticPvP[0])), (ch->GetQuestFlag(szTableStaticPvP[1])), (ch->GetQuestFlag(szTableStaticPvP[2])), (ch->GetQuestFlag(szTableStaticPvP[3])), (ch->GetQuestFlag(szTableStaticPvP[4])), (ch->GetQuestFlag(szTableStaticPvP[5])), (ch->GetQuestFlag(szTableStaticPvP[6])), (ch->GetQuestFlag(szTableStaticPvP[7])), (ch->GetQuestFlag(szTableStaticPvP[8])), (ch->GetQuestFlag(szTableStaticPvP[9])) };
+
+    if (!strcmp(type, "BlockChangeItem") && m_nDuelTable[0] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockBuff") && m_nDuelTable[1] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockPotion") && m_nDuelTable[2] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockRide") && m_nDuelTable[3] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockPet") && m_nDuelTable[4] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockPoly") && m_nDuelTable[5] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockParty") && m_nDuelTable[6] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BlockExchange") && m_nDuelTable[7] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "BetMoney") && m_nDuelTable[8] > 0) {
+        return true;
+    }
+    if (!strcmp(type, "IsFight") && m_nDuelTable[9] > 0) {
+        return true;
+    }
+    return false;
+}
+
+void SetDuelImpl(CHARACTER* ch, const char* type, int value)
+{
+    const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
+
+    if (!strcmp(type, "BlockChangeItem")) {
+        ch->SetQuestFlag(szTableStaticPvP[0], value);
+    }
+    if (!strcmp(type, "BlockBuff")) {
+        ch->SetQuestFlag(szTableStaticPvP[1], value);
+    }
+    if (!strcmp(type, "BlockPotion")) {
+        ch->SetQuestFlag(szTableStaticPvP[2], value);
+    }
+    if (!strcmp(type, "BlockRide")) {
+        ch->SetQuestFlag(szTableStaticPvP[3], value);
+    }
+    if (!strcmp(type, "BlockPet")) {
+        ch->SetQuestFlag(szTableStaticPvP[4], value);
+    }
+    if (!strcmp(type, "BlockPoly")) {
+        ch->SetQuestFlag(szTableStaticPvP[5], value);
+    }
+    if (!strcmp(type, "BlockParty")) {
+        ch->SetQuestFlag(szTableStaticPvP[6], value);
+    }
+    if (!strcmp(type, "BlockExchange")) {
+        ch->SetQuestFlag(szTableStaticPvP[7], value);
+    }
+    if (!strcmp(type, "BetMoney")) {
+        ch->SetQuestFlag(szTableStaticPvP[8], value);
+    }
+    if (!strcmp(type, "IsFight")) {
+        ch->SetQuestFlag(szTableStaticPvP[9], value);
+    }
+}
+#endif
+}
+
 #ifdef TEXTS_IMPROVEMENT
 void CHARACTER::ChatPacketNew(uint8_t type, uint32_t idx, const char* format, ...)
 {
@@ -2350,5 +2430,17 @@ void CHARACTER::RankingSubcategory(int iArg)
     }
 
     GetDesc()->Packet(&p, sizeof(p));
+}
+#endif
+
+#ifdef ENABLE_PVP_ADVANCED
+int CHARACTER::GetDuel(const char* type) const
+{
+    return GetDuelImpl(this, type);
+}
+
+void CHARACTER::SetDuel(const char* type, int value)
+{
+    SetDuelImpl(this, type, value);
 }
 #endif
