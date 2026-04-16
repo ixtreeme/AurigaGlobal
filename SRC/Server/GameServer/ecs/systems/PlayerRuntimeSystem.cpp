@@ -35,6 +35,7 @@
 #endif
 
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
+EVENTFUNC(kill_ore_load_event);
 
 namespace
 {
@@ -2737,4 +2738,61 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_newpetSystem = M2_NEW CNewPetSystem(this);
 #endif
+}
+
+void CHARACTER::SetProto(const CMob* pkMob)
+{
+    if (m_pkMobInst)
+        M2_DELETE(m_pkMobInst);
+
+    m_pkMobData = pkMob;
+    m_pkMobInst = M2_NEW CMobInstance;
+
+    m_bPKMode = PK_MODE_FREE;
+
+    const TMobTable* t = &m_pkMobData->m_table;
+
+    m_bCharType = t->bType;
+
+    SetLevel(t->bLevel);
+    SetEmpire(t->bEmpire);
+
+    SetExp(t->dwExp);
+    SetRealPoint(POINT_ST, t->bStr);
+    SetRealPoint(POINT_DX, t->bDex);
+    SetRealPoint(POINT_HT, t->bCon);
+    SetRealPoint(POINT_IQ, t->bInt);
+
+    ComputePoints();
+
+    SetHP(GetMaxHP());
+    SetSP(GetMaxSP());
+
+    m_pointsInstant.dwAIFlag = t->dwAIFlag;
+    SetImmuneFlag(t->dwImmuneFlag);
+
+    AssignTriggers(t);
+
+    ApplyMobAttribute(t);
+
+    if (IsStone())
+    {
+        DetermineDropMetinStone();
+    }
+
+    if (IsWarp() || IsGoto())
+    {
+        StartWarpNPCEvent();
+    }
+
+    CHARACTER_MANAGER::instance().RegisterRaceNumMap(this);
+
+    if (mining::IsVeinOfOre(GetRaceNum()))
+    {
+        char_event_info* info = AllocEventInfo<char_event_info>();
+
+        info->ch = this;
+
+        m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
+    }
 }

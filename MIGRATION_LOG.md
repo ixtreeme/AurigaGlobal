@@ -2659,3 +2659,17 @@
   - `CHARACTER::` body count: `96`
 - build: success
 - next: `S11d-c-2d SetProto`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-2d SetProto`
+- moved:
+  - `SetProto`
+- note:
+  - the first post-move build failed with a single missing-event surface (`kill_ore_load_event`)
+  - fixed in-place by forward-declaring `EVENTFUNC(kill_ore_load_event);` inside `PlayerRuntimeSystem.cpp`; rollback was not needed
+- after char.cpp Slice S11d-c-2d: `1782`
+- char.cpp status after slice:
+  - line count: `4161`
+  - `CHARACTER::` body count: `95`
+- build: success
+- next: `S11d-c-3 state machine/runtime pulse`
