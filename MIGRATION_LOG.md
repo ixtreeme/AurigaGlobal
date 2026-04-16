@@ -2673,3 +2673,20 @@
   - `CHARACTER::` body count: `95`
 - build: success
 - next: `S11d-c-3 state machine/runtime pulse`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-3a short state-machine helpers`
+- moved:
+  - `StartStateMachine`
+  - `StopStateMachine`
+  - `UpdateStateMachine`
+  - `SetNextStatePulse`
+  - `UpdateCharacter`
+- note:
+  - kept the short FSM pulse/update helpers together and left `ChatPacket`, `MonsterLog`, `OnIdle`, `OnMove`, and `OnClick` for later follow-up slices
+- after char.cpp Slice S11d-c-3a: `1777`
+- char.cpp status after slice:
+  - line count: `4123`
+  - `CHARACTER::` body count: `90`
+- build: success
+- next: `S11d-c-3b/c runtime click/chat` or `S11d-c-1b-d channel/block setters`

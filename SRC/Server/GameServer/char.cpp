@@ -1872,50 +1872,12 @@ void CHARACTER::ChatPacket(uint8_t type, const char* format, ...)
 
 // MINING
 
-bool CHARACTER::StartStateMachine(int iNextPulse)
-{
-	if (CHARACTER_MANAGER::instance().AddToStateList(this))
-	{
-		m_dwNextStatePulse = thecore_heart->pulse + iNextPulse;
-		return true;
-	}
 
-	return false;
-}
 
-void CHARACTER::StopStateMachine()
-{
-	CHARACTER_MANAGER::instance().RemoveFromStateList(this);
-}
 
-void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
-{
-	if (dwPulse < m_dwNextStatePulse)
-		return;
-
-	if (IsDead())
-		return;
-
-	Update();
-	m_dwNextStatePulse = dwPulse + m_dwStateDuration;
-}
-
-void CHARACTER::SetNextStatePulse(int iNextPulse)
-{
-	CHARACTER_MANAGER::instance().AddToStateList(this);
-	m_dwNextStatePulse = iNextPulse;
-
-	if (iNextPulse < 10)
-		MonsterLog("´UA1»óAÂ·Î3î1­°!AÚ");
-}
 
 
 // Ä3¸-AÍ AÎ1oAI1o 3÷µYAIA® ÇÔ1ö.
-void CHARACTER::UpdateCharacter(uint32_t dwPulse)
-{
-	CFSM::Update();
-
-}
 
 
 

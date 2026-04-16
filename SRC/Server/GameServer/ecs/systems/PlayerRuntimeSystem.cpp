@@ -2796,3 +2796,45 @@ void CHARACTER::SetProto(const CMob* pkMob)
         m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
     }
 }
+
+bool CHARACTER::StartStateMachine(int iNextPulse)
+{
+    if (CHARACTER_MANAGER::instance().AddToStateList(this))
+    {
+        m_dwNextStatePulse = thecore_heart->pulse + iNextPulse;
+        return true;
+    }
+
+    return false;
+}
+
+void CHARACTER::StopStateMachine()
+{
+    CHARACTER_MANAGER::instance().RemoveFromStateList(this);
+}
+
+void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
+{
+    if (dwPulse < m_dwNextStatePulse)
+        return;
+
+    if (IsDead())
+        return;
+
+    Update();
+    m_dwNextStatePulse = dwPulse + m_dwStateDuration;
+}
+
+void CHARACTER::SetNextStatePulse(int iNextPulse)
+{
+    CHARACTER_MANAGER::instance().AddToStateList(this);
+    m_dwNextStatePulse = iNextPulse;
+
+    if (iNextPulse < 10)
+        MonsterLog("´UA1»óAÂ·Î3î1­°!AÚ");
+}
+
+void CHARACTER::UpdateCharacter(uint32_t dwPulse)
+{
+    CFSM::Update();
+}
