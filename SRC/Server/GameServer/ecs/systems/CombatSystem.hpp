@@ -18,6 +18,7 @@ bool IsStun(entt::entity e);
 void Stun(entt::entity e);
 bool IsDead(entt::entity e);
 void SetLastAttacked(entt::entity e, uint32_t tick);
+void DeathPenalty(entt::entity e, uint8_t bTown);
 
 } // namespace CombatSystem
 

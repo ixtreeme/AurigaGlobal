@@ -1368,3 +1368,16 @@
 - after char_battle.cpp Slice BB2b2: `2158`
 - build: success
 - next: slice BC (`death / reward / drop lifecycle`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC1:
+  - moved:
+    - `DeathPenalty`
+  - helper surface moved with the slice:
+    - `__GetExpLossPerc`
+  - note:
+    - `DeathPenalty` was isolated first because it does not depend on the `dead_event` lifecycle that still belongs to `Dead()`
+    - the reward/drop helpers under `ENABLE_DROP_INSTANT_INVENTORY` remain in `char_battle.cpp` for the later `Reward` slice
+- after char_battle.cpp Slice BC1: `2157`
+- build: success
+- next: slice BC2 (`RewardGold`)

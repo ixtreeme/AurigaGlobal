@@ -194,6 +194,14 @@ void SetLastAttacked(entt::entity e, uint32_t tick)
     }
 }
 
+
+void DeathPenalty(entt::entity e, uint8_t bTown)
+{
+    if (LPCHARACTER ch = LegacyCharOf(e)) {
+        ch->DeathPenalty(bTown);
+    }
+}
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
@@ -418,6 +426,82 @@ int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/
 
 	return iArrowCount;
 }
+// char_battle.cpp slice BC1 moved into CombatSystem.cpp
+
+static int __GetExpLossPerc(const uint32_t level)
+{
+	if (!level || level > PLAYER_EXP_TABLE_MAX)
+		return 1;
+	return aiExpLossPercents[level];
+}
+
+
+void CHARACTER::DeathPenalty(uint8_t bTown)
+{
+	sys_log(1, "DEATH_PERNALY_CHECK(%s) town(%d)", GetName(), bTown);
+
+	Cube_close(this);
+#ifdef __ATTR_TRANSFER_SYSTEM__
+	AttrTransfer_close(this);
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+	CloseAcce();
+#endif
+
+	if (CBattleArena::instance().IsBattleArenaMap(GetMapIndex()) == true)
+	{
+		return;
+	}
+
+	if (GetLevel() < 10) {
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 412, "");
+#endif
+		return;
+	}
+
+	if (number(0, 2) == 1) {
+#ifdef TEXTS_IMPROVEMENT
+		ChatPacketNew(CHAT_TYPE_INFO, 412, "");
+#endif
+		return;
+	}
+
+	if (IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY))
+	{
+		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+
+		// NO_DEATH_PENALTY_BUG_FIX
+		if (!bTown) //   ڸ Ȱø  ȣ Ѵ. ( ͽô ġ гƼ )
+		{
+			if (FindAffect(AFFECT_NO_DEATH_PENALTY))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ChatPacketNew(CHAT_TYPE_INFO, 384, "");
+#endif
+				RemoveAffect(AFFECT_NO_DEATH_PENALTY);
+				return;
+			}
+		}
+		// END_OF_NO_DEATH_PENALTY_BUG_FIX
+
+		int iLoss = ((GetNextExp() * __GetExpLossPerc(GetLevel())) / 100);
+
+		iLoss = std::min(800000, iLoss);
+
+		if (bTown)
+			iLoss = 0;
+
+		if (IsEquipUniqueItem(UNIQUE_ITEM_TEARDROP_OF_GODNESS))
+			iLoss /= 2;
+
+		sys_log(0, "DEATH_PENALTY(%s) EXP_LOSS: %d percent %d%%", GetName(), iLoss, __GetExpLossPerc(GetLevel()));
+
+		PointChange(POINT_EXP, -iLoss, true);
+	}
+}
+
+
 // char_battle.cpp slice BB2b moved into CombatSystem.cpp
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
