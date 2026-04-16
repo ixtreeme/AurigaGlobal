@@ -848,7 +848,12 @@ int idle()
 
 	t = get_dword_time();
 	CHARACTER_MANAGER::instance().Update(thecore_heart->pulse);
-	// ECS system tick - runs alongside legacy update during migration
+	// Phase 8 audit: the parallel ECS runtime tick is not authoritative yet.
+	// Movement/combat/network sync still rely on the migrated CHARACTER:: bodies.
+	// Leaving the placeholder ECS loops enabled overrides live gameplay with
+	// incomplete movement/combat/points packets.
+	constexpr bool kEnableParallelEcsMigrationTicks = false;
+	if (kEnableParallelEcsMigrationTicks)
 	{
 		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
 		AISystem_Update(g_registry, tick);
