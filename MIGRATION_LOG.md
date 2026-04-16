@@ -1703,3 +1703,41 @@
   - `CHARACTER::` body count: `324`
 - build: success
 - next: `S3 SessionSystem`
+
+## Phase 8 - Step 8.17 char.cpp -> MovementSystem
+- completed slice `S3 MovementSystem`
+- moved:
+  - `StartRecoveryEvent`
+  - `Standup`
+  - `Sitdown`
+  - `SetRotation`
+  - `SetRotationToXY`
+  - `CannotMoveByAffect`
+  - `CanMove`
+  - `Sync`
+  - `Stop`
+  - `Goto`
+  - `GetMotionMode`
+  - `GetMoveMotionSpeed`
+  - `GetMoveSpeed`
+  - `CalculateMoveDuration`
+  - `Move`
+  - `SendMovePacket`
+  - `MotionPacketEncode`
+  - `Motion`
+- note:
+  - the first movement relocation build failed below rollback threshold because the slice still depended on:
+    - `party.h`
+    - global `EncodeMovePacket`
+    - global `recovery_event`
+    - the still-external `save_event`
+  - these were resolved by:
+    - expanding the helper surface in `MovementSystem.cpp`
+    - adding a forward declaration for `save_event` in `char.cpp`
+  - no rollback was required
+- after char.cpp Slice S3: `2027`
+- char.cpp status after slice:
+  - line count: `8250`
+  - `CHARACTER::` body count: `305`
+- build: success
+- next: `S4 Session / Network / social-adjacent runtime slices`
