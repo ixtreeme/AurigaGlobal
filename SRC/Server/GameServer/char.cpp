@@ -2390,65 +2390,6 @@ bool CHARACTER::IsSyncOwner(LPCHARACTER ch) const
 	return false;
 }
 
-void CHARACTER::SetDungeon(LPDUNGEON pkDungeon)
-{
-	if (pkDungeon && m_pkDungeon)
-	{
-		sys_err("%s is trying to reassigning dungeon (current %p, new party %p)", GetName(), get_pointer(m_pkDungeon), get_pointer(pkDungeon));
-	}
-
-	if (m_pkDungeon)
-	{
-		if (IsPC())
-		{
-			if (GetParty())
-				m_pkDungeon->DecPartyMember(GetParty(), this);
-			else
-				m_pkDungeon->DecMember(this);
-		}
-	}
-
-	m_pkDungeon = pkDungeon;
-
-	if (pkDungeon)
-	{
-		//sys_log(0, "%s DUNGEON set to %p, PARTY is %p", GetName(), get_pointer(pkDungeon), get_pointer(m_pkParty));
-
-		if (IsPC())
-		{
-			if (GetParty())
-				m_pkDungeon->IncPartyMember(GetParty(), this);
-			else
-				m_pkDungeon->IncMember(this);
-		}
-		else if (IsMonster() || IsStone())
-		{
-			m_pkDungeon->IncMonster();
-		}
-	}
-}
-
-void CHARACTER::SetWarMap(CWarMap* pWarMap)
-{
-	if (m_pWarMap)
-		m_pWarMap->DecMember(this);
-
-	m_pWarMap = pWarMap;
-
-	if (m_pWarMap)
-		m_pWarMap->IncMember(this);
-}
-
-void CHARACTER::SetWeddingMap(marriage::WeddingMap* pMap)
-{
-	if (m_pWeddingMap)
-		m_pWeddingMap->DecMember(this);
-
-	m_pWeddingMap = pMap;
-
-	if (m_pWeddingMap)
-		m_pWeddingMap->IncMember(this);
-}
 
 
 bool CHARACTER::OnIdle()

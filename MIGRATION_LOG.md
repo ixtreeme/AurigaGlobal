@@ -2484,3 +2484,24 @@
   - `CHARACTER::` body count: `110`
 - build: success
 - next: `S11d-c-1b or S11c-3b-3 depending on helper-surface risk`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-1b-a dungeon/war/wedding setters`
+- moved:
+  - `SetDungeon`
+  - `SetWarMap`
+  - `SetWeddingMap`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `marriage.h`
+    - `war_map.h`
+    - `wedding.h`
+- note:
+  - the first post-move build failed with two incomplete-type errors on `marriage::WeddingMap`
+  - fixed in-place by adding the concrete `wedding.h` include; rollback was not needed
+- after char.cpp Slice S11d-c-1b-a: `1803`
+- char.cpp status after slice:
+  - line count: `4686`
+  - `CHARACTER::` body count: `107`
+- build: success
+- next: `S11c-3b-3 Acce material/refine branch or another medium runtime batch`

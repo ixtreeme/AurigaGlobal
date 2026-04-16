@@ -15,10 +15,13 @@
 #include "../../gm.h"
 #include "../../item.h"
 #include "../../item_manager.h"
+#include "../../marriage.h"
 #include "../../mob_manager.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
 #include "../../skill_power.h"
+#include "../../war_map.h"
+#include "../../wedding.h"
 #include "../../../common/rune_length.h"
 #ifdef ENABLE_ANTICHEAT
 #include "../../hwidmanager.h"
@@ -1069,6 +1072,64 @@ LPCHARACTER CHARACTER::GetMarryPartner() const
 void CHARACTER::SetMarryPartner(LPCHARACTER ch)
 {
     m_pkChrMarried = ch;
+}
+
+void CHARACTER::SetDungeon(LPDUNGEON pkDungeon)
+{
+    if (pkDungeon && m_pkDungeon)
+    {
+        sys_err("%s is trying to reassigning dungeon (current %p, new party %p)", GetName(), get_pointer(m_pkDungeon), get_pointer(pkDungeon));
+    }
+
+    if (m_pkDungeon)
+    {
+        if (IsPC())
+        {
+            if (GetParty())
+                m_pkDungeon->DecPartyMember(GetParty(), this);
+            else
+                m_pkDungeon->DecMember(this);
+        }
+    }
+
+    m_pkDungeon = pkDungeon;
+
+    if (pkDungeon)
+    {
+        if (IsPC())
+        {
+            if (GetParty())
+                m_pkDungeon->IncPartyMember(GetParty(), this);
+            else
+                m_pkDungeon->IncMember(this);
+        }
+        else if (IsMonster() || IsStone())
+        {
+            m_pkDungeon->IncMonster();
+        }
+    }
+}
+
+void CHARACTER::SetWarMap(CWarMap* pWarMap)
+{
+    if (m_pWarMap)
+        m_pWarMap->DecMember(this);
+
+    m_pWarMap = pWarMap;
+
+    if (m_pWarMap)
+        m_pWarMap->IncMember(this);
+}
+
+void CHARACTER::SetWeddingMap(marriage::WeddingMap* pMap)
+{
+    if (m_pWeddingMap)
+        m_pWeddingMap->DecMember(this);
+
+    m_pWeddingMap = pMap;
+
+    if (m_pWeddingMap)
+        m_pWeddingMap->IncMember(this);
 }
 
 void CHARACTER::OpenAcce(bool bCombination)
