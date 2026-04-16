@@ -20,6 +20,7 @@ bool IsDead(entt::entity e);
 void SetLastAttacked(entt::entity e, uint32_t tick);
 void DeathPenalty(entt::entity e, uint8_t bTown);
 void RewardGold(entt::entity victim, entt::entity attacker);
+void Reward(entt::entity victim, bool bItemDrop);
 
 } // namespace CombatSystem
 

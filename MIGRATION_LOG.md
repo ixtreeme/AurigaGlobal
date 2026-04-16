@@ -1407,3 +1407,14 @@
 - after char_battle.cpp Slice BC3a: `2156`
 - build: success
 - next: slice BC3b (`Reward` body relocation)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC3b:
+  - moved:
+    - `Reward`
+  - note:
+    - the prior `BC3a` helper duplication was sufficient, so `Reward()` could be relocated without any rollback cycle
+    - the reward-item helper surface still exists in both translation units temporarily; it will be removed from `char_battle.cpp` once the remaining death/drop slice stops referencing it
+- after char_battle.cpp Slice BC3b: `2140`
+- build: success
+- next: slice BC4 (`ItemDropPenalty` / `RegisterDamageForExp` / `Dead`)

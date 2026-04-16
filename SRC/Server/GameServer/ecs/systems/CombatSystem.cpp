@@ -210,6 +210,14 @@ void RewardGold(entt::entity victim, entt::entity attacker)
     }
 }
 
+
+void Reward(entt::entity victim, bool bItemDrop)
+{
+    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+        ch->Reward(bItemDrop);
+    }
+}
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
@@ -995,6 +1003,680 @@ static std::set<uint32_t> verjema_szadba_ixtreeme =
 60101//mikulas baba 30 napos petkszti
 };
 #endif
+
+// char_battle.cpp slice BC3b moved into CombatSystem.cpp
+
+void CHARACTER::Reward(bool bItemDrop)
+{
+	//PROF_UNIT puReward("Reward");
+	LPCHARACTER pkAttacker = DistributeExp();
+
+	if (!pkAttacker)
+		return;
+
+
+	if (!IsPC() && !m_pkMobData)
+	{
+		sys_err("Reward: NULL mob data (vid=%u race=%u name=%s map=%ld x=%ld y=%ld attacker=%s)",
+			(uint32_t)GetVID(),
+			GetRaceNum(),
+			GetName(),
+			GetMapIndex(),
+			GetX(),
+			GetY(),
+			pkAttacker ? pkAttacker->GetName() : "<null>");
+		m_map_kDamage.clear();
+		return;
+	}
+	//PROF_UNIT pu1("r1");
+	if (pkAttacker->IsPC())
+	{
+		if ((GetLevel() - pkAttacker->GetLevel()) >= -10)
+		{
+			/*if (pkAttacker->GetRealAlignment() < 0) // trsra: minden gyilkols 2 pontot ad
+			{
+				if (pkAttacker->IsEquipUniqueItem(UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
+					pkAttacker->UpdateAlignment(14);
+				else
+					pkAttacker->UpdateAlignment(7);
+			}
+			else*/
+				pkAttacker->UpdateAlignment(2);
+		}
+
+		pkAttacker->SetQuestNPCID(GetVID());
+		quest::CQuestManager::instance().Kill(pkAttacker->GetPlayerID(), GetRaceNum());
+		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+		COrcsDungeon::instance().OnMobKilled(pkAttacker, this);
+		CTritonTempleDungeon::instance().OnMobKilled(pkAttacker, this);
+		CValentineDungeon::instance().OnMobKilled(pkAttacker, this);
+		CRuneDungeon::instance().OnMobKilled(pkAttacker, this);
+		CPyramidDungeonRazor93::instance().OnMobKilled(pkAttacker, this);
+		CNightmareDungeonRazor93::instance().OnMobKilled(pkAttacker, this);
+		//CLostCastleDungeon::instance().OnMobKilled(pkAttacker, this);
+		CHalloween2022Dungeon::instance().OnMobKilled(pkAttacker, this);
+		CVikingDungeon::instance().OnMobKilled(pkAttacker, this);
+		CEasterDungeon::instance().OnMobKilled(pkAttacker, this);
+#endif
+
+#ifdef ENABLE_BATTLE_PASS
+		uint8_t bBattlePassId = pkAttacker->GetBattlePassId();
+		if (bBattlePassId)
+		{
+			uint32_t dwMonsterVnum, dwToKillCount;
+			if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_KILL, &dwMonsterVnum, &dwToKillCount))
+			{
+				if (dwMonsterVnum == GetRaceNum() && pkAttacker->GetMissionProgress(MONSTER_KILL, bBattlePassId) < dwToKillCount)
+					pkAttacker->UpdateMissionProgress(MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
+			}
+		}
+#endif
+
+		if (!number(0, 9))
+		{
+			if (pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY))
+			{
+				int iHP = pkAttacker->GetMaxHP() * pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY) / 100;
+				pkAttacker->PointChange(POINT_HP, iHP);
+				CreateFly(FLY_HP_SMALL, pkAttacker);
+			}
+
+			if (pkAttacker->GetPoint(POINT_KILL_SP_RECOVER))
+			{
+				int iSP = pkAttacker->GetMaxSP() * pkAttacker->GetPoint(POINT_KILL_SP_RECOVER) / 100;
+				pkAttacker->PointChange(POINT_SP, iSP);
+				CreateFly(FLY_SP_SMALL, pkAttacker);
+			}
+		}
+	}
+	//pu1.Pop();
+
+#ifdef ENABLE_BLOCK_MULTIFARM
+	if (pkAttacker->FindAffect(AFFECT_DROP_BLOCK, APPLY_NONE)) {
+		return;
+	}
+#endif
+
+	if (!bItemDrop)
+		return;
+
+	PIXEL_POSITION pos = GetXYZ();
+
+	if (!SECTREE_MANAGER::instance().GetMovablePosition(GetMapIndex(), pos.x, pos.y, pos))
+		return;
+
+	//
+	//  
+	//
+	//PROF_UNIT pu2("r2");
+	if (test_server)
+		sys_log(0, "Drop money : Attacker %s", pkAttacker->GetName());
+	RewardGold(pkAttacker);
+	//pu2.Pop();
+
+	//
+	//  
+	//
+	//PROF_UNIT pu3("r3");
+	LPITEM item;
+
+	static std::vector<LPITEM> s_vec_item;
+	s_vec_item.clear();
+
+	if (ITEM_MANAGER::instance().CreateDropItem(this, pkAttacker, s_vec_item))
+	{
+
+#ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
+		for (auto& item : s_vec_item)
+		{
+			if (verjema_szadba_ixtreeme.find(item->GetVnum()) != verjema_szadba_ixtreeme.end())
+			{
+				std::string message = MakeItemLink(item, pkAttacker, this);
+				BroadcastNotice(message.c_str());
+			}
+		}
+#endif
+#ifdef ENABLE_DROP_INSTANT_INVENTORY
+		const bool bInstantRewardToInventory = true;
+#endif
+
+		bool bSharedDungeonDrop = false;
+
+#ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
+		// Dungeon party shared drop (ground + ownership) + HWID|HOST szures:
+		// - csak mapindex 
+		// - csak ha a killer partyban van
+		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
+		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
+
+		if (GetDungeon() && pkAttacker && pkAttacker->IsPC() && !s_vec_item.empty())
+		{
+			const long lMapIndex = GetMapIndex(); // a megolt mob mapindexe
+
+			if (
+				(lMapIndex >= 3550000 && lMapIndex < 3560000)  // ork
+
+				|| (lMapIndex >= 660000 && lMapIndex < 670000)   // dt
+				|| (lMapIndex >= 3690000 && lMapIndex < 3700000)  // triton
+				|| (lMapIndex >= 3570000 && lMapIndex < 3580000)  // pyramid
+				|| (lMapIndex >= 3730000 && lMapIndex < 3740000)  // nightmare
+				|| (lMapIndex >= 180000 && lMapIndex < 190000)   // bagoly
+				|| (lMapIndex >= 2180000 && lMapIndex < 2190000)  // runa
+				|| (lMapIndex >= 2120000 && lMapIndex < 2130000)  // meley
+				|| (lMapIndex >= 3670000 && lMapIndex < 3680000)  // majom
+				|| (lMapIndex >= 3520000 && lMapIndex < 3530000)  // nemere
+				|| (lMapIndex >= 270000 && lMapIndex < 280000)   // slyme
+				|| (lMapIndex >= 2080000 && lMapIndex < 2090000)  // beran
+				|| (lMapIndex >= 2160000 && lMapIndex < 2170000)  // catacombe
+				|| (lMapIndex >= 2090000 && lMapIndex < 2100000)  // ochao
+				|| (lMapIndex >= 2100000 && lMapIndex < 2110000)  // valazslatos erdo
+				|| (lMapIndex >= 3510000 && lMapIndex < 3520000)  // razador
+				|| (lMapIndex >= 2170000 && lMapIndex < 2180000)  // pokbaro
+				|| (lMapIndex >= 1610000 && lMapIndex < 1620000)  // vampir
+				|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
+				)
+			{
+				if (pkAttacker->GetParty()) // CSAK partyra
+				{
+					CDungeon* pDungeon = GetDungeon();
+
+					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
+					if (pkAttacker->GetDungeon() == pDungeon)
+					{
+						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
+						auto MakeHwidHostKey = [&](LPCHARACTER ch) -> std::string
+							{
+								if (!ch || !ch->IsPC() || !ch->GetDesc())
+									return std::string();
+
+								DESC* d = ch->GetDesc();
+								const char* hwid = d->GetHwid();
+								const char* host = d->GetHostName();
+
+								if (!hwid || !*hwid)
+									return std::string();
+								if (!host || !*host)
+									return std::string();
+
+								std::string key;
+								key.reserve(128);
+								key += hwid;
+								key += "|";
+								key += host;
+								return key;
+							};
+
+						// 1) HWID|HOST alapjan 1 karakter / gep (dupe eseten a legtobb dmg kap)
+						std::unordered_map<std::string, LPCHARACTER> mapWinnerByKey;
+						mapWinnerByKey.reserve(16);
+
+						pDungeon->ForEachMember([&](LPCHARACTER mch)
+							{
+								if (!mch || !mch->IsPC() || !mch->GetDesc())
+									return;
+
+								// ugyanabban a dungeon instance-ben kell legyen
+								if (mch->GetDungeon() != pDungeon)
+									return;
+
+								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
+								if (mch->GetMapIndex() != lMapIndex)
+									return;
+
+								// ugyanabban a partyban legyen
+								if (mch->GetParty() != pkAttacker->GetParty())
+									return;
+
+								std::string key = MakeHwidHostKey(mch);
+
+								// ha nincs hwid/host, fallback: account (ne kapjon duplan)
+								if (key.empty())
+									key = "ACC:" + std::to_string(mch->GetDesc()->GetAccountTable().id);
+
+								auto it = mapWinnerByKey.find(key);
+								if (it == mapWinnerByKey.end())
+								{
+									mapWinnerByKey.emplace(std::move(key), mch);
+									return;
+								}
+
+								// dupe HWID|HOST: a legtobb dmg-et okozo kap
+								uint64_t dmgNew = 0;
+								uint64_t dmgOld = 0;
+
+								auto itNew = m_map_kDamage.find(mch->GetVID());
+								if (itNew != m_map_kDamage.end())
+									dmgNew = itNew->second.iTotalDamage;
+
+								auto itOld = m_map_kDamage.find(it->second->GetVID());
+								if (itOld != m_map_kDamage.end())
+									dmgOld = itOld->second.iTotalDamage;
+
+								if (dmgNew > dmgOld)
+									it->second = mch;
+							});
+
+						if (!mapWinnerByKey.empty())
+						{
+							// 2) template drop lementese (vnum/count/socket/attr)
+							struct SPartySharedDropItem
+							{
+								uint32_t vnum;
+								uint32_t count;
+								long sockets[ITEM_SOCKET_MAX_NUM];
+								TPlayerItemAttribute attrs[ITEM_ATTRIBUTE_MAX_NUM];
+							};
+
+							std::vector<SPartySharedDropItem> drops;
+							drops.reserve(s_vec_item.size());
+
+							for (LPITEM srcItem : s_vec_item)
+							{
+								if (!srcItem)
+									continue;
+
+								SPartySharedDropItem di{};
+								di.vnum = srcItem->GetVnum();
+								di.count = srcItem->GetCount();
+
+								for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+									di.sockets[i] = srcItem->GetSocket(i);
+
+								for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+									di.attrs[i] = srcItem->GetAttribute(i);
+
+								drops.push_back(di);
+							}
+
+							// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
+							for (const auto& kv : mapWinnerByKey)
+							{
+								LPCHARACTER rch = kv.second;
+								if (!rch || !rch->IsPC() || !rch->GetDesc())
+									continue;
+
+								PIXEL_POSITION mpos = pos;
+
+								// kis eltolas, hogy ne 1 pontra essen minden
+								mpos.x = number(-7, 7) * 20 + GetX();
+								mpos.y = number(-7, 7) * 20 + GetY();
+
+								for (const auto& di : drops)
+								{
+									LPITEM newItem = ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
+									if (!newItem)
+										continue;
+
+									for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+										newItem->SetSocket(i, di.sockets[i]);
+
+									newItem->SetAttributes(di.attrs);
+
+#ifdef ENABLE_DROP_INSTANT_INVENTORY
+									if (bInstantRewardToInventory)
+									{
+										__GiveRewardItemToCharacterOrDrop(rch, this, newItem, mpos, true);
+									}
+									else
+									{
+										newItem->AddToGround(lMapIndex, mpos);
+
+										if (CBattleArena::instance().IsBattleArenaMap(rch->GetMapIndex()) == false)
+											newItem->SetOwnership(rch);
+
+										newItem->StartDestroyEvent();
+									}
+#else
+									newItem->AddToGround(lMapIndex, mpos);
+
+									if (CBattleArena::instance().IsBattleArenaMap(rch->GetMapIndex()) == false)
+										newItem->SetOwnership(rch);
+
+									newItem->StartDestroyEvent();
+#endif
+								}
+							}
+
+							// 4) a template itemeket megsemmisitjuk, hogy ne duplazzon
+							for (LPITEM srcItem : s_vec_item)
+							{
+								if (srcItem)
+									M2_DESTROY_ITEM(srcItem);
+							}
+
+							s_vec_item.clear();
+							bSharedDungeonDrop = true;
+						}
+					}
+				}
+			}
+		}
+#endif // ENABLE_DUNGEON_SHARED_DROP_HWID
+
+
+		if (!bSharedDungeonDrop)
+		{
+#ifdef ENABLE_DROP_INSTANT_INVENTORY
+
+			if (s_vec_item.size() == 0);
+			else if (s_vec_item.size() == 1)
+			{
+				item = s_vec_item[0];
+
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+				const bool bKeepGroundDrop = (pkAttacker && pkAttacker->GetParty());
+#else
+				const bool bKeepGroundDrop = false;
+#endif
+
+				if (bInstantRewardToInventory && !bKeepGroundDrop)
+				{
+					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, item, pos, true);
+				}
+				else
+				{
+					item->AddToGround(GetMapIndex(), pos);
+
+					if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+					{
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+						if (pkAttacker->GetParty())
+						{
+							FPartyDropDiceRoll f(item, pkAttacker);
+							f.Process(this);
+						}
+						else
+							item->SetOwnership(pkAttacker);
+#else
+						item->SetOwnership(pkAttacker);
+#endif
+					}
+
+					item->StartDestroyEvent();
+
+					sys_log(0, "DROP_ITEM: %s %d %d from %s", item->GetName(), pos.x, pos.y, GetName());
+				}
+
+				pos.x = number(-7, 7) * 20;
+				pos.y = number(-7, 7) * 20;
+				pos.x += GetX();
+				pos.y += GetY();
+			}
+			else
+			{
+				int iItemIdx = s_vec_item.size() - 1;
+
+				std::priority_queue<std::pair<uint64_t, LPCHARACTER> > pq;
+
+				uint64_t total_dam = 0;
+
+				for (TDamageMap::iterator it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
+				{
+					uint64_t iDamage = it->second.iTotalDamage;
+					if (iDamage > 0)
+					{
+						LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+
+						if (ch)
+						{
+							pq.push(std::make_pair(iDamage, ch));
+							total_dam += iDamage;
+						}
+					}
+				}
+
+				std::vector<LPCHARACTER> v;
+
+				while (!pq.empty() && pq.top().first * 10 >= total_dam)
+				{
+					v.push_back(pq.top().second);
+					pq.pop();
+				}
+
+				if (v.empty())
+				{
+					while (iItemIdx >= 0)
+					{
+						item = s_vec_item[iItemIdx--];
+
+						if (!item)
+						{
+							sys_err("item null in vector idx %d", iItemIdx + 1);
+							continue;
+						}
+
+						item->AddToGround(GetMapIndex(), pos);
+
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+							item->SetOwnership(pkAttacker);
+
+						item->StartDestroyEvent();
+
+						sys_log(0, "DROP_ITEM: %s %d %d by %s", item->GetName(), pos.x, pos.y, GetName());
+
+						pos.x = number(-7, 7) * 20;
+						pos.y = number(-7, 7) * 20;
+						pos.x += GetX();
+						pos.y += GetY();
+					}
+				}
+				else
+				{
+					std::vector<LPCHARACTER>::iterator it = v.begin();
+
+					while (iItemIdx >= 0)
+					{
+						item = s_vec_item[iItemIdx--];
+
+						if (!item)
+						{
+							sys_err("item null in vector idx %d", iItemIdx + 1);
+							continue;
+						}
+
+						LPCHARACTER ch = *it;
+
+						if (ch->GetParty())
+							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
+
+						++it;
+
+						if (it == v.end())
+							it = v.begin();
+
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+						const bool bKeepGroundDrop = (ch && ch->GetParty());
+#else
+						const bool bKeepGroundDrop = false;
+#endif
+
+						if (bInstantRewardToInventory && !bKeepGroundDrop)
+						{
+							__GiveRewardItemToCharacterOrDrop(ch, this, item, pos, true);
+						}
+						else
+						{
+							item->AddToGround(GetMapIndex(), pos);
+
+							if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+							{
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+								if (ch->GetParty())
+								{
+									FPartyDropDiceRoll f(item, ch);
+									f.Process(this);
+								}
+								else
+									item->SetOwnership(ch);
+#else
+								item->SetOwnership(ch);
+#endif
+							}
+
+							item->StartDestroyEvent();
+
+							sys_log(0, "DROP_ITEM: %s %d %d by %s", item->GetName(), pos.x, pos.y, GetName());
+						}
+
+						pos.x = number(-7, 7) * 20;
+						pos.y = number(-7, 7) * 20;
+						pos.x += GetX();
+						pos.y += GetY();
+					}
+				}
+			}
+
+#else
+
+			if (s_vec_item.size() == 0);
+			else if (s_vec_item.size() == 1)
+			{
+				item = s_vec_item[0];
+				item->AddToGround(GetMapIndex(), pos);
+
+				if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+				{
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+					if (pkAttacker->GetParty())
+					{
+						FPartyDropDiceRoll f(item, pkAttacker);
+						f.Process(this);
+					}
+					else
+						item->SetOwnership(pkAttacker);
+#else
+					item->SetOwnership(pkAttacker);
+#endif
+				}
+
+				item->StartDestroyEvent();
+
+				pos.x = number(-7, 7) * 20;
+				pos.y = number(-7, 7) * 20;
+				pos.x += GetX();
+				pos.y += GetY();
+
+				sys_log(0, "DROP_ITEM: %s %d %d from %s", item->GetName(), pos.x, pos.y, GetName());
+			}
+			else
+			{
+				int iItemIdx = s_vec_item.size() - 1;
+
+				std::priority_queue<std::pair<uint64_t, LPCHARACTER> > pq;
+
+				uint64_t total_dam = 0;
+
+				for (TDamageMap::iterator it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
+				{
+					uint64_t iDamage = it->second.iTotalDamage;
+					if (iDamage > 0)
+					{
+						LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+
+						if (ch)
+						{
+							pq.push(std::make_pair(iDamage, ch));
+							total_dam += iDamage;
+						}
+					}
+				}
+
+				std::vector<LPCHARACTER> v;
+
+				while (!pq.empty() && pq.top().first * 10 >= total_dam)
+				{
+					v.push_back(pq.top().second);
+					pq.pop();
+				}
+
+				if (v.empty())
+				{
+					while (iItemIdx >= 0)
+					{
+						item = s_vec_item[iItemIdx--];
+
+						if (!item)
+						{
+							sys_err("item null in vector idx %d", iItemIdx + 1);
+							continue;
+						}
+
+						item->AddToGround(GetMapIndex(), pos);
+
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+							item->SetOwnership(pkAttacker);
+
+						item->StartDestroyEvent();
+
+						pos.x = number(-7, 7) * 20;
+						pos.y = number(-7, 7) * 20;
+						pos.x += GetX();
+						pos.y += GetY();
+
+						sys_log(0, "DROP_ITEM: %s %d %d by %s", item->GetName(), pos.x, pos.y, GetName());
+					}
+				}
+				else
+				{
+					std::vector<LPCHARACTER>::iterator it = v.begin();
+
+					while (iItemIdx >= 0)
+					{
+						item = s_vec_item[iItemIdx--];
+
+						if (!item)
+						{
+							sys_err("item null in vector idx %d", iItemIdx + 1);
+							continue;
+						}
+
+						item->AddToGround(GetMapIndex(), pos);
+
+						LPCHARACTER ch = *it;
+
+						if (ch->GetParty())
+							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
+
+						++it;
+
+						if (it == v.end())
+							it = v.begin();
+
+						if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+						{
+#ifdef ENABLE_DICE_SYSTEM_OFFOLVA
+							if (ch->GetParty())
+							{
+								FPartyDropDiceRoll f(item, ch);
+								f.Process(this);
+							}
+							else
+								item->SetOwnership(ch);
+#else
+							item->SetOwnership(ch);
+#endif
+						}
+
+						item->StartDestroyEvent();
+
+						pos.x = number(-7, 7) * 20;
+						pos.y = number(-7, 7) * 20;
+						pos.x += GetX();
+						pos.y += GetY();
+
+						sys_log(0, "DROP_ITEM: %s %d %d by %s", item->GetName(), pos.x, pos.y, GetName());
+					}
+				}
+			}
+
+#endif
+		}
+	}
+
+	m_map_kDamage.clear();
+}
+
 
 // char_battle.cpp slice BC2 moved into CombatSystem.cpp
 
