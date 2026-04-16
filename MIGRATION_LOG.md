@@ -1392,3 +1392,18 @@
 - after char_battle.cpp Slice BC2: `2156`
 - build: success
 - next: slice BC3 (`Reward`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC3a:
+  - duplicated helper surface for the upcoming `Reward()` relocation into `CombatSystem.cpp`:
+    - `__UpdateBattlePassCollectProgress`
+    - `__TryAutoGiveRewardItem`
+    - `__GiveRewardItemToCharacterOrDrop`
+    - `MakeItemLink`
+    - `verjema_szadba_ixtreeme`
+  - note:
+    - the original helper bodies remain in `char_battle.cpp` for now so the source file keeps building until the `Reward()` body is actually cut
+    - `MakeItemLink` was duplicated as a local helper in `CombatSystem.cpp` to avoid a duplicate external symbol during the overlap window
+- after char_battle.cpp Slice BC3a: `2156`
+- build: success
+- next: slice BC3b (`Reward` body relocation)

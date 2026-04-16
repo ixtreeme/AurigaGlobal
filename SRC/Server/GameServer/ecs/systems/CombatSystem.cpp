@@ -510,6 +510,492 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 }
 
 
+// char_battle.cpp slice BC3a helper surface duplicated into CombatSystem.cpp
+
+#ifdef ENABLE_DROP_INSTANT_INVENTORY
+static void __UpdateBattlePassCollectProgress(LPCHARACTER ch, uint32_t dwItemVnum, uint32_t dwCount)
+{
+#ifdef ENABLE_BATTLE_PASS
+	if (!ch || !dwCount)
+		return;
+
+	const uint8_t bBattlePassId = ch->GetBattlePassId();
+	if (!bBattlePassId)
+		return;
+
+	auto updateMission = [&](uint32_t dwMissionType)
+		{
+			uint32_t dwMissionItemVnum = 0;
+			uint32_t dwNeedCount = 0;
+
+			if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, dwMissionType, &dwMissionItemVnum, &dwNeedCount))
+				return;
+
+			if (dwMissionItemVnum != dwItemVnum)
+				return;
+
+			if (ch->GetMissionProgress(dwMissionType, bBattlePassId) >= dwNeedCount)
+				return;
+
+			ch->UpdateMissionProgress(dwMissionType, bBattlePassId, dwCount, dwNeedCount);
+		};
+
+	updateMission(COLLECT_ITEM);
+	updateMission(COLLECT_ITEM1);
+	updateMission(COLLECT_ITEM2);
+#endif
+}
+
+static bool __TryAutoGiveRewardItem(LPCHARACTER ch, LPITEM item, uint32_t& dwGivenCount)
+{
+	dwGivenCount = 0;
+
+	if (!ch || !item)
+		return false;
+
+	const char* szItemName = item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+	{
+#ifdef ENABLE_NEW_STACK_LIMIT
+		int bCount = item->GetCount();
+#else
+		uint8_t bCount = item->GetCount();
+#endif
+		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item2 = ch->GetExtraInventoryItem(i);
+			if (!item2)
+				continue;
+
+			if (item2->GetVnum() != item->GetVnum())
+				continue;
+
+			int j = 0;
+			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
+			{
+				if (item2->GetSocket(j) != item->GetSocket(j))
+					break;
+			}
+
+			if (j != ITEM_SOCKET_MAX_NUM)
+				continue;
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+			int bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+#else
+			uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+#endif
+			if (bCount2 <= 0)
+				continue;
+
+			bCount -= bCount2;
+			dwGivenCount += bCount2;
+			item2->SetCount(item2->GetCount() + bCount2);
+
+			if (bCount == 0)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				if (dwGivenCount > 0)
+				{
+					ch->ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+						CHAT_TYPE_INFO_ITEM
+#else
+						CHAT_TYPE_INFO
+#endif
+						, 102, "%u#%s", dwGivenCount, szItemName);
+				}
+#endif
+
+				item->SetCount(0);
+				M2_DESTROY_ITEM(item);
+				return true;
+			}
+		}
+
+		item->SetCount(bCount);
+	}
+	else if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+#else
+	if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+#endif
+	{
+#ifdef ENABLE_NEW_STACK_LIMIT
+		int bCount = item->GetCount();
+#else
+		uint8_t bCount = item->GetCount();
+#endif
+		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+		{
+			LPITEM item2 = ch->GetInventoryItem(i);
+			if (!item2)
+				continue;
+
+			if (item2->GetVnum() != item->GetVnum())
+				continue;
+
+			int j = 0;
+			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
+			{
+				if (item2->GetSocket(j) != item->GetSocket(j))
+					break;
+			}
+
+			if (j != ITEM_SOCKET_MAX_NUM)
+				continue;
+
+#ifdef ENABLE_NEW_STACK_LIMIT
+			int bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+#else
+			uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+#endif
+			if (bCount2 <= 0)
+				continue;
+
+			bCount -= bCount2;
+			dwGivenCount += bCount2;
+			item2->SetCount(item2->GetCount() + bCount2);
+
+			if (bCount == 0)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				if (dwGivenCount > 0)
+				{
+					ch->ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+						CHAT_TYPE_INFO_ITEM
+#else
+						CHAT_TYPE_INFO
+#endif
+						, 102, "%u#%s", dwGivenCount, szItemName);
+				}
+#endif
+
+				item->SetCount(0);
+				M2_DESTROY_ITEM(item);
+				return true;
+			}
+		}
+
+		item->SetCount(bCount);
+	}
+
+	int iEmptyCell = -1;
+	TItemPos pos;
+
+	if (item->IsDragonSoul())
+	{
+		iEmptyCell = ch->GetEmptyDragonSoulInventory(item);
+		pos = TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell);
+	}
+#ifdef ENABLE_EXTRA_INVENTORY
+	else if (item->IsExtraItem())
+	{
+		iEmptyCell = ch->GetEmptyExtraInventory(item);
+		pos = TItemPos(EXTRA_INVENTORY, iEmptyCell);
+	}
+#endif
+	else
+	{
+		iEmptyCell = ch->GetEmptyInventory(item->GetSize());
+		pos = TItemPos(INVENTORY, iEmptyCell);
+	}
+
+	if (iEmptyCell == -1)
+		return false;
+
+	const uint32_t dwDirectCount = item->GetCount();
+	item->AddToCharacter(ch, pos);
+	dwGivenCount += dwDirectCount;
+
+#ifdef TEXTS_IMPROVEMENT
+	if (dwGivenCount > 0)
+	{
+		ch->ChatPacketNew(
+#ifdef ENABLE_NEW_CHAT
+			CHAT_TYPE_INFO_ITEM
+#else
+			CHAT_TYPE_INFO
+#endif
+			, 102, "%u#%s", dwGivenCount, szItemName);
+	}
+#endif
+
+	char szHint[32 + 1];
+	snprintf(szHint, sizeof(szHint), "%s %u %u", item->GetName(), item->GetCount(), item->GetOriginalVnum());
+	LogManager::instance().ItemLog(ch, item, "GET", szHint);
+	return true;
+}
+
+static void __GiveRewardItemToCharacterOrDrop(LPCHARACTER ch, LPCHARACTER pkVictim, LPITEM item, const PIXEL_POSITION& pos, bool bTrackBattlePass)
+{
+	if (!item)
+		return;
+
+	uint32_t dwGivenCount = 0;
+	const uint32_t dwItemVnum = item->GetVnum();
+
+	if (ch && __TryAutoGiveRewardItem(ch, item, dwGivenCount))
+	{
+		if (bTrackBattlePass && dwGivenCount > 0)
+			__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
+		return;
+	}
+
+	if (bTrackBattlePass && dwGivenCount > 0)
+		__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
+
+	item->AddToGround(pkVictim->GetMapIndex(), pos);
+
+	if (ch && CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+		item->SetOwnership(ch, 60);
+
+	item->StartDestroyEvent();
+
+	sys_log(0, "DROP_ITEM: %s %d %d from %s", item->GetName(), pos.x, pos.y, pkVictim->GetName());
+}
+#endif
+
+
+#ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
+static std::string MakeItemLink(LPITEM pkItem, LPCHARACTER pkKiller, LPCHARACTER pkMob)
+{
+	char itemlink[512];
+	int len = 0;
+
+	// item link alap
+	len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+		pkItem->GetVnum(),
+		pkItem->GetSocket(0),
+		pkItem->GetSocket(1),
+		pkItem->GetSocket(2),
+		0, 0);
+
+	// bonuszok
+	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
+		uint8_t type = pkItem->GetAttributeType(i);
+		short   val = pkItem->GetAttributeValue(i);
+		if (type && val)
+			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+	}
+
+
+	int lang = LANGUAGE_EN;
+	if (pkKiller && pkKiller->GetDesc())
+		lang = pkKiller->GetDesc()->GetLanguage();
+
+
+	const char* fmt = "|cffc71585[%s]|r looted a special item from |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r"; // EN default
+	switch (lang) {
+	case LANGUAGE_RO:
+		fmt = "|cffc71585[%s]|r a primit un obiect rar de la |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_IT:
+		fmt = "|cffc71585[%s]|r ha ottenuto un oggetto raro da |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_TR:
+		fmt = "|cffc71585[%s]|r nadir bir esya elde etti (|cff87ceeb[%s]|r): |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_DE:
+		fmt = "|cffc71585[%s]|r hat einen seltenen Gegenstand von |cff87ceeb[%s]|r erhalten: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_PL:
+		fmt = "|cffc71585[%s]|r otrzymal rzadki przedmiot od |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_PT:
+		fmt = "|cffc71585[%s]|r obteve um item raro de |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_ES:
+		fmt = "|cffc71585[%s]|r obtuvo un objeto raro de |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_CZ:
+		fmt = "|cffc71585[%s]|r ziskal vzcny predmet z |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	case LANGUAGE_HU:
+		fmt = "|cffc71585[%s]|r ritka trgyat szerzett |cff87ceeb[%s]|r mobtl: |cffffd700|H%s|h[%s]|h|r";
+		break;
+	default:
+		break;
+	}
+
+
+	char szChat[1024];
+	snprintf(szChat, sizeof(szChat), fmt,
+		pkKiller ? pkKiller->GetName() : "Player",
+		pkMob ? pkMob->GetName() : "Mob",
+		itemlink,
+		pkItem ? pkItem->GetName() : "item");
+
+	return std::string(szChat);
+}
+
+
+
+
+static std::set<uint32_t> verjema_szadba_ixtreeme =
+{
+		14590, 14591, 14592, 14593, 52040, 60001, 48421, 49009,
+		49049, 60003, 71223, 71253, 71224, 71228, 71251, 71125,
+		71126, 71127, 71139, 71166, 71171, 71176, 71177, 71221,
+		71222, 71252, 71256, 71225, 71226, 71227, 71255, 71254,
+		71233, 71250, 71128, 23014, 23015, 23016, 71137, 71140, 71185,
+		// vek: 18000 - 18119
+		//18000, 18001, 18002, 18003, 18004, 18005, 18006, 18007, 18008, 18009,
+		//18010, 18011, 18012, 18013, 18014, 18015, 18016, 18017, 18018, 18019,
+		//18020, 18021, 18022, 18023, 18024, 18025, 18026, 18027, 18028, 18029,
+		//18030, 18031, 18032, 18033, 18034, 18035, 18036, 18037, 18038, 18039,
+		//18040, 18041, 18042, 18043, 18044, 18045, 18046, 18047, 18048, 18049,
+		//18050, 18051, 18052, 18053, 18054, 18055, 18056, 18057, 18058, 18059,
+		//18060, 18061, 18062, 18063, 18064, 18065, 18066, 18067, 18068, 18069,
+		//18070, 18071, 18072, 18073, 18074, 18075, 18076, 18077, 18078, 18079,
+		//18080, 18081, 18082, 18083, 18084, 18085, 18086, 18087, 18088, 18089,
+		//18090, 18091, 18092, 18093, 18094, 18095, 18096, 18097, 18098, 18099,
+		//18100, 18101, 18102, 18103, 18104, 18105, 18106, 18107, 18108, 18109,
+		//18110, 18111, 18112, 18113, 18114, 18115, 18116, 18117, 18118, 18119,
+		53025, //luffy
+		70402,//klnleges bonusz 5
+		70403,//klnleges bonusz 10
+		30617,//	Legends Bnuszol
+		30618,//	Legends Megvltoztat
+		86050,//	Talizmn megersto
+		86051,//	Talizmn bvlo
+		86052//	Talizmnersto,
+		,18140, 18141, 18142, 18143, 18144, 18145, 18146, 18147, 18148, 18149,
+		18150, 18151, 18152, 18153, 18154, 18155, 18156, 18157, 18158, 18159
+	// uj mountok 
+,611500, 611501, 611502, 611503, 611504, 611505, 611506, 611507, 611508,
+611510, 611511, 611512, 611513, 611514, 611515, 611516, 611517, 611518,
+611520, 611521, 611522, 611523, 611524, 611525, 611526, 611527, 611528,
+611530, 611531, 611532, 611533, 611534, 611535, 611536, 611537, 611538,
+611540, 611541, 611542, 611543, 611544,
+	611545,
+611546,
+611547,
+611548,
+611549,
+611550,
+611551,
+611552,
+611553,
+611554,
+611555,
+611556,
+611557,
+611558,
+611559,
+611560,
+611561,
+611562,
+611563,
+611564,
+611565,
+611566,
+611567,
+611568,
+611569,
+611570,
+611571,
+611572,
+611573,
+611574,
+611575,
+611576,
+611577,
+611578,
+611579,
+611580,
+611581,
+611582,
+611583,
+611584,
+611585,
+611586,
+611587,
+611588,
+611589,
+611590,
+611591,
+611592,
+611593,
+611594,
+611595,
+611596,
+611597,
+	611598,
+611599,
+611600,
+611601,
+611602,
+611603,
+611604,
+611605,
+611606,
+611607,
+611608,
+611609,
+611610,
+611611,
+611612,
+611613,
+611614,
+611615,
+611616,
+611617,
+611618,
+611619,
+611620,
+611621,
+611622,
+611623,
+611624,
+611625,
+611626,
+611627,
+611628,
+611629,
+611630,
+611631,
+611632,
+611633,
+611634,
+611635,
+611636,
+611637,
+611638,
+611639,
+611640,
+611641,
+611642,
+611643,
+611644,
+611645,
+611646,
+611647,
+611648,
+611649,
+611650,
+611651,
+611652,
+611653,
+611654,
+611655,
+611656,
+611657,
+611658,
+611659,
+611660,
+611661,
+611662,
+611663,
+611664,
+611665,
+611666,
+60101//mikulas baba 30 napos petkszti
+};
+#endif
+
 // char_battle.cpp slice BC2 moved into CombatSystem.cpp
 
 void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
