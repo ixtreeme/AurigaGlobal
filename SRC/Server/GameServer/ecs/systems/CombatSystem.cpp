@@ -10,6 +10,7 @@
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/movement_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
 #include "../AIHelpers.hpp"
@@ -19,6 +20,7 @@
 #include "../VIDRegistry.hpp"
 #include "../../utils.h"
 #include "../../config.h"
+#include "../../constants.h"
 #include "../../desc.h"
 #include "../../desc_manager.h"
 #include "../../char.h"
@@ -95,6 +97,13 @@ static inline entt::entity EntityOf(LPCHARACTER ch)
     }
 
     return CVIDRegistry::Instance().Find(ch->GetVID());
+}
+
+static inline bool HasMoveState(const CHARACTER* ch)
+{
+    const entt::entity e = EntityOf(const_cast<CHARACTER*>(ch));
+    return e != entt::null && g_registry.valid(e) &&
+        g_registry.all_of<ecs::MovementDestination>(e);
 }
 
 namespace CombatSystem {
@@ -7456,5 +7465,297 @@ bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
 		dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
 
 	return get_dword_time() - m_dwLastChangeAttackPositionTime > dwChangeTime;
+}
+
+int CHARACTER::GetLeadershipSkillLevel() const
+{
+	return GetSkillLevel(SKILL_LEADERSHIP);
+}
+
+void CHARACTER::ReviveInvisible(int iDur)
+{
+	AddAffect(AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0, AFF_REVIVE_INVISIBLE, iDur, 0, true);
+}
+
+void CHARACTER::CowardEscape()
+{
+	int iDist[4] = {500, 1000, 3000, 5000};
+
+	for (int iDistIdx = 2; iDistIdx >= 0; --iDistIdx)
+		for (int iTryCount = 0; iTryCount < 8; ++iTryCount)
+		{
+			SetRotation(number(0, 359));
+
+			float fx, fy;
+			float fDist = number(iDist[iDistIdx], iDist[iDistIdx + 1]);
+
+			GetDeltaByDegree(GetRotation(), fDist, &fx, &fy);
+
+			bool bIsWayBlocked = false;
+			for (int j = 1; j <= 100; ++j)
+			{
+				if (!SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
+				{
+					bIsWayBlocked = true;
+					break;
+				}
+			}
+
+			if (bIsWayBlocked)
+				continue;
+
+			m_dwStateDuration = PASSES_PER_SEC(1);
+
+			int iDestX = GetX() + (int)fx;
+			int iDestY = GetY() + (int)fy;
+
+			if (Goto(iDestX, iDestY))
+				SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+
+			sys_log(0, "WAEGU move to %d %d (far)", iDestX, iDestY);
+			return;
+		}
+}
+
+void CHARACTER::DetermineDropMetinStone()
+{
+#ifdef ENABLE_NEWSTUFF
+	if (g_NoDropMetinStone)
+	{
+		m_dwDropMetinStone = 0;
+		return;
+	}
+#endif
+
+	static const uint32_t c_adwMetin[] =
+	{
+#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_WOLFMAN_STONES)
+		28012,
+#endif
+		28030,
+		28031,
+		28032,
+		28033,
+		28034,
+		28035,
+		28036,
+		28037,
+		28038,
+		28039,
+		28040,
+		28041,
+		28042,
+		28043,
+#if defined(ENABLE_MAGIC_REDUCTION_SYSTEM) && defined(USE_MAGIC_REDUCTION_STONES)
+		28044,
+		28045,
+#endif
+	};
+	uint32_t stone_num = GetRaceNum();
+	int idx = std::lower_bound(aStoneDrop, aStoneDrop + STONE_INFO_MAX_NUM, stone_num) - aStoneDrop;
+	if (idx >= STONE_INFO_MAX_NUM || aStoneDrop[idx].dwMobVnum != stone_num)
+	{
+		m_dwDropMetinStone = 0;
+	}
+	else
+	{
+		const SStoneDropInfo& info = aStoneDrop[idx];
+		m_bDropMetinStonePct = info.iDropPct;
+		{
+			m_dwDropMetinStone = c_adwMetin[number(0, sizeof(c_adwMetin) / sizeof(uint32_t) - 1)];
+			int iGradePct = number(1, 100);
+			for (int iStoneLevel = 0; iStoneLevel < STONE_LEVEL_MAX_NUM; iStoneLevel++)
+			{
+				int iLevelGradePortion = info.iLevelPct[iStoneLevel];
+				if (iGradePct <= iLevelGradePortion)
+				{
+					break;
+				}
+				else
+				{
+					iGradePct -= iLevelGradePortion;
+					m_dwDropMetinStone += 100;
+				}
+			}
+		}
+	}
+}
+
+bool CHARACTER::CanSummon(int iLeaderShip)
+{
+	return ((iLeaderShip >= 20) || ((iLeaderShip >= 12) && ((m_dwLastDeadTime + 180) > get_dword_time())));
+}
+
+bool CHARACTER::Return()
+{
+	if (!IsNPC())
+		return false;
+
+	int x, y;
+	SetVictim(nullptr);
+
+	x = m_pkMobInst->m_posLastAttacked.x;
+	y = m_pkMobInst->m_posLastAttacked.y;
+
+	SetRotationToXY(x, y);
+
+	if (!Goto(x, y))
+		return false;
+
+	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+
+	if (test_server)
+		sys_log(0, "%s %p A÷±âÇI°í µ13A°!AÚ! %d %d", GetName(), this, x, y);
+
+	if (GetParty())
+		GetParty()->SendMessage(this, PM_RETURN, x, y);
+
+	return true;
+}
+
+bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
+{
+	if (IsPC())
+	{
+		sys_err("CHARACTER::Follow : PC cannot use this method", GetName());
+		return false;
+	}
+
+	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE))
+	{
+		if (pkChr->IsPC())
+		{
+			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
+			{
+				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
+				{
+					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(pkChr->GetX() - GetX(), pkChr->GetY() - GetY()))
+						if (Return())
+							return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	int32_t x = pkChr->GetX();
+	int32_t y = pkChr->GetY();
+
+	if (pkChr->IsPC())
+	{
+		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
+		{
+			if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
+			{
+				if (5000 < DISTANCE_APPROX(m_pkMobInst->m_posLastAttacked.x - GetX(), m_pkMobInst->m_posLastAttacked.y - GetY()))
+					if (Return())
+						return true;
+			}
+		}
+	}
+
+#ifndef ENABLE_BUG_FIXES
+	if (IsGuardNPC())
+	{
+		if (5000 < DISTANCE_APPROX(m_pkMobInst->m_posLastAttacked.x - GetX(), m_pkMobInst->m_posLastAttacked.y - GetY()))
+			if (Return())
+				return true;
+	}
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+	if (HasMoveState(pkChr) &&
+		GetMobBattleType() != BATTLE_TYPE_RANGE &&
+		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
+		false == IsPet() && false == IsNewPet()
+#else
+	if (HasMoveState(pkChr) &&
+		GetMobBattleType() != BATTLE_TYPE_RANGE &&
+		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
+		false == IsPet()
+#endif
+		)
+	{
+		float rot = pkChr->GetRotation();
+		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), pkChr->GetX(), pkChr->GetY()));
+
+		float yourSpeed = pkChr->GetMoveSpeed();
+		float mySpeed = GetMoveSpeed();
+
+		float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
+		float fFollowSpeed = mySpeed - yourSpeed * cos(rot_delta * M_PI / 180);
+
+		if (fFollowSpeed >= 0.1f)
+		{
+			float fMeetTime = fDist / fFollowSpeed;
+			float fYourMoveEstimateX, fYourMoveEstimateY;
+
+			if (fMeetTime * yourSpeed <= 100000.0f)
+			{
+				GetDeltaByDegree(pkChr->GetRotation(), fMeetTime * yourSpeed, &fYourMoveEstimateX, &fYourMoveEstimateY);
+
+				x += (int32_t)fYourMoveEstimateX;
+				y += (int32_t)fYourMoveEstimateY;
+
+				float fDistNew = sqrt(((double)x - GetX()) * (x - GetX()) + ((double)y - GetY()) * (y - GetY()));
+				if (fDist < fDistNew)
+				{
+					x = (int32_t)(GetX() + (x - GetX()) * fDist / fDistNew);
+					y = (int32_t)(GetY() + (y - GetY()) * fDist / fDistNew);
+				}
+			}
+		}
+	}
+
+	SetRotationToXY(x, y);
+
+	float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
+
+	if (fDist <= fMinDistance)
+		return false;
+
+	float fx, fy;
+
+	if (IsChangeAttackPosition(pkChr) && GetMobRank() < MOB_RANK_BOSS)
+	{
+		SetChangeAttackPositionTime();
+
+		int retry = 16;
+		int dx, dy;
+		int rot = (int)GetDegreeFromPositionXY(x, y, GetX(), GetY());
+
+		while (--retry)
+		{
+			if (fDist < 500.0f)
+				GetDeltaByDegree((rot + number(-90, 90) + number(-90, 90)) % 360, fMinDistance, &fx, &fy);
+			else
+				GetDeltaByDegree(number(0, 359), fMinDistance, &fx, &fy);
+
+			dx = x + (int)fx;
+			dy = y + (int)fy;
+
+			LPSECTREE tree = SECTREE_MANAGER::instance().Get(GetMapIndex(), dx, dy);
+
+			if (nullptr == tree)
+				break;
+
+			if (0 == (tree->GetAttribute(dx, dy) & (ATTR_BLOCK | ATTR_OBJECT)))
+				break;
+		}
+
+		if (!Goto(dx, dy))
+			return false;
+	}
+	else
+	{
+		float fDistToGo = fDist - fMinDistance;
+		GetDeltaByDegree(GetRotation(), fDistToGo, &fx, &fy);
+
+		if (!Goto(GetX() + (int)fx, GetY() + (int)fy))
+			return false;
+	}
+
+	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+	return true;
 }
 

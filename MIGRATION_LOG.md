@@ -2881,3 +2881,23 @@
   - `CHARACTER::` body count: `31`
 - build: success
 - next: `S11e-3b Return/Follow`, `S11e-3c coward/drop helpers`, or `S11e-4a mount counters`
+
+## Phase 8 - Step 8.17 char.cpp -> CombatSystem (continued)
+- completed slice `S11e-3b/c target follow coward`
+- moved:
+  - `Return`
+  - `Follow`
+  - `GetLeadershipSkillLevel`
+  - `ReviveInvisible`
+  - `CowardEscape`
+  - `DetermineDropMetinStone`
+  - `CanSummon`
+- note:
+  - `Return` and `Follow` moved directly after measuring; the only post-move fix was adding a local `HasMoveState` helper plus `movement_components.hpp` to `CombatSystem.cpp`
+  - `DetermineDropMetinStone` required explicit `constants.h` surface in `CombatSystem.cpp` for `aStoneDrop`, `SStoneDropInfo`, and `STONE_INFO_MAX_NUM`
+- after char.cpp Slice S11e-3c: `1701`
+- char.cpp status after slice:
+  - line count: `1911`
+  - `CHARACTER::` body count: `24`
+- build: success
+- next: `S11e-4a mount counters`, `S11d-c-4c Initialize`, or `S11d-c-4d Create`
