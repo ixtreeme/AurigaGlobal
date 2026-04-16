@@ -1741,3 +1741,26 @@
   - `CHARACTER::` body count: `305`
 - build: success
 - next: `S4 Session / Network / social-adjacent runtime slices`
+
+## Phase 8 - Step 8.17 char.cpp -> NetworkSyncSystem
+- completed slice `S4 NetworkSyncSystem`
+- extended:
+  - `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp`
+  - `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- moved:
+  - `UpdatePacket`
+  - `MainCharacterPacket`
+  - `PointsPacket`
+  - `CHARACTER_SetBGMVolumeEnable`
+  - `CHARACTER_AddBGMInfo`
+  - `CHARACTER_GetBGMInfo`
+  - `CHARACTER_IsBGMVolumeEnable`
+- note:
+  - the BGM helper surface stayed global because `cmd.h` and `questlua_global.cpp` still call the legacy helper entry points directly
+  - the packet body relocation built green on the first pass after the helper surface was added
+- after char.cpp Slice S4: `2023`
+- char.cpp status after slice:
+  - line count: `8026`
+  - `CHARACTER::` body count: `302`
+- build: success
+- next: `S5 SessionSystem / SocialSystem candidate audit`
