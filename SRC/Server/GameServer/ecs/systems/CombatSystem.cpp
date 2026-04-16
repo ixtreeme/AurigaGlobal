@@ -1112,6 +1112,626 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 }
 
 
+// char_battle.cpp slice BD2b moved into CombatSystem.cpp
+
+static uint32_t __GetPartyExpNP(const uint32_t level);
+static uint32_t AdjustExpByLevel_Combat(const LPCHARACTER ch, const uint32_t exp);
+
+void CHARACTER::DistributeHP(LPCHARACTER pkKiller)
+{
+	if (pkKiller->GetDungeon()) //  ΰʴ´
+		return;
+}
+#define ENABLE_NEWEXP_CALCULATION
+#ifdef ENABLE_NEWEXP_CALCULATION
+#define NEW_GET_LVDELTA(me, victim) aiPercentByDeltaLev[MINMAX(0, (victim + 15) - me, MAX_EXP_DELTA_OF_LEV - 1)]
+typedef long double rate_t;
+static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
+{
+	if (test_server && iExp < 0)
+	{
+		to->ChatPacket(CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
+		return;
+	}
+	// decrease/increase exp based on player<>mob level
+	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(to->GetLevel(), from->GetLevel())) / 100.0L;
+	iExp *= lvFactor;
+	// start calculating rate exp bonus
+	int iBaseExp = iExp;
+	rate_t rateFactor = 100;
+
+	rateFactor += CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT);
+	if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
+		rateFactor += 20;
+	if (to->GetMapIndex() >= 660000 && to->GetMapIndex() < 670000)
+		rateFactor += 20;
+#ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
+
+
+
+	int expDoubleBonus = to->GetPoint(POINT_EXP_DOUBLE_BONUS);
+
+	if (expDoubleBonus > 0)
+	{
+		int extraBonus = 30;
+
+		if (expDoubleBonus > 100)
+		{
+			
+			extraBonus = 30 + ((expDoubleBonus - 100) / 10) * 10;
+		}
+
+		 
+		rateFactor += extraBonus;
+	}
+
+#else
+	if (to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+		if (number(1, 100) <= to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+			rateFactor += 30;
+#endif
+	if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
+		rateFactor += 50;
+
+	switch (to->GetMountVnum())
+	{
+	case 20110:
+	case 20111:
+	case 20112:
+	case 20113:
+		if (to->IsEquipUniqueItem(71115) || to->IsEquipUniqueItem(71117) || to->IsEquipUniqueItem(71119) ||
+			to->IsEquipUniqueItem(71121))
+		{
+			rateFactor += 10;
+		}
+		break;
+
+	case 20114:
+	case 20120:
+	case 20121:
+	case 20122:
+	case 20123:
+	case 20124:
+	case 20125:
+		rateFactor += 30;
+		break;
+	}
+
+	if (to->GetPremiumRemainSeconds(PREMIUM_EXP) > 0)
+		rateFactor += 50;
+	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
+		rateFactor += 50;
+	if (to->GetPoint(POINT_PC_BANG_EXP_BONUS) > 0)
+	{
+		if (to->IsPCBang())
+			rateFactor += to->GetPoint(POINT_PC_BANG_EXP_BONUS);
+	}
+	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
+	rateFactor += to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP);
+	rateFactor += to->GetPoint(POINT_MALL_EXPBONUS);
+	rateFactor += to->GetPoint(POINT_EXP);
+	// useless (never used except for china intoxication) = always 100
+	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(to)) / 100.0L;
+	// apply calculated rate bonus
+	iExp *= (rateFactor / 100.0L);
+	if (test_server)
+		to->ChatPacket(CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
+	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
+	iExp = std::min(to->GetNextExp() / 10, (uint32_t)iExp);
+	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
+	iExp = AdjustExpByLevel_Combat(to, iExp);
+
+#ifdef __NEWPET_SYSTEM__
+	CNewPetSystem* petSystemNew = to->GetNewPetSystem();
+	if (petSystemNew)
+	{
+#ifdef ENABLE_NEW_PET_EDITS
+		if (petSystemNew->GetLevel() < 100)
+#else
+		if (petSystemNew->GetLevel() < 120)
+#endif
+		{
+			if ((petSystemNew->IsActivePet()) && (petSystemNew->GetLevelStep() < 4))
+			{
+				int tmpexp = iExp * 9 / 20;
+				iExp = iExp - tmpexp;
+				petSystemNew->SetExp(tmpexp, 0);
+			}
+		}
+	}
+#endif
+
+	if (test_server)
+		to->ChatPacket(CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
+	// set
+	to->PointChange(POINT_EXP, iExp, true);
+	from->CreateFly(FLY_EXP, to);
+	// marriage
+	{
+		LPCHARACTER you = to->GetMarryPartner();
+		if (you)
+		{
+			// sometimes, this overflows
+			uint32_t dwUpdatePoint = (2000.0L / to->GetLevel() / to->GetLevel() / 3) * iExp;
+
+			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
+				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
+				dwUpdatePoint *= 3;
+
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(to->GetPlayerID());
+
+			// DIVORCE_NULL_BUG_FIX
+			if (pMarriage && pMarriage->IsNear())
+				pMarriage->Update(dwUpdatePoint);
+			// END_OF_DIVORCE_NULL_BUG_FIX
+		}
+	}
+}
+#else
+static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
+{
+	//  ġ 
+	iExp = CALCULATE_VALUE_LVDELTA(to->GetLevel(), from->GetLevel(), iExp);
+
+	int iBaseExp = iExp;
+
+	// , ȸ ġ ̺Ʈ 
+#ifdef ENABLE_EVENT_MANAGER
+	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, to->GetEmpire());
+	if (event != 0)
+		iExp = iExp * (100 + (event->value[0] + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT))) / 100;
+	else
+		iExp = iExp * (100 + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT)) / 100;
+#else
+	iExp = iExp * (100 + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT)) / 100;
+#endif
+
+	// ӳ ⺻ Ǵ ġ ʽ
+	{
+		// 뵿 ޴
+		if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
+			iExp += iExp * 20 / 100;
+
+		// Ÿ ġ ʽ
+		if (to->GetMapIndex() >= 660000 && to->GetMapIndex() < 670000)
+			iExp += iExp * 20 / 100; // 1.2 (20%)
+
+		//  ġ ι Ӽ
+		if (to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+			if (number(1, 100) <= to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+				iExp += iExp * 30 / 100; // 1.3 (30%)
+
+		//   (2ð¥)
+		if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
+			iExp += iExp * 50 / 100;
+
+		switch (to->GetMountVnum())
+		{
+		case 20110:
+		case 20111:
+		case 20112:
+		case 20113:
+			if (to->IsEquipUniqueItem(71115) || to->IsEquipUniqueItem(71117) || to->IsEquipUniqueItem(71119) ||
+				to->IsEquipUniqueItem(71121))
+			{
+				iExp += iExp * 10 / 100;
+			}
+			break;
+
+		case 20114:
+		case 20120:
+		case 20121:
+		case 20122:
+		case 20123:
+		case 20124:
+		case 20125:
+			//  ġ ʽ
+			iExp += iExp * 30 / 100;
+			break;
+		}
+	}
+
+	//   Ǹ ġ ʽ
+	{
+		//  : ġ 
+		if (to->GetPremiumRemainSeconds(PREMIUM_EXP) > 0)
+		{
+			iExp += (iExp * 50 / 100);
+		}
+
+		if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP) == true)
+		{
+			iExp += (iExp * 50 / 100);
+		}
+
+		// PC  ġ ʽ
+		if (to->GetPoint(POINT_PC_BANG_EXP_BONUS) > 0)
+		{
+			if (to->IsPCBang() == true)
+				iExp += (iExp * to->GetPoint(POINT_PC_BANG_EXP_BONUS) / 100);
+		}
+
+		// ȥ ʽ
+		iExp += iExp * to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
+	}
+
+	iExp += (iExp * to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
+	iExp += (iExp * to->GetPoint(POINT_MALL_EXPBONUS) / 100);
+	iExp += (iExp * to->GetPoint(POINT_EXP) / 100);
+
+	if (test_server)
+	{
+		sys_log(0, "Bonus Exp : Ramadan Candy: %d MallExp: %d PointExp: %d",
+			to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP),
+			to->GetPoint(POINT_MALL_EXPBONUS),
+			to->GetPoint(POINT_EXP)
+		);
+	}
+
+	// ȹ  2005.04.21  85%
+	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(to) / 100;
+
+	// ġ ѹ ȹ淮 
+	iExp = MIN(to->GetNextExp() / 10, iExp);
+
+	if (test_server)
+	{
+		if (quest::CQuestManager::instance().GetEventFlag("exp_bonus_log") && iBaseExp > 0)
+			to->ChatPacket(CHAT_TYPE_INFO, "exp bonus %d%%", (iExp - iBaseExp) * 100 / iBaseExp);
+		to->ChatPacket(CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
+	}
+
+	iExp = AdjustExpByLevel_Combat(to, iExp);
+
+#ifdef __NEWPET_SYSTEM__
+	CNewPetSystem* petSystemNew = to->GetNewPetSystem();
+	if (petSystemNew) {
+		if (petSystemNew->GetLevel() < 120)
+		{
+			if (petSystemNew->IsActivePet() && petSystemNew->GetLevelStep() < 4)
+			{
+				int tmpexp = iExp * 9 / 20;
+				iExp = iExp - tmpexp;
+				petSystemNew->SetExp(tmpexp, 0);
+			}
+		}
+	}
+#endif
+
+	to->PointChange(POINT_EXP, iExp, true);
+	from->CreateFly(FLY_EXP, to);
+
+	{
+		LPCHARACTER you = to->GetMarryPartner();
+		// κΰ  Ƽ̸ ݽ 
+		if (you)
+		{
+			// 1 100%
+			uint32_t dwUpdatePoint = 2000 * iExp / to->GetLevel() / to->GetLevel() / 3;
+
+			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
+				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
+				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
+
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(to->GetPlayerID());
+
+			// DIVORCE_NULL_BUG_FIX
+			if (pMarriage && pMarriage->IsNear())
+				pMarriage->Update(dwUpdatePoint);
+			// END_OF_DIVORCE_NULL_BUG_FIX
+		}
+	}
+}
+#endif
+
+namespace NPartyExpDistribute
+{
+	struct FPartyTotaler
+	{
+		int		total;
+		int		member_count;
+		int		x, y;
+
+		FPartyTotaler(LPCHARACTER center)
+			: total(0), member_count(0), x(center->GetX()), y(center->GetY())
+		{
+		};
+
+		void operator () (LPCHARACTER ch)
+		{
+			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			{
+				total += __GetPartyExpNP(ch->GetLevel());
+
+				++member_count;
+			}
+		}
+	};
+
+	struct FPartyDistributor
+	{
+		int		total;
+		LPCHARACTER	c;
+		int		x, y;
+		uint32_t		_iExp;
+		int		m_iMode;
+		int		m_iMemberCount;
+
+		FPartyDistributor(LPCHARACTER center, int member_count, int total, uint32_t iExp, int iMode)
+			: total(total), c(center), x(center->GetX()), y(center->GetY()), _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
+		{
+			if (m_iMemberCount == 0)
+				m_iMemberCount = 1;
+		};
+
+		void operator () (LPCHARACTER ch)
+		{
+			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			{
+				uint32_t iExp2 = 0;
+
+				switch (m_iMode)
+				{
+				case PARTY_EXP_DISTRIBUTION_NON_PARITY:
+					iExp2 = (uint32_t)(_iExp * (float)__GetPartyExpNP(ch->GetLevel()) / total);
+					break;
+
+				case PARTY_EXP_DISTRIBUTION_PARITY:
+					iExp2 = _iExp / m_iMemberCount;
+					break;
+
+				default:
+					sys_err("Unknown party exp distribution mode %d", m_iMode);
+					return;
+				}
+
+				GiveExp(c, ch, iExp2);
+			}
+		}
+	};
+}
+
+typedef struct SDamageInfo
+{
+	int iDam;
+	LPCHARACTER pAttacker;
+	LPPARTY pParty;
+
+	void Clear()
+	{
+		pAttacker = nullptr;
+		pParty = nullptr;
+	}
+
+	inline void Distribute(LPCHARACTER ch, int iExp)
+	{
+		if (pAttacker)
+			GiveExp(ch, pAttacker, iExp);
+		else if (pParty)
+		{
+			NPartyExpDistribute::FPartyTotaler f(ch);
+			pParty->ForEachOnlineMember(f);
+
+			if (pParty->IsPositionNearLeader(ch))
+				iExp = iExp * (100 + pParty->GetExpBonusPercent()) / 100;
+
+			// ġ ֱ (Ƽ ȹ ġ 5%   )
+			if (pParty->GetExpCentralizeCharacter())
+			{
+				LPCHARACTER tch = pParty->GetExpCentralizeCharacter();
+
+				if (DISTANCE_APPROX(ch->GetX() - tch->GetX(), ch->GetY() - tch->GetY()) <= PARTY_DEFAULT_RANGE)
+				{
+					int iExpCenteralize = (int)(iExp * 0.05f);
+					iExp -= iExpCenteralize;
+
+					GiveExp(ch, pParty->GetExpCentralizeCharacter(), iExpCenteralize);
+				}
+			}
+
+			NPartyExpDistribute::FPartyDistributor fDist(ch, f.member_count, f.total, iExp, pParty->GetExpDistributionMode());
+			pParty->ForEachOnlineMember(fDist);
+		}
+	}
+} TDamageInfo;
+
+LPCHARACTER CHARACTER::DistributeExp()
+{
+	int iExpToDistribute = GetExp();
+#ifdef ENABLE_NEWEXP_CALCULATION_RAZOR93
+	int map = GetMapIndex();
+	if (map == 41 || map == 363)//map1, map2
+	{
+		//+500%
+		iExpToDistribute = iExpToDistribute * 5;
+	}
+	else if (map == 364)//ice empore
+	{
+		// +300%
+		iExpToDistribute = iExpToDistribute * 4;
+	}
+	else if (map == 368 || map == 63)//,nephtype,desert
+	{
+		// +200%
+		iExpToDistribute = iExpToDistribute * 2;
+	}
+
+#endif
+
+	if (iExpToDistribute <= 0)
+		return nullptr;
+
+	uint64_t	iTotalDam = 0;
+	LPCHARACTER pkChrMostAttacked = nullptr;
+	uint64_t iMostDam = 0;
+
+	typedef std::vector<TDamageInfo> TDamageInfoTable;
+	TDamageInfoTable damage_info_table;
+	std::map<LPPARTY, TDamageInfo> map_party_damage;
+
+	damage_info_table.reserve(m_map_kDamage.size());
+
+	TDamageMap::iterator it = m_map_kDamage.begin();
+
+	// ϴ    ɷ . (50m)
+	while (it != m_map_kDamage.end())
+	{
+		const VID& c_VID = it->first;
+		uint64_t iDam = it->second.iTotalDamage;
+
+		++it;
+
+		LPCHARACTER pAttacker = CHARACTER_MANAGER::instance().Find(c_VID);
+
+		// NPC ⵵ ϳ? -.-;
+		if (!pAttacker || pAttacker->IsNPC() || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
+			continue;
+
+		iTotalDam += iDam;
+		if (!pkChrMostAttacked || iDam > iMostDam)
+		{
+			pkChrMostAttacked = pAttacker;
+			iMostDam = iDam;
+		}
+
+		if (pAttacker->GetParty())
+		{
+			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(pAttacker->GetParty());
+			if (it == map_party_damage.end())
+			{
+				TDamageInfo di;
+				di.iDam = iDam;
+				di.pAttacker = nullptr;
+				di.pParty = pAttacker->GetParty();
+				map_party_damage.insert(std::make_pair(di.pParty, di));
+			}
+			else
+			{
+				it->second.iDam += iDam;
+			}
+		}
+		else
+		{
+			TDamageInfo di;
+
+			di.iDam = iDam;
+			di.pAttacker = pAttacker;
+			di.pParty = nullptr;
+
+			//sys_log(0, "__ pq_damage %s %d", pAttacker->GetName(), iDam);
+			//pq_damage.push(di);
+			damage_info_table.push_back(di);
+		}
+	}
+
+	for (std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.begin(); it != map_party_damage.end(); ++it)
+	{
+		damage_info_table.push_back(it->second);
+		//sys_log(0, "__ pq_damage_party [%u] %d", it->second.pParty->GetLeaderPID(), it->second.iDam);
+	}
+
+	SetExp(0);
+	//m_map_kDamage.clear();
+
+	if (iTotalDam == 0)	//  ذ 0̸ 
+		return nullptr;
+
+	if (m_pkChrStone)	//    ġ   ѱ.
+	{
+		//sys_log(0, "__ Give half to Stone : %d", iExpToDistribute>>1);
+		int iExp = iExpToDistribute >> 1;
+		m_pkChrStone->SetExp(m_pkChrStone->GetExp() + iExp);
+		iExpToDistribute -= iExp;
+	}
+
+	sys_log(1, "%s total exp: %d, damage_info_table.size() == %d, TotalDam %d",
+		GetName(), iExpToDistribute, damage_info_table.size(), iTotalDam);
+	//sys_log(1, "%s total exp: %d, pq_damage.size() == %d, TotalDam %d",
+	//GetName(), iExpToDistribute, pq_damage.size(), iTotalDam);
+
+	if (damage_info_table.empty())
+		return nullptr;
+
+	//      HP ȸ Ѵ.
+	DistributeHP(pkChrMostAttacked);	//  ý
+
+	{
+		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
+		TDamageInfoTable::iterator di = damage_info_table.begin();
+		{
+			TDamageInfoTable::iterator it;
+
+			for (it = damage_info_table.begin(); it != damage_info_table.end(); ++it)
+			{
+				if (it->iDam > di->iDam)
+					di = it;
+			}
+		}
+
+		int	iExp = iExpToDistribute / 5;
+		iExpToDistribute -= iExp;
+
+		float fPercent = (float)di->iDam / iTotalDam;
+
+		if (fPercent > 1.0f)
+		{
+			sys_err("DistributeExp percent over 1.0 (fPercent %f name %s)", fPercent, di->pAttacker->GetName());
+			fPercent = 1.0f;
+		}
+
+		iExp += (int)(iExpToDistribute * fPercent);
+
+		//sys_log(0, "%s given exp percent %.1f + 20 dam %d", GetName(), fPercent * 100.0f, di.iDam);
+#ifdef DISABLE_EXP_FROM_STONES_RAZOR93
+		if (IsStone()) // razor93
+		{
+			//NEM HIVJA MEG A di->Distribute(this, iExp);
+		}
+		else
+		{
+			di->Distribute(this, iExp);//HA NEM STNONE AKKOR IGEN
+		}
+#else
+		const int race = GetRaceNum();
+		if (race == 8010 || race == 8020 || race == 8738 || race == 8739 || race == 8740 || race == 4811 || race == 4812 || race == 4813 || race == 4814 || race == 4815
+			|| race == 8821 || race == 8822 || race == 8823 || race == 8824
+			)
+			return pkChrMostAttacked; // seggbe 
+		di->Distribute(this, iExp);
+#endif
+		// 100%  Ծ Ѵ.
+		if (fPercent == 1.0f)
+			return pkChrMostAttacked;
+
+		di->Clear();
+	}
+
+	{
+		//  80% ġ йѴ.
+		TDamageInfoTable::iterator it;
+
+		for (it = damage_info_table.begin(); it != damage_info_table.end(); ++it)
+		{
+			TDamageInfo& di = *it;
+
+			float fPercent = (float)di.iDam / iTotalDam;
+
+			if (fPercent > 1.0f)
+			{
+				sys_err("DistributeExp percent over 1.0 (fPercent %f name %s)", fPercent, di.pAttacker->GetName());
+				fPercent = 1.0f;
+			}
+
+			//sys_log(0, "%s given exp percent %.1f dam %d", GetName(), fPercent * 100.0f, di.iDam);
+			di.Distribute(this, (int)(iExpToDistribute * fPercent));
+		}
+	}
+
+	return pkChrMostAttacked;
+}
+
+// ȭ   
+
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
     // migrated from CHARACTER::Attack

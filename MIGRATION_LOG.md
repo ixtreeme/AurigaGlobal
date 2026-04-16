@@ -1514,3 +1514,21 @@
 - after char_battle.cpp Slice BD2a: `2097`
 - build: success
 - next: slice BD2b (`DistributeHP` + `DistributeExp`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BD2b:
+  - moved:
+    - `DistributeHP`
+    - `DistributeExp`
+  - helper surface moved with the slice:
+    - `rate_t`
+    - `GiveExp` overloads
+    - `NPartyExpDistribute`
+    - `SDamageInfo`
+  - note:
+    - the first relocation build only needed a small follow-up fix:
+      - add forward declarations for the duplicated exp helpers before the moved block in `CombatSystem.cpp`
+    - after that, the exp-distribution slice built cleanly and `char_battle.cpp` was reduced to a single remaining `Dead()` body
+- after char_battle.cpp Slice BD2b: `2081`
+- build: success
+- next: final slice BC5 (`Dead`) and file deletion
