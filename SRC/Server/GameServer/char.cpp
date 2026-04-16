@@ -1425,16 +1425,6 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity) {
 }
 #ifdef ENABLE_FAKE_SHOP_HEADER
 //#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-int CHARACTER::GetBeltCount() const
-{
-	int beltItemCount = 0;
-	for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-	{
-		if (GetInventoryItem(i))
-			++beltItemCount;
-	}
-	return beltItemCount;
-}
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 bool CHARACTER::IsNextMountPulse() const { return (m_mountPulse == 0 || (m_mountPulse < thecore_pulse())); }
@@ -1450,85 +1440,6 @@ void SendI18nChatPacket(CHARACTER* ch, uint8_t type, const char* format, Args ..
 	SendChatPacket(ch, type, resultString);
 }
 #endif
-int CHARACTER::GetMountCount() const
-{
-	int mountItemCount = 0;
-	if (CMountInventory* mi = GetMountInventory())
-	{
-		const int total = mi->GetWidth() * mi->GetSize();
-		for (int pos = 0; pos < total; ++pos)
-		{
-			if (mi->Get(pos))
-				++mountItemCount;
-		}
-	}
-	return mountItemCount;
-}
-void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
-{
-	if (!IsPC())
-		return;
-
-	if (!viewer || !viewer->IsPC())
-		return;
-
-	if (!viewer->GetDesc())
-		return;
-
-	// MOUNT count
-	int mountItemCount = 0;
-	if (CMountInventory* mi = GetMountInventory())
-	{
-		const int total = mi->GetWidth() * mi->GetSize();
-		for (int pos = 0; pos < total; ++pos)
-		{
-			if (mi->Get(pos))
-				++mountItemCount;
-		}
-	}
-
-	// BELT count
-	int beltItemCount = 0;
-	for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-	{
-		if (GetInventoryItem(i))
-			++beltItemCount;
-	}
-
-	TPacketGCFakeShopSign p;
-	p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
-	p.dwVID = GetVID();
-	p.iMountCount = mountItemCount;
-	p.iBeltCount = beltItemCount;
-
-	viewer->GetDesc()->Packet(&p, sizeof(p));
-
-
-}
-
-void CHARACTER::UpdateMountCountOverheadToViewers()
-{
-#ifdef ENABLE_FAKE_SHOP_HEADER
-	
-	UpdateMountInventoryCountOverhead(this);
-
-	
-	for (const auto& it : m_map_view)
-	{
-		LPENTITY ent = it.first;
-		if (!ent || !ent->IsType(ENTITY_CHARACTER))
-			continue;
-
-		LPCHARACTER viewer = (LPCHARACTER)ent;
-		if (!viewer || viewer == this)
-			continue;
-
-		if (viewer->IsPC() && viewer->GetDesc())
-			UpdateMountInventoryCountOverhead(viewer);
-	}
-#endif
-}
-
 //void CHARACTER::UpdateMountCountOverhead(LPCHARACTER viewer)
 //{
 //	if (!IsPC()) // Én magam játékos vagyok-e?

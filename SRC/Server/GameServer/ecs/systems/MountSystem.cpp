@@ -219,6 +219,75 @@ void CHARACTER::SendMountInventory()
     GetDesc()->Packet(buf.read_peek(), buf.size());
 }
 
+int CHARACTER::GetBeltCount() const
+{
+    int beltItemCount = 0;
+    for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
+    {
+        if (GetInventoryItem(i))
+            ++beltItemCount;
+    }
+
+    return beltItemCount;
+}
+
+int CHARACTER::GetMountCount() const
+{
+    int mountItemCount = 0;
+    if (CMountInventory* mi = GetMountInventory())
+    {
+        const int total = mi->GetWidth() * mi->GetSize();
+        for (int pos = 0; pos < total; ++pos)
+        {
+            if (mi->Get(pos))
+                ++mountItemCount;
+        }
+    }
+
+    return mountItemCount;
+}
+
+void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
+{
+    if (!IsPC())
+        return;
+
+    if (!viewer || !viewer->IsPC())
+        return;
+
+    if (!viewer->GetDesc())
+        return;
+
+    TPacketGCFakeShopSign p;
+    p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
+    p.dwVID = GetVID();
+    p.iMountCount = GetMountCount();
+    p.iBeltCount = GetBeltCount();
+
+    viewer->GetDesc()->Packet(&p, sizeof(p));
+}
+
+void CHARACTER::UpdateMountCountOverheadToViewers()
+{
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    UpdateMountInventoryCountOverhead(this);
+
+    for (const auto& it : m_map_view)
+    {
+        LPENTITY ent = it.first;
+        if (!ent || !ent->IsType(ENTITY_CHARACTER))
+            continue;
+
+        LPCHARACTER viewer = (LPCHARACTER)ent;
+        if (!viewer || viewer == this)
+            continue;
+
+        if (viewer->IsPC() && viewer->GetDesc())
+            UpdateMountInventoryCountOverhead(viewer);
+    }
+#endif
+}
+
 namespace MountSystem {
 
 bool CanUseHorseSkill(entt::entity owner)

@@ -2012,3 +2012,20 @@
   - `CHARACTER::` body count: `240`
 - build: success
 - next: `S10d mount counter helpers retry with smaller scope`
+
+## Phase 8 - Step 8.17 char.cpp -> MountSystem (continued)
+- completed slice `S10d MountSystem (mount/belt counter overhead helpers)`
+- moved:
+  - `GetBeltCount`
+  - `GetMountCount`
+  - `UpdateMountInventoryCountOverhead`
+  - `UpdateMountCountOverheadToViewers`
+- note:
+  - the first broader mount-counter attempt was rolled back because mixing pulse helpers with the counter/display helpers corrupted the file scope and exceeded the rollback threshold
+  - retrying with only the four declared counter/display bodies built cleanly after the expected duplicate definitions were removed from `char.cpp`
+- after char.cpp Slice S10d: `1934`
+- char.cpp status after slice:
+  - line count: `6151`
+  - `CHARACTER::` body count: `236`
+- build: success
+- next: `S11a combat + AI helper audit`
