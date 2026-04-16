@@ -1331,3 +1331,18 @@
 - after char_battle.cpp Slice BB2a extraction: `2160`
 - build: success
 - next: slice BB2b (`Damage()` body relocation)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- attempted slice BB2b:
+  - target:
+    - `IsBeranMap`
+    - `IsSpiderMap`
+    - `Damage`
+  - result:
+    - rolled back to the last green `BB2a` checkpoint
+  - failure reason:
+    - the direct body relocation broke the surrounding brace / preprocessor structure in `char_battle.cpp`
+    - the build failed with more than 20 syntax errors after the cut, so the rollback rule was triggered
+  - next required approach:
+    - split `Damage()` more finely before relocation
+    - first extract internal sub-blocks or helper subroutines from `Damage()` instead of cutting the full method body in one pass
