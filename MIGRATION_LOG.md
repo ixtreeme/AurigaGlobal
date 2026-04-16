@@ -2284,3 +2284,94 @@
   - `CHARACTER::` body count: `150`
 - build: success
 - next: `S11e mount/social/session accessor triage`
+
+## Phase 8 - Step 8.17 char.cpp re-audit
+- status: `updated`
+- current baseline:
+  - global `LPCHARACTER|CHARACTER::` count: `1848`
+  - `char.cpp` line count: `6661`
+  - `char.cpp` `CHARACTER::` body count: `150`
+- remaining categorized batches:
+  - `S11b AffectSystem`
+    - `GetPolymorphPower`, `SetPolymorph`
+    - `SetInvincible`, `GetInvincible`
+    - `IncreaseMobHP`, `IncreaseMobRigHP`
+  - `S11c ActivitySystem / PlayerRuntimeSystem`
+    - mining/fishing wrappers:
+      - `mining_take`, `mining_cancel`, `mining`, `fishing`, `fishing_take`
+    - battle pass:
+      - `EnsureFreeBattlePassActive`, `LoadBattlePass`, `CancelStayOnlineEvent`
+      - `HasBattlePassBoost`, `GetBattlePassAdjustedTotal`, `ApplyBattlePassBoostRecalc`
+      - `GetMissionProgress`, `IsCompletedMission`, `UpdateMissionProgress`
+      - `GetBattlePassId`, `GetSecondsTillNextMonth`
+    - acce / inventory edit / runtime misc:
+      - `OpenAcce`, `CloseAcce`, `ClearAcceMaterials`, `AcceIsSameGrade`
+      - `GetAcceCombinePrice`, `CheckEmptyMaterialSlot`, `GetAcceCombineResult`
+      - `AddAcceMaterial`, `RemoveAcceMaterial`, `CanRefineAcceMaterials`
+      - `RefineAcceMaterials`, `CleanAcceAttr`
+      - `CanTakeInventoryItem`, `EditMyInven`, `EditMyExtraInven`, `Update_Inven`
+      - `GetSoulItemDamage`, `SetSkillColor`
+      - `SendOfflineMessage`, `ReadOfflineMessages`, `GetRuneEffect`
+  - `S11d-c PlayerRuntimeSystem`
+    - lifecycle/state:
+      - `Initialize`, `Create`, `Destroy`, `DestroyPvP`
+      - `RestartAtSamePos`, `SetPosition`
+      - `MonsterLog`, `ChatPacket`
+      - `StartStateMachine`, `StopStateMachine`, `UpdateStateMachine`, `SetNextStatePulse`, `UpdateCharacter`
+      - `SetShop`, `SetExchange`, `SetDungeon`, `SetWarMap`, `SetWeddingMap`, `SetRegen`
+      - `OnIdle`, `OnMove`, `OnClick`
+    - proto/parts/runtime:
+      - `SetPlayerProto`, `SetProto`
+      - `SetPart`, `GetPart`, `GetOriginalPart`
+      - `GetDuel`, `SetDuel`
+      - `GetMarryPartner`, `SetMarryPartner`
+      - `IsHack`, `Say`
+      - `GetRankPoints`, `SetRankPoints`, `RankingSubcategory`
+      - `SetShopSafebox`
+      - `SwitchChannel`, `StartChannelSwitch`
+      - `BlockProcessed`, `BlockDrop`, `UnblockDrop`, `SetDropStatus`
+  - `S11e Cross-system remainder`
+    - `NetworkSyncSystem`:
+      - `EncodeInsertPacket`, `EncodeRemovePacket`, `FindCharacterInView`, `SyncPacket`
+      - `SetSyncOwner`, `ClearSync`, `IsSyncOwner`
+      - `BuildUpdatePartyPacket`
+    - `MovementSystem`:
+      - `SetNowWalking`, `StartStaminaConsume`, `StopStaminaConsume`
+      - `IsStaminaConsume`, `IsStaminaHalfConsume`, `ResetStopTime`, `GetStopTime`
+      - `GoHome`
+    - `CombatSystem`:
+      - `SetStone`, `ClearStone` overloads, `ClearTarget`, `SetTarget`, `BroadcastTargetPacket`, `CheckTarget`
+      - `Return`, `Follow`, `IsChangeAttackPosition`, `ReviveInvisible`, `CowardEscape`
+      - `DetermineDropMetinStone`, `CanSummon`, `GetLeadershipSkillLevel`
+    - `MountSystem`:
+      - `IsNextMountPulse`, `UpdateMountPulse`
+      - `GetMountCounter`, `ResetMountCounter`, `IncreaseMountCounter`, `IsRiding`
+      - `MountSummon`, `MountUnsummon`, `CheckMount`, `IsRidingMount`
+      - `UpdatePetSkin`, `GetPetSkinVnum`, `UpdateMountSkin`, `GetMountSkinVnum`
+      - `ComputeMountInventoryBonuses`
+    - `PlayerRuntimeSystem` fallback:
+      - `ResetPoint`, `GiveRandomSkillBook`, `ToggleMonsterLog`, `SendGreetMessage`, `BeginStateEmpty`
+      - `ChangeEmpire`, `GetChangeEmpireCount`, `SetChangeEmpireCount`
+      - `MountVnum`, `ComputeRefineFee`, `PayRefineFee`, `StartDestroyWhenIdleEvent`
+- next planned slice:
+  - `S11b AffectSystem polymorph/invincible/mobHP`
+
+## Phase 8 - Step 8.17 char.cpp -> AffectSystem (continued)
+- completed slice `S11b polymorph / invincible / mobHP`
+- moved:
+  - `GetPolymorphPower`, `SetPolymorph`
+  - `SetInvincible`, `GetInvincible`
+  - `IncreaseMobHP`, `IncreaseMobRigHP`
+- helper surface:
+  - `AffectSystem.cpp`
+    - `constants.h`
+    - `questmanager.h`
+- note:
+  - the first post-removal build failed below rollback threshold because `quest::CQuestManager` was not visible in `AffectSystem.cpp`
+  - adding the missing helper-surface includes fixed the slice in-place without rollback
+- after char.cpp Slice S11b: `1842`
+- char.cpp status after slice:
+  - line count: `6579`
+  - `CHARACTER::` body count: `144`
+- build: success
+- next: `S11c-1 ActivitySystem mining/fishing wrapper batch`

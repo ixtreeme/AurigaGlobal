@@ -3732,66 +3732,6 @@ void CHARACTER::SetChangeEmpireCount()
 	std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
 }
 
-int CHARACTER::GetPolymorphPower() const
-{
-	if (test_server)
-	{
-		int value = quest::CQuestManager::instance().GetEventFlag("poly");
-		if (value)
-			return value;
-	}
-	return aiPolymorphPowerByLevel[MINMAX(0, GetSkillLevel(SKILL_POLYMORPH), 40)];
-}
-
-void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
-{
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	if (dwRaceNum < MAIN_RACE_MAX_NUM)
-#else
-	if (dwRaceNum < JOB_MAX_NUM)
-#endif
-	{
-		dwRaceNum = 0;
-		bMaintainStat = false;
-	}
-
-	if (m_dwPolymorphRace == dwRaceNum)
-		return;
-
-	m_bPolyMaintainStat = bMaintainStat;
-	m_dwPolymorphRace = dwRaceNum;
-
-	sys_log(0, "POLYMORPH: %s race %u ", GetName(), dwRaceNum);
-
-	if (dwRaceNum != 0)
-		StopRiding();
-
-	SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
-	m_afAffectFlag.Set(AFF_SPAWN);
-
-	ViewReencode();
-
-	REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
-
-	if (!bMaintainStat)
-	{
-		PointChange(POINT_ST, 0);
-		PointChange(POINT_DX, 0);
-		PointChange(POINT_IQ, 0);
-		PointChange(POINT_HT, 0);
-	}
-
-	// Aú¸®¸?ÇÁ »óAÂ?!1­ Á×´Â °a?i, Aú¸®¸?ÇÁ°! Ç®¸®°Ô µÇ´ÂµY
-	// Aú¸® ¸?ÇÁ AüEÄ·Î valid combo intervalAI ´U¸L±â ¶§1®?!
-	// Combo ÇU ¶Ç´Â Hacker·Î AÎ1ÄÇI´Â °a?i°! AÖ´U.
-	// µu¶ó1­ Aú¸®¸?ÇÁ¸¦ Ç®°A3a Aú¸®¸?ÇÁ ÇI°Ô µÇ¸é,
-	// valid combo intervalA» resetÇN´U.
-	SetValidComboInterval(0);
-	SetComboSequence(0);
-
-	ComputeBattlePoints();
-}
-
 void CHARACTER::DetermineDropMetinStone()
 {
 #ifdef ENABLE_NEWSTUFF
@@ -6313,28 +6253,6 @@ uint32_t CHARACTER::GetMountSkinVnum() {
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 #endif
-
-int32_t CHARACTER::SetInvincible(bool arg) {
-	isInvincible = arg;
-	return 1;
-}
-
-bool CHARACTER::GetInvincible() {
-	return isInvincible;
-}
-
-int32_t CHARACTER::IncreaseMobHP(int32_t lArg) {
-	int32_t t = GetMaxHP() + lArg;
-	SetMaxHP(t);
-	SetHP(t);
-	PointChange(POINT_HP, t, true);
-	return 1;
-}
-
-int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg) {
-	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);
-	return 1;
-}
 
 #ifdef ENABLE_BLOCK_MULTIFARM
 void CHARACTER::BlockProcessed() {

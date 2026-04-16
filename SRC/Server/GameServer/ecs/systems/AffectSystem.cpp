@@ -8,6 +8,7 @@
 #include "../../char.h"
 #include "../../char_manager.h"
 #include "../../config.h"
+#include "../../constants.h"
 #include "../../desc.h"
 #include "../../desc_client.h"
 #include "../../battle.h"
@@ -18,6 +19,7 @@
 #include "../../locale_service.h"
 #include "../../lua_incl.h"
 #include "../../packet.h"
+#include "../../questmanager.h"
 #ifdef ENABLE_NEW_USE_POTION
 #include "../../party.h"
 #endif
@@ -1860,3 +1862,68 @@ void CHARACTER::RemoveBadAffect()
 	//RemoveAffect(SKILL_BUDONG);
 }
 
+int CHARACTER::GetPolymorphPower() const
+{
+	if (test_server)
+	{
+		int value = quest::CQuestManager::instance().GetEventFlag("poly");
+		if (value)
+			return value;
+	}
+	return aiPolymorphPowerByLevel[MINMAX(0, GetSkillLevel(SKILL_POLYMORPH), 40)];
+}
+void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
+{
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	if (dwRaceNum < MAIN_RACE_MAX_NUM)
+#else
+	if (dwRaceNum < JOB_MAX_NUM)
+#endif
+	{
+		dwRaceNum = 0;
+		bMaintainStat = false;
+	}
+	if (m_dwPolymorphRace == dwRaceNum)
+		return;
+	m_bPolyMaintainStat = bMaintainStat;
+	m_dwPolymorphRace = dwRaceNum;
+	sys_log(0, "POLYMORPH: %s race %u ", GetName(), dwRaceNum);
+	if (dwRaceNum != 0)
+		StopRiding();
+	SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+	m_afAffectFlag.Set(AFF_SPAWN);
+	ViewReencode();
+	REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+	if (!bMaintainStat)
+	{
+		PointChange(POINT_ST, 0);
+		PointChange(POINT_DX, 0);
+		PointChange(POINT_IQ, 0);
+		PointChange(POINT_HT, 0);
+	}
+	SetValidComboInterval(0);
+	SetComboSequence(0);
+	ComputeBattlePoints();
+}
+int32_t CHARACTER::SetInvincible(bool arg)
+{
+	isInvincible = arg;
+	return 1;
+}
+bool CHARACTER::GetInvincible()
+{
+	return isInvincible;
+}
+int32_t CHARACTER::IncreaseMobHP(int32_t lArg)
+{
+	int32_t t = GetMaxHP() + lArg;
+	SetMaxHP(t);
+	SetHP(t);
+	PointChange(POINT_HP, t, true);
+	return 1;
+}
+int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg)
+{
+	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);
+	return 1;
+}
