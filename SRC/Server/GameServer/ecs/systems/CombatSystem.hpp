@@ -38,6 +38,10 @@ void AggregateMonster(entt::entity e);
 void AggregateMonsterPlus(entt::entity e);
 void AttractRanger(entt::entity e);
 void PullMonster(entt::entity e);
+void SendLeaderboardData(entt::entity e);
+void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer);
+void SendLeaderboardDataGuild(entt::entity e);
+void CheckLeaderboardSkillMobChanges(entt::entity e);
 
 } // namespace CombatSystem
 

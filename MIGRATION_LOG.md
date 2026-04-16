@@ -1478,3 +1478,18 @@
 - after char_battle.cpp Slice BE2a: `2106`
 - build: success
 - next: slice BE2b (`UpdateAggrPointEx` / `UpdateAggrPoint` / `ChangeVictimByAggro`)
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BE3:
+  - moved:
+    - `SendLeaderboardData`
+    - `SendLeaderboardDataSkillMob`
+    - `SendLeaderboardDataGuild`
+    - `FetchTop10SkillMob`
+    - `CheckLeaderboardSkillMobChanges`
+  - note:
+    - the first extraction pass cut the leaderboard block with one missing outer `#endif`
+    - this was corrected in place without rollback because the failure stayed well below the rollback threshold
+- after char_battle.cpp Slice BE3: `2101`
+- build: success
+- next: slice BD2 or BC5 (`DistributeHP` / `DistributeExp` / `Dead`)
