@@ -73,6 +73,10 @@
 #endif
 #endif
 
+#ifdef ENABLE_EVENT_MANAGER
+extern void Map1MassSpawnEvent_OnMobDead(uint32_t vid);
+#endif
+
 static inline LPCHARACTER LegacyCharOf(entt::entity e)
 {
     auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
@@ -1731,6 +1735,613 @@ LPCHARACTER CHARACTER::DistributeExp()
 }
 
 // ȭ   
+
+// char_battle.cpp slice BC5 moved into CombatSystem.cpp
+
+EVENTINFO(SCharDeadEventInfo)
+{
+	uint32_t vid;
+
+	SCharDeadEventInfo()
+		: vid(0)
+	{
+	}
+};
+
+EVENTFUNC(dead_event)
+{
+	const SCharDeadEventInfo* info = dynamic_cast<SCharDeadEventInfo*>(event->info);
+	if (info == nullptr)
+	{
+		sys_err("dead_event> <Factor> Null pointer");
+		return 0;
+	}
+
+	LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(info->vid);
+	if (ch == nullptr)
+	{
+		sys_err("DEAD_EVENT: cannot find char pointer with MOB vid(%d)", info->vid);
+		return 0;
+	}
+
+	ch->m_pkDeadEvent = nullptr;
+
+	if (!ch->IsPC())
+	{
+		if (ch->IsMonster() == true)
+		{
+			if (ch->IsRevive() == false && ch->HasReviverInParty() == true)
+			{
+				ch->SetPosition(POS_STANDING);
+				ch->SetHP(ch->GetMaxHP());
+
+				ch->ViewReencode();
+
+				ch->SetAggressive();
+				ch->SetRevive(true);
+
+				return 0;
+			}
+		}
+
+		M2_DESTROY_CHARACTER(ch);
+	}
+
+	return 0;
+}
+
+
+void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
+{
+	// FakePlayers are normally excluded from death handling, but LostCastle clones must die.
+	//if (IsFakePlayer() && !CLostCastleDungeon::instance().IsCloneVID(GetVID()))
+	//	return;
+
+	if (IsDead())
+		return;
+
+	if (GetInvincible())
+		return;
+
+	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
+	// ezert a normal !IsPC() reward/resurrection ag GetMobTable()-t hivna es crashelne.
+	// Itt egy safe halal pipeline + return.
+	//if (IsFakePlayer() && CLostCastleDungeon::instance().IsCloneVID(GetVID()))
+	//{
+	//	if (!pkKiller && m_dwKillerPID)
+	//		pkKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
+
+	//	m_dwKillerPID = 0;
+
+	//	SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_NO_REWARD);
+
+	//	SetPosition(POS_DEAD);
+	//	ClearAffect(true);
+	//	ClearSync();
+	//	event_cancel(&m_pkStunEvent);
+
+	//	if (pkKiller && pkKiller->IsPC())
+	//		CLostCastleDungeon::instance().OnMobKilled(pkKiller, this);
+
+	//	TPacketGCDead pack;
+	//	pack.header = HEADER_GC_DEAD;
+	//	pack.vid = m_vid;
+	//	PacketAround(&pack, sizeof(pack));
+
+	//	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+
+	//	if (GetDungeon())
+	//		GetDungeon()->DeadCharacter(this);
+
+	//	if (m_pkDeadEvent)
+	//		event_cancel(&m_pkDeadEvent);
+
+	//	SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
+	//	pEventInfo->vid = GetVID();
+	//	m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+	//	return;
+	//}
+
+	if (IsPC())
+	{
+		if (IsHorseRiding()) {
+			StopRiding();
+		}
+		else if (GetMountVnum()) {
+			RemoveAffect(AFFECT_MOUNT_BONUS);
+			m_dwMountVnum = 0;
+			UnEquipSpecialRideUniqueItem();
+			UpdatePacket();
+		}
+	}
+
+	if (IsMonster() || IsStone())
+	{
+		LPDUNGEON dungeon = GetDungeon();
+		if (dungeon)
+		{
+			dungeon->DecMonster();
+		}
+	}
+
+#ifdef ENABLE_EVENT_MANAGER
+	// Map1 mass-spawn wave tracking (Tanaka / Golden Frog)
+	if (IsMonster() && GetMapIndex() == 1)
+	{
+		const uint32_t vnum = GetRaceNum();
+		if (vnum == 5000u || vnum == 124u)
+			Map1MassSpawnEvent_OnMobDead(static_cast<uint32_t>(GetVID()));
+	}
+#endif
+
+
+	if (!pkKiller && m_dwKillerPID)
+		pkKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
+
+	m_dwKillerPID = 0; // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
+
+	bool isAgreedPVP = false;
+	bool isUnderGuildWar = false;
+	bool isDuel = false;
+
+	if (pkKiller && pkKiller->IsPC())
+	{
+		if (pkKiller->m_pkChrTarget == this)
+			pkKiller->SetTarget(nullptr);
+
+		isAgreedPVP = CPVPManager::instance().Dead(this, pkKiller->GetPlayerID());
+		isDuel = CArenaManager::instance().OnDead(pkKiller, this);
+#ifdef ENABLE_PVP_ADVANCED
+		if (isAgreedPVP || isDuel)
+		{
+			const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
+
+			int betMoneyDead = GetQuestFlag(szTableStaticPvP[8]);
+			int betMoneyKiller = pkKiller->GetQuestFlag(szTableStaticPvP[8]);
+
+			if (betMoneyDead > 0 && betMoneyKiller > 0)
+			{
+				pkKiller->PointChange(POINT_GOLD, betMoneyDead * 2, true);
+#ifdef TEXTS_IMPROVEMENT
+				pkKiller->ChatPacketNew(CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
+#endif
+			}
+
+			for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
+				char pkCh_Buf[CHAT_MAX_LEN + 1], pkKiller_Buf[CHAT_MAX_LEN + 1];
+
+				snprintf(pkCh_Buf, sizeof(pkCh_Buf), "BINARY_Duel_Delete");
+				snprintf(pkKiller_Buf, sizeof(pkKiller_Buf), "BINARY_Duel_Delete");
+
+				ChatPacket(CHAT_TYPE_COMMAND, pkCh_Buf);
+				SetQuestFlag(szTableStaticPvP[i], 0);
+
+				pkKiller->ChatPacket(CHAT_TYPE_COMMAND, pkKiller_Buf);
+				pkKiller->SetQuestFlag(szTableStaticPvP[i], 0);
+			}
+		}
+#endif
+
+		if (IsPC())
+		{
+			CGuild* g1 = GetGuild();
+			CGuild* g2 = pkKiller->GetGuild();
+
+			if (g1 && g2)
+				if (g1->UnderWar(g2->GetID()))
+					isUnderGuildWar = true;
+
+			pkKiller->SetQuestNPCID(GetVID());
+			quest::CQuestManager::instance().Kill(pkKiller->GetPlayerID(), quest::QUEST_NO_NPC);
+			CGuildManager::instance().Kill(pkKiller, this);
+		}
+	}
+
+#ifdef ENABLE_QUEST_DIE_EVENT
+	//if (IsPC())
+	//{
+	//	if (pkKiller)
+	//		SetQuestNPCID(pkKiller->GetVID());
+	//	// quest::CQuestManager::instance().Die(GetPlayerID(), quest::QUEST_NO_NPC);
+	//	quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller)?pkKiller->GetRaceNum():quest::QUEST_NO_NPC);
+	//}
+	if (IsPC())
+	{
+		if (pkKiller) {
+			SetQuestNPCID(pkKiller->GetVID());
+		}
+
+		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? pkKiller->GetRaceNum() : quest::QUEST_NO_NPC);
+	}
+#endif
+
+#ifdef ENABLE_RANKING
+	if ((IsPC())) {
+		if (((isAgreedPVP) || (isDuel)) && (pkKiller)) {
+			SetRankPoints(1, pkKiller->GetRankPoints(1) + 1);
+			pkKiller->SetRankPoints(0, pkKiller->GetRankPoints(0) + 1);
+		}
+		else if (isUnderGuildWar) {
+			pkKiller->SetRankPoints(2, pkKiller->GetRankPoints(2) + 1);
+		}
+	}
+
+	if (pkKiller) {
+		if (pkKiller->IsPC()) {
+			if (IsStone()) {
+				if (pkKiller)
+					pkKiller->SetRankPoints(5, pkKiller->GetRankPoints(5) + 1);
+			}
+			else if (IsMonster()) {
+				if (GetMobRank() >= MOB_RANK_BOSS)
+					pkKiller->SetRankPoints(7, pkKiller->GetRankPoints(7) + 1);
+				else
+					pkKiller->SetRankPoints(6, pkKiller->GetRankPoints(6) + 1);
+			}
+		}
+	}
+#endif
+
+	/*
+		if (pkKiller &&
+				!isAgreedPVP &&
+				!isUnderGuildWar &&
+				IsPC() &&
+				!isDuel)
+		{
+			if (GetGMLevel() == GM_PLAYER || test_server)
+			{
+				ItemDropPenalty(pkKiller);
+			}
+		}
+	*/
+
+#ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
+	if (IsPC()) {
+#ifdef ENABLE_01092021
+		if (pkKiller && !pkKiller->IsPC()) {
+			pkKiller->SetTarget(nullptr);
+		}
+#endif
+		ClearAffectSkills();
+	}
+#endif
+	SetPosition(POS_DEAD);
+	ClearAffect(true);
+
+	if (pkKiller && IsPC())
+	{
+		if (!pkKiller->IsPC())
+		{
+#ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
+			SetDeadByMonster(true);
+#endif
+
+			sys_log(1, "DEAD: %s %p WITH PENALTY", GetName(), this);
+			SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+			LogManager::instance().CharLog(this, pkKiller->GetRaceNum(), "DEAD_BY_NPC", pkKiller->GetName());
+		}
+		else
+		{
+#ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
+			SetDeadByMonster(false);
+#endif
+			sys_log(1, "DEAD_BY_PC: %s %p KILLER %s %p", GetName(), this, pkKiller->GetName(), get_pointer(pkKiller));
+			REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+
+			if (GetEmpire() != pkKiller->GetEmpire())
+			{
+				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), pkKiller->GetPoint(POINT_EMPIRE_POINT));
+
+				PointChange(POINT_EMPIRE_POINT, -(iEP / 10));
+				pkKiller->PointChange(POINT_EMPIRE_POINT, iEP / 5);
+
+
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+					"%d %u %d %s %d %u %d %s",
+					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
+					pkKiller->GetEmpire(), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+
+				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
+			}
+			else
+			{
+//				if (!isAgreedPVP && !isUnderGuildWar && !IsKillerMode() /*&& GetAlignment() >= 0*/ && !isDuel)
+//				{
+//					int iNoPenaltyProb = 0;
+//
+//					if (pkKiller->GetAlignment() >= 0)	// 1/3 percent down
+//						iNoPenaltyProb = 33;
+//					else				// 4/5 percent down
+//						iNoPenaltyProb = 20;
+//
+//					if (number(1, 100) < iNoPenaltyProb) {
+//#ifdef TEXTS_IMPROVEMENT
+//						pkKiller->ChatPacketNew(CHAT_TYPE_INFO, 413, "");
+//#endif
+//					}
+//					else {
+//						if (pkKiller->GetParty())
+//						{
+//							FPartyAlignmentCompute f(-20000, pkKiller->GetX(), pkKiller->GetY());
+//							pkKiller->GetParty()->ForEachOnlineMember(f);
+//
+//							if (f.m_iCount == 0)
+//								pkKiller->UpdateAlignment(-20000);
+//							else
+//							{
+//								sys_log(0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
+//
+//								f.m_iStep = 1;
+//								pkKiller->GetParty()->ForEachOnlineMember(f);
+//							}
+//						}
+//						else
+//							pkKiller->UpdateAlignment(-20000);
+//					}
+//				}
+
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+					"%d %u %d %s %d %u %d %s",
+					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
+					pkKiller->GetEmpire(), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+
+				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
+			}
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = pkKiller->GetBattlePassId();
+			if (bBattlePassId)
+			{
+				uint32_t dwToKillCount, dwMinLevel;
+				uint32_t dwLevel = GetLevel();
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
+				{
+#ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
+					if ((GetDesc()->GetHostName() != pkKiller->GetDesc()->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
+					{
+						if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
+						{
+							pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
+							CBattlePass::instance().RegisterPlayerKill(pkKiller->GetPlayerID(), GetPlayerID());
+						}
+					}
+#else
+					if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
+						pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
+#endif
+				}
+			}
+			if (pkKiller && pkKiller->IsPC() && IsPC())
+			{
+				const char* szMapName;
+				switch (GetMapIndex())
+				{
+				case 18: szMapName = "Owl Dungeon"; break;
+				case 27: szMapName = "Slime Dungeon"; break;
+				case 41: szMapName = "Map1"; break;
+				case 63: szMapName = "Desert"; break;
+				case 66: szMapName = "Devil Tower"; break;
+				case 73: szMapName = "Ice Cave"; break;
+				case 208: szMapName = "Beran Setou Dungeon"; break;
+				case 216: szMapName = "Devil Catacomb"; break;
+				case 217: szMapName = "Spider Dungeon"; break;
+				case 218: szMapName = "Rune Dungeon"; break;
+				case 351: szMapName = "Fire Dungeon"; break;
+				case 352: szMapName = "Nemere Dungeon"; break;
+				case 355: szMapName = "Orcs Dungeon"; break;
+				case 356: szMapName = "DT2"; break;
+				case 357: szMapName = "Pyramid"; break;
+				case 362: szMapName = "Dark Forest"; break;
+				case 363: szMapName = "Map2"; break;
+				case 364: szMapName = "Ice Empire"; break;
+				case 365: szMapName = "SD5"; break;
+				case 366: szMapName = "Hydra Dungeon"; break;
+				case 367: szMapName = "Monkey Dungeon"; break;
+				default: szMapName = "Unknown Map"; break;
+				}
+
+				char szMsg[256];
+
+				if (isAgreedPVP)
+				{
+					int iRankPoints = pkKiller->GetRankPoints(0); // PvP rangpont
+					snprintf(szMsg, sizeof(szMsg),
+						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: DUEL (Winned duels: %d)",
+						pkKiller->GetName(), GetName(), szMapName, iRankPoints);
+				}
+				else
+				{
+					snprintf(szMsg, sizeof(szMsg),
+						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: FREE!",
+						pkKiller->GetName(), GetName(), szMapName);
+				}
+
+				BroadcastNotice(szMsg);
+			}
+
+
+#endif
+		}
+	}
+	else
+	{
+		sys_log(1, "DEAD: %s %p", GetName(), this);
+		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+	}
+
+	ClearSync();
+
+	//sys_log(1, "stun cancel %s[%d]", GetName(), (uint32_t)GetVID());
+	event_cancel(&m_pkStunEvent); //  ̺Ʈ δ.
+
+	if (IsPC())
+	{
+		m_dwLastDeadTime = get_dword_time();
+		//SetKillerMode(pkKiller && pkKiller->IsPC());
+		SetKillerMode(false);
+		GetDesc()->SetPhase(PHASE_DEAD);
+	}
+	else
+	{
+		// 忡 ݹ ʹ   Ѵ.
+		if (!IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_NO_REWARD))
+		{
+			if (!(pkKiller && pkKiller->IsPC() && pkKiller->GetGuild() && pkKiller->GetGuild()->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
+			{
+				// Ȱϴ ʹ   ʴ´.
+				if (GetMobTable().dwResurrectionVnum)
+				{
+					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
+					LPCHARACTER chResurrect = CHARACTER_MANAGER::instance().SpawnMob(GetMobTable().dwResurrectionVnum, GetMapIndex(), GetX(), GetY(), GetZ(), true, (int)GetRotation());
+					if (GetDungeon() && chResurrect)
+					{
+						chResurrect->SetDungeon(GetDungeon());
+					}
+					// END_OF_DUNGEON_MONSTER_REBIRTH_BUG_FIX
+
+					Reward(false);
+				}
+				else if (IsRevive() == true)
+				{
+					Reward(false);
+				}
+				else
+				{
+					Reward(true); // Drops gold, item, etc..
+				}
+			}
+			else
+			{
+				if (pkKiller->m_dwUnderGuildWarInfoMessageTime < get_dword_time())
+				{
+					pkKiller->m_dwUnderGuildWarInfoMessageTime = get_dword_time() + 60000;
+#ifdef TEXTS_IMPROVEMENT
+					pkKiller->ChatPacketNew(CHAT_TYPE_INFO, 147, "");
+#endif
+				}
+			}
+		}
+	}
+
+	// BOSS_KILL_LOG
+	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && pkKiller->IsPC())
+	{
+		char buf[51];
+		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, pkKiller->GetMapIndex());
+		if (IsStone())
+			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "STONE_KILL", buf);
+		else
+			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "BOSS_KILL", buf);
+	}
+	// END_OF_BOSS_KILL_LOG
+
+	TPacketGCDead pack;
+	pack.header = HEADER_GC_DEAD;
+	pack.vid = m_vid;
+	PacketAround(&pack, sizeof(pack));
+
+	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+
+	// ÷̾ ĳ̸
+	if (GetDesc() != nullptr) {
+		//
+		// Ŭ̾Ʈ Ʈ Ŷ ٽ .
+		//
+		auto it = m_list_pkAffect.begin();
+
+		while (it != m_list_pkAffect.end())
+			SendAffectAddPacket(GetDesc(), *it++);
+	}
+
+	//
+	// Dead ̺Ʈ ,
+	//
+	// Dead ̺Ʈ    Ŀ Destroy ǵ ָ,
+	// PC  3 ִٰ    ش. 3  κ
+	//   , ⼭    ޴´.
+	if (isDuel == false)
+	{
+		if (m_pkDeadEvent)
+		{
+			sys_log(1, "DEAD_EVENT_CANCEL: %s %p %p", GetName(), this, get_pointer(m_pkDeadEvent));
+			event_cancel(&m_pkDeadEvent);
+		}
+
+		if (IsStone())
+		{
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+			ClearStone(pkKiller);
+#else
+			ClearStone();
+#endif
+		}
+
+		if (GetDungeon())
+		{
+			GetDungeon()->DeadCharacter(this);
+		}
+
+		if (!IsPC())
+		{
+			SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
+			pEventInfo->vid = GetVID();
+
+			if (IsRevive() == false && HasReviverInParty() == true)
+			{
+				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+			}
+#ifdef __DEFENSE_WAVE__
+			else if (GetRaceNum() >= 3950 && GetRaceNum() <= 3964)
+			{
+				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+			}
+#endif
+			else
+			{
+				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+			}
+
+			sys_log(1, "DEAD_EVENT_CREATE: %s %p %p", GetName(), this, get_pointer(m_pkDeadEvent));
+		}
+	}
+
+	if (m_pkExchange != nullptr)
+	{
+		m_pkExchange->Cancel();
+	}
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+	if (IsAttrTransferOpen() == true)
+	{
+		AttrTransfer_close(this);
+	}
+#endif
+
+	if (IsCubeOpen() == true)
+	{
+		Cube_close(this);
+	}
+
+#ifdef ENABLE_ACCE_SYSTEM
+	if (IsPC())
+		CloseAcce();
+#endif
+
+	if (IsPC())
+	{
+		CShopManager::instance().StopShopping(this);
+		CloseMyShop();
+		CloseSafebox();
+	}
+}
+
+
+
+
+
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {

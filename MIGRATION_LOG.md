@@ -1532,3 +1532,27 @@
 - after char_battle.cpp Slice BD2b: `2081`
 - build: success
 - next: final slice BC5 (`Dead`) and file deletion
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem (continued)
+- completed slice BC5:
+  - moved:
+    - `Dead`
+  - helper surface moved with the slice:
+    - `SCharDeadEventInfo`
+    - `dead_event`
+  - note:
+    - the only follow-up fix after relocation was adding the `Map1MassSpawnEvent_OnMobDead` extern declaration to `CombatSystem.cpp`
+- after char_battle.cpp Slice BC5: `2081`
+- build: success
+
+## Phase 8 - Step 8.14 char_battle.cpp -> CombatSystem
+- `char_battle.cpp`: DELETED
+- build:
+  - normal incremental build hit the expected stale-TU issue after file removal
+  - `--clean-first` build passed cleanly
+- after char_battle.cpp DELETED: `2067`
+- remaining `char*.cpp` targets:
+  - `char_manager.cpp`
+  - `char2.cpp`
+  - `char.cpp`
+- next target: audit `char_manager.cpp`
