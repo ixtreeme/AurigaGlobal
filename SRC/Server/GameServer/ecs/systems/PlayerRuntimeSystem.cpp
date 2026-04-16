@@ -12,6 +12,7 @@
 #include "../../db.h"
 #include "../../desc_client.h"
 #include "../../dungeon.h"
+#include "../../exchange.h"
 #include "../../gm.h"
 #include "../../item.h"
 #include "../../item_manager.h"
@@ -25,7 +26,9 @@
 #include "../../PetSystem.h"
 #include "../../questmanager.h"
 #include "../../regen.h"
+#include "../../shop.h"
 #include "../../skill_power.h"
+#include "../../target.h"
 #include "../../war_map.h"
 #include "../../wedding.h"
 #include "../../../common/rune_length.h"
@@ -2949,4 +2952,135 @@ void CHARACTER::OnMove(bool bIsAttack)
     // MINING
     mining_cancel();
     // END_OF_MINING
+}
+
+void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
+{
+    if (!pkChrCauser)
+    {
+        sys_err("OnClick %s by NULL", GetName());
+        return;
+    }
+
+    uint32_t vid = GetVID();
+    sys_log(0, "OnClick %s[vnum: %d vid: %d] by %s", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
+
+    {
+        if (pkChrCauser->GetMyShop() && pkChrCauser != this)
+        {
+            sys_err("OnClick Fail (%s->%s) - pc has shop", pkChrCauser->GetName(), GetName());
+            return;
+        }
+    }
+
+    {
+        if (pkChrCauser->GetExchange())
+        {
+            sys_err("OnClick Fail (%s->%s) - pc is exchanging", pkChrCauser->GetName(), GetName());
+            return;
+        }
+    }
+
+    if (IsPC())
+    {
+        if (!CTargetManager::instance().GetTargetInfo(pkChrCauser->GetPlayerID(), TARGET_TYPE_VID, GetVID()))
+        {
+            if (GetMyShop())
+            {
+                if (pkChrCauser->IsDead() == true)
+                    return;
+
+                if (pkChrCauser == this)
+                {
+                    if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (IsAttrTransferOpen())
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+#endif
+                }
+                else
+                {
+                    if ((pkChrCauser->GetExchange() || pkChrCauser->IsOpenSafebox() || pkChrCauser->GetMyShop() || pkChrCauser->GetShopOwner()) || pkChrCauser->IsCubeOpen())
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (pkChrCauser->IsAttrTransferOpen())
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 291, "");
+#endif
+                        return;
+                    }
+#endif
+
+                    if ((GetExchange() || IsOpenSafebox() || IsCubeOpen()))
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 369, "%s", GetName());
+#endif
+                        return;
+                    }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+                    if (IsAttrTransferOpen())
+                    {
+#ifdef TEXTS_IMPROVEMENT
+                        pkChrCauser->ChatPacketNew(CHAT_TYPE_INFO, 369, "%s", GetName());
+#endif
+                        return;
+                    }
+#endif
+                }
+
+                if (pkChrCauser->GetShop())
+                {
+                    pkChrCauser->GetShop()->RemoveGuest(pkChrCauser);
+                    pkChrCauser->SetShop(nullptr);
+                }
+
+                GetMyShop()->AddGuest(pkChrCauser, GetVID(), false);
+                pkChrCauser->SetShopOwner(this);
+                return;
+            }
+
+            if (test_server)
+                sys_err("%s.OnClickFailure(%s) - target is PC", pkChrCauser->GetName(), GetName());
+
+            return;
+        }
+    }
+
+    pkChrCauser->SetQuestNPCID(GetVID());
+
+    if (quest::CQuestManager::instance().Click(pkChrCauser->GetPlayerID(), this))
+    {
+        return;
+    }
+
+    if (!IsPC())
+    {
+        if (!m_triggerOnClick.pFunc)
+        {
+            return;
+        }
+
+        m_triggerOnClick.pFunc(this, pkChrCauser);
+    }
 }

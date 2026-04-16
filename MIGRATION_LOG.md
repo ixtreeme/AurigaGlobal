@@ -2719,3 +2719,17 @@
   - `CHARACTER::` body count: `77`
 - build: success
 - next: `S11d-c-3c-b OnClick` or `S11d-c-1b-d channel/block setters`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-3c-b OnClick`
+- moved:
+  - `OnClick`
+- note:
+  - helper surface was extended first with `exchange.h`, `shop.h`, and `target.h`
+  - the method stayed below the copy-first threshold, so it was moved in one piece after the helper-surface build passed
+- after char.cpp Slice S11d-c-3c-b: `1772`
+- char.cpp status after slice:
+  - line count: `3163`
+  - `CHARACTER::` body count: `76`
+- build: success
+- next: `S11d-c-1b-d channel/block setters` or `S11d-c-4a DestroyPvP/RestartAtSamePos`
