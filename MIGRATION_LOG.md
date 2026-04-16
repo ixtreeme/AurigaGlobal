@@ -2705,3 +2705,17 @@
   - `CHARACTER::` body count: `79`
 - build: success
 - next: `S11d-c-3c OnIdle/OnMove/OnClick`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11d-c-3c OnIdle/OnMove`
+- moved:
+  - `OnIdle`
+  - `OnMove`
+- note:
+  - kept `OnClick` out of this batch because it still carries shop/exchange/target interaction branches and is a safer standalone slice
+- after char.cpp Slice S11d-c-3c-a: `1773`
+- char.cpp status after slice:
+  - line count: `3291`
+  - `CHARACTER::` body count: `77`
+- build: success
+- next: `S11d-c-3c-b OnClick` or `S11d-c-1b-d channel/block setters`

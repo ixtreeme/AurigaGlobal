@@ -2912,3 +2912,41 @@ void CHARACTER::ChatPacket(uint8_t type, const char* format, ...)
     if (type == CHAT_TYPE_COMMAND && test_server)
         sys_log(0, "SEND_COMMAND %s %s", GetName(), chatbuf);
 }
+
+bool CHARACTER::OnIdle()
+{
+    return false;
+}
+
+void CHARACTER::OnMove(bool bIsAttack)
+{
+    m_dwLastMoveTime = get_dword_time();
+
+    if (bIsAttack)
+    {
+        m_dwLastAttackTime = m_dwLastMoveTime;
+
+        if (IsAffectFlag(AFF_REVIVE_INVISIBLE))
+            RemoveAffect(AFFECT_REVIVE_INVISIBLE);
+
+        if (IsAffectFlag(AFF_EUNHYUNG))
+        {
+            RemoveAffect(SKILL_EUNHYUNG);
+            SetAffectedEunhyung();
+        }
+        else
+        {
+            ClearAffectedEunhyung();
+        }
+
+        /*if (IsAffectFlag(AFF_JEONSIN))
+          RemoveAffect(SKILL_JEONSINBANGEO);*/
+    }
+
+    /*if (IsAffectFlag(AFF_GUNGON))
+      RemoveAffect(SKILL_GUNGON);*/
+
+    // MINING
+    mining_cancel();
+    // END_OF_MINING
+}
