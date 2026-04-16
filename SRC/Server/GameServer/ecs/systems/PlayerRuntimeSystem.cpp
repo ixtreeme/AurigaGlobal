@@ -1878,3 +1878,281 @@ bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
     LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT (CLEAN ATTR)", pkTarget->GetName());
     return true;
 }
+
+#ifdef ENABLE_SORT_INVEN
+static bool SortMyItems(const LPITEM& s1, const LPITEM& s2)
+{
+    std::string name(s1->GetName());
+    std::string name2(s2->GetName());
+
+    return name < name2;
+}
+
+void CHARACTER::EditMyInven()
+{
+    return;
+
+    int iPulse = thecore_pulse() - GetSortInv1Time();
+    if (iPulse < PASSES_PER_SEC(30)) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 1290, "");
+#endif
+        return;
+    }
+
+    if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 540, "");
+#endif
+        return;
+    }
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+    if (GetOfflineShopGuest() || GetAuctionGuest())
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 782, "");
+#endif
+        return;
+    }
+#endif
+
+    static std::vector<LPITEM> v;
+    LPITEM myitems;
+
+    std::map<uint32_t, uint8_t> mapOldPosition;
+
+    v.clear();
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    int size = Inventory_Size();
+#else
+    int size = INVENTORY_MAX_NUM;
+#endif
+
+    for (int i = 0; i < size; ++i)
+    {
+        if (!(myitems = GetInventoryItem(i)))
+            continue;
+
+        v.push_back(myitems);
+        mapOldPosition.insert(std::make_pair(myitems->GetID(), myitems->GetCell()));
+        myitems->RemoveFromCharacter();
+    }
+    std::sort(v.begin(), v.end(), SortMyItems);
+
+    std::vector<TQuickslot*> vecItemQuickslot;
+    for (auto& quick : m_quickslot)
+        if (quick.type == QUICKSLOT_TYPE_ITEM)
+            vecItemQuickslot.push_back(&quick);
+
+    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](LPITEM pItemLocal)
+        {
+            auto iter = mapOldPosition.find(pItemLocal->GetID());
+            if (iter == mapOldPosition.end())
+                return (TQuickslot*)nullptr;
+
+            auto itemPos = iter->second;
+
+            for (auto it = vecItemQuickslot.begin(); it != vecItemQuickslot.end(); it++)
+            {
+                TQuickslot* pQuick = *it;
+
+                if (pQuick && pQuick->pos == itemPos)
+                {
+                    vecItemQuickslot.erase(it);
+                    return pQuick;
+                }
+            }
+            return (TQuickslot*)nullptr;
+        };
+
+    auto it = v.begin();
+    while (it != v.end()) {
+        LPITEM item = *(it++);
+        if (item)
+        {
+            TQuickslot* pQuickSlot = lambdaChecker(item);
+            bool isQuickSlotItem = pQuickSlot != nullptr;
+
+            LPITEM newItem = item;
+
+            TItemTable* p = ITEM_MANAGER::instance().GetTable(item->GetVnum());
+            if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND
+#ifdef ENABLE_NEW_USE_POTION
+                && (p->bType != ITEM_USE && p->bSubType != USE_NEW_POTIION)
+#endif
+                )
+                newItem = AutoGiveItem(item->GetVnum(), item->GetCount(), -1, false
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , false
+#endif
+                );
+            else
+                AutoGiveItem(item, false
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , false
+#endif
+                );
+
+            if (isQuickSlotItem)
+                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, newItem->GetCell());
+        }
+    }
+
+    ChatPacket(CHAT_TYPE_COMMAND, "inv_sort_done");
+    SetSortInv1Time();
+}
+
+static bool SortMyExtraItems(const LPITEM& s1, const LPITEM& s2)
+{
+    uint32_t name(s1->GetVnum());
+    uint32_t name2(s2->GetVnum());
+
+    return name < name2;
+}
+
+void CHARACTER::EditMyExtraInven()
+{
+    return;
+
+    int iPulse = thecore_pulse() - GetSortInv2Time();
+    if (iPulse < PASSES_PER_SEC(30)) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 1290, "");
+#endif
+        return;
+    }
+
+    if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 540, "");
+#endif
+        return;
+    }
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+    if (GetOfflineShopGuest() || GetAuctionGuest())
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 782, "");
+#endif
+        return;
+    }
+#endif
+
+    static std::vector<LPITEM> v;
+    LPITEM myitems;
+
+    std::map<uint32_t, uint8_t> mapOldPosition;
+
+    v.clear();
+
+    int size = EXTRA_INVENTORY_MAX_NUM;
+
+    for (int i = 0; i < size; ++i)
+    {
+        if (!(myitems = GetExtraInventoryItem(i)))
+            continue;
+
+        v.push_back(myitems);
+        mapOldPosition.insert(std::make_pair(myitems->GetID(), myitems->GetCell()));
+        myitems->RemoveFromCharacter();
+    }
+    std::sort(v.begin(), v.end(), SortMyExtraItems);
+
+    std::vector<TQuickslot*> vecItemQuickslot;
+    for (auto& quick : m_quickslot)
+        if (quick.type == QUICKSLOT_TYPE_ITEM)
+            vecItemQuickslot.push_back(&quick);
+
+    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](LPITEM pItemLocal)
+        {
+            auto iter = mapOldPosition.find(pItemLocal->GetID());
+            if (iter == mapOldPosition.end())
+                return (TQuickslot*)nullptr;
+
+            auto itemPos = iter->second;
+
+            for (auto it = vecItemQuickslot.begin(); it != vecItemQuickslot.end(); it++)
+            {
+                TQuickslot* pQuick = *it;
+
+                if (pQuick && pQuick->pos == itemPos)
+                {
+                    vecItemQuickslot.erase(it);
+                    return pQuick;
+                }
+            }
+            return (TQuickslot*)nullptr;
+        };
+
+    auto it = v.begin();
+    while (it != v.end()) {
+        LPITEM item = *(it++);
+        if (item)
+        {
+            TQuickslot* pQuickSlot = lambdaChecker(item);
+            bool isQuickSlotItem = pQuickSlot != nullptr;
+
+            LPITEM newItem = item;
+
+            TItemTable* p = ITEM_MANAGER::instance().GetTable(item->GetVnum());
+            if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND)
+                newItem = AutoGiveItem(item->GetVnum(), item->GetCount(), -1, false
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , false
+#endif
+                );
+            else
+                AutoGiveItem(item, false
+#ifdef __HIGHLIGHT_SYSTEM__
+                    , false
+#endif
+                );
+
+            if (isQuickSlotItem)
+                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, newItem->GetCell());
+        }
+    }
+
+    ChatPacket(CHAT_TYPE_COMMAND, "ext_sort_done");
+    SetSortInv2Time();
+}
+#endif
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
+bool CHARACTER::Update_Inven()
+{
+#ifdef ENABLE_SPAM_CHECK
+    int32_t time = GetLastUnlock() - get_global_time();
+    if (time > 0) {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", time);
+#endif
+        return false;
+    }
+#endif
+
+#define key2 72320
+    int needkey = NeedKeys[Inven_Point()];
+    if (CountSpecifyItem(key2) >= needkey) {
+        RemoveSpecifyItem(key2, needkey);
+        PointChange(POINT_INVEN, 1, false);
+        ChatPacket(CHAT_TYPE_COMMAND, "refreshinven");
+        UpdatePacket();
+#ifdef ENABLE_SPAM_CHECK
+        SetLastUnlock();
+#endif
+        return true;
+    }
+    else {
+        int need_key = needkey - CountSpecifyItem(key2);
+        ChatPacket(CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
+        return false;
+    }
+}
+#endif

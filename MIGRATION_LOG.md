@@ -2565,3 +2565,22 @@
   - `CHARACTER::` body count: `111`
 - build: success
 - next: `EditMyInven / EditMyExtraInven / Update_Inven` or `S11d-c-1b duel/session setter retry`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3c inventory sort / extend inventory helpers`
+- moved:
+  - `SortMyItems`
+  - `EditMyInven`
+  - `SortMyExtraItems`
+  - `EditMyExtraInven`
+  - `NeedKeys`
+  - `Update_Inven`
+- note:
+  - preserved the current legacy behavior exactly, including the early `return;` guards in both inventory-sort entry points
+  - kept the original compile-time split: `ENABLE_SORT_INVEN` for sort/edit helpers and `__ENABLE_EXTEND_INVEN_SYSTEM__` for `NeedKeys` + `Update_Inven`
+- after char.cpp Slice S11c-3c: `1795`
+- char.cpp status after slice:
+  - line count: `4799`
+  - `CHARACTER::` body count: `108`
+- build: success
+- next: `S11d-c-1b duel/session setter retry` or another small runtime/session accessor batch
