@@ -1069,3 +1069,113 @@ void CHARACTER::SetMarryPartner(LPCHARACTER ch)
 {
     m_pkChrMarried = ch;
 }
+
+void CHARACTER::OpenAcce(bool bCombination)
+{
+    if (isAcceOpened(bCombination))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 659, "");
+#endif
+        return;
+    }
+
+    if (bCombination)
+    {
+        if (m_bAcceAbsorption)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 660, "");
+#endif
+            return;
+        }
+
+        m_bAcceCombination = true;
+    }
+    else
+    {
+        if (m_bAcceCombination)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ChatPacketNew(CHAT_TYPE_INFO, 661, "");
+#endif
+            return;
+        }
+
+        m_bAcceAbsorption = true;
+    }
+
+    TItemPos tPos;
+    tPos.window_type = INVENTORY;
+    tPos.cell = 0;
+
+    TPacketAcce sPacket;
+    sPacket.header = HEADER_GC_ACCE;
+    sPacket.subheader = ACCE_SUBHEADER_GC_OPEN;
+    sPacket.bWindow = bCombination;
+    sPacket.dwPrice = 0;
+    sPacket.bPos = 0;
+    sPacket.tPos = tPos;
+    sPacket.dwItemVnum = 0;
+    sPacket.dwMinAbs = 0;
+    sPacket.dwMaxAbs = 0;
+    GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+
+    ClearAcceMaterials();
+}
+
+void CHARACTER::CloseAcce()
+{
+    if ((!m_bAcceCombination) && (!m_bAcceAbsorption))
+        return;
+
+    bool bWindow = (m_bAcceCombination == true ? true : false);
+
+    TItemPos tPos;
+    tPos.window_type = INVENTORY;
+    tPos.cell = 0;
+
+    TPacketAcce sPacket;
+    sPacket.header = HEADER_GC_ACCE;
+    sPacket.subheader = ACCE_SUBHEADER_GC_CLOSE;
+    sPacket.bWindow = bWindow;
+    sPacket.dwPrice = 0;
+    sPacket.bPos = 0;
+    sPacket.tPos = tPos;
+    sPacket.dwItemVnum = 0;
+    sPacket.dwMinAbs = 0;
+    sPacket.dwMaxAbs = 0;
+    GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+
+    if (bWindow)
+        m_bAcceCombination = false;
+    else
+        m_bAcceAbsorption = false;
+
+    ClearAcceMaterials();
+}
+
+void CHARACTER::ClearAcceMaterials()
+{
+    LPITEM* pkItemMaterial;
+    pkItemMaterial = GetAcceMaterials();
+    for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
+    {
+        if (!pkItemMaterial[i])
+            continue;
+
+        pkItemMaterial[i]->Lock(false);
+        pkItemMaterial[i] = nullptr;
+    }
+}
+
+bool CHARACTER::AcceIsSameGrade(int32_t lGrade)
+{
+    LPITEM* pkItemMaterial;
+    pkItemMaterial = GetAcceMaterials();
+    if (!pkItemMaterial[0])
+        return false;
+
+    bool bReturn = (pkItemMaterial[0]->GetValue(ACCE_GRADE_VALUE_FIELD) == lGrade ? true : false);
+    return bReturn;
+}

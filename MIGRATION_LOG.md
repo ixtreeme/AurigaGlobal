@@ -2451,3 +2451,18 @@
   - `CHARACTER::` body count: `117`
 - build: success
 - next: `S11c-3b Acce block or another small runtime/session accessor batch`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3b-1 Acce open/close/material setup`
+- moved:
+  - `OpenAcce`, `CloseAcce`
+  - `ClearAcceMaterials`, `AcceIsSameGrade`
+- note:
+  - the full Acce block was re-measured before extraction and confirmed too large for a single safe slice
+  - continuing with the planned three-way split keeps the refine branch isolated from the packet/window-state helpers
+- after char.cpp Slice S11c-3b-1: `1809`
+- char.cpp status after slice:
+  - line count: `4861`
+  - `CHARACTER::` body count: `113`
+- build: success
+- next: `S11c-3b-2 Acce price/result helper batch`
