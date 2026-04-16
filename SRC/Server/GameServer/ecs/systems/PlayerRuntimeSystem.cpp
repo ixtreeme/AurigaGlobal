@@ -9,6 +9,7 @@
 #include "../../desc.h"
 #include "../../buffer_manager.h"
 #include "../../battle_pass.h"
+#include "../../banword.h"
 #include "../../db.h"
 #include "../../desc_client.h"
 #include "../../dungeon.h"
@@ -36,6 +37,7 @@
 #include "../../regen.h"
 #include "../../safebox.h"
 #include "../../shop.h"
+#include "../../shop_manager.h"
 #include "../../start_position.h"
 #include "../../skill_power.h"
 #include "../../target.h"
@@ -3878,4 +3880,276 @@ void CHARACTER::SetDropStatus()
         }
     }
 }
+#endif
+
+void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
+#ifdef KASMIR_PAKET_SYSTEM
+    , uint32_t KasmirNpc, uint8_t KasmirBaslik
+#endif
+)
+{
+    if (!CanHandleItem())
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 291, "");
+#endif
+        return;
+    }
+
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+    if (GetGMLevel() > GM_PLAYER && GetGMLevel() < GM_IMPLEMENTOR) {
+        return;
+    }
+#endif
+
+#ifndef ENABLE_OPEN_SHOP_WITH_ARMOR
+    if (GetPart(PART_MAIN) > 2)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 503, "");
+#endif
+        return;
+    }
+#endif
+
+    if (GetMyShop())
+    {
+        CloseMyShop();
+        return;
+    }
+
+    quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());
+    if (pPC->IsRunning())
+        return;
+
+    if (bItemCount == 0)
+        return;
+
+    int64_t nTotalMoney = 0;
+
+    for (int n = 0; n < bItemCount; ++n)
+    {
+        nTotalMoney += static_cast<int64_t>((pTable + n)->price);
+    }
+
+    nTotalMoney += static_cast<int64_t>(GetGold());
+
+    if (GOLD_MAX <= nTotalMoney)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 226,
+            "%lld"
+
+            , GOLD_MAX);
+#endif
+        return;
+    }
+
+    char szSign[SHOP_SIGN_MAX_LEN + 1];
+    strlcpy(szSign, c_pszSign, sizeof(szSign));
+
+    m_stShopSign = szSign;
+
+    if (m_stShopSign.length() == 0)
+        return;
+
+    if (CBanwordManager::instance().CheckString(m_stShopSign.c_str(), m_stShopSign.length()))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 358, "");
+#endif
+        return;
+    }
+
+#ifdef KASMIR_PAKET_SYSTEM
+    m_bKasmirPaketBaslik = KasmirBaslik;
+    if (m_bKasmirPaketBaslik < 1 && m_bKasmirPaketBaslik > 6)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ChatPacketNew(CHAT_TYPE_INFO, 46, "");
+#endif
+        return;
+    }
+#endif
+
+    std::map<uint32_t, uint32_t> itemkind;
+
+    std::set<TItemPos> cont;
+    for (uint8_t i = 0; i < bItemCount; ++i)
+    {
+        if (cont.contains((pTable + i)->pos))
+        {
+            sys_err("MYSHOP: duplicate shop item detected! (name: %s)", GetName());
+            return;
+        }
+
+        LPITEM pkItem = GetItem((pTable + i)->pos);
+
+        if (pkItem)
+        {
+            const TItemTable* item_table = pkItem->GetProto();
+
+            if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ChatPacketNew(CHAT_TYPE_INFO, 416, "%s", pkItem->GetName());
+#endif
+                return;
+            }
+
+            if (pkItem->IsEquipped() == true)
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ChatPacketNew(CHAT_TYPE_INFO, 541, "");
+#endif
+                return;
+            }
+
+            if (true == pkItem->isLocked())
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ChatPacketNew(CHAT_TYPE_INFO, 656, "");
+#endif
+                return;
+            }
+
+            itemkind[pkItem->GetVnum()] = (pTable + i)->price / pkItem->GetCount();
+        }
+
+        cont.insert((pTable + i)->pos);
+    }
+
+    if (CountSpecifyItem(71049)
+#ifdef KASMIR_PAKET_SYSTEM
+        || CountSpecifyItem(88901)
+#endif
+        ) {
+        TItemPriceListTable header;
+        memset(&header, 0, sizeof(TItemPriceListTable));
+
+        header.dwOwnerID = GetPlayerID();
+        header.byCount = itemkind.size();
+
+        size_t idx = 0;
+        for (auto it = itemkind.begin(); it != itemkind.end(); ++it)
+        {
+            header.aPriceInfo[idx].dwVnum = it->first;
+            header.aPriceInfo[idx].dwPrice = it->second;
+            idx++;
+        }
+
+        db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, GetDesc()->GetHandle(), &header, sizeof(TItemPriceListTable));
+    }
+    else if (CountSpecifyItem(50200))
+        RemoveSpecifyItem(50200, 1);
+    else
+        return;
+
+    if (m_pkExchange)
+        m_pkExchange->Cancel();
+
+    TPacketGCShopSign p;
+
+    p.bHeader = HEADER_GC_SHOP_SIGN;
+    p.dwVID = GetVID();
+    strlcpy(p.szSign, c_pszSign, sizeof(p.szSign));
+#ifdef KASMIR_PAKET_SYSTEM
+    p.bShopKasmirTitle = KasmirBaslik;
+#endif
+    PacketAround(&p, sizeof(TPacketGCShopSign));
+
+    m_pkMyShop = CShopManager::instance().CreatePCShop(this, pTable, bItemCount);
+
+    if (IsPolymorphed() == true)
+    {
+        RemoveAffect(AFFECT_POLYMORPH);
+    }
+
+    if (GetHorse())
+    {
+        HorseSummon(false, true);
+    }
+    else if (GetMountVnum())
+    {
+        RemoveAffect(AFFECT_MOUNT);
+        RemoveAffect(AFFECT_MOUNT_BONUS);
+    }
+
+    uint32_t dwNpcShop = 30000;
+#ifdef KASMIR_PAKET_SYSTEM
+    dwNpcShop = KasmirNpc >= 30000 && KasmirNpc <= 30007 ? KasmirNpc : 30000;
+#endif
+    SetPolymorph(dwNpcShop, true);
+}
+
+void CHARACTER::CloseMyShop()
+{
+    if (GetMyShop())
+    {
+        m_stShopSign.clear();
+        CShopManager::instance().DestroyPCShop(this);
+        m_pkMyShop = nullptr;
+#ifdef KASMIR_PAKET_SYSTEM
+        m_bKasmirPaketBaslik = 0;
+        m_bKasmirPaketDurum = false;
+#endif
+
+        TPacketGCShopSign p;
+
+        p.bHeader = HEADER_GC_SHOP_SIGN;
+        p.dwVID = GetVID();
+#ifdef KASMIR_PAKET_SYSTEM
+        p.bShopKasmirTitle = m_bKasmirPaketBaslik;
+#endif
+        p.szSign[0] = '\0';
+
+        PacketAround(&p, sizeof(p));
+#ifdef ENABLE_WOLFMAN_CHARACTER
+        SetPolymorph(m_points.job, true);
+#else
+        SetPolymorph(GetJob(), true);
+#endif
+    }
+}
+
+#ifdef __HIDE_COSTUME_SYSTEM__
+void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
+{
+    m_bHideBodyCostume = hidden;
+    ChatPacket(CHAT_TYPE_COMMAND, "SetBodyCostumeHidden %d", m_bHideBodyCostume ? 1 : 0);
+    if (!pass) {
+        SetQuestFlag("costume_option.hide_body", m_bHideBodyCostume ? 1 : 0);
+    }
+}
+
+void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
+{
+    m_bHideHairCostume = hidden;
+    ChatPacket(CHAT_TYPE_COMMAND, "SetHairCostumeHidden %d", m_bHideHairCostume ? 1 : 0);
+    if (!pass) {
+        SetQuestFlag("costume_option.hide_hair", m_bHideHairCostume ? 1 : 0);
+    }
+}
+
+#ifdef ENABLE_ACCE_SYSTEM
+void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
+{
+    m_bHideAcceCostume = hidden;
+    ChatPacket(CHAT_TYPE_COMMAND, "SetAcceCostumeHidden %d", m_bHideAcceCostume ? 1 : 0);
+    if (!pass) {
+        SetQuestFlag("costume_option.hide_acce", m_bHideAcceCostume ? 1 : 0);
+    }
+}
+#endif
+
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
+{
+    m_bHideWeaponCostume = hidden;
+    ChatPacket(CHAT_TYPE_COMMAND, "SetWeaponCostumeHidden %d", m_bHideWeaponCostume ? 1 : 0);
+    if (!pass) {
+        SetQuestFlag("costume_option.hide_weapon", m_bHideWeaponCostume ? 1 : 0);
+    }
+}
+#endif
 #endif

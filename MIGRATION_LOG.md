@@ -2955,3 +2955,24 @@
   - `CHARACTER::` body count: `9`
 - build: success
 - next: `S11d-c-4c Initialize`, `S11d-c-4d Create`, or a final residual sweep
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem / MovementSystem (continued)
+- completed slice `S11e-6 shop / position / costume-hide remainder`
+- moved to `PlayerRuntimeSystem.cpp`:
+  - `OpenMyShop`
+  - `CloseMyShop`
+  - `SetBodyCostumeHidden`
+  - `SetHairCostumeHidden`
+  - `SetAcceCostumeHidden`
+  - `SetWeaponCostumeHidden`
+- moved to `MovementSystem.cpp`:
+  - `SetPosition`
+- note:
+  - this slice started with two surface fixes below rollback threshold: `banword.h` for `CBanwordManager` and `shop_manager.h` for `CShopManager`
+  - after the slice, only `Initialize` and `Create` remained as `CHARACTER::` bodies in `char.cpp`
+- after char.cpp Slice S11e-6: `1679`
+- char.cpp status after slice:
+  - line count: `1332`
+  - `CHARACTER::` body count: `2`
+- build: success
+- next: `S11d-c-4c Initialize` then `S11d-c-4d Create`

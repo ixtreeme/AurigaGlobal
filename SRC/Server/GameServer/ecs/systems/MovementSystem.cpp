@@ -674,3 +674,39 @@ void CHARACTER::GoHome()
 {
     WarpSet(EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
 }
+
+void CHARACTER::SetPosition(int pos)
+{
+	if (pos == POS_STANDING)
+	{
+		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
+		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+
+		event_cancel(&m_pkDeadEvent);
+		event_cancel(&m_pkStunEvent);
+	}
+	else if (pos == POS_DEAD)
+		SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
+
+	if (!IsStone())
+	{
+		switch (pos)
+		{
+		case POS_FIGHTING:
+			if (!HasCombatState(this))
+				MonsterLog("[BATTLE] 1Î?i´Â »óAÂ");
+
+			EnterBattleState(this);
+			break;
+
+		default:
+			if (!HasIdleState(this))
+				MonsterLog("[IDLE] 1¬´Â »óAÂ");
+
+			EnterIdleState(this);
+			break;
+		}
+	}
+
+	m_pointsInstant.position = pos;
+}
