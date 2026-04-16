@@ -2551,3 +2551,17 @@
   - `CHARACTER::` body count: `112`
 - build: success
 - next: `S11c-3b-3c RefineAcceMaterials`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3b-3c Acce refine execution`
+- moved:
+  - `RefineAcceMaterials`
+- note:
+  - the first post-move build failed with exactly three missing `STOLA_COMBINE_GRADE_*` identifiers
+  - fixed in-place by extending the helper surface with `SRC/Server/common/stole_length.h`; rollback was not needed
+- after char.cpp Slice S11c-3b-3c: `1798`
+- char.cpp status after slice:
+  - line count: `5135`
+  - `CHARACTER::` body count: `111`
+- build: success
+- next: `EditMyInven / EditMyExtraInven / Update_Inven` or `S11d-c-1b duel/session setter retry`
