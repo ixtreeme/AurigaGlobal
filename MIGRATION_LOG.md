@@ -1977,3 +1977,38 @@
   - `CHARACTER::` body count: `253`
 - build: success
 - next: `S10c title/name/display packet batch audit`
+
+## Phase 8 - Step 8.17 char.cpp -> NetworkSyncSystem / PlayerRuntimeSystem (continued)
+- completed slice `S10c title/name/display + identity basics`
+- moved to `NetworkSyncSystem.cpp`:
+  - `GetName`
+  - `GetItemOnTitlePrefix`
+  - `GetDisplayedNameWithItemOnTitle`
+  - `SendItemOnTitleNameToDesc`
+  - `UpdateItemOnTitleName`
+- moved to `PlayerRuntimeSystem.cpp`:
+  - `ChangeSex`
+  - `GetRaceNum`
+  - `SetRace`
+  - `GetJob`
+  - `SetLevel`
+  - `SetEmpire`
+  - `GetCharType`
+- helper surface:
+  - `NetworkSyncSystem.cpp`
+    - `item.h`
+    - `mob_manager.h`
+  - `PlayerRuntimeSystem.cpp`
+    - `config.h`
+    - `mob_manager.h`
+    - `RaceToJob` forward declaration
+- note:
+  - the first `NetworkSyncSystem` build failed below rollback threshold because the original `GetName` and `ItemOnTitle` bodies were still present in `char.cpp`; removing those source blocks fixed the slice in-place
+  - the first `PlayerRuntimeSystem` build failed below rollback threshold because `PK_PROTECT_LEVEL` was not visible; adding `config.h` fixed the helper surface and the following build then only hit the expected duplicate-body link errors
+  - a follow-up `MountSystem` counter batch (`GetBeltCount`, `GetMountCount`, mount pulse / overhead helpers) was attempted after this slice but exceeded the rollback threshold with a namespace/scope corruption in `MountSystem.cpp`; that batch was fully rolled back to keep the tree green
+- after char.cpp Slice S10c: `1939`
+- char.cpp status after slice:
+  - line count: `6227`
+  - `CHARACTER::` body count: `240`
+- build: success
+- next: `S10d mount counter helpers retry with smaller scope`

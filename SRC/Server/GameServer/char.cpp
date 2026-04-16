@@ -868,17 +868,6 @@ void CHARACTER::Destroy()
 		CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
 }
 
-#ifdef ENABLE_MULTI_LANGUAGE
-const char* CHARACTER::GetName(uint8_t lang) const
-{
-	return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "") : m_stName.c_str();
-}
-#else
-const char* CHARACTER::GetName() const
-{
-	return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName : "") : m_stName.c_str();
-}
-#endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 EVENTFUNC(battle_pass_stay_online_event)
 {
@@ -1380,11 +1369,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity) {
 #else
 #endif
 		d->Packet(&addPacket, sizeof(TPacketGCCharacterAdditionalInfo));
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-		if (IsPC())
-			SendItemOnTitleNameToDesc(d);
-#endif
-	}
+}
 
 	if (iDur) {
 		TPacketGCMove pack;
@@ -1658,92 +1643,6 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
 }
 
 
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-
-std::string CHARACTER::GetItemOnTitlePrefix() const
-{
-	if (!IsPC())
-		return std::string();
-
-	// Title item is equipped into WEAR_RING1 (ITEM_BELT mapped there)
-	LPITEM pTitleItem = GetWear(WEAR_BELT);
-	if (!pTitleItem)
-		return std::string();
-
-	if (pTitleItem->GetType() != ITEM_BELT)
-		return std::string();
-
-	// Only belts with value5==1 are considered as title items (equipable rule)
-	if (pTitleItem->GetValue(5) != 1)
-		return std::string();
-
-	const TItemTable* pProto = pTitleItem->GetProto();
-	const char* szProtoName = pProto ? pProto->szName : nullptr;
-	if (!szProtoName || szProtoName[0] != '[')
-		return std::string();
-
-	const char* pEnd = strchr(szProtoName, ']');
-	if (!pEnd)
-		return std::string();
-
-	const int prefixLen = (int)(pEnd - szProtoName) + 1;
-	if (prefixLen <= 0 || prefixLen > 24)
-		return std::string();
-
-	return std::string(szProtoName, prefixLen);
-}
-
-
-std::string CHARACTER::GetDisplayedNameWithItemOnTitle() const
-{
-	const std::string prefix = GetItemOnTitlePrefix();
-	if (prefix.empty())
-		return std::string(GetName());
-	return prefix + std::string(GetName());
-}
-
-
-void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
-{
-	if (!d)
-		return;
-
-	TPacketGCItemOnTitleNameUpdate p;
-	p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-	p.dwVID = GetVID();
-
-	const std::string prefix = GetItemOnTitlePrefix();
-	strlcpy(p.name, prefix.c_str(), sizeof(p.name));
-
-	d->Packet(&p, sizeof(p));
-}
-
-
-
-void CHARACTER::UpdateItemOnTitleName(bool bForce)
-{
-	const std::string newPrefix = GetItemOnTitlePrefix();
-	if (!bForce && m_lastItemOnTitlePrefix == newPrefix)
-		return;
-
-	m_lastItemOnTitlePrefix = newPrefix;
-
-	TPacketGCItemOnTitleNameUpdate p;
-	p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-	p.dwVID = GetVID();
-	strlcpy(p.name, newPrefix.c_str(), sizeof(p.name));
-
-	// self
-	if (GetDesc())
-		GetDesc()->Packet(&p, sizeof(p));
-
-	// others around
-	PacketAround(&p, sizeof(p));
-}
-
-
-#endif
-
 LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
 {
 	ENTITY_MAP::iterator it = m_map_view.begin();
@@ -1822,111 +1721,6 @@ EVENTFUNC(UpdateMountCountEvent)
 
 #endif
 
-
-bool CHARACTER::ChangeSex()
-{
-	int src_race = GetRaceNum();
-
-	switch (src_race)
-	{
-	case MAIN_RACE_WARRIOR_M:
-		m_points.job = MAIN_RACE_WARRIOR_W;
-		break;
-
-	case MAIN_RACE_WARRIOR_W:
-		m_points.job = MAIN_RACE_WARRIOR_M;
-		break;
-
-	case MAIN_RACE_ASSASSIN_M:
-		m_points.job = MAIN_RACE_ASSASSIN_W;
-		break;
-
-	case MAIN_RACE_ASSASSIN_W:
-		m_points.job = MAIN_RACE_ASSASSIN_M;
-		break;
-
-	case MAIN_RACE_SURA_M:
-		m_points.job = MAIN_RACE_SURA_W;
-		break;
-
-	case MAIN_RACE_SURA_W:
-		m_points.job = MAIN_RACE_SURA_M;
-		break;
-
-	case MAIN_RACE_SHAMAN_M:
-		m_points.job = MAIN_RACE_SHAMAN_W;
-		break;
-
-	case MAIN_RACE_SHAMAN_W:
-		m_points.job = MAIN_RACE_SHAMAN_M;
-		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case MAIN_RACE_WOLFMAN_M:
-		m_points.job = MAIN_RACE_WOLFMAN_M;
-		break;
-#endif
-	default:
-		sys_err("CHANGE_SEX: %s unknown race %d", GetName(), src_race);
-		return false;
-	}
-
-	sys_log(0, "CHANGE_SEX: %s (%d -> %d)", GetName(), src_race, m_points.job);
-	return true;
-}
-
-uint16_t CHARACTER::GetRaceNum() const
-{
-	if (m_dwPolymorphRace)
-		return m_dwPolymorphRace;
-
-	if (m_pkMobData)
-		return m_pkMobData->m_table.dwVnum;
-
-	return m_points.job;
-}
-
-void CHARACTER::SetRace(uint8_t race)
-{
-	if (race >= MAIN_RACE_MAX_NUM)
-	{
-		sys_err("CHARACTER::SetRace(name=%s, race=%d).OUT_OF_RACE_RANGE", GetName(), race);
-		return;
-	}
-
-	m_points.job = race;
-}
-
-uint8_t CHARACTER::GetJob() const
-{
-	unsigned race = m_points.job;
-	unsigned job;
-
-	if (RaceToJob(race, &job))
-		return job;
-
-	sys_err("CHARACTER::GetJob(name=%s, race=%d).OUT_OF_RACE_RANGE", GetName(), race);
-	return JOB_WARRIOR;
-}
-
-void CHARACTER::SetLevel(uint8_t level)
-{
-	m_points.level = level;
-
-	if (IsPC())
-	{
-		if (level < PK_PROTECT_LEVEL)
-			SetPKMode(PK_MODE_PROTECT);
-		else if (GetGMLevel() != GM_PLAYER)
-			SetPKMode(PK_MODE_PROTECT);
-		else if (m_bPKMode == PK_MODE_PROTECT)
-			SetPKMode(PK_MODE_PEACE);
-	}
-}
-
-void CHARACTER::SetEmpire(uint8_t bEmpire)
-{
-	m_bEmpire = bEmpire;
-}
 
 #define ENABLE_GM_FLAG_IF_TEST_SERVER
 #define ENABLE_GM_FLAG_FOR_LOW_WIZARD
@@ -2856,11 +2650,6 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
 	default:
 		return 0;
 	}
-}
-
-uint8_t CHARACTER::GetCharType() const
-{
-	return m_bCharType;
 }
 
 bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)

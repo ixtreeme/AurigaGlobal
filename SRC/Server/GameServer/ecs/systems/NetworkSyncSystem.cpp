@@ -9,6 +9,8 @@
 #include "../../char_manager.h"
 #include "../../desc.h"
 #include "../../guild.h"
+#include "../../item.h"
+#include "../../mob_manager.h"
 #include "../../packet.h"
 #include "../AIHelpers.hpp"
 #include "../components/combat_components.hpp"
@@ -350,3 +352,90 @@ void CHARACTER::PointsPacket()
 #endif
     GetDesc()->Packet(&pack, sizeof(TPacketGCPoints));
 }
+
+#ifdef ENABLE_MULTI_LANGUAGE
+const char* CHARACTER::GetName(uint8_t lang) const
+{
+    return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "") : m_stName.c_str();
+}
+#else
+const char* CHARACTER::GetName() const
+{
+    return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName : "") : m_stName.c_str();
+}
+#endif
+
+#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
+std::string CHARACTER::GetItemOnTitlePrefix() const
+{
+    if (!IsPC())
+        return std::string();
+
+    LPITEM pTitleItem = GetWear(WEAR_BELT);
+    if (!pTitleItem)
+        return std::string();
+
+    if (pTitleItem->GetType() != ITEM_BELT)
+        return std::string();
+
+    if (pTitleItem->GetValue(5) != 1)
+        return std::string();
+
+    const TItemTable* pProto = pTitleItem->GetProto();
+    const char* szProtoName = pProto ? pProto->szName : nullptr;
+    if (!szProtoName || szProtoName[0] != '[')
+        return std::string();
+
+    const char* pEnd = strchr(szProtoName, ']');
+    if (!pEnd)
+        return std::string();
+
+    const int prefixLen = (int)(pEnd - szProtoName) + 1;
+    if (prefixLen <= 0 || prefixLen > 24)
+        return std::string();
+
+    return std::string(szProtoName, prefixLen);
+}
+
+std::string CHARACTER::GetDisplayedNameWithItemOnTitle() const
+{
+    const std::string prefix = GetItemOnTitlePrefix();
+    if (prefix.empty())
+        return std::string(GetName());
+    return prefix + std::string(GetName());
+}
+
+void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
+{
+    if (!d)
+        return;
+
+    TPacketGCItemOnTitleNameUpdate p;
+    p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
+    p.dwVID = GetVID();
+
+    const std::string prefix = GetItemOnTitlePrefix();
+    strlcpy(p.name, prefix.c_str(), sizeof(p.name));
+
+    d->Packet(&p, sizeof(p));
+}
+
+void CHARACTER::UpdateItemOnTitleName(bool bForce)
+{
+    const std::string newPrefix = GetItemOnTitlePrefix();
+    if (!bForce && m_lastItemOnTitlePrefix == newPrefix)
+        return;
+
+    m_lastItemOnTitlePrefix = newPrefix;
+
+    TPacketGCItemOnTitleNameUpdate p;
+    p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
+    p.dwVID = GetVID();
+    strlcpy(p.name, newPrefix.c_str(), sizeof(p.name));
+
+    if (GetDesc())
+        GetDesc()->Packet(&p, sizeof(p));
+
+    PacketAround(&p, sizeof(p));
+}
+#endif
