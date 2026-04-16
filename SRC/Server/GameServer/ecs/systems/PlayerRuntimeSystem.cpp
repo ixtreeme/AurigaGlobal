@@ -15,6 +15,7 @@
 #include "../../gm.h"
 #include "../../item.h"
 #include "../../item_manager.h"
+#include "../../log.h"
 #include "../../marriage.h"
 #include "../../mob_manager.h"
 #include "../../questmanager.h"
@@ -1585,4 +1586,101 @@ void CHARACTER::RemoveAcceMaterial(uint8_t bPos)
     sPacket.dwMinAbs = 0;
     sPacket.dwMaxAbs = 0;
     GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+}
+
+uint8_t CHARACTER::CanRefineAcceMaterials()
+{
+    if (GetOfflineShopGuest() || GetAuctionGuest())
+        return 0;
+
+    if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+#ifdef __ATTR_TRANSFER_SYSTEM__
+        || IsAttrTransferOpen()
+#endif
+        )
+        return 0;
+
+    uint8_t bReturn = 0;
+    LPITEM* pkItemMaterial;
+    pkItemMaterial = GetAcceMaterials();
+    if (m_bAcceCombination)
+    {
+        for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
+        {
+            if (pkItemMaterial[i])
+            {
+                if ((pkItemMaterial[i]->GetType() == ITEM_COSTUME) && (pkItemMaterial[i]->GetSubType() == COSTUME_ACCE))
+                    bReturn = 1;
+#ifdef ENABLE_STOLE_COSTUME
+                else if ((pkItemMaterial[i]->GetType() == ITEM_COSTUME) && (pkItemMaterial[i]->GetSubType() == COSTUME_STOLE))
+                    bReturn = 1;
+#endif
+                else
+                {
+                    bReturn = 0;
+                    break;
+                }
+            }
+            else
+            {
+                bReturn = 0;
+                break;
+            }
+        }
+    }
+    else if (m_bAcceAbsorption)
+    {
+        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
+        {
+            if ((pkItemMaterial[0]->GetType() == ITEM_COSTUME) && (pkItemMaterial[0]->GetSubType() == COSTUME_ACCE))
+                bReturn = 2;
+            else
+                bReturn = 0;
+
+            if ((pkItemMaterial[1]->GetType() == ITEM_WEAPON) || ((pkItemMaterial[1]->GetType() == ITEM_ARMOR) && (pkItemMaterial[1]->GetSubType() == ARMOR_BODY)))
+                bReturn = 2;
+#ifdef ATTR_LOCK
+            if ((pkItemMaterial[1]->GetType() == ITEM_WEAPON) || ((pkItemMaterial[1]->GetType() == ITEM_ARMOR) && (pkItemMaterial[1]->GetSubType() == ARMOR_BODY)))
+            {
+                if (pkItemMaterial[1]->GetLockedAttr() != -1)
+                {
+                    bReturn = 0;
+#ifdef TEXTS_IMPROVEMENT
+                    ChatPacketNew(CHAT_TYPE_INFO, 783, "");
+#endif
+                }
+            }
+#endif
+            else
+                bReturn = 0;
+
+            if (pkItemMaterial[0]->GetSocket(ACCE_ABSORBED_SOCKET) > 0)
+                bReturn = 0;
+        }
+        else
+            bReturn = 0;
+    }
+
+    return bReturn;
+}
+
+bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
+{
+    if (!CanHandleItem())
+        return false;
+    else if ((!pkItem) || (!pkTarget))
+        return false;
+    else if ((pkTarget->GetType() != ITEM_COSTUME) && (pkTarget->GetSubType() != COSTUME_ACCE))
+        return false;
+
+    if (pkTarget->GetSocket(ACCE_ABSORBED_SOCKET) <= 0)
+        return false;
+
+    pkTarget->SetSocket(ACCE_ABSORBED_SOCKET, 0);
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        pkTarget->SetForceAttribute(i, 0, 0);
+
+    pkItem->SetCount(pkItem->GetCount() - 1);
+    LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT (CLEAN ATTR)", pkTarget->GetName());
+    return true;
 }

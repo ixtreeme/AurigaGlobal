@@ -2536,3 +2536,18 @@
 - next:
   - re-attempt `GetDuel` / `SetDuel` only with signature-aware brace matching
   - or skip directly to another isolated batch such as `SetShopSafebox` / `Acce material-refine` preparation after a fresh helper-surface pass
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-3b-3b Acce refine guards / clean helper`
+- moved:
+  - `CanRefineAcceMaterials`
+  - `CleanAcceAttr`
+- note:
+  - `char.cpp` is latin1-encoded, so the source-side removal was done with signature-aware brace matching under latin1 I/O after `apply_patch` failed on non-UTF input
+  - added `log.h` surface to `PlayerRuntimeSystem.cpp` for the detached-attr item log path
+- after char.cpp Slice S11c-3b-3b: `1799`
+- char.cpp status after slice:
+  - line count: `5327`
+  - `CHARACTER::` body count: `112`
+- build: success
+- next: `S11c-3b-3c RefineAcceMaterials`
