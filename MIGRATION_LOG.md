@@ -2393,3 +2393,27 @@
   - `CHARACTER::` body count: `139`
 - build: success
 - next: `S11c-2 PlayerRuntimeSystem BattlePass / offline helper batch`
+
+## Phase 8 - Step 8.17 char.cpp -> PlayerRuntimeSystem (continued)
+- completed slice `S11c-2 BattlePass / offline / rune helpers`
+- moved:
+  - `EnsureFreeBattlePassActive`, `LoadBattlePass`, `CancelStayOnlineEvent`
+  - `HasBattlePassBoost`, `GetBattlePassAdjustedTotal`, `ApplyBattlePassBoostRecalc`
+  - `GetMissionProgress`, `IsCompletedMission`, `UpdateMissionProgress`
+  - `GetBattlePassId`, `GetSecondsTillNextMonth`
+  - `SendOfflineMessage`, `ReadOfflineMessages`, `GetRuneEffect`
+- helper surface:
+  - `PlayerRuntimeSystem.cpp`
+    - `battle_pass.h`
+    - `desc_client.h`
+    - `item.h`
+    - `common/rune_length.h`
+- note:
+  - the first post-move build failed with 7 errors, all below rollback threshold
+  - fixed in-place by restoring the missing `char.cpp` preprocessor balance after the block removal and by adding the missing DB/item/rune helper-surface includes to `PlayerRuntimeSystem.cpp`
+- after char.cpp Slice S11c-2: `1822`
+- char.cpp status after slice:
+  - line count: `5059`
+  - `CHARACTER::` body count: `125`
+- build: success
+- next: `S11c-3 PlayerRuntimeSystem / ItemSystem acce-inventory-misc batch`
