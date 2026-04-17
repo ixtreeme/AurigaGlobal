@@ -69,6 +69,9 @@
 #include "../../../common/stole_length.h"
 #endif
 #include "../../../common/CommonDefines.h"
+#ifdef ENABLE_RUNE_SYSTEM
+#include "../../../common/rune_length.h"
+#endif
 
 #include "../Registry.hpp"
 #include "../components/identity_components.hpp"
@@ -16005,5 +16008,220 @@ void CItem::StartSoulItemEvent()
 	const entt::entity e = ItemEntityOf(this);
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+}
+#endif
+
+#ifdef ENABLE_RUNE_SYSTEM
+void CItem::InitializeRune() {
+	if ((GetType() == ITEM_USE) && (GetSubType() == USE_RUNE_PERC_CHARGE)) {
+		SetSocket(0, GetValue(0));
+		UpdatePacket();
+		return;
+	}
+
+	if (!IsRune())
+		return;
+
+	int32_t lTime = 0, lAttr = 0, lValue = 0;
+	for (int i = 0; i < RUNE_ATTR_EACH; ++i) {
+		lTime = GetSocket(0);
+		lAttr = GetRuneAttrType(i);
+		lValue = GetRuneAttrValue(i, lTime);
+		if ((lAttr > 0) && (lValue > 0)) {
+			SetForceAttribute(i, lAttr, lValue);
+		}
+	}
+}
+
+void CItem::ChangeRuneAttr(int32_t lTime) {
+	int32_t lValue = GetRuneAttrValue(0, lTime);
+	bool bChange = lValue != GetAttributeValue(0) ? true : false;
+	if (!bChange)
+		return;
+
+	bool isActive = GetSocket(1) == 1 ? true : false;
+	if (isActive)
+		ModifyPoints(false);
+
+	for (int i = 0; i < RUNE_ATTR_EACH; ++i) {
+		lValue = GetRuneAttrValue(i, lTime);
+		SetForceAttribute(i, GetAttributeType(i), lValue);
+	}
+
+	if (isActive)
+		ModifyPoints(true);
+
+	UpdatePacket();
+}
+
+void CItem::ActivateRuneBonus() {
+	if (!m_pOwner)
+		return;
+
+	LPITEM pkItem1 = m_pOwner->GetWear(WEAR_RUNE7);
+	if (!pkItem1)
+		return;
+
+	if (pkItem1->GetSocket(1) == 1)
+		return;
+
+	bool bCan = true;
+	int iMaxSubTypes = RUNE_SUBTYPES - 1;
+	LPITEM pkItem2 = nullptr;
+	for (int i = 0; i < iMaxSubTypes; i++) {
+		pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+		if (pkItem2) {
+			if (pkItem2->GetSocket(1) != 1) {
+				bCan = false;
+				break;
+			}
+			else {
+				if (int32_t(pkItem2->GetSocket(0) / (pkItem2->GetValue(0) / 100)) < 50) {
+					bCan = false;
+					break;
+				}
+			}
+		}
+		else {
+			bCan = false;
+			break;
+		}
+	}
+
+	if (!bCan) {
+		if (m_pOwner->FindAffect(AFFECT_RUNE2))
+			m_pOwner->RemoveAffect(AFFECT_RUNE2);
+
+		if (!m_pOwner->FindAffect(AFFECT_RUNE1))
+			m_pOwner->AddAffect(AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+
+		return;
+	}
+	else {
+		if (m_pOwner->FindAffect(AFFECT_RUNE1))
+			m_pOwner->RemoveAffect(AFFECT_RUNE1);
+
+		if (!m_pOwner->FindAffect(AFFECT_RUNE2))
+			m_pOwner->AddAffect(AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+	}
+
+	pkItem1->SetSocket(1, 1);
+	pkItem1->ModifyPoints(true);
+	pkItem1->UpdatePacket();
+#ifdef TEXTS_IMPROVEMENT
+	m_pOwner->ChatPacketNew(CHAT_TYPE_INFO, 31, "%s", pkItem1->GetName());
+#endif
+}
+
+void CItem::DeactivateRuneBonus() {
+	if (!m_pOwner)
+		return;
+
+	LPITEM pkItem1 = m_pOwner->GetWear(WEAR_RUNE7);
+	if (!pkItem1)
+		return;
+
+	if (pkItem1->GetSocket(1) != 1)
+		return;
+
+	if (m_pOwner->FindAffect(AFFECT_RUNE2))
+		m_pOwner->RemoveAffect(AFFECT_RUNE2);
+
+	pkItem1->SetSocket(1, 0);
+	pkItem1->ModifyPoints(false);
+	pkItem1->UpdatePacket();
+#ifdef TEXTS_IMPROVEMENT
+	m_pOwner->ChatPacketNew(CHAT_TYPE_INFO, 901, "%s", pkItem1->GetName());
+#endif
+}
+
+void CItem::DeactivateRuneBonusRefresh() {
+	int iMaxSubTypes = RUNE_SUBTYPES - 1;
+	bool bAdd = false;
+	LPITEM pkItem2 = nullptr;
+	if (!m_pOwner->FindAffect(AFFECT_RUNE1)) {
+		for (int i = 0; i < iMaxSubTypes; i++) {
+			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+			if (pkItem2) {
+				if (pkItem2->GetSocket(1) != 0) {
+					bAdd = true;
+					break;
+				}
+			}
+			else {
+				bAdd = true;
+				break;
+			}
+		}
+
+		if (bAdd)
+			m_pOwner->AddAffect(AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+	}
+	else {
+		for (int i = 0; i < iMaxSubTypes; i++) {
+			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+			if (pkItem2) {
+				if (pkItem2->GetSocket(1) != 0) {
+					bAdd = true;
+					break;
+				}
+			}
+			else {
+				bAdd = true;
+				break;
+			}
+		}
+
+		if (!bAdd)
+			m_pOwner->RemoveAffect(AFFECT_RUNE1);
+	}
+}
+
+void CItem::ActivateRune() {
+	if (!IsRune())
+		return;
+
+	if (GetSocket(1) == 1)
+		return;
+
+	if (GetSocket(ITEM_SOCKET_REMAIN_SEC) <= 0) {
+#ifdef TEXTS_IMPROVEMENT
+		if (m_pOwner) {
+			m_pOwner->ChatPacketNew(CHAT_TYPE_INFO, 30, "%s", GetName());
+		}
+#endif
+		return;
+	}
+
+	SetSocket(1, 1);
+	ModifyPoints(true);
+	UpdatePacket();
+#ifdef TEXTS_IMPROVEMENT
+	if (m_pOwner) {
+		m_pOwner->ChatPacketNew(CHAT_TYPE_INFO, 31, "%s", GetName());
+	}
+#endif
+
+	ActivateRuneBonus();
+}
+
+void CItem::DeactivateRune() {
+	if (!IsRune())
+		return;
+
+	if (GetSocket(1) == 0)
+		return;
+
+	DeactivateRuneBonus();
+
+	SetSocket(1, 0);
+	ModifyPoints(false);
+	UpdatePacket();
+	DeactivateRuneBonusRefresh();
+#ifdef TEXTS_IMPROVEMENT
+	if (m_pOwner) {
+		m_pOwner->ChatPacketNew(CHAT_TYPE_INFO, 32, "%s", GetName());
+	}
+#endif
 }
 #endif

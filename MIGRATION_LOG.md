@@ -3635,3 +3635,71 @@
     - accessory socket expire wrappers
     - soul item wrappers
   - then `P11.9` item packet encoding methods
+
+## Phase 11 - P11.8 Slice S7 timer / expire event wrappers (batches C-E)
+- moved additional timer/expire wrapper `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- completed batches:
+  - Batch C: real-time expire wrapper
+    - `StartRealTimeExpireEvent`
+  - Batch D: accessory socket expire wrappers
+    - `SetAccessorySocketExpireEvent`
+    - `StartAccessorySocketExpireEvent`
+    - `StopAccessorySocketExpireEvent`
+  - Batch E: soul item wrappers
+    - `SetSoulItemEvent`
+    - `StartSoulItemEvent`
+- additive ECS emit added after legacy `event_create` calls:
+  - `g_dispatcher.trigger(ecs::EvItemExpired{e, GetID()})`
+- notes:
+  - each batch required the matching `EVENTFUNC(...)` forward declaration in `ItemSystem.cpp`
+    - `real_time_expire_event`
+    - `accessory_socket_expire_event`
+    - `soul_item_event`
+  - all three batches stayed within the migration-window rule:
+    - legacy `event_create` / `event_cancel` path preserved
+    - ECS trigger additive only
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success after each batch
+- commits:
+  - `fcb3102` `Phase 11: P11.8-C StartRealTimeExpireEvent`
+  - `a29836d` `Phase 11: P11.8-D Accessory socket expire wrappers`
+  - `fd32670` `Phase 11: P11.8-E Soul item event wrappers`
+
+## Phase 11 - P11.9 item packet encoding methods
+- moved item packet/network `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- migrated methods:
+  - `EncodeInsertPacket`
+  - `EncodeRemovePacket`
+  - `UsePacketEncode`
+  - `UpdatePacket`
+- notes:
+  - moved as direct `CItem::` method definitions in `NetworkSyncSystem.cpp`
+  - no free helper wrappers were introduced, matching the successful `CHARACTER::` migration pattern from Phase 8
+  - existing helper surface in `NetworkSyncSystem.cpp` was already sufficient:
+    - `item.h`
+    - `packet.h`
+    - `desc.h`
+    - `sectree.h`
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success
+- commit:
+  - `19f1b11` `Phase 11: P11.9 Item packet encoding methods`
+
+## Phase 11 - current checkpoint
+- build gate:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green
+- remaining item bodies:
+  - `SRC/Server/GameServer/item.cpp`: `45`
+- status:
+  - `P11.0` to `P11.9`: complete
+  - next logical slice:
+    - `P11.10` rune / accessory / special behavior batches
+  - after that:
+    - `P11.11` file-scope sweep and `item.cpp` deletion
