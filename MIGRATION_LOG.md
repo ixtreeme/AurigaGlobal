@@ -4048,3 +4048,51 @@
 - commits:
   - `a833164` `Phase 12: P12d-1 Add map-meta wrappers to SpatialHelpers.hpp`
   - `807c407` `Phase 12: P12d-2 Replace remaining TODO calls in ECS systems`
+
+
+
+
+
+
+itt voltunk 
+
+## Phase 9b - Layer 1 char_fwd split
+- introduced a dedicated forward-only `LPCHARACTER` header:
+  - `SRC/Server/GameServer/char_fwd.hpp`
+    - contents:
+      - `class CHARACTER;`
+      - `using LPCHARACTER = CHARACTER*;`
+- moved the canonical `LPCHARACTER` alias out of `typedef.h`:
+  - `SRC/Server/GameServer/typedef.h`
+    - removed the direct `CHARACTER` / `LPCHARACTER` typedef block
+    - now includes:
+      - `char_fwd.hpp`
+- build checkpoints:
+  - after `char_fwd.hpp` creation:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after `typedef.h` include-chain update:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+- attempted Layer 1 file migration against the old Phase 9 fanout snapshot:
+  - tested:
+    - `SRC/Server/GameServer/MountInventory.cpp`
+    - `SRC/Server/GameServer/new_offlineshop_safebox.cpp`
+  - result:
+    - both failed to compile with `char_fwd.hpp` only
+  - reasons:
+    - `MountInventory.cpp` directly calls `CHARACTER` methods through `m_pkOwner`
+    - `new_offlineshop_safebox.cpp` pulls in `new_offlineshop.h`, which itself requires full `CHARACTER` method visibility
+  - conclusion:
+    - the historical Phase 9 L1 list is stale and cannot be applied blindly to the current tree
+    - no requested L1 source file was safely switchable in this pass without introducing `char_interface.hpp`
+- current counts after the partial Layer 1 split:
+  - direct `#include "char.h"` users: `118`
+  - direct `#include "char_fwd.hpp"` users: `1`
+    - `typedef.h`
+- commits:
+  - `a5ed008` `Phase 9b: P9b-1 Create char_fwd.hpp`
+  - `b4577a9` `Phase 9b: P9b-2 typedef.h includes char_fwd.hpp`
+- status:
+  - `LPCHARACTER` is now decoupled from `typedef.h` implementation-wise
+  - Layer 1 source migration remains blocked on a fresh reclassification pass or the introduction of `char_interface.hpp`
