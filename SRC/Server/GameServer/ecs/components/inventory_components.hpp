@@ -7,6 +7,7 @@
 
 #include "../../safebox.h"
 #include "../../typedef.h"
+#include "item_components.hpp"
 
 namespace ecs {
 
