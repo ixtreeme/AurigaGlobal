@@ -2,7 +2,7 @@
 #include "utils.h"
 #include "config.h"
 #include "desc.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "battle.h"
 #include "item.h"
@@ -44,6 +44,7 @@ bool battle_distance_valid(LPCHARACTER ch, LPCHARACTER victim)
 
 bool timed_event_cancel(LPCHARACTER ch)
 {
+	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
 	if (ch->m_pkTimedEvent)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -970,6 +971,7 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 }
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
+	// INTERFACE_TODO: m_kAttackLog direct access, needs public anti-cheat attack-log surface.
 	if (victim && ch && ch->IsPC()) {
 		ch->m_kAttackLog.dwVID = victim->GetVID();
 		ch->m_kAttackLog.dwTime = current_time;
@@ -977,6 +979,7 @@ void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 }
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
+	// INTERFACE_TODO: m_AttackedLog direct access, needs public anti-cheat attacked-log surface.
 	if (victim && ch && ch->IsPC()) {
 		victim->m_AttackedLog.dwPID = ch->GetPlayerID();
 		victim->m_AttackedLog.dwAttackedTime = current_time;
@@ -984,6 +987,7 @@ void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time)
 }
 
 bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
+	// INTERFACE_TODO: m_kAttackLog / m_AttackedLog / m_speed_hack_count direct access, needs public anti-cheat surface.
 	if (victim && ch && ch->IsPC()) {
 		if (ch->m_kAttackLog.dwVID == victim->GetVID())
 		{
