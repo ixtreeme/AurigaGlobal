@@ -3958,3 +3958,44 @@
   - `1062ca7` `Phase 12: P12b-1 Extend SyncSectorPlacement to spawn paths`
     - note: this checkpoint also introduced `ecs::ViewActiveTag` and its first add/remove wiring
   - `2e46ff8` `Phase 12: P12b-3 Replace remaining SECTREE_MANAGER calls in ECS systems`
+
+## Phase 12c - attribute and movable-position bridge
+- extended the ECS-side spatial bridge with read-only wrappers for the remaining simple SECTREE capabilities used by ECS systems:
+  - `SRC/Server/GameServer/ecs/SpatialHelpers.hpp`
+    - added:
+      - `ecs::IsMovablePosition(int32_t mapIndex, int32_t x, int32_t y)`
+      - `ecs::IsAttrAt(int32_t mapIndex, int32_t x, int32_t y, uint32_t dwFlag)`
+    - both wrappers delegate to legacy SECTREE infrastructure
+    - no legacy SECTREE source files were modified
+- TODO-marked ECS system call sites were re-audited:
+  - replaced:
+    - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+      - line-of-sight block check now uses:
+        - `ecs::IsMovablePosition(...)`
+      - the old `SECTREE_MIGRATION_TODO` marker at this site was removed
+  - intentionally kept as legacy with TODO marker:
+    - complex `GetMovablePosition(...)` paths
+    - manager-meta lookups:
+      - `GetEmpireFromMapIndex(...)`
+      - `GetRecallPositionByEmpire(...)`
+      - `GetMap(...)`
+      - `GetMapIndex(...)`
+    - these remain outside the safe scope of the current read-only bridge
+- constraints preserved:
+  - legacy `SECTREE` / `SECTREE_MANAGER` remain authoritative
+  - no write-side insert / remove / attribute-paint operations were replaced
+  - ECS bridge remains additive and read-only
+- build checkpoints:
+  - after helper-surface addition:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after movable-position TODO replacement:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+- counts after `P12c`:
+  - remaining `SECTREE_MIGRATION_TODO` markers in `ecs/systems/*.cpp`: `10`
+  - remaining direct `SECTREE_MANAGER::instance` / `SECTREE_MANAGER::Get` calls in `ecs/systems/*.cpp`: `10`
+  - remaining `LPSECTREE|SECTREE_MANAGER::` refs outside `ecs/` and `questlua_*`: `296`
+- commits:
+  - `5c608c5` `Phase 12: P12c-1 Add IsMovablePosition and IsAttrAt helpers`
+  - `abaeb4b` `Phase 12: P12c-2 Replace movable/attr TODO calls in ECS systems`
