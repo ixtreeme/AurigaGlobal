@@ -5,12 +5,14 @@
 #include <algorithm>
 #include <cstring>
 
+#include "ItemRegistry.hpp"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
 #include "components/ai_components.hpp"
 #include "components/combat_components.hpp"
 #include "components/identity_components.hpp"
 #include "components/inventory_components.hpp"
+#include "components/item_components.hpp"
 #include "components/movement_components.hpp"
 #include "components/quest_components.hpp"
 #include "components/session_components.hpp"
@@ -318,6 +320,85 @@ void RemoveFromLegacyMapSector(entt::registry& reg, entt::entity entity)
     // Actual entt::entity-backed map sector membership is introduced in Phase 4.
 }
 
+ecs::ItemIdentity MakeItemIdentity(LPITEM item)
+{
+    return ecs::ItemIdentity {
+        item->GetID(),
+        item->GetOriginalVnum(),
+        item->GetVID(),
+        item->GetMaskVnum(),
+    };
+}
+
+ecs::ItemLocation MakeItemLocation(LPITEM item)
+{
+    return ecs::ItemLocation {
+        item->GetWindow(),
+        item->GetCell(),
+    };
+}
+
+ecs::ItemCount MakeItemCount(LPITEM item)
+{
+    return ecs::ItemCount { item->GetCount() };
+}
+
+ecs::ItemOwner MakeItemOwner(LPITEM item)
+{
+    uint32_t ownerPID = 0;
+
+    if (const auto* owner = item->GetOwner()) {
+        ownerPID = owner->GetPlayerID();
+    }
+
+    return ecs::ItemOwner {
+        ownerPID,
+        item->GetLastOwnerPID(),
+        ownerPID,
+    };
+}
+
+ecs::ItemEquipped MakeItemEquipped(LPITEM item)
+{
+    return ecs::ItemEquipped { item->IsEquipped() };
+}
+
+ecs::ItemFlags MakeItemFlags(LPITEM item)
+{
+    return ecs::ItemFlags {
+        item->GetFlag(),
+        item->IsExchanging(),
+        item->GetSkipSave(),
+        item->isLocked(),
+    };
+}
+
+ecs::ItemSockets MakeItemSockets(LPITEM item)
+{
+    ecs::ItemSockets sockets {};
+    std::copy_n(item->GetSockets(), ITEM_SOCKET_MAX_NUM, sockets.sockets.begin());
+    return sockets;
+}
+
+ecs::ItemAttributes MakeItemAttributes(LPITEM item)
+{
+    ecs::ItemAttributes attributes {};
+    std::copy_n(item->GetAttributes(), ITEM_ATTRIBUTE_MAX_NUM, attributes.attrs.begin());
+    return attributes;
+}
+
+void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
+{
+    reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
+    reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
+    reg.emplace_or_replace<ecs::ItemCount>(entity, MakeItemCount(item));
+    reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
+    reg.emplace_or_replace<ecs::ItemEquipped>(entity, MakeItemEquipped(item));
+    reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
+    reg.emplace_or_replace<ecs::ItemSockets>(entity, MakeItemSockets(item));
+    reg.emplace_or_replace<ecs::ItemAttributes>(entity, MakeItemAttributes(item));
+}
+
 } // namespace
 
 entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& data, LPDESC desc, uint32_t legacyVID)
@@ -419,6 +500,48 @@ entt::entity EntityFactory::CreateStone(entt::registry& reg, const TMobTable& da
 {
     entt::entity entity = CreateMobEntity<ecs::TagStone>(reg, data, x, y, mapIndex, legacyVID);
     return entity;
+}
+
+entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
+{
+    if (!item) {
+        return entt::null;
+    }
+
+    const uint32_t itemID = item->GetID();
+    if (itemID == 0) {
+        return entt::null;
+    }
+
+    const entt::entity existing = CItemRegistry::Instance().Find(itemID);
+    if (existing != entt::null && reg.valid(existing)) {
+        SyncItemEntity(reg, existing, item);
+        return existing;
+    }
+
+    const entt::entity entity = reg.create();
+    SyncItemEntity(reg, entity, item);
+    CItemRegistry::Instance().Register(itemID, entity);
+    return entity;
+}
+
+void EntityFactory::DestroyItemEntity(entt::registry& reg, LPITEM item)
+{
+    if (!item) {
+        return;
+    }
+
+    const uint32_t itemID = item->GetID();
+    if (itemID == 0) {
+        return;
+    }
+
+    const entt::entity entity = CItemRegistry::Instance().Find(itemID);
+    CItemRegistry::Instance().Unregister(itemID);
+
+    if (entity != entt::null && reg.valid(entity)) {
+        reg.destroy(entity);
+    }
 }
 
 void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
