@@ -486,14 +486,12 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
-	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
-	if (ch->m_pkTimedEvent)
+	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->m_pkTimedEvent);
+		event_cancel(&ch->GetTimedEventRef());
 		return;
 	}
 
@@ -579,12 +577,11 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
 	LPDESC d = ch->GetDesc();
 
 	if (info->left_second <= 0)
 	{
-		ch->m_pkTimedEvent = nullptr;
+		ch->GetTimedEventRef() = nullptr;
 
 		switch (info->subcmd)
 		{
@@ -640,12 +637,12 @@ EVENTFUNC(timed_event)
 
 ACMD(do_cmd)
 {
-	if (ch->m_pkTimedEvent)
+	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->m_pkTimedEvent);
+		event_cancel(&ch->GetTimedEventRef());
 		return;
 	}
 
@@ -691,8 +688,7 @@ ACMD(do_cmd)
 				info->subcmd		= subcmd;
 				strlcpy(info->szReason, argument, sizeof(info->szReason));
 
-				// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
-				ch->m_pkTimedEvent	= event_create(timed_event, info, 1);
+				ch->GetTimedEventRef()	= event_create(timed_event, info, 1);
 			}
 			break;
 	}
