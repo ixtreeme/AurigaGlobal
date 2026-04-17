@@ -794,60 +794,9 @@ EVENTFUNC(accessory_socket_expire_event)
 	}
 }
 
-void CItem::StartAccessorySocketExpireEvent()
-{
-	if (!IsAccessoryForSocket())
-		return;
 
-	if (m_pkAccessorySocketExpireEvent)
-		return;
 
-	if (GetAccessorySocketMaxGrade() == 0)
-		return;
 
-	if (GetAccessorySocketGrade() == 0)
-		return;
-
-	int iSec = GetAccessorySocketDownGradeTime();
-#ifdef ENABLE_INFINITE_RAFINES
-	if (iSec > 86400) {
-		return;
-	}
-#endif
-	SetAccessorySocketExpireEvent(nullptr);
-
-	if (iSec <= 1)
-		iSec = 5;
-	else
-		iSec = MIN(iSec, 60);
-
-	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-	info->item_vid = GetVID();
-
-	SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
-}
-
-void CItem::StopAccessorySocketExpireEvent()
-{
-	if (!m_pkAccessorySocketExpireEvent)
-		return;
-
-	if (!IsAccessoryForSocket())
-		return;
-
-	int new_time = GetAccessorySocketDownGradeTime() - (60 - event_time(m_pkAccessorySocketExpireEvent) / passes_per_sec);
-
-	event_cancel(&m_pkAccessorySocketExpireEvent);
-
-	if (new_time <= 1)
-	{
-		AccessorySocketDegrade();
-	}
-	else
-	{
-		SetAccessorySocketDownGradeTime(new_time);
-	}
-}
 
 bool CItem::IsRamadanRing()
 {
@@ -874,10 +823,7 @@ void CItem::ClearMountAttributeAndAffect()
 // fixme
 // ÀÌ°Å Áö±ÝÀº ¾È¾´µ¥... ±Ùµ¥ È¤½Ã³ª ½Í¾î¼­ ³²°ÜµÒ.
 // by rtsummit
-void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
-{
-	m_pkAccessorySocketExpireEvent = pkEvent;
-}
+
 
 void CItem::AccessorySocketDegrade()
 {

@@ -393,6 +393,7 @@ EVENTFUNC(item_destroy_event);
 EVENTFUNC(unique_expire_event);
 EVENTFUNC(timer_based_on_wear_expire_event);
 EVENTFUNC(real_time_expire_event);
+EVENTFUNC(accessory_socket_expire_event);
 
 namespace ItemSystem {
 
@@ -15912,4 +15913,68 @@ void CItem::StartRealTimeExpireEvent()
 			return;
 		}
 	}
+}
+
+void CItem::StartAccessorySocketExpireEvent()
+{
+	if (!IsAccessoryForSocket())
+		return;
+
+	if (m_pkAccessorySocketExpireEvent)
+		return;
+
+	if (GetAccessorySocketMaxGrade() == 0)
+		return;
+
+	if (GetAccessorySocketGrade() == 0)
+		return;
+
+	int iSec = GetAccessorySocketDownGradeTime();
+#ifdef ENABLE_INFINITE_RAFINES
+	if (iSec > 86400) {
+		return;
+	}
+#endif
+	SetAccessorySocketExpireEvent(nullptr);
+
+	if (iSec <= 1)
+		iSec = 5;
+	else
+		iSec = MIN(iSec, 60);
+
+	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
+	info->item_vid = GetVID();
+
+	SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
+
+	const entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+}
+
+void CItem::StopAccessorySocketExpireEvent()
+{
+	if (!m_pkAccessorySocketExpireEvent)
+		return;
+
+	if (!IsAccessoryForSocket())
+		return;
+
+	int new_time = GetAccessorySocketDownGradeTime() - (60 - event_time(m_pkAccessorySocketExpireEvent) / passes_per_sec);
+
+	event_cancel(&m_pkAccessorySocketExpireEvent);
+
+	if (new_time <= 1)
+	{
+		AccessorySocketDegrade();
+	}
+	else
+	{
+		SetAccessorySocketDownGradeTime(new_time);
+	}
+}
+
+void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
+{
+	m_pkAccessorySocketExpireEvent = pkEvent;
 }
