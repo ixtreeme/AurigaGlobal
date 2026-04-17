@@ -231,16 +231,6 @@ void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use*
 	packet->vnum = GetVnum();
 }
 
-void CItem::RemoveFlag(int32_t bit)
-{
-	REMOVE_BIT(m_lFlag, bit);
-}
-
-void CItem::AddFlag(int32_t bit)
-{
-	SET_BIT(m_lFlag, bit);
-}
-
 void CItem::UpdatePacket()
 {
 	if (!m_pOwner || !m_pOwner->GetDesc())
@@ -267,26 +257,6 @@ void CItem::UpdatePacket()
 
 	sys_log(2, "UpdatePacket %s -> %s", GetName(), m_pOwner->GetName());
 	m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
-}
-
-int CItem::GetCount()
-{
-	const TItemTable* proto = GetProto();
-	const TItemTable* expected = ITEM_MANAGER::instance().GetTable(GetOriginalVnum());
-
-	if (proto != expected)
-	{
-		proto = expected;
-	}
-
-	const uint8_t itemType = proto ? proto->bType : 0;
-	if (itemType == ITEM_ELK)
-	{
-		return MIN(m_dwCount, INT_MAX);
-	}
-
-	return MIN(m_dwCount, g_bItemCountLimit);
-	
 }
 
 #ifdef ATTR_LOCK
@@ -392,101 +362,6 @@ void CItem::SetLockedAttr(short sIndex)
 }
 
 #endif
-
-bool CItem::SetCount(int count)
-{
-#ifdef ENABLE_MINUS_COUNT_FIX_RAZOR93
-	if (count < 0) {
-		sys_err("SetCount megpróbált minuszba menni (count=%d) vnum=%u", count, GetVnum());
-		count = 0;
-	}
-
-	const int limit = (GetType() == ITEM_ELK) ? INT_MAX : g_bItemCountLimit;
-	if (count > limit)
-		count = limit;
-
-	m_dwCount = count;
-#else
-
-	if (GetType() == ITEM_ELK)
-	{
-		m_dwCount = MIN(count, INT_MAX);
-	}
-	else
-	{
-		m_dwCount = MIN(count, g_bItemCountLimit);
-	}
-#endif
-	if (count == 0 && m_pOwner)
-	{
-		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
-		{
-			LPCHARACTER pOwner = GetOwner();
-			uint16_t wCell = GetCell();
-
-			RemoveFromCharacter();
-
-			if (!IsDragonSoul())
-			{
-				LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
-
-				if (nullptr != pItem)
-				{
-#ifdef ENABLE_EXTRA_INVENTORY
-					if (IsExtraItem()) {
-						pOwner->ChainQuickslotItem(pItem, QUICKSLOT_TYPE_ITEM_EXTRA, wCell);
-					}
-					else {
-						pOwner->ChainQuickslotItem(pItem, QUICKSLOT_TYPE_ITEM, wCell);
-					}
-#else
-					pOwner->ChainQuickslotItem(pItem, QUICKSLOT_TYPE_ITEM, wCell);
-#endif
-				}
-				else
-				{
-#ifdef ENABLE_EXTRA_INVENTORY
-					if (IsExtraItem()) {
-						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, wCell, 255);
-					}
-					else {
-						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, 255);
-					}
-#else
-					pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, 255);
-#endif
-				}
-			}
-
-			M2_DESTROY_ITEM(this);
-		}
-		else
-		{
-			if (!IsDragonSoul())
-			{
-#ifdef ENABLE_EXTRA_INVENTORY
-				if (IsExtraItem()) {
-					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, m_wCell, 255);
-				}
-				else {
-					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, 255);
-				}
-#else
-				m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, 255);
-#endif
-			}
-
-			M2_DESTROY_ITEM(RemoveFromCharacter());
-		}
-
-		return false;
-	}
-
-	UpdatePacket();
-
-	Save();
-	return true;
-}
 
 LPITEM CItem::RemoveFromCharacter()
 {
@@ -1758,12 +1633,6 @@ bool CItem::Unequip()
 	return true;
 }
 
-int32_t CItem::GetValue(uint32_t idx)
-{
-	assert(idx < ITEM_VALUES_MAX_NUM);
-	return GetProto()->alValues[idx];
-}
-
 void CItem::SetExchanging(bool bOn)
 {
 	m_bExchanging = bOn;
@@ -1796,45 +1665,6 @@ bool CItem::CreateSocket(uint8_t bSlot, uint8_t bGold)
 
 	Save();
 	return true;
-}
-
-void CItem::SetSockets(const int32_t* c_al)
-{
-	memcpy(m_alSockets, c_al, sizeof(m_alSockets));
-	Save();
-}
-
-void CItem::SetSocket(int i, int32_t v, bool bLog)
-{
-	assert(i < ITEM_SOCKET_MAX_NUM);
-	m_alSockets[i] = v;
-	UpdatePacket();
-	Save();
-	if (bLog)
-	{
-#ifdef ENABLE_NEWSTUFF
-		if (g_iDbLogLevel >= LOG_LEVEL_MAX)
-#endif
-			LogManager::instance().ItemLog(i, v, 0, GetID(), "SET_SOCKET", "", "", GetOriginalVnum());
-	}
-}
-
-int64_t CItem::GetGold()
-{
-	if (IS_SET(GetFlag(), ITEM_FLAG_COUNT_PER_1GOLD))
-	{
-		if (GetProto()->dwGold == 0)
-			return GetCount();
-		else
-			return GetCount() / GetProto()->dwGold;
-	}
-	else
-		return GetProto()->dwGold;
-}
-
-int64_t CItem::GetShopBuyPrice()
-{
-	return GetProto()->dwShopBuyPrice;
 }
 
 bool CItem::IsOwnership(LPCHARACTER ch)
@@ -1915,25 +1745,6 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
 
 	PacketAround(&p, sizeof(p));
-}
-
-int CItem::GetSocketCount()
-{
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
-	{
-		if (GetSocket(i) == 0)
-			return i;
-	}
-	return ITEM_SOCKET_MAX_NUM;
-}
-
-bool CItem::AddSocket()
-{
-	int count = GetSocketCount();
-	if (count == ITEM_SOCKET_MAX_NUM)
-		return false;
-	m_alSockets[count] = 1;
-	return true;
 }
 
 void CItem::AlterToSocketItem(int iSocketCount)

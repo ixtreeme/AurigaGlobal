@@ -141,6 +141,43 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
     return item->GetVnum();
 }
 
+static void SyncItemCountComponent(LPITEM item, int count)
+{
+    entt::entity e = ItemEntityOf(item);
+    if (e == entt::null)
+        return;
+
+    g_registry.emplace_or_replace<ecs::ItemCount>(e, ecs::ItemCount{count});
+}
+
+static void SyncItemFlagsComponent(LPITEM item)
+{
+    entt::entity e = ItemEntityOf(item);
+    if (e == entt::null)
+        return;
+
+    ecs::ItemFlags flags{};
+    flags.flags = item->GetFlag();
+    flags.exchanging = item->IsExchanging();
+    flags.skipSave = item->GetSkipSave();
+    flags.isLocked = item->isLocked();
+    g_registry.emplace_or_replace<ecs::ItemFlags>(e, flags);
+}
+
+static void SyncItemSocketsComponent(LPITEM item)
+{
+    entt::entity e = ItemEntityOf(item);
+    if (e == entt::null)
+        return;
+
+    ecs::ItemSockets sockets{};
+    const int32_t* values = item->GetSockets();
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        sockets.sockets[i] = values[i];
+
+    g_registry.emplace_or_replace<ecs::ItemSockets>(e, sockets);
+}
+
 bool IsExtraEnchantUseSubtype(uint8_t subtype)
 {
 	switch (subtype)
@@ -661,6 +698,185 @@ const char* CItem::GetName(uint8_t Lang)
 	return name;
 }
 #endif
+
+// Phase 11: migrated from item.cpp slice S2
+
+void CItem::RemoveFlag(int32_t bit)
+{
+	REMOVE_BIT(m_lFlag, bit);
+	SyncItemFlagsComponent(this);
+}
+
+void CItem::AddFlag(int32_t bit)
+{
+	SET_BIT(m_lFlag, bit);
+	SyncItemFlagsComponent(this);
+}
+
+int CItem::GetCount()
+{
+	const TItemTable* proto = GetProto();
+	const TItemTable* expected = ITEM_MANAGER::instance().GetTable(GetOriginalVnum());
+
+	if (proto != expected)
+	{
+		proto = expected;
+	}
+
+	int count = m_dwCount;
+	entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+	{
+		if (const auto* itemCount = g_registry.try_get<ecs::ItemCount>(e))
+			count = itemCount->count;
+	}
+
+	const uint8_t itemType = proto ? proto->bType : 0;
+	if (itemType == ITEM_ELK)
+	{
+		return MIN(count, INT_MAX);
+	}
+
+	return MIN(count, g_bItemCountLimit);
+}
+
+bool CItem::SetCount(int count)
+{
+#ifdef ENABLE_MINUS_COUNT_FIX_RAZOR93
+	if (count < 0) {
+		sys_err("SetCount attempted negative value (count=%d) vnum=%u", count, GetVnum());
+		count = 0;
+	}
+
+	const int limit = (GetType() == ITEM_ELK) ? INT_MAX : g_bItemCountLimit;
+	if (count > limit)
+		count = limit;
+
+	m_dwCount = count;
+#else
+
+	if (GetType() == ITEM_ELK)
+	{
+		m_dwCount = MIN(count, INT_MAX);
+	}
+	else
+	{
+		m_dwCount = MIN(count, g_bItemCountLimit);
+	}
+#endif
+	SyncItemCountComponent(this, m_dwCount);
+	if (count == 0 && m_pOwner)
+	{
+		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
+		{
+			LPCHARACTER pOwner = GetOwner();
+			uint16_t wCell = GetCell();
+
+			RemoveFromCharacter();
+
+			if (!IsDragonSoul())
+			{
+				LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
+				if (nullptr != pItem)
+				{
+					pItem->SetCount(pItem->GetCount() + count);
+					M2_DESTROY_ITEM(this);
+					return false;
+				}
+			}
+
+			M2_DESTROY_ITEM(RemoveFromCharacter());
+
+			const uint8_t bType = pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*1 + pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*2;
+			if (IsDragonSoul())
+			{
+				if (bType == 0)
+					pOwner->DragonSoul_RefineWindow_Close();
+				else if (bType == 1)
+					pOwner->DragonSoul_RefineWindow_Close();
+			}
+
+			LogManager::instance().ItemLog(pOwner, this, "REMOVE", "DELETED (set count to 0)");
+
+			return false;
+		}
+
+		M2_DESTROY_ITEM(RemoveFromCharacter());
+		return false;
+	}
+
+	UpdatePacket();
+	Save();
+
+	return true;
+}
+
+int32_t CItem::GetValue(uint32_t idx)
+{
+	assert(idx < ITEM_VALUES_MAX_NUM);
+	return GetProto()->alValues[idx];
+}
+
+void CItem::SetSockets(const int32_t* c_al)
+{
+	memcpy(m_alSockets, c_al, sizeof(m_alSockets));
+	SyncItemSocketsComponent(this);
+	Save();
+}
+
+void CItem::SetSocket(int i, int32_t v, bool bLog)
+{
+	assert(i < ITEM_SOCKET_MAX_NUM);
+	m_alSockets[i] = v;
+	SyncItemSocketsComponent(this);
+	UpdatePacket();
+	Save();
+	if (bLog)
+	{
+#ifdef ENABLE_NEWSTUFF
+		if (g_iDbLogLevel >= LOG_LEVEL_MAX)
+#endif
+			LogManager::instance().ItemLog(i, v, 0, GetID(), "SET_SOCKET", "", "", GetOriginalVnum());
+	}
+}
+
+int64_t CItem::GetGold()
+{
+	if (IS_SET(GetFlag(), ITEM_FLAG_COUNT_PER_1GOLD))
+	{
+		if (GetProto()->dwGold == 0)
+			return GetCount();
+		else
+			return GetCount() / GetProto()->dwGold;
+	}
+	else
+		return GetProto()->dwGold;
+}
+
+int64_t CItem::GetShopBuyPrice()
+{
+	return GetProto()->dwShopBuyPrice;
+}
+
+int CItem::GetSocketCount()
+{
+	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
+	{
+		if (GetSocket(i) == 0)
+			return i;
+	}
+	return ITEM_SOCKET_MAX_NUM;
+}
+
+bool CItem::AddSocket()
+{
+	int count = GetSocketCount();
+	if (count == ITEM_SOCKET_MAX_NUM)
+		return false;
+	m_alSockets[count] = 1;
+	SyncItemSocketsComponent(this);
+	return true;
+}
 
 // char_item.cpp slice A moved into ItemSystem.cpp
 
