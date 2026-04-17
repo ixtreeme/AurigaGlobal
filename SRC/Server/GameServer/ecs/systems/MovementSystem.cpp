@@ -23,6 +23,7 @@
 #include "../../party.h"
 #include "../AIHelpers.hpp"
 #include "../components/dirty_components.hpp"
+#include "../components/identity_components.hpp"
 #include "../components/movement_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/combat_components.hpp"
@@ -86,13 +87,17 @@ namespace
         g_registry.emplace_or_replace<ecs::CombatActiveTag>(e);
     }
 }
-
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::Goto
-    auto view = reg.view<ecs::Position, ecs::MovementDestination, ecs::MovementState>();
+    // During the migration window, only process entities with an active movement destination.
+    auto view = reg.view<ecs::MovementDestination, ecs::VIDComponent, ecs::Position, ecs::MovementState>();
 
-    view.each([&](const entt::entity entity, ecs::Position& position, ecs::MovementDestination& destination, ecs::MovementState& movementState) {
+    view.each([&](const entt::entity entity,
+                  ecs::MovementDestination& destination,
+                  const ecs::VIDComponent& vid,
+                  ecs::Position& position,
+                  ecs::MovementState& movementState) {
+        (void)vid;
         const int32_t dx = destination.x - position.x;
         const int32_t dy = destination.y - position.y;
 

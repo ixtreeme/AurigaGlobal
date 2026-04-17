@@ -506,6 +506,11 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
 
     for (const entt::entity entity : view) {
+        LPCHARACTER ch = LegacyCharOf(entity);
+        if (!ch || !ch->GetDesc()) {
+            continue;
+        }
+
         auto& session = view.get<ecs::NetworkSession>(entity);
         const auto& position = view.get<ecs::Position>(entity);
         const auto& health = view.get<ecs::Health>(entity);

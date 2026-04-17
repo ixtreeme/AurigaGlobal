@@ -521,8 +521,13 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
 
 void UpdateFishing(entt::registry& reg, uint32_t)
 {
-    auto view = reg.view<ecs::FishingState, ecs::VIDComponent>();
+    // During the migration window, only process entities with an active fishing state.
+    auto view = reg.view<ecs::FishingState, ecs::FishingActiveTag, ecs::VIDComponent>();
     view.each([](entt::entity e, ecs::FishingState& state, const ecs::VIDComponent& vid) {
+        if (!state.fishingNewEvent) {
+            return;
+        }
+
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
         if (!ch)
             return;

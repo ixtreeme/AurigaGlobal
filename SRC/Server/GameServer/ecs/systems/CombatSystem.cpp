@@ -2355,14 +2355,16 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::Attack
-    auto view = reg.view<ecs::CombatActiveTag, ecs::CombatTarget, ecs::CombatStats, ecs::AttackCooldown, ecs::Health>();
+    // During the migration window, only process entities with an explicit active combat target.
+    auto view = reg.view<ecs::CombatActiveTag, ecs::CombatTarget, ecs::VIDComponent, ecs::CombatStats, ecs::AttackCooldown, ecs::Health>();
 
     view.each([&](const entt::entity entity,
                   ecs::CombatTarget& combatTarget,
+                  const ecs::VIDComponent& vid,
                   ecs::CombatStats& combatStats,
                   ecs::AttackCooldown& attackCooldown,
                   ecs::Health& attackerHealth) {
+        (void)vid;
         (void)combatStats;
         (void)attackerHealth;
 

@@ -606,8 +606,12 @@ void UpdateAffect(entt::registry& reg, uint32_t tick)
         return;
     }
 
-    auto view = reg.view<ecs::VIDComponent>();
-    view.each([&](entt::entity e, const ecs::VIDComponent& vid) {
+    auto view = reg.view<ecs::AffectList, ecs::VIDComponent>();
+    view.each([&](entt::entity e, ecs::AffectList& affectList, const ecs::VIDComponent& vid) {
+        if (affectList.affects.empty() && affectList.skillAffects.empty()) {
+            return;
+        }
+
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
         if (!ch) {
             return;
@@ -680,8 +684,12 @@ void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 
     AffectSystem::UpdateAffect(reg, tick);
 
-    auto view = reg.view<ecs::AffectList>();
-    view.each([&](const entt::entity entity, ecs::AffectList& affectList) {
+    auto view = reg.view<ecs::AffectList, ecs::VIDComponent>();
+    view.each([&](const entt::entity entity, ecs::AffectList& affectList, const ecs::VIDComponent& vid) {
+        (void)vid;
+        if (affectList.affects.empty() && affectList.skillAffects.empty()) {
+            return;
+        }
         bool dirty = false;
 
         for (auto it = affectList.affects.begin(); it != affectList.affects.end();) {
