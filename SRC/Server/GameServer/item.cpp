@@ -90,17 +90,6 @@ EVENTFUNC(item_destroy_event)
 
 #ifdef ATTR_LOCK
 
-bool CItem::CheckHumanApply()
-{
-	bool bHaveHuman = false;
-	TItemTable* p = ITEM_MANAGER::instance().GetTable(GetVnum());
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-		if (p->aApplies[i].bType == APPLY_ATTBONUS_HUMAN)
-			bHaveHuman = true;
-
-	return bHaveHuman;
-}
-
 #ifdef ATTR_LOCK
 
 void CItem::AddLockedAttr()
@@ -232,38 +221,6 @@ EVENTFUNC(ownership_event)
 }
 
 
-
-uint32_t CItem::GetRefineFromVnum()
-{
-	return ITEM_MANAGER::instance().GetRefineFromVnum(GetVnum());
-}
-
-int CItem::GetRefineLevel()
-{
-	const char* name = GetBaseName();
-	char* p = const_cast<char*>(strrchr(name, '+'));
-
-	if (!p)
-		return 0;
-
-	int	rtn = 0;
-	str_to_number(rtn, p + 1);
-
-	const char* locale_name = GetName();
-	p = const_cast<char*>(strrchr(locale_name, '+'));
-
-	if (p)
-	{
-		int	locale_rtn = 0;
-		str_to_number(locale_rtn, p + 1);
-		if (locale_rtn != rtn)
-		{
-			sys_err("refine_level_based_on_NAME(%d) is not equal to refine_level_based_on_LOCALE_NAME(%d).", rtn, locale_rtn);
-		}
-	}
-
-	return rtn;
-}
 
 EVENTFUNC(unique_expire_event)
 {
@@ -502,21 +459,6 @@ EVENTFUNC(accessory_socket_expire_event)
 
 
 
-
-void CItem::ClearMountAttributeAndAffect()
-{
-	LPCHARACTER ch = GetOwner();
-
-	ch->RemoveAffect(AFFECT_MOUNT);
-	ch->RemoveAffect(AFFECT_MOUNT_BONUS);
-
-	ch->MountVnum(0);
-
-	ch->PointChange(POINT_ST, 0);
-	ch->PointChange(POINT_DX, 0);
-	ch->PointChange(POINT_HT, 0);
-	ch->PointChange(POINT_IQ, 0);
-}
 
 // fixme
 // ÀÌ°Å Áö±ÝÀº ¾È¾´µ¥... ±Ùµ¥ È¤½Ã³ª ½Í¾î¼­ ³²°ÜµÒ.
@@ -831,20 +773,6 @@ bool CItem::CanPutInto2(LPITEM item)
 
 // PC_BANG_ITEM_ADD
 // END_PC_BANG_ITEM_ADD
-
-int32_t CItem::FindApplyValue(uint8_t bApplyType)
-{
-	if (m_pProto == nullptr)
-		return 0;
-
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-	{
-		if (m_pProto->aApplies[i].bType == bApplyType)
-			return m_pProto->aApplies[i].lValue;
-	}
-
-	return 0;
-}
 
 #ifdef ENABLE_EXTRA_INVENTORY
 namespace
