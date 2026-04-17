@@ -3235,3 +3235,117 @@
 - status:
   - `char.cpp`: deleted
   - `char.h`: retained for Phase 9b interface splitting/deletion work
+
+## Phase 10 - P10.0 additive ECS event registration
+- extended `SRC/Server/GameServer/ecs/events.hpp` with additive migration-window event types for:
+  - war lifecycle
+  - dungeon lifecycle
+  - descriptor/session ping-disconnect
+  - mount/horse stamina
+  - guild invite
+  - combat/DOT/session/movement/skill observation hooks
+- emitted additive `g_dispatcher.trigger(...)` hooks from legacy `EVENTFUNC` bodies in:
+  - `SRC/Server/GameServer/war_map.cpp`
+  - `SRC/Server/GameServer/dungeon.cpp`
+  - `SRC/Server/GameServer/EasterDungeon.cpp`
+  - `SRC/Server/GameServer/ValentineDungeon.cpp`
+  - `SRC/Server/GameServer/OrcsDungeon.cpp`
+  - `SRC/Server/GameServer/TritonTempleDungeon.cpp`
+  - `SRC/Server/GameServer/desc.cpp`
+  - `SRC/Server/GameServer/horse_rider.cpp`
+  - `SRC/Server/GameServer/MountSystem.cpp`
+  - `SRC/Server/GameServer/guild.cpp`
+- note:
+  - legacy `event_create` / `event_cancel` remained authoritative
+  - ECS trigger emission was additive only
+- build:
+  - green after each file/slice
+- commits:
+  - `4d58211` `Phase 10: P10.0-A Add NO_LEGACY ECS event types`
+  - `b36375d` `Phase 10: P10.0-B Emit ECS events from war_map EVENTFUNCs`
+  - `5e4df8b` `Phase 10: P10.0-C Emit ECS events from dungeon EVENTFUNCs`
+  - `1ebb727` `Phase 10: P10.0-D Emit ECS events from desc EVENTFUNCs`
+  - `8717a2c` `Phase 10: P10.0-E Emit ECS events from horse/mount EVENTFUNCs`
+  - `a0274c2` `Phase 10: P10.0-F Emit ECS events from guild EVENTFUNCs`
+
+## Phase 10 - P10.1 CHARACTER-bridged event observation hooks
+- added additive ECS observation emits before legacy CHARACTER-path calls in:
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - `StunEvent`
+    - `dead_event`
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+    - `poison_event`
+    - `bleeding_event`
+    - `fire_event`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+    - `warp_npc_event`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+    - `save_event`
+    - `recovery_event`
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+    - `mob_skill_hit_event`
+    - `ChainLightningEvent`
+- notes:
+  - the `P10.1-A` event-type surface was folded into the earlier `P10.0-A` `events.hpp` update
+  - `save_event` was found in `MovementSystem.cpp`, not `SessionSystem.cpp`
+  - `dead_event` currently emits `EvCharDead { entt::null, victim }` because the free `EVENTFUNC` body cannot legally read the protected killer member
+- build:
+  - green after each slice
+- commits:
+  - `7e380f2` `Phase 10: P10.1-B Emit ECS events from CombatSystem EVENTFUNCs`
+  - `2c9dba0` `Phase 10: P10.1-C Emit ECS events from AffectSystem DOT EVENTFUNCs`
+  - `4be4088` `Phase 10: P10.1-D Emit ECS events from SessionSystem EVENTFUNCs`
+  - `2447645` `Phase 10: P10.1-E Emit ECS events from MovementSystem EVENTFUNCs`
+  - `536a4bd` `Phase 10: P10.1-F Emit ECS events from SkillSystem EVENTFUNCs`
+
+## Phase 10 - P10.2 WRITES_STATE audit
+- audited WRITES_STATE `EVENTFUNC` bodies still mutating legacy `CHARACTER` event handles directly
+- added defer comments at the event bodies that still depend on authoritative legacy handle state:
+  - `m_pkDeadEvent`
+  - `m_pkStunEvent`
+  - `m_pkRecoveryEvent`
+  - `m_pkWarpNPCEvent`
+  - `m_pkTimedEvent`
+  - `m_pkFishingEvent`
+  - `m_pkPoisonEvent`
+  - `m_pkBleedingEvent`
+  - `m_pkFireEvent`
+  - `m_pkMiningEvent`
+  - `m_pkDestroyWhenIdleEvent`
+  - `m_pkDropEvent`
+- edited files:
+  - `SRC/Server/GameServer/cmd_general.cpp`
+  - `SRC/Server/GameServer/fishing.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+- build:
+  - success
+- commit:
+  - `44e0171` `Phase 10: P10.2-A WRITES_STATE audit and defer comments`
+
+## Phase 10 - P10.3 LPEVENT member removal audit
+- result:
+  - no `LPEVENT` member qualified for safe removal in this phase
+- reason:
+  - every candidate still has direct legacy reads/writes through active `event_create`, `event_cancel`, guard checks, or reset paths
+  - removing any handle from `CHARACTER` would break the migration-window authoritative legacy scheduler contract
+- status:
+  - P10.3 completed as a no-op audit checkpoint
+
+## Phase 10 - completion
+- final `g_dispatcher.trigger` coverage count:
+  - `50`
+- remaining `char.h` event-handle lines:
+  - `29`
+- final non-ECS / non-questlua legacy count:
+  - `1660`
+- build:
+  - success
+- status:
+  - additive ECS event observation hooks are in place
+  - legacy event scheduler remains authoritative
+  - `char.h` retained
