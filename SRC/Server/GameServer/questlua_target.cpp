@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "questmanager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "target.h"
 

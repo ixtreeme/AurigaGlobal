@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "questmanager.h"
 #include "sectree_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 
 namespace quest
 {

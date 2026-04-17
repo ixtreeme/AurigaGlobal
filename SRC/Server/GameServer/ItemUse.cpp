@@ -2,7 +2,7 @@
 
 #include "ItemUse.h"
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "item.h"
 
 #include <algorithm>

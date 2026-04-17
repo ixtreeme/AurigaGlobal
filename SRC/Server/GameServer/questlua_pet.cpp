@@ -3,7 +3,7 @@
 #include "questlua.h"
 #include "questmanager.h"
 #include "horsename_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "affect.h"
 #include "config.h"
 #include "utils.h"

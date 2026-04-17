@@ -3,7 +3,7 @@
 
 #include "desc.h"
 #include "party.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "questlua.h"
 #include "questmanager.h"
 #include "packet.h"

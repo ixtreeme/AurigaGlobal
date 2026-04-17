@@ -2,7 +2,7 @@
 #include "config.h"
 #include "questmanager.h"
 #include "sectree_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "affect.h"
 #include "db.h"
 #include "ecs/quest_helpers.hpp"

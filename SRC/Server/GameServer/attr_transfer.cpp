@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "utils.h"
 #include "log.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"

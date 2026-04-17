@@ -2,7 +2,7 @@
 #include "utils.h"
 #include "config.h"
 #include "questmanager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "party.h"
 #include "char_manager.h"
 #include "shop_manager.h"

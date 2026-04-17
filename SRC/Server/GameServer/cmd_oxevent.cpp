@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "utils.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "OXEvent.h"
 #include "questmanager.h"
 #include "questlua.h"

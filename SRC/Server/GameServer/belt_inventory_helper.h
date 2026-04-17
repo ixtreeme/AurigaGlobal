@@ -1,7 +1,7 @@
 #ifndef __HEADER_BELT_INVENTORY_HELPER__
 #define __HEADER_BELT_INVENTORY_HELPER__
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "item.h"
 
 class CBeltInventoryHelper

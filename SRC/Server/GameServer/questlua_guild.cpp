@@ -3,7 +3,7 @@
 #include "questlua.h"
 #include "questmanager.h"
 #include "desc_client.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "utils.h"
 #include "guild.h"
