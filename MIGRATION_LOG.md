@@ -3703,3 +3703,143 @@
     - `P11.10` rune / accessory / special behavior batches
   - after that:
     - `P11.11` file-scope sweep and `item.cpp` deletion
+
+## Phase 11 - P11.10 rune / accessory / special behaviors
+- moved the remaining special-behavior `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- completed sub-batches:
+  - Batch A: rune core
+    - `ActivateRune`
+    - `DeactivateRune`
+    - `ActivateRuneBonus`
+    - `DeactivateRuneBonus`
+    - `DeactivateRuneBonusRefresh`
+    - `InitializeRune`
+    - `ChangeRuneAttr`
+  - Batch B: accessory socket system
+    - `AccessorySocketDegrade`
+    - `SetAccessorySocketGrade`
+    - `GetAccessorySocketGrade`
+    - `SetAccessorySocketMaxGrade`
+    - `GetAccessorySocketMaxGrade`
+    - `SetAccessorySocketDownGradeTime`
+    - `GetAccessorySocketDownGradeTime`
+    - `IsAccessoryForSocket`
+  - Batch C: alter / addon / socket helpers
+    - `AlterToMagicItem`
+    - `AlterToSocketItem`
+    - `ApplyAddon`
+    - `AttrLog`
+    - `CreateSocket`
+    - `CopySocketTo`
+  - Batch D: duration / time / type helpers
+    - `GetDuration`
+    - `GiveMoreTime_Fix`
+    - `GiveMoreTime_Per`
+    - `IsRealTimeItem`
+    - `IsRealTimeFirstUseItem`
+    - `IsUnlimitedTimeUnique`
+    - `IsRamadanRing`
+    - `IsPolymorphItem`
+  - Batch E: apply / refine / mount helpers
+    - `FindApplyValue`
+    - `CheckHumanApply`
+    - `GetRefineFromVnum`
+    - `GetRefineLevel`
+    - `ClearMountAttributeAndAffect`
+- cleanup needed after the planned A-E batches:
+  - the audit still found 9 additional helper bodies left in `item.cpp`
+  - these were also moved into `ItemSystem.cpp` in a final cleanup pass:
+    - `AddLockedAttr`
+    - `ChangeLockedAttr`
+    - `RemoveLockedAttr`
+    - `SetLockedAttr`
+    - `SetExchanging`
+    - `CanPutInto`
+    - `CanPutInto2`
+    - `GetRuneAttrType`
+    - `GetRuneAttrValue`
+  - the related file-scope helper was moved as well:
+    - `CanPutIntoRing`
+- helper-surface fix during this slice:
+  - `ItemSystem.cpp` needed `#include "../../item_addon.h"` for `CItemAddonManager`
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success after each sub-batch and after the cleanup pass
+- commits:
+  - `92a82b7` `Phase 11: P11.10-A Rune core methods`
+  - `3060062` `Phase 11: P11.10-B Accessory socket system`
+  - `8907b11` `Phase 11: P11.10-C Alter/addon/socket helpers`
+  - `2264c92` `Phase 11: P11.10-D Duration/time/type helpers`
+  - `bf7b544` `Phase 11: P11.10-E Remaining apply/refine/mount helpers`
+  - `f576ed9` `Phase 11: P11.10-F Remaining helper cleanup`
+
+## Phase 11 - post-P11.10 checkpoint
+- build gate:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green
+- remaining direct `CItem::` bodies in `item.cpp`:
+  - `SRC/Server/GameServer/item.cpp`: `2`
+  - remaining definitions:
+    - `CItem::CItem(uint32_t)`
+    - `CItem::~CItem()`
+- status:
+  - `P11.10`: complete
+  - next logical slice:
+    - `P11.11` file-scope sweep
+    - move remaining item-owned `EVENTFUNC`s / static helpers
+    - delete `item.cpp`
+
+## Phase 11 - P11.11 file-scope sweep and item.cpp deletion
+- moved the final direct `CItem::` definitions from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- moved ctor / dtor:
+  - `CItem::CItem(uint32_t)`
+  - `CItem::~CItem()`
+- moved remaining item-owned file-scope `EVENTFUNC`s into `ItemSystem.cpp`:
+  - `item_destroy_event`
+  - `ownership_event`
+  - `unique_expire_event`
+  - `timer_based_on_wear_expire_event`
+  - `real_time_expire_event`
+  - `accessory_socket_expire_event`
+  - `soul_item_event`
+- notes:
+  - `item_event_info` / `item_vid_event_info` stayed in `item.h`; no struct move was required
+  - `ItemSystem.cpp` needed extra helper-surface includes for the file-scope event block:
+    - `protocol.h`
+    - `MountInventory.h`
+  - after the move, `item.cpp` was reduced to include-only shell state before deletion
+- build checkpoints:
+  - after ctor / dtor move:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after EVENTFUNC sweep:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after deletion:
+    - `cmake -S . -B build`
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 --clean-first`
+    - success
+- commits:
+  - `c39cd2f` `Phase 11: P11.11-A Move CItem ctor/dtor`
+  - `cfbf1dc` `Phase 11: P11.11-B Move item EVENTFUNCs`
+  - `cadd873` `Phase 11: Delete item.cpp`
+
+## Phase 11 - completion checkpoint
+- build gate:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green during slice builds
+  - deletion checkpoint also green with:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 --clean-first`
+- final legacy item count:
+  - `LPITEM|CItem::` references outside `ecs/` and `questlua_*`: `480`
+- final item file status:
+  - `SRC/Server/GameServer/item.cpp`: deleted
+  - `SRC/Server/GameServer/item_attribute.cpp`: deleted earlier in `P11.4`
+- status:
+  - `P11.0` to `P11.11`: complete
+  - next expected follow-up:
+    - `item.h` interface cleanup / split in a later phase
