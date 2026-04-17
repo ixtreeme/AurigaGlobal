@@ -2444,11 +2444,6 @@ void CItem::ApplyAddon(int iAddonType)
 	CItemAddonManager::instance().ApplyAddonTo(iAddonType, this);
 }
 
-int CItem::GetSpecialGroup() const
-{
-	return ITEM_MANAGER::instance().GetSpecialGroupFromItem(GetVnum());
-}
-
 bool CItem::IsAccessoryForSocket()
 {
 	return (m_pProto->bType == ITEM_ARMOR && (m_pProto->bSubType == ARMOR_WRIST || m_pProto->bSubType == ARMOR_NECK || m_pProto->bSubType == ARMOR_EAR)) || (m_pProto->bType == ITEM_BELT);	
@@ -2575,19 +2570,6 @@ void CItem::StopAccessorySocketExpireEvent()
 	}
 }
 
-bool CItem::IsRideItem()
-{
-	if (ITEM_UNIQUE == GetType() && UNIQUE_SPECIAL_RIDE == GetSubType())
-		return true;
-	if (ITEM_UNIQUE == GetType() && UNIQUE_SPECIAL_MOUNT_RIDE == GetSubType())
-		return true;
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (ITEM_COSTUME == GetType() && COSTUME_MOUNT == GetSubType())
-		return true;
-#endif
-	return false;
-}
-
 bool CItem::IsRamadanRing()
 {
 	if (GetVnum() == UNIQUE_ITEM_RAMADAN_RING)
@@ -2613,19 +2595,6 @@ void CItem::ClearMountAttributeAndAffect()
 // fixme
 // ÀÌ°Å Áö±ÝÀº ¾È¾´µ¥... ±Ùµ¥ È¤½Ã³ª ½Í¾î¼­ ³²°ÜµÒ.
 // by rtsummit
-bool CItem::IsNewMountItem()
-{
-	switch (GetVnum())
-	{
-	case 76000: case 76001: case 76002: case 76003:
-	case 76004: case 76005: case 76006: case 76007:
-	case 76008: case 76009: case 76010: case 76011:
-	case 76012: case 76013: case 76014:
-		return true;
-	}
-	return false;
-}
-
 void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
 {
 	m_pkAccessorySocketExpireEvent = pkEvent;
@@ -2963,29 +2932,7 @@ bool CItem::CanPutInto2(LPITEM item)
 #endif
 
 // PC_BANG_ITEM_ADD
-bool CItem::IsPCBangItem()
-{
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-	{
-		if (m_pProto->aLimits[i].bType == LIMIT_PCBANG)
-			return true;
-	}
-	return false;
-}
 // END_PC_BANG_ITEM_ADD
-
-bool CItem::CheckItemUseLevel(int nLevel)
-{
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-	{
-		if (this->m_pProto->aLimits[i].bType == LIMIT_LEVEL)
-		{
-			if (this->m_pProto->aLimits[i].lValue > nLevel) return false;
-			else return true;
-		}
-	}
-	return true;
-}
 
 int32_t CItem::FindApplyValue(uint8_t bApplyType)
 {
@@ -3061,45 +3008,6 @@ void CItem::AttrLog()
 	}
 }
 
-int CItem::GetLevelLimit()
-{
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-	{
-		if (this->m_pProto->aLimits[i].bType == LIMIT_LEVEL)
-		{
-			return this->m_pProto->aLimits[i].lValue;
-		}
-	}
-	return 0;
-}
-
-bool CItem::OnAfterCreatedItem()
-{
-	// ¾ÆÀÌÅÛÀ» ÇÑ ¹øÀÌ¶óµµ »ç¿ëÇß´Ù¸é, ±× ÀÌÈÄ¿£ »ç¿ë ÁßÀÌÁö ¾Ê¾Æµµ ½Ã°£ÀÌ Â÷°¨µÇ´Â ¹æ½Ä
-	if (-1 != this->GetProto()->cLimitRealTimeFirstUseIndex)
-	{
-		// Socket1¿¡ ¾ÆÀÌÅÛÀÇ »ç¿ë È½¼ö°¡ ±â·ÏµÇ¾î ÀÖÀ¸´Ï, ÇÑ ¹øÀÌ¶óµµ »ç¿ëÇÑ ¾ÆÀÌÅÛÀº Å¸ÀÌ¸Ó¸¦ ½ÃÀÛÇÑ´Ù.
-		if (0 != GetSocket(1))
-		{
-			StartRealTimeExpireEvent();
-		}
-	}
-
-#ifdef ENABLE_SOUL_SYSTEM
-	if (GetType() == ITEM_SOUL)
-	{
-		StartSoulItemEvent();
-	}
-#endif
-
-	return true;
-}
-
-bool CItem::IsDragonSoul()
-{
-	return GetType() == ITEM_DS;
-}
-
 int CItem::GiveMoreTime_Per(float fPercent)
 {
 	if (IsDragonSoul())
@@ -3170,18 +3078,6 @@ int	CItem::GetDuration()
 	return -1;
 }
 
-bool CItem::IsSameSpecialGroup(const LPITEM item) const
-{
-	// ¼­·Î VNUMÀÌ °°´Ù¸é °°Àº ±×·ìÀÎ °ÍÀ¸·Î °£ÁÖ
-	if (this->GetVnum() == item->GetVnum())
-		return true;
-
-	if (GetSpecialGroup() && (item->GetSpecialGroup() == GetSpecialGroup()))
-		return true;
-
-	return false;
-}
-
 
 #ifdef ENABLE_EXTRA_INVENTORY
 namespace
@@ -3237,213 +3133,7 @@ namespace
 	}
 }
 
-bool CItem::IsExtraItem()
-{
-	switch (GetVnum()) {
-	case 70612:
-	case 70613:
-	case 70614:
-	case 88968:
-	case 30002:
-	case 30003:
-	case 30004:
-	case 30005:
-	case 30006:
-	case 30015:
-	case 30047:
-	case 30050:
-	case 30165:
-	case 30166:
-	case 30167:
-	case 30168:
-	case 30251:
-	case 30252:
-	case 2870:
-	case 2871:
-	case 2872:
-	case 2873:
-	case 2874:
-	case 2875:
-	case 2876:
-	case 2877:
-	case 2878:
-		return false;
-	case 30277:
-	case 30279:
-	case 30284:
-	case 86053:
-	case 86054:
-	case 86055:
-	case 70102:
-	case 39008:
-	case 71001:
-	case 72310:
-	case 39030:
-	case 71094:
-#ifdef __NEWPET_SYSTEM__
-	case 86077:
-	case 86076:
-	case 55010:
-	case 55011:
-	case 55012:
-	case 55013:
-	case 55014:
-	case 55015:
-	case 55016:
-	case 55017:
-	case 55018:
-	case 55019:
-	case 55020:
-	case 55021:
-#endif
-	case 50513:
-	case 50525:
-	case 50526:
-	case 50527:
-	case 71095:
-		return true;
-	default:
-		break;
-	}
 
-	switch (GetType()) {
-	case ITEM_MATERIAL:
-	case ITEM_METIN:
-	case ITEM_SKILLBOOK:
-	case ITEM_SKILLFORGET:
-	case ITEM_GIFTBOX:
-	case ITEM_TREASURE_BOX:
-	case ITEM_TREASURE_KEY:
-	{
-		return true;
-	}
-	case ITEM_USE:
-	{
-		uint8_t subtype = GetSubType();
-		return (subtype == USE_CHANGE_ATTRIBUTE ||
-			subtype == USE_ADD_ATTRIBUTE ||
-			subtype == USE_ADD_ATTRIBUTE2 ||
-			subtype == USE_CHANGE_ATTRIBUTE2 ||
-			subtype == USE_CHANGE_COSTUME_ATTR ||
-			subtype == USE_RESET_COSTUME_ATTR ||
-			subtype == USE_CHANGE_ATTRIBUTE_PLUS ||
-#ifdef ATTR_LOCK
-			subtype == USE_ADD_ATTRIBUTE_LOCK ||
-			subtype == USE_CHANGE_ATTRIBUTE_LOCK ||
-			subtype == USE_DELETE_ATTRIBUTE_LOCK ||
-#endif
-#ifdef ENABLE_ATTR_COSTUMES
-			subtype == USE_CHANGE_ATTR_COSTUME ||
-			subtype == USE_ADD_ATTR_COSTUME1 ||
-			subtype == USE_ADD_ATTR_COSTUME2 ||
-			subtype == USE_REMOVE_ATTR_COSTUME ||
-#endif
-#ifdef ENABLE_DS_ENCHANT
-			subtype == USE_DS_ENCHANT ||
-#endif
-#ifdef ENABLE_DS_ENCHANT
-			subtype == USE_ENCHANT_STOLE ||
-#endif
-			subtype == USE_POTION ||
-			subtype == USE_POTION_NODELAY ||
-			subtype == USE_POTION_CONTINUE ||
-			subtype == USE_ABILITY_UP ||
-			subtype == USE_AFFECT
-#ifdef ENABLE_NEW_USE_POTION
-			|| subtype == USE_NEW_POTIION
-#endif
-			);
-	}
-	default:
-	{
-		break;
-	}
-	}
-
-	return false;
-}
-
-
-uint8_t CItem::GetExtraCategory()
-{
-	switch (GetType())
-	{
-	case ITEM_SKILLBOOK:
-	case ITEM_SKILLFORGET:
-	{
-		return 0;
-	}
-	case ITEM_MATERIAL:
-	{
-		return 1;
-	}
-	case ITEM_METIN:
-	{
-		return 2;
-	}
-	case ITEM_GIFTBOX:
-	case ITEM_TREASURE_BOX:
-	case ITEM_TREASURE_KEY:
-	{
-		return 3;
-	}
-	case ITEM_USE:
-	{
-		uint8_t subtype = GetSubType();
-
-		if (IsExtraEnchantUseSubtype(subtype))
-			return 4;
-
-		if (IsExtraPotionUseSubtype(subtype))
-			return 5;
-
-		break;
-	}
-	default:
-	{
-		break;
-	}
-	}
-
-	switch (GetVnum()) {
-	case 30277:
-	case 30279:
-	case 30284:
-	case 86053:
-	case 86054:
-	case 86055:
-		return 1;
-	case 70102:
-	case 39008:
-	case 71001:
-	case 72310:
-	case 39030:
-	case 71094:
-#ifdef __NEWPET_SYSTEM__
-	case 86077:
-	case 86076:
-	case 55010:
-	case 55011:
-	case 55012:
-	case 55013:
-	case 55014:
-	case 55015:
-	case 55016:
-	case 55017:
-	case 55018:
-	case 55019:
-	case 55020:
-	case 55021:
-#endif
-	case 50513:
-	case 50525:
-	case 50526:
-	case 50527:
-		return 0;
-	}
-
-	return 0;
-}
 #endif
 
 #ifdef ENABLE_SOUL_SYSTEM
@@ -3503,23 +3193,9 @@ void CItem::StartSoulItemEvent()
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-bool CItem::IsMountItem()
-{
-	if (GetType() == ITEM_COSTUME && GetSubType() == COSTUME_MOUNT)
-		return true;
-
-	return false;
-}
 #endif
 
 #ifdef ENABLE_RUNE_SYSTEM
-bool CItem::IsRune() {
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() >= RUNE_SLOT1) && (GetSubType() <= RUNE_SLOT7))
-		return true;
-
-	return false;
-}
-
 int32_t CItem::GetRuneAttrType(int c) {
 	int32_t v = 0;
 	uint8_t bSubType = GetSubType();
@@ -3814,80 +3490,8 @@ void CItem::DeactivateRune() {
 //	return (uint8_t)lang;
 //}
 //
-//const char* CItem::GetName(uint8_t Lang)
-//{
-//	if (!m_pProto)
-//		return nullptr;
-//
-//	// 1) Lang==0 -> auto (desc alapján), de clampelve
-//	if (Lang == 0)
-//	{
-//		uint8_t useLang = ITEM_LOCALE_FALLBACK;
-//
-//		if (m_pOwner)
-//		{
-//			if (LPDESC d = m_pOwner->GetDesc())
-//			{
-//				const int dlang = (int)d->GetLanguage();
-//				useLang = ClampItemLang(dlang);
-//				if (useLang == 0) // ha 0 jött vissza, ne maradjon 0 index
-//					useLang = ITEM_LOCALE_FALLBACK;
-//				if (dlang <= 0 || dlang >= ITEM_LOCALE_MAX)
-//					sys_err("INVALID LANG in DESC: %d (pid=%u)", dlang, m_pOwner ? m_pOwner->GetPlayerID() : 0);
-//
-//			}
-//
-//		}
-//
-//		return m_pProto->szLocaleName[useLang];
-//	}
-//
-//	// 2) explicit Lang -> clamp
-//	const uint8_t safeLang = ClampItemLang((int)Lang);
-//	return m_pProto->szLocaleName[safeLang ? safeLang : ITEM_LOCALE_FALLBACK];
-//
-//}
 //
 //#endif
 
 #ifdef ENABLE_MULTI_NAMES
-const char* CItem::GetName(uint8_t Lang)
-{
-	// Soha ne adjunk vissza nullptr-t (log/format sok helyen feltételezi a valid C-stringet)
-	if (!m_pProto)
-		return "";
-
-	// Régi fallback viselkedés: ha lehet, index 1 (különben 0)
-	const size_t localeCount = sizeof(m_pProto->szLocaleName) / sizeof(m_pProto->szLocaleName[0]);
-	const uint8_t fallbackIndex = (localeCount > 1) ? 1 : 0;
-
-	uint8_t idx = Lang;
-
-	// Lang == 0: auto nyelv (owner->desc alapján)
-	if (idx == 0)
-	{
-		idx = fallbackIndex;
-
-		if (m_pOwner)
-		{
-			if (LPDESC d = m_pOwner->GetDesc())
-			{
-				const uint8_t dlang = d->GetLanguage();
-				// 0-t ne használjunk indexnek, maradjon fallback
-				if (dlang != 0)
-					idx = dlang;
-			}
-		}
-	}
-
-	// Kemény clamp
-	if (localeCount == 0 || idx >= localeCount)
-		idx = fallbackIndex;
-
-	const char* name = m_pProto->szLocaleName[idx];
-	if (!name || !*name)
-		return m_pProto->szName;
-
-	return name;
-}
 #endif

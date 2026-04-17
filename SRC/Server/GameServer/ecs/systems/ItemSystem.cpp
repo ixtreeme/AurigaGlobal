@@ -72,6 +72,8 @@
 
 #include "../Registry.hpp"
 #include "../components/identity_components.hpp"
+#include "../ItemRegistry.hpp"
+#include "../components/item_components.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
 bool IS_BOTARYABLE_ZONE(int nMapIndex);
@@ -114,6 +116,79 @@ LPCHARACTER LegacyCharacter(entt::entity e)
 static inline LPCHARACTER LegacyCharOf(entt::entity e)
 {
     return LegacyCharacter(e);
+}
+
+static entt::entity ItemEntityOf(LPITEM item)
+{
+    if (!item || item->GetID() == 0)
+        return entt::null;
+
+    return CItemRegistry::Instance().Find(item->GetID());
+}
+
+static uint32_t ItemVnumOrLegacy(LPITEM item)
+{
+    if (!item)
+        return 0;
+
+    entt::entity e = ItemEntityOf(item);
+    if (e != entt::null)
+    {
+        if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(e))
+            return identity->vnum;
+    }
+
+    return item->GetVnum();
+}
+
+bool IsExtraEnchantUseSubtype(uint8_t subtype)
+{
+	switch (subtype)
+	{
+	case USE_CHANGE_ATTRIBUTE:
+	case USE_ADD_ATTRIBUTE:
+	case USE_ADD_ATTRIBUTE2:
+	case USE_CHANGE_ATTRIBUTE2:
+	case USE_CHANGE_COSTUME_ATTR:
+	case USE_RESET_COSTUME_ATTR:
+	case USE_CHANGE_ATTRIBUTE_PLUS:
+#ifdef ATTR_LOCK
+	case USE_ADD_ATTRIBUTE_LOCK:
+	case USE_CHANGE_ATTRIBUTE_LOCK:
+	case USE_DELETE_ATTRIBUTE_LOCK:
+#endif
+#ifdef ENABLE_ATTR_COSTUMES
+	case USE_CHANGE_ATTR_COSTUME:
+	case USE_ADD_ATTR_COSTUME1:
+	case USE_ADD_ATTR_COSTUME2:
+	case USE_REMOVE_ATTR_COSTUME:
+#endif
+#ifdef ENABLE_DS_ENCHANT
+	case USE_DS_ENCHANT:
+	case USE_ENCHANT_STOLE:
+#endif
+		return true;
+	}
+
+	return false;
+}
+
+bool IsExtraPotionUseSubtype(uint8_t subtype)
+{
+	switch (subtype)
+	{
+	case USE_POTION:
+	case USE_POTION_NODELAY:
+	case USE_POTION_CONTINUE:
+	case USE_ABILITY_UP:
+	case USE_AFFECT:
+#ifdef ENABLE_NEW_USE_POTION
+	case USE_NEW_POTIION:
+#endif
+		return true;
+	}
+
+	return false;
 }
 
 static void FN_copy_item_socket(LPITEM dest, LPITEM src)
@@ -519,7 +594,373 @@ void ClearRefineMode(entt::entity e)
 
 } // namespace ItemSystem
 
+bool CItem::IsNewMountItem()
+{
+	switch (GetVnum())
+	{
+	case 76000: case 76001: case 76002: case 76003:
+	case 76004: case 76005: case 76006: case 76007:
+	case 76008: case 76009: case 76010: case 76011:
+	case 76012: case 76013: case 76014:
+		return true;
+	}
+	return false;
+}
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+bool CItem::IsMountItem()
+{
+	if (GetType() == ITEM_COSTUME && GetSubType() == COSTUME_MOUNT)
+		return true;
+
+	return false;
+}
+#endif
+
+#ifdef ENABLE_RUNE_SYSTEM
+bool CItem::IsRune() {
+	if ((GetType() == ITEM_COSTUME) && (GetSubType() >= RUNE_SLOT1) && (GetSubType() <= RUNE_SLOT7))
+		return true;
+
+	return false;
+}
+#endif
+
+#ifdef ENABLE_MULTI_NAMES
+const char* CItem::GetName(uint8_t Lang)
+{
+	if (!m_pProto)
+		return "";
+
+	const size_t localeCount = sizeof(m_pProto->szLocaleName) / sizeof(m_pProto->szLocaleName[0]);
+	const uint8_t fallbackIndex = (localeCount > 1) ? 1 : 0;
+
+	uint8_t idx = Lang;
+	if (idx == 0)
+	{
+		idx = fallbackIndex;
+
+		if (m_pOwner)
+		{
+			if (LPDESC d = m_pOwner->GetDesc())
+			{
+				const uint8_t dlang = d->GetLanguage();
+				if (dlang != 0)
+					idx = dlang;
+			}
+		}
+	}
+
+	if (localeCount == 0 || idx >= localeCount)
+		idx = fallbackIndex;
+
+	const char* name = m_pProto->szLocaleName[idx];
+	if (!name || !*name)
+		return m_pProto->szName;
+
+	return name;
+}
+#endif
+
 // char_item.cpp slice A moved into ItemSystem.cpp
+
+// Phase 11: migrated from item.cpp slice S1
+
+int CItem::GetSpecialGroup() const
+{
+	return ITEM_MANAGER::instance().GetSpecialGroupFromItem(ItemVnumOrLegacy(const_cast<LPITEM>(this)));
+}
+
+bool CItem::IsRideItem()
+{
+	if (ITEM_UNIQUE == GetType() && UNIQUE_SPECIAL_RIDE == GetSubType())
+		return true;
+	if (ITEM_UNIQUE == GetType() && UNIQUE_SPECIAL_MOUNT_RIDE == GetSubType())
+		return true;
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	if (ITEM_COSTUME == GetType() && COSTUME_MOUNT == GetSubType())
+		return true;
+#endif
+	return false;
+}
+
+bool CItem::IsPCBangItem()
+{
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+	{
+		if (m_pProto->aLimits[i].bType == LIMIT_PCBANG)
+			return true;
+	}
+	return false;
+}
+
+bool CItem::CheckItemUseLevel(int nLevel)
+{
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+	{
+		if (this->m_pProto->aLimits[i].bType == LIMIT_LEVEL)
+		{
+			if (this->m_pProto->aLimits[i].lValue > nLevel) return false;
+			else return true;
+		}
+	}
+	return true;
+}
+
+int CItem::GetLevelLimit()
+{
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+	{
+		if (this->m_pProto->aLimits[i].bType == LIMIT_LEVEL)
+		{
+			return this->m_pProto->aLimits[i].lValue;
+		}
+	}
+	return 0;
+}
+
+bool CItem::OnAfterCreatedItem()
+{
+	if (-1 != this->GetProto()->cLimitRealTimeFirstUseIndex)
+	{
+		if (0 != GetSocket(1))
+		{
+			StartRealTimeExpireEvent();
+		}
+	}
+
+#ifdef ENABLE_SOUL_SYSTEM
+	if (GetType() == ITEM_SOUL)
+	{
+		StartSoulItemEvent();
+	}
+#endif
+
+	return true;
+}
+
+bool CItem::IsDragonSoul()
+{
+	return GetType() == ITEM_DS;
+}
+
+bool CItem::IsSameSpecialGroup(const LPITEM item) const
+{
+	if (ItemVnumOrLegacy(const_cast<LPITEM>(this)) == ItemVnumOrLegacy(item))
+		return true;
+
+	if (GetSpecialGroup() && (item->GetSpecialGroup() == GetSpecialGroup()))
+		return true;
+
+	return false;
+}
+
+bool CItem::IsExtraItem()
+{
+	switch (GetVnum()) {
+	case 70612:
+	case 70613:
+	case 70614:
+	case 88968:
+	case 30002:
+	case 30003:
+	case 30004:
+	case 30005:
+	case 30006:
+	case 30015:
+	case 30047:
+	case 30050:
+	case 30165:
+	case 30166:
+	case 30167:
+	case 30168:
+	case 30251:
+	case 30252:
+	case 2870:
+	case 2871:
+	case 2872:
+	case 2873:
+	case 2874:
+	case 2875:
+	case 2876:
+	case 2877:
+	case 2878:
+		return false;
+	case 30277:
+	case 30279:
+	case 30284:
+	case 86053:
+	case 86054:
+	case 86055:
+	case 70102:
+	case 39008:
+	case 71001:
+	case 72310:
+	case 39030:
+	case 71094:
+#ifdef __NEWPET_SYSTEM__
+	case 86077:
+	case 86076:
+	case 55010:
+	case 55011:
+	case 55012:
+	case 55013:
+	case 55014:
+	case 55015:
+	case 55016:
+	case 55017:
+	case 55018:
+	case 55019:
+	case 55020:
+	case 55021:
+#endif
+	case 50513:
+	case 50525:
+	case 50526:
+	case 50527:
+	case 71095:
+		return true;
+	default:
+		break;
+	}
+
+	switch (GetType()) {
+	case ITEM_MATERIAL:
+	case ITEM_METIN:
+	case ITEM_SKILLBOOK:
+	case ITEM_SKILLFORGET:
+	case ITEM_GIFTBOX:
+	case ITEM_TREASURE_BOX:
+	case ITEM_TREASURE_KEY:
+	{
+		return true;
+	}
+	case ITEM_USE:
+	{
+		uint8_t subtype = GetSubType();
+		return (subtype == USE_CHANGE_ATTRIBUTE ||
+			subtype == USE_ADD_ATTRIBUTE ||
+			subtype == USE_ADD_ATTRIBUTE2 ||
+			subtype == USE_CHANGE_ATTRIBUTE2 ||
+			subtype == USE_CHANGE_COSTUME_ATTR ||
+			subtype == USE_RESET_COSTUME_ATTR ||
+			subtype == USE_CHANGE_ATTRIBUTE_PLUS ||
+#ifdef ATTR_LOCK
+			subtype == USE_ADD_ATTRIBUTE_LOCK ||
+			subtype == USE_CHANGE_ATTRIBUTE_LOCK ||
+			subtype == USE_DELETE_ATTRIBUTE_LOCK ||
+#endif
+#ifdef ENABLE_ATTR_COSTUMES
+			subtype == USE_CHANGE_ATTR_COSTUME ||
+			subtype == USE_ADD_ATTR_COSTUME1 ||
+			subtype == USE_ADD_ATTR_COSTUME2 ||
+			subtype == USE_REMOVE_ATTR_COSTUME ||
+#endif
+#ifdef ENABLE_DS_ENCHANT
+			subtype == USE_DS_ENCHANT ||
+#endif
+#ifdef ENABLE_DS_ENCHANT
+			subtype == USE_ENCHANT_STOLE ||
+#endif
+			subtype == USE_POTION ||
+			subtype == USE_POTION_NODELAY ||
+			subtype == USE_POTION_CONTINUE ||
+			subtype == USE_ABILITY_UP ||
+			subtype == USE_AFFECT
+#ifdef ENABLE_NEW_USE_POTION
+			|| subtype == USE_NEW_POTIION
+#endif
+			);
+	}
+	default:
+	{
+		break;
+	}
+	}
+
+	return false;
+}
+
+uint8_t CItem::GetExtraCategory()
+{
+	switch (GetType())
+	{
+	case ITEM_SKILLBOOK:
+	case ITEM_SKILLFORGET:
+	{
+		return 0;
+	}
+	case ITEM_MATERIAL:
+	{
+		return 1;
+	}
+	case ITEM_METIN:
+	{
+		return 2;
+	}
+	case ITEM_GIFTBOX:
+	case ITEM_TREASURE_BOX:
+	case ITEM_TREASURE_KEY:
+	{
+		return 3;
+	}
+	case ITEM_USE:
+	{
+		uint8_t subtype = GetSubType();
+
+		if (IsExtraEnchantUseSubtype(subtype))
+			return 4;
+
+		if (IsExtraPotionUseSubtype(subtype))
+			return 5;
+
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+
+	switch (GetVnum()) {
+	case 30277:
+	case 30279:
+	case 30284:
+	case 86053:
+	case 86054:
+	case 86055:
+		return 1;
+	case 70102:
+	case 39008:
+	case 71001:
+	case 72310:
+	case 39030:
+	case 71094:
+#ifdef __NEWPET_SYSTEM__
+	case 86077:
+	case 86076:
+	case 55010:
+	case 55011:
+	case 55012:
+	case 55013:
+	case 55014:
+	case 55015:
+	case 55016:
+	case 55017:
+	case 55018:
+	case 55019:
+	case 55020:
+	case 55021:
+#endif
+	case 50513:
+	case 50525:
+	case 50526:
+	case 50527:
+		return 0;
+	}
+
+	return 0;
+}
 
 LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 {
