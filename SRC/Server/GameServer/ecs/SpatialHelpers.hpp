@@ -55,4 +55,22 @@ inline LPSECTREE SectorAt(int32_t mapIndex, int32_t x, int32_t y)
     return SECTREE_MANAGER::instance().Get(mapIndex, x, y);
 }
 
+// ECS-side wrapper for movable-position check.
+// Delegates to legacy SECTREE_MANAGER::IsMovablePosition.
+inline bool IsMovablePosition(int32_t mapIndex, int32_t x, int32_t y)
+{
+    return SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, x, y);
+}
+
+// ECS-side wrapper for attribute flag check at position.
+// Delegates to legacy SECTREE::IsAttr.
+inline bool IsAttrAt(int32_t mapIndex, int32_t x, int32_t y, uint32_t dwFlag)
+{
+    LPSECTREE tree = SectorAt(mapIndex, x, y);
+    if (!tree)
+        return false;
+
+    return tree->IsAttr(x, y, dwFlag);
+}
+
 } // namespace ecs
