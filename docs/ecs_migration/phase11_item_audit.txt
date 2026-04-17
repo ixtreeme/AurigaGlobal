@@ -1,0 +1,655 @@
+PHASE 11 ITEM SYSTEM DISCOVERY AUDIT
+====================================
+
+STEP 1 - LOCATE THE ITEM INFRASTRUCTURE
+---------------------------------------
+SRC/Server/GameServer/blend_item.cpp
+SRC/Server/GameServer/blend_item.h
+SRC/Server/GameServer/item.cpp
+SRC/Server/GameServer/item.h
+SRC/Server/GameServer/item_addon.cpp
+SRC/Server/GameServer/item_addon.h
+SRC/Server/GameServer/item_attribute.cpp
+SRC/Server/GameServer/item_manager.cpp
+SRC/Server/GameServer/item_manager.h
+SRC/Server/GameServer/item_manager_idrange.cpp
+SRC/Server/GameServer/item_manager_private_types.h
+SRC/Server/GameServer/item_manager_read_tables.cpp
+SRC/Server/GameServer/ItemUse.cpp
+SRC/Server/GameServer/ItemUse.h
+SRC/Server/GameServer/questlua_item.cpp
+SRC/Server/GameServer/unique_item.h
+
+CItem class definition: SRC/Server/GameServer/item.h:6
+ITEM_MANAGER class definition: SRC/Server/GameServer/item_manager.h:365
+Split item files present:
+  - SRC/Server/GameServer/item.cpp
+  - SRC/Server/GameServer/item_addon.cpp
+  - SRC/Server/GameServer/item_attribute.cpp
+  - SRC/Server/GameServer/item_manager.cpp
+  - SRC/Server/GameServer/item_manager_idrange.cpp
+  - SRC/Server/GameServer/item_manager_read_tables.cpp
+  - SRC/Server/GameServer/ItemUse.cpp
+LPITEM typedef: SRC/Server/GameServer/typedef.h:40  typedef CItem* LPITEM;
+
+STEP 2 - MEASURE THE ITEM CLASS
+-------------------------------
+SRC/Server/GameServer/item.cpp lines: 3893 | CItem:: bodies: 108
+SRC/Server/GameServer/item_addon.cpp lines: 32 | CItem:: bodies: 0
+SRC/Server/GameServer/item_attribute.cpp lines: 823 | CItem:: bodies: 30
+SRC/Server/GameServer/item_manager.cpp lines: 2430 | CItem:: bodies: 0
+SRC/Server/GameServer/item_manager_idrange.cpp lines: 85 | CItem:: bodies: 0
+SRC/Server/GameServer/item_manager_read_tables.cpp lines: 1128 | CItem:: bodies: 0
+SRC/Server/GameServer/ItemUse.cpp lines: 204 | CItem:: bodies: 0
+Heuristic CItem member count: 32
+Heuristic CItem method declaration count: 141
+
+STEP 3 - AUDIT LPITEM REFERENCE FANOUT
+--------------------------------------
+LPITEM/CItem:: references (non-ECS, non-questlua): 670
+Top 20 files by LPITEM/CItem:: reference count:
+   142  SRC/Server/GameServer/item.cpp
+    55  SRC/Server/GameServer/char.h
+    53  SRC/Server/GameServer/DragonSoul.cpp
+    31  SRC/Server/GameServer/item_attribute.cpp
+    28  SRC/Server/GameServer/item_manager.cpp
+    19  SRC/Server/GameServer/cmd_gm.cpp
+    19  SRC/Server/GameServer/char_manager.cpp
+    17  SRC/Server/GameServer/item_manager.h
+    16  SRC/Server/GameServer/DragonSoul.h
+    15  SRC/Server/GameServer/cmd_general.cpp
+    14  SRC/Server/GameServer/New_PetSystem.cpp
+    12  SRC/Server/GameServer/input_main.cpp
+    12  SRC/Server/GameServer/MountInventory.cpp
+    11  SRC/Server/GameServer/fishing.cpp
+    10  SRC/Server/GameServer/mining.cpp
+     9  SRC/Server/GameServer/new_switchbot.cpp
+     8  SRC/Server/GameServer/item.h
+     8  SRC/Server/GameServer/exchange.cpp
+     8  SRC/Server/GameServer/MountSystem.cpp
+     7  SRC/Server/GameServer/shop.cpp
+LPITEM/CItem:: references in questlua_*: 97
+
+STEP 4 - AUDIT ITEM CLASS MEMBERS
+---------------------------------
+CItem member variable lines:
+322: 		TItemTable const * m_pProto;		// ������ Ÿ��
+324: 		uint32_t		m_dwVnum;
+325: 		LPCHARACTER	m_pOwner;
+327: 		uint8_t		m_bWindow;		// ���� �������� ��ġ�� ������
+328: 		uint32_t		m_dwID;			// ������ȣ
+329: 		bool		m_bEquipped;	// ���� �Ǿ��°�?
+330: 		uint32_t		m_dwVID;		// VID
+331: 		uint16_t		m_wCell;		// ��ġ
+332: 		int		m_dwCount;		// ����
+334: 		short		m_sLockedAttr;
+337: 		TItemExtraProto* m_ExtraProto;
+339: 		int32_t		m_lFlag;		// �߰� flag
+340: 		uint32_t		m_dwLastOwnerPID;	// ������ ������ �־��� ����� PID
+342: 		bool		m_bExchanging;	///< ���� ��ȯ�� ����
+344: 		int32_t		m_alSockets[ITEM_SOCKET_MAX_NUM];	// ������ ��Ĺ
+345: 		TPlayerItemAttribute	m_aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+347: 		LPEVENT		m_pkDestroyEvent;
+348: 		LPEVENT		m_pkExpireEvent;
+350: 		LPEVENT		m_pkSoulItemEvent;
+352: 		LPEVENT		m_pkUniqueExpireEvent;
+353: 		LPEVENT		m_pkTimerBasedOnWearExpireEvent;
+354: 		LPEVENT		m_pkRealTimeExpireEvent;
+355: 		LPEVENT		m_pkAccessorySocketExpireEvent;
+356: 		LPEVENT		m_pkOwnershipEvent;
+357: 		uint32_t		m_dwOwnershipPID;
+359: 		bool		m_bSkipSave;
+361: 		bool		m_isLocked;
+363: 		uint32_t		m_dwMaskVnum;
+364: 		uint32_t		m_dwSIGVnum;
+368: 			m_dwSIGVnum = dwSIG;
+372: 			return m_dwSIGVnum;
+407: 	uint32_t item_vid;
+
+Identity: 14
+  324: m_dwVnum
+  325: m_pOwner
+  327: m_bWindow
+  328: m_dwID
+  330: m_dwVID
+  331: m_wCell
+  340: m_dwLastOwnerPID
+  356: m_pkOwnershipEvent
+  357: m_dwOwnershipPID
+  363: m_dwMaskVnum
+  364: m_dwSIGVnum
+  368: m_dwSIGVnum
+  372: m_dwSIGVnum
+  407: m_vid
+Stats: 5
+  332: m_dwCount
+  334: m_sLockedAttr
+  344: m_alSockets
+  345: m_aAttr
+  355: m_pkAccessorySocketExpireEvent
+State: 5
+  329: m_bEquipped
+  339: m_lFlag
+  347: m_pkDestroyEvent
+  359: m_bSkipSave
+  361: m_isLocked
+Lifecycle: 5
+  348: m_pkExpireEvent
+  350: m_pkSoulItemEvent
+  352: m_pkUniqueExpireEvent
+  353: m_pkTimerBasedOnWearExpireEvent
+  354: m_pkRealTimeExpireEvent
+Pointers: 2
+  322: m_pProto
+  337: m_ExtraProto
+Uncategorized: 1
+  342: m_bExchanging
+
+LPEVENT handles on CItem: 8
+  347: LPEVENT		m_pkDestroyEvent;
+  348: LPEVENT		m_pkExpireEvent;
+  350: LPEVENT		m_pkSoulItemEvent;
+  352: LPEVENT		m_pkUniqueExpireEvent;
+  353: LPEVENT		m_pkTimerBasedOnWearExpireEvent;
+  354: LPEVENT		m_pkRealTimeExpireEvent;
+  355: LPEVENT		m_pkAccessorySocketExpireEvent;
+  356: LPEVENT		m_pkOwnershipEvent;
+
+STEP 5 - AUDIT ITEM METHOD SURFACE
+----------------------------------
+CItem method declarations:
+10: virtual void	EncodeInsertPacket(LPENTITY entity);
+11: virtual void	EncodeRemovePacket(LPENTITY entity);
+14: CItem(uint32_t dwVnum);
+15: virtual ~CItem();
+17: int			GetLevelLimit();
+19: bool		CheckItemUseLevel(int nLevel);
+21: bool		IsPCBangItem();
+23: int32_t		FindApplyValue(uint8_t bApplyType);
+27: void		Initialize();
+28: void		Destroy();
+30: void		Save();
+38: void			SetProto(const TItemTable * table);
+42: void		SetExtraProto(TItemExtraProto* Proto);
+43: TItemExtraProto* GetExtraProto();
+49: void	SetLockedAttr(short sIndex);
+50: void	AddLockedAttr();
+51: void	ChangeLockedAttr();
+52: void	RemoveLockedAttr();
+53: bool	CheckHumanApply();
+56: int64_t		GetGold();
+57: int64_t		GetShopBuyPrice();
+61: const char *	GetName(uint8_t Lang=0);
+72: void		AddFlag(int32_t bit);
+73: void		RemoveFlag(int32_t bit);
+82: bool		SetCount(int count);
+83: int			GetCount();
+95: int32_t		GetValue(uint32_t idx);
+100: LPITEM		RemoveFromCharacter();
+102: bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell, bool isHighLight = true);
+104: bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell);
+108: LPITEM		RemoveFromGround();
+109: bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
+111: int			FindEquipCell(LPCHARACTER ch, int bCandidateCell = -1);
+113: bool		EquipTo(LPCHARACTER ch, uint8_t bWearCell);
+114: bool		IsEquipable() ;
+116: bool		CanUsedBy(LPCHARACTER ch);
+118: bool		DistanceValid(LPCHARACTER ch);
+120: void		UpdatePacket();
+121: void		UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, struct packet_item_use * packet);
+123: void		SetExchanging(bool isOn = true);
+126: bool		IsTwohanded();
+128: bool		IsPolymorphItem();
+130: void		ModifyPoints(bool bAdd);	// �������� ȿ���� ĳ���Ϳ� �ο� �Ѵ�. bAdd�� false�̸� ������
+132: bool		CreateSocket(uint8_t bSlot, uint8_t bGold);
+136: void		SetSockets(const int32_t* al);
+137: void		SetSocket(int i, int32_t v, bool bLog = true);
+139: int		GetSocketCount();
+140: bool		AddSocket();
+148: void		SetAttributes(const TPlayerItemAttribute* c_pAttribute);
+150: int		FindAttribute(uint8_t bType);
+151: bool		RemoveAttributeAt(int index);
+152: bool		RemoveAttributeType(uint8_t bType);
+154: bool		HasAttr(uint8_t bApply);
+155: bool		HasRareAttr(uint8_t bApply);
+157: void		SetDestroyEvent(LPEVENT pkEvent);
+158: void		StartDestroyEvent(int iSec=300);
+161: uint32_t		GetRefineFromVnum();
+162: int		GetRefineLevel();
+167: bool		IsOwnership(LPCHARACTER ch);
+168: void		SetOwnership(LPCHARACTER ch, int iSec = 10);
+169: void		SetOwnershipEvent(LPEVENT pkEvent);
+175: bool		HaveOwnership() { return (m_pkOwnershipEvent ? true : false); }
+178: int		GetAttributeSetIndex(); // �Ӽ� �ٴ°��� ������ �迭�� ��� �ε����� ����ϴ��� �����ش�.
+179: void		AlterToMagicItem();
+180: void		AlterToSocketItem(int iSocketCount);
+184: void		StartUniqueExpireEvent();
+185: void		SetUniqueExpireEvent(LPEVENT pkEvent);
+187: void		StartTimerBasedOnWearExpireEvent();
+188: void		SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent);
+190: void		StartRealTimeExpireEvent();
+191: bool		IsRealTimeItem();
+192: bool		IsRealTimeFirstUseItem();
+193: bool		IsUnlimitedTimeUnique();
+195: void		StopUniqueExpireEvent();
+196: void		StopTimerBasedOnWearExpireEvent();
+197: void		StopAccessorySocketExpireEvent();
+200: int			GetDuration();
+202: int		GetAttributeCount();
+203: void		ClearAttribute();
+204: void		ChangeAttribute(const int* aiChangeProb= nullptr);
+206: bool ChangeKKAK(int iAddonType = 0);
+207: void		AddAttribute2(uint8_t bType, short sValue);
+209: void		AddAttribute();
+210: void		AddAttribute(uint8_t bType, short sValue);
+212: void		ApplyAddon(int iAddonType);
+214: int		GetSpecialGroup() const;
+215: bool	IsSameSpecialGroup(const LPITEM item) const;
+219: bool		IsAccessoryForSocket();
+221: int		GetAccessorySocketGrade();
+222: int		GetAccessorySocketMaxGrade();
+223: int		GetAccessorySocketDownGradeTime();
+230: void		SetAccessorySocketMaxGrade(int iMaxGrade);
+231: void		SetAccessorySocketDownGradeTime(uint32_t time);
+233: void		AccessorySocketDegrade();
+236: void		StartAccessorySocketExpireEvent();
+237: void		SetAccessorySocketExpireEvent(LPEVENT pkEvent);
+239: bool		CanPutInto(LPITEM item);
+241: bool		CanPutInto2(LPITEM item);
+245: void		CopyAttributeTo(LPITEM pItem);
+246: void		CopySocketTo(LPITEM pItem);
+... showing first 100 of 141 total
+
+A) Identity getters/setters: 1
+  61: GetName
+B) Count/value accessors: 10
+  23: FindApplyValue
+  56: GetGold
+  57: GetShopBuyPrice
+  82: SetCount
+  83: GetCount
+  95: GetValue
+  139: GetSocketCount
+  202: GetAttributeCount
+  248: GetRareAttrCount
+  382: GetRuneAttrValue
+C) Socket/attribute system: 53
+  49: SetLockedAttr
+  50: AddLockedAttr
+  51: ChangeLockedAttr
+  52: RemoveLockedAttr
+  53: CheckHumanApply
+  132: CreateSocket
+  136: SetSockets
+  137: SetSocket
+  140: AddSocket
+  148: SetAttributes
+  150: FindAttribute
+  151: RemoveAttributeAt
+  152: RemoveAttributeType
+  154: HasAttr
+  155: HasRareAttr
+  178: GetAttributeSetIndex
+  180: AlterToSocketItem
+  197: StopAccessorySocketExpireEvent
+  203: ClearAttribute
+  204: ChangeAttribute
+  207: AddAttribute2
+  209: AddAttribute
+  210: AddAttribute
+  212: ApplyAddon
+  219: IsAccessoryForSocket
+  221: GetAccessorySocketGrade
+  222: GetAccessorySocketMaxGrade
+  223: GetAccessorySocketDownGradeTime
+  230: SetAccessorySocketMaxGrade
+  231: SetAccessorySocketDownGradeTime
+  233: AccessorySocketDegrade
+  236: StartAccessorySocketExpireEvent
+  237: SetAccessorySocketExpireEvent
+  245: CopyAttributeTo
+  246: CopySocketTo
+  249: AddRareAttribute
+  250: ChangeRareAttribute
+  252: AttrLog
+  258: SetAttribute
+  260: SetAttribute2
+  261: AddRareAttribute3
+  264: SetForceAttribute
+  270: AddAttr4
+  272: AddAttr
+  273: PutAttribute
+  274: PutAttributeWithLevel
+  277: AddRareAttribute2
+  279: AddRareAttr
+  280: PutRareAttribute
+  281: PutRareAttributeWithLevel
+  ... showing first 50 of 53 total
+D) Equip/unequip: 5
+  111: FindEquipCell
+  113: EquipTo
+  114: IsEquipable
+  267: EquipEx
+  268: Unequip
+E) Lifecycle/event management: 14
+  28: Destroy
+  30: Save
+  157: SetDestroyEvent
+  158: StartDestroyEvent
+  169: SetOwnershipEvent
+  184: StartUniqueExpireEvent
+  185: SetUniqueExpireEvent
+  187: StartTimerBasedOnWearExpireEvent
+  188: SetTimerBasedOnWearExpireEvent
+  190: StartRealTimeExpireEvent
+  195: StopUniqueExpireEvent
+  196: StopTimerBasedOnWearExpireEvent
+  317: StartSoulItemEvent
+  318: SetSoulItemEvent
+F) Owner interaction: 3
+  167: IsOwnership
+  168: SetOwnership
+  175: HaveOwnership
+G) Item use / special behavior: 5
+  19: CheckItemUseLevel
+  116: CanUsedBy
+  121: UsePacketEncode
+  128: IsPolymorphItem
+  192: IsRealTimeFirstUseItem
+Other: 50
+  10: EncodeInsertPacket
+  11: EncodeRemovePacket
+  14: CItem
+  15: ~CItem
+  17: GetLevelLimit
+  21: IsPCBangItem
+  27: Initialize
+  38: SetProto
+  42: SetExtraProto
+  43: GetExtraProto
+  72: AddFlag
+  73: RemoveFlag
+  100: RemoveFromCharacter
+  102: AddToCharacter
+  104: AddToCharacter
+  108: RemoveFromGround
+  109: AddToGround
+  118: DistanceValid
+  120: UpdatePacket
+  123: SetExchanging
+  126: IsTwohanded
+  130: ModifyPoints
+  161: GetRefineFromVnum
+  162: GetRefineLevel
+  179: AlterToMagicItem
+  191: IsRealTimeItem
+  193: IsUnlimitedTimeUnique
+  200: GetDuration
+  206: ChangeKKAK
+  214: GetSpecialGroup
+  215: IsSameSpecialGroup
+  239: CanPutInto
+  241: CanPutInto2
+  285: OnAfterCreatedItem
+  288: IsRideItem
+  289: IsRamadanRing
+  292: IsNewMountItem
+  295: IsMountItem
+  312: IsDragonSoul
+  313: GiveMoreTime_Per
+  314: GiveMoreTime_Fix
+  375: IsExtraItem
+  376: GetExtraCategory
+  380: IsRune
+  383: InitializeRune
+  385: ActivateRuneBonus
+  386: DeactivateRuneBonus
+  387: DeactivateRuneBonusRefresh
+  388: ActivateRune
+  389: DeactivateRune
+
+STEP 6 - AUDIT ITEM MANAGER
+---------------------------
+SRC/Server/GameServer/item_manager.cpp lines: 2430
+ITEM_MANAGER:: body count: 1
+Top ITEM_MANAGER:: responsibilities (first 40):
+35: ITEM_MANAGER::ITEM_MANAGER()
+Owns item allocation/deallocation: True
+Owns item proto loading: True
+Owns item lookup by ID: True
+
+STEP 7 - IDENTIFY LPITEM DEPENDENCIES IN ECS SYSTEMS
+----------------------------------------------------
+LPITEM/CItem::/GetItem/SetItem/EquipItem/UnequipItem refs in ecs/systems/*.cpp: 409
+   281 total-token refs |  202 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+    41 total-token refs |   39 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp
+    29 total-token refs |   28 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+    12 total-token refs |   12 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+     9 total-token refs |    9 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/MountSystem.cpp
+     8 total-token refs |    8 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp
+     7 total-token refs |    5 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/GayaSystem.cpp
+     7 total-token refs |    7 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+     4 total-token refs |    4 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/StatSystem.cpp
+     3 total-token refs |    3 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+     3 total-token refs |    2 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp
+     2 total-token refs |    2 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp
+     1 total-token refs |    1 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/SocialSystem.cpp
+     1 total-token refs |    1 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+     1 total-token refs |    1 LPITEM/CItem:: refs | SRC/Server/GameServer/ecs/systems/InventorySystem.cpp
+
+STEP 8 - AUDIT ITEM EVENT HANDLES
+---------------------------------
+Item-dependent EVENTFUNCs: 9
+  SRC/Server/GameServer/fishing.cpp:394 EVENTFUNC(fishing_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:110 EVENTFUNC(item_destroy_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:1848 EVENTFUNC(ownership_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:2063 EVENTFUNC(unique_expire_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:2110 EVENTFUNC(timer_based_on_wear_expire_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:2173 EVENTFUNC(real_time_expire_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:2489 EVENTFUNC(accessory_socket_expire_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/item.cpp:3450 EVENTFUNC(soul_item_event) [ITEM_DEPENDENT]
+  SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:76 EVENTFUNC(ecs_fishing_event) [ITEM_DEPENDENT]
+
+STEP 9 - IDENTIFY ECS COMPONENT COVERAGE GAPS
+----------------------------------------------
+ECS item components already defined: 5
+  13: EquipmentSlots
+  17: InventoryGrid
+  21: GoldAmount
+  23: QuickSlots
+  27: SafeboxRef
+
+Fields already defined in inventory_components.hpp:
+  SafeboxRef:
+    30: safeboxSize  [int safeboxSize;]
+    31: safeboxLoadTime  [int safeboxLoadTime;]
+    32: mallLoadTime  [int mallLoadTime;]
+    33: isOpening  [bool isOpening;]
+
+CItem member fields with no obvious ECS component equivalent yet (heuristic): 32
+  322: m_pProto
+  324: m_dwVnum
+  325: m_pOwner
+  327: m_bWindow
+  328: m_dwID
+  329: m_bEquipped
+  330: m_dwVID
+  331: m_wCell
+  332: m_dwCount
+  334: m_sLockedAttr
+  337: m_ExtraProto
+  339: m_lFlag
+  340: m_dwLastOwnerPID
+  342: m_bExchanging
+  344: m_alSockets
+  345: m_aAttr
+  347: m_pkDestroyEvent
+  348: m_pkExpireEvent
+  350: m_pkSoulItemEvent
+  352: m_pkUniqueExpireEvent
+  353: m_pkTimerBasedOnWearExpireEvent
+  354: m_pkRealTimeExpireEvent
+  355: m_pkAccessorySocketExpireEvent
+  356: m_pkOwnershipEvent
+  357: m_dwOwnershipPID
+  359: m_bSkipSave
+  361: m_isLocked
+  363: m_dwMaskVnum
+  364: m_dwSIGVnum
+  368: m_dwSIGVnum
+  372: m_dwSIGVnum
+  407: m_vid
+Likely blockers for ITEM ECS migration: proto pointer, owner pointer, equip/ground visibility state, sockets/attributes, destroy/expire events, and packet-facing item visibility.
+
+STEP 10 - CLASSIFY item.cpp METHODS BY MIGRATION DIFFICULTY
+-----------------------------------------------------------
+EASY (17):
+  AddLockedAttr
+  CanPutInto
+  CanPutInto2
+  ChangeLockedAttr
+  GetDuration
+  GetLevelLimit
+  GetRuneAttrType
+  GetRuneAttrValue
+  GiveMoreTime_Fix
+  GiveMoreTime_Per
+  IsDragonSoul
+  IsExtraItem
+  IsMountItem
+  IsPCBangItem
+  IsRune
+  IsSameSpecialGroup
+  OnAfterCreatedItem
+
+MEDIUM (4):
+  CanUsedBy
+  DistanceValid
+  FindEquipCell
+  IsEquipable
+
+HARD (84):
+  AccessorySocketDegrade
+  ActivateRune
+  ActivateRuneBonus
+  AddFlag
+  AddSocket
+  AddToGround
+  AlterToMagicItem
+  AlterToSocketItem
+  ApplyAddon
+  AttrLog
+  ChangeRuneAttr
+  CheckHumanApply
+  CheckItemUseLevel
+  ClearMountAttributeAndAffect
+  CopySocketTo
+  CreateSocket
+  DeactivateRune
+  DeactivateRuneBonus
+  DeactivateRuneBonusRefresh
+  Destroy
+  EncodeInsertPacket
+  EncodeRemovePacket
+  EquipTo
+  FindApplyValue
+  GetAccessorySocketDownGradeTime
+  GetAccessorySocketGrade
+  GetAccessorySocketMaxGrade
+  GetCount
+  GetExtraCategory
+  GetExtraProto
+  GetGold
+  GetName
+  GetRefineFromVnum
+  GetRefineLevel
+  GetShopBuyPrice
+  GetSocketCount
+  GetSpecialGroup
+  GetValue
+  Initialize
+  InitializeRune
+  IsAccessoryForSocket
+  IsNewMountItem
+  IsOwnership
+  IsPolymorphItem
+  IsRamadanRing
+  IsRealTimeFirstUseItem
+  IsRealTimeItem
+  IsRideItem
+  IsUnlimitedTimeUnique
+  ModifyPoints
+  RemoveFlag
+  RemoveFromCharacter
+  RemoveFromGround
+  RemoveLockedAttr
+  Save
+  SetAccessorySocketDownGradeTime
+  SetAccessorySocketExpireEvent
+  SetAccessorySocketGrade
+  SetAccessorySocketMaxGrade
+  SetCount
+  SetDestroyEvent
+  SetExchanging
+  SetExtraProto
+  SetLockedAttr
+  SetOwnership
+  SetOwnershipEvent
+  SetProto
+  SetSocket
+  SetSockets
+  SetSoulItemEvent
+  SetTimerBasedOnWearExpireEvent
+  SetUniqueExpireEvent
+  StartAccessorySocketExpireEvent
+  StartDestroyEvent
+  StartRealTimeExpireEvent
+  StartSoulItemEvent
+  StartTimerBasedOnWearExpireEvent
+  StartUniqueExpireEvent
+  StopAccessorySocketExpireEvent
+  StopTimerBasedOnWearExpireEvent
+  StopUniqueExpireEvent
+  Unequip
+  UpdatePacket
+  UsePacketEncode
+
+STEP 11 - COUNT SUMMARY
+-----------------------
+| Metric | Count |
+|---|---:|
+| item.cpp total lines | 3893 |
+| CItem:: method bodies | 108 |
+| CItem member variables (heuristic) | 32 |
+| CItem method declarations (heuristic) | 141 |
+| LPITEM references (non-ECS, non-questlua) | 670 |
+| LPITEM references in questlua_* | 97 |
+| LPITEM references in ecs/systems/*.cpp | 409 |
+| LPEVENT handles on CItem | 8 |
+| Item-dependent EVENTFUNCs | 9 |
+| ECS item components already defined | 5 |
+| EASY migration methods | 17 |
+| MEDIUM migration methods | 4 |
+| HARD migration methods | 84 |
+
+STEP 12 - EXTRACTION SLICE PLAN
+-------------------------------
+Slice | Methods | Target ECS file | Difficulty | Dependencies
+---|---|---|---|---
+S1 | ctor/dtor, Initialize, Destroy, Save, SetProto/GetProto/GetExtraProto | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | EASY | core item state and proto wiring
+S2 | SetWindow/GetWindow, SetID/GetID, SetVID/GetVID, SetCell/GetCell, GetVnum/GetOriginalVnum | SRC/Server/GameServer/ecs/systems/InventorySystem.cpp | EASY | identity/storage surfaces; LPITEM remains
+S3 | GetCount/SetCount, GetValue, GetGold, GetShopBuyPrice | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | MEDIUM | owner sync and shop math
+S4 | GetSockets/SetSockets/GetSocket/SetSocket/AddSocket/CreateSocket | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | MEDIUM | socket storage and refinement rules
+S5 | GetAttributes/GetAttribute/CopyAttributeTo/CopySocketTo/locked-attr helpers | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | MEDIUM | item_attribute.cpp dependencies
+S6 | AddToCharacter, RemoveFromCharacter, AddToGround, RemoveFromGround, DistanceValid | SRC/Server/GameServer/ecs/systems/InventorySystem.cpp | HARD | owner CHARACTER bridge, ground entity visibility
+S7 | IsEquipable, FindEquipCell, EquipTo, Unequip, ModifyPoints | SRC/Server/GameServer/ecs/systems/InventorySystem.cpp | HARD | character points/equipment state
+S8 | ownership/destroy/expire event management | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | HARD | legacy EVENTFUNC/LPEVENT remains authoritative
+S9 | real-time/unique/accessory/soul timers and expiry methods | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | HARD | event scheduler and socket degrade logic
+S10 | UsePacketEncode, EncodeInsertPacket, EncodeRemovePacket, UpdatePacket | SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp | HARD | DESC/packet/sectree coupling
+S11 | CanUsedBy, CheckItemUseLevel, IsPolymorphItem, item use gating | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | HARD | owner bridge and quest/use rules
+S12 | rune/mount/soul special behaviors and any >300 line bodies copy-first | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp | HARD | rune system, mount affects, soul timers
+
+STEP 13 - NOTES
+---------------
+- No source files were modified in this audit pass.
+- This document is analysis-only and intended as the Phase 11 migration backlog seed.
