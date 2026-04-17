@@ -4355,3 +4355,10 @@ itt voltunk
   - `5fb0953` `Phase 9c: P9c-2 Replace INTERFACE_TODO in New_PetSystem.cpp`
   - `c3866d4` `Phase 9c: P9c-2 Replace INTERFACE_TODO in battle.h`
   - `4783a74` `Phase 9c: P9c-2 Replace INTERFACE_TODO in battle.cpp`
+- real `char_interface.hpp` extraction status:
+  - deferred to `Phase 9d`
+  - reason:
+    - `char.h` still contains `309` `inline|{` hits, which is far above the safe extraction threshold
+    - a mechanical public-only cut would almost certainly reintroduce the same parse/inlined-private-state failure mode seen in the previous extraction attempt
+  - conclusion:
+    - the next viable step is targeted de-inlining / declaration-only lifting of public methods before retrying a real public-only `char_interface.hpp`
