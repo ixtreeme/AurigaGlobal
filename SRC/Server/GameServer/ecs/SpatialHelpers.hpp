@@ -36,6 +36,9 @@ inline void SyncSectorPlacement(entt::registry& reg,
         ecs::SectorPlacement{ mapIndex, static_cast<uint32_t>(x), static_cast<uint32_t>(y) });
 }
 
+// Iterate all entities visible from the sector of entity `e`.
+// Calls func(LPENTITY) for each entity in the sector and its neighbors.
+// Returns immediately if SectorPlacement is missing.
 template <typename Func>
 inline void ForEachAround(entt::registry& reg, entt::entity e, Func&& func)
 {
@@ -46,6 +49,7 @@ inline void ForEachAround(entt::registry& reg, entt::entity e, Func&& func)
     tree->ForEachAround(func);
 }
 
+// Resolve LPSECTREE directly from map coordinates.
 inline LPSECTREE SectorAt(int32_t mapIndex, int32_t x, int32_t y)
 {
     return SECTREE_MANAGER::instance().Get(mapIndex, x, y);
