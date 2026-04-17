@@ -20,6 +20,7 @@
 #include "../../unique_item.h"
 #include "../../vector.h"
 #include "../AIHelpers.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/activity_components.hpp"
@@ -154,13 +155,9 @@ void StartFishing(entt::entity fisher, uint32_t)
     if (!ch || !state || state->fishingNewEvent)
         return;
 
-    LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(ch->GetMapIndex());
-    if (!pkSectreeMap)
-        return;
-
     const int x = ch->GetX();
     const int y = ch->GetY();
-    LPSECTREE tree = pkSectreeMap->Find(x, y);
+    LPSECTREE tree = ecs::SectorAt(ch->GetMapIndex(), x, y);
     if (!tree)
         return;
 
@@ -637,12 +634,10 @@ void CHARACTER::fishing()
     }
 
     {
-        LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(GetMapIndex());
-
         int x = GetX();
         int y = GetY();
 
-        LPSECTREE tree = pkSectreeMap->Find(x, y);
+        LPSECTREE tree = ecs::SectorAt(GetMapIndex(), x, y);
         uint32_t dwAttr = tree->GetAttribute(x, y);
 
         if (IS_SET(dwAttr, ATTR_BLOCK))

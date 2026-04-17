@@ -77,6 +77,7 @@
 #endif
 
 #include "../Registry.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../components/identity_components.hpp"
 #include "../ItemRegistry.hpp"
 #include "../events.hpp"
@@ -5665,7 +5666,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		float fx, fy;
 		GetDeltaByDegree(GetRotation(), 100.0f, &fx, &fy);
 
-		LPSECTREE tree = SECTREE_MANAGER::instance().Get(GetMapIndex(), (int32_t)(GetX() + fx), (int32_t)(GetY() + fy));
+		LPSECTREE tree = ecs::SectorAt(GetMapIndex(), (int32_t)(GetX() + fx), (int32_t)(GetY() + fy));
 
 		if (!tree)
 		{

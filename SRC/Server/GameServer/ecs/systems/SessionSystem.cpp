@@ -798,7 +798,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         }
     }
 
-    LPSECTREE sectree = SECTREE_MANAGER::instance().Get(lMapIndex, x, y);
+    LPSECTREE sectree = ecs::SectorAt(lMapIndex, x, y);
 
     if (!sectree)
     {

@@ -14,6 +14,7 @@
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
 #include "../AIHelpers.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include "../Registry.hpp"
@@ -743,54 +744,34 @@ struct FuncPullMonster
 
 void CHARACTER::ForgetMyAttacker()
 {
-	LPSECTREE pSec = GetSectree();
-	if (pSec)
-	{
-		FuncForgetMyAttacker f(this);
-		pSec->ForEachAround(f);
-	}
+	FuncForgetMyAttacker f(this);
+	ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), f);
 	ReviveInvisible(5);
 }
 
 void CHARACTER::AggregateMonster()
 {
-	LPSECTREE pSec = GetSectree();
-	if (pSec)
-	{
-		FuncAggregateMonster f(this);
-		pSec->ForEachAround(f);
-	}
+	FuncAggregateMonster f(this);
+	ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), f);
 }
 
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
 void CHARACTER::AggregateMonsterPlus()
 {
-	LPSECTREE pSec = GetSectree();
-	if (pSec)
-	{
-		FuncAggregateMonsterPlus f(this);
-		pSec->ForEachAround(f);
-	}
+	FuncAggregateMonsterPlus f(this);
+	ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), f);
 }
 #endif
 void CHARACTER::AttractRanger()
 {
-	LPSECTREE pSec = GetSectree();
-	if (pSec)
-	{
-		FuncAttractRanger f(this);
-		pSec->ForEachAround(f);
-	}
+	FuncAttractRanger f(this);
+	ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), f);
 }
 
 void CHARACTER::PullMonster()
 {
-	LPSECTREE pSec = GetSectree();
-	if (pSec)
-	{
-		FuncPullMonster f(this);
-		pSec->ForEachAround(f);
-	}
+	FuncPullMonster f(this);
+	ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), f);
 }
 
 
@@ -3565,6 +3546,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 	PIXEL_POSITION pos = GetXYZ();
 
+	// SECTREE_MIGRATION_TODO: keep legacy manager path until movable-position logic has an ECS bridge
 	if (!SECTREE_MANAGER::instance().GetMovablePosition(GetMapIndex(), pos.x, pos.y, pos))
 		return;
 
@@ -7746,7 +7728,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 			dx = x + (int)fx;
 			dy = y + (int)fy;
 
-			LPSECTREE tree = SECTREE_MANAGER::instance().Get(GetMapIndex(), dx, dy);
+			LPSECTREE tree = ecs::SectorAt(GetMapIndex(), dx, dy);
 
 			if (nullptr == tree)
 				break;

@@ -261,7 +261,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	if (!GetSectree())
 		return false;
 
-	LPSECTREE new_tree = SECTREE_MANAGER::instance().Get(GetMapIndex(), x, y);
+	LPSECTREE new_tree = ecs::SectorAt(GetMapIndex(), x, y);
 
 	if (!new_tree)
 	{
