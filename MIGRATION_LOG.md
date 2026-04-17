@@ -3575,3 +3575,63 @@
   - `SRC/Server/GameServer/item.cpp`: `69`
 - next logical slice:
   - `P11.7` item lifecycle and core event management into `ItemSystem.cpp`
+
+## Phase 11 - P11.7 Slice S6 item lifecycle and core event management
+- moved lifecycle/core event `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- migrated methods:
+  - `Initialize`
+  - `Destroy`
+  - `Save`
+  - `SetProto`
+  - `SetExtraProto`
+  - `GetExtraProto`
+  - `SetDestroyEvent`
+  - `StartDestroyEvent`
+- ECS event surface extended in:
+  - `SRC/Server/GameServer/ecs/events.hpp`
+  - added:
+    - `EvItemDestroyed`
+    - `EvItemExpired`
+- additive ECS emit added:
+  - after `Destroy`
+    - `g_dispatcher.trigger(ecs::EvItemDestroyed{e, GetID()})`
+- notes:
+  - `ItemSystem.cpp` needed `EventDispatcher.hpp` and `events.hpp` include surface
+  - the final destroy-event wrapper build needed a forward declaration for `item_destroy_event` in the new TU
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success after each sub-batch
+
+## Phase 11 - P11.8 Slice S7 timer / expire event wrappers (batches A-B)
+- moved timer/expire wrapper `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- completed batches:
+  - Batch A: unique expire wrappers
+    - `SetUniqueExpireEvent`
+    - `StartUniqueExpireEvent`
+    - `StopUniqueExpireEvent`
+  - Batch B: timer-based-on-wear wrappers
+    - `SetTimerBasedOnWearExpireEvent`
+    - `StartTimerBasedOnWearExpireEvent`
+    - `StopTimerBasedOnWearExpireEvent`
+- additive ECS emit added after legacy `event_create` calls:
+  - `g_dispatcher.trigger(ecs::EvItemExpired{e, GetID()})`
+- notes:
+  - each batch needed the corresponding `EVENTFUNC(...)` forward declaration in `ItemSystem.cpp`
+    - `unique_expire_event`
+    - `timer_based_on_wear_expire_event`
+  - no rollback was needed; both follow-up builds were green after the surface fixes
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success after each batch
+- remaining item bodies after current checkpoint:
+  - `SRC/Server/GameServer/item.cpp`: `55`
+- next logical slices:
+  - `P11.8` Batch C-E
+    - `StartRealTimeExpireEvent`
+    - accessory socket expire wrappers
+    - soul item wrappers
+  - then `P11.9` item packet encoding methods

@@ -73,6 +73,8 @@
 #include "../Registry.hpp"
 #include "../components/identity_components.hpp"
 #include "../ItemRegistry.hpp"
+#include "../events.hpp"
+#include "../EventDispatcher.hpp"
 #include "../components/item_components.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
@@ -386,6 +388,10 @@ static bool FN_check_item_sex(LPCHARACTER ch, LPITEM item)
 }
 
 } // namespace
+
+EVENTFUNC(item_destroy_event);
+EVENTFUNC(unique_expire_event);
+EVENTFUNC(timer_based_on_wear_expire_event);
 
 namespace ItemSystem {
 
@@ -956,166 +962,312 @@ bool CItem::AddSocket()
 
 // Phase 11: migrated from item_attribute.cpp batch A
 
-int CItem::GetAttributeSetIndex()
-{
-	if (GetType() == ITEM_WEAPON)
-	{
-		if (GetSubType() == WEAPON_ARROW)
-			return -1;
-
-		return ATTRIBUTE_SET_WEAPON;
-	}
-
-	if (GetType() == ITEM_ARMOR)
-	{
-		switch (GetSubType())
-		{
-			case ARMOR_BODY:
-				return ATTRIBUTE_SET_BODY;
-
-			case ARMOR_WRIST:
-				return ATTRIBUTE_SET_WRIST;
-
-			case ARMOR_FOOTS:
-				return ATTRIBUTE_SET_FOOTS;
-
-			case ARMOR_NECK:
-				return ATTRIBUTE_SET_NECK;
-
-			case ARMOR_HEAD:
-				return ATTRIBUTE_SET_HEAD;
-
-			case ARMOR_SHIELD:
-				return ATTRIBUTE_SET_SHIELD;
-
-			case ARMOR_EAR:
-				return ATTRIBUTE_SET_EAR;
-		
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
-			case ARMOR_PENDANT:
-				return ATTRIBUTE_SET_PENDANT;
-#endif
-		}
-	}
-#ifdef ENABLE_ATTR_COSTUMES
-	else if (GetType() == ITEM_COSTUME)
-	{
-		switch (GetSubType())
-		{
-			case COSTUME_BODY:
-				return ATTRIBUTE_SET_COSTUME_BODY;
-			case COSTUME_HAIR:
-				return ATTRIBUTE_SET_COSTUME_HAIR;
-			case COSTUME_WEAPON:
-				return ATTRIBUTE_SET_COSTUME_WEAPON;
-#ifdef ENABLE_STOLE_COSTUME
-			case COSTUME_STOLE:
-				return ATTRIBUTE_SET_COSTUME_STOLE;
-#endif
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			case COSTUME_MOUNT:
-				break;
-#endif
-		}
-	}
-#endif
-
-	return -1;
+int CItem::GetAttributeSetIndex()
+
+{
+
+	if (GetType() == ITEM_WEAPON)
+
+	{
+
+		if (GetSubType() == WEAPON_ARROW)
+
+			return -1;
+
+
+
+		return ATTRIBUTE_SET_WEAPON;
+
+	}
+
+
+
+	if (GetType() == ITEM_ARMOR)
+
+	{
+
+		switch (GetSubType())
+
+		{
+
+			case ARMOR_BODY:
+
+				return ATTRIBUTE_SET_BODY;
+
+
+
+			case ARMOR_WRIST:
+
+				return ATTRIBUTE_SET_WRIST;
+
+
+
+			case ARMOR_FOOTS:
+
+				return ATTRIBUTE_SET_FOOTS;
+
+
+
+			case ARMOR_NECK:
+
+				return ATTRIBUTE_SET_NECK;
+
+
+
+			case ARMOR_HEAD:
+
+				return ATTRIBUTE_SET_HEAD;
+
+
+
+			case ARMOR_SHIELD:
+
+				return ATTRIBUTE_SET_SHIELD;
+
+
+
+			case ARMOR_EAR:
+
+				return ATTRIBUTE_SET_EAR;
+
+		
+
+#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
+
+			case ARMOR_PENDANT:
+
+				return ATTRIBUTE_SET_PENDANT;
+
+#endif
+
+		}
+
+	}
+
+#ifdef ENABLE_ATTR_COSTUMES
+
+	else if (GetType() == ITEM_COSTUME)
+
+	{
+
+		switch (GetSubType())
+
+		{
+
+			case COSTUME_BODY:
+
+				return ATTRIBUTE_SET_COSTUME_BODY;
+
+			case COSTUME_HAIR:
+
+				return ATTRIBUTE_SET_COSTUME_HAIR;
+
+			case COSTUME_WEAPON:
+
+				return ATTRIBUTE_SET_COSTUME_WEAPON;
+
+#ifdef ENABLE_STOLE_COSTUME
+
+			case COSTUME_STOLE:
+
+				return ATTRIBUTE_SET_COSTUME_STOLE;
+
+#endif
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+
+			case COSTUME_MOUNT:
+
+				break;
+
+#endif
+
+		}
+
+	}
+
+#endif
+
+
+
+	return -1;
+
 }
 
-bool CItem::HasAttr(uint8_t bApply)
-{
-	bool ignoreBaseApplies = false;
-
-#ifdef ENABLE_PENDANT
-	// Talizmán / pendant: lehessen ugyanaz a bónusz az alap bónusz mellett is
-	if ((GetType() == ITEM_ARMOR && GetSubType() == ARMOR_NUM_TYPES) || (GetWearFlag() & WEARABLE_PENDANT))
-		ignoreBaseApplies = true;
-#endif
-
-	if (!ignoreBaseApplies)
-	{
-		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-			if (m_pProto->aApplies[i].bType == bApply)
-				return true;
-
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-		if (HasExtraProto())
-		{
-#ifdef ENABLE_NEW_EXTRA_BONUS
-			for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; ++i)
-				if (m_ExtraProto->ExtraBonus[i].bType == bApply)
-					return true;
-#endif
-		}
-#endif
-	}
-
- 
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-		if (GetAttributeType(i) == bApply)
-			return true;
-
-	return false;
+bool CItem::HasAttr(uint8_t bApply)
+
+{
+
+	bool ignoreBaseApplies = false;
+
+
+
+#ifdef ENABLE_PENDANT
+
+	// Talizmán / pendant: lehessen ugyanaz a bónusz az alap bónusz mellett is
+
+	if ((GetType() == ITEM_ARMOR && GetSubType() == ARMOR_NUM_TYPES) || (GetWearFlag() & WEARABLE_PENDANT))
+
+		ignoreBaseApplies = true;
+
+#endif
+
+
+
+	if (!ignoreBaseApplies)
+
+	{
+
+		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
+
+			if (m_pProto->aApplies[i].bType == bApply)
+
+				return true;
+
+
+
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+
+		if (HasExtraProto())
+
+		{
+
+#ifdef ENABLE_NEW_EXTRA_BONUS
+
+			for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; ++i)
+
+				if (m_ExtraProto->ExtraBonus[i].bType == bApply)
+
+					return true;
+
+#endif
+
+		}
+
+#endif
+
+	}
+
+
+
+ 
+
+	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
+
+		if (GetAttributeType(i) == bApply)
+
+			return true;
+
+
+
+	return false;
+
 }
 
-bool CItem::HasRareAttr(uint8_t bApply)
-{
-	for (int i = 0; i < MAX_RARE_ATTR_NUM; ++i)
-		if (GetAttributeType(i + 5) == bApply)
-			return true;
-
-	return false;
+bool CItem::HasRareAttr(uint8_t bApply)
+
+{
+
+	for (int i = 0; i < MAX_RARE_ATTR_NUM; ++i)
+
+		if (GetAttributeType(i + 5) == bApply)
+
+			return true;
+
+
+
+	return false;
+
 }
 
-int CItem::GetAttributeCount()
-{
-	int i;
-
-	for (i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-	{
-		if (GetAttributeType(i) == 0)
-			break;
-	}
-
-	return i;
+int CItem::GetAttributeCount()
+
+{
+
+	int i;
+
+
+
+	for (i = 0; i < MAX_NORM_ATTR_NUM; ++i)
+
+	{
+
+		if (GetAttributeType(i) == 0)
+
+			break;
+
+	}
+
+
+
+	return i;
+
 }
 
-int CItem::FindAttribute(uint8_t bType)
-{
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-	{
-		if (GetAttributeType(i) == bType)
-			return i;
-	}
-
-	return -1;
+int CItem::FindAttribute(uint8_t bType)
+
+{
+
+	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
+
+	{
+
+		if (GetAttributeType(i) == bType)
+
+			return i;
+
+	}
+
+
+
+	return -1;
+
 }
 
-bool CItem::RemoveAttributeAt(int index)
-{
-	if (GetAttributeCount() <= index)
-		return false;
-
-	for (int i = index; i < MAX_NORM_ATTR_NUM - 1; ++i)
-	{
-		SetAttribute(i, GetAttributeType(i + 1), GetAttributeValue(i + 1));
-	}
-
-	SetAttribute(MAX_NORM_ATTR_NUM - 1, APPLY_NONE, 0);
-	return true;
+bool CItem::RemoveAttributeAt(int index)
+
+{
+
+	if (GetAttributeCount() <= index)
+
+		return false;
+
+
+
+	for (int i = index; i < MAX_NORM_ATTR_NUM - 1; ++i)
+
+	{
+
+		SetAttribute(i, GetAttributeType(i + 1), GetAttributeValue(i + 1));
+
+	}
+
+
+
+	SetAttribute(MAX_NORM_ATTR_NUM - 1, APPLY_NONE, 0);
+
+	return true;
+
 }
 
-bool CItem::RemoveAttributeType(uint8_t bType)
-{
-	int index = FindAttribute(bType);
-	return index != -1 && RemoveAttributeType(index);
+bool CItem::RemoveAttributeType(uint8_t bType)
+
+{
+
+	int index = FindAttribute(bType);
+
+	return index != -1 && RemoveAttributeType(index);
+
 }
 
-void CItem::SetAttributes(const TPlayerItemAttribute* c_pAttribute)
-{
-	memcpy(m_aAttr, c_pAttribute, sizeof(m_aAttr));
-	Save();
+void CItem::SetAttributes(const TPlayerItemAttribute* c_pAttribute)
+
+{
+
+	memcpy(m_aAttr, c_pAttribute, sizeof(m_aAttr));
+
+	Save();
+
 }
 
 void CItem::SetAttribute(int i, uint8_t bType, short sValue)
@@ -1149,49 +1301,88 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 }
 
-void CItem::SetAttribute2(int i, uint8_t bType, short sValue)
-{
-	assert(i < MAX_NORM_ATTR_NUM+2);
-
-	m_aAttr[i].bType = bType;
-	m_aAttr[i].sValue = sValue;
-	UpdatePacket();
-	Save();
-
-	if (bType)
-	{
-		const char* pszIP = nullptr;
-
-		if (GetOwner() && GetOwner()->GetDesc())
-			pszIP = GetOwner()->GetDesc()->GetHostName();
-
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
-	}
+void CItem::SetAttribute2(int i, uint8_t bType, short sValue)
+
+{
+
+	assert(i < MAX_NORM_ATTR_NUM+2);
+
+
+
+	m_aAttr[i].bType = bType;
+
+	m_aAttr[i].sValue = sValue;
+
+	UpdatePacket();
+
+	Save();
+
+
+
+	if (bType)
+
+	{
+
+		const char* pszIP = nullptr;
+
+
+
+		if (GetOwner() && GetOwner()->GetDesc())
+
+			pszIP = GetOwner()->GetDesc()->GetHostName();
+
+
+
+		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
+
+	}
+
 }
 
-void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
-{
-	assert(i < ITEM_ATTRIBUTE_MAX_NUM);
-
-	m_aAttr[i].bType = bType;
-	m_aAttr[i].sValue = sValue;
-	UpdatePacket();
-	Save();
-
-	if (bType)
-	{
-		const char * pszIP = nullptr;
-
-		if (GetOwner() && GetOwner()->GetDesc())
-			pszIP = GetOwner()->GetDesc()->GetHostName();
-
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_FORCE_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
-	}
+void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
+
+{
+
+	assert(i < ITEM_ATTRIBUTE_MAX_NUM);
+
+
+
+	m_aAttr[i].bType = bType;
+
+	m_aAttr[i].sValue = sValue;
+
+	UpdatePacket();
+
+	Save();
+
+
+
+	if (bType)
+
+	{
+
+		const char * pszIP = nullptr;
+
+
+
+		if (GetOwner() && GetOwner()->GetDesc())
+
+			pszIP = GetOwner()->GetDesc()->GetHostName();
+
+
+
+		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_FORCE_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
+
+	}
+
 }
 
-void CItem::CopyAttributeTo(LPITEM pItem)
-{
-	pItem->SetAttributes(m_aAttr);
+void CItem::CopyAttributeTo(LPITEM pItem)
+
+{
+
+	pItem->SetAttributes(m_aAttr);
+
 }
 
 // Phase 11: migrated from item_attribute.cpp batch B
@@ -15455,3 +15646,209 @@ bool CHARACTER::CanDoAttrTransfer() const
 	return true;
 }
 #endif
+
+void CItem::Initialize()
+{
+	CEntity::Initialize(ENTITY_ITEM);
+
+	m_bWindow = RESERVED_WINDOW;
+	m_pOwner = nullptr;
+	m_dwID = 0;
+	m_bEquipped = false;
+	m_dwVID = m_wCell = m_dwCount = m_lFlag = 0;
+	m_pProto = nullptr;
+	m_bExchanging = false;
+#ifdef ENABLE_SOUL_SYSTEM
+	m_pkSoulItemEvent = nullptr;
+#endif
+	m_pkUniqueExpireEvent = nullptr;
+	memset(&m_alSockets, 0, sizeof(m_alSockets));
+	memset(&m_aAttr, 0, sizeof(m_aAttr));
+#ifdef ATTR_LOCK
+	m_sLockedAttr = -1;
+#endif
+
+	m_pkDestroyEvent = nullptr;
+	m_pkOwnershipEvent = nullptr;
+	m_dwOwnershipPID = 0;
+
+	m_pkTimerBasedOnWearExpireEvent = nullptr;
+	m_pkRealTimeExpireEvent = nullptr;
+
+	m_pkAccessorySocketExpireEvent = nullptr;
+
+	m_bSkipSave = false;
+	m_dwLastOwnerPID = 0;
+}
+
+void CItem::Destroy()
+{
+	event_cancel(&m_pkDestroyEvent);
+	event_cancel(&m_pkOwnershipEvent);
+	event_cancel(&m_pkUniqueExpireEvent);
+
+#ifdef ENABLE_SOUL_SYSTEM
+	event_cancel(&m_pkSoulItemEvent);
+#endif
+
+	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
+	event_cancel(&m_pkRealTimeExpireEvent);
+	event_cancel(&m_pkAccessorySocketExpireEvent);
+
+	CEntity::Destroy();
+
+	if (GetSectree())
+		GetSectree()->RemoveEntity(this);
+
+	const entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemDestroyed { e, GetID() });
+}
+
+void CItem::Save()
+{
+	if (m_bSkipSave)
+		return;
+
+	ITEM_MANAGER::instance().DelayedSave(this);
+}
+
+void CItem::SetProto(const TItemTable* table)
+{
+	assert(table != NULL);
+	m_pProto = table;
+	SetFlag(m_pProto->dwFlags);
+}
+
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+void CItem::SetExtraProto(TItemExtraProto* Proto)
+{
+	m_ExtraProto = Proto;
+}
+
+TItemExtraProto* CItem::GetExtraProto()
+{
+	return m_ExtraProto;
+}
+#endif
+
+void CItem::SetDestroyEvent(LPEVENT pkEvent)
+{
+	m_pkDestroyEvent = pkEvent;
+}
+
+void CItem::StartDestroyEvent(int iSec)
+{
+	if (m_pkDestroyEvent)
+		return;
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = this;
+
+	SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
+}
+
+void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
+{
+	m_pkUniqueExpireEvent = pkEvent;
+}
+
+void CItem::StartUniqueExpireEvent()
+{
+	if (GetType() != ITEM_UNIQUE)
+		return;
+
+	if (m_pkUniqueExpireEvent)
+		return;
+
+	if (IsRealTimeItem() || IsRealTimeFirstUseItem() || IsUnlimitedTimeUnique())
+		return;
+
+	// HARD CODING
+	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
+		m_pOwner->ShowAlignment(false);*/
+
+	int iSec = GetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME);
+
+	if (iSec == 0)
+		iSec = 60;
+	else
+		iSec = MIN(iSec, 60);
+
+	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = this;
+
+	SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
+
+	const entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+}
+
+void CItem::StopUniqueExpireEvent()
+{
+	if (!m_pkUniqueExpireEvent)
+		return;
+
+	if (GetValue(2) != 0)
+		return;
+
+	// HARD CODING
+	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
+		m_pOwner->ShowAlignment(true);*/
+
+	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(m_pkUniqueExpireEvent) / passes_per_sec);
+	event_cancel(&m_pkUniqueExpireEvent);
+
+	ITEM_MANAGER::instance().SaveSingleItem(this);
+}
+
+void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
+{
+	m_pkTimerBasedOnWearExpireEvent = pkEvent;
+}
+
+void CItem::StartTimerBasedOnWearExpireEvent()
+{
+	if (m_pkTimerBasedOnWearExpireEvent)
+		return;
+
+	if (IsRealTimeItem())
+		return;
+
+	if (-1 == GetProto()->cLimitTimerBasedOnWearIndex)
+		return;
+
+	int iSec = GetSocket(0);
+
+	if (0 != iSec)
+	{
+		iSec %= 60;
+		if (0 == iSec)
+			iSec = 60;
+	}
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = this;
+
+	SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
+
+	const entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+}
+
+void CItem::StopTimerBasedOnWearExpireEvent()
+{
+	if (!m_pkTimerBasedOnWearExpireEvent)
+		return;
+
+	int remain_time = GetSocket(ITEM_SOCKET_REMAIN_SEC) - event_processing_time(m_pkTimerBasedOnWearExpireEvent) / passes_per_sec;
+
+	SetSocket(ITEM_SOCKET_REMAIN_SEC, remain_time);
+	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
+
+	ITEM_MANAGER::instance().SaveSingleItem(this);
+}

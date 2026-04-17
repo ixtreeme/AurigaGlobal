@@ -53,59 +53,8 @@ CItem::~CItem()
 	Destroy();
 }
 
-void CItem::Initialize()
-{
-	CEntity::Initialize(ENTITY_ITEM);
 
-	m_bWindow = RESERVED_WINDOW;
-	m_pOwner = nullptr;
-	m_dwID = 0;
-	m_bEquipped = false;
-	m_dwVID = m_wCell = m_dwCount = m_lFlag = 0;
-	m_pProto = nullptr;
-	m_bExchanging = false;
-#ifdef ENABLE_SOUL_SYSTEM
-	m_pkSoulItemEvent = nullptr;
-#endif
-	m_pkUniqueExpireEvent = nullptr;
-	memset(&m_alSockets, 0, sizeof(m_alSockets));
-	memset(&m_aAttr, 0, sizeof(m_aAttr));
-#ifdef ATTR_LOCK
-	m_sLockedAttr = -1;
-#endif
 
-	m_pkDestroyEvent = nullptr;
-	m_pkOwnershipEvent = nullptr;
-	m_dwOwnershipPID = 0;
-
-	m_pkTimerBasedOnWearExpireEvent = nullptr;
-	m_pkRealTimeExpireEvent = nullptr;
-
-	m_pkAccessorySocketExpireEvent = nullptr;
-
-	m_bSkipSave = false;
-	m_dwLastOwnerPID = 0;
-}
-
-void CItem::Destroy()
-{
-	event_cancel(&m_pkDestroyEvent);
-	event_cancel(&m_pkOwnershipEvent);
-	event_cancel(&m_pkUniqueExpireEvent);
-
-#ifdef ENABLE_SOUL_SYSTEM
-	event_cancel(&m_pkSoulItemEvent);
-#endif
-
-	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
-	event_cancel(&m_pkRealTimeExpireEvent);
-	event_cancel(&m_pkAccessorySocketExpireEvent);
-
-	CEntity::Destroy();
-
-	if (GetSectree())
-		GetSectree()->RemoveEntity(this);
-}
 
 EVENTFUNC(item_destroy_event)
 {
@@ -127,21 +76,9 @@ EVENTFUNC(item_destroy_event)
 	return 0;
 }
 
-void CItem::SetDestroyEvent(LPEVENT pkEvent)
-{
-	m_pkDestroyEvent = pkEvent;
-}
 
-void CItem::StartDestroyEvent(int iSec)
-{
-	if (m_pkDestroyEvent)
-		return;
 
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
 
-	SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
-}
 
 void CItem::EncodeInsertPacket(LPENTITY ent)
 {
@@ -200,24 +137,9 @@ void CItem::EncodeRemovePacket(LPENTITY ent)
 	sys_log(2, "Item::EncodeRemovePacket %s to %s", GetName(), ((LPCHARACTER)ent)->GetName());
 }
 
-void CItem::SetProto(const TItemTable* table)
-{
-	assert(table != NULL);
-	m_pProto = table;
-	SetFlag(m_pProto->dwFlags);
-}
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-void CItem::SetExtraProto(TItemExtraProto* Proto)
-{
-	m_ExtraProto = Proto;
-}
 
-TItemExtraProto* CItem::GetExtraProto()
-{
-	return m_ExtraProto;
-}
-#endif
+
 
 void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)
 {
@@ -376,13 +298,7 @@ void CItem::SetExchanging(bool bOn)
 	m_bExchanging = bOn;
 }
 
-void CItem::Save()
-{
-	if (m_bSkipSave)
-		return;
 
-	ITEM_MANAGER::instance().DelayedSave(this);
-}
 
 bool CItem::CreateSocket(uint8_t bSlot, uint8_t bGold)
 {
@@ -656,15 +572,9 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 	return PASSES_PER_SEC(MIN(60, remain_time));
 }
 
-void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
-{
-	m_pkUniqueExpireEvent = pkEvent;
-}
 
-void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
-{
-	m_pkTimerBasedOnWearExpireEvent = pkEvent;
-}
+
+
 
 EVENTFUNC(real_time_expire_event)
 {
@@ -848,92 +758,12 @@ bool CItem::IsUnlimitedTimeUnique()
 	return false;
 }
 
-void CItem::StartUniqueExpireEvent()
-{
-	if (GetType() != ITEM_UNIQUE)
-		return;
 
-	if (m_pkUniqueExpireEvent)
-		return;
 
-	if (IsRealTimeItem() || IsRealTimeFirstUseItem() || IsUnlimitedTimeUnique())
-		return;
 
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(false);*/
 
-	int iSec = GetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME);
 
-	if (iSec == 0)
-		iSec = 60;
-	else
-		iSec = MIN(iSec, 60);
 
-	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
-
-	SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
-}
-
-void CItem::StartTimerBasedOnWearExpireEvent()
-{
-	if (m_pkTimerBasedOnWearExpireEvent)
-		return;
-
-	if (IsRealTimeItem())
-		return;
-
-	if (-1 == GetProto()->cLimitTimerBasedOnWearIndex)
-		return;
-
-	int iSec = GetSocket(0);
-
-	if (0 != iSec)
-	{
-		iSec %= 60;
-		if (0 == iSec)
-			iSec = 60;
-	}
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
-
-	SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
-}
-
-void CItem::StopUniqueExpireEvent()
-{
-	if (!m_pkUniqueExpireEvent)
-		return;
-
-	if (GetValue(2) != 0)
-		return;
-
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(true);*/
-
-	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(m_pkUniqueExpireEvent) / passes_per_sec);
-	event_cancel(&m_pkUniqueExpireEvent);
-
-	ITEM_MANAGER::instance().SaveSingleItem(this);
-}
-
-void CItem::StopTimerBasedOnWearExpireEvent()
-{
-	if (!m_pkTimerBasedOnWearExpireEvent)
-		return;
-
-	int remain_time = GetSocket(ITEM_SOCKET_REMAIN_SEC) - event_processing_time(m_pkTimerBasedOnWearExpireEvent) / passes_per_sec;
-
-	SetSocket(ITEM_SOCKET_REMAIN_SEC, remain_time);
-	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
-
-	ITEM_MANAGER::instance().SaveSingleItem(this);
-}
 
 void CItem::ApplyAddon(int iAddonType)
 {
