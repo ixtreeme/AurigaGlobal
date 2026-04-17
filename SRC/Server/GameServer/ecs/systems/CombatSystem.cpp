@@ -1774,6 +1774,7 @@ EVENTFUNC(dead_event)
 		return 0;
 	}
 
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDeadEvent
 	ch->m_pkDeadEvent = nullptr;
 	{
 		const entt::entity victimEntity = CVIDRegistry::Instance().Find(ch->GetVID());
@@ -6462,6 +6463,7 @@ EVENTFUNC(StunEvent)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkStunEvent
 	ch->m_pkStunEvent = nullptr;
 	const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
 	if (e != entt::null)

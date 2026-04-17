@@ -71,6 +71,7 @@ EVENTFUNC(poison_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkPoisonEvent
     LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetPoisonDamageRate(ch) / 1000;
     if (test_server) {
@@ -138,6 +139,7 @@ EVENTFUNC(bleeding_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkBleedingEvent
     LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetBleedingDamageRate(ch) / 1000;
     if (test_server) {
@@ -193,6 +195,7 @@ EVENTFUNC(fire_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkFireEvent
     LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = info->amount;
     if (test_server) {

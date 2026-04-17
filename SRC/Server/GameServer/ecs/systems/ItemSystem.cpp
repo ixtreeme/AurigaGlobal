@@ -3451,6 +3451,7 @@ EVENTFUNC(kill_campfire_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkMiningEvent
 	ch->m_pkMiningEvent = nullptr;
 	M2_DESTROY_CHARACTER(ch);
 	return 0;

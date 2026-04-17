@@ -656,6 +656,8 @@ EVENTFUNC(warp_npc_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkWarpNPCEvent
+
     const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
     if (e != entt::null)
     {

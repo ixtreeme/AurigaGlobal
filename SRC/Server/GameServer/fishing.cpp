@@ -406,6 +406,8 @@ EVENTFUNC(fishing_event)
 	if (!ch)
 		return 0;
 
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkFishingEvent
+
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
 
 	if (!(rod && rod->GetType() == ITEM_ROD))

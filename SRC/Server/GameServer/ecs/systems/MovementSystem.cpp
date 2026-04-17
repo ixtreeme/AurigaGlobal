@@ -737,6 +737,7 @@ EVENTFUNC(recovery_event)
 		return 0;
 	}
 
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
 	if (!ch->IsPC())
 	{
 		if (ch->IsAffectFlag(AFF_POISON))

@@ -3794,6 +3794,8 @@ EVENTFUNC(switch_channel)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
+
     if (!ch->GetDesc())
         return 0;
 
@@ -4632,6 +4634,8 @@ EVENTFUNC(kill_ore_load_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkMiningEvent
+
     ch->m_pkMiningEvent = nullptr;
     M2_DESTROY_CHARACTER(ch);
     return 0;
@@ -4674,6 +4678,8 @@ EVENTFUNC(destroy_when_idle_event)
         return 0;
     }
 
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDestroyWhenIdleEvent
+
     if (ch->GetVictim())
     {
         return PASSES_PER_SEC(300);
@@ -4706,6 +4712,8 @@ EVENTFUNC(drop_event)
         sys_err("<drop_event> %s have no desc connector.", ch->GetName());
         return 0;
     }
+
+    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDropEvent
 
     time_t diff = info->time - get_global_time();
     if (diff > 0) {

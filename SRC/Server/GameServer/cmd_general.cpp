@@ -577,6 +577,7 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
 	LPDESC d = ch->GetDesc();
 
 	if (info->left_second <= 0)
