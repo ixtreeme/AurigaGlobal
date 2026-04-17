@@ -1,0 +1,220 @@
+Phase 12: SECTREE system discovery audit
+========================================
+
+Scope: discovery only, no source edits.
+
+STEP 1 - Locate SECTREE infrastructure
+--------------------------------------
+Files found:
+  - SRC/Server/GameServer/sectree.cpp
+  - SRC/Server/GameServer/sectree.h
+  - SRC/Server/GameServer/sectree_manager.cpp
+  - SRC/Server/GameServer/sectree_manager.h
+Report:
+  - This codebase uses `SECTREE` and `SECTREE_MANAGER` names instead of `CSectree` / `CSectreeManager`.
+  - `SECTREE` class definition lives in `SRC/Server/GameServer/sectree.h`.
+  - `SECTREE_MANAGER` and `SECTREE_MAP` live in `SRC/Server/GameServer/sectree_manager.h`.
+  - Implementation is split between `sectree.cpp` and `sectree_manager.cpp`.
+  - `LPSECTREE` is defined in `SRC/Server/GameServer/typedef.h` as `DebugPtr<SECTREE>` in debug and `SECTREE*` otherwise.
+  - `LPSECTREE_MAP` is also defined in `typedef.h`.
+
+STEP 2 - Measure the SECTREE class
+----------------------------------
+  - `sectree.cpp`: 227 lines, 15 `SECTREE::` method bodies
+  - `sectree_manager.cpp`: 1756 lines, 54 `SECTREE_MANAGER::` method bodies, 5 `SECTREE_MAP::` method bodies
+
+STEP 3 - Audit LPSECTREE reference fanout
+-----------------------------------------
+  - Total references matching `LPSECTREE|CSectree::|CSectreeManager::|SECTREE_MANAGER::` outside `ecs/` and `questlua_*`: 296
+  - Top 20 files by reference count:
+    - 98  SRC/Server/GameServer/sectree_manager.cpp
+    - 35  SRC/Server/GameServer/dungeon.cpp
+    - 18  SRC/Server/GameServer/char_manager.cpp
+    - 16  SRC/Server/GameServer/sectree_manager.h
+    - 11  SRC/Server/GameServer/cmd_gm.cpp
+    - 11  SRC/Server/GameServer/LostCastleDungeon.cpp
+    - 10  SRC/Server/GameServer/sectree.h
+    - 10  SRC/Server/GameServer/building.cpp
+    - 9  SRC/Server/GameServer/BattleArena.cpp
+    - 6  SRC/Server/GameServer/typedef.h
+    - 6  SRC/Server/GameServer/ValentineDungeon.cpp
+    - 6  SRC/Server/GameServer/EasterDungeon.cpp
+    - 5  SRC/Server/GameServer/sectree.cpp
+    - 4  SRC/Server/GameServer/questlua.cpp
+    - 4  SRC/Server/GameServer/input_login.cpp
+    - 4  SRC/Server/GameServer/input_db.cpp
+    - 3  SRC/Server/GameServer/wedding.cpp
+    - 3  SRC/Server/GameServer/new_offlineshop_manager.cpp
+    - 3  SRC/Server/GameServer/entity.h
+    - 3  SRC/Server/GameServer/cmd_general2.cpp
+
+STEP 4 - Audit SECTREE class members
+------------------------------------
+Member declarations on `SECTREE`:
+  - sectree.h:255  SECTREEID m_id;
+  - sectree.h:256  ENTITY_SET m_set_entity;
+  - sectree.h:257  LPSECTREE_LIST m_neighbor_list;
+  - sectree.h:258  int m_iPCCount;
+  - sectree.h:259  bool isClone;
+  - sectree.h:261  CAttribute* m_pkAttribute;
+Categorization:
+  - Identity: `m_id`
+  - Entity sets: `m_set_entity`
+  - Spatial: `m_neighbor_list`
+  - State: `m_iPCCount`, `isClone`
+  - Attribute binding: `m_pkAttribute`
+  - Entity container members owned by `SECTREE`: 1 (`ENTITY_SET m_set_entity`)
+  - Neighbor-sector container members: 1 (`LPSECTREE_LIST m_neighbor_list`)
+
+STEP 5 - Audit SECTREE method surface
+-------------------------------------
+Declared `SECTREE` methods in `sectree.h`:
+  - sectree.h:202  SECTREE();
+  - sectree.h:203  ~SECTREE();
+  - sectree.h:205  void Initialize();
+  - sectree.h:206  void Destroy();
+  - sectree.h:208  SECTREEID GetID();
+  - sectree.h:210  bool InsertEntity(LPENTITY ent);
+  - sectree.h:211  void RemoveEntity(LPENTITY ent);
+  - sectree.h:213  void SetRegenEvent(LPEVENT event);
+  - sectree.h:214  bool Regen();
+  - sectree.h:216  void IncreasePC();
+  - sectree.h:217  void DecreasePC();
+  - sectree.h:219  void BindAttribute(CAttribute* pkAttribute);
+  - sectree.h:221  CAttribute* GetAttributePtr();
+  - sectree.h:223  uint32_t GetAttribute(int32_t x, int32_t y);
+  - sectree.h:224  bool IsAttr(int32_t x, int32_t y, uint32_t dwFlag);
+  - sectree.h:226  void CloneAttribute(LPSECTREE tree);
+  - sectree.h:228  int GetEventAttribute(int32_t x, int32_t y);
+  - sectree.h:230  void SetAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);
+  - sectree.h:231  void RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);
+Categorization:
+  - A) Entity insertion/removal: `InsertEntity`, `RemoveEntity`
+  - B) Spatial queries / neighborhood traversal: `GetID`, `GetAttribute`, `IsAttr`, `GetEventAttribute`, `find_if`, `ForEachAround`, `ForEachAroundPlus`, `for_each_for_find_victim`, `for_each_entity_for_find_victim`
+  - C) State / flag management: `SetRegenEvent`, `IncreasePC`, `DecreasePC`, `BindAttribute`, `SetAttribute`, `RemoveAttribute`, `CloneAttribute`
+  - D) Update / tick methods: `Initialize`, `Destroy`, `Regen`
+
+STEP 6 - Audit LPENTITY relationship
+------------------------------------
+Relevant lines:
+  - SRC/Server/GameServer/sectree.h:76  typedef std::vector<LPENTITY> ListType;
+  - SRC/Server/GameServer/sectree.h:88  template <class _Func> LPENTITY find_if(_Func& func) const
+  - SRC/Server/GameServer/sectree.h:210  bool InsertEntity(LPENTITY ent);
+  - SRC/Server/GameServer/sectree.h:211  void RemoveEntity(LPENTITY ent);
+  - SRC/Server/GameServer/sectree.h:256  ENTITY_SET m_set_entity;
+  - SRC/Server/GameServer/sectree.cpp:127  bool SECTREE::InsertEntity(LPENTITY pkEnt)
+  - SRC/Server/GameServer/sectree.cpp:167  void SECTREE::RemoveEntity(LPENTITY pkEnt)
+Report:
+  - `SECTREE` owns a generic `ENTITY_SET` of `LPENTITY`; it does not keep separate CHARACTER and ITEM sets.
+  - Snapshot traversal uses `FCollectEntity::result`, a `std::vector<LPENTITY>`.
+  - `InsertEntity` / `RemoveEntity` operate on generic entities, so CHARACTER, ITEM, and OBJECT all share the same spatial container via `CEntity`.
+  - Neighbor awareness is kept separately in `LPSECTREE_LIST`.
+
+STEP 7 - Audit SECTREE_MANAGER
+-------------------------------
+  - `sectree_manager.cpp`: 1756 lines
+  - Method surface sample (first 50 matches):
+    - sectree_manager.cpp:23  SECTREE_MAP::SECTREE_MAP()
+    - sectree_manager.cpp:40  SECTREE_MAP::SECTREE_MAP(SECTREE_MAP & r)
+    - sectree_manager.cpp:60  LPSECTREE SECTREE_MAP::Find(uint32_t dwPackage)
+    - sectree_manager.cpp:70  LPSECTREE SECTREE_MAP::Find(uint32_t x, uint32_t y)
+    - sectree_manager.cpp:78  void SECTREE_MAP::Build()
+    - sectree_manager.cpp:128  SECTREE_MANAGER::SECTREE_MANAGER()
+    - sectree_manager.cpp:145  LPSECTREE_MAP SECTREE_MANAGER::GetMap(int32_t lMapIndex)
+    - sectree_manager.cpp:155  LPSECTREE SECTREE_MANAGER::Get(int32_t dwIndex, uint32_t package)
+    - sectree_manager.cpp:165  LPSECTREE SECTREE_MANAGER::Get(int32_t dwIndex, int32_t x, int32_t y)
+    - sectree_manager.cpp:176  int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettingFileName, TMapSetting & r_setting)
+    - sectree_manager.cpp:223  LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
+    - sectree_manager.cpp:263  void SECTREE_MANAGER::LoadDungeon(int iIndex, const char * c_pszFileName)
+    - sectree_manager.cpp:308  bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_setting, const char * c_pszMapName)
+    - sectree_manager.cpp:385  bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_pszFileName, TMapSetting & r_setting)
+    - sectree_manager.cpp:486  bool SECTREE_MANAGER::GetRecallPositionByEmpire(int32_t iMapIndex, uint8_t bEmpire, PIXEL_POSITION & r_pos)
+    - sectree_manager.cpp:527  bool SECTREE_MANAGER::GetCenterPositionOfMap(int32_t lMapIndex, PIXEL_POSITION & r_pos)
+    - sectree_manager.cpp:547  bool SECTREE_MANAGER::GetSpawnPositionByMapIndex(int32_t lMapIndex, PIXEL_POSITION& r_pos)
+    - sectree_manager.cpp:566  bool SECTREE_MANAGER::GetSpawnPosition(int32_t x, int32_t y, PIXEL_POSITION & r_pos)
+    - sectree_manager.cpp:584  bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t lMapIndex, PIXEL_POSITION & r_pos)
+    - sectree_manager.cpp:606  bool SECTREE_MANAGER::GetMapBasePosition(int32_t x, int32_t y, PIXEL_POSITION & r_pos)
+    - sectree_manager.cpp:626  const TMapRegion * SECTREE_MANAGER::FindRegionByPartialName(const char* szMapName)
+    - sectree_manager.cpp:643  const TMapRegion * SECTREE_MANAGER::GetMapRegion(int32_t lMapIndex)
+    - sectree_manager.cpp:658  int32_t SECTREE_MANAGER::GetMapIndex(int32_t x, int32_t y)
+    - sectree_manager.cpp:670  sys_log(0, "SECTREE_MANAGER::GetMapIndex(%d, %d)", x, y);
+    - sectree_manager.cpp:682  int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapBasePath)
+    - sectree_manager.cpp:775  bool SECTREE_MANAGER::IsMovablePosition(int32_t lMapIndex, int32_t x, int32_t y)
+    - sectree_manager.cpp:777  LPSECTREE tree = SECTREE_MANAGER::instance().Get(lMapIndex, x, y);
+    - sectree_manager.cpp:785  bool SECTREE_MANAGER::GetMovablePosition(int32_t lMapIndex, int32_t x, int32_t y, PIXEL_POSITION & pos)
+    - sectree_manager.cpp:794  LPSECTREE tree = SECTREE_MANAGER::instance().Get(lMapIndex, dx, dy);
+    - sectree_manager.cpp:812  bool SECTREE_MANAGER::GetValidLocation(int32_t lMapIndex, int32_t x, int32_t y, int32_t& r_lValidMapIndex, PIXEL_POSITION & r_pos, uint8_t empire)
+    - sectree_manager.cpp:872  bool SECTREE_MANAGER::GetRandomLocation(int32_t lMapIndex, PIXEL_POSITION & r_pos, uint32_t dwCurrentX, uint32_t dwCurrentY, int iMaxDistance)
+    - sectree_manager.cpp:939  int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
+    - sectree_manager.cpp:1050  void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
+    - sectree_manager.cpp:1086  TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
+    - sectree_manager.cpp:1097  void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
+    - sectree_manager.cpp:1148  void SECTREE_MANAGER::InsertNPCPosition(int32_t lMapIndex, uint8_t bType,
+    - sectree_manager.cpp:1160  void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
+    - sectree_manager.cpp:1200  void SECTREE_MANAGER::InsertBossPosition(int32_t lMapIndex, uint8_t bType,
+    - sectree_manager.cpp:1212  uint8_t SECTREE_MANAGER::GetEmpireFromMapIndex(int32_t lMapIndex)
+    - sectree_manager.cpp:1269  if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ch->GetEmpire(), pos))
+    - sectree_manager.cpp:1283  bool SECTREE_MANAGER::ForAttrRegionCell(int32_t lMapIndex, int32_t lCX, int32_t lCY, uint32_t dwAttr, EAttrRegionMode mode )
+    - sectree_manager.cpp:1320  bool SECTREE_MANAGER::ForAttrRegionRightAngle(int32_t lMapIndex, int32_t lCX, int32_t lCY, int32_t lCW, int32_t lCH, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode )
+    - sectree_manager.cpp:1347  bool SECTREE_MANAGER::ForAttrRegionFreeAngle(int32_t lMapIndex, int32_t lCX, int32_t lCY, int32_t lCW, int32_t lCH, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode )
+    - sectree_manager.cpp:1409  bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t lStartY, int32_t lEndX, int32_t lEndY, int32_t lRotate, uint32_t dwAttr, EAttrRegionMode mode)
+    - sectree_manager.cpp:1447  bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_pszFileName, LPSECTREE_MAP pMapSrc)
+    - sectree_manager.cpp:1449  LPSECTREE_MAP pMap = SECTREE_MANAGER::GetMap(lMapIndex);
+    - sectree_manager.cpp:1572  void SECTREE_MANAGER::PurgeMonstersInMap(int32_t lMapIndex)
+    - sectree_manager.cpp:1574  LPSECTREE_MAP sectree = SECTREE_MANAGER::instance().GetMap(lMapIndex);
+    - sectree_manager.cpp:1600  void SECTREE_MANAGER::PurgeStonesInMap(int32_t lMapIndex)
+    - sectree_manager.cpp:1602  LPSECTREE_MAP sectree = SECTREE_MANAGER::instance().GetMap(lMapIndex);
+Report:
+  - Yes, `SECTREE_MANAGER` owns map loading: `LoadSettingFile`, `LoadMapRegion`, `Build`, `BuildSectreeFromSetting`, `LoadAttribute`, `LoadDungeon`.
+  - Yes, it owns sector lookup by package and position through `Get(...)` and `SECTREE_MAP::Find(...)`.
+  - Yes, sector neighbor calculation is handled in `SECTREE_MAP::Build()`, which populates each tree's neighbor list.
+  - It also owns private-map lifecycle, spawn/recall location lookup, movable-position checks, NPC/boss atlas positions, and attribute-region painting.
+
+STEP 8 - Identify ECS dependency gaps
+-------------------------------------
+  - Total references in `ecs/systems/*.cpp` matching `LPSECTREE|CSectree::|sectree|SECTREE_MANAGER::`: 56
+  - ECS system files with SECTREE references:
+    - 17  SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+    - 13  SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+    - 8  SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp
+    - 7  SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+    - 5  SRC/Server/GameServer/ecs/systems/InventorySystem.cpp
+    - 3  SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+    - 2  SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+    - 1  SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp
+Gap assessment:
+  - Migrated ECS systems still rely on legacy SECTREE for placement, neighborhood scans, visibility, map checks, and target selection.
+  - The heaviest ECS-side dependencies are `SkillSystem.cpp`, `SessionSystem.cpp`, and `CombatSystem.cpp`.
+  - This means SECTREE migration is a cross-system spatial-runtime migration, not a single-monolith extraction.
+
+STEP 9 - Count summary
+----------------------
+| Metric | Count |
+|---|---:|
+| sectree.cpp total lines | 227 |
+| sectree_manager.cpp total lines | 1756 |
+| CSectree:: method bodies (legacy `SECTREE::`) | 15 |
+| CSectreeManager:: method bodies (legacy `SECTREE_MANAGER::`) | 54 |
+| LPSECTREE references (non-ECS, non-questlua) | 296 |
+| LPSECTREE references in ecs/systems/*.cpp | 56 |
+| CSectree member variables (heuristic) | 6 total / 5 `m_`-prefixed |
+| Entity container members on CSectree | 1 |
+
+Additional findings
+-------------------
+  - `SECTREE` itself is relatively small; most complexity sits in `SECTREE_MANAGER` / `SECTREE_MAP`.
+  - The runtime tree is generic over `LPENTITY`, so any ECS replacement must account for CHARACTER, ITEM, and OBJECT coexistence.
+  - Neighbor caching (`m_neighbor_list`) is a core behavioral assumption for around-view queries.
+  - Map bootstrap, map metadata, and runtime spatial queries are mixed inside the manager layer and should likely be separated in future work.
+
+Migration outlook
+-----------------
+  - Runtime spatial query migration difficulty: HARD
+  - Map/bootstrap migration difficulty: MEDIUM
+  - Suggested future decomposition:
+    - Phase 12a: read-only wrappers around `Get`, `Find`, and around-view traversal
+    - Phase 12b: ECS bridge for entity placement / visibility while keeping legacy sectree authoritative
+    - Phase 12c: attribute and movable-position bridge
+    - Phase 12d: private-map / map-loading isolation
+
+Generated by the Phase 12 discovery pass.
