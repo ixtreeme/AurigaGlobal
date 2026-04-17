@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include "utils.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "config.h"
 

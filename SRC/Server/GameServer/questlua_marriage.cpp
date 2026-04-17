@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "wedding.h"
 #include "questmanager.h"

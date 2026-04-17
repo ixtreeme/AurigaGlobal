@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <Base/attribute.h>
 #include "sectree_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "item.h"
 #include "item_manager.h"

@@ -2,7 +2,7 @@
 #include "refine.h"
 
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "item_manager.h"
 #include "item.h"
 

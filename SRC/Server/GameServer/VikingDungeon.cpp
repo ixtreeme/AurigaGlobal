@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <algorithm>
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "config.h"
 #include "party.h"

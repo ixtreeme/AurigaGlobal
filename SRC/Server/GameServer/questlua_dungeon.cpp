@@ -3,7 +3,7 @@
 #include "questmanager.h"
 #include "questlua.h"
 #include "dungeon.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "party.h"
 #include "buffer_manager.h"
 #include "char_manager.h"

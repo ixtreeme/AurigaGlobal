@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstdarg>
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "config.h"
 #include "desc.h"

@@ -4,7 +4,7 @@
 #include "desc.h"
 #include "desc_client.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "protocol.h"
 #include "packet.h"
 #include "messenger_manager.h"

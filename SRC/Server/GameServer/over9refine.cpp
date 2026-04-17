@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "constants.h"
 #include "log.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "item_manager.h"
 #include "item.h"
 #include "over9refine.h"

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "wheel_of_destiny.h"
-#include "char.h"
+#include "char_interface.hpp"
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 

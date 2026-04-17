@@ -4,7 +4,7 @@
 #include "questmanager.h"
 #include "profiler.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #ifdef ENABLE_MULTI_LANGUAGE
 #include "desc.h"
 #endif

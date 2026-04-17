@@ -3,7 +3,7 @@
 #include "horsename_manager.h"
 #include "desc_client.h"
 #include "char_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "affect.h"
 #include "utils.h"
 

@@ -2,7 +2,7 @@
 #include <common/service.h>
 #include <common/CommonDefines.h>
 #include <common/length.h>
-#include "char.h"
+#include "char_interface.hpp"
 #include "skill.h"
 #include "config.h"
 #include "sectree_manager.h"

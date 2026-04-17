@@ -8,7 +8,7 @@
 #include "config.h"
 #include "p2p.h"
 #include "crc32.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "questmanager.h"
 

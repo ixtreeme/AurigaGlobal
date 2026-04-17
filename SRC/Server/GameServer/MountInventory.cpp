@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "MountInventory.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "db.h"
 #include "desc.h"
 #include "item_manager.h"

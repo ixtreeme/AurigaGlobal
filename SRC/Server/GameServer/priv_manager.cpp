@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "constants.h"
 #include "priv_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc_client.h"
 #include "guild.h"
 #include "guild_manager.h"

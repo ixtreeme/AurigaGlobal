@@ -4,7 +4,7 @@
 #include "char_manager.h"
 #include "sectree_manager.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "wedding.h"
 #include "regen.h"
 #include "locale_service.h"

@@ -2,7 +2,7 @@
 
 #include "config.h"
 #include "questmanager.h"
-#include "char.h"
+#include "char_interface.hpp"
 
 #undef sys_err
 #ifndef _WIN32

@@ -3,7 +3,7 @@
 #include "config.h"
 #include "log.h"
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc.h"
 #include "item.h"
 

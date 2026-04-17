@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "config.h"
 #include "log.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "db.h"
 #include "desc_client.h"
 #include "buffer_manager.h"

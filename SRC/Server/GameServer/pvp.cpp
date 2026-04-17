@@ -5,7 +5,7 @@
 #include "packet.h"
 #include "desc.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "config.h"
 #include "sectree_manager.h"

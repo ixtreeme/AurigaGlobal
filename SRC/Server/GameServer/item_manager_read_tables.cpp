@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "utils.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "desc_client.h"
 #include "db.h"

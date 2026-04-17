@@ -4,7 +4,7 @@
 #include "BattleArena.h"
 #include "start_position.h"
 #include "char_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "regen.h"
 #include "questmanager.h"

@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "desc.h"
 #include "party.h"

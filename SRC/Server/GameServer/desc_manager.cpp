@@ -8,7 +8,7 @@
 #include "desc_manager.h"
 
 #include <algorithm>
-#include "char.h"
+#include "char_interface.hpp"
 #include "protocol.h"
 #include "messenger_manager.h"
 #include "p2p.h"

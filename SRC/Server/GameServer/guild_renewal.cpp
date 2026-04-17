@@ -4,7 +4,7 @@
 
 #include "guild_renewal.h"
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc.h"
 #include "desc_manager.h"
 #include "guild.h"

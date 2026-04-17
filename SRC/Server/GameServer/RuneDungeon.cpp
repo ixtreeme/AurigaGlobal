@@ -8,7 +8,7 @@
 #include <random>
 #include <memory>
 
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "config.h"
 #include "desc.h"

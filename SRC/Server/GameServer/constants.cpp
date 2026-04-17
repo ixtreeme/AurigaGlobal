@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "stdafx.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include <common/CommonDefines.h>
 TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] =
 /*

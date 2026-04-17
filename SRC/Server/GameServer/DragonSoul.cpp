@@ -5,7 +5,7 @@
 #include "unique_item.h"
 #include "packet.h"
 #include "desc.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "dragon_soul_table.h"
 #include "log.h"
 #include "DragonSoul.h"

@@ -3,7 +3,7 @@
 
 #include "constants.h"
 #include "skill.h"
-#include "char.h"
+#include "char_interface.hpp"
 
 void CSkillProto::SetPointVar(const std::string& strName, double dVar)
 {

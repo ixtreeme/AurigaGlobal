@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "horse_rider.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/VIDRegistry.hpp"

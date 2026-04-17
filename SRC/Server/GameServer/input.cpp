@@ -3,7 +3,7 @@
 
 #include "desc.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "buffer_manager.h"
 #include "config.h"
 #include "profiler.h"

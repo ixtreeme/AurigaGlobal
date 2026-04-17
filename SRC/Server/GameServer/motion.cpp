@@ -4,7 +4,7 @@
 #include "motion.h"
 #include "text_file_loader.h"
 #include "mob_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include <common/CommonDefines.h>
 #include "config.h"
 

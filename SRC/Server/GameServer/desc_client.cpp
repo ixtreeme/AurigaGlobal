@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "desc_client.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "protocol.h"
 #include "p2p.h"
 #include "buffer_manager.h"

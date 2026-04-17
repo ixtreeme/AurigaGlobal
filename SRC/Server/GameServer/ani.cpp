@@ -8,7 +8,7 @@
 #define _ani_cpp_
 
 #include "stdafx.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "item.h"
 #include "ani.h"
 #include "dev_log.h"

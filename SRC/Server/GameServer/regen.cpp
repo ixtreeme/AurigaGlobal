@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "regen.h"
 #include "mob_manager.h"

@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "utils.h"
 #include "desc.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "mob_manager.h"
 #include "party.h"

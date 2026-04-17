@@ -3,7 +3,7 @@
 #include "constants.h"
 #include "safebox.h"
 #include "packet.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc_client.h"
 #include "item.h"
 #include "item_manager.h"

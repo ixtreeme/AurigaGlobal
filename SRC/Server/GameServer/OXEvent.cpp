@@ -6,7 +6,7 @@
 #include "packet.h"
 #include "buffer_manager.h"
 #include "log.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "OXEvent.h"
 #include "desc.h"

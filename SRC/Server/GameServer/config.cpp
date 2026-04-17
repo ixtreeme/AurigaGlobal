@@ -11,7 +11,7 @@
 #include "desc_manager.h"
 #include "item_manager.h"
 #include "p2p.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "ip_ban.h"
 #include "war_map.h"
 #include "locale_service.h"

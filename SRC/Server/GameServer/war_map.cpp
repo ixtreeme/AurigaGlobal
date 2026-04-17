@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "war_map.h"
 #include "sectree_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "affect.h"
 #include "item.h"

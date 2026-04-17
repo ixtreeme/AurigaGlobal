@@ -6,7 +6,7 @@
 #include "shop.h"
 #include "desc.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "item.h"
 #include "item_manager.h"

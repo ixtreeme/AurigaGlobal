@@ -7,7 +7,7 @@
 #include "item_manager.h"
 #include "char_manager.h"
 #include "buffer_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "config.h"
 #include "p2p.h"
 #ifdef ENABLE_BATTLE_PASS

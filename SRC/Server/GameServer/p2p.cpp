@@ -5,7 +5,7 @@
 #include "config.h"
 #include "p2p.h"
 #include "desc_p2p.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "sectree_manager.h"
 #include "guild_manager.h"

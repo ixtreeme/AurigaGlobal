@@ -4,7 +4,7 @@
 #include "questmanager.h"
 #include "packet.h"
 #include "buffer_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc_client.h"
 #include "questevent.h"
 
