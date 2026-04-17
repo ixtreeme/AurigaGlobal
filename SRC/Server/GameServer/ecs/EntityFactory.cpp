@@ -412,14 +412,12 @@ entt::entity EntityFactory::CreateMonster(entt::registry& reg, const TMobTable& 
 entt::entity EntityFactory::CreateNPC(entt::registry& reg, const TMobTable& data, int x, int y, int mapIndex, uint32_t legacyVID)
 {
     entt::entity entity = CreateMobEntity<ecs::TagNPC>(reg, data, x, y, mapIndex, legacyVID);
-    sys_log(0, "ECS: NPC entity created VID=%u vnum=%u", legacyVID, data.dwVnum);
     return entity;
 }
 
 entt::entity EntityFactory::CreateStone(entt::registry& reg, const TMobTable& data, int x, int y, int mapIndex, uint32_t legacyVID)
 {
     entt::entity entity = CreateMobEntity<ecs::TagStone>(reg, data, x, y, mapIndex, legacyVID);
-    sys_log(0, "ECS: Stone entity created VID=%u vnum=%u", legacyVID, data.dwVnum);
     return entity;
 }
 

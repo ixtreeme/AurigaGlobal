@@ -557,13 +557,6 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
         sys_log(0, "ECS: PC entity created VID=%u pid=%u",
                 ch->GetVID(), ch->GetPlayerID());
 
-        // VID unification verification - REMOVE IN PHASE 9
-        entt::entity verify = CVIDRegistry::Instance().Find(ch->GetVID());
-        if (verify == entt::null || !g_registry.valid(verify)) {
-            sys_err("VID UNIFICATION FAILED: vid=%u", ch->GetVID());
-        } else {
-            sys_log(0, "VID OK: vid=%u entity valid", ch->GetVID());
-        }
 
         // Phase 7: sync ECS vital components from DB result
         if (g_registry.valid(ecs_e)) {

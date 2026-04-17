@@ -1111,9 +1111,8 @@ namespace quest
 
 		// Temporary verification - REMOVE IN PHASE 9
 		if (e == entt::null) {
-			sys_err("GetPCEntity: VID=%u not in ECS registry",
-					ch->GetVID());
 		}
+
 
 		return e;
 	}
@@ -1130,9 +1129,8 @@ namespace quest
 
 		// Temporary verification - REMOVE IN PHASE 9
 		if (e == entt::null) {
-			sys_err("GetPCEntity: VID=%u not in ECS registry",
-					ch->GetVID());
 		}
+
 
 		return e;
 	}

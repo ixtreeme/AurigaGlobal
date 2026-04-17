@@ -626,26 +626,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		if (ch->IsStone())
 		{
-			sys_log(0, "SPAWN_PATH: %s vid=%u vnum=%u type=%u at (%d,%d) map=%d",
-				__FUNCTION__,
-				ch->GetVID(),
-				pkMob->m_table.dwVnum,
-				pkMob->m_table.bType,
-				ch->GetX(),
-				ch->GetY(),
-				ch->GetMapIndex());
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			sys_log(0, "SPAWN_PATH: %s vid=%u vnum=%u type=%u at (%d,%d) map=%d",
-				__FUNCTION__,
-				ch->GetVID(),
-				pkMob->m_table.dwVnum,
-				pkMob->m_table.bType,
-				ch->GetX(),
-				ch->GetY(),
-				ch->GetMapIndex());
 			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
 		}
 	}
@@ -824,14 +808,6 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 		const bool isNpcLike = (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO);
 		if (ch->IsStone() || isNpcLike)
 		{
-			sys_log(0, "SPAWN_PATH: %s vid=%u vnum=%u type=%u at (%d,%d) map=%d",
-				__FUNCTION__,
-				ch->GetVID(),
-				pkMob->m_table.dwVnum,
-				pkMob->m_table.bType,
-				ch->GetX(),
-				ch->GetY(),
-				ch->GetMapIndex());
 		}
 	}
 
