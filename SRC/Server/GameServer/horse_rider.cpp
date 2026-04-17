@@ -3,7 +3,11 @@
 #include "utils.h"
 #include "horse_rider.h"
 #include "config.h"
+#include "char.h"
 #include "char_manager.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/events.hpp"
 
 const int HORSE_HEALTH_DROP_INTERVAL = 3 * 24 * 60 * 60;
 const int HORSE_STAMINA_CONSUME_INTERVAL = 6 * 60;
@@ -248,6 +252,12 @@ EVENTFUNC(horse_stamina_consume_event)
 	}
 
 	hr->CheckHorseHealthDropTime();
+	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
+	{
+		const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		if (e != entt::null)
+			g_dispatcher.trigger(ecs::EvHorseStaminaConsume { e });
+	}
 	sys_log(0, "HORSE STAMINA - %p", get_pointer(event));
 	return delta;
 }
@@ -279,6 +289,12 @@ EVENTFUNC(horse_stamina_regen_event)
 	}
 
 	hr->CheckHorseHealthDropTime();
+	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
+	{
+		const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		if (e != entt::null)
+			g_dispatcher.trigger(ecs::EvHorseStaminaRegen { e });
+	}
 	sys_log(0, "HORSE STAMINA + %p", get_pointer(event));
 
 

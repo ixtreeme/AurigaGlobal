@@ -11,6 +11,9 @@
 #include "packet.h"
 #include "item_manager.h"
 #include "item.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/VIDRegistry.hpp"
+#include "ecs/events.hpp"
 
 EVENTINFO(mountsystem_event_info)
 {
@@ -33,6 +36,12 @@ EVENTFUNC(mountsystem_update_event)
 
 
 	pMountSystem->Update(0);
+	if (auto* owner = pMountSystem->GetOwner())
+	{
+		const entt::entity e = CVIDRegistry::Instance().Find(owner->GetVID());
+		if (e != entt::null)
+			g_dispatcher.trigger(ecs::EvMountSystemUpdate { e });
+	}
 	return PASSES_PER_SEC(1) / 4;
 }
 

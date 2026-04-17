@@ -64,6 +64,7 @@ public:
 
 	CMountActor*	GetByVID(uint32_t vid) const;
 	CMountActor*	GetByVnum(uint32_t vnum) const;
+	LPCHARACTER	GetOwner() const { return m_pkOwner; }
 
 	bool		Update(uint32_t deltaTime);
 	void		Destroy();
