@@ -16464,3 +16464,124 @@ void CItem::AttrLog()
 	}
 }
 
+
+bool CItem::IsPolymorphItem()
+{
+	return GetType() == ITEM_POLYMORPH;
+}
+
+bool CItem::IsRealTimeItem()
+{
+	if (!GetProto())
+		return false;
+
+	for (auto aLimit : GetProto()->aLimits)
+	{
+		if (LIMIT_REAL_TIME == aLimit.bType)
+			return true;
+	}
+	return false;
+}
+
+bool CItem::IsRealTimeFirstUseItem()
+{
+	if (GetProto()) {
+		for (auto aLimit : GetProto()->aLimits)
+		{
+			if (LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool CItem::IsUnlimitedTimeUnique()
+{
+	if (GetProto()) {
+		for (auto aLimit : GetProto()->aLimits)
+		{
+			if (LIMIT_UNIQUE_UNLIMITED == aLimit.bType)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool CItem::IsRamadanRing()
+{
+	if (GetVnum() == UNIQUE_ITEM_RAMADAN_RING)
+		return true;
+	return false;
+}
+
+int CItem::GiveMoreTime_Per(float fPercent)
+{
+	if (IsDragonSoul())
+	{
+		uint32_t duration = DSManager::instance().GetDuration(this);
+		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
+		uint32_t given_time = fPercent * duration / 100u;
+		if (remain_sec == duration)
+			return false;
+		if ((given_time + remain_sec) >= duration)
+		{
+			SetSocket(ITEM_SOCKET_REMAIN_SEC, duration);
+			return duration - remain_sec;
+		}
+		else
+		{
+			SetSocket(ITEM_SOCKET_REMAIN_SEC, given_time + remain_sec);
+			return given_time;
+		}
+	}
+	// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
+	else
+		return 0;
+}
+
+int CItem::GiveMoreTime_Fix(uint32_t dwTime)
+{
+	if (IsDragonSoul())
+	{
+		uint32_t duration = DSManager::instance().GetDuration(this);
+		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
+		if (remain_sec == duration)
+			return false;
+		if ((dwTime + remain_sec) >= duration)
+		{
+			SetSocket(ITEM_SOCKET_REMAIN_SEC, duration);
+			return duration - remain_sec;
+		}
+		else
+		{
+			SetSocket(ITEM_SOCKET_REMAIN_SEC, dwTime + remain_sec);
+			return dwTime;
+		}
+	}
+	// ¿ì¼± ¿ëÈ¥¼®¿¡ °üÇØ¼­¸¸ ÇÏµµ·Ï ÇÑ´Ù.
+	else
+		return 0;
+}
+
+int	CItem::GetDuration()
+{
+	if (!GetProto())
+		return -1;
+
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; i++)
+	{
+		if (LIMIT_REAL_TIME == GetProto()->aLimits[i].bType)
+			return GetProto()->aLimits[i].lValue;
+	}
+
+	if (GetProto()->cLimitTimerBasedOnWearIndex >= 0)
+	{
+		uint8_t cLTBOWI = GetProto()->cLimitTimerBasedOnWearIndex;
+		return GetProto()->aLimits[cLTBOWI].lValue;
+	}
+
+	return -1;
+}
+
