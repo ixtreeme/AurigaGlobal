@@ -3,7 +3,7 @@
 
 #include "p2p.h"
 #include "locale_service.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "buffer_manager.h"
