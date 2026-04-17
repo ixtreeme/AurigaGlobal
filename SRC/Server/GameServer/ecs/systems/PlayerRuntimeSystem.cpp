@@ -16,6 +16,7 @@
 #include "../../dungeon.h"
 #include "../../ecs/EntityFactory.hpp"
 #include "../../ecs/AIHelpers.hpp"
+#include "../../ecs/SpatialHelpers.hpp"
 #include "../../ecs/Registry.hpp"
 #include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
@@ -2849,8 +2850,14 @@ void CHARACTER::Destroy()
 
     CEntity::Destroy();
 
+    const entt::entity e = AIHelpers::EcsOf(this);
     if (GetSectree())
         GetSectree()->RemoveEntity(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        g_registry.remove<ecs::SectorPlacement>(e);
+        g_registry.remove<ecs::ViewActiveTag>(e);
+    }
 
     if (m_bMonsterLog)
         CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
@@ -3736,6 +3743,12 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
     if (GetSectree())
     {
         GetSectree()->RemoveEntity(this);
+        const entt::entity e = AIHelpers::EcsOf(this);
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_registry.remove<ecs::SectorPlacement>(e);
+            g_registry.remove<ecs::ViewActiveTag>(e);
+        }
         ViewCleanup();
         EncodeRemovePacket(this);
     }

@@ -324,6 +324,8 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 		const entt::entity e = EcsEntityOf(this);
 		ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
+		if (e != entt::null && g_registry.valid(e))
+			g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
 	}
 
 	return true;

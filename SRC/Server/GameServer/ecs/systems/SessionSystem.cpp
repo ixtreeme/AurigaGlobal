@@ -467,6 +467,12 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
     if (GetSectree())
     {
         GetSectree()->RemoveEntity(this);
+        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_registry.remove<ecs::SectorPlacement>(e);
+            g_registry.remove<ecs::ViewActiveTag>(e);
+        }
         ViewCleanup();
 
         EncodeRemovePacket(this);
@@ -824,7 +830,15 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (bChangeTree)
     {
         if (GetSectree())
+        {
             GetSectree()->RemoveEntity(this);
+            const entt::entity oldEntity = CVIDRegistry::Instance().Find(GetVID());
+            if (oldEntity != entt::null && g_registry.valid(oldEntity))
+            {
+                g_registry.remove<ecs::SectorPlacement>(oldEntity);
+                g_registry.remove<ecs::ViewActiveTag>(oldEntity);
+            }
+        }
 
         ViewCleanup();
     }
@@ -872,11 +886,16 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
         const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
         ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
+        if (e != entt::null && g_registry.valid(e))
+            g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
 
         UpdateSectree();
     }
     else
     {
+        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        if (e != entt::null && g_registry.valid(e))
+            g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
         ViewReencode();
         sys_log(0, "      in same sectree");
     }

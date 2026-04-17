@@ -15707,12 +15707,18 @@ void CItem::Destroy()
 
 	CEntity::Destroy();
 
+	const entt::entity e = ItemEntityOf(this);
 	if (GetSectree())
 		GetSectree()->RemoveEntity(this);
+	if (e != entt::null && g_registry.valid(e))
+	{
+		g_registry.remove<ecs::SectorPlacement>(e);
+		g_registry.remove<ecs::ViewActiveTag>(e);
+	}
 
-	const entt::entity e = ItemEntityOf(this);
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemDestroyed { e, GetID() });
+	const entt::entity e2 = e;
+	if (e2 != entt::null)
+		g_dispatcher.trigger(ecs::EvItemDestroyed { e2, GetID() });
 }
 
 void CItem::Save()

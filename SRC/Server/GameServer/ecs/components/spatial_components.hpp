@@ -12,4 +12,9 @@ struct SectorPlacement {
     uint32_t sectorY;
 };
 
+// Tag: entity is currently visible (in-sector, has active view).
+// Set additively after legacy view/sectree updates succeed.
+// Cleared on RemoveEntity / despawn.
+struct ViewActiveTag {};
+
 } // namespace ecs

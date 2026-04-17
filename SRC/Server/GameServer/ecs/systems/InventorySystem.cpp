@@ -13,6 +13,7 @@
 #include "../../sectree_manager.h"
 #include "../../../common/VnumHelper.h"
 #include "../AIHelpers.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
 #include "../events.hpp"
@@ -575,11 +576,17 @@ LPITEM CItem::RemoveFromGround()
 
 		GetSectree()->RemoveEntity(this);
 
+		const entt::entity itemEntity = ItemEntityOf(this);
+		if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		{
+			g_registry.remove<ecs::SectorPlacement>(itemEntity);
+			g_registry.remove<ecs::ViewActiveTag>(itemEntity);
+		}
+
 		ViewCleanup();
 
 		Save();
 
-		const entt::entity itemEntity = ItemEntityOf(this);
 		SyncItemLocation(itemEntity, this);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
@@ -625,6 +632,9 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	Save();
 
 	const entt::entity itemEntity = ItemEntityOf(this);
+	ecs::SyncSectorPlacement(g_registry, itemEntity, lMapIndex, GetX(), GetY());
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.emplace_or_replace<ecs::ViewActiveTag>(itemEntity);
 	SyncItemLocation(itemEntity, this);
 	g_registry.remove<ecs::ItemOwner>(itemEntity);
 	g_registry.remove<ecs::ItemEquipped>(itemEntity);
