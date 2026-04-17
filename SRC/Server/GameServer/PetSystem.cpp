@@ -2,7 +2,7 @@
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "char_manager.h"
 #include "mob_manager.h"
@@ -288,6 +288,7 @@ bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 // StateHorse함수 그냥 C&P -_-;
 bool CPetActor::_UpdateFollowAI()
 {
+	// INTERFACE_TODO: m_pkMobData direct access, needs public/null-safe mob-data query surface.
 	if (nullptr == m_pkChar->m_pkMobData)
 	{
 		//sys_err("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
