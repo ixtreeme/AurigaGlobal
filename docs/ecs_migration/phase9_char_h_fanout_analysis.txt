@@ -1,0 +1,157 @@
+  L0  constants.cpp
+  L0  desc_client.cpp
+  L0  ecs\systems\InventorySystem.cpp
+  L0  item_attribute.cpp
+  L0  questevent.cpp
+  L0  questlua_oxevent.cpp
+  L0  skill.cpp
+  L1  MountInventory.cpp
+  L1  belt_inventory_helper.h
+  L1  ecs\EntityFactory.cpp
+  L1  horsename_manager.cpp
+  L1  new_offlineshop.cpp
+  L1  new_offlineshop_safebox.cpp
+  L1  questlua_affect.cpp
+  L1  questlua_arena.cpp
+  L1  questlua_building.cpp
+  L1  questlua_danceevent.cpp
+  L1  questlua_dragonsoul.cpp
+  L1  target.cpp
+  L2  DragonSoul.cpp
+  L2  Halloween2022Dungeon.cpp
+  L2  ItemUse.cpp
+  L2  NightmareDungeonRazor93.cpp
+  L2  OXEvent.cpp
+  L2  OrcsDungeon.cpp
+  L2  PyramidDungeonRazor93.cpp
+  L2  RuneDungeon.cpp
+  L2  TritonTempleDungeon.cpp
+  L2  VikingDungeon.cpp
+  L2  ani.cpp
+  L2  attr_transfer.cpp
+  L2  battle_pass.cpp
+  L2  buff_on_attributes.cpp
+  L2  building.cpp
+  L2  cmd.cpp
+  L2  cmd_emotion.cpp
+  L2  cmd_gm2.cpp
+  L2  cmd_guild_renewal.cpp
+  L2  cmd_oxevent.cpp
+  L2  config.cpp
+  L2  cuberenewal.cpp
+  L2  db.cpp
+  L2  ecs\systems\DragonSoulSystem.cpp
+  L2  ecs\systems\GayaSystem.cpp
+  L2  entity.cpp
+  L2  guild.cpp
+  L2  guild_manager.cpp
+  L2  guild_renewal.cpp
+  L2  guild_war.cpp
+  L2  input.cpp
+  L2  input_db.cpp
+  L2  input_login.cpp
+  L2  input_main.cpp
+  L2  input_p2p.cpp
+  L2  log.cpp
+  L2  main.cpp
+  L2  marriage.cpp
+  L2  messenger_manager.cpp
+  L2  mining.cpp
+  L2  new_offlineshop_manager.cpp
+  L2  new_switchbot.cpp
+  L2  over9refine.cpp
+  L2  p2p.cpp
+  L2  party.cpp
+  L2  party.h
+  L2  questlua_dungeon.cpp
+  L2  questlua_game.cpp
+  L2  questlua_guild.cpp
+  L2  questlua_horse.cpp
+  L2  questlua_item.cpp
+  L2  questlua_npc.cpp
+  L2  questlua_party.cpp
+  L2  questlua_pet.cpp
+  L2  questlua_petnew.cpp
+  L2  questlua_target.cpp
+  L2  questmanager.cpp
+  L2  questnpc.cpp
+  L2  questpc.cpp
+  L2  refine.cpp
+  L2  safebox.cpp
+  L2  shop.cpp
+  L2  shopEx.cpp
+  L2  shop_manager.cpp
+  L2  trigger.cpp
+  L2  war_map.cpp
+  L2  wheel_of_destiny.cpp
+  L2  whisper_admin.cpp
+  L3  BattleArena.cpp
+  L3  EasterDungeon.cpp
+  L3  LostCastleDungeon.cpp
+  L3  MountSystem.cpp
+  L3  New_PetSystem.cpp
+  L3  PetSystem.cpp
+  L3  ValentineDungeon.cpp
+  L3  arena.cpp
+  L3  battle.cpp
+  L3  battle.h
+  L3  char_manager.cpp
+  L3  cmd_general.cpp
+  L3  cmd_general2.cpp
+  L3  cmd_gm.cpp
+  L3  desc.cpp
+  L3  desc_manager.cpp
+  L3  dungeon.cpp
+  L3  ecs\systems\ActivitySystem.cpp
+  L3  ecs\systems\AffectSystem.cpp
+  L3  ecs\systems\CombatSystem.cpp
+  L3  ecs\systems\ItemSystem.cpp
+  L3  ecs\systems\MountSystem.cpp
+  L3  ecs\systems\MovementSystem.cpp
+  L3  ecs\systems\NetworkSyncSystem.cpp
+  L3  ecs\systems\PlayerRuntimeSystem.cpp
+  L3  ecs\systems\PointSystem.cpp
+  L3  ecs\systems\SessionSystem.cpp
+  L3  ecs\systems\SkillSystem.cpp
+  L3  ecs\systems\SocialSystem.cpp
+  L3  ecs\systems\StatSystem.cpp
+  L3  entity_view.cpp
+  L3  exchange.cpp
+  L3  fishing.cpp
+  L3  item.cpp
+  L3  item_manager.cpp
+  L3  item_manager_read_tables.cpp
+  L3  mob_manager.cpp
+  L3  motion.cpp
+  L3  polymorph.cpp
+  L3  priv_manager.cpp
+  L3  pvp.cpp
+  L3  questlua.cpp
+  L3  questlua_global.cpp
+  L3  questlua_marriage.cpp
+  L3  questlua_pc.cpp
+  L3  regen.cpp
+  L3  sectree.cpp
+  L3  sectree_manager.cpp
+  L3  wedding.cpp
+
+Summary:
+  L0 (transitive only):  7
+  L1 (LPCHARACTER only): 12
+  L2 (calls methods):    68
+  L3 (private access):   49
+  Total:                 136
+
+L1 candidates (safe for typedef.h switch):
+    MountInventory.cpp
+    belt_inventory_helper.h
+    ecs\EntityFactory.cpp
+    horsename_manager.cpp
+    new_offlineshop.cpp
+    new_offlineshop_safebox.cpp
+    questlua_affect.cpp
+    questlua_arena.cpp
+    questlua_building.cpp
+    questlua_danceevent.cpp
+    questlua_dragonsoul.cpp
+    target.cpp
