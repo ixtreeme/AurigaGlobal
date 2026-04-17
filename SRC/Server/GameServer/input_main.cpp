@@ -9,7 +9,7 @@
 #include "buffer_manager.h"
 #include "packet.h"
 #include "protocol.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "item.h"
 #include "item_manager.h"
