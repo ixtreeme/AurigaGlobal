@@ -16225,3 +16225,86 @@ void CItem::DeactivateRune() {
 #endif
 }
 #endif
+
+bool CItem::IsAccessoryForSocket()
+{
+	return (m_pProto->bType == ITEM_ARMOR && (m_pProto->bSubType == ARMOR_WRIST || m_pProto->bSubType == ARMOR_NECK || m_pProto->bSubType == ARMOR_EAR)) || (m_pProto->bType == ITEM_BELT);	
+}
+
+void CItem::SetAccessorySocketGrade(int iGrade
+#ifdef ENABLE_INFINITE_RAFINES
+	, bool infinite
+#endif
+)
+{
+	SetSocket(0, MINMAX(0, iGrade, GetAccessorySocketMaxGrade()));
+
+	int iDownTime =
+#ifdef ENABLE_INFINITE_RAFINES
+		infinite == true ? 86410 : aiAccessorySocketDegradeTime[GetAccessorySocketGrade()];
+#else
+		aiAccessorySocketDegradeTime[GetAccessorySocketGrade()]
+#endif
+		;
+
+	//if (test_server)
+	//	iDownTime /= 60;
+
+	SetAccessorySocketDownGradeTime(iDownTime);
+}
+
+void CItem::SetAccessorySocketMaxGrade(int iMaxGrade)
+{
+	SetSocket(1, MINMAX(0, iMaxGrade, ITEM_ACCESSORY_SOCKET_MAX_NUM));
+}
+
+void CItem::SetAccessorySocketDownGradeTime(uint32_t time)
+{
+	SetSocket(2, time);
+}
+
+void CItem::AccessorySocketDegrade()
+{
+	if (GetAccessorySocketGrade() > 0)
+	{
+		LPCHARACTER ch = GetOwner();
+#ifdef TEXTS_IMPROVEMENT
+		if (ch) {
+			ch->ChatPacketNew(CHAT_TYPE_INFO, 117, "%s", GetName());
+		}
+#endif
+
+		ModifyPoints(false);
+		SetAccessorySocketGrade(GetAccessorySocketGrade() - 1);
+		ModifyPoints(true);
+
+		int iDownTime = aiAccessorySocketDegradeTime[GetAccessorySocketGrade()];
+
+		if (test_server)
+			iDownTime /= 60;
+
+		SetAccessorySocketDownGradeTime(iDownTime);
+
+		if (iDownTime)
+			StartAccessorySocketExpireEvent();
+	}
+}
+
+int CItem::GetAccessorySocketGrade()
+{
+	return MINMAX(0, GetSocket(0), GetAccessorySocketMaxGrade());
+}
+
+int CItem::GetAccessorySocketMaxGrade()
+{
+	return MINMAX(0, GetSocket(1), ITEM_ACCESSORY_SOCKET_MAX_NUM);
+}
+
+int CItem::GetAccessorySocketDownGradeTime()
+{
+#ifdef ENABLE_INFINITE_RAFINES
+	return GetSocket(2);
+#else
+	return MINMAX(0, GetSocket(2), aiAccessorySocketDegradeTime[GetAccessorySocketGrade()]);
+#endif
+}
