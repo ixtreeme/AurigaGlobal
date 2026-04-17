@@ -4096,3 +4096,74 @@ itt voltunk
 - status:
   - `LPCHARACTER` is now decoupled from `typedef.h` implementation-wise
   - Layer 1 source migration remains blocked on a fresh reclassification pass or the introduction of `char_interface.hpp`
+
+## Phase 9b - Fresh reclassification and Layer 2 shim
+- generated a fresh `char.h` usage classification against the current tree:
+  - `docs/ecs_migration/phase9b_reclassification.txt`
+- current direct `char.h` includer classification:
+  - `L0`: `4`
+  - `L1`: `1`
+  - `L2`: `22`
+  - `L3`: `91`
+- verified the single heuristic `L1` candidate:
+  - `SRC/Server/GameServer/questlua_dragonsoul.cpp`
+  - result:
+    - not actually forward-only safe
+  - reason:
+    - it calls `ch->DragonSoul_RefineWindow_Open(...)` through `LPCHARACTER`
+    - `char_fwd.hpp` alone leaves `CHARACTER` incomplete
+  - conclusion:
+    - effective Layer 1 migration in the current tree is a no-op
+    - true forward-only users require a stricter reclassification pass than the original heuristic
+- introduced a stable Layer 2 include target:
+  - `SRC/Server/GameServer/char_interface.hpp`
+    - shim contents:
+      - `#include "char_fwd.hpp"`
+      - `#include "char.h"`
+    - purpose:
+      - establish the public-interface include layer now
+      - defer the real public-only extraction to a later pass
+- migrated all currently classified `L2` files from `char.h` to `char_interface.hpp`:
+  - `SRC/Server/GameServer/ItemUse.cpp`
+  - `SRC/Server/GameServer/attr_transfer.cpp`
+  - `SRC/Server/GameServer/belt_inventory_helper.h`
+  - `SRC/Server/GameServer/cmd.cpp`
+  - `SRC/Server/GameServer/cmd_emotion.cpp`
+  - `SRC/Server/GameServer/cmd_gm2.cpp`
+  - `SRC/Server/GameServer/cmd_guild_renewal.cpp`
+  - `SRC/Server/GameServer/cmd_oxevent.cpp`
+  - `SRC/Server/GameServer/cuberenewal.cpp`
+  - `SRC/Server/GameServer/mining.cpp`
+  - `SRC/Server/GameServer/questlua_affect.cpp`
+  - `SRC/Server/GameServer/questlua_arena.cpp`
+  - `SRC/Server/GameServer/questlua_building.cpp`
+  - `SRC/Server/GameServer/questlua_danceevent.cpp`
+  - `SRC/Server/GameServer/questlua_game.cpp`
+  - `SRC/Server/GameServer/questlua_guild.cpp`
+  - `SRC/Server/GameServer/questlua_npc.cpp`
+  - `SRC/Server/GameServer/questlua_party.cpp`
+  - `SRC/Server/GameServer/questlua_pet.cpp`
+  - `SRC/Server/GameServer/questlua_petnew.cpp`
+  - `SRC/Server/GameServer/questlua_target.cpp`
+  - `SRC/Server/GameServer/whisper_admin.cpp`
+- build checkpoints:
+  - after `char_interface.hpp` creation:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after each `L2` include migration:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+- counts after the Layer 1+2 pass:
+  - direct `#include "char.h"` users outside `ecs/`: `96`
+    - remaining set is `L0 + L1(no-op) + L3`
+  - direct `#include "char_fwd.hpp"` users: `1`
+    - `typedef.h`
+  - direct `#include "char_interface.hpp"` users: `22`
+- commits:
+  - `74930e2` `Phase 9b: P9b-3 Fresh L1/L2/L3 reclassification`
+  - `b60c01d` `Phase 9b: P9b-5 Create char_interface.hpp shim`
+  - `2786599` `Phase 9b: P9b-6 Migrate L2 files to char_interface.hpp`
+- status:
+  - Layer 2 indirection is now established
+  - `char.h` content is still unchanged
+  - the next safe reduction step is a stricter forward-only audit and then a real public-only `char_interface.hpp` extraction
