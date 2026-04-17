@@ -11,7 +11,7 @@
 #include "packet.h"
 
 #include "sectree_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 
 #include "log.h"
@@ -406,7 +406,7 @@ EVENTFUNC(fishing_event)
 	if (!ch)
 		return 0;
 
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkFishingEvent
+	// INTERFACE_TODO: m_pkFishingEvent direct access, needs public fishing-event handle surface.
 
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
 
@@ -442,6 +442,7 @@ EVENTFUNC(fishing_event)
 			if (info->step > 5)
 				info->step = 5;
 
+			// INTERFACE_TODO: m_pkFishingEvent direct access, needs public fishing-event handle surface.
 			ch->m_pkFishingEvent = nullptr;
 			FishingFail(ch);
 			rod->SetSocket(2, 0);
