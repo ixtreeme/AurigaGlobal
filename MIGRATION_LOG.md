@@ -3537,3 +3537,41 @@
   - `SRC/Server/GameServer/item.cpp`: `75`
 - next logical slice:
   - `P11.6` equip / unequip / point modification into `InventorySystem.cpp`
+
+## Phase 11 - P11.6 Slice S5 equip / unequip / ModifyPoints
+- moved equip-surface `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- migrated methods:
+  - `CanUsedBy`
+  - `FindEquipCell`
+  - `IsEquipable`
+  - `EquipTo`
+  - `Unequip`
+  - `ModifyPoints`
+- ECS event surface extended in:
+  - `SRC/Server/GameServer/ecs/events.hpp`
+  - added:
+    - `EvItemEquipped`
+    - `EvItemUnequipped`
+- helper surface added in `InventorySystem.cpp`:
+  - `SyncCharacterEquipmentSlot(LPCHARACTER, uint8_t, LPITEM)`
+- additive ECS sync / emit after legacy equip changes:
+  - `ecs::ItemEquipped`
+  - `ecs::ItemLocation`
+  - `ecs::ItemOwner`
+  - `ecs::EquipmentSlots`
+  - `g_dispatcher.trigger(ecs::EvItemEquipped{...})`
+  - `g_dispatcher.trigger(ecs::EvItemUnequipped{...})`
+- notes:
+  - `ModifyPoints` was the only >300-line method in this slice and was moved with a direct same-step transfer to avoid duplicate symbol windows
+  - the first `EquipTo` / `Unequip` build only needed a small helper-surface fix:
+    - `DragonSoul.h`
+  - the item equip event types were added and build-verified before wiring the emits
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success after each sub-batch
+- remaining item bodies after slice:
+  - `SRC/Server/GameServer/item.cpp`: `69`
+- next logical slice:
+  - `P11.7` item lifecycle and core event management into `ItemSystem.cpp`

@@ -31,6 +31,16 @@ struct EvItemPickup {
     uint32_t itemVnum { 0 };
 };
 
+struct EvItemEquipped {
+    entt::entity charEntity { entt::null };
+    entt::entity itemEntity { entt::null };
+};
+
+struct EvItemUnequipped {
+    entt::entity charEntity { entt::null };
+    entt::entity itemEntity { entt::null };
+};
+
 struct EvLevelUp {
     entt::entity entity { entt::null };
     int32_t newLevel { 0 };
