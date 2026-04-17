@@ -1,0 +1,413 @@
+Phase 9b char.h interface-split discovery audit
+==============================================
+
+Scope: discovery only. No source migration in this pass.
+
+Step 1 - Measure char.h
+-----------------------
+File: SRC/Server/GameServer/char.h
+Total lines: 3034
+Heuristic member count (lines matching m_*): 481
+Heuristic method declaration count: 474
+
+Step 2 - Phase 9 fanout snapshot summary
+----------------------------------------
+Source: docs/ecs_migration/phase9_char_h_fanout_analysis.txt
+L0 (transitive only): 7
+L1 (typedef-only): 12
+L2 (public method callers): 68
+L3 (private member users): 49
+Total files in Phase 9 snapshot: 136
+Note: this snapshot predates item.cpp / item_attribute.cpp deletion, so it includes now-deleted historical entries.
+Current direct char.h includers (measured now): 118
+
+Step 3 - LPCHARACTER-only users (Layer 1 candidates)
+----------------------------------------------------
+Count from Phase 9 snapshot: 12
+Files:
+  - MountInventory.cpp
+  - belt_inventory_helper.h
+  - ecs/EntityFactory.cpp
+  - horsename_manager.cpp
+  - new_offlineshop.cpp
+  - new_offlineshop_safebox.cpp
+  - questlua_affect.cpp
+  - questlua_arena.cpp
+  - questlua_building.cpp
+  - questlua_danceevent.cpp
+  - questlua_dragonsoul.cpp
+  - target.cpp
+
+Layer-1 files still present as direct char.h includers today: 11
+  - MountInventory.cpp
+  - belt_inventory_helper.h
+  - horsename_manager.cpp
+  - new_offlineshop.cpp
+  - new_offlineshop_safebox.cpp
+  - questlua_affect.cpp
+  - questlua_arena.cpp
+  - questlua_building.cpp
+  - questlua_danceevent.cpp
+  - questlua_dragonsoul.cpp
+  - target.cpp
+
+Step 4 - Minimum public interface surface
+-----------------------------------------
+Public method declaration count: 457
+First 80 public declarations:
+  626: 	int	(*pFunc) (TRIGGERPARAM);
+  654: 	bool    HitOnce(uint32_t dwVnum = 0);
+  656: 	bool    UseSkill(bool isGrandMaster, uint32_t vid, uint32_t dwCooltime, int splashcount = 1, int hitcount = -1, int range = -1);
+  724: 	LPCHARACTER			FindCharacterInView(const char* name, bool bFindPCOnly);
+  725: 	void				UpdatePacket();
+  732: 	void				UpdateItemOnTitleName(bool bForce = false);
+  742: 	long long	GetVoteCoin();
+  743: 	void		SetVoteCoin(long long amount);
+  749: 	void				SetAggressive();
+  752: 	void				SetCoward();
+  754: 	void				CowardEscape();
+  756: 	void				SetNoAttackShinsu();
+  759: 	void				SetNoAttackChunjo();
+  762: 	void				SetNoAttackJinno();
+  765: 	void				SetAttackMob();
+  768: 	virtual void			BeginStateEmpty();
+  771: 	void				RestartAtSamePos();
+  778: 	CHARACTER();
+  781: 	void			Create(const char* c_pszName, uint32_t vid, bool isPC);
+  782: 	void			Destroy();
+  784: 	void			Disconnect(const char* c_pszReason);
+  834: 	void			SetPlayerProto(const TPlayerTable* table);
+  835: 	void			CreatePlayerProto(TPlayerTable& tab);	// ÀúÀå ½Ã »ç¿ë
+  837: 	void			SetProto(const CMob* c_pkMob);
+  840: 	void			Save();		// DelayedSave
+  841: 	void			SaveReal();	// ½ÇÁ¦ ÀúÀå
+  842: 	void			FlushDelayedSaveItem();
+  857: 	void			SetRace(uint8_t race);
+  858: 	bool			ChangeSex();
+  862: 	void			SetChangeEmpireCount();
+  863: 	int				ChangeEmpire(uint8_t empire);
+  886: 	void			SetLevel(uint8_t level);
+  890: 	void			SetGMLevel();
+  902: 	LPCHARACTER		DistributeExp();
+  905: 	void			DistributeHP(LPCHARACTER pkKiller);
+  906: 	void			DistributeSP(LPCHARACTER pkKiller, int iMethod = 0);
+  908: 	void			SetPosition(int pos);
+  912: 	void			SetPart(uint8_t bPartPos, uint16_t wVal);
+  942: 	void			SetRealPoint(uint8_t idx, int64_t val);
+  945: 	void			SetPoint(uint8_t idx, int64_t val);
+  965: 	void			SetBerserk(bool mode);
+  971: 	void			SetGodSpeed(bool mode);
+  979: 	void			SetRevive(bool mode);
+  989: 	void			MainCharacterPacket();	// ³»°¡ ¸ÞÀÎÄ³¸¯ÅÍ¶ó°í º¸³»ÁØ´Ù.
+  991: 	void			ComputeAligin();
+  992: 	void			ComputePoints();
+  993: 	void			ComputeBattlePoints();
+  1001: 	void			PointsPacket();
+  1002: 	void			ApplyPoint(uint8_t bApplyType, int iVal);
+  1004: 	void			SendPetLevelUpEffect(int vid, int type, int value, int amount);
+  1006: 	void			CheckMaximumPoints();	// HP, SP µîÀÇ ÇöÀç °ªÀÌ ÃÖ´ë°ª º¸´Ù ³ôÀºÁö °Ë»çÇÏ°í ³ô´Ù¸é ³·Ãá´Ù.
+  1008: 	bool			Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool bShowSpawnMotion = false);
+  1010: 	void			Sitdown(int is_ground);
+  1011: 	void			Standup();
+  1014: 	void			SetRotation(float fRot, bool bForce = false);
+  1016: 	void			SetRotation(float fRot);
+  1018: 	void			SetRotationToXY(int32_t x, int32_t y);
+  1021: 	void			MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet);
+  1022: 	void			Motion(uint8_t motion, LPCHARACTER victim = nullptr);
+  1024: 	void			ChatPacket(uint8_t type, const char* format, ...);
+  1025: 	void			SendGreetMessage();
+  1027: 	void			ResetPoint(int iLv);
+  1029: 	void			SetBlockMode(uint8_t bFlag);
+  1030: 	void			SetBlockModeForce(uint8_t bFlag);
+  1035: 	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
+  1040: 	void			fishing();
+  1041: 	void			fishing_take();
+  1045: 	void			mining(LPCHARACTER chLoad);
+  1046: 	void			mining_cancel();
+  1047: 	void			mining_take();
+  1050: 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
+  1052: 	void			CreateFly(uint8_t bType, LPCHARACTER pkVictim);
+  1054: 	void			ResetChatCounter();
+  1055: 	uint8_t			IncreaseChatCounter();
+  1058: 	void			ResetMountCounter();
+  1059: 	uint8_t			IncreaseMountCounter();
+  1099: 	int32_t	SetInvincible(bool arg);
+  1100: 	bool	GetInvincible();
+  1101: 	int32_t	IncreaseMobHP(int32_t lArg);
+  1102: 	int32_t	IncreaseMobRigHP(int32_t lArg);
+  ... truncated, remaining public declarations: 377
+
+Step 5 - Private/protected member surface
+-----------------------------------------
+Private/protected member variable lines matching m_*: 202
+First 60 private/protected member lines:
+  606: 	LPENTITY		m_pDragonSoulRefineWindowOpener;
+  706: 	time_t m_lastFruitUse;
+  707: 	time_t m_lastGoldFruitUse;
+  736: 	std::string			m_lastItemOnTitlePrefix;
+  774: 	uint32_t				m_dwStateDuration;
+  814: 	std::string m_strLastSentDisplayedNameWithBelt;
+  1063: 	uint32_t			m_dwPolymorphRace;
+  1064: 	bool			m_bPolyMaintainStat;
+  1065: 	uint32_t			m_dwLoginPlayTime;
+  1066: 	uint32_t			m_dwPlayerID;
+  1067: 	VID				m_vid;
+  1068: 	std::string		m_stName;
+  1070: 	uint8_t			m_stImmortalSt;
+  1072: 	uint8_t			m_bCharType;
+  1074: 	bool			m_bDungeonTicketExtraMetin;
+  1078: 	uint32_t			m_newpetskillcd[4];
+  1080: 	CHARACTER_POINT		m_points;
+  1081: 	CHARACTER_POINT_INSTANT	m_pointsInstant;
+  1083: 	int				m_iMoveCount;
+  1084: 	uint32_t			m_dwPlayStartTime;
+  1085: 	uint8_t			m_bAddChrState;
+  1086: 	bool			m_bSkipSave;
+  1087: 	std::string		m_stMobile;
+  1088: 	char			m_szMobileAuth[5];
+  1089: 	uint8_t			m_bChatCounter;
+  1091: 	uint8_t			m_bMountCounter;
+  1111: 	bool	m_bFakePlayer = false;
+  1169: 	float			m_fSyncTime;
+  1170: 	LPCHARACTER		m_pkChrSyncOwner;
+  1171: 	CHARACTER_LIST	m_kLst_pkChrSyncOwned;	// ³»°¡ SyncOwnerÀÎ ÀÚµé
+  1173: 	PIXEL_POSITION	m_posDest;
+  1174: 	PIXEL_POSITION	m_posStart;
+  1175: 	PIXEL_POSITION	m_posWarp;
+  1176: 	int32_t			m_lWarpMapIndex;
+  1178: 	PIXEL_POSITION	m_posExit;
+  1179: 	int32_t			m_lExitMapIndex;
+  1181: 	uint32_t			m_dwMoveStartTime;
+  1182: 	uint32_t			m_dwMoveDuration;
+  1184: 	uint32_t			m_dwLastMoveTime;
+  1185: 	uint32_t			m_dwLastAttackTime;
+  1186: 	uint32_t			m_dwWalkStartTime;
+  1187: 	uint32_t			m_dwStopTime;
+  1189: 	bool			m_bWalking;
+  1190: 	bool			m_bNowWalking;
+  1191: 	bool			m_bStaminaConsume;
+  1228: 	offlineshop::CShop* m_pkOfflineShop;
+  1229: 	offlineshop::CShop* m_pkOfflineShopGuest;
+  1230: 	offlineshop::CShopSafebox* m_pkShopSafebox;
+  1231: 	offlineshop::CAuction* m_pkAuction;
+  1232: 	offlineshop::CAuction* m_pkAuctionGuest;
+  1235: 	bool	m_bIsLookingOfflineshopOfferList;
+  1237: 	int		m_iOfflineShopUseTime = 0;
+  1241: 	TQuickslot		m_quickslot[QUICKSLOT_MAX_NUM];
+  1273: 	bool			m_bIsLoadedAffect;
+  1274: 	TAffectFlag		m_afAffectFlag;
+  1275: 	std::list<CAffect*>	m_list_pkAffect;
+  1284: 	std::vector<TAffectSkills>	m_list_pkAffectSkills;
+  1369: 	LPPARTY			m_pkParty;
+  1370: 	uint32_t			m_dwLastDeadTime;
+  1371: 	LPEVENT			m_pkPartyRequestEvent;
+  ... truncated, remaining private/protected member lines: 142
+
+ECS system private-member access line count: 1474
+ECS system private-member access counts by file:
+  - PlayerRuntimeSystem.cpp: 421
+  - CombatSystem.cpp: 246
+  - SkillSystem.cpp: 242
+  - ItemSystem.cpp: 159
+  - SessionSystem.cpp: 111
+  - AffectSystem.cpp: 73
+  - NetworkSyncSystem.cpp: 56
+  - MountSystem.cpp: 42
+  - MovementSystem.cpp: 35
+  - StatSystem.cpp: 29
+  - InventorySystem.cpp: 28
+  - SocialSystem.cpp: 19
+  - ActivitySystem.cpp: 11
+  - PointSystem.cpp: 2
+
+Step 6 - LPEVENT handles still on CHARACTER
+-------------------------------------------
+All char.h lines containing LPEVENT: 28
+Direct CHARACTER member declarations using LPEVENT and m_*: 26
+LPEVENT lines:
+  1323: 	void			SetPartyRequestEvent(LPEVENT pkEvent) { m_pkPartyRequestEvent = pkEvent; }
+  1371: 	LPEVENT			m_pkPartyRequestEvent;
+  1380: 	typedef std::map< uint32_t, LPEVENT >	EventMap;
+  2026: 	LPEVENT				m_pkMuyeongEvent;
+  2028: 	LPEVENT				m_pkGyeongGongEvent;
+  2356: 	LPEVENT				m_pkDeadEvent;
+  2357: 	LPEVENT				m_pkStunEvent;
+  2358: 	LPEVENT				m_pkSaveEvent;
+  2359: 	LPEVENT				m_pkRecoveryEvent;
+  2360: 	LPEVENT				m_pkTimedEvent;
+  2361: 	LPEVENT				m_pkFishingEvent;
+  2362: 	LPEVENT				m_pkAffectEvent;
+  2363: 	LPEVENT				m_pkPoisonEvent;
+  2365: 	LPEVENT				m_pkBleedingEvent;
+  2367: 	LPEVENT				m_pkFireEvent;
+  2368: 	LPEVENT				m_pkWarpNPCEvent;
+  2373: 	LPEVENT				m_pkMiningEvent;
+  2375: 	LPEVENT				m_pkWarpEvent;
+  2376: 	LPEVENT				m_pkDestroyWhenIdleEvent;
+  2377: 	LPEVENT				m_pkPetSystemUpdateEvent;
+  2379: 	LPEVENT				m_pkNewPetSystemUpdateEvent;
+  2380: 	LPEVENT				m_pkNewPetSystemExpireEvent;
+  2392: 	std::map<int, LPEVENT> m_mapMobSkillEvent;
+  2767: 	LPEVENT m_pkBattlePassStayOnlineEvent;
+  2836: 	LPEVENT	GayaUpdateTime;
+  2868: 	LPEVENT				m_pkStayOnlineEvent;
+  2887: 	LPEVENT m_pkFishingNewEvent;
+  2992: 	LPEVENT m_pkDropEvent;
+
+Step 7 - Proposed split layers
+------------------------------
+Layer 1 - char_fwd.hpp
+  - Contents: forward declaration of CHARACTER plus LPCHARACTER alias only.
+  - Immediate candidate files from Phase 9 snapshot: 12
+Layer 2 - char_interface.hpp
+  - Contents: public CHARACTER method declarations only, includes char_fwd.hpp.
+  - Immediate candidate files from Phase 9 snapshot: 68
+Layer 3 - char.h (shrunk full definition)
+  - Contents: full class definition, private/protected members, friend declarations, event handles, internal state.
+  - Files that must remain here initially from Phase 9 snapshot: 49
+Blocking factors for Layer 3 reduction:
+  - 1474 private-member access lines remain in ecs/systems/*.cpp.
+  - 26 direct LPEVENT member declarations remain on CHARACTER and must stay until legacy event scheduling is removed.
+  - CHARACTER point/state/storage internals (m_points, m_pointsInstant, networking state, sync state, event maps, pet/mount/fishing/combat/runtime fields) are still read directly by L3 users.
+
+Step 8 - Count summary
+----------------------
+| Metric | Count |
+| --- | ---: |
+| char.h total lines | 3034 |
+| char.h public method declarations | 457 |
+| char.h private member variables | 202 |
+| char.h LPEVENT handles (direct m_* declarations) | 26 |
+| Direct char.h includers (current) | 118 |
+| L1 (typedef-only) candidates | 12 |
+| L2 (public method) candidates | 68 |
+| L3 (private member) users | 49 |
+| ECS system files accessing private members (matching lines) | 1474 |
+
+Step 9 - Audit conclusion
+-------------------------
+The split is mechanically feasible, but char.h cannot shrink to an interface-only header yet.
+The first safe cut is Layer 1: move LPCHARACTER out of typedef.h into a dedicated forward-only header and migrate the L1 snapshot set first.
+Layer 2 can follow once current L2 files are revalidated against today's tree and method-only includes are switched over.
+Layer 3 remains blocked by private field access and the legacy event-handle surface still embedded in CHARACTER.
+
+Appendix - Current direct char.h includers
+-----------------------------------------
+  - SRC/Server/GameServer/ani.cpp
+  - SRC/Server/GameServer/arena.cpp
+  - SRC/Server/GameServer/attr_transfer.cpp
+  - SRC/Server/GameServer/battle.cpp
+  - SRC/Server/GameServer/battle.h
+  - SRC/Server/GameServer/battle_pass.cpp
+  - SRC/Server/GameServer/BattleArena.cpp
+  - SRC/Server/GameServer/belt_inventory_helper.h
+  - SRC/Server/GameServer/buff_on_attributes.cpp
+  - SRC/Server/GameServer/building.cpp
+  - SRC/Server/GameServer/char_manager.cpp
+  - SRC/Server/GameServer/cmd.cpp
+  - SRC/Server/GameServer/cmd_emotion.cpp
+  - SRC/Server/GameServer/cmd_general.cpp
+  - SRC/Server/GameServer/cmd_general2.cpp
+  - SRC/Server/GameServer/cmd_gm.cpp
+  - SRC/Server/GameServer/cmd_gm2.cpp
+  - SRC/Server/GameServer/cmd_guild_renewal.cpp
+  - SRC/Server/GameServer/cmd_oxevent.cpp
+  - SRC/Server/GameServer/config.cpp
+  - SRC/Server/GameServer/constants.cpp
+  - SRC/Server/GameServer/cuberenewal.cpp
+  - SRC/Server/GameServer/db.cpp
+  - SRC/Server/GameServer/desc.cpp
+  - SRC/Server/GameServer/desc_client.cpp
+  - SRC/Server/GameServer/desc_manager.cpp
+  - SRC/Server/GameServer/DragonSoul.cpp
+  - SRC/Server/GameServer/dungeon.cpp
+  - SRC/Server/GameServer/EasterDungeon.cpp
+  - SRC/Server/GameServer/entity.cpp
+  - SRC/Server/GameServer/entity_view.cpp
+  - SRC/Server/GameServer/exchange.cpp
+  - SRC/Server/GameServer/fishing.cpp
+  - SRC/Server/GameServer/guild.cpp
+  - SRC/Server/GameServer/guild_manager.cpp
+  - SRC/Server/GameServer/guild_renewal.cpp
+  - SRC/Server/GameServer/guild_war.cpp
+  - SRC/Server/GameServer/Halloween2022Dungeon.cpp
+  - SRC/Server/GameServer/horse_rider.cpp
+  - SRC/Server/GameServer/horsename_manager.cpp
+  - SRC/Server/GameServer/input.cpp
+  - SRC/Server/GameServer/input_db.cpp
+  - SRC/Server/GameServer/input_login.cpp
+  - SRC/Server/GameServer/input_main.cpp
+  - SRC/Server/GameServer/input_p2p.cpp
+  - SRC/Server/GameServer/item_manager.cpp
+  - SRC/Server/GameServer/item_manager_read_tables.cpp
+  - SRC/Server/GameServer/ItemUse.cpp
+  - SRC/Server/GameServer/log.cpp
+  - SRC/Server/GameServer/LostCastleDungeon.cpp
+  - SRC/Server/GameServer/main.cpp
+  - SRC/Server/GameServer/marriage.cpp
+  - SRC/Server/GameServer/messenger_manager.cpp
+  - SRC/Server/GameServer/mining.cpp
+  - SRC/Server/GameServer/mob_manager.cpp
+  - SRC/Server/GameServer/motion.cpp
+  - SRC/Server/GameServer/MountInventory.cpp
+  - SRC/Server/GameServer/MountSystem.cpp
+  - SRC/Server/GameServer/new_offlineshop.cpp
+  - SRC/Server/GameServer/new_offlineshop_manager.cpp
+  - SRC/Server/GameServer/new_offlineshop_safebox.cpp
+  - SRC/Server/GameServer/New_PetSystem.cpp
+  - SRC/Server/GameServer/new_switchbot.cpp
+  - SRC/Server/GameServer/NightmareDungeonRazor93.cpp
+  - SRC/Server/GameServer/OrcsDungeon.cpp
+  - SRC/Server/GameServer/over9refine.cpp
+  - SRC/Server/GameServer/OXEvent.cpp
+  - SRC/Server/GameServer/p2p.cpp
+  - SRC/Server/GameServer/party.cpp
+  - SRC/Server/GameServer/party.h
+  - SRC/Server/GameServer/PetSystem.cpp
+  - SRC/Server/GameServer/polymorph.cpp
+  - SRC/Server/GameServer/priv_manager.cpp
+  - SRC/Server/GameServer/pvp.cpp
+  - SRC/Server/GameServer/PyramidDungeonRazor93.cpp
+  - SRC/Server/GameServer/questevent.cpp
+  - SRC/Server/GameServer/questlua.cpp
+  - SRC/Server/GameServer/questlua_affect.cpp
+  - SRC/Server/GameServer/questlua_arena.cpp
+  - SRC/Server/GameServer/questlua_building.cpp
+  - SRC/Server/GameServer/questlua_danceevent.cpp
+  - SRC/Server/GameServer/questlua_dragonsoul.cpp
+  - SRC/Server/GameServer/questlua_dungeon.cpp
+  - SRC/Server/GameServer/questlua_game.cpp
+  - SRC/Server/GameServer/questlua_global.cpp
+  - SRC/Server/GameServer/questlua_guild.cpp
+  - SRC/Server/GameServer/questlua_horse.cpp
+  - SRC/Server/GameServer/questlua_item.cpp
+  - SRC/Server/GameServer/questlua_marriage.cpp
+  - SRC/Server/GameServer/questlua_npc.cpp
+  - SRC/Server/GameServer/questlua_oxevent.cpp
+  - SRC/Server/GameServer/questlua_party.cpp
+  - SRC/Server/GameServer/questlua_pc.cpp
+  - SRC/Server/GameServer/questlua_pet.cpp
+  - SRC/Server/GameServer/questlua_petnew.cpp
+  - SRC/Server/GameServer/questlua_target.cpp
+  - SRC/Server/GameServer/questmanager.cpp
+  - SRC/Server/GameServer/questnpc.cpp
+  - SRC/Server/GameServer/questpc.cpp
+  - SRC/Server/GameServer/refine.cpp
+  - SRC/Server/GameServer/regen.cpp
+  - SRC/Server/GameServer/RuneDungeon.cpp
+  - SRC/Server/GameServer/safebox.cpp
+  - SRC/Server/GameServer/sectree.cpp
+  - SRC/Server/GameServer/sectree_manager.cpp
+  - SRC/Server/GameServer/shop.cpp
+  - SRC/Server/GameServer/shop_manager.cpp
+  - SRC/Server/GameServer/shopEx.cpp
+  - SRC/Server/GameServer/skill.cpp
+  - SRC/Server/GameServer/target.cpp
+  - SRC/Server/GameServer/trigger.cpp
+  - SRC/Server/GameServer/TritonTempleDungeon.cpp
+  - SRC/Server/GameServer/ValentineDungeon.cpp
+  - SRC/Server/GameServer/VikingDungeon.cpp
+  - SRC/Server/GameServer/war_map.cpp
+  - SRC/Server/GameServer/wedding.cpp
+  - SRC/Server/GameServer/wheel_of_destiny.cpp
+  - SRC/Server/GameServer/whisper_admin.cpp
