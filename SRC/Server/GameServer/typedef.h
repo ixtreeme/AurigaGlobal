@@ -1,6 +1,7 @@
 #ifndef __INC_METIN_II_GAME_TYPEDEF_H__
 #define __INC_METIN_II_GAME_TYPEDEF_H__
 #include <unordered_set>
+#include "char_fwd.hpp"
 
 class DESC;
 #ifdef USE_DEBUG_PTR
@@ -23,12 +24,6 @@ typedef DebugPtr<DESC_P2P> LPDESC_P2P;
 typedef DESC_P2P* LPDESC_P2P;
 #endif
 
-class CHARACTER;
-#ifdef USE_DEBUG_PTR
-typedef DebugPtr<CHARACTER> LPCHARACTER;
-#else
-typedef CHARACTER* LPCHARACTER;
-#endif
 typedef std::vector<LPCHARACTER> CHARACTER_VECTOR;
 typedef std::list<LPCHARACTER> CHARACTER_LIST;
 typedef std::unordered_set<LPCHARACTER> CHARACTER_SET;
