@@ -1,0 +1,1520 @@
+Phase 10 EVENT System Discovery Audit
+=====================================
+Project: Auriga-Global
+Scope: discovery only, no code migration, no build in this pass
+Generated from workspace scan of legacy and ECS-adjacent event infrastructure.
+
+Step 1 - Locate the EVENT infrastructure
+========================================
+Core event-related files from the requested filename scan (non-ECS, non-build):
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Base/TimerEvent.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/ActorInstanceEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/ActorInstanceMotionEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/GameEventManager.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/GameEventManager.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/RaceMotionDataEvent.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Render/Event.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/InstanceBaseEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonApplicationEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonEventManager.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonEventManager.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonEventManagerMoudle.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonGameEventManagerModule.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonNetworkStreamEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonPlayerEventHandler.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Userinterface/PythonPlayerEventHandler.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/ClientManagerEventFlag.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_oxevent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_danceevent.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_oxevent.cpp
+
+Search for EVENTFUNC / event_create / event_cancel references returned 58 files. First 30 (command asked for head -30):
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.h
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp
+- ... (28 more files omitted from this raw head output)
+
+Infrastructure ownership / definition points:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:40 [EVENTFUNC macro] #define EVENTFUNC(name)	int32_t (name) (LPEVENT event, int32_t processing_time)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:86 [event_create[_ex]] extern LPEVENT	event_create_ex(TEVENTFUNC func, event_info_data* info, int32_t when);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:87 [event_cancel] extern void		event_cancel(LPEVENT * event);			// �̺�Ʈ ���
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:82 [event_process] extern int		event_process(int pulse);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:43 [event queue] struct TQueueElement;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:9 [event_create[_ex]] LPEVENT event_create_ex(TEVENTFUNC func, event_info_data* info, int32_t when)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:29 [event_cancel] void event_cancel(LPEVENT * ppevent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:81 [event_process] int event_process(int pulse)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:7 [event queue] static CEventQueue cxx_q;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.h:10 [event queue] struct TQueueElement
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/main.cpp:260 [event_process] num_events_called += event_process(pulse);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/main.cpp:255 [heartbeat loop] void heartbeat(LPHEART ht, int pulse)
+
+Infrastructure conclusions:
+- EVENTFUNC is defined in `SRC/Server/GameServer/event.h` as `#define EVENTFUNC(name) int32_t (name) (LPEVENT event, int32_t processing_time)`.
+- event_create is exposed via `event_create` macro -> `event_create_ex` in `event.h`, implemented in `SRC/Server/GameServer/event.cpp`.
+- event_cancel is declared in `event.h` and implemented in `event.cpp`.
+- Central event queue ownership lives in `event_queue.h` / `event_queue.cpp` and the static queue instance `cxx_q` inside `event.cpp`.
+- Central event loop / dispatcher is `event_process(int pulse)` in `event.cpp`, driven from `heartbeat()` in `main.cpp` before `CHARACTER_MANAGER::Update()`.
+- `thecore` / `common` do not appear to own a second server-side EVENTFUNC implementation; the active timed-event runtime is the GameServer `event.*` stack.
+
+Step 2 - EVENTFUNC macro pattern audit
+======================================
+Raw grep-style matches for `^EVENTFUNC(`: 82
+First 50 raw matches:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:198: EVENTFUNC(ready_to_start_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:389: EVENTFUNC(duel_time_out)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:85: EVENTFUNC(battle_arena_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:393: EVENTFUNC(shutdown_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:566: EVENTFUNC(timed_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1373: EVENTFUNC(reload_spam_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:164: EVENTFUNC(ping_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:838: EVENTFUNC(disconnect_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:212: EVENTFUNC(dungeon_dead_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:848: EVENTFUNC(dungeon_jump_to_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:490: EVENTFUNC(easter_dungeon_prepare_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:502: EVENTFUNC(easter_dungeon_exit_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:515: EVENTFUNC(easter_dungeon_check_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:552: EVENTFUNC(easter_dungeon_to_floor2_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:76: EVENTFUNC(ecs_fishing_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:61: EVENTFUNC(poison_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:123: EVENTFUNC(bleeding_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:173: EVENTFUNC(fire_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:788: EVENTFUNC(affect_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1234: EVENTFUNC(load_affect_login_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1761: EVENTFUNC(dead_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6445: EVENTFUNC(StunEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:38: EVENTFUNC(check_time_market_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:3439: EVENTFUNC(kill_campfire_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:451: EVENTFUNC(horse_dead_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:34: EVENTFUNC(recovery_event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:585: EVENTFUNC(save_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:722: EVENTFUNC(recovery_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:57: EVENTFUNC(drop_event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:58: EVENTFUNC(destroy_when_idle_event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:59: EVENTFUNC(kill_ore_load_event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3781: EVENTFUNC(switch_channel)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4621: EVENTFUNC(kill_ore_load_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4663: EVENTFUNC(destroy_when_idle_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4690: EVENTFUNC(drop_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:56: EVENTFUNC(save_event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:135: EVENTFUNC(battle_pass_stay_online_event_session)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:641: EVENTFUNC(warp_npc_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:1673: EVENTFUNC(ChainLightningEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2575: EVENTFUNC(skill_gwihwan_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3940: EVENTFUNC(skill_muyoung_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3995: EVENTFUNC(skill_gyeongGong_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4121: EVENTFUNC(mob_skill_hit_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:74: EVENTFUNC(party_request_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:290: EVENTFUNC(party_invite_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:394: EVENTFUNC(fishing_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2186: EVENTFUNC( GuildInviteEvent )
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:221: EVENTFUNC(horse_stamina_consume_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:255: EVENTFUNC(horse_stamina_regen_event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp:1163: EVENTFUNC(quest_login_event)
+- ... (32 more raw matches not shown here)
+
+Parsed EVENTFUNC definitions: 77
+Parsed EVENTFUNC forward declarations: 5
+
+Detailed EVENTFUNC inventory:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:198 | EVENTFUNC ready_to_start_event | subsystem=COMBAT | legacy=CALLS_METHODS
+  CHARACTER vars: chA, chB
+  CHARACTER accesses: chA->ChatPacketNew, chA->GetDesc, chA->GetHP, chA->GetMapIndex, chA->GetMaxHP, chA->GetMaxSP, chA->GetSP, chA->GetVID, chA->PointChange, chA->SetArena, chA->SetPosition, chA->SetPotionLimit, chA->Show, chA->StartRecoveryEvent, chA->ViewReencode, chB->ChatPacketNew, chB->GetDesc, chB->GetHP, chB->GetMapIndex, chB->GetMaxHP, chB->GetMaxSP, chB->GetSP, chB->GetVID, chB->PointChange, chB->SetArena, chB->SetPosition, chB->SetPotionLimit, chB->Show, chB->StartRecoveryEvent, chB->ViewReencode
+  CHARACTER method calls: chA->ChatPacketNew(), chA->GetDesc(), chA->GetHP(), chA->GetMapIndex(), chA->GetMaxHP(), chA->GetMaxSP(), chA->GetSP(), chA->GetVID(), chA->PointChange(), chA->SetArena(), chA->SetPosition(), chA->SetPotionLimit(), chA->Show(), chA->StartRecoveryEvent(), chA->ViewReencode(), chB->ChatPacketNew(), chB->GetDesc(), chB->GetHP(), chB->GetMapIndex(), chB->GetMaxHP(), chB->GetMaxSP(), chB->GetSP(), chB->GetVID(), chB->PointChange(), chB->SetArena(), chB->SetPosition(), chB->SetPotionLimit(), chB->Show(), chB->StartRecoveryEvent(), chB->ViewReencode()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:389 | EVENTFUNC duel_time_out | subsystem=COMBAT | legacy=CALLS_METHODS
+  CHARACTER vars: chA, chB
+  CHARACTER accesses: chA->ChatPacketNew, chA->GetDesc, chB->ChatPacketNew
+  CHARACTER method calls: chA->ChatPacketNew(), chA->GetDesc(), chB->ChatPacketNew()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:85 | EVENTFUNC battle_arena_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:393 | EVENTFUNC shutdown_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:566 | EVENTFUNC timed_event | subsystem=MISC | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacket, ch->ChatPacketNew, ch->Disconnect, ch->GetDesc, ch->m_pkTimedEvent
+  CHARACTER method calls: ch->ChatPacket(), ch->ChatPacketNew(), ch->Disconnect(), ch->GetDesc()
+  CHARACTER direct writes: ch->m_pkTimedEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1373 | EVENTFUNC reload_spam_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:164 | EVENTFUNC ping_event | subsystem=SESSION | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:838 | EVENTFUNC disconnect_event | subsystem=SESSION | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:212 | EVENTFUNC dungeon_dead_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:848 | EVENTFUNC dungeon_jump_to_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:490 | EVENTFUNC easter_dungeon_prepare_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:502 | EVENTFUNC easter_dungeon_exit_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:515 | EVENTFUNC easter_dungeon_check_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:552 | EVENTFUNC easter_dungeon_to_floor2_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:76 | EVENTFUNC ecs_fishing_event | subsystem=ACTIVITY | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacketNew, ch->GetDesc, ch->GetWear
+  CHARACTER method calls: ch->ChatPacketNew(), ch->GetDesc(), ch->GetWear()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:61 | EVENTFUNC poison_event | subsystem=AFFECT | legacy=WRITES_STATE
+  CHARACTER vars: ch, pkAttacker
+  CHARACTER accesses: ch->ChatPacket, ch->Damage, ch->GetMaxHP, ch->m_pkPoisonEvent
+  CHARACTER method calls: ch->ChatPacket(), ch->Damage(), ch->GetMaxHP()
+  CHARACTER direct writes: ch->m_pkPoisonEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:123 | EVENTFUNC bleeding_event | subsystem=AFFECT | legacy=WRITES_STATE
+  CHARACTER vars: ch, pkAttacker
+  CHARACTER accesses: ch->ChatPacket, ch->Damage, ch->GetMaxHP, ch->m_pkBleedingEvent
+  CHARACTER method calls: ch->ChatPacket(), ch->Damage(), ch->GetMaxHP()
+  CHARACTER direct writes: ch->m_pkBleedingEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:173 | EVENTFUNC fire_event | subsystem=AFFECT | legacy=WRITES_STATE
+  CHARACTER vars: ch, pkAttacker
+  CHARACTER accesses: ch->ChatPacket, ch->Damage, ch->m_pkFireEvent
+  CHARACTER method calls: ch->ChatPacket(), ch->Damage()
+  CHARACTER direct writes: ch->m_pkFireEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:788 | EVENTFUNC affect_event | subsystem=AFFECT | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->UpdateAffect
+  CHARACTER method calls: ch->UpdateAffect()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1234 | EVENTFUNC load_affect_login_event | subsystem=AFFECT | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetDesc, ch->GetPlayerID, ch->LoadAffect
+  CHARACTER method calls: ch->GetDesc(), ch->GetPlayerID(), ch->LoadAffect()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1761 | EVENTFUNC dead_event | subsystem=COMBAT | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetMaxHP, ch->HasReviverInParty, ch->IsMonster, ch->IsPC, ch->IsRevive, ch->SetAggressive, ch->SetHP, ch->SetPosition, ch->SetRevive, ch->ViewReencode, ch->m_pkDeadEvent
+  CHARACTER method calls: ch->GetMaxHP(), ch->HasReviverInParty(), ch->IsMonster(), ch->IsPC(), ch->IsRevive(), ch->SetAggressive(), ch->SetHP(), ch->SetPosition(), ch->SetRevive(), ch->ViewReencode()
+  CHARACTER direct writes: ch->m_pkDeadEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6445 | EVENTFUNC StunEvent | subsystem=COMBAT | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->Dead, ch->m_pkStunEvent
+  CHARACTER method calls: ch->Dead()
+  CHARACTER direct writes: ch->m_pkStunEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:38 | EVENTFUNC check_time_market_event | subsystem=MISC | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacket, ch->IsNPC
+  CHARACTER method calls: ch->ChatPacket(), ch->IsNPC()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:3439 | EVENTFUNC kill_campfire_event | subsystem=AFFECT | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->m_pkMiningEvent
+  CHARACTER direct writes: ch->m_pkMiningEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:451 | EVENTFUNC horse_dead_event | subsystem=MOUNT | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->HorseSummon
+  CHARACTER method calls: ch->HorseSummon()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:585 | EVENTFUNC save_event | subsystem=MOVEMENT | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->FlushDelayedSaveItem, ch->GetName, ch->Save
+  CHARACTER method calls: ch->FlushDelayedSaveItem(), ch->GetName(), ch->Save()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:722 | EVENTFUNC recovery_event | subsystem=MOVEMENT | legacy=WRITES_STATE
+  CHARACTER vars: ch, target
+  CHARACTER accesses: ch->CheckTarget, ch->DistributeSP, ch->GetDungeon, ch->GetHP, ch->GetLastMoveTime, ch->GetMaxHP, ch->GetMobTable, ch->GetName, ch->GetPoint, ch->IsAffectFlag, ch->IsDoor, ch->IsPC, ch->MonsterLog, ch->PointChange, ch->UpdateKillerMode, ch->m_pkRecoveryEvent, target->GetFlag
+  CHARACTER method calls: ch->CheckTarget(), ch->DistributeSP(), ch->GetDungeon(), ch->GetHP(), ch->GetLastMoveTime(), ch->GetMaxHP(), ch->GetMobTable(), ch->GetName(), ch->GetPoint(), ch->IsAffectFlag(), ch->IsDoor(), ch->IsPC(), ch->MonsterLog(), ch->PointChange(), ch->UpdateKillerMode(), target->GetFlag()
+  CHARACTER direct writes: ch->m_pkRecoveryEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3781 | EVENTFUNC switch_channel | subsystem=SESSION | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacketNew, ch->GetDesc, ch->SwitchChannel, ch->m_pkTimedEvent
+  CHARACTER method calls: ch->ChatPacketNew(), ch->GetDesc(), ch->SwitchChannel()
+  CHARACTER direct writes: ch->m_pkTimedEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4621 | EVENTFUNC kill_ore_load_event | subsystem=MISC | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->m_pkMiningEvent
+  CHARACTER direct writes: ch->m_pkMiningEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4663 | EVENTFUNC destroy_when_idle_event | subsystem=SESSION | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetName, ch->GetVictim, ch->m_pkDestroyWhenIdleEvent
+  CHARACTER method calls: ch->GetName(), ch->GetVictim()
+  CHARACTER direct writes: ch->m_pkDestroyWhenIdleEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4690 | EVENTFUNC drop_event | subsystem=MISC | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->AddAffect, ch->BlockProcessed, ch->ChatPacketNew, ch->GetDesc, ch->GetName, ch->RemoveAffect
+  CHARACTER method calls: ch->AddAffect(), ch->BlockProcessed(), ch->ChatPacketNew(), ch->GetDesc(), ch->GetName(), ch->RemoveAffect()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:135 | EVENTFUNC battle_pass_stay_online_event_session | subsystem=SESSION | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetBattlePassId, ch->GetDesc, ch->GetMissionProgress, ch->IsCompletedMission, ch->UpdateMissionProgress
+  CHARACTER method calls: ch->GetBattlePassId(), ch->GetDesc(), ch->GetMissionProgress(), ch->IsCompletedMission(), ch->UpdateMissionProgress()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:641 | EVENTFUNC warp_npc_event | subsystem=MOVEMENT | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetSectree, ch->m_pkWarpNPCEvent
+  CHARACTER method calls: ch->GetSectree()
+  CHARACTER direct writes: ch->m_pkWarpNPCEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:1673 | EVENTFUNC ChainLightningEvent | subsystem=SKILL | legacy=CALLS_METHODS
+  CHARACTER vars: pkChr, pkChrVictim, pkTarget
+  CHARACTER accesses: pkChr->AddChainLightningExcept, pkChr->ComputeSkill, pkChr->GetChainLightingExcept, pkChr->GetName, pkChrVictim->CreateFly, pkChrVictim->GetName, pkChrVictim->GetParty, pkChrVictim->GetSectree, pkChrVictim->GetX, pkChrVictim->GetY
+  CHARACTER method calls: pkChr->AddChainLightningExcept(), pkChr->ComputeSkill(), pkChr->GetChainLightingExcept(), pkChr->GetName(), pkChrVictim->CreateFly(), pkChrVictim->GetName(), pkChrVictim->GetParty(), pkChrVictim->GetSectree(), pkChrVictim->GetX(), pkChrVictim->GetY()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2575 | EVENTFUNC skill_gwihwan_event | subsystem=SKILL | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacketNew, ch->GetEmpire, ch->GetMapIndex, ch->GetName, ch->GetX, ch->GetY, ch->WarpSet
+  CHARACTER method calls: ch->ChatPacketNew(), ch->GetEmpire(), ch->GetMapIndex(), ch->GetName(), ch->GetX(), ch->GetY(), ch->WarpSet()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3940 | EVENTFUNC skill_muyoung_event | subsystem=SKILL | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ComputeSkill, ch->CreateFly, ch->GetSectree, ch->IsAffectFlag, ch->StopMuyeongEvent
+  CHARACTER method calls: ch->ComputeSkill(), ch->CreateFly(), ch->GetSectree(), ch->IsAffectFlag(), ch->StopMuyeongEvent()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3995 | EVENTFUNC skill_gyeongGong_event | subsystem=SKILL | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ComputeGyeongGongSkill, ch->IsAffectFlag, ch->StopGyeongGongEvent
+  CHARACTER method calls: ch->ComputeGyeongGongSkill(), ch->IsAffectFlag(), ch->StopGyeongGongEvent()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4121 | EVENTFUNC mob_skill_hit_event | subsystem=SKILL | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ComputeSkillAtPosition, ch->m_mapMobSkillEvent
+  CHARACTER method calls: ch->ComputeSkillAtPosition()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:74 | EVENTFUNC party_request_event | subsystem=SOCIAL | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->ChatPacket, ch->GetName, ch->SetPartyRequestEvent
+  CHARACTER method calls: ch->ChatPacket(), ch->GetName(), ch->SetPartyRequestEvent()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:290 | EVENTFUNC party_invite_event | subsystem=SOCIAL | legacy=CALLS_METHODS
+  CHARACTER vars: pchInviter
+  CHARACTER accesses: pchInviter->GetName, pchInviter->PartyInviteDeny
+  CHARACTER method calls: pchInviter->GetName(), pchInviter->PartyInviteDeny()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:394 | EVENTFUNC fishing_event | subsystem=ACTIVITY | legacy=WRITES_STATE
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetDesc, ch->GetWear, ch->Motion, ch->m_pkFishingEvent
+  CHARACTER method calls: ch->GetDesc(), ch->GetWear(), ch->Motion()
+  CHARACTER direct writes: ch->m_pkFishingEvent
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2186 | EVENTFUNC GuildInviteEvent | subsystem=SOCIAL | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:221 | EVENTFUNC horse_stamina_consume_event | subsystem=MOVEMENT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:255 | EVENTFUNC horse_stamina_regen_event | subsystem=MOVEMENT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp:1163 | EVENTFUNC quest_login_event | subsystem=SESSION | legacy=CALLS_METHODS
+  CHARACTER vars: ch
+  CHARACTER accesses: ch->GetDesc, ch->GetPlayerID
+  CHARACTER method calls: ch->GetDesc(), ch->GetPlayerID()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:221 | EVENTFUNC block_chat_by_ip_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:110 | EVENTFUNC item_destroy_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1848 | EVENTFUNC ownership_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2063 | EVENTFUNC unique_expire_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2110 | EVENTFUNC timer_based_on_wear_expire_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2173 | EVENTFUNC real_time_expire_event | subsystem=MISC | legacy=CALLS_METHODS
+  CHARACTER vars: pkOwner
+  CHARACTER accesses: pkOwner->ChatPacketNew, pkOwner->FindAffect, pkOwner->GetDesc, pkOwner->RemoveAffect
+  CHARACTER method calls: pkOwner->ChatPacketNew(), pkOwner->FindAffect(), pkOwner->GetDesc(), pkOwner->RemoveAffect()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2489 | EVENTFUNC accessory_socket_expire_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3450 | EVENTFUNC soul_item_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:20 | EVENTFUNC mountsystem_update_event | subsystem=MOUNT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:42 | EVENTFUNC newpetsystem_update_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:62 | EVENTFUNC newpetsystem_expire_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:154 | EVENTFUNC switchbot_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:287 | EVENTFUNC orcs_dungeon_prepare_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:298 | EVENTFUNC orcs_dungeon_end_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:190 | EVENTFUNC oxevent_timer | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp:221 | EVENTFUNC party_update_event | subsystem=SOCIAL | legacy=CALLS_METHODS
+  CHARACTER vars: leader
+  CHARACTER accesses: leader->GetDesc, leader->GetParty
+  CHARACTER method calls: leader->GetDesc(), leader->GetParty()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:32 | EVENTFUNC petsystem_update_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:57 | EVENTFUNC pvp_check_disconnect | subsystem=SESSION | legacy=CALLS_METHODS
+  CHARACTER vars: chA, chB
+  CHARACTER accesses: chA->ChatPacket, chA->ChatPacketNew, chA->GetQuestFlag, chA->PointChange, chA->SetQuestFlag, chB->ChatPacket, chB->ChatPacketNew, chB->GetQuestFlag, chB->PointChange, chB->SetQuestFlag
+  CHARACTER method calls: chA->ChatPacket(), chA->ChatPacketNew(), chA->GetQuestFlag(), chA->PointChange(), chA->SetQuestFlag(), chB->ChatPacket(), chB->ChatPacketNew(), chB->GetQuestFlag(), chB->PointChange(), chB->SetQuestFlag()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:144 | EVENTFUNC pvp_duel_counter | subsystem=COMBAT | legacy=CALLS_METHODS
+  CHARACTER vars: chA, chB
+  CHARACTER accesses: chA->ChatPacket, chA->FindAffect, chA->GetDuel, chA->GetHorse, chA->GetJob, chA->GetLevel, chA->GetMaxHP, chA->GetName, chA->GetNewPetSystem, chA->GetParty, chA->GetPetSystem, chA->GetPlayerID, chA->GetQuestFlag, chA->GetRaceNum, chA->HorseSummon, chA->IsHorseRiding, chA->IsPolymorphed, chA->MountVnum, chA->RemoveAffect, chA->SetHP, chA->SetPolymorph, chA->SpecificEffectPacket, chA->StopRiding, chB->ChatPacket, chB->FindAffect, chB->GetDuel, chB->GetHorse, chB->GetJob, chB->GetLevel, chB->GetMaxHP, chB->GetName, chB->GetNewPetSystem, chB->GetParty, chB->GetPetSystem, chB->GetPlayerID, chB->GetQuestFlag, chB->GetRaceNum, chB->HorseSummon, chB->IsHorseRiding, chB->IsPolymorphed, chB->MountVnum, chB->RemoveAffect, chB->SetHP, chB->SetPolymorph, chB->SpecificEffectPacket, chB->StopRiding
+  CHARACTER method calls: chA->ChatPacket(), chA->FindAffect(), chA->GetDuel(), chA->GetHorse(), chA->GetJob(), chA->GetLevel(), chA->GetMaxHP(), chA->GetName(), chA->GetNewPetSystem(), chA->GetParty(), chA->GetPetSystem(), chA->GetPlayerID(), chA->GetQuestFlag(), chA->GetRaceNum(), chA->HorseSummon(), chA->IsHorseRiding(), chA->IsPolymorphed(), chA->MountVnum(), chA->RemoveAffect(), chA->SetHP(), chA->SetPolymorph(), chA->SpecificEffectPacket(), chA->StopRiding(), chB->ChatPacket(), chB->FindAffect(), chB->GetDuel(), chB->GetHorse(), chB->GetJob(), chB->GetLevel(), chB->GetMaxHP(), chB->GetName(), chB->GetNewPetSystem(), chB->GetParty(), chB->GetPetSystem(), chB->GetPlayerID(), chB->GetQuestFlag(), chB->GetRaceNum(), chB->HorseSummon(), chB->IsHorseRiding(), chB->IsPolymorphed(), chB->MountVnum(), chB->RemoveAffect(), chB->SetHP(), chB->SetPolymorph(), chB->SpecificEffectPacket(), chB->StopRiding()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:399 | EVENTFUNC dungeon_regen_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:598 | EVENTFUNC regen_event | subsystem=MISC | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:57 | EVENTFUNC target_event | subsystem=COMBAT | legacy=CALLS_METHODS
+  CHARACTER vars: pkChr, tch
+  CHARACTER accesses: pkChr->GetDesc, pkChr->GetMapIndex, pkChr->GetPlayerID, pkChr->GetX, pkChr->GetY, tch->GetMapIndex, tch->GetX, tch->GetY
+  CHARACTER method calls: pkChr->GetDesc(), pkChr->GetMapIndex(), pkChr->GetPlayerID(), pkChr->GetX(), pkChr->GetY(), tch->GetMapIndex(), tch->GetX(), tch->GetY()
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:370 | EVENTFUNC triton_temple_prepare_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:381 | EVENTFUNC triton_temple_end_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:475 | EVENTFUNC val_dungeon_prepare_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:487 | EVENTFUNC val_dungeon_exit_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:500 | EVENTFUNC val_dungeon_check_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:537 | EVENTFUNC val_dungeon_to_floor2_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:29 | EVENTFUNC war_begin_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:44 | EVENTFUNC war_end_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:70 | EVENTFUNC war_timeout_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:924 | EVENTFUNC war_reset_flag_event | subsystem=COMBAT | legacy=NO_LEGACY
+  CHARACTER vars: none
+  CHARACTER accesses: none
+- DECLARATION ONLY E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:34 | EVENTFUNC recovery_event
+- DECLARATION ONLY E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:57 | EVENTFUNC drop_event
+- DECLARATION ONLY E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:58 | EVENTFUNC destroy_when_idle_event
+- DECLARATION ONLY E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:59 | EVENTFUNC kill_ore_load_event
+- DECLARATION ONLY E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:56 | EVENTFUNC save_event
+
+Step 3 - event_create call site audit
+=====================================
+Raw grep-style matches for `event_create`: 111
+First 50 raw matches:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:489: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:500: m_pTimeOutEvent = event_create(duel_time_out, info, PASSES_PER_SEC(nMinute*60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:839: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:863: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:261: m_pEvent = event_create(battle_arena_event, info, test_server ? PASSES_PER_SEC(60) : PASSES_PER_SEC(5*60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:299: event_create(battle_arena_event, info, PASSES_PER_SEC(5));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:453: event_create(shutdown_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:691: ch->m_pkTimedEvent	= event_create(timed_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1387: s_pkReloadSpamEvent = event_create(reload_spam_event, info, PASSES_PER_SEC(g_uiSpamReloadCycle));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:236: m_pkPingEvent = event_create(ping_event, info, ping_event_second_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:864: m_pkDisconnectEvent = event_create(disconnect_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:258: deadEvent = event_create(dungeon_dead_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:580: m_evPrepare[mapIndex] = event_create(easter_dungeon_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:588: m_evExit[mapIndex] = event_create(easter_dungeon_exit_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:596: m_evCheck[mapIndex] = event_create(easter_dungeon_check_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:604: m_evToF2[mapIndex] = event_create(easter_dungeon_to_floor2_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:218: state->fishingNewEvent = event_create(ecs_fishing_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:316: ch->m_pkFireEvent = event_create(fire_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:374: ch->m_pkPoisonEvent = event_create(poison_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:437: ch->m_pkBleedingEvent = event_create(bleeding_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:901: m_pkAffectEvent = event_create(affect_event, info, passes_per_sec);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1340: event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1851: //	m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2304: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2309: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2314: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6216: event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6501: m_pkStunEvent = event_create(StunEvent, info, PASSES_PER_SEC(3));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:557: ch->GayaUpdateTime = event_create(check_time_market_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:4005: campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:537: m_chHorse->m_pkDeadEvent = event_create(horse_dead_event, info, PASSES_PER_SEC(60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:166: m_pkRecoveryEvent = event_create(recovery_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3138: m_pkDestroyWhenIdleEvent = event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3354: m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3825: m_pkTimedEvent = event_create(switch_channel, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3870: m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3896: m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:351: m_pkSaveEvent = event_create(save_event, info, save_event_second_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:681: m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:795: m_pkBattlePassStayOnlineEvent = event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2462: event_create(ChainLightningEvent, info, passes_per_sec / 5);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3986: m_pkMuyeongEvent = event_create(skill_muyoung_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4030: m_pkGyeongGongEvent = event_create(skill_gyeongGong_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4248: m_mapMobSkillEvent.insert(std::make_pair(i, event_create(mob_skill_hit_event, info, PASSES_PER_SEC(rInfo.dwTiming) / 1000)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:179: SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:406: m_PartyInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:85: #define event_create(func, info, when) event_create_ex(func, info, when)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:466: return event_create(fishing_event, info, PASSES_PER_SEC(time));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2293: m_GuildInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:486: m_evTimeout[idx] = event_create(halloween2022_timeout_event, info, PASSES_PER_SEC(kTimeOutNoticeStep));
+- ... (61 more raw matches not shown here)
+
+Parsed event_create call sites (excluding macro definition): 110
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:489 | schedules=ready_to_start_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=assigned to m_pEvent
+  statement: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:500 | schedules=duel_time_out | info=info | when=PASSES_PER_SEC(nMinute*60) | stored=yes | storage=assigned to m_pTimeOutEvent
+  statement: m_pTimeOutEvent = event_create(duel_time_out, info, PASSES_PER_SEC(nMinute*60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:839 | schedules=ready_to_start_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=assigned to m_pEvent
+  statement: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:863 | schedules=ready_to_start_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=assigned to m_pEvent
+  statement: m_pEvent = event_create(ready_to_start_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:261 | schedules=battle_arena_event | info=info | when=test_server ? PASSES_PER_SEC(60) : PASSES_PER_SEC(5*60) | stored=yes | storage=assigned to m_pEvent
+  statement: m_pEvent = event_create(battle_arena_event, info, test_server ? PASSES_PER_SEC(60) : PASSES_PER_SEC(5*60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:299 | schedules=battle_arena_event | info=info | when=PASSES_PER_SEC(5) | stored=yes | storage=embedded call in statement: event_create(battle_arena_event, info, PASSES_PER_SEC(5));
+  statement: event_create(battle_arena_event, info, PASSES_PER_SEC(5));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:453 | schedules=shutdown_event | info=info | when=1 | stored=yes | storage=embedded call in statement: event_create(shutdown_event, info, 1);
+  statement: event_create(shutdown_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:691 | schedules=timed_event | info=info | when=1 | stored=yes | storage=assigned to ch->m_pkTimedEvent
+  statement: ch->m_pkTimedEvent = event_create(timed_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1387 | schedules=reload_spam_event | info=info | when=PASSES_PER_SEC(g_uiSpamReloadCycle) | stored=yes | storage=assigned to s_pkReloadSpamEvent
+  statement: s_pkReloadSpamEvent = event_create(reload_spam_event, info, PASSES_PER_SEC(g_uiSpamReloadCycle));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:236 | schedules=ping_event | info=info | when=ping_event_second_cycle | stored=yes | storage=assigned to m_pkPingEvent
+  statement: m_pkPingEvent = event_create(ping_event, info, ping_event_second_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:864 | schedules=disconnect_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=assigned to m_pkDisconnectEvent
+  statement: m_pkDisconnectEvent = event_create(disconnect_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:258 | schedules=dungeon_dead_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=assigned to deadEvent
+  statement: deadEvent = event_create(dungeon_dead_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:580 | schedules=easter_dungeon_prepare_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(easter_dungeon_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:588 | schedules=easter_dungeon_exit_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evExit[mapIndex]
+  statement: m_evExit[mapIndex] = event_create(easter_dungeon_exit_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:596 | schedules=easter_dungeon_check_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evCheck[mapIndex]
+  statement: m_evCheck[mapIndex] = event_create(easter_dungeon_check_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:604 | schedules=easter_dungeon_to_floor2_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evToF2[mapIndex]
+  statement: m_evToF2[mapIndex] = event_create(easter_dungeon_to_floor2_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:218 | schedules=ecs_fishing_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to state->fishingNewEvent
+  statement: state->fishingNewEvent = event_create(ecs_fishing_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:316 | schedules=fire_event | info=info | when=1 | stored=yes | storage=assigned to ch->m_pkFireEvent
+  statement: ch->m_pkFireEvent = event_create(fire_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:374 | schedules=poison_event | info=info | when=1 | stored=yes | storage=assigned to ch->m_pkPoisonEvent
+  statement: ch->m_pkPoisonEvent = event_create(poison_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:437 | schedules=bleeding_event | info=info | when=1 | stored=yes | storage=assigned to ch->m_pkBleedingEvent
+  statement: ch->m_pkBleedingEvent = event_create(bleeding_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:901 | schedules=affect_event | info=info | when=passes_per_sec | stored=yes | storage=assigned to m_pkAffectEvent
+  statement: m_pkAffectEvent = event_create(affect_event, info, passes_per_sec);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1340 | schedules=load_affect_login_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=embedded call in statement: event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
+  statement: event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1851 | schedules=dead_event | info=pEventInfo | when=bImmediateDead ? 1 : PASSES_PER_SEC(1) | stored=yes | storage=assigned to // m_pkDeadEvent
+  statement: // m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2304 | schedules=dead_event | info=pEventInfo | when=bImmediateDead ? 1 : PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkDeadEvent
+  statement: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2309 | schedules=dead_event | info=pEventInfo | when=bImmediateDead ? 1 : PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkDeadEvent
+  statement: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2314 | schedules=dead_event | info=pEventInfo | when=bImmediateDead ? 1 : PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkDeadEvent
+  statement: m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6216 | schedules=budong_event_func | info=dwEI | when=PASSES_PER_SEC(1) | stored=yes | storage=embedded call in statement: event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
+  statement: event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6501 | schedules=StunEvent | info=info | when=PASSES_PER_SEC(3) | stored=yes | storage=assigned to m_pkStunEvent
+  statement: m_pkStunEvent = event_create(StunEvent, info, PASSES_PER_SEC(3));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:557 | schedules=check_time_market_event | info=info | when=1 | stored=yes | storage=assigned to ch->GayaUpdateTime
+  statement: ch->GayaUpdateTime = event_create(check_time_market_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:4005 | schedules=kill_campfire_event | info=info | when=PASSES_PER_SEC(40) | stored=yes | storage=assigned to campfire->m_pkMiningEvent
+  statement: campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:537 | schedules=horse_dead_event | info=info | when=PASSES_PER_SEC(60) | stored=yes | storage=assigned to m_chHorse->m_pkDeadEvent
+  statement: m_chHorse->m_pkDeadEvent = event_create(horse_dead_event, info, PASSES_PER_SEC(60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:166 | schedules=recovery_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=assigned to m_pkRecoveryEvent
+  statement: m_pkRecoveryEvent = event_create(recovery_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3138 | schedules=destroy_when_idle_event | info=info | when=PASSES_PER_SEC(300) | stored=yes | storage=assigned to m_pkDestroyWhenIdleEvent
+  statement: m_pkDestroyWhenIdleEvent = event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3354 | schedules=kill_ore_load_event | info=info | when=PASSES_PER_SEC(number(7 * 60, 15 * 60)) | stored=yes | storage=assigned to m_pkMiningEvent
+  statement: m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3825 | schedules=switch_channel | info=info | when=1 | stored=yes | storage=assigned to m_pkTimedEvent
+  statement: m_pkTimedEvent = event_create(switch_channel, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3870 | schedules=drop_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkDropEvent
+  statement: m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3896 | schedules=drop_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkDropEvent
+  statement: m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:351 | schedules=save_event | info=info | when=save_event_second_cycle | stored=yes | storage=assigned to m_pkSaveEvent
+  statement: m_pkSaveEvent = event_create(save_event, info, save_event_second_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:681 | schedules=warp_npc_event | info=info | when=passes_per_sec / 2 | stored=yes | storage=assigned to m_pkWarpNPCEvent
+  statement: m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:795 | schedules=battle_pass_stay_online_event_session | info=info | when=PASSES_PER_SEC(60) | stored=yes | storage=assigned to m_pkBattlePassStayOnlineEvent
+  statement: m_pkBattlePassStayOnlineEvent = event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2462 | schedules=ChainLightningEvent | info=info | when=passes_per_sec / 5 | stored=yes | storage=embedded call in statement: event_create(ChainLightningEvent, info, passes_per_sec / 5);
+  statement: event_create(ChainLightningEvent, info, passes_per_sec / 5);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3986 | schedules=skill_muyoung_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkMuyeongEvent
+  statement: m_pkMuyeongEvent = event_create(skill_muyoung_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4030 | schedules=skill_gyeongGong_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkGyeongGongEvent
+  statement: m_pkGyeongGongEvent = event_create(skill_gyeongGong_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4248 | schedules=mob_skill_hit_event | info=info | when=PASSES_PER_SEC(rInfo.dwTiming) / 1000 | stored=yes | storage=embedded call in statement: m_mapMobSkillEvent.insert(std::make_pair(i, event_create(mob_skill_hit_event, info, PASSES_PER_SEC(rInfo.dwTiming) / 1000)));
+  statement: m_mapMobSkillEvent.insert(std::make_pair(i, event_create(mob_skill_hit_event, info, PASSES_PER_SEC(rInfo.dwTiming) / 1000)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:179 | schedules=party_request_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=embedded call in statement: SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
+  statement: SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:406 | schedules=party_invite_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=embedded call in statement: m_PartyInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
+  statement: m_PartyInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:466 | schedules=fishing_event | info=info | when=PASSES_PER_SEC(time) | stored=yes | storage=returned directly
+  statement: return event_create(fishing_event, info, PASSES_PER_SEC(time));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2293 | schedules=GuildInviteEvent | info=pInfo | when=PASSES_PER_SEC(10) | stored=yes | storage=embedded call in statement: m_GuildInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
+  statement: m_GuildInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:486 | schedules=halloween2022_timeout_event | info=info | when=PASSES_PER_SEC(kTimeOutNoticeStep) | stored=yes | storage=assigned to m_evTimeout[idx]
+  statement: m_evTimeout[idx] = event_create(halloween2022_timeout_event, info, PASSES_PER_SEC(kTimeOutNoticeStep));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:494 | schedules=halloween2022_final_boss_event | info=info | when=PASSES_PER_SEC(sec) | stored=yes | storage=assigned to m_evFinalBoss[idx]
+  statement: m_evFinalBoss[idx] = event_create(halloween2022_final_boss_event, info, PASSES_PER_SEC(sec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:502 | schedules=halloween2022_out_event | info=info | when=PASSES_PER_SEC(sec) | stored=yes | storage=assigned to m_evOut[idx]
+  statement: m_evOut[idx] = event_create(halloween2022_out_event, info, PASSES_PER_SEC(sec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:305 | schedules=horse_stamina_consume_event | info=info | when=PASSES_PER_SEC(HORSE_STAMINA_CONSUME_INTERVAL) | stored=yes | storage=assigned to m_eventStaminaConsume
+  statement: m_eventStaminaConsume = event_create(horse_stamina_consume_event, info, PASSES_PER_SEC(HORSE_STAMINA_CONSUME_INTERVAL));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:326 | schedules=horse_stamina_regen_event | info=info | when=PASSES_PER_SEC(HORSE_STAMINA_REGEN_INTERVAL) | stored=yes | storage=assigned to m_eventStaminaRegen
+  statement: m_eventStaminaRegen = event_create(horse_stamina_regen_event, info, PASSES_PER_SEC(HORSE_STAMINA_REGEN_INTERVAL));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp:1295 | schedules=quest_login_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=embedded call in statement: event_create(quest_login_event, info, PASSES_PER_SEC(1));
+  statement: event_create(quest_login_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:278 | schedules=block_chat_by_ip_event | info=info | when=PASSES_PER_SEC(g_uiSpamBlockDuration) | stored=yes | storage=assigned to it->second.second
+  statement: it->second.second = event_create(block_chat_by_ip_event, info, PASSES_PER_SEC(g_uiSpamBlockDuration));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:143 | schedules=item_destroy_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
+  statement: SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1909 | schedules=ownership_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
+  statement: SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2300 | schedules=real_time_expire_event | info=info | when=PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec) | stored=yes | storage=assigned to m_pkRealTimeExpireEvent
+  statement: m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2304 | schedules=real_time_expire_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkRealTimeExpireEvent
+  statement: m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2307 | schedules=real_time_expire_event | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkRealTimeExpireEvent
+  statement: m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2382 | schedules=unique_expire_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
+  statement: SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2408 | schedules=timer_based_on_wear_expire_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
+  statement: SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2553 | schedules=accessory_socket_expire_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
+  statement: SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3501 | schedules=soul_item_event | info=pInfo | when=PASSES_PER_SEC(test_server ? 5 : 60) | stored=yes | storage=embedded call in statement: SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
+  statement: SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:480 | schedules=lostcastle_clone_ai_event | info=info | when=tick | stored=yes | storage=assigned to m_evCloneAI[mapIndex]
+  statement: m_evCloneAI[mapIndex] = event_create(lostcastle_clone_ai_event, info, tick);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:532 | schedules=lostcastle_timer_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=assigned to m_evTimer[mapIndex]
+  statement: m_evTimer[mapIndex] = event_create(lostcastle_timer_event, info, PASSES_PER_SEC(10));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/marriage.cpp:445 | schedules=near_check_event | info=info | when=1 | stored=yes | storage=assigned to eventNearCheck
+  statement: eventNearCheck = event_create(near_check_event, info, 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/mining.cpp:419 | schedules=mining_event | info=info | when=PASSES_PER_SEC(2 * count) | stored=yes | storage=returned directly
+  statement: return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:640 | schedules=mountsystem_update_event | info=info | when=PASSES_PER_SEC(1) / 4 | stored=yes | storage=assigned to m_pkMountSystemUpdateEvent
+  statement: m_pkMountSystemUpdateEvent = event_create(mountsystem_update_event, info, PASSES_PER_SEC(1) / 4);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_offlineshop_manager.cpp:530 | schedules=func_offlineshop_update_duration | info=info | when=OFFLINESHOP_DURATION_UPDATE_TIME | stored=yes | storage=assigned to m_eventShopDuration
+  statement: m_eventShopDuration = event_create(func_offlineshop_update_duration, info, OFFLINESHOP_DURATION_UPDATE_TIME);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1911 | schedules=newpetsystem_update_event | info=info | when=PASSES_PER_SEC(1) / 4 | stored=yes | storage=assigned to m_pkNewPetSystemUpdateEvent
+  statement: m_pkNewPetSystemUpdateEvent = event_create(newpetsystem_update_event, info, PASSES_PER_SEC(1) / 4);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1920 | schedules=newpetsystem_expire_event | info=infoe | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pkNewPetSystemExpireEvent
+  statement: m_pkNewPetSystemExpireEvent = event_create(newpetsystem_expire_event, infoe, PASSES_PER_SEC(1) );
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:180 | schedules=switchbot_event | info=info | when=c_fSpeed | stored=yes | storage=assigned to m_pkSwitchEvent
+  statement: m_pkSwitchEvent = event_create(switchbot_event, info, c_fSpeed);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/NightmareDungeonRazor93.cpp:179 | schedules=nm_prepare_event | info=info | when=PASSES_PER_SEC(delaySec) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(nm_prepare_event, info, PASSES_PER_SEC(delaySec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/NightmareDungeonRazor93.cpp:187 | schedules=nm_end_event | info=info | when=PASSES_PER_SEC(delaySec) | stored=yes | storage=assigned to m_evEnd[mapIndex]
+  statement: m_evEnd[mapIndex] = event_create(nm_end_event, info, PASSES_PER_SEC(delaySec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:314 | schedules=orcs_dungeon_prepare_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(orcs_dungeon_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:322 | schedules=orcs_dungeon_end_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evEnd[mapIndex]
+  statement: m_evEnd[mapIndex] = event_create(orcs_dungeon_end_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:267 | schedules=oxevent_timer | info=answer | when=PASSES_PER_SEC(timelimit) | stored=yes | storage=assigned to m_timedEvent
+  statement: m_timedEvent = event_create(oxevent_timer, answer, PASSES_PER_SEC(timelimit));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp:549 | schedules=party_update_event | info=info | when=PASSES_PER_SEC(3) | stored=yes | storage=assigned to m_eventUpdate
+  statement: m_eventUpdate = event_create(party_update_event, info, PASSES_PER_SEC(3));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:663 | schedules=petsystem_update_event | info=info | when=PASSES_PER_SEC(1) / 4 | stored=yes | storage=assigned to m_pkPetSystemUpdateEvent
+  statement: m_pkPetSystemUpdateEvent = event_create(petsystem_update_event, info, PASSES_PER_SEC(1) / 4);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:478 | schedules=pvp_duel_counter | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pAdvancedDuelTimer
+  statement: m_pAdvancedDuelTimer = event_create(pvp_duel_counter, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:486 | schedules=pvp_check_disconnect | info=info | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to m_pCheckDisconnect
+  statement: m_pCheckDisconnect = event_create(pvp_check_disconnect, info, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PyramidDungeonRazor93.cpp:160 | schedules=pyramid_prepare_event | info=info | when=PASSES_PER_SEC(delaySec) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(pyramid_prepare_event, info, PASSES_PER_SEC(delaySec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:102 | schedules=quest_server_timer_event | info=info | when=ltime_cycle | stored=yes | storage=returned directly
+  statement: return event_create(quest_server_timer_event, info, ltime_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:123 | schedules=quest_timer_event | info=info | when=ltime_cycle | stored=yes | storage=returned directly
+  statement: return event_create(quest_timer_event, info, ltime_cycle);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua.cpp:937 | schedules=confirm_timeout_event | info=info | when=PASSES_PER_SEC(iTimeout) | stored=yes | storage=embedded call in statement: event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
+  statement: event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua.cpp:953 | schedules=input_timeout_event | info=dwEI | when=PASSES_PER_SEC(iTimeout) | stored=yes | storage=embedded call in statement: //event_create(input_timeout_event, dwEI, PASSES_PER_SEC(iTimeout));
+  statement: //event_create(input_timeout_event, dwEI, PASSES_PER_SEC(iTimeout));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_global.cpp:1149 | schedules=warp_all_to_village_event | info=info | when=PASSES_PER_SEC(iSec) | stored=yes | storage=embedded call in statement: event_create(warp_all_to_village_event, info, PASSES_PER_SEC(iSec));
+  statement: event_create(warp_all_to_village_event, info, PASSES_PER_SEC(iSec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_oxevent.cpp:145 | schedules=end_oxevent | info=info | when=PASSES_PER_SEC(5) | stored=yes | storage=embedded call in statement: event_create(end_oxevent, info, PASSES_PER_SEC(5));
+  statement: event_create(end_oxevent, info, PASSES_PER_SEC(5));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:508 | schedules=dungeon_regen_event | info=info | when=PASSES_PER_SEC(number(0, 16)) + PASSES_PER_SEC(regen->time) | stored=yes | storage=assigned to regen->event
+  statement: regen->event = event_create(dungeon_regen_event, info, PASSES_PER_SEC(number(0, 16)) + PASSES_PER_SEC(regen->time));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:730 | schedules=regen_event | info=info | when=PASSES_PER_SEC(number(0, 16)) + PASSES_PER_SEC(regen->time) | stored=yes | storage=assigned to regen->event
+  statement: regen->event = event_create(regen_event, info, PASSES_PER_SEC(number(0, 16)) + PASSES_PER_SEC(regen->time));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:362 | schedules=rune_prepare_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to LPEVENT ev
+  statement: LPEVENT ev = event_create(rune_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:371 | schedules=rune_end_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to LPEVENT ev
+  statement: LPEVENT ev = event_create(rune_end_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:380 | schedules=rune_step_limit_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to LPEVENT ev
+  statement: LPEVENT ev = event_create(rune_step_limit_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:389 | schedules=rune_check_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to LPEVENT ev
+  statement: LPEVENT ev = event_create(rune_check_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:398 | schedules=rune_warp_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to LPEVENT ev
+  statement: LPEVENT ev = event_create(rune_warp_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:230 | schedules=target_event | info=newInfo | when=PASSES_PER_SEC(1) | stored=yes | storage=assigned to LPEVENT event
+  statement: LPEVENT event = event_create(target_event, newInfo, PASSES_PER_SEC(1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:397 | schedules=triton_temple_prepare_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(triton_temple_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:405 | schedules=triton_temple_end_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evEnd[mapIndex]
+  statement: m_evEnd[mapIndex] = event_create(triton_temple_end_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:565 | schedules=val_dungeon_prepare_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evPrepare[mapIndex]
+  statement: m_evPrepare[mapIndex] = event_create(val_dungeon_prepare_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:573 | schedules=val_dungeon_exit_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evExit[mapIndex]
+  statement: m_evExit[mapIndex] = event_create(val_dungeon_exit_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:581 | schedules=val_dungeon_check_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evCheck[mapIndex]
+  statement: m_evCheck[mapIndex] = event_create(val_dungeon_check_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:589 | schedules=val_dungeon_to_floor2_event | info=info | when=PASSES_PER_SEC(seconds) | stored=yes | storage=assigned to m_evToF2[mapIndex]
+  statement: m_evToF2[mapIndex] = event_create(val_dungeon_to_floor2_event, info, PASSES_PER_SEC(seconds));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:550 | schedules=fn | info=info | when=PASSES_PER_SEC(sec) | stored=yes | storage=assigned to map[idx]
+  statement: map[idx] = event_create(fn, info, PASSES_PER_SEC(sec));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:558 | schedules=fn | info=info | when=pulses > 0 ? pulses : 1 | stored=yes | storage=assigned to map[idx]
+  statement: map[idx] = event_create(fn, info, pulses > 0 ? pulses : 1);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:117 | schedules=war_begin_event | info=info | when=PASSES_PER_SEC(60) | stored=yes | storage=embedded call in statement: SetBeginEvent(event_create(war_begin_event, info, PASSES_PER_SEC(60)));
+  statement: SetBeginEvent(event_create(war_begin_event, info, PASSES_PER_SEC(60)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:492 | schedules=war_timeout_event | info=info | when=PASSES_PER_SEC(60) | stored=yes | storage=embedded call in statement: SetTimeoutEvent(event_create(war_timeout_event, info, PASSES_PER_SEC(60)));
+  statement: SetTimeoutEvent(event_create(war_timeout_event, info, PASSES_PER_SEC(60)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:788 | schedules=war_end_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=embedded call in statement: SetEndEvent(event_create(war_end_event, info, PASSES_PER_SEC(10)));
+  statement: SetEndEvent(event_create(war_end_event, info, PASSES_PER_SEC(10)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:973 | schedules=war_reset_flag_event | info=info | when=PASSES_PER_SEC(10) | stored=yes | storage=embedded call in statement: SetResetFlagEvent(event_create(war_reset_flag_event, info, PASSES_PER_SEC(10)));
+  statement: SetResetFlagEvent(event_create(war_reset_flag_event, info, PASSES_PER_SEC(10)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/wedding.cpp:79 | schedules=wedding_end_event | info=info | when=PASSES_PER_SEC(5) | stored=yes | storage=assigned to m_pEndEvent
+  statement: m_pEndEvent = event_create(wedding_end_event, info, PASSES_PER_SEC(5));
+
+Step 4 - event_cancel call site audit
+=====================================
+Raw grep-style matches for `event_cancel`: 142
+First 50 raw matches:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:42: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:47: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:481: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:492: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:537: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:540: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:831: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:855: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp:52: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp:60: event_cancel(&ch->m_pkRecallEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:251: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:273: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:290: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:494: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:645: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:129: event_cancel(&m_pkPingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:130: event_cancel(&m_pkDisconnectEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:42: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:46: event_cancel(&exit_all_event_);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:50: event_cancel(&jump_to_event_);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:238: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:256: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:543: event_cancel(&regen->event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:282: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:240: event_cancel(&state->fishingNewEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:316: event_cancel(&state->fishingNewEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:584: event_cancel(&m_pkMiningEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:329: event_cancel(&ch->m_pkFireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:393: event_cancel(&ch->m_pkPoisonEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:456: event_cancel(&ch->m_pkBleedingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1035: event_cancel(&m_pkAffectEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1831: //	event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1847: //		event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2188: event_cancel(&m_pkStunEvent); //  ̺Ʈ δ.
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2280: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6485: event_cancel(&m_pkRecoveryEvent); // ȸ ̺Ʈ δ.
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:692: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:693: event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:827: event_cancel(&m_pkStayOnlineEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2788: event_cancel(&m_pkWarpNPCEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2789: event_cancel(&m_pkRecoveryEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2790: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2791: event_cancel(&m_pkSaveEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2792: event_cancel(&m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2793: event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2794: event_cancel(&m_pkFishingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2795: event_cancel(&m_pkPoisonEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2797: event_cancel(&m_pkBleedingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2799: event_cancel(&m_pkFireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2800: event_cancel(&m_pkPartyRequestEvent);
+- ... (92 more raw matches not shown here)
+
+Parsed event_cancel call sites (excluding declaration/definition): 140
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:42 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:47 | handle=&m_pTimeOutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:481 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:492 | handle=&m_pTimeOutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:537 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:540 | handle=&m_pTimeOutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pTimeOutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:831 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:855 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp:52 | handle=&ch->m_pkTimedEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp:60 | handle=&ch->m_pkRecallEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkRecallEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:251 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:273 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:290 | handle=&m_pEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:494 | handle=&ch->m_pkTimedEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:645 | handle=&ch->m_pkTimedEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:129 | handle=&m_pkPingEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:130 | handle=&m_pkDisconnectEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDisconnectEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:42 | handle=&deadEvent | character_member_hint=no
+  statement: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:46 | handle=&exit_all_event_ | character_member_hint=no
+  statement: event_cancel(&exit_all_event_);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:50 | handle=&jump_to_event_ | character_member_hint=no
+  statement: event_cancel(&jump_to_event_);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:238 | handle=&deadEvent | character_member_hint=no
+  statement: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:256 | handle=&deadEvent | character_member_hint=no
+  statement: event_cancel(&deadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:543 | handle=&regen->event | character_member_hint=no
+  statement: event_cancel(&regen->event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:282 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:240 | handle=&state->fishingNewEvent | character_member_hint=no
+  statement: event_cancel(&state->fishingNewEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:316 | handle=&state->fishingNewEvent | character_member_hint=no
+  statement: event_cancel(&state->fishingNewEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:584 | handle=&m_pkMiningEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkMiningEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:329 | handle=&ch->m_pkFireEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkFireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:393 | handle=&ch->m_pkPoisonEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkPoisonEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:456 | handle=&ch->m_pkBleedingEvent | character_member_hint=yes
+  statement: event_cancel(&ch->m_pkBleedingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1035 | handle=&m_pkAffectEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkAffectEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1831 | handle=&m_pkStunEvent | character_member_hint=yes
+  statement: // event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1847 | handle=&m_pkDeadEvent | character_member_hint=yes
+  statement: // event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2188 | handle=&m_pkStunEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2280 | handle=&m_pkDeadEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6485 | handle=&m_pkRecoveryEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkRecoveryEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:692 | handle=&m_pkDeadEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:693 | handle=&m_pkStunEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:827 | handle=&m_pkStayOnlineEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkStayOnlineEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2788 | handle=&m_pkWarpNPCEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkWarpNPCEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2789 | handle=&m_pkRecoveryEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkRecoveryEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2790 | handle=&m_pkDeadEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDeadEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2791 | handle=&m_pkSaveEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkSaveEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2792 | handle=&m_pkTimedEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2793 | handle=&m_pkStunEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkStunEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2794 | handle=&m_pkFishingEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkFishingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2795 | handle=&m_pkPoisonEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPoisonEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2797 | handle=&m_pkBleedingEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkBleedingEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2799 | handle=&m_pkFireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkFireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2800 | handle=&m_pkPartyRequestEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPartyRequestEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2801 | handle=&m_pkWarpEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkWarpEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2803 | handle=&m_pkFishingNewEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkFishingNewEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2808 | handle=&m_pkBattlePassStayOnlineEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkBattlePassStayOnlineEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2813 | handle=&m_pkMiningEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkMiningEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2816 | handle=&m_pkDropEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDropEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2821 | handle=&m_pkStayOnlineEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkStayOnlineEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2827 | handle=&pkEvent | character_member_hint=yes
+  statement: event_cancel(&pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2835 | handle=&m_pkDestroyWhenIdleEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDestroyWhenIdleEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3840 | handle=&m_pkDropEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDropEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3991 | handle=&m_pkMuyeongEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkMuyeongEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4035 | handle=&m_pkGyeongGongEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkGyeongGongEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4244 | handle=&existing | character_member_hint=no
+  statement: event_cancel(&existing);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:209 | handle=&member->m_pkPartyRequestEvent | character_member_hint=yes
+  statement: event_cancel(&member->m_pkPartyRequestEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:235 | handle=&member->m_pkPartyRequestEvent | character_member_hint=yes
+  statement: event_cancel(&member->m_pkPartyRequestEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:424 | handle=&itFind->second | character_member_hint=no
+  statement: event_cancel(&itFind->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:509 | handle=&itFind->second | character_member_hint=no
+  statement: event_cancel(&itFind->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2323 | handle=&itFind->second | character_member_hint=no
+  statement: event_cancel( &itFind->second );
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2378 | handle=&itFind->second | character_member_hint=no
+  statement: event_cancel( &itFind->second );
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:470 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:83 | handle=&m_eventStaminaRegen | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaRegen);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:84 | handle=&m_eventStaminaConsume | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaConsume);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:297 | handle=&m_eventStaminaRegen | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaRegen);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:318 | handle=&m_eventStaminaConsume | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaConsume);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:364 | handle=&m_eventStaminaRegen | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaRegen);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:365 | handle=&m_eventStaminaConsume | character_member_hint=yes
+  statement: event_cancel(&m_eventStaminaConsume);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:92 | handle=&m_pkDestroyEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDestroyEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:93 | handle=&m_pkOwnershipEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkOwnershipEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:94 | handle=&m_pkUniqueExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkUniqueExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:97 | handle=&m_pkSoulItemEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkSoulItemEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:100 | handle=&m_pkTimerBasedOnWearExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimerBasedOnWearExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:101 | handle=&m_pkRealTimeExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkRealTimeExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:102 | handle=&m_pkAccessorySocketExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkAccessorySocketExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:602 | handle=&m_pkDestroyEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDestroyEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:687 | handle=&m_pkDestroyEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkDestroyEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1883 | handle=&m_pkOwnershipEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkOwnershipEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2424 | handle=&m_pkUniqueExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkUniqueExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2437 | handle=&m_pkTimerBasedOnWearExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimerBasedOnWearExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2566 | handle=&m_pkAccessorySocketExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkAccessorySocketExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:454 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:465 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/marriage.cpp:452 | handle=&eventNearCheck | character_member_hint=no
+  statement: event_cancel(&eventNearCheck);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:513 | handle=&m_pkMountSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkMountSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:612 | handle=&m_pkMountSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkMountSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_offlineshop_manager.cpp:549 | handle=&m_eventShopDuration | character_member_hint=yes
+  statement: event_cancel(&m_eventShopDuration);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1560 | handle=&m_pkNewPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1561 | handle=&m_pkNewPetSystemExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1678 | handle=&m_pkNewPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1679 | handle=&m_pkNewPetSystemExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1710 | handle=&m_pkNewPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:1715 | handle=&m_pkNewPetSystemExpireEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkNewPetSystemExpireEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:66 | handle=&m_pkSwitchEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkSwitchEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:189 | handle=&m_pkSwitchEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkSwitchEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:202 | handle=&m_pkSwitchEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkSwitchEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/NightmareDungeonRazor93.cpp:138 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:144 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:259 | handle=&m_timedEvent | character_member_hint=yes
+  statement: event_cancel(&m_timedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:392 | handle=&m_timedEvent | character_member_hint=yes
+  statement: event_cancel(&m_timedEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp:305 | handle=&m_eventUpdate | character_member_hint=yes
+  statement: event_cancel(&m_eventUpdate);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:511 | handle=&m_pkPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:615 | handle=&m_pkPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:635 | handle=&m_pkPetSystemUpdateEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkPetSystemUpdateEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:106 | handle=&m_pCheckDisconnect | character_member_hint=yes
+  statement: event_cancel(&m_pCheckDisconnect);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:136 | handle=&m_pCheckDisconnect | character_member_hint=yes
+  statement: event_cancel(&m_pCheckDisconnect);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:447 | handle=&m_pAdvancedDuelTimer | character_member_hint=yes
+  statement: event_cancel(&m_pAdvancedDuelTimer);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:452 | handle=&m_pCheckDisconnect | character_member_hint=yes
+  statement: event_cancel(&m_pCheckDisconnect);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PyramidDungeonRazor93.cpp:169 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:20 | handle=ppEvent | character_member_hint=no
+  statement: event_cancel(ppEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1830 | handle=&event | character_member_hint=no
+  statement: // event_cancel(&event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1841 | handle=&event | character_member_hint=no
+  statement: event_cancel(&event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1857 | handle=&event | character_member_hint=no
+  statement: // event_cancel(&event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1864 | handle=&event | character_member_hint=no
+  statement: event_cancel(&event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1879 | handle=&event | character_member_hint=no
+  statement: // event_cancel(&event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:763 | handle=&regen->event | character_member_hint=no
+  statement: event_cancel(&regen->event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:331 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:274 | handle=&pkEvent | character_member_hint=yes
+  statement: event_cancel(&pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:360 | handle=&(*(it2++)) | character_member_hint=no
+  statement: event_cancel(&(*(it2++)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:244 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:267 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:525 | handle=&it->second | character_member_hint=no
+  statement: event_cancel(&it->second);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:136 | handle=&m_pkBeginEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkBeginEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:137 | handle=&m_pkEndEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkEndEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:138 | handle=&m_pkTimeoutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimeoutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:139 | handle=&m_pkResetFlagEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkResetFlagEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:162 | handle=&m_pkBeginEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkBeginEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:172 | handle=&m_pkEndEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkEndEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:182 | handle=&m_pkTimeoutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimeoutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:192 | handle=&m_pkResetFlagEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkResetFlagEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:374 | handle=&m_pkTimeoutEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkTimeoutEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:781 | handle=&m_pkResetFlagEvent | character_member_hint=yes
+  statement: event_cancel(&m_pkResetFlagEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/wedding.cpp:64 | handle=&m_pEndEvent | character_member_hint=yes
+  statement: event_cancel(&m_pEndEvent);
+
+Step 5 - EVENT handle storage on CHARACTER and elsewhere
+========================================================
+CHARACTER direct LPEVENT members (including container members): 26
+- SRC/Server/GameServer/char.h:1371 | m_pkPartyRequestEvent | scalar
+- SRC/Server/GameServer/char.h:2026 | m_pkMuyeongEvent | scalar
+- SRC/Server/GameServer/char.h:2028 | m_pkGyeongGongEvent | scalar
+- SRC/Server/GameServer/char.h:2356 | m_pkDeadEvent | scalar
+- SRC/Server/GameServer/char.h:2357 | m_pkStunEvent | scalar
+- SRC/Server/GameServer/char.h:2358 | m_pkSaveEvent | scalar
+- SRC/Server/GameServer/char.h:2359 | m_pkRecoveryEvent | scalar
+- SRC/Server/GameServer/char.h:2360 | m_pkTimedEvent | scalar
+- SRC/Server/GameServer/char.h:2361 | m_pkFishingEvent | scalar
+- SRC/Server/GameServer/char.h:2362 | m_pkAffectEvent | scalar
+- SRC/Server/GameServer/char.h:2363 | m_pkPoisonEvent | scalar
+- SRC/Server/GameServer/char.h:2365 | m_pkBleedingEvent | scalar
+- SRC/Server/GameServer/char.h:2367 | m_pkFireEvent | scalar
+- SRC/Server/GameServer/char.h:2368 | m_pkWarpNPCEvent | scalar
+- SRC/Server/GameServer/char.h:2373 | m_pkMiningEvent | scalar
+- SRC/Server/GameServer/char.h:2375 | m_pkWarpEvent | scalar
+- SRC/Server/GameServer/char.h:2376 | m_pkDestroyWhenIdleEvent | scalar
+- SRC/Server/GameServer/char.h:2377 | m_pkPetSystemUpdateEvent | scalar
+- SRC/Server/GameServer/char.h:2379 | m_pkNewPetSystemUpdateEvent | scalar
+- SRC/Server/GameServer/char.h:2380 | m_pkNewPetSystemExpireEvent | scalar
+- SRC/Server/GameServer/char.h:2392 | m_mapMobSkillEvent | container
+- SRC/Server/GameServer/char.h:2767 | m_pkBattlePassStayOnlineEvent | scalar
+- SRC/Server/GameServer/char.h:2836 | GayaUpdateTime | scalar
+- SRC/Server/GameServer/char.h:2868 | m_pkStayOnlineEvent | scalar
+- SRC/Server/GameServer/char.h:2887 | m_pkFishingNewEvent | scalar
+- SRC/Server/GameServer/char.h:2992 | m_pkDropEvent | scalar
+
+Non-char.h LPEVENT / event_t storage sightings (excluding create/cancel/EVENTFUNC lines): 156
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.h:29: LPEVENT m_pEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.h:30: LPEVENT m_pTimeOutEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.h:21: LPEVENT m_pEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1365: static LPEVENT s_pkReloadSpamEvent = nullptr;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.h:245: LPEVENT			m_pkPingEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.h:294: LPEVENT			m_pkDisconnectEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.h:125: LPEVENT		deadEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.h:127: LPEVENT exit_all_event_;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.h:128: LPEVENT jump_to_event_;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:272: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:273: std::unordered_map<int32_t, LPEVENT> m_evExit;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:274: std::unordered_map<int32_t, LPEVENT> m_evCheck; // floor2 settle check
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:275: std::unordered_map<int32_t, LPEVENT> m_evToF2;  // floor1 -> floor2 delay
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:277: void CancelEvent(std::unordered_map<int32_t, LPEVENT>& m, int32_t mapIndex)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/components/activity_components.hpp:10: LPEVENT fishingNewEvent { nullptr };
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:2826: LPEVENT pkEvent = it->second;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4243: LPEVENT existing = it->second;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:11: LPEVENT new_event = nullptr;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:31: LPEVENT event;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:70: void event_reset_time(LPEVENT event, int32_t when)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:97: LPEVENT the_event = pElem->pvData;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:130: int32_t event_processing_time(LPEVENT event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:139: int32_t event_time(LPEVENT event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.cpp:154: LPEVENT the_event = (LPEVENT) pElem->pvData;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:37: typedef boost::intrusive_ptr<EVENT> LPEVENT;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:88: extern int32_t		event_processing_time(LPEVENT event);	// ���� �ð� ����
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:89: extern int32_t		event_time(LPEVENT event);			// ���� �ð� ����
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:90: extern void		event_reset_time(LPEVENT event, int32_t when);	// ���� �ð� �� ����
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event.h:94: extern event_info_data*	event_info(LPEVENT event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.cpp:31: TQueueElement * CEventQueue::Enqueue(LPEVENT pvData, int duration, int pulse)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.h:12: LPEVENT	pvData;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/event_queue.h:33: TQueueElement *	Enqueue(LPEVENT data, int duration, int pulse);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:450: LPEVENT CreateFishingEvent(LPCHARACTER ch)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.h:33: extern LPEVENT CreateFishingEvent(LPCHARACTER ch);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.h:432: typedef std::map< uint32_t, LPEVENT >	EventMap;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:460: std::unordered_map<int32_t, LPEVENT> m_evTimeout;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:461: std::unordered_map<int32_t, LPEVENT> m_evFinalBoss;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:462: std::unordered_map<int32_t, LPEVENT> m_evOut;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp:464: void Cancel(std::unordered_map<int32_t, LPEVENT>& map, int32_t idx)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.h:94: LPEVENT	m_eventStaminaRegen;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.h:95: LPEVENT	m_eventStaminaConsume;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:218: typedef std::unordered_map<std::string, std::pair<unsigned int, LPEVENT> > spam_score_of_ip_t;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:255: spam_score_of_ip.insert(std::make_pair(ch->GetDesc()->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:130: void CItem::SetDestroyEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1872: void CItem::SetOwnershipEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2163: void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2168: void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2629: void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3482: void CItem::SetSoulItemEvent(LPEVENT pkEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:157: void		SetDestroyEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:169: void		SetOwnershipEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:185: void		SetUniqueExpireEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:188: void		SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:237: void		SetAccessorySocketExpireEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:318: void		SetSoulItemEvent(LPEVENT pkEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:347: LPEVENT		m_pkDestroyEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:348: LPEVENT		m_pkExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:350: LPEVENT		m_pkSoulItemEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:352: LPEVENT		m_pkUniqueExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:353: LPEVENT		m_pkTimerBasedOnWearExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:354: LPEVENT		m_pkRealTimeExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:355: LPEVENT		m_pkAccessorySocketExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h:356: LPEVENT		m_pkOwnershipEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:425: std::unordered_map<int32_t, LPEVENT> m_evTimer;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp:446: std::unordered_map<int32_t, LPEVENT> m_evCloneAI;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/marriage.h:85: LPEVENT eventNearCheck;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/mining.cpp:413: LPEVENT CreateMiningEvent(LPCHARACTER ch, LPCHARACTER load, int count)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/mining.h:6: LPEVENT CreateMiningEvent(LPCHARACTER ch, LPCHARACTER load, int count);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.h:95: LPEVENT			m_pkMountSystemUpdateEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_offlineshop_manager.h:254: LPEVENT			m_eventShopDuration;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.h:217: LPEVENT			m_pkNewPetSystemUpdateEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.h:218: LPEVENT			m_pkNewPetSystemExpireEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.h:46: LPEVENT m_pkSwitchEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/NightmareDungeonRazor93.cpp:152: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/NightmareDungeonRazor93.cpp:153: std::unordered_map<int32_t, LPEVENT> m_evEnd;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:136: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:137: std::unordered_map<int32_t, LPEVENT> m_evEnd;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:139: void CancelEvent(std::unordered_map<int32_t, LPEVENT>& m, int32_t mapIndex)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.h:30: LPEVENT m_timedEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.h:218: LPEVENT		m_eventUpdate;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.h:140: LPEVENT			m_pkPetSystemUpdateEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:55: static LPEVENT m_pCheckDisconnect = nullptr;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.h:48: LPEVENT	m_pAdvancedDuelTimer;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PyramidDungeonRazor93.cpp:197: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:10: void CancelTimerEvent(LPEVENT * ppEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:86: LPEVENT quest_create_server_timer_event(const char * name, double when, uint32_t timernpc, bool loop, uint32_t arg)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.cpp:105: LPEVENT quest_create_timer_event(const char * name, uint32_t player_id, double when, uint32_t npc_id, bool loop)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.h:38: extern LPEVENT quest_create_server_timer_event(const char* name, double when, uint32_t timernpc = QUEST_NO_NPC, bool loop = false, uint32_t arg = 0);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.h:39: extern LPEVENT quest_create_timer_event(const char* name, uint32_t player_id, double when, uint32_t npc_id=QUEST_NO_NPC, bool loop = false);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questevent.h:40: extern void CancelTimerEvent(LPEVENT* ppEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_global.cpp:187: LPEVENT event = quest_create_server_timer_event(name, t, timernpc, false, arg);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_global.cpp:213: LPEVENT event = quest_create_server_timer_event(name, t, timernpc, true, arg);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_target.cpp:122: LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent(ch->GetPlayerID(), dwQuestIndex, (const char *) lua_tostring(L, 1));
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1808: void CQuestManager::AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1829: //		LPEVENT event = it->second;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1863: LPEVENT event = it->second;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp:1878: //			LPEVENT event = it->second;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.h:113: void		AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.h:229: std::map<std::pair<std::string, uint32_t>, LPEVENT> m_mapServerTimer;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questpc.cpp:158: void PC::AddTimer(const string & name, LPEVENT pEvent)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questpc.h:107: void		AddTimer(const string& name, LPEVENT pEvent);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questpc.h:175: typedef map<string, LPEVENT> TTimerMap;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.h:33: LPEVENT	event;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:319: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:320: std::unordered_map<int32_t, LPEVENT> m_evEnd;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:321: std::unordered_map<int32_t, LPEVENT> m_evStepLimit;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:322: std::unordered_map<int32_t, LPEVENT> m_evCheck;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:323: std::unordered_map<int32_t, LPEVENT> m_evWarp;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp:325: void CancelEvent(std::unordered_map<int32_t, LPEVENT>& map, int32_t idx)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/sectree.h:213: void				SetRegenEvent(LPEVENT event);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:162: std::list<LPEVENT>::const_iterator it2 = it->second.begin();
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:166: LPEVENT pkEvent = *(it2++);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:247: std::list<LPEVENT>::iterator it2 = it->second.begin();
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:251: LPEVENT pkEvent = *it2;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:284: LPEVENT CTargetManager::GetTargetEvent(uint32_t dwPID, uint32_t dwQuestIndex, const char * c_pszTargetName)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:291: std::list<LPEVENT>::iterator it2 = it->second.begin();
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:295: LPEVENT pkEvent = *(it2++);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:324: std::list<LPEVENT>::iterator it2 = it->second.begin();
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:328: LPEVENT pkEvent = *(it2++);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:357: std::list<LPEVENT>::iterator it2 = it->second.begin();
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.h:62: LPEVENT GetTargetEvent(uint32_t dwPID, uint32_t dwQuestIndex, const char * c_pszTargetName);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.h:66: std::map<uint32_t, std::list<LPEVENT> > m_map_kListEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:236: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:237: std::unordered_map<int32_t, LPEVENT> m_evEnd;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:239: void CancelEvent(std::unordered_map<int32_t, LPEVENT>& m, int32_t mapIndex)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:257: std::unordered_map<int32_t, LPEVENT> m_evPrepare;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:258: std::unordered_map<int32_t, LPEVENT> m_evExit;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:259: std::unordered_map<int32_t, LPEVENT> m_evCheck; // floor2 settle check
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:260: std::unordered_map<int32_t, LPEVENT> m_evToF2;  // floor1 -> floor2 delay
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:262: void CancelEvent(std::unordered_map<int32_t, LPEVENT>& m, int32_t mapIndex)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:506: std::unordered_map<int32_t, LPEVENT> evStart;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:507: std::unordered_map<int32_t, LPEVENT> evTimeout;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:508: std::unordered_map<int32_t, LPEVENT> evFloor1Check;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:509: std::unordered_map<int32_t, LPEVENT> evFloor1Boss;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:510: std::unordered_map<int32_t, LPEVENT> evFloor1BossHp;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:511: std::unordered_map<int32_t, LPEVENT> evFloor2Timer;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:512: std::unordered_map<int32_t, LPEVENT> evFloor2Transition;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:513: std::unordered_map<int32_t, LPEVENT> evFloor4Transition;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:514: std::unordered_map<int32_t, LPEVENT> evFinalSpawn;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:515: std::unordered_map<int32_t, LPEVENT> evFinalHp;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:516: std::unordered_map<int32_t, LPEVENT> evComplete;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:517: std::unordered_map<int32_t, LPEVENT> evOut;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp:519: void Cancel(std::unordered_map<int32_t, LPEVENT>& map, int32_t idx)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:159: void CWarMap::SetBeginEvent(LPEVENT pkEv)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:169: void CWarMap::SetEndEvent(LPEVENT pkEv)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:179: void CWarMap::SetTimeoutEvent(LPEVENT pkEv)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:189: void CWarMap::SetResetFlagEvent(LPEVENT pkEv)
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:77: void	SetBeginEvent(LPEVENT pkEv);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:78: void	SetTimeoutEvent(LPEVENT pkEv);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:79: void	SetEndEvent(LPEVENT pkEv);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:80: void	SetResetFlagEvent(LPEVENT pkEv);
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:111: LPEVENT m_pkBeginEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:112: LPEVENT m_pkTimeoutEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:113: LPEVENT m_pkEndEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.h:114: LPEVENT	m_pkResetFlagEvent;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/wedding.h:45: LPEVENT m_pEndEvent;
+
+Step 6 - EVENTFUNC classification by subsystem
+==============================================
+- MOVEMENT: count=5 | target ECS system=MovementSystem | feasibility=MEDIUM
+  - save_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:585 | legacy=CALLS_METHODS
+  - recovery_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:722 | legacy=WRITES_STATE
+  - warp_npc_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:641 | legacy=WRITES_STATE
+  - horse_stamina_consume_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:221 | legacy=NO_LEGACY
+  - horse_stamina_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:255 | legacy=NO_LEGACY
+- COMBAT: count=26 | target ECS system=CombatSystem + AffectSystem | feasibility=HARD
+  - ready_to_start_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:198 | legacy=CALLS_METHODS
+  - duel_time_out | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:389 | legacy=CALLS_METHODS
+  - battle_arena_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:85 | legacy=NO_LEGACY
+  - dungeon_dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:212 | legacy=NO_LEGACY
+  - dungeon_jump_to_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:848 | legacy=NO_LEGACY
+  - easter_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:490 | legacy=NO_LEGACY
+  - easter_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:502 | legacy=NO_LEGACY
+  - easter_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:515 | legacy=NO_LEGACY
+  - easter_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:552 | legacy=NO_LEGACY
+  - dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1761 | legacy=WRITES_STATE
+  - StunEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6445 | legacy=WRITES_STATE
+  - block_chat_by_ip_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:221 | legacy=NO_LEGACY
+  - orcs_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:287 | legacy=NO_LEGACY
+  - orcs_dungeon_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:298 | legacy=NO_LEGACY
+  - pvp_duel_counter | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:144 | legacy=CALLS_METHODS
+  - target_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:57 | legacy=CALLS_METHODS
+  - triton_temple_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:370 | legacy=NO_LEGACY
+  - triton_temple_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:381 | legacy=NO_LEGACY
+  - val_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:475 | legacy=NO_LEGACY
+  - val_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:487 | legacy=NO_LEGACY
+  - val_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:500 | legacy=NO_LEGACY
+  - val_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:537 | legacy=NO_LEGACY
+  - war_begin_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:29 | legacy=NO_LEGACY
+  - war_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:44 | legacy=NO_LEGACY
+  - war_timeout_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:70 | legacy=NO_LEGACY
+  - war_reset_flag_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:924 | legacy=NO_LEGACY
+- SESSION: count=7 | target ECS system=SessionSystem + PlayerRuntimeSystem | feasibility=HARD
+  - ping_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:164 | legacy=NO_LEGACY
+  - disconnect_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:838 | legacy=NO_LEGACY
+  - switch_channel | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3781 | legacy=WRITES_STATE
+  - destroy_when_idle_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4663 | legacy=WRITES_STATE
+  - battle_pass_stay_online_event_session | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:135 | legacy=CALLS_METHODS
+  - quest_login_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp:1163 | legacy=CALLS_METHODS
+  - pvp_check_disconnect | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:57 | legacy=CALLS_METHODS
+- AFFECT: count=6 | target ECS system=AffectSystem | feasibility=MEDIUM
+  - poison_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:61 | legacy=WRITES_STATE
+  - bleeding_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:123 | legacy=WRITES_STATE
+  - fire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:173 | legacy=WRITES_STATE
+  - affect_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:788 | legacy=CALLS_METHODS
+  - load_affect_login_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1234 | legacy=CALLS_METHODS
+  - kill_campfire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:3439 | legacy=WRITES_STATE
+- ACTIVITY: count=2 | target ECS system=ActivitySystem | feasibility=MEDIUM
+  - ecs_fishing_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:76 | legacy=CALLS_METHODS
+  - fishing_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:394 | legacy=WRITES_STATE
+- MOUNT: count=2 | target ECS system=MountSystem | feasibility=MEDIUM
+  - horse_dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:451 | legacy=CALLS_METHODS
+  - mountsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:20 | legacy=NO_LEGACY
+- SKILL: count=5 | target ECS system=SkillSystem | feasibility=HARD
+  - ChainLightningEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:1673 | legacy=CALLS_METHODS
+  - skill_gwihwan_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2575 | legacy=CALLS_METHODS
+  - skill_muyoung_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3940 | legacy=CALLS_METHODS
+  - skill_gyeongGong_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3995 | legacy=CALLS_METHODS
+  - mob_skill_hit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4121 | legacy=CALLS_METHODS
+- SOCIAL: count=4 | target ECS system=SocialSystem | feasibility=MEDIUM
+  - party_request_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:74 | legacy=CALLS_METHODS
+  - party_invite_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:290 | legacy=CALLS_METHODS
+  - GuildInviteEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2186 | legacy=NO_LEGACY
+  - party_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp:221 | legacy=CALLS_METHODS
+- MISC: count=20 | target ECS system=PlayerRuntimeSystem / subsystem-specific | feasibility=HARD
+  - shutdown_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:393 | legacy=NO_LEGACY
+  - timed_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:566 | legacy=WRITES_STATE
+  - reload_spam_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1373 | legacy=NO_LEGACY
+  - check_time_market_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:38 | legacy=CALLS_METHODS
+  - kill_ore_load_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4621 | legacy=WRITES_STATE
+  - drop_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4690 | legacy=CALLS_METHODS
+  - item_destroy_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:110 | legacy=NO_LEGACY
+  - ownership_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1848 | legacy=NO_LEGACY
+  - unique_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2063 | legacy=NO_LEGACY
+  - timer_based_on_wear_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2110 | legacy=NO_LEGACY
+  - real_time_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2173 | legacy=CALLS_METHODS
+  - accessory_socket_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2489 | legacy=NO_LEGACY
+  - soul_item_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3450 | legacy=NO_LEGACY
+  - newpetsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:42 | legacy=NO_LEGACY
+  - newpetsystem_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:62 | legacy=NO_LEGACY
+  - switchbot_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:154 | legacy=NO_LEGACY
+  - oxevent_timer | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:190 | legacy=NO_LEGACY
+  - petsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:32 | legacy=NO_LEGACY
+  - dungeon_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:399 | legacy=NO_LEGACY
+  - regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:598 | legacy=NO_LEGACY
+
+Step 7 - LPCHARACTER / CHARACTER dependencies in EVENTFUNC bodies
+=================================================================
+- NO_LEGACY: 41
+  - battle_arena_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:85 | subsystem=COMBAT | accesses=none
+  - shutdown_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:393 | subsystem=MISC | accesses=none
+  - reload_spam_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1373 | subsystem=MISC | accesses=none
+  - ping_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:164 | subsystem=SESSION | accesses=none
+  - disconnect_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:838 | subsystem=SESSION | accesses=none
+  - dungeon_dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:212 | subsystem=COMBAT | accesses=none
+  - dungeon_jump_to_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:848 | subsystem=COMBAT | accesses=none
+  - easter_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:490 | subsystem=COMBAT | accesses=none
+  - easter_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:502 | subsystem=COMBAT | accesses=none
+  - easter_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:515 | subsystem=COMBAT | accesses=none
+  - easter_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:552 | subsystem=COMBAT | accesses=none
+  - GuildInviteEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2186 | subsystem=SOCIAL | accesses=none
+  - horse_stamina_consume_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:221 | subsystem=MOVEMENT | accesses=none
+  - horse_stamina_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:255 | subsystem=MOVEMENT | accesses=none
+  - block_chat_by_ip_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:221 | subsystem=COMBAT | accesses=none
+  - item_destroy_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:110 | subsystem=MISC | accesses=none
+  - ownership_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1848 | subsystem=MISC | accesses=none
+  - unique_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2063 | subsystem=MISC | accesses=none
+  - timer_based_on_wear_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2110 | subsystem=MISC | accesses=none
+  - accessory_socket_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2489 | subsystem=MISC | accesses=none
+  - soul_item_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3450 | subsystem=MISC | accesses=none
+  - mountsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:20 | subsystem=MOUNT | accesses=none
+  - newpetsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:42 | subsystem=MISC | accesses=none
+  - newpetsystem_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:62 | subsystem=MISC | accesses=none
+  - switchbot_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:154 | subsystem=MISC | accesses=none
+  - orcs_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:287 | subsystem=COMBAT | accesses=none
+  - orcs_dungeon_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:298 | subsystem=COMBAT | accesses=none
+  - oxevent_timer | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:190 | subsystem=MISC | accesses=none
+  - petsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:32 | subsystem=MISC | accesses=none
+  - dungeon_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:399 | subsystem=MISC | accesses=none
+  - regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:598 | subsystem=MISC | accesses=none
+  - triton_temple_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:370 | subsystem=COMBAT | accesses=none
+  - triton_temple_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:381 | subsystem=COMBAT | accesses=none
+  - val_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:475 | subsystem=COMBAT | accesses=none
+  - val_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:487 | subsystem=COMBAT | accesses=none
+  - val_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:500 | subsystem=COMBAT | accesses=none
+  - val_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:537 | subsystem=COMBAT | accesses=none
+  - war_begin_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:29 | subsystem=COMBAT | accesses=none
+  - war_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:44 | subsystem=COMBAT | accesses=none
+  - war_timeout_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:70 | subsystem=COMBAT | accesses=none
+  - war_reset_flag_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:924 | subsystem=COMBAT | accesses=none
+- READS_ONLY: 0
+- CALLS_METHODS: 23
+  - ready_to_start_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:198 | subsystem=COMBAT | accesses=chA->ChatPacketNew, chA->GetDesc, chA->GetHP, chA->GetMapIndex, chA->GetMaxHP, chA->GetMaxSP, chA->GetSP, chA->GetVID, chA->PointChange, chA->SetArena, chA->SetPosition, chA->SetPotionLimit
+  - duel_time_out | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/arena.cpp:389 | subsystem=COMBAT | accesses=chA->ChatPacketNew, chA->GetDesc, chB->ChatPacketNew
+  - ecs_fishing_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp:76 | subsystem=ACTIVITY | accesses=ch->ChatPacketNew, ch->GetDesc, ch->GetWear
+  - affect_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:788 | subsystem=AFFECT | accesses=ch->UpdateAffect
+  - load_affect_login_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:1234 | subsystem=AFFECT | accesses=ch->GetDesc, ch->GetPlayerID, ch->LoadAffect
+  - check_time_market_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp:38 | subsystem=MISC | accesses=ch->ChatPacket, ch->IsNPC
+  - horse_dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp:451 | subsystem=MOUNT | accesses=ch->HorseSummon
+  - save_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:585 | subsystem=MOVEMENT | accesses=ch->FlushDelayedSaveItem, ch->GetName, ch->Save
+  - drop_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4690 | subsystem=MISC | accesses=ch->AddAffect, ch->BlockProcessed, ch->ChatPacketNew, ch->GetDesc, ch->GetName, ch->RemoveAffect
+  - battle_pass_stay_online_event_session | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:135 | subsystem=SESSION | accesses=ch->GetBattlePassId, ch->GetDesc, ch->GetMissionProgress, ch->IsCompletedMission, ch->UpdateMissionProgress
+  - ChainLightningEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:1673 | subsystem=SKILL | accesses=pkChr->AddChainLightningExcept, pkChr->ComputeSkill, pkChr->GetChainLightingExcept, pkChr->GetName, pkChrVictim->CreateFly, pkChrVictim->GetName, pkChrVictim->GetParty, pkChrVictim->GetSectree, pkChrVictim->GetX, pkChrVictim->GetY
+  - skill_gwihwan_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:2575 | subsystem=SKILL | accesses=ch->ChatPacketNew, ch->GetEmpire, ch->GetMapIndex, ch->GetName, ch->GetX, ch->GetY, ch->WarpSet
+  - skill_muyoung_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3940 | subsystem=SKILL | accesses=ch->ComputeSkill, ch->CreateFly, ch->GetSectree, ch->IsAffectFlag, ch->StopMuyeongEvent
+  - skill_gyeongGong_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:3995 | subsystem=SKILL | accesses=ch->ComputeGyeongGongSkill, ch->IsAffectFlag, ch->StopGyeongGongEvent
+  - mob_skill_hit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:4121 | subsystem=SKILL | accesses=ch->ComputeSkillAtPosition, ch->m_mapMobSkillEvent
+  - party_request_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:74 | subsystem=SOCIAL | accesses=ch->ChatPacket, ch->GetName, ch->SetPartyRequestEvent
+  - party_invite_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:290 | subsystem=SOCIAL | accesses=pchInviter->GetName, pchInviter->PartyInviteDeny
+  - quest_login_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp:1163 | subsystem=SESSION | accesses=ch->GetDesc, ch->GetPlayerID
+  - real_time_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2173 | subsystem=MISC | accesses=pkOwner->ChatPacketNew, pkOwner->FindAffect, pkOwner->GetDesc, pkOwner->RemoveAffect
+  - party_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp:221 | subsystem=SOCIAL | accesses=leader->GetDesc, leader->GetParty
+  - pvp_check_disconnect | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:57 | subsystem=SESSION | accesses=chA->ChatPacket, chA->ChatPacketNew, chA->GetQuestFlag, chA->PointChange, chA->SetQuestFlag, chB->ChatPacket, chB->ChatPacketNew, chB->GetQuestFlag, chB->PointChange, chB->SetQuestFlag
+  - pvp_duel_counter | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp:144 | subsystem=COMBAT | accesses=chA->ChatPacket, chA->FindAffect, chA->GetDuel, chA->GetHorse, chA->GetJob, chA->GetLevel, chA->GetMaxHP, chA->GetName, chA->GetNewPetSystem, chA->GetParty, chA->GetPetSystem, chA->GetPlayerID
+  - target_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.cpp:57 | subsystem=COMBAT | accesses=pkChr->GetDesc, pkChr->GetMapIndex, pkChr->GetPlayerID, pkChr->GetX, pkChr->GetY, tch->GetMapIndex, tch->GetX, tch->GetY
+- WRITES_STATE: 13
+  - timed_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:566 | subsystem=MISC | accesses=ch->ChatPacket, ch->ChatPacketNew, ch->Disconnect, ch->GetDesc, ch->m_pkTimedEvent
+  - poison_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:61 | subsystem=AFFECT | accesses=ch->ChatPacket, ch->Damage, ch->GetMaxHP, ch->m_pkPoisonEvent
+  - bleeding_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:123 | subsystem=AFFECT | accesses=ch->ChatPacket, ch->Damage, ch->GetMaxHP, ch->m_pkBleedingEvent
+  - fire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:173 | subsystem=AFFECT | accesses=ch->ChatPacket, ch->Damage, ch->m_pkFireEvent
+  - dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1761 | subsystem=COMBAT | accesses=ch->GetMaxHP, ch->HasReviverInParty, ch->IsMonster, ch->IsPC, ch->IsRevive, ch->SetAggressive, ch->SetHP, ch->SetPosition, ch->SetRevive, ch->ViewReencode, ch->m_pkDeadEvent
+  - StunEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6445 | subsystem=COMBAT | accesses=ch->Dead, ch->m_pkStunEvent
+  - kill_campfire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp:3439 | subsystem=AFFECT | accesses=ch->m_pkMiningEvent
+  - recovery_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:722 | subsystem=MOVEMENT | accesses=ch->CheckTarget, ch->DistributeSP, ch->GetDungeon, ch->GetHP, ch->GetLastMoveTime, ch->GetMaxHP, ch->GetMobTable, ch->GetName, ch->GetPoint, ch->IsAffectFlag, ch->IsDoor, ch->IsPC
+  - switch_channel | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:3781 | subsystem=SESSION | accesses=ch->ChatPacketNew, ch->GetDesc, ch->SwitchChannel, ch->m_pkTimedEvent
+  - kill_ore_load_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4621 | subsystem=MISC | accesses=ch->m_pkMiningEvent
+  - destroy_when_idle_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:4663 | subsystem=SESSION | accesses=ch->GetName, ch->GetVictim, ch->m_pkDestroyWhenIdleEvent
+  - warp_npc_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:641 | subsystem=MOVEMENT | accesses=ch->GetSectree, ch->m_pkWarpNPCEvent
+  - fishing_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp:394 | subsystem=ACTIVITY | accesses=ch->GetDesc, ch->GetWear, ch->Motion, ch->m_pkFishingEvent
+
+Step 8 - Existing ECS event infrastructure
+==========================================
+EnTT events already defined in `SRC/Server/GameServer/ecs/events.hpp`:
+- SRC/Server/GameServer/ecs/events.hpp:11 | EvEntityDied
+- SRC/Server/GameServer/ecs/events.hpp:16 | EvEntityDamaged
+- SRC/Server/GameServer/ecs/events.hpp:23 | EvEntityMoved
+- SRC/Server/GameServer/ecs/events.hpp:29 | EvItemPickup
+- SRC/Server/GameServer/ecs/events.hpp:34 | EvLevelUp
+- SRC/Server/GameServer/ecs/events.hpp:39 | EvExperienceChanged
+- SRC/Server/GameServer/ecs/events.hpp:44 | EvAffectApplied
+- SRC/Server/GameServer/ecs/events.hpp:49 | EvAffectExpired
+- Total ECS event structs defined: 8
+
+Dispatcher wiring in `main.cpp`:
+- SRC/Server/GameServer/main.cpp:855: constexpr bool kEnableParallelEcsMigrationTicks = true;
+- SRC/Server/GameServer/main.cpp:856: if (kEnableParallelEcsMigrationTicks)
+- SRC/Server/GameServer/main.cpp:875: g_dispatcher.update();
+- `g_dispatcher.update()` is already wired into the main heartbeat/tick block behind `kEnableParallelEcsMigrationTicks`.
+
+Dispatcher usage / emit sites found:
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/EventDispatcher.cpp:3: entt::dispatcher g_dispatcher;
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:711: g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect->dwType });
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:727: g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect.dwType });
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2391: g_dispatcher.trigger(ecs::EvEntityDamaged { entity, combatTarget.target, damage, DAMAGE_TYPE_NORMAL });
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:2404: g_dispatcher.trigger(ecs::EvEntityDied { entity, combatTarget.target });
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp:137: g_dispatcher.trigger(ecs::EvEntityMoved { entity, position.x, position.y });
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_npc.cpp:126: g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_npc.cpp:147: g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp:1241: g_dispatcher.trigger(ecs::EvLevelUp{e, ch->GetLevel()});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp:1547: g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp:1572: g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp:1597: g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
+- E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp:4255: g_dispatcher.trigger(ecs::EvEntityDied{entt::null, e});
+- No `.sink<...>` subscriptions were found in the scanned GameServer ECS system files; current usage is trigger/update oriented.
+
+Step 9 - Count summary
+======================
+| Metric | Count |
+|---|---:|
+| Total EVENTFUNC definitions | 77 |
+| Total EVENTFUNC forward declarations | 5 |
+| Total event_create call sites | 110 |
+| Total event_cancel call sites | 140 |
+| LPEVENT members on CHARACTER | 26 |
+| Events: NO_LEGACY | 41 |
+| Events: READS_ONLY | 0 |
+| Events: CALLS_METHODS | 23 |
+| Events: WRITES_STATE | 13 |
+| ECS events already defined | 8 |
+
+Step 10 - Phase 10 migration candidate list (NO_LEGACY + READS_ONLY)
+====================================================================
+MOVEMENT:
+- horse_stamina_consume_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:221 | subsystem=MOVEMENT | classification=NO_LEGACY | target ECS system=MovementSystem
+- horse_stamina_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/horse_rider.cpp:255 | subsystem=MOVEMENT | classification=NO_LEGACY | target ECS system=MovementSystem
+COMBAT:
+- battle_arena_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp:85 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- block_chat_by_ip_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp:221 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- dungeon_dead_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:212 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- dungeon_jump_to_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp:848 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- easter_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:515 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- easter_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:502 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- easter_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:490 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- easter_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp:552 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- orcs_dungeon_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:298 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- orcs_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp:287 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- triton_temple_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:381 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- triton_temple_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp:370 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- val_dungeon_check_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:500 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- val_dungeon_exit_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:487 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- val_dungeon_prepare_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:475 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- val_dungeon_to_floor2_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp:537 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- war_begin_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:29 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- war_end_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:44 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- war_reset_flag_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:924 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+- war_timeout_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/war_map.cpp:70 | subsystem=COMBAT | classification=NO_LEGACY | target ECS system=CombatSystem + AffectSystem
+SESSION:
+- disconnect_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:838 | subsystem=SESSION | classification=NO_LEGACY | target ECS system=SessionSystem + PlayerRuntimeSystem
+- ping_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/desc.cpp:164 | subsystem=SESSION | classification=NO_LEGACY | target ECS system=SessionSystem + PlayerRuntimeSystem
+MOUNT:
+- mountsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/MountSystem.cpp:20 | subsystem=MOUNT | classification=NO_LEGACY | target ECS system=MountSystem
+SOCIAL:
+- GuildInviteEvent | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp:2186 | subsystem=SOCIAL | classification=NO_LEGACY | target ECS system=SocialSystem
+MISC:
+- accessory_socket_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2489 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- dungeon_regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:399 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- item_destroy_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:110 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- newpetsystem_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:62 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- newpetsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/New_PetSystem.cpp:42 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- ownership_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:1848 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- oxevent_timer | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OXEvent.cpp:190 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- petsystem_update_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PetSystem.cpp:32 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- regen_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/regen.cpp:598 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- reload_spam_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/db.cpp:1373 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- shutdown_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp:393 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- soul_item_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:3450 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- switchbot_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp:154 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- timer_based_on_wear_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2110 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+- unique_expire_event | E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.cpp:2063 | subsystem=MISC | classification=NO_LEGACY | target ECS system=PlayerRuntimeSystem / subsystem-specific
+
+Step 11 - Auditor conclusions
+=============================
+- The legacy timed event runtime is still heavily centered on `LPEVENT` handles stored directly on `CHARACTER` and other gameplay objects.
+- The highest-friction migration areas are combat/skill/session events because they call CHARACTER methods or write CHARACTER-owned state directly.
+- Best Phase 10 entry points are the NO_LEGACY and selected READS_ONLY candidates listed above, especially self-contained world / dungeon / timer events that do not mutate CHARACTER state directly.
+- ECS dispatcher support exists, but it is currently event-trigger oriented and not yet a replacement scheduler for the legacy `event_process()` queue.
