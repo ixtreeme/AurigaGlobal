@@ -16658,3 +16658,419 @@ int32_t CItem::FindApplyValue(uint8_t bApplyType)
 	return 0;
 }
 
+
+void CItem::AddLockedAttr()
+{
+	const int iCount = GetAttributeCount();
+	if (iCount <= 0)
+	{
+		SetLockedAttr(-1);
+		return;
+	}
+
+	SetLockedAttr((short)(rand() % iCount));
+}
+
+void CItem::ChangeLockedAttr()
+{
+	const int iCount = GetAttributeCount();
+	if (iCount <= 0)
+	{
+		SetLockedAttr(-1);
+		return;
+	}
+
+	if (iCount == 1)
+	{
+		SetLockedAttr(0);
+		return;
+	}
+
+	int iRand = 0;
+	do
+	{
+		iRand = rand() % iCount;
+	} while (iRand == (int)GetLockedAttr());
+
+	SetLockedAttr((short)iRand);
+}
+
+void CItem::RemoveLockedAttr()
+{
+	SetLockedAttr(-1);
+}
+
+void CItem::SetLockedAttr(short sIndex)
+{
+	m_sLockedAttr = sIndex;
+	UpdatePacket();
+	Save();
+}
+
+void CItem::SetExchanging(bool bOn)
+{
+	m_bExchanging = bOn;
+}
+
+static const bool CanPutIntoRing(LPITEM ring, LPITEM item)
+{
+	//const uint32_t vnum = item->GetVnum();
+	return false;
+}
+
+bool CItem::CanPutInto(LPITEM item)
+{
+	//if (item->GetType() == ITEM_BELT) {
+	//	if (GetSubType() == USE_PUT_INTO_BELT_SOCKET && GetValue(0) != 1) {
+	//		return true;
+	//	}
+	//	else {
+	//		return false;
+	//	}
+	//}
+	/*else*/ if (item->GetType() == ITEM_RING)
+		return CanPutIntoRing(item, this);
+
+	else if (item->GetType() != ITEM_ARMOR)
+		return false;
+
+	uint32_t vnum = item->GetVnum();
+
+	if (GetVnum() == 50634) {
+		return (vnum >= 14220 && vnum <= 14233) || (vnum >= 16220 && vnum <= 16233) || (vnum >= 17220 && vnum <= 17233) ? true : false;
+	}
+
+	if (GetVnum() == 50640) {
+		return (vnum >= 14580 && vnum <= 14589) || (vnum >= 15010 && vnum <= 15013) || (vnum >= 16580 && vnum <= 16593) || (vnum >= 17570 && vnum <= 17583) ? true : false;
+	}
+
+	if (GetVnum() == 50641) //limites koho aqua
+	{
+		return (vnum >= 8210 && vnum <= 8223) || (vnum >= 8250 && vnum <= 8263) || (vnum >= 8270 && vnum <= 8283) ? true : false;
+	}
+
+	if (GetVnum() == 50645) //limites koho aqua
+	{
+		return (vnum >= 8780 && vnum <= 8789) || (vnum >= 8760 && vnum <= 8769) || (vnum >= 8790 && vnum <= 8799) ? true : false;//Fagyos aqua itemek
+	}
+
+
+	if (GetVnum() == 50646) //limites koho isteni
+	{
+		return (vnum >= 8730 && vnum <= 8739) || (vnum >= 8700 && vnum <= 8709) || (vnum >= 8780 && vnum <= 8789) ? true : false;//véres zodiák itemek
+	}
+
+
+
+
+	if (GetVnum() == 50643) //limites koho isteni
+	{
+		return (vnum >= 1740 && vnum <= 1753) || (vnum >= 1780 && vnum <= 1793) || (vnum >= 1800 && vnum <= 1813) ? true : false;
+	}
+	struct JewelAccessoryInfo
+	{
+		uint32_t jewel;
+		uint32_t wrist;
+		uint32_t neck;
+		uint32_t ear;
+	};
+	const static JewelAccessoryInfo infos[] = {
+		{ 50634, 14220, 16220, 17220 },
+		{ 50635, 14500, 16500, 17500 },
+		{ 50636, 14520, 16520, 17520 },
+		{ 50637, 14540, 16540, 17540 },
+		{ 50638, 14560, 16560, 17560 },
+		{ 50639, 14570, 16570, 17570 },
+		{ 50641, 8210, 8250, 8270 },
+		{ 50645, 8780, 8760, 8790 },
+		{ 50643, 1740, 1780, 1800 },
+		{ 50646, 8730, 8720, 8730 },
+	};
+
+	uint32_t item_type = (item->GetVnum() / 10) * 10;
+	for (size_t i = 0; i < sizeof(infos) / sizeof(infos[0]); i++)
+	{
+		const JewelAccessoryInfo& info = infos[i];
+		switch (item->GetSubType())
+		{
+		case ARMOR_WRIST:
+			if (info.wrist == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_NECK:
+			if (info.neck == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_EAR:
+			if (info.ear == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		}
+	}
+	if (item->GetSubType() == ARMOR_WRIST)
+		vnum -= 14000;
+	else if (item->GetSubType() == ARMOR_NECK)
+		vnum -= 16000;
+	else if (item->GetSubType() == ARMOR_EAR)
+		vnum -= 17000;
+	else
+		return false;
+
+	uint32_t type = vnum / 20;
+
+	if (type < 0 || type > 11)
+	{
+		type = (vnum - 170) / 20;
+
+		if (50623 + type != GetVnum())
+			return false;
+		else
+			return true;
+	}
+	else if (item->GetVnum() >= 16210 && item->GetVnum() <= 16219)
+	{
+		if (50625 != GetVnum())
+			return false;
+		else
+			return true;
+	}
+	else if (item->GetVnum() >= 16230 && item->GetVnum() <= 16239)
+	{
+		if (50626 != GetVnum())
+			return false;
+		else
+			return true;
+	}
+
+	return 50623 + type == GetVnum();
+}
+
+bool CItem::CanPutInto2(LPITEM item)
+{
+/*	if (item->GetType() == ITEM_BELT) {
+		if (GetSubType() == USE_PUT_INTO_BELT_SOCKET && GetValue(0) == 1) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	else*/ if (item->GetType() == ITEM_RING)
+		return CanPutIntoRing(item, this);
+
+	else if (item->GetType() != ITEM_ARMOR)
+		return false;
+
+	uint32_t vnum = item->GetVnum();
+
+	if (GetVnum() == 50684) {
+		return (vnum >= 14220 && vnum <= 14233) || (vnum >= 16220 && vnum <= 16233) || (vnum >= 17220 && vnum <= 17233) ? true : false;
+	}
+
+	if (GetVnum() == 50690) {
+		return (vnum >= 14580 && vnum <= 14589) || (vnum >= 15010 && vnum <= 15013) || (vnum >= 16580 && vnum <= 16593) || (vnum >= 17570 && vnum <= 17583) ? true : false;
+	}
+
+	if (GetVnum() == 50642) //perma koho aqua
+	{
+		return (vnum >= 8210 && vnum <= 8223) || (vnum >= 8250 && vnum <= 8263) || (vnum >= 8270 && vnum <= 8283) ? true : false;
+	}
+
+
+	if (GetVnum() == 50644) //perma koho isteni
+	{
+		return (vnum >= 1740 && vnum <= 1753) || (vnum >= 1780 && vnum <= 1793) || (vnum >= 1800 && vnum <= 1813) ? true : false;
+	}
+
+	struct JewelAccessoryInfo
+	{
+		uint32_t jewel;
+		uint32_t wrist;
+		uint32_t neck;
+		uint32_t ear;
+	};
+	const static JewelAccessoryInfo infos[] = {
+		{ 50684, 14220, 16220, 17220 },
+		{ 50685, 14500, 16500, 17500 },
+		{ 50686, 14520, 16520, 17520 },
+		{ 50687, 14540, 16540, 17540 },
+		{ 50688, 14560, 16560, 17560 },
+		{ 50689, 14570, 16570, 17570 },
+		{ 50642, 8210, 8250, 8270 },
+		{ 50644, 1740, 1780, 1800 },
+	};
+
+	uint32_t item_type = (item->GetVnum() / 10) * 10;
+	for (size_t i = 0; i < sizeof(infos) / sizeof(infos[0]); i++)
+	{
+		const JewelAccessoryInfo& info = infos[i];
+		switch (item->GetSubType())
+		{
+		case ARMOR_WRIST:
+			if (info.wrist == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_NECK:
+			if (info.neck == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_EAR:
+			if (info.ear == item_type)
+			{
+				if (info.jewel == GetVnum())
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		}
+	}
+	if (item->GetSubType() == ARMOR_WRIST)
+		vnum -= 14000;
+	else if (item->GetSubType() == ARMOR_NECK)
+		vnum -= 16000;
+	else if (item->GetSubType() == ARMOR_EAR)
+		vnum -= 17000;
+	else
+		return false;
+
+	uint32_t type = vnum / 20;
+
+	if (type < 0 || type > 11)
+	{
+		type = (vnum - 170) / 20;
+
+		if (50673 + type != GetVnum())
+			return false;
+		else
+			return true;
+	}
+	else if (item->GetVnum() >= 16210 && item->GetVnum() <= 16219)
+	{
+		if (50675 != GetVnum())
+			return false;
+		else
+			return true;
+	}
+	else if (item->GetVnum() >= 16230 && item->GetVnum() <= 16239)
+	{
+		if (50676 != GetVnum())
+			return false;
+		else
+			return true;
+	}
+
+	return 50673 + type == GetVnum();
+}
+
+int32_t CItem::GetRuneAttrType(int c) {
+	int32_t v = 0;
+	uint8_t bSubType = GetSubType();
+	if (bSubType == RUNE_SLOT1)
+		v = c == 1 ? aApplyRuneInfo[1][0] : aApplyRuneInfo[0][0];
+	else if (bSubType == RUNE_SLOT2)
+		v = c == 1 ? aApplyRuneInfo[3][0] : aApplyRuneInfo[2][0];
+	else if (bSubType == RUNE_SLOT3)
+		v = c == 1 ? aApplyRuneInfo[5][0] : aApplyRuneInfo[4][0];
+	else if (bSubType == RUNE_SLOT4)
+		v = c == 1 ? aApplyRuneInfo[7][0] : aApplyRuneInfo[6][0];
+	else if (bSubType == RUNE_SLOT5)
+		v = c == 1 ? aApplyRuneInfo[9][0] : aApplyRuneInfo[8][0];
+	else if (bSubType == RUNE_SLOT6)
+		v = c == 1 ? aApplyRuneInfo[11][0] : aApplyRuneInfo[10][0];
+	else if (bSubType == RUNE_SLOT7)
+		v = c == 1 ? aApplyRuneInfo[13][0] : aApplyRuneInfo[12][0];
+
+	return v;
+}
+
+int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
+	int32_t v = 0;
+	int32_t t = 1;
+	int32_t lMaxTime = GetValue(0);
+	int32_t lOnePercent = lMaxTime / 100;
+	int32_t lRemainPercent = lTime / lOnePercent;
+	if (lRemainPercent >= 81)
+		t = 7;
+	else if (lRemainPercent >= 61)
+		t = 6;
+	else if (lRemainPercent >= 41)
+		t = 5;
+	else if (lRemainPercent >= 21)
+		t = 4;
+	else if (lRemainPercent >= 11)
+		t = 3;
+	else if (lRemainPercent >= 6)
+		t = 2;
+	else if (lRemainPercent >= 0)
+		t = 1;
+
+	uint8_t bSubType = GetSubType();
+	if (bSubType == RUNE_SLOT1)
+		v = c == 1 ? aApplyRuneInfo[1][t] : aApplyRuneInfo[0][t];
+	else if (bSubType == RUNE_SLOT2)
+		v = c == 1 ? aApplyRuneInfo[3][t] : aApplyRuneInfo[2][t];
+	else if (bSubType == RUNE_SLOT3)
+		v = c == 1 ? aApplyRuneInfo[5][t] : aApplyRuneInfo[4][t];
+	else if (bSubType == RUNE_SLOT4)
+		v = c == 1 ? aApplyRuneInfo[7][t] : aApplyRuneInfo[6][t];
+	else if (bSubType == RUNE_SLOT5)
+		v = c == 1 ? aApplyRuneInfo[9][t] : aApplyRuneInfo[8][t];
+	else if (bSubType == RUNE_SLOT6)
+		v = c == 1 ? aApplyRuneInfo[11][t] : aApplyRuneInfo[10][t];
+	else if (bSubType == RUNE_SLOT7)
+		v = c == 1 ? aApplyRuneInfo[13][t] : aApplyRuneInfo[12][t];
+
+	return v;
+}
+
