@@ -856,13 +856,22 @@ int idle()
 	if (kEnableParallelEcsMigrationTicks)
 	{
 		const uint32_t tick = static_cast<uint32_t>(get_dword_time());
-		AISystem_Update(g_registry, tick);
+		// AISystem is disabled during the migration window.
+		// Legacy CHARACTER FSM handles all AI behavior.
+		// Re-enable in Phase 11 after FSM removal.
+		// AISystem_Update(g_registry, tick);
 		MovementSystem_Update(g_registry, tick);
 		CombatSystem_Update(g_registry, tick);
-		VitalRegenSystem_Update(g_registry, tick);
+		// VitalRegenSystem is disabled during the migration window.
+		// Legacy CHARACTER_MANAGER::Update() still owns HP/SP regeneration.
+		// Re-enable in Phase 10 after legacy regen removal.
+		// VitalRegenSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);
 		AffectSystem_Update(g_registry, tick);
-		NetworkSyncSystem_Update(g_registry, tick);
+		// NetworkSyncSystem is disabled during the migration window.
+		// Legacy CHARACTER packet paths remain authoritative for full stat/bonus UI sync.
+		// Re-enable after the ECS sync packet surface matches the legacy packet layout.
+		// NetworkSyncSystem_Update(g_registry, tick);
 		g_dispatcher.update();
 		// Phase 7 verification log - REMOVE IN PHASE 9
 		static uint32_t s_ecsdebug = 0;
@@ -1043,6 +1052,7 @@ int io_loop(LPFDWATCH fdw)
 
 	return 1;
 }
+
 
 
 

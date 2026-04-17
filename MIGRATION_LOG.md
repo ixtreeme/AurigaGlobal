@@ -3051,3 +3051,89 @@
 - next:
   - split `char.h` into forward-decl / interface layers in a dedicated follow-up pass
   - replace broad `#include "char.h"` usage incrementally before re-attempting deletion
+
+## Phase 9 - P9-1 ECS tick safety guards
+- goal:
+  - make the parallel ECS tick safe to run alongside `CHARACTER_MANAGER::Update()`
+  - keep `AISystem` and `VitalRegenSystem` disabled during the migration window
+- updated `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`:
+  - `MovementSystem_Update` now iterates only entities with:
+    - `ecs::MovementDestination`
+    - `ecs::VIDComponent`
+    - `ecs::Position`
+    - `ecs::MovementState`
+  - added `ecs/components/identity_components.hpp` include for `VIDComponent`
+- updated `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`:
+  - `CombatSystem_Update` now iterates only entities with:
+    - `ecs::CombatActiveTag`
+    - `ecs::CombatTarget`
+    - `ecs::VIDComponent`
+    - `ecs::CombatStats`
+    - `ecs::AttackCooldown`
+    - `ecs::Health`
+- updated `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`:
+  - `AffectSystem::UpdateAffect` now runs only for entities with `ecs::AffectList + ecs::VIDComponent`
+  - affect sync is skipped for empty `AffectList` state
+  - affect expiry loop now also requires `ecs::AffectList + ecs::VIDComponent`
+  - affect expiry is skipped for empty affect state
+- updated `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp`:
+  - `UpdateFishing` now runs only for entities with:
+    - `ecs::FishingState`
+    - `ecs::FishingActiveTag`
+    - `ecs::VIDComponent`
+  - inactive fishing state (`fishingNewEvent == nullptr`) is skipped
+- updated `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`:
+  - sync tick now checks:
+    - `LegacyCharOf(entity) != nullptr`
+    - `ch->GetDesc() != nullptr`
+  - entities without a live legacy character/connection are skipped
+- updated `SRC/Server/GameServer/main.cpp`:
+  - re-enabled:
+    - `constexpr bool kEnableParallelEcsMigrationTicks = true;`
+  - kept disabled during migration window:
+    - `AISystem_Update(g_registry, tick);`
+    - `VitalRegenSystem_Update(g_registry, tick);`
+    - `NetworkSyncSystem_Update(g_registry, tick);`
+  - added comments documenting that legacy FSM, legacy HP/SP regen, and legacy stat/bonus packet sync remain authoritative
+- build checkpoints:
+  - build after each guard change: success
+  - build after re-enabling parallel ECS tick: success
+- WinTest deploy/runtime checkpoint:
+  - deployed fresh `GameServer.exe` to:
+    - `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+  - restarted:
+    - `Database.exe`
+    - `Login.exe`
+    - `CORE99.exe`
+  - verified listeners:
+    - `30051`
+    - `30052`
+    - `30053`
+    - `30078`
+    - `30079`
+  - verified `core99` reconnected to DB after restart
+- syslog/syserr status:
+  - no new crash/ECS regression errors observed in `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\syslog.txt`
+  - no new P9-1-specific errors observed in `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\syserr.txt`
+  - remaining visible `syserr` lines were pre-existing:
+    - `GetPCEntity: VID=... not in ECS registry`
+    - earlier DB reconnect failures before `Database.exe` restart
+- note:
+  - first P9-1 runtime pass showed a remaining regression:
+    - login / select / loading / movement / attack / damage were correct
+    - character level, status points, and bonus UI fields were shown as zero
+  - root cause:
+    - `NetworkSyncSystem_Update` was still sending incomplete ECS-driven stat packets in parallel with the legacy packet path
+  - follow-up fix:
+    - disabled `NetworkSyncSystem_Update(g_registry, tick);` in `main.cpp`
+    - rebuilt and redeployed `GameServer.exe`
+    - restarted `Database.exe`, `Login.exe`, and `CORE99.exe`
+  - manual runtime verification after the follow-up fix: green
+    - login: OK
+    - character select / loading: OK
+    - movement: OK
+    - combat / attack / damage: OK
+    - character level / status points / bonus UI: OK
+  - P9-2 can start from this checkpoint
+- commit:
+  - `07ac1c7` `Phase 9: ECS tick safety guards - parallel tick re-enabled`
