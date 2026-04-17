@@ -77,6 +77,11 @@ EVENTFUNC(poison_event)
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
     }
 
+    const entt::entity poisonEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    if (poisonEntity != entt::null) {
+        g_dispatcher.trigger(ecs::EvPoisonApplied { poisonEntity, dam });
+    }
+
     if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_POISON)) {
         ch->m_pkPoisonEvent = nullptr;
         return 0;
@@ -139,6 +144,11 @@ EVENTFUNC(bleeding_event)
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
     }
 
+    const entt::entity bleedingEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    if (bleedingEntity != entt::null) {
+        g_dispatcher.trigger(ecs::EvBleedingApplied { bleedingEntity, dam });
+    }
+
     if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_BLEEDING)) {
         ch->m_pkBleedingEvent = nullptr;
         return 0;
@@ -187,6 +197,11 @@ EVENTFUNC(fire_event)
     int dam = info->amount;
     if (test_server) {
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
+    }
+
+    const entt::entity fireEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    if (fireEntity != entt::null) {
+        g_dispatcher.trigger(ecs::EvFireApplied { fireEntity, dam });
     }
 
     if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_FIRE)) {
