@@ -23,6 +23,8 @@
 #include "../../sectree_manager.h"
 #include "../../mob_manager.h"
 #include "../../start_position.h"
+#include "../events.hpp"
+#include "../EventDispatcher.hpp"
 #include "../../party.h"
 #include "../../buffer_manager.h"
 #include "../../guild.h"
@@ -1709,6 +1711,9 @@ EVENTFUNC(ChainLightningEvent)
 	if (pkTarget)
 	{
 		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, pkTarget);
+		const entt::entity e = CVIDRegistry::Instance().Find(pkChr->GetVID());
+		if (e != entt::null)
+			g_dispatcher.trigger(ecs::EvSkillUsed { e, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, pkTarget);
 		pkChr->AddChainLightningExcept(pkTarget);
 	}
@@ -4134,6 +4139,9 @@ EVENTFUNC(mob_skill_hit_event)
 		return 0;
 	}
 
+	const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
 	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);
 	ch->m_mapMobSkillEvent.erase(info->index);
 
