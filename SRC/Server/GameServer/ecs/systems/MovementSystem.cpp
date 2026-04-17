@@ -597,6 +597,9 @@ EVENTFUNC(save_event)
 		return 0;
 	}
 	sys_log(1, "SAVE_EVENT: %s", ch->GetName());
+	const entt::entity saveEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+	if (saveEntity != entt::null)
+		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
 	ch->Save();
 	ch->FlushDelayedSaveItem();
 	return (save_event_second_cycle);
@@ -763,6 +766,9 @@ EVENTFUNC(recovery_event)
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+					if (recoveryEntity != entt::null)
+						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 					ch->PointChange(POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
@@ -786,6 +792,9 @@ EVENTFUNC(recovery_event)
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+					if (recoveryEntity != entt::null)
+						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 					ch->PointChange(POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
@@ -795,8 +804,12 @@ EVENTFUNC(recovery_event)
 
 		if (!ch->IsDoor())
 		{
-			ch->MonsterLog("HP_REGEN +%d", std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100));
-			ch->PointChange(POINT_HP, std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100));
+			const int64_t hpGain = std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100);
+			ch->MonsterLog("HP_REGEN +%d", hpGain);
+			const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+			if (recoveryEntity != entt::null)
+				g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, static_cast<int32_t>(hpGain), 0 });
+			ch->PointChange(POINT_HP, hpGain);
 		}
 
 		if (ch->GetHP() >= ch->GetMaxHP())
@@ -839,6 +852,9 @@ EVENTFUNC(recovery_event)
 
 		sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 
+		const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+		if (recoveryEntity != entt::null)
+			g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 		ch->PointChange(POINT_HP, iAmount, false);
 		return PASSES_PER_SEC(3);
 	}
