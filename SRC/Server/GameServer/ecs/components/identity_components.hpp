@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 
+#include "spatial_components.hpp"
+
 namespace ecs {
 
 struct VIDComponent { uint32_t value; };
