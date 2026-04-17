@@ -17,6 +17,8 @@
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 
 #include <common/VnumHelper.h>
 #include "DragonSoul.h"
@@ -399,6 +401,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 			if (Blend_Item_find(item->GetVnum()))
 			{
 				Blend_Item_set_value(item);
+				EntityFactory::CreateItemEntity(g_registry, item);
 				return item;
 			}
 		}
@@ -517,6 +520,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	}
 #endif
 
+	EntityFactory::CreateItemEntity(g_registry, item);
 	return item;
 }
 
@@ -724,6 +728,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 		m_map_pkItemByID.erase(dwID);
 
 	m_VIDMap.erase(item->GetVID());
+	EntityFactory::DestroyItemEntity(g_registry, item);
 
 #ifdef M2_USE_POOL
 	pool_.Destroy(item);
