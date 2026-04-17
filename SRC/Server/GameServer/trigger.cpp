@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "utils.h"
 #include "config.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "battle.h"
 #include "affect.h"
@@ -83,6 +83,7 @@ void CHARACTER::AssignTriggers(const TMobTable* table)
 		abort();
 	}
 
+	// INTERFACE_TODO: m_triggerOnClick direct access, needs public trigger setter surface.
 	m_triggerOnClick.bType = table->bOnClickType;
 	m_triggerOnClick.pFunc = OnClickTriggers[table->bOnClickType].func;
 }
