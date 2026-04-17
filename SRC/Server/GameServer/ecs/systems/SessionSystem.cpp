@@ -23,6 +23,9 @@
 #include "../../p2p.h"
 #include "../../party.h"
 #include "../../pvp.h"
+#include "../EventDispatcher.hpp"
+#include "../VIDRegistry.hpp"
+#include "../events.hpp"
 #include "../../questmanager.h"
 #include "../../safebox.h"
 #include "../../sectree.h"
@@ -651,6 +654,18 @@ EVENTFUNC(warp_npc_event)
 
     if (ch == nullptr) {
         return 0;
+    }
+
+    const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+    if (e != entt::null)
+    {
+        const PIXEL_POSITION& warpPos = ch->GetWarpPosition();
+        g_dispatcher.trigger(ecs::EvWarpBegin {
+            e,
+            static_cast<uint32_t>(ch->GetMapIndex()),
+            warpPos.x,
+            warpPos.y
+        });
     }
 
     if (!ch->GetSectree())
