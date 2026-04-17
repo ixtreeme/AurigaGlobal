@@ -3843,3 +3843,52 @@
   - `P11.0` to `P11.11`: complete
   - next expected follow-up:
     - `item.h` interface cleanup / split in a later phase
+
+## Phase 12a - SECTREE read-only ECS bridge
+- added a thin ECS-side spatial bridge without modifying any legacy SECTREE source files:
+  - new component:
+    - `SRC/Server/GameServer/ecs/components/spatial_components.hpp`
+      - `ecs::SectorPlacement`
+  - include-chain wiring:
+    - `SRC/Server/GameServer/ecs/components/identity_components.hpp`
+  - new helper bridge:
+    - `SRC/Server/GameServer/ecs/SpatialHelpers.hpp`
+      - `ecs::SectorOf(...)`
+      - `ecs::SyncSectorPlacement(...)`
+      - `ecs::ForEachAround(...)`
+      - `ecs::SectorAt(...)`
+- additive sector sync wiring after legacy sector insertion / movement:
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+    - after legacy `new_tree->InsertEntity(this)` in `CHARACTER::Sync`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+    - after legacy `sectree->InsertEntity(this)` in `CHARACTER::Show`
+- read-only SECTREE helper replacements in ECS system files:
+  - `MovementSystem.cpp`
+    - simple `SECTREE_MANAGER::instance().Get(...)` lookup replaced with `ecs::SectorAt(...)`
+  - `SessionSystem.cpp`
+    - simple `SECTREE_MANAGER::instance().Get(...)` lookup replaced with `ecs::SectorAt(...)`
+  - `ActivitySystem.cpp`
+    - fishing start / fishing lookup paths switched from `GetMap(...)->Find(...)` to `ecs::SectorAt(...)`
+  - `CombatSystem.cpp`
+    - around-view traversals switched to `ecs::ForEachAround(g_registry, AIHelpers::EcsOf(this), ...)`
+    - simple retry lookup switched to `ecs::SectorAt(...)`
+    - complex `GetMovablePosition(...)` manager path intentionally kept with `SECTREE_MIGRATION_TODO`
+  - `ItemSystem.cpp`
+    - campfire placement check lookup switched to `ecs::SectorAt(...)`
+- constraints preserved:
+  - legacy `SECTREE` / `SECTREE_MANAGER` remain authoritative
+  - no write-side `InsertEntity` / `RemoveEntity` / attribute calls were replaced
+  - ECS bridge is read-only plus additive sync only
+- build checkpoints:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green after each step and each modified file
+- counts after `P12a`:
+  - remaining direct `SECTREE_MANAGER::instance` / `SECTREE_MANAGER::Get` calls in `ecs/systems/*.cpp`: `12`
+  - remaining `LPSECTREE|SECTREE_MANAGER::` refs outside `ecs/` and `questlua_*`: `234`
+  - `SyncSectorPlacement` call sites in `*.cpp`: `2`
+- commits:
+  - `dd3aaba` `Phase 12: P12a-1 Add SectorPlacement ECS component`
+  - `b37aa1d` `Phase 12: P12a-2 Add SpatialHelpers.hpp`
+  - `2d78553` `Phase 12: P12a-3 Wire SyncSectorPlacement into movement paths`
+  - `5c01817` `Phase 12: P12a-4 Add ForEachAround and SectorAt helpers`
+  - `4b26a49` `Phase 12: P12a-5 Replace read-only SECTREE calls in ECS systems`
