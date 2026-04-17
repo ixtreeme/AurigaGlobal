@@ -3137,3 +3137,101 @@
   - P9-2 can start from this checkpoint
 - commit:
   - `07ac1c7` `Phase 9: ECS tick safety guards - parallel tick re-enabled`
+
+## Phase 9 - P9-2 temporary diagnostics removed
+- removed from `SRC/Server/GameServer/input_db.cpp`:
+  - `VID UNIFICATION FAILED: vid=%u`
+  - `VID OK: vid=%u entity valid`
+- removed from `SRC/Server/GameServer/questmanager.cpp`:
+  - `GetPCEntity: VID=%u not in ECS registry`
+- removed from `SRC/Server/GameServer/char_manager.cpp`:
+  - all `SPAWN_PATH: ...` spawn diagnostics
+- removed from `SRC/Server/GameServer/ecs/EntityFactory.cpp`:
+  - `ECS: NPC entity created VID=...`
+  - `ECS: Stone entity created VID=...`
+- kept in `SRC/Server/GameServer/ecs/EntityFactory.cpp`:
+  - `ECS: PC entity created VID=...`
+- note:
+  - the expected `main.cpp` entity-count debug block was already absent at cleanup time, so no additional change was required there
+- verification:
+  - zero matches remain for:
+    - `VID UNIFICATION FAILED`
+    - `VID OK: vid`
+    - `SPAWN_PATH`
+    - `ECS: Monster entity`
+    - `ECS: NPC entity`
+    - `ECS: Stone entity`
+    - `ecsEntityCount`
+    - `ECS entity count`
+- build: success
+- commit:
+  - `e1d75c6` `Phase 9: P9-2 Remove temporary Phase 7/8 diagnostics`
+
+## Phase 9 - P9-3 migration dual-path audit
+- scope:
+  - `SRC/Server/GameServer/ecs/systems/*.cpp`
+- result:
+  - audited the migration markers and suspect component writes
+  - no removable type-A dual-path blocks or type-D disabled migration blocks remained in the active ECS system files
+  - remaining ECS writes in system files were either:
+    - active forward-only logic
+    - guard logic for the migration-window tick
+    - authoritative CHARACTER bridge code
+- status:
+  - P9-3 completed as an audit/no-op checkpoint
+
+## Phase 9 - P9-4 migration comments removed
+- removed stale migration comments from:
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/VitalRegenSystem.cpp`
+- kept architectural comments for the migration window, including:
+  - AISystem disabled comment
+  - VitalRegenSystem disabled comment
+  - NetworkSyncSystem disabled comment
+- verification:
+  - remaining count for
+    - `Phase [678]:`
+    - `ECS_MIGRATION`
+    - `migrated from`
+    - `legacy fallback preserved`
+    - `MIGRATION TODO`
+  - in `ecs/systems/*.cpp`: `0`
+- build: success
+- commit:
+  - `9e63461` `Phase 9: P9-4 Remove migration comments batch 0`
+
+## Phase 9 - P9-5 char.h fanout analysis
+- generated:
+  - `docs/ecs_migration/phase9_char_h_fanout_analysis.txt`
+- purpose:
+  - classify direct `char.h` users into:
+    - `L0` transitive-only
+    - `L1` `LPCHARACTER` only
+    - `L2` method-call users
+    - `L3` private-member users
+- output saved for Phase 9b planning
+- commit:
+  - `9287381` `Phase 9: P9-5 char.h fanout analysis`
+
+## Phase 9 - completion
+- P9-1:
+  - complete
+  - tick enabled
+  - runtime green after disabling `AISystem_Update`, `VitalRegenSystem_Update`, and `NetworkSyncSystem_Update` during the migration window
+- P9-2:
+  - complete
+- P9-3:
+  - complete (audit/no-op)
+- P9-4:
+  - complete
+- P9-5:
+  - complete
+- final build:
+  - success
+- final non-ECS / non-questlua legacy count:
+  - `1659`
+- status:
+  - `char.cpp`: deleted
+  - `char.h`: retained for Phase 9b interface splitting/deletion work
