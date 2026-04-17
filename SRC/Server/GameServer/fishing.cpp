@@ -406,13 +406,12 @@ EVENTFUNC(fishing_event)
 	if (!ch)
 		return 0;
 
-	// INTERFACE_TODO: m_pkFishingEvent direct access, needs public fishing-event handle surface.
 
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
 
 	if (!(rod && rod->GetType() == ITEM_ROD))
 	{
-		ch->m_pkFishingEvent = nullptr;
+		ch->GetFishingEventRef() = nullptr;
 		return 0;
 	}
 
@@ -442,8 +441,7 @@ EVENTFUNC(fishing_event)
 			if (info->step > 5)
 				info->step = 5;
 
-			// INTERFACE_TODO: m_pkFishingEvent direct access, needs public fishing-event handle surface.
-			ch->m_pkFishingEvent = nullptr;
+			ch->GetFishingEventRef() = nullptr;
 			FishingFail(ch);
 			rod->SetSocket(2, 0);
 			return 0;
