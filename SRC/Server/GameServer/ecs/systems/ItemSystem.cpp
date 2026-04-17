@@ -17074,3 +17074,30 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 	return v;
 }
 
+
+CItem::CItem(uint32_t dwVnum)
+	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_bWindow(0), m_dwID(0), m_bEquipped(false), m_dwVID(0),
+	m_wCell(0),
+	m_dwCount(0),
+	m_sLockedAttr(0),
+	m_ExtraProto(nullptr), m_lFlag(0), m_dwLastOwnerPID(0),
+	m_bExchanging(false), m_pkDestroyEvent(nullptr), m_pkExpireEvent(nullptr),
+
+#ifdef ENABLE_SOUL_SYSTEM
+	m_pkSoulItemEvent(nullptr),
+#endif
+
+	m_pkUniqueExpireEvent(nullptr), m_pkTimerBasedOnWearExpireEvent(nullptr), m_pkRealTimeExpireEvent(nullptr),
+	m_pkAccessorySocketExpireEvent(nullptr), m_pkOwnershipEvent(nullptr), m_dwOwnershipPID(0), m_bSkipSave(false),
+	m_isLocked(false),
+	m_dwMaskVnum(0), m_dwSIGVnum(0)
+{
+	memset(&m_alSockets, 0, sizeof(m_alSockets));
+	memset(&m_aAttr, 0, sizeof(m_aAttr));
+}
+
+CItem::~CItem()
+{
+	Destroy();
+}
+
