@@ -1,7 +1,7 @@
 #ifndef __INC_METIN_II_GAME_PARTY_H__
 #define __INC_METIN_II_GAME_PARTY_H__
 
-#include "char.h"
+#include "char_interface.hpp"
 
 enum // unit : minute
 {
