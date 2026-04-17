@@ -7,7 +7,7 @@
 #include "questlua.h"
 #include "config.h"
 #include "desc.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "buffer_manager.h"
 #include "db.h"
