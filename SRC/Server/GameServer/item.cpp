@@ -207,28 +207,6 @@ void CItem::SetExchanging(bool bOn)
 
 
 
-bool CItem::CreateSocket(uint8_t bSlot, uint8_t bGold)
-{
-	assert(bSlot < ITEM_SOCKET_MAX_NUM);
-
-	if (m_alSockets[bSlot] != 0)
-	{
-		sys_err("Item::CreateSocket : socket already exist %s %d", GetName(), bSlot);
-		return false;
-	}
-
-	if (bGold)
-		m_alSockets[bSlot] = 2;
-	else
-		m_alSockets[bSlot] = 1;
-
-	UpdatePacket();
-
-	Save();
-	return true;
-}
-
-
 EVENTFUNC(ownership_event)
 {
 	auto info = dynamic_cast<item_event_info*>(event->info);
@@ -254,93 +232,6 @@ EVENTFUNC(ownership_event)
 }
 
 
-
-void CItem::AlterToSocketItem(int iSocketCount)
-{
-	if (iSocketCount >= ITEM_SOCKET_MAX_NUM)
-	{
-		sys_log(0, "Invalid Socket Count %d, set to maximum", ITEM_SOCKET_MAX_NUM);
-		iSocketCount = ITEM_SOCKET_MAX_NUM;
-	}
-
-	for (int i = 0; i < iSocketCount; ++i)
-		SetSocket(i, 1);
-}
-
-void CItem::AlterToMagicItem()
-{
-	if (GetAttributeSetIndex() < 0)
-	{
-		return;
-	}
-
-	int iSecondPct;
-	int iThirdPct;
-
-	switch (GetType())
-	{
-	case ITEM_WEAPON:
-	{
-		iSecondPct = 20;
-		iThirdPct = 5;
-	}
-	break;
-
-	case ITEM_ARMOR:
-	{
-		if (GetSubType() == ARMOR_BODY)
-		{
-			iSecondPct = 10;
-			iThirdPct = 2;
-		}
-		else
-		{
-			iSecondPct = 10;
-			iThirdPct = 1;
-		}
-	}
-	break;
-#ifdef ENABLE_ATTR_COSTUMES
-	case ITEM_COSTUME:
-	{
-		uint8_t subtype = GetSubType();
-		iSecondPct = subtype == COSTUME_BODY || subtype == COSTUME_HAIR
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-			|| subtype == COSTUME_WEAPON
-#endif
-			? 100 : 0;
-		iThirdPct = subtype == COSTUME_BODY || subtype == COSTUME_HAIR
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-			|| subtype == COSTUME_WEAPON
-#endif
-			? 100 : 0;
-	}
-	break;
-#endif
-	default:
-	{
-		iSecondPct = 0;
-		iThirdPct = 0;
-	}
-	break;
-	}
-
-	if (iSecondPct == 0 && iThirdPct == 0)
-	{
-		return;
-	}
-
-	PutAttribute(aiItemMagicAttributePercentHigh);
-	if (number(1, 100) <= iSecondPct)
-	{
-		PutAttribute(aiItemMagicAttributePercentLow);
-	}
-
-	if (number(1, 100) <= iThirdPct)
-	{
-		PutAttribute(aiItemMagicAttributePercentLow);
-	}
-}
 
 uint32_t CItem::GetRefineFromVnum()
 {
@@ -622,13 +513,6 @@ bool CItem::IsUnlimitedTimeUnique()
 
 
 
-
-
-
-void CItem::ApplyAddon(int iAddonType)
-{
-	CItemAddonManager::instance().ApplyAddonTo(iAddonType, this);
-}
 
 
 
@@ -1018,53 +902,6 @@ int32_t CItem::FindApplyValue(uint8_t bApplyType)
 	}
 
 	return 0;
-}
-
-void CItem::CopySocketTo(LPITEM pItem)
-{
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		pItem->m_alSockets[i] = m_alSockets[i];
-	}
-}
-
-
-
-
-
-
-
-void CItem::AttrLog()
-{
-	const char* pszIP = nullptr;
-
-	if (GetOwner() && GetOwner()->GetDesc())
-		pszIP = GetOwner()->GetDesc()->GetHostName();
-
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		if (m_alSockets[i])
-		{
-#ifdef ENABLE_NEWSTUFF
-			if (g_iDbLogLevel >= LOG_LEVEL_MAX)
-#endif
-				LogManager::instance().ItemLog(i, m_alSockets[i], 0, GetID(), "INFO_SOCKET", "", pszIP ? pszIP : "", GetOriginalVnum());
-		}
-	}
-
-	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-	{
-		int	type = m_aAttr[i].bType;
-		int value = m_aAttr[i].sValue;
-
-		if (type)
-		{
-#ifdef ENABLE_NEWSTUFF
-			if (g_iDbLogLevel >= LOG_LEVEL_MAX)
-#endif
-				LogManager::instance().ItemLog(i, type, value, GetID(), "INFO_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum());
-		}
-	}
 }
 
 int CItem::GiveMoreTime_Per(float fPercent)
