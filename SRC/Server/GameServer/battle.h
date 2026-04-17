@@ -90,8 +90,7 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 }
 
 #ifdef ENABLE_ANTICHEAT
-// INTERFACE_TODO: m_speed_hack_count direct access, needs public anti-cheat counter surface.
-#define GET_SPEED_HACK_COUNT(ch)		((ch)->m_speed_hack_count)
+#define GET_SPEED_HACK_COUNT(ch)		((ch)->GetSpeedHackCount())
 #define INCREASE_SPEED_HACK_COUNT(ch)	(++GET_SPEED_HACK_COUNT(ch))
 int32_t GET_ATTACK_SPEED(LPCHARACTER ch);
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time);
