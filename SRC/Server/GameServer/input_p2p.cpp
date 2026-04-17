@@ -3,7 +3,7 @@
 #include "config.h"
 #include "desc_client.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "p2p.h"
 #include "guild.h"
