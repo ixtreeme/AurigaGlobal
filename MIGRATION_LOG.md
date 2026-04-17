@@ -4220,3 +4220,96 @@ itt voltunk
 - commits:
   - `6b37822` `Phase 9b: strict L3 re-audit`
   - `10d79b6` `Phase 9b: Migrate strict-L2 files to char_interface.hpp`
+
+## Phase 13 - TRUE L3 include reduction and interface todo marking
+- generated a dedicated audit for the remaining `TRUE L3` file set:
+  - `docs/ecs_migration/phase13_l3_private_audit.txt`
+- audited file set:
+  - `battle.cpp`
+  - `battle.h`
+  - `New_PetSystem.cpp`
+  - `new_offlineshop.cpp`
+  - `input_main.cpp`
+  - `dungeon.cpp`
+  - `PetSystem.cpp`
+  - `trigger.cpp`
+  - `questlua_global.cpp`
+  - `questlua.cpp`
+  - `party.h`
+  - `party.cpp`
+  - `input_p2p.cpp`
+  - `fishing.cpp`
+  - `cmd_general.cpp`
+  - `battle_pass.cpp`
+  - `MountSystem.cpp`
+- result of the per-file audit:
+  - several original hits were false positives from local/non-`CHARACTER` members with `m_*` names
+    - examples:
+      - `party.cpp` / `party.h` → `CParty::m_pkDungeon`
+      - `input_main.cpp` → local `m_pkChrTarget` / struct `m_bEmpire`
+      - `new_offlineshop.cpp` → shop-local `m_stName` / `m_pkShop`
+      - `dungeon.cpp` → `CDungeon::m_pkDungeon` / `m_lWarpMapIndex`
+  - actual unresolved `CHARACTER` internals remaining in this pass are concentrated in:
+    - trigger click state
+    - timed-event handles
+    - fishing-event handle
+    - pet/mount mob-data null checks
+    - battle anti-cheat log/counter state
+- migrated all 17 target files from `char.h` to `char_interface.hpp`
+- added explicit `INTERFACE_TODO` markers where direct `CHARACTER` private access could not be safely replaced without adding new public getters:
+  - `SRC/Server/GameServer/trigger.cpp`
+    - `m_triggerOnClick`
+  - `SRC/Server/GameServer/fishing.cpp`
+    - `m_pkFishingEvent`
+  - `SRC/Server/GameServer/cmd_general.cpp`
+    - `m_pkTimedEvent`
+  - `SRC/Server/GameServer/MountSystem.cpp`
+    - `m_pkMobData`
+  - `SRC/Server/GameServer/PetSystem.cpp`
+    - `m_pkMobData`
+  - `SRC/Server/GameServer/New_PetSystem.cpp`
+    - `m_pkMobData`
+  - `SRC/Server/GameServer/battle.h`
+    - `m_speed_hack_count`
+  - `SRC/Server/GameServer/battle.cpp`
+    - `m_pkTimedEvent`
+    - `m_kAttackLog`
+    - `m_AttackedLog`
+    - `m_speed_hack_count`
+- safe direct replacements done implicitly by audit outcome:
+  - files whose `m_*` hits turned out to be non-`CHARACTER` members were reduced to include-layer migration only
+  - no new `char.h` getters were introduced in this pass
+  - no risky entt bridge rewrite was forced into logic that still depends on private state
+- counts after Phase 13:
+  - direct `#include "char.h"` users outside `ecs/`: `1`
+    - remaining file:
+      - `SRC/Server/GameServer/char_manager.cpp`
+  - direct `#include "char_interface.hpp"` users: `118`
+  - direct `#include "char_fwd.hpp"` users: `1`
+  - total `INTERFACE_TODO` markers in `SRC/Server/GameServer`: `15`
+- build gate:
+  - full `GameServer` build run after every file migration:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success on all 17 files
+- commits:
+  - `314c102` `Phase 13: L3 private member access audit`
+  - `32b6f96` `Phase 13: migrate trigger.cpp`
+  - `c9e27f6` `Phase 13: migrate questlua_global.cpp`
+  - `415b17a` `Phase 13: migrate questlua.cpp`
+  - `9383561` `Phase 13: migrate party.h`
+  - `42d839d` `Phase 13: migrate party.cpp`
+  - `dbe2faa` `Phase 13: migrate input_p2p.cpp`
+  - `a169750` `Phase 13: migrate fishing.cpp`
+  - `8ab3f02` `Phase 13: migrate cmd_general.cpp`
+  - `9bbe3f7` `Phase 13: migrate battle_pass.cpp`
+  - `a139a92` `Phase 13: migrate MountSystem.cpp`
+  - `7215f38` `Phase 13: migrate new_offlineshop.cpp`
+  - `971c7b3` `Phase 13: migrate input_main.cpp`
+  - `f4df990` `Phase 13: migrate dungeon.cpp`
+  - `9f5e877` `Phase 13: migrate PetSystem.cpp`
+  - `1df4eed` `Phase 13: migrate New_PetSystem.cpp`
+  - `7f4e767` `Phase 13: migrate battle.h`
+  - `ab69590` `Phase 13: migrate battle.cpp`
+- status:
+  - the remaining `char.h` include surface is effectively collapsed to one non-ecs source file
+  - the next reduction step is Phase `9c`: add the missing public accessor surface for the `INTERFACE_TODO` members and then remove the last direct `char.h` include
