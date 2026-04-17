@@ -80,106 +80,13 @@ EVENTFUNC(item_destroy_event)
 
 
 
-void CItem::EncodeInsertPacket(LPENTITY ent)
-{
-	LPDESC d;
-
-	if (!(d = ent->GetDesc()))
-		return;
-
-	const PIXEL_POSITION& c_pos = GetXYZ();
-
-	packet_item_ground_add pack;
-
-	pack.bHeader = HEADER_GC_ITEM_GROUND_ADD;
-	pack.x = c_pos.x;
-	pack.y = c_pos.y;
-	pack.z = c_pos.z;
-	pack.dwVnum = GetVnum();
-	pack.dwVID = m_dwVID;
-	//pack.count	= m_dwCount;
-
-	d->Packet(&pack, sizeof(pack));
-
-	if (m_pkOwnershipEvent != nullptr)
-	{
-		auto info = dynamic_cast<item_event_info*>(m_pkOwnershipEvent->info);
-
-		if (info == nullptr)
-		{
-			sys_err("CItem::EncodeInsertPacket> <Factor> Null pointer");
-			return;
-		}
-
-		TPacketGCItemOwnership p;
-
-		p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-		p.dwVID = m_dwVID;
-		strlcpy(p.szName, info->szOwnerName, sizeof(p.szName));
-
-		d->Packet(&p, sizeof(TPacketGCItemOwnership));
-	}
-}
-
-void CItem::EncodeRemovePacket(LPENTITY ent)
-{
-	LPDESC d;
-
-	if (!(d = ent->GetDesc()))
-		return;
-
-	packet_item_ground_del pack;
-
-	pack.bHeader = HEADER_GC_ITEM_GROUND_DEL;
-	pack.dwVID = m_dwVID;
-
-	d->Packet(&pack, sizeof(pack));
-	sys_log(2, "Item::EncodeRemovePacket %s to %s", GetName(), ((LPCHARACTER)ent)->GetName());
-}
 
 
 
 
 
-void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)
-{
-	if (!GetVnum())
-		return;
 
-	packet->header = HEADER_GC_ITEM_USE;
-	packet->ch_vid = ch->GetVID();
-	packet->victim_vid = victim->GetVID();
-	packet->Cell = TItemPos(GetWindow(), m_wCell);
-	packet->vnum = GetVnum();
-}
 
-void CItem::UpdatePacket()
-{
-	if (!m_pOwner || !m_pOwner->GetDesc())
-		return;
-
-#ifdef ENABLE_SWITCHBOT
-	if (m_bWindow == SWITCHBOT)
-		return;
-#endif
-
-	TPacketGCItemUpdate pack;
-
-	pack.header = HEADER_GC_ITEM_UPDATE;
-	pack.Cell = TItemPos(GetWindow(), m_wCell);
-	pack.count = m_dwCount;
-#ifdef ATTR_LOCK
-	pack.lockedattr = m_sLockedAttr;
-#endif
-
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		pack.alSockets[i] = m_alSockets[i];
-
-	memcpy(pack.aAttr, GetAttributes(), sizeof(pack.aAttr));
-
-	sys_log(2, "UpdatePacket %s -> %s", GetName(), m_pOwner->GetName());
-	m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
-}
 
 #ifdef ATTR_LOCK
 
