@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <sstream>
 #include "constants.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "log.h"
 #include "questmanager.h"
