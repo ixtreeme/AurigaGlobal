@@ -16,6 +16,8 @@
 #include "locale_service.h"
 #include "log.h"
 #include "questmanager.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
 : pid(ch->GetPlayerID()), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ch->GetName())
@@ -2201,6 +2203,7 @@ EVENTFUNC( GuildInviteEvent )
 		pGuild->InviteDeny( pInfo->dwInviteePID );
 	}
 
+	g_dispatcher.trigger(ecs::EvGuildInvite { pInfo->dwGuildID, pInfo->dwInviteePID });
 	return 0;
 }
 
