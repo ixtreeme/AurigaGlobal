@@ -502,7 +502,6 @@ void CHARACTER::SyncPacket()
 
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::PointsPacket
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
 
     for (const entt::entity entity : view) {

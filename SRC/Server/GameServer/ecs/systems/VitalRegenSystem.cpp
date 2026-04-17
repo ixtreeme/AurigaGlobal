@@ -11,7 +11,6 @@
 
 void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::StartRecoveryEvent
     if ((tick % PASSES_PER_SEC(1)) != 0) {
         return;
     }

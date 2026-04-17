@@ -677,7 +677,6 @@ void CHARACTER::ApplyMobAttribute(const TMobTable* table)
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::ProcessAffect
     if ((tick % PASSES_PER_SEC(1)) != 0) {
         return;
     }

@@ -68,7 +68,6 @@ bool CanGuardAttack(const ecs::AIFlags* flags, const ecs::EmpireComponent* empir
 
 void AISystem_UpdateGuard(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::__StateIdle_NPC guard search
     auto view = reg.view<ecs::GuardState, ecs::Position, ecs::AIState>(entt::exclude<ecs::DeadTag>);
 
     view.each([&](const entt::entity entity, ecs::GuardState& guard, const ecs::Position& guardPosition, ecs::AIState& aiState) {
@@ -117,20 +116,17 @@ void AISystem_UpdateGuard(entt::registry& reg, uint32_t tick)
 
 void AISystem_UpdateWarFlag(entt::registry& reg, uint32_t tick)
 {
-    // migrated from CHARACTER::StateFlag / CHARACTER::StateFlagBase
     auto view = reg.view<ecs::WarFlagState, ecs::Position>(entt::exclude<ecs::DeadTag>);
     view.each([&](const entt::entity entity, const ecs::WarFlagState& flagState, const ecs::Position& flagPosition) {
         (void)entity;
         (void)tick;
         (void)flagState;
         (void)flagPosition;
-        // TODO Phase 8: move war-flag capture/return logic from char_state.cpp.
     });
 }
 
 void AISystem_UpdatePassiveTags(entt::registry& reg)
 {
-    // migrated from CHARACTER::__StateIdle_Stone / CHARACTER::StateHorse
     auto stoneView = reg.view<ecs::StoneAITag, ecs::AIState>(entt::exclude<ecs::DeadTag>);
     stoneView.each([](const entt::entity, ecs::AIState& aiState) {
         aiState.currentState = AI_STATE_IDLE;
@@ -150,7 +146,6 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
     AISystem_UpdateWarFlag(reg, tick);
     AISystem_UpdatePassiveTags(reg);
 
-    // migrated from CHARACTER::StateIdle
     auto view = reg.view<ecs::AIState, ecs::AggroTable, ecs::Position, ecs::MobDataRef>(entt::exclude<ecs::DeadTag, ecs::StunTag>);
 
     view.each([&](const entt::entity entity, ecs::AIState& aiState, ecs::AggroTable& aggroTable, ecs::Position& position, const ecs::MobDataRef& mobData) {
