@@ -73,4 +73,34 @@ inline bool IsAttrAt(int32_t mapIndex, int32_t x, int32_t y, uint32_t dwFlag)
     return tree->IsAttr(x, y, dwFlag);
 }
 
+// Empire lookup by map index.
+inline uint8_t GetEmpireFromMap(int32_t mapIndex)
+{
+    return SECTREE_MANAGER::instance().GetEmpireFromMapIndex(mapIndex);
+}
+
+// Recall position lookup.
+inline bool GetRecallPosition(int32_t mapIndex, uint8_t empire, PIXEL_POSITION& outPos)
+{
+    return SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapIndex, empire, outPos);
+}
+
+// Map metadata lookup by map index.
+inline LPSECTREE_MAP GetMap(int32_t mapIndex)
+{
+    return SECTREE_MANAGER::instance().GetMap(mapIndex);
+}
+
+// Map index from world coordinates.
+inline int32_t GetMapIndex(int32_t x, int32_t y)
+{
+    return SECTREE_MANAGER::instance().GetMapIndex(x, y);
+}
+
+// Movable position search (complex path - wraps as-is).
+inline bool GetMovablePosition(int32_t mapIndex, int32_t x, int32_t y, PIXEL_POSITION& outPos)
+{
+    return SECTREE_MANAGER::instance().GetMovablePosition(mapIndex, x, y, outPos);
+}
+
 } // namespace ecs
