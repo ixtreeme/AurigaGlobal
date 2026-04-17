@@ -36,6 +36,7 @@
 
 #define ENABLE_FORCE2MASTERSKILL
 
+#include "../SpatialHelpers.hpp"
 #include "../AIHelpers.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
@@ -2601,8 +2602,7 @@ EVENTFUNC(skill_gwihwan_event)
 		PIXEL_POSITION pos;
 
 		// Ľş°ř
-		// SECTREE_MIGRATION_TODO: keep legacy manager path until recall-position lookup has an ECS bridge
-		if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ch->GetEmpire(), pos))
+		if (ecs::GetRecallPosition(ch->GetMapIndex(), ch->GetEmpire(), pos))
 		{
 			sys_log(1, "Recall: %s %d %d -> %d %d", ch->GetName(), ch->GetX(), ch->GetY(), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
