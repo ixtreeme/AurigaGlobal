@@ -3999,3 +3999,52 @@
 - commits:
   - `5c608c5` `Phase 12: P12c-1 Add IsMovablePosition and IsAttrAt helpers`
   - `abaeb4b` `Phase 12: P12c-2 Replace movable/attr TODO calls in ECS systems`
+
+## Phase 12d - private-map / map-loading isolation
+- audited the remaining manager-meta `SECTREE_MIGRATION_TODO` markers in ECS system files:
+  - category counts before replacement:
+    - `GetEmpireFromMapIndex`: `1`
+    - `GetRecallPositionByEmpire`: `3`
+    - `GetMap / GetMapIndex`: `4`
+    - `GetMovablePosition`: `2`
+    - `Other`: `0`
+- extended `SRC/Server/GameServer/ecs/SpatialHelpers.hpp` with thin map-meta wrappers:
+  - `ecs::GetEmpireFromMap(int32_t mapIndex)`
+  - `ecs::GetRecallPosition(int32_t mapIndex, uint8_t empire, PIXEL_POSITION& outPos)`
+  - `ecs::GetMap(int32_t mapIndex)`
+  - `ecs::GetMapIndex(int32_t x, int32_t y)`
+  - `ecs::GetMovablePosition(int32_t mapIndex, int32_t x, int32_t y, PIXEL_POSITION& outPos)`
+- all remaining TODO-marked manager-meta call sites in ECS systems were replaced with the new wrappers:
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - `GetMovablePosition(...)` -> `ecs::GetMovablePosition(...)`
+    - `GetEmpireFromMapIndex(...)` -> `ecs::GetEmpireFromMap(...)`
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+    - `GetRecallPositionByEmpire(...)` -> `ecs::GetRecallPosition(...)`
+    - `GetMap(...)` -> `ecs::GetMap(...)`
+    - `GetMapIndex(...)` -> `ecs::GetMapIndex(...)`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+    - `GetMapIndex(...)` -> `ecs::GetMapIndex(...)`
+    - `GetMap(...)` -> `ecs::GetMap(...)`
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+    - `GetRecallPositionByEmpire(...)` -> `ecs::GetRecallPosition(...)`
+- result:
+  - no `SECTREE_MIGRATION_TODO` markers remain in `ecs/systems/*.cpp`
+  - no direct `SECTREE_MANAGER::instance` / `SECTREE_MANAGER::Get` calls remain in `ecs/systems/*.cpp`
+- constraints preserved:
+  - legacy `SECTREE` / `SECTREE_MANAGER` remain authoritative
+  - no legacy SECTREE source files were modified
+  - bridge remains pure wrapping with no functional rewrite
+- build checkpoints:
+  - after wrapper addition:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - after TODO replacement:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+- counts after `P12d`:
+  - remaining `SECTREE_MIGRATION_TODO` markers in `ecs/systems/*.cpp`: `0`
+  - remaining direct `SECTREE_MANAGER::instance` / `SECTREE_MANAGER::Get` calls in `ecs/systems/*.cpp`: `0`
+  - remaining `LPSECTREE|SECTREE_MANAGER::` refs outside `ecs/` and `questlua_*`: `296`
+- commits:
+  - `a833164` `Phase 12: P12d-1 Add map-meta wrappers to SpatialHelpers.hpp`
+  - `807c407` `Phase 12: P12d-2 Replace remaining TODO calls in ECS systems`
