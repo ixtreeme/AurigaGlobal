@@ -13,6 +13,8 @@
 #include "db.h"
 #include "packet.h"
 #include "locale_service.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 EVENTINFO(war_map_info)
 {
@@ -38,6 +40,7 @@ EVENTFUNC(war_begin_event)
 
 	CWarMap * pMap = info->pWarMap;
 	pMap->CheckWarEnd();
+	g_dispatcher.trigger(ecs::EvWarBegin { static_cast<uint32_t>(pMap->GetMapIndex()) });
 	return PASSES_PER_SEC(10);
 }
 
@@ -62,6 +65,7 @@ EVENTFUNC(war_end_event)
 	else
 	{
 		pMap->SetEndEvent(nullptr);
+		g_dispatcher.trigger(ecs::EvWarEnd { static_cast<uint32_t>(pMap->GetMapIndex()) });
 		CWarMapManager::instance().DestroyWarMap(pMap);
 		return 0;
 	}
@@ -79,6 +83,7 @@ EVENTFUNC(war_timeout_event)
 
 	CWarMap * pMap = info->pWarMap;
 	pMap->Timeout();
+	g_dispatcher.trigger(ecs::EvWarTimeout { static_cast<uint32_t>(pMap->GetMapIndex()) });
 	return 0;
 }
 
