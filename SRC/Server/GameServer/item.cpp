@@ -670,54 +670,7 @@ EVENTFUNC(real_time_expire_event)
 	return PASSES_PER_SEC(1);
 }
 
-void CItem::StartRealTimeExpireEvent()
-{
-	if (m_pkRealTimeExpireEvent)
-		return;
 
-	for (auto aLimit : GetProto()->aLimits)
-	{
-		if (LIMIT_REAL_TIME == aLimit.bType || LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
-		{
-			item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-			info->item_vid = GetVID();
-#ifdef ENABLE_NEW_USE_POTION
-			if ((GetType() == ITEM_USE) && (GetSubType() == USE_NEW_POTIION)) {
-				int32_t remainSec = GetSocket(0);
-				if (remainSec <= 0) {
-					if (GetSocket(1) == 1) {
-						LPCHARACTER pkOwner = GetOwner();
-						if (pkOwner) {
-							if (pkOwner->FindAffect(GetValue(0))) {
-								pkOwner->RemoveAffect(GetValue(0));
-							}
-
-#ifdef TEXTS_IMPROVEMENT
-							pkOwner->ChatPacketNew(CHAT_TYPE_INFO, 27, "%s", GetName());
-#endif
-						}
-					}
-
-					ITEM_MANAGER::instance().RemoveItem(this, "REAL_TIME_EXPIRE");
-					return;
-				}
-
-				info->newpotion = true;
-				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
-			}
-			else {
-				info->newpotion = false;
-				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-			}
-#else
-			m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-#endif
-
-			sys_log(0, "REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
-			return;
-		}
-	}
-}
 
 bool CItem::IsRealTimeItem()
 {
