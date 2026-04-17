@@ -44,13 +44,12 @@ bool battle_distance_valid(LPCHARACTER ch, LPCHARACTER victim)
 
 bool timed_event_cancel(LPCHARACTER ch)
 {
-	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
-	if (ch->m_pkTimedEvent)
+	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->m_pkTimedEvent);
+		event_cancel(&ch->GetTimedEventRef());
 		return true;
 	}
 
@@ -971,27 +970,24 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 }
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	// INTERFACE_TODO: m_kAttackLog direct access, needs public anti-cheat attack-log surface.
 	if (victim && ch && ch->IsPC()) {
-		ch->m_kAttackLog.dwVID = victim->GetVID();
-		ch->m_kAttackLog.dwTime = current_time;
+		ch->GetAttackLogRef().dwVID = victim->GetVID();
+		ch->GetAttackLogRef().dwTime = current_time;
 	}
 }
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	// INTERFACE_TODO: m_AttackedLog direct access, needs public anti-cheat attacked-log surface.
 	if (victim && ch && ch->IsPC()) {
-		victim->m_AttackedLog.dwPID = ch->GetPlayerID();
-		victim->m_AttackedLog.dwAttackedTime = current_time;
+		victim->GetAttackedLogRef().dwPID = ch->GetPlayerID();
+		victim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}
 }
 
 bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	// INTERFACE_TODO: m_kAttackLog / m_AttackedLog / m_speed_hack_count direct access, needs public anti-cheat surface.
 	if (victim && ch && ch->IsPC()) {
-		if (ch->m_kAttackLog.dwVID == victim->GetVID())
+		if (ch->GetAttackLogRef().dwVID == victim->GetVID())
 		{
-			if (current_time - ch->m_kAttackLog.dwTime < GET_ATTACK_SPEED(ch))
+			if (current_time - ch->GetAttackLogRef().dwTime < GET_ATTACK_SPEED(ch))
 			{
 				INCREASE_SPEED_HACK_COUNT(ch);
 	
@@ -999,15 +995,15 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 				{
 					sys_log(0, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
 							ch->GetName(),
-							current_time - ch->m_kAttackLog.dwTime,
+							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
-							ch->m_speed_hack_count);
+							ch->GetSpeedHackCount());
 	
 					ch->ChatPacket(CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
 							ch->GetName(),
-							current_time - ch->m_kAttackLog.dwTime,
+							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
-							ch->m_speed_hack_count);
+							ch->GetSpeedHackCount());
 				}
 	
 				SET_ATTACK_TIME(ch, victim, current_time);
@@ -1018,10 +1014,10 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	
 		SET_ATTACK_TIME(ch, victim, current_time);
 	
-		if (victim->m_AttackedLog.dwPID == ch->GetPlayerID()) {
-			if (current_time - victim->m_AttackedLog.dwAttackedTime < GET_ATTACK_SPEED(ch)) {
+		if (victim->GetAttackedLogRef().dwPID == ch->GetPlayerID()) {
+			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
-				if (ch->m_speed_hack_count > 30) {
+				if (ch->GetSpeedHackCount() > 30) {
 					ch->ChatPacket(CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ch->GetName());
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
 					ch->GetDesc()->DelayedDisconnect(3);
