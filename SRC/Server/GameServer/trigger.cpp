@@ -83,9 +83,9 @@ void CHARACTER::AssignTriggers(const TMobTable* table)
 		abort();
 	}
 
-	// INTERFACE_TODO: m_triggerOnClick direct access, needs public trigger setter surface.
-	m_triggerOnClick.bType = table->bOnClickType;
-	m_triggerOnClick.pFunc = OnClickTriggers[table->bOnClickType].func;
+	auto& triggerOnClick = GetTriggerOnClick();
+	triggerOnClick.bType = table->bOnClickType;
+	triggerOnClick.pFunc = OnClickTriggers[table->bOnClickType].func;
 }
 
 /*
