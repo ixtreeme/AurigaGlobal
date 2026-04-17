@@ -4167,3 +4167,56 @@ itt voltunk
   - Layer 2 indirection is now established
   - `char.h` content is still unchanged
   - the next safe reduction step is a stricter forward-only audit and then a real public-only `char_interface.hpp` extraction
+
+## Phase 9b - Strict L2/L3 split
+- generated a strict private-member audit against the current tree:
+  - `docs/ecs_migration/phase9b_strict_l3_audit.txt`
+- strict audit result:
+  - `TRUE L3` (direct private member access): `17`
+  - `TRUE L2` (no direct private member access): `101`
+- moved all newly confirmed `TRUE L2` files that still included `char.h` over to `char_interface.hpp`
+  - migrated count: `79`
+  - build gate policy used:
+    - full `GameServer` build after each batch of `5` files
+  - result:
+    - all batches passed without rollback
+- counts after the strict split:
+  - direct `#include "char.h"` users: `18`
+    - this is now the strict private-access set plus the residual non-migrated edge cases
+  - direct `#include "char_interface.hpp"` users: `101`
+  - direct `#include "char_fwd.hpp"` users: `1`
+- attempted to replace the `char_interface.hpp` shim with a real public-only extracted surface from `char.h`
+  - result:
+    - rolled back
+  - measured failure:
+    - first build returned `5392` compiler errors
+  - primary blocker classes from the failed attempt:
+    - class-level parse breakage caused by removing interleaved `protected:` / `private:` regions from a heavily segmented class body
+    - many public inline methods directly reference hidden member fields
+      - example fields hit in the first error wave:
+        - `m_lastFruitUse`
+        - `m_lastGoldFruitUse`
+        - `m_pointsInstant`
+        - `dwLastTargetInfoPulse`
+    - high volume of follow-on identifier failures
+      - undeclared identifier errors observed in the attempt log: `771`
+    - missing/undefined type and base-surface fallout
+      - base/type-related failures observed in the attempt log: `102`
+  - conclusion:
+    - `char_interface.hpp` cannot be made public-only by mechanical extraction
+    - the next viable phase needs targeted de-inlining or explicit declaration-only replacement for public methods that currently depend on hidden state
+  - rollback outcome:
+    - `char_interface.hpp` restored to the shim version
+    - restore build green
+- build checkpoints:
+  - after every strict-L2 migration batch:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+  - public-only extraction attempt:
+    - failed, `5392` errors
+  - rollback build:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+    - success
+- commits:
+  - `6b37822` `Phase 9b: strict L3 re-audit`
+  - `10d79b6` `Phase 9b: Migrate strict-L2 files to char_interface.hpp`
