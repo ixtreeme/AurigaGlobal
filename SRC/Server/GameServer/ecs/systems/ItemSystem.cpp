@@ -394,6 +394,7 @@ EVENTFUNC(unique_expire_event);
 EVENTFUNC(timer_based_on_wear_expire_event);
 EVENTFUNC(real_time_expire_event);
 EVENTFUNC(accessory_socket_expire_event);
+EVENTFUNC(soul_item_event);
 
 namespace ItemSystem {
 
@@ -15978,3 +15979,31 @@ void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
 {
 	m_pkAccessorySocketExpireEvent = pkEvent;
 }
+
+#ifdef ENABLE_SOUL_SYSTEM
+void CItem::SetSoulItemEvent(LPEVENT pkEvent)
+{
+	m_pkSoulItemEvent = pkEvent;
+}
+
+void CItem::StartSoulItemEvent()
+{
+	if (GetType() != ITEM_SOUL)
+		return;
+
+	if (m_pkSoulItemEvent)
+		return;
+
+	int iMinutes = (GetSocket(2) / 10000);
+	if (iMinutes >= GetLimitValue(1))
+		return;
+
+	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
+	pInfo->item_vid = GetVID();
+	SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
+
+	const entt::entity e = ItemEntityOf(this);
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+}
+#endif

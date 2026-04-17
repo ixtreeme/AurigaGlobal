@@ -1394,27 +1394,7 @@ EVENTFUNC(soul_item_event)
 	return PASSES_PER_SEC(60);
 }
 
-void CItem::SetSoulItemEvent(LPEVENT pkEvent)
-{
-	m_pkSoulItemEvent = pkEvent;
-}
 
-void CItem::StartSoulItemEvent()
-{
-	if (GetType() != ITEM_SOUL)
-		return;
-
-	if (m_pkSoulItemEvent)
-		return;
-
-	int iMinutes = (GetSocket(2) / 10000);
-	if (iMinutes >= GetLimitValue(1))
-		return;
-
-	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
-	pInfo->item_vid = GetVID();
-	SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
-}
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
