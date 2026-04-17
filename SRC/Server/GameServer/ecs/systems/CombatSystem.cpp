@@ -7490,8 +7490,7 @@ void CHARACTER::CowardEscape()
 			bool bIsWayBlocked = false;
 			for (int j = 1; j <= 100; ++j)
 			{
-				// SECTREE_MIGRATION_TODO: keep legacy manager path until movable-position logic has an ECS bridge
-				if (!SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
+				if (!ecs::IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
 				{
 					bIsWayBlocked = true;
 					break;
