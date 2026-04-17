@@ -1128,8 +1128,7 @@ bool CNewPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 // StateHorse함수 그냥 C&P -_-;
 bool CNewPetActor::_UpdateFollowAI()
 {
-	// INTERFACE_TODO: m_pkMobData direct access, needs public/null-safe mob-data query surface.
-	if (nullptr == m_pkChar->m_pkMobData)
+	if (nullptr == m_pkChar->GetMobData())
 	{
 		//sys_err("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
 		return false;
