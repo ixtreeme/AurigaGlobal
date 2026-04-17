@@ -4313,3 +4313,45 @@ itt voltunk
 - status:
   - the remaining `char.h` include surface is effectively collapsed to one non-ecs source file
   - the next reduction step is Phase `9c`: add the missing public accessor surface for the `INTERFACE_TODO` members and then remove the last direct `char.h` include
+
+## Phase 9c - INTERFACE_TODO getter surface
+- added minimal public accessor surface in `SRC/Server/GameServer/char.h` for the members referenced by `INTERFACE_TODO` markers:
+  - `GetTriggerOnClick()`
+  - `GetTimedEvent()`
+  - `GetTimedEventRef()`
+  - `GetFishingEvent()`
+  - `GetFishingEventRef()`
+  - `GetMobData()`
+  - `GetAttackLog()`
+  - `GetAttackLogRef()`
+  - `GetAttackedLog()`
+  - `GetAttackedLogRef()`
+  - `GetSpeedHackCount()`
+  - `GetSpeedHackCountRef()`
+- replaced every remaining `INTERFACE_TODO` call site with the new public accessor surface:
+  - `SRC/Server/GameServer/trigger.cpp`
+  - `SRC/Server/GameServer/fishing.cpp`
+  - `SRC/Server/GameServer/cmd_general.cpp`
+  - `SRC/Server/GameServer/MountSystem.cpp`
+  - `SRC/Server/GameServer/PetSystem.cpp`
+  - `SRC/Server/GameServer/New_PetSystem.cpp`
+  - `SRC/Server/GameServer/battle.h`
+  - `SRC/Server/GameServer/battle.cpp`
+- verification after the replacement pass:
+  - remaining `INTERFACE_TODO` markers in `SRC/Server/GameServer`: `0`
+  - remaining direct `#include "char.h"` users outside `ecs/`: `1`
+    - `SRC/Server/GameServer/char_manager.cpp`
+- build policy:
+  - full `GameServer` build after the getter addition
+  - full `GameServer` build after each file-level replacement
+  - all checkpoints green
+- commits:
+  - `80c58bf` `Phase 9c: P9c-1 Add public getters for INTERFACE_TODO members`
+  - `015e080` `Phase 9c: P9c-2 Replace INTERFACE_TODO in trigger.cpp`
+  - `f6f2ca0` `Phase 9c: P9c-2 Replace INTERFACE_TODO in fishing.cpp`
+  - `858646c` `Phase 9c: P9c-2 Replace INTERFACE_TODO in cmd_general.cpp`
+  - `62d03c5` `Phase 9c: P9c-2 Replace INTERFACE_TODO in MountSystem.cpp`
+  - `9ddc5f3` `Phase 9c: P9c-2 Replace INTERFACE_TODO in PetSystem.cpp`
+  - `5fb0953` `Phase 9c: P9c-2 Replace INTERFACE_TODO in New_PetSystem.cpp`
+  - `c3866d4` `Phase 9c: P9c-2 Replace INTERFACE_TODO in battle.h`
+  - `4783a74` `Phase 9c: P9c-2 Replace INTERFACE_TODO in battle.cpp`
