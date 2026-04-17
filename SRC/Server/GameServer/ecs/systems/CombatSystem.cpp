@@ -1775,6 +1775,11 @@ EVENTFUNC(dead_event)
 	}
 
 	ch->m_pkDeadEvent = nullptr;
+	{
+		const entt::entity victimEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+		if (victimEntity != entt::null)
+			g_dispatcher.trigger(ecs::EvCharDead { entt::null, victimEntity });
+	}
 
 	if (!ch->IsPC())
 	{
@@ -6458,6 +6463,9 @@ EVENTFUNC(StunEvent)
 		return 0;
 	}
 	ch->m_pkStunEvent = nullptr;
+	const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvStunBegin { e, 3000u });
 	ch->Dead();
 	return 0;
 }
