@@ -18,6 +18,8 @@
 #include "sectree_manager.h"
 #include "dungeon.h"
 #include "questmanager.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 #include "cmd.h"
 #include "db.h"
 #include "log.h"
@@ -375,6 +377,7 @@ EVENTFUNC(triton_temple_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_triton.m_evPrepare.erase(mapIndex);
     s_triton.StartPrepare(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 
@@ -386,6 +389,7 @@ EVENTFUNC(triton_temple_end_event)
     const int32_t mapIndex = info->mapIndex;
     s_triton.m_evEnd.erase(mapIndex);
     s_triton.EndDungeon(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 

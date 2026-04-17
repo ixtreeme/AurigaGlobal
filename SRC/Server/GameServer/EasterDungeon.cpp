@@ -17,6 +17,8 @@
 #include "cmd.h"
 #include "log.h"
 #include "item_manager.h" // item name from vnum
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 namespace
 {
@@ -496,6 +498,7 @@ EVENTFUNC(easter_dungeon_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evPrepare.erase(mapIndex);
     s_easter.StartFloor1(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 
@@ -508,6 +511,7 @@ EVENTFUNC(easter_dungeon_exit_event)
     const int32_t mapIndex = info->mapIndex;
     s_easter.m_evExit.erase(mapIndex);
     s_easter.ClearDungeon(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 
@@ -535,6 +539,7 @@ EVENTFUNC(easter_dungeon_check_event)
     {
         d->SetFlag("easter_f2_retry", 0);
         s_easter.SpawnBoss(mapIndex);
+        g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
         return 0;
     }
 
@@ -569,6 +574,7 @@ EVENTFUNC(easter_dungeon_to_floor2_event)
         return 0;
 
     s_easter.StartFloor2(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 

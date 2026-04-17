@@ -13,6 +13,8 @@
 #include "item_manager.h"
 #include "utils.h"
 #include "questmanager.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 CDungeon::CDungeon(IdType id, int32_t lOriginalMapIndex, int32_t lMapIndex)
 	: m_id(id),
@@ -227,6 +229,7 @@ EVENTFUNC(dungeon_dead_event)
 	pDungeon->deadEvent = nullptr;
 
 	CDungeonManager::instance().Destroy(info->dungeon_id);
+	g_dispatcher.trigger(ecs::EvDungeonDead { info->dungeon_id });
 	return 0;
 }
 
@@ -859,7 +862,10 @@ EVENTFUNC(dungeon_jump_to_event)
 	pDungeon->jump_to_event_ = nullptr;
 
 	if (pDungeon)
+	{
 		pDungeon->JumpToEliminateLocation();
+		g_dispatcher.trigger(ecs::EvDungeonPrepare { info->dungeon_id });
+	}
 	else
 		sys_err("cannot find dungeon with map index %u", info->dungeon_id);
 

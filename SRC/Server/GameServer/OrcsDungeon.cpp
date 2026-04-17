@@ -17,6 +17,8 @@
 #include "cmd.h"
 #include "db.h"
 #include "log.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
@@ -292,6 +294,7 @@ EVENTFUNC(orcs_dungeon_prepare_event)
     const int32_t mapIndex = info->mapIndex;
     s_orc.m_evPrepare.erase(mapIndex);
     s_orc.StartPrepare(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonPrepare { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 
@@ -303,6 +306,7 @@ EVENTFUNC(orcs_dungeon_end_event)
     const int32_t mapIndex = info->mapIndex;
     s_orc.m_evEnd.erase(mapIndex);
     s_orc.EndDungeon(mapIndex);
+    g_dispatcher.trigger(ecs::EvDungeonEnd { static_cast<uint32_t>(mapIndex) });
     return 0;
 }
 
