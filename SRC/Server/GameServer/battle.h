@@ -1,7 +1,7 @@
 #ifndef __INC_METIN_II_GAME_BATTLE_H__
 #define __INC_METIN_II_GAME_BATTLE_H__
 
-#include "char.h"
+#include "char_interface.hpp"
 
 enum EBattleTypes       // 상대방 기준
 {
@@ -90,6 +90,7 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 }
 
 #ifdef ENABLE_ANTICHEAT
+// INTERFACE_TODO: m_speed_hack_count direct access, needs public anti-cheat counter surface.
 #define GET_SPEED_HACK_COUNT(ch)		((ch)->m_speed_hack_count)
 #define INCREASE_SPEED_HACK_COUNT(ch)	(++GET_SPEED_HACK_COUNT(ch))
 int32_t GET_ATTACK_SPEED(LPCHARACTER ch);
