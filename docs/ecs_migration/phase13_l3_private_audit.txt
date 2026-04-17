@@ -1,0 +1,59 @@
+battle.cpp (15 private hits):
+    6x  m_kAttackLog
+    4x  m_AttackedLog
+    3x  m_speed_hack_count
+    2x  m_pkTimedEvent
+
+battle.h (1 private hits):
+    1x  m_speed_hack_count
+
+New_PetSystem.cpp (21 private hits):
+    8x  m_pkNewPetSystemUpdateEvent
+    8x  m_pkNewPetSystemExpireEvent
+    5x  m_pkMobData
+
+new_offlineshop.cpp (6 private hits):
+    4x  m_stName
+    2x  m_pkShop
+
+input_main.cpp (16 private hits):
+   12x  m_pkChrTarget
+    4x  m_bEmpire
+
+dungeon.cpp (8 private hits):
+    5x  m_pkDungeon
+    3x  m_lWarpMapIndex
+
+PetSystem.cpp (13 private hits):
+    8x  m_pkPetSystemUpdateEvent
+    5x  m_pkMobData
+
+trigger.cpp (2 private hits):
+    2x  m_triggerOnClick
+
+questlua_global.cpp (2 private hits):
+    2x  m_bEmpire
+
+questlua.cpp (1 private hits):
+    1x  m_bEmpire
+
+party.h (1 private hits):
+    1x  m_pkDungeon
+
+party.cpp (5 private hits):
+    5x  m_pkDungeon
+
+input_p2p.cpp (4 private hits):
+    4x  m_bEmpire
+
+fishing.cpp (3 private hits):
+    3x  m_pkFishingEvent
+
+cmd_general.cpp (7 private hits):
+    7x  m_pkTimedEvent
+
+battle_pass.cpp (2 private hits):
+    2x  m_dwBattlePassStayOnlineNextTick
+
+MountSystem.cpp (1 private hits):
+    1x  m_pkMobData
