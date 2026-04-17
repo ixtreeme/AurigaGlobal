@@ -9,7 +9,7 @@
 #include "config.h"
 #include "desc_client.h"
 #include "desc_manager.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "motion.h"
 #include "packet.h"
@@ -486,6 +486,8 @@ ACMD(do_change_channel)
 		return;
 	}
 
+	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
+	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
 	if (ch->m_pkTimedEvent)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -577,7 +579,7 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
+	// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
 	LPDESC d = ch->GetDesc();
 
 	if (info->left_second <= 0)
@@ -689,6 +691,7 @@ ACMD(do_cmd)
 				info->subcmd		= subcmd;
 				strlcpy(info->szReason, argument, sizeof(info->szReason));
 
+				// INTERFACE_TODO: m_pkTimedEvent direct access, needs public timed-event handle surface.
 				ch->m_pkTimedEvent	= event_create(timed_event, info, 1);
 			}
 			break;
