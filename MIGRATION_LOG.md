@@ -3500,3 +3500,40 @@
   - `SRC/Server/GameServer/item_attribute.cpp`: deleted
 - next logical slice:
   - `P11.5` owner / ground interaction into `InventorySystem.cpp`
+
+## Phase 11 - P11.5 Slice S4 owner / ground interaction
+- moved owner / ground interaction `CItem::` bodies from:
+  - `SRC/Server/GameServer/item.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- migrated methods:
+  - `RemoveFromCharacter`
+  - `AddToCharacter`
+  - `RemoveFromGround`
+  - `AddToGround`
+  - `DistanceValid`
+  - `IsOwnership`
+  - `SetOwnershipEvent`
+  - `SetOwnership`
+- helper surface added in `InventorySystem.cpp`:
+  - `LegacyItemOf(entt::entity)`
+  - `ItemEntityOf(LPITEM)`
+  - `SyncItemLocation(entt::entity, LPITEM)`
+  - `SyncItemOwner(entt::entity, uint32_t, uint32_t, uint32_t)`
+  - `SyncItemEquipped(entt::entity, bool)`
+- additive ECS sync after legacy writes:
+  - `ecs::ItemOwner`
+  - `ecs::ItemLocation`
+  - `ecs::ItemEquipped`
+- notes:
+  - the first build failed on small helper-surface gaps only:
+    - `ITEM_MANAGER::FindByID` had to be corrected to the existing `Find`
+    - `ownership_event` forward declaration was required in the new TU
+    - `config.h` was needed for `passes_per_sec`
+  - no rollback was needed; the follow-up build went green immediately after those fixes
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - success
+- remaining item bodies after slice:
+  - `SRC/Server/GameServer/item.cpp`: `75`
+- next logical slice:
+  - `P11.6` equip / unequip / point modification into `InventorySystem.cpp`
