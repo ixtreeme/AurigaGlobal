@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "dungeon.h"
-#include "char.h"
+#include "char_interface.hpp"
 #include "char_manager.h"
 #include "party.h"
 #include "affect.h"
