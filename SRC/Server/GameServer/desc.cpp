@@ -16,6 +16,8 @@
 #include "locale_service.h"
 #include "log.h"
 #include "shutdown_manager.h"
+#include "ecs/EventDispatcher.hpp"
+#include "ecs/events.hpp"
 
 extern int max_bytes_written;
 extern int current_bytes_written;
@@ -174,13 +176,17 @@ EVENTFUNC(ping_event)
 	LPDESC desc = info->desc;
 
 	if (desc->IsAdminMode())
+	{
+		g_dispatcher.trigger(ecs::EvDescPing { desc->GetHandle() });
 		return (ping_event_second_cycle);
+	}
 
 	if (!desc->IsPong())
 	{
 		sys_log(0, "PING_EVENT: no pong %s", desc->GetHostName());
 
 		desc->SetPhase(PHASE_CLOSE);
+		g_dispatcher.trigger(ecs::EvDescPing { desc->GetHandle() });
 
 		return (ping_event_second_cycle);
 	}
@@ -194,6 +200,7 @@ EVENTFUNC(ping_event)
 
 
 	desc->SendHandshake(get_dword_time(), 0);
+	g_dispatcher.trigger(ecs::EvDescPing { desc->GetHandle() });
 
 	return (ping_event_second_cycle);
 }
@@ -849,6 +856,7 @@ EVENTFUNC(disconnect_event)
 
 	d->m_pkDisconnectEvent = nullptr;
 	d->SetPhase(PHASE_CLOSE);
+	g_dispatcher.trigger(ecs::EvDescDisconnect { d->GetHandle() });
 	return 0;
 }
 
