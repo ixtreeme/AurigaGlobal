@@ -22,6 +22,7 @@
 #include "../../mount_inventory_helper.h"
 #include "../../party.h"
 #include "../AIHelpers.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/movement_components.hpp"
@@ -320,6 +321,9 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 		}
 
 		new_tree->InsertEntity(this);
+
+		const entt::entity e = EcsEntityOf(this);
+		ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
 	}
 
 	return true;

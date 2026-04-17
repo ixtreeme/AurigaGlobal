@@ -24,6 +24,7 @@
 #include "../../party.h"
 #include "../../pvp.h"
 #include "../EventDispatcher.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
 #include "../events.hpp"
 #include "../../questmanager.h"
@@ -868,6 +869,9 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     {
         EncodeInsertPacket(this);
         sectree->InsertEntity(this);
+
+        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
 
         UpdateSectree();
     }
