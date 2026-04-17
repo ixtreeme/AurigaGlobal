@@ -3349,3 +3349,154 @@
   - additive ECS event observation hooks are in place
   - legacy event scheduler remains authoritative
   - `char.h` retained
+
+## Phase 11 - P11.0 item ECS component surface
+- added new item ECS component header:
+  - `SRC/Server/GameServer/ecs/components/item_components.hpp`
+- new additive item components:
+  - `ecs::ItemIdentity`
+  - `ecs::ItemLocation`
+  - `ecs::ItemCount`
+  - `ecs::ItemOwner`
+  - `ecs::ItemEquipped`
+  - `ecs::ItemFlags`
+  - `ecs::ItemSockets`
+  - `ecs::ItemAttributes`
+- wired the new header into the component include chain through:
+  - `SRC/Server/GameServer/ecs/components/inventory_components.hpp`
+- note:
+  - `TPlayerItemAttribute` came from `common/tables.h` in the real repo surface, not from the originally suggested `ClientDb.h`
+- build:
+  - success
+- commits:
+  - `4d3c02c` `Phase 11: P11.0-A Add item ECS component definitions`
+  - `765f4d1` `Phase 11: P11.0-B Wire item_components.hpp into build`
+
+## Phase 11 - P11.1 item entity registry and lifecycle
+- added parallel ECS item registry:
+  - `SRC/Server/GameServer/ecs/ItemRegistry.hpp`
+  - `SRC/Server/GameServer/ecs/ItemRegistry.cpp`
+- extended entity factory with item lifecycle entry points:
+  - `EntityFactory::CreateItemEntity(entt::registry&, LPITEM)`
+  - `EntityFactory::DestroyItemEntity(entt::registry&, LPITEM)`
+- item entity creation initializes additive ECS mirrors for:
+  - identity
+  - location
+  - count
+  - owner
+  - equipped state
+  - flags
+  - sockets
+  - attributes
+- wired additive item entity lifecycle into `ITEM_MANAGER`:
+  - `SRC/Server/GameServer/item_manager.cpp`
+  - `CreateItemEntity(g_registry, item)` after successful legacy item creation
+  - `DestroyItemEntity(g_registry, item)` before legacy free/pool teardown
+- note:
+  - `ownershipPID` currently falls back to the observable owner PID because `m_dwOwnershipPID` still has no public getter and `item.h` remains untouched in this phase
+- build:
+  - success
+- commits:
+  - `788f056` `Phase 11: P11.1-A Add ItemRegistry and CreateItemEntity`
+  - `e9fc6b6` `Phase 11: P11.1-B Wire item entity lifecycle into ITEM_MANAGER`
+
+## Phase 11 - P11.2 Slice S1 identity/proto accessors
+- moved read-only identity/proto `CItem::` bodies from `SRC/Server/GameServer/item.cpp` into:
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- migrated methods:
+  - `GetName(uint8_t)`
+  - `GetSpecialGroup`
+  - `CheckItemUseLevel`
+  - `GetLevelLimit`
+  - `OnAfterCreatedItem`
+  - `IsDragonSoul`
+  - `IsExtraItem`
+  - `GetExtraCategory`
+  - `IsRideItem`
+  - `IsNewMountItem`
+  - `IsMountItem`
+  - `IsRune`
+  - `IsSameSpecialGroup`
+  - `IsPCBangItem`
+- helper surface added in `ItemSystem.cpp`:
+  - `ItemEntityOf(LPITEM)`
+  - `ItemVnumOrLegacy(LPITEM)`
+  - extra-item subtype helpers needed by `GetExtraCategory`
+- note:
+  - `ItemSystem.cpp` required encoding-safe editing because the TU is not valid UTF-8
+- build:
+  - success
+- commit:
+  - `a49aa95` `Phase 11: P11.2 Slice S1 identity/proto accessors`
+
+## Phase 11 - P11.3 Slice S2 count/value/socket accessors
+- moved count/value/socket/flag accessor `CItem::` bodies from `SRC/Server/GameServer/item.cpp` into:
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- migrated methods:
+  - `RemoveFlag`
+  - `AddFlag`
+  - `GetCount`
+  - `SetCount`
+  - `GetValue`
+  - `SetSockets`
+  - `SetSocket`
+  - `GetGold`
+  - `GetShopBuyPrice`
+  - `GetSocketCount`
+  - `AddSocket`
+- additive ECS sync added after legacy writes:
+  - `ecs::ItemFlags`
+  - `ecs::ItemSockets`
+  - `ecs::ItemCount`
+- notes:
+  - `SetCount` stayed migrated in `ItemSystem.cpp`
+  - `skipSave` sync had to use the existing public getter `GetSkipSave()`
+  - the dragon-soul zero-count cleanup branch needed a compile-safe fallback because `DragonSoul_RefineWindow_Clean()` is not on the visible public `CHARACTER` surface in this TU
+  - one stale object / duplicate-symbol step needed a clean-first rebuild while converging the slice
+- build:
+  - success
+- commit:
+  - `e11f670` `Phase 11: P11.3 Slice S2 count/value/socket accessors`
+
+## Phase 11 - current checkpoint
+- build gate:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green
+- remaining item bodies:
+  - `SRC/Server/GameServer/item.cpp`: `93`
+  - `SRC/Server/GameServer/item_attribute.cpp`: `30`
+- status:
+  - `item.cpp`: in progress
+  - `item_attribute.cpp`: not started yet for migration
+  - next logical slice: `P11.4` attribute system move into `ItemSystem.cpp`
+
+## Phase 11 - P11.4 Slice S3 attribute system
+- moved all remaining `CItem::` attribute bodies from:
+  - `SRC/Server/GameServer/item_attribute.cpp`
+  - into `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- helper surface added in `ItemSystem.cpp`:
+  - `SyncItemAttributesComponent(LPITEM)`
+  - `IsZodiacAttributeItemVnum(uint32_t)`
+  - local attribute count constants for normal/rare attr handling
+- migrated in three batches:
+  - Batch A:
+    - attribute getters/setters and copy helpers
+  - Batch B:
+    - locked attr helpers and normal attribute mutation logic
+  - Batch C:
+    - rare attribute helpers and remaining attr mutation bodies
+- additive ECS sync added after legacy writes:
+  - `ecs::ItemAttributes`
+- notes:
+  - `ItemSystem.cpp` and `item_attribute.cpp` both needed encoding-safe editing because they are not valid UTF-8
+  - deleting `item_attribute.cpp` required an explicit `cmake -S . -B build` reconfigure before the clean-first build picked up the removed source file correctly
+  - one pre-existing warning remains in migrated code:
+    - `CItem::AddRareAttribute3`: `warning C4715` not all control paths return a value
+- build:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 --clean-first`
+  - success
+- remaining item bodies after slice:
+  - `SRC/Server/GameServer/item.cpp`: `84`
+  - `SRC/Server/GameServer/item_attribute.cpp`: deleted
+- next logical slice:
+  - `P11.5` owner / ground interaction into `InventorySystem.cpp`
