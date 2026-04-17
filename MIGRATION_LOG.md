@@ -3892,3 +3892,69 @@
   - `2d78553` `Phase 12: P12a-3 Wire SyncSectorPlacement into movement paths`
   - `5c01817` `Phase 12: P12a-4 Add ForEachAround and SectorAt helpers`
   - `4b26a49` `Phase 12: P12a-5 Replace read-only SECTREE calls in ECS systems`
+
+## Phase 12b - entity placement / visibility ECS bridge
+- extended additive `SectorPlacement` coverage to remaining spawn / despawn paths without touching legacy SECTREE sources:
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+    - after legacy `new_tree->InsertEntity(this)` in `CHARACTER::Sync`
+    - additive:
+      - `ecs::SyncSectorPlacement(...)`
+      - `ecs::ViewActiveTag`
+  - `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+    - `CHARACTER::Show`
+      - after legacy `sectree->InsertEntity(this)`
+      - additive:
+        - `ecs::SyncSectorPlacement(...)`
+        - `ecs::ViewActiveTag`
+      - same-sectree `ViewReencode()` branch now also reasserts `ecs::ViewActiveTag`
+    - remove / warp / channel-switch paths now clear:
+      - `ecs::SectorPlacement`
+      - `ecs::ViewActiveTag`
+  - `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+    - `CItem::AddToGround`
+      - additive:
+        - `ecs::SyncSectorPlacement(...)`
+        - `ecs::ViewActiveTag`
+    - `CItem::RemoveFromGround`
+      - clears:
+        - `ecs::SectorPlacement`
+        - `ecs::ViewActiveTag`
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+    - `CItem::Destroy`
+      - clears:
+        - `ecs::SectorPlacement`
+        - `ecs::ViewActiveTag`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+    - character destroy / despawn remove paths now clear:
+      - `ecs::SectorPlacement`
+      - `ecs::ViewActiveTag`
+- new additive visibility tag:
+  - `SRC/Server/GameServer/ecs/components/spatial_components.hpp`
+    - `ecs::ViewActiveTag`
+- remaining direct `SECTREE_MANAGER` calls in ECS systems were re-audited:
+  - simple sector lookup replaced:
+    - `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+      - `SECTREE_MANAGER::instance().Get(lMapIndex, pos.x, pos.y)` -> `ecs::SectorAt(...)`
+  - complex manager-meta / write-side-adjacent paths were kept intentionally and marked:
+    - `CombatSystem.cpp`
+    - `ItemSystem.cpp`
+    - `SessionSystem.cpp`
+    - `SkillSystem.cpp`
+    - marker used:
+      - `SECTREE_MIGRATION_TODO`
+- constraints preserved:
+  - legacy `SECTREE` / `SECTREE_MANAGER` remain authoritative
+  - no write-side `InsertEntity` / `RemoveEntity` calls were replaced
+  - ECS bridge remains additive only
+- build checkpoints:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - green after sync extension
+  - green after remaining `SECTREE_MANAGER` audit replacements / TODO markers
+- counts after `P12b`:
+  - remaining direct `SECTREE_MANAGER::instance` / `SECTREE_MANAGER::Get` calls in `ecs/systems/*.cpp`: `11`
+  - `SyncSectorPlacement` call sites in `*.cpp`: `3`
+  - `ViewActiveTag` references in `ecs/systems/*.cpp`: `10`
+- commits:
+  - `1062ca7` `Phase 12: P12b-1 Extend SyncSectorPlacement to spawn paths`
+    - note: this checkpoint also introduced `ecs::ViewActiveTag` and its first add/remove wiring
+  - `2e46ff8` `Phase 12: P12b-3 Replace remaining SECTREE_MANAGER calls in ECS systems`
