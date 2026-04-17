@@ -376,8 +376,7 @@ uint32_t CMountActor::Summon(LPITEM pSummonItem, bool bSpawnFar)
 
 bool CMountActor::UpdateFollowAI()
 {
-	// INTERFACE_TODO: m_pkMobData direct access, needs public/null-safe mob-data query surface.
-	if (nullptr == m_pkChar->m_pkMobData)
+	if (nullptr == m_pkChar->GetMobData())
 	{
 		return false;
 	}
