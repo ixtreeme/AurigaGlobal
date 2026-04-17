@@ -549,6 +549,7 @@ void CHARACTER::WarpEnd()
         strlcpy(p.szName, GetName(), sizeof(p.szName));
         p.dwPID = GetPlayerID();
         p.bEmpire = GetEmpire();
+        // SECTREE_MIGRATION_TODO: keep legacy manager path until map-index lookup has an ECS bridge
         p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(GetX(), GetY());
         p.bChannel = g_bChannel;
 
@@ -590,6 +591,7 @@ namespace {
 
             if (pkWarp->IsGoto())
             {
+                // SECTREE_MIGRATION_TODO: keep legacy manager path until map metadata lookup has an ECS bridge
                 LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(pkWarp->GetMapIndex());
                 m_lTargetX += pkSectreeMap->m_setting.iBaseX;
                 m_lTargetY += pkSectreeMap->m_setting.iBaseY;

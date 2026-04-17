@@ -615,7 +615,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		return false;
 	}
 
-	LPSECTREE tree = SECTREE_MANAGER::instance().Get(lMapIndex, pos.x, pos.y);
+	LPSECTREE tree = ecs::SectorAt(lMapIndex, pos.x, pos.y);
 
 	if (!tree)
 	{

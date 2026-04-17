@@ -5041,6 +5041,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 			//±ÍÈ¯ºÎ
 			else if (item->GetVnum() == 22000)
 			{
+				// SECTREE_MIGRATION_TODO: keep legacy manager path until recall-position lookup has an ECS bridge
 				SECTREE_MANAGER::instance().GetRecallPositionByEmpire(GetMapIndex(), GetEmpire(), posWarp);
 
 				if (item->GetSocket(0) == 0)
@@ -6985,6 +6986,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 27989: // ¿µ¼®°¨Áö±â
 			case 76006: // ¼±¹°¿ë ¿µ¼®°¨Áö±â
 			{
+				// SECTREE_MIGRATION_TODO: keep legacy manager path until map metadata lookup has an ECS bridge
 				LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(GetMapIndex());
 
 				if (pMap != nullptr)
@@ -8976,6 +8978,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					PIXEL_POSITION posWarp;
 
+					// SECTREE_MIGRATION_TODO: keep legacy manager path until recall-position lookup has an ECS bridge
 					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(GetMapIndex(), GetEmpire(), posWarp))
 					{
 						// CONSUME_LIFE_WHEN_USE_WARP_ITEM
@@ -14939,6 +14942,7 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 {
 	int idx;
 
+	// SECTREE_MIGRATION_TODO: keep legacy manager path until map-index lookup has an ECS bridge
 	if ((idx = SECTREE_MANAGER::instance().GetMapIndex(item->GetSocket(0), item->GetSocket(1))) == 0)
 		return;
 

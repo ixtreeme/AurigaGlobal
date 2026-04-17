@@ -4196,7 +4196,8 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			PIXEL_POSITION pos;
 
 			if (!isAutoLoot)
-				if (!SECTREE_MANAGER::instance().GetMovablePosition(GetMapIndex(), GetX(), GetY(), pos))
+				// SECTREE_MIGRATION_TODO: keep legacy manager path until movable-position logic has an ECS bridge
+			if (!SECTREE_MANAGER::instance().GetMovablePosition(GetMapIndex(), GetX(), GetY(), pos))
 					return;
 
 			int iTotalGold = 0;
@@ -5086,6 +5087,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		{
 			int iEmpire = pAttacker->GetEmpire();
 			int32_t lMapIndex = pAttacker->GetMapIndex();
+			// SECTREE_MIGRATION_TODO: keep legacy manager path until empire lookup has an ECS bridge
 			int iMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex);
 
 			// ٸ     10% 
@@ -7488,6 +7490,7 @@ void CHARACTER::CowardEscape()
 			bool bIsWayBlocked = false;
 			for (int j = 1; j <= 100; ++j)
 			{
+				// SECTREE_MIGRATION_TODO: keep legacy manager path until movable-position logic has an ECS bridge
 				if (!SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
 				{
 					bIsWayBlocked = true;
