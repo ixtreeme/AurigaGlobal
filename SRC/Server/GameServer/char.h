@@ -2078,6 +2078,8 @@ public:
 
 	void			OnAttack(LPCHARACTER pkChrAttacker);
 	void			OnClick(LPCHARACTER pkChrCauser);
+	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
+	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
 	VID				m_kVIDVictim;
 
@@ -2361,6 +2363,10 @@ public:
 	LPEVENT				m_pkFishingEvent;
 	LPEVENT				m_pkAffectEvent;
 	LPEVENT				m_pkPoisonEvent;
+	LPEVENT				GetTimedEvent() const { return m_pkTimedEvent; }
+	LPEVENT&			GetTimedEventRef() { return m_pkTimedEvent; }
+	LPEVENT				GetFishingEvent() const { return m_pkFishingEvent; }
+	LPEVENT&			GetFishingEventRef() { return m_pkFishingEvent; }
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	LPEVENT				m_pkBleedingEvent;
 #endif
@@ -2388,6 +2394,7 @@ public:
 
 	const CMob* m_pkMobData;
 	CMobInstance* m_pkMobInst;
+	const CMob* GetMobData() const { return m_pkMobData; }
 
 	std::map<int, LPEVENT> m_mapMobSkillEvent;
 
@@ -2528,6 +2535,12 @@ public:
 	AttackLog	m_kAttackLog;
 	AttackedLog m_AttackedLog;
 	int			m_speed_hack_count;
+	const AttackLog& GetAttackLog() const { return m_kAttackLog; }
+	AttackLog& GetAttackLogRef() { return m_kAttackLog; }
+	const AttackedLog& GetAttackedLog() const { return m_AttackedLog; }
+	AttackedLog& GetAttackedLogRef() { return m_AttackedLog; }
+	int GetSpeedHackCount() const { return m_speed_hack_count; }
+	int& GetSpeedHackCountRef() { return m_speed_hack_count; }
 
 private:
 	std::string m_strNewName;
