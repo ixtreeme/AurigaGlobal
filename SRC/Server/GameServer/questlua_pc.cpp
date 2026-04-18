@@ -580,7 +580,7 @@ namespace quest
 
 		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
 		return 0;
 	}
 
@@ -627,7 +627,7 @@ namespace quest
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
@@ -695,7 +695,7 @@ namespace quest
 
 		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
 
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
 
 		lua_pushnumber(L, (item) ? item->GetID() : 0);
 		return 1;
@@ -741,7 +741,7 @@ namespace quest
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
@@ -1030,7 +1030,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetRaceNum() : 0);
+		lua_pushnumber(L, ch ? ecs::GetRaceNum(ch) : 0);
 		return 1;
 	}
 
@@ -1054,7 +1054,7 @@ namespace quest
         }
         const int result = ch->ChangeSex();
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(ch->GetRaceNum());
+            race->value = static_cast<uint16_t>(ecs::GetRaceNum(ch));
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         lua_pushnumber(L, result);
@@ -1185,7 +1185,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetLevel() : 0);
+		lua_pushnumber(L, ch ? ecs::GetLevel(ch) : 0);
 		return 1;
 	}
 
@@ -1205,11 +1205,11 @@ namespace quest
             return 0;
         sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ecs::GetName(ch), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), newLevel, 0);
-        ch->PointChange(POINT_SKILL, newLevel - ch->GetLevel());
-        ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(ch->GetLevel(), 9));
-        ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ch->GetLevel()) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
-        ch->PointChange(POINT_LEVEL, newLevel - ch->GetLevel());
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), newLevel, 0);
+        ch->PointChange(POINT_SKILL, newLevel - ecs::GetLevel(ch));
+        ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(ecs::GetLevel(ch), 9));
+        ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ecs::GetLevel(ch)) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
+        ch->PointChange(POINT_LEVEL, newLevel - ecs::GetLevel(ch));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
         ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
@@ -1218,7 +1218,7 @@ namespace quest
         ch->PointsPacket();
         ch->SkillLevelPacket();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ch->GetLevel();
+            lv->value = ecs::GetLevel(ch);
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -1231,7 +1231,7 @@ namespace quest
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
-            points->base.level = ch->GetLevel();
+            points->base.level = ecs::GetLevel(ch);
             points->base.points[POINT_SKILL] = ch->GetPoint(POINT_SKILL);
             points->base.points[POINT_SUB_SKILL] = ch->GetPoint(POINT_SUB_SKILL);
             points->base.points[POINT_STAT] = ch->GetPoint(POINT_STAT);
@@ -1239,7 +1239,7 @@ namespace quest
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvLevelUp{e, ch->GetLevel()});
+            g_dispatcher.trigger(ecs::EvLevelUp{e, ecs::GetLevel(ch)});
         }
         return 0;
     }
@@ -1548,7 +1548,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
         ch->PointChange(POINT_EXP, exp);
         return 0;
     }
@@ -1573,7 +1573,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
         pPC->GiveExp(lua_tostring(L,1), exp);
         return 0;
     }
@@ -1598,7 +1598,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC * pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
         pPC->GiveExp(lua_tostring(L, 1), exp);
         return 0;
     }
@@ -2280,7 +2280,7 @@ namespace quest
 
 		if (new_ch)
 		{
-			CQuestManager::instance().GetPC(new_ch->GetPlayerID());
+			CQuestManager::instance().GetPC(ecs::GetPlayerID(new_ch));
 
 			lua_pushnumber(L, ecs::GetPlayerID(ch));
 		}
@@ -2303,7 +2303,7 @@ namespace quest
 
 		if (new_ch)
 		{
-			CQuestManager::instance().GetPC(new_ch->GetPlayerID());
+			CQuestManager::instance().GetPC(ecs::GetPlayerID(new_ch));
 #ifdef ENABLE_BUG_FIXES
 			lua_pushnumber(L, ch ? (uint32_t)ecs::GetVID(ch) : 0);
 #else
@@ -2967,12 +2967,12 @@ teleport_area:
 				if ( point == POINT_HT )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomHP((ch->GetLevel()-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+					ch->SetRandomHP((ecs::GetLevel(ch)-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
 				}
 				else if ( point == POINT_IQ )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomSP((ch->GetLevel()-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+					ch->SetRandomSP((ecs::GetLevel(ch)-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
 				}
 
 				ch->ComputePoints();
@@ -3539,7 +3539,7 @@ teleport_area:
 
 		const PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
 
 		lua_pushboolean(L, true);
 
@@ -3903,7 +3903,7 @@ teleport_area:
                 break;
 #endif
         }
-        if (dwRace!=ch->GetRaceNum())
+        if (dwRace!=ecs::GetRaceNum(ch))
         {
             ch->SetRace(dwRace);
             ch->ClearSkill();
@@ -3912,7 +3912,7 @@ teleport_area:
             ch->SetPolymorph(0);
         }
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(ch->GetRaceNum());
+            race->value = static_cast<uint16_t>(ecs::GetRaceNum(ch));
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
             points->base.skill_group = ch->GetSkillGroup();
         if (e != entt::null && g_registry.valid(e))
@@ -3984,7 +3984,7 @@ teleport_area:
         ch->ClearSkill();
         ch->ClearSubSkill();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ch->GetLevel();
+            lv->value = ecs::GetLevel(ch);
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -3996,7 +3996,7 @@ teleport_area:
             mana->max = ch->GetMaxSP();
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
-            points->base.level = ch->GetLevel();
+            points->base.level = ecs::GetLevel(ch);
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         return 0;
@@ -5335,6 +5335,7 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
+
 
 
 
