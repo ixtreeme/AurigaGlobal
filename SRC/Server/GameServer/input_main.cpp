@@ -2226,10 +2226,6 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		return;
 
 	struct command_move * pinfo = (struct command_move *) data;
-
-	if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
-		sys_log(0, "MELEE_INPUT: Move func=%u ch=%s mounted=%d", pinfo->bFunc, ch->GetName(), ch->IsRiding() ? 1 : 0);
-
 	if (!ch->CanMove())
 		return;
 
@@ -2327,9 +2323,6 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	{
 		if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
 		{
-			if (test_server && ch->IsPC())
-				sys_log(0, "COMBAT_DEBUG INPUT MOVE_ATTACK name=%s vid=%u func=%u riding=%d mountVnum=%u x=%d y=%d",
-					ch->GetName(), ch->GetVID(), pinfo->bFunc, ch->IsRiding() ? 1 : 0, ch->GetMountVnum(), pinfo->lX, pinfo->lY);
 			ch->OnMove(true);
 		}
 		else if (pinfo->bFunc & FUNC_SKILL)
@@ -2450,7 +2443,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	if (nullptr == ch)
 		return;
 
-	sys_log(0, "MELEE_INPUT: Attack header=%u ch=%s mounted=%d", header, ch->GetName(), ch->IsRiding() ? 1 : 0);
 
 	struct type_identifier
 	{
@@ -2464,7 +2456,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	{
 		if (false == ch->CanUseSkill(type->type))
 		{
-			sys_log(0, "MELEE_REJECT: CanUseSkill false ch=%s type=%u header=%u mounted=%d", ch->GetName(), type->type, header, ch->IsRiding() ? 1 : 0);
 			return;
 		}
 
@@ -2486,7 +2477,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 			case SKILL_HORSE_WILDATTACK_RANGE:
 				if (HEADER_CG_SHOOT != type->header)
 				{
-					sys_log(0, "MELEE_REJECT: ranged-skill wrong header ch=%s type=%u packetHeader=%u typeHeader=%u", ch->GetName(), type->type, header, type->header);
 					return;
 				}
 				break;
@@ -2499,15 +2489,10 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 			{
 				if (nullptr == ch->GetDesc())
 				{
-					sys_log(0, "MELEE_REJECT: no desc ch=%s", ch ? ch->GetName() : "<null>");
 					return;
 				}
 
 				const TPacketCGAttack* const packMelee = reinterpret_cast<const TPacketCGAttack*>(data);
-
-				if (test_server && ch->IsPC())
-					sys_log(0, "COMBAT_DEBUG INPUT HEADER_CG_ATTACK name=%s vid=%u targetVID=%u type=%u riding=%d mountVnum=%u",
-						ch->GetName(), ch->GetVID(), packMelee->dwVID, packMelee->bType, ch->IsRiding() ? 1 : 0, ch->GetMountVnum());
 
 				ch->GetDesc()->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
 
@@ -2515,7 +2500,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 
 				if (nullptr == victim || ch == victim)
 				{
-					sys_log(0, "MELEE_REJECT: null/self victim ch=%s targetVID=%u self=%d", ch->GetName(), packMelee->dwVID, ch == victim ? 1 : 0);
 					return;
 				}
 
@@ -2524,7 +2508,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					case CHAR_TYPE_NPC:
 					case CHAR_TYPE_WARP:
 					case CHAR_TYPE_GOTO:
-						sys_log(0, "MELEE_REJECT: victim char type blocked ch=%s victim=%s charType=%d", ch->GetName(), victim->GetName(), victim->GetCharType());
 						return;
 				}
 
@@ -2532,7 +2515,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 				{
 					if (false == ch->CheckSkillHitCount(packMelee->bType, victim->GetVID()))
 					{
-						sys_log(0, "MELEE_REJECT: CheckSkillHitCount false ch=%s victim=%s type=%u", ch->GetName(), victim->GetName(), packMelee->bType);
 						return;
 					}
 				}
@@ -2547,7 +2529,6 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
 				}
 				// DUAL-PATH: ECS + legacy call
-				sys_log(0, "MELEE_TRACE: calling ch->Attack ch=%s victim=%s type=%u mounted=%d", ch->GetName(), victim->GetName(), packMelee->bType, ch->IsRiding() ? 1 : 0);
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;
@@ -5981,4 +5962,5 @@ void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
 	}
 }
 #endif
+
 
