@@ -5,6 +5,7 @@
 #include "char_interface.hpp"
 #include "sectree_manager.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "mob_manager.h"
 #include "MountSystem.h"
 #include <common/VnumHelper.h>
@@ -768,3 +769,4 @@ void CMountSystem::UpdateMountSkin() {
 	}
 }
 #endif
+
