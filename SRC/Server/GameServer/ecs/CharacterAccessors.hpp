@@ -114,4 +114,76 @@ inline int32_t GetY(LPCHARACTER ch)
     return ch->GetY();
 }
 
+inline uint32_t GetRaceNum(LPCHARACTER ch)
+{
+    if (!ch) {
+        return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* race = g_registry.try_get<ecs::RaceComponent>(e)) {
+            return race->value;
+        }
+    }
+
+    return ch->GetRaceNum();
+}
+
+inline int GetLevel(LPCHARACTER ch)
+{
+    if (!ch) {
+        return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* level = g_registry.try_get<ecs::LevelComponent>(e)) {
+            return static_cast<int>(level->value);
+        }
+    }
+
+    return ch->GetLevel();
+}
+
+inline bool IsPC(LPCHARACTER ch)
+{
+    if (!ch) {
+        return false;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (g_registry.all_of<ecs::TagPC>(e)) {
+            return true;
+        }
+
+        if (g_registry.any_of<ecs::TagNPC, ecs::TagMonster, ecs::TagStone, ecs::TagPet, ecs::TagMount, ecs::TagHorse>(e)) {
+            return false;
+        }
+    }
+
+    return ch->IsPC();
+}
+
+inline bool IsNPC(LPCHARACTER ch)
+{
+    if (!ch) {
+        return false;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (g_registry.all_of<ecs::TagNPC>(e)) {
+            return true;
+        }
+
+        if (g_registry.any_of<ecs::TagPC, ecs::TagMonster, ecs::TagStone, ecs::TagPet, ecs::TagMount, ecs::TagHorse>(e)) {
+            return false;
+        }
+    }
+
+    return ch->IsNPC();
+}
+
 } // namespace ecs
