@@ -2,6 +2,7 @@
 #include <common/tables.h>
 #include "item.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "buff_on_attributes.h"
 #include <algorithm>
 
@@ -179,3 +180,4 @@ void CBuffOnAttributes::Off()
 	}
 	Initialize();
 }
+
