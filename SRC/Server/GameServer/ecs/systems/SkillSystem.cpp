@@ -347,7 +347,7 @@ time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillNextReadTime(e, dwVnum);
 
@@ -423,7 +423,7 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillLevel(e, dwVnum);
 
@@ -1712,7 +1712,7 @@ EVENTFUNC(ChainLightningEvent)
 	if (pkTarget)
 	{
 		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, pkTarget);
-		const entt::entity e = CVIDRegistry::Instance().Find(pkChr->GetVID());
+		const entt::entity e = AIHelpers::EcsOf(pkChr);
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { e, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, pkTarget);
@@ -1955,7 +1955,7 @@ struct FuncSplashDamage
 		////////////////////////////////////////////////////////////////////////////////
 		//sys_log(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
-		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != (uint32_t) pkChrVictim->GetVID())
+		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != pkChrVictim->GetPacketVID())
 		{
 			// µĄąĚÁö °¨ĽŇ
 			iDam = (int) (iDam * m_pkSk->kSplashAroundDamageAdjustPoly.Eval());
@@ -2435,7 +2435,7 @@ struct FuncSplashDamage
 				pkChrVictim->Goto(tx, ty);
 				pkChrVictim->CalculateMoveDuration();
 
-				if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == pkChrVictim->GetVID())
+				if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == pkChrVictim->GetPacketVID())
 				{
 					SkillAttackAffect(pkChrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
@@ -2462,8 +2462,8 @@ struct FuncSplashDamage
 		{
 			chain_lightning_event_info* info = AllocEventInfo<chain_lightning_event_info>();
 
-			info->dwVictim = pkChrVictim->GetVID();
-			info->dwChr = m_pkChr->GetVID();
+			info->dwVictim = pkChrVictim->GetPacketVID();
+			info->dwChr = m_pkChr->GetPacketVID();
 
 			event_create(ChainLightningEvent, info, passes_per_sec / 5);
 		}
@@ -3626,7 +3626,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 					return false;
 			}
 
-			m_SkillUseInfo[dwVnum].SetMainTargetVID(pkVictim->GetVID());
+			m_SkillUseInfo[dwVnum].SetMainTargetVID(pkVictim->GetPacketVID());
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
 			ComputeSkill(dwVnum, pkVictim);
 			RemoveAffect(dwVnum);
@@ -3741,7 +3741,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
-						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetVID() : 0, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
+						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
 					ChatPacket(CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
@@ -3753,7 +3753,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
 						bUseGrandMaster,
-				   		(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetVID() : 0,
+				   		(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0,
 				   		ComputeCooltime(iCooltime * 1000),
 				   		iSplashCount,
 				   		lMaxHit))
@@ -3768,7 +3768,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		if (false ==
 				m_SkillUseInfo[dwVnum].UseSkill(
 					bUseGrandMaster,
-				   	(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetVID() : 0,
+				   	(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0,
 				   	ComputeCooltime(iCooltime * 1000),
 				   	iSplashCount,
 				   	lMaxHit))
@@ -4140,7 +4140,7 @@ EVENTFUNC(mob_skill_hit_event)
 		return 0;
 	}
 
-	const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+	const entt::entity e = AIHelpers::EcsOf(ch);
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
 	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);
@@ -4942,5 +4942,3 @@ const uint32_t GetRandomSkillVnum(uint8_t bJob)
 	} while (true);
 	return dwSkillVnum;
 }
-
-
