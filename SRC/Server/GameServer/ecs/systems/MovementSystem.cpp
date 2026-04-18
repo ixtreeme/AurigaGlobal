@@ -84,8 +84,17 @@ namespace
         const entt::entity e = EcsEntityOf(ch);
         if (e == entt::null || !g_registry.valid(e))
             return;
-
         g_registry.emplace_or_replace<ecs::CombatActiveTag>(e);
+    }
+    inline void TransitionAfterMovementStop(const ecs::VIDComponent& vid)
+    {
+        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
+        if (!ch || ch->IsPC())
+            return;
+        if (ch->GetVictim() && !ch->IsCoward())
+            ch->SetPosition(POS_FIGHTING);
+        else
+            ch->SetPosition(POS_STANDING);
     }
 }
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
@@ -105,8 +114,12 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
         if (dx == 0 && dy == 0) {
             movementState.lastMoveTime = tick;
             movementState.stopTime = tick;
+            movementState.moveDuration = 0;
+            movementState.isWalking = false;
+            movementState.isNowWalking = false;
             reg.remove<ecs::MovementDestination>(entity);
             reg.emplace_or_replace<ecs::DirtyTag>(entity);
+            TransitionAfterMovementStop(vid);
             return;
         }
 
@@ -122,7 +135,10 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
             movementState.lastMoveTime = tick;
             movementState.stopTime = tick;
             movementState.moveDuration = 0;
+            movementState.isWalking = false;
+            movementState.isNowWalking = false;
             reg.remove<ecs::MovementDestination>(entity);
+            TransitionAfterMovementStop(vid);
         } else {
             const double ratio = static_cast<double>(step) / distance;
             position.x += static_cast<int32_t>(std::round(dx * ratio));
@@ -147,7 +163,7 @@ void CHARACTER::StartRecoveryEvent()
 	if (IsDead() || IsStun())
 		return;
 
-	if (IsNPC() && GetHP() >= GetMaxHP()) // ¸ó1oAÍ´Â A1·ÂAI ´U Â÷AÖA¸¸é 1AAU 3EÇN´U.
+	if (IsNPC() && GetHP() >= GetMaxHP()) // ¸ó1oAÍ´?A1·ÂAI ´U Â÷A?¸¸?1AAU 3E?´U.
 		return;
 
 
@@ -228,7 +244,7 @@ void CHARACTER::SetRotation(float fRot)
 	m_pointsInstant.fRot = fRot;
 }
 
-// x, y 1aÇâA¸·Î o¸°í 1±´U.
+// x, y 1aÇâA¸·?o¸°?1±´U.
 void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
 {
 	SetRotation(GetDegreeFromPositionXY(GetX(), GetY(), x, y));
@@ -244,10 +260,10 @@ bool CHARACTER::CanMove() const
 	if (CannotMoveByAffect())
 		return false;
 
-	if (GetMyShop())	// »óÁ! ?¬ »óAÂ?!1­´Â ?oÁ÷AI 1ö 3oA1
+	if (GetMyShop())	// »ó? ??»óA?!1???oÁ÷AI 1?3oA1
 		return false;
 
-	// 0.2AE AüAI¶ó¸é ?oÁ÷AI 1ö 3o´U.
+	// 0.2AE A?I¶ó¸é ?oÁ÷AI 1?3o´U.
 	/*
 	   if (get_float_time() - m_fSyncTime < 0.2f)
 	   return false;
@@ -255,7 +271,7 @@ bool CHARACTER::CanMove() const
 	return true;
 }
 
-// 1«Á¶°Ç x, y A§Ä!·Î AIµ? 1AA2´U.
+// 1«Á¶°?x, y A§Ä!·Î AI? 1AA2´U.
 bool CHARACTER::Sync(int32_t x, int32_t y)
 {
 	if (!GetSectree())
@@ -284,7 +300,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 	if (GetDungeon())
 	{
-		// ´oÁ—?ë AIoYA® 1Ó1o o—E­
+		// Sync quest event attr transitions when entering a new dungeon sector.
 		int iLastEventAttr = m_iEventAttr;
 		m_iEventAttr = new_tree->GetEventAttribute(x, y);
 
@@ -334,9 +350,10 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 void CHARACTER::Stop()
 {
 	if (!HasIdleState(this))
-		MonsterLog("[IDLE] Á¤Áö");
-
+		MonsterLog("[IDLE] stop");
 	EnterIdleState(this);
+	if (!IsPC())
+		GotoState(m_stateIdle);
 
 	m_posDest.x = m_posStart.x = GetX();
 	m_posDest.y = m_posStart.y = GetY();
@@ -344,8 +361,7 @@ void CHARACTER::Stop()
 
 bool CHARACTER::Goto(int32_t x, int32_t y)
 {
-	// TODO °A¸®A1A© ÇE?ä
-	// °°Ao A§Ä!¸é AIµ?ÇO ÇE?ä 3oA1 (AÚµ? 1o°o)
+	// TODO °A¸®A1A????	// °°Ao A§Ä!¸é AI?? ???3oA1 (AÚµ? 1o°o)
 	if (GetX() == x && GetY() == y)
 		return false;
 
@@ -395,7 +411,7 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 
 
 	if (!HasMoveState(this)) {
-		MonsterLog("[MOVE] %s", GetVictim() ? "´ë»óAßAu" : "±×3ÉAIµ?");
+		MonsterLog("[MOVE] %s", GetVictim() ? "´ë»óA?u" : "±×3?I?");
 	}
 
 	const entt::entity e = EcsEntityOf(this);
@@ -532,14 +548,14 @@ void CHARACTER::CalculateMoveDuration()
 	m_dwMoveStartTime = get_dword_time();
 }
 
-// x y A§Ä!·Î AIµ? ÇN´U. (AIµ?ÇO 1ö AÖ´Â °! 3o´Â °!¸¦ E®AÎ ÇI°í Sync ¸?1Oµa·Î 1ÇÁ¦ AIµ? ÇN´U)
-// 1­1ö´Â charAÇ x, y °aA» 1U·Î 1U2UÁö¸¸,
-// A¬¶ó?!1­´Â AIAü A§Ä!?!1­ 1U2U x, y±îÁö interpolationÇN´U.
-// °E°A3a ¶U´Â °ÍAo charAÇ m_bNowWalking?! ´?·ÁAÖ´U.
+// x y A§Ä!·Î AI? ?´U. (AI?? 1?AÖ´?? 3o´Â ?¸¦ E®A??°í Sync ?1Oµa·Î 1ÇÁ?AI? ?´U)
+// 1?ö´?charA?x, y °aA?1U·Î 1U2UÁö¸¸,
+// A¬¶?!1??AIA?A§Ä!?!1?1U2U x, y±îÁö interpolation?´U.
+// °E°A3a ¶U´Â °ÍAo charA?m_bNowWalking?! ?·ÁAÖ´U.
 // Warp¸¦ AÇµµÇN °ÍAI¶ó¸é Show¸¦ »ç?ëÇO °Í.
 bool CHARACTER::Move(int32_t x, int32_t y)
 {
-	// °°Ao A§Ä!¸é AIµ?ÇO ÇE?ä 3oA1 (AÚµ? 1o°o)
+	// °°Ao A§Ä!¸é AI?? ???3oA1 (AÚµ? 1o°o)
 	if (GetX() == x && GetY() == y)
 		return true;
 
@@ -704,22 +720,24 @@ void CHARACTER::SetPosition(int pos)
 	else if (pos == POS_DEAD)
 		SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
 
-	if (!IsStone())
+	if (!IsStone() && !IsPC())
 	{
 		switch (pos)
 		{
 		case POS_FIGHTING:
 			if (!HasCombatState(this))
-				MonsterLog("[BATTLE] 1Î?i´Â »óAÂ");
+				MonsterLog("[BATTLE] enter fighting state");
 
 			EnterBattleState(this);
+			GotoState(m_stateBattle);
 			break;
 
 		default:
 			if (!HasIdleState(this))
-				MonsterLog("[IDLE] 1¬´Â »óAÂ");
+				MonsterLog("[IDLE] enter idle state");
 
 			EnterIdleState(this);
+			GotoState(m_stateIdle);
 			break;
 		}
 	}
