@@ -6,6 +6,7 @@
 #include "item_manager.h"
 #include "desc.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
@@ -597,7 +598,7 @@ namespace offlineshop
 				if (!ch)
 					continue;
 
-				if (ch->GetPlayerID() == m_dwPID)
+				if (ecs::GetPlayerID(ch) == m_dwPID)
 					GetManager().SendShopOpenMyShopClientPacket(ch);
 
 				else
@@ -608,7 +609,7 @@ namespace offlineshop
 
 		else
 		{
-			if(ch->GetPlayerID() == m_dwPID)
+			if(ecs::GetPlayerID(ch) == m_dwPID)
 				GetManager().SendShopOpenMyShopClientPacket(ch);
 
 			else
@@ -879,7 +880,7 @@ namespace offlineshop
 	void ShopEntity::EncodeInsertPacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !ch->IsPC())
+		if(!ch || !ecs::IsPC(ch))
 			return;
 
 		GetManager().EncodeInsertShopEntity(*this, ch);
@@ -889,7 +890,7 @@ namespace offlineshop
 	void ShopEntity::EncodeRemovePacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !ch->IsPC())
+		if(!ch || !ecs::IsPC(ch))
 			return;
 
 		GetManager().EncodeRemoveShopEntity(*this, ch);
@@ -941,6 +942,7 @@ namespace offlineshop
 
 
 #endif //__ENABLE_NEW_OFFLINESHOP__
+
 
 
 
