@@ -2,6 +2,7 @@
 #include "mining.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
 #include "item.h"
 #include "config.h"
@@ -139,10 +140,10 @@ namespace mining
 		}
 
 		PIXEL_POSITION pos;
-		pos.x = ch->GetX() + number(-200, 200);
-		pos.y = ch->GetY() + number(-200, 200);
+		pos.x = ecs::GetX(ch) + number(-200, 200);
+		pos.y = ecs::GetY(ch) + number(-200, 200);
 
-		item->AddToGround(ch->GetMapIndex(), pos);
+		item->AddToGround(ecs::GetMapIndex(ch), pos);
 		item->StartDestroyEvent();
 		item->SetOwnership(ch, 15);
 
@@ -241,8 +242,8 @@ namespace mining
 
 		if (!Pick_Check(*item))
 		{
-			sys_err("REFINE_PICK_HACK pid(%u) item(%s:%d) type(%d)", ch->GetPlayerID(), item->GetName(), item->GetID(), item->GetType());
-			rkLogMgr.RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), -1, 1, "PICK_HACK");
+			sys_err("REFINE_PICK_HACK pid(%u) item(%s:%d) type(%d)", ecs::GetPlayerID(ch), item->GetName(), item->GetID(), item->GetType());
+			rkLogMgr.RefineLog(ecs::GetPlayerID(ch), item->GetName(), item->GetID(), -1, 1, "PICK_HACK");
 			return 2;
 		}
 
@@ -258,7 +259,7 @@ namespace mining
 
 		if (Pick_IsRefineSuccess(rkOldPick))
 		{
-			rkLogMgr.RefineLog(ch->GetPlayerID(), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 1, "PICK");
+			rkLogMgr.RefineLog(ecs::GetPlayerID(ch), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 1, "PICK");
 
 			LPITEM pkNewPick = ITEM_MANAGER::instance().CreateItem(rkOldPick.GetRefinedVnum(), 1);
 			if (pkNewPick)
@@ -274,7 +275,7 @@ namespace mining
 		}
 		else
 		{
-			rkLogMgr.RefineLog(ch->GetPlayerID(), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 0, "PICK");
+			rkLogMgr.RefineLog(ecs::GetPlayerID(ch), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 0, "PICK");
 
 #ifdef ENABLE_PICKAXE_RENEWAL
 			{
@@ -413,7 +414,7 @@ namespace mining
 	LPEVENT CreateMiningEvent(LPCHARACTER ch, LPCHARACTER load, int count)
 	{
 		mining_event_info* info = AllocEventInfo<mining_event_info>();
-		info->pid = ch->GetPlayerID();
+		info->pid = ecs::GetPlayerID(ch);
 		info->vid_load = load->GetVID();
 
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
@@ -472,4 +473,5 @@ namespace mining
 		return false;
 	}
 }
+
 
