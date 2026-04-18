@@ -4805,3 +4805,63 @@ Open investigation scope when revisited:
     - remove `m_vid`
     - remove `GetVID()`
     - delete `vid.h`
+
+## Phase 15 VID-A4 - damage map keyed by `entt::entity`
+- completed:
+  - `TDamageMap<VID, TBattleInfo>`
+    - -> `TDamageMap<entt::entity, TBattleInfo>`
+- files touched:
+  - `SRC/Server/GameServer/char.h`
+    - damage map typedef now uses `entt::entity`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - aggro update now records damage with `EntityOf(pAttacker)`
+    - victim-by-aggro selection resolves attackers with `LegacyCharOf(entity)`
+    - exp distribution iterates attacker entities, not `VID`
+    - party/shared drop winner comparison uses entity keys
+    - fixed-damage event map path uses entity key
+    - normal NPC damage path uses entity key
+    - nearest-victim scan resolves from entity key
+    - `RegisterDamageForExp(...)` now stores by entity
+- grep / code-state verification:
+  - no remaining `m_map_kDamage.find(...GetVID())` pattern in `SRC/Server/GameServer`
+  - no remaining `m_map_kDamage.insert(...GetVID())` pattern in `SRC/Server/GameServer`
+  - `TDamageMap` now appears only as:
+    - typedef
+    - field declaration
+    - iterator/type usage sites
+- build checkpoint:
+  - build gate passed:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- WinTest deploy / boot checkpoint:
+  - fresh `GameServer.exe` copied to:
+    - `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+  - restarted:
+    - `Database`
+    - `Login`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - fresh boot logs showed:
+    - no `VID_DRIFT fallback`
+    - no `entt::null` crash text
+    - no new assert / segfault pattern
+    - only the pre-existing motion asset warnings
+- runtime evidence available from recent combat log history:
+  - `Drop money : Attacker [DEV]Ixtreeme`
+  - `CQuestManager::Kill QUEST_KILL_EVENT`
+  - `FuncSplashDamage End :[DEV]Ixtreeme`
+  - these patterns remain the target for manual regression after this change
+- important limitation:
+  - no fresh manual in-client loot / XP / splash regression was completed in this checkpoint
+  - validation level is therefore:
+    - build green
+    - deploy green
+    - multi-core boot green
+    - no immediate damage-map related boot errors
+- next VID-A steps:
+  - `VID-A5/A6`
+    - remove remaining internal `VID` flows:
+      - `m_vid`
+      - `GetVID()`
+      - residual `VID` params / locals / returns
+    - then delete `vid.h`
