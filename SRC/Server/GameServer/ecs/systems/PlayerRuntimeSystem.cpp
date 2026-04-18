@@ -4586,6 +4586,12 @@ void CHARACTER::Initialize()
 #endif
 }
 
+uint32_t CHARACTER::GetPacketVID() const
+{
+    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    return static_cast<uint32_t>(e);
+}
+
 void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
 {
     static int s_crc = 172814;
@@ -4802,3 +4808,4 @@ EVENTFUNC(drop_event)
     return PASSES_PER_SEC(1);
 }
 #endif
+

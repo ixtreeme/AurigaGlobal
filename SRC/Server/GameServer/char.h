@@ -848,6 +848,7 @@ public:
 #endif
 
 	const VID& GetVID() const { return m_vid; }
+	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
 	void			SetCharType(uint8_t bType) { m_bCharType = bType; }
