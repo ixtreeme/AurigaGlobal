@@ -1032,12 +1032,16 @@ void CHARACTER::UpdateAggrPoint(LPCHARACTER pAttacker, EDamageType type, int dam
 	if (IsDead() || IsStun())
 		return;
 
-	TDamageMap::iterator it = m_map_kDamage.find(pAttacker->GetVID());
+	const entt::entity eAttacker = EntityOf(pAttacker);
+	if (eAttacker == entt::null)
+		return;
+
+	TDamageMap::iterator it = m_map_kDamage.find(eAttacker);
 
 	if (it == m_map_kDamage.end())
 	{
-		m_map_kDamage.insert(TDamageMap::value_type(pAttacker->GetVID(), TBattleInfo(0, dam)));
-		it = m_map_kDamage.find(pAttacker->GetVID());
+		m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(0, dam)));
+		it = m_map_kDamage.find(eAttacker);
 	}
 
 	UpdateAggrPointEx(pAttacker, type, dam, it->second);
@@ -1064,7 +1068,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 		{
 			if (it->second.iAggro > iNewAggro)
 			{
-				LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+				LPCHARACTER ch = LegacyCharOf(it->first);
 
 				if (ch && !ch->IsDead() && DISTANCE_APPROX(ch->GetX() - GetX(), ch->GetY() - GetY()) < 5000)
 				{
@@ -1080,10 +1084,10 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 #ifdef __DEFENSE_WAVE__
 			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
 			{
-				SetVictim(CHARACTER_MANAGER::instance().Find(itFind->first));
+				SetVictim(LegacyCharOf(itFind->first));
 			}
 #else
-			SetVictim(CHARACTER_MANAGER::instance().Find(itFind->first));
+			SetVictim(LegacyCharOf(itFind->first));
 #endif
 			m_dwStateDuration = 1;
 		}
@@ -1571,12 +1575,12 @@ LPCHARACTER CHARACTER::DistributeExp()
 	// ϴ    ɷ . (50m)
 	while (it != m_map_kDamage.end())
 	{
-		const VID& c_VID = it->first;
+		const entt::entity eAttacker = it->first;
 		uint64_t iDam = it->second.iTotalDamage;
 
 		++it;
 
-		LPCHARACTER pAttacker = CHARACTER_MANAGER::instance().Find(c_VID);
+		LPCHARACTER pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
 		if (!pAttacker || pAttacker->IsNPC() || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
@@ -3688,11 +3692,11 @@ void CHARACTER::Reward(bool bItemDrop)
 								uint64_t dmgNew = 0;
 								uint64_t dmgOld = 0;
 
-								auto itNew = m_map_kDamage.find(mch->GetVID());
+								auto itNew = m_map_kDamage.find(EntityOf(mch));
 								if (itNew != m_map_kDamage.end())
 									dmgNew = itNew->second.iTotalDamage;
 
-								auto itOld = m_map_kDamage.find(it->second->GetVID());
+								auto itOld = m_map_kDamage.find(EntityOf(it->second));
 								if (itOld != m_map_kDamage.end())
 									dmgOld = itOld->second.iTotalDamage;
 
@@ -3859,7 +3863,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					uint64_t iDamage = it->second.iTotalDamage;
 					if (iDamage > 0)
 					{
-						LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+						LPCHARACTER ch = LegacyCharOf(it->first);
 
 						if (ch)
 						{
@@ -4015,7 +4019,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					uint64_t iDamage = it->second.iTotalDamage;
 					if (iDamage > 0)
 					{
-						LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(it->first);
+						LPCHARACTER ch = LegacyCharOf(it->first);
 
 						if (ch)
 						{
@@ -4504,11 +4508,15 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		const int64_t fixed_dam = 100000;
 
 		// [1] Regisztrljuk a sebzst a dropphoz
-		auto it = m_map_kDamage.find(pAttacker->GetVID());
+		const entt::entity eAttacker = EntityOf(pAttacker);
+		if (eAttacker == entt::null)
+			return false;
+
+		auto it = m_map_kDamage.find(eAttacker);
 		if (it == m_map_kDamage.end())
 		{
 			m_map_kDamage.insert(std::make_pair(
-				pAttacker->GetVID(),
+				eAttacker,
 				TBattleInfo(fixed_dam, 0)
 			));
 		}
@@ -5699,16 +5707,21 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	if (pAttacker && dam > 0 && IsNPC())
 	{
 		//PROF_UNIT puRest20("Rest20");
-		TDamageMap::iterator it = m_map_kDamage.find(pAttacker->GetVID());
+		const entt::entity eAttacker = EntityOf(pAttacker);
+		TDamageMap::iterator it = m_map_kDamage.end();
+		if (eAttacker != entt::null)
+		{
+			it = m_map_kDamage.find(eAttacker);
 
-		if (it == m_map_kDamage.end())
-		{
-			m_map_kDamage.insert(TDamageMap::value_type(pAttacker->GetVID(), TBattleInfo(dam, 0)));
-			it = m_map_kDamage.find(pAttacker->GetVID());
-		}
-		else
-		{
-			it->second.iTotalDamage += dam;
+			if (it == m_map_kDamage.end())
+			{
+				m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(dam, 0)));
+				it = m_map_kDamage.find(eAttacker);
+			}
+			else
+			{
+				it->second.iTotalDamage += dam;
+			}
 		}
 		//puRest20.Pop();
 
@@ -5724,7 +5737,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		//puRest21.Pop();
 
 		//PROF_UNIT puRest22("Rest22");
-		UpdateAggrPointEx(pAttacker, type, dam, it->second);
+		if (it != m_map_kDamage.end())
+			UpdateAggrPointEx(pAttacker, type, dam, it->second);
 		//puRest22.Pop();
 	}
 	//puRest2.Pop();
@@ -6358,10 +6372,10 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 	// ϴ    ɷ .
 	while (it != m_map_kDamage.end())
 	{
-		const VID& c_VID = it->first;
+		const entt::entity eAttacker = it->first;
 		++it;
 
-		LPCHARACTER pAttacker = CHARACTER_MANAGER::instance().Find(c_VID);
+		LPCHARACTER pAttacker = LegacyCharOf(eAttacker);
 
 		if (!pAttacker)
 			continue;
@@ -6530,11 +6544,13 @@ void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
 	if (iDamage <= 0)
 		iDamage = 1;
 
-	const VID vid = pkAttacker->GetVID();
+	const entt::entity eAttacker = EntityOf(pkAttacker);
+	if (eAttacker == entt::null)
+		return;
 
-	TDamageMap::iterator it = m_map_kDamage.find(vid);
+	TDamageMap::iterator it = m_map_kDamage.find(eAttacker);
 	if (it == m_map_kDamage.end())
-		m_map_kDamage.insert(TDamageMap::value_type(vid, TBattleInfo(iDamage, 0)));
+		m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(iDamage, 0)));
 	else
 		it->second.iTotalDamage += iDamage;
 

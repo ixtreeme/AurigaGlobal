@@ -1702,7 +1702,7 @@ public:
 		{
 		}
 	};
-	typedef std::map<VID, TBattleInfo>	TDamageMap;
+	typedef std::map<entt::entity, TBattleInfo> TDamageMap;
 
 	typedef struct SAttackLog
 	{
