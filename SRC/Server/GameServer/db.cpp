@@ -11,6 +11,7 @@
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "p2p.h"
@@ -1037,7 +1038,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						sys_log(0, "GIVE LOTTO FAIL TO pid %u", ch->GetPlayerID());
+						sys_log(0, "GIVE LOTTO FAIL TO pid %u", ecs::GetPlayerID(ch));
 					}
 					else
 					{
@@ -1045,12 +1046,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (pkItem)
 						{
-							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ch->GetName(), qi->dwIdent);
+							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ecs::GetName(ch), qi->dwIdent);
 							pkItem->SetSocket(0, pMsg->Get()->uiInsertID);
 							pkItem->SetSocket(1, pdw[2]);
 						}
 						else
-							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ch->GetPlayerID());
+							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ecs::GetPlayerID(ch));
 					}
 				}
 
@@ -1416,3 +1417,4 @@ void AccountDB::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 	M2_DELETE(qi);
 }
+
