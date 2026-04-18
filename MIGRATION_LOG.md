@@ -4865,3 +4865,296 @@ Open investigation scope when revisited:
       - `GetVID()`
       - residual `VID` params / locals / returns
     - then delete `vid.h`
+
+## Phase 15 VID-A5 - `GetVID()` call-site migration (checkpoint, in progress)
+- scope in this checkpoint:
+  - first `GetVID()` reduction batch was started file-by-file
+  - goal:
+    - replace packet-boundary sites with `GetPacketVID()`
+    - replace ECS lookup sites with entity flow (`AIHelpers::EcsOf(...)` / existing entity path)
+    - avoid touching `m_vid`, `GetVID()` definition, and `vid.h` itself in this substep
+- committed first-batch files:
+  - `SRC/Server/GameServer/VikingDungeon.cpp`
+  - `SRC/Server/GameServer/party.cpp`
+  - `SRC/Server/GameServer/LostCastleDungeon.cpp`
+  - `SRC/Server/GameServer/New_PetSystem.cpp`
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - `SRC/Server/GameServer/MountSystem.cpp`
+  - `SRC/Server/GameServer/RuneDungeon.cpp`
+  - `SRC/Server/GameServer/Halloween2022Dungeon.cpp`
+- classification used during migration:
+  - `TYPE_P`
+    - packet boundary / dungeon flag / UI packet / log VID
+    - migrated to `GetPacketVID()`
+  - `TYPE_L`
+    - legacy lookup flow such as `CVIDRegistry::Find(ch->GetVID())`
+    - migrated to entity flow where safe
+  - `TYPE_C`
+    - comparisons against stored uint32 target / dungeon flag VID
+    - temporarily migrated to `GetPacketVID()` for wire/storage compatibility
+  - `TYPE_H`
+    - map/hash keys storing uint32 clone/shop/flag identifiers
+    - left on uint32 storage in this pass, but fed from `GetPacketVID()` where appropriate
+  - `TYPE_D`
+    - debug / sys_log VID output
+    - migrated to `GetPacketVID()`
+- intermediate progress after first batch:
+  - build gate stayed green after each migrated file
+  - raw remaining `GetVID()` call sites across `SRC/Server/GameServer` after the batch:
+    - `113`
+- first regression found during intermediate WinTest:
+  - symptom:
+    - boot spam:
+      - `CHARACTER_MANAGER::DestroyCharacter ... <Factor> -1 not found`
+      - `SpawnMob: cannot create new character`
+  - root cause:
+    - in `SRC/Server/GameServer/char_manager.cpp`, several lifecycle / legacy-map / spawn sites were incorrectly switched to `GetPacketVID()`
+    - those paths still operate on legacy `m_map_pkChrByVID` and `legacyVID` authority
+    - `GetPacketVID()` depends on a valid ECS entity; when unavailable, it yielded `entt::null`/`-1`, breaking destroy/spawn sanity checks
+  - corrective action:
+    - `char_manager.cpp` lifecycle/spawn sanity sites were reverted back to legacy `GetVID()` on purpose
+    - `GetPacketVID()` was kept only for true packet-boundary usage, not for legacy manager authority paths
+  - result after redeploy:
+    - fresh WinTest boot no longer showed:
+      - `DestroyCharacter ... -1 not found`
+      - `SpawnMob: cannot create new character`
+- second regression found after that:
+  - symptom:
+    - dead mob bodies stayed on the ground and did not disappear
+  - root cause:
+    - in `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`, `dead_event` scheduling had been changed to:
+      - `pEventInfo->vid = GetPacketVID();`
+    - but `dead_event` still resolved via:
+      - `CHARACTER_MANAGER::instance().Find(info->vid);`
+    - this mixed packet-VID and legacy-VID authority, so corpse cleanup could not resolve the dead actor
+  - first corrective action:
+    - temporarily restored the event payload writer to legacy `GetVID()` so corpse cleanup worked again
+  - final corrective action in the same checkpoint:
+    - fully migrated `dead_event` to ECS/entity flow:
+      - `SCharDeadEventInfo` now stores `entt::entity entity`
+      - scheduling uses `EntityOf(this)`
+      - handler resolves with `LegacyCharOf(info->entity)`
+    - this removes the hidden legacy VID dependency from the corpse cleanup path
+  - result after redeploy:
+    - fresh WinTest boot remained clean of new destroy/spawn regressions
+    - corpse cleanup path is now entity-based internally
+- current local, not-yet-committed fixes:
+  - `SRC/Server/GameServer/char_manager.cpp`
+    - lifecycle/spawn-side `GetPacketVID()` rollback to safe legacy `GetVID()` where manager authority still depends on legacy VID
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - `dead_event` fully migrated from `uint32_t vid` to `entt::entity`
+- current validation level:
+  - build green
+  - deploy green
+  - multi-core boot green
+  - no new:
+    - `DestroyCharacter ... -1 not found`
+    - `SpawnMob: cannot create new character`
+  - in-client confirmation from user:
+    - corpse disappearance path is fixed again
+- important stop-state:
+  - `VID-A5` is not complete yet
+  - remaining `GetVID()` usage is still substantial
+  - `vid.h` is still not deletable because these blockers remain:
+    - `char.h`
+      - `#include "vid.h"`
+      - `VID m_vid`
+      - `const VID& GetVID() const`
+      - `CheckSkillHitCount(..., const VID ...)`
+    - `char_manager.h/.cpp`
+      - `Find(const VID&)`
+    - `PlayerRuntimeSystem.cpp`
+      - `m_vid = VID(...)`
+    - `SkillSystem.cpp`
+      - `CheckSkillHit(..., VID targetVID)`
+    - `sectree_manager.cpp`
+      - `std::map<VID, VID> m_map_Monsters`
+- next recommended order from this checkpoint:
+  1. commit the two hotfixes currently only local:
+     - `char_manager.cpp` lifecycle rollback
+     - `CombatSystem.cpp` entity-based `dead_event`
+  2. continue `VID-A5` on remaining non-lifecycle, packet-boundary-heavy files
+  3. only after `GetVID()` count is driven much lower:
+     - remove `m_vid`
+     - remove `GetVID()`
+     - replace remaining `VID` params/locals
+     - delete `vid.h`
+
+
+## Phase 15 VID-A5 - continuation batch
+- committed hotfixes before new migration work:
+  - `30080b1` `Phase 15 VID-A5: Revert lifecycle sites to GetVID (legacy authority)`
+  - `2834011` `Phase 15 VID-A5: Migrate dead_event payload to entt::entity`
+- completed safe `GetVID()` reduction batches:
+  - `7f5a011` `Phase 15 VID-A5: Migrate TYPE_P in ActivitySystem.cpp`
+    - note: this commit also contains the matching packet-boundary replacements from `ecs/systems/NetworkSyncSystem.cpp`
+  - `de5b239` `Phase 15 VID-A5: Convert TYPE_E storage in AffectSystem.cpp`
+  - `58e2425` `Phase 15 VID-A5: Migrate TYPE_P and TYPE_E in MovementSystem.cpp`
+  - `0bcae18` `Phase 15 VID-A5: Migrate TYPE_P in fishing.cpp`
+  - `5f85884` `Phase 15 VID-A5: Migrate TYPE_P in arena.cpp`
+  - `c16829c` `Phase 15 VID-A5: Migrate TYPE_P in questlua packet sites`
+- migration rules applied in this batch:
+  - packet / Lua boundary only -> `GetPacketVID()`
+  - immediate ECS resolution -> `AIHelpers::EcsOf(...)`
+  - legacy manager / lifecycle authority untouched
+- fresh raw `GetVID()` grep count after this continuation: `91`
+  - down from the continuation baseline `113`
+- current hottest remaining files:
+  - `char_manager.cpp` `16` (intentional `TYPE_LEGACY` for now)
+  - `sectree.h` `6`
+  - `shop_manager.cpp` `5`
+  - `input_main.cpp` `5`
+  - `PetSystem.cpp` `5`
+  - `pvp.cpp` `5`
+  - `ecs/systems/ItemSystem.cpp` `5`
+- intermediate WinTest deploy/boot/log check stayed clean after the first safe batch (`ActivitySystem`, `NetworkSyncSystem`, `AffectSystem`):
+  - no new `VID_DRIFT`
+  - no fresh `DestroyCharacter ... -1 not found`
+  - no fresh `SpawnMob: cannot create new character`
+  - only pre-existing motion asset warnings in `syserr.txt`
+- later commits in this continuation (`MovementSystem`, `fishing`, `arena`, `questlua_*`) are build-verified and committed, but not yet manually re-smoked in-client on WinTest in this exact checkpoint.
+- next recommended targets:
+  - `input_main.cpp` split into packet-boundary vs `CheckSkillHitCount(..., VID)` survivors
+  - `pvp.cpp` packet/debug-only replacements, leave `SetVID` storage for later phase
+  - `shop_manager.cpp` / `PetSystem.cpp` only after explicit storage-type audit
+
+### Follow-up regression: `CParty::Unlink` syserr spam
+- after the later `VID-A5` packet-boundary batches, WinTest started spamming:
+  - `CParty::Unlink: Vein Of ... is not member of this party`
+  - `CParty::Unlink: Pile Of Clams is not member of this party`
+- root cause:
+  - non-PC party membership in [party.cpp](/E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp) was incorrectly migrated to `GetPacketVID()`
+  - this affected:
+    - `CPartyManager::CreateParty(...)` non-PC branch
+    - `CParty::Link(...)` non-PC branch
+    - `CParty::Unlink(...)` non-PC branch
+  - but the mob/vein/clams party member map is still keyed by legacy `GetVID()` in this phase
+  - result: unlink searched with packet VID instead of the stored legacy membership key
+- fix:
+  - reverted non-PC party membership key sites back to legacy `GetVID()`
+  - kept packet send / party link packets on `GetPacketVID()` where wire encoding is correct
+- verification:
+  - build green
+  - fresh WinTest deploy + restart
+  - after restart, no new `CParty::Unlink` lines appeared in the fresh boot window
+- commit:
+  - `d7d94ba` `Phase 15 VID-A5: Keep mob-party membership on legacy GetVID`
+- migration note:
+  - mob-party membership remains `TYPE_LEGACY` until the whole non-PC party storage is converted, not just the call sites
+
+
+## Phase 15 VID-A6 - remove CHARACTER::m_vid / GetVID core bridge
+- goal of this checkpoint:
+  - remove `CHARACTER::m_vid`
+  - remove `CHARACTER::GetVID()`
+  - move CHARACTER-side identity reads to ECS-first helpers:
+    - `GetLegacyVID()` for legacy-authority runtime storage still keyed by old manager VID
+    - `GetPacketVID()` for packet / client wire VID only
+    - `GetEntityHandle()` for direct ECS/entity flow
+- bridge work introduced before field removal:
+  - `SRC/Server/GameServer/char.h`
+    - added public surface:
+      - `uint32_t GetLegacyVID() const;`
+      - `entt::entity GetEntityHandle() const;`
+      - `void SetEntityHandle(entt::entity e);`
+      - `uint32_t GetPacketVID() const;`
+    - removed `VID m_vid`
+    - removed `CHARACTER::GetVID()` declaration
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+    - `Initialize()` now clears `m_entity`
+    - `GetLegacyVID()` reads the ECS `VIDComponent.value`
+    - `GetPacketVID()` returns `static_cast<uint32_t>(entity)`
+    - removed the old `CHARACTER::GetVID()` implementation
+    - creation path no longer writes `m_vid = VID(...)`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+    - `AttachLegacyCharacter(...)` now stamps the bridge handle back onto the live `CHARACTER`
+    - destroy path clears the handle back to `entt::null`
+  - `SRC/Server/GameServer/ecs/AIHelpers.hpp`
+    - `EcsOf(LPCHARACTER)` now resolves directly from `GetEntityHandle()` instead of re-looking up through legacy VID
+- major caller migration completed in this checkpoint:
+  - packet-boundary replacements -> `GetPacketVID()`
+    - `input_main.cpp`
+    - `pvp.cpp`
+    - `questmanager.cpp` target-VID packet uses
+    - `shop_manager.cpp`
+    - `PlayerRuntimeSystem.cpp`
+    - `SessionSystem.cpp`
+    - `battle.cpp`
+    - `cmd_general.cpp`
+    - `exchange.cpp`
+    - `DragonSoulSystem.cpp`
+    - `MountSystem.cpp`
+    - `SocialSystem.cpp`
+    - several dungeon/boss-flag packet-facing sites
+  - legacy-authority replacements -> `GetLegacyVID()`
+    - `char_manager.cpp`
+    - `party.cpp` non-PC membership keys
+    - `dungeon.cpp`
+    - `EasterDungeon.cpp`
+    - `ValentineDungeon.cpp`
+    - `OrcsDungeon.cpp`
+    - `TritonTempleDungeon.cpp`
+    - `PetSystem.cpp`
+    - `mining.cpp`
+  - direct entity replacements -> `GetEntityHandle()` / ECS handle flow
+    - `char_manager.cpp`
+    - `questmanager.cpp`
+    - `PlayerRuntimeSystem.cpp`
+    - `SessionSystem.cpp`
+    - `cmd_gm.cpp`
+    - `ItemSystem.cpp` direct ECS call sites
+- `Find(const VID&)` cleanup:
+  - removed `CHARACTER_MANAGER::Find(const VID&)` declaration and definition
+  - remaining manager lookup is only `Find(uint32_t)`
+- skill-hit migration included in this checkpoint:
+  - `TSkillUseInfo::target_map` changed from `std::map<uint32_t, size_t>` to `std::map<entt::entity, size_t>`
+  - `TSkillUseInfo::dwVID` changed from `uint32_t` to `entt::entity`
+  - `TSkillUseInfo::UseSkill(...)` now stores entity targets
+  - `CHARACTER::CheckSkillHitCount(...)` now takes `entt::entity`
+  - `CheckSkillHit(...)` in `SkillSystem.cpp` now takes `entt::entity`
+  - the matching target comparisons in `SkillSystem.cpp` were updated to `AIHelpers::EcsOf(pkChrVictim)`
+- `sectree_manager` cleanup included in this checkpoint:
+  - `std::map<VID, VID> m_map_Monsters` replaced with `std::map<entt::entity, entt::entity>`
+  - insert path now stores entity handles, not legacy VID wrappers
+- regression during A6 bring-up:
+  - initial partial field removal broke the build because packet paths still used `m_vid`
+  - after the compile-guided cleanup, the remaining direct `m_vid` reads were replaced with `GetPacketVID()` in:
+    - `CombatSystem.cpp`
+    - `MovementSystem.cpp`
+    - `NetworkSyncSystem.cpp`
+    - `PointSystem.cpp`
+- final verification for this checkpoint:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + full stack restart completed:
+    - `Database`
+    - `Login`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - fresh boot log check:
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - only the pre-existing motion asset warnings remain in `syserr.txt`
+- exact post-checkpoint state:
+  - case-sensitive `m_vid` references: `0`
+  - `Find(const VID&)` references: `0`
+  - raw case-sensitive `GetVID()` grep still returns survivors, but these are now:
+    - non-CHARACTER classes (`CItem`, `CObject`, pet/offlineshop helper wrappers, etc.)
+    - comments / historical notes
+  - `CHARACTER::GetVID()` itself is removed from the CHARACTER surface
+- important limitation of this checkpoint:
+  - full in-client 30-minute manual regression was not executed by me here
+  - validation level is build + deploy + fresh boot/log health, not full gameplay smoke
+- next recommended step:
+  1. commit this A6 bridge removal batch cleanly
+  2. run focused in-client smoke on:
+     - login/logout
+     - melee + skill combat
+     - quest click / shop / party invite
+     - pet summon/despawn
+     - dungeon boss spawn/flag flows
+  3. then proceed to VID-A7 (`vid.h` deletion), because the CHARACTER-side blockers are now removed
