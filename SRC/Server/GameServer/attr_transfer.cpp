@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "log.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
@@ -20,7 +21,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	const LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		sys_log(0, "%s has try to open the Attr Transfer window without talk to the NPC.", ch->GetName());
+		sys_log(0, "%s has try to open the Attr Transfer window without talk to the NPC.", ecs::GetName(ch));
 		return;
 	}
 	
@@ -40,10 +41,10 @@ void AttrTransfer_open(LPCHARACTER ch)
 		return;
 	}
 	
-	int32_t distance = DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY());
+	int32_t distance = DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(npc), ecs::GetY(ch) - ecs::GetY(npc));
 	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
 	{
-		sys_log(1, "%s is too far for can open the Attr Transfer Window. (character distance: %d, distance allowed: %d)", ch->GetName(), distance, ATTR_TRANSFER_MAX_DISTANCE);
+		sys_log(1, "%s is too far for can open the Attr Transfer Window. (character distance: %d, distance allowed: %d)", ecs::GetName(ch), distance, ATTR_TRANSFER_MAX_DISTANCE);
 		return;
 	}
 	
@@ -52,7 +53,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
-		sys_log(1, "%s has open the Attr Transfer window.", ch->GetName());
+		sys_log(1, "%s has open the Attr Transfer window.", ecs::GetName(ch));
 	}
 }
 
@@ -64,7 +65,7 @@ void AttrTransfer_close(LPCHARACTER ch)
 	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{
-		sys_log(1, "%s has close the Attr Transfer window.", ch->GetName());
+		sys_log(1, "%s has close the Attr Transfer window.", ecs::GetName(ch));
 	}
 }
 
@@ -98,7 +99,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		sys_log(0, "%s has try to open the transfer the bonuses between costumes without talk to the NPC.", ch->GetName());
+		sys_log(0, "%s has try to open the transfer the bonuses between costumes without talk to the NPC.", ecs::GetName(ch));
 		return false;
 	}
 	
@@ -153,7 +154,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	items[2] = nullptr;
 	
 	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), items[1]->GetVnum());
+	LogManager::instance().AttrTransferLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), items[1]->GetVnum());
 #ifdef TEXTS_IMPROVEMENT
 	ch->ChatPacketNew(CHAT_TYPE_INFO, 84, "");
 #endif
@@ -339,3 +340,4 @@ void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
 	attr_transfer_item[w_index] = nullptr;
 	return;
 }
+
