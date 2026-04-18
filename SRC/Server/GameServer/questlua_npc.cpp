@@ -38,7 +38,7 @@ namespace quest
 		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
 		if (npcE == entt::null || !g_registry.valid(npcE)) {
 			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
-			lua_pushboolean(L, (npc && npc->IsPC()) ? 1 : 0);
+			lua_pushboolean(L, (npc && ecs::IsPC(npc)) ? 1 : 0);
 			return 1;
 		}
 		lua_pushboolean(L, g_registry.all_of<ecs::TagPC>(npcE) ? 1 : 0);
@@ -223,7 +223,7 @@ namespace quest
 
 		if ( npc != nullptr)
 		{
-			if (npc->IsPC())
+			if (ecs::IsPC(npc))
 				return 0;
 
 			if (npc->GetQuestNPCID() == ecs::GetPlayerID(ch))
@@ -242,7 +242,7 @@ namespace quest
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		if (!npc || npc->IsPC())
+		if (!npc || ecs::IsPC(npc))
 		{
 			lua_pushboolean(L, true);
 			return 1;
@@ -400,7 +400,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		lua_pushnumber(L, npc->GetLevel());
+		lua_pushnumber(L, ecs::GetLevel(npc));
 		return 1;
 	}
 
@@ -433,7 +433,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		lua_pushnumber(L, npc->GetRaceNum());
+		lua_pushnumber(L, ecs::GetRaceNum(npc));
 		return 1;
 	}
 
@@ -508,5 +508,6 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("npc", npc_functions);
 	}
 };
+
 
 
