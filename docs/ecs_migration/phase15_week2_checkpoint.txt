@@ -1,0 +1,123 @@
+Phase 15 Week 2 - CharacterAccessors ECS authority switch + wider migration
+
+Scope
+- Switched CharacterAccessors.hpp from pure legacy passthrough to ECS-first reads with legacy fallback where the component is populated.
+- Added four more trivial accessors: GetRaceNum, GetLevel, IsPC, IsNPC.
+- Extended trivial getter replacements to wider variable names in Week 1 files.
+- Migrated MEDIUM-tier files with trivial getter replacements only.
+
+Step 1 audit - ECS-populated fields
+- Confirmed ECS-populated on login / entity creation:
+  - `ecs::VIDComponent.value`
+  - `ecs::PlayerID.pid`
+  - `ecs::PlayerName.value`
+  - `ecs::LevelComponent.value`
+  - `ecs::Position.x`, `ecs::Position.y`
+  - `ecs::SectorPlacement.mapIndex`
+  - `ecs::MapIndex.value`
+  - type tags: `ecs::TagPC`, `ecs::TagNPC`, `ecs::TagMonster`, `ecs::TagStone`, `ecs::TagPet`, `ecs::TagMount`, `ecs::TagHorse`
+- Audit sources:
+  - `SRC/Server/GameServer/input_db.cpp`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+
+CharacterAccessors ECS-first authority switch
+- ECS-first with legacy fallback:
+  - `ecs::GetVID(LPCHARACTER)`
+  - `ecs::GetPlayerID(LPCHARACTER)`
+  - `ecs::GetMapIndex(LPCHARACTER)`
+  - `ecs::GetX(LPCHARACTER)`
+  - `ecs::GetY(LPCHARACTER)`
+  - `ecs::GetRaceNum(LPCHARACTER)`
+  - `ecs::GetLevel(LPCHARACTER)`
+  - `ecs::IsPC(LPCHARACTER)`
+  - `ecs::IsNPC(LPCHARACTER)`
+- Legacy-only for now:
+  - `ecs::GetName(LPCHARACTER)`
+    - deferred because string ownership / lifetime still relies on legacy `CHARACTER`
+
+Week 2 source migration
+- Step 3 wider variable-name pass on already migrated Week 1 files:
+  - `SRC/Server/GameServer/ani.cpp`
+  - `SRC/Server/GameServer/questlua_danceevent.cpp`
+  - `SRC/Server/GameServer/questlua_dungeon.cpp`
+  - `SRC/Server/GameServer/questlua_global.cpp`
+  - `SRC/Server/GameServer/questlua_pc.cpp`
+
+- Step 4/5 MEDIUM-tier files migrated:
+  - `SRC/Server/GameServer/trigger.cpp`
+  - `SRC/Server/GameServer/cmd_emotion.cpp`
+  - `SRC/Server/GameServer/questlua.cpp`
+  - `SRC/Server/GameServer/log.cpp`
+  - `SRC/Server/GameServer/target.cpp`
+  - `SRC/Server/GameServer/attr_transfer.cpp`
+  - `SRC/Server/GameServer/questpc.cpp`
+  - `SRC/Server/GameServer/mining.cpp`
+  - `SRC/Server/GameServer/shopEx.cpp`
+  - `SRC/Server/GameServer/building.cpp`
+  - `SRC/Server/GameServer/questlua_npc.cpp`
+  - `SRC/Server/GameServer/messenger_manager.cpp`
+  - `SRC/Server/GameServer/sectree_manager.cpp`
+  - `SRC/Server/GameServer/input_p2p.cpp`
+  - `SRC/Server/GameServer/guild_war.cpp`
+  - `SRC/Server/GameServer/new_offlineshop.cpp`
+  - `SRC/Server/GameServer/marriage.cpp`
+  - `SRC/Server/GameServer/cmd.cpp`
+  - `SRC/Server/GameServer/guild_manager.cpp`
+  - `SRC/Server/GameServer/wheel_of_destiny.cpp`
+  - `SRC/Server/GameServer/sectree.cpp`
+  - `SRC/Server/GameServer/db.cpp`
+  - `SRC/Server/GameServer/arena.cpp`
+
+Rollback / manual review needed
+- `SRC/Server/GameServer/wedding.cpp`
+  - rolled back after build failure
+  - reason: `ecs/CharacterAccessors.hpp` pulls `AIHelpers.hpp`, which requires full `CHARACTER` type; this conflicted with the current forward-only include surface in `wedding.cpp`
+
+Checkpoint counts
+- Calls before Week 2:
+  - `1715`
+- Calls after Week 2 Step 3 only:
+  - `1679`
+- Calls after Week 2 complete:
+  - `1520`
+- Net Week 2 reduction:
+  - `195`
+- Additional reduction from MEDIUM-tier batch alone:
+  - `159`
+
+Files / surface counts
+- Helper headers with ECS-authoritative accessors:
+  - `1`
+    - `SRC/Server/GameServer/ecs/CharacterAccessors.hpp`
+- ECS-first accessors implemented in that file:
+  - `9`
+- Legacy-only accessor retained:
+  - `1` (`GetName`)
+- Source files migrated in Week 2:
+  - `28`
+    - `5` wider-variable Week 1 follow-up files
+    - `23` MEDIUM-tier files
+
+Build status
+- Build gate after every committed file:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - passed
+- Final Week 2 build:
+  - passed
+
+Runtime verification
+- No manual WinTest runtime smoke was executed in this week-2 pass.
+- Therefore:
+  - runtime regressions observed: none confirmed
+  - runtime regressions ruled out: no
+- Follow-up recommended before Week 3:
+  - login
+  - movement
+  - combat
+  - basic quest dialogs
+  - check `syserr.txt` for new errors
+
+Notes
+- Week 2 remained limited to trivial getter syntax migration only.
+- No non-trivial methods were migrated.
+- No HARD/EPIC files were touched in the committed MEDIUM-tier batch, except for already completed Week 2 follow-up replacements on previously migrated Week 1 files.

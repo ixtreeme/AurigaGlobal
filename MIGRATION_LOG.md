@@ -4611,3 +4611,73 @@ Open investigation scope when revisited:
 - verify victim `GetX/GetY` vs attacker position
 - check view broadcast lag for mob position sync
 - check ECS `SectorPlacement` sync during movement
+
+## Phase 15 Week 2 - CharacterAccessors ECS-first switch
+- `SRC/Server/GameServer/ecs/CharacterAccessors.hpp`
+  - switched from pure legacy passthrough to ECS-first reads with legacy fallback for:
+    - `GetVID`
+    - `GetPlayerID`
+    - `GetMapIndex`
+    - `GetX`
+    - `GetY`
+    - `GetRaceNum`
+    - `GetLevel`
+    - `IsPC`
+    - `IsNPC`
+  - `GetName` intentionally remained legacy-only for now
+- audit confirmed ECS seeding/availability in:
+  - `input_db.cpp`
+  - `ecs/EntityFactory.cpp`
+  - relevant components:
+    - `VIDComponent`
+    - `PlayerID`
+    - `PlayerName`
+    - `LevelComponent`
+    - `Position`
+    - `SectorPlacement`
+    - `MapIndex`
+    - type tags
+- wider variable-name accessor migration completed on previously migrated Week 1 files:
+  - `ani.cpp`
+  - `questlua_danceevent.cpp`
+  - `questlua_dungeon.cpp`
+  - `questlua_global.cpp`
+  - `questlua_pc.cpp`
+- MEDIUM-tier trivial accessor migration completed in:
+  - `trigger.cpp`
+  - `cmd_emotion.cpp`
+  - `questlua.cpp`
+  - `log.cpp`
+  - `target.cpp`
+  - `attr_transfer.cpp`
+  - `questpc.cpp`
+  - `mining.cpp`
+  - `shopEx.cpp`
+  - `building.cpp`
+  - `questlua_npc.cpp`
+  - `messenger_manager.cpp`
+  - `sectree_manager.cpp`
+  - `input_p2p.cpp`
+  - `guild_war.cpp`
+  - `new_offlineshop.cpp`
+  - `marriage.cpp`
+  - `cmd.cpp`
+  - `guild_manager.cpp`
+  - `wheel_of_destiny.cpp`
+  - `sectree.cpp`
+  - `db.cpp`
+  - `arena.cpp`
+- rollback / manual review:
+  - `wedding.cpp`
+    - attempted trivial accessor helper include broke build because the file currently relies on a forward-only `CHARACTER` surface
+    - rolled back and deferred
+- Week 2 checkpoint:
+  - target 10-method direct-call count before Week 2: `1715`
+  - after Step 3: `1679`
+  - after Week 2 complete: `1520`
+  - net Week 2 reduction: `195`
+  - source files migrated in Week 2: `28`
+- verification:
+  - build gate passed after every committed file:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - no manual WinTest smoke completed in this pass
