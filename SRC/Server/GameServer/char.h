@@ -11,7 +11,6 @@
 #include "entity.h"
 #include "FSM.h"
 #include "horse_rider.h"
-#include "vid.h"
 #include "constants.h"
 #include "affect.h"
 #include "affect_flag.h"

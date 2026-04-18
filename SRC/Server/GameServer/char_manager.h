@@ -12,7 +12,6 @@
 #include <common/stl.h>
 #include <common/length.h>
 
-#include "vid.h"
 
 class CDungeon;
 class CHARACTER;

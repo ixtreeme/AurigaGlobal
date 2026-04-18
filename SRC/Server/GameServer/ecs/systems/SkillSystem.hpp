@@ -6,7 +6,6 @@
 #include <entt/entt.hpp>
 
 #include "../../typedef.h"
-#include "../../vid.h"
 
 namespace SkillSystem {
 
@@ -23,7 +22,7 @@ bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId);
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob = 0);
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
-bool CheckSkillHit(entt::entity attacker, uint8_t skillId, VID targetVID);
+bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target);
 int ComputeCooltime(entt::entity e, int time);
 void DisableCooltime(entt::entity e);
 void ResetMobSkillCooltime(entt::entity e);
