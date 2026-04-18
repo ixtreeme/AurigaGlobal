@@ -15,7 +15,7 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
-				if ( ch->IsPC() == true && ch->IsGM() != true )
+				if ( ecs::IsPC(ch) == true && ch->IsGM() != true )
 				{
 					if ( ((ecs::GetX(ch) >= 764503 && ecs::GetX(ch) <= 772362) && (ecs::GetY(ch) >= 22807 && ecs::GetY(ch) <= 26499)) == false )
 					{
@@ -51,5 +51,6 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("dance_event", dance_event_functions);
 	}
 }
+
 
 
