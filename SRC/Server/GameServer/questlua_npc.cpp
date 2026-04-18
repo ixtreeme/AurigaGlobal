@@ -5,6 +5,7 @@
 #include "char_interface.hpp"
 #include "party.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "shop_manager.h"
 #include "guild.h"
 #include "ecs/quest_helpers.hpp"
@@ -170,7 +171,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(npc), ecs::GetY(ch) - ecs::GetY(npc)) < dist*100);
 			return 1;
 		}
 
@@ -204,7 +205,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY()) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(npc), ecs::GetY(ch) - ecs::GetY(npc)) < dist*100);
 			return 1;
 		}
 
@@ -225,7 +226,7 @@ namespace quest
 			if (npc->IsPC())
 				return 0;
 
-			if (npc->GetQuestNPCID() == ch->GetPlayerID())
+			if (npc->GetQuestNPCID() == ecs::GetPlayerID(ch))
 			{
 				npc->SetQuestNPCID(0);
 			}
@@ -247,9 +248,9 @@ namespace quest
 			return 1;
 		}
 
-		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == ch->GetPlayerID())
+		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == ecs::GetPlayerID(ch))
 		{
-			npc->SetQuestNPCID(ch->GetPlayerID());
+			npc->SetQuestNPCID(ecs::GetPlayerID(ch));
 			lua_pushboolean(L, true);
 		}
 		else
@@ -292,7 +293,7 @@ namespace quest
 		if (!vid)
 		{
 			LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
-			lua_pushnumber(L, npc ? npc->GetVID() : 0);
+			lua_pushnumber(L, npc ? ecs::GetVID(npc) : 0);
 			return 1;
 		}
 		lua_pushnumber(L, vid->value);
@@ -410,7 +411,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		lua_pushstring(L, npc->GetName());
+		lua_pushstring(L, ecs::GetName(npc));
 		return 1;
 	}
 
@@ -421,7 +422,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
 
-		lua_pushnumber(L, npc->GetPlayerID());
+		lua_pushnumber(L, ecs::GetPlayerID(npc));
 		return 1;
 	}
 
@@ -507,4 +508,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("npc", npc_functions);
 	}
 };
+
 
