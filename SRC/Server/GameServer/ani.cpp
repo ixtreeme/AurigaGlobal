@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "ani.h"
 #include "dev_log.h"
@@ -357,7 +358,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
-			ch->GetName(),
+			ecs::GetName(ch),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
 			ch->GetPoint(POINT_ATT_SPEED));
@@ -394,3 +395,4 @@ int main(int argc, char **argv)
 	exit(0);
 }
 #endif
+
