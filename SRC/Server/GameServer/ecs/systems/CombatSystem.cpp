@@ -1735,10 +1735,10 @@ LPCHARACTER CHARACTER::DistributeExp()
 
 EVENTINFO(SCharDeadEventInfo)
 {
-	uint32_t vid;
+	entt::entity entity;
 
 	SCharDeadEventInfo()
-		: vid(0)
+		: entity(entt::null)
 	{
 	}
 };
@@ -1752,10 +1752,10 @@ EVENTFUNC(dead_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(info->vid);
+	LPCHARACTER ch = LegacyCharOf(info->entity);
 	if (ch == nullptr)
 	{
-		sys_err("DEAD_EVENT: cannot find char pointer with MOB vid(%d)", info->vid);
+		sys_err("DEAD_EVENT: cannot find char pointer with MOB entity(%u)", static_cast<uint32_t>(info->entity));
 		return 0;
 	}
 
@@ -2288,7 +2288,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		if (!IsPC())
 		{
 			SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
-			pEventInfo->vid = GetPacketVID();
+			pEventInfo->entity = EntityOf(this);
 
 			if (IsRevive() == false && HasReviverInParty() == true)
 			{
