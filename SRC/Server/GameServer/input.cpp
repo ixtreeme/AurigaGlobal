@@ -4,6 +4,7 @@
 #include "desc.h"
 #include "desc_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "buffer_manager.h"
 #include "config.h"
 #include "profiler.h"
@@ -154,7 +155,7 @@ void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
-	sys_log(0, "VERSION: %s %s %s", ch->GetName(), p->timestamp, p->filename);
+	sys_log(0, "VERSION: %s %s %s", ecs::GetName(ch), p->timestamp, p->filename);
 	ch->GetDesc()->SetClientVersion(p->timestamp);
 }
 
@@ -274,5 +275,6 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	return 0;
 }
+
 
 
