@@ -8,6 +8,7 @@
 #include "desc_client.h"
 #include "buffer_manager.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "db.h"
 #include "affect.h"
 #include "p2p.h"
@@ -687,7 +688,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 			ch->StopRiding();
 	}
 #endif
-	quest::PC * pPC = quest::CQuestManager::instance().GetPC(ch->GetPlayerID());
+	quest::PC * pPC = quest::CQuestManager::instance().GetPC(ecs::GetPlayerID(ch));
 	pPC->SetFlag("war.is_war_member", 1);
 
 	ch->SaveExitLocation();
@@ -731,13 +732,13 @@ void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
 		unsigned int questIndex=CQuestManager::instance().GetQuestIndexByName("guild_war_join");
 		if (questIndex)
 		{
-			sys_log(0, "GuildWar.GuildWarEntryAsk.SendLetterToMember pid(%d), qid(%d)", ch->GetPlayerID(), questIndex);
-			CQuestManager::instance().Letter(ch->GetPlayerID(), questIndex, 0);
+			sys_log(0, "GuildWar.GuildWarEntryAsk.SendLetterToMember pid(%d), qid(%d)", ecs::GetPlayerID(ch), questIndex);
+			CQuestManager::instance().Letter(ecs::GetPlayerID(ch), questIndex, 0);
 		}
 		else
 		{
 			sys_err("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid(%d), quest_name('guild_war_join.quest')",
-					ch->GetPlayerID(), questIndex);
+					ecs::GetPlayerID(ch), questIndex);
 			break;
 		}
 	}
@@ -777,5 +778,6 @@ void CGuild::ChangeLadderPoint(int iChange)
 	p.lChange = iChange;
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_CHANGE_LADDER_POINT, 0, &p, sizeof(p));
 }
+
 
 
