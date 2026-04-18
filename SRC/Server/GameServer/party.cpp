@@ -156,7 +156,7 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 	else
 	{
 		pParty->SetPCParty(false);
-		pParty->Join(pLeader->GetVID());
+		pParty->Join(pLeader->GetPacketVID());
 	}
 
 	pParty->Link(pLeader);
@@ -533,7 +533,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	if (pkChr->IsPC())
 		it = m_memberMap.find(pkChr->GetPlayerID());
 	else
-		it = m_memberMap.find(pkChr->GetVID());
+		it = m_memberMap.find(pkChr->GetPacketVID());
 
 	if (it == m_memberMap.end())
 	{
@@ -628,7 +628,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 	if (pkChr->IsPC())
 		it = m_memberMap.find(pkChr->GetPlayerID());
 	else
-		it = m_memberMap.find(pkChr->GetVID());
+		it = m_memberMap.find(pkChr->GetPacketVID());
 
 	if (it == m_memberMap.end())
 	{
@@ -722,7 +722,7 @@ void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_UNLINK;
 	p.pid = ch->GetPlayerID();
-	p.vid = (uint32_t)ch->GetVID();
+	p.vid = ch->GetPacketVID();
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
@@ -742,7 +742,7 @@ void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_LINK;
-	p.vid = ch->GetVID();
+	p.vid = ch->GetPacketVID();
 	p.pid = ch->GetPlayerID();
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
@@ -768,7 +768,7 @@ void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 	{
 		if (it->second.pCharacter)
 		{
-			p.vid = it->second.pCharacter->GetVID();
+			p.vid = it->second.pCharacter->GetPacketVID();
 			p.pid = it->second.pCharacter->GetPlayerID();
 			ch->GetDesc()->Packet(&p, sizeof(p));
 		}
@@ -800,7 +800,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
 		{
-			//sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), (uint32_t)ch->GetVID(), it->second.pCharacter->GetName(), (uint32_t)it->second.pCharacter->GetVID());
+			//sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
 		}
 	}
@@ -821,7 +821,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
 		{
-			sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), (uint32_t)ch->GetVID(), it->second.pCharacter->GetName(), (uint32_t)it->second.pCharacter->GetVID());
+			sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
 		}
 	}
@@ -848,7 +848,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		sys_log(2, "PARTY send info %s[%d] to %s[%d]", it->second.pCharacter->GetName(), (uint32_t)it->second.pCharacter->GetVID(), ch->GetName(), (uint32_t)ch->GetVID());
+		sys_log(2, "PARTY send info %s[%d] to %s[%d]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
 		ch->GetDesc()->Packet(&p, sizeof(p));
 	}
 }
