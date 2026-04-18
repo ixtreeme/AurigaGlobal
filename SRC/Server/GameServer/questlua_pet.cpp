@@ -4,6 +4,7 @@
 #include "questmanager.h"
 #include "horsename_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "config.h"
 #include "utils.h"
@@ -178,4 +179,5 @@ namespace quest
 #endif
 
 }
+
 
