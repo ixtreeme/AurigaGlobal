@@ -1,0 +1,434 @@
+Phase 14d - CHARACTER_MANAGER::Update() residual responsibilities audit
+Date: 2026-04-18
+Workspace: E:\AurigaGlobal\LiveWork\AurigaGlobal
+
+Scope
+- Audit only. No gameplay code changes.
+- Goal: identify every responsibility still owned by CHARACTER_MANAGER::Update()
+  that prevents disabling the legacy tick.
+
+========================================================================
+1. Full CHARACTER_MANAGER::Update() responsibility list
+========================================================================
+
+Authoritative implementation
+- File: SRC/Server/GameServer/char_manager.cpp:1042-1204
+
+Responsibilities in execution order
+
+1. Begin pending-destroy window
+- Call:
+  - BeginPendingDestroy()
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1049
+- Meaning:
+  - enables deferred destruction during the rest of the update pass
+  - any DestroyCharacter() during this window is queued instead of immediate
+
+2. Dungeon-ticket event resync
+- Block:
+  - ENABLE_EVENT_MANAGER guarded block
+  - CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0)
+  - compare previous active state / extra-count
+  - destroy existing extra metins
+  - spawn new extra metins around base stones if needed
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1050-1128
+- Meaning:
+  - world event reconciliation logic
+  - not per-entity AI
+  - performs destroy/spawn side effects against live character world state
+
+3. Map1 mass spawn events tick
+- Call:
+  - Map1MassSpawnEvents_Update(*this, iPulse)
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1130
+- Meaning:
+  - pulse-driven wave spawner for Tanaka / Golden Frog events
+  - prunes alive wave VIDs
+  - spawns a new wave only when previous wave is cleared
+  - may destroy remaining spawned mobs when event ends
+
+4. PC tick loop
+- Block:
+  - iterate m_map_pkPCChr
+  - copy pointers to CHARACTER_VECTOR
+  - every 5 seconds:
+    - ResetChatCounter()
+    - CFSM::Update() via FuncUpdateAndResetChatCounter
+  - otherwise:
+    - CHARACTER::UpdateCharacter(iPulse)
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1133-1169
+- Meaning:
+  - authoritative per-PC execution tick
+
+5. State-list tick
+- Block:
+  - iterate m_set_pkChrState
+  - copy pointers to CHARACTER_VECTOR
+  - call CHARACTER::UpdateStateMachine(iPulse)
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1171-1184
+- Meaning:
+  - authoritative per-entity state-machine tick
+  - used primarily by monster / NPC / stateful actors
+
+6. Hourly mob-kill-money flush
+- Block:
+  - every PASSES_PER_SEC(3600)
+  - DBManager::instance().SendMoneyLog(MONEY_LOG_MONSTER_KILL, ...)
+  - clear m_map_dwMobKillCount
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1186-1193
+- Meaning:
+  - periodic accounting flush
+  - unrelated to ECS entity update
+
+7. Test-server character count log
+- Block:
+  - every 60 seconds on test_server
+  - sys_log("CHARACTER COUNT vid %zu pid %zu", ...)
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1195-1197
+- Meaning:
+  - debug / observability only
+
+8. Flush pending-destroy queue
+- Call:
+  - FlushPendingDestroy()
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1200
+- Meaning:
+  - executes deferred M2_DESTROY_CHARACTER() after the update loops finish
+
+9. Shutdown manager tick
+- Call:
+  - CShutdownManager::Instance().Update()
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:1203
+- Meaning:
+  - locale/time based forced disconnect handling
+  - desc/account-level concern, not ECS
+
+========================================================================
+2. Per-responsibility classification
+========================================================================
+
+Categories
+- CAT_A: can move to ECS system tick directly
+- CAT_B: can move to its own standalone tick in idle()
+- CAT_C: requires new ECS / lifecycle infrastructure
+- CAT_D: cannot be migrated yet, stays as-is
+
+1. BeginPendingDestroy / FlushPendingDestroy
+- Primary classification: CAT_C
+- Reason:
+  - not a gameplay tick by itself, but a lifecycle safety mechanism
+  - tied to DestroyCharacter() semantics and update-loop stability
+  - replacing it cleanly requires deferred entity/character destruction semantics
+- Alternate path:
+  - can remain outside ECS entirely as a standalone deferred-destroy manager
+  - still requires new infrastructure before legacy tick removal
+
+2. Dungeon-ticket event resync
+- Primary classification: CAT_C
+- Reason:
+  - currently couples event-manager state checks with destroy/spawn of live world actors
+  - removing it from CHARACTER_MANAGER::Update() safely requires either:
+    - its own lifecycle-safe standalone tick, or
+    - an event-driven world-spawn manager with deferred destroy support
+- Alternate path:
+  - CAT_B if kept legacy and moved wholesale to idle() after pending-destroy is solved
+
+3. Map1MassSpawnEvents_Update
+- Primary classification: CAT_B
+- Reason:
+  - standalone event-manager/world-event loop
+  - not ECS-dependent
+  - already isolated helper with pulse input
+- Alternate path:
+  - CAT_C if future goal is full ECS event-wave ownership using entity components instead of static state
+
+4. PC tick loop -> UpdateCharacter
+- Primary classification: CAT_D
+- Reason:
+  - this is still authoritative execution, not passive sync
+  - disabling it without replacing the PC runtime owner would break gameplay
+
+5. State-list tick -> UpdateStateMachine
+- Primary classification: CAT_D
+- Reason:
+  - same as above for stateful actors, especially monster state machine timing
+  - this is a direct blocker for legacy tick removal
+
+6. Hourly mob-kill-money flush
+- Primary classification: CAT_B
+- Reason:
+  - pure periodic housekeeping
+  - can be called directly from idle() on the same cadence
+  - not ECS-dependent
+
+7. Test-server character count log
+- Primary classification: CAT_B
+- Reason:
+  - observability only
+  - trivial to move or drop from idle()
+
+8. Shutdown manager update
+- Primary classification: CAT_B
+- Reason:
+  - completely independent of ECS and character FSM ownership
+  - safe candidate for direct idle() call
+
+========================================================================
+3. PC / mob tick blocker analysis
+========================================================================
+
+Authoritative implementations
+- File: SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp
+  - CHARACTER::UpdateStateMachine(uint32_t dwPulse) at 3381-3391
+  - CHARACTER::UpdateCharacter(uint32_t dwPulse) at 3402-3405
+
+UpdateCharacter
+- Body:
+  - CFSM::Update()
+- Interpretation:
+  - PC runtime is still driven by the legacy FSM update path
+  - even though the function body is short, the authority remains in the underlying FSM callbacks
+
+UpdateStateMachine
+- Body:
+  - returns if dwPulse < m_dwNextStatePulse
+  - returns if dead
+  - calls Update()
+  - sets m_dwNextStatePulse = dwPulse + m_dwStateDuration
+- Interpretation:
+  - state timing / execution / scheduling is still legacy-owned
+  - the authoritative monster/NPC state progression still flows through this gate
+
+What is already ECS-covered
+- VitalRegenSystem:
+  - sync-only observer for HP/SP/Stamina
+- AISystem:
+  - observation-oriented, with restored legacy-style monster FSM helpers in current tree
+  - not yet a full independent authority replacement for all runtime state execution
+- NetworkSyncSystem:
+  - disabled as authoritative sender
+  - remains partial and non-authoritative
+
+What is still legacy-only
+- actual FSM execution cadence
+- m_dwNextStatePulse / m_dwStateDuration scheduling
+- PC-side CFSM runtime execution
+- state-list ownership through CHARACTER_MANAGER::AddToStateList + m_set_pkChrState
+
+Can a sync-only ECS wrapper take over?
+- UpdateCharacter:
+  - No, not safely.
+  - There is no passive snapshot to mirror; this call executes runtime behavior.
+- UpdateStateMachine:
+  - No, not safely.
+  - This is also active execution plus scheduler advancement, not a state mirror.
+
+Bottom line
+- UpdateCharacter and UpdateStateMachine are the real tick blockers.
+- Everything else in CHARACTER_MANAGER::Update() is smaller and more movable.
+
+========================================================================
+4. Pending destroy queue audit
+========================================================================
+
+Key definitions
+- File: SRC/Server/GameServer/char_manager.h
+  - bool m_bUsePendingDestroy
+  - CHARACTER_SET m_set_pkChrPendingDestroy
+
+DestroyCharacter deferred path
+- File: SRC/Server/GameServer/char_manager.cpp:386-417
+- Behavior:
+  - if m_bUsePendingDestroy is true:
+    - insert character into m_set_pkChrPendingDestroy
+    - return immediately
+
+BeginPendingDestroy
+- File: SRC/Server/GameServer/char_manager.cpp:1527-1535
+- Behavior:
+  - if already active: return false
+  - otherwise set m_bUsePendingDestroy = true
+
+FlushPendingDestroy
+- File: SRC/Server/GameServer/char_manager.cpp:1538-1555
+- Behavior:
+  - set m_bUsePendingDestroy = false
+  - iterate m_set_pkChrPendingDestroy
+  - call M2_DESTROY_CHARACTER(*it) for each
+  - clear set
+
+Additional helper coupling
+- CharacterVectorInteractor ctor/dtor
+  - File: SRC/Server/GameServer/char_manager.cpp:1557-1569
+  - acquires BeginPendingDestroy() on construction and FlushPendingDestroy() on destruction if it owns the begin-call
+
+How the queue works
+- It protects update loops from mutating live character containers while iterating.
+- Destruction requests are postponed until the loop exits.
+
+When BeginPendingDestroy is called
+- At the start of CHARACTER_MANAGER::Update()
+- Also by CharacterVectorInteractor when helper code wants a safe vectorized iteration context
+
+When FlushPendingDestroy is called
+- At the end of CHARACTER_MANAGER::Update()
+- Also from CharacterVectorInteractor destructor when that helper owns the pending-destroy window
+
+Could this be replaced by ECS deferred destroy?
+- Yes in principle, but not trivially.
+- Required equivalent:
+  - deferred tombstone queue
+  - stable iteration guarantees across character/world registries
+  - teardown ordering for legacy character object, desc, sectree, item ownership, dungeon hooks, and ECS entity
+- Classification:
+  - CAT_C
+
+========================================================================
+5. Map event / stone spawn audit
+========================================================================
+
+Map1MassSpawnEvents_Update helper
+- File: SRC/Server/GameServer/char_manager.cpp:276-280
+- Delegates:
+  - Map1Wave_UpdateOne(mgr, s_TanakaWave, iPulse)
+  - Map1Wave_UpdateOne(mgr, s_GoldenFrogWave, iPulse)
+
+Supporting mechanism
+- static TMap1WaveEventState
+  - eventIndex
+  - mobVnum
+  - mapIndex
+  - defaultWaveCount
+  - wasActive
+  - hadWave
+  - nextRetryTime
+  - aliveVIDs
+- File:
+  - SRC/Server/GameServer/char_manager.cpp:92-108
+
+Wave behavior
+- every second:
+  - checks EventManager active state
+  - prunes dead/missing mobs from aliveVIDs
+  - when wave clears, sends notice
+  - when empty, attempts respawn on grid positions
+  - if spawn blocked, backs off for 5 seconds
+- Files:
+  - Map1Wave_UpdateOne: 223-274
+  - Map1Wave_SpawnWave: 177-221
+  - Map1Wave_Cleanup: 151-162
+
+Tick-critical or event-handler candidate?
+- This is not per-frame gameplay critical.
+- It is a periodic world-event loop and can live outside CHARACTER_MANAGER::Update().
+- However it still calls:
+  - SpawnMob()
+  - DestroyCharacter()
+  - Find()
+- So moving it cleanly depends on safe lifecycle handling.
+
+Conclusion
+- Good candidate for extraction from CHARACTER_MANAGER::Update().
+- Low gameplay authority risk, but medium integration risk due to spawn/destroy side effects.
+
+========================================================================
+6. Shutdown manager audit
+========================================================================
+
+Implementation
+- File: SRC/Server/GameServer/shutdown_manager.cpp:47-82
+
+What CShutdownManager::Update() does
+- Checks locale gating
+- Updates current time
+- 10 minutes before shutdown time:
+  - sends info chat packets to tracked descs
+- At shutdown time:
+  - iterates tracked desc list
+  - sets PHASE_CLOSE on each desc
+  - clears list and resets alarm flag
+
+Is it ECS-dependent?
+- No.
+- It operates on LPDESC list, account social-id rules, and server time.
+
+Can it be called directly from idle()?
+- Yes.
+- This is the cleanest CAT_B extraction candidate in the whole Update() body.
+
+========================================================================
+7. Proposed migration path
+========================================================================
+
+Step 1 - Easy wins (CAT_B)
+- Move CShutdownManager::Instance().Update() out of CHARACTER_MANAGER::Update()
+  - Risk: LOW
+  - Reason: no ECS dependency, no character-container dependency
+
+- Move hourly mob-kill-money flush to its own idle() cadence
+  - Risk: LOW
+  - Reason: pure periodic DB log flush
+
+- Move test-server character count log out or drop it
+  - Risk: LOW
+  - Reason: observability only
+
+Step 2 - Medium lift (CAT_B with lifecycle awareness)
+- Extract Map1MassSpawnEvents_Update() to standalone idle()-driven world event tick
+  - Risk: MEDIUM
+  - Reason: isolated helper, but still touches SpawnMob / DestroyCharacter
+
+Step 3 - Hard lift (CAT_C)
+- Extract dungeon-ticket resync from CHARACTER_MANAGER::Update()
+  - Risk: MEDIUM-HIGH
+  - Reason: destroy/spawn reconciliation across full character world
+
+- Replace pending-destroy queue with explicit deferred lifecycle manager
+  - Risk: HIGH
+  - Reason: this underpins safe mutation while iterating character containers
+
+Step 4 - Final blocker removal (CAT_D)
+- Replace UpdateCharacter authority
+  - Risk: HIGH
+  - Reason: still backed by legacy CFSM execution
+
+- Replace UpdateStateMachine authority
+  - Risk: HIGH
+  - Reason: still owns state scheduling and monster/NPC state execution timing
+
+Only after Step 4
+- CHARACTER_MANAGER::Update() can be meaningfully disabled.
+- Until then, the legacy tick remains authoritative even if many side blocks are extracted.
+
+========================================================================
+8. Final assessment
+========================================================================
+
+Residual responsibilities that truly block legacy tick removal
+- UpdateCharacter (PC runtime authority)
+- UpdateStateMachine (state-machine authority)
+- Pending destroy queue (safe lifecycle mutation)
+
+Residual responsibilities that are removable earlier
+- Shutdown manager update
+- hourly mob-kill-money flush
+- test-server character count log
+- Map1 mass spawn wave tick
+- dungeon-ticket world resync, after lifecycle-safe extraction path is ready
+
+Bottom line
+- CHARACTER_MANAGER::Update() is not blocked by one monolith.
+- The easy extractions are real and should be done first.
+- But disabling the legacy tick still fundamentally depends on replacing:
+  - PC runtime execution
+  - state-list execution
+  - deferred destroy safety
