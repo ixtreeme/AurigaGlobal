@@ -8,6 +8,7 @@
 #include "questmanager.h"
 #include "packet.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "db.h"
 #include "ecs/quest_helpers.hpp"
 
@@ -104,7 +105,7 @@ namespace quest
 			if (pParty->GetMemberCount() == 2)
 				CPartyManager::instance().DeleteParty(pParty);
 			else
-				pParty->Quit(ch->GetPlayerID());
+				pParty->Quit(ecs::GetPlayerID(ch));
 		}
 
 		lua_pushboolean(L, ch->GetParty()== nullptr);
@@ -117,10 +118,10 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ch->GetPlayerID())
+		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch))
 			// return 0;
 
-		if (ch->GetParty() && ch->GetParty()->GetLeaderPID() == ch->GetPlayerID())
+		if (ch->GetParty() && ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch))
 			CPartyManager::instance().DeleteParty(ch->GetParty());
 
 		lua_pushboolean(L, ch->GetParty()== nullptr);
@@ -148,11 +149,11 @@ namespace quest
 
         void operator()(LPCHARACTER ch)
         {
-            sys_log(0, "CINEMASEND_TRY %s", ch->GetName());
+            sys_log(0, "CINEMASEND_TRY %s", ecs::GetName(ch));
 
             if (ch->GetDesc())
             {
-                sys_log(0, "CINEMASEND %s", ch->GetName());
+                sys_log(0, "CINEMASEND %s", ecs::GetName(ch));
                 ch->GetDesc()->BufferedPacket(&pack, sizeof(struct packet_script));
                 ch->GetDesc()->Packet(data.c_str(),data.size());
             }
@@ -199,11 +200,11 @@ namespace quest
 
 		void operator()(LPCHARACTER ch)
 		{
-			sys_log(0, "CINEMASEND_TRY %s", ch->GetName());
+			sys_log(0, "CINEMASEND_TRY %s", ecs::GetName(ch));
 
 			if (ch->GetDesc())
 			{
-				sys_log(0, "CINEMASEND %s", ch->GetName());
+				sys_log(0, "CINEMASEND %s", ecs::GetName(ch));
 				ch->GetDesc()->BufferedPacket(&packet_script, sizeof(struct packet_script));
 				ch->GetDesc()->Packet(str,len);
 			}
@@ -279,7 +280,7 @@ namespace quest
 				return 1;
 			}
 
-			lua_pushboolean(L, ch->GetParty()->GetLeaderPID() == ch->GetPlayerID() ? 1 : 0);
+			lua_pushboolean(L, ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch) ? 1 : 0);
 			return 1;
 		}
 
@@ -365,7 +366,7 @@ namespace quest
 			f.flagname = pPC->GetCurrentQuestName() + "."+sz;
 			f.value = (int) rint(lua_tonumber(L, 2));
 
-			bool returnBool = pParty->ForEachOnMapMemberBool(f, ch->GetMapIndex());
+			bool returnBool = pParty->ForEachOnMapMemberBool(f, ecs::GetMapIndex(ch));
 			lua_pushboolean(L, returnBool);
 		}
 
@@ -485,7 +486,7 @@ namespace quest
 
 		FGiveBuff f (dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
 		if (ch->GetParty())
-			ch->GetParty()->ForEachOnMapMember(f, ch->GetMapIndex());
+			ch->GetParty()->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
 		else
 			f(ch);
 
@@ -501,7 +502,7 @@ namespace quest
 		}
 		void operator () (LPCHARACTER ch)
 		{
-			vecPIDs.push_back(ch->GetPlayerID());
+			vecPIDs.push_back(ecs::GetPlayerID(ch));
 		}
 	};
 
@@ -517,7 +518,7 @@ namespace quest
 			return 0;
 		}
 		FPartyPIDCollector f;
-		pParty->ForEachOnMapMember(f, ch->GetMapIndex());
+		pParty->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
 
 		for (std::vector <uint32_t>::iterator it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 		{
@@ -545,11 +546,11 @@ namespace quest
 		{
 			int32_t pid = party->GetLeaderPID();
 			LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(pid);
-			name = leader != nullptr ? leader->GetName() : ch->GetName();
+			name = leader != nullptr ? leader->GetName() : ecs::GetName(ch);
 		}
 		else
 		{
-			name = ch->GetName();
+			name = ecs::GetName(ch);
 		}
 
 		lua_pushstring(L, name.c_str());
@@ -573,7 +574,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ch->GetMapIndex());
+			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -586,13 +587,13 @@ namespace quest
 					}
 					else
 					{
-						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, tch->GetPlayerID(), gold);
+						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(tch), gold);
 						tch->PointChange(POINT_GOLD, gold, true);
 					}
 				}
 			}
 
-			if (!q.GetPC(ch->GetPlayerID()))
+			if (!q.GetPC(ecs::GetPlayerID(ch)))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -605,7 +606,7 @@ namespace quest
 			}
 			else
 			{
-				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), gold);
+				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gold);
 				ch->PointChange(POINT_GOLD, gold, true);
 			}
 		}
@@ -628,7 +629,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ch->GetMapIndex());
+			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 			{
@@ -639,7 +640,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(ch->GetPlayerID()))
+			if (!q.GetPC(ecs::GetPlayerID(ch)))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -687,6 +688,7 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("party", party_functions);
 	}
 }
+
 
 
 
