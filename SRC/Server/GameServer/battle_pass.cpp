@@ -12,6 +12,7 @@
 #include "questlua.h"
 #include "start_position.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
 #include "sectree_manager.h"
 #include "regen.h"
@@ -49,7 +50,7 @@ namespace
 		if (!ch)
 			return false;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
 		if (!pc)
 			return false;
 
@@ -62,7 +63,7 @@ namespace
 		if (!ch)
 			return;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
 		if (!pc)
 			return;
 
@@ -770,7 +771,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	if(bIsCompleted)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", pkChar->GetName(), battlePassName.c_str());
+		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ecs::GetName(pkChar), battlePassName.c_str());
 #endif
 		BattlePassReward(pkChar);
 	}
@@ -831,7 +832,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	
 	TBattlePassRegisterRanking ranking;
 	ranking.bBattlePassId = bBattlePassId;
-	strlcpy(ranking.playerName, pkChar->GetName(), sizeof(ranking.playerName));
+	strlcpy(ranking.playerName, ecs::GetName(pkChar), sizeof(ranking.playerName));
 	db_clientdesc->DBPacket(HEADER_GD_REGISTER_BP_RANKING, 0, &ranking, sizeof(TBattlePassRegisterRanking));
 	SetBattlePassFinalRewardTaken(pkChar, bBattlePassId);
 }
@@ -924,3 +925,4 @@ void CBattlePass::RegisterPlayerKill(uint32_t dwKillerID, uint32_t dwPlayerID)
 	}
 }
 #endif
+
