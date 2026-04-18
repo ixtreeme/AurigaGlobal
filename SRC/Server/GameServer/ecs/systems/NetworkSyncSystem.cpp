@@ -261,11 +261,11 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
     if (iDur) {
         TPacketGCMove pack;
-        EncodeMovePacket(pack, GetVID(), FUNC_MOVE, 0, m_posDest.x, m_posDest.y, iDur, 0, (GetRotation() / 5));
+        EncodeMovePacket(pack, GetPacketVID(), FUNC_MOVE, 0, m_posDest.x, m_posDest.y, iDur, 0, (GetRotation() / 5));
         d->Packet(&pack, sizeof(pack));
 
         TPacketGCWalkMode p;
-        p.vid = GetVID();
+        p.vid = GetPacketVID();
         p.header = HEADER_GC_WALK_MODE;
         p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
 
@@ -276,7 +276,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         LPCHARACTER ch = (LPCHARACTER)entity;
         if (ch->IsWalking()) {
             TPacketGCWalkMode p;
-            p.vid = ch->GetVID();
+            p.vid = ch->GetPacketVID();
             p.header = HEADER_GC_WALK_MODE;
             p.mode = ch->m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
             GetDesc()->Packet(&p, sizeof(p));
@@ -286,7 +286,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     if (GetMyShop()) {
         TPacketGCShopSign p;
         p.bHeader = HEADER_GC_SHOP_SIGN;
-        p.dwVID = GetVID();
+        p.dwVID = GetPacketVID();
 #ifdef KASMIR_PAKET_SYSTEM
         p.bShopKasmirTitle = m_bKasmirPaketBaslik;
 #endif
@@ -421,8 +421,8 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     TPacketGCOwnership pack;
 
     pack.bHeader = HEADER_GC_OWNERSHIP;
-    pack.dwOwnerVID = ch ? ch->GetVID() : 0;
-    pack.dwVictimVID = GetVID();
+    pack.dwOwnerVID = ch ? ch->GetPacketVID() : 0;
+    pack.dwVictimVID = GetPacketVID();
 
     PacketAround(&pack, sizeof(TPacketGCOwnership));
     return true;
@@ -485,7 +485,7 @@ void CHARACTER::SyncPacket()
 
     TPacketCGSyncPositionElement elem;
 
-    elem.dwVID = GetVID();
+    elem.dwVID = GetPacketVID();
     elem.lX = GetX();
     elem.lY = GetY();
 
@@ -814,7 +814,7 @@ void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
 
     TPacketGCItemOnTitleNameUpdate p;
     p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    p.dwVID = GetVID();
+    p.dwVID = GetPacketVID();
 
     const std::string prefix = GetItemOnTitlePrefix();
     strlcpy(p.name, prefix.c_str(), sizeof(p.name));
@@ -832,7 +832,7 @@ void CHARACTER::UpdateItemOnTitleName(bool bForce)
 
     TPacketGCItemOnTitleNameUpdate p;
     p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    p.dwVID = GetVID();
+    p.dwVID = GetPacketVID();
     strlcpy(p.name, newPrefix.c_str(), sizeof(p.name));
 
     if (GetDesc())
@@ -848,7 +848,7 @@ void CHARACTER::EffectPacket(uint8_t enumEffectType)
 
     p.header = HEADER_GC_SEPCIAL_EFFECT;
     p.type = enumEffectType;
-    p.vid = GetVID();
+    p.vid = GetPacketVID();
 
     PacketAround(&p, sizeof(TPacketGCSpecialEffect));
 }
@@ -858,7 +858,7 @@ void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
     TPacketGCSpecificEffect p;
 
     p.header = HEADER_GC_SPECIFIC_EFFECT;
-    p.vid = GetVID();
+    p.vid = GetPacketVID();
     strlcpy(p.effect_file, filename, MAX_EFFECT_FILE_NAME);
 
     PacketAround(&p, sizeof(TPacketGCSpecificEffect));
@@ -868,7 +868,7 @@ void CHARACTER::SendEquipment(LPCHARACTER ch)
 {
     TPacketViewEquip p;
     p.header = HEADER_GC_VIEW_EQUIP;
-    p.vid = GetVID();
+    p.vid = GetPacketVID();
 
 #ifdef EQUIP_ENABLE_VIEW_SASH
 #ifdef ENABLE_COSTUME_PET
@@ -979,8 +979,8 @@ void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use*
 		return;
 
 	packet->header = HEADER_GC_ITEM_USE;
-	packet->ch_vid = ch->GetVID();
-	packet->victim_vid = victim->GetVID();
+	packet->ch_vid = ch->GetPacketVID();
+	packet->victim_vid = victim->GetPacketVID();
 	packet->Cell = TItemPos(GetWindow(), m_wCell);
 	packet->vnum = GetVnum();
 }
