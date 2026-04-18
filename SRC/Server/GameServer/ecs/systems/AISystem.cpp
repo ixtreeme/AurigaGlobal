@@ -2,8 +2,14 @@
 
 #include "AISystem.hpp"
 
+#include "../../config.h"
 #include "../../char_interface.hpp"
 #include "../../char_manager.h"
+#include "../../packet.h"
+#include "../../party.h"
+#include "../../sectree_manager.h"
+#include "../../motion.h"
+#include "../../vector.h"
 #include "../AIHelpers.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/ai_components.hpp"
@@ -34,7 +40,7 @@ LPCHARACTER LegacyCharOf(entt::registry& reg, entt::entity entity)
 
 uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
-    if (!ch) {
+    if (!ch || ch->IsPC()) {
         return AI_STATE_IDLE;
     }
 
@@ -83,7 +89,333 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
     return true;
 }
 
+bool LegacyGotoNearTarget(LPCHARACTER self, LPCHARACTER victim)
+{
+    if (IS_SET(self->GetAIFlag(), AIFLAG_NOMOVE)) {
+        return false;
+    }
+
+    switch (self->GetMobBattleType()) {
+    case BATTLE_TYPE_RANGE:
+    case BATTLE_TYPE_MAGIC:
+        if (self->Follow(victim, self->GetMobAttackRange() * 8 / 10)) {
+            return true;
+        }
+        break;
+
+    default:
+        if (self->Follow(victim, self->GetMobAttackRange() * 9 / 10)) {
+            return true;
+        }
+        break;
+    }
+
+    return self->Follow(victim, self->GetMobAttackRange() * 9 / 10);
+}
+
 } // namespace
+
+extern LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance);
+
+void CHARACTER::StateIdle()
+{
+    if (IsStone()) {
+        m_dwStateDuration = PASSES_PER_SEC(1);
+        return;
+    }
+
+    if (IsWarp() || IsGoto()) {
+        m_dwStateDuration = 60 * passes_per_sec;
+        return;
+    }
+
+    if (IsPC()) {
+        return;
+    }
+
+    if (!IsMonster()) {
+        __StateIdle_NPC();
+        return;
+    }
+
+    __StateIdle_Monster();
+}
+
+void CHARACTER::__StateIdle_NPC()
+{
+    m_dwStateDuration = PASSES_PER_SEC(5);
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (IsMount()) {
+        return;
+    }
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+    if (IsPet() || IsNewPet()) {
+        return;
+    }
+#else
+    if (IsPet()) {
+        return;
+    }
+#endif
+
+    if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE)) {
+        return;
+    }
+
+    LPCHARACTER protege = GetProtege();
+    if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 500) {
+        if (Follow(protege, number(100, 300))) {
+            return;
+        }
+    }
+
+    if (number(0, 6)) {
+        return;
+    }
+
+    SetRotation(number(0, 359));
+
+    float fx = 0.0f;
+    float fy = 0.0f;
+    const float dist = number(200, 400);
+    GetDeltaByDegree(GetRotation(), dist, &fx, &fy);
+
+    if (!(SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy)) &&
+        SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx) / 2, GetY() + static_cast<int>(fy) / 2))) {
+        return;
+    }
+
+    SetNowWalking(true);
+    if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
+        SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+    }
+}
+
+void CHARACTER::__StateIdle_Monster()
+{
+    if (IsStun() || !CanMove()) {
+        return;
+    }
+
+    if (IsCoward()) {
+        if (!IsDead()) {
+            CowardEscape();
+        }
+        return;
+    }
+
+    if (IsBerserker() && IsBerserk()) {
+        SetBerserk(false);
+    }
+
+    if (IsGodSpeeder() && IsGodSpeed()) {
+        SetGodSpeed(false);
+    }
+
+    LPCHARACTER victim = GetVictim();
+    if (!victim || victim->IsDead()) {
+        SetVictim(nullptr);
+        victim = nullptr;
+        m_dwStateDuration = PASSES_PER_SEC(1);
+    }
+
+    if (!victim || victim->IsBuilding()) {
+        if (m_pkChrStone) {
+            victim = m_pkChrStone->GetNearestVictim(m_pkChrStone);
+        } else if (!no_wander && IsAggressive()) {
+            victim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
+        }
+    }
+
+    if (victim && !victim->IsDead()) {
+        if (CanBeginFight()) {
+            BeginFight(victim);
+        }
+        return;
+    }
+
+    m_dwStateDuration = IsAggressive() && !victim
+        ? PASSES_PER_SEC(number(1, 3))
+        : PASSES_PER_SEC(number(3, 5));
+
+    LPCHARACTER protege = GetProtege();
+    if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 1000) {
+        if (Follow(protege, number(150, 400))) {
+            MonsterLog("[IDLE] returning to protege");
+            return;
+        }
+    }
+
+    if (no_wander || IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE) || number(0, 6)) {
+        return;
+    }
+
+    SetRotation(number(0, 359));
+
+    float fx = 0.0f;
+    float fy = 0.0f;
+    const float dist = number(300, 700);
+    GetDeltaByDegree(GetRotation(), dist, &fx, &fy);
+
+    if (!(SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy)) &&
+        SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx) / 2, GetY() + static_cast<int>(fy) / 2))) {
+        return;
+    }
+
+    if (test_server) {
+        SetNowWalking(number(0, 100) >= 60);
+    }
+
+    if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
+        SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+    }
+}
+
+void CHARACTER::StateBattle()
+{
+    if (IsStone()) {
+        sys_err("Stone must not use battle state (name %s)", GetName());
+        return;
+    }
+
+    if (IsPC() || !CanMove() || IsStun()) {
+        return;
+    }
+
+    LPCHARACTER victim = GetVictim();
+
+    if (IsCoward()) {
+        if (IsDead()) {
+            return;
+        }
+
+        SetVictim(nullptr);
+        if (number(1, 50) != 1) {
+            SetPosition(POS_STANDING);
+            m_dwStateDuration = 1;
+        } else {
+            CowardEscape();
+        }
+        return;
+    }
+
+    if (!victim || (victim->IsStun() && IsGuardNPC()) || victim->IsDead()) {
+        LPCHARACTER newVictim = nullptr;
+        if (victim && victim->IsDead() && !no_wander && IsAggressive() && (!GetParty() || GetParty()->GetLeader() == this)) {
+            newVictim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
+        }
+
+        if (newVictim) {
+            SetVictim(newVictim);
+            m_dwStateDuration = PASSES_PER_SEC(1);
+            return;
+        }
+
+        SetVictim(nullptr);
+        if (IsGuardNPC()) {
+            Return();
+        } else {
+            SetPosition(POS_STANDING);
+        }
+        m_dwStateDuration = PASSES_PER_SEC(1);
+        return;
+    }
+
+    LPCHARACTER protege = GetProtege();
+    const float dist = static_cast<float>(DISTANCE_APPROX(GetX() - victim->GetX(), GetY() - victim->GetY()));
+
+    if (dist >= 4000.0f) {
+        SetVictim(nullptr);
+        if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 1000) {
+            Follow(protege, number(150, 400));
+        } else {
+            SetPosition(POS_STANDING);
+        }
+        return;
+    }
+
+    if (dist >= GetMobAttackRange() * 1.15f) {
+        if (LegacyGotoNearTarget(this, victim)) {
+            m_dwStateDuration = 1;
+        }
+        return;
+    }
+
+    if (m_pkParty) {
+        m_pkParty->SendMessage(this, PM_ATTACKED_BY, 0, 0);
+    }
+
+    const uint32_t curTime = get_dword_time();
+    const uint32_t duration = CalculateDuration(GetLimitPoint(POINT_ATT_SPEED), 2000);
+    if ((curTime - m_dwLastAttackTime) < duration) {
+        m_dwStateDuration = MAX(1, (passes_per_sec * (duration - (curTime - m_dwLastAttackTime)) / 1000));
+        return;
+    }
+
+    if (IsBerserker() && GetHPPct() < m_pkMobData->m_table.bBerserkPoint && !IsBerserk()) {
+        SetBerserk(true);
+    }
+
+    if (IsGodSpeeder() && GetHPPct() < m_pkMobData->m_table.bGodSpeedPoint && !IsGodSpeed()) {
+        SetGodSpeed(true);
+    }
+
+    if (HasMobSkill()) {
+        for (unsigned int skillIdx = 0; skillIdx < MOB_SKILL_MAX_NUM; ++skillIdx) {
+            if (!CanUseMobSkill(skillIdx)) {
+                continue;
+            }
+
+            SetRotationToXY(victim->GetX(), victim->GetY());
+            if (UseMobSkill(skillIdx)) {
+                SendMovePacket(FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
+
+                const float motionDuration = CMotionManager::instance().GetMotionDuration(
+                    GetRaceNum(),
+                    MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_SPECIAL_1 + skillIdx));
+                m_dwStateDuration = static_cast<uint32_t>(
+                    motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration));
+                return;
+            }
+        }
+    }
+
+    if (!IsPC()) {
+        const int32_t vnum = GetRaceNum();
+#ifdef ENABLE_MELEY_LAIR
+        if (vnum == 6193) {
+            return;
+        }
+#endif
+#ifdef ENABLE_ANCIENT_PYRAMID
+        if (vnum == PYRAMID_BOSSVNUM) {
+            return;
+        }
+#endif
+#ifdef __DEFENSE_WAVE__
+        if (vnum >= 3960 && vnum <= 3962) {
+            return;
+        }
+#endif
+    }
+
+    if (!Attack(victim, 0)) {
+        m_dwStateDuration = passes_per_sec / 2;
+        return;
+    }
+
+    SetRotationToXY(victim->GetX(), victim->GetY());
+    SendMovePacket(FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
+
+    const float motionDuration = CMotionManager::instance().GetMotionDuration(
+        GetRaceNum(),
+        MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_NORMAL_ATTACK));
+    m_dwStateDuration = static_cast<uint32_t>(
+        motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration));
+}
 
 void AISystem_Update(entt::registry& reg, uint32_t tick)
 {
@@ -93,7 +425,7 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
 
     for (auto entity : view) {
         LPCHARACTER ch = LegacyCharOf(reg, entity);
-        if (!ch) {
+        if (!ch || ch->IsPC()) {
             continue;
         }
 
