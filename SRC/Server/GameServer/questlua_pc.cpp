@@ -5,6 +5,7 @@
 #include "sectree_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "item.h"
 #include "item_manager.h"
@@ -268,7 +269,7 @@ namespace quest
         {
             warpPos->x = static_cast<int32_t>(lua_tonumber(L, 1));
             warpPos->y = static_cast<int32_t>(lua_tonumber(L, 2));
-            warpPos->mapIndex = map_index ? map_index : ch->GetMapIndex();
+            warpPos->mapIndex = map_index ? map_index : ecs::GetMapIndex(ch);
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         if ( test_server )
@@ -395,7 +396,7 @@ namespace quest
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		CGuild * g = ch ? ch->GetGuild() : nullptr;
-		lua_pushboolean(L, (g && ch && ch->GetPlayerID() == g->GetMasterPID()) ? 1 : 0);
+		lua_pushboolean(L, (g && ch && ecs::GetPlayerID(ch) == g->GetMasterPID()) ? 1 : 0);
 		return 1;
 	}
 
@@ -405,7 +406,7 @@ namespace quest
 		CGuild * g = ch->GetGuild();
 
 		if (g)
-			g->RequestDisband(ch->GetPlayerID());
+			g->RequestDisband(ecs::GetPlayerID(ch));
 
 		return 0;
 	}
@@ -416,7 +417,7 @@ namespace quest
 		CGuild * g = ch->GetGuild();
 
 		if (g)
-			g->RequestRemoveMember(ch->GetPlayerID());
+			g->RequestRemoveMember(ecs::GetPlayerID(ch));
 
 		return 0;
 	}
@@ -445,7 +446,7 @@ namespace quest
         LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
         if (ch)
         {
-            DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), iAmount);
+            DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), iAmount);
             ch->PointChange(POINT_GOLD, iAmount, true);
         }
         return 0;
@@ -579,7 +580,7 @@ namespace quest
 
 		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
 		return 0;
 	}
 
@@ -622,17 +623,17 @@ namespace quest
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ch->GetName());
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 )
 		{
-			LogManager::instance().GoldBarLog(ch->GetPlayerID(), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(ecs::GetPlayerID(ch), item->GetID(), QUEST, "quest: give_item2");
 		}
 
 		if (nullptr != item)
@@ -692,9 +693,9 @@ namespace quest
 			ch->AutoGiveItem(item);
 
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ch->GetName());
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
 
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
 
 		lua_pushnumber(L, (item) ? item->GetID() : 0);
 		return 1;
@@ -736,11 +737,11 @@ namespace quest
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ch->GetName());
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
@@ -749,7 +750,7 @@ namespace quest
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 )
 		{
-			LogManager::instance().GoldBarLog(ch->GetPlayerID(), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(ecs::GetPlayerID(ch), item->GetID(), QUEST, "quest: give_item2");
 		}
 
 		return 0;
@@ -765,7 +766,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetMapIndex() : 0);
+		lua_pushnumber(L, ch ? ecs::GetMapIndex(ch) : 0);
 		return 1;
 	}
 
@@ -779,7 +780,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetX() / 100 : 0);
+		lua_pushnumber(L, ch ? ecs::GetX(ch) / 100 : 0);
 		return 1;
 	}
 
@@ -793,7 +794,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetY() / 100 : 0);
+		lua_pushnumber(L, ch ? ecs::GetY(ch) / 100 : 0);
 		return 1;
 	}
 
@@ -814,8 +815,8 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ch->GetMapIndex());
-		lua_pushnumber(L, pMap ? ((ch->GetX() - pMap->m_setting.iBaseX) / 100) : (ch->GetX() / 100));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
+		lua_pushnumber(L, pMap ? ((ecs::GetX(ch) - pMap->m_setting.iBaseX) / 100) : (ecs::GetX(ch) / 100));
 		return 1;
 	}
 
@@ -836,8 +837,8 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ch->GetMapIndex());
-		lua_pushnumber(L, pMap ? ((ch->GetY() - pMap->m_setting.iBaseY) / 100) : (ch->GetY() / 100));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
+		lua_pushnumber(L, pMap ? ((ecs::GetY(ch) - pMap->m_setting.iBaseY) / 100) : (ecs::GetY(ch) / 100));
 		return 1;
 	}
 
@@ -974,7 +975,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, ch ? ch->GetVID() : 0);
+		lua_pushnumber(L, ch ? ecs::GetVID(ch) : 0);
 		return 1;
 	}
 
@@ -988,7 +989,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushstring(L, ch ? ch->GetName() : "");
+		lua_pushstring(L, ch ? ecs::GetName(ch) : "");
 		return 1;
 	}
 	ALUA(pc_get_next_exp)
@@ -1202,9 +1203,9 @@ namespace quest
         LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ch->GetName(), (int)rint(lua_tonumber(L,1)));
+        sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ecs::GetName(ch), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), newLevel, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), newLevel, 0);
         ch->PointChange(POINT_SKILL, newLevel - ch->GetLevel());
         ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(ch->GetLevel(), 9));
         ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ch->GetLevel()) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
@@ -1385,7 +1386,7 @@ namespace quest
 			sys_err("QUEST wrong ChangeGold %lld (now %lld)", gold, ch->GetGold());
 		else if (ch)
 		{
-			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), gold);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gold);
 			ch->PointChange(POINT_GOLD, gold, true);
 		}
 		return 0;
@@ -1537,7 +1538,7 @@ namespace quest
         LPCHARACTER ch = q.GetCurrentCharacterPtr();
         if (!lua_isnumber(L,1) || !ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp2 %d", ch->GetName(), (int)rint(lua_tonumber(L,1)));
+        sys_log(0,"QUEST [REWARD] %s give exp2 %d", ecs::GetName(ch), (int)rint(lua_tonumber(L,1)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,1));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1547,7 +1548,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
         ch->PointChange(POINT_EXP, exp);
         return 0;
     }
@@ -1562,7 +1563,7 @@ namespace quest
         LPCHARACTER ch = q.GetCurrentCharacterPtr();
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp %s %d", ch->GetName(), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
+        sys_log(0,"QUEST [REWARD] %s give exp %s %d", ecs::GetName(ch), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,2));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1572,7 +1573,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
         pPC->GiveExp(lua_tostring(L,1), exp);
         return 0;
     }
@@ -1587,7 +1588,7 @@ namespace quest
             return 0;
         int lev = (int)rint(lua_tonumber(L,2));
         double proc = (lua_tonumber(L,3));
-        sys_log(0, "QUEST [REWARD] %s give exp %s lev %d percent %g%%", ch->GetName(), lua_tostring(L, 1), lev, proc);
+        sys_log(0, "QUEST [REWARD] %s give exp %s lev %d percent %g%%", ecs::GetName(ch), lua_tostring(L, 1), lev, proc);
         uint32_t exp = (uint32_t)((exp_table[MINMAX(0, lev, PLAYER_MAX_LEVEL_CONST)] * proc) / 100);
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1597,7 +1598,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC * pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), exp, 0);
         pPC->GiveExp(lua_tostring(L, 1), exp);
         return 0;
     }
@@ -2225,7 +2226,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		LPCHARACTER ch = q.GetCurrentCharacterPtr();
 
-		sys_log(0, "TRY GIVE LOTTO TO pid %u", ch->GetPlayerID());
+		sys_log(0, "TRY GIVE LOTTO TO pid %u", ecs::GetPlayerID(ch));
 
 		uint32_t * pdw = M2_NEW uint32_t[3];
 
@@ -2234,9 +2235,9 @@ namespace quest
 		pdw[2] = q.GetEventFlag("lotto_round");
 
 		// 추첨서는 소켓을 설정한다
-		DBManager::instance().ReturnQuery(QID_LOTTO, ch->GetPlayerID(), pdw,
+		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::GetPlayerID(ch), pdw,
 				"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-				get_table_postfix(), ch->GetPlayerID());
+				get_table_postfix(), ecs::GetPlayerID(ch));
 
 		return 0;
 	}
@@ -2281,7 +2282,7 @@ namespace quest
 		{
 			CQuestManager::instance().GetPC(new_ch->GetPlayerID());
 
-			lua_pushnumber(L, ch->GetPlayerID());
+			lua_pushnumber(L, ecs::GetPlayerID(ch));
 		}
 		else
 		{
@@ -2304,9 +2305,9 @@ namespace quest
 		{
 			CQuestManager::instance().GetPC(new_ch->GetPlayerID());
 #ifdef ENABLE_BUG_FIXES
-			lua_pushnumber(L, ch ? (uint32_t)ch->GetVID() : 0);
+			lua_pushnumber(L, ch ? (uint32_t)ecs::GetVID(ch) : 0);
 #else
-			lua_pushnumber(L, (uint32_t)ch->GetVID());
+			lua_pushnumber(L, (uint32_t)ecs::GetVID(ch));
 #endif
 		}
 		else
@@ -2334,7 +2335,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngaged(ch->GetPlayerID())) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngaged(ecs::GetPlayerID(ch))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2348,7 +2349,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsMarried(ch->GetPlayerID())) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsMarried(ecs::GetPlayerID(ch))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2362,7 +2363,7 @@ namespace quest
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngagedOrMarried(ch->GetPlayerID())) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngagedOrMarried(ecs::GetPlayerID(ch))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2569,13 +2570,13 @@ namespace quest
             }
             else
             {
-                exitPos->x = ch->GetX();
-                exitPos->y = ch->GetY();
+                exitPos->x = ecs::GetX(ch);
+                exitPos->y = ecs::GetY(ch);
             }
             if (const auto* mapIndex = ECS_TryGet<ecs::MapIndex>(e))
                 exitPos->mapIndex = mapIndex->value;
             else
-                exitPos->mapIndex = ch->GetMapIndex();
+                exitPos->mapIndex = ecs::GetMapIndex(ch);
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SaveExitLocation();
@@ -2674,8 +2675,8 @@ namespace quest
 			}
 			else
 			{
-				x = tch->GetX() / 100;
-				y = tch->GetY() / 100;
+				x = ecs::GetX(tch) / 100;
+				y = ecs::GetY(tch) / 100;
 			}
 		}
 
@@ -2690,7 +2691,7 @@ teleport_area:
 		{
 			warpPos->x = x;
 			warpPos->y = y;
-			warpPos->mapIndex = ch->GetMapIndex();
+			warpPos->mapIndex = ecs::GetMapIndex(ch);
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 		ch->WarpSet(x,y);
@@ -2901,11 +2902,11 @@ teleport_area:
                 return 1;
             }
         }
-        uint32_t pid = ch->GetPlayerID();
+        uint32_t pid = ecs::GetPlayerID(ch);
         db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
         db_clientdesc->Packet(&pid, sizeof(uint32_t));
-        MessengerManager::instance().RemoveAllList(ch->GetName());
-        LogManager::instance().ChangeNameLog(pid, ch->GetName(), szName, ch->GetDesc()->GetHostName());
+        MessengerManager::instance().RemoveAllList(ecs::GetName(ch));
+        LogManager::instance().ChangeNameLog(pid, ecs::GetName(ch), szName, ch->GetDesc()->GetHostName());
         snprintf(szQuery, sizeof(szQuery), "UPDATE player%s SET name='%s' WHERE id=%u", get_table_postfix(), szName, pid);
         SQLMsg * msg = DBManager::instance().DirectQuery(szQuery);
         M2_DELETE(msg);
@@ -3198,7 +3199,7 @@ teleport_area:
 		}
 		LPCHARACTER pMe = CQuestManager::instance().GetCurrentCharacterPtr();
 		LPCHARACTER pOther = CHARACTER_MANAGER::instance().Find(vid);
-		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(pMe->GetX() - pOther->GetX(), pMe->GetY() - pOther->GetY()) < range) ? 1 : 0);
+		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(ecs::GetX(pMe) - pOther->GetX(), ecs::GetY(pMe) - pOther->GetY()) < range) ? 1 : 0);
 		return 1;
 	}
 
@@ -3315,7 +3316,7 @@ teleport_area:
 			return 1;
 		}
 		LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushnumber(L, pChar ? pChar->GetPlayerID() : 0);
+		lua_pushnumber(L, pChar ? ecs::GetPlayerID(pChar) : 0);
 		return 1;
 	}
 
@@ -3538,7 +3539,7 @@ teleport_area:
 
 		const PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ch->GetPlayerID(), ch->GetLevel(), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ch->GetLevel(), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
 
 		lua_pushboolean(L, true);
 
@@ -3853,10 +3854,10 @@ teleport_area:
 					else
 						pkNewItem->SetOwnership(ch);
 				case PCMI0_DROP:
-					pos.x = ch->GetX() + number(-200, 200);
-					pos.y = ch->GetY() + number(-200, 200);
+					pos.x = ecs::GetX(ch) + number(-200, 200);
+					pos.y = ecs::GetY(ch) + number(-200, 200);
 
-					pkNewItem->AddToGround(ch->GetMapIndex(), pos);
+					pkNewItem->AddToGround(ecs::GetMapIndex(ch), pos);
 					pkNewItem->StartDestroyEvent();
 					break;
 				default:
@@ -4477,7 +4478,7 @@ teleport_area:
 			return 1;
 		}
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		lua_pushboolean(L, ch ? (CPVPManager::instance().IsFighting(ch->GetPlayerID()) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (CPVPManager::instance().IsFighting(ecs::GetPlayerID(ch)) ? 1 : 0) : 0);
 		return 1;
 	}
 
@@ -4522,7 +4523,7 @@ teleport_area:
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (ch->GetGuild())
 		{
-			lua_pushnumber(L, (ch->GetPlayerID() == ch->GetGuild()->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
+			lua_pushnumber(L, (ecs::GetPlayerID(ch) == ch->GetGuild()->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
 			return 1;
 		}
 		const char* guild_name = lua_tostring(L, 1);
@@ -4645,7 +4646,7 @@ teleport_area:
 			return 0;
 		}
 
-		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), iAmount);
+		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), iAmount);
 		ch->PointChange(POINT_GAYA, iAmount, true);
 		return 0;
 	}
@@ -4666,7 +4667,7 @@ teleport_area:
 			sys_err("QUEST wrong ChangeGaya %d (now %d)", gaya, ch->GetGaya());
 		else if (ch)
 		{
-			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), gaya);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gaya);
 			ch->PointChange(POINT_GAYA, gaya, true);
 		}
 		return 0;
@@ -4755,7 +4756,7 @@ teleport_area:
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (ch)
 		{
-			uint32_t dwPlayerId = ch->GetPlayerID();
+			uint32_t dwPlayerId = ecs::GetPlayerID(ch);
 			uint8_t bIsGlobal = 1;
 			
 			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
@@ -5334,6 +5335,7 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
+
 
 
 
