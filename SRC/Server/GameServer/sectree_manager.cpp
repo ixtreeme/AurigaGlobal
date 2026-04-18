@@ -11,6 +11,7 @@
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "buffer_manager.h"
@@ -1028,7 +1029,7 @@ struct FDestroyPrivateMapEntity
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			//sys_log(0, "PRIVAE_MAP: removing character %s", ch->GetName());
+			//sys_log(0, "PRIVAE_MAP: removing character %s", ecs::GetName(ch));
 
 			if (ch->GetDesc())
 				DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
@@ -1100,7 +1101,7 @@ void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ch->GetMapIndex();
+	int32_t lMapIndex = ecs::GetMapIndex(ch);
 
 	if (m_mapNPCPosition[lMapIndex].empty())
 		return;
@@ -1163,7 +1164,7 @@ void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 	
-	int32_t lMapIndex = ch->GetMapIndex();
+	int32_t lMapIndex = ecs::GetMapIndex(ch);
 	
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
@@ -1262,11 +1263,11 @@ class FRemoveIfAttr
 			{
 				LPCHARACTER ch = (LPCHARACTER) entity;
 
-				if (ch->IsPC())
+				if (ecs::IsPC(ch))
 				{
 					PIXEL_POSITION pos;
 
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ch->GetEmpire(), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::GetMapIndex(ch), ch->GetEmpire(), pos))
 						ch->WarpSet(pos.x, pos.y);
 					else
 						ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
@@ -1751,5 +1752,6 @@ size_t SECTREE_MANAGER::GetMonsterCountInMap(int32_t lMapIndex, uint32_t dwVnum)
 
 	return 0;
 }
+
 
 
