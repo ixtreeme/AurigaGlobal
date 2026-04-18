@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "questmanager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "over9refine.h"
@@ -869,3 +870,4 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("item", item_functions);
 	}
 }
+
