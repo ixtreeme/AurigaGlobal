@@ -28,6 +28,7 @@
 #include <unordered_set>
 #include "safebox.h"
 #include "ecs/EntityFactory.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -202,7 +203,7 @@ namespace
 
 				if (LPCHARACTER mob = mgr.SpawnMob(st.mobVnum, st.mapIndex, x, y, 0, true, -1, true))
 				{
-					st.aliveVIDs.insert(static_cast<uint32_t>(mob->GetVID()));
+					st.aliveVIDs.insert(mob->GetPacketVID());
 					++spawned;
 				}
 			}
@@ -361,14 +362,6 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 #endif
 	ch->Create(name, dwVID, dwPID ? true : false);
 
-#ifdef ENABLE_BUG_FIXES
-	if (dwVID != ch->GetVID()) {
-		--m_iVIDCount;
-		M2_DESTROY_CHARACTER(ch);
-		return nullptr;
-	}
-#endif
-
 	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
 		--m_iVIDCount;
 #ifdef M2_USE_POOL
@@ -378,6 +371,17 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 #endif
 		return nullptr;
 	}
+
+#ifdef ENABLE_BUG_FIXES
+	if (dwVID != ch->GetPacketVID()) {
+		if (const entt::entity entity = AIHelpers::EcsOf(ch); entity != entt::null && g_registry.valid(entity)) {
+			EntityFactory::Destroy(g_registry, entity);
+		}
+		--m_iVIDCount;
+		M2_DESTROY_CHARACTER(ch);
+		return nullptr;
+	}
+#endif
 
 	m_map_pkChrByVID.insert(std::make_pair(dwVID, ch));
 
@@ -403,9 +407,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		return;
 
 	// <Factor> Check whether it has been already deleted or not.
-	const auto it = m_map_pkChrByVID.find(ch->GetVID());
+	const auto it = m_map_pkChrByVID.find(ch->GetPacketVID());
 	if (it == m_map_pkChrByVID.end()) {
-		sys_err("[CHARACTER_MANAGER::DestroyCharacter] <Factor> %d not found", (uint32_t)ch->GetVID());
+		sys_err("[CHARACTER_MANAGER::DestroyCharacter] <Factor> %d not found", ch->GetPacketVID());
 		return; // prevent duplicated destrunction
 	}
 
@@ -472,7 +476,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 	RemoveFromStateList(ch);
 
-	if (const entt::entity entity = CVIDRegistry::Instance().Find(ch->GetVID());
+	if (const entt::entity entity = AIHelpers::EcsOf(ch);
 		entity != entt::null && g_registry.valid(entity))
 	{
 		EntityFactory::Destroy(g_registry, entity);
@@ -508,8 +512,8 @@ LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
-	if (found != nullptr && dwVID != (uint32_t)found->GetVID()) {
-		sys_err("[CHARACTER_MANAGER::Find] <Factor> %u != %u", dwVID, (uint32_t)found->GetVID());
+	if (found != nullptr && dwVID != found->GetPacketVID()) {
+		sys_err("[CHARACTER_MANAGER::Find] <Factor> %u != %u", dwVID, found->GetPacketVID());
 		return nullptr;
 	}
 	return found;
@@ -647,15 +651,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		if (ch->IsStone())
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 	}
 
@@ -819,15 +823,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		if (ch->IsStone())
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetPacketVID());
 		}
 	}
 
@@ -868,7 +872,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ch->GetName(), (uint32_t)ch->GetVID(), ch->GetX(), ch->GetY());
+			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ch->GetName(), ch->GetPacketVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -934,7 +938,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 			tch->SetStone(m_pkChrSelectedStone);
 		else if (pkParty)
 		{
-			pkParty->Join(tch->GetVID());
+			pkParty->Join(tch->GetPacketVID());
 			pkParty->Link(tch);
 		}
 		else if (!pkChrMaster)
@@ -1027,7 +1031,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 			tch->SetStone(m_pkChrSelectedStone);
 		else if (pkParty)
 		{
-			pkParty->Join(tch->GetVID());
+			pkParty->Join(tch->GetPacketVID());
 			pkParty->Link(tch);
 		}
 		else if (!pkChrMaster)
