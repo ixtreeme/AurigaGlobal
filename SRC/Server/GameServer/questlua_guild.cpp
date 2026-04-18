@@ -5,6 +5,7 @@
 #include "desc_client.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "utils.h"
 #include "guild.h"
 #include "guild_manager.h"
@@ -197,7 +198,7 @@ namespace quest
         p.dwGuild = (uint32_t) lua_tonumber(L, 2);
         p.dwGold = (uint32_t) lua_tonumber(L, 3);
         sys_log(0, "GUILD_WAR_BET: %s login %s war_id %u guild %u gold %u",
-                ch->GetName(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
+                ecs::GetName(ch), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
         db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
         return 0;
     }
@@ -303,7 +304,7 @@ namespace quest
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
+            if ( pGuild->GetMasterPID() == ecs::GetPlayerID(ch) )
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
@@ -334,7 +335,7 @@ namespace quest
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == ch->GetPlayerID() )
+            if ( pGuild->GetMasterPID() == ecs::GetPlayerID(ch) )
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
@@ -348,7 +349,7 @@ namespace quest
                         else
                         {
                             int nBeOtherLeader = pNewMaster->GetQuestFlag("change_guild_master.be_other_leader");
-                            CQuestManager::instance().GetPC( ch->GetPlayerID() );
+                            CQuestManager::instance().GetPC( ecs::GetPlayerID(ch) );
                             if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
                             if ( nBeOtherLeader > get_global_time() )
                                 lua_pushnumber(L, 7);
@@ -628,4 +629,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("guild", guild_functions);
 	}
 }
+
 
