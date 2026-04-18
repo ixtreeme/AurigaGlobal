@@ -4316,6 +4316,7 @@ void CHARACTER::Initialize()
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
     EnterIdleState(this);
+    GotoState(m_stateIdle);
     m_dwStateDuration = 1;
 
     m_dwLastAttackTime = get_dword_time() - 20000;
@@ -4625,6 +4626,8 @@ DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
 
 CHARACTER::CHARACTER()
 {
+    m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateIdle, &CHARACTER::EndStateEmpty);
+    m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateBattle, &CHARACTER::EndStateEmpty);
     Initialize();
 }
 
