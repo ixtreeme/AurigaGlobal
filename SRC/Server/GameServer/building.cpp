@@ -7,6 +7,7 @@
 #include "packet.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "guild.h"
 #include "guild_manager.h"
 #include "desc.h"
@@ -363,11 +364,11 @@ void CLand::PutData(const TLand * data)
 				{
 					LPCHARACTER ch = *(it++);
 
-					if (ch->GetMapIndex() != m_data.lMapIndex)
+					if (ecs::GetMapIndex(ch) != m_data.lMapIndex)
 						continue;
 
-					int x = ch->GetX() - r->sx;
-					int y = ch->GetY() - r->sy;
+					int x = ecs::GetX(ch) - r->sx;
+					int y = ecs::GetY(ch) - r->sy;
 
 					if (x > m_data.x + m_data.width || x < m_data.x)
 						continue;
@@ -487,8 +488,8 @@ struct FIsIn
 			{
 				return;
 			}
-			if (sx <= ch->GetX() && ch->GetX() <= ex
-				&& sy <= ch->GetY() && ch->GetY() <= ey)
+			if (sx <= ecs::GetX(ch) && ecs::GetX(ch) <= ex
+				&& sy <= ecs::GetY(ch) && ecs::GetY(ch) <= ey)
 			{
 				bIn = true;
 			}
@@ -1263,4 +1264,5 @@ void CLand::RequestDeleteWallBlocks(uint32_t dwID)
 	}
 }
 // END_BUILD_WALL
+
 
