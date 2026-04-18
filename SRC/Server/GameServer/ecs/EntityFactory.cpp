@@ -198,8 +198,13 @@ ecs::GMLevel MakeGMLevel(const TPlayerTable& data, LPDESC desc)
 
 void RegisterEntityVID(entt::registry& reg, entt::entity entity, uint32_t vid)
 {
-    reg.emplace<ecs::VIDComponent>(entity, vid);
+    reg.emplace_or_replace<ecs::VIDComponent>(entity, vid);
     CVIDRegistry::Instance().Register(vid, entity);
+}
+
+void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
+{
+    reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
 }
 
 ecs::AIFlags MakeAIFlags(const TMobTable& data)
@@ -228,54 +233,56 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
 {
     const uint32_t now = get_dword_time();
     const CMob* mobProto = CMobManager::instance().Get(data.dwVnum);
-    const entt::entity existing = CVIDRegistry::Instance().Find(legacyVID);
-    if (existing != entt::null && reg.valid(existing)) {
-        return existing;
+    entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
+    if (entity != entt::null && reg.valid(entity) && reg.any_of<Tag>(entity)) {
+        return entity;
     }
 
-    entt::entity entity = reg.create();
+    if (entity == entt::null || !reg.valid(entity)) {
+        entity = reg.create();
+        RegisterEntityVID(reg, entity, legacyVID);
+    }
 
-    RegisterEntityVID(reg, entity, legacyVID);
-    reg.emplace<ecs::RaceComponent>(entity, ecs::RaceComponent { static_cast<uint16_t>(data.dwVnum) });
-    reg.emplace<Tag>(entity);
-    reg.emplace<ecs::Position>(entity, x, y, 0);
-    reg.emplace<ecs::WarpPosition>(entity, 0, 0, 0);
-    reg.emplace<ecs::ExitPosition>(entity, 0, 0, 0);
-    reg.emplace<ecs::RegenPosition>(entity, x, y, 0.0f);
-    reg.emplace<ecs::RotationComponent>(entity, 0.0f);
-    reg.emplace<ecs::MapIndex>(entity, mapIndex);
-    reg.emplace<ecs::MovementState>(entity, MakeDefaultMovementState(now));
-    reg.emplace<ecs::MovementSpeed>(entity, std::max<int32_t>(1, data.sMovingSpeed), std::max<int32_t>(1, data.sMovingSpeed));
-    reg.emplace<ecs::SyncState>(entity, MakeDefaultSyncState());
-    reg.emplace<ecs::Health>(entity, static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)), static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)));
-    reg.emplace<ecs::Mana>(entity, 0, 0);
-    reg.emplace<ecs::Stamina>(entity, 0, 0);
-    reg.emplace<ecs::LevelComponent>(entity, data.bLevel);
-    reg.emplace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);
-    reg.emplace<ecs::CharacterPoints>(entity, ecs::CharacterPoints {});
-    reg.emplace<ecs::CombatStats>(entity, MakeDefaultCombatStats(0));
-    reg.emplace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
-    reg.emplace<ecs::DamageMap>(entity, ecs::DamageMap {});
-    reg.emplace<ecs::AffectList>(entity, MakeDefaultAffectList());
-    reg.emplace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
-    reg.emplace<ecs::AIState>(entity, ecs::AIState { 0u, 0u, 1u });
+    reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { static_cast<uint16_t>(data.dwVnum) });
+    reg.emplace_or_replace<Tag>(entity);
+    reg.emplace_or_replace<ecs::Position>(entity, x, y, 0);
+    reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
+    reg.emplace_or_replace<ecs::ExitPosition>(entity, 0, 0, 0);
+    reg.emplace_or_replace<ecs::RegenPosition>(entity, x, y, 0.0f);
+    reg.emplace_or_replace<ecs::RotationComponent>(entity, 0.0f);
+    reg.emplace_or_replace<ecs::MapIndex>(entity, mapIndex);
+    reg.emplace_or_replace<ecs::MovementState>(entity, MakeDefaultMovementState(now));
+    reg.emplace_or_replace<ecs::MovementSpeed>(entity, std::max<int32_t>(1, data.sMovingSpeed), std::max<int32_t>(1, data.sMovingSpeed));
+    reg.emplace_or_replace<ecs::SyncState>(entity, MakeDefaultSyncState());
+    reg.emplace_or_replace<ecs::Health>(entity, static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)), static_cast<int32_t>(std::min<uint64_t>(data.dwMaxHP, INT32_MAX)));
+    reg.emplace_or_replace<ecs::Mana>(entity, 0, 0);
+    reg.emplace_or_replace<ecs::Stamina>(entity, 0, 0);
+    reg.emplace_or_replace<ecs::LevelComponent>(entity, data.bLevel);
+    reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);
+    reg.emplace_or_replace<ecs::CharacterPoints>(entity, ecs::CharacterPoints {});
+    reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(0));
+    reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
+    reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
+    reg.emplace_or_replace<ecs::AffectList>(entity, MakeDefaultAffectList());
+    reg.emplace_or_replace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
+    reg.emplace_or_replace<ecs::AIState>(entity, ecs::AIState { 0u, 0u, 1u });
     const auto aiFlags = MakeAIFlags(data);
-    reg.emplace<ecs::AIFlags>(entity, aiFlags);
-    reg.emplace<ecs::AggroTable>(entity, ecs::AggroTable {});
-    reg.emplace<ecs::SpawnInfo>(entity, ecs::SpawnInfo { x, y, static_cast<uint32_t>(mapIndex), 0u, 0u });
-    reg.emplace<ecs::MobDataRef>(entity, mobProto, nullptr);
-    reg.emplace<ecs::FlyTargets>(entity, ecs::FlyTargets { 0u, {} });
+    reg.emplace_or_replace<ecs::AIFlags>(entity, aiFlags);
+    reg.emplace_or_replace<ecs::AggroTable>(entity, ecs::AggroTable {});
+    reg.emplace_or_replace<ecs::SpawnInfo>(entity, ecs::SpawnInfo { x, y, static_cast<uint32_t>(mapIndex), 0u, 0u });
+    reg.emplace_or_replace<ecs::MobDataRef>(entity, mobProto, nullptr);
+    reg.emplace_or_replace<ecs::FlyTargets>(entity, ecs::FlyTargets { 0u, {} });
 
     if (aiFlags.isGuard) {
-        reg.emplace<ecs::GuardState>(entity, ecs::GuardState { entt::null, std::max<uint32_t>(data.wAggressiveSight, 500u), 0u });
+        reg.emplace_or_replace<ecs::GuardState>(entity, ecs::GuardState { entt::null, std::max<uint32_t>(data.wAggressiveSight, 500u), 0u });
     }
 
     if (data.bType == CHAR_TYPE_HORSE) {
-        reg.emplace<ecs::HorseAITag>(entity);
+        reg.emplace_or_replace<ecs::HorseAITag>(entity);
     }
 
     if (data.bType == CHAR_TYPE_STONE) {
-        reg.emplace<ecs::StoneAITag>(entity);
+        reg.emplace_or_replace<ecs::StoneAITag>(entity);
     }
 
     return entity;
@@ -401,81 +408,102 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
 
 } // namespace
 
+entt::entity EntityFactory::EnsureLegacyCharacterEntity(entt::registry& reg, LPCHARACTER ch, uint32_t legacyVID)
+{
+    if (!ch) {
+        return entt::null;
+    }
+
+    const entt::entity existing = CVIDRegistry::Instance().Find(legacyVID);
+    if (existing != entt::null && reg.valid(existing)) {
+        RegisterEntityVID(reg, existing, legacyVID);
+        AttachLegacyCharacter(reg, existing, ch);
+        return existing;
+    }
+
+    const entt::entity entity = reg.create();
+    RegisterEntityVID(reg, entity, legacyVID);
+    AttachLegacyCharacter(reg, entity, ch);
+    return entity;
+}
+
 entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& data, LPDESC desc, uint32_t legacyVID)
 {
     const uint32_t now = get_dword_time();
     const ecs::GMLevel gmLevel = MakeGMLevel(data, desc);
 
-    const entt::entity existing = CVIDRegistry::Instance().Find(legacyVID);
-    if (existing != entt::null && reg.valid(existing)) {
+    entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
+    if (entity != entt::null && reg.valid(entity) && reg.all_of<ecs::TagPC>(entity)) {
         if (desc) {
-            desc->SetEntity(existing);
+            desc->SetEntity(entity);
         }
-        return existing;
+        return entity;
     }
 
-    entt::entity entity = reg.create();
+    if (entity == entt::null || !reg.valid(entity)) {
+        entity = reg.create();
+        RegisterEntityVID(reg, entity, legacyVID);
+    }
 
-    RegisterEntityVID(reg, entity, legacyVID);
-    reg.emplace<ecs::PlayerID>(entity, data.id);
-    reg.emplace<ecs::AccountID>(entity, ecs::AccountID { desc ? desc->GetAccountTable().id : 0u });
-    reg.emplace<ecs::EmpireComponent>(entity, ecs::EmpireComponent { static_cast<uint8_t>(desc ? desc->GetEmpire() : 0u) });
-    reg.emplace<ecs::RaceComponent>(entity, ecs::RaceComponent { data.job });
-    reg.emplace<ecs::PlayerName>(entity, std::string(data.name));
-    reg.emplace<ecs::GMLevel>(entity, gmLevel);
-    reg.emplace<ecs::TagPC>(entity);
+    reg.emplace_or_replace<ecs::PlayerID>(entity, data.id);
+    reg.emplace_or_replace<ecs::AccountID>(entity, ecs::AccountID { desc ? desc->GetAccountTable().id : 0u });
+    reg.emplace_or_replace<ecs::EmpireComponent>(entity, ecs::EmpireComponent { static_cast<uint8_t>(desc ? desc->GetEmpire() : 0u) });
+    reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { data.job });
+    reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
+    reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
+    reg.emplace_or_replace<ecs::TagPC>(entity);
 
-    reg.emplace<ecs::Position>(entity, data.x, data.y, data.z);
-    reg.emplace<ecs::WarpPosition>(entity, 0, 0, 0);
-    reg.emplace<ecs::ExitPosition>(entity, data.lExitX, data.lExitY, data.lExitMapIndex);
-    reg.emplace<ecs::RegenPosition>(entity, 0, 0, 0.0f);
-    reg.emplace<ecs::RotationComponent>(entity, static_cast<float>(data.dir));
-    reg.emplace<ecs::MapIndex>(entity, data.lMapIndex);
+    reg.emplace_or_replace<ecs::Position>(entity, data.x, data.y, data.z);
+    reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
+    reg.emplace_or_replace<ecs::ExitPosition>(entity, data.lExitX, data.lExitY, data.lExitMapIndex);
+    reg.emplace_or_replace<ecs::RegenPosition>(entity, 0, 0, 0.0f);
+    reg.emplace_or_replace<ecs::RotationComponent>(entity, static_cast<float>(data.dir));
+    reg.emplace_or_replace<ecs::MapIndex>(entity, data.lMapIndex);
 
-    reg.emplace<ecs::MovementState>(entity, MakeDefaultMovementState(now));
-    reg.emplace<ecs::MovementSpeed>(entity, 100, 100);
-    reg.emplace<ecs::SyncState>(entity, MakeDefaultSyncState());
+    reg.emplace_or_replace<ecs::MovementState>(entity, MakeDefaultMovementState(now));
+    reg.emplace_or_replace<ecs::MovementSpeed>(entity, 100, 100);
+    reg.emplace_or_replace<ecs::SyncState>(entity, MakeDefaultSyncState());
 
-    reg.emplace<ecs::Health>(entity, data.hp, data.hp);
-    reg.emplace<ecs::Mana>(entity, data.sp, data.sp);
-    reg.emplace<ecs::Stamina>(entity, data.stamina, data.stamina);
-    reg.emplace<ecs::LevelComponent>(entity, data.level);
-    reg.emplace<ecs::Experience>(entity, static_cast<int64_t>(data.exp), 0);
-    reg.emplace<ecs::CharacterPoints>(entity, MakeCharacterPoints(data));
+    reg.emplace_or_replace<ecs::Health>(entity, data.hp, data.hp);
+    reg.emplace_or_replace<ecs::Mana>(entity, data.sp, data.sp);
+    reg.emplace_or_replace<ecs::Stamina>(entity, data.stamina, data.stamina);
+    reg.emplace_or_replace<ecs::LevelComponent>(entity, data.level);
+    reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.exp), 0);
+    reg.emplace_or_replace<ecs::CharacterPoints>(entity, MakeCharacterPoints(data));
 
-    reg.emplace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));
-    reg.emplace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
-    reg.emplace<ecs::DamageMap>(entity, ecs::DamageMap {});
+    reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));
+    reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
+    reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
 
-    reg.emplace<ecs::AffectList>(entity, MakeDefaultAffectList());
-    auto& statusFlags = reg.emplace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
+    reg.emplace_or_replace<ecs::AffectList>(entity, MakeDefaultAffectList());
+    auto& statusFlags = reg.emplace_or_replace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
     statusFlags.isGM = (gmLevel.level > 0);
 
-    reg.emplace<ecs::NetworkSession>(entity, desc);
-    reg.emplace<ecs::LoginInfo>(entity, MakeLoginInfo(data, desc, now));
-    reg.emplace<ecs::AntiFlood>(entity, ecs::AntiFlood { 0, 0u, 0, 0u });
+    reg.emplace_or_replace<ecs::NetworkSession>(entity, desc);
+    reg.emplace_or_replace<ecs::LoginInfo>(entity, MakeLoginInfo(data, desc, now));
+    reg.emplace_or_replace<ecs::AntiFlood>(entity, ecs::AntiFlood { 0, 0u, 0, 0u });
 
-    reg.emplace<ecs::EquipmentSlots>(entity, ecs::EquipmentSlots {});
-    reg.emplace<ecs::InventoryGrid>(entity, ecs::InventoryGrid {});
-    reg.emplace<ecs::GoldAmount>(entity, data.gold);
-    reg.emplace<ecs::QuickSlots>(entity, MakeQuickSlots(data));
-    reg.emplace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);
+    reg.emplace_or_replace<ecs::EquipmentSlots>(entity, ecs::EquipmentSlots {});
+    reg.emplace_or_replace<ecs::InventoryGrid>(entity, ecs::InventoryGrid {});
+    reg.emplace_or_replace<ecs::GoldAmount>(entity, data.gold);
+    reg.emplace_or_replace<ecs::QuickSlots>(entity, MakeQuickSlots(data));
+    reg.emplace_or_replace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);
 
-    reg.emplace<ecs::SkillLevels>(entity, MakeSkillLevels(data));
-    reg.emplace<ecs::SkillCooldowns>(entity, ecs::SkillCooldowns { {}, now, false });
-    reg.emplace<ecs::SkillDamageBonus>(entity, ecs::SkillDamageBonus {});
-    reg.emplace<ecs::SkillColor>(entity, ecs::SkillColor {});
+    reg.emplace_or_replace<ecs::SkillLevels>(entity, MakeSkillLevels(data));
+    reg.emplace_or_replace<ecs::SkillCooldowns>(entity, ecs::SkillCooldowns { {}, now, false });
+    reg.emplace_or_replace<ecs::SkillDamageBonus>(entity, ecs::SkillDamageBonus {});
+    reg.emplace_or_replace<ecs::SkillColor>(entity, ecs::SkillColor {});
 
-    reg.emplace<ecs::PartyMembership>(entity, nullptr, now > 180000 ? now - 180000 : 0);
-    reg.emplace<ecs::GuildMembership>(entity, nullptr, now > 60000 ? now - 60000 : 0);
-    reg.emplace<ecs::DungeonMembership>(entity, nullptr, 0, nullptr);
-    reg.emplace<ecs::MarriageState>(entity, nullptr, nullptr);
-    reg.emplace<ecs::ShopState>(entity, nullptr, nullptr, std::string {}, true, false, 0, 0u);
-    reg.emplace<ecs::MountState>(entity, ecs::MountState { 0u, 0u, data.horse.bLevel, 0u, 0u, 0 });
+    reg.emplace_or_replace<ecs::PartyMembership>(entity, nullptr, now > 180000 ? now - 180000 : 0);
+    reg.emplace_or_replace<ecs::GuildMembership>(entity, nullptr, now > 60000 ? now - 60000 : 0);
+    reg.emplace_or_replace<ecs::DungeonMembership>(entity, nullptr, 0, nullptr);
+    reg.emplace_or_replace<ecs::MarriageState>(entity, nullptr, nullptr);
+    reg.emplace_or_replace<ecs::ShopState>(entity, nullptr, nullptr, std::string {}, true, false, 0, 0u);
+    reg.emplace_or_replace<ecs::MountState>(entity, ecs::MountState { 0u, 0u, data.horse.bLevel, 0u, 0u, 0 });
 
-    reg.emplace<ecs::QuestContext>(entity, 0u, 0u, nullptr);
-    reg.emplace<ecs::RankPoints>(entity, MakeRankPoints(data));
-    reg.emplace<ecs::AlignBonuses>(entity, ecs::AlignBonuses { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<uint8_t>(255) });
+    reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, nullptr);
+    reg.emplace_or_replace<ecs::RankPoints>(entity, MakeRankPoints(data));
+    reg.emplace_or_replace<ecs::AlignBonuses>(entity, ecs::AlignBonuses { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<uint8_t>(255) });
 
     if (desc) {
         desc->SetEntity(entity);

@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <string>
 
+#include "../../char_fwd.hpp"
 #include "spatial_components.hpp"
 
 namespace ecs {
 
 struct VIDComponent { uint32_t value; };
+struct LegacyCharPtr { LPCHARACTER ptr; };
 struct PlayerID { uint32_t pid; };
 struct AccountID { uint32_t aid; };
 struct EmpireComponent {

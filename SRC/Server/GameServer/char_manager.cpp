@@ -30,6 +30,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/components/identity_components.hpp"
 namespace
 {
 	inline double uniform_random(double min, double max)
@@ -368,6 +369,16 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 	}
 #endif
 
+	if (EntityFactory::EnsureLegacyCharacterEntity(g_registry, ch, dwVID) == entt::null) {
+		--m_iVIDCount;
+#ifdef M2_USE_POOL
+		pool_.Destroy(ch);
+#else
+		M2_DELETE(ch);
+#endif
+		return nullptr;
+	}
+
 	m_map_pkChrByVID.insert(std::make_pair(dwVID, ch));
 
 	if (dwPID)
@@ -480,7 +491,6 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 {
-
 	const auto it = m_map_pkChrByVID.find(dwVID);
 
 	if (m_map_pkChrByVID.end() == it)
