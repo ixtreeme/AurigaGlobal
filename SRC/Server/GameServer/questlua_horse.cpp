@@ -4,6 +4,7 @@
 #include "questmanager.h"
 #include "horsename_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "config.h"
 #include "utils.h"
@@ -77,7 +78,7 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (ch->GetMapIndex() == 113 || CArenaManager::instance().IsArenaMap(ch->GetMapIndex()) == true)
+		if (ecs::GetMapIndex(ch) == 113 || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
 			return 0;		
 #endif
 
@@ -132,7 +133,7 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (ch->GetMapIndex() == 113 || CArenaManager::instance().IsArenaMap(ch->GetMapIndex()) == true)
+		if (ecs::GetMapIndex(ch) == 113 || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
 			return 0;		
 #endif
 
@@ -395,7 +396,7 @@ namespace quest
 				ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, PASSES_PER_SEC(nHorseNameDuration), 0, true);
 				std::string name = pHorseName;
 				name += " Horse";
-				CHorseNameManager::instance().UpdateHorseName(ch->GetPlayerID(), name.c_str(), true);
+				CHorseNameManager::instance().UpdateHorseName(ecs::GetPlayerID(ch), name.c_str(), true);
 
 				if (ch->GetHorse() != nullptr) {
 					ch->HorseSummon(false, true);
@@ -421,7 +422,7 @@ namespace quest
 
 		if ( ch != nullptr)
 		{
-			const char* pHorseName = CHorseNameManager::instance().GetHorseName(ch->GetPlayerID());
+			const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::GetPlayerID(ch));
 
 			if ( pHorseName != nullptr)
 			{
@@ -482,6 +483,7 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("horse", horse_functions);
 	}
 }
+
 
 
 
