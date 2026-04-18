@@ -4554,3 +4554,60 @@ itt voltunk
 - next action:
   - reproduce one normal melee attempt in-game
   - inspect fresh `MELEE_REJECT` / `MELEE_TRACE` / `melee result` lines in `core99/syslog.txt`
+
+## Phase 14b-fix Round 4 - CHARACTER::Attack internal tracing
+- root-cause narrowing before this round:
+  - Round 3 proved that normal melee packets reach `CInputMain::Attack(...)`
+  - logs also proved execution reaches `ch->Attack(victim, 0)` in both mounted and dismounted states
+  - however there were still no `battle_melee_attack(...)` result/abort lines, so the next blind spot was `CHARACTER::Attack(...)` itself
+- instrumentation added in `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`:
+  - `MELEE_ATTACK_FN: enter ...`
+  - player-side abort reasons for:
+    - `pkVictim->GetMyShop()`
+    - `!CanMove()`
+    - `!battle_is_attackable(...)`
+    - `IS_SPEED_HACK(...)`
+    - skip-combo timing gate
+    - skill delta gate
+  - branch tracing for:
+    - melee branch selection
+    - `battle_melee_attack(...)`
+    - `Shoot(0)`
+    - `Shoot(1)`
+    - default/unhandled battle type
+  - result tracing for:
+    - `MELEE_ATTACK_FN: result ... ret=%d`
+    - `MELEE_ATTACK_FN: return true ...`
+    - `MELEE_ATTACK_FN: return false ...`
+- build/deploy status:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8` passed
+  - fresh `GameServer.exe` deployed to WinTest
+  - full stack restarted with:
+    - `auth`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+- next action:
+  - reproduce one normal melee attempt again
+  - inspect fresh `MELEE_ATTACK_FN` lines to identify the exact in-function branch/return point
+
+## Phase 14b - COMPLETE (with known non-blocking issue)
+- monster aggro/chase/attack: RESTORED
+- skill damage: working
+- normal melee (close range): working
+- normal melee (at-distance targets): OPEN
+  - symptom: melee aborts with `distance=NNN max=300`
+  - diagnosis: target selection / victim VID / position sync issue
+  - NOT a migration blocker; deferred to dedicated target-sync investigation
+  - evidence: successful melee hits at distance <300 in the same session
+    - `Metin of Empire`: `ret=1 dam=2192 distance=155`
+    - `Black Wind Jak-To`: `ret=3 dam=1556 distance=132`
+- Round 1 fix (GetMobAttackRange PC guard): confirmed stable
+- all diagnostic instrumentation: removed
+- all legitimate fixes: committed
+
+Open investigation scope when revisited:
+- `input_main.cpp`: trace target VID arrival in `Attack()`
+- verify victim `GetX/GetY` vs attacker position
+- check view broadcast lag for mob position sync
+- check ECS `SectorPlacement` sync during movement
