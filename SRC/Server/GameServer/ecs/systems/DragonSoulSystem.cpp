@@ -260,12 +260,12 @@ void CHARACTER::DragonSoul_Initialize()
 
 int CHARACTER::DragonSoul_GetActiveDeck() const
 {
-    return DragonSoulSystem::GetActiveDeck(CVIDRegistry::Instance().Find(GetVID()));
+    return DragonSoulSystem::GetActiveDeck(GetEntityHandle());
 }
 
 bool CHARACTER::DragonSoul_IsDeckActivated() const
 {
-    return DragonSoulSystem::IsDeckActivated(CVIDRegistry::Instance().Find(GetVID()));
+    return DragonSoulSystem::IsDeckActivated(GetEntityHandle());
 }
 
 bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)

@@ -631,7 +631,7 @@ EVENTINFO(char_event_info)
 	DynamicCharacterPtr ch;
 };
 
-typedef std::map<uint32_t, size_t> target_map;
+typedef std::map<entt::entity, size_t> target_map;
 struct TSkillUseInfo
 {
 	int	    iHitCount;
@@ -640,22 +640,22 @@ struct TSkillUseInfo
 	uint32_t   dwNextSkillUsableTime;
 	int	    iRange;
 	bool    bUsed;
-	uint32_t   dwVID;
+	entt::entity   dwVID;
 	bool    isGrandMaster;
 
 	target_map TargetVIDMap;
 
 	TSkillUseInfo()
 		: iHitCount(0), iMaxHitCount(0), iSplashCount(0), dwNextSkillUsableTime(0), iRange(0), bUsed(false),
-		dwVID(0), isGrandMaster(false)
+		dwVID(entt::null), isGrandMaster(false)
 	{
 	}
 
 	bool    HitOnce(uint32_t dwVnum = 0);
 
-	bool    UseSkill(bool isGrandMaster, uint32_t vid, uint32_t dwCooltime, int splashcount = 1, int hitcount = -1, int range = -1);
-	uint32_t   GetMainTargetVID() const { return dwVID; }
-	void    SetMainTargetVID(uint32_t vid) { dwVID = vid; }
+	bool    UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCooltime, int splashcount = 1, int hitcount = -1, int range = -1);
+	entt::entity   GetMainTargetVID() const { return dwVID; }
+	void    SetMainTargetVID(entt::entity vid) { dwVID = vid; }
 	void    ResetHitCount() { if (iSplashCount) { iHitCount = iMaxHitCount; iSplashCount--; } }
 };
 
@@ -847,7 +847,9 @@ public:
 	const char* GetName() const;
 #endif
 
-	const VID& GetVID() const { return m_vid; }
+	uint32_t		GetLegacyVID() const;
+	entt::entity		GetEntityHandle() const { return m_entity; }
+	void			SetEntityHandle(entt::entity e) { m_entity = e; }
 	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
@@ -1065,7 +1067,6 @@ protected:
 	bool			m_bPolyMaintainStat;
 	uint32_t			m_dwLoginPlayTime;
 	uint32_t			m_dwPlayerID;
-	VID				m_vid;
 	std::string		m_stName;
 #ifdef __NEWPET_SYSTEM__
 	uint8_t			m_stImmortalSt;
@@ -1961,7 +1962,7 @@ public:
 	bool				IsLearnableSkill(uint32_t dwSkillVnum) const;
 	// END_OF_ADD_GRANDMASTER_SKILL
 
-	bool				CheckSkillHitCount(const uint8_t SkillID, const VID dwTargetVID);
+	bool				CheckSkillHitCount(const uint8_t SkillID, entt::entity target);
 	bool				CanUseSkill(uint32_t dwSkillVnum) const;
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
@@ -2089,6 +2090,7 @@ public:
 	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
 	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
+	entt::entity	 m_entity { entt::null };
 	entt::entity	 m_eVictim { entt::null };
 
 protected:

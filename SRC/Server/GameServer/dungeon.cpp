@@ -455,7 +455,7 @@ int32_t CDungeon::GetUniqueVid(const std::string& key)
 		return false;
 	}
 
-	return it->second->GetVID();
+	return it->second->GetLegacyVID();
 }
 
 void CDungeon::DeadCharacter(LPCHARACTER ch)

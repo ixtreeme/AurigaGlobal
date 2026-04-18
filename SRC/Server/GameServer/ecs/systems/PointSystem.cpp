@@ -1092,7 +1092,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		struct packet_point_change pack;
 
 		pack.header = HEADER_GC_CHARACTER_POINT_CHANGE;
-		pack.dwVID = m_vid;
+		pack.dwVID = GetPacketVID();
 		pack.type = type;
 		pack.value = val;
 

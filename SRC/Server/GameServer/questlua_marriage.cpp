@@ -71,7 +71,7 @@ namespace quest
 		{
 			LPCHARACTER you = CHARACTER_MANAGER::instance().FindByPID(pMarriage->GetOther(ecs::GetPlayerID(ch)));
 			if (you)
-				vid = you->GetVID();
+				vid = you->GetPacketVID();
 		}
 
 		lua_pushnumber(L, vid);

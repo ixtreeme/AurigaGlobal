@@ -900,7 +900,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return false;
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChr->GetVID());
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChr->GetPacketVID());
 
 			if (pInfo)
 			{
@@ -931,7 +931,7 @@ namespace quest
 				return false;
 			}
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChrTarget->GetVID());
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChrTarget->GetPacketVID());
 			if (test_server)
 			{
 				sys_log(0, "CQuestManager::Click(pid=%d, npc_name=%s) - target_info(%x)", pc, pkChrTarget->GetName(), pInfo);
@@ -1107,7 +1107,7 @@ namespace quest
 		if (!ch)
 			return entt::null;
 
-		entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		entt::entity e = ch->GetEntityHandle();
 
 		// Temporary verification - REMOVE IN PHASE 9
 		if (e == entt::null) {
@@ -1125,7 +1125,7 @@ namespace quest
 		if (!ch)
 			return entt::null;
 
-		entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		entt::entity e = ch->GetEntityHandle();
 
 		// Temporary verification - REMOVE IN PHASE 9
 		if (e == entt::null) {

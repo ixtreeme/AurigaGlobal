@@ -178,7 +178,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
     SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
 
-    leader->ChatPacket(CHAT_TYPE_COMMAND, "PartyRequest %u", (uint32_t)GetVID());
+    leader->ChatPacket(CHAT_TYPE_COMMAND, "PartyRequest %u", GetPacketVID());
 #ifdef TEXTS_IMPROVEMENT
     ChatPacketNew(CHAT_TYPE_INFO, 106, "%s", leader->GetName());
 #endif
@@ -407,7 +407,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 
     TPacketGCPartyInvite p;
     p.header = HEADER_GC_PARTY_INVITE;
-    p.leader_vid = GetVID();
+    p.leader_vid = GetPacketVID();
     pchInvitee->GetDesc()->Packet(&p, sizeof(p));
 }
 

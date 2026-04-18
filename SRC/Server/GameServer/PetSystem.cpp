@@ -181,7 +181,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 	if (nullptr != m_pkChar)
 	{
 		m_pkChar->Show (m_pkOwner->GetMapIndex(), x, y);
-		m_dwVID = m_pkChar->GetVID();
+		m_dwVID = m_pkChar->GetLegacyVID();
 
 		return m_dwVID;
 	}
@@ -225,7 +225,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 	//펫의 국가를 주인의 국가로 설정함.
 	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
 
-	m_dwVID = m_pkChar->GetVID();
+	m_dwVID = m_pkChar->GetLegacyVID();
 
 	this->SetName("");
 
@@ -536,7 +536,7 @@ bool CPetSystem::Update(uint32_t deltaTime)
 		{
 			LPCHARACTER pPet = petActor->GetCharacter();
 
-			if (nullptr == CHARACTER_MANAGER::instance().Find(pPet->GetVID()))
+			if (nullptr == CHARACTER_MANAGER::instance().Find(pPet->GetLegacyVID()))
 			{
 				v_garbageActor.push_back(petActor);
 			}

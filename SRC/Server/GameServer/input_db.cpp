@@ -552,10 +552,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             g_registry,
             *pTab,
             d,
-            ch->GetVID());
+            ch->GetLegacyVID());
         d->SetEntity(ecs_e);
         sys_log(0, "ECS: PC entity created VID=%u pid=%u",
-                ch->GetVID(), ch->GetPlayerID());
+                ch->GetLegacyVID(), ch->GetPlayerID());
 
 
         // Phase 7: sync ECS vital components from DB result

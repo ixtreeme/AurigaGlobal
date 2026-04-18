@@ -13,7 +13,7 @@ inline entt::entity EcsOf(LPCHARACTER ch)
         return entt::null;
     }
 
-    return CVIDRegistry::Instance().Find(ch->GetVID());
+    return ch->GetEntityHandle();
 }
 
 inline ecs::AIFlags* TryGetFlags(entt::entity e)

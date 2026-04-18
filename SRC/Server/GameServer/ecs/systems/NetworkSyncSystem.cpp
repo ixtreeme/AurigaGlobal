@@ -152,7 +152,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
     TPacketGCCharacterAdd pack;
     pack.header = HEADER_GC_CHARACTER_ADD;
-    pack.dwVID = m_vid;
+    pack.dwVID = GetPacketVID();
     pack.bType = GetCharType();
     pack.angle = GetRotation();
     pack.x = GetX();
@@ -222,7 +222,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         }
 
         addPacket.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-        addPacket.dwVID = m_vid;
+        addPacket.dwVID = GetPacketVID();
         addPacket.bPKMode = m_bPKMode;
         addPacket.bEmpire = m_bEmpire;
         addPacket.dwGuildID = 0;
@@ -322,12 +322,12 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
     TPacketGCCharacterDelete pack;
 
     pack.header = HEADER_GC_CHARACTER_DEL;
-    pack.id = m_vid;
+    pack.id = GetPacketVID();
 
     d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
 
     if (entity->IsType(ENTITY_CHARACTER))
-        sys_log(3, "EntityRemove %s(%d) FROM %s", GetName(), (uint32_t)m_vid, ((LPCHARACTER)entity)->GetName());
+        sys_log(3, "EntityRemove %s(%d) FROM %s", GetName(), GetPacketVID(), ((LPCHARACTER)entity)->GetName());
 }
 
 LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
@@ -568,7 +568,7 @@ void CHARACTER::UpdatePacket()
     TPacketGCCharacterUpdate pack2;
 
     pack.header = HEADER_GC_CHARACTER_UPDATE;
-    pack.dwVID = m_vid;
+    pack.dwVID = GetPacketVID();
 
     pack.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
     pack.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
@@ -673,7 +673,7 @@ void CHARACTER::MainCharacterPacket()
             sys_log(1, "bgm_info.play_bgm_vol(%d, name='%s', vol=%f)", mapIndex, bgmInfo.name.c_str(), bgmInfo.vol);
             TPacketGCMainCharacter4_BGM_VOL mainChrPacket;
             mainChrPacket.header = HEADER_GC_MAIN_CHARACTER4_BGM_VOL;
-            mainChrPacket.dwVID = m_vid;
+            mainChrPacket.dwVID = GetPacketVID();
             mainChrPacket.wRaceNum = GetRaceNum();
             mainChrPacket.lx = GetX();
             mainChrPacket.ly = GetY();
@@ -691,7 +691,7 @@ void CHARACTER::MainCharacterPacket()
             sys_log(1, "bgm_info.play(%d, '%s')", mapIndex, bgmInfo.name.c_str());
             TPacketGCMainCharacter3_BGM mainChrPacket;
             mainChrPacket.header = HEADER_GC_MAIN_CHARACTER3_BGM;
-            mainChrPacket.dwVID = m_vid;
+            mainChrPacket.dwVID = GetPacketVID();
             mainChrPacket.wRaceNum = GetRaceNum();
             mainChrPacket.lx = GetX();
             mainChrPacket.ly = GetY();
@@ -709,7 +709,7 @@ void CHARACTER::MainCharacterPacket()
 
         TPacketGCMainCharacter pack;
         pack.header = HEADER_GC_MAIN_CHARACTER;
-        pack.dwVID = m_vid;
+        pack.dwVID = GetPacketVID();
         pack.wRaceNum = GetRaceNum();
         pack.lx = GetX();
         pack.ly = GetY();

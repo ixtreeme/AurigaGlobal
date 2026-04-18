@@ -104,7 +104,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[(uint32_t)pChar->GetVID()] = pChar;
+				m_mapStone[pChar->GetPacketVID()] = pChar;
 			}
 		}
 	}
@@ -7022,7 +7022,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (max < 10000) val = 2;
 							else if (max < 70000) val = 1;
 
-							ChatPacket(CHAT_TYPE_COMMAND, "StoneDetect %u %d %d", (uint32_t)GetVID(), val,
+							ChatPacket(CHAT_TYPE_COMMAND, "StoneDetect %u %d %d", GetPacketVID(), val,
 								(int)GetDegreeFromPositionXY(GetX(), pTarget->GetY(), pTarget->GetX(), GetY()));
 						}
 #ifdef TEXTS_IMPROVEMENT
@@ -7039,7 +7039,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					if (item->GetSocket(0) >= 6)
 					{
-						ChatPacket(CHAT_TYPE_COMMAND, "StoneDetect %u 0 0", (uint32_t)GetVID());
+						ChatPacket(CHAT_TYPE_COMMAND, "StoneDetect %u 0 0", GetPacketVID());
 						ITEM_MANAGER::instance().RemoveItem(item);
 					}
 				}
@@ -10945,7 +10945,7 @@ void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success 
 
 void CHARACTER::ItemDivision(TItemPos Cell)
 {
-	ItemSystem::ItemDivision(CVIDRegistry::Instance().Find(GetVID()), Cell);
+	ItemSystem::ItemDivision(GetEntityHandle(), Cell);
 }
 
 void CHARACTER::SetRefineNPC(LPCHARACTER ch)
@@ -10955,7 +10955,7 @@ void CHARACTER::SetRefineNPC(LPCHARACTER ch)
 #endif
 	if (ch != nullptr)
 	{
-		m_dwRefineNPCVID = ch->GetVID();
+		m_dwRefineNPCVID = ch->GetPacketVID();
 	}
 	else
 	{
@@ -13301,7 +13301,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		else
 		{
 			// TAKE_ITEM_BUG_FIX
-			from->SetQuestNPCID(GetVID());
+			from->SetQuestNPCID(GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
 			quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
 		}
@@ -13448,7 +13448,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 
 	default:
 		sys_log(0, "TakeItem %s %d %s", from->GetName(), GetRaceNum(), item->GetName());
-		from->SetQuestNPCID(GetVID());
+		from->SetQuestNPCID(GetPacketVID());
 		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
 		break;
 	}
@@ -13678,7 +13678,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[(uint32_t)pChar->GetVID()] = pChar;
+				m_mapStone[pChar->GetPacketVID()] = pChar;
 			}
 		}
 	}

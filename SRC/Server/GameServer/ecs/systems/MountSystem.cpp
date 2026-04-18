@@ -98,7 +98,7 @@ entt::entity GetRider(entt::entity horse)
     if (!chHorse)
         return entt::null;
 
-    return chHorse->GetRider() ? CVIDRegistry::Instance().Find(chHorse->GetRider()->GetVID()) : entt::null;
+    return chHorse->GetRider() ? chHorse->GetRider()->GetEntityHandle() : entt::null;
 }
 
 void HorseSummon(entt::entity owner, bool summon, bool fromFar, uint32_t vnum, const char* petName)
@@ -263,7 +263,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
 
     TPacketGCFakeShopSign p;
     p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
-    p.dwVID = GetVID();
+    p.dwVID = GetPacketVID();
     p.iMountCount = GetMountCount();
     p.iBeltCount = GetBeltCount();
 
@@ -569,7 +569,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		{
 			TPacketGCDead pack;
 			pack.header	= HEADER_GC_DEAD;
-			pack.vid    = m_chHorse->GetVID();
+			pack.vid    = m_chHorse->GetPacketVID();
 			PacketAround(&pack, sizeof(pack));
 		}
 

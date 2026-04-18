@@ -1644,7 +1644,7 @@ void SECTREE_MANAGER::PurgeNPCsInMap(int32_t lMapIndex)
 
 struct FCountMonsters
 {
-	std::map<VID, VID> m_map_Monsters;
+	std::map<entt::entity, entt::entity> m_map_Monsters;
 
 	void operator() (LPENTITY ent)
 	{
@@ -1654,7 +1654,7 @@ struct FCountMonsters
 
 			if ( lpChar->IsMonster() == true )
 			{
-				m_map_Monsters[lpChar->GetVID()] = lpChar->GetVID();
+				const entt::entity e = lpChar->GetEntityHandle(); if (e != entt::null) m_map_Monsters[e] = e;
 			}
 		}
 	}

@@ -843,7 +843,7 @@ ACMD(do_mob_aggresive)
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
 				{
-					const entt::entity e = CVIDRegistry::Instance().Find(tch->GetVID());
+					const entt::entity e = tch->GetEntityHandle();
 					if (e != entt::null)
 						AIHelpers::SetAggressive(e, true);
 				}

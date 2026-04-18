@@ -1826,7 +1826,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
-	//	pack.vid = m_vid;
+	//	pack.vid = GetPacketVID();
 	//	PacketAround(&pack, sizeof(pack));
 
 	//	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
@@ -2241,7 +2241,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 	TPacketGCDead pack;
 	pack.header = HEADER_GC_DEAD;
-	pack.vid = m_vid;
+	pack.vid = GetPacketVID();
 	PacketAround(&pack, sizeof(pack));
 
 	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
@@ -5926,7 +5926,7 @@ public:
 			if (g_bSkillDisable)
 				return;
 
-			m_me->m_SkillUseInfo[m_bType].SetMainTargetVID(dwTargetVID);
+			m_me->m_SkillUseInfo[m_bType].SetMainTargetVID(static_cast<entt::entity>(dwTargetVID));
 			/*if (m_bType == SKILL_BIPABU || m_bType == SKILL_KWANKYEOK)
 			  m_me->m_SkillUseInfo[m_bType].ResetHitCount();*/
 		}
@@ -6498,7 +6498,7 @@ void CHARACTER::Stun()
 
 	TPacketGCStun pack;
 	pack.header = HEADER_GC_STUN;
-	pack.vid = m_vid;
+	pack.vid = GetPacketVID();
 	PacketAround(&pack, sizeof(pack));
 
 	SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);

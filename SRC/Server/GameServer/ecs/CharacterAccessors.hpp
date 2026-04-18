@@ -79,7 +79,7 @@ inline uint32_t GetVID(LPCHARACTER ch)
         }
     }
 
-    return ch->GetVID();
+    return ch->GetLegacyVID();
 }
 
 inline int32_t GetX(LPCHARACTER ch)

@@ -66,7 +66,7 @@ inline entt::entity EcsEntityOf(const CHARACTER* ch)
     if (!ch)
         return entt::null;
 
-    return CVIDRegistry::Instance().Find(ch->GetVID());
+    return ch->GetEntityHandle();
 }
 
 inline bool HasCombatState(const CHARACTER* ch)
@@ -602,7 +602,7 @@ uint32_t CHARACTER::GetMobDropItemVnum() const
     if (!m_pkMobData)
     {
         sys_err("GetMobDropItemVnum: NULL mob data (vid=%u race=%u name=%s map=%ld x=%ld y=%ld)",
-            static_cast<uint32_t>(GetVID()),
+            GetPacketVID(),
             GetRaceNum(),
             GetName(),
             GetMapIndex(),
@@ -655,7 +655,7 @@ uint16_t CHARACTER::GetMobAttackRange() const
     if (!m_pkMobData)
     {
         sys_err("GetMobAttackRange: m_pkMobData NULL! (VID: %u, Name: %s, Race:%d)",
-            static_cast<uint32_t>(GetVID()), GetName(), GetRaceNum());
+            GetPacketVID(), GetName(), GetRaceNum());
         return 0;
     }
 
@@ -2641,7 +2641,7 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
 void CHARACTER::Destroy()
 {
     {
-        entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        entt::entity e = GetEntityHandle();
         if (e != entt::null)
             EntityFactory::Destroy(g_registry, e);
     }
@@ -2736,7 +2736,7 @@ void CHARACTER::Destroy()
     LPPARTY party = m_pkParty;
     if (party)
     {
-        if (party->GetLeaderPID() == GetVID() && !IsPC())
+        if (party->GetLeaderPID() == GetLegacyVID() && !IsPC())
         {
             M2_DELETE(party);
         }
@@ -2745,7 +2745,7 @@ void CHARACTER::Destroy()
             party->Unlink(this);
 
             if (!IsPC())
-                party->Quit(GetVID());
+                party->Quit(GetLegacyVID());
         }
 
         SetParty(nullptr);
@@ -3413,7 +3413,7 @@ void CHARACTER::MonsterLog(const char* format, ...)
         return;
 
     char chatbuf[CHAT_MAX_LEN + 1];
-    int len = snprintf(chatbuf, sizeof(chatbuf), "%lu)", static_cast<unsigned long>(GetVID()));
+    int len = snprintf(chatbuf, sizeof(chatbuf), "%lu)", static_cast<unsigned long>(GetPacketVID()));
 
     if (len < 0 || len >= (int)sizeof(chatbuf))
         len = sizeof(chatbuf) - 1;
@@ -3438,7 +3438,7 @@ void CHARACTER::MonsterLog(const char* format, ...)
     pack_chat.header = HEADER_GC_CHAT;
     pack_chat.size = sizeof(TPacketGCChat) + len;
     pack_chat.type = CHAT_TYPE_TALKING;
-    pack_chat.id = GetVID();
+    pack_chat.id = GetPacketVID();
     pack_chat.bEmpire = 0;
 
     TEMP_BUFFER buf;
@@ -3524,7 +3524,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
         return;
     }
 
-    uint32_t vid = GetVID();
+    uint32_t vid = GetPacketVID();
     sys_log(0, "OnClick %s[vnum: %d vid: %d] by %s", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
 
     {
@@ -3545,7 +3545,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 
     if (IsPC())
     {
-        if (!CTargetManager::instance().GetTargetInfo(pkChrCauser->GetPlayerID(), TARGET_TYPE_VID, GetVID()))
+        if (!CTargetManager::instance().GetTargetInfo(pkChrCauser->GetPlayerID(), TARGET_TYPE_VID, GetPacketVID()))
         {
             if (GetMyShop())
             {
@@ -3617,7 +3617,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     pkChrCauser->SetShop(nullptr);
                 }
 
-                GetMyShop()->AddGuest(pkChrCauser, GetVID(), false);
+                GetMyShop()->AddGuest(pkChrCauser, GetPacketVID(), false);
                 pkChrCauser->SetShopOwner(this);
                 return;
             }
@@ -3629,7 +3629,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
         }
     }
 
-    pkChrCauser->SetQuestNPCID(GetVID());
+    pkChrCauser->SetQuestNPCID(GetPacketVID());
 
     if (quest::CQuestManager::instance().Click(pkChrCauser->GetPlayerID(), this))
     {
@@ -4105,7 +4105,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     TPacketGCShopSign p;
 
     p.bHeader = HEADER_GC_SHOP_SIGN;
-    p.dwVID = GetVID();
+    p.dwVID = GetPacketVID();
     strlcpy(p.szSign, c_pszSign, sizeof(p.szSign));
 #ifdef KASMIR_PAKET_SYSTEM
     p.bShopKasmirTitle = KasmirBaslik;
@@ -4151,7 +4151,7 @@ void CHARACTER::CloseMyShop()
         TPacketGCShopSign p;
 
         p.bHeader = HEADER_GC_SHOP_SIGN;
-        p.dwVID = GetVID();
+        p.dwVID = GetPacketVID();
 #ifdef KASMIR_PAKET_SYSTEM
         p.bShopKasmirTitle = m_bKasmirPaketBaslik;
 #endif
@@ -4211,6 +4211,7 @@ void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 void CHARACTER::Initialize()
 {
     CEntity::Initialize(ENTITY_CHARACTER);
+    m_entity = entt::null;
     m_eVictim = entt::null;
 
     m_bNoOpenedShop = true;
@@ -4587,19 +4588,27 @@ void CHARACTER::Initialize()
 #endif
 }
 
+uint32_t CHARACTER::GetLegacyVID() const
+{
+    const entt::entity e = m_entity != entt::null ? m_entity : AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    if (e != entt::null) {
+        if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e)) {
+            return vid->value;
+        }
+    }
+
+    return 0;
+}
+
 uint32_t CHARACTER::GetPacketVID() const
 {
-    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    const entt::entity e = m_entity != entt::null ? m_entity : AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
     return static_cast<uint32_t>(e);
 }
 
 void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
 {
-    static int s_crc = 172814;
-
-    char crc_string[128 + 1];
-    snprintf(crc_string, sizeof(crc_string), "%s%p%d", c_pszName, this, ++s_crc);
-    m_vid = VID(vid, GetCRC32(crc_string, strlen(crc_string)));
+    (void)vid;
     if (isPC)
         m_stName = c_pszName;
 }
@@ -4626,7 +4635,7 @@ DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
     }
     else {
         is_pc = false;
-        id = character->GetVID();
+        id = character->GetLegacyVID();
     }
     return *this;
 }

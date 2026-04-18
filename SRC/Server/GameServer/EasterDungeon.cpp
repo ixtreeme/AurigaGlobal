@@ -410,7 +410,7 @@ public:
         d->SetFlag(kFlagStep, 0);
 
         LPCHARACTER boss = SpawnMobGlobal(d, kBossVnum, kBossX, kBossY);
-        d->SetFlag(kFlagBossVid, boss ? (int32_t)boss->GetVID() : 0);
+        d->SetFlag(kFlagBossVid, boss ? (int32_t)boss->GetLegacyVID() : 0);
 
         ChatToMap(mapIndex, "Husvet: A boss megjelent! Feladat #3: Oljtek meg a bosst.");
     }

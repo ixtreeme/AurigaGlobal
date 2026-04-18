@@ -205,6 +205,12 @@ void RegisterEntityVID(entt::registry& reg, entt::entity entity, uint32_t vid)
 void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
     reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
+    if (ch) {
+        ch->SetEntityHandle(entity);
+        if (LPDESC desc = ch->GetDesc()) {
+            desc->SetEntity(entity);
+        }
+    }
 }
 
 ecs::AIFlags MakeAIFlags(const TMobTable& data)
@@ -582,6 +588,10 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
 
     if (const auto* vid = reg.try_get<ecs::VIDComponent>(e)) {
         CVIDRegistry::Instance().Unregister(vid->value);
+    }
+
+    if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr) {
+        legacy->ptr->SetEntityHandle(entt::null);
     }
 
     if (const auto* session = reg.try_get<ecs::NetworkSession>(e)) {

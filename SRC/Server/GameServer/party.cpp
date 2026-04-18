@@ -156,7 +156,7 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 	else
 	{
 		pParty->SetPCParty(false);
-		pParty->Join(pLeader->GetVID());
+		pParty->Join(pLeader->GetLegacyVID());
 	}
 
 	pParty->Link(pLeader);
@@ -533,7 +533,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	if (pkChr->IsPC())
 		it = m_memberMap.find(pkChr->GetPlayerID());
 	else
-		it = m_memberMap.find(pkChr->GetVID());
+		it = m_memberMap.find(pkChr->GetLegacyVID());
 
 	if (it == m_memberMap.end())
 	{
@@ -628,7 +628,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 	if (pkChr->IsPC())
 		it = m_memberMap.find(pkChr->GetPlayerID());
 	else
-		it = m_memberMap.find(pkChr->GetVID());
+		it = m_memberMap.find(pkChr->GetLegacyVID());
 
 	if (it == m_memberMap.end())
 	{

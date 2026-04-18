@@ -160,8 +160,8 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	SetExchangeTime();
 	victim->SetExchangeTime();
 
-	exchange_packet(victim, EXCHANGE_SUBHEADER_GC_START, 0, GetVID(), NPOS, 0);
-	exchange_packet(this, EXCHANGE_SUBHEADER_GC_START, 0, victim->GetVID(), NPOS, 0);
+	exchange_packet(victim, EXCHANGE_SUBHEADER_GC_START, 0, GetPacketVID(), NPOS, 0);
+	exchange_packet(this, EXCHANGE_SUBHEADER_GC_START, 0, victim->GetPacketVID(), NPOS, 0);
 
 	return true;
 }

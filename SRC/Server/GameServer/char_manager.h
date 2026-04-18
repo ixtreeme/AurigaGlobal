@@ -69,7 +69,6 @@ protected:
 		NAME_MAP &		GetPCMap() { return m_map_pkPCChr; }
 
 		LPCHARACTER		Find(uint32_t dwVID);
-		LPCHARACTER		Find(const VID & vid);
 		LPCHARACTER		FindPC(const char * name);
 		LPCHARACTER		FindByPID(uint32_t dwPID);
 

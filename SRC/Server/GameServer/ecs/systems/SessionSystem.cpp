@@ -467,7 +467,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
     if (GetSectree())
     {
         GetSectree()->RemoveEntity(this);
-        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        const entt::entity e = GetEntityHandle();
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.remove<ecs::SectorPlacement>(e);
@@ -665,7 +665,7 @@ EVENTFUNC(warp_npc_event)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkWarpNPCEvent
 
-    const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+    const entt::entity e = ch->GetEntityHandle();
     if (e != entt::null)
     {
         const PIXEL_POSITION& warpPos = ch->GetWarpPosition();
@@ -832,7 +832,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         if (GetSectree())
         {
             GetSectree()->RemoveEntity(this);
-            const entt::entity oldEntity = CVIDRegistry::Instance().Find(GetVID());
+            const entt::entity oldEntity = GetEntityHandle();
             if (oldEntity != entt::null && g_registry.valid(oldEntity))
             {
                 g_registry.remove<ecs::SectorPlacement>(oldEntity);
@@ -884,7 +884,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         EncodeInsertPacket(this);
         sectree->InsertEntity(this);
 
-        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        const entt::entity e = GetEntityHandle();
         ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
@@ -893,7 +893,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     }
     else
     {
-        const entt::entity e = CVIDRegistry::Instance().Find(GetVID());
+        const entt::entity e = GetEntityHandle();
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
         ViewReencode();
@@ -1206,7 +1206,7 @@ void CHARACTER::CloseSafebox()
     {
         sys_err("CloseSafebox skipped: invalid owner (name=%s vid=%u race=%u ispc=%d desc=%p)",
             GetName(),
-            static_cast<uint32_t>(GetVID()),
+            GetPacketVID(),
             GetRaceNum(),
             IsPC(),
             GetDesc());

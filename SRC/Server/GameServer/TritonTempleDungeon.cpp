@@ -292,7 +292,7 @@ public:
 
         LPCHARACTER boss = d->SpawnMob(kBossVnum, kBossX, kBossY);
 
-        const uint32_t bossVid = boss ? boss->GetVID() : 0;
+        const uint32_t bossVid = boss ? boss->GetLegacyVID() : 0;
         d->SetFlag(kFlagBossVid, (int32_t)bossVid);
 
         const bool ok = boss && boss->SetInvincible(true);

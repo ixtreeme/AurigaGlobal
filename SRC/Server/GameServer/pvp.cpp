@@ -644,8 +644,8 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 	pkPVP = M2_NEW CPVP(kPVP);
 
-	pkPVP->SetVID(pkChr->GetPlayerID(), pkChr->GetVID());
-	pkPVP->SetVID(pkVictim->GetPlayerID(), pkVictim->GetVID());
+	pkPVP->SetVID(pkChr->GetPlayerID(), pkChr->GetPacketVID());
+	pkPVP->SetVID(pkVictim->GetPlayerID(), pkVictim->GetPacketVID());
 
 	m_map_pkPVP.insert(map<uint32_t, CPVP *>::value_type(pkPVP->m_dwCRC, pkPVP));
 
@@ -673,7 +673,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		const char* m_Name = pkChr->GetName();
 		const char* m_GuildName = "-";
 		
-		int m_Vid = pkChr->GetVID();	
+		int m_Vid = pkChr->GetPacketVID();	
 		int m_Level = pkChr->GetLevel();
 		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
 		int m_MaxHP = pkChr->GetMaxHP();
@@ -741,7 +741,7 @@ void CPVPManager::ConnectEx(LPCHARACTER pkChr, bool bDisconnect)
 	if (it == m_map_pkPVPSetByID.end())
 		return;
 
-	uint32_t dwVID = bDisconnect ? 0 : pkChr->GetVID();
+	uint32_t dwVID = bDisconnect ? 0 : pkChr->GetPacketVID();
 
 	auto it2 = it->second.begin();
 
@@ -1034,7 +1034,7 @@ void CPVPManager::SendList(LPDESC d)
 {
 	map<uint32_t, CPVP *>::iterator it = m_map_pkPVP.begin();
 
-	uint32_t dwVID = d->GetCharacter()->GetVID();
+	uint32_t dwVID = d->GetCharacter()->GetPacketVID();
 
 	TPacketGCPVP pack;
 

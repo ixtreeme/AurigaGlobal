@@ -152,7 +152,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (pkChr->GetEmpire() != pkChrShopKeeper->GetEmpire())
 		bOtherEmpire = true;
 
-	pkShop->AddGuest(pkChr, pkChrShopKeeper->GetVID(), bOtherEmpire);
+	pkShop->AddGuest(pkChr, pkChrShopKeeper->GetPacketVID(), bOtherEmpire);
 	pkChr->SetShopOwner(pkChrShopKeeper);
 	sys_log(0, "SHOP: START: %s", pkChr->GetName());
 	return true;
@@ -170,20 +170,20 @@ LPSHOP CShopManager::FindPCShop(uint32_t dwVID)
 
 LPSHOP CShopManager::CreatePCShop(LPCHARACTER ch, TShopItemTable * pTable, uint8_t bItemCount)
 {
-	if (FindPCShop(ch->GetVID()))
+	if (FindPCShop(ch->GetPacketVID()))
 		return nullptr;
 
 	LPSHOP pkShop = M2_NEW CShop;
 	pkShop->SetPCShop(ch);
 	pkShop->SetShopItems(pTable, bItemCount);
 
-	m_map_pkShopByPC.insert(TShopMap::value_type(ch->GetVID(), pkShop));
+	m_map_pkShopByPC.insert(TShopMap::value_type(ch->GetPacketVID(), pkShop));
 	return pkShop;
 }
 
 void CShopManager::DestroyPCShop(LPCHARACTER ch)
 {
-	LPSHOP pkShop = FindPCShop(ch->GetVID());
+	LPSHOP pkShop = FindPCShop(ch->GetPacketVID());
 
 	if (!pkShop)
 		return;
@@ -192,7 +192,7 @@ void CShopManager::DestroyPCShop(LPCHARACTER ch)
 	ch->SetMyShopTime();
 	//END_PREVENT_ITEM_COPY
 
-	m_map_pkShopByPC.erase(ch->GetVID());
+	m_map_pkShopByPC.erase(ch->GetPacketVID());
 	M2_DELETE(pkShop);
 }
 

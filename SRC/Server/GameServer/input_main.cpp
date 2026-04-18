@@ -142,7 +142,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 		else if (s_vec_item.size() == 1)
 		{
 			pkInfoItem = s_vec_item[0];
-			pInfo.dwVID	= m_pkChrTarget->GetVID();
+			pInfo.dwVID	= m_pkChrTarget->GetPacketVID();
 			pInfo.race = m_pkChrTarget->GetRaceNum();
 			pInfo.dwVnum = pkInfoItem->GetVnum();
 			pInfo.count = pkInfoItem->GetCount();
@@ -161,7 +161,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 					continue;
 				}
 
-					pInfo.dwVID	= m_pkChrTarget->GetVID();
+					pInfo.dwVID	= m_pkChrTarget->GetPacketVID();
 					pInfo.race = m_pkChrTarget->GetRaceNum();
 					pInfo.dwVnum = pkInfoItem->GetVnum();
 					pInfo.count = pkInfoItem->GetCount();
@@ -1402,7 +1402,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	pack_chat.header = HEADER_GC_CHAT;
 	pack_chat.size = sizeof(TPacketGCChat) + len;
 	pack_chat.type = pinfo->type;
-	pack_chat.id = ch->GetVID();
+	pack_chat.id = ch->GetPacketVID();
 
 	switch (pinfo->type)
 	{
@@ -2352,7 +2352,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	pack.bFunc        = pinfo->bFunc;
 	pack.bArg         = pinfo->bArg;
 	pack.bRot         = pinfo->bRot;
-	pack.dwVID        = ch->GetVID();
+	pack.dwVID        = ch->GetPacketVID();
 	pack.lX           = pinfo->lX;
 	pack.lY           = pinfo->lY;
 	pack.dwTime       = pinfo->dwTime;
@@ -2513,7 +2513,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 
 				if (packMelee->bType > 0)
 				{
-					if (false == ch->CheckSkillHitCount(packMelee->bType, victim->GetVID()))
+					if (false == ch->CheckSkillHitCount(packMelee->bType, victim->GetEntityHandle()))
 					{
 						return;
 					}

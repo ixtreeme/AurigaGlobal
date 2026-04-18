@@ -236,10 +236,10 @@ bool CanUseSkill(entt::entity e, uint32_t skillId)
     return ch ? ch->CanUseSkill(skillId) : false;
 }
 
-bool CheckSkillHit(entt::entity attacker, uint8_t skillId, VID targetVID)
+bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target)
 {
     LPCHARACTER ch = LegacyCharacter(attacker);
-    return ch ? ch->CheckSkillHitCount(skillId, targetVID) : false;
+    return ch ? ch->CheckSkillHitCount(skillId, target) : false;
 }
 
 int ComputeCooltime(entt::entity e, int time)
@@ -1036,7 +1036,7 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 	return false;
 }
 
-bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, const VID TargetVID)
+bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID)
 {
 	std::map<int, TSkillUseInfo>::iterator iter = m_SkillUseInfo.find(SkillID);
 
@@ -1200,7 +1200,7 @@ bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
 
 
 
-bool TSkillUseInfo::UseSkill(bool isGrandMaster, uint32_t vid, uint32_t dwCooltime, int splashcount, int hitcount, int range)
+bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCooltime, int splashcount, int hitcount, int range)
 {
 	this->isGrandMaster = isGrandMaster;
 	uint32_t dwCur = get_dword_time();
@@ -1955,7 +1955,7 @@ struct FuncSplashDamage
 		////////////////////////////////////////////////////////////////////////////////
 		//sys_log(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
-		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != pkChrVictim->GetPacketVID())
+		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
 			// µĄąĚÁö °¨ĽŇ
 			iDam = (int) (iDam * m_pkSk->kSplashAroundDamageAdjustPoly.Eval());
@@ -2435,7 +2435,7 @@ struct FuncSplashDamage
 				pkChrVictim->Goto(tx, ty);
 				pkChrVictim->CalculateMoveDuration();
 
-				if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == pkChrVictim->GetPacketVID())
+				if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == AIHelpers::EcsOf(pkChrVictim))
 				{
 					SkillAttackAffect(pkChrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
@@ -3626,7 +3626,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 					return false;
 			}
 
-			m_SkillUseInfo[dwVnum].SetMainTargetVID(pkVictim->GetPacketVID());
+			m_SkillUseInfo[dwVnum].SetMainTargetVID(AIHelpers::EcsOf(pkVictim));
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
 			ComputeSkill(dwVnum, pkVictim);
 			RemoveAffect(dwVnum);
@@ -3741,7 +3741,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
-						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
+						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
 					ChatPacket(CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
@@ -3753,7 +3753,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
 						bUseGrandMaster,
-				   		(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0,
+				   		(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null,
 				   		ComputeCooltime(iCooltime * 1000),
 				   		iSplashCount,
 				   		lMaxHit))
@@ -3768,7 +3768,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		if (false ==
 				m_SkillUseInfo[dwVnum].UseSkill(
 					bUseGrandMaster,
-				   	(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? pkVictim->GetPacketVID() : 0,
+				   	(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null,
 				   	ComputeCooltime(iCooltime * 1000),
 				   	iSplashCount,
 				   	lMaxHit))

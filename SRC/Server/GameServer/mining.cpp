@@ -415,7 +415,7 @@ namespace mining
 	{
 		mining_event_info* info = AllocEventInfo<mining_event_info>();
 		info->pid = ecs::GetPlayerID(ch);
-		info->vid_load = load->GetVID();
+		info->vid_load = load->GetLegacyVID();
 
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
 	}

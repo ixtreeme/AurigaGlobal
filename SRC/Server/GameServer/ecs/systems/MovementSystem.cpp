@@ -588,7 +588,7 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet)
 {
 	packet->header = HEADER_GC_MOTION;
-	packet->vid = m_vid;
+	packet->vid = GetPacketVID();
 	packet->motion = motion;
 
 	if (victim)
