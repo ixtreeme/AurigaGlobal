@@ -695,7 +695,7 @@ namespace quest
 		bool what = lua_toboolean(L, 2);
 		if (what == false && !lastmeley)
 		{
-			if (ch->GetRaceNum() == 6118 && ch->FindAffect(AFFECT_STATUE))
+			if (ecs::GetRaceNum(ch) == 6118 && ch->FindAffect(AFFECT_STATUE))
 			{
 				ch->RemoveAffect(AFFECT_STATUE);
 			}
@@ -707,7 +707,7 @@ namespace quest
 		}
 		else
 		{
-			if (ch->GetRaceNum() == 6118 && !ch->FindAffect(AFFECT_STATUE))
+			if (ecs::GetRaceNum(ch) == 6118 && !ch->FindAffect(AFFECT_STATUE))
 			{
 				lua_pushboolean(L, ch->SetInvincible(what));
 			}
@@ -925,7 +925,7 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ch->IsPC())
+			if (ch && ecs::IsPC(ch))
 			{
 				vecPIDs.push_back(ecs::GetPlayerID(ch));
 			}
@@ -983,7 +983,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::IsPC(tch))
 				{
 					if (!tch->CanWarp())
 					{
@@ -991,7 +991,7 @@ namespace quest
 						m_resultname = ecs::GetName(tch);
 					}
 
-					int32_t lvl = tch->GetLevel();
+					int32_t lvl = ecs::GetLevel(tch);
 					if (lvl < m_minlvl)
 					{
 						m_result = 4;
@@ -1043,7 +1043,7 @@ namespace quest
 				m_resultname = ecs::GetName(ch);
 			}
 
-			int32_t lvl = ch->GetLevel();
+			int32_t lvl = ecs::GetLevel(ch);
 			m_resulttime = ch->GetQuestFlag(m_questname.c_str()) - get_global_time();
 			if (lvl < m_minlvl)
 			{
@@ -1121,7 +1121,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::IsPC(tch))
 				{
 					bool ticket = false;
 					if (vnum2 > 0 && count2 > 0)
@@ -1326,7 +1326,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::IsPC(tch))
 				{
 
 					if (currentDungeon)
@@ -1467,7 +1467,7 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ch->IsPC())
+			if (ch && ecs::IsPC(ch))
 			{
 				if (ch->GetGuild())
 				{
@@ -1572,7 +1572,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::IsPC(tch))
 				{
 					if (!tch->CanWarp())
 					{
@@ -1580,7 +1580,7 @@ namespace quest
 						r = ecs::GetName(tch);
 					}
 
-					int32_t lvl = tch->GetLevel();
+					int32_t lvl = ecs::GetLevel(tch);
 					if (lvl < m_minlvl)
 					{
 						m_result = 9;
@@ -1655,7 +1655,7 @@ namespace quest
 			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			// {
 				// LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				// if (tch && tch->IsPC())
+				// if (tch && ecs::IsPC(tch))
 				// {
 					// if (vnum > 0)
 					// {
@@ -1923,5 +1923,6 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("d", dungeon_functions);
 	}
 }
+
 
 
