@@ -491,10 +491,20 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 {
+	if (const entt::entity entity = CVIDRegistry::Instance().Find(dwVID);
+		entity != entt::null && g_registry.valid(entity))
+	{
+		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(entity); legacy && legacy->ptr) {
+			return legacy->ptr;
+		}
+	}
+
 	const auto it = m_map_pkChrByVID.find(dwVID);
 
 	if (m_map_pkChrByVID.end() == it)
 		return nullptr;
+
+	sys_err("VID_DRIFT fallback in CHARACTER_MANAGER::Find(%u)", dwVID);
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
@@ -507,12 +517,7 @@ LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 
 LPCHARACTER CHARACTER_MANAGER::Find(const VID& vid)
 {
-	LPCHARACTER tch = Find((uint32_t)vid);
-
-	if (!tch || tch->GetVID() != vid)
-		return nullptr;
-
-	return tch;
+	return Find((uint32_t)vid);
 }
 
 LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
