@@ -2434,7 +2434,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 #endif
 
 	if (test_server)
-		sys_log(0, "[TEST_SERVER] Attack : %s type %d, MobBattleType %d", GetName(), bType, !GetMobBattleType() ? 0 : GetMobAttackRange());
+		sys_log(0, "[TEST_SERVER] Attack : %s type %d, MobBattleType %d", GetName(), bType, (!IsPC() && GetMobBattleType()) ? GetMobAttackRange() : 0);
 	//PROF_UNIT puAttack("Attack");
 	if (!CanMove())
 		return false;

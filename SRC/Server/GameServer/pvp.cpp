@@ -881,7 +881,10 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 
 	if (pkVictim->IsNPC() && pkChr->IsNPC() && !pkChr->IsGuardNPC())
 		return false;
-
+	// Non-PC combat stays allowed during the migration window.
+	// The mount restriction below only gates PC-vs-PC combat.
+	if (!pkVictim->IsPC() || !pkChr->IsPC())
+		return true;
 	if( true == pkChr->IsHorseRiding() )
 	{
 		if( pkChr->GetHorseLevel() > 0 && 1 == pkChr->GetHorseGrade() )
@@ -903,11 +906,6 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 				return false;
 				break;
 		}
-	}
-
-	if (pkVictim->IsNPC() || pkChr->IsNPC())
-	{
-		return true;
 	}
 
 	if (pkVictim->IsObserverMode() || pkChr->IsObserverMode())
