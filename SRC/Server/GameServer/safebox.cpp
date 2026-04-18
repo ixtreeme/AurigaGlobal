@@ -4,6 +4,7 @@
 #include "safebox.h"
 #include "packet.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "desc_client.h"
 #include "item.h"
 #include "item_manager.h"
@@ -274,4 +275,5 @@ bool CSafebox::IsValidPosition(uint32_t dwPos)
 
 	return true;
 }
+
 
