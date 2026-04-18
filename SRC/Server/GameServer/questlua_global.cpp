@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "log.h"
 #include "questmanager.h"
 #include "questlua.h"
@@ -419,7 +420,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		sys_log(0, "QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ch->GetName(), lua_tostring(L, 2));
+		sys_log(0, "QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ecs::GetName(ch), lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -440,7 +441,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		sys_err("QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ch->GetName(), lua_tostring(L, 1));
+		sys_err("QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ecs::GetName(ch), lua_tostring(L, 1));
 		return 0;
 	}
 
@@ -568,7 +569,7 @@ namespace quest
 
 		if (ch)
 			sys_log(0, "_give_empire_privileage(empire=%d, type=%d, value=%d, time=%d), by quest, %s",
-					empire, type, value, time, ch->GetName());
+					empire, type, value, time, ecs::GetName(ch));
 		else
 			sys_log(0, "_give_empire_privileage(empire=%d, type=%d, value=%d, time=%d), by quest, NULL",
 					empire, type, value, time);
@@ -832,7 +833,7 @@ namespace quest
 
 		const char * name = lua_tostring(L, 1);
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
-		lua_pushnumber(L, tch ? tch->GetVID() : 0);
+		lua_pushnumber(L, tch ? ecs::GetVID(tch) : 0);
 		return 1;
 	}
 
@@ -857,18 +858,18 @@ namespace quest
 		if (test_server)
 		{
 			sys_log(0, "find_pc_cond map=%d, job=%d, level=%d~%d",
-					ch->GetMapIndex(),
+					ecs::GetMapIndex(ch),
 					uiJobFlag,
 					iMinLev, iMaxLev);
 		}
 
 		tch = CHARACTER_MANAGER::instance().FindSpecifyPC(uiJobFlag,
-				ch->GetMapIndex(),
+				ecs::GetMapIndex(ch),
 				ch,
 				iMinLev,
 				iMaxLev);
 
-		lua_pushnumber(L, tch ? tch->GetVID() : 0);
+		lua_pushnumber(L, tch ? ecs::GetVID(tch) : 0);
 		return 1;
 	}
 
@@ -895,9 +896,9 @@ namespace quest
 			{
 				LPCHARACTER tch = *(it++);
 
-				if (tch->GetMapIndex() == CQuestManager::instance().GetCurrentCharacterPtr()->GetMapIndex())
+				if (ecs::GetMapIndex(tch) == CQuestManager::instance().GetCurrentCharacterPtr()->GetMapIndex())
 				{
-					lua_pushnumber(L, tch->GetVID());
+					lua_pushnumber(L, ecs::GetVID(tch));
 					return 1;
 				}
 			}
@@ -1008,7 +1009,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (pChar != nullptr) {
-			SendNoticeMap(lua_tostring(L,1), pChar->GetMapIndex(), true);
+			SendNoticeMap(lua_tostring(L,1), ecs::GetMapIndex(pChar), true);
 		}
 
 		return 0;
@@ -1104,7 +1105,7 @@ namespace quest
 					uint8_t bEmpire =  ch->GetEmpire();
 					if ( bEmpire == 0 )
 					{
-						sys_err( "Unkonwn Empire %s %d ", ch->GetName(), ch->GetPlayerID() );
+						sys_err( "Unkonwn Empire %s %d ", ecs::GetName(ch), ecs::GetPlayerID(ch) );
 						return;
 					}
 
@@ -1364,7 +1365,7 @@ namespace quest
 			return 1;
 		}
 		const LPCHARACTER ch = CHARACTER_MANAGER::instance().SpawnMob(dwVnum, lMapIndex, pkSectreeMap->m_setting.iBaseX+dwX*100, pkSectreeMap->m_setting.iBaseY+dwY*100, 0, false, -1);
-		lua_pushnumber(L, (ch)?ch->GetVID():0);
+		lua_pushnumber(L, (ch)?ecs::GetVID(ch):0);
 		return 1;
 	}
 #endif
@@ -1393,11 +1394,11 @@ namespace quest
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
-						pChar->GetMapIndex(),
-						pChar->GetX() - number(200, 750),
-						pChar->GetY() - number(200, 750),
-						pChar->GetX() + number(200, 750),
-						pChar->GetY() + number(200, 750),
+						ecs::GetMapIndex(pChar),
+						ecs::GetX(pChar) - number(200, 750),
+						ecs::GetY(pChar) - number(200, 750),
+						ecs::GetX(pChar) + number(200, 750),
+						ecs::GetY(pChar) + number(200, 750),
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
@@ -1513,9 +1514,9 @@ namespace quest
 				return 0;
 			}
 
-			SendNoticeNew(CHAT_TYPE_NOTICE, 0, pChar->GetMapIndex(), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
+			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::GetMapIndex(pChar), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
 #else
-			SendNoticeMap( lua_tostring(L,1), pChar->GetMapIndex(), lua_toboolean(L,2) );
+			SendNoticeMap( lua_tostring(L,1), ecs::GetMapIndex(pChar), lua_toboolean(L,2) );
 #endif
 		}
 
@@ -1555,7 +1556,7 @@ namespace quest
 				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == pChar->IsStone()))
 #endif
 				{
-					if (x1 <= pChar->GetX() && pChar->GetX() <= x2 && y1 <= pChar->GetY() && pChar->GetY() <= y2)
+					if (x1 <= ecs::GetX(pChar) && ecs::GetX(pChar) <= x2 && y1 <= ecs::GetY(pChar) && ecs::GetY(pChar) <= y2)
 					{
 						M2_DESTROY_CHARACTER(pChar);
 					}
@@ -1613,7 +1614,7 @@ namespace quest
 
 				if (true == pChar->IsPC())
 				{
-					if (from_x1 <= pChar->GetX() && pChar->GetX() <= from_x2 && from_y1 <= pChar->GetY() && pChar->GetY() <= from_y2)
+					if (from_x1 <= ecs::GetX(pChar) && ecs::GetX(pChar) <= from_x2 && from_y1 <= ecs::GetY(pChar) && ecs::GetY(pChar) <= from_y2)
 					{
 						++warpCount;
 
@@ -1932,6 +1933,7 @@ namespace quest
 		}
 	}
 }
+
 
 
 
