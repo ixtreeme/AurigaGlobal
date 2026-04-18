@@ -7,6 +7,7 @@
 #include "desc_p2p.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
 #include "guild_manager.h"
 #include "party.h"
@@ -41,10 +42,10 @@ void P2P_MANAGER::Boot(LPDESC d)
 		it++;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
-		p.dwPID = ch->GetPlayerID();
+		strlcpy(p.szName, ecs::GetName(ch), sizeof(p.szName));
+		p.dwPID = ecs::GetPlayerID(ch);
 		p.bEmpire = ch->GetEmpire();
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::GetX(ch), ecs::GetY(ch));
 		p.bChannel = g_bChannel;
 
 		d->Packet(&p, sizeof(p));
@@ -271,3 +272,4 @@ void P2P_MANAGER::GetP2PHostNames(std::string& hostNames)
 	}
 	hostNames += oss.str();
 }
+
