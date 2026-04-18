@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "priv_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "desc_client.h"
 #include "guild.h"
 #include "guild_manager.h"
@@ -204,7 +205,7 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 {
 	// 캐릭터의 변경 수치가 -라면 무조건 -만 적용되게
-	int val_ch = GetPrivByCharacter(ch->GetPlayerID(), type);
+	int val_ch = GetPrivByCharacter(ecs::GetPlayerID(ch), type);
 
 	if (val_ch < 0 && !ch->IsEquipUniqueItem(UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
 		return val_ch;
@@ -282,4 +283,5 @@ int CPrivManager::GetPrivByCharacter(uint32_t pid, uint8_t type)
 
 	return 0;
 }
+
 
