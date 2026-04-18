@@ -5,6 +5,7 @@
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "p2p.h"
 #include "guild.h"
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
@@ -304,16 +305,16 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 #else
-	if (ch && ch->GetMapIndex() < 10000)
+	if (ch && ecs::GetMapIndex(ch) < 10000)
 #endif
 	{
 		TPacketGGWarpCharacter pw;
 		pw.header = HEADER_GG_WARP_CHARACTER;
 		pw.pid = p->dwFromPID;
-		pw.x = ch->GetX();
-		pw.y = ch->GetY();
+		pw.x = ecs::GetX(ch);
+		pw.y = ecs::GetY(ch);
 #ifdef __CMD_WARP_IN_DUNGEON__
-		pw.mapIndex = (ch->GetMapIndex() < 10000) ? 0 : ch->GetMapIndex();
+		pw.mapIndex = (ecs::GetMapIndex(ch) < 10000) ? 0 : ecs::GetMapIndex(ch);
 #endif
 		d->Packet(&pw, sizeof(pw));
 	}
@@ -554,3 +555,4 @@ void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
 	CSwitchbotManager::Instance().P2PReceiveSwitchbot(p->table);
 }
 #endif
+
