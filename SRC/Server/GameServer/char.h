@@ -2091,6 +2091,7 @@ public:
 	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
 	entt::entity	 m_entity { entt::null };
+	uint32_t		 m_dwLegacyVID { 0 };
 	entt::entity	 m_eVictim { entt::null };
 
 protected:

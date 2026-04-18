@@ -4212,6 +4212,7 @@ void CHARACTER::Initialize()
 {
     CEntity::Initialize(ENTITY_CHARACTER);
     m_entity = entt::null;
+    m_dwLegacyVID = 0;
     m_eVictim = entt::null;
 
     m_bNoOpenedShop = true;
@@ -4590,6 +4591,10 @@ void CHARACTER::Initialize()
 
 uint32_t CHARACTER::GetLegacyVID() const
 {
+    if (m_dwLegacyVID != 0) {
+        return m_dwLegacyVID;
+    }
+
     const entt::entity e = m_entity != entt::null ? m_entity : AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
     if (e != entt::null) {
         if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e)) {
@@ -4608,7 +4613,7 @@ uint32_t CHARACTER::GetPacketVID() const
 
 void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
 {
-    (void)vid;
+    m_dwLegacyVID = vid;
     if (isPC)
         m_stName = c_pszName;
 }
