@@ -329,7 +329,7 @@ void FishingReact(LPCHARACTER ch)
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_REACT;
-	p.info = ch->GetVID();
+	p.info = ch->GetPacketVID();
 	ch->PacketAround(&p, sizeof(p));
 }
 
@@ -338,7 +338,7 @@ void FishingSuccess(LPCHARACTER ch)
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_SUCCESS;
-	p.info = ch->GetVID();
+	p.info = ch->GetPacketVID();
 	ch->PacketAround(&p, sizeof(p));
 }
 
@@ -347,7 +347,7 @@ void FishingFail(LPCHARACTER ch)
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_FAIL;
-	p.info = ch->GetVID();
+	p.info = ch->GetPacketVID();
 	ch->PacketAround(&p, sizeof(p));
 }
 
@@ -460,7 +460,7 @@ LPEVENT CreateFishingEvent(LPCHARACTER ch)
 	TPacketGCFishing p;
 	p.header	= HEADER_GC_FISHING;
 	p.subheader	= FISHING_SUBHEADER_GC_START;
-	p.info		= ch->GetVID();
+	p.info		= ch->GetPacketVID();
 	p.dir		= (uint8_t)(ch->GetRotation()/5);
 	ch->PacketAround(&p, sizeof(TPacketGCFishing));
 
@@ -635,7 +635,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 		TPacketGCFishing p;
 		p.header = HEADER_GC_FISHING;
 		p.subheader = FISHING_SUBHEADER_GC_STOP;
-		p.info = ch->GetVID();
+		p.info = ch->GetPacketVID();
 		ch->PacketAround(&p, sizeof(p));
 	}
 
