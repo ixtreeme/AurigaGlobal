@@ -3,6 +3,7 @@
 #include "questmanager.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "guild.h"
 #include "db.h"
 #include "building.h"
@@ -182,4 +183,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("building", functions);
 	}
 };
+
 
