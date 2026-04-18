@@ -4526,3 +4526,31 @@ itt voltunk
     - dismount -> normal melee
     - mount -> normal melee
   - after that the fresh `MELEE_INPUT` lines in `core99/syslog.txt` will distinguish scenario A/B/C
+
+## Phase 14b-fix Round 3 - melee rejection tracing
+- purpose:
+  - after Round 2 proved that normal melee packets (`HEADER_CG_ATTACK = 49`) do arrive at the server, this round adds guard-by-guard rejection tracing inside the melee execution chain
+- instrumentation added:
+  - `SRC/Server/GameServer/input_main.cpp`
+    - `MELEE_REJECT: CanUseSkill false ...`
+    - `MELEE_REJECT: ranged-skill wrong header ...`
+    - `MELEE_REJECT: no desc ...`
+    - `MELEE_REJECT: null/self victim ...`
+    - `MELEE_REJECT: victim char type blocked ...`
+    - `MELEE_REJECT: CheckSkillHitCount false ...`
+    - `MELEE_TRACE: calling ch->Attack ...`
+  - `SRC/Server/GameServer/battle.cpp`
+    - `melee abort: attack timer ...`
+    - existing `battle_is_attackable` / distance abort logs retained
+    - added final `melee result: ret=%d dam=%d distance=%d`
+- build/deploy status:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8` passed
+  - fresh `GameServer.exe` deployed to WinTest
+  - full stack restarted with:
+    - `auth`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+- next action:
+  - reproduce one normal melee attempt in-game
+  - inspect fresh `MELEE_REJECT` / `MELEE_TRACE` / `melee result` lines in `core99/syslog.txt`

@@ -2464,6 +2464,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	{
 		if (false == ch->CanUseSkill(type->type))
 		{
+			sys_log(0, "MELEE_REJECT: CanUseSkill false ch=%s type=%u header=%u mounted=%d", ch->GetName(), type->type, header, ch->IsRiding() ? 1 : 0);
 			return;
 		}
 
@@ -2485,6 +2486,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 			case SKILL_HORSE_WILDATTACK_RANGE:
 				if (HEADER_CG_SHOOT != type->header)
 				{
+					sys_log(0, "MELEE_REJECT: ranged-skill wrong header ch=%s type=%u packetHeader=%u typeHeader=%u", ch->GetName(), type->type, header, type->header);
 					return;
 				}
 				break;
@@ -2496,7 +2498,10 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 		case HEADER_CG_ATTACK:
 			{
 				if (nullptr == ch->GetDesc())
+				{
+					sys_log(0, "MELEE_REJECT: no desc ch=%s", ch ? ch->GetName() : "<null>");
 					return;
+				}
 
 				const TPacketCGAttack* const packMelee = reinterpret_cast<const TPacketCGAttack*>(data);
 
@@ -2509,13 +2514,17 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 				LPCHARACTER	victim = CHARACTER_MANAGER::instance().Find(packMelee->dwVID);
 
 				if (nullptr == victim || ch == victim)
+				{
+					sys_log(0, "MELEE_REJECT: null/self victim ch=%s targetVID=%u self=%d", ch->GetName(), packMelee->dwVID, ch == victim ? 1 : 0);
 					return;
+				}
 
 				switch (victim->GetCharType())
 				{
 					case CHAR_TYPE_NPC:
 					case CHAR_TYPE_WARP:
 					case CHAR_TYPE_GOTO:
+						sys_log(0, "MELEE_REJECT: victim char type blocked ch=%s victim=%s charType=%d", ch->GetName(), victim->GetName(), victim->GetCharType());
 						return;
 				}
 
@@ -2523,6 +2532,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 				{
 					if (false == ch->CheckSkillHitCount(packMelee->bType, victim->GetVID()))
 					{
+						sys_log(0, "MELEE_REJECT: CheckSkillHitCount false ch=%s victim=%s type=%u", ch->GetName(), victim->GetName(), packMelee->bType);
 						return;
 					}
 				}
@@ -2537,6 +2547,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
 				}
 				// DUAL-PATH: ECS + legacy call
+				sys_log(0, "MELEE_TRACE: calling ch->Attack ch=%s victim=%s type=%u mounted=%d", ch->GetName(), victim->GetName(), packMelee->bType, ch->IsRiding() ? 1 : 0);
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;

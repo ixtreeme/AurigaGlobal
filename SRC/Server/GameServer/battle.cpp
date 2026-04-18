@@ -27,6 +27,37 @@
 //#include <Database/DBManager.h>
 int battle_hit(LPCHARACTER ch, LPCHARACTER victim, int & iRetDam);
 
+namespace {
+
+bool ShouldCombatDebugLog(LPCHARACTER ch, LPCHARACTER victim)
+{
+	if (!test_server || !ch || !victim)
+		return false;
+
+	return (ch->IsNPC() && victim->IsPC()) || (ch->IsPC() && victim->IsNPC());
+}
+
+void CombatDebugLog(LPCHARACTER ch, LPCHARACTER victim, const char* fmt, ...)
+{
+	if (!ShouldCombatDebugLog(ch, victim))
+		return;
+
+	char msg[512];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, args);
+	va_end(args);
+
+	sys_log(0, "COMBAT_DEBUG [%s(%u)->%s(%u)] %s",
+		ch ? ch->GetName() : "null",
+		ch ? ch->GetVID() : 0,
+		victim ? victim->GetName() : "null",
+		victim ? victim->GetVID() : 0,
+		msg);
+}
+
+} // namespace
+
 bool battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty)
 {
 	int32_t distance = DISTANCE_APPROX(x - tx, y - ty);
@@ -69,12 +100,18 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 {
 	// »ó´ë¹æÀÌ Á×¾úÀ¸¸é Áß´ÜÇÑ´Ù.
 	if (victim->IsDead())
+	{
+		CombatDebugLog(ch, victim, "blocked: victim dead");
 		return false;
+	}
 
 
 #ifdef ENABLE_BUG_FIXES
 	if (victim->GetMyShop())
+	{
+		CombatDebugLog(ch, victim, "blocked: victim shop");
 		return false;
+	}
 #endif
 
 	// ¾ÈÀüÁö´ë¸é Áß´Ü
@@ -83,16 +120,25 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 
 		sectree = ch->GetSectree();
 		if (sectree && sectree->IsAttr(ch->GetX(), ch->GetY(), ATTR_BANPK))
+		{
+			CombatDebugLog(ch, victim, "blocked: attacker in BANPK map=%d x=%d y=%d", ch->GetMapIndex(), ch->GetX(), ch->GetY());
 			return false;
+		}
 
 		sectree = victim->GetSectree();
 		if (sectree && sectree->IsAttr(victim->GetX(), victim->GetY(), ATTR_BANPK))
+		{
+			CombatDebugLog(ch, victim, "blocked: victim in BANPK map=%d x=%d y=%d", victim->GetMapIndex(), victim->GetX(), victim->GetY());
 			return false;
+		}
 	}
 
 	// ³»°¡ Á×¾úÀ¸¸é Áß´ÜÇÑ´Ù.
 	if (ch->IsStun() || ch->IsDead())
+	{
+		CombatDebugLog(ch, victim, "blocked: attacker stun=%d dead=%d", ch->IsStun() ? 1 : 0, ch->IsDead() ? 1 : 0);
 		return false;
+	}
 
 	if (ch->IsPC() && victim->IsPC())
 	{
@@ -126,15 +172,26 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	}
 	break;
 	}
-	return CPVPManager::instance().CanAttack(ch, victim, bIsFarmMap);
+	const bool canAttack = CPVPManager::instance().CanAttack(ch, victim, bIsFarmMap);
+	if (!canAttack)
+	{
+		CombatDebugLog(ch, victim, "blocked: CPVPManager::CanAttack false map=%d ridingA=%d ridingV=%d mountVnumA=%u mountVnumV=%u",
+			ch->GetMapIndex(),
+			ch->IsRiding() ? 1 : 0,
+			victim->IsRiding() ? 1 : 0,
+			ch->GetMountVnum(),
+			victim->GetMountVnum());
+	}
+	return canAttack;
 }
 
 int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 {
 #if defined(ENABLE_CHECK_BATTLE)
 	if (ch->IsPC() && victim) {
-		const bool bAttacking = (get_dword_time() - ch->GetLastAttackTime()) < ch->IsRiding() ? 800 : 750;
+		const bool bAttacking = (get_dword_time() - ch->GetLastAttackTime()) < (ch->IsRiding() ? 800 : 750);
 		if (!bAttacking) {
+			CombatDebugLog(ch, victim, "melee abort: attack timer delta=%u riding=%d", get_dword_time() - ch->GetLastAttackTime(), ch->IsRiding() ? 1 : 0);
 			return BATTLE_NONE;
 		}
 
@@ -149,13 +206,19 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
 
 	if (!victim || ch == victim)
+	{
+		CombatDebugLog(ch, victim, "melee abort: null/self");
 		return BATTLE_NONE;
+	}
 
 	if (test_server && ch->IsPC())
 		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
 
 	if (!battle_is_attackable(ch, victim))
+	{
+		CombatDebugLog(ch, victim, "melee abort: battle_is_attackable false");
 		return BATTLE_NONE;
+	}
 
 	if (test_server && ch->IsPC())
 		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
@@ -191,6 +254,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 			if (test_server)
 				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ch->GetName(), distance, max);
 
+			CombatDebugLog(ch, victim, "melee abort: victim far distance=%d max=%d attackRange=%d", distance, max, ch->IsPC() ? 0 : ch->GetMobAttackRange());
 			return BATTLE_NONE;
 		}
 	}
@@ -212,6 +276,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 
 	int dam;
 	int ret = battle_hit(ch, victim, dam);
+	CombatDebugLog(ch, victim, "melee result: ret=%d dam=%d distance=%d", ret, dam, distance);
 	return (ret);
 }
 
@@ -769,8 +834,9 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 {
 #if defined(ENABLE_CHECK_BATTLE)
 	if (pkAttacker->IsPC() && pkVictim) {
-		const bool bAttacking = (get_dword_time() - pkAttacker->GetLastAttackTime()) < pkAttacker->IsRiding() ? 800 : 750;
+		const bool bAttacking = (get_dword_time() - pkAttacker->GetLastAttackTime()) < (pkAttacker->IsRiding() ? 800 : 750);
 		if (!bAttacking) {
+			CombatDebugLog(ch, victim, "melee abort: attack timer delta=%u riding=%d", get_dword_time() - ch->GetLastAttackTime(), ch->IsRiding() ? 1 : 0);
 			return BATTLE_NONE;
 		}
 
