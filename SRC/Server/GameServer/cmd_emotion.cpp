@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "motion.h"
 #include "packet.h"
 #include "buffer_manager.h"
@@ -110,7 +111,7 @@ ACMD(do_emotion_allow)
 		return;
 
 	uint32_t	val = 0; str_to_number(val, arg1);
-	s_emotion_set.insert(std::make_pair(ch->GetVID(), val));
+	s_emotion_set.insert(std::make_pair(ecs::GetVID(ch), val));
 }
 
 #ifdef ENABLE_NEWSTUFF
@@ -202,7 +203,7 @@ ACMD(do_emotion)
 
 	if (victim)
 	{
-		if (!victim->IsPC() || victim == ch)
+		if (!ecs::IsPC(victim) || victim == ch)
 			return;
 
 		if (victim->IsRiding())
@@ -213,7 +214,7 @@ ACMD(do_emotion)
 			return;
 		}
 
-		int32_t distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
+		int32_t distance = DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(victim), ecs::GetY(ch) - ecs::GetY(victim));
 
 		if (distance < 10)
 		{
@@ -244,18 +245,18 @@ ACMD(do_emotion)
 
 		if (IS_SET(emotion_types[i].flag, NEED_PC))
 		{
-			if (s_emotion_set.find(std::make_pair(victim->GetVID(), ch->GetVID())) == s_emotion_set.end())
+			if (s_emotion_set.find(std::make_pair(ecs::GetVID(victim), ecs::GetVID(ch))) == s_emotion_set.end())
 			{
-				if (true == marriage::CManager::instance().IsMarried( ch->GetPlayerID() ))
+				if (true == marriage::CManager::instance().IsMarried( ecs::GetPlayerID(ch) ))
 				{
-					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( ch->GetPlayerID() );
+					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( ecs::GetPlayerID(ch) );
 
-					const uint32_t other = marriageInfo->GetOther( ch->GetPlayerID() );
+					const uint32_t other = marriageInfo->GetOther( ecs::GetPlayerID(ch) );
 
-					if (0 == other || other != victim->GetPlayerID())
+					if (0 == other || other != ecs::GetPlayerID(victim))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ch->ChatPacketNew(CHAT_TYPE_INFO, 432, "%s", victim->GetName());
+						ch->ChatPacketNew(CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
 #endif
 						return;
 					}
@@ -263,20 +264,20 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 432, "%s", victim->GetName());
+					ch->ChatPacketNew(CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
 #endif
 					return;
 				}
 			}
 
-			s_emotion_set.insert(std::make_pair(ch->GetVID(), victim->GetVID()));
+			s_emotion_set.insert(std::make_pair(ecs::GetVID(ch), ecs::GetVID(victim)));
 		}
 	}
 
 	char chatbuf[256+1];
 	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u",
 			emotion_types[i].command_to_client,
-			(uint32_t) ch->GetVID(), victim ? (uint32_t) victim->GetVID() : 0);
+			(uint32_t) ecs::GetVID(ch), victim ? (uint32_t) ecs::GetVID(victim) : 0);
 
 	if (len < 0 || len >= (int) sizeof(chatbuf))
 		len = sizeof(chatbuf) - 1;
@@ -295,8 +296,9 @@ ACMD(do_emotion)
 	ch->PacketAround(buf.read_peek(), buf.size());
 
 	if (victim)
-		sys_log(1, "ACTION: %s TO %s", emotion_types[i].command, victim->GetName());
+		sys_log(1, "ACTION: %s TO %s", emotion_types[i].command, ecs::GetName(victim));
 	else
 		sys_log(1, "ACTION: %s", emotion_types[i].command);
 }
+
 
