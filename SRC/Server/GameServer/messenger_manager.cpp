@@ -10,6 +10,7 @@
 #include "crc32.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "questmanager.h"
 
 // @fixme142 BEGIN
@@ -162,10 +163,10 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 
 void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 {
-	if (!ch->IsPC() || !target->IsPC())
+	if (!ecs::IsPC(ch) || !target->IsPC())
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ch->ChatPacketNew(CHAT_TYPE_INFO, 607, "");
@@ -176,7 +177,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 	if (quest::CQuestManager::instance().GetPCForce(target->GetPlayerID())->IsRunning() == true)
 		return;
 
-	uint32_t dw1 = GetCRC32(ch->GetName(), strlen(ch->GetName()));
+	uint32_t dw1 = GetCRC32(ecs::GetName(ch), strlen(ecs::GetName(ch)));
 	uint32_t dw2 = GetCRC32(target->GetName(), strlen(target->GetName()));
 
 	char buf[64];
@@ -185,7 +186,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	target->ChatPacket(CHAT_TYPE_COMMAND, "messenger_auth %s", ch->GetName());
+	target->ChatPacket(CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::GetName(ch));
 }
 
 // @fixme130 void -> bool
@@ -796,4 +797,5 @@ void MessengerManager::SendLogout(MessengerManager::keyA account, MessengerManag
 	d->BufferedPacket(&bLen, sizeof(uint8_t));
 	d->Packet(companion.c_str(), companion.size());
 }
+
 
