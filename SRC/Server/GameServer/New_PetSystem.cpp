@@ -496,7 +496,7 @@ bool CNewPetActor::IncreasePetEvolution()
 		if ((GetLevel() >= 40 && m_dwevolution < 1 )||( GetLevel() >= 60 && m_dwevolution < 2 )||( GetLevel() >= 80 && m_dwevolution < 3) )
 		{
 			m_dwevolution += 1;
-			m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 1, GetLevel(), 1);
+			m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 1, GetLevel(), 1);
 			m_pkOwner->ChatPacket(CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
 #ifdef TEXTS_IMPROVEMENT
 			m_pkOwner->ChatPacketNew(CHAT_TYPE_INFO, 747, "%d", m_dwevolution);
@@ -512,7 +512,7 @@ bool CNewPetActor::IncreasePetEvolution()
 			
 #ifdef ENABLE_NEW_PET_EDITS
 			SetLevel(GetLevel() + 1);
-			m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 1, GetLevel(), 1);
+			m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 1, GetLevel(), 1);
 #ifdef ENABLE_NEW_PET_EDITS
 			IncreasePetBonus();
 #endif
@@ -663,7 +663,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 #endif
 			{
 				SetLevel(GetLevel() + 1);
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 1, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 1, GetLevel(), 1);
 #ifndef ENABLE_NEW_PET_EDITS
 				IncreasePetBonus();
 #endif
@@ -677,7 +677,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 			}
 #ifndef ENABLE_NEW_PET_EDITS
 			else  {
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 25, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 25, GetLevel(), 1);
 				m_dwlevelstep = 4;
 				exp = GetNextExpFromMob() - GetExp();
 				m_pkOwner->ChatPacket(CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
@@ -692,13 +692,13 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 			uint32_t dwNextExpQuart = GetNextExpFromMob() / 4;
 			if (m_dwexp >= dwNextExpQuart * 3 && m_dwlevelstep == 2) {
 				m_dwlevelstep = 3;
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 25, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 25, GetLevel(), 1);
 			} else if (m_dwexp >= dwNextExpQuart * 2 && m_dwlevelstep == 1) {
 				m_dwlevelstep = 2;
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 25, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 25, GetLevel(), 1);
 			} else if (m_dwexp >= dwNextExpQuart && m_dwlevelstep == 0)  {
 				m_dwlevelstep = 1;
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 25, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 25, GetLevel(), 1);
 			}
 		}
 	} else if (mode == 1)  {
@@ -710,7 +710,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 				m_pkChar->SetExp(0);
 				m_dwlevelstep = 0;
 				SetLevel(GetLevel() + 1);
-				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetVID(), 1, GetLevel(), 1);
+				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 1, GetLevel(), 1);
 #ifndef ENABLE_NEW_PET_EDITS
 				IncreasePetBonus();
 #endif
@@ -881,7 +881,7 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	if (nullptr != m_pkChar)
 	{
 		m_pkChar->Show (m_pkOwner->GetMapIndex(), x, y);
-		m_dwVID = m_pkChar->GetVID();
+		m_dwVID = m_pkChar->GetPacketVID();
 
 		return m_dwVID;
 	}
@@ -979,7 +979,7 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	//펫의 국가를 주인의 국가로 설정함.
 	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
 
-	m_dwVID = m_pkChar->GetVID();
+	m_dwVID = m_pkChar->GetPacketVID();
 
 	char szQuery1[1024];
 	snprintf(szQuery1, sizeof(szQuery1), "SELECT name,level,exp,expi,bonus0,bonus1,bonus2,skill0,skill0lv,skill1,skill1lv,skill2,skill2lv,skill3,skill3lv,duration,tduration,evolution "
@@ -1599,7 +1599,8 @@ bool CNewPetSystem::Update(uint32_t deltaTime)
 		{
 			LPCHARACTER pPet = petActor->GetCharacter();
 			
-			if (nullptr == CHARACTER_MANAGER::instance().Find(pPet->GetVID()))
+			const entt::entity petEntity = AIHelpers::EcsOf(pPet);
+			if (petEntity == entt::null || !g_registry.valid(petEntity))
 			{
 				v_garbageActor.push_back(petActor);
 			}
