@@ -1,0 +1,414 @@
+Phase 14c - NetworkSyncSystem full stat surface audit
+Date: 2026-04-18
+Workspace: E:\AurigaGlobal\LiveWork\AurigaGlobal
+
+Scope
+- Audit only. No gameplay code changes.
+- Compare legacy stat packet authority against active ECS NetworkSyncSystem output.
+- Identify exact gaps that caused the previous zero-stat UI regression risk.
+
+Summary
+- Legacy stat UI authority is still CHARACTER::MainCharacterPacket() + CHARACTER::PointsPacket().
+- Active ECS NetworkSyncSystem_Update() only sends:
+  - TPacketGCMove
+  - partial TPacketGCPoints with HP / MaxHP / SP / MaxSP / optional Stamina
+- ECS currently does not send Level, EXP, Next EXP, Gold, base attributes, status points, skill points, attack/defense grades, or the rest of the POINT_* surface.
+- Login seeding already populates Health, Mana, LevelComponent, Experience, and GoldAmount.
+- Login seeding does not currently populate Stamina or full CharacterPoints from input_db.cpp.
+- Safe near-term strategy: keep legacy stat packets authoritative, keep ECS NetworkSyncSystem sync-only until full POINT_* coverage exists.
+
+========================================================================
+1. Legacy stat packet inventory
+========================================================================
+
+Primary packet structs
+- TPacketGCMainCharacter
+  - File: SRC/Server/common/Headers/GC_Packet.h:225-234
+  - Fields:
+    - uint8_t header
+    - uint32_t dwVID
+    - uint16_t wRaceNum
+    - char szName[CHARACTER_NAME_MAX_LEN + 1]
+    - int32_t lx, ly, lz
+    - uint8_t empire
+    - uint8_t skill_group
+
+- TPacketGCMainCharacter3_BGM
+  - File: SRC/Server/common/Headers/GC_Packet.h:237-252
+  - Fields:
+    - uint8_t header
+    - uint32_t dwVID
+    - uint16_t wRaceNum
+    - char szChrName[CHARACTER_NAME_MAX_LEN + 1]
+    - char szBGMName[MUSIC_NAME_LEN + 1]
+    - int32_t lx, ly, lz
+    - uint8_t empire
+    - uint8_t skill_group
+
+- TPacketGCMainCharacter4_BGM_VOL
+  - File: SRC/Server/common/Headers/GC_Packet.h:254-270
+  - Fields:
+    - uint8_t header
+    - uint32_t dwVID
+    - uint16_t wRaceNum
+    - char szChrName[CHARACTER_NAME_MAX_LEN + 1]
+    - char szBGMName[MUSIC_NAME_LEN + 1]
+    - float fBGMVol
+    - int32_t lx, ly, lz
+    - uint8_t empire
+    - uint8_t skill_group
+
+- TPacketGCPoints
+  - File: SRC/Server/common/Headers/GC_Packet.h:273-279
+  - Fields:
+    - uint8_t header
+    - int64_t points[POINT_MAX_NUM]
+
+Secondary stat-related packet structs
+- TPacketGCPointChange
+  - File: SRC/Server/common/Headers/GC_Packet.h:287-296
+  - Fields:
+    - int header
+    - uint32_t dwVID
+    - uint8_t type
+    - int64_t amount
+    - int64_t value
+  - Purpose:
+    - fine-grained single-point change update
+    - distinct from the full stat snapshot packet
+
+- TPacketGCCharacterAdditionalInfo
+  - File: SRC/Server/common/Headers/GC_Packet.h:150-166
+  - Fields:
+    - uint32_t dwVID
+    - char name[CHARACTER_NAME_MAX_LEN + 1]
+    - uint16_t awPart[CHR_EQUIPPART_NUM]
+    - uint8_t bEmpire
+    - uint32_t dwGuildID
+    - uint32_t dwLevel
+    - uint32_t sAlignment
+    - uint8_t bPKMode
+    - uint32_t dwMountVnum
+    - optional skill colors / language
+  - Purpose:
+    - appearance / identity / level disclosure to observers
+    - not the full local-player stat UI packet
+
+- TPacketGCCharacterUpdate
+  - File: SRC/Server/common/Headers/GC_Packet.h:168-191
+  - Fields:
+    - uint8_t header
+    - uint32_t dwVID
+    - uint16_t awPart[CHR_EQUIPPART_NUM]
+    - uint16_t bMovingSpeed
+    - uint16_t bAttackSpeed
+    - uint8_t bStateFlag
+    - uint32_t dwAffectFlag[2]
+    - uint32_t dwGuildID
+    - uint32_t sAlignment
+    - uint8_t bPKMode
+    - uint32_t dwMountVnum
+    - optional skill colors / language
+  - Purpose:
+    - world-state / appearance / affect sync
+    - not sufficient to drive the main character stat UI alone
+
+========================================================================
+2. Legacy PointsPacket contents
+========================================================================
+
+Authoritative implementation
+- File: SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:727-755
+
+Explicitly written fields before the generic POINT_* loop
+- POINT_LEVEL
+- POINT_EXP
+- POINT_NEXT_EXP
+- POINT_HP
+- POINT_MAX_HP
+- POINT_SP
+- POINT_MAX_SP
+- POINT_GOLD
+- POINT_STAMINA
+- POINT_MAX_STAMINA
+- POINT_INVEN (conditional: __ENABLE_EXTEND_INVEN_SYSTEM__)
+
+Generic stat surface written via loop
+- for (int i = POINT_ST; i < POINT_MAX_NUM; ++i)
+  - pack.points[i] = GetPoint(i)
+
+Implication
+- The legacy path sends far more than the eight base vitals.
+- It covers the full POINT_* runtime surface starting at POINT_ST.
+- This includes, at minimum:
+  - base attributes: POINT_ST, POINT_HT, POINT_DX, POINT_IQ
+  - combat grades: POINT_ATT_GRADE, POINT_DEF_GRADE, POINT_MAGIC_ATT_GRADE, POINT_MAGIC_DEF_GRADE
+  - speeds: POINT_ATT_SPEED, POINT_MOV_SPEED, POINT_CASTING_SPEED
+  - unspent points: POINT_STAT, POINT_SKILL, POINT_SUB_SKILL
+  - recovery / regen values
+  - crit / pen / poison / stun / slow / curse
+  - class / race / element attack bonuses
+  - resistances
+  - bonus grades and many later POINT_* extensions
+
+Conditional tail fields
+- POINT_GAYA (conditional: ENABLE_GAYA_SYSTEM)
+
+Conclusion
+- Legacy PointsPacket is a full stat snapshot packet.
+- Any ECS replacement that only sends HP/SP will necessarily regress the local stat UI.
+
+========================================================================
+3. Legacy MainCharacterPacket contents
+========================================================================
+
+Authoritative implementation
+- File: SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:664-725
+
+Always-sent identity / spawn fields
+- header
+- dwVID
+- wRaceNum
+- lx
+- ly
+- lz
+- empire
+- skill_group
+- character name
+  - szName or szChrName depending on packet variant
+
+Optional BGM fields by packet variant
+- szBGMName
+- fBGMVol
+
+Additional side effect
+- Sends "sms" command if m_stMobile is present in the default packet branch
+
+Conclusion
+- MainCharacterPacket is not the stat snapshot packet, but it is still part of the local-player bootstrap surface.
+- ECS active update currently sends no equivalent main-character identity packet.
+
+========================================================================
+4. Current ECS NetworkSyncSystem output
+========================================================================
+
+Active update loop
+- File: SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:503-550
+- View:
+  - ecs::TagPC
+  - ecs::NetworkSession
+  - ecs::Position
+  - ecs::Health
+  - ecs::Mana
+  - ecs::VIDComponent
+  - ecs::DirtyTag
+
+Packets actually sent by NetworkSyncSystem_Update()
+- TPacketGCMove
+  - dwVID, position, wait func, tick, duration
+- TPacketGCPoints (partial only)
+  - POINT_HP
+  - POINT_MAX_HP
+  - POINT_SP
+  - POINT_MAX_SP
+  - POINT_STAMINA, POINT_MAX_STAMINA if ecs::Stamina exists
+
+Packets not sent by active ECS update
+- MainCharacterPacket variant packets
+- full PointsPacket surface
+- PointChange packet
+- CharacterUpdate / AdditionalInfo from the active ECS loop
+
+Wrapper helpers present but not ECS-authoritative
+- NetworkSyncSystem::MainCharacterPacket(entt::entity e)
+  - simply calls legacy ch->MainCharacterPacket()
+- NetworkSyncSystem::PointsPacket(entt::entity e)
+  - simply calls legacy ch->PointsPacket()
+- UpdatePacket(entt::entity e)
+  - simply calls legacy ch->UpdatePacket()
+
+Net effect
+- Current ECS net sync is partial and observational.
+- It is not a full replacement for legacy stat packet authority.
+
+========================================================================
+5. ECS component coverage
+========================================================================
+
+Existing ECS stat-related components
+- File: SRC/Server/GameServer/ecs/components/vital_components.hpp
+  - Health { current, max }
+  - Mana { current, max }
+  - Stamina { current, max }
+  - LevelComponent { value }
+  - Experience { current, next }
+  - CharacterPoints { CHARACTER_POINT base; CHARACTER_POINT_INSTANT instant; }
+
+- File: SRC/Server/GameServer/ecs/components/inventory_components.hpp
+  - GoldAmount { amount }
+
+- File: SRC/Server/GameServer/ecs/components/combat_components.hpp
+  - CombatStats { ... }
+
+Covered by an existing ECS component
+- HP / MaxHP -> Health
+- SP / MaxSP -> Mana
+- Stamina / MaxStamina -> Stamina
+- Level -> LevelComponent
+- EXP / Next EXP -> Experience
+- Gold -> GoldAmount
+- Broad legacy point storage candidate -> CharacterPoints
+- Some combat-derived state -> CombatStats
+
+Present in ECS but UNUSED by active NetworkSyncSystem_Update()
+- LevelComponent
+- Experience
+- GoldAmount
+- CharacterPoints
+- CombatStats
+
+Likely GAPS relative to legacy packet surface
+- Full STR / HT / DX / IQ transmission
+- Status points (POINT_STAT)
+- Skill points / sub-skill points
+- Attack / defense grades
+- Casting / movement / attack speed
+- Full resistance / bonus / recovery / crit / pen point surface
+- Gaya
+- Extended inventory point
+
+========================================================================
+6. ECS seeding on login
+========================================================================
+
+Login seeding source
+- File: SRC/Server/GameServer/input_db.cpp:549-580
+
+Seeded in PlayerLoad
+- ecs::Health from ch->GetHP(), ch->GetMaxHP()
+- ecs::Mana from ch->GetSP(), ch->GetMaxSP()
+- ecs::LevelComponent from ch->GetLevel()
+- ecs::Experience from ch->GetExp(), ch->GetNextExp()
+- ecs::GoldAmount from ch->GetGold()
+
+Not seeded here
+- ecs::Stamina
+- ecs::CharacterPoints
+- STR / HT / DX / IQ breakdown
+- status points / skill points
+- attack / defense grades
+- any full POINT_* mirror
+
+Conclusion
+- Even before send-side expansion, ECS stat data is incomplete at load time.
+- This alone is enough to explain why a full ECS stat packet authority switch caused zero / missing UI fields previously.
+
+========================================================================
+7. Legacy stat packet call sites
+========================================================================
+
+MainCharacterPacket call sites
+- SRC/Server/GameServer/input_db.cpp:615
+
+PointsPacket call sites
+- SRC/Server/GameServer/input_db.cpp:637
+- SRC/Server/GameServer/input_db.cpp:1805
+- SRC/Server/GameServer/guild.cpp:2621
+- SRC/Server/GameServer/guild.cpp:2690
+- SRC/Server/GameServer/input_main.cpp:3256
+- SRC/Server/GameServer/input_main.cpp:3323
+- SRC/Server/GameServer/item_manager.cpp:675
+- SRC/Server/GameServer/questlua_pc.cpp:1217
+- SRC/Server/GameServer/questlua_pc.cpp:2516
+- SRC/Server/GameServer/questlua_pc.cpp:2978
+- SRC/Server/GameServer/questlua_pc.cpp:3053
+- SRC/Server/GameServer/questlua_pc.cpp:3094
+- SRC/Server/GameServer/questlua_pc.cpp:3135
+- SRC/Server/GameServer/questlua_pc.cpp:3176
+
+Authoritative interpretation
+- These legacy call sites still own stat packet dispatch today.
+- NetworkSyncSystem cannot safely replace them until it can reproduce the same stat surface.
+
+========================================================================
+8. Gap analysis table
+========================================================================
+
+| Stat Field / Surface                | Legacy Path       | ECS Component         | ECS NetSync active update |
+|------------------------------------|-------------------|-----------------------|---------------------------|
+| Level                              | PointsPacket      | LevelComponent        | GAP                       |
+| EXP                                | PointsPacket      | Experience.current    | GAP                       |
+| Next EXP                           | PointsPacket      | Experience.next       | GAP                       |
+| HP / MaxHP                         | PointsPacket      | Health                | yes                       |
+| SP / MaxSP                         | PointsPacket      | Mana                  | yes                       |
+| Stamina / MaxStamina               | PointsPacket      | Stamina               | partial send, seed GAP    |
+| Gold                               | PointsPacket      | GoldAmount            | GAP                       |
+| STR / HT / DX / IQ                 | PointsPacket      | CharacterPoints (?)   | GAP                       |
+| StatusPoints (POINT_STAT)          | PointsPacket      | CharacterPoints (?)   | GAP                       |
+| SkillPoints (POINT_SKILL)          | PointsPacket      | CharacterPoints (?)   | GAP                       |
+| SubSkillPoints                     | PointsPacket      | CharacterPoints (?)   | GAP                       |
+| Attack grade                       | PointsPacket      | CombatStats (?)       | GAP                       |
+| Defense grade                      | PointsPacket      | CombatStats (?)       | GAP                       |
+| Magic attack / defense             | PointsPacket      | CombatStats (?)       | GAP                       |
+| Attack speed                       | PointsPacket      | CombatStats (?)       | GAP                       |
+| Move speed                         | PointsPacket      | CombatStats (?)       | GAP                       |
+| Casting speed                      | PointsPacket      | CombatStats (?)       | GAP                       |
+| Recovery / regen derived points    | PointsPacket      | no clear active ECS   | GAP                       |
+| Crit / Pen / Poison / Stun / Slow  | PointsPacket      | no clear active ECS   | GAP                       |
+| Resistances / attack bonuses       | PointsPacket      | no clear active ECS   | GAP                       |
+| Gaya                               | PointsPacket      | no dedicated ECS seen | GAP                       |
+| Extended inventory point           | PointsPacket      | no dedicated ECS seen | GAP                       |
+| Main-character identity bootstrap  | MainCharacterPacket | legacy only wrapper | GAP in active ECS update  |
+| Fine-grained point change packet   | PointChange       | none active           | GAP                       |
+
+Notes
+- "CharacterPoints (?)" means the component exists, but this audit found no active login seeding and no active net-sync usage for it.
+- "CombatStats (?)" means there is a combat component, but this audit found no active PointsPacket population from it.
+
+========================================================================
+9. Recommended sync strategy
+========================================================================
+
+Current safe authority model
+- Keep legacy MainCharacterPacket() authoritative.
+- Keep legacy PointsPacket() authoritative.
+- Keep active ECS NetworkSyncSystem_Update() sync-only until the full stat surface is covered.
+
+Why
+- Previous zero-stat regression came from enabling NetworkSyncSystem_Update() while ECS only had partial HP/SP data on the send path.
+- This audit confirms that the active ECS sender still lacks most of the legacy stat UI surface.
+
+Minimum requirements before any authority switch
+1. Seed and maintain Stamina on login and runtime updates.
+2. Seed and maintain full CharacterPoints / POINT_* state.
+3. Map CombatStats and any derived grades/speeds into the outgoing packet surface.
+4. Expand active ECS TPacketGCPoints construction to fill every field that legacy PointsPacket currently fills.
+5. Decide whether PointChange remains legacy or gets a matching ECS incremental path.
+6. Only after 1-5 are complete, evaluate replacing legacy caller sites.
+
+Recommended migration mode for Phase 14x
+- NetworkSyncSystem should remain sync-only observer.
+- Legacy packet call sites should not be disabled yet.
+- Any future ECS send enable should be gated behind field-complete parity with PointsPacket.
+
+========================================================================
+10. Bottom line
+========================================================================
+
+Findings
+- The active ECS NetworkSyncSystem does send stat UI data, but only a narrow vital subset.
+- The legacy PointsPacket sends a much broader POINT_* surface.
+- ECS already stores some of the missing data, but does not send it.
+- Other missing data is not even seeded yet at login.
+
+Risk classification
+- Enabling NetworkSyncSystem_Update as an authoritative stat sender today is HIGH RISK.
+- It will regress local-player stat UI again unless the full legacy packet surface is mirrored.
+
+Recommended next step
+- Do not enable NetworkSyncSystem_Update yet.
+- Next technical slice should be:
+  - full POINT_* seed audit
+  - CharacterPoints runtime sync
+  - ECS PointsPacket parity implementation
+  - only then a guarded WinTest re-enable attempt
