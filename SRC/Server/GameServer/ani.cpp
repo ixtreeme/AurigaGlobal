@@ -353,7 +353,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (ITEM_WEAPON != item->GetType())
 		return speed;
 
-	int race = ch->GetRaceNum();
+	int race = ecs::GetRaceNum(ch);
 	int weapon = item->GetSubType();
 
 	/*
@@ -379,7 +379,7 @@ uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 	if (nullptr == item || combo > 8)
 		return 1000;
 
-	return s_ANI.attack_speed(ch->GetRaceNum(), item->GetSubType(), combo, ch->IsRiding());
+	return s_ANI.attack_speed(ecs::GetRaceNum(ch), item->GetSubType(), combo, ch->IsRiding());
 }
 
 void ani_print_attack_speed()
@@ -395,4 +395,5 @@ int main(int argc, char **argv)
 	exit(0);
 }
 #endif
+
 
