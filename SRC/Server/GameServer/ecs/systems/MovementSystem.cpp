@@ -41,7 +41,7 @@ namespace
         if (!ch)
             return entt::null;
 
-        return CVIDRegistry::Instance().Find(ch->GetVID());
+        return AIHelpers::EcsOf(const_cast<CHARACTER*>(ch));
     }
 
     inline bool HasCombatState(const CHARACTER* ch)
@@ -195,7 +195,7 @@ void CHARACTER::Standup()
 	sys_log(1, "STANDUP: %s", GetName());
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
-	pack_position.vid = GetVID();
+	pack_position.vid = GetPacketVID();
 	pack_position.position = POSITION_GENERAL;
 
 	PacketAround(&pack_position, sizeof(pack_position));
@@ -212,7 +212,7 @@ void CHARACTER::Sitdown(int is_ground)
 	sys_log(1, "SITDOWN: %s", GetName());
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
-	pack_position.vid = GetVID();
+	pack_position.vid = GetPacketVID();
 	pack_position.position = POSITION_SITTING_GROUND;
 	PacketAround(&pack_position, sizeof(pack_position));
 }
@@ -579,9 +579,9 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 	}
 
 	if (iRot == -1.0f)
-		EncodeMovePacket(pack, GetVID(), bFunc, bArg, x, y, dwDuration, dwTime, GetRotation() / 5.0f);
+		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, GetRotation() / 5.0f);
 	else
-		EncodeMovePacket(pack, GetVID(), bFunc, bArg, x, y, dwDuration, dwTime, iRot);
+		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, iRot);
 	PacketView(&pack, sizeof(TPacketGCMove), this);
 }
 
@@ -592,7 +592,7 @@ void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct pa
 	packet->motion = motion;
 
 	if (victim)
-		packet->victim_vid = victim->GetVID();
+		packet->victim_vid = victim->GetPacketVID();
 	else
 		packet->victim_vid = 0;
 }
@@ -619,7 +619,7 @@ EVENTFUNC(save_event)
 		return 0;
 	}
 	sys_log(1, "SAVE_EVENT: %s", ch->GetName());
-	const entt::entity saveEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+	const entt::entity saveEntity = AIHelpers::EcsOf(ch);
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
 	ch->Save();
@@ -644,7 +644,7 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
 
         {
             TPacketGCWalkMode p;
-            p.vid = GetVID();
+            p.vid = GetPacketVID();
             p.header = HEADER_GC_WALK_MODE;
             p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
 
@@ -791,7 +791,7 @@ EVENTFUNC(recovery_event)
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
-					const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 					ch->PointChange(POINT_HP, iAmount, false);
@@ -817,7 +817,7 @@ EVENTFUNC(recovery_event)
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
-					const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 					ch->PointChange(POINT_HP, iAmount, false);
@@ -831,7 +831,7 @@ EVENTFUNC(recovery_event)
 		{
 			const int64_t hpGain = std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100);
 			ch->MonsterLog("HP_REGEN +%d", hpGain);
-			const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+			const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 			if (recoveryEntity != entt::null)
 				g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, static_cast<int32_t>(hpGain), 0 });
 			ch->PointChange(POINT_HP, hpGain);
@@ -877,7 +877,7 @@ EVENTFUNC(recovery_event)
 
 		sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 
-		const entt::entity recoveryEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 		if (recoveryEntity != entt::null)
 			g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
 		ch->PointChange(POINT_HP, iAmount, false);
