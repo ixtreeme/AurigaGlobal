@@ -461,6 +461,12 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 	RemoveFromStateList(ch);
 
+	if (const entt::entity entity = CVIDRegistry::Instance().Find(ch->GetVID());
+		entity != entt::null && g_registry.valid(entity))
+	{
+		EntityFactory::Destroy(g_registry, entity);
+	}
+
 #ifdef M2_USE_POOL
 	pool_.Destroy(ch);
 #else
@@ -627,6 +633,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 		if (ch->IsStone())
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+		}
+		else if (ch->IsMonster())
+		{
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
@@ -795,6 +805,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 		if (ch->IsStone())
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
+		}
+		else if (ch->IsMonster())
+		{
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
