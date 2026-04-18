@@ -1,0 +1,160 @@
+Phase 9d - char.h inline method audit
+Date: 2026-04-18
+Workspace: E:\AurigaGlobal\LiveWork\AurigaGlobal
+
+Scope
+- Audit only.
+- No char.h edits in this pass.
+- Goal: estimate extraction difficulty for inline bodies before turning char_interface.hpp into a true public-only header.
+
+Important counting note
+- Historical snapshot cited in prior phases: 309 inline bodies.
+- Current tree signature grep count: 266.
+- Current body-parser script classification total: 264.
+- The 2-body gap is expected from regex heuristics on unusual inline forms.
+- The 43-body gap versus the historical 309 snapshot means the old count is stale, or it used a broader pattern than the current grep/script.
+- Use the numbers below as the authoritative count for the current tree state.
+
+Step 1 - Current inline count and first 50 signatures
+- Inline signature count from:
+  grep -cE "^\s+[a-zA-Z].*\)\s*(const\s*)?\{" SRC/Server/GameServer/char.h
+- Result: 266
+
+First 50 inline signatures from current char.h:
+1. 485: DynamicCharacterPtr() : is_pc(false), id(0) {}
+2. 493: void Reset() {
+3. 499: DynamicCharacterPtr& operator=(const DynamicCharacterPtr& rhs) {
+4. 507: operator LPCHARACTER() const {
+5. 657: uint32_t   GetMainTargetVID() const { return dwVID; }
+6. 658: void    SetMainTargetVID(uint32_t vid) { dwVID = vid; }
+7. 659: void    ResetHitCount() { if (iSplashCount) { iHitCount = iMaxHitCount; iSplashCount--; } }
+8. 710: time_t GetLastFruitUse() const { return m_lastFruitUse; }
+9. 711: void SetLastFruitUse(time_t t) { m_lastFruitUse = t; }
+10. 713: time_t GetLastGoldFruitUse() const { return m_lastGoldFruitUse; }
+11. 714: void SetLastGoldFruitUse(time_t t) { m_lastGoldFruitUse = t; }
+12. 747: uint32_t GetAIFlag() const { return m_pointsInstant.dwAIFlag; }
+13. 769: virtual void			EndStateEmpty() {}
+14. 817: uint32_t			GetLastTargetInfoPulse() const { return dwLastTargetInfoPulse; }
+15. 818: void			SetLastTargetInfoPulse(uint32_t pulse) { dwLastTargetInfoPulse = pulse; }
+16. 821: uint32_t			GetPlayerID() const { return m_dwPlayerID; }
+17. 850: const VID& GetVID() const { return m_vid; }
+18. 853: void			SetCharType(uint8_t bType) { m_bCharType = bType; }
+19. 855: void			SetName(const std::string& name) { m_stName = name; }
+20. 868: bool			IsPC() const { return GetDesc() ? true : false; }
+21. 869: bool			IsNPC()	const { return m_bCharType != CHAR_TYPE_PC; }
+22. 870: bool			IsMonster()	const { return m_bCharType == CHAR_TYPE_MONSTER; }
+23. 871: bool			IsStone() const { return m_bCharType == CHAR_TYPE_STONE; }
+24. 872: bool			IsDoor() const { return m_bCharType == CHAR_TYPE_DOOR; }
+25. 873: bool			IsBuilding() const { return m_bCharType == CHAR_TYPE_BUILDING; }
+26. 874: bool			IsWarp() const { return m_bCharType == CHAR_TYPE_WARP; }
+27. 875: bool			IsGoto() const { return m_bCharType == CHAR_TYPE_GOTO; }
+28. 879: void SetDungeonTicketExtraMetin(bool b) { m_bDungeonTicketExtraMetin = b; }
+29. 880: bool IsDungeonTicketExtraMetin() const { return m_bDungeonTicketExtraMetin; }
+30. 883: uint32_t			GetLastShoutPulse() const { return m_pointsInstant.dwLastShoutPulse; }
+31. 884: void			SetLastShoutPulse(uint32_t pulse) { m_pointsInstant.dwLastShoutPulse = pulse; }
+32. 885: int				GetLevel() const { return m_points.level; }
+33. 892: uint32_t			GetExp() const { return m_points.exp; }
+34. 893: void			SetExp(uint32_t exp) { m_points.exp = exp; }
+35. 909: bool			IsPosition(int pos) const { return m_pointsInstant.position == pos ? true : false; }
+36. 910: int				GetPosition() const { return m_pointsInstant.position; }
+37. 916: void			SetHP(int64_t hp) { m_points.hp = hp; }
+38. 917: int64_t				GetHP() const { return m_points.hp; }
+39. 919: void			SetSP(int64_t sp) { m_points.sp = sp; }
+40. 920: int64_t				GetSP() const { return m_points.sp; }
+41. 922: void			SetStamina(int stamina) { m_points.stamina = stamina; }
+42. 923: int				GetStamina() const { return m_points.stamina; }
+43. 925: void			SetMaxHP(int64_t iVal) { m_pointsInstant.iMaxHP = iVal; }
+44. 926: int64_t				GetMaxHP() const { return m_pointsInstant.iMaxHP; }
+45. 928: void			SetMaxSP(int64_t iVal) { m_pointsInstant.iMaxSP = iVal; }
+46. 929: int64_t				GetMaxSP() const { return m_pointsInstant.iMaxSP; }
+47. 931: void			SetMaxStamina(int64_t iVal) { m_pointsInstant.iMaxStamina = iVal; }
+48. 932: int64_t				GetMaxStamina() const { return m_pointsInstant.iMaxStamina; }
+49. 934: void			SetRandomHP(int v) { m_points.iRandomHP = v; }
+50. 935: void			SetRandomSP(int v) { m_points.iRandomSP = v; }
+
+Step 2 - Difficulty tier breakdown
+- Classification source: the requested heuristic script, run on current char.h.
+- Classified total: 264
+
+TIER_A - Trivial getter / trivial one-liner
+- Count: 166
+- Sample signatures:
+  1. operator LPCHARACTER() const
+  2. uint32_t   GetMainTargetVID() const
+  3. time_t GetLastFruitUse() const
+  4. time_t GetLastGoldFruitUse() const
+  5. uint32_t GetAIFlag() const
+  6. uint32_t GetLastTargetInfoPulse() const
+  7. uint32_t GetPlayerID() const
+  8. const VID& GetVID() const
+  9. bool IsPC() const
+  10. bool IsNPC() const
+
+TIER_B - Simple logic
+- Count: 98
+- Sample signatures:
+  1. void Reset()
+  2. EVENTINFO(char_event_info)
+  3. void SetMainTargetVID(uint32_t vid)
+  4. void ResetHitCount()
+  5. void SetLastFruitUse(time_t t)
+  6. void SetLastGoldFruitUse(time_t t)
+  7. virtual void EndStateEmpty()
+  8. void SetLastTargetInfoPulse(uint32_t pulse)
+  9. void SetCharType(uint8_t bType)
+  10. void SetName(const std::string& name)
+
+TIER_C - Complex inline
+- Count: 0 by current heuristic script
+- Interpretation:
+  The current regex heuristic classifies no bodies into Tier C.
+  This is not evidence that char.h has no risky inline logic.
+  It means the simple parser is under-sensitive and most current matches are short bodies.
+
+TIER_D - Template / lambda / hard-to-extract inline
+- Count: 0 by current heuristic script
+- Interpretation:
+  Same caveat as Tier C. The current parser did not surface template/lambda inline bodies in the matched set.
+
+Step 3 - Public inline getters returning private members
+- Query:
+  grep -cE "return\s+m_[a-zA-Z]" SRC/Server/GameServer/char.h
+- Result: 145
+
+Interpretation
+- 145 public inline getters directly expose private member state through `return m_*`.
+- These are the main blockers for converting char_interface.hpp into a true public-only declaration header while keeping char.h private-state-only.
+- They are also the best first extraction batch, because they are mostly declaration-only candidates once their bodies move out of the header.
+
+Extraction risk summary
+- Best safe first wave: Tier A
+  Rationale: mostly direct getters/setters and small accessors.
+- Second wave: Tier B
+  Rationale: still short, low fanout risk, usually no extra helper surface.
+- Deferred wave: heuristic misses
+  The current script likely under-detects multi-line, nested-brace, or unusual-signature inline bodies.
+  Before actual extraction begins, re-audit with a parser that can handle nested braces or use a targeted line-by-line/manual inventory for the remaining non-moved methods.
+
+Proposed extraction order
+1. Tier A first
+   - bulk move trivial getters/setters and declaration-only accessors out of char.h
+2. Tier B second
+   - batch-move short logic methods in small compile-safe groups
+3. Remaining unmatched / residual bodies
+   - inspect manually; these are the real Tier C candidates in practice
+4. Template / lambda cases
+   - keep inline unless a specific restructuring need appears
+
+Recommended next action for Phase 9d implementation
+- Start with the 145 `return m_*` public getters.
+- Split them into batches of 20-30 methods.
+- After each batch:
+  - move definitions out of char.h
+  - keep declarations in char_interface.hpp
+  - build gate
+- Only after the getter batch is stable, continue with Tier B one-liners and short helpers.
+
+Bottom line
+- Current tree state supports a practical extraction-first strategy.
+- The real low-risk starting set is large: 145 direct `return m_*` public getters and a broader Tier A pool of 166 methods.
+- The legacy `309` inline estimate is no longer current for this tree; use 266 signature hits / 264 classified bodies as the live baseline.
