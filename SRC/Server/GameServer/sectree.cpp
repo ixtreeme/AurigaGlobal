@@ -3,6 +3,7 @@
 #include "sectree_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "desc_manager.h"
@@ -46,7 +47,7 @@ void SECTREE::Destroy()
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
 				sys_err("Sectree: destroying character: %s is_pc %d",
-					ch->GetName(), ch->IsPC() ? 1 : 0);
+					ecs::GetName(ch), ecs::IsPC(ch) ? 1 : 0);
 
 				if (ch->GetDesc())
 					DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
@@ -148,7 +149,7 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	{
 		LPCHARACTER pkChr = (LPCHARACTER) pkEnt;
 
-		if (pkChr->IsPC())
+		if (ecs::IsPC(pkChr))
 		{
 			IncreasePC();
 
@@ -223,4 +224,5 @@ int SECTREE::GetEventAttribute(int32_t x, int32_t y)
 {
 	return GetAttribute(x, y) >> 8;
 }
+
 
