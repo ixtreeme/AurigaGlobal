@@ -600,7 +600,7 @@ struct FuncForgetMyAttacker
 			LPCHARACTER ch = (LPCHARACTER)ent;
 			if (ch->IsPC())
 				return;
-			if (ch->m_kVIDVictim == m_ch->GetVID())
+			if (ch->m_eVictim == AIHelpers::EcsOf(m_ch))
 				ch->SetVictim(nullptr);
 		}
 	}
@@ -6387,25 +6387,32 @@ void CHARACTER::SetVictim(LPCHARACTER pkVictim)
 {
 	if (!pkVictim)
 	{
-		if (0 != (uint32_t)m_kVIDVictim)
+		if (m_eVictim != entt::null)
 			MonsterLog("  ");
 
-		m_kVIDVictim.Reset();
+		m_eVictim = entt::null;
 		battle_end(this);
 	}
 	else
 	{
-		if (m_kVIDVictim != pkVictim->GetVID())
+		const entt::entity eVictim = AIHelpers::EcsOf(pkVictim);
+		if (m_eVictim != eVictim)
 			MonsterLog("  : %s", pkVictim->GetName());
 
-		m_kVIDVictim = pkVictim->GetVID();
+		m_eVictim = eVictim;
 		m_dwLastVictimSetTime = get_dword_time();
 	}
 }
 
 LPCHARACTER CHARACTER::GetVictim() const
 {
-	return CHARACTER_MANAGER::instance().Find(m_kVIDVictim);
+	if (m_eVictim == entt::null)
+		return nullptr;
+
+	if (auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(m_eVictim))
+		return legacy->ptr;
+
+	return nullptr;
 }
 
 LPCHARACTER CHARACTER::GetProtege() const // ȣؾ   

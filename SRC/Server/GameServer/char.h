@@ -2089,7 +2089,7 @@ public:
 	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
 	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
-	VID				m_kVIDVictim;
+	entt::entity	 m_eVictim { entt::null };
 
 protected:
 	uint32_t			m_dwLastChangeAttackPositionTime;

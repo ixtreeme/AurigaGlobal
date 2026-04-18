@@ -4211,6 +4211,7 @@ void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 void CHARACTER::Initialize()
 {
     CEntity::Initialize(ENTITY_CHARACTER);
+    m_eVictim = entt::null;
 
     m_bNoOpenedShop = true;
 #ifdef ENABLE_EVENT_MANAGER
