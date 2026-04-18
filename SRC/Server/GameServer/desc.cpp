@@ -5,6 +5,7 @@
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "protocol.h"
 #include "packet.h"
 #include "messenger_manager.h"
@@ -1120,4 +1121,5 @@ void DESC::ChatPacketNew(uint8_t type, uint32_t idx, const char * format, ...) {
 	Packet(buf.read_peek(), buf.size());
 }
 #endif
+
 
