@@ -1100,7 +1100,7 @@ namespace quest
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (ch->IsPC())
+				if (ecs::IsPC(ch))
 				{
 					uint8_t bEmpire =  ch->GetEmpire();
 					if ( bEmpire == 0 )
@@ -1208,9 +1208,9 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 #ifdef __NEWPET_SYSTEM__
-				if (!ch->IsPC() && !ch->IsPet() && !ch->IsNewPet())
+				if (!ecs::IsPC(ch) && !ch->IsPet() && !ch->IsNewPet())
 #else
-				if (!ch->IsPC() && !ch->IsPet())
+				if (!ecs::IsPC(ch) && !ch->IsPet())
 #endif
 					ch->Dead();
 			}
@@ -1612,7 +1612,7 @@ namespace quest
 			{
 				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
 
-				if (true == pChar->IsPC())
+				if (true == ecs::IsPC(pChar))
 				{
 					if (from_x1 <= ecs::GetX(pChar) && ecs::GetX(pChar) <= from_x2 && from_y1 <= ecs::GetY(pChar) && ecs::GetY(pChar) <= from_y2)
 					{
@@ -1933,6 +1933,7 @@ namespace quest
 		}
 	}
 }
+
 
 
 
