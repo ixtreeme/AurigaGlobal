@@ -1,0 +1,461 @@
+Phase 15 - VID system unification baseline audit
+
+Scope
+- Audit only.
+- Goal state:
+  - single runtime handle authority = `entt::entity`
+  - legacy `VID` type removed from gameplay/runtime lookups
+  - packet-facing `uint32_t dwVID` survives only at encode/decode boundaries
+
+Build gate
+- `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+
+======================================================================
+1. VID infrastructure
+======================================================================
+
+Files touching VID type definition / alias patterns
+- `SRC/Server/GameServer/vid.h`
+- `SRC/Server/GameServer/char.h`
+- `SRC/Server/GameServer/item_manager.h`
+- `SRC/Server/common/Headers/CG_Packet.h`
+
+Actual VID type definition
+- File:
+  - `SRC/Server/GameServer/vid.h`
+- Definition kind:
+  - `class VID`
+- Shape:
+  - private `uint32_t m_id`
+  - private `uint32_t m_crc`
+  - default ctor sets both to 0
+  - ctor `(uint32_t id, uint32_t crc)`
+  - copy ctor / assignment
+  - `operator uint32_t() const` returns `m_id`
+  - `Reset()` zeros both members
+- Effective size:
+  - logically 8 bytes (`2 x uint32_t`)
+- Semantics:
+  - not a typedef / alias
+  - not a plain `uint32_t`
+  - carries both numeric id and crc
+
+CHARACTER-side VID storage
+- `SRC/Server/GameServer/char.h:1067`
+  - `VID m_vid;`
+- `SRC/Server/GameServer/char.h:850`
+  - `const VID& GetVID() const { return m_vid; }`
+
+Other CHARACTER-side VID storage
+- `SRC/Server/GameServer/char.h:2091`
+  - `VID m_kVIDVictim;`
+- `SRC/Server/GameServer/char.h:1704`
+  - `typedef std::map<VID, TBattleInfo> TDamageMap;`
+
+Immediate conclusion
+- The legacy runtime does not use a trivial integer alias.
+- Full elimination is not just “replace `uint32_t`”:
+  - `m_crc`
+  - victim tracking
+  - damage maps
+  must be accounted for.
+
+======================================================================
+2. VID usage pattern counts
+======================================================================
+
+Count semantics
+- Pattern A follows the user grep semantics:
+  - number of files containing `->GetVID()`
+- Patterns B-F follow the user grep semantics:
+  - number of matching lines
+- All counts below are case-sensitive to match grep behavior.
+
+Pattern A - `GetVID()` call sites
+- Count:
+  - `50` files contain `->GetVID()`
+
+Pattern B - `VID` as function parameter
+- Raw grep-style count:
+  - `7` matching lines
+- Matching lines:
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6526`
+    - `const VID vid = pkAttacker->GetVID();`
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:239`
+    - `bool CheckSkillHit(entt::entity attacker, uint8_t skillId, VID targetVID)`
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:1039`
+    - `bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, const VID TargetVID)`
+  - `SRC/Server/GameServer/char.h:1067`
+    - `VID m_vid;`
+  - `SRC/Server/GameServer/char.h:1963`
+    - `bool CheckSkillHitCount(const uint8_t SkillID, const VID dwTargetVID);`
+  - `SRC/Server/GameServer/char.h:2091`
+    - `VID m_kVIDVictim;`
+  - `SRC/Server/GameServer/questlua_target.cpp:52`
+    - comment-only hit
+- Interpretation:
+  - raw grep count is `7`
+  - true code/signature/member hits are `6`
+
+Pattern C - `VID` as local variable
+- Count:
+  - `2` matching lines
+- Matching lines:
+  - `SRC/Server/GameServer/char.h:1067` `VID m_vid;`
+  - `SRC/Server/GameServer/char.h:2091` `VID m_kVIDVictim;`
+- Interpretation:
+  - the exact regex from the task catches indented declarations, which in this tree only finds members, not stack locals
+  - true stack-local usage observed in audit:
+    - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:6526` `const VID vid = pkAttacker->GetVID();`
+
+Pattern D - `CHARACTER_MANAGER::Find(VID)` style lookups
+- Count:
+  - `98` matching lines
+
+Pattern E - legacy VID field access (`vid.dwVid`, `SetVID`, `ResetVID`)
+- Count:
+  - `0`
+- Interpretation:
+  - legacy `VID` does not expose public `dwVid`
+  - current code uses conversion operator / `GetVID()` much more than direct field access
+
+Pattern F - packet boundary `dwVID`
+- Count:
+  - `152` matching lines
+
+Summary table
+- `Pattern A  GetVID() files`: `50`
+- `Pattern B  VID parameter lines`: `7`
+- `Pattern C  VID local lines`: `2`
+- `Pattern D  CHARACTER_MANAGER::Find(...) lines`: `98`
+- `Pattern E  vid.dwVid / SetVID / ResetVID lines`: `0`
+- `Pattern F  dwVID packet-boundary lines`: `152`
+
+Hot files for `->GetVID()` occurrences
+- `29` `SRC/Server/GameServer/LostCastleDungeon.cpp`
+- `27` `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `17` `SRC/Server/GameServer/char_manager.cpp`
+- `14` `SRC/Server/GameServer/VikingDungeon.cpp`
+- `13` `SRC/Server/GameServer/New_PetSystem.cpp`
+- `12` `SRC/Server/GameServer/party.cpp`
+- `10` `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+
+Hot files for `CHARACTER_MANAGER::Find(...)`
+- `14` `SRC/Server/GameServer/input_main.cpp`
+- `12` `SRC/Server/GameServer/questlua_dungeon.cpp`
+- `12` `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `7` `SRC/Server/GameServer/cmd_general.cpp`
+- `6` `SRC/Server/GameServer/questlua_npc.cpp`
+
+======================================================================
+3. CHARACTER_MANAGER lookup inventory
+======================================================================
+
+Lookup / allocation API in `char_manager.h`
+- `uint32_t AllocVID();`
+- `LPCHARACTER Find(uint32_t dwVID);`
+- `LPCHARACTER Find(const VID & vid);`
+- `LPCHARACTER FindPC(const char * name);`
+- `LPCHARACTER FindByPID(uint32_t dwPID);`
+- `LPCHARACTER FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, LPCHARACTER except = nullptr, int iMinLevel = 1, int iMaxLevel = PLAYER_MAX_LEVEL_CONST);`
+
+Lookup classification
+- Takes VID:
+  - `Find(uint32_t dwVID)`
+  - `Find(const VID& vid)`
+- Takes PID:
+  - `FindByPID(uint32_t dwPID)`
+- Takes player name:
+  - `FindPC(const char* name)`
+- AID / player-account lookup:
+  - no `FindByAID`
+  - no `FindByPlayerID` API in this tree
+
+Internal data structures backing lookup
+- `m_map_pkChrByVID`
+  - `std::unordered_map<uint32_t, LPCHARACTER>`
+- `m_map_pkChrByPID`
+  - `std::unordered_map<uint32_t, LPCHARACTER>`
+- `m_map_pkPCChr`
+  - `NAME_MAP`
+- `m_map_pkChrByRaceNum`
+  - `std::map<uint32_t, CHARACTER_SET>`
+- also relevant runtime sets:
+  - `m_set_pkChrState`
+  - `m_set_pkChrForDelayedSave`
+
+Reference counts in `char_manager.cpp/.h`
+- `m_map_pkChrByVID`: `16`
+- `m_map_pkChrByPID`: `10`
+- `m_map_pkPCChr`: `15`
+- `m_map_pkChrByRaceNum`: `5`
+- `m_set_pkChrState`: `9`
+- `m_set_pkChrForDelayedSave`: `16`
+
+Important implementation observations
+- `CreateCharacter(...)` allocates a fresh legacy VID via `AllocVID()`
+- `CreateCharacter(...)` inserts into `m_map_pkChrByVID` before ECS registration
+  - `char_manager.cpp:371` `m_map_pkChrByVID.insert(std::make_pair(dwVID, ch));`
+- `Find(const VID& vid)` simply narrows to integer lookup:
+  - `LPCHARACTER tch = Find((uint32_t)vid);`
+- CRC is therefore ignored by lookup authority today
+
+Meaning
+- Although `VID` carries `(id, crc)`, the authoritative map key is only `uint32_t`
+- That already weakens the semantic value of the legacy class
+
+======================================================================
+4. CVIDRegistry audit
+======================================================================
+
+Files
+- `SRC/Server/GameServer/ecs/VIDRegistry.hpp`
+- `SRC/Server/GameServer/ecs/VIDRegistry.cpp`
+
+Current API surface
+- `entt::entity Find(uint32_t vid) const;`
+- `void Register(uint32_t vid, entt::entity e);`
+- `void Unregister(uint32_t vid);`
+
+Internal storage
+- `std::unordered_map<uint32_t, entt::entity> m_map;`
+
+Registration / unregistration points
+- register:
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp:202`
+    - `CVIDRegistry::Instance().Register(vid, entity);`
+- unregister:
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp:556`
+    - `CVIDRegistry::Instance().Unregister(vid->value);`
+
+Entity creation paths feeding registry
+- PCs:
+  - `input_db.cpp:541` creates legacy character via `CreateCharacter(...)`
+  - `input_db.cpp:551` then creates ECS entity via `EntityFactory::CreatePC(...)`
+- monsters / NPCs / stones:
+  - `char_manager.cpp:635/639/643`
+  - `char_manager.cpp:807/811/815`
+  - all route through `EntityFactory::{CreateStone,CreateMonster,CreateNPC}(...)`
+
+Destroy path
+- `char_manager.cpp:464`
+  - resolves ECS entity by `CVIDRegistry::Find(ch->GetVID())`
+- `char_manager.cpp:467`
+  - destroys entity through `EntityFactory::Destroy(...)`
+- `EntityFactory::Destroy(...)`
+  - unregisters from `CVIDRegistry`
+  - destroys the registry entity
+
+Current `Find(...)` consumption
+- `CVIDRegistry::Instance().Find(...)` lines in tree:
+  - `50`
+- Used broadly by:
+  - AI helpers
+  - combat
+  - movement
+  - session
+  - quest
+  - mount/horse
+  - GM/admin utilities
+
+Is every CHARACTER_MANAGER character also in CVIDRegistry?
+- Answer:
+  - not strictly guaranteed at every moment
+- Why:
+  - `CHARACTER_MANAGER::CreateCharacter(...)` inserts into `m_map_pkChrByVID` first
+  - ECS registration happens later:
+    - PC path in `input_db.cpp`
+    - spawn path in `char_manager.cpp`
+- Therefore there is a drift window:
+  - legacy character exists in `m_map_pkChrByVID`
+  - but corresponding `entt::entity` may not yet be registered in `CVIDRegistry`
+- For fully initialized PCs / monsters / NPCs / stones:
+  - the intended steady state is synchronized
+- For transitional / failed / partially initialized lifetimes:
+  - drift is possible
+
+Migration implication
+- `CVIDRegistry` is already the ECS-side bridge, but not yet safe as sole authority until creation-order drift is removed.
+
+======================================================================
+5. Packet VID boundary audit
+======================================================================
+
+How many packet structs contain `dwVID`?
+- `28`
+
+Incoming packet structs with `dwVID`
+- `TPacketCGAttack`
+- `TPacketCGSyncPositionElement`
+- `TPacketCGUseSkill`
+- `TPacketCGTarget`
+- `TPacketCGTargetInfoLoad`
+
+Outgoing packet structs with `dwVID`
+- `TPacketGCCharacterAdd`
+- `TPacketGCCharacterAdditionalInfo`
+- `TPacketGCCharacterUpdate`
+- `TPacketGCItemOnTitleNameUpdate`
+- `TPacketGCMainCharacter`
+- `TPacketGCMainCharacter3_BGM`
+- `TPacketGCMainCharacter4_BGM_VOL`
+- `TPacketGCPointChange`
+- `TPacketGCItemGroundAdd`
+- `TPacketGCItemOwnership`
+- `TPacketGCItemGroundDel`
+- `TPacketGCBeltNameUpdate`
+- `TPacketGCMountCountOverhead`
+- `TPacketGCMove`
+- `TPacketGCSyncPositionElement`
+- `TPacketGCPVP`
+- `TPacketGCTarget`
+- `TPacketGCTargetInfo`
+- `TPacketGCShopSign`
+- `TPacketGCFakeShopSign`
+- `TPacketGCTargetCreate`
+- `TPacketGCDamageInfo`
+- `TPacketGCCubeRenewalReceive`
+
+Incoming decode sites (client -> server)
+- `input_main.cpp:124`
+  - `Find(p->dwVID)` for target packet
+- `input_main.cpp:2499`
+  - `Find(packMelee->dwVID)` for melee attack packet
+- `input_main.cpp:2524`
+  - `CVIDRegistry::Find(packMelee->dwVID)` ECS-side target resolution
+- `input_main.cpp:2604`
+  - `Find(e->dwVID)` for sync-position element
+- `input_main.cpp:2718`
+  - `UseSkill(..., Find(p->dwVID))`
+- `input_main.cpp:2831`
+  - `FindObjectByVID(p->dwVID)` for building target
+- `input_main.cpp:2841`
+  - `SetTarget(Find(p->dwVID))`
+
+Outgoing encode sites (server -> client)
+- Primary encoder is `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- Examples:
+  - `EncodeMovePacket(... dwVID ...)`
+  - `TPacketGCMainCharacter.dwVID`
+  - `TPacketGCCharacterAdd.dwVID`
+  - `TPacketGCCharacterUpdate.dwVID`
+  - `TPacketGCPVP.dwOwnerVID / dwVictimVID`
+  - `TPacketGCDamageInfo.dwVID`
+  - various `p.dwVID = GetVID()` or `m_vid`
+
+Boundary conclusion
+- Final design must keep `uint32_t dwVID` only at:
+  - packet headers / packet payload structs
+  - input decode in `input_main.cpp`
+  - output encode in `NetworkSyncSystem.cpp` and equivalent packet writers
+
+======================================================================
+6. entt::entity current usage
+======================================================================
+
+Count of `entt::entity` token occurrences
+- `532`
+
+Count of files containing `entt::entity`
+- `39`
+
+Meaning
+- Entity handles are already heavily present in runtime code.
+- VID unification does not start from zero:
+  - the tree already contains a large parallel entity-handle surface
+  - the missing step is authority inversion, not first introduction
+
+======================================================================
+7. Migration strategy proposal
+======================================================================
+
+Phase A - single VID lookup authority
+- Target:
+  - `CHARACTER_MANAGER::Find(uint32_t)` and `Find(const VID&)` delegate to ECS-side registry resolution
+  - legacy `m_map_pkChrByVID` becomes mirror-only, then removable
+- Audit-driven workload:
+  - `98` `CHARACTER_MANAGER::Find(...)` lines
+  - `50` `CVIDRegistry::Find(...)` lines already exist
+  - `16` references to `m_map_pkChrByVID`
+- Difficulty:
+  - medium/high
+- Main blocker:
+  - eliminate creation-order drift between legacy character creation and ECS registration
+
+Phase B - collapse CHARACTER-side VID storage
+- Target:
+  - remove `CHARACTER::m_vid`
+  - make `CHARACTER::GetVID()` read from ECS `VIDComponent`
+  - then remove `GetVID()` from most gameplay paths
+- Audit-driven workload:
+  - `m_vid` storage
+  - `m_kVIDVictim`
+  - `TDamageMap = std::map<VID, ...>`
+  - `7` raw `VID` declaration/signature lines from grep
+  - true code sites are few, but high-risk because they are structural
+- Difficulty:
+  - high
+- Main blocker:
+  - victim / damage-map paths still use VID as internal runtime state
+
+Phase C - replace `GetVID()` callers with entity-first flow
+- Target:
+  - callers stop fetching legacy VID and passing it around
+  - they pass/store `entt::entity` directly
+  - packet boundary converts entity -> `uint32_t` only on encode
+- Audit-driven workload:
+  - `50` files contain `->GetVID()`
+  - many hot spots are combat/session/dungeon code
+- Difficulty:
+  - high but mechanical in many files
+- Likely order:
+  - quest / utility / admin files first
+  - gameplay runtime later
+
+Phase D - remove legacy VID class
+- Target:
+  - delete `class VID`
+  - replace surviving packet-boundary needs with plain `uint32_t`
+  - decide fate of `m_crc`
+- Audit-driven workload:
+  - class definition itself
+  - any remaining `VID` parameters / locals / typedefs
+  - packet and PvP helper structs already use `uint32_t`
+- Difficulty:
+  - medium if `m_crc` is truly dead
+  - high if any runtime logic still relies on the CRC distinction
+
+Most likely safest execution order
+1. Phase A first:
+   - make lookup authority singular
+   - remove drift
+2. Phase C second:
+   - cut high-volume `GetVID()` traffic
+3. Phase B third:
+   - collapse `CHARACTER` storage after callers stop depending on it
+4. Phase D last:
+   - remove `VID` class only when internal runtime users are gone
+
+======================================================================
+8. Key risks / conclusions
+======================================================================
+
+Key risks
+- `VID` is not a dumb alias:
+  - it still carries `m_crc`
+- `CHARACTER_MANAGER::Find(const VID&)` currently discards CRC:
+  - this suggests semantic rot and makes the type removal easier conceptually
+  - but also means hidden assumptions may already be broken
+- `CVIDRegistry` is not yet guaranteed in sync at all times:
+  - creation-order drift exists today
+- `m_kVIDVictim` and `TDamageMap<VID,...>` are internal blockers:
+  - these are not packet-boundary uses
+  - they must be redesigned, not just search-replaced
+
+Bottom line
+- VID unification is feasible.
+- The highest-value first cut is not deleting `VID` itself.
+- The highest-value first cut is:
+  - make `CVIDRegistry` / ECS lookup authoritative
+  - remove the `m_map_pkChrByVID` authority role
+  - then progressively eliminate `GetVID()` and internal `VID` state.
