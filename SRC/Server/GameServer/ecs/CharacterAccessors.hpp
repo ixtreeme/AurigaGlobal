@@ -10,6 +10,7 @@
 #include "components/identity_components.hpp"
 #include "components/spatial_components.hpp"
 #include "components/transform_components.hpp"
+#include "components/vital_components.hpp"
 #include "../char_interface.hpp"
 #include "../typedef.h"
 
@@ -24,6 +25,13 @@ inline uint32_t GetPlayerID(LPCHARACTER ch)
 {
     if (!ch) {
         return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* pid = g_registry.try_get<ecs::PlayerID>(e)) {
+            return pid->pid;
+        }
     }
 
     return ch->GetPlayerID();
@@ -44,6 +52,17 @@ inline int32_t GetMapIndex(LPCHARACTER ch)
         return 0;
     }
 
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* placement = g_registry.try_get<ecs::SectorPlacement>(e)) {
+            return placement->mapIndex;
+        }
+
+        if (const auto* mapIndex = g_registry.try_get<ecs::MapIndex>(e)) {
+            return mapIndex->value;
+        }
+    }
+
     return ch->GetMapIndex();
 }
 
@@ -51,6 +70,13 @@ inline uint32_t GetVID(LPCHARACTER ch)
 {
     if (!ch) {
         return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e)) {
+            return vid->value;
+        }
     }
 
     return ch->GetVID();
@@ -62,6 +88,13 @@ inline int32_t GetX(LPCHARACTER ch)
         return 0;
     }
 
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* pos = g_registry.try_get<ecs::Position>(e)) {
+            return static_cast<int32_t>(pos->x);
+        }
+    }
+
     return ch->GetX();
 }
 
@@ -69,6 +102,13 @@ inline int32_t GetY(LPCHARACTER ch)
 {
     if (!ch) {
         return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* pos = g_registry.try_get<ecs::Position>(e)) {
+            return static_cast<int32_t>(pos->y);
+        }
     }
 
     return ch->GetY();
