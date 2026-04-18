@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "utils.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
 
@@ -16,11 +17,11 @@ ACMD(do_blockhwid)
 
 	const char* targetname = arg;
 
-	if (strcmp(ch->GetName(), targetname) == 0) {
+	if (strcmp(ecs::GetName(ch), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendBlockHwid(ch->GetName(), targetname);
+	CHwidManager::Instance().SendBlockHwid(ecs::GetName(ch), targetname);
 }
 
 ACMD(do_unblockhwid)
@@ -35,10 +36,11 @@ ACMD(do_unblockhwid)
 
 	const char* targetname = arg;
 
-	if (strcmp(ch->GetName(), targetname) == 0) {
+	if (strcmp(ecs::GetName(ch), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendUnblockHwid(ch->GetName(), targetname);
+	CHwidManager::Instance().SendUnblockHwid(ecs::GetName(ch), targetname);
 }
 #endif
+
