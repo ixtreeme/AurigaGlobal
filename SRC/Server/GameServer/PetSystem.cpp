@@ -17,6 +17,24 @@
 #include "ecs/Registry.hpp"
 #include "ecs/components/movement_components.hpp"
 
+namespace
+{
+bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
+{
+	if (!follower || !owner)
+		return false;
+
+	if (follower->Sync(x, y))
+	{
+		follower->Stop();
+		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
+		return true;
+	}
+
+	return follower->Show(owner->GetMapIndex(), x, y, z);
+}
+}
+
 
 EVENTINFO(petsystem_event_info)
 {
@@ -180,7 +198,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 
 	if (nullptr != m_pkChar)
 	{
-		m_pkChar->Show (m_pkOwner->GetMapIndex(), x, y);
+		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
 		m_dwVID = m_pkChar->GetLegacyVID();
 
 		return m_dwVID;
@@ -326,7 +344,7 @@ bool CPetActor::_UpdateFollowAI()
 		float fOwnerRot = m_pkOwner->GetRotation() * 3.141592f / 180.f;
 		float fx = -APPROACH * cos(fOwnerRot);
 		float fy = -APPROACH * sin(fOwnerRot);
-		if (m_pkChar->Show(m_pkOwner->GetMapIndex(), ownerX + fx, ownerY + fy))
+		if (SnapFollowerToOwner(m_pkChar, m_pkOwner, ownerX + fx, ownerY + fy, m_pkOwner->GetZ()))
 		{
 			return true;
 		}

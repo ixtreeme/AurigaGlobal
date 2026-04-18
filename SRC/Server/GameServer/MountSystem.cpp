@@ -18,6 +18,24 @@
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/events.hpp"
 
+namespace
+{
+bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
+{
+	if (!follower || !owner)
+		return false;
+
+	if (follower->Sync(x, y))
+	{
+		follower->Stop();
+		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
+		return true;
+	}
+
+	return follower->Show(owner->GetMapIndex(), x, y, z);
+}
+}
+
 EVENTINFO(mountsystem_event_info)
 {
 	CMountSystem* pMountSystem;
@@ -339,7 +357,7 @@ uint32_t CMountActor::Summon(LPITEM pSummonItem, bool bSpawnFar)
 	
 	if (nullptr != m_pkChar)
 	{
-		m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y);
+		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
 		m_dwVID = m_pkChar->GetPacketVID();
 
 		return m_dwVID;
@@ -411,7 +429,7 @@ bool CMountActor::UpdateFollowAI()
 		float fOwnerRot = m_pkOwner->GetRotation() * 3.141592f / 180.f;
 		float fx = -APPROACH * cos(fOwnerRot);
 		float fy = -APPROACH * sin(fOwnerRot);
-		if (m_pkChar->Show(m_pkOwner->GetMapIndex(), ownerX + fx, ownerY + fy))
+		if (SnapFollowerToOwner(m_pkChar, m_pkOwner, ownerX + fx, ownerY + fy, m_pkOwner->GetZ()))
 		{
 			return true;
 		}

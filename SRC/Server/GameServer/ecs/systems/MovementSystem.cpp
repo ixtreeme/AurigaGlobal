@@ -96,6 +96,22 @@ namespace
         else
             ch->SetPosition(POS_STANDING);
     }
+
+    inline void MirrorLegacyMovement(entt::registry& reg, entt::entity entity, const ecs::Position& position)
+    {
+        const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
+        if (!legacy || !legacy->ptr)
+            return;
+
+        LPCHARACTER ch = legacy->ptr;
+        if (ch->GetX() == position.x && ch->GetY() == position.y)
+            return;
+
+        ch->SetXYZ(position.x, position.y, ch->GetZ());
+        ch->UpdateSectree();
+
+        ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
+    }
 }
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 {
@@ -118,6 +134,7 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
             movementState.isWalking = false;
             movementState.isNowWalking = false;
             reg.remove<ecs::MovementDestination>(entity);
+            MirrorLegacyMovement(reg, entity, position);
             reg.emplace_or_replace<ecs::DirtyTag>(entity);
             TransitionAfterMovementStop(vid);
             return;
@@ -138,6 +155,7 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
             movementState.isWalking = false;
             movementState.isNowWalking = false;
             reg.remove<ecs::MovementDestination>(entity);
+            MirrorLegacyMovement(reg, entity, position);
             TransitionAfterMovementStop(vid);
         } else {
             const double ratio = static_cast<double>(step) / distance;
@@ -150,6 +168,7 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
             movementState.isNowWalking = true;
         }
 
+        MirrorLegacyMovement(reg, entity, position);
         reg.emplace_or_replace<ecs::DirtyTag>(entity);
         g_dispatcher.trigger(ecs::EvEntityMoved { entity, position.x, position.y });
     });

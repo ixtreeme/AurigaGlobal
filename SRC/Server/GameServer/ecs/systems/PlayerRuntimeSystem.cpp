@@ -4607,8 +4607,7 @@ uint32_t CHARACTER::GetLegacyVID() const
 
 uint32_t CHARACTER::GetPacketVID() const
 {
-    const entt::entity e = m_entity != entt::null ? m_entity : AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
-    return static_cast<uint32_t>(e);
+    return GetLegacyVID();
 }
 
 void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
