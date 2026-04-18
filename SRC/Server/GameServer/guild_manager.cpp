@@ -8,6 +8,7 @@
 #include "desc_client.h"
 #include "buffer_manager.h"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "packet.h"
 #include "war_map.h"
 #include "questmanager.h"
@@ -184,7 +185,7 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 
 void CGuildManager::LoginMember(LPCHARACTER ch)
 {
-	TGuildMap::iterator it = m_map_pkGuildByPID.find(ch->GetPlayerID());
+	TGuildMap::iterator it = m_map_pkGuildByPID.find(ecs::GetPlayerID(ch));
 
 	if (it != m_map_pkGuildByPID.end())
 	{
@@ -884,7 +885,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!killer->IsPC())
 		return;
 
-	if (!victim->IsPC())
+	if (!ecs::IsPC(victim))
 		return;
 
 	if (killer->GetWarMap())
@@ -905,7 +906,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!gAttack->UnderWar(gDefend->GetID()))
 		return;
 
-	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), victim->GetLevel());
+	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), ecs::GetLevel(victim));
 }
 
 void CGuildManager::StopAllGuildWar()
@@ -1010,4 +1011,5 @@ void CGuildManager::ChangeMaster(uint32_t dwGID)
 	DBManager::instance().FuncQuery(std::bind(&CGuild::SendGuildDataUpdateToAllMember, iter->second, std::placeholders::_1),"SELECT 1");
 
 }
+
 
