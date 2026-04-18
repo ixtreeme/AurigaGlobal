@@ -4,6 +4,7 @@
 #include "log.h"
 
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "desc.h"
 #include "item.h"
 
@@ -83,7 +84,7 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 		return;
 	}
 
-	ItemLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), item->GetID(),
+	ItemLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), item->GetID(),
 	        nullptr == c_pszText ? "" : c_pszText,
 		   	c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "",
 		   	item->GetOriginalVnum());
@@ -92,7 +93,7 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	ItemLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), itemID, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "", itemVnum);
+	ItemLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), itemID, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "", itemVnum);
 }
 
 void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValue, const char * c_pszText, const char * c_pszHint, const char * c_pszIP)
@@ -108,7 +109,7 @@ void LogManager::CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, co
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	if (ch)
-		CharLog(ch->GetPlayerID(), ch->GetX(), ch->GetY(), dw, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+		CharLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), dw, c_pszText, c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
 	else
 		CharLog(0, 0, 0, dw, c_pszText, c_pszHint, "");
 }
@@ -141,7 +142,7 @@ void LogManager::HackLog(const char * c_pszHackName, LPCHARACTER ch)
 {
 	if (ch->GetDesc())
 	{
-		HackLog(c_pszHackName, ch->GetDesc()->GetAccountTable().login, ch->GetName(), ch->GetDesc()->GetHostName());
+		HackLog(c_pszHackName, ch->GetDesc()->GetAccountTable().login, ecs::GetName(ch), ch->GetDesc()->GetHostName());
 	}
 }
 
@@ -265,7 +266,7 @@ void LogManager::LevelLog(LPCHARACTER pChar, unsigned int level, unsigned int pl
 	}
 
 	Query("REPLACE INTO levellog%s (name, level, time, account_id, pid, playtime) VALUES('%s', %u, NOW(), %u, %u, %d)",
-			get_table_postfix(), pChar->GetName(), level, aid, pChar->GetPlayerID(), playhour);
+			get_table_postfix(), ecs::GetName(pChar), level, aid, ecs::GetPlayerID(pChar), playhour);
 }
 
 void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)
@@ -321,7 +322,7 @@ void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
 				ch->IsGM() == true ? "'Y'" : "'N'",
 				g_bChannel,
 				ch->GetDesc()->GetAccountTable().id,
-				ch->GetPlayerID(),
+				ecs::GetPlayerID(ch),
 				ch->GetDesc()->GetHostName(),
 				ch->GetDesc()->GetClientVersion());
 	}
@@ -329,7 +330,7 @@ void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
 	{
 		Query("SET @i = (SELECT MAX(id) FROM loginlog2 WHERE account_id=%u AND pid=%u)",
 				ch->GetDesc()->GetAccountTable().id,
-				ch->GetPlayerID());
+				ecs::GetPlayerID(ch));
 
 		Query("UPDATE loginlog2 SET type='VALID', logout_time=NOW(), playtime=TIMEDIFF(logout_time,login_time) WHERE id=@i");
 	}
@@ -388,3 +389,4 @@ void LogManager::CheatLog(int32_t pid, std::string hostname, std::string reason)
 	Query("INSERT INTO cheat_log (player_id, ip, reason, time) VALUES(%d, '%s', '%s', NOW())", pid, hostname.c_str(), reason.c_str());
 }
 #endif
+
