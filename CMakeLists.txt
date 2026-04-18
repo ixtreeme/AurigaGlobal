@@ -122,6 +122,8 @@ if(MSVC)
         $<$<BOOL:${UNIX}>:UNIX>
     )
 
+    add_compile_options(/bigobj)
+
     if(ENABLE_ASAN)
         add_compile_options(
             /MP
