@@ -24,6 +24,7 @@
 #include "../../party.h"
 #endif
 #include "../../utils.h"
+#include "../AIHelpers.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -78,7 +79,7 @@ EVENTFUNC(poison_event)
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
     }
 
-    const entt::entity poisonEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    const entt::entity poisonEntity = AIHelpers::EcsOf(ch);
     if (poisonEntity != entt::null) {
         g_dispatcher.trigger(ecs::EvPoisonApplied { poisonEntity, dam });
     }
@@ -146,7 +147,7 @@ EVENTFUNC(bleeding_event)
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
     }
 
-    const entt::entity bleedingEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    const entt::entity bleedingEntity = AIHelpers::EcsOf(ch);
     if (bleedingEntity != entt::null) {
         g_dispatcher.trigger(ecs::EvBleedingApplied { bleedingEntity, dam });
     }
@@ -202,7 +203,7 @@ EVENTFUNC(fire_event)
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
     }
 
-    const entt::entity fireEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+    const entt::entity fireEntity = AIHelpers::EcsOf(ch);
     if (fireEntity != entt::null) {
         g_dispatcher.trigger(ecs::EvFireApplied { fireEntity, dam });
     }
@@ -643,9 +644,9 @@ void UpdateAffect(entt::registry& reg, uint32_t tick)
 
 void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
 {
-    AffectSystem::ApplyFire(
-        CVIDRegistry::Instance().Find(GetVID()),
-        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null,
+    AffectSystem::ApplyFire
+        (AIHelpers::EcsOf(this),
+        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null,
         amount,
         count);
 }
@@ -653,44 +654,44 @@ void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
 void CHARACTER::AttackedByPoison(LPCHARACTER pkAttacker)
 {
     AffectSystem::ApplyPoison(
-        CVIDRegistry::Instance().Find(GetVID()),
-        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null);
+        AIHelpers::EcsOf(this),
+        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null);
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
 void CHARACTER::AttackedByBleeding(LPCHARACTER pkAttacker)
 {
     AffectSystem::ApplyBleeding(
-        CVIDRegistry::Instance().Find(GetVID()),
-        pkAttacker ? CVIDRegistry::Instance().Find(pkAttacker->GetVID()) : entt::null);
+        AIHelpers::EcsOf(this),
+        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null);
 }
 #endif
 
 void CHARACTER::RemoveFire()
 {
-    AffectSystem::RemoveFire(CVIDRegistry::Instance().Find(GetVID()));
+    AffectSystem::RemoveFire(AIHelpers::EcsOf(this));
 }
 
 void CHARACTER::RemovePoison()
 {
-    AffectSystem::RemovePoison(CVIDRegistry::Instance().Find(GetVID()));
+    AffectSystem::RemovePoison(AIHelpers::EcsOf(this));
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
 void CHARACTER::RemoveBleeding()
 {
-    AffectSystem::RemoveBleeding(CVIDRegistry::Instance().Find(GetVID()));
+    AffectSystem::RemoveBleeding(AIHelpers::EcsOf(this));
 }
 #endif
 
 bool CHARACTER::IsImmune(uint32_t dwImmuneFlag)
 {
-    return AffectSystem::IsImmune(CVIDRegistry::Instance().Find(GetVID()), dwImmuneFlag);
+    return AffectSystem::IsImmune(AIHelpers::EcsOf(this), dwImmuneFlag);
 }
 
 void CHARACTER::ApplyMobAttribute(const TMobTable* table)
 {
-    AffectSystem::ApplyMobAttribute(CVIDRegistry::Instance().Find(GetVID()), table);
+    AffectSystem::ApplyMobAttribute(AIHelpers::EcsOf(this), table);
 }
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
