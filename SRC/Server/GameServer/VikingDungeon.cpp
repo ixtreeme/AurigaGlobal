@@ -411,13 +411,13 @@ namespace
 
         LPCHARACTER memorial = d->SpawnMob(kMemorialNpc1, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial)
-            d->SetUnique("vk_memorial", memorial->GetVID());
+		d->SetUnique("vk_memorial", memorial->GetPacketVID());
 
         for (int i = 0; i < 3; ++i)
         {
             LPCHARACTER stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone)
-                d->SetUnique(GetFloor3StoneKey(i), stone->GetVID());
+				d->SetUnique(GetFloor3StoneKey(i), stone->GetPacketVID());
         }
     }
 
@@ -439,7 +439,7 @@ namespace
 
             LPCHARACTER stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone)
-                d->SetUnique(GetFloor3StoneKey(i), stone->GetVID());
+				d->SetUnique(GetFloor3StoneKey(i), stone->GetPacketVID());
         }
     }
 
@@ -461,7 +461,7 @@ namespace
 
             LPCHARACTER protector = d->SpawnMob(kStoneProtectorNpc, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (protector)
-                d->SetUnique(GetFloor3ProtectorKey(i), protector->GetVID());
+			d->SetUnique(GetFloor3ProtectorKey(i), protector->GetPacketVID());
         }
     }
 
@@ -476,7 +476,7 @@ namespace
 
         LPCHARACTER spawned = d->SpawnMob(newVnum, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (spawned)
-            d->SetUnique("vk_compass", spawned->GetVID());
+		d->SetUnique("vk_compass", spawned->GetPacketVID());
 
         npc->Dead(nullptr, true);
     }
@@ -664,7 +664,7 @@ namespace
             d->SetFlag(kFlagMainBossStage, 0);
             LPCHARACTER boss = d->SpawnMob(kFloor1MainBossVnum, kFloor1MainBossPos.x, kFloor1MainBossPos.y, kFloor1MainBossPos.dir);
             if (boss)
-                d->SetUnique("vk_main_boss", boss->GetVID());
+	d->SetUnique("vk_main_boss", boss->GetPacketVID());
             ScheduleFloor1BossHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The first main boss has appeared!");
             return 0;
@@ -756,7 +756,7 @@ namespace
 
             LPCHARACTER gate = d->SpawnMob(kGateNpc, kGatePos2.x, kGatePos2.y, kGatePos2.dir);
             if (gate)
-                d->SetUnique("vk_gate_2", gate->GetVID());
+		d->SetUnique("vk_gate_2", gate->GetPacketVID());
 
             ScheduleFloor2Timer(idx);
             NoticeMap(idx, "<Frostbane Fortress> Destroy all second-floor stones within 4 minutes.");
@@ -793,7 +793,7 @@ namespace
                 const int64_t hp = d->GetFlag(kFlagFinalPenalty) ? kFinalBossPenaltyHP : kFinalBossNormalHP;
                 boss->SetMaxHP(hp);
                 boss->SetHP(hp);
-                d->SetUnique("vk_final_boss", boss->GetVID());
+	d->SetUnique("vk_final_boss", boss->GetPacketVID());
             }
             ScheduleFinalHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The final boss has appeared!");
@@ -1055,11 +1055,11 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
         d->SetFlag(kFlagInitialized, 1);
         LPCHARACTER gate = d->SpawnMob(kGateNpc, kGatePos1.x, kGatePos1.y, kGatePos1.dir);
         if (gate)
-            d->SetUnique("vk_gate_1", gate->GetVID());
+	d->SetUnique("vk_gate_1", gate->GetPacketVID());
 
         LPCHARACTER compass = d->SpawnMob(kCompassEmptyNpc, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (compass)
-            d->SetUnique("vk_compass", compass->GetVID());
+	d->SetUnique("vk_compass", compass->GetPacketVID());
 
         NoticeMap(idx, "<Frostbane Fortress> Starting in 10 seconds. Get ready.");
         s_viking.ScheduleStart(idx);
@@ -1424,7 +1424,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
         d->SetFlag(kFlagFloor3NpcVnum, newNpc);
         LPCHARACTER memorial = d->SpawnMob(newNpc, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial)
-            d->SetUnique("vk_memorial", memorial->GetVID());
+		d->SetUnique("vk_memorial", memorial->GetPacketVID());
 
         if (stage < 3)
         {
@@ -1490,7 +1490,7 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 4 && vnum == kFloor3StoneVnum)
     {
-        const int killedSlot = FindFloor3StoneSlotByVid(d, victim->GetVID());
+	const int killedSlot = FindFloor3StoneSlotByVid(d, victim->GetPacketVID());
         if (killedSlot >= 0)
             SetFloor3SlotCleared(d, killedSlot, true);
 
@@ -1500,7 +1500,7 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         const int32_t bossLocalY = std::max<int32_t>(1, killer->GetY() / 100 - kBaseCellY);
         LPCHARACTER boss = d->SpawnMob(kFloor3BossVnum, bossLocalX, bossLocalY, 0);
         if (boss)
-            d->SetUnique("vk_floor3_boss", boss->GetVID());
+		d->SetUnique("vk_floor3_boss", boss->GetPacketVID());
         d->SetFlag(kFlagCanKillFloor3Boss, 1);
         NoticeMap(idx, "<Frostbane Fortress> The protecting boss appeared. Kill it to proceed.");
         return;
