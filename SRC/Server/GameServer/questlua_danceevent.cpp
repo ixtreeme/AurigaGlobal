@@ -3,6 +3,7 @@
 #include "questmanager.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 
 namespace quest
 {
@@ -16,7 +17,7 @@ namespace quest
 
 				if ( ch->IsPC() == true && ch->IsGM() != true )
 				{
-					if ( ((ch->GetX() >= 764503 && ch->GetX() <= 772362) && (ch->GetY() >= 22807 && ch->GetY() <= 26499)) == false )
+					if ( ((ecs::GetX(ch) >= 764503 && ecs::GetX(ch) <= 772362) && (ecs::GetY(ch) >= 22807 && ecs::GetY(ch) <= 26499)) == false )
 					{
 						ch->GoHome();
 					}
@@ -50,4 +51,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("dance_event", dance_event_functions);
 	}
 }
+
 
