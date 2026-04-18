@@ -1,7 +1,8 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
 #include "battle.h"
 #include "affect.h"
@@ -105,7 +106,7 @@ int OnClickOrcsDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 9239
-	if (!ch || ch->GetRaceNum() != 9239)
+	if (!ch || ecs::GetRaceNum(ch) != 9239)
 		return 0;
 
 	COrcsDungeon::instance().OnClickNpc(causer);
@@ -118,7 +119,7 @@ int OnClickTritonTempleDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20094
-	if (!ch || ch->GetRaceNum() != 20094)
+	if (!ch || ecs::GetRaceNum(ch) != 20094)
 		return 0;
 
 	CTritonTempleDungeon::instance().OnClickNpc(causer);
@@ -131,7 +132,7 @@ int OnClickValentineDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20012
-	if (!ch || ch->GetRaceNum() != 20012)
+	if (!ch || ecs::GetRaceNum(ch) != 20012)
 		return 0;
 
 	CValentineDungeon::instance().OnClickNpc(causer);
@@ -144,7 +145,7 @@ int OnClickEasterDungeon(TRIGGERPARAM)
         return 0;
 
     // NPC vnum 21
-    if (!ch || ch->GetRaceNum() != 9308)
+    if (!ch || ecs::GetRaceNum(ch) != 9308)
         return 0;
 
     CEasterDungeon::instance().OnClickNpc(causer);
@@ -157,7 +158,7 @@ int OnClickRuneDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20506
-	if (!ch || ch->GetRaceNum() != 20506)
+	if (!ch || ecs::GetRaceNum(ch) != 20506)
 		return 0;
 
 	CRuneDungeon::instance().OnClickNpc(causer);
@@ -170,7 +171,7 @@ int OnClickPyramidDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 9331
-	if (!ch || ch->GetRaceNum() != 9331)
+	if (!ch || ecs::GetRaceNum(ch) != 9331)
 		return 0;
 
 	CPyramidDungeonRazor93::instance().OnClickNpc(causer);
@@ -182,7 +183,7 @@ int OnClickNightmareDungeon(TRIGGERPARAM)
 	if (!causer || !causer->IsPC())
 		return 0;
 
-	if (!ch || ch->GetRaceNum() != 20088)
+	if (!ch || ecs::GetRaceNum(ch) != 20088)
 		return 0;
 
 	CNightmareDungeonRazor93::instance().OnClickNpc(causer);
@@ -196,7 +197,7 @@ int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 	if (!ch)
 		return 0;
 
-	if (ch->GetRaceNum() != 9475 && ch->GetRaceNum() != 9484)
+	if (ecs::GetRaceNum(ch) != 9475 && ecs::GetRaceNum(ch) != 9484)
 		return 0;
 
 	CHalloween2022Dungeon::instance().OnClickNpc(causer, ch);
@@ -213,7 +214,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 
 	// entry npc: 9615
 	// reward chest: 9626
-	if (ch->GetRaceNum() != 9615 && ch->GetRaceNum() != 9626)
+	if (ecs::GetRaceNum(ch) != 9615 && ecs::GetRaceNum(ch) != 9626)
 		return 0;
 
 	CVikingDungeon::instance().OnClickNpc(causer, ch);
@@ -225,13 +226,13 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (!causer || !causer->IsPC())
 		return 0;
 
-	if (!ch || ch->GetRaceNum() != 9005)
+	if (!ch || ecs::GetRaceNum(ch) != 9005)
 		return 0;
 
 	if (causer->GetExchange() || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
 		return 0;
 
-	causer->SetQuestNPCID(ch->GetVID());
+	causer->SetQuestNPCID(ecs::GetVID(ch));
 	causer->ChatPacket(CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }
@@ -241,7 +242,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 //	if (!causer || !causer->IsPC())
 //		return 0;
 //
-//	if (!ch || ch->GetRaceNum() != 20021)
+//	if (!ch || ecs::GetRaceNum(ch) != 20021)
 //		return 0;
 //
 //	CLostCastleDungeon::instance().OnClickNpc(causer);
@@ -250,7 +251,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 #endif
 
 /*
- * \xb8\xf3\xbd\xba\xc5\xcd AI \xc7Լ\xf6\xb5\xe9\xc0\xbb BattleAI Ŭ\xb7\xa1\xbd\xba\xb7\xce \xbc\xf6\xc1\xa4
+ * \xb8\xf3\xbd\xba\xc5\xcd AI \xc7?\xf6\xb5\xe9\xc0\xbb BattleAI U\xb7\xa1\xbd\xba\xb7\xce \xbc\xf6\xc1\xa4
  */
 int OnIdleDefault(TRIGGERPARAM)
 {
@@ -267,8 +268,8 @@ public:
 		m_pkChr(pkChr),
 		m_iMinDistance(~(1L << 31)),
 		m_iMaxDistance(iMaxDistance),
-		m_lx(pkChr->GetX()),
-		m_ly(pkChr->GetY()),
+		m_lx(ecs::GetX(pkChr)),
+		m_ly(ecs::GetY(pkChr)),
 		m_pkChrVictim(nullptr),
 		m_pkChrBuilding(nullptr)
 	{
@@ -289,7 +290,7 @@ public:
 			m_pkChrBuilding = pkChr;
 		}
 
-		if (pkChr->IsNPC())
+		if (ecs::IsNPC(pkChr))
 		{
 			const entt::entity ownerEntity = AIHelpers::EcsOf(m_pkChr);
 			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))
@@ -305,9 +306,9 @@ public:
 			pkChr->IsAffectFlag(AFF_REVIVE_INVISIBLE))
 			return false;
 
-		if (pkChr->IsAffectFlag(AFF_TERROR) && m_pkChr->IsImmune(IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 ó\xb8\xae
+		if (pkChr->IsAffectFlag(AFF_TERROR) && m_pkChr->IsImmune(IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
 		{
-			if (pkChr->GetLevel() >= m_pkChr->GetLevel())
+			if (ecs::GetLevel(pkChr) >= m_pkChr->GetLevel())
 				return false;
 		}
 
@@ -329,7 +330,7 @@ public:
 				return false;
 		}
 
-		int iDistance = DISTANCE_APPROX(m_lx - pkChr->GetX(), m_ly - pkChr->GetY());
+		int iDistance = DISTANCE_APPROX(m_lx - ecs::GetX(pkChr), m_ly - ecs::GetY(pkChr));
 
 		if (iDistance < m_iMinDistance && iDistance <= m_iMaxDistance)
 		{
@@ -341,7 +342,7 @@ public:
 
 	LPCHARACTER GetVictim()
 	{
-		// \xb1\xd9ó\xbf\xa1 \xb0ǹ\xb0\xc0\xcc \xc0ְ\xed \xc7ǰ\xa1 \xb8\xb9\xc0\xcc \xc0ִٸ\xe9 \xb0ǹ\xb0\xc0\xbb \xb0\xf8\xb0\xdd\xc7Ѵ\xd9. \xb0ǹ\xb0\xb8\xb8 \xc0־ \xb0ǹ\xb0\xc0\xbb \xb0\xf8\xb0\xdd
+		// \xb1\xd9�\xbf\xa1 \xb0?\xb0\xc0\xcc \xc0?\xed \xc7j\xa1 \xb8\xb9\xc0\xcc \xc0??\xe9 \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd\xc7?\xd9. \xb0?\xb0\xb8\xb8 \xc0?? \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd
 		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > m_pkChr->GetMaxHP())) || !m_pkChrVictim)
 		{
 			return m_pkChrBuilding;
@@ -370,3 +371,4 @@ LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance)
 	}
 	return f.GetVictim();
 }
+
