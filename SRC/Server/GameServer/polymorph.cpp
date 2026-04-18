@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "mob_manager.h"
 #include "affect.h"
 #include "item.h"
@@ -141,7 +142,7 @@ bool CPolymorphUtils::GiveBook(LPCHARACTER pChar, uint32_t dwMobVnum, uint32_t d
 	if (CMobManager::instance().Get(dwMobVnum) == nullptr)
 	{
 		sys_err("Wrong Polymorph vnum passed: CPolymorphUtils::GiveBook(PID(%d), %d %d %d %d)",
-				pChar->GetPlayerID(), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
+				ecs::GetPlayerID(pChar), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
 		return false;
 	}
 
@@ -160,3 +161,4 @@ bool CPolymorphUtils::BookUpgrade(LPCHARACTER pChar, LPITEM pItem)
 	pItem->SetSocket(2, pItem->GetSocket(2)+1);
 	return true;
 }
+
