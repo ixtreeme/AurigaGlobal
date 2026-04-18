@@ -1,0 +1,797 @@
+Phase 15 - Full LPCHARACTER / CHARACTER elimination baseline audit
+Date: 2026-04-18
+Workspace: E:/AurigaGlobal/LiveWork/AurigaGlobal
+
+Scope
+- Audit only. No gameplay code changes.
+- Goal: establish the hard baseline for eliminating LPCHARACTER / direct CHARACTER usage outside thin ECS bridge helpers.
+
+Methodology
+- Counts below are pattern-based and were computed from the live source tree under SRC/Server/GameServer, excluding build artifacts.
+- Where the requested grep pattern is heuristic (for example LPCHARACTER local declaration matching), the same heuristic was used consistently for totals and per-file breakdowns.
+- CHARACTER member categories are name/type-based classifications on the live char.h member list; they are intended as migration planning buckets, not compiler-enforced domains.
+
+========================================================================
+1. Total LPCHARACTER variable declarations
+========================================================================
+- Total LPCHARACTER local/declaration-pattern matches: 1154
+
+Top 30 files by LPCHARACTER declaration-pattern count
+| Count | File |
+| --- | --- |
+| 201 | SRC/Server/GameServer/questlua_pc.cpp |
+| 72 | SRC/Server/GameServer/ecs/systems/CombatSystem.cpp |
+| 61 | SRC/Server/GameServer/ecs/systems/ItemSystem.cpp |
+| 37 | SRC/Server/GameServer/cmd_gm.cpp |
+| 30 | SRC/Server/GameServer/questlua_npc.cpp |
+| 29 | SRC/Server/GameServer/char_manager.cpp |
+| 28 | SRC/Server/GameServer/questlua_dungeon.cpp |
+| 27 | SRC/Server/GameServer/questlua_global.cpp |
+| 25 | SRC/Server/GameServer/ecs/systems/AffectSystem.cpp |
+| 25 | SRC/Server/GameServer/ecs/systems/SkillSystem.cpp |
+| 25 | SRC/Server/GameServer/questlua_party.cpp |
+| 24 | SRC/Server/GameServer/party.cpp |
+| 22 | SRC/Server/GameServer/questlua_horse.cpp |
+| 21 | SRC/Server/GameServer/new_offlineshop_manager.cpp |
+| 20 | SRC/Server/GameServer/questmanager.cpp |
+| 19 | SRC/Server/GameServer/input_main.cpp |
+| 18 | SRC/Server/GameServer/ecs/systems/MountSystem.cpp |
+| 17 | SRC/Server/GameServer/VikingDungeon.cpp |
+| 17 | SRC/Server/GameServer/ecs/systems/GayaSystem.cpp |
+| 16 | SRC/Server/GameServer/questlua_marriage.cpp |
+| 15 | SRC/Server/GameServer/input_db.cpp |
+| 14 | SRC/Server/GameServer/dungeon.cpp |
+| 14 | SRC/Server/GameServer/questlua_petnew.cpp |
+| 13 | SRC/Server/GameServer/LostCastleDungeon.cpp |
+| 13 | SRC/Server/GameServer/arena.cpp |
+| 13 | SRC/Server/GameServer/char.h |
+| 13 | SRC/Server/GameServer/cmd_general.cpp |
+| 12 | SRC/Server/GameServer/guild.cpp |
+| 12 | SRC/Server/GameServer/messenger_manager.cpp |
+| 12 | SRC/Server/GameServer/questlua_affect.cpp |
+
+========================================================================
+2. LPCHARACTER function parameters / returns / members
+========================================================================
+- LPCHARACTER function parameter matches: 1442
+- LPCHARACTER return-type matches: 88
+- LPCHARACTER member-variable declarations in headers: 32
+
+========================================================================
+3. CHARACTER method call sites (ch->Method())
+========================================================================
+- Total direct CHARACTER-style method call matches: 7371
+
+Top 50 called methods from common CHARACTER pointer variable names
+| Rank | Method | Count |
+| --- | --- | --- |
+| 1 | ChatPacket | 614 |
+| 2 | ChatPacketNew | 526 |
+| 3 | GetPlayerID | 438 |
+| 4 | GetDesc | 336 |
+| 5 | GetName | 334 |
+| 6 | GetMapIndex | 239 |
+| 7 | IsPC | 185 |
+| 8 | GetPoint | 179 |
+| 9 | GetRaceNum | 171 |
+| 10 | GetX | 157 |
+| 11 | GetY | 157 |
+| 12 | PointChange | 150 |
+| 13 | SetQuestFlag | 136 |
+| 14 | GetQuestFlag | 121 |
+| 15 | GetLevel | 117 |
+| 16 | GetParty | 113 |
+| 17 | GetVID | 109 |
+| 18 | RemoveAffect | 88 |
+| 19 | GetEmpire | 80 |
+| 20 | GetGuild | 78 |
+| 21 | GetWear | 68 |
+| 22 | AddAffect | 67 |
+| 23 | Show | 64 |
+| 24 | WarpSet | 63 |
+| 25 | GetGMLevel | 62 |
+| 26 | CountSpecifyItem | 52 |
+| 27 | GetGold | 50 |
+| 28 | GetInventoryItem | 44 |
+| 29 | IsAffectFlag | 41 |
+| 30 | RemoveSpecifyItem | 41 |
+| 31 | FindAffect | 41 |
+| 32 | GetExchange | 40 |
+| 33 | AutoGiveItem | 39 |
+| 34 | GetMaxHP | 38 |
+| 35 | ComputePoints | 36 |
+| 36 | GetRealPoint | 36 |
+| 37 | IsObserverMode | 33 |
+| 38 | GetHP | 32 |
+| 39 | GetExtraInventoryItem | 32 |
+| 40 | GetNewPetSystem | 30 |
+| 41 | IsDead | 28 |
+| 42 | ExitToSavedLocation | 28 |
+| 43 | GetMissionProgress | 27 |
+| 44 | UpdateMissionProgress | 27 |
+| 45 | IsStone | 26 |
+| 46 | GetMaxSP | 26 |
+| 47 | GetSectree | 25 |
+| 48 | GetItem | 25 |
+| 49 | IsRaceFlag | 24 |
+| 50 | GetJob | 23 |
+
+========================================================================
+4. CHARACTER:: method bodies
+========================================================================
+- CHARACTER:: method bodies in non-ECS .cpp files: 0
+- CHARACTER:: method bodies in ECS system files: 4
+
+Non-ECS breakdown by file
+| Count | File |
+| --- | --- |
+
+ECS system breakdown by file
+| Count | File |
+| --- | --- |
+| 2 | SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp |
+| 2 | SRC/Server/GameServer/ecs/systems/SocialSystem.cpp |
+
+========================================================================
+5. CHARACTER class member data still in char.h
+========================================================================
+- char.h total lines at audit time: 3057
+- CHARACTER member-variable declarations matched: 236
+
+Category counts
+| Category | Count |
+| --- | --- |
+| IDENTITY | 17 |
+| VITALS | 12 |
+| POSITION | 15 |
+| COMBAT | 15 |
+| INVENTORY | 17 |
+| SKILLS | 17 |
+| SOCIAL | 10 |
+| SESSION | 20 |
+| EVENT HANDLES | 25 |
+| RUNTIME | 29 |
+| OTHER | 59 |
+
+Member names by category
+- IDENTITY (17)
+  - 814: m_strLastSentDisplayedNameWithBelt :: std::string m_strLastSentDisplayedNameWithBelt;
+  - 1061: m_dwPolymorphRace :: 
+  - 1065: m_dwLoginPlayTime :: uint32_t			m_dwLoginPlayTime;
+  - 1066: m_dwPlayerID :: uint32_t			m_dwPlayerID;
+  - 1067: m_vid :: VID				m_vid;
+  - 1068: m_stName :: std::string		m_stName;
+  - 1070: m_stImmortalSt :: uint8_t			m_stImmortalSt;
+  - 1072: m_bCharType :: uint8_t			m_bCharType;
+  - 1084: m_dwPlayStartTime :: uint32_t			m_dwPlayStartTime;
+  - 1087: m_stMobile :: std::string		m_stMobile;
+  - 1088: m_szMobileAuth :: char			m_szMobileAuth[5];
+  - 1586: m_dwRefineNPCVID :: uint32_t			m_dwRefineNPCVID;
+  - 2090: m_kVIDVictim :: 
+  - 2277: m_bEmpire :: 
+  - 2324: m_dwQuestNPCVID :: 
+  - 2553: m_strNewName :: 
+  - 2632: m_eggvid :: int m_eggvid;
+- VITALS (12)
+  - 1080: m_points :: CHARACTER_POINT		m_points;
+  - 1081: m_pointsInstant :: CHARACTER_POINT_INSTANT	m_pointsInstant;
+  - 1191: m_bStaminaConsume :: bool			m_bStaminaConsume;
+  - 1895: m_set_pkChrSpawnedBy :: CHARACTER_SET		m_set_pkChrSpawnedBy;	// ³»°¡ ½ºÆùÇÑ ³ðµé
+  - 1906: m_lRankPoints :: long long	m_lRankPoints[RANKING_MAX_CATEGORIES];
+  - 2157: m_iSafeboxLoadTime :: int					m_iSafeboxLoadTime;
+  - 2164: m_iMallLoadTime :: int					m_iMallLoadTime;
+  - 2259: m_bSendHorseStaminaGrade :: uint8_t				m_bSendHorseStaminaGrade;
+  - 2398: m_bHasPoisoned :: 
+  - 2546: m_speed_hack_count :: int			m_speed_hack_count;
+  - 2615: m_bIsPet :: bool m_bIsPet;
+  - 2939: m_iSavePointTime :: 
+- POSITION (15)
+  - 1082: m_iMoveCount :: 
+  - 1168: m_fSyncTime :: 
+  - 1170: m_pkChrSyncOwner :: LPCHARACTER		m_pkChrSyncOwner;
+  - 1171: m_kLst_pkChrSyncOwned :: CHARACTER_LIST	m_kLst_pkChrSyncOwned;	// ³»°¡ SyncOwnerÀÎ ÀÚµé
+  - 1172: m_posDest :: 
+  - 1174: m_posStart :: PIXEL_POSITION	m_posStart;
+  - 1175: m_posWarp :: PIXEL_POSITION	m_posWarp;
+  - 1177: m_posExit :: 
+  - 1902: m_protection_Time :: std::map<std::string, int>  m_protection_Time;
+  - 2092: m_dwLastChangeAttackPositionTime :: 
+  - 2165: m_posSafeboxOpen :: 
+  - 2285: m_posRegen :: 
+  - 2517: m_deposit_pulse :: 
+  - 2717: m_tvLastSyncTime :: timeval			m_tvLastSyncTime;
+  - 2718: m_iSyncHackCount :: int			m_iSyncHackCount;
+- COMBAT (15)
+  - 1185: m_dwLastAttackTime :: uint32_t			m_dwLastAttackTime;
+  - 1837: m_bComboSequence :: 
+  - 1840: m_dwLastComboTime :: uint32_t m_dwLastComboTime;
+  - 1841: m_iValidComboInterval :: int m_iValidComboInterval;
+  - 1842: m_bComboIndex :: uint8_t m_bComboIndex;
+  - 1843: m_iComboHackCount :: int m_iComboHackCount;
+  - 1844: m_dwSkipComboAttackByTime :: uint32_t m_dwSkipComboAttackByTime;
+  - 1849: m_dwFlyTargetID :: 
+  - 1851: m_vec_dwFlyTargets :: std::vector<uint32_t>	m_vec_dwFlyTargets;
+  - 1862: m_dwLastVictimSetTime :: uint32_t				m_dwLastVictimSetTime;
+  - 1863: m_iMaxAggro :: int					m_iMaxAggro;
+  - 2101: m_pkChrTarget :: LPCHARACTER				m_pkChrTarget;		// ³» Å¸°Ù
+  - 2102: m_set_pkChrTargetedBy :: CHARACTER_SET	m_set_pkChrTargetedBy;	// ³ª¸¦ Å¸°ÙÀ¸·Î °¡Áö°í ÀÖ´Â »ç¶÷µé
+  - 2543: m_kAttackLog :: 
+  - 2545: m_AttackedLog :: AttackedLog m_AttackedLog;
+- INVENTORY (17)
+  - 606: m_pDragonSoulRefineWindowOpener :: LPENTITY		m_pDragonSoulRefineWindowOpener;
+  - 726: m_lastBeltMountCount :: int m_lastBeltMountCount;
+  - 734: m_lastItemOnTitlePrefix :: 
+  - 1230: m_pkShopSafebox :: offlineshop::CShopSafebox* m_pkShopSafebox;
+  - 1435: m_sortExtraInventoryPulse :: int				m_sortExtraInventoryPulse;
+  - 1582: m_bItemLoaded :: 
+  - 2153: m_pkSafebox :: 
+  - 2156: m_iSafeboxSize :: int					m_iSafeboxSize;
+  - 2158: m_bOpeningSafebox :: bool				m_bOpeningSafebox;	///< Ã¢°í°¡ ¿­±â ¿äÃ» ÁßÀÌ°Å³ª ¿­·ÁÀÖ´Â°¡ ¿©ºÎ, true ÀÏ °æ¿ì ¿­±â¿äÃ»ÀÌ°Å³ª ¿­·ÁÀÖÀ½.
+  - 2159: m_pkMountInventory :: 
+  - 2161: m_bMountInventoryLoaded :: bool				 m_bMountInventoryLoaded;
+  - 2162: m_pkMall :: 
+  - 2328: m_pQuestItem :: LPITEM				m_pQuestItem;
+  - 2477: m_isOpenSafebox :: bool	m_isOpenSafebox;
+  - 3011: m_lastdropitem :: int32_t m_firstReward, m_rewardCount, m_checkRepeated, m_dropitemcount, m_lastdropitem;
+  - 3019: m_dwItemUseAntiFloodPulse :: int m_dwItemUseAntiFloodPulse;
+  - 3020: m_dwItemUseAntiFloodCount :: uint32_t m_dwItemUseAntiFloodCount;
+- SKILLS (17)
+  - 1078: m_newpetskillcd :: uint32_t			m_newpetskillcd[4];
+  - 1271: m_bIsLoadedAffect :: 
+  - 1274: m_afAffectFlag :: TAffectFlag		m_afAffectFlag;
+  - 1275: m_list_pkAffect :: std::list<CAffect*>	m_list_pkAffect;
+  - 1282: m_list_pkAffectSkills :: 
+  - 1657: m_dwSkillColor :: 
+  - 1908: m_bSkillHit :: bool m_bSkillHit;
+  - 1998: m_dwLastSkillTime :: uint32_t				m_dwLastSkillTime;	///< ¸¶Áö¸·À¸·Î skill À» ¾´ ½Ã°£(millisecond).
+  - 2013: m_adwMobSkillCooltime :: uint32_t				m_adwMobSkillCooltime[MOB_SKILL_MAX_NUM];
+  - 2049: m_dwAffectedEunhyungLevel :: 
+  - 2057: m_pSkillLevels :: TPlayerSkill* m_pSkillLevels;
+  - 2058: m_SkillDamageBonus :: std::unordered_map<uint8_t, int>		m_SkillDamageBonus;
+  - 2059: m_SkillUseInfo :: std::map<int, TSkillUseInfo>	m_SkillUseInfo;
+  - 2251: m_chHorse :: LPCHARACTER			m_chHorse;
+  - 2256: m_bSendHorseLevel :: 
+  - 2258: m_bSendHorseHealthGrade :: uint8_t				m_bSendHorseHealthGrade;
+  - 2606: m_map_buff_on_attrs :: TMapBuffOnAttrs m_map_buff_on_attrs;
+- SOCIAL (10)
+  - 1176: m_lWarpMapIndex :: int32_t			m_lWarpMapIndex;
+  - 1368: m_pkParty :: 
+  - 1381: m_PartyInviteEventMap :: EventMap		m_PartyInviteEventMap;
+  - 1403: m_pGuild :: 
+  - 1406: m_dwUnderGuildWarInfoMessageTime :: uint32_t			m_dwUnderGuildWarInfoMessageTime;
+  - 1407: m_pWarMap :: CWarMap* m_pWarMap;
+  - 2353: m_pWeddingMap :: 
+  - 2453: m_pArena :: CArena* m_pArena;
+  - 2454: m_ArenaObserver :: bool m_ArenaObserver;
+  - 2563: m_known_guild :: 
+- SESSION (20)
+  - 1226: m_pkOfflineShop :: 
+  - 1229: m_pkOfflineShopGuest :: offlineshop::CShop* m_pkOfflineShopGuest;
+  - 1231: m_pkAuction :: offlineshop::CAuction* m_pkAuction;
+  - 1232: m_pkAuctionGuest :: offlineshop::CAuction* m_pkAuctionGuest;
+  - 1235: m_bIsLookingOfflineshopOfferList :: bool	m_bIsLookingOfflineshopOfferList;
+  - 1237: m_iOfflineShopUseTime :: int		m_iOfflineShopUseTime = 0;
+  - 1392: m_pkDungeon :: LPDUNGEON	m_pkDungeon;
+  - 1580: m_bNoOpenedShop :: 
+  - 1584: m_iRefineAdditionalCell :: int				m_iRefineAdditionalCell;
+  - 1585: m_bUnderRefine :: bool			m_bUnderRefine;
+  - 1640: m_pkShop :: 
+  - 1644: m_pkMyShop :: LPSHOP			m_pkMyShop;
+  - 1649: m_stShopSign :: std::string		m_stShopSign;
+  - 1650: m_pkChrShopOwner :: LPCHARACTER		m_pkChrShopOwner;
+  - 1679: m_pkExchange :: CExchange* m_pkExchange;
+  - 2327: m_dwQuestByVnum :: uint32_t				m_dwQuestByVnum;
+  - 2485: m_iRefineTime :: int		m_iRefineTime;
+  - 2497: m_iExchangeTime :: int		m_iExchangeTime;
+  - 2499: m_iMyShopTime :: 
+  - 2980: m_iLastDSRefine :: 
+- EVENT HANDLES (25)
+  - 1371: m_pkPartyRequestEvent :: LPEVENT			m_pkPartyRequestEvent;
+  - 2024: m_pkMuyeongEvent :: 
+  - 2028: m_pkGyeongGongEvent :: LPEVENT				m_pkGyeongGongEvent;
+  - 2366: m_pkDeadEvent :: 
+  - 2368: m_pkStunEvent :: LPEVENT				m_pkStunEvent;
+  - 2369: m_pkSaveEvent :: LPEVENT				m_pkSaveEvent;
+  - 2370: m_pkRecoveryEvent :: LPEVENT				m_pkRecoveryEvent;
+  - 2371: m_pkTimedEvent :: LPEVENT				m_pkTimedEvent;
+  - 2372: m_pkFishingEvent :: LPEVENT				m_pkFishingEvent;
+  - 2373: m_pkAffectEvent :: LPEVENT				m_pkAffectEvent;
+  - 2374: m_pkPoisonEvent :: LPEVENT				m_pkPoisonEvent;
+  - 2380: m_pkBleedingEvent :: LPEVENT				m_pkBleedingEvent;
+  - 2382: m_pkFireEvent :: LPEVENT				m_pkFireEvent;
+  - 2383: m_pkWarpNPCEvent :: LPEVENT				m_pkWarpNPCEvent;
+  - 2388: m_pkMiningEvent :: LPEVENT				m_pkMiningEvent;
+  - 2390: m_pkWarpEvent :: LPEVENT				m_pkWarpEvent;
+  - 2391: m_pkDestroyWhenIdleEvent :: LPEVENT				m_pkDestroyWhenIdleEvent;
+  - 2392: m_pkPetSystemUpdateEvent :: LPEVENT				m_pkPetSystemUpdateEvent;
+  - 2394: m_pkNewPetSystemUpdateEvent :: LPEVENT				m_pkNewPetSystemUpdateEvent;
+  - 2395: m_pkNewPetSystemExpireEvent :: LPEVENT				m_pkNewPetSystemExpireEvent;
+  - 2407: m_mapMobSkillEvent :: 
+  - 2788: m_pkBattlePassStayOnlineEvent :: 
+  - 2890: m_pkStayOnlineEvent :: LPEVENT				m_pkStayOnlineEvent;
+  - 2909: m_pkFishingNewEvent :: LPEVENT m_pkFishingNewEvent;
+  - 3014: m_pkDropEvent :: LPEVENT m_pkDropEvent;
+- RUNTIME (29)
+  - 706: m_lastFruitUse :: time_t m_lastFruitUse;
+  - 707: m_lastGoldFruitUse :: time_t m_lastGoldFruitUse;
+  - 772: m_dwStateDuration :: 
+  - 1085: m_bAddChrState :: uint8_t			m_bAddChrState;
+  - 1086: m_bSkipSave :: bool			m_bSkipSave;
+  - 1089: m_bChatCounter :: uint8_t			m_bChatCounter;
+  - 1090: m_bMountCounter :: 
+  - 1111: m_bFakePlayer :: bool	m_bFakePlayer = false;
+  - 1182: m_dwMoveDuration :: uint32_t			m_dwMoveDuration;
+  - 1183: m_dwLastMoveTime :: 
+  - 1370: m_dwLastDeadTime :: uint32_t			m_dwLastDeadTime;
+  - 1393: m_iEventAttr :: int			m_iEventAttr;
+  - 1858: m_iKillerModePulse :: int					m_iKillerModePulse;
+  - 2001: m_mountPulse :: 
+  - 2268: m_bDetailLog :: bool				m_bDetailLog;
+  - 2269: m_bMonsterLog :: bool				m_bMonsterLog;
+  - 2288: m_fRegenAngle :: float				m_fRegenAngle;
+  - 2289: m_pkRegen :: LPREGEN				m_pkRegen;
+  - 2339: m_stateBattle :: 
+  - 2342: m_stateIdle :: CStateTemplate<CHARACTER>	m_stateIdle;
+  - 2343: m_dwNextStatePulse :: uint32_t				m_dwNextStatePulse;
+  - 2491: m_iSeedTime :: int 	m_iSeedTime;
+  - 2570: m_dwLogOffInterval :: 
+  - 2581: m_dwLastGoldDropTime :: 
+  - 2585: m_dwLastBoxUseTime :: uint32_t m_dwLastBoxUseTime;
+  - 2586: m_dwLastBuySellTime :: uint32_t m_dwLastBuySellTime;
+  - 2705: m_dwCmdAntiFloodPulse :: int m_dwCmdAntiFloodPulse;
+  - 2926: m_dwLastCatch :: int m_dwLastCatch;
+  - 2960: m_iLastBuyTime :: 
+- OTHER (59)
+  - 1064: m_bPolyMaintainStat :: bool			m_bPolyMaintainStat;
+  - 1074: m_bDungeonTicketExtraMetin :: bool			m_bDungeonTicketExtraMetin;
+  - 1179: m_lExitMapIndex :: int32_t			m_lExitMapIndex;
+  - 1180: m_dwMoveStartTime :: 
+  - 1186: m_dwWalkStartTime :: uint32_t			m_dwWalkStartTime;
+  - 1187: m_dwStopTime :: uint32_t			m_dwStopTime;
+  - 1188: m_bWalking :: 
+  - 1190: m_bNowWalking :: bool			m_bNowWalking;
+  - 1239: m_quickslot :: 
+  - 1646: m_bKasmirPaketBaslik :: uint8_t			m_bKasmirPaketBaslik;
+  - 1647: m_bKasmirPaketDurum :: bool			m_bKasmirPaketDurum;
+  - 1852: m_map_kDamage :: TDamageMap			m_map_kDamage;	// ¾î¶² Ä³¸¯ÅÍ°¡ ³ª¿¡°Ô ¾ó¸¶¸¸Å­ÀÇ µ¥¹ÌÁö¸¦ ÁÖ¾ú´Â°¡?
+  - 1854: m_dwKillerPID :: uint32_t				m_dwKillerPID;
+  - 1855: m_iAlignment :: 
+  - 1857: m_iRealAlignment :: uint32_t					m_iRealAlignment;
+  - 1859: m_bPKMode :: uint8_t				m_bPKMode;
+  - 1892: m_pkChrStone :: 
+  - 1896: m_dwDropMetinStone :: uint32_t				m_dwDropMetinStone;
+  - 1897: m_bDropMetinStonePct :: uint8_t				m_bDropMetinStonePct;
+  - 1898: m_dwDropMetinStofa :: uint32_t				m_dwDropMetinStofa;
+  - 1899: m_bDropMetinStofaPct :: uint8_t				m_bDropMetinStofaPct;
+  - 1900: m_dwDropMetinSacca :: uint32_t				m_dwDropMetinSacca;
+  - 1901: m_bDropMetinSaccaPct :: uint8_t				m_bDropMetinSaccaPct;
+  - 1995: m_bDisableCooltime :: 
+  - 2039: m_iChainLightingIndex :: 
+  - 2042: m_setExceptChainLighting :: CHARACTER_SET m_setExceptChainLighting;
+  - 2095: m_triggerOnClick :: CTrigger		m_triggerOnClick;
+  - 2210: m_petSystem :: 
+  - 2225: m_mountSystem :: 
+  - 2233: m_newpetSystem :: 
+  - 2252: m_chRider :: LPCHARACTER			m_chRider;
+  - 2253: m_dwMountVnum :: 
+  - 2255: m_dwMountTime :: uint32_t				m_dwMountTime;
+  - 2356: m_pkChrMarried :: LPCHARACTER			m_pkChrMarried;
+  - 2401: m_bHasBled :: bool				m_bHasBled;
+  - 2403: m_pkMobData :: 
+  - 2405: m_pkMobInst :: CMobInstance* m_pkMobInst;
+  - 2416: m_aiPremiumTimes :: 
+  - 2428: m_isinPCBang :: bool m_isinPCBang;
+  - 2455: m_nPotionLimit :: int m_nPotionLimit;
+  - 2623: m_bIsMount :: bool m_bIsMount;
+  - 2631: m_bIsNewPet :: bool m_bIsNewPet;
+  - 2643: m_fAttMul :: float m_fAttMul;
+  - 2644: m_fDamMul :: float m_fDamMul;
+  - 2706: m_dwCmdAntiFloodCount :: uint32_t m_dwCmdAntiFloodCount;
+  - 2727: m_bAcceAbsorption :: bool	m_bAcceCombination, m_bAcceAbsorption;
+  - 2779: m_bHideBodyCostume :: 
+  - 2782: m_bHideHairCostume :: bool m_bHideHairCostume;
+  - 2784: m_bHideAcceCostume :: bool m_bHideAcceCostume;
+  - 2794: m_bHideWeaponCostume :: bool m_bHideWeaponCostume;
+  - 2877: m_bIsLoadedBattlePass :: 
+  - 2880: m_listBattlePass :: std::list<TPlayerBattlePassMission*> m_listBattlePass;
+  - 2886: m_dwBattlePassEndTime :: uint32_t			m_dwBattlePassEndTime;
+  - 2922: m_bFishCatch :: 
+  - 2925: m_dwCatchFailed :: uint32_t m_dwCatchFailed;
+  - 2931: m_iGoToXYTime :: 
+  - 2950: m_iSortInv1Time :: 
+  - 2953: m_iSortInv2Time :: int		m_iSortInv2Time;
+  - 2969: m_deadByMonster :: 
+
+========================================================================
+6. ECS component coverage gap
+========================================================================
+Component structs discovered under ecs/components
+- SRC/Server/GameServer/ecs/components/activity_components.hpp
+  - FishingState
+  - FishingActiveTag
+- SRC/Server/GameServer/ecs/components/ai_components.hpp
+  - AIFlags
+  - AIState
+  - GuardState
+  - WarFlagState
+  - AggroTable
+  - SpawnInfo
+  - MobDataRef
+  - FlyTargets
+  - HorseAITag
+  - StoneAITag
+- SRC/Server/GameServer/ecs/components/combat_components.hpp
+  - CombatTarget
+  - CombatStats
+  - AttackCooldown
+  - DamageMap
+  - CombatActiveTag
+  - InvincibleTag
+- SRC/Server/GameServer/ecs/components/dirty_components.hpp
+  - DirtyTag
+- SRC/Server/GameServer/ecs/components/identity_components.hpp
+  - VIDComponent
+  - PlayerID
+  - AccountID
+  - EmpireComponent
+  - RaceComponent
+  - PlayerName
+  - GMLevel
+  - TagPC
+  - TagNPC
+  - TagMonster
+  - TagStone
+  - TagPet
+  - TagMount
+  - TagHorse
+- SRC/Server/GameServer/ecs/components/inventory_components.hpp
+  - EquipmentSlots
+  - InventoryGrid
+  - GoldAmount
+  - QuickSlots
+  - SafeboxRef
+- SRC/Server/GameServer/ecs/components/item_components.hpp
+  - ItemIdentity
+  - ItemLocation
+  - ItemCount
+  - ItemOwner
+  - ItemEquipped
+  - ItemFlags
+  - ItemSockets
+  - ItemAttributes
+- SRC/Server/GameServer/ecs/components/movement_components.hpp
+  - MovementDestination
+  - MovementState
+  - MovementSpeed
+  - SyncState
+- SRC/Server/GameServer/ecs/components/quest_components.hpp
+  - QuestContext
+  - RankPoints
+  - AlignBonuses
+- SRC/Server/GameServer/ecs/components/session_components.hpp
+  - NetworkSession
+  - LoginInfo
+  - AntiFlood
+  - DragonSoulState
+- SRC/Server/GameServer/ecs/components/skill_components.hpp
+  - SkillLevels
+  - SkillCooldowns
+  - SkillDamageBonus
+  - SkillColor
+- SRC/Server/GameServer/ecs/components/social_components.hpp
+  - PartyMembership
+  - GuildMembership
+  - DungeonMembership
+  - MarriageState
+  - ShopState
+  - MountState
+- SRC/Server/GameServer/ecs/components/spatial_components.hpp
+  - SectorPlacement
+  - ViewActiveTag
+- SRC/Server/GameServer/ecs/components/status_components.hpp
+  - AffectList
+  - StatusFlags
+  - PolymorphState
+  - DeadTag
+  - StunTag
+  - SafeZoneTag
+  - PoisonTag
+  - BleedTag
+  - FireTag
+- SRC/Server/GameServer/ecs/components/transform_components.hpp
+  - Position
+  - WarpPosition
+  - ExitPosition
+  - RegenPosition
+  - RotationComponent
+  - MapIndex
+- SRC/Server/GameServer/ecs/components/vital_components.hpp
+  - Health
+  - Mana
+  - Stamina
+  - LevelComponent
+  - Experience
+  - CharacterPoints
+
+Coverage by CHARACTER member category
+| Member Category | CHARACTER Count | ECS Coverage | Notes |
+| --- | --- | --- | --- |
+| IDENTITY | 17 | IS_COVERED | VIDComponent, PlayerID, EmpireComponent, RaceComponent, PlayerName, GMLevel, tag components exist. |
+| VITALS | 12 | PARTIAL | Health, Mana, Stamina, LevelComponent, Experience, CharacterPoints exist, but not all runtime point fields are fully mirrored/seeded. |
+| POSITION | 15 | IS_COVERED | Position, WarpPosition, ExitPosition, RegenPosition, RotationComponent, MapIndex, MovementDestination, SectorPlacement exist. |
+| COMBAT | 15 | PARTIAL | CombatTarget, CombatStats, AttackCooldown, DamageMap exist, but legacy attack logs / attacked logs remain on CHARACTER. |
+| INVENTORY | 17 | PARTIAL | EquipmentSlots, InventoryGrid, GoldAmount, QuickSlots, SafeboxRef and item components exist; owner-side structures still partly legacy. |
+| SKILLS | 17 | PARTIAL | SkillLevels, SkillCooldowns, SkillDamageBonus, SkillColor, AffectList, DragonSoulState exist; not full legacy skill/affect state parity. |
+| SOCIAL | 10 | IS_COVERED | PartyMembership, GuildMembership, DungeonMembership, MarriageState, ShopState, MountState exist. |
+| SESSION | 20 | PARTIAL | NetworkSession, LoginInfo, AntiFlood, ShopState and desc-linked session components exist; exchange/shop/session internals still partly legacy. |
+| EVENT HANDLES | 25 | GAP | No ECS replacement for 26 legacy LPEVENT handles; event scheduler handles still live on CHARACTER. |
+| RUNTIME | 29 | PARTIAL | AIState, AIFlags, MovementState, SyncState, StatusFlags, DirtyTag exist, but many timers/counters/pulses still live on CHARACTER. |
+| OTHER | 59 | GAP | No clear ECS parity or uncategorized remnants remain. |
+
+Coverage summary counts
+| Coverage Class | Count |
+| --- | --- |
+| IS_COVERED | 3 |
+| PARTIAL | 6 |
+| GAP | 2 |
+
+========================================================================
+7. File-by-file migration complexity
+========================================================================
+Tier breakdown
+| Tier | File Count |
+| --- | --- |
+| EASY | 30 |
+| MEDIUM | 33 |
+| HARD | 29 |
+| EPIC | 11 |
+
+Top 30 EPIC/HARD files by combined LPCHARACTER/parameter/call usage
+| TOTAL | TIER | DECL | PARAM | CALLS | FILE |
+| --- | --- | --- | --- | --- | --- |
+| 886 | EPIC | 19 | 104 | 763 | SRC/Server/GameServer/input_main.cpp |
+| 693 | EPIC | 13 | 5 | 675 | SRC/Server/GameServer/cmd_general.cpp |
+| 631 | EPIC | 201 | 0 | 430 | SRC/Server/GameServer/questlua_pc.cpp |
+| 545 | EPIC | 37 | 11 | 497 | SRC/Server/GameServer/cmd_gm.cpp |
+| 330 | EPIC | 0 | 34 | 296 | SRC/Server/GameServer/battle.cpp |
+| 324 | EPIC | 29 | 34 | 261 | SRC/Server/GameServer/char_manager.cpp |
+| 277 | EPIC | 21 | 43 | 213 | SRC/Server/GameServer/new_offlineshop_manager.cpp |
+| 188 | EPIC | 0 | 0 | 188 | SRC/Server/GameServer/cmd_general2.cpp |
+| 163 | EPIC | 12 | 34 | 117 | SRC/Server/GameServer/guild.cpp |
+| 162 | EPIC | 1 | 2 | 159 | SRC/Server/GameServer/input_login.cpp |
+| 156 | EPIC | 24 | 16 | 116 | SRC/Server/GameServer/party.cpp |
+| 138 | HARD | 8 | 15 | 115 | SRC/Server/GameServer/pvp.cpp |
+| 130 | HARD | 28 | 2 | 100 | SRC/Server/GameServer/questlua_dungeon.cpp |
+| 115 | HARD | 15 | 0 | 100 | SRC/Server/GameServer/input_db.cpp |
+| 113 | HARD | 2 | 9 | 102 | SRC/Server/GameServer/item_manager.cpp |
+| 103 | HARD | 25 | 4 | 74 | SRC/Server/GameServer/questlua_party.cpp |
+| 100 | HARD | 17 | 15 | 68 | SRC/Server/GameServer/VikingDungeon.cpp |
+| 99 | HARD | 13 | 29 | 57 | SRC/Server/GameServer/LostCastleDungeon.cpp |
+| 99 | HARD | 9 | 10 | 80 | SRC/Server/GameServer/RuneDungeon.cpp |
+| 87 | HARD | 0 | 9 | 78 | SRC/Server/GameServer/shop_manager.cpp |
+| 86 | HARD | 3 | 4 | 79 | SRC/Server/GameServer/exchange.cpp |
+| 82 | HARD | 2 | 8 | 72 | SRC/Server/GameServer/DragonSoul.cpp |
+| 79 | HARD | 5 | 18 | 56 | SRC/Server/GameServer/Halloween2022Dungeon.cpp |
+| 78 | HARD | 14 | 18 | 46 | SRC/Server/GameServer/dungeon.cpp |
+| 78 | HARD | 22 | 0 | 56 | SRC/Server/GameServer/questlua_horse.cpp |
+| 76 | HARD | 3 | 13 | 60 | SRC/Server/GameServer/EasterDungeon.cpp |
+| 76 | HARD | 5 | 10 | 61 | SRC/Server/GameServer/TritonTempleDungeon.cpp |
+| 76 | HARD | 3 | 13 | 60 | SRC/Server/GameServer/ValentineDungeon.cpp |
+| 75 | HARD | 5 | 10 | 60 | SRC/Server/GameServer/OrcsDungeon.cpp |
+| 75 | HARD | 1 | 13 | 61 | SRC/Server/GameServer/fishing.cpp |
+
+Full file complexity table
+| TOTAL | TIER | DECL | PARAM | CALLS | FILE |
+| --- | --- | --- | --- | --- | --- |
+| 886 | EPIC | 19 | 104 | 763 | SRC/Server/GameServer/input_main.cpp |
+| 693 | EPIC | 13 | 5 | 675 | SRC/Server/GameServer/cmd_general.cpp |
+| 631 | EPIC | 201 | 0 | 430 | SRC/Server/GameServer/questlua_pc.cpp |
+| 545 | EPIC | 37 | 11 | 497 | SRC/Server/GameServer/cmd_gm.cpp |
+| 330 | EPIC | 0 | 34 | 296 | SRC/Server/GameServer/battle.cpp |
+| 324 | EPIC | 29 | 34 | 261 | SRC/Server/GameServer/char_manager.cpp |
+| 277 | EPIC | 21 | 43 | 213 | SRC/Server/GameServer/new_offlineshop_manager.cpp |
+| 188 | EPIC | 0 | 0 | 188 | SRC/Server/GameServer/cmd_general2.cpp |
+| 163 | EPIC | 12 | 34 | 117 | SRC/Server/GameServer/guild.cpp |
+| 162 | EPIC | 1 | 2 | 159 | SRC/Server/GameServer/input_login.cpp |
+| 156 | EPIC | 24 | 16 | 116 | SRC/Server/GameServer/party.cpp |
+| 138 | HARD | 8 | 15 | 115 | SRC/Server/GameServer/pvp.cpp |
+| 130 | HARD | 28 | 2 | 100 | SRC/Server/GameServer/questlua_dungeon.cpp |
+| 115 | HARD | 15 | 0 | 100 | SRC/Server/GameServer/input_db.cpp |
+| 113 | HARD | 2 | 9 | 102 | SRC/Server/GameServer/item_manager.cpp |
+| 103 | HARD | 25 | 4 | 74 | SRC/Server/GameServer/questlua_party.cpp |
+| 100 | HARD | 17 | 15 | 68 | SRC/Server/GameServer/VikingDungeon.cpp |
+| 99 | HARD | 13 | 29 | 57 | SRC/Server/GameServer/LostCastleDungeon.cpp |
+| 99 | HARD | 9 | 10 | 80 | SRC/Server/GameServer/RuneDungeon.cpp |
+| 87 | HARD | 0 | 9 | 78 | SRC/Server/GameServer/shop_manager.cpp |
+| 86 | HARD | 3 | 4 | 79 | SRC/Server/GameServer/exchange.cpp |
+| 82 | HARD | 2 | 8 | 72 | SRC/Server/GameServer/DragonSoul.cpp |
+| 79 | HARD | 5 | 18 | 56 | SRC/Server/GameServer/Halloween2022Dungeon.cpp |
+| 78 | HARD | 14 | 18 | 46 | SRC/Server/GameServer/dungeon.cpp |
+| 78 | HARD | 22 | 0 | 56 | SRC/Server/GameServer/questlua_horse.cpp |
+| 76 | HARD | 3 | 13 | 60 | SRC/Server/GameServer/EasterDungeon.cpp |
+| 76 | HARD | 5 | 10 | 61 | SRC/Server/GameServer/TritonTempleDungeon.cpp |
+| 76 | HARD | 3 | 13 | 60 | SRC/Server/GameServer/ValentineDungeon.cpp |
+| 75 | HARD | 5 | 10 | 60 | SRC/Server/GameServer/OrcsDungeon.cpp |
+| 75 | HARD | 1 | 13 | 61 | SRC/Server/GameServer/fishing.cpp |
+| 70 | HARD | 5 | 5 | 60 | SRC/Server/GameServer/guild_renewal.cpp |
+| 64 | HARD | 2 | 14 | 48 | SRC/Server/GameServer/PyramidDungeonRazor93.cpp |
+| 60 | HARD | 20 | 8 | 32 | SRC/Server/GameServer/questmanager.cpp |
+| 59 | HARD | 2 | 4 | 53 | SRC/Server/GameServer/new_switchbot.cpp |
+| 58 | HARD | 16 | 0 | 42 | SRC/Server/GameServer/questlua_marriage.cpp |
+| 57 | HARD | 1 | 13 | 43 | SRC/Server/GameServer/war_map.cpp |
+| 55 | HARD | 2 | 4 | 49 | SRC/Server/GameServer/cuberenewal.cpp |
+| 55 | HARD | 27 | 3 | 25 | SRC/Server/GameServer/questlua_global.cpp |
+| 54 | HARD | 1 | 13 | 40 | SRC/Server/GameServer/NightmareDungeonRazor93.cpp |
+| 54 | HARD | 2 | 5 | 47 | SRC/Server/GameServer/shop.cpp |
+| 48 | MEDIUM | 2 | 6 | 40 | SRC/Server/GameServer/attr_transfer.cpp |
+| 43 | MEDIUM | 30 | 0 | 13 | SRC/Server/GameServer/questlua_npc.cpp |
+| 43 | MEDIUM | 4 | 3 | 36 | SRC/Server/GameServer/trigger.cpp |
+| 42 | MEDIUM | 9 | 5 | 28 | SRC/Server/GameServer/questlua.cpp |
+| 41 | MEDIUM | 0 | 1 | 40 | SRC/Server/GameServer/cmd.cpp |
+| 37 | MEDIUM | 2 | 9 | 26 | SRC/Server/GameServer/mining.cpp |
+| 36 | MEDIUM | 13 | 23 | 0 | SRC/Server/GameServer/arena.cpp |
+| 36 | MEDIUM | 1 | 0 | 35 | SRC/Server/GameServer/cmd_emotion.cpp |
+| 34 | MEDIUM | 9 | 0 | 25 | SRC/Server/GameServer/questlua_game.cpp |
+| 33 | MEDIUM | 5 | 2 | 26 | SRC/Server/GameServer/guild_war.cpp |
+| 33 | MEDIUM | 0 | 6 | 27 | SRC/Server/GameServer/log.cpp |
+| 32 | MEDIUM | 12 | 2 | 18 | SRC/Server/GameServer/messenger_manager.cpp |
+| 31 | MEDIUM | 14 | 0 | 17 | SRC/Server/GameServer/questlua_petnew.cpp |
+| 30 | MEDIUM | 7 | 8 | 15 | SRC/Server/GameServer/sectree_manager.cpp |
+| 30 | MEDIUM | 2 | 7 | 21 | SRC/Server/GameServer/wedding.cpp |
+| 29 | MEDIUM | 7 | 11 | 11 | SRC/Server/GameServer/new_offlineshop.cpp |
+| 28 | MEDIUM | 1 | 3 | 24 | SRC/Server/GameServer/ItemUse.cpp |
+| 28 | MEDIUM | 12 | 0 | 16 | SRC/Server/GameServer/questlua_affect.cpp |
+| 28 | MEDIUM | 5 | 2 | 21 | SRC/Server/GameServer/questpc.cpp |
+| 26 | MEDIUM | 0 | 2 | 24 | SRC/Server/GameServer/shopEx.cpp |
+| 24 | MEDIUM | 11 | 0 | 13 | SRC/Server/GameServer/questlua_guild.cpp |
+| 22 | MEDIUM | 2 | 8 | 12 | SRC/Server/GameServer/guild_manager.cpp |
+| 22 | MEDIUM | 0 | 5 | 17 | SRC/Server/GameServer/refine.cpp |
+| 21 | MEDIUM | 5 | 0 | 16 | SRC/Server/GameServer/target.cpp |
+| 20 | MEDIUM | 5 | 0 | 15 | SRC/Server/GameServer/input_p2p.cpp |
+| 20 | MEDIUM | 6 | 5 | 9 | SRC/Server/GameServer/marriage.cpp |
+| 17 | MEDIUM | 5 | 0 | 12 | SRC/Server/GameServer/questlua_target.cpp |
+| 17 | MEDIUM | 0 | 1 | 16 | SRC/Server/GameServer/wheel_of_destiny.cpp |
+| 16 | MEDIUM | 3 | 4 | 9 | SRC/Server/GameServer/sectree.cpp |
+| 15 | MEDIUM | 4 | 2 | 9 | SRC/Server/GameServer/db.cpp |
+| 15 | MEDIUM | 6 | 0 | 9 | SRC/Server/GameServer/questlua_pet.cpp |
+| 13 | MEDIUM | 4 | 0 | 9 | SRC/Server/GameServer/questlua_arena.cpp |
+| 10 | MEDIUM | 1 | 0 | 9 | SRC/Server/GameServer/cmd_guild_renewal.cpp |
+| 9 | EASY | 5 | 4 | 0 | SRC/Server/GameServer/OXEvent.cpp |
+| 9 | EASY | 0 | 2 | 7 | SRC/Server/GameServer/ani.cpp |
+| 9 | EASY | 1 | 1 | 7 | SRC/Server/GameServer/questlua_danceevent.cpp |
+| 9 | EASY | 3 | 0 | 6 | SRC/Server/GameServer/regen.cpp |
+| 8 | EASY | 2 | 2 | 4 | SRC/Server/GameServer/MountSystem.cpp |
+| 8 | EASY | 0 | 6 | 2 | SRC/Server/GameServer/battle_pass.cpp |
+| 6 | EASY | 1 | 3 | 2 | SRC/Server/GameServer/New_PetSystem.cpp |
+| 6 | EASY | 0 | 0 | 6 | SRC/Server/GameServer/cmd_gm2.cpp |
+| 6 | EASY | 3 | 3 | 0 | SRC/Server/GameServer/entity_view.cpp |
+| 6 | EASY | 1 | 0 | 5 | SRC/Server/GameServer/p2p.cpp |
+| 6 | EASY | 0 | 1 | 5 | SRC/Server/GameServer/priv_manager.cpp |
+| 6 | EASY | 5 | 0 | 1 | SRC/Server/GameServer/questlua_item.cpp |
+| 6 | EASY | 0 | 2 | 4 | SRC/Server/GameServer/whisper_admin.cpp |
+| 5 | EASY | 0 | 0 | 5 | SRC/Server/GameServer/cmd_oxevent.cpp |
+| 4 | EASY | 0 | 1 | 3 | SRC/Server/GameServer/mob_manager.cpp |
+| 4 | EASY | 0 | 4 | 0 | SRC/Server/GameServer/polymorph.cpp |
+| 3 | EASY | 1 | 2 | 0 | SRC/Server/GameServer/PetSystem.cpp |
+| 3 | EASY | 1 | 1 | 1 | SRC/Server/GameServer/entity.cpp |
+| 3 | EASY | 0 | 1 | 2 | SRC/Server/GameServer/input.cpp |
+| 3 | EASY | 0 | 3 | 0 | SRC/Server/GameServer/new_offlineshop_safebox.cpp |
+| 2 | EASY | 1 | 1 | 0 | SRC/Server/GameServer/BattleArena.cpp |
+| 2 | EASY | 0 | 0 | 2 | SRC/Server/GameServer/horse_rider.cpp |
+| 2 | EASY | 0 | 2 | 0 | SRC/Server/GameServer/over9refine.cpp |
+| 2 | EASY | 1 | 0 | 1 | SRC/Server/GameServer/questlua_dragonsoul.cpp |
+| 2 | EASY | 1 | 0 | 1 | SRC/Server/GameServer/questnpc.cpp |
+| 1 | EASY | 0 | 1 | 0 | SRC/Server/GameServer/MountInventory.cpp |
+| 1 | EASY | 0 | 1 | 0 | SRC/Server/GameServer/buff_on_attributes.cpp |
+| 1 | EASY | 0 | 1 | 0 | SRC/Server/GameServer/desc.cpp |
+| 1 | EASY | 0 | 1 | 0 | SRC/Server/GameServer/horsename_manager.cpp |
+| 1 | EASY | 0 | 1 | 0 | SRC/Server/GameServer/safebox.cpp |
+
+========================================================================
+8. questlua special audit
+========================================================================
+- questlua_* GetCurrentCharacterPtr/GetCurrentNPCCharacterPtr LPCHARACTER binding matches: 354
+- Counting note:
+  - this uses the practical assignment pattern with optional const qualifier and common q./CQuestManager::instance() prefixes
+  - a narrower literal grep undercounts because many live call sites use prefixes or const LPCHARACTER forms
+
+Per-file questlua binding counts
+| Count | File |
+| --- | --- |
+| 194 | SRC/Server/GameServer/questlua_pc.cpp |
+| 22 | SRC/Server/GameServer/questlua_horse.cpp |
+| 22 | SRC/Server/GameServer/questlua_npc.cpp |
+| 21 | SRC/Server/GameServer/questlua_party.cpp |
+| 16 | SRC/Server/GameServer/questlua_global.cpp |
+| 14 | SRC/Server/GameServer/questlua_marriage.cpp |
+| 13 | SRC/Server/GameServer/questlua_petnew.cpp |
+| 12 | SRC/Server/GameServer/questlua_affect.cpp |
+| 9 | SRC/Server/GameServer/questlua_dungeon.cpp |
+| 9 | SRC/Server/GameServer/questlua_game.cpp |
+| 5 | SRC/Server/GameServer/questlua_item.cpp |
+| 5 | SRC/Server/GameServer/questlua_pet.cpp |
+| 5 | SRC/Server/GameServer/questlua_target.cpp |
+| 3 | SRC/Server/GameServer/questlua_guild.cpp |
+| 2 | SRC/Server/GameServer/questlua_arena.cpp |
+| 1 | SRC/Server/GameServer/questlua_building.cpp |
+| 1 | SRC/Server/GameServer/questlua_dragonsoul.cpp |
+
+Observation
+- These bindings are highly regular and likely the best mass-migration candidate, especially where an entity-oriented helper already exists.
+
+========================================================================
+9. Final summary
+========================================================================
+| Metric | Count |
+| --- | --- |
+| Total LPCHARACTER local variable declarations | 1154 |
+| Total LPCHARACTER function parameters | 1442 |
+| Total LPCHARACTER return types | 88 |
+| Total LPCHARACTER member variables (other) | 32 |
+| Total ch->Method() call sites | 7371 |
+| CHARACTER:: method bodies in non-ECS files | 0 |
+| CHARACTER:: method bodies in ECS systems | 4 |
+| CHARACTER class member variables total | 236 |
+| Files with LPCHARACTER usage (total) | 103 |
+| - EASY (<10 usages) | 30 |
+| - MEDIUM (10-49) | 33 |
+| - HARD (50-149) | 29 |
+| - EPIC (150+) | 11 |
+| questlua_* GetCurrentCharacterPtr() calls | 354 |
+| ECS member categories IS_COVERED | 3 |
+| ECS member categories PARTIAL | 6 |
+| ECS member categories GAP | 2 |
+
+========================================================================
+10. Revised 12-week roadmap
+========================================================================
+Week 1-2
+- questlua mass migration pattern sweep
+- unify PC/NPC entity lookup helpers
+- low-risk LPCHARACTER parameter replacements in Lua bindings and helper utilities
+
+Week 3-4
+- EASY-tier files (<10 usages)
+- focus on isolated helpers / command wrappers / small systems
+
+Week 5-6
+- MEDIUM-tier files (10-49 usages)
+- cmd_*, trigger, fishing, mount/pet-side helpers, shop-adjacent helpers
+
+Week 7-8
+- HARD-tier files (50-149 usages)
+- battle, exchange, guild, party, dungeon-adjacent files
+- expect bridge-heavy intermediate state
+
+Week 9-10
+- EPIC-tier files (150+)
+- input_main.cpp, char_manager.cpp, other core dispatch/runtime files
+- this is the critical-path risk window
+
+Week 11
+- collapse remaining direct CHARACTER data access behind thin wrappers / ECS bridge helpers
+- remove broad char.h dependency where still possible
+
+Week 12
+- stabilization, regression-fix budget, final LPCHARACTER sweep, prep for next ECS/storage phase
+
+Feasibility assessment
+- Three months is aggressive but plausible only if migration stays pattern-driven, questlua is bulk-converted early, and EPIC files are split into narrow bridge phases. It is not realistic as a pure manual one-file-at-a-time rewrite.
+- The most fragile risk zone is the EPIC set: high fanout runtime / input / manager files where LPCHARACTER variables, parameters, and chained method calls all coexist.
+
+Key EPIC/HARD risks
+- SRC/Server/GameServer/input_main.cpp: EPIC total=886 decl=19 param=104 calls=763
+- SRC/Server/GameServer/cmd_general.cpp: EPIC total=693 decl=13 param=5 calls=675
+- SRC/Server/GameServer/questlua_pc.cpp: EPIC total=631 decl=201 param=0 calls=430
+- SRC/Server/GameServer/cmd_gm.cpp: EPIC total=545 decl=37 param=11 calls=497
+- SRC/Server/GameServer/battle.cpp: EPIC total=330 decl=0 param=34 calls=296
+- SRC/Server/GameServer/char_manager.cpp: EPIC total=324 decl=29 param=34 calls=261
+- SRC/Server/GameServer/new_offlineshop_manager.cpp: EPIC total=277 decl=21 param=43 calls=213
+- SRC/Server/GameServer/cmd_general2.cpp: EPIC total=188 decl=0 param=0 calls=188
+- SRC/Server/GameServer/guild.cpp: EPIC total=163 decl=12 param=34 calls=117
+- SRC/Server/GameServer/input_login.cpp: EPIC total=162 decl=1 param=2 calls=159
+
+Bottom line
+- The codebase is no longer at zero: a meaningful amount of CHARACTER behavior already lives in ECS systems, and many data domains have matching components.
+- The elimination problem is still large because direct LPCHARACTER declarations and especially ch-> call sites remain widespread.
+- The baseline indicates that the 3-month plan lives or dies on batch strategy, not on isolated refactors.
