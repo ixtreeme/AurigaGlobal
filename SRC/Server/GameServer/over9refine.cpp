@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "log.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
 #include "item.h"
 #include "over9refine.h"
@@ -107,4 +108,5 @@ uint32_t COver9RefineManager::GetMaterialVnum(uint32_t baseVnum)
 
 	return 0;
 }
+
 
