@@ -4681,3 +4681,127 @@ Open investigation scope when revisited:
   - build gate passed after every committed file:
     - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
   - no manual WinTest smoke completed in this pass
+
+## Phase 15 VID-A - A1/A2 checkpoint
+- completed:
+  - `VID-A1` creation-order drift elimination
+  - `VID-A2` ECS-authoritative `CHARACTER_MANAGER::Find(uint32_t)`
+- files touched for `VID-A1`:
+  - `SRC/Server/GameServer/ecs/components/identity_components.hpp`
+    - added `ecs::LegacyCharPtr`
+  - `SRC/Server/GameServer/ecs/EntityFactory.hpp`
+    - added `EnsureLegacyCharacterEntity(...)`
+  - `SRC/Server/GameServer/ecs/EntityFactory.cpp`
+    - `RegisterEntityVID(...)` now uses `emplace_or_replace`
+    - added shell-entity path:
+      - `EnsureLegacyCharacterEntity(reg, ch, legacyVID)`
+    - `CreatePC(...)` now reuses and fills an existing shell entity if present
+    - `CreateMonster/CreateNPC/CreateStone` now reuse and fill an existing shell entity if present
+  - `SRC/Server/GameServer/char_manager.cpp`
+    - `CreateCharacter(...)` now creates the ECS shell entity before legacy `m_map_pkChrByVID` insertion
+- functional result of `VID-A1`:
+  - a freshly created legacy `CHARACTER` now has an ECS-side entity with:
+    - `VIDComponent`
+    - `LegacyCharPtr`
+  - this happens before the legacy VID lookup map insert
+  - this removes the previously audited creation-order drift on the main creation path
+- `VID-A2` lookup switch:
+  - `CHARACTER_MANAGER::Find(uint32_t)` now:
+    1. resolves `entt::entity` via `CVIDRegistry`
+    2. resolves `LPCHARACTER` via `ecs::LegacyCharPtr`
+    3. falls back to legacy `m_map_pkChrByVID` only if ECS lookup fails
+  - fallback emits:
+    - `VID_DRIFT fallback in CHARACTER_MANAGER::Find(%u)`
+  - `Find(const VID&)` is now a thin wrapper over `Find((uint32_t)vid)`
+- build / deploy / runtime checkpoint:
+  - build gate passed after both steps:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh `GameServer.exe` deployed to WinTest share bin
+  - restarted:
+    - `Database`
+    - `Login`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - boot logs came up clean except for the pre-existing motion asset warnings
+  - no immediate `VID_DRIFT` lines were observed in fresh boot logs
+- important limitation:
+  - no full manual login/combat regression pass was completed in this checkpoint
+  - validation level is:
+    - build green
+    - deploy green
+    - multi-core boot green
+    - no immediate drift warnings at boot
+- why VID-A stopped after A2 in this pass:
+  - the next block is materially larger and higher risk than A1/A2:
+    - `GetVID()` call refs: `241`
+    - `m_vid` refs: `16`
+    - `m_kVIDVictim` refs: `7`
+    - `TDamageMap/TBattleInfo` refs: `19`
+    - raw `VID` type refs: `28`
+  - the real blocker cluster is in:
+    - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+      - `m_kVIDVictim`
+      - `m_map_kDamage`
+      - `TDamageMap<VID, ...>`
+      - direct `GetVID()`-based damage/victim bookkeeping
+- next recommended order for VID-A continuation:
+  1. add packet-boundary-only `GetPacketVID()` temporarily
+  2. replace `m_kVIDVictim` with `entt::entity`
+  3. convert `TDamageMap<VID, ...>` to `TDamageMap<entt::entity, ...>`
+  4. only then remove `m_vid` / `GetVID()` / `vid.h`
+
+## Phase 15 VID-A3 - victim tracking moved to `entt::entity`
+- completed:
+  - `VID-A3.1` packet-boundary helper:
+    - `CHARACTER::GetPacketVID() const`
+  - `VID-A3.2` victim field replacement:
+    - `m_kVIDVictim` -> `m_eVictim`
+- files touched:
+  - `SRC/Server/GameServer/char.h`
+    - added `GetPacketVID() const`
+    - replaced victim field:
+      - `VID m_kVIDVictim`
+      - -> `entt::entity m_eVictim { entt::null }`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+    - implemented `CHARACTER::GetPacketVID()`
+    - `Initialize()` now resets:
+      - `m_eVictim = entt::null`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - `FuncForgetMyAttacker` now compares victim via entity
+    - `SetVictim(...)` now stores `AIHelpers::EcsOf(pkVictim)`
+    - `SetVictim(nullptr)` now clears to `entt::null`
+    - `GetVictim()` now resolves through:
+      - `g_registry.try_get<ecs::LegacyCharPtr>(m_eVictim)`
+- verification:
+  - `m_kVIDVictim` grep count in `SRC/Server/GameServer`: `0`
+  - `m_eVictim` grep count in `SRC/Server/GameServer`: `9`
+  - build gate passed:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- WinTest deploy / boot checkpoint:
+  - fresh `GameServer.exe` copied to:
+    - `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+  - restarted:
+    - `Database`
+    - `Login`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - fresh `core99` log tail showed:
+    - no `VID_DRIFT fallback`
+    - no `entt::null` crash text
+    - only the pre-existing motion asset warnings
+- important limitation:
+  - no manual in-client combat regression was completed in this checkpoint
+  - because of that, validation level is:
+    - build green
+    - deploy green
+    - multi-core boot green
+    - no immediate victim/drift errors at boot
+- next VID-A step remains:
+  - `VID-A4`
+    - convert `TDamageMap<VID, ...>` to `TDamageMap<entt::entity, ...>`
+  - after that:
+    - remove `m_vid`
+    - remove `GetVID()`
+    - delete `vid.h`
