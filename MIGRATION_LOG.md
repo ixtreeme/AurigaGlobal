@@ -4362,3 +4362,46 @@ itt voltunk
     - a mechanical public-only cut would almost certainly reintroduce the same parse/inlined-private-state failure mode seen in the previous extraction attempt
   - conclusion:
     - the next viable step is targeted de-inlining / declaration-only lifting of public methods before retrying a real public-only `char_interface.hpp`
+## Phase 14a - VitalRegenSystem legacy sync rewrite
+- legacy regen audit:
+  - authoritative HP/SP recovery still runs in `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp` via `EVENTFUNC(recovery_event)`
+  - regen scheduling remains legacy-owned:
+    - PCs: typically `PASSES_PER_SEC(3)`
+    - mobs: `PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle))`
+  - legacy recovery applies HP through `ch->PointChange(POINT_HP, ...)`
+  - the recovery event also emits `ecs::EvRecovery`, but the actual regen authority is still the live `CHARACTER`
+- previous `VitalRegenSystem` problem:
+  - it used a simplified `level / 10` formula
+  - it wrote ECS `Health/Mana/Stamina` directly
+  - it did not use `LegacyCharOf`
+  - it was not legacy-equivalent and had double-regen risk if enabled
+- rewrite completed in `SRC/Server/GameServer/ecs/systems/VitalRegenSystem.cpp`:
+  - added local `LegacyCharOf(entt::entity)` bridge using `ecs::VIDComponent` + `CHARACTER_MANAGER::instance().Find(...)`
+  - system is now sync-only: it does not apply regen itself
+  - on each tick it mirrors `GetHP()/GetMaxHP()/GetSP()/GetMaxSP()/GetStamina()/GetMaxStamina()` from the live `CHARACTER` back into ECS components
+  - `ecs::DirtyTag` is only raised when mirrored values actually changed
+- `main.cpp` current checkpoint:
+  - `VitalRegenSystem_Update(g_registry, tick);` has been re-enabled
+  - this is intentionally paired with the sync-only rewrite, so legacy `recovery_event` remains authoritative and no double-regen is introduced by ECS itself
+- build/deploy checkpoint:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8` green after rewrite
+  - fresh `GameServer.exe` deployed to `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+  - WinTest stack restarted from the shared binary path:
+    - `Database.exe`
+    - `Login.exe`
+    - `CORE99.exe`
+- runtime note:
+  - no new VitalRegen-specific crash was observed in the immediate auth/core log tail after restart
+  - existing unrelated noise remained present (`Cube_init`, `Blend_Item_init`, quest/ECS registry warnings)
+- WinTest manual verification:
+  - login and enter world: OK
+  - HP regeneration over time: OK
+  - SP regeneration over time: OK
+  - no double-regen observed: OK
+  - combat damage and recovery behavior: OK
+  - no new regen-specific crash observed: OK
+- separate runtime note:
+  - cross-core teleport readiness is still a WinTest startup/routing issue and is not treated as a `VitalRegenSystem` regression
+- commits:
+  - `251d5e5` `Phase 14a: P14a-1 Rewrite VitalRegenSystem as legacy sync`
+  - `Phase 14a: P14a-3 Enable VitalRegenSystem` pending local commit after log finalization

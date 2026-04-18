@@ -862,10 +862,8 @@ int idle()
 		// AISystem_Update(g_registry, tick);
 		MovementSystem_Update(g_registry, tick);
 		CombatSystem_Update(g_registry, tick);
-		// VitalRegenSystem is disabled during the migration window.
-		// Legacy CHARACTER_MANAGER::Update() still owns HP/SP regeneration.
-		// Re-enable in Phase 10 after legacy regen removal.
-		// VitalRegenSystem_Update(g_registry, tick);
+		// VitalRegenSystem mirrors legacy recovery_event output back into ECS.
+		VitalRegenSystem_Update(g_registry, tick);
 		AffectSystem::UpdateAffect(g_registry, tick);
 		AffectSystem_Update(g_registry, tick);
 		// NetworkSyncSystem is disabled during the migration window.
