@@ -312,7 +312,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, mob->GetVID());
+					lua_pushnumber(L, mob->GetPacketVID());
 				}
 			}
 		}
@@ -381,7 +381,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, mob->GetVID());
+					lua_pushnumber(L, mob->GetPacketVID());
 				}
 			}
 		}

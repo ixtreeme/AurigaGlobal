@@ -1414,7 +1414,7 @@ namespace quest
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
 						pSpawnMonster->GetMapIndex(),
-						pSpawnMonster->GetVID());
+						pSpawnMonster->GetPacketVID());
 				}
 				}
 			}
@@ -1483,7 +1483,7 @@ namespace quest
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
 						pSpawnMonster->GetMapIndex(),
-						pSpawnMonster->GetVID());
+						pSpawnMonster->GetPacketVID());
 				}
 				}
 			}

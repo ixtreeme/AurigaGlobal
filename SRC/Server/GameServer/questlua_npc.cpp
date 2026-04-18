@@ -271,13 +271,13 @@ namespace quest
 #ifdef ENABLE_BUG_FIXES
 		LPPARTY party = npc ? npc->GetParty() : nullptr;
 		LPCHARACTER leader = party ? party->GetLeader() : nullptr;
-		lua_pushnumber(L, leader ? leader->GetVID() : 0);
+		lua_pushnumber(L, leader ? leader->GetPacketVID() : 0);
 #else
 		PPARTY party = npc->GetParty();
 		LPCHARACTER leader = party->GetLeader();
 
 		if (leader)
-			lua_pushnumber(L, leader->GetVID());
+			lua_pushnumber(L, leader->GetPacketVID());
 		else
 			lua_pushnumber(L, 0);
 #endif
