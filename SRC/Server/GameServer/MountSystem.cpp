@@ -13,6 +13,8 @@
 #include "item_manager.h"
 #include "item.h"
 #include "ecs/EventDispatcher.hpp"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/events.hpp"
 
@@ -39,7 +41,7 @@ EVENTFUNC(mountsystem_update_event)
 	pMountSystem->Update(0);
 	if (auto* owner = pMountSystem->GetOwner())
 	{
-		const entt::entity e = CVIDRegistry::Instance().Find(owner->GetVID());
+		const entt::entity e = AIHelpers::EcsOf(owner);
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvMountSystemUpdate { e });
 	}
@@ -297,8 +299,8 @@ void CMountActor::Unsummon()
 		
 		if (nullptr != m_pkChar)
 		{
-			LPCHARACTER pkMount = CHARACTER_MANAGER::instance().Find(m_pkChar->GetVID());
-			if (pkMount == m_pkChar)
+			const entt::entity mountEntity = AIHelpers::EcsOf(m_pkChar);
+			if (mountEntity != entt::null && g_registry.valid(mountEntity))
 				M2_DESTROY_CHARACTER(m_pkChar);
 		}
 
@@ -338,7 +340,7 @@ uint32_t CMountActor::Summon(LPITEM pSummonItem, bool bSpawnFar)
 	if (nullptr != m_pkChar)
 	{
 		m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y);
-		m_dwVID = m_pkChar->GetVID();
+		m_dwVID = m_pkChar->GetPacketVID();
 
 		return m_dwVID;
 	}
@@ -363,7 +365,7 @@ uint32_t CMountActor::Summon(LPITEM pSummonItem, bool bSpawnFar)
 
 	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
 
-	m_dwVID = m_pkChar->GetVID();
+	m_dwVID = m_pkChar->GetPacketVID();
 
 	this->SetName();
 
@@ -548,7 +550,8 @@ bool CMountSystem::Update(uint32_t deltaTime)
 				continue;
 			}
 
-			if (CHARACTER_MANAGER::instance().Find(pMount->GetVID()) != pMount)
+			const entt::entity mountEntity = AIHelpers::EcsOf(pMount);
+			if (mountEntity == entt::null || !g_registry.valid(mountEntity))
 			{
 				v_garbageActor.push_back(mountActor);
 			}
