@@ -4405,3 +4405,124 @@ itt voltunk
 - commits:
   - `251d5e5` `Phase 14a: P14a-1 Rewrite VitalRegenSystem as legacy sync`
   - `Phase 14a: P14a-3 Enable VitalRegenSystem` pending local commit after log finalization
+
+## Phase 14b - Monster combat / AI restoration checkpoint
+- scope:
+  - this pass focused on restoring post-`char_state.cpp` monster retaliate/chase/attack behavior enough to unblock live WinTest validation
+  - work is still local and uncommitted; this section documents the exact checkpoint before switching focus back to LPITEM/ECS work
+- root-cause findings:
+  - the previous `char_state.cpp` removal left monsters without an authoritative `StateIdle` / `StateBattle` execution path
+  - symptom: monsters could receive aggro/victim state but would not chase or would stop next to the player without transitioning into a real attack loop
+  - a second issue existed on the player melee side:
+    - skill damage still worked
+    - normal melee damage often failed, especially while mounted
+    - `CPVPManager::CanAttack(...)` still blocked mounted normal attacks before the non-PC victim fast-path
+- restored legacy-style monster FSM surface:
+  - `SRC/Server/GameServer/char.h`
+    - reintroduced state members and declarations needed by the deleted legacy monster state machine:
+      - `m_stateIdle`
+      - `m_stateBattle`
+      - `StateIdle()`
+      - `StateBattle()`
+      - `__StateIdle_Monster()`
+      - `__StateIdle_NPC()`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+    - constructor and initialization now wire `m_stateIdle` / `m_stateBattle`
+    - runtime init returns monsters to `GotoState(m_stateIdle)` with `m_dwStateDuration = 1`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.cpp`
+    - reintroduced legacy-style:
+      - `CHARACTER::StateIdle()`
+      - `CHARACTER::__StateIdle_NPC()`
+      - `CHARACTER::__StateIdle_Monster()`
+      - `CHARACTER::StateBattle()`
+      - helper `LegacyGotoNearTarget(...)`
+    - `AISystem_Update(...)` remains observation-only and skips PCs
+    - this was enough to restore monster chase/follow behavior in WinTest
+- movement/combat bridge fixes layered on top:
+  - `SRC/Server/GameServer/char_manager.cpp`
+    - `SpawnMob(...)` / monster spawn paths now create ECS entities for monsters as well, not only for PCs/NPCs/stones
+    - destroy path also tears down the ECS entity
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+    - when ECS movement reaches destination, monsters now transition back into `POS_FIGHTING` if they still have a victim
+    - this restores the missing `StateMove -> StateBattle` handoff that previously caused mobs to run up to the player and then stop
+    - `Stop()` / `SetPosition()` were additionally guarded so the restored battle/idle state transitions do not push PCs into monster FSM paths
+  - `SRC/Server/GameServer/pvp.cpp`
+    - mounted normal-attack restriction is now effectively limited to PC-vs-PC flow
+    - non-PC targets are allowed through before the mount restriction branch
+- combat/melee instrumentation still present locally:
+  - `SRC/Server/GameServer/battle.cpp`
+    - added `COMBAT_DEBUG` logging around:
+      - `battle_is_attackable(...)`
+      - `battle_melee_attack(...)`
+      - BANPK and distance gates
+    - fixed suspicious precedence in the melee timing check:
+      - `(get_dword_time() - lastAttackTime) < (IsRiding() ? 800 : 750)`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - added `COMBAT_DEBUG` logging around:
+      - `CHARACTER::Attack(...)`
+      - `battle_is_attackable` aborts
+      - attack result and victim type
+    - player-side `GetMobAttackRange()` debug spam was reduced by guarding debug range reads behind `!IsPC()`
+  - `SRC/Server/GameServer/input_main.cpp`
+    - temporary `COMBAT_DEBUG INPUT ...` logging for:
+      - `HEADER_CG_ATTACK`
+      - move packets carrying `FUNC_ATTACK` / `FUNC_COMBO`
+- WinTest observations from this checkpoint:
+  - full stack was restarted repeatedly with:
+    - `auth`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - net improvement vs. pre-fix baseline:
+    - monsters now aggro
+    - monsters now chase/follow the player
+  - unresolved at the time of this checkpoint:
+    - normal melee remained inconsistent in live testing
+    - skills could still kill mobs even when normal melee appeared blocked
+    - `core99` still showed repeated `GetMobAttackRange: m_pkMobData NULL` spam on the player in some sessions, indicating at least one remaining incorrect player-side path into mob-only attack range logic
+- current disposition:
+  - this combat/AI branch is documented but not finalized
+  - no Phase 14b enable/complete commit has been made from this checkpoint
+  - work now intentionally pauses here so ECS migration can continue on the LPITEM / broader item surface
+- current local modified files related to this checkpoint:
+  - `CMakeLists.txt`
+  - `SRC/Server/GameServer/battle.cpp`
+  - `SRC/Server/GameServer/char.h`
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/ecs/systems/AISystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+  - `SRC/Server/GameServer/input_main.cpp`
+  - `SRC/Server/GameServer/pvp.cpp`
+
+## Phase 14b-fix Round 2 - Normal melee input routing diagnostic (instrumentation)
+- objective:
+  - distinguish whether normal melee is blocked only while mounted, blocked in all states, or received but rejected later in the server chain
+- input dispatch audit:
+  - `SRC/Server/GameServer/input_main.cpp`
+    - `CInputMain::Move(...)` begins at line ~2220
+    - `CInputMain::Attack(...)` begins at line ~2447
+    - packet dispatch routes both `HEADER_CG_ATTACK` and `HEADER_CG_SHOOT` into `Attack(...)` at line ~5495
+    - `HEADER_CG_MOVE` dispatch stays in the general input switch at line ~5421
+  - `SRC/Server/GameServer/input.cpp`
+    - only generic packet-header tracing near line ~82, no dedicated melee routing
+- instrumentation added in `SRC/Server/GameServer/input_main.cpp`:
+  - at the start of `CInputMain::Move(...)`, before `CanMove()`:
+    - unconditional `MELEE_INPUT: Move ...` log for `FUNC_ATTACK` and `FUNC_COMBO`
+  - at the start of `CInputMain::Attack(...)`, before skill/PVP/battle guards:
+    - unconditional `MELEE_INPUT: Attack ...` log
+- build/deploy status:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8` passed
+  - fresh `GameServer.exe` deployed to WinTest
+  - full WinTest stack restarted with:
+    - `auth`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+- status:
+  - this round is diagnostic only
+  - next required action is the controlled live test sequence:
+    - dismount -> normal melee
+    - mount -> normal melee
+  - after that the fresh `MELEE_INPUT` lines in `core99/syslog.txt` will distinguish scenario A/B/C

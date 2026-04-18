@@ -2225,10 +2225,13 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	if (!ch)
 		return;
 
+	struct command_move * pinfo = (struct command_move *) data;
+
+	if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
+		sys_log(0, "MELEE_INPUT: Move func=%u ch=%s mounted=%d", pinfo->bFunc, ch->GetName(), ch->IsRiding() ? 1 : 0);
+
 	if (!ch->CanMove())
 		return;
-
-	struct command_move * pinfo = (struct command_move *) data;
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
 	{
@@ -2323,7 +2326,12 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	else
 	{
 		if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
+		{
+			if (test_server && ch->IsPC())
+				sys_log(0, "COMBAT_DEBUG INPUT MOVE_ATTACK name=%s vid=%u func=%u riding=%d mountVnum=%u x=%d y=%d",
+					ch->GetName(), ch->GetVID(), pinfo->bFunc, ch->IsRiding() ? 1 : 0, ch->GetMountVnum(), pinfo->lX, pinfo->lY);
 			ch->OnMove(true);
+		}
 		else if (pinfo->bFunc & FUNC_SKILL)
 		{
 			const int MASK_SKILL_MOTION = 0x7F;
@@ -2442,6 +2450,8 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	if (nullptr == ch)
 		return;
 
+	sys_log(0, "MELEE_INPUT: Attack header=%u ch=%s mounted=%d", header, ch->GetName(), ch->IsRiding() ? 1 : 0);
+
 	struct type_identifier
 	{
 		uint8_t header;
@@ -2489,6 +2499,10 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					return;
 
 				const TPacketCGAttack* const packMelee = reinterpret_cast<const TPacketCGAttack*>(data);
+
+				if (test_server && ch->IsPC())
+					sys_log(0, "COMBAT_DEBUG INPUT HEADER_CG_ATTACK name=%s vid=%u targetVID=%u type=%u riding=%d mountVnum=%u",
+						ch->GetName(), ch->GetVID(), packMelee->dwVID, packMelee->bType, ch->IsRiding() ? 1 : 0, ch->GetMountVnum());
 
 				ch->GetDesc()->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
 
