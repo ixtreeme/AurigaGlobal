@@ -1,0 +1,160 @@
+Phase 15 Week 1 - trivial accessor migration checkpoint
+Date: 2026-04-18
+Workspace: E:\AurigaGlobal\LiveWork\AurigaGlobal
+
+Scope
+- Week 1 syntactic migration only.
+- No ECS data authority change yet.
+- CharacterAccessors.hpp remains legacy passthrough.
+
+Helper added
+- SRC/Server/GameServer/ecs/CharacterAccessors.hpp
+  - ecs::GetPlayerID(LPCHARACTER)
+  - ecs::GetName(LPCHARACTER)
+  - ecs::GetMapIndex(LPCHARACTER)
+  - ecs::GetVID(LPCHARACTER)
+  - ecs::GetX(LPCHARACTER)
+  - ecs::GetY(LPCHARACTER)
+
+Migration rule used
+- Only trivial read-only accessor calls were rewritten.
+- Pattern:
+  - ch->GetPlayerID() -> ecs::GetPlayerID(ch)
+  - ch->GetName() -> ecs::GetName(ch)
+  - ch->GetMapIndex() -> ecs::GetMapIndex(ch)
+  - ch->GetVID() -> ecs::GetVID(ch)
+  - ch->GetX() -> ecs::GetX(ch)
+  - ch->GetY() -> ecs::GetY(ch)
+- Migration remained syntactic:
+  - helper still delegates to legacy CHARACTER methods
+  - no behavior/authority change
+
+Global recount
+- Calls before Week 1:
+  - 1441
+- Calls after Week 1:
+  - 1220
+- Net reduction:
+  - 221 direct trivial accessor calls
+
+Files migrated this week
+- Total touched files in Week 1 series:
+  - 37
+- Of those:
+  - 1 helper header
+  - 36 source files migrated to ecs accessors
+
+Migrated source files
+- questlua_pc.cpp
+- questlua_npc.cpp
+- questlua_global.cpp
+- questlua_party.cpp
+- questlua_horse.cpp
+- questlua_dungeon.cpp
+- questlua_marriage.cpp
+- questlua_petnew.cpp
+- questlua_affect.cpp
+- questlua_game.cpp
+- questlua_pet.cpp
+- questlua_target.cpp
+- questlua_item.cpp
+- questlua_guild.cpp
+- questlua_arena.cpp
+- questlua_building.cpp
+- questlua_dragonsoul.cpp
+- questlua_danceevent.cpp
+- OXEvent.cpp
+- ani.cpp
+- battle_pass.cpp
+- cmd_gm2.cpp
+- entity_view.cpp
+- p2p.cpp
+- priv_manager.cpp
+- whisper_admin.cpp
+- polymorph.cpp
+- input.cpp
+- horse_rider.cpp
+- over9refine.cpp
+- buff_on_attributes.cpp
+- desc.cpp
+- safebox.cpp
+- MountSystem.cpp
+- PetSystem.cpp
+- New_PetSystem.cpp
+
+Files intentionally skipped because target accessor count was zero
+- regen.cpp
+- cmd_oxevent.cpp
+- mob_manager.cpp
+- entity.cpp
+- new_offlineshop_safebox.cpp
+- BattleArena.cpp
+- MountInventory.cpp
+
+Files attempted but rolled back
+- horsename_manager.cpp
+  - build break after include insertion
+  - cause:
+    - existing forward-only include surface collided with CharacterAccessors.hpp dependency chain
+  - status:
+    - reverted cleanly
+    - manual review needed
+
+Post-migration residue
+- In the migrated .cpp file set, direct matches for:
+  - GetPlayerID
+  - GetName
+  - GetMapIndex
+  - GetVID
+  - GetX
+  - GetY
+  on the common CHARACTER pointer variable names are now:
+  - 0
+- Remaining global direct-call count (1220) therefore lives in:
+  - untouched files
+  - variable names outside the conservative replacement set
+  - higher-risk files deferred to later weeks
+
+Build gate
+- Status:
+  - GREEN after helper creation
+  - GREEN after every migrated file in the Week 1 batch
+- Command:
+  - cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+
+Warnings observed
+- Existing MSVC warnings in questlua / helper files persisted
+- Existing post-build environment warning persisted:
+  - 'pwsh.exe' is not recognized as an internal or external command
+- No new blocking compile/link failures remained in committed files
+
+Runtime verification
+- Manual WinTest gameplay verification was not completed in this checkpoint document.
+- Because the helper layer is pure legacy passthrough, behavior risk is low, but a dedicated Week 1 runtime smoke is still recommended:
+  - quest dialogs
+  - movement
+  - combat
+  - chat
+  - syserr tail check
+
+Assessment
+- Week 1 succeeded as a syntax-first reduction pass.
+- The reduction is meaningful, but below the aspirational ~2000-call cut because:
+  - the requested 6 methods on the selected file set only yielded 221 removable direct calls under the conservative replacement pattern
+  - many remaining calls use:
+    - other variable names
+    - untouched files
+    - methods outside the Week 1 trivial accessor set
+- The approach is still valid:
+  - low-risk helper indirection is now established
+  - follow-up weeks can widen the variable-name set and extend helper coverage
+
+Recommended Week 2 follow-up
+- Extend CharacterAccessors.hpp to read ECS components first with legacy fallback
+- Expand replacement set to additional trivial getters:
+  - GetRaceNum
+  - GetLevel
+  - GetDesc (careful)
+  - IsPC / IsNPC / IsMonster
+- Resume from remaining easy/medium files
+- Revisit horsename_manager.cpp with a narrower include strategy
