@@ -3,6 +3,7 @@
 #include "config.h"
 #include "questmanager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -40,4 +41,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("ds", ds_functions);
 	}
 };
+
 
