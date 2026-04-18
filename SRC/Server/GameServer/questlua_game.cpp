@@ -22,6 +22,7 @@
 #endif
 #ifdef ENABLE_EVENT_MANAGER
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #endif
 #undef sys_err
 #ifndef _WIN32
@@ -153,8 +154,8 @@ namespace quest
 
 		uint32_t item_vnum = (uint32_t) lua_tonumber(L, 1);
 		int count = (int) lua_tonumber(L, 2);
-		int32_t x = ch->GetX();
-		int32_t y = ch->GetY();
+		int32_t x = ecs::GetX(ch);
+		int32_t y = ecs::GetY(ch);
 
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(item_vnum, count);
 
@@ -168,7 +169,7 @@ namespace quest
 		pos.x = x + number(-200, 200);
 		pos.y = y + number(-200, 200);
 
-		item->AddToGround(ch->GetMapIndex(), pos);
+		item->AddToGround(ecs::GetMapIndex(ch), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -215,10 +216,10 @@ namespace quest
 			item->SetOwnership( ch );
 
 		PIXEL_POSITION pos;
-		pos.x = ch->GetX() + number(-200, 200);
-		pos.y = ch->GetY() + number(-200, 200);
+		pos.x = ecs::GetX(ch) + number(-200, 200);
+		pos.y = ecs::GetY(ch) + number(-200, 200);
 
-		item->AddToGround(ch->GetMapIndex(), pos);
+		item->AddToGround(ecs::GetMapIndex(ch), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -271,10 +272,10 @@ namespace quest
 			item->SetOwnership( ch );
 
 		PIXEL_POSITION pos;
-		pos.x = ch->GetX() + number(-200, 200);
-		pos.y = ch->GetY() + number(-200, 200);
+		pos.x = ecs::GetX(ch) + number(-200, 200);
+		pos.y = ecs::GetY(ch) + number(-200, 200);
 
-		item->AddToGround(ch->GetMapIndex(), pos);
+		item->AddToGround(ecs::GetMapIndex(ch), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -457,5 +458,6 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("game", game_functions);
 	}
 }
+
 
 
