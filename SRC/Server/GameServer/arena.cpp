@@ -300,7 +300,7 @@ EVENTFUNC(ready_to_start_event)
 
 				uint32_t dwOppList[8]; // 최대 파티원 8명 이므로..
 
-				dwOppList[0] = (uint32_t)chB->GetVID();
+				dwOppList[0] = chB->GetPacketVID();
 				TEMP_BUFFER buf;
 
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
@@ -308,7 +308,7 @@ EVENTFUNC(ready_to_start_event)
 				chA->GetDesc()->Packet(buf.read_peek(), buf.size());
 
 
-				dwOppList[0] = (uint32_t)chA->GetVID();
+				dwOppList[0] = chA->GetPacketVID();
 				TEMP_BUFFER buf2;
 
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
@@ -352,12 +352,12 @@ EVENTFUNC(ready_to_start_event)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
 
-				dwOppList[0] = (uint32_t)chB->GetVID();
+				dwOppList[0] = chB->GetPacketVID();
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
 				chA->GetDesc()->Packet(buf.read_peek(), buf.size());
 
-				dwOppList[0] = (uint32_t)chA->GetVID();
+				dwOppList[0] = chA->GetPacketVID();
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
 				chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
