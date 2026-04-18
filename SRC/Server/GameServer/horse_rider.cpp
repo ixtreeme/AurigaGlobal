@@ -1,10 +1,11 @@
-ï»¿#include "stdafx.h"
+#include "stdafx.h"
 #include "constants.h"
 #include "utils.h"
 #include "horse_rider.h"
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/events.hpp"
@@ -18,10 +19,10 @@ const int HORSE_STAMINA_REGEN_INTERVAL = 12 * 60;
 
 THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 /*
-   int iMinLevel;	// Ä¹Ä¾ËÃ‚Ã‡Å‡ Ä½Ã¶ Å”Ã–Â´Ã‚ Ä‚Ã–Ä½Å‡ Â·Ä…ÅŸÂ§
+   int iMinLevel;	// Å¾½ÂÇÒ ¼ö ÀÖ´Â ÃÖ¼Ò ·¹º§
    int iNPCRace;
-   int iMaxHealth;	// Â¸Â»Å”Ã‡ Ä‚Ã–Â´Ã« Ä‚Ä½Â·Ã‚
-   int iMaxStamina;	// Â¸Â»Å”Ã‡ Ä‚Ã–Â´Ã« ËÅŸÄ¹Ã—Ä…ÄšÅ‚Ä˜
+   int iMaxHealth;	// ¸»ÀÇ ÃÖ´ë Ã¼·Â
+   int iMaxStamina;	// ¸»ÀÇ ÃÖ´ë ½ºÅ×¹Ì³Ê
    int iST;
    int iDX;
    int iHT;
@@ -33,7 +34,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
  */
 {//	pclvl	lo		h	s	st	dx  ht  iq      dm  dmax vedelem
 	{  0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0  },
-	{ 25,	20101,	3,	4,	26,	1,	18,	9,	54,	43,	64,	20 },	// 1 (Ä‚Ä˜Â±Å¢)
+	{ 25,	20101,	3,	4,	26,	1,	18,	9,	54,	43,	64,	20 },	// 1 (ÃÊ±Þ)
 	{ 25,	20101,	4,	4,	27,	36,	18,	9,	55,	44,	66,	33 },
 	{ 25,	20101,	5,	5,	28,	38,	19,	9,	56,	44,	67,	33 },
 	{ 25,	20101,	7,	5,	29,	39,	19,	10,	57,	45,	68,	34 },
@@ -43,7 +44,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 	{ 25,	20101,	12,	7,	33,	44,	22,	11,	61,	48,	73,	36 },
 	{ 25,	20101,	13,	8,	34,	45,	22,	11,	62,	49,	74,	37 },
 	{ 25,	20101,	15,	10,	35,	46,	23,	12,	63,	50,	75,	37 },
-	{ 35,	20104,	18,	30,	40,	53,	27,	13,	69,	55,	82,	41 },	// 11 (ÃÃŸÂ±Å¢)
+	{ 35,	20104,	18,	30,	40,	53,	27,	13,	69,	55,	82,	41 },	// 11 (Áß±Þ)
 	{ 35,	20104,	19,	35,	41,	54,	27,	14,	70,	56,	84,	42 },
 	{ 35,	20104,	21,	40,	42,	56,	28,	14,	71,	56,	85,	42 },
 	{ 35,	20104,	22,	50,	43,	57,	28,	14,	72,	57,	86,	43 },
@@ -53,7 +54,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 	{ 35,	20104,	28,	70,	46,	62,	31,	15,	76,	60,	91,	45 },
 	{ 35,	20104,	30,	80,	47,	63,	31,	16,	77,	61,	92,	46 },
 	{ 35,	20104,	32,	100,	48,	64,	32,	16,	78,	62,	93,	46 },
-	{ 50,	20107,	35,	120,	53,	71,	36,	18,	84,	67,	100,	50 },	// 21 (Â°Ã­Â±Å¢)
+	{ 50,	20107,	35,	120,	53,	71,	36,	18,	84,	67,	100,	50 },	// 21 (°í±Þ)
 	{ 50,	20107,	36,	125,	55,	74,	37,	18,	86,	68,	103,	51 },
 	{ 50,	20107,	37,	130,	57,	76,	38,	19,	88,	70,	105,	52 },
 	{ 50,	20107,	38,	135,	59,	78,	39,	20,	90,	72,	108,	54 },
@@ -121,7 +122,7 @@ bool CHorseRider::ReviveHorse()
 	m_Horse.sHealth = c_aHorseStat[level].iMaxHealth;
 	m_Horse.sStamina = c_aHorseStat[level].iMaxStamina;
 
-	// 2005.03.24.ipkn.Â¸Â» Â»Ä›Â¸Â°ÄŒÃ„ Â´Å®ËÄ‚ ÃÃ—Â´Ã‚ Ã‡Ã¶Â»Ã³ Ä½Ã¶ÃÂ¤
+	// 2005.03.24.ipkn.¸» »ì¸°ÈÄ ´Ù½Ã Á×´Â Çö»ó ¼öÁ¤
 	ResetHorseHealthDropTime();
 
 	StartStaminaRegenEvent();
@@ -142,12 +143,12 @@ short CHorseRider::GetHorseMaxStamina()
 
 void CHorseRider::FeedHorse()
 {
-	// Â¸Â»Ã€Â» Â°Â¡ÃÃ¶Â°Ã­ Â»Ã¬Â¾Ã†Ã€Ã–Ã€Â»Â¶Â§Â¸Â¸
+	// ¸»A» °!Áö°í »i3AAÖA»¶§¸¸
 	if (GetHorseLevel() > 0 && GetHorseHealth() > 0)
 	{
 		UpdateHorseHealth(+1);
-		UpdateHorseStamina(+1);// etetÃ©snÃ©l a kitartÃ¡s is nÃ¶ 
-		// 20050324. ipkn Â¸Â» Â¸Ã”Â¿Â´Ã€Â»Â¶Â§ÂµÂµ ÃƒÂ¼Â·Ã‚ Â°Â¨Â¼Ã’ ÂµÃ´Â·Â¹Ã€ÃŒÂ¸Â¦ Â´ÃƒÂ¸Â°Â´Ã™.
+		UpdateHorseStamina(+1);// etetésnél a kitartás is nö 
+		// 20050324. ipkn ¸» ¸Ô?´A»¶§µµ A1·Â °¨1O µô·1AI¸¦ ´A¸°´U.
 		ResetHorseHealthDropTime();
 	}
 }
@@ -164,7 +165,7 @@ void CHorseRider::UpdateHorseDataByLogoff(uint32_t dwLogoffTime)
 		return;
 
 	if (dwLogoffTime >= 12 * 60)
-		UpdateHorseStamina(dwLogoffTime / 12 / 60, false); // Â·ÃŽÂ±Ã—Å¼Å”Ã‡Ã 12ÅŸÄÂ´Ã§ 1Ä¾Å¼ ÄŒÂ¸ÅŸÄ…
+		UpdateHorseStamina(dwLogoffTime / 12 / 60, false); // ·Î±×¿ÀÇÁ 12ºÐ´ç 1¾¿ È¸º¹
 }
 
 void CHorseRider::UpdateHorseStamina(int iStamina, bool bSend)
@@ -254,7 +255,7 @@ EVENTFUNC(horse_stamina_consume_event)
 	hr->CheckHorseHealthDropTime();
 	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
 	{
-		const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		const entt::entity e = CVIDRegistry::Instance().Find(ecs::GetVID(ch));
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaConsume { e });
 	}
@@ -291,7 +292,7 @@ EVENTFUNC(horse_stamina_regen_event)
 	hr->CheckHorseHealthDropTime();
 	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
 	{
-		const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+		const entt::entity e = CVIDRegistry::Instance().Find(ecs::GetVID(ch));
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaRegen { e });
 	}
@@ -403,4 +404,5 @@ uint8_t CHorseRider::GetHorseGrade()
 
 	return 2;
 }
+
 
