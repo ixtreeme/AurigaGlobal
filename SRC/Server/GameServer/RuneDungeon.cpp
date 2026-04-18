@@ -463,7 +463,7 @@ namespace
 
                 char vidFlag[32];
                 snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i + 1);
-                d->SetFlag(vidFlag, (int32_t)stone->GetVID());
+		d->SetFlag(vidFlag, (int32_t)stone->GetPacketVID());
             }
 
             d->SetFlag(kFlagCount, 0);
@@ -553,7 +553,7 @@ namespace
                         ClearDungeon(mapIndex);
                         return;
                     }
-                    d->SetFlag(kFlagBossVid, (int32_t)boss->GetVID());
+	d->SetFlag(kFlagBossVid, (int32_t)boss->GetPacketVID());
                     ScheduleCheck(mapIndex, 2);
                 }
                 else // type == 3
@@ -582,7 +582,7 @@ namespace
                 }
                 boss->SetInvincible(true);
 
-                d->SetFlag(kFlagBossVid, (int32_t)boss->GetVID());
+	d->SetFlag(kFlagBossVid, (int32_t)boss->GetPacketVID());
 
                 d->SpawnRegen(kRegenFloor5, true);
 
@@ -964,7 +964,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i);
             snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", i);
 
-            if ((uint32_t)d->GetFlag(vidFlag) == victim->GetVID())
+	if ((uint32_t)d->GetFlag(vidFlag) == victim->GetPacketVID())
             {
                 d->SetFlag(doneFlag, 1);
                 break;
@@ -1064,7 +1064,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         }
         gate->SetInvincible(true);
 
-        d->SetFlag(kFlagBossVid, (int32_t)gate->GetVID());
+	d->SetFlag(kFlagBossVid, (int32_t)gate->GetPacketVID());
         d->SetFlag(kFlagOpened, 0);
 
         d->SpawnRegen(kRegenFloor6, true);
@@ -1098,7 +1098,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             return;
         }
 
-        d->SetFlag(kFlagBossVid, (int32_t)boss->GetVID());
+	d->SetFlag(kFlagBossVid, (int32_t)boss->GetPacketVID());
         s_rune.ScheduleCheck(idx, 2);
 
         d->Notice(965, "", true);
