@@ -3,6 +3,7 @@
 #include "questmanager.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "db.h"
 #include "ecs/quest_helpers.hpp"
@@ -372,4 +373,5 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("affect", affect_functions);
 	}
 };
+
 
