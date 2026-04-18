@@ -8,6 +8,7 @@
 #include "questmanager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "arena.h"
 
 #include <utility>
@@ -899,7 +900,7 @@ bool CArena::IsMyObserver(uint16_t ObserverX, uint16_t ObserverY)
 
 bool CArena::AddObserver(LPCHARACTER pChar)
 {
-	uint32_t pid = pChar->GetPlayerID();
+	uint32_t pid = ecs::GetPlayerID(pChar);
 
 	m_mapObserver.insert(std::make_pair(pid, (LPCHARACTER)nullptr));
 
@@ -1066,7 +1067,7 @@ bool CArenaMap::RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint16_t
 
 bool CArena::RegisterObserverPtr(LPCHARACTER pChar)
 {
-	uint32_t pid = pChar->GetPlayerID();
+	uint32_t pid = ecs::GetPlayerID(pChar);
 
 	if (const auto iter = m_mapObserver.find(pid); iter == m_mapObserver.end())
 	{
@@ -1146,4 +1147,5 @@ bool CArenaManager::IsLimitedItem(int32_t lMapIndex, uint32_t dwVnum)
 
 	return false;
 }
+
 
