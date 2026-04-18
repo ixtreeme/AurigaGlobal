@@ -875,7 +875,7 @@ public:
 	bool			IsGoto() const { return m_bCharType == CHAR_TYPE_GOTO; }
 	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
-	// DUNGEON_TICKET_LOOT_EVENT extra metin jelölés
+	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
 	void SetDungeonTicketExtraMetin(bool b) { m_bDungeonTicketExtraMetin = b; }
 	bool IsDungeonTicketExtraMetin() const { return m_bDungeonTicketExtraMetin; }
 #endif
@@ -2066,7 +2066,14 @@ public:
 	void			SetVictim(LPCHARACTER pkVictim);
 	LPCHARACTER		GetNearestVictim(LPCHARACTER pkChr);
 	LPCHARACTER		GetProtege() const;	// º¸È£ÇØ¾ß ÇÒ ´ë»ó ¸®ÅÏ
+	virtual void			StateBattle();
+	virtual void			StateIdle();
 
+protected:
+	void				__StateIdle_Monster();
+	void				__StateIdle_NPC();
+
+public:
 	bool			Follow(LPCHARACTER pkChr, float fMinimumDistance = 150.0f);
 	bool			Return();
 	bool			IsGuardNPC() const;
@@ -2331,6 +2338,8 @@ public:
 	void				UpdateCharacter(uint32_t dwPulse);
 
 protected:
+	CStateTemplate<CHARACTER>	m_stateBattle;
+	CStateTemplate<CHARACTER>	m_stateIdle;
 	uint32_t				m_dwNextStatePulse;
 
 	// Marriage
