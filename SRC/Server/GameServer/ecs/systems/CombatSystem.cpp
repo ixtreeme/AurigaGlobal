@@ -97,7 +97,7 @@ static inline entt::entity EntityOf(LPCHARACTER ch)
         return entt::null;
     }
 
-    return CVIDRegistry::Instance().Find(ch->GetVID());
+    return AIHelpers::EcsOf(ch);
 }
 
 static inline bool HasMoveState(const CHARACTER* ch)
@@ -1016,12 +1016,12 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 		//     ϴ
 		int iPartyAggroDist = dam;
 
-		if (pParty->GetLeaderPID() == GetVID())
+		if (pParty->GetLeaderPID() == GetPacketVID())
 			iPartyAggroDist /= 2;
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, pAttacker->GetVID());
+		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, pAttacker->GetPacketVID());
 	}
 
 	ChangeVictimByAggro(info.iAggro, pAttacker);
@@ -1762,7 +1762,7 @@ EVENTFUNC(dead_event)
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDeadEvent
 	ch->m_pkDeadEvent = nullptr;
 	{
-		const entt::entity victimEntity = CVIDRegistry::Instance().Find(ch->GetVID());
+		const entt::entity victimEntity = AIHelpers::EcsOf(ch);
 		if (victimEntity != entt::null)
 			g_dispatcher.trigger(ecs::EvCharDead { entt::null, victimEntity });
 	}
@@ -1871,7 +1871,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	{
 		const uint32_t vnum = GetRaceNum();
 		if (vnum == 5000u || vnum == 124u)
-			Map1MassSpawnEvent_OnMobDead(static_cast<uint32_t>(GetVID()));
+			Map1MassSpawnEvent_OnMobDead(GetPacketVID());
 	}
 #endif
 
@@ -1932,7 +1932,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				if (g1->UnderWar(g2->GetID()))
 					isUnderGuildWar = true;
 
-			pkKiller->SetQuestNPCID(GetVID());
+			pkKiller->SetQuestNPCID(GetPacketVID());
 			quest::CQuestManager::instance().Kill(pkKiller->GetPlayerID(), quest::QUEST_NO_NPC);
 			CGuildManager::instance().Kill(pkKiller, this);
 		}
@@ -1949,7 +1949,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	if (IsPC())
 	{
 		if (pkKiller) {
-			SetQuestNPCID(pkKiller->GetVID());
+			SetQuestNPCID(pkKiller->GetPacketVID());
 		}
 
 		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? pkKiller->GetRaceNum() : quest::QUEST_NO_NPC);
@@ -2288,7 +2288,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		if (!IsPC())
 		{
 			SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
-			pEventInfo->vid = GetVID();
+			pEventInfo->vid = GetPacketVID();
 
 			if (IsRevive() == false && HasReviverInParty() == true)
 			{
@@ -2424,8 +2424,8 @@ void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
 
 	packFly.bHeader = HEADER_GC_CREATE_FLY;
 	packFly.bType = bType;
-	packFly.dwStartVID = GetVID();
-	packFly.dwEndVID = pkVictim->GetVID();
+	packFly.dwStartVID = GetPacketVID();
+	packFly.dwEndVID = pkVictim->GetPacketVID();
 
 	PacketAround(&packFly, sizeof(TPacketGCCreateFly));
 }
@@ -2498,11 +2498,11 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			iRet = battle_melee_attack(this, pkVictim);
 			break;
 		case BATTLE_TYPE_RANGE:
-			FlyTarget(pkVictim->GetVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(pkVictim->GetPacketVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(0) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		case BATTLE_TYPE_MAGIC:
-			FlyTarget(pkVictim->GetVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(pkVictim->GetPacketVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(1) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		default:
@@ -3465,7 +3465,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	if (!IsPC() && !m_pkMobData)
 	{
 		sys_err("Reward: NULL mob data (vid=%u race=%u name=%s map=%ld x=%ld y=%ld attacker=%s)",
-			(uint32_t)GetVID(),
+			GetPacketVID(),
 			GetRaceNum(),
 			GetName(),
 			GetMapIndex(),
@@ -3491,7 +3491,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				pkAttacker->UpdateAlignment(2);
 		}
 
-		pkAttacker->SetQuestNPCID(GetVID());
+		pkAttacker->SetQuestNPCID(GetPacketVID());
 		quest::CQuestManager::instance().Kill(pkAttacker->GetPlayerID(), GetRaceNum());
 		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -4135,7 +4135,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 	if (!m_pkMobData)
 	{
 		sys_err("RewardGold: NULL mob data (vid=%u race=%u name=%s map=%ld x=%ld y=%ld attacker=%s)",
-			(uint32_t)GetVID(),
+			GetPacketVID(),
 			GetRaceNum(),
 			GetName(),
 			GetMapIndex(),
@@ -5430,7 +5430,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #if defined(ENABLE_MELEY_LAIR)
 				if (racevnum == 6118)
 				{
-					int32_t vid = GetVID();
+					int32_t vid = GetPacketVID();
 					if (vid == dungeon->GetFlag("statue_vid1") || vid == dungeon->GetFlag("statue_vid2") || vid == dungeon->GetFlag("statue_vid3") || vid == dungeon->GetFlag("statue_vid4"))
 					{
 						int32_t floor = dungeon->GetFlag("floor");
@@ -5686,7 +5686,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (!IsPC() && pAttacker && pAttacker->IsPC())
 		{
 			pAttacker->SetQuestDamage(GetRaceNum(), dam);
-			pAttacker->SetQuestNPCID(GetVID());
+			pAttacker->SetQuestNPCID(GetPacketVID());
 			quest::CQuestManager::instance().QuestDamage(pAttacker->GetPlayerID(), GetRaceNum());
 		}
 #endif
@@ -6211,8 +6211,8 @@ public:
 
 		  uint32_t * pdw;
 		  uint32_t dwEI = AllocEventInfo(sizeof(uint32_t) * 2, &pdw);
-		  pdw[0] = m_me->GetVID();
-		  pdw[1] = pkVictim->GetVID();
+		  pdw[0] = m_me->GetPacketVID();
+		  pdw[1] = pkVictim->GetPacketVID();
 
 		  event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
 		  }
@@ -6335,11 +6335,11 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 
 	//pack.bHeader	= HEADER_GC_FLY_TARGETING;
 	pack.bHeader = (bHeader == HEADER_CG_FLY_TARGETING) ? HEADER_GC_FLY_TARGETING : HEADER_GC_ADD_FLY_TARGETING;
-	pack.dwShooterVID = GetVID();
+	pack.dwShooterVID = GetPacketVID();
 
 	if (pkVictim)
 	{
-		pack.dwTargetVID = pkVictim->GetVID();
+		pack.dwTargetVID = pkVictim->GetPacketVID();
 		pack.x = pkVictim->GetX();
 		pack.y = pkVictim->GetY();
 
@@ -6467,7 +6467,7 @@ EVENTFUNC(StunEvent)
 	}
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkStunEvent
 	ch->m_pkStunEvent = nullptr;
-	const entt::entity e = CVIDRegistry::Instance().Find(ch->GetVID());
+	const entt::entity e = AIHelpers::EcsOf(ch);
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvStunBegin { e, 3000u });
 	ch->Dead();
@@ -6578,7 +6578,7 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
 
 		damageInfo.header = HEADER_GC_DAMAGE_INFO;
-		damageInfo.dwVID = (uint32_t)GetVID();
+		damageInfo.dwVID = GetPacketVID();
 		damageInfo.flag = DamageFlag;
 		damageInfo.damage = Damage;
 #ifdef ENABLE_TARGET_DAMAGE_RAZOR93
@@ -7249,7 +7249,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 	if (m_pkChrTarget)
 	{
 		m_pkChrTarget->m_set_pkChrTargetedBy.insert(this);
-		p.dwVID = m_pkChrTarget->GetVID();
+	p.dwVID = m_pkChrTarget->GetPacketVID();
 
 #ifdef __VIEW_TARGET_PLAYER_HP__
 		if ((m_pkChrTarget->GetMaxHP() <= 0))
@@ -7420,7 +7420,7 @@ void CHARACTER::BroadcastTargetPacket()
 	TPacketGCTarget p;
 
 	p.header = HEADER_GC_TARGET;
-	p.dwVID = GetVID();
+	p.dwVID = GetPacketVID();
 
 #ifdef __VIEW_TARGET_DECIMAL_HP__
 	if (GetMaxHP() <= 0)
