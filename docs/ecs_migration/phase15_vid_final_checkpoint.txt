@@ -1,0 +1,87 @@
+Phase 15 VID-A Final Checkpoint
+================================
+
+Scope
+- Goal: eliminate legacy `class VID` and `vid.h` from `SRC/Server/GameServer`.
+- Wire format `uint32_t dwVID` remains unchanged at packet boundaries.
+
+VID-A summary
+- VID-A1: creation-order drift removed by creating/registering ECS shell entity before legacy character VID-map insertion.
+- VID-A2: `CHARACTER_MANAGER::Find(uint32_t)` became ECS-authoritative via `CVIDRegistry` with legacy fallback/detector.
+- VID-A3: `m_kVIDVictim` was replaced with `entt::entity m_eVictim`; dead-event payloads now resolve through entity -> `LegacyCharPtr`.
+- VID-A4: `TDamageMap` was converted from `VID` keying to `entt::entity` keying.
+- VID-A5: `CHARACTER::GetVID()` call sites were migrated away from character runtime paths; packet paths use `GetPacketVID()`, legacy authority paths use `GetLegacyVID()`.
+- VID-A6: `CHARACTER::m_vid`, `CHARACTER::GetVID()`, and `CHARACTER_MANAGER::Find(const VID&)` were removed; character VID surface is now split into `GetPacketVID()`, `GetLegacyVID()`, and `GetEntityHandle()`.
+- VID-A7: `vid.h` and all `#include "vid.h"` usage in GameServer were removed.
+
+Before/after counts
+- Legacy VID definition files:
+  - Before A7: 1 (`SRC/Server/GameServer/vid.h`)
+  - After A7: 0
+- `#include "vid.h"` in `SRC/Server/`:
+  - Before A7: 3
+  - After A7: 0
+- Case-sensitive `VID` type/code references in `SRC/Server/GameServer` excluding `dwVID`/`PacketVID`/`LegacyVID`/comments:
+  - Before A7: 3 matches were left after A6, but all were non-type survivors:
+    - log string `VID:` in `PlayerRuntimeSystem.cpp`
+    - log string `VID=%u` in `input_db.cpp`
+    - comment text in `party.h`
+  - After A7: 0 actual type references; only the same non-type text survivors remain.
+- Raw `dwVID` wire-boundary lines in `SRC/Server/`:
+  - Current count: 155
+- Non-CHARACTER `GetVID()` survivors:
+  - Current count: 26
+  - Status: retained intentionally because they belong to independent systems (`CItem`, `CObject`, pet/mount wrappers, offline shop entities) and do not depend on `class VID`.
+
+Remaining `GetVID()` survivors by subsystem
+- Item / object systems:
+  - `CItem::GetVID()`
+  - `CObject::GetVID()`
+  - item manager / building / sectree / item packet encode
+- Pet / mount helper wrappers:
+  - `CPetActor::GetVID()`
+  - `CNewPetActor::GetVID()`
+  - `CMountActor::GetVID()`
+  - related `GetByVID(uint32_t)` helpers
+- Offline shop entities:
+  - entity/shop `GetVID()` used in offline shop bookkeeping and packet encode
+
+Decision on non-CHARACTER survivors
+- Applied option: keep as-is for now.
+- Reason: these classes already expose plain `uint32_t` IDs and do not use the removed `class VID` type internally.
+- Follow-up: these are separate ID domains and should be migrated in their own phases, not mixed into character VID elimination.
+
+Verification
+- Build gate:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - Result: PASS
+- WinTest deployment:
+  - deployed fresh `GameServer.exe`
+  - restarted `Database`, `Login`, `ch1/core1`, `ch1/core2`, `ch99/core99`
+- Boot/log smoke:
+  - No new `VID_DRIFT`
+  - No new `DestroyCharacter ... not found`
+  - No new `SpawnMob: cannot create new character`
+  - No new `CParty::Unlink` spam in the fresh boot window
+- Known unrelated noise still present:
+  - mount/pet motion asset warnings (`motlist.txt`, `run.msa`, `GetMoveMotionSpeed`)
+  - mount follow/same-sectree visual anomaly is still open from the previous checkpoint
+
+Important limitation
+- A full 30-minute manual WinTest gameplay regression was not completed in this checkpoint.
+- Completed verification is limited to build, deploy, restart, and fresh boot/log smoke.
+
+Effect on Phase 15 LPCHARACTER elimination
+- Character runtime no longer depends on the legacy `class VID`.
+- Entity-first flow is now unblocked for the former character lookup routes that previously had to carry `VID`.
+- Remaining work is now about:
+  - converting legacy `Find(dwVID)` packet-boundary consumers to entity-first decode where appropriate
+  - separately auditing non-character ID systems that still use their own `GetVID()` accessors
+
+Final state
+- `vid.h`: deleted
+- `CHARACTER::m_vid`: deleted
+- `CHARACTER::GetVID()`: deleted
+- `CHARACTER_MANAGER::Find(const VID&)`: deleted
+- `CHARACTER` victim/damage tracking: entity-based
+- Packet `dwVID`: unchanged by design
