@@ -147,7 +147,9 @@ namespace quest
 
 		CQuestManager& q = CQuestManager::instance();
 
-		LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();
+		const entt::entity npcEntity = q.GetCurrentNPCEntity();
+
+		auto* npc = ecs::LegacyCharOf(npcEntity);
 		if (!npc)
 			return 0;
 

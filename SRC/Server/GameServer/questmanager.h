@@ -100,7 +100,7 @@ namespace quest
 		unsigned int	FindNPCIDByName(const std::string& name);
 
 		//void		SetCurrentNPCCharacterPtr(LPCHARACTER ch) { m_pkCurrentNPC = ch; }
-		LPCHARACTER		GetCurrentNPCCharacterPtr();
+		LPCHARACTER		GetCurrentNPCCharacterPtr() const;
 
 		void		SetCurrentEventIndex(int index) { m_iRunningEventIndex = index; }
 
@@ -172,9 +172,11 @@ namespace quest
 		bool		CanStartQuest(unsigned int quest_index);
 		bool		CanEndQuestAtState(const std::string& quest_name, const string& state_name);
 
-		LPCHARACTER		GetCurrentCharacterPtr() { return m_pCurrentCharacter; }
-		LPCHARACTER		GetCurrentPartyMember() { return m_pCurrentPartyMember; }
-		PC* GetCurrentPC() { return m_pCurrentPC; }
+		LPCHARACTER		GetCurrentCharacterPtr() const { return m_pCurrentCharacter; }
+		LPCHARACTER		GetCurrentPartyMember() const { return m_pCurrentPartyMember; }
+		PC* GetCurrentPC() const { return m_pCurrentPC; }
+		entt::entity	GetCurrentPCEntity() const;
+		entt::entity	GetCurrentNPCEntity() const;
 		entt::entity	GetPCEntity(lua_State* L);
 		entt::entity	GetNPCEntity(lua_State* L);
 

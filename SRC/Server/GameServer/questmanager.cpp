@@ -1099,10 +1099,8 @@ namespace quest
 		return (m_pCurrentPC);
 	}
 
-	entt::entity CQuestManager::GetPCEntity(lua_State* L)
+	entt::entity CQuestManager::GetCurrentPCEntity() const
 	{
-		(void)L;
-
 		LPCHARACTER ch = GetCurrentCharacterPtr();
 		if (!ch)
 			return entt::null;
@@ -1113,14 +1111,11 @@ namespace quest
 		if (e == entt::null) {
 		}
 
-
 		return e;
 	}
 
-	entt::entity CQuestManager::GetNPCEntity(lua_State* L)
+	entt::entity CQuestManager::GetCurrentNPCEntity() const
 	{
-		(void)L;
-
 		LPCHARACTER ch = GetCurrentNPCCharacterPtr();
 		if (!ch)
 			return entt::null;
@@ -1131,8 +1126,19 @@ namespace quest
 		if (e == entt::null) {
 		}
 
-
 		return e;
+	}
+
+	entt::entity CQuestManager::GetPCEntity(lua_State* L)
+	{
+		(void)L;
+		return GetCurrentPCEntity();
+	}
+
+	entt::entity CQuestManager::GetNPCEntity(lua_State* L)
+	{
+		(void)L;
+		return GetCurrentNPCEntity();
 	}
 
 	void CQuestManager::ClearScript()
@@ -1290,7 +1296,7 @@ namespace quest
 			ch->SetQuestItemPtr(item);
 	}
 
-	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr()
+	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const
 	{
 		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestNPC() : nullptr;
 	}

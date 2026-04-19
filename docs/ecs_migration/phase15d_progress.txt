@@ -1,0 +1,170 @@
+Phase 15D-1 Progress - Questlua LPCHARACTER Mass Migration
+Date: 2026-04-19
+Workspace: E:/AurigaGlobal/LiveWork/AurigaGlobal
+
+Scope
+- Target: non-ECS questlua_*.cpp files
+- Goal of this pass: replace the dominant `LPCHARACTER ch = GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` binding pattern with entity-first quest context acquisition, then bridge back to legacy CHARACTER only where still needed.
+- Compatibility rule kept: `GetCurrentCharacterPtr()` and `GetCurrentNPCCharacterPtr()` remain available for any non-migrated caller.
+
+Step 1 - Binding Pattern Audit
+
+Dominant quest context binding counts before this pass (exact assignment-shape matches):
+- questlua_pc.cpp: 192
+- questlua_npc.cpp: 22
+- questlua_horse.cpp: 21
+- questlua_party.cpp: 21
+- questlua_marriage.cpp: 14
+- questlua_global.cpp: 13
+- questlua_petnew.cpp: 13
+- questlua_affect.cpp: 12
+- questlua_dungeon.cpp: 9
+- questlua_game.cpp: 9
+- questlua_target.cpp: 5
+- questlua_pet.cpp: 5
+- questlua_item.cpp: 4
+- questlua_arena.cpp: 2
+- questlua_guild.cpp: 2
+- questlua_building.cpp: 1
+
+Total exact dominant pattern instances migrated in this pass: 345
+
+Most common binding shapes:
+1. PC binding with direct local pointer:
+   - `LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();`
+2. NPC binding with direct local pointer:
+   - `LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();`
+3. Local quest manager alias form:
+   - `LPCHARACTER ch = q.GetCurrentCharacterPtr();`
+   - `LPCHARACTER npc = q.GetCurrentNPCCharacterPtr();`
+
+Step 2 - Shared Entity-First Helper Surface
+
+Changes made to quest context helpers:
+- Added to `CQuestManager`:
+  - `entt::entity GetCurrentPCEntity() const;`
+  - `entt::entity GetCurrentNPCEntity() const;`
+- Kept compatibility wrappers:
+  - `GetPCEntity(lua_State* L)` now forwards to `GetCurrentPCEntity()`
+  - `GetNPCEntity(lua_State* L)` now forwards to `GetCurrentNPCEntity()`
+- Added shared bridge helper in `ecs/CharacterAccessors.hpp`:
+  - `ecs::LegacyCharOf(entt::entity e)`
+
+This means quest bindings can now start from entity context without re-implementing `LegacyCharPtr` resolution locally.
+
+Step 3 - File-by-File Migration Results
+
+Per-file LPCHARACTER declaration counts (HEAD -> current worktree):
+- questlua_affect.cpp: 12 -> 0
+- questlua_arena.cpp: 4 -> 2
+- questlua_building.cpp: 1 -> 0
+- questlua_danceevent.cpp: 1 -> 1
+- questlua_dragonsoul.cpp: 1 -> 1
+- questlua_dungeon.cpp: 28 -> 19
+- questlua_game.cpp: 9 -> 0
+- questlua_global.cpp: 27 -> 14
+- questlua_guild.cpp: 11 -> 9
+- questlua_horse.cpp: 22 -> 1
+- questlua_item.cpp: 5 -> 1
+- questlua_marriage.cpp: 16 -> 2
+- questlua_npc.cpp: 30 -> 8
+- questlua_party.cpp: 25 -> 4
+- questlua_pc.cpp: 201 -> 9
+- questlua_pet.cpp: 6 -> 1
+- questlua_petnew.cpp: 14 -> 1
+- questlua_target.cpp: 5 -> 0
+
+Aggregate questlua LPCHARACTER declaration count:
+- Before this pass (HEAD): 418
+- After this pass: 73
+- Reduction: 345
+- Reduction rate: 82.54%
+
+Global GameServer LPCHARACTER declaration count:
+- Before this pass: 940
+- After this pass: 596
+- Reduction from this pass alone: 344
+
+Interpretation:
+- Phase 15D-1 produced the first large non-ECS LPCHARACTER collapse.
+- `questlua_pc.cpp` absorbed the largest reduction by far.
+- The questlua layer is no longer dominated by `LPCHARACTER ch = GetCurrentCharacterPtr()` boilerplate.
+
+Step 4 - Pattern Distribution
+
+Pattern distribution observed in this pass:
+- Pattern A (pure ECS direct read): already existed in a subset of questlua bindings before this pass, especially where `GetPCEntity(L)` plus `ECS_TryGet` or `ecs::Get*` accessors had already been introduced.
+- Pattern B (entity-first + `ecs::LegacyCharOf(e)` bridge): dominant in this pass.
+  - Count: 345 migrated binding starts.
+- Pattern C (quest flag / player data / legacy-only state): also common.
+  - In these functions the binding now starts from entity context, but the actual operation still goes through the bridged `CHARACTER*` because quest flags, inventory, guild, desc, safebox, and similar state remain legacy-authoritative.
+
+Practical summary:
+- This was primarily a mass Pattern-B / Pattern-C cleanup pass.
+- It intentionally did not try to invent new ECS component authority for quest/player/safebox/guild state.
+
+Step 5 - Remaining Direct Quest Context Survivors
+
+Remaining direct `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` uses in questlua files: 57
+
+These survivors are not dominated by local `LPCHARACTER` declarations anymore. They are mostly:
+- direct singleton dereferences:
+  - `CQuestManager::instance().GetCurrentCharacterPtr()->...`
+- helper return wrappers that still expose `LPCHARACTER`
+- a few `const LPCHARACTER` locals in more irregular helpers
+- comments / dead commented legacy examples
+
+Main remaining hotspots:
+- questlua_global.cpp
+- questlua_pc.cpp
+- questlua_party.cpp
+- questlua_game.cpp
+- questlua_npc.cpp
+- questlua_guild.cpp
+
+Interpretation:
+- The dominant assignment boilerplate is gone.
+- The remaining questlua cleanup is now a smaller follow-up pass on irregular direct-call survivors, not another 300-site mass change.
+
+Step 6 - WinTest / Verification Notes
+
+Build verification:
+- Build gate green:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+
+WinTest smoke performed in this pass:
+- Deployed fresh `GameServer.exe` to WinTest executables
+- Restarted auth + ch1/core1 + ch1/core2 + ch99/core99
+- Fresh boot/log smoke result:
+  - no new `VID_DRIFT`
+  - no new `DestroyCharacter ... not found`
+  - no new `SpawnMob: cannot create new character`
+  - no immediate quest bootstrap regression observed in fresh logs
+  - quest event flags loaded normally during boot
+  - only the usual pre-existing motion/content warnings remained
+
+Limitations:
+- I did not complete a full manual in-client quest gameplay regression myself in this pass.
+- NPC dialog / quest progression / reward flow / quest flag persistence still need user-side runtime confirmation after this large questlua batch.
+
+Step 7 - Recommendation for Phase 15D-2
+
+Recommended next target: `cmd_*.cpp`
+
+Why `cmd_*.cpp` next:
+- They are among the hottest remaining non-ECS files.
+- They typically contain repetitive command-entry boilerplate with `LPCHARACTER ch` and direct `ch->Method()` usage.
+- They are mechanically similar to questlua in the sense that a lot of surface can move to entity-first context acquisition while still bridging to legacy runtime methods when necessary.
+
+Priority order for 15D-2:
+1. `cmd_general.cpp`
+2. `cmd_gm.cpp`
+3. `cmd_general2.cpp`
+4. `cmd.cpp`
+5. `cmd_emotion.cpp`
+
+Overall assessment
+- Phase 15D-1 succeeded.
+- It removed the dominant questlua LPCHARACTER declaration pattern without changing quest manager core authority.
+- The questlua layer is now materially cleaner and no longer the largest easy LPCHARACTER decl cluster in the tree.
+- The next non-ECS wave should move to `cmd_*.cpp`, while a smaller cleanup follow-up can later remove the remaining 57 irregular direct quest-context survivors.

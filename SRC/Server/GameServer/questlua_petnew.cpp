@@ -30,7 +30,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
 		if (!ch || !petSystem || !pItem)
@@ -81,7 +82,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 			return 0;
 		
@@ -108,7 +110,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		lua_Number count = 0;
@@ -126,7 +129,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem)
@@ -149,7 +153,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem)
@@ -174,7 +179,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem)
@@ -196,7 +202,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem) {
@@ -218,7 +225,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem) {
@@ -271,7 +279,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CNewPetSystem* petSystem = ch->GetNewPetSystem();
 
 		if (nullptr == petSystem)
@@ -297,7 +306,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();		
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		int evid = lua_isnumber(L, 0) ? static_cast<int>(lua_tonumber(L, 0)) : 0;
 		ch->SetEggVid(evid);
 		return 1;
@@ -308,7 +318,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch) {
 			lua_pushnumber(L, 2);
 			return 1;
@@ -328,7 +339,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch) {
 			lua_pushnumber(L, 2);
 			return 1;
@@ -350,7 +362,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 			return 0;
 

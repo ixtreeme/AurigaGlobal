@@ -21,7 +21,8 @@ namespace quest
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
 		uint32_t vid = (uint32_t) lua_tonumber(L, 1);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPCHARACTER ch_you = CHARACTER_MANAGER::instance().Find(vid);
 		if (ch_you)
 		{
@@ -34,7 +35,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -49,7 +51,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -64,7 +67,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		uint32_t vid = 0;
 		if (pMarriage)
@@ -127,8 +131,9 @@ namespace quest
 		uint32_t pid1 = (uint32_t) lua_tonumber(L, 1);
 		uint32_t pid2 = (uint32_t) lua_tonumber(L, 2);
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(pid1);
 		if (!pMarriage)
 		{
@@ -153,7 +158,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -175,7 +181,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -199,7 +206,8 @@ namespace quest
 			sys_err("invalid argument 1 : must be boolean");
 			return 0;
 		}
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 
 		if (!pMarriage)
@@ -226,7 +234,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -246,7 +256,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -280,7 +291,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -306,7 +319,8 @@ namespace quest
 			sys_err("invalid argument 1 : must be boolean");
 			return 0;
 		}
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (!pMarriage)
 		{
@@ -325,7 +339,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 		if (pMarriage->pWeddingInfo)
 		{
@@ -342,7 +357,8 @@ namespace quest
 	{
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::GetPlayerID(ch));
 
 		if (!pMarriage)

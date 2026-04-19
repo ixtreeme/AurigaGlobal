@@ -21,6 +21,19 @@ namespace ecs {
 // During migration window these delegate to legacy CHARACTER
 // methods if ECS component is missing, guaranteeing no regression.
 
+inline LPCHARACTER LegacyCharOf(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return nullptr;
+    }
+
+    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e)) {
+        return legacy->ptr;
+    }
+
+    return nullptr;
+}
+
 inline uint32_t GetPlayerID(LPCHARACTER ch)
 {
     if (!ch) {

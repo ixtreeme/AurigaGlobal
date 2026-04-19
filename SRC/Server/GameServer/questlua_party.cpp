@@ -47,8 +47,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->ForEachNearMember
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty())
 		{
 			FPartyClearReady f;
@@ -64,7 +64,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm || !pm->party)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetMemberMaxLevel() : 1);
 			return 1;
 		}
@@ -81,7 +82,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm || !pm->party)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetMemberMinLevel() : 1);
 			return 1;
 		}
@@ -94,8 +96,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->Quit
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon())
 			// return 0;
 
@@ -116,8 +118,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->Delete
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch))
 			// return 0;
 
@@ -168,8 +170,8 @@ namespace quest
 			return 0;
 
 		sys_log(0, "RUN_CINEMA %s", lua_tostring(L, 1));
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty())
 		{
 			FRunCinematicSender f(lua_tostring(L, 1));
@@ -219,8 +221,8 @@ namespace quest
 			return 0;
 
 		sys_log(0, "CINEMA %s", lua_tostring(L, 1));
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty())
 		{
 			FCinematicSender f(lua_tostring(L, 1));
@@ -238,7 +240,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm || !pm->party)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetNearMemberCount() : 0);
 			return 1;
 		}
@@ -273,7 +276,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm || !pm->party)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			if (!ch || !ch->GetParty())
 			{
 				lua_pushboolean(L, 0);
@@ -296,7 +300,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushboolean(L, (ch && ch->GetParty()) ? 1 : 0);
 			return 1;
 		}
@@ -312,7 +317,8 @@ namespace quest
 		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
 		if (!pm || !pm->party)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetParty()) ? ch->GetParty()->GetLeaderPID() : -1);
 			return 1;
 		}
@@ -355,7 +361,8 @@ namespace quest
 
 		CQuestManager& q = CQuestManager::Instance();
 		LPPARTY pParty = q.GetCurrentCharacterPtr()->GetParty();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		PC* pPC = q.GetCurrentPC();
 
 		const char* sz = lua_tostring(L,1);
@@ -377,8 +384,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->SetFlag
 		// DUAL-PATH: ECS update + legacy call during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty() && lua_isstring(L, 1) && lua_isnumber(L, 2))
 			ch->GetParty()->SetFlag(lua_tostring(L, 1), (int)lua_tonumber(L, 2));
 
@@ -389,8 +396,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->GetFlag
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch->GetParty() || !lua_isstring(L, 1))
 			lua_pushnumber(L, 0);
 		else
@@ -410,8 +417,9 @@ namespace quest
 		f.flagname = q.GetCurrentPC()->GetCurrentQuestName() + "." + lua_tostring(L, 1);
 		f.value = (int) rint(lua_tonumber(L, 2));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty())
 			ch->GetParty()->ForEachOnlineMember(f);
 		else
@@ -428,7 +436,8 @@ namespace quest
 		if (!pm || !pm->party)
 		{
 			CQuestManager & q = CQuestManager::instance();
-			LPCHARACTER ch = q.GetCurrentCharacterPtr();
+			const entt::entity chEntity = q.GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			LPPARTY pParty = ch ? ch->GetParty() : nullptr;
 			lua_pushboolean(L, (pParty != nullptr && pParty->GetDungeon()) ? true : false);
 			return 1;
@@ -467,8 +476,8 @@ namespace quest
 		// migrated from CHARACTER::AddAffect
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) ||
 			!lua_isnumber(L, 5) || !lua_isnumber(L, 6) || !lua_isboolean(L, 7) || !lua_isboolean(L, 8))
 		{
@@ -511,7 +520,8 @@ namespace quest
 		// migrated from CHARACTER::GetParty()->ForEachOnMapMember
 		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPPARTY pParty = ch->GetParty();
 		if (nullptr == pParty)
 		{
@@ -534,7 +544,8 @@ namespace quest
 		std::string name = "";
 
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			lua_pushstring(L, name.c_str());
@@ -562,7 +573,8 @@ namespace quest
 		// migrated from CHARACTER::PointChange(POINT_GOLD, ...)
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			return 0;
@@ -619,7 +631,8 @@ namespace quest
 		// migrated from CHARACTER::SetQuestFlag
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			return 0;

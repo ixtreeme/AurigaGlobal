@@ -14,7 +14,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::Target position lookup
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
@@ -51,7 +52,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::Target VID lookup
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
@@ -79,7 +81,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::DeleteTarget
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1))
@@ -98,7 +101,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::DeleteTarget
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		CTargetManager::instance().DeleteTarget(ecs::GetPlayerID(ch), iQuestIndex, nullptr);
@@ -110,7 +114,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetTargetEvent
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t dwQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1))

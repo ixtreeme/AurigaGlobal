@@ -27,7 +27,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CPetSystem* petSystem = ch->GetPetSystem();
 		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
 		if (!ch || !petSystem || !pItem)
@@ -72,7 +73,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 			return 0;
 		
@@ -99,7 +101,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CPetSystem* petSystem = ch->GetPetSystem();
 
 		lua_Number count = 0;
@@ -117,7 +120,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CPetSystem* petSystem = ch->GetPetSystem();
 
 		if (nullptr == petSystem)
@@ -140,7 +144,8 @@ namespace quest
 	{
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CPetSystem* petSystem = ch->GetPetSystem();
 
 		if (nullptr == petSystem)

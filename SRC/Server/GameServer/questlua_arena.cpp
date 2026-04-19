@@ -12,7 +12,8 @@ namespace quest
 	{
 		// migrated from arena system
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPCHARACTER ch2 = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
 		int nSetPoint = (int)lua_tonumber(L, 2);
 
@@ -90,8 +91,8 @@ namespace quest
 		int mapIdx = (int)lua_tonumber(L, 1);
 		int ObPointX = (int)lua_tonumber(L, 2);
 		int ObPointY = (int)lua_tonumber(L, 3);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CArenaManager::instance().AddObserver(ch, mapIdx, ObPointX, ObPointY);
 
 		return 1;

@@ -30,7 +30,8 @@ namespace quest
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		if (!ms)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->IsHorseRiding()) ? 1 : 0);
 			return 1;
 		}
@@ -43,8 +44,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetHorse
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (nullptr != ch)
 		{
 			lua_pushboolean(L, (ch->GetHorse() != nullptr) ? true : false);
@@ -64,7 +65,8 @@ namespace quest
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 #ifdef ENABLE_PVP_ADVANCED	
 	if ((ch->GetDuel("BlockRide")))
 	{
@@ -106,7 +108,9 @@ namespace quest
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch)
 			ch->StopRiding();
 		return 0;
@@ -119,7 +123,8 @@ namespace quest
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 #ifdef ENABLE_PVP_ADVANCED	
 	if ((ch->GetDuel("BlockRide")))
 	{
@@ -166,7 +171,9 @@ namespace quest
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch)
 			ch->HorseSummon(false);
 		return 0;
@@ -181,8 +188,10 @@ namespace quest
 		auto* npcVid = ECS_TryGet<ecs::VIDComponent>(npcE);
 		if (!mount || !npcVid)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-			LPCHARACTER horse = CQuestManager::instance().GetCurrentNPCCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
+			const entt::entity horseEntity = CQuestManager::instance().GetCurrentNPCEntity();
+			auto* horse = ecs::LegacyCharOf(horseEntity);
 			lua_pushboolean(L, horse && horse->GetRider() == ch);
 			return 1;
 		}
@@ -207,7 +216,9 @@ namespace quest
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch)
 		{
 			ch->SetHorseLevel(newlevel);
@@ -224,7 +235,8 @@ namespace quest
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		if (!ms)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, ch ? ch->GetHorseLevel() : 0);
 			return 1;
 		}
@@ -239,8 +251,8 @@ namespace quest
 		// DUAL-PATH: ECS update + legacy call during migration window
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch && ch->GetHorseLevel() >= HORSE_MAX_LEVEL)
 			return 0;
 
@@ -266,7 +278,8 @@ namespace quest
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		if (!ms)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetHorseLevel()) ? ch->GetHorseHealth() : 0);
 			return 1;
 		}
@@ -279,8 +292,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetHorseHealth
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		int pct = MINMAX(0, ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth(), 100);
 		sys_log(1, "horse.get_health_pct %d", pct);
 
@@ -299,7 +312,8 @@ namespace quest
 		auto* ms = ECS_TryGet<ecs::MountState>(e);
 		if (!ms)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, (ch && ch->GetHorseLevel()) ? ch->GetHorseStamina() : 0);
 			return 1;
 		}
@@ -312,7 +326,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetHorseStamina
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		int pct = MINMAX(0, ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina(), 100);
 		sys_log(1, "horse.get_stamina_pct %d", pct);
 
@@ -328,7 +343,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetHorseGrade
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		lua_pushnumber(L, ch->GetHorseGrade());
 		return 1;
 	}
@@ -337,7 +353,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetHorseHealth
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		lua_pushboolean(L, ch->GetHorseHealth()<=0);
 		return 1;
 	}
@@ -346,7 +363,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::ReviveHorse
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetHorseLevel() > 0 && ch->GetHorseHealth() <= 0)
 		{
 			ch->ReviveHorse();
@@ -358,7 +376,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::FeedHorse
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		//uint32_t dwHorseFood = ch->GetHorseLevel() + ITEM_HORSE_FOOD_1 - 1;
 		if (ch->GetHorseLevel() > 0 && ch->GetHorseHealth() > 0)
 		{
@@ -378,8 +397,9 @@ namespace quest
 
 		if ( lua_isstring(L, -1) != true ) return 0;
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch->GetHorseLevel() > 0 )
 		{
 			const char* pHorseName = lua_tostring(L, -1);
@@ -418,8 +438,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetPlayerID
 		// DUAL-PATH: legacy fallback during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
 			const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::GetPlayerID(ch));

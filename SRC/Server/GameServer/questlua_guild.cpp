@@ -489,8 +489,8 @@ namespace quest
 
 	ALUA(guild_get_skill_level0)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CGuild* pGuild = ch->GetGuild();
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillLevel(lua_tonumber(L, 1)):0);
 		return 1;
@@ -508,8 +508,8 @@ namespace quest
 
 	ALUA(guild_get_skill_point0)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CGuild* pGuild = ch->GetGuild();
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillPoint():0);
 		return 1;

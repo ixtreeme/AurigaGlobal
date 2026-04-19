@@ -360,8 +360,8 @@ namespace quest
 		// migrated from CHARACTER::char_log
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t what = 0;
 		const char* how = "";
 		const char* hint = "";
@@ -379,8 +379,8 @@ namespace quest
 		// migrated from CHARACTER::item_log
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t dwItemID = 0;
 		const char* how = "";
 		const char* hint = "";
@@ -415,8 +415,9 @@ namespace quest
 		if (!pc)
 			return 0;
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 			return 0;
 
@@ -436,8 +437,9 @@ namespace quest
 		if (!pc)
 			return 0;
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 			return 0;
 
@@ -505,8 +507,9 @@ namespace quest
 
 		CQuestManager& q = CQuestManager::instance();
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch->GetInventoryItem(bCell);
 
 		int ret = mining::RealRefinePick(ch, item);
@@ -523,8 +526,9 @@ namespace quest
 
 		CQuestManager& q = CQuestManager::instance();
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch->GetInventoryItem(bCell);
 
 		int ret = fishing::RealRefineRod(ch, item);
@@ -559,8 +563,8 @@ namespace quest
 		int type = (int)lua_tonumber(L, 2);
 		int value = (int)lua_tonumber(L, 3);
 		int time = (int) lua_tonumber(L,4);
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (MAX_PRIV_NUM <= type)
 		{
 			sys_err("PRIV_MANAGER: _give_empire_privilege: wrong empire priv type(%u)", type);
@@ -723,7 +727,8 @@ namespace quest
 			uint32_t dwVnum = (uint32_t)lua_tonumber(L,1);
 			TItemTable* pTable = ITEM_MANAGER::instance().GetTable(dwVnum);
 #ifdef ENABLE_MULTI_NAMES
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 #endif
 
 			if (pTable)
@@ -750,7 +755,8 @@ namespace quest
 			const CMob * pkMob = CMobManager::instance().Get(dwVnum);
 
 #ifdef ENABLE_MULTI_NAMES
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 #endif
 
 			if (pkMob)
@@ -815,7 +821,9 @@ namespace quest
 		const char * str = lua_tostring(L, 1);
 		size_t len = strlen(str);
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		interpret_command(ch, str, len);
 		return 0;
 	}
@@ -852,7 +860,9 @@ namespace quest
 		int iMaxLev = (int) lua_tonumber(L, 2);
 		unsigned int uiJobFlag = (unsigned int) lua_tonumber(L, 3);
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPCHARACTER tch;
 
 		if (test_server)
@@ -1158,8 +1168,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::warp_to_village
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (nullptr != ch)
 		{
 			uint8_t bEmpire = ch->GetEmpire();
@@ -1312,8 +1322,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::block_chat
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* pChar = ecs::LegacyCharOf(pCharEntity);
 		if (pChar != nullptr)
 		{
 			if (lua_isstring(L, 1) != true && lua_isstring(L, 2) != true)

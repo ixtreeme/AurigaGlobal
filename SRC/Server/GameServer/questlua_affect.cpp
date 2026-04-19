@@ -27,8 +27,9 @@ namespace quest
 
 		uint8_t applyOn = static_cast<uint8_t>(lua_tonumber(L, 1));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
 			sys_err("apply is out of range : %d", applyOn);
@@ -72,7 +73,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::RemoveBadAffect
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		ch->RemoveBadAffect();
 		return 0;
 	}
@@ -81,7 +83,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::RemoveGoodAffect
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		ch->RemoveGoodAffect();
 		return 0;
 	}
@@ -100,8 +103,9 @@ namespace quest
 
 		uint8_t applyOn = static_cast<uint8_t>(lua_tonumber(L, 1));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
 			sys_err("apply is out of range : %d", applyOn);
@@ -120,8 +124,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::FindAffect
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		CAffect* pkAff = ch->FindAffect( AFFECT_HAIR );
 
 		if ( pkAff != nullptr)
@@ -153,7 +157,8 @@ namespace quest
 		auto* al = ECS_TryGet<ecs::AffectList>(e);
 		if (!al)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			if (!ch)
 			{
 				lua_pushnumber(L, 0);
@@ -194,8 +199,9 @@ namespace quest
 
 		uint8_t applyOn = static_cast<uint8_t>(lua_tonumber(L, 1));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
 			sys_err("apply is out of range : %d", applyOn);
@@ -222,8 +228,9 @@ namespace quest
 
 		uint8_t applyOn = static_cast<uint8_t>(lua_tonumber(L, 1));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
 			sys_err("apply is out of range : %d", applyOn);
@@ -252,8 +259,9 @@ namespace quest
 
 		uint8_t point_type = static_cast<uint8_t>(lua_tonumber(L, 1));
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
 
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (point_type >= POINT_MAX_NUM || point_type < 1)
 		{
 			sys_err("point is out of range : %d", point_type);
@@ -272,8 +280,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::RemoveAffect
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
 			uint8_t bApply = static_cast<uint8_t>(lua_tonumber(L, 1));
@@ -314,8 +322,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::RemoveAffect
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
 			ch->RemoveAffect(AFFECT_COLLECT);
@@ -330,7 +338,8 @@ namespace quest
 		// migrated from CHARACTER::AddAffect
 		// TODO Phase 8: CAffect construction requires CHARACTER* - legacy only
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) || !ch)
 			return 0;
 		uint32_t affectType = (uint32_t)lua_tonumber(L, 1);

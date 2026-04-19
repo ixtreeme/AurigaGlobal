@@ -83,7 +83,8 @@ namespace quest
 		if (!sb)
 		{
 			CQuestManager& q = CQuestManager::instance();
-			LPCHARACTER ch = q.GetCurrentCharacterPtr();
+			const entt::entity chEntity = q.GetCurrentPCEntity();
+			auto* ch = ecs::LegacyCharOf(chEntity);
 			lua_pushnumber(L, ch ? ch->GetSafeboxSize()/SAFEBOX_PAGE_SIZE : 0);
 			return 1;
 		}
@@ -119,7 +120,8 @@ namespace quest
 		// migrated from CHARACTER::SetSafeboxOpenPosition()
 		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		entt::entity e = q.GetPCEntity(L);
 		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
 		if (sb)
@@ -137,7 +139,8 @@ namespace quest
 		// migrated from CHARACTER::SetSafeboxOpenPosition
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		ch->SetSafeboxOpenPosition();
 		ch->ChatPacket(CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 		return 0;
@@ -150,8 +153,8 @@ namespace quest
 		//
 		// Syntax: game.drop_item(50050, 1)
 		//
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t item_vnum = (uint32_t) lua_tonumber(L, 1);
 		int count = (int) lua_tonumber(L, 2);
 		int32_t x = ecs::GetX(ch);
@@ -179,8 +182,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::DropItemWithOwnership
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = nullptr;
 		switch (lua_gettop(L))
 		{
@@ -249,7 +252,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetParty())
 		{
 			FPartyDropDiceRoll f(item, ch);
@@ -286,8 +291,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::do_in_game_mall
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
 			do_in_game_mall(ch, const_cast<char*>(""), 0, 0);
@@ -302,8 +307,8 @@ namespace quest
 		// migrated from CHARACTER::ChatPacket
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -321,8 +326,8 @@ namespace quest
 		// migrated from CHARACTER::ChatPacket
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT

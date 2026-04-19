@@ -54,7 +54,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch) {
 			return 0;
 		}
@@ -107,7 +109,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		int map_index = int(lua_tonumber(L, 1));
 		uint8_t rank_type = int(lua_tonumber(L, 2));
 		if (map_index <= 0 || rank_type <= 0) {
@@ -214,7 +218,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t pid = ecs::GetPlayerID(ch);
 
 		int map_index = int(lua_tonumber(L, 1));
@@ -274,7 +280,9 @@ namespace quest
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		int32_t index = ch ? ecs::GetMapIndex(ch) : -1;
 		if (index != -1) {
 			LPPARTY party = ch->GetParty();
@@ -947,7 +955,9 @@ namespace quest
 			return 3;
 		}
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			lua_pushnumber(L, 0);
@@ -1094,7 +1104,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			sys_err("no current character.");
@@ -1304,7 +1316,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			return 0;
@@ -1503,7 +1517,8 @@ namespace quest
 		}
 
 		CQuestManager & q = CQuestManager::instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			lua_pushnumber(L, 0);
@@ -1635,7 +1650,9 @@ namespace quest
 			return 0;
 		}
 
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		const entt::entity chEntity = q.GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!ch)
 		{
 			sys_err("no current character.");

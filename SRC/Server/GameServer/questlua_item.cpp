@@ -43,7 +43,9 @@ namespace quest
 		}
 		uint32_t cell = (uint32_t) lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch ? ch->GetInventoryItem(cell) : nullptr;
 
 		if (!item)
@@ -355,7 +357,8 @@ namespace quest
 
 	ALUA(item_change_to_over9)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = CQuestManager::instance().GetCurrentItem();
 
 		if ( ch == nullptr || item == nullptr) return 0;
@@ -367,7 +370,8 @@ namespace quest
 
 	ALUA(item_over9refine)
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = CQuestManager::instance().GetCurrentItem();
 
 		if ( ch == nullptr || item == nullptr) return 0;
@@ -467,8 +471,8 @@ namespace quest
 
 		CQuestManager& q = CQuestManager::instance();
 		LPITEM pItem = q.GetCurrentItem();
-		LPCHARACTER pChar = q.GetCurrentCharacterPtr();
-
+		const entt::entity pCharEntity = q.GetCurrentPCEntity();
+		auto* pChar = ecs::LegacyCharOf(pCharEntity);
 		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, false);
 
 		if (pkNewItem)
