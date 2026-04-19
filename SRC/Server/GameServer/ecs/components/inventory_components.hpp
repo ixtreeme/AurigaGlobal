@@ -7,6 +7,8 @@
 
 #include "../../safebox.h"
 #include "../../typedef.h"
+#include "../../cuberenewal.h"
+#include "../../attr_transfer.h"
 #include "item_components.hpp"
 
 namespace ecs {
@@ -25,6 +27,11 @@ struct ExtraInventoryRuntimeComponent {
     uint16_t wItemGrid[EXTRA_INVENTORY_MAX_NUM] {};
 };
 #endif
+
+struct CubeWindowComponent {
+    LPITEM pItems[CUBE_MAX_NUM] {};
+    LPCHARACTER pNpc { nullptr };
+};
 
 struct GoldAmount { int64_t amount; };
 
