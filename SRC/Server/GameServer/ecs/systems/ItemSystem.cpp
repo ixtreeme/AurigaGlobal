@@ -2333,13 +2333,16 @@ void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
 
 LPITEM* CHARACTER::GetAttrTransferItem()
 {
+    if (auto* comp = EnsureAttrTransferWindowComponent(this))
+        return comp->pItems;
+
     return m_pointsInstant.pAttrTransferItems;
 }
 
 bool CHARACTER::IsAttrTransferOpen() const
 {
-    if (const auto* comp = TryGetAttrTransferWindowComponent(this); comp && comp->pNpc)
-        return true;
+    if (const auto* comp = TryGetAttrTransferWindowComponent(this))
+        return comp->pNpc != nullptr;
 
     return m_pointsInstant.pAttrTransferNpc != nullptr;
 }
