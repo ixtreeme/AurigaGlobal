@@ -1,0 +1,118 @@
+Phase 15B-1 — GayaSystem entity-first pilot
+
+Date: 2026-04-19
+Build gate: PASS
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/GayaSystem.cpp
+- Helper: SRC/Server/GameServer/ecs/AIHelpers.hpp
+
+Step 1 audit summary
+- GayaSystem public API was already entity-based in GayaSystem.hpp.
+- Internal implementation still used a local helper that resolved entity -> VIDComponent -> CHARACTER_MANAGER::Find(...).
+- Internal state authority is still legacy CHARACTER-owned:
+  - load_gaya_items
+  - load_gaya_values
+  - info_items
+  - info_slots
+  - GayaUpdateTime
+  - GetGaya / PointChange(POINT_GAYA)
+- No direct external callers to GayaSystem::* were found outside the file-local CHARACTER wrappers.
+- External gameplay callers still use CHARACTER wrappers such as:
+  - CraftGayaItems
+  - MarketGayaItems
+  - RefreshGayaItems
+  - UpdateItemsGayaMarker
+  - InfoGayaMarker
+
+Step 2 caller audit
+- Direct external GayaSystem::* callers: 0
+- Caller cascade risk: low
+- Existing wrapper model:
+  - CHARACTER::* methods bridge to GayaSystem::* via AIHelpers::EcsOf(this)
+
+Step 3 signature decisions
+- Load: OPTION_ENTITY (already entity)
+- CheckItemsFull: OPTION_ENTITY
+- ClearMarket: OPTION_ENTITY
+- InfoMarket: OPTION_ENTITY
+- CheckSlot: OPTION_ENTITY
+- BuyItems: OPTION_ENTITY
+- RefreshItemsMarket: OPTION_ENTITY
+- UpdateSlot: OPTION_ENTITY
+- UpdateItems0: OPTION_ENTITY
+- UpdateItems: OPTION_ENTITY
+- CraftItems: OPTION_ENTITY
+- MarketItems: OPTION_ENTITY
+- RefreshItems: OPTION_ENTITY
+- GetState: OPTION_ENTITY
+- SetState: OPTION_ENTITY
+- StartCheckTimeMarket: OPTION_ENTITY
+
+No KEEP_LEGACY_OVERLOAD was needed because the wrapper layer already existed on CHARACTER.
+
+Implementation pattern summary
+- Pattern A (read from ECS component instead of CHARACTER): 0
+  - Reason: no dedicated ECS Gaya component / market-state component exists yet.
+  - Gaya data coverage remains a Phase 15D component-expansion concern.
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): 8
+  - ClearMarket
+  - BuyItems
+  - UpdateSlot
+  - UpdateItems0
+  - UpdateItems
+  - CraftItems
+  - RefreshItems
+  - SetState
+
+- Pattern C (legacy packet/chat/event interaction through one resolved CHARACTER bridge): 6
+  - check_time_market_event
+  - InfoMarket
+  - BuyItems
+  - CraftItems
+  - MarketItems
+  - RefreshItems
+
+- Pattern D (resolve legacy pointer once at top of entity-entry function): 16
+  - Every GayaSystem entity-entry function now begins with a single:
+    auto* ch = LegacyCharOf(entity);
+  - The old repeated entity -> VIDComponent -> Find(...) pattern is gone.
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Removed dependency on char_manager.cpp lookup from GayaSystem internals.
+- Added AIHelpers::EcsOf(const CHARACTER*) overload to remove const_cast noise from the const wrapper path.
+
+Counts
+- Baseline LPCHARACTER count from migration audit: 17
+- Post-migration raw LPCHARACTER / CHARACTER* token count in GayaSystem.cpp/.hpp: 0
+- LegacyCharOf bridge points in GayaSystem entity-entry functions: 16
+
+What went smoothly
+- Public GayaSystem surface was already entity-first, so no caller cascade was needed.
+- Existing CHARACTER wrappers made the migration low-risk.
+- LegacyCharPtr component was already available and stable after VID-A.
+
+Unexpected friction
+- char_event_info::ch is DynamicCharacterPtr, not a raw CHARACTER pointer.
+  - Correct access is info->ch.Get().
+- MSVC rejected mixed auto return deduction for pointer + nullptr in the local helper.
+  - Fixed by using an explicit LegacyCharHandle alias.
+
+Recommendation for next targets
+- AffectSystem
+  - Good next candidate if handled as targeted helper cleanup first.
+  - It already mixes ECS events with legacy pointers and has similar bridge opportunities.
+- SkillSystem
+  - Higher risk than GayaSystem.
+  - Better after one or two more small/medium pilots, because it has deeper combat/runtime coupling.
+
+Recommendation for Phase 15B reuse
+- Prefer entity-first public signatures.
+- Keep legacy authority behind exactly one local bridge per function.
+- Replace entity -> Find(...) with entity -> LegacyCharPtr wherever state authority still lives on CHARACTER.
+- Do not attempt ECS component expansion in the same pass as bridge cleanup.
