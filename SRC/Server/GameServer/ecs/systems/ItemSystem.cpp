@@ -445,16 +445,6 @@ LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell)
     auto* ch = LegacyCharOf(e);
     return ch ? ch->GetExtraInventoryItem(cell) : nullptr;
 }
-
-void SyncExtraInventoryAll(LPCHARACTER ch)
-{
-    auto* comp = EnsureExtraInventoryRuntimeComponent(ch);
-    if (!comp)
-        return;
-
-    std::memcpy(comp->pItems, ch->m_pointsInstant.pExtraItems, sizeof(comp->pItems));
-    std::memcpy(comp->wItemGrid, ch->m_pointsInstant.wExtraItemGrid, sizeof(comp->wItemGrid));
-}
 #endif
 
 LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
@@ -2270,7 +2260,7 @@ LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
 		return comp->pItems[wCell];
 
-	return m_pointsInstant.pExtraItems[wCell];
+	return nullptr;
 }
 
 uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
@@ -2281,7 +2271,7 @@ uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
 	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
 		return comp->wItemGrid[wCell];
 
-	return m_pointsInstant.wExtraItemGrid[wCell];
+	return 0;
 }
 #endif
 
@@ -14023,7 +14013,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		LPITEM pOld = m_pointsInstant.pExtraItems[wCell];
+		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(this);
+		if (!pExtraInventory)
+		{
+			sys_err("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
+			return;
+		}
+
+		LPITEM pOld = pExtraInventory->pItems[wCell];
 
 		if (pOld)
 		{
@@ -14040,14 +14037,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 					if (p >= EXTRA_INVENTORY_MAX_NUM)
 						continue;
 
-					if (m_pointsInstant.pExtraItems[p] && m_pointsInstant.pExtraItems[p] != pOld)
+					if (pExtraInventory->pItems[p] && pExtraInventory->pItems[p] != pOld)
 						continue;
 
-					m_pointsInstant.wExtraItemGrid[p] = 0;
+					pExtraInventory->wItemGrid[p] = 0;
 				}
 			}
 			else
-				m_pointsInstant.wExtraItemGrid[wCell] = 0;
+				pExtraInventory->wItemGrid[wCell] = 0;
 		}
 
 		if (pItem)
@@ -14064,15 +14061,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 					if (p >= EXTRA_INVENTORY_MAX_NUM)
 						continue;
 
-					m_pointsInstant.wExtraItemGrid[p] = wCell + 1;
+					pExtraInventory->wItemGrid[p] = wCell + 1;
 				}
 			}
 			else
-				m_pointsInstant.wExtraItemGrid[wCell] = wCell + 1;
+				pExtraInventory->wItemGrid[wCell] = wCell + 1;
 		}
 
-		m_pointsInstant.pExtraItems[wCell] = pItem;
-	ItemSystem::SyncExtraInventoryAll(this);
+		pExtraInventory->pItems[wCell] = pItem;
 	}
 	break;
 #endif
@@ -17469,4 +17465,6 @@ EVENTFUNC(soul_item_event)
 
 
 #endif
+
+
 

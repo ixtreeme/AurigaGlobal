@@ -32,7 +32,6 @@
 class CMountSystem;
 #endif
 
-namespace ItemSystem { void SyncExtraInventoryAll(LPCHARACTER ch); }
 
 #ifdef ENABLE_BATTLE_PASS
 #include "utils.h"
@@ -577,8 +576,6 @@ typedef struct character_point_instant
 	LPITEM			pDSItems[DRAGON_SOUL_INVENTORY_MAX_NUM];
 	uint16_t			wDSItemGrid[DRAGON_SOUL_INVENTORY_MAX_NUM];
 #ifdef ENABLE_EXTRA_INVENTORY
-	LPITEM			pExtraItems[EXTRA_INVENTORY_MAX_NUM];
-	uint16_t			wExtraItemGrid[EXTRA_INVENTORY_MAX_NUM];
 #endif
 #ifdef ENABLE_SWITCHBOT
 	LPITEM			pSwitchbotItems[SWITCHBOT_SLOT_COUNT];
@@ -2415,7 +2412,6 @@ public:
 
 	friend struct FuncSplashDamage;
 	friend struct FuncSplashAffect;
-friend void ItemSystem::SyncExtraInventoryAll(LPCHARACTER ch);
 	friend class CFuncShoot;
 
 public:
@@ -3057,6 +3053,7 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
+
 
 
 

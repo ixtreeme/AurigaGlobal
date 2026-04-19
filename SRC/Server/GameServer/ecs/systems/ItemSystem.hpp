@@ -104,3 +104,4 @@ void SetRefineMode(entt::entity e, int additionalCell = -1);
 void ClearRefineMode(entt::entity e);
 
 } // namespace ItemSystem
+
