@@ -47,16 +47,15 @@
 namespace
 {
 
-LPCHARACTER LegacyCharacter(entt::entity e)
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
+LegacyCharHandle LegacyCharOf(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid)
-        return nullptr;
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 ecs::SkillLevels* TryGetSkillLevels(entt::entity e)
@@ -81,7 +80,7 @@ void MarkDirty(entt::entity e)
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-bool ShouldCheckSkillBookExp(LPCHARACTER ch)
+bool ShouldCheckSkillBookExp(LegacyCharHandle ch)
 {
     return ch && ch->GetLevel() < gPlayerMaxLevel;
 }
@@ -208,43 +207,43 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
 
 bool IsLearnableSkill(entt::entity e, uint32_t skillId)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->IsLearnableSkill(skillId) : false;
 }
 
 bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->LearnGrandMasterSkill(skillId) : false;
 }
 
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->LearnSkillByBook(skillId, prob) : false;
 }
 
 bool CanUseMobSkill(entt::entity e, unsigned int idx)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CanUseMobSkill(idx) : false;
 }
 
 bool CanUseSkill(entt::entity e, uint32_t skillId)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CanUseSkill(skillId) : false;
 }
 
 bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target)
 {
-    LPCHARACTER ch = LegacyCharacter(attacker);
+    auto* ch = LegacyCharOf(attacker);
     return ch ? ch->CheckSkillHitCount(skillId, target) : false;
 }
 
 int ComputeCooltime(entt::entity e, int time)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? CalculateDuration(ch->GetPoint(POINT_CASTING_SPEED), time) : time;
 }
 
@@ -312,7 +311,7 @@ void ComputeSkillPoints(entt::entity)
 
 void ResetSkill(entt::entity e)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (ch)
         ch->ResetSkill();
 }
@@ -347,7 +346,7 @@ time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    const entt::entity e = AIHelpers::EcsOf(this);
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillNextReadTime(e, dwVnum);
 
@@ -423,7 +422,7 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    const entt::entity e = AIHelpers::EcsOf(this);
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillLevel(e, dwVnum);
 
@@ -1602,7 +1601,7 @@ void CHARACTER::ComputePassiveSkill(uint32_t dwVnum)
 
 struct FFindNearVictim
 {
-	FFindNearVictim(LPCHARACTER center, LPCHARACTER attacker, const CHARACTER_SET& excepts_set = empty_set_)
+	FFindNearVictim(LegacyCharHandle center, LegacyCharHandle attacker, const CHARACTER_SET& excepts_set = empty_set_)
 		: m_pkChrCenter(center),
 	m_pkChrNextTarget(nullptr),
 	m_pkChrAttacker(attacker),
@@ -1616,7 +1615,7 @@ struct FFindNearVictim
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
-		LPCHARACTER pkChr = (LPCHARACTER) ent;
+		auto* pkChr = static_cast<LegacyCharHandle>(ent);
 
 		if (!m_excepts_set.empty()) {
 			if (m_excepts_set.find(pkChr) != m_excepts_set.end())
@@ -1645,14 +1644,14 @@ struct FFindNearVictim
 		}
 	}
 
-	LPCHARACTER GetVictim()
+	LegacyCharHandle GetVictim()
 	{
 		return m_pkChrNextTarget;
 	}
 
-	LPCHARACTER m_pkChrCenter;
-	LPCHARACTER m_pkChrNextTarget;
-	LPCHARACTER m_pkChrAttacker;
+	LegacyCharHandle m_pkChrCenter;
+	LegacyCharHandle m_pkChrNextTarget;
+	LegacyCharHandle m_pkChrAttacker;
 	int		m_count;
 	const CHARACTER_SET & m_excepts_set;
 private:
@@ -1663,12 +1662,12 @@ CHARACTER_SET FFindNearVictim::empty_set_;
 
 EVENTINFO(chain_lightning_event_info)
 {
-	uint32_t			dwVictim;
-	uint32_t			dwChr;
+	entt::entity			dwVictim;
+	entt::entity			dwChr;
 
 	chain_lightning_event_info()
-	: dwVictim(0)
-	, dwChr(0)
+	: dwVictim(entt::null)
+	, dwChr(entt::null)
 	{
 	}
 };
@@ -1677,9 +1676,9 @@ EVENTFUNC(ChainLightningEvent)
 {
 	chain_lightning_event_info * info = dynamic_cast<chain_lightning_event_info *>( event->info );
 
-	LPCHARACTER pkChrVictim = CHARACTER_MANAGER::instance().Find(info->dwVictim);
-	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().Find(info->dwChr);
-	LPCHARACTER pkTarget = nullptr;
+	auto* pkChrVictim = LegacyCharOf(info->dwVictim);
+	auto* pkChr = LegacyCharOf(info->dwChr);
+	LegacyCharHandle pkTarget = nullptr;
 
 	if (!pkChr || !pkChrVictim)
 	{
@@ -1726,7 +1725,7 @@ EVENTFUNC(ChainLightningEvent)
 	return 0;
 }
 
-void SetPolyVarForAttack(LPCHARACTER ch, CSkillProto * pkSk, LPITEM pkWeapon)
+void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, LPITEM pkWeapon)
 {
 	if (ch->IsPC())
 	{
@@ -1760,7 +1759,7 @@ void SetPolyVarForAttack(LPCHARACTER ch, CSkillProto * pkSk, LPITEM pkWeapon)
 
 struct FuncSplashDamage
 {
-	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LPCHARACTER pkChr, int iAmount, int iAG, int iMaxHit, LPITEM pkWeapon, bool bDisableCooltime, TSkillUseInfo* pInfo, uint8_t bUseSkillPower)
+	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LegacyCharHandle pkChr, int iAmount, int iAG, int iMaxHit, LPITEM pkWeapon, bool bDisableCooltime, TSkillUseInfo* pInfo, uint8_t bUseSkillPower)
 		:
 		m_x(x), m_y(y), m_pkSk(pkSk), m_pkChr(pkChr), m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_pInfo(pInfo), m_bUseSkillPower(bUseSkillPower)
 		{
@@ -1774,7 +1773,7 @@ struct FuncSplashDamage
 			return;
 		}
 
-		LPCHARACTER pkChrVictim = (LPCHARACTER) ent;
+		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
 
 		if (DISTANCE_APPROX(m_x - pkChrVictim->GetX(), m_y - pkChrVictim->GetY()) > m_pkSk->iSplashRange)
 		{
@@ -2462,8 +2461,8 @@ struct FuncSplashDamage
 		{
 			chain_lightning_event_info* info = AllocEventInfo<chain_lightning_event_info>();
 
-			info->dwVictim = pkChrVictim->GetPacketVID();
-			info->dwChr = m_pkChr->GetPacketVID();
+			info->dwVictim = AIHelpers::EcsOf(pkChrVictim);
+			info->dwChr = AIHelpers::EcsOf(m_pkChr);
 
 			event_create(ChainLightningEvent, info, passes_per_sec / 5);
 		}
@@ -2490,7 +2489,7 @@ struct FuncSplashDamage
 	int		m_x;
 	int		m_y;
 	CSkillProto * m_pkSk;
-	LPCHARACTER	m_pkChr;
+	LegacyCharHandle	m_pkChr;
 	int		m_iAmount;
 	int		m_iAG;
 	int		m_iCount;
@@ -2505,7 +2504,7 @@ struct FuncSplashDamage
 
 struct FuncSplashAffect
 {
-	FuncSplashAffect(LPCHARACTER ch, int x, int y, int iDist, uint32_t dwVnum, uint8_t bPointOn, int iAmount, uint32_t dwAffectFlag, int iDuration, int iSPCost, bool bOverride, int iMaxHit)
+	FuncSplashAffect(LegacyCharHandle ch, int x, int y, int iDist, uint32_t dwVnum, uint8_t bPointOn, int iAmount, uint32_t dwAffectFlag, int iDuration, int iSPCost, bool bOverride, int iMaxHit)
 	{
 		m_x = x;
 		m_y = y;
@@ -2529,7 +2528,7 @@ struct FuncSplashAffect
 
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER pkChr = (LPCHARACTER) ent;
+			auto* pkChr = static_cast<LegacyCharHandle>(ent);
 
 			if (test_server)
 				sys_log(0, "FuncSplashAffect step 1 : name:%s vnum:%d iDur:%d", pkChr->GetName(), m_dwVnum, m_iDuration);
@@ -2551,7 +2550,7 @@ struct FuncSplashAffect
 		}
 	}
 
-	LPCHARACTER m_pkChrAttacker;
+	LegacyCharHandle m_pkChrAttacker;
 	int		m_x;
 	int		m_y;
 	int		m_iDist;
@@ -2590,7 +2589,7 @@ EVENTFUNC(skill_gwihwan_event)
 
 	uint32_t pid = info->pid;
 	uint8_t sklv= info->bsklv;
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pid);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(pid);
 
 	if (!ch)
 		return 0;
@@ -2917,18 +2916,18 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 #ifdef GROUP_BUFF
 struct FComputeSkillParty
 {
-	FComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkAttacker, uint8_t bSkillLevel = 0)
+	FComputeSkillParty(uint32_t dwVnum, LegacyCharHandle pkAttacker, uint8_t bSkillLevel = 0)
 		: m_dwVnum(dwVnum), m_pkAttacker(pkAttacker), m_bSkillLevel(bSkillLevel)
 		{
 		}
 
-	void operator () (LPCHARACTER ch)
+	void operator () (LegacyCharHandle ch)
 	{
 		m_pkAttacker->ComputeSkill(m_dwVnum, ch, m_bSkillLevel);
 	}
 
 	uint32_t m_dwVnum;
-	LPCHARACTER m_pkAttacker;
+	LegacyCharHandle m_pkAttacker;
 	uint8_t m_bSkillLevel;
 };
 
@@ -3953,7 +3952,7 @@ EVENTFUNC(skill_muyoung_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = info->ch;
+	auto*	ch = info->ch.Get();
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -4008,7 +4007,7 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = info->ch;
+	auto*	ch = info->ch.Get();
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -4135,7 +4134,7 @@ EVENTFUNC(mob_skill_hit_event)
 	}
 
 	// <Factor>
-	LPCHARACTER ch = info->ch;
+	auto* ch = info->ch.Get();
 	if (ch == nullptr) {
 		return 0;
 	}
@@ -4152,9 +4151,9 @@ EVENTFUNC(mob_skill_hit_event)
 #ifdef __VERSION_162__
 struct FHealerParty
 {
-	FHealerParty(LPCHARACTER pkHealer) : m_pkHealer(pkHealer) {}
+	FHealerParty(LegacyCharHandle pkHealer) : m_pkHealer(pkHealer) {}
 	
-	void operator () (LPCHARACTER ch)
+	void operator () (LegacyCharHandle ch)
 	{
 		int iRevive = (int)(m_pkHealer->GetMaxHP() / 100 * 15);
 		int iHP = (ch->GetMaxHP() >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ch->GetMaxHP());
@@ -4163,7 +4162,7 @@ struct FHealerParty
 		sys_log(0, "FHealerParty: %s (pointer: %p) heal the HP of %s (pointer: %p) with %d (new HP: %d).", m_pkHealer->GetName(), get_pointer(m_pkHealer), ch->GetName(), get_pointer(ch), iRevive, ch->GetHP());
 	}
 	
-	LPCHARACTER	m_pkHealer;
+	LegacyCharHandle	m_pkHealer;
 };
 #endif
 
