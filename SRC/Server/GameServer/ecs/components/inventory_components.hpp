@@ -40,6 +40,12 @@ struct AttrTransferWindowComponent {
 };
 #endif
 
+#ifdef ENABLE_ACCE_SYSTEM
+struct AcceWindowComponent {
+    LPITEM pMaterials[ACCE_WINDOW_MAX_MATERIALS] {};
+};
+#endif
+
 struct GoldAmount { int64_t amount; };
 
 struct QuickSlots {
