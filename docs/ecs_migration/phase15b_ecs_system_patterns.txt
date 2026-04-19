@@ -237,3 +237,141 @@ Recommendation for next targets
   - should reuse the same LegacyCharPtr bridge cleanup first
 - CombatSystem
   - defer until after one more medium-risk successful system pass
+
+
+Phase 15B-3 - SkillSystem entity-first cleanup
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+- SkillSystem.hpp needed no signature expansion in this pass.
+- Existing VID-A6 groundwork remained in place:
+  - CheckSkillHit(attacker, skillId, target) already entity-based
+  - CheckSkillHitCount already entity-based
+  - TSkillUseInfo::dwVID is entt::entity
+  - TSkillUseInfo::target_map is std::map<entt::entity, size_t>
+
+Audit summary
+- Baseline raw LPCHARACTER / CHARACTER* token count in SkillSystem.cpp/.hpp: 42
+- External direct SkillSystem::* callers outside the file were effectively negligible.
+- The practical entry chain still comes through CHARACTER wrapper methods such as:
+  - UseSkill
+  - ComputeSkill
+  - ComputeSkillParty
+  - ComputeGyeongGongSkill
+- High-risk internal hotspots before cleanup were:
+  - LegacyCharacter(entity) using VIDComponent + CHARACTER_MANAGER::Find(...)
+  - chain_lightning_event payload using runtime ids resolved later
+  - splash functors carrying LPCHARACTER state
+  - event callbacks reading DynamicCharacterPtr as raw pointer
+
+Signature decisions
+- Namespace-level entity-entry helpers stayed OPTION_ENTITY.
+- No wide external caller cascade was needed.
+- Large CHARACTER runtime wrappers stayed intentionally legacy for now:
+  - int CHARACTER::ComputeSkillParty(uint32_t, LPCHARACTER, uint8_t)
+  - int CHARACTER::ComputeGyeongGongSkill(uint32_t, LPCHARACTER, uint8_t)
+  - int CHARACTER::ComputeSkill(uint32_t, LPCHARACTER, uint8_t)
+  - bool CHARACTER::UseSkill(uint32_t, LPCHARACTER, bool)
+- These 4 wrappers are the only raw LPCHARACTER survivors after the pass.
+
+Implementation pattern summary
+- Pattern A (pure ECS reads replacing CHARACTER reads): 0
+  - Skill authority still ultimately flows through legacy CHARACTER runtime logic.
+  - This pass only removed the old VID-based bounce-back lookup path.
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): 9
+  - IsLearnableSkill
+  - LearnGrandMasterSkill
+  - LearnSkillByBook
+  - CanUseMobSkill
+  - CanUseSkill
+  - CheckSkillHit
+  - ComputeCooltime
+  - ResetSkill
+  - chain_lightning_event victim/caster resolution
+
+- Pattern C (legacy packet/event/combat interaction through one resolved CHARACTER bridge): 6
+  - skill_muyoung_event
+  - skill_gyeongGong_event
+  - mob_skill_hit_event
+  - chain_lightning_event
+  - FuncSplashDamage
+  - FuncSplashAffect
+
+- Pattern D (resolve legacy pointer once at top of entity-entry function): 11
+  - All cleaned entity-entry helpers now use a single LegacyCharOf(entity) lookup.
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Added a local bridge alias:
+  - using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+- Updated helper/functor members and parameters from LPCHARACTER to LegacyCharHandle:
+  - FFindNearVictim
+  - FuncSplashDamage
+  - FuncSplashAffect
+  - FComputeSkillParty
+  - FHealerParty
+- Converted chain_lightning_event payload from runtime uint32 ids to entt::entity:
+  - dwVictim: entt::entity
+  - dwChr: entt::entity
+- Converted event callback access from:
+  - info->ch
+  to:
+  - info->ch.Get()
+- Removed unnecessary const_cast in CHARACTER const wrappers by using:
+  - AIHelpers::EcsOf(this)
+
+Lifecycle / null-safety findings
+- Skill teardown edges are more dangerous than Gaya or Affect because both attacker and victim may disappear mid-chain.
+- The safe pattern for this pass is:
+  - resolve attacker once
+  - resolve target once
+  - abort or skip when either side is missing
+- chain_lightning_event is now safer because it no longer stores packet ids that must be re-routed through a later Find(...).
+- DynamicCharacterPtr event payloads must always be read with .Get() before dereference.
+
+Counts
+- Baseline LPCHARACTER count from audit: 42
+- Post-migration raw LPCHARACTER / CHARACTER* token count in SkillSystem.cpp/.hpp: 4
+- Intentional survivors: 4
+  - all four are large CHARACTER wrapper signatures listed above
+- Accidental survivors: 0
+- LegacyCharOf bridge points in SkillSystem.cpp/.hpp: 11
+
+What went smoothly
+- VID-A6 groundwork had already converted target tracking and hit-count bookkeeping to entt::entity.
+- LegacyCharPtr again proved to be the right bridge after VID elimination.
+- Helper/functor cleanup was straightforward once the old Find(...) bounce was removed.
+
+Unexpected friction
+- The baseline token count was materially higher than the original phase estimate because SkillSystem.cpp still hosts a very large amount of legacy CHARACTER runtime code.
+- The file mixes three layers in one compilation unit:
+  - entity-entry helpers
+  - event/functor glue
+  - legacy CHARACTER skill runtime
+- That means token-count reduction is useful, but must be interpreted carefully.
+
+Verification
+- Build gate: PASS
+- WinTest deploy + restart: PASS
+- Boot/log smoke: PASS
+- No fresh skill-specific null-deref, VID_DRIFT, DestroyCharacter, or SpawnMob regression was observed in the fresh boot window.
+- Full in-client skill gameplay still requires manual smoke for:
+  - single-target skill damage
+  - AoE skill damage
+  - buff/debuff application
+  - death/logout/channel edge cases
+
+Cumulative 15B progress so far
+- GayaSystem: 17 -> 0
+- AffectSystem: 32 -> 3
+- SkillSystem: 42 -> 4
+
+Recommendation for next targets
+- CombatSystem
+  - next logical high-value target, but higher risk than SkillSystem because it owns the core runtime combat lifecycle
+- MountSystem / ItemSystem
+  - lower-risk alternatives if a smaller stabilization pass is preferred before CombatSystem
