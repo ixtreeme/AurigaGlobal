@@ -55,6 +55,7 @@
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/components/vital_components.hpp"
 #include "ecs/components/inventory_components.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
@@ -1800,6 +1801,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			item->AddToCharacter(ch, TItemPos(INVENTORY, pos));
 #endif
 	}
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	ItemSystem::SyncExtraInventoryAll(ch);
+#endif
 
 	ch->CheckMaximumPoints();
 	ch->PointsPacket();

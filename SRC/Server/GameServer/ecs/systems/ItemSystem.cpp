@@ -77,12 +77,14 @@
 #endif
 
 #include "../Registry.hpp"
+#include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/identity_components.hpp"
-#include "../ItemRegistry.hpp"
+#include "../components/inventory_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include "../components/item_components.hpp"
+#include "../ItemRegistry.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
 bool IS_BOTARYABLE_ZONE(int nMapIndex);
@@ -120,6 +122,20 @@ LegacyCharHandle LegacyCharOf(entt::entity e)
     auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
     return legacy ? legacy->ptr : nullptr;
 }
+
+#ifdef ENABLE_EXTRA_INVENTORY
+static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(e);
+}
+#endif
 
 static entt::entity ItemEntityOf(LPITEM item)
 {
@@ -416,6 +432,16 @@ LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell)
 {
     auto* ch = LegacyCharOf(e);
     return ch ? ch->GetExtraInventoryItem(cell) : nullptr;
+}
+
+void SyncExtraInventoryAll(LPCHARACTER ch)
+{
+    auto* comp = EnsureExtraInventoryRuntimeComponent(ch);
+    if (!comp)
+        return;
+
+    std::memcpy(comp->pItems, ch->m_pointsInstant.pExtraItems, sizeof(comp->pItems));
+    std::memcpy(comp->wItemGrid, ch->m_pointsInstant.wExtraItemGrid, sizeof(comp->wItemGrid));
 }
 #endif
 

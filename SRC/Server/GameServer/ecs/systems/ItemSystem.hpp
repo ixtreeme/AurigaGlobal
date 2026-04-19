@@ -14,6 +14,7 @@ LPITEM GetItem(entt::entity e, TItemPos cell);
 LPITEM GetInventoryItem(entt::entity e, uint16_t cell);
 #ifdef ENABLE_EXTRA_INVENTORY
 LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell);
+void SyncExtraInventoryAll(LPCHARACTER ch);
 #endif
 LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
 #ifdef ENABLE_EXTRA_INVENTORY

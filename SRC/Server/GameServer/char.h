@@ -32,6 +32,8 @@
 class CMountSystem;
 #endif
 
+namespace ItemSystem { void SyncExtraInventoryAll(LPCHARACTER ch); }
+
 #ifdef ENABLE_BATTLE_PASS
 #include "utils.h"
 #endif
@@ -2412,6 +2414,7 @@ public:
 
 	friend struct FuncSplashDamage;
 	friend struct FuncSplashAffect;
+friend void ItemSystem::SyncExtraInventoryAll(LPCHARACTER ch);
 	friend class CFuncShoot;
 
 public:
