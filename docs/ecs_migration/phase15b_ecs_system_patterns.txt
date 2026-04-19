@@ -513,3 +513,149 @@ Recommendation for next targets
   - highest value next target, but materially higher risk because it owns the core melee lifecycle
 - ItemSystem
   - lower-risk alternative if another stabilization pass is preferred before CombatSystem
+
+
+Phase 15B-5 - CombatSystem entity-first cleanup
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+- CombatSystem.hpp needed no signature expansion in this pass.
+- This pass intentionally did not collapse the large legacy CHARACTER combat wrapper surface.
+- The target was the accidental LPCHARACTER-heavy helper/event/iteration layer around that wrapper surface.
+
+Audit summary
+- Baseline raw LPCHARACTER / CHARACTER* token count in CombatSystem.cpp/.hpp: 154
+- This is much higher than the old phase-15 baseline estimate because the file now contains:
+  - ECS entry helpers
+  - aggro / reward / drop helper structs
+  - event handlers
+  - large legacy CHARACTER combat runtime wrappers
+- Already-entity groundwork from previous phases remained in place before this pass:
+  - TDamageMap keyed by entt::entity
+  - m_eVictim is entt::entity
+  - dead_event payload uses entt::entity
+- One stale ECS view still used VIDComponent before this pass:
+  - CombatSystem_Update view<..., VIDComponent, ...>
+
+Signature decisions
+- CombatSystem namespace entry helpers stayed OPTION_ENTITY.
+- CHARACTER:: combat wrappers intentionally stayed KEEP_LEGACY_OVERLOAD:
+  - Attack
+  - Damage
+  - Dead
+  - BeginFight
+  - DistributeHP
+  - DistributeSP
+  - ItemDropPenalty
+  - RewardGold
+  - GetVictim / SetVictim / GetNearestVictim
+  - aggro update wrappers
+- Internal static helper functions, helper structs, lambdas, and event handlers were converted away from LPCHARACTER where possible.
+
+Implementation pattern summary
+- Pattern A (pure ECS reads replacing CHARACTER reads): 1
+  - CombatSystem_Update view switched from VIDComponent to LegacyCharPtr.
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): many helper-entry sites
+  - top CombatSystem namespace wrappers now resolve through LegacyCharPtr instead of VIDComponent + Find
+  - drop / exp / reward helper functions use LegacyCharHandle internally
+
+- Pattern C (event/callback payload and iteration safety): several
+  - dead_event already entity-based and stayed so
+  - helper functors now carry LegacyCharHandle instead of LPCHARACTER
+  - for_each_pc / dungeon-member lambdas no longer use raw LPCHARACTER type declarations internally
+
+- Pattern D (resolve once, then stay on bridge handle): dominant pattern in this pass
+  - LegacyCharHandle alias used for helper structs, temporary locals, containers, and utility function params
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Added a local bridge alias:
+  - using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)
+- Converted top CombatSystem namespace helper layer from raw LPCHARACTER locals to `auto*` bridge locals.
+- Converted helper structs from LPCHARACTER storage to LegacyCharHandle:
+  - FuncForgetMyAttacker
+  - FuncAggregateMonster
+  - FuncAggregateMonsterPlus
+  - FuncAttractRanger
+  - FuncPullMonster
+  - NPartyExpDistribute::FPartyTotaler
+  - NPartyExpDistribute::FPartyDistributor
+  - SDamageInfo
+  - CFuncShoot
+  - FuncSetLastAttacked
+  - FuncDeadSpawnedByStone
+- Converted internal helper signatures from LPCHARACTER to LegacyCharHandle where safe:
+  - AdjustExpByLevel_Combat
+  - GiveExp
+  - __UpdateBattlePassCollectProgress
+  - __TryAutoGiveRewardItem
+  - __GiveRewardItemToCharacterOrDrop
+  - MakeItemLink
+  - ProcessStoneSpawnStep
+  - CalcReference* damage helpers
+- Converted the remaining stale ECS runtime view from:
+  - view<..., VIDComponent, ...>
+  to:
+  - view<..., LegacyCharPtr, ...>
+
+Death / drop / quest chain notes
+- The death-chain authority remained on the existing legacy wrapper flow, but helper/iteration resolution is now entity-first.
+- End-to-end chain ownership after this cleanup:
+  - death scheduling: dead_event with entt::entity payload (already in place before this pass)
+  - damage ownership: TDamageMap keyed by entt::entity (already in place before this pass)
+  - exp distribution: entity-key iteration resolves attackers through LegacyCharPtr bridge
+  - drop attribution: reward helper queues/vectors now carry LegacyCharHandle, not LPCHARACTER declarations
+  - quest / corpse / post-death flow: unchanged authority, but no reintroduced VID bounce-back path was added
+- No duplicate VIDComponent + Find lookup path remains in CombatSystem internals after this pass.
+
+Counts
+- Baseline LPCHARACTER count from audit: 154
+- Post-migration raw LPCHARACTER / CHARACTER* token count in CombatSystem.cpp/.hpp: 17
+- Intentional survivors: 17
+  - all remaining matches are large CHARACTER wrapper/runtime signatures
+- Accidental internal survivors: 0
+
+What went smoothly
+- VID-A groundwork had already eliminated the hardest identity problems.
+- LegacyCharPtr again removed the old bounce-back lookup path cleanly.
+- Helper-struct and utility-function cleanup yielded a large reduction without touching the most dangerous combat wrapper signatures.
+
+Unexpected friction
+- CombatSystem baseline was far larger than expected because the file is effectively several subsystems in one compilation unit.
+- The safe migration boundary here is not file-level; it is layer-level:
+  - helper/event/iteration layer can be cleaned now
+  - core CHARACTER combat wrappers must stay legacy-signature for now
+- This is the opposite signature ratio from GayaSystem, where nearly everything could go entity-first directly.
+
+Verification
+- Build gate: PASS
+- WinTest deploy + restart: PASS
+- Boot/log smoke: PASS
+- No fresh combat-system startup regression was observed:
+  - no VID_DRIFT
+  - no DestroyCharacter not found
+  - no SpawnMob cannot create new character
+- Only the usual pre-existing motion/content warnings remained.
+- Full in-client combat regression is still required for:
+  - normal melee kill
+  - skill kill
+  - AoE splash kill
+  - exp/drop/quest chain
+  - death and corpse cleanup
+  - PvP / party assist / guild-war related combat
+
+Cumulative 15B progress so far
+- GayaSystem: 17 -> 0
+- AffectSystem: 32 -> 3
+- SkillSystem: 42 -> 4
+- MountSystem: 22 -> 3
+- CombatSystem: 154 -> 17
+- Total reduction so far: 267 -> 27
+
+Recommendation after this pass
+- ItemSystem is now the most reasonable next 15B target if another medium-risk cleanup is preferred.
+- If gameplay remains stable after manual combat validation, the project is in a good position to pivot from 15B system-internal cleanup toward the next broader LPCHARACTER reduction phase.
