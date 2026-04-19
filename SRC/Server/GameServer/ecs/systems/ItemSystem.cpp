@@ -2376,6 +2376,9 @@ bool CHARACTER::IsAttrTransferOpen() const
 #ifdef ENABLE_ACCE_SYSTEM
 LPITEM* CHARACTER::GetAcceMaterials()
 {
+    if (auto* comp = EnsureAcceWindowComponent(this))
+        return comp->pMaterials;
+
     return m_pointsInstant.pAcceMaterials;
 }
 #endif
