@@ -34,11 +34,13 @@
 
 namespace {
 
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
 const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
     80, 50, 40, 30, 25, 1
 };
 
-int GetPoisonDamageRate(LPCHARACTER ch)
+int GetPoisonDamageRate(LegacyCharHandle ch)
 {
     int iRate = ch->IsPC() ? 50 : poison_damage_rate[ch->GetMobRank()];
     iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
@@ -67,13 +69,13 @@ EVENTFUNC(poison_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    auto* ch = info->ch.Get();
     if (ch == nullptr) {
         return 0;
     }
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkPoisonEvent
-    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetPoisonDamageRate(ch) / 1000;
     if (test_server) {
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
@@ -103,7 +105,7 @@ const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
     80, 50, 40, 30, 25, 1
 };
 
-int GetBleedingDamageRate(LPCHARACTER ch)
+int GetBleedingDamageRate(LegacyCharHandle ch)
 {
     int iRate = ch->IsPC() ? 50 : bleeding_damage_rate[ch->GetMobRank()];
     iRate = MAX(0, iRate - ch->GetPoint(POINT_BLEEDING_REDUCE));
@@ -135,13 +137,13 @@ EVENTFUNC(bleeding_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    auto* ch = info->ch.Get();
     if (ch == nullptr) {
         return 0;
     }
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkBleedingEvent
-    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetBleedingDamageRate(ch) / 1000;
     if (test_server) {
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
@@ -191,13 +193,13 @@ EVENTFUNC(fire_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    auto* ch = info->ch.Get();
     if (ch == nullptr) {
         return 0;
     }
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkFireEvent
-    LPCHARACTER pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
+    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = info->amount;
     if (test_server) {
         ch->ChatPacket(CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
@@ -232,14 +234,14 @@ int bleeding_level_adjust[9] = {
 };
 #endif
 
-LPCHARACTER LegacyCharacter(entt::entity e)
+LegacyCharHandle LegacyCharOf(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e)) {
         return nullptr;
     }
 
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    return vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 void MarkPoison(entt::entity e, bool value)
@@ -295,7 +297,7 @@ void MarkFire(entt::entity e, bool value)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-void SyncAffectList(entt::entity e, LPCHARACTER ch)
+void SyncAffectList(entt::entity e, LegacyCharHandle ch)
 {
     if (!ch || e == entt::null || !g_registry.valid(e)) {
         return;
@@ -314,7 +316,7 @@ void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count
 {
     MarkFire(target, true);
 
-    LPCHARACTER ch = LegacyCharacter(target);
+    auto* ch = LegacyCharOf(target);
     if (!ch || ch->m_pkFireEvent) {
         return;
     }
@@ -326,7 +328,7 @@ void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count
     info->count = count;
     info->amount = amount;
 
-    if (LPCHARACTER pkAttacker = LegacyCharacter(attacker)) {
+    if (auto* pkAttacker = LegacyCharOf(attacker)) {
         info->attacker_pid = pkAttacker->GetPlayerID();
     } else {
         info->attacker_pid = 0;
@@ -339,7 +341,7 @@ void RemoveFire(entt::entity e)
 {
     MarkFire(e, false);
 
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return;
     }
@@ -352,7 +354,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
 {
     MarkPoison(target, true);
 
-    LPCHARACTER ch = LegacyCharacter(target);
+    auto* ch = LegacyCharOf(target);
     if (!ch || ch->m_pkPoisonEvent) {
         return;
     }
@@ -371,7 +373,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
     }
 #endif
 
-    LPCHARACTER pkAttacker = LegacyCharacter(attacker);
+    auto* pkAttacker = LegacyCharOf(attacker);
     if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
         int delta = ch->GetLevel() - pkAttacker->GetLevel();
         if (delta > 8) {
@@ -403,7 +405,7 @@ void RemovePoison(entt::entity e)
 {
     MarkPoison(e, false);
 
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return;
     }
@@ -417,7 +419,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
 {
     MarkBleeding(target, true);
 
-    LPCHARACTER ch = LegacyCharacter(target);
+    auto* ch = LegacyCharOf(target);
     if (!ch || ch->m_pkBleedingEvent) {
         return;
     }
@@ -434,7 +436,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
         return;
     }
 
-    LPCHARACTER pkAttacker = LegacyCharacter(attacker);
+    auto* pkAttacker = LegacyCharOf(attacker);
     if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
         int delta = ch->GetLevel() - pkAttacker->GetLevel();
         if (delta > 8) {
@@ -466,7 +468,7 @@ void RemoveBleeding(entt::entity e)
 {
     MarkBleeding(e, false);
 
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return;
     }
@@ -486,7 +488,7 @@ void RemoveBleeding(entt::entity)
 
 bool IsImmune(entt::entity e, uint32_t immuneFlag)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return false;
     }
@@ -525,7 +527,7 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
 
 void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 {
-    LPCHARACTER ch = LegacyCharacter(target);
+    auto* ch = LegacyCharOf(target);
     if (!ch || !table) {
         return;
     }
@@ -567,7 +569,7 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->FindAffect(type, apply) : nullptr;
 }
 
@@ -575,7 +577,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return false;
     }
@@ -587,7 +589,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
 
 bool RemoveAffect(entt::entity e, uint32_t type)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return false;
     }
@@ -599,7 +601,7 @@ bool RemoveAffect(entt::entity e, uint32_t type)
 
 void ClearAffect(entt::entity e, bool save)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return;
     }
@@ -610,7 +612,7 @@ void ClearAffect(entt::entity e, bool save)
 
 void RefreshAffect(entt::entity e)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch) {
         return;
     }
@@ -625,13 +627,13 @@ void UpdateAffect(entt::registry& reg, uint32_t tick)
         return;
     }
 
-    auto view = reg.view<ecs::AffectList, ecs::VIDComponent>();
-    view.each([&](entt::entity e, ecs::AffectList& affectList, const ecs::VIDComponent& vid) {
+    auto view = reg.view<ecs::AffectList, ecs::LegacyCharPtr>();
+    view.each([&](entt::entity e, ecs::AffectList& affectList, const ecs::LegacyCharPtr& legacy) {
         if (affectList.affects.empty() && affectList.skillAffects.empty()) {
             return;
         }
 
-        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
+        auto* ch = legacy.ptr;
         if (!ch) {
             return;
         }
@@ -702,9 +704,9 @@ void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 
     AffectSystem::UpdateAffect(reg, tick);
 
-    auto view = reg.view<ecs::AffectList, ecs::VIDComponent>();
-    view.each([&](const entt::entity entity, ecs::AffectList& affectList, const ecs::VIDComponent& vid) {
-        (void)vid;
+    auto view = reg.view<ecs::AffectList, ecs::LegacyCharPtr>();
+    view.each([&](const entt::entity entity, ecs::AffectList& affectList, const ecs::LegacyCharPtr& legacy) {
+        (void)legacy;
         if (affectList.affects.empty() && affectList.skillAffects.empty()) {
             return;
         }
@@ -814,7 +816,7 @@ EVENTFUNC(affect_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = info->ch;
+	auto* ch = info->ch.Get();
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -1261,7 +1263,7 @@ EVENTFUNC(load_affect_login_event)
 	}
 
 	uint32_t dwPID = info->pid;
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
 
 	if (!ch)
 	{
