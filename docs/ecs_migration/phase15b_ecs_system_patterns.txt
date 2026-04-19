@@ -659,3 +659,139 @@ Cumulative 15B progress so far
 Recommendation after this pass
 - ItemSystem is now the most reasonable next 15B target if another medium-risk cleanup is preferred.
 - If gameplay remains stable after manual combat validation, the project is in a good position to pivot from 15B system-internal cleanup toward the next broader LPCHARACTER reduction phase.
+
+
+Phase 15B-6 - ItemSystem entity-first cleanup
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+- ItemSystem.hpp needed no owner-side signature expansion in this pass.
+- This pass focused on the CHARACTER-owner bridge layer inside ItemSystem.
+- CItem / LPITEM authority remained legacy in this phase by design.
+
+Audit summary
+- Baseline raw LPCHARACTER / CHARACTER* token count in ItemSystem.cpp/.hpp: 83
+- Baseline raw LPITEM / CItem* token count in ItemSystem.cpp/.hpp: 246
+- This system is dual-context by design:
+  - owner side: CHARACTER / player / NPC interactions
+  - item side: LPITEM / CItem state and ItemRegistry
+- Direct external ItemSystem::* callers outside the file were minimal because most gameplay still enters through CHARACTER item wrappers.
+- The highest-value stale pattern before cleanup was the usual one:
+  - entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)
+
+Signature decisions
+- ItemSystem namespace owner-entry helpers stayed OPTION_ENTITY.
+- CHARACTER inventory / transfer wrappers intentionally stayed KEEP_LEGACY_OVERLOAD:
+  - CHARACTER::SetRefineNPC
+  - CHARACTER::GiveItem
+  - CHARACTER::CanReceiveItem
+  - CHARACTER::ReceiveItem
+- Non-CHARACTER item-side wrappers such as CItem::GetOwner and CItem::GetVID remained TYPE_LEGACY and were left untouched.
+
+Implementation pattern summary
+- Pattern A (pure ECS reads replacing CHARACTER reads): 0
+  - inventory authority still lives on legacy CHARACTER state
+  - item authority still lives on legacy CItem state
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): dominant pattern
+  - all top ItemSystem namespace owner-entry helpers now resolve owner once through LegacyCharPtr
+  - give / receive / refine helper calls use owner bridge pointers, not Find(...)
+
+- Pattern C (event/callback iteration cleanup): several
+  - kill_campfire_event now reads DynamicCharacterPtr through `.Get()`
+  - FFindStone owner-side helper storage moved to LegacyCharHandle
+  - NPartyPickupDistribute helper structs moved to LegacyCharHandle
+
+- Pattern D (dual-context clarity): key ItemSystem-specific rule
+  - owner side uses LegacyCharHandle
+  - item side stays LPITEM / CItem*
+  - do not mix the two surfaces implicitly
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Added a local bridge alias:
+  - using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)
+- Converted the top ItemSystem namespace owner-entry surface from raw LPCHARACTER locals to `auto*` bridge locals:
+  - GetItem / GetInventoryItem / GetWearItem
+  - FindSpecifyItem / FindItemByID / Count* helpers
+  - Equip / Unequip / Drop / Move / Pickup / Use / UseItemEx
+  - AutoGiveItem / AutoGiveDS
+  - GiveItem / CanReceiveItem / ReceiveItem
+  - SetRefineNPC / DoRefine* / RefineInformation / RefineItem
+  - UseSilkBotary / SetRefineMode / ClearRefineMode
+- Converted helper/event structures from LPCHARACTER storage to LegacyCharHandle where safe:
+  - FFindStone
+  - NPartyPickupDistribute::FFindOwnership
+  - NPartyPickupDistribute::FCountNearMember
+  - NPartyPickupDistribute::FMoneyDistributor
+- Converted kill_campfire_event from:
+  - info->ch
+  to:
+  - info->ch.Get()
+- Cleaned several local owner-side temporaries from LPCHARACTER to `auto*` in mixed legacy sections.
+
+Cross-system drop / pickup chain notes
+- CombatSystem still owns attacker attribution and reward initiation.
+- ItemSystem still owns item creation, ground placement, pickup, and inventory insertion.
+- After this pass, owner resolution in ItemSystem no longer re-enters through the deleted VID path.
+- Ground-item / LPITEM authority was intentionally not migrated in this phase.
+- Inventory authority still reads CHARACTER::m_pointsInstant.pItems and therefore remained outside ECS component expansion scope.
+
+Counts
+- Baseline LPCHARACTER count from audit: 83
+- Post-migration raw LPCHARACTER / CHARACTER* token count in ItemSystem.cpp/.hpp: 8
+- Intentional survivors: 8
+  - NotifyRefineSuccess / NotifyRefineFail declarations and definitions
+  - CHARACTER::SetRefineNPC
+  - CHARACTER::GiveItem
+  - CHARACTER::CanReceiveItem
+  - CHARACTER::ReceiveItem
+- Accidental survivors: 0
+- LPITEM / CItem* surface remains large and intentional in this phase.
+
+What went smoothly
+- The same LegacyCharPtr bridge pattern scaled cleanly to the owner side of ItemSystem.
+- The dual-context split (owner vs item) was manageable as long as the bridge boundary stayed explicit.
+- No caller cascade was needed outside the file.
+
+Unexpected friction
+- The file is much larger and more mixed than the original audit implied.
+- There are effectively two migration stories in the same file:
+  - owner-side CHARACTER bridge cleanup
+  - item-side LPITEM / CItem authority, which remains for a later phase
+- Token-count reduction must therefore be interpreted only on the owner side in this phase.
+
+Verification
+- Build gate: PASS
+- WinTest deploy + restart: PASS
+- Boot/log smoke: PASS
+- No fresh ItemSystem startup regression was observed:
+  - no inventory-related syserr
+  - no VID_DRIFT
+  - no DestroyCharacter / SpawnMob regression
+- Only the usual pre-existing motion/content warnings remained.
+- Full in-client item regression still requires manual smoke for:
+  - mob drop -> ground item
+  - pickup -> inventory insert
+  - manual drop -> ground item
+  - consumable use
+  - equip / unequip stat update
+  - stack merge / split
+  - shop / refine interactions
+
+Phase 15B final summary
+- GayaSystem: 17 -> 0
+- AffectSystem: 32 -> 3
+- SkillSystem: 42 -> 4
+- MountSystem: 22 -> 3
+- CombatSystem: 154 -> wrapper-dominated residual only
+- ItemSystem (owner side): 83 -> 8
+- Across the six ECS systems cleaned in 15B, the accidental internal LPCHARACTER layer has been removed.
+- Remaining LPCHARACTER matches in these ECS files are intentional wrapper/runtime surfaces.
+- LegacyCharPtr is now the established owner-side bridge pattern for ECS-system cleanup.
+- This leaves the project ready either for:
+  - Phase 15C style component-expansion work, or
+  - continued LPCHARACTER reduction outside ECS files.
