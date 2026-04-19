@@ -1,0 +1,147 @@
+# Phase 15C-1: Points Cluster Migration Audit
+
+## Executive Summary
+- `CHARACTER_POINT_INSTANT` is structurally dominated by inventory-storage arrays, not by scalar runtime flags.
+- The struct is estimated at **34,335 bytes**, matching the `15C-0` estimate.
+- The best **first implementation slice** inside the points cluster is **extra inventory storage** (`pExtraItems + wExtraItemGrid`), not the hottest combat fields.
+- Reason: it frees **10,800 bytes per CHARACTER** while keeping blast radius localized to ItemSystem feature-gated paths.
+- The truly hot fields (`points[]`, `position`, `instant_flag`, `dwAIFlag`, `pItems`, `bItemGrid`) should be migrated later behind mirrored helper boundaries.
+
+## 1. Full Structural Dump of `CHARACTER_POINT_INSTANT`
+| Field | Type | Est. Bytes | Direct Field Refs | Classification | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| `points` | `int64_t[POINT_MAX_NUM]` | 2,040 | 5 | HOT | Direct low, but amplified by GetPoint/PointChange/ComputePoints/PointsPacket. |
+| `fRot` | `float` | 4 | 2 | MEDIUM | Rotation/state sync surface, low direct count. |
+| `iMaxHP` | `int64_t` | 8 | 2 | HOT | Hot via GetMaxHP/PointChange/PointsPacket helper chain. |
+| `iMaxSP` | `int64_t` | 8 | 2 | HOT | Hot via GetMaxSP/PointChange/PointsPacket helper chain. |
+| `position` | `int32_t` | 4 | 7 | HOT | Read in IsAlive/GetPosition/combat movement checks. |
+| `instant_flag` | `int32_t` | 4 | 15 | HOT | Death/stun/shop runtime bits; touched in combat and movement. |
+| `dwAIFlag` | `uint32_t` | 4 | 23 | HOT | AI/combat flags read per tick and action. |
+| `dwImmuneFlag` | `uint32_t` | 4 | 10 | MEDIUM | Frequently checked in damage/stat resolution. |
+| `dwLastShoutPulse` | `uint32_t` | 4 | 2 | COLD | Chat anti-spam timing, low frequency. |
+| `parts` | `uint16_t[PART_MAX_NUM]` | 16 | 3 | MEDIUM | Amplified by GetPart/SetPart and appearance packets. |
+| `pItems` | `LPITEM[INVENTORY_AND_EQUIP_SLOT_MAX]` | 5,280 | 6 | HOT | Main inventory/equipment authority; amplified by GetItem/SetItem. |
+| `bItemGrid` | `uint16_t[INVENTORY_AND_EQUIP_SLOT_MAX]` | 1,320 | 23 | HOT | Main inventory occupancy checks are dense in ItemSystem. |
+| `pDSItems` | `LPITEM[DRAGON_SOUL_INVENTORY_MAX_NUM]` | 11,616 | 5 | MEDIUM | DragonSoul storage, large but localized. |
+| `wDSItemGrid` | `uint16_t[DRAGON_SOUL_INVENTORY_MAX_NUM]` | 2,904 | 11 | MEDIUM | DragonSoul occupancy logic, localized to Item/DragonSoul paths. |
+| `pExtraItems` | `LPITEM[EXTRA_INVENTORY_MAX_NUM]` | 8,640 | 5 | MEDIUM | Huge slice, feature-localized extra inventory authority. |
+| `wExtraItemGrid` | `uint16_t[EXTRA_INVENTORY_MAX_NUM]` | 2,160 | 16 | MEDIUM | Extra inventory occupancy logic, ItemSystem-localized. |
+| `pSwitchbotItems` | `LPITEM[SWITCHBOT_SLOT_COUNT]` | 40 | 4 | COLD | Feature-localized, low fan-out. |
+| `pCubeItems` | `LPITEM[CUBE_MAX_NUM]` | 192 | 1 | COLD | Transient window state only. |
+| `pCubeNpc` | `LPCHARACTER` | 8 | 2 | COLD | Transient NPC window pointer. |
+| `pAttrTransferItems` | `LPITEM[MAX_ATTR_TRANSFER_SLOT]` | 24 | 1 | COLD | Feature-localized window state. |
+| `pAttrTransferNpc` | `LPCHARACTER` | 8 | 2 | COLD | Feature-localized NPC pointer. |
+| `pAcceMaterials` | `LPITEM[ACCE_WINDOW_MAX_MATERIALS]` | 16 | 1 | COLD | Accessory window materials, narrow surface. |
+| `battle_victim` | `LPCHARACTER` | 8 | 0 | COLD | Legacy survivor, apparently unused after m_eVictim migration. |
+| `gm_level` | `uint8_t` | 1 | 4 | MEDIUM | Session/permission state, small scalar. |
+| `bBasePart` | `uint8_t` | 1 | 3 | MEDIUM | Appearance base part, packet-visible. |
+| `iMaxStamina` | `int64_t` | 8 | 2 | MEDIUM | Vitals helper-backed, less hot than HP/SP. |
+| `bBlockMode` | `uint8_t` | 1 | 5 | MEDIUM | Runtime interaction flag. |
+| `iDragonSoulActiveDeck` | `int32_t` | 4 | 4 | MEDIUM | DragonSoul runtime deck selection. |
+| `m_pDragonSoulRefineWindowOpener` | `LPENTITY` | 8 | 5 | COLD | Transient refine opener pointer. |
+| **Total** |  | **34,335** |  |  |  |
+
+## 2. Helper / Indirect Access Amplifiers
+These functions hide much of the real heat of the points cluster, so direct field grep counts alone understate risk.
+| Helper | Whole-tree hits | Why it matters |
+| --- | ---: | --- |
+| `GetPoint` | 649 | Main read boundary for `points[]` derived stats. |
+| `PointChange` | 417 | Main write boundary for points/vitals recomputation. |
+| `GetItem` | 99 | Main read boundary for `pItems` and inventory storage. |
+| `GetPart` | 44 | Main read boundary for `parts[]` / appearance. |
+| `SetPart` | 44 | Main write boundary for `parts[]` / appearance. |
+| `ComputePoints` | 73 | Primary recompute boundary touching multiple fields. |
+| `PointsPacket` | 20 | Packet boundary that serializes points-related state. |
+| `SetItem` | 14 | Inventory authority write helper. |
+| `SetQuickslot` | 11 | Indirect inventory-adjacent UI boundary. |
+| `GetQuickslot` | 6 | Indirect inventory-adjacent UI boundary. |
+
+Interpretation:
+- `points[]` looks ?cold? in raw field grep (`5` direct refs), but it is actually one of the hottest slices because `GetPoint()` (`649`) and `PointChange()` (`417`) sit on almost every combat/stat/item path.
+- `parts[]` also looks light in direct refs, but `GetPart()` / `SetPart()` double the real packet-visible surface.
+- `pItems[]` and `bItemGrid[]` are hot even before helper amplification, and their actual fan-out is larger once `GetItem()` and inventory routines are included.
+
+## 3. Logical Grouping Proposal
+| Group | Fields | Bytes | Freq | Suggested Component | Coverage | Feasibility |
+| --- | --- | ---: | --- | --- | --- | --- |
+| `G_COMBAT_STATS` | points | 2,040 | HOT | `CombatPointsRuntimeComponent` | PARTIAL | HARD |
+| `G_VITALS_MAX` | iMaxHP, iMaxSP, iMaxStamina | 24 | HOT | `VitalCapsComponent` | PARTIAL | MEDIUM |
+| `G_INVENTORY_STORAGE` | pItems, bItemGrid | 6,600 | HOT | `InventoryRuntimeComponent` | PARTIAL | HARD |
+| `G_DRAGONSOUL` | pDSItems, wDSItemGrid, iDragonSoulActiveDeck, m_pDragonSoulRefineWindowOpener | 14,532 | MEDIUM | `DragonSoulInventoryRuntimeComponent` | PARTIAL | MEDIUM |
+| `G_EXTRA_INVENTORY` | pExtraItems, wExtraItemGrid | 10,800 | MEDIUM | `ExtraInventoryRuntimeComponent` | PARTIAL | EASY |
+| `G_SWITCHBOT` | pSwitchbotItems | 40 | COLD | `SwitchbotRuntimeComponent` | NONE | EASY |
+| `G_CUBE` | pCubeItems, pCubeNpc | 200 | COLD | `CubeWindowRuntimeComponent` | NONE | EASY |
+| `G_ACCE` | pAcceMaterials | 16 | COLD | `AcceWindowRuntimeComponent` | NONE | EASY |
+| `G_ATTR_TRANSFER` | pAttrTransferItems, pAttrTransferNpc | 32 | COLD | `AttrTransferWindowRuntimeComponent` | NONE | EASY |
+| `G_INTERACTION` | battle_victim | 8 | COLD | `InteractionRuntimeComponent` | NONE | EASY |
+| `G_RUNTIME_FLAGS` | fRot, position, instant_flag, dwAIFlag, dwImmuneFlag, dwLastShoutPulse, gm_level, bBasePart, bBlockMode | 27 | HOT | `CharacterRuntimeFlagsComponent` | PARTIAL | MEDIUM |
+| `G_APPEARANCE_PARTS` | parts | 16 | MEDIUM | `AppearancePartsComponent` | PARTIAL | MEDIUM |
+
+Group notes:
+- `G_COMBAT_STATS` is only `2,040` bytes by raw storage, but it is helper-amplified and therefore one of the riskiest hot migrations.
+- `G_INVENTORY_STORAGE` is smaller than DragonSoul/extra inventory in bytes, but hotter because it backs the main inventory/equipment authority.
+- `G_EXTRA_INVENTORY` is the best size-vs-risk candidate: huge byte win, narrow feature surface, ItemSystem-localized.
+- `G_INTERACTION` is tiny but useful as a proof-of-pattern warmup if an ultra-safe first cut is desired.
+
+## 4. Migration Order Recommendation
+Order is from easiest/lowest-blast-radius toward hottest/highest-risk slices.
+- **15C-1a** ? `G_EXTRA_INVENTORY` ? ~10,800 bytes freed. Move `pExtraItems` + `wExtraItemGrid` into `ExtraInventoryRuntimeComponent`. Big byte win (`10,800` bytes) with localized ItemSystem surface.
+- **15C-1b** ? `G_CUBE` ? ~200 bytes freed. Extract cube window arrays/pointer. Very low risk transient state slice.
+- **15C-1c** ? `G_ATTR_TRANSFER` ? ~32 bytes freed. Extract attr-transfer window items/NPC pointer. Narrow feature surface.
+- **15C-1d** ? `G_ACCE` ? ~16 bytes freed. Extract accessory window materials. Tiny but clean isolation.
+- **15C-1e** ? `G_SWITCHBOT` ? ~40 bytes freed. Extract switchbot item slots. Small, feature-gated runtime slice.
+- **15C-1f** ? `G_DRAGONSOUL` ? ~14,532 bytes freed. Move DragonSoul storage arrays and deck/opener runtime state. Large byte win but dedicated-system coupling.
+- **15C-1g** ? `G_APPEARANCE_PARTS` ? ~16 bytes freed. Move `parts[]`/base appearance slice after packet mirroring is proven.
+- **15C-1h** ? `G_VITALS_MAX` ? ~24 bytes freed. Move `iMaxHP/iMaxSP/iMaxStamina` once recompute paths are mirrored.
+- **15C-1i** ? `G_RUNTIME_FLAGS` ? ~27 bytes freed. Move runtime flags/AI/position bits with careful dual-authority sync.
+- **15C-1j** ? `G_INVENTORY_STORAGE + G_COMBAT_STATS` ? ~8,640 bytes freed. Finish the hot main inventory arrays and `points[]` core only after all helper boundaries are mirrored.
+
+**Recommended first substep to implement next: `15C-1a` (`G_EXTRA_INVENTORY`).**
+- Expected bytes freed per CHARACTER: **10,800**
+- Why first: largest isolated slice with medium/cold access profile and strong feature locality inside ItemSystem.
+- Why not `points[]` first: helper fan-out is too large (`GetPoint`, `PointChange`, `ComputePoints`, `PointsPacket`), so a direct first cut would carry far more regression risk.
+
+## 5. Risk Assessment
+1. **Dual-authority divergence**
+   - Risk: Mirrored ECS data can drift from legacy fields during a long migration window.
+   - Mitigation: For every substep, introduce one write-through bridge API first and make all writes flow through it before changing reads.
+2. **Hot-path latency / cache regression**
+   - Risk: Scattering hot stats and inventory occupancy into too many tiny components can hurt combat and item hot paths.
+   - Mitigation: Keep hot slices coarse-grained: one component for extra inventory, one for DragonSoul storage, one for runtime flags, one for combat points.
+3. **Packet serialization breakage**
+   - Risk: `PointsPacket()` and related UI updates assume immediately coherent point state.
+   - Mitigation: Treat `PointsPacket()` as a formal boundary: do not flip authority until the backing component read path is complete and covered by smoke tests.
+4. **DB/login initialization ordering**
+   - Risk: Load/login code expects the cluster to be fully valid before early packet sends and command handling.
+   - Mitigation: Populate ECS mirrors immediately at character creation/login before any packet or command path can read them.
+5. **Hidden helper amplification**
+   - Risk: Low direct field counts hide huge helper fan-out (`GetPoint`, `GetItem`, `ComputePoints`).
+   - Mitigation: Drain helper implementations first; do not rely on raw field grep counts alone when deciding that a field is ?cold?.
+
+## 6. Packet + DB Boundary Scan
+Exact raw-layout grep hits (`&m_pointsInstant`, `memcpy(m_pointsInstant)`, `m_pointsInstant[...]`) found: **0**
+
+This is good news: the struct is not being passed around wholesale. The real critical boundaries are helper-based:
+- No exact raw `&m_pointsInstant` / `memcpy(m_pointsInstant)` hits ? The layout is not passed around wholesale in current code.
+- ecs/systems/PointSystem.cpp:155 `CHARACTER::GetPoint` ? Indirect read boundary for `points[]`.
+- ecs/systems/StatSystem.cpp:110 `CHARACTER::ComputeBattlePoints` ? Derived-combat recompute boundary.
+- ecs/systems/StatSystem.cpp:267 `CHARACTER::ComputePoints` ? Full stat recompute boundary spanning points cluster.
+- ecs/systems/NetworkSyncSystem.cpp:727 `CHARACTER::PointsPacket` ? Packet serialization boundary that must stay coherent during dual-authority migration.
+- ecs/systems/ItemSystem.cpp:2234 `CHARACTER::GetItem` ? Inventory read boundary over `pItems` / storage arrays.
+- input_db.cpp:637, 1805 ? DB/login flow explicitly calls `PointsPacket()` after load/update.
+
+## 7. Concrete Implementation Guidance
+Do **not** migrate the points cluster as one giant component. The safer plan is:
+1. Start with one isolated storage slice (`G_EXTRA_INVENTORY`).
+2. Mirror writes into a new ECS component while legacy fields remain authoritative.
+3. Flip read paths in ItemSystem for that slice only.
+4. Run item/inventory regressions.
+5. Remove the legacy fields for that slice only.
+6. Repeat for DragonSoul, then transient windows, then hot runtime flags, and finally `points[]` and main inventory storage.
+
+## 8. Final Recommendation
+- **First code implementation target:** `G_EXTRA_INVENTORY`
+- **Second:** `G_CUBE` / `G_ATTR_TRANSFER` / `G_ACCE` as low-risk cleanup slices
+- **Third:** `G_DRAGONSOUL`
+- **Leave for late:** `G_INVENTORY_STORAGE`, `G_RUNTIME_FLAGS`, `G_COMBAT_STATS`
+- This ordering maximizes bytes freed early without taking the highest-risk combat/stat authority cuts first.
