@@ -2513,8 +2513,8 @@ public:
 	bool ItemProcess_Polymorph(LPITEM item);
 
 	// by mhh
-	LPITEM* GetCubeItem() { return m_pointsInstant.pCubeItems; }
-	bool IsCubeOpen() const { return (m_pointsInstant.pCubeNpc ? true : false); }
+	LPITEM* GetCubeItem();
+	bool IsCubeOpen() const;
 	void SetCubeNpc(LPCHARACTER npc);
 	bool CanDoCube() const;
 
