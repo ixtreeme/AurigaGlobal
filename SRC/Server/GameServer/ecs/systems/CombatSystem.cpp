@@ -6,6 +6,7 @@
 #include <boost/algorithm/string/find.hpp>
 #include <random>
 #include <thread>
+#include <utility>
 
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -81,17 +82,19 @@
 extern void Map1MassSpawnEvent_OnMobDead(uint32_t vid);
 #endif
 
-static inline LPCHARACTER LegacyCharOf(entt::entity e)
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
+static inline LegacyCharHandle LegacyCharOf(entt::entity e)
 {
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid) {
+    if (e == entt::null || !g_registry.valid(e)) {
         return nullptr;
     }
 
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
-static inline entt::entity EntityOf(LPCHARACTER ch)
+static inline entt::entity EntityOf(LegacyCharHandle ch)
 {
     if (!ch) {
         return entt::null;
@@ -100,9 +103,9 @@ static inline entt::entity EntityOf(LPCHARACTER ch)
     return AIHelpers::EcsOf(ch);
 }
 
-static inline bool HasMoveState(const CHARACTER* ch)
+static inline bool HasMoveState(LegacyCharHandle ch)
 {
-    const entt::entity e = EntityOf(const_cast<CHARACTER*>(ch));
+    const entt::entity e = EntityOf(ch);
     return e != entt::null && g_registry.valid(e) &&
         g_registry.all_of<ecs::MovementDestination>(e);
 }
@@ -111,7 +114,7 @@ namespace CombatSystem {
 
 bool CanBeginFight(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->CanBeginFight();
     }
 
@@ -120,14 +123,14 @@ bool CanBeginFight(entt::entity e)
 
 void BeginFight(entt::entity attacker, entt::entity victim)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         ch->BeginFight(LegacyCharOf(victim));
     }
 }
 
 bool CanFight(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->CanFight();
     }
 
@@ -136,7 +139,7 @@ bool CanFight(entt::entity e)
 
 bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         return ch->Attack(LegacyCharOf(victim), attackType);
     }
 
@@ -145,7 +148,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 
 bool Shoot(entt::entity attacker, uint8_t attackType)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         return ch->Shoot(attackType);
     }
 
@@ -154,14 +157,14 @@ bool Shoot(entt::entity attacker, uint8_t attackType)
 
 void SetVictim(entt::entity attacker, entt::entity victim)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         ch->SetVictim(LegacyCharOf(victim));
     }
 }
 
 entt::entity GetVictim(entt::entity attacker)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         return EntityOf(ch->GetVictim());
     }
 
@@ -170,7 +173,7 @@ entt::entity GetVictim(entt::entity attacker)
 
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
 {
-    if (LPCHARACTER ch = LegacyCharOf(attacker)) {
+    if (auto* ch = LegacyCharOf(attacker)) {
         return EntityOf(ch->GetNearestVictim(LegacyCharOf(from)));
     }
 
@@ -179,7 +182,7 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
 
 bool IsStun(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->IsStun();
     }
 
@@ -188,14 +191,14 @@ bool IsStun(entt::entity e)
 
 void Stun(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->Stun();
     }
 }
 
 bool IsDead(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->IsDead();
     }
 
@@ -204,7 +207,7 @@ bool IsDead(entt::entity e)
 
 void SetLastAttacked(entt::entity e, uint32_t tick)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SetLastAttacked(tick);
     }
 }
@@ -212,7 +215,7 @@ void SetLastAttacked(entt::entity e, uint32_t tick)
 
 void DeathPenalty(entt::entity e, uint8_t bTown)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->DeathPenalty(bTown);
     }
 }
@@ -220,7 +223,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 
 void RewardGold(entt::entity victim, entt::entity attacker)
 {
-    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+    if (auto* ch = LegacyCharOf(victim)) {
         ch->RewardGold(LegacyCharOf(attacker));
     }
 }
@@ -228,7 +231,7 @@ void RewardGold(entt::entity victim, entt::entity attacker)
 
 void Reward(entt::entity victim, bool bItemDrop)
 {
-    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+    if (auto* ch = LegacyCharOf(victim)) {
         ch->Reward(bItemDrop);
     }
 }
@@ -236,7 +239,7 @@ void Reward(entt::entity victim, bool bItemDrop)
 
 void ItemDropPenalty(entt::entity victim, entt::entity killer)
 {
-    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+    if (auto* ch = LegacyCharOf(victim)) {
         ch->ItemDropPenalty(LegacyCharOf(killer));
     }
 }
@@ -244,7 +247,7 @@ void ItemDropPenalty(entt::entity victim, entt::entity killer)
 
 void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
 {
-    if (LPCHARACTER ch = LegacyCharOf(victim)) {
+    if (auto* ch = LegacyCharOf(victim)) {
         ch->DistributeSP(LegacyCharOf(killer), iMethod);
     }
 }
@@ -252,7 +255,7 @@ void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
 
 uint32_t GetAlignment(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->GetAlignment();
     }
 
@@ -261,7 +264,7 @@ uint32_t GetAlignment(entt::entity e)
 
 uint32_t GetRealAlignment(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->GetRealAlignment();
     }
 
@@ -270,7 +273,7 @@ uint32_t GetRealAlignment(entt::entity e)
 
 uint8_t GetAlignmentGrade(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->GetAlignmentGrade();
     }
 
@@ -279,28 +282,28 @@ uint8_t GetAlignmentGrade(entt::entity e)
 
 void ApplyAlignmentBonus(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->ApplyAlignmentBonus();
     }
 }
 
 void UpdateAlignment(entt::entity e, uint32_t amount)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->UpdateAlignment(amount);
     }
 }
 
 void SetKillerMode(entt::entity e, bool isOn)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SetKillerMode(isOn);
     }
 }
 
 bool IsKillerMode(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->IsKillerMode();
     }
 
@@ -309,21 +312,21 @@ bool IsKillerMode(entt::entity e)
 
 void UpdateKillerMode(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->UpdateKillerMode();
     }
 }
 
 void SetPKMode(entt::entity e, uint8_t bPKMode)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SetPKMode(bPKMode);
     }
 }
 
 uint8_t GetPKMode(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         return ch->GetPKMode();
     }
 
@@ -333,35 +336,35 @@ uint8_t GetPKMode(entt::entity e)
 
 void ForgetMyAttacker(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->ForgetMyAttacker();
     }
 }
 
 void AggregateMonster(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->AggregateMonster();
     }
 }
 
 void AggregateMonsterPlus(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->AggregateMonsterPlus();
     }
 }
 
 void AttractRanger(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->AttractRanger();
     }
 }
 
 void PullMonster(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->PullMonster();
     }
 }
@@ -369,28 +372,28 @@ void PullMonster(entt::entity e)
 
 void SendLeaderboardData(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SendLeaderboardData();
     }
 }
 
 void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SendLeaderboardDataSkillMob(LegacyCharOf(viewer));
     }
 }
 
 void SendLeaderboardDataGuild(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->SendLeaderboardDataGuild();
     }
 }
 
 void CheckLeaderboardSkillMobChanges(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
+    if (auto* ch = LegacyCharOf(e)) {
         ch->CheckLeaderboardSkillMobChanges();
     }
 }
@@ -588,8 +591,8 @@ uint8_t CHARACTER::GetPKMode() const
 
 struct FuncForgetMyAttacker
 {
-	LPCHARACTER m_ch;
-	FuncForgetMyAttacker(LPCHARACTER ch)
+	LegacyCharHandle m_ch;
+	FuncForgetMyAttacker(LegacyCharHandle ch)
 	{
 		m_ch = ch;
 	}
@@ -597,7 +600,7 @@ struct FuncForgetMyAttacker
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER)ent;
+			auto* ch = static_cast<LegacyCharHandle>(ent);
 			if (ch->IsPC())
 				return;
 			if (ch->m_eVictim == AIHelpers::EcsOf(m_ch))
@@ -608,8 +611,8 @@ struct FuncForgetMyAttacker
 
 struct FuncAggregateMonster
 {
-	LPCHARACTER m_ch;
-	FuncAggregateMonster(LPCHARACTER ch)
+	LegacyCharHandle m_ch;
+	FuncAggregateMonster(LegacyCharHandle ch)
 	{
 		m_ch = ch;
 	}
@@ -617,7 +620,7 @@ struct FuncAggregateMonster
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER)ent;
+			auto* ch = static_cast<LegacyCharHandle>(ent);
 			if (ch->IsPC())
 				return;
 			if (!ch->IsMonster())
@@ -635,8 +638,8 @@ struct FuncAggregateMonster
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
 struct FuncAggregateMonsterPlus
 {
-	LPCHARACTER m_ch;
-	FuncAggregateMonsterPlus(LPCHARACTER ch)
+	LegacyCharHandle m_ch;
+	FuncAggregateMonsterPlus(LegacyCharHandle ch)
 	{
 		m_ch = ch;
 	}
@@ -644,7 +647,7 @@ struct FuncAggregateMonsterPlus
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER)ent;
+			auto* ch = static_cast<LegacyCharHandle>(ent);
 			if (ch->IsPC())
 				return;
 			if (!ch->IsMonster())
@@ -664,8 +667,8 @@ struct FuncAggregateMonsterPlus
 #endif
 struct FuncAttractRanger
 {
-	LPCHARACTER m_ch;
-	FuncAttractRanger(LPCHARACTER ch)
+	LegacyCharHandle m_ch;
+	FuncAttractRanger(LegacyCharHandle ch)
 	{
 		m_ch = ch;
 	}
@@ -674,7 +677,7 @@ struct FuncAttractRanger
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER)ent;
+			auto* ch = static_cast<LegacyCharHandle>(ent);
 			if (ch->IsPC())
 				return;
 			if (!ch->IsMonster())
@@ -695,9 +698,9 @@ struct FuncAttractRanger
 
 struct FuncPullMonster
 {
-	LPCHARACTER m_ch;
+	LegacyCharHandle m_ch;
 	int m_iLength;
-	FuncPullMonster(LPCHARACTER ch, int iLength = 300)
+	FuncPullMonster(LegacyCharHandle ch, int iLength = 300)
 	{
 		m_ch = ch;
 		m_iLength = iLength;
@@ -707,7 +710,7 @@ struct FuncPullMonster
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER)ent;
+			auto* ch = static_cast<LegacyCharHandle>(ent);
 			if (ch->IsPC())
 				return;
 			if (!ch->IsMonster())
@@ -1068,7 +1071,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 		{
 			if (it->second.iAggro > iNewAggro)
 			{
-				LPCHARACTER ch = LegacyCharOf(it->first);
+				auto* ch = LegacyCharOf(it->first);
 
 				if (ch && !ch->IsDead() && DISTANCE_APPROX(ch->GetX() - GetX(), ch->GetY() - GetY()) < 5000)
 				{
@@ -1114,7 +1117,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 // char_battle.cpp slice BD2b moved into CombatSystem.cpp
 
 static uint32_t __GetPartyExpNP(const uint32_t level);
-static uint32_t AdjustExpByLevel_Combat(const LPCHARACTER ch, const uint32_t exp);
+static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp);
 
 void CHARACTER::DistributeHP(LPCHARACTER pkKiller)
 {
@@ -1125,7 +1128,7 @@ void CHARACTER::DistributeHP(LPCHARACTER pkKiller)
 #ifdef ENABLE_NEWEXP_CALCULATION
 #define NEW_GET_LVDELTA(me, victim) aiPercentByDeltaLev[MINMAX(0, (victim + 15) - me, MAX_EXP_DELTA_OF_LEV - 1)]
 typedef long double rate_t;
-static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
+static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
 	if (test_server && iExp < 0)
 	{
@@ -1247,7 +1250,7 @@ static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
 	from->CreateFly(FLY_EXP, to);
 	// marriage
 	{
-		LPCHARACTER you = to->GetMarryPartner();
+		auto* you = to->GetMarryPartner();
 		if (you)
 		{
 			// sometimes, this overflows
@@ -1267,7 +1270,7 @@ static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
 	}
 }
 #else
-static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
+static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
 	//  ġ 
 	iExp = CALCULATE_VALUE_LVDELTA(to->GetLevel(), from->GetLevel(), iExp);
@@ -1401,7 +1404,7 @@ static void GiveExp(LPCHARACTER from, LPCHARACTER to, int iExp)
 	from->CreateFly(FLY_EXP, to);
 
 	{
-		LPCHARACTER you = to->GetMarryPartner();
+		auto* you = to->GetMarryPartner();
 		// κΰ  Ƽ̸ ݽ 
 		if (you)
 		{
@@ -1431,12 +1434,12 @@ namespace NPartyExpDistribute
 		int		member_count;
 		int		x, y;
 
-		FPartyTotaler(LPCHARACTER center)
+		FPartyTotaler(LegacyCharHandle center)
 			: total(0), member_count(0), x(center->GetX()), y(center->GetY())
 		{
 		};
 
-		void operator () (LPCHARACTER ch)
+		void operator () (LegacyCharHandle ch)
 		{
 			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
 			{
@@ -1450,20 +1453,20 @@ namespace NPartyExpDistribute
 	struct FPartyDistributor
 	{
 		int		total;
-		LPCHARACTER	c;
+		LegacyCharHandle	c;
 		int		x, y;
 		uint32_t		_iExp;
 		int		m_iMode;
 		int		m_iMemberCount;
 
-		FPartyDistributor(LPCHARACTER center, int member_count, int total, uint32_t iExp, int iMode)
+		FPartyDistributor(LegacyCharHandle center, int member_count, int total, uint32_t iExp, int iMode)
 			: total(total), c(center), x(center->GetX()), y(center->GetY()), _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
 		{
 			if (m_iMemberCount == 0)
 				m_iMemberCount = 1;
 		};
 
-		void operator () (LPCHARACTER ch)
+		void operator () (LegacyCharHandle ch)
 		{
 			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
 			{
@@ -1493,7 +1496,7 @@ namespace NPartyExpDistribute
 typedef struct SDamageInfo
 {
 	int iDam;
-	LPCHARACTER pAttacker;
+	LegacyCharHandle pAttacker;
 	LPPARTY pParty;
 
 	void Clear()
@@ -1502,7 +1505,7 @@ typedef struct SDamageInfo
 		pParty = nullptr;
 	}
 
-	inline void Distribute(LPCHARACTER ch, int iExp)
+	inline void Distribute(LegacyCharHandle ch, int iExp)
 	{
 		if (pAttacker)
 			GiveExp(ch, pAttacker, iExp);
@@ -1517,7 +1520,7 @@ typedef struct SDamageInfo
 			// ġ ֱ (Ƽ ȹ ġ 5%   )
 			if (pParty->GetExpCentralizeCharacter())
 			{
-				LPCHARACTER tch = pParty->GetExpCentralizeCharacter();
+				auto* tch = pParty->GetExpCentralizeCharacter();
 
 				if (DISTANCE_APPROX(ch->GetX() - tch->GetX(), ch->GetY() - tch->GetY()) <= PARTY_DEFAULT_RANGE)
 				{
@@ -1561,7 +1564,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		return nullptr;
 
 	uint64_t	iTotalDam = 0;
-	LPCHARACTER pkChrMostAttacked = nullptr;
+	auto* pkChrMostAttacked = static_cast<LegacyCharHandle>(nullptr);
 	uint64_t iMostDam = 0;
 
 	typedef std::vector<TDamageInfo> TDamageInfoTable;
@@ -1580,7 +1583,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 
 		++it;
 
-		LPCHARACTER pAttacker = LegacyCharOf(eAttacker);
+		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
 		if (!pAttacker || pAttacker->IsNPC() || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
@@ -1752,7 +1755,7 @@ EVENTFUNC(dead_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = LegacyCharOf(info->entity);
+	auto* ch = LegacyCharOf(info->entity);
 	if (ch == nullptr)
 	{
 		sys_err("DEAD_EVENT: cannot find char pointer with MOB entity(%u)", static_cast<uint32_t>(info->entity));
@@ -2196,7 +2199,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				if (GetMobTable().dwResurrectionVnum)
 				{
 					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
-					LPCHARACTER chResurrect = CHARACTER_MANAGER::instance().SpawnMob(GetMobTable().dwResurrectionVnum, GetMapIndex(), GetX(), GetY(), GetZ(), true, (int)GetRotation());
+					auto* chResurrect = CHARACTER_MANAGER::instance().SpawnMob(GetMobTable().dwResurrectionVnum, GetMapIndex(), GetX(), GetY(), GetZ(), true, (int)GetRotation());
 					if (GetDungeon() && chResurrect)
 					{
 						chResurrect->SetDungeon(GetDungeon());
@@ -2347,15 +2350,15 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
     // During the migration window, only process entities with an explicit active combat target.
-    auto view = reg.view<ecs::CombatActiveTag, ecs::CombatTarget, ecs::VIDComponent, ecs::CombatStats, ecs::AttackCooldown, ecs::Health>();
+    auto view = reg.view<ecs::CombatActiveTag, ecs::CombatTarget, ecs::LegacyCharPtr, ecs::CombatStats, ecs::AttackCooldown, ecs::Health>();
 
     view.each([&](const entt::entity entity,
                   ecs::CombatTarget& combatTarget,
-                  const ecs::VIDComponent& vid,
+                  const ecs::LegacyCharPtr& legacy,
                   ecs::CombatStats& combatStats,
                   ecs::AttackCooldown& attackCooldown,
                   ecs::Health& attackerHealth) {
-        (void)vid;
+        (void)legacy;
         (void)combatStats;
         (void)attackerHealth;
 
@@ -2660,7 +2663,7 @@ static uint32_t __GetPartyExpNP(const uint32_t level)
 }
 
 
-static uint32_t AdjustExpByLevel_Combat(const LPCHARACTER ch, const uint32_t exp)
+static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp)
 {
 	if (PLAYER_MAX_LEVEL_CONST < ch->GetLevel())
 	{
@@ -2968,7 +2971,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 // char_battle.cpp slice BC3a helper surface duplicated into CombatSystem.cpp
 
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
-static void __UpdateBattlePassCollectProgress(LPCHARACTER ch, uint32_t dwItemVnum, uint32_t dwCount)
+static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwItemVnum, uint32_t dwCount)
 {
 #ifdef ENABLE_BATTLE_PASS
 	if (!ch || !dwCount)
@@ -3001,7 +3004,7 @@ static void __UpdateBattlePassCollectProgress(LPCHARACTER ch, uint32_t dwItemVnu
 #endif
 }
 
-static bool __TryAutoGiveRewardItem(LPCHARACTER ch, LPITEM item, uint32_t& dwGivenCount)
+static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& dwGivenCount)
 {
 	dwGivenCount = 0;
 
@@ -3184,7 +3187,7 @@ static bool __TryAutoGiveRewardItem(LPCHARACTER ch, LPITEM item, uint32_t& dwGiv
 	return true;
 }
 
-static void __GiveRewardItemToCharacterOrDrop(LPCHARACTER ch, LPCHARACTER pkVictim, LPITEM item, const PIXEL_POSITION& pos, bool bTrackBattlePass)
+static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, LPITEM item, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
 	if (!item)
 		return;
@@ -3215,7 +3218,7 @@ static void __GiveRewardItemToCharacterOrDrop(LPCHARACTER ch, LPCHARACTER pkVict
 
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
-static std::string MakeItemLink(LPITEM pkItem, LPCHARACTER pkKiller, LPCHARACTER pkMob)
+static std::string MakeItemLink(LPITEM pkItem, LegacyCharHandle pkKiller, LegacyCharHandle pkMob)
 {
 	char itemlink[512];
 	int len = 0;
@@ -3456,7 +3459,7 @@ static std::set<uint32_t> verjema_szadba_ixtreeme =
 void CHARACTER::Reward(bool bItemDrop)
 {
 	//PROF_UNIT puReward("Reward");
-	LPCHARACTER pkAttacker = DistributeExp();
+	auto* pkAttacker = DistributeExp();
 
 	if (!pkAttacker)
 		return;
@@ -3632,7 +3635,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					if (pkAttacker->GetDungeon() == pDungeon)
 					{
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
-						auto MakeHwidHostKey = [&](LPCHARACTER ch) -> std::string
+						auto MakeHwidHostKey = [&](LegacyCharHandle ch) -> std::string
 							{
 								if (!ch || !ch->IsPC() || !ch->GetDesc())
 									return std::string();
@@ -3655,10 +3658,10 @@ void CHARACTER::Reward(bool bItemDrop)
 							};
 
 						// 1) HWID|HOST alapjan 1 karakter / gep (dupe eseten a legtobb dmg kap)
-						std::unordered_map<std::string, LPCHARACTER> mapWinnerByKey;
+						std::unordered_map<std::string, LegacyCharHandle> mapWinnerByKey;
 						mapWinnerByKey.reserve(16);
 
-						pDungeon->ForEachMember([&](LPCHARACTER mch)
+						pDungeon->ForEachMember([&](LegacyCharHandle mch)
 							{
 								if (!mch || !mch->IsPC() || !mch->GetDesc())
 									return;
@@ -3739,7 +3742,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
 							for (const auto& kv : mapWinnerByKey)
 							{
-								LPCHARACTER rch = kv.second;
+								auto* rch = kv.second;
 								if (!rch || !rch->IsPC() || !rch->GetDesc())
 									continue;
 
@@ -3854,7 +3857,7 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, LPCHARACTER> > pq;
+				std::priority_queue<std::pair<uint64_t, LegacyCharHandle> > pq;
 
 				uint64_t total_dam = 0;
 
@@ -3863,7 +3866,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					uint64_t iDamage = it->second.iTotalDamage;
 					if (iDamage > 0)
 					{
-						LPCHARACTER ch = LegacyCharOf(it->first);
+						auto* ch = LegacyCharOf(it->first);
 
 						if (ch)
 						{
@@ -3873,7 +3876,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					}
 				}
 
-				std::vector<LPCHARACTER> v;
+				std::vector<LegacyCharHandle> v;
 
 				while (!pq.empty() && pq.top().first * 10 >= total_dam)
 				{
@@ -3910,7 +3913,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				}
 				else
 				{
-					std::vector<LPCHARACTER>::iterator it = v.begin();
+					std::vector<LegacyCharHandle>::iterator it = v.begin();
 
 					while (iItemIdx >= 0)
 					{
@@ -3922,7 +3925,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 						}
 
-						LPCHARACTER ch = *it;
+						auto* ch = *it;
 
 						if (ch->GetParty())
 							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
@@ -4010,7 +4013,7 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, LPCHARACTER> > pq;
+				std::priority_queue<std::pair<uint64_t, LegacyCharHandle> > pq;
 
 				uint64_t total_dam = 0;
 
@@ -4019,7 +4022,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					uint64_t iDamage = it->second.iTotalDamage;
 					if (iDamage > 0)
 					{
-						LPCHARACTER ch = LegacyCharOf(it->first);
+						auto* ch = LegacyCharOf(it->first);
 
 						if (ch)
 						{
@@ -4029,7 +4032,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					}
 				}
 
-				std::vector<LPCHARACTER> v;
+				std::vector<LegacyCharHandle> v;
 
 				while (!pq.empty() && pq.top().first * 10 >= total_dam)
 				{
@@ -4066,7 +4069,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				}
 				else
 				{
-					std::vector<LPCHARACTER>::iterator it = v.begin();
+					std::vector<LegacyCharHandle>::iterator it = v.begin();
 
 					while (iItemIdx >= 0)
 					{
@@ -4080,7 +4083,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						item->AddToGround(GetMapIndex(), pos);
 
-						LPCHARACTER ch = *it;
+						auto* ch = *it;
 
 						if (ch->GetParty())
 							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
@@ -4424,11 +4427,11 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 // char_battle.cpp slice BB2b moved into CombatSystem.cpp
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-static void ProcessStoneSpawnStep(LPCHARACTER ch);
+static void ProcessStoneSpawnStep(LegacyCharHandle ch);
 #endif
-static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
-static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
-static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
+static int64_t CalcReferenceBowHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
+static int64_t CalcReferenceBasicHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
+static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
 
 bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // returns true if dead
 {
@@ -5563,7 +5566,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			);
 			CheckLeaderboardSkillMobChanges();
 			if (GetMapIndex() == 41) {
-				CHARACTER_MANAGER::instance().for_each_pc([](LPCHARACTER ch) {
+				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
 					ch->SendLeaderboardDataSkillMob(ch);
 					});
 
@@ -5911,11 +5914,11 @@ void CHARACTER::UseArrow(LPITEM pkArrow, uint32_t dwArrowCount)
 class CFuncShoot
 {
 public:
-	LPCHARACTER	m_me;
+	LegacyCharHandle	m_me;
 	uint8_t		m_bType;
 	bool		m_bSucceed;
 
-	CFuncShoot(LPCHARACTER ch, uint8_t bType) : m_me(ch), m_bType(bType), m_bSucceed(false)
+	CFuncShoot(LegacyCharHandle ch, uint8_t bType) : m_me(ch), m_bType(bType), m_bSucceed(false)
 	{
 	}
 
@@ -5931,7 +5934,7 @@ public:
 			  m_me->m_SkillUseInfo[m_bType].ResetHitCount();*/
 		}
 
-		LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
+		auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
 
 		if (!pkVictim)
 			return;
@@ -6330,7 +6333,7 @@ bool CHARACTER::Shoot(uint8_t bType)
 
 void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader)
 {
-	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
+	auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
 	TPacketGCFlyTargeting pack;
 
 	//pack.bHeader	= HEADER_GC_FLY_TARGETING;
@@ -6365,7 +6368,7 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 		pkChr = this;
 
 	float fMinDist = 99999.0f;
-	LPCHARACTER pkVictim = nullptr;
+	auto* pkVictim = static_cast<LegacyCharHandle>(nullptr);
 
 	TDamageMap::iterator it = m_map_kDamage.begin();
 
@@ -6375,7 +6378,7 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 		const entt::entity eAttacker = it->first;
 		++it;
 
-		LPCHARACTER pAttacker = LegacyCharOf(eAttacker);
+		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		if (!pAttacker)
 			continue;
@@ -6527,7 +6530,7 @@ struct FuncSetLastAttacked
 	{
 	}
 
-	void operator () (LPCHARACTER ch)
+	void operator () (LegacyCharHandle ch)
 	{
 		ch->SetLastAttacked(m_dwTime);
 	}
@@ -6641,9 +6644,9 @@ bool IsSpiderMap(int lMapIndex)
 
 // char_battle.cpp slice BB2a helper surface moved into CombatSystem.cpp
 
-static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
+static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-static void ProcessStoneSpawnStep(LPCHARACTER ch)
+static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 {
 	if (!ch || !ch->IsStone() || ch->GetMaxHP() <= 0)
 		return;
@@ -7142,7 +7145,7 @@ struct FuncDeadSpawnedByStone
 	{
 	}
 
-	void operator () (LPCHARACTER ch)
+	void operator () (LegacyCharHandle ch)
 	{
 		if (m_pkKiller && m_pkKiller->IsPC())
 			ch->RegisterDamageForExp(m_pkKiller, 1);
@@ -7154,7 +7157,7 @@ struct FuncDeadSpawnedByStone
 #else
 struct FuncDeadSpawnedByStone
 {
-	void operator () (LPCHARACTER ch)
+	void operator () (LegacyCharHandle ch)
 	{
 		ch->Dead(nullptr);
 		ch->SetStone(nullptr);
