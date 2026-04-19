@@ -46,6 +46,12 @@ struct AcceWindowComponent {
 };
 #endif
 
+#ifdef ENABLE_SWITCHBOT
+struct SwitchbotRuntimeComponent {
+    LPITEM pItems[SWITCHBOT_SLOT_COUNT] {};
+};
+#endif
+
 struct GoldAmount { int64_t amount; };
 
 struct QuickSlots {
