@@ -584,7 +584,6 @@ typedef struct character_point_instant
 #ifdef __ATTR_TRANSFER_SYSTEM__
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	LPITEM				pAcceMaterials[ACCE_WINDOW_MAX_MATERIALS];
 #endif
 	LPCHARACTER			battle_victim;
 

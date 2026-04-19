@@ -2379,7 +2379,7 @@ LPITEM* CHARACTER::GetAcceMaterials()
     if (auto* comp = EnsureAcceWindowComponent(this))
         return comp->pMaterials;
 
-    return m_pointsInstant.pAcceMaterials;
+    return nullptr;
 }
 #endif
 
