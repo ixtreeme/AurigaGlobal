@@ -375,3 +375,141 @@ Recommendation for next targets
   - next logical high-value target, but higher risk than SkillSystem because it owns the core runtime combat lifecycle
 - MountSystem / ItemSystem
   - lower-risk alternatives if a smaller stabilization pass is preferred before CombatSystem
+
+
+Phase 15B-4 - MountSystem entity-first cleanup
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/MountSystem.cpp
+- MountSystem.hpp was already entity-first and needed no signature expansion.
+- This pass focused on the ECS-facing bridge layer, not on the large legacy CHARACTER mount runtime surface in the same file.
+
+Audit summary
+- Baseline raw LPCHARACTER / CHARACTER* token count in MountSystem.cpp/.hpp: 22
+- Public MountSystem namespace API was already entity-first:
+  - StartRiding
+  - StopRiding
+  - SetRider
+  - GetRider
+  - HorseSummon
+  - GetMyHorseVnum
+  - HorseDie
+  - ReviveHorse
+  - ClearHorseInfo
+  - SendHorseInfo
+  - CanUseHorseSkill
+  - SetHorseLevel
+  - IsRiding
+  - GetMountVnum
+- External dependency audit showed mount state is read widely through legacy CHARACTER methods:
+  - battle.cpp
+  - input_main.cpp
+  - ani.cpp
+  - cmd_emotion.cpp
+  - guild_war.cpp
+  - questlua_pc.cpp
+- Mount lifecycle actions are still triggered through legacy callers such as:
+  - cmd_general.cpp
+  - ItemSystem.cpp
+- There was no ECS registry view loop to convert in this file; the main problem was the old bridge helper and event dereference pattern.
+
+Signature decisions
+- All MountSystem namespace functions stayed OPTION_ENTITY.
+- No KEEP_LEGACY_OVERLOAD was required.
+- The remaining LPCHARACTER signatures after the pass are intentional CHARACTER wrapper/runtime surfaces:
+  - void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
+  - void CHARACTER::SetRider(LPCHARACTER ch)
+  - LPCHARACTER CHARACTER::GetRider() const
+
+Implementation pattern summary
+- Pattern A (pure ECS reads replacing CHARACTER reads): 0
+  - Mount authority still ultimately flows through legacy CHARACTER / CHorseRider / CMountSystem runtime.
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): 12
+  - StartRiding
+  - StopRiding
+  - SetRider
+  - GetRider
+  - HorseSummon
+  - GetMyHorseVnum
+  - HorseDie
+  - ReviveHorse
+  - ClearHorseInfo
+  - SendHorseInfo
+  - CanUseHorseSkill
+  - SetHorseLevel
+
+- Pattern C (legacy packet/event/lifecycle interaction through one resolved CHARACTER bridge): 3
+  - IsRiding
+  - GetMountVnum
+  - horse_dead_event
+
+- Pattern D (resolve legacy pointer once at top of entity-entry function): 14
+  - All cleaned MountSystem namespace entry points now use a single LegacyCharOf(entity) lookup.
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Added a local bridge alias:
+  - using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)
+- Converted namespace-level LPCHARACTER locals to `auto*` bridge locals.
+- Converted horse_dead_event from:
+  - info->ch
+  to:
+  - info->ch.Get()
+- Removed stray local CHARACTER* cast in viewer-update code by reusing LegacyCharHandle.
+
+Lifecycle / null-safety findings
+- MountSystem has a lighter ECS-facing lifecycle surface than SkillSystem because the heavy mount runtime still lives in CHARACTER methods.
+- The risky event path here was horse_dead_event; it now reads DynamicCharacterPtr safely through `.Get()`.
+- Rider/mount dual-entity handling is still mostly encapsulated in legacy runtime classes, so this pass intentionally cleaned only the ECS-facing bridge layer.
+- This means warp/death/logout mount behavior still depends on legacy runtime correctness, but the old entity -> VID -> Find bounce-back path is gone from the ECS entry points.
+
+Counts
+- Baseline LPCHARACTER count from audit: 22
+- Post-migration raw LPCHARACTER / CHARACTER* token count in MountSystem.cpp/.hpp: 3
+- Intentional survivors: 3
+  - all three are wrapper/runtime signatures listed above
+- Accidental survivors: 0
+- LegacyCharOf bridge points in MountSystem.cpp/.hpp: 16
+
+What went smoothly
+- MountSystem namespace API was already entity-first, so there was no caller cascade.
+- LegacyCharPtr again removed the old VIDComponent + Find bridge cleanly.
+- The file had no ECS view iteration to rewrite, which kept the blast radius small.
+
+Unexpected friction
+- The baseline token count was higher than the old audit estimate because MountSystem.cpp also contains a large amount of classic CHARACTER mount/inventory runtime code.
+- The file mixes:
+  - ECS-facing MountSystem namespace entry points
+  - event glue
+  - legacy CHARACTER mount runtime
+- As with AffectSystem and SkillSystem, token-count reduction is meaningful only when separating those layers.
+
+Verification
+- Build gate: PASS
+- WinTest deploy + restart: PASS
+- Boot/log smoke: PASS
+- No fresh mount-lifecycle syserr was observed after restart.
+- Only the usual pre-existing mount motion/content asset warnings remained.
+- Full in-client mount gameplay still needs manual smoke for:
+  - ride / dismount
+  - mounted melee and mounted skill use
+  - death while mounted
+  - warp while mounted
+  - logout/login while mounted
+
+Cumulative 15B progress so far
+- GayaSystem: 17 -> 0
+- AffectSystem: 32 -> 3
+- SkillSystem: 42 -> 4
+- MountSystem: 22 -> 3
+- Total reduction so far: 107 -> 10
+
+Recommendation for next targets
+- CombatSystem
+  - highest value next target, but materially higher risk because it owns the core melee lifecycle
+- ItemSystem
+  - lower-risk alternative if another stabilization pass is preferred before CombatSystem
