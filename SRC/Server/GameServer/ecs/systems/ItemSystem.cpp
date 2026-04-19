@@ -225,6 +225,32 @@ static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(const CHARACTER
 }
 #endif
 
+#ifdef ENABLE_SWITCHBOT
+static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.emplace_or_replace<ecs::SwitchbotRuntimeComponent>(e);
+}
+
+static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e);
+}
+#endif
+
 static entt::entity ItemEntityOf(LPITEM item)
 {
     if (!item || item->GetID() == 0)
@@ -2380,6 +2406,16 @@ LPITEM* CHARACTER::GetAcceMaterials()
         return comp->pMaterials;
 
     return nullptr;
+}
+#endif
+
+#ifdef ENABLE_SWITCHBOT
+LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
+{
+    if (wCell >= SWITCHBOT_SLOT_COUNT)
+        return nullptr;
+
+    return m_pointsInstant.pSwitchbotItems[wCell];
 }
 #endif
 

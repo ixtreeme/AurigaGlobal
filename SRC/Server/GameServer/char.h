@@ -1423,6 +1423,9 @@ public:
 #endif
 	LPITEM			GetItem(TItemPos Cell) const;
 	LPITEM			GetInventoryItem(uint16_t wCell) const;
+#ifdef ENABLE_SWITCHBOT
+	LPITEM			GetSwitchbotItem(uint16_t wCell) const;
+#endif
 #ifdef ENABLE_EXTRA_INVENTORY
 	LPITEM			GetExtraInventoryItem(uint16_t wCell) const;
 	uint16_t			GetExtraInventoryGrid(uint16_t wCell) const;

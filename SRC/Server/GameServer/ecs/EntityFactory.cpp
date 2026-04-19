@@ -501,6 +501,9 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 #ifdef ENABLE_ACCE_SYSTEM
     reg.emplace_or_replace<ecs::AcceWindowComponent>(entity, ecs::AcceWindowComponent {});
 #endif
+#ifdef ENABLE_SWITCHBOT
+    reg.emplace_or_replace<ecs::SwitchbotRuntimeComponent>(entity, ecs::SwitchbotRuntimeComponent {});
+#endif
     reg.emplace_or_replace<ecs::GoldAmount>(entity, data.gold);
     reg.emplace_or_replace<ecs::QuickSlots>(entity, MakeQuickSlots(data));
     reg.emplace_or_replace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);
