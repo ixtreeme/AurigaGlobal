@@ -33,6 +33,13 @@ struct CubeWindowComponent {
     LPCHARACTER pNpc { nullptr };
 };
 
+#ifdef __ATTR_TRANSFER_SYSTEM__
+struct AttrTransferWindowComponent {
+    LPITEM pItems[MAX_ATTR_TRANSFER_SLOT] {};
+    LPCHARACTER pNpc { nullptr };
+};
+#endif
+
 struct GoldAmount { int64_t amount; };
 
 struct QuickSlots {
