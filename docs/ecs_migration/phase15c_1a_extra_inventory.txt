@@ -1,0 +1,40 @@
+Phase 15C-1a - Extra Inventory migrated to ECS
+
+Summary
+- Migrated the extra inventory runtime arrays out of CHARACTER_POINT_INSTANT into ecs::ExtraInventoryRuntimeComponent.
+- Authority now lives in the ECS component; legacy pExtraItems / wExtraItemGrid were removed from CHARACTER.
+- CHARACTER read paths now route through ECS-backed helpers: GetExtraInventoryItem() and GetExtraInventoryGrid().
+- CHARACTER write path in SetItem(TItemPos, LPITEM) now writes directly into the ECS component.
+
+Bytes Freed
+- Estimated bytes freed per CHARACTER: 10,800 bytes
+- Estimated server-wide saving at 1,000 online characters: about 10.3 MiB
+
+Migration Notes
+- Dual-authority phase was short and clean because the extra inventory arrays had a narrow surface.
+- Direct writes were localized to the EXTRA_INVENTORY case in CHARACTER::SetItem.
+- Direct reads were localized to GetExtraInventoryItem, GetExtraInventoryGrid, GetItem(EXTRA_INVENTORY), and IsEmptyItemGrid extra-inventory branches.
+- No raw memcpy / address-taking boundary existed for m_pointsInstant extra inventory fields, which made removal low-risk.
+
+Unexpected Friction
+- The main friction was text-editing around legacy non-UTF8 source files, not gameplay logic.
+- WinTest restart had to be redone once because the binary copy raced a still-running process.
+
+Reusable Pattern
+1. Add ECS runtime component with legacy-equivalent storage.
+2. Seed component during entity creation / login while legacy fields still exist.
+3. Mirror every write into ECS.
+4. Flip all reads to ECS-backed helpers.
+5. Remove legacy fields and collapse writes to ECS-only.
+6. Rebuild, redeploy, and smoke-test boot/logs before manual gameplay validation.
+
+Validation
+- Compile + link succeeded after legacy field removal.
+- Fresh WinTest deploy/restart succeeded.
+- Boot/log smoke after restart showed no new EXTRA_INV_DRIFT, VID_DRIFT, DestroyCharacter, or SpawnMob regressions.
+- Remaining syserr entries were the pre-existing motion/content warnings.
+
+Next Reusable Targets
+- 15C-1b Cube window state
+- 15C-1c Attribute transfer window state
+- 15C-1d Acce window state
