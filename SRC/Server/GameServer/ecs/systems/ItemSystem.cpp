@@ -14044,6 +14044,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		}
 
 		m_pointsInstant.pExtraItems[wCell] = pItem;
+	ItemSystem::SyncExtraInventoryAll(this);
 	}
 	break;
 #endif
