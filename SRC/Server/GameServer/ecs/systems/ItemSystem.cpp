@@ -92,15 +92,17 @@ namespace {
 
 const int ITEM_BROKEN_METIN_VNUM = 28960;
 
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
 struct FFindStone
 {
-	std::map<uint32_t, LPCHARACTER> m_mapStone;
+	std::map<uint32_t, LegacyCharHandle> m_mapStone;
 
 	void operator()(LPENTITY pEnt)
 	{
 		if (pEnt->IsType(ENTITY_CHARACTER) == true)
 		{
-			LPCHARACTER pChar = (LPCHARACTER)pEnt;
+			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
 
 			if (pChar->IsStone() == true)
 			{
@@ -110,21 +112,13 @@ struct FFindStone
 	}
 };
 
-LPCHARACTER LegacyCharacter(entt::entity e)
+LegacyCharHandle LegacyCharOf(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid)
-        return nullptr;
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
-}
-
-static inline LPCHARACTER LegacyCharOf(entt::entity e)
-{
-    return LegacyCharacter(e);
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 static entt::entity ItemEntityOf(LPITEM item)
@@ -372,7 +366,7 @@ static bool FN_check_item_socket(LPITEM item)
 
 // item socket º¹»ç -- by mhh
 
-static bool FN_check_item_sex(LPCHARACTER ch, LPITEM item)
+static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
 {
 #ifdef ENABLE_WOLFMAN_CHARACTER
     if (ITEM_RING == item->GetType())
@@ -407,20 +401,20 @@ namespace ItemSystem {
 
 LPITEM GetItem(entt::entity e, TItemPos cell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->GetItem(cell) : nullptr;
 }
 
 LPITEM GetInventoryItem(entt::entity e, uint16_t cell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->GetInventoryItem(cell) : nullptr;
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
 LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->GetExtraInventoryItem(cell) : nullptr;
 }
 #endif
@@ -431,7 +425,7 @@ LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
 #endif
 )
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (!ch)
         return nullptr;
 
@@ -444,25 +438,25 @@ LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
 
 LPITEM FindItemByID(entt::entity e, uint32_t id)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->FindItemByID(id) : nullptr;
 }
 
 int CountItemRenewal(entt::entity e, uint32_t vnum)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CountSpecifyItemRenewal(vnum) : 0;
 }
 
 int CountItem(entt::entity e, uint32_t vnum)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CountSpecifyItem(vnum) : 0;
 }
 
 int CountTypeItem(entt::entity e, uint8_t type)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CountSpecifyTypeItem(type) : 0;
 }
 
@@ -473,56 +467,56 @@ bool HasItem(entt::entity e, uint32_t vnum, uint32_t count)
 
 LPITEM GetWearItem(entt::entity e, uint8_t wearPos)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->GetWear(wearPos) : nullptr;
 }
 
 void SetWearItem(entt::entity e, uint8_t wearPos, LPITEM item)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     if (ch)
         ch->SetWear(wearPos, item);
 }
 
 bool UnequipItem(entt::entity e, LPITEM item)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->UnequipItem(item) : false;
 }
 
 bool EquipItem(entt::entity e, LPITEM item, int candidateCell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->EquipItem(item, candidateCell) : false;
 }
 
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->IsEquipUniqueItem(itemVnum) : false;
 }
 
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->IsEquipUniqueGroup(groupVnum) : false;
 }
 
 bool UnEquipSpecialRideUniqueItem(entt::entity e)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->UnEquipSpecialRideUniqueItem() : false;
 }
 
 bool CanEquipNow(entt::entity e, const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CanEquipNow(item, srcCell, destCell) : false;
 }
 
 bool CanUnequipNow(entt::entity e, const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->CanUnequipNow(item, srcCell, destCell) : false;
 }
 
@@ -534,13 +528,13 @@ bool DropItem(entt::entity e, TItemPos cell,
 #endif
                   count)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DropItem(cell, count) : false;
 }
 
 bool DropGold(entt::entity e, int64_t gold)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DropGold(gold) : false;
 }
 
@@ -552,32 +546,32 @@ bool MoveItem(entt::entity e, TItemPos fromCell, TItemPos toCell,
 #endif
                   count)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->MoveItem(fromCell, toCell, count) : false;
 }
 
 bool PickupItem(entt::entity e, uint32_t vid)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->PickupItem(vid) : false;
 }
 
 bool UseItem(entt::entity e, TItemPos cell, TItemPos destCell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->UseItem(cell, destCell) : false;
 }
 
 bool UseItemEx(entt::entity e, LPITEM item, TItemPos destCell)
 {
-    LPCHARACTER ch = LegacyCharOf(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->UseItemEx(item, destCell) : false;
 }
 
 
 void RemoveTypeItem(entt::entity e, uint8_t type, int count)
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
+    if (auto* ch = LegacyCharOf(e))
         ch->RemoveSpecifyTypeItem(type, count);
 }
 
@@ -587,7 +581,7 @@ void AutoGiveItem(entt::entity e, LPITEM item, bool longOwnerShip
 #endif
 )
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
+    if (auto* ch = LegacyCharOf(e))
         ch->AutoGiveItem(item, longOwnerShip
 #ifdef __HIGHLIGHT_SYSTEM__
                          , isHighLight
@@ -598,7 +592,7 @@ void AutoGiveItem(entt::entity e, LPITEM item, bool longOwnerShip
 #ifdef ENABLE_DS_REFINE_ALL
 bool AutoGiveDS(entt::entity e, LPITEM item, bool longOwnerShip)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->AutoGiveDS(item, longOwnerShip) : false;
 }
 #endif
@@ -615,7 +609,7 @@ LPITEM AutoGiveItem(entt::entity e, uint32_t itemVnum,
 #endif
 )
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->AutoGiveItem(itemVnum, count, rarePct, sendMessage
 #ifdef __HIGHLIGHT_SYSTEM__
                                  , isHighLight
@@ -625,22 +619,22 @@ LPITEM AutoGiveItem(entt::entity e, uint32_t itemVnum,
 
 bool GiveItem(entt::entity from, entt::entity victim, TItemPos cell)
 {
-    LPCHARACTER fromCh = LegacyCharacter(from);
-    LPCHARACTER victimCh = LegacyCharacter(victim);
+    auto* fromCh = LegacyCharOf(from);
+    auto* victimCh = LegacyCharOf(victim);
     return (fromCh && victimCh) ? fromCh->GiveItem(victimCh, cell) : false;
 }
 
 bool CanReceiveItem(entt::entity receiver, entt::entity from, LPITEM item)
 {
-    LPCHARACTER receiverCh = LegacyCharacter(receiver);
-    LPCHARACTER fromCh = LegacyCharacter(from);
+    auto* receiverCh = LegacyCharOf(receiver);
+    auto* fromCh = LegacyCharOf(from);
     return (receiverCh && fromCh) ? receiverCh->CanReceiveItem(fromCh, item) : false;
 }
 
 void ReceiveItem(entt::entity receiver, entt::entity from, LPITEM item)
 {
-    LPCHARACTER receiverCh = LegacyCharacter(receiver);
-    LPCHARACTER fromCh = LegacyCharacter(from);
+    auto* receiverCh = LegacyCharOf(receiver);
+    auto* fromCh = LegacyCharOf(from);
     if (receiverCh && fromCh)
         receiverCh->ReceiveItem(fromCh, item);
 }
@@ -651,13 +645,13 @@ bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum,
                                   std::vector<LPITEM>& itemGets,
                                   int& count)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->GiveItemFromSpecialItemGroup(groupNum, itemVnums, itemCounts, itemGets, count) : false;
 }
 
 bool DestroyItem(entt::entity e, TItemPos cell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DestroyItem(cell) : false;
 }
 
@@ -669,55 +663,55 @@ void ItemDivision(entt::entity e, TItemPos cell)
 
 void SetRefineNPC(entt::entity e, entt::entity npc)
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
-        ch->SetRefineNPC(LegacyCharacter(npc));
+    if (auto* ch = LegacyCharOf(e))
+        ch->SetRefineNPC(LegacyCharOf(npc));
 }
 
 bool DoRefine(entt::entity e, LPITEM item, bool moneyOnly)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DoRefine(item, moneyOnly) : false;
 }
 
 bool DoRefineWithScroll(entt::entity e, LPITEM item)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DoRefineWithScroll(item) : false;
 }
 
 bool DoRefineItemSoul(entt::entity e, LPITEM item)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->DoRefineItemSoul(item) : false;
 }
 
 bool RefineInformation(entt::entity e, uint8_t cell, uint8_t type, int additionalCell)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->RefineInformation(cell, type, additionalCell) : false;
 }
 
 bool RefineItem(entt::entity e, LPITEM item, LPITEM target)
 {
-    LPCHARACTER ch = LegacyCharacter(e);
+    auto* ch = LegacyCharOf(e);
     return ch ? ch->RefineItem(item, target) : false;
 }
 
 void UseSilkBotary(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
+    if (auto* ch = LegacyCharOf(e))
         ch->UseSilkBotary();
 }
 
 void SetRefineMode(entt::entity e, int additionalCell)
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
+    if (auto* ch = LegacyCharOf(e))
         ch->SetRefineMode(additionalCell);
 }
 
 void ClearRefineMode(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharacter(e))
+    if (auto* ch = LegacyCharOf(e))
         ch->ClearRefineMode();
 }
 
@@ -861,7 +855,7 @@ bool CItem::SetCount(int count)
 	{
 		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
 		{
-			LPCHARACTER pOwner = GetOwner();
+			auto* pOwner = GetOwner();
 			uint16_t wCell = GetCell();
 
 			RemoveFromCharacter();
@@ -3260,14 +3254,14 @@ namespace NPartyPickupDistribute
 	struct FFindOwnership
 	{
 		LPITEM item;
-		LPCHARACTER owner;
+		LegacyCharHandle owner;
 
 		FFindOwnership(LPITEM item)
 			: item(item), owner(nullptr)
 		{
 		}
 
-		void operator () (LPCHARACTER ch)
+		void operator () (LegacyCharHandle ch)
 		{
 			if (item->IsOwnership(ch))
 				owner = ch;
@@ -3279,12 +3273,12 @@ namespace NPartyPickupDistribute
 		int		total;
 		int		x, y;
 
-		FCountNearMember(LPCHARACTER center)
+		FCountNearMember(LegacyCharHandle center)
 			: total(0), x(center->GetX()), y(center->GetY())
 		{
 		}
 
-		void operator () (LPCHARACTER ch)
+		void operator () (LegacyCharHandle ch)
 		{
 			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
 				total += 1;
@@ -3294,16 +3288,16 @@ namespace NPartyPickupDistribute
 	struct FMoneyDistributor
 	{
 		int		total;
-		LPCHARACTER	c;
+		LegacyCharHandle	c;
 		int		x, y;
 		int64_t		iMoney;
 
-		FMoneyDistributor(LPCHARACTER center, int64_t iMoney)
+		FMoneyDistributor(LegacyCharHandle center, int64_t iMoney)
 			: total(0), c(center), x(center->GetX()), y(center->GetY()), iMoney(iMoney)
 		{
 		}
 
-		void operator ()(LPCHARACTER ch)
+		void operator ()(LegacyCharHandle ch)
 		{
 			if (ch != c)
 				if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
@@ -4030,7 +4024,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					if (!ent || !ent->IsType(ENTITY_CHARACTER))
 						continue;
 
-					LPCHARACTER viewer = (LPCHARACTER)ent;
+					auto* viewer = static_cast<LegacyCharHandle>(ent);
 					if (viewer == this)
 						continue;
 
@@ -4504,7 +4498,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 			GetParty()->ForEachOnlineMember(funcFindOwnership);
 
-			LPCHARACTER owner = funcFindOwnership.owner;
+			auto* owner = funcFindOwnership.owner;
 			// @fixme115
 			if (!owner)
 				return false;
@@ -5145,7 +5139,7 @@ EVENTFUNC(kill_campfire_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = info->ch;
+	auto*	ch = info->ch.Get();
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -5156,7 +5150,7 @@ EVENTFUNC(kill_campfire_event)
 	return 0;
 }
 
-int CalculateConsume(LPCHARACTER ch)
+int CalculateConsume(LegacyCharHandle ch)
 {
 	static const int WARP_NEED_LIFE_PERCENT = 30;
 	static const int WARP_MIN_LIFE_PERCENT = 10;
@@ -5193,7 +5187,7 @@ int CalculateConsume(LPCHARACTER ch)
 	return consumeLife;
 }
 
-int CalculateConsumeSP(LPCHARACTER lpChar)
+int CalculateConsumeSP(LegacyCharHandle lpChar)
 {
 	static const int NEED_WARP_SP_PERCENT = 30;
 
@@ -5696,7 +5690,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 #endif
 
-		LPCHARACTER campfire = CHARACTER_MANAGER::instance().SpawnMob(fishing::CAMPFIRE_MOB, GetMapIndex(), (int32_t)(GetX() + fx), (int32_t)(GetY() + fy), 0, false, number(0, 359));
+		auto* campfire = CHARACTER_MANAGER::instance().SpawnMob(fishing::CAMPFIRE_MOB, GetMapIndex(), (int32_t)(GetX() + fx), (int32_t)(GetY() + fy), 0, false, number(0, 359));
 
 		char_event_info* info = AllocEventInfo<char_event_info>();
 
@@ -6998,10 +6992,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					if (f.m_mapStone.size() > 0)
 					{
-						std::map<uint32_t, LPCHARACTER>::iterator stone = f.m_mapStone.begin();
+						auto stone = f.m_mapStone.begin();
 
 						uint32_t max = UINT_MAX;
-						LPCHARACTER pTarget = stone->second;
+						auto* pTarget = stone->second;
 
 						while (stone != f.m_mapStone.end())
 						{
@@ -13501,7 +13495,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 			int x = GetX() + number(-500, 500);
 			int y = GetY() + number(-500, 500);
 
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().SpawnMob(dwCount, GetMapIndex(), x, y, 0, true, -1);
+			auto* ch = CHARACTER_MANAGER::instance().SpawnMob(dwCount, GetMapIndex(), x, y, 0, true, -1);
 			if (ch)
 				ch->SetAggressive();
 			bSuccess = true;
@@ -13666,15 +13660,17 @@ static bool IS_POTION_PVP_BLOCKED(int vnum)
 }
 #endif
 
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
 struct FFindStone
 {
-	std::map<uint32_t, LPCHARACTER> m_mapStone;
+	std::map<uint32_t, LegacyCharHandle> m_mapStone;
 
 	void operator()(LPENTITY pEnt)
 	{
 		if (pEnt->IsType(ENTITY_CHARACTER) == true)
 		{
-			LPCHARACTER pChar = (LPCHARACTER)pEnt;
+			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
 
 			if (pChar->IsStone() == true)
 			{
@@ -13754,7 +13750,7 @@ bool IS_BOTARYABLE_ZONE(int nMapIndex)
 }
 
 // item socket ÀÌ ÇÁ·ÎÅäÅ¸ÀÔ°ú °°ÀºÁö Ã¼Å© -- by mhh
-static bool FN_check_item_sex(LPCHARACTER ch, LPITEM item)
+static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
 {
 
 #ifdef ENABLE_SORT_INVEN
@@ -15885,7 +15881,7 @@ void CItem::StartRealTimeExpireEvent()
 				int32_t remainSec = GetSocket(0);
 				if (remainSec <= 0) {
 					if (GetSocket(1) == 1) {
-						LPCHARACTER pkOwner = GetOwner();
+						auto* pkOwner = GetOwner();
 						if (pkOwner) {
 							if (pkOwner->FindAffect(GetValue(0))) {
 								pkOwner->RemoveAffect(GetValue(0));
@@ -16277,7 +16273,7 @@ void CItem::AccessorySocketDegrade()
 {
 	if (GetAccessorySocketGrade() > 0)
 	{
-		LPCHARACTER ch = GetOwner();
+		auto* ch = GetOwner();
 #ifdef TEXTS_IMPROVEMENT
 		if (ch) {
 			ch->ChatPacketNew(CHAT_TYPE_INFO, 117, "%s", GetName());
@@ -16640,7 +16636,7 @@ int CItem::GetRefineLevel()
 
 void CItem::ClearMountAttributeAndAffect()
 {
-	LPCHARACTER ch = GetOwner();
+	auto* ch = GetOwner();
 
 	ch->RemoveAffect(AFFECT_MOUNT);
 	ch->RemoveAffect(AFFECT_MOUNT_BONUS);
@@ -17272,7 +17268,7 @@ EVENTFUNC(real_time_expire_event)
 		int32_t remainSec = item->GetSocket(0);
 		if (remainSec <= 0) {
 			if (item->GetSocket(1) == 1) {
-				LPCHARACTER pkOwner = item->GetOwner();
+				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
 					if (pkOwner->FindAffect(item->GetValue(0))) {
 						pkOwner->RemoveAffect(item->GetValue(0));
@@ -17295,7 +17291,7 @@ EVENTFUNC(real_time_expire_event)
 			int32_t nextSec = (remainSec - 60) > 0 ? (remainSec - 60) : 0;
 			item->SetSocket(0, nextSec);
 			if (nextSec <= 0) {
-				LPCHARACTER pkOwner = item->GetOwner();
+				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
 					if (pkOwner->FindAffect(item->GetValue(0))) {
 						pkOwner->RemoveAffect(item->GetValue(0));
@@ -17319,7 +17315,7 @@ EVENTFUNC(real_time_expire_event)
 	const time_t current = get_global_time();
 	if (current > item->GetSocket(0))
 	{
-		LPCHARACTER pkOwner = item->GetOwner();
+		auto* pkOwner = item->GetOwner();
 
 		if (pkOwner && pkOwner->GetDesc() && item->GetWindow() == MOUNT_INVENTORY)
 		{
