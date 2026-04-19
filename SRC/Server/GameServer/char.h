@@ -1433,6 +1433,7 @@ public:
 	LPITEM			GetInventoryItem(uint16_t wCell) const;
 #ifdef ENABLE_EXTRA_INVENTORY
 	LPITEM			GetExtraInventoryItem(uint16_t wCell) const;
+	uint16_t			GetExtraInventoryGrid(uint16_t wCell) const;
 	void			SetNextSortExtraInventoryPulse(int pulse) { m_sortExtraInventoryPulse = pulse; }
 	int				GetSortExtraInventoryPulse() { return m_sortExtraInventoryPulse; }
 	int				m_sortExtraInventoryPulse;

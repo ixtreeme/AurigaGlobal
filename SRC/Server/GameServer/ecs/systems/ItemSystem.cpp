@@ -135,6 +135,18 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
 
     return &g_registry.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(e);
 }
+
+static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
+}
 #endif
 
 static entt::entity ItemEntityOf(LPITEM item)
@@ -2249,11 +2261,27 @@ LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 #ifdef ENABLE_EXTRA_INVENTORY
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 {
-	return GetItem(TItemPos(EXTRA_INVENTORY, wCell));
-	return GetItem(TItemPos(INVENTORY, wCell));
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	sys_log(0, "Razor93 LOG:: Called: Char_item.cpp LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const");
 #endif
+	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
+		return nullptr;
+
+	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
+		return comp->pItems[wCell];
+
+	return m_pointsInstant.pExtraItems[wCell];
+}
+
+uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
+{
+	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
+		return 0;
+
+	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
+		return comp->wItemGrid[wCell];
+
+	return m_pointsInstant.wExtraItemGrid[wCell];
 }
 #endif
 
@@ -2293,7 +2321,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 			sys_err("CHARACTER::GetInventoryItem: invalid EXTRA item cell %d", wCell);
 			return nullptr;
 		}
-		return m_pointsInstant.pExtraItems[wCell];
+		return GetExtraInventoryItem(wCell);
 #endif
 
 #ifdef ENABLE_SWITCHBOT
@@ -14366,9 +14394,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 		++iExceptionCell;
 
-		if (m_pointsInstant.wExtraItemGrid[bCell])
+		if (GetExtraInventoryGrid(bCell))
 		{
-			if (m_pointsInstant.wExtraItemGrid[bCell] == iExceptionCell)
+			if (GetExtraInventoryGrid(bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14386,8 +14414,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
 						return false;
 
-					if (m_pointsInstant.wExtraItemGrid[p])
-						if (m_pointsInstant.wExtraItemGrid[p] != iExceptionCell)
+					if (GetExtraInventoryGrid(p))
+						if (GetExtraInventoryGrid(p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14414,8 +14442,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
 					return false;
 
-				if (m_pointsInstant.wExtraItemGrid[p])
-					if (m_pointsInstant.wExtraItemGrid[p] != iExceptionCell)
+				if (GetExtraInventoryGrid(p))
+					if (GetExtraInventoryGrid(p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -14528,9 +14556,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 		++iExceptionCell;
 
-		if (m_pointsInstant.wExtraItemGrid[bCell])
+		if (GetExtraInventoryGrid(bCell))
 		{
-			if (m_pointsInstant.wExtraItemGrid[bCell] == iExceptionCell)
+			if (GetExtraInventoryGrid(bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14548,8 +14576,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
 						return false;
 
-					if (m_pointsInstant.wExtraItemGrid[p])
-						if (m_pointsInstant.wExtraItemGrid[p] != iExceptionCell)
+					if (GetExtraInventoryGrid(p))
+						if (GetExtraInventoryGrid(p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14576,8 +14604,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
 					return false;
 
-				if (m_pointsInstant.wExtraItemGrid[p])
-					if (m_pointsInstant.wExtraItemGrid[p] != iExceptionCell)
+				if (GetExtraInventoryGrid(p))
+					if (GetExtraInventoryGrid(p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
