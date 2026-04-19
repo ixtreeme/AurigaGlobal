@@ -199,6 +199,32 @@ static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent
 }
 #endif
 
+#ifdef ENABLE_ACCE_SYSTEM
+static ecs::AcceWindowComponent* EnsureAcceWindowComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.emplace_or_replace<ecs::AcceWindowComponent>(e);
+}
+
+static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::AcceWindowComponent>(e);
+}
+#endif
+
 static entt::entity ItemEntityOf(LPITEM item)
 {
     if (!item || item->GetID() == 0)
@@ -2344,6 +2370,13 @@ bool CHARACTER::IsAttrTransferOpen() const
         return comp->pNpc != nullptr;
 
     return false;
+}
+#endif
+
+#ifdef ENABLE_ACCE_SYSTEM
+LPITEM* CHARACTER::GetAcceMaterials()
+{
+    return m_pointsInstant.pAcceMaterials;
 }
 #endif
 

@@ -2731,7 +2731,7 @@ public:
 	void	CloseAcce();
 	void	ClearAcceMaterials();
 	bool	CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget);
-	LPITEM* GetAcceMaterials() { return m_pointsInstant.pAcceMaterials; }
+	LPITEM* GetAcceMaterials();
 	bool	AcceIsSameGrade(int32_t lGrade);
 	uint32_t	GetAcceCombinePrice(int32_t lGrade
 #ifdef ENABLE_STOLE_COSTUME

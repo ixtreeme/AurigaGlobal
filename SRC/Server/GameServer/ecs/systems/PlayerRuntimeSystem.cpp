@@ -21,6 +21,7 @@
 #include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
 #include "../../ecs/components/identity_components.hpp"
+#include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
@@ -96,6 +97,23 @@ inline void EnterIdleState(CHARACTER* ch)
     g_registry.remove<ecs::CombatTarget>(e);
     g_registry.remove<ecs::MovementDestination>(e);
 }
+
+#ifdef ENABLE_ACCE_SYSTEM
+inline void SyncAcceMaterialsToECS(CHARACTER* ch)
+{
+    if (!ch)
+        return;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& comp = g_registry.emplace_or_replace<ecs::AcceWindowComponent>(e);
+    LPITEM* materials = ch->GetAcceMaterials();
+    for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
+        comp.pMaterials[i] = materials[i];
+}
+#endif
 
 #ifdef ENABLE_PVP_ADVANCED
 int GetDuelImpl(const CHARACTER* ch, const char* type)
@@ -1375,6 +1393,9 @@ void CHARACTER::ClearAcceMaterials()
         pkItemMaterial[i]->Lock(false);
         pkItemMaterial[i] = nullptr;
     }
+#ifdef ENABLE_ACCE_SYSTEM
+    SyncAcceMaterialsToECS(this);
+#endif
 }
 
 bool CHARACTER::AcceIsSameGrade(int32_t lGrade)
@@ -1685,6 +1706,9 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     sPacket.dwMinAbs = dwMinAbs;
     sPacket.dwMaxAbs = dwMaxAbs;
     GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+#ifdef ENABLE_ACCE_SYSTEM
+    SyncAcceMaterialsToECS(this);
+#endif
 }
 
 void CHARACTER::RemoveAcceMaterial(uint8_t bPos)
@@ -1731,6 +1755,9 @@ void CHARACTER::RemoveAcceMaterial(uint8_t bPos)
     sPacket.dwMinAbs = 0;
     sPacket.dwMaxAbs = 0;
     GetDesc()->Packet(&sPacket, sizeof(TPacketAcce));
+#ifdef ENABLE_ACCE_SYSTEM
+    SyncAcceMaterialsToECS(this);
+#endif
 }
 
 uint8_t CHARACTER::CanRefineAcceMaterials()
