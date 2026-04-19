@@ -578,7 +578,6 @@ typedef struct character_point_instant
 #ifdef ENABLE_EXTRA_INVENTORY
 #endif
 #ifdef ENABLE_SWITCHBOT
-	LPITEM			pSwitchbotItems[SWITCHBOT_SLOT_COUNT];
 #endif
 	// by mhh
 #ifdef __ATTR_TRANSFER_SYSTEM__

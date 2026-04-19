@@ -2418,7 +2418,7 @@ LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
     if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(this))
         return switchbot->pItems[wCell];
 
-    return m_pointsInstant.pSwitchbotItems[wCell];
+    return nullptr;
 }
 #endif
 
@@ -14270,7 +14270,6 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			CSwitchbotManager::Instance().UnregisterItem(GetPlayerID(), wCell);
 		}
 
-		m_pointsInstant.pSwitchbotItems[wCell] = pItem;
 	}
 	break;
 #endif
