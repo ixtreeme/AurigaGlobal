@@ -2200,9 +2200,9 @@ public:
 	bool				IsRiding() const;
 #ifdef __ATTR_TRANSFER_SYSTEM__
 public:
-	LPITEM* GetAttrTransferItem() { return m_pointsInstant.pAttrTransferItems; }
-	bool IsAttrTransferOpen() const { return (m_pointsInstant.pAttrTransferNpc ? true : false); }
-	void SetAttrTransferNpc(LPCHARACTER npc) { m_pointsInstant.pAttrTransferNpc = npc; }
+	LPITEM* GetAttrTransferItem();
+	bool IsAttrTransferOpen() const;
+	void SetAttrTransferNpc(LPCHARACTER npc);
 	bool CanDoAttrTransfer() const;
 #endif
 #ifdef __PET_SYSTEM__

@@ -6,12 +6,33 @@
 #include "log.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/components/inventory_components.hpp"
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
 #include <stdlib.h>
 #include <sstream>
 #define RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch) if (!(ch)->IsAttrTransferOpen()) return
+
+namespace {
+
+void SyncAttrTransferItemsToECS(LPCHARACTER ch)
+{
+	if (!ch)
+		return;
+
+	const entt::entity e = AIHelpers::EcsOf(ch);
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	auto& comp = g_registry.emplace_or_replace<ecs::AttrTransferWindowComponent>(e);
+	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
+		comp.pItems[i] = ch->GetAttrTransferItem()[i];
+}
+
+} // namespace
 
 void AttrTransfer_open(LPCHARACTER ch)
 {
@@ -79,6 +100,8 @@ void AttrTransfer_clean_item(LPCHARACTER ch)
 		
 		attr_transfer_item[i] = nullptr;
 	}
+
+	SyncAttrTransferItemsToECS(ch);
 }
 
 bool AttrTransfer_make(LPCHARACTER ch)
@@ -152,6 +175,8 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	items[0] = nullptr;
 	items[2]->SetCount(items[2]->GetCount() - 1);
 	items[2] = nullptr;
+
+	SyncAttrTransferItemsToECS(ch);
 	
 	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer success");
 	LogManager::instance().AttrTransferLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), items[1]->GetVnum());
@@ -292,6 +317,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 		if (item == attr_transfer_item[i])
 		{
 			attr_transfer_item[i] = nullptr;
+			SyncAttrTransferItemsToECS(ch);
 			break;
 		}
 	}
@@ -321,6 +347,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	}
 	
 	attr_transfer_item[w_index] = item;
+	SyncAttrTransferItemsToECS(ch);
 	return;
 }
 
@@ -338,6 +365,7 @@ void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
 	
 	//attr_transfer_item[w_index];
 	attr_transfer_item[w_index] = nullptr;
+	SyncAttrTransferItemsToECS(ch);
 	return;
 }
 

@@ -173,6 +173,32 @@ static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(const CHARACTER
     return g_registry.try_get<ecs::CubeWindowComponent>(e);
 }
 
+#ifdef __ATTR_TRANSFER_SYSTEM__
+static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.emplace_or_replace<ecs::AttrTransferWindowComponent>(e);
+}
+
+static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::AttrTransferWindowComponent>(e);
+}
+#endif
+
 static entt::entity ItemEntityOf(LPITEM item)
 {
     if (!item || item->GetID() == 0)
@@ -2295,6 +2321,29 @@ bool CHARACTER::IsCubeOpen() const
 
     return false;
 }
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
+{
+    if (auto* comp = EnsureAttrTransferWindowComponent(this))
+        comp->pNpc = npc;
+
+    m_pointsInstant.pAttrTransferNpc = npc;
+}
+
+LPITEM* CHARACTER::GetAttrTransferItem()
+{
+    return m_pointsInstant.pAttrTransferItems;
+}
+
+bool CHARACTER::IsAttrTransferOpen() const
+{
+    if (const auto* comp = TryGetAttrTransferWindowComponent(this); comp && comp->pNpc)
+        return true;
+
+    return m_pointsInstant.pAttrTransferNpc != nullptr;
+}
+#endif
 
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 {
