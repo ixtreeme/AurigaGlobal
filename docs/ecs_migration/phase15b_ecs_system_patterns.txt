@@ -116,3 +116,124 @@ Recommendation for Phase 15B reuse
 - Keep legacy authority behind exactly one local bridge per function.
 - Replace entity -> Find(...) with entity -> LegacyCharPtr wherever state authority still lives on CHARACTER.
 - Do not attempt ECS component expansion in the same pass as bridge cleanup.
+
+
+Phase 15B-2 — AffectSystem entity-first cleanup
+
+Scope
+- File: SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+- No public API expansion was needed in AffectSystem.hpp because the AffectSystem surface was already entity-first.
+
+Audit summary
+- Baseline raw LPCHARACTER / CHARACTER* token count in AffectSystem.cpp/.hpp: 32
+- External AffectSystem::* callers outside the file: 2
+  - main.cpp
+    - UpdateAffect(g_registry, tick)
+    - AffectSystem_Update(g_registry, tick)
+- Direct gameplay callers still primarily use CHARACTER wrapper methods inside the same file:
+  - AttackedByFire
+  - AttackedByPoison
+  - AttackedByBleeding
+  - RemoveFire / RemovePoison / RemoveBleeding
+  - IsImmune
+  - ApplyMobAttribute
+
+Signature decisions
+- All AffectSystem namespace functions stayed OPTION_ENTITY.
+- No KEEP_LEGACY_OVERLOAD was required.
+- The only LPCHARACTER survivors after the pass are CHARACTER wrapper signatures:
+  - void CHARACTER::AttackedByFire(LPCHARACTER ...)
+  - void CHARACTER::AttackedByPoison(LPCHARACTER ...)
+  - void CHARACTER::AttackedByBleeding(LPCHARACTER ...)
+
+Implementation pattern summary
+- Pattern A (read from ECS component instead of CHARACTER): 0
+  - Affect state still ultimately mirrors the legacy affect container.
+  - No new affect ECS component authority was introduced in this pass.
+
+- Pattern B (legacy mutating authority through one resolved CHARACTER bridge): 10
+  - ApplyFire
+  - RemoveFire
+  - ApplyPoison
+  - RemovePoison
+  - ApplyBleeding
+  - RemoveBleeding
+  - AddAffect
+  - RemoveAffect
+  - ClearAffect
+  - RefreshAffect
+
+- Pattern C (legacy packet/chat/event interaction through one resolved CHARACTER bridge): 8
+  - poison_event
+  - bleeding_event
+  - fire_event
+  - IsImmune
+  - ApplyMobAttribute
+  - affect_event
+  - load_affect_login_event
+  - test_server info-chat branches in poison/bleed/fire application
+
+- Pattern D (resolve legacy pointer once at top of entity-entry function): 13
+  - All AffectSystem namespace entity-entry functions now use a single:
+    auto* ch = LegacyCharOf(entity);
+
+Concrete changes
+- Replaced local entity -> CHARACTER resolution from:
+  - VIDComponent + CHARACTER_MANAGER::Find(...)
+  to:
+  - LegacyCharPtr component lookup
+- Converted raw LPCHARACTER locals to `auto*` bridge locals.
+- Converted DynamicCharacterPtr event access from:
+  - info->ch
+  to:
+  - info->ch.Get()
+- Converted registry iteration from:
+  - view<AffectList, VIDComponent> + Find(vid.value)
+  to:
+  - view<AffectList, LegacyCharPtr> + legacy.ptr
+
+Lifecycle safety findings
+- Affect event callbacks already had the correct null-safe shape:
+  - if event info is null -> return 0
+  - if resolved character is null -> return 0
+- The critical teardown-safe pattern here is:
+  - resolve from DynamicCharacterPtr or LegacyCharPtr
+  - null-check before dereference
+  - avoid re-looking up through CHARACTER_MANAGER when the entity already carries LegacyCharPtr
+- No extra ECS-side cleanup path was introduced because AffectList still mirrors legacy affect ownership.
+
+Counts
+- Baseline LPCHARACTER count from audit: 32
+- Post-migration raw LPCHARACTER / CHARACTER* token count in AffectSystem.cpp/.hpp: 3
+- Intentional survivors: 3
+  - all three are CHARACTER wrapper signatures for attacker input
+- Accidental survivors: 0
+
+What went smoothly
+- AffectSystem namespace API was already entity-first, so there was no caller cascade.
+- LegacyCharPtr again proved to be the correct bridge after VID-A.
+- The event/lifecycle code already had most of the required null checks; the main cleanup was the lookup path, not the control flow.
+
+Unexpected friction
+- The baseline count was higher than the old audit estimate because this file still contains large legacy CHARACTER-affect implementations below the AffectSystem namespace.
+- The important distinction was:
+  - AffectSystem namespace internals
+  versus
+  - legacy CHARACTER wrapper / implementation code living in the same compilation unit
+
+Verification
+- Build gate: PASS
+- WinTest deploy + restart: PASS
+- Boot/log smoke: PASS
+- No new AffectSystem-specific syserr was observed during the fresh boot window.
+- Full in-client affect gameplay validation still needs manual smoke for:
+  - buff icon appearance
+  - duration countdown
+  - death/logout restore paths
+
+Recommendation for next targets
+- SkillSystem
+  - next logical step, but higher risk than AffectSystem
+  - should reuse the same LegacyCharPtr bridge cleanup first
+- CombatSystem
+  - defer until after one more medium-risk successful system pass
