@@ -1,0 +1,68 @@
+Phase 15C-1b-e - Transient window components batch migration
+
+Scope
+- Migrated the remaining COLD transient window groups out of CHARACTER_POINT_INSTANT:
+  - G_CUBE
+  - G_ATTR_TRANSFER
+  - G_ACCE
+  - G_SWITCHBOT
+
+Per-substep commit list
+- 15C-1b cube:
+  - 19439ea Phase 15C-1b.1: Add CubeWindowComponent definition
+  - 59d012b Phase 15C-1b.2: Seed + mirror cube window to ECS
+  - 6934589 Phase 15C-1b.3: Flip cube window reads to ECS
+  - 5f66b1c Phase 15C-1b: COMPLETE - cube window on ECS
+- 15C-1c attr transfer:
+  - fa40f66 Phase 15C-1c.1: Add AttrTransferWindowComponent definition
+  - b2aeac6 Phase 15C-1c.2: Seed + mirror attr transfer to ECS
+  - 65f133a Phase 15C-1c.3: Flip attr transfer reads to ECS
+  - 1e3cd1b Phase 15C-1c: COMPLETE
+- 15C-1d acce:
+  - 5e60db1 Phase 15C-1d.1: Add AcceWindowComponent definition
+  - b6d2aa6 Phase 15C-1d.2: Seed + mirror acce window to ECS
+  - 3235f5f Phase 15C-1d.3: Flip acce window reads to ECS
+  - 5ecb4da Phase 15C-1d: COMPLETE
+- 15C-1e switchbot:
+  - da5bdf2 Phase 15C-1e.1: Add SwitchbotRuntimeComponent definition
+  - 048983f Phase 15C-1e.2: Seed + mirror switchbot to ECS
+  - b7b635a Phase 15C-1e.3: Flip switchbot reads to ECS
+  - 315a638 Phase 15C-1e: COMPLETE
+
+Components introduced
+- ecs::CubeWindowComponent
+- ecs::AttrTransferWindowComponent
+- ecs::AcceWindowComponent
+- ecs::SwitchbotRuntimeComponent
+
+Cumulative bytes freed
+- 15C-1a extra inventory: ~10,800 bytes per CHARACTER
+- 15C-1b-e transient windows: ~288 bytes per CHARACTER
+- Total so far in 15C-1: ~11,088 bytes per CHARACTER
+- At 1000 online characters: ~10.6 MiB saved
+
+Patterns reused from 15C-1a
+- Added one ECS runtime component per logical window group.
+- Attached zeroed components during CHARACTER entity creation.
+- Used dual-authority only long enough to seed and verify writes.
+- Flipped read authority to ECS before removing legacy fields.
+- Deleted the legacy CHARACTER_POINT_INSTANT fields only after all direct survivors were gone.
+
+Observed friction
+- char.h and ItemSystem.cpp still require latin-1-safe edits; naive patching is brittle there.
+- The window groups that mutate through raw LPITEM* arrays need a temporary helper/sync phase before read flip.
+- Switchbot touched more ItemSystem branches than the other transient windows and needed a dedicated getter surface.
+
+Verification
+- Compile and link passed after each substep.
+- Combined WinTest deploy/restart completed after the full batch.
+- Fresh core99 boot/log smoke showed no new window-specific regression pattern:
+  - no cube / attr transfer / acce / switchbot null deref
+  - no new VID_DRIFT
+  - no new DestroyCharacter not found
+  - no new SpawnMob cannot create
+- Remaining syserr noise stayed in known motion/content warnings plus pre-existing unrelated entries.
+
+Next target
+- Ready for 15C-1f: G_DRAGONSOUL
+- Expected next large byte win: ~14,532 bytes per CHARACTER
