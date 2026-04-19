@@ -2415,6 +2415,9 @@ LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
     if (wCell >= SWITCHBOT_SLOT_COUNT)
         return nullptr;
 
+    if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(this))
+        return switchbot->pItems[wCell];
+
     return m_pointsInstant.pSwitchbotItems[wCell];
 }
 #endif
@@ -2491,7 +2494,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 			sys_err("CHARACTER::GetInventoryItem: invalid switchbot item cell %d", wCell);
 			return nullptr;
 		}
-		return m_pointsInstant.pSwitchbotItems[wCell];
+		return GetSwitchbotItem(wCell);
 #endif
 	default:
 		return nullptr;
@@ -14246,7 +14249,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #ifdef ENABLE_SWITCHBOT
 	case SWITCHBOT:
 	{
-		LPITEM pOld = m_pointsInstant.pSwitchbotItems[wCell];
+		LPITEM pOld = GetSwitchbotItem(wCell);
 		if (pItem && pOld)
 		{
 			return;
@@ -14792,7 +14795,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 			return false;
 		}
 
-		if (m_pointsInstant.pSwitchbotItems[wCell])
+		if (GetSwitchbotItem(wCell))
 		{
 			return false;
 		}
