@@ -494,6 +494,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 #ifdef ENABLE_EXTRA_INVENTORY
     reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
 #endif
+    reg.emplace_or_replace<ecs::CubeWindowComponent>(entity, ecs::CubeWindowComponent {});
     reg.emplace_or_replace<ecs::GoldAmount>(entity, data.gold);
     reg.emplace_or_replace<ecs::QuickSlots>(entity, MakeQuickSlots(data));
     reg.emplace_or_replace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);

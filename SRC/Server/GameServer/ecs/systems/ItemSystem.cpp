@@ -149,6 +149,30 @@ static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeCom
 }
 #endif
 
+static ecs::CubeWindowComponent* EnsureCubeWindowComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.emplace_or_replace<ecs::CubeWindowComponent>(e);
+}
+
+static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::CubeWindowComponent>(e);
+}
+
 static entt::entity ItemEntityOf(LPITEM item)
 {
     if (!item || item->GetID() == 0)
@@ -2249,6 +2273,14 @@ LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 
 
 #ifdef ENABLE_EXTRA_INVENTORY
+void CHARACTER::SetCubeNpc(LPCHARACTER npc)
+{
+    if (auto* comp = EnsureCubeWindowComponent(this))
+        comp->pNpc = npc;
+
+    m_pointsInstant.pCubeNpc = npc;
+}
+
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93

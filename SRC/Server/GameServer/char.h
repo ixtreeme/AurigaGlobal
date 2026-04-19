@@ -2515,7 +2515,7 @@ public:
 	// by mhh
 	LPITEM* GetCubeItem() { return m_pointsInstant.pCubeItems; }
 	bool IsCubeOpen() const { return (m_pointsInstant.pCubeNpc ? true : false); }
-	void SetCubeNpc(LPCHARACTER npc) { m_pointsInstant.pCubeNpc = npc; }
+	void SetCubeNpc(LPCHARACTER npc);
 	bool CanDoCube() const;
 
 
