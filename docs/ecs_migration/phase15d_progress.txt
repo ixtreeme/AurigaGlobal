@@ -168,3 +168,73 @@ Overall assessment
 - It removed the dominant questlua LPCHARACTER declaration pattern without changing quest manager core authority.
 - The questlua layer is now materially cleaner and no longer the largest easy LPCHARACTER decl cluster in the tree.
 - The next non-ECS wave should move to `cmd_*.cpp`, while a smaller cleanup follow-up can later remove the remaining 57 irregular direct quest-context survivors.
+
+Phase 15D-2 - cmd_*.cpp Trivial Getter Migration
+
+Scope actually touched in this pass
+- The `cmd_*.cpp` layer did not contain another questlua-style `LPCHARACTER` declaration mass pattern.
+- The realistic low-risk surface here was the ACMD entry variable `ch` and its direct trivial getter calls.
+- Three files had meaningful matches and were migrated:
+  - `cmd_general.cpp`
+  - `cmd_gm.cpp`
+  - `cmd_general2.cpp`
+- The smaller files were audited and turned out to be no-op for the requested target getter set:
+  - `cmd_emotion.cpp`
+  - `cmd.cpp`
+  - `cmd_oxevent.cpp`
+  - `cmd_gm2.cpp`
+  - `cmd_guild_renewal.cpp`
+
+Pattern used
+- No ACMD macro surface changes.
+- No `LegacyCharOf(e)` bridge was added inside handlers.
+- The handler entry `LPCHARACTER ch` remained authoritative, as requested.
+- Only trivial getter reads on the ACMD entry variable were replaced with ECS-backed accessors:
+  - `ecs::GetPlayerID(ch)`
+  - `ecs::GetName(ch)`
+  - `ecs::GetMapIndex(ch)`
+  - `ecs::GetX(ch)`
+  - `ecs::GetY(ch)`
+  - `ecs::GetLevel(ch)`
+  - `ecs::IsPC(ch)`
+
+Checkpoint numbers
+- `cmd_*.cpp` LPCHARACTER local declarations before: 52
+- `cmd_*.cpp` LPCHARACTER local declarations after: 52
+- This count stayed flat because ACMD handlers still enter through legacy `LPCHARACTER ch` and this pass did not rewrite macro signatures.
+- Meaningful reduction for this pass is the direct trivial getter surface on `ch`:
+  - before: 141
+  - after: 0
+- Whole-tree LPCHARACTER local declaration count is therefore unchanged by 15D-2 itself.
+
+Per-file result
+- `cmd_general.cpp`
+  - direct `ch->GetXxx()` target calls migrated to `ecs::GetXxx(ch)`
+- `cmd_gm.cpp`
+  - direct `ch->GetXxx()` target calls migrated to `ecs::GetXxx(ch)`
+- `cmd_general2.cpp`
+  - direct `ch->GetXxx()` target calls migrated to `ecs::GetXxx(ch)`
+
+Build / WinTest notes
+- Build gate green:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Fresh `GameServer.exe` deployed to WinTest:
+  - `share/bin/GameServer.exe`
+  - `auth/GameServer.exe`
+- Restarted:
+  - `Database`
+  - `auth/GameServer`
+  - `Login`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+- Fresh boot/log smoke result:
+  - no new `VID_DRIFT`
+  - no new `DestroyCharacter ... not found`
+  - no new `SpawnMob: cannot create new character`
+  - only the usual pre-existing motion/content warnings remained
+
+Interpretation
+- `cmd_*.cpp` is not another declaration-reduction wave like `questlua_*`.
+- It is a command-entry accessor cleanup wave.
+- The next meaningful non-ECS declaration target should stay on files that actually manufacture local `LPCHARACTER` boilerplate, not just ACMD entry wrappers.
