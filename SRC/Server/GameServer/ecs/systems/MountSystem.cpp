@@ -28,20 +28,20 @@
 #include "../components/social_components.hpp"
 
 #include <common/VnumHelper.h>
+#include <utility>
 
 namespace
 {
 
-LPCHARACTER LegacyCharacter(entt::entity e)
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
+LegacyCharHandle LegacyCharOf(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid)
-        return nullptr;
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 ecs::MountState* GetMountState(entt::entity e)
@@ -74,27 +74,27 @@ namespace MountSystem {
 
 bool StartRiding(entt::entity rider)
 {
-    LPCHARACTER ch = LegacyCharacter(rider);
+    auto* ch = LegacyCharOf(rider);
     return ch ? ch->StartRiding() : false;
 }
 
 bool StopRiding(entt::entity rider)
 {
-    LPCHARACTER ch = LegacyCharacter(rider);
+    auto* ch = LegacyCharOf(rider);
     return ch ? ch->StopRiding() : false;
 }
 
 void SetRider(entt::entity horse, entt::entity rider)
 {
-    LPCHARACTER chHorse = LegacyCharacter(horse);
-    LPCHARACTER chRider = LegacyCharacter(rider);
+    auto* chHorse = LegacyCharOf(horse);
+    auto* chRider = LegacyCharOf(rider);
     if (chHorse)
         chHorse->SetRider(chRider);
 }
 
 entt::entity GetRider(entt::entity horse)
 {
-    LPCHARACTER chHorse = LegacyCharacter(horse);
+    auto* chHorse = LegacyCharOf(horse);
     if (!chHorse)
         return entt::null;
 
@@ -103,40 +103,40 @@ entt::entity GetRider(entt::entity horse)
 
 void HorseSummon(entt::entity owner, bool summon, bool fromFar, uint32_t vnum, const char* petName)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     if (ch)
         ch->HorseSummon(summon, fromFar, vnum, petName);
 }
 
 uint32_t GetMyHorseVnum(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     return ch ? ch->GetMyHorseVnum() : 0;
 }
 
 void HorseDie(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     if (ch)
         ch->HorseDie();
 }
 
 bool ReviveHorse(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     return ch ? ch->ReviveHorse() : false;
 }
 
 void ClearHorseInfo(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     if (ch)
         ch->ClearHorseInfo();
 }
 
 void SendHorseInfo(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     if (ch)
         ch->SendHorseInfo();
 }
@@ -281,7 +281,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
         if (!ent || !ent->IsType(ENTITY_CHARACTER))
             continue;
 
-        LPCHARACTER viewer = (LPCHARACTER)ent;
+        auto* viewer = static_cast<LegacyCharHandle>(ent);
         if (!viewer || viewer == this)
             continue;
 
@@ -295,26 +295,26 @@ namespace MountSystem {
 
 bool CanUseHorseSkill(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     return ch ? ch->CanUseHorseSkill() : false;
 }
 
 void SetHorseLevel(entt::entity owner, int level)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharOf(owner);
     if (ch)
         ch->SetHorseLevel(level);
 }
 
 bool IsRiding(entt::entity rider)
 {
-    LPCHARACTER ch = LegacyCharacter(rider);
+    auto* ch = LegacyCharOf(rider);
     return ch ? ch->IsRiding() : false;
 }
 
 uint32_t GetMountVnum(entt::entity rider)
 {
-    LPCHARACTER ch = LegacyCharacter(rider);
+    auto* ch = LegacyCharOf(rider);
     return ch ? ch->GetMountVnum() : 0;
 }
 
@@ -458,7 +458,7 @@ EVENTFUNC(horse_dead_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = info->ch;
+	auto* ch = info->ch.Get();
 	if (ch == nullptr) {
 		return 0;
 	}
@@ -580,7 +580,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		if (!m_chHorse)
 			return;
 
-		LPCHARACTER chHorse = m_chHorse;
+		auto* chHorse = m_chHorse;
 
 		chHorse->SetRider(nullptr);
 
