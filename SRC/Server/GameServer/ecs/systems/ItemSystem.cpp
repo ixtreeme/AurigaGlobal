@@ -2328,7 +2328,6 @@ void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
     if (auto* comp = EnsureAttrTransferWindowComponent(this))
         comp->pNpc = npc;
 
-    m_pointsInstant.pAttrTransferNpc = npc;
 }
 
 LPITEM* CHARACTER::GetAttrTransferItem()
@@ -2336,7 +2335,7 @@ LPITEM* CHARACTER::GetAttrTransferItem()
     if (auto* comp = EnsureAttrTransferWindowComponent(this))
         return comp->pItems;
 
-    return m_pointsInstant.pAttrTransferItems;
+    return nullptr;
 }
 
 bool CHARACTER::IsAttrTransferOpen() const
@@ -2344,7 +2343,7 @@ bool CHARACTER::IsAttrTransferOpen() const
     if (const auto* comp = TryGetAttrTransferWindowComponent(this))
         return comp->pNpc != nullptr;
 
-    return m_pointsInstant.pAttrTransferNpc != nullptr;
+    return false;
 }
 #endif
 

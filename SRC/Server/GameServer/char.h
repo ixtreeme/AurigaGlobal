@@ -582,8 +582,6 @@ typedef struct character_point_instant
 #endif
 	// by mhh
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	LPITEM			pAttrTransferItems[MAX_ATTR_TRANSFER_SLOT];
-	LPCHARACTER		pAttrTransferNpc;
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
 	LPITEM				pAcceMaterials[ACCE_WINDOW_MAX_MATERIALS];
