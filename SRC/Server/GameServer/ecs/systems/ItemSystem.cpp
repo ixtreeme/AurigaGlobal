@@ -2278,7 +2278,6 @@ void CHARACTER::SetCubeNpc(LPCHARACTER npc)
     if (auto* comp = EnsureCubeWindowComponent(this))
         comp->pNpc = npc;
 
-    m_pointsInstant.pCubeNpc = npc;
 }
 
 LPITEM* CHARACTER::GetCubeItem()
@@ -2286,7 +2285,7 @@ LPITEM* CHARACTER::GetCubeItem()
     if (auto* comp = EnsureCubeWindowComponent(this))
         return comp->pItems;
 
-    return m_pointsInstant.pCubeItems;
+    return nullptr;
 }
 
 bool CHARACTER::IsCubeOpen() const
@@ -2294,7 +2293,7 @@ bool CHARACTER::IsCubeOpen() const
     if (const auto* comp = TryGetCubeWindowComponent(this))
         return comp->pNpc != nullptr;
 
-    return m_pointsInstant.pCubeNpc != nullptr;
+    return false;
 }
 
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const

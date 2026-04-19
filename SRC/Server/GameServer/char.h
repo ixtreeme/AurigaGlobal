@@ -581,8 +581,6 @@ typedef struct character_point_instant
 	LPITEM			pSwitchbotItems[SWITCHBOT_SLOT_COUNT];
 #endif
 	// by mhh
-	LPITEM			pCubeItems[CUBE_MAX_NUM];
-	LPCHARACTER		pCubeNpc;
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	LPITEM			pAttrTransferItems[MAX_ATTR_TRANSFER_SLOT];
 	LPCHARACTER		pAttrTransferNpc;
