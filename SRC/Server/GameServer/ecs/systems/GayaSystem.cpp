@@ -3,7 +3,6 @@
 #include "GayaSystem.hpp"
 
 #include "../../char.h"
-#include "../../char_manager.h"
 #include "../../config.h"
 #include "../../item.h"
 #include "../../item_manager.h"
@@ -17,16 +16,18 @@
 namespace
 {
 
-LPCHARACTER LegacyCharacter(entt::entity e)
+using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
+
+static inline LegacyCharHandle LegacyCharOf(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return nullptr;
 
-	auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-	if (!vid)
+	auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+	if (!legacy)
 		return nullptr;
 
-	return CHARACTER_MANAGER::instance().Find(vid->value);
+	return legacy->ptr;
 }
 
 void MarkDirty(entt::entity e)
@@ -44,7 +45,7 @@ EVENTFUNC(check_time_market_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = info->ch;
+	auto* ch = info->ch.Get();
 	if (nullptr == ch || ch->IsNPC())
 		return 0;
 
@@ -70,7 +71,7 @@ namespace GayaSystem {
 
 void Load(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -139,7 +140,7 @@ void Load(entt::entity pc)
 
 bool CheckItemsFull(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return false;
 
@@ -151,7 +152,7 @@ bool CheckItemsFull(entt::entity pc)
 
 void ClearMarket(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -162,7 +163,7 @@ void ClearMarket(entt::entity pc)
 
 void InfoMarket(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -185,7 +186,7 @@ void InfoMarket(entt::entity pc)
 
 bool CheckSlot(entt::entity pc, int slot)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || ch->info_slots.empty())
 		return false;
 
@@ -200,7 +201,7 @@ bool CheckSlot(entt::entity pc, int slot)
 
 void BuyItems(entt::entity pc, int slot)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || slot < 0 || slot >= (int)ch->info_items.size())
 		return;
 
@@ -221,7 +222,7 @@ void BuyItems(entt::entity pc, int slot)
 
 void RefreshItemsMarket(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -251,7 +252,7 @@ void RefreshItemsMarket(entt::entity pc)
 
 void UpdateSlot(entt::entity pc, int slot)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || ch->info_slots.empty())
 		return;
 
@@ -279,7 +280,7 @@ void UpdateSlot(entt::entity pc, int slot)
 
 void UpdateItems0(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -341,7 +342,7 @@ void UpdateItems0(entt::entity pc)
 
 void UpdateItems(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -365,7 +366,7 @@ void UpdateItems(entt::entity pc)
 
 void CraftItems(entt::entity pc, int slot)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -440,7 +441,7 @@ void CraftItems(entt::entity pc, int slot)
 
 void MarketItems(entt::entity pc, int slot)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || !CheckItemsFull(pc))
 		return;
 
@@ -486,7 +487,7 @@ void MarketItems(entt::entity pc, int slot)
 
 void RefreshItems(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || !CheckItemsFull(pc))
 		return;
 
@@ -511,7 +512,7 @@ void RefreshItems(entt::entity pc)
 
 int GetState(entt::entity pc, const std::string& state)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return 0;
 
@@ -529,7 +530,7 @@ int GetState(entt::entity pc, const std::string& state)
 
 void SetState(entt::entity pc, const std::string& state, int value)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch)
 		return;
 
@@ -548,7 +549,7 @@ void SetState(entt::entity pc, const std::string& state, int value)
 
 void StartCheckTimeMarket(entt::entity pc)
 {
-	LPCHARACTER ch = LegacyCharacter(pc);
+	auto* ch = LegacyCharOf(pc);
 	if (!ch || ch->GayaUpdateTime)
 		return;
 
@@ -627,7 +628,7 @@ void CHARACTER::RefreshGayaItems()
 
 int CHARACTER::GetGayaState(const std::string& state) const
 {
-	return GayaSystem::GetState(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)), state);
+	return GayaSystem::GetState(AIHelpers::EcsOf(this), state);
 }
 
 void CHARACTER::SetGayaState(const std::string& state, int szValue)

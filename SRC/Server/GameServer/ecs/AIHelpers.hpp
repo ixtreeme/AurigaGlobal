@@ -16,6 +16,15 @@ inline entt::entity EcsOf(LPCHARACTER ch)
     return ch->GetEntityHandle();
 }
 
+inline entt::entity EcsOf(const CHARACTER* ch)
+{
+    if (!ch) {
+        return entt::null;
+    }
+
+    return ch->GetEntityHandle();
+}
+
 inline ecs::AIFlags* TryGetFlags(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e)) {
