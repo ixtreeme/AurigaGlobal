@@ -1,0 +1,161 @@
+Phase 15B Final Audit - 15C/15D Direction Assessment
+Date: 2026-04-19
+Workspace: E:/AurigaGlobal/LiveWork/AurigaGlobal
+
+Step 1 - Current Total Counts
+
+Current whole-tree counts (GameServer .cpp/.h, excluding build/):
+- LPCHARACTER local declarations: 940
+- LPCHARACTER function parameters: 1327
+- Direct ch->Method()-style call sites: 6948
+
+Phase 15 baseline (from phase15_baseline_audit.txt):
+- LPCHARACTER local declarations: 1154
+- LPCHARACTER function parameters: 1442
+- Direct ch->Method()-style call sites: 7371
+
+Delta vs baseline:
+- LPCHARACTER local declarations: -214 (-18.54%)
+- LPCHARACTER function parameters: -115 (-7.98%)
+- Direct ch->Method()-style call sites: -423 (-5.74%)
+
+Interpretation:
+- Phase 15B cleaned the ECS runtime layer successfully, but the global LPCHARACTER surface is still dominated by non-ECS files.
+- The reduction is meaningful inside ECS systems, but the whole-tree totals only moved modestly because the remaining mass sits in classic runtime, input, command, questlua, guild, party, dungeon, and manager code.
+
+Step 2 - ECS vs Non-ECS Distribution
+
+ECS-only counts (SRC/Server/GameServer/ecs/):
+- LPCHARACTER local declarations: 60
+- LPCHARACTER function parameters: 107
+- Direct ch->Method()-style call sites: 1091
+
+Non-ECS counts (SRC/Server/GameServer excluding ecs/):
+- LPCHARACTER local declarations: 880
+- LPCHARACTER function parameters: 1220
+- Direct ch->Method()-style call sites: 5857
+
+Split of current remaining surface:
+- Local declarations in non-ECS: 93.62%
+- Parameters in non-ECS: 91.94%
+- Direct ch->Method() calls in non-ECS: 84.30%
+
+Interpretation:
+- The remaining LPCHARACTER pool is overwhelmingly non-ECS.
+- Phase 15B removed most accidental ECS internals, so the next major numerical gains are no longer inside ECS systems.
+
+Step 3 - Hot File Ranking (Post-15B)
+
+ TOTAL  ECS  DECL  PARAM  CALLS  FILE
+   886  ---    19    104    763  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_main.cpp
+   693  ---    13      5    675  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general.cpp
+   547  ---   201      0    346  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_pc.cpp
+   545  ---    37     11    497  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_gm.cpp
+   471  ECS     5     29    437  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+   330  ---     0     34    296  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/battle.cpp
+   323  ---    28     34    261  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/char_manager.cpp
+   277  ---    21     43    213  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_offlineshop_manager.cpp
+   188  ---     0      0    188  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/cmd_general2.cpp
+   163  ---    12     34    117  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild.cpp
+   162  ---     1      2    159  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_login.cpp
+   156  ---    24     16    116  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/party.cpp
+   138  ---     8     15    115  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/pvp.cpp
+   134  ECS     0      4    130  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+   115  ---    15      0    100  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_db.cpp
+   113  ---     2      9    102  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager.cpp
+   100  ---    17     15     68  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/VikingDungeon.cpp
+    99  ---    13     29     57  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp
+    99  ---     9     10     80  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/RuneDungeon.cpp
+    92  ---    28      2     62  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_dungeon.cpp
+    87  ECS     0      8     79  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+    87  ---     0      9     78  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/shop_manager.cpp
+    86  ---     3      4     79  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/exchange.cpp
+    84  ---    25      4     55  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_party.cpp
+    82  ---     2      8     72  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/DragonSoul.cpp
+    79  ---     5     18     56  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp
+    78  ---    14     18     46  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/dungeon.cpp
+    76  ---     5     10     61  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/TritonTempleDungeon.cpp
+    76  ---     3     13     60  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ValentineDungeon.cpp
+    76  ---     3     13     60  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp
+    75  ---     5     10     60  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/OrcsDungeon.cpp
+    75  ---     1     13     61  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/fishing.cpp
+    72  ---    22      0     50  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questlua_horse.cpp
+    71  ECS     0      3     68  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+    70  ---     5      5     60  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/guild_renewal.cpp
+    69  ECS     4      2     63  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+    64  ---     2     14     48  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/PyramidDungeonRazor93.cpp
+    60  ---    20      8     32  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/questmanager.cpp
+    59  ECS     7      2     50  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp
+    59  ---     2      4     53  E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/new_switchbot.cpp
+
+Interpretation:
+- The hottest files are still overwhelmingly non-ECS.
+- The biggest remaining clusters are packet/input entry (`input_main.cpp`), GM/command code, questlua bindings, battle/classic runtime, and manager files.
+- The remaining ECS-heavy files are wrapper-dominated systems, especially `CombatSystem.cpp`, `SkillSystem.cpp`, `ItemSystem.cpp`, `AffectSystem.cpp`, and `MovementSystem.cpp`.
+
+Step 4 - CHARACTER Member Coverage Gap (15C Readiness)
+
+Rough structural counts:
+- Total CHARACTER members in char.h: 237
+- Total ECS component structs in ecs/components/*.hpp: 91
+
+Coverage direction estimate:
+- ECS component count is now large enough that the project has meaningful structural coverage for identity, vitals, transform/spatial, level/exp/gold, AI, combat-adjacent runtime, and several feature-specific domains.
+- However, 91 component structs is not close to a one-to-one replacement for 237 CHARACTER members.
+- Many CHARACTER members still represent large uncovered or only partially covered clusters, especially:
+  - inventory/equipment authoritative storage
+  - session/view/runtime wrapper state
+  - event handles/timers
+  - social links and classic runtime bookkeeping
+  - remaining combat wrapper state
+
+Interpretation:
+- Phase 15C is viable, but it is not a near-finished cleanup. It would be real component expansion work, not just light follow-through.
+- There is still a substantial CHARACTER-member coverage gap.
+
+Step 5 - Recommendation
+
+Decision:
+- Favor Phase 15D first, with a small parallel 15C trickle only where it directly unblocks a concrete runtime pain point.
+
+Why:
+- A) Large remaining LPCHARACTER pool in non-ECS files: YES.
+  - 880 of 940 remaining local declarations are outside ECS.
+  - 1220 of 1327 remaining LPCHARACTER parameters are outside ECS.
+  - 5857 of 6948 remaining direct ch->Method() calls are outside ECS.
+  - This is the dominant remaining mass, and it is where the biggest mechanical reduction is available.
+- B) Bridge-via-legacy-pointer pattern showing stress: SOMEWHAT, but not enough to override A.
+  - The bridge pattern is now proven across 6 systems and has held up in runtime validation.
+  - The remaining ECS surface is mostly intentional wrapper/runtime legacy, not accidental helper clutter.
+  - There are still per-frame bridge calls, but the bigger blocker to project-wide LPCHARACTER elimination is simply that the non-ECS codebase still owns most of the usage.
+- C) Split roughly even: NO.
+  - The remaining surface is not evenly split. It is strongly skewed toward non-ECS code.
+
+Recommended next direction:
+1. Primary track: Phase 15D
+   - Continue file-by-file LPCHARACTER reduction in non-ECS hotspots.
+   - Best next targets by impact:
+     - input_main.cpp
+     - cmd_general.cpp
+     - cmd_gm.cpp
+     - questlua_pc.cpp
+     - battle.cpp
+     - char_manager.cpp
+     - party.cpp
+     - guild.cpp
+     - questlua_dungeon.cpp
+2. Secondary track: selective 15C only when needed
+   - Expand components only where the lack of authority clearly blocks safe LPCHARACTER removal.
+   - Most likely component-expansion triggers:
+     - inventory/equipment authority
+     - session/view/runtime wrapper state
+     - remaining combat wrapper-owned runtime state
+3. Practical strategy
+   - Run 15D mechanically and aggressively on non-ECS hotspots.
+   - Use 15C surgically, not as the main phase driver yet.
+
+Bottom line:
+- Phase 15B succeeded in cleaning the ECS runtime layer.
+- The current numbers say the next major payoff is not another ECS-system cleanup pass.
+- The next major payoff is non-ECS LPCHARACTER reduction, so the project should favor Phase 15D first.
+- Phase 15C should follow as a targeted enabler, not as the primary next wave.
