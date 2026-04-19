@@ -19,6 +19,13 @@ struct InventoryGrid {
     std::array<LPITEM, INVENTORY_MAX_NUM> items {};
 };
 
+#ifdef ENABLE_EXTRA_INVENTORY
+struct ExtraInventoryRuntimeComponent {
+    LPITEM pItems[EXTRA_INVENTORY_MAX_NUM] {};
+    uint16_t wItemGrid[EXTRA_INVENTORY_MAX_NUM] {};
+};
+#endif
+
 struct GoldAmount { int64_t amount; };
 
 struct QuickSlots {
