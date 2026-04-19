@@ -1,0 +1,358 @@
+# Phase 15C-0: Component Expansion Priority Audit
+
+## Snapshot
+- Active CHARACTER member declarations found in current build config: 257 (higher than the earlier 237 estimate because feature-flagged members are enabled in this build).
+- ECS component structs found under `ecs/components`: 91.
+- Estimated `sizeof(CHARACTER)` from rough member summation: ~38,620 bytes (~37.7 KiB).
+- Estimated `CHARACTER_POINT`: ~2,092 bytes.
+- Estimated `CHARACTER_POINT_INSTANT`: ~34,335 bytes.
+
+## Constants Used For Rough Sizing
+- `POINT_MAX_NUM = 255`
+- `PART_MAX_NUM = 8`
+- `INVENTORY_AND_EQUIP_SLOT_MAX = 660`
+- `DRAGON_SOUL_INVENTORY_MAX_NUM = 1452`
+- `EXTRA_INVENTORY_MAX_NUM = 1080`
+- `SWITCHBOT_SLOT_COUNT = 5`
+- `CUBE_MAX_NUM = 24`
+- `MAX_ATTR_TRANSFER_SLOT = 3`
+- `ACCE_WINDOW_MAX_MATERIALS = 2`
+
+## Group Ranking
+| Rank | Group | Bytes | ECS Coverage | Freq | Feasibility | Complexity | Priority Score |
+| --- | --- | ---: | --- | --- | --- | ---: | ---: |
+| 1 | G_POINTS | 36,427 | PARTIAL | HIGH | MED | 1200 | 1,517.8 |
+| 2 | G_EVENT_HANDLES | 240 | NONE | MED | EASY | 120 | 100.0 |
+| 3 | G_IDENTITY | 151 | PARTIAL | HIGH | EASY | 180 | 83.9 |
+| 4 | G_POSITION | 185 | PARTIAL | HIGH | EASY | 350 | 52.9 |
+| 5 | G_VITALS | 182 | PARTIAL | HIGH | MED | 300 | 30.3 |
+| 6 | G_SOCIAL | 219 | PARTIAL | MED | MED | 250 | 21.9 |
+| 7 | G_INVENTORY | 344 | PARTIAL | HIGH | MED | 900 | 19.1 |
+| 8 | G_SKILLS | 180 | PARTIAL | HIGH | MED | 500 | 18.0 |
+| 9 | G_AFFECTS | 70 | PARTIAL | HIGH | MED | 220 | 15.9 |
+| 10 | G_SESSION | 102 | PARTIAL | MED | MED | 250 | 10.2 |
+| 11 | G_STATE_MACHINE | 33 | PARTIAL | HIGH | MED | 180 | 9.2 |
+| 12 | G_MOUNT_STATE | 54 | PARTIAL | MED | MED | 200 | 6.8 |
+| 13 | G_COMBAT_RUNTIME | 53 | PARTIAL | HIGH | MED | 750 | 3.5 |
+| 14 | G_QUEST_STATE | 45 | PARTIAL | MED | LOW | 250 | 0.9 |
+| 15 | G_MISC | 335 | NONE | LOW | LOW | 400 | 0.8 |
+
+## Largest Groups By Bytes
+- `G_POINTS`: ~36,427 bytes across 2 members. Sample members: m_points, m_pointsInstant
+- `G_INVENTORY`: ~344 bytes across 11 members. Sample members: m_lastItemOnTitlePrefix, m_quickslot, m_sortExtraInventoryPulse, m_bItemLoaded, m_bAcceCombination, m_bAcceAbsorption, m_bHideAcceCostume, m_dropitemcount, ...
+- `G_MISC`: ~335 bytes across 73 members. Sample members: m_lastFruitUse, m_lastGoldFruitUse, m_lastAlignmentGrade, m_alignBonusMonster, m_alignBonusHuman, m_alignBonusMetin, m_alignBonusBoss, m_alignBonusNormal, ...
+- `G_EVENT_HANDLES`: ~240 bytes across 25 members. Sample members: m_pkPartyRequestEvent, m_pkMuyeongEvent, m_pkGyeongGongEvent, m_pkDeadEvent, m_pkStunEvent, m_pkSaveEvent, m_pkRecoveryEvent, m_pkTimedEvent, ...
+- `G_SOCIAL`: ~219 bytes across 25 members. Sample members: m_pkOfflineShop, m_pkOfflineShopGuest, m_pkShopSafebox, m_bIsLookingOfflineshopOfferList, m_iOfflineShopUseTime, m_pkParty, m_PartyInviteEventMap, m_pGuild, ...
+- `G_POSITION`: ~185 bytes across 26 members. Sample members: m_bPolyMaintainStat, m_dwLoginPlayTime, m_iMoveCount, m_dwPlayStartTime, m_bFakePlayer, m_posDest, m_posExit, m_dwMoveStartTime, ...
+- `G_VITALS`: ~182 bytes across 8 members. Sample members: m_alignBonusHP, m_alignBonusPvm, m_alignAppliedHP, m_bStaminaConsume, m_lRankPoints, m_speed_hack_count, m_bIsPet, m_iSavePointTime
+- `G_SKILLS`: ~180 bytes across 16 members. Sample members: m_alignBonusSkill, m_alignAppliedSkill, m_newpetskillcd, m_dwSkillColor, m_bComboSequence, m_dwLastComboTime, m_iValidComboInterval, m_bComboIndex, ...
+- `G_IDENTITY`: ~151 bytes across 10 members. Sample members: m_strLastSentDisplayedNameWithBelt, m_dwPolymorphRace, m_dwPlayerID, m_stName, m_bCharType, m_stMobile, m_szMobileAuth, m_bEmpire, ...
+- `G_SESSION`: ~102 bytes across 16 members. Sample members: m_bDungeonTicketExtraMetin, m_fSyncTime, m_pkChrSyncOwner, m_kLst_pkChrSyncOwned, m_posWarp, m_lWarpMapIndex, m_lExitMapIndex, m_pkDungeon, ...
+
+## First Target Recommendation
+**Best first target: extract the `m_pointsInstant` blob (and then the adjacent `m_points` base block) into ECS-owned runtime point/inventory components.**
+
+Why this wins first:
+- `m_pointsInstant` alone is roughly **34,335 bytes** per CHARACTER, dwarfing every other single member.
+- `m_points` adds another **2,092 bytes** right next to it, so the combined points/runtime cluster is about **36,427 bytes** per CHARACTER.
+- This cluster is also on hot paths: movement, combat stats, inventory/equipment, quickslots, DragonSoul, cube/refine windows, and transient runtime flags all read it constantly.
+- Pulling this blob out is the clearest path to shrinking `sizeof(CHARACTER)` meaningfully and reducing the amount of state that forces `LegacyCharOf(e)` back-bridges.
+
+Proposed component split:
+- `CharacterPointsBaseComponent`: current `m_points` payload (`points[]`, level/exp/gold/gaya/hp/sp/stamina/job/skill_group`).
+- `CharacterRuntimePointsComponent`: current `m_pointsInstant.points[]`, max HP/SP/Stamina, rotation, position, instant flags, AI/immune flags, parts, base part, deck state.
+- `InventoryRuntimeComponent`: `pItems`, `bItemGrid`, `pDSItems`, `wDSItemGrid`, extra inventory arrays, switchbot/cube/acce/attr-transfer window pointers.
+- `InteractionWindowComponent`: transient NPC / refine / cube / attr-transfer / DragonSoul opener pointers that are currently embedded in `m_pointsInstant`.
+
+Estimated savings if the first target is completed:
+- Per CHARACTER: about **36,427 bytes** (~35.6 KiB).
+- At 1,000 online characters: about **34.7 MiB** reclaimed from live CHARACTER objects.
+
+Suggested migration steps:
+- Introduce mirror ECS components for `m_points` and `m_pointsInstant` without deleting the CHARACTER fields yet.
+- Populate them on character creation/login and keep them synchronized from the existing authoritative write paths.
+- Move read-mostly accessor sites (`GetLevel`, `GetPoint`, `GetPart`, `GetRotation`, inventory slot readers) to ECS-backed accessors first.
+- Flip hot runtime systems (Combat, Movement, Item, Mount, Skill) to read from the new components directly.
+- Move window/inventory transient pointer surfaces behind small bridge helpers so `CHARACTER` no longer owns the arrays.
+- After callers are drained, remove `m_pointsInstant` from `CHARACTER`, then remove `m_points` in a second cut.
+- Finally add an exact compiler `sizeof(CHARACTER)` check once the field removals land.
+
+Main blockers / risks:
+- `m_pointsInstant` is a mixed mega-blob: runtime stats, inventory pointers, window state, and combat-adjacent state are packed together. It should be split, not migrated as one opaque struct.
+- Inventory authority still lives on `CHARACTER::m_pointsInstant.pItems`; moving it requires careful sync with ItemSystem and every inventory window path.
+- Many write paths are hot and implicit (`PointChange`, equip/unequip, DragonSoul, cube, refine, stat recompute). Mirroring first is safer than direct authority transfer.
+- Exact byte savings will differ slightly from this audit because compiler padding and feature-flag combinations can change the real layout.
+
+## Next 5 Targets (Roadmap)
+1. `G_POINTS` ? Biggest size win by far and central to hot-path reads; it also unlocks later bridge elimination.
+2. `G_EVENT_HANDLES` ? Small, self-contained pointer cluster with almost no data coupling; easy early shrink after points mirroring starts.
+3. `G_IDENTITY` ? Mostly scalar data with good ECS coverage already present; cheap cleanup after the large runtime blobs move out.
+4. `G_POSITION` ? Already partially ECS-backed; finishing the mirror removes constant `CHARACTER` position/rotation reads from movement/combat code.
+5. `G_VITALS` ? Follow the byte/frequency ranking.
+6. `G_SOCIAL` ? Party/guild/shop/safebox pointers are numerous but less frame-hot than points/combat.
+
+## Estimated Size After Top 5 Migrations
+- Current rough size: ~38,620 bytes.
+- If the top 5 ranked groups move fully out of `CHARACTER`: ~1,435 bytes remain in the shell object.
+- In practice the first two migrations will dominate; later cuts are more about bridge elimination than raw bytes.
+
+## Full Member Table
+| Line | Type | Member | Est. Bytes | Group |
+| ---: | --- | --- | ---: | --- |
+| 705 | `time_t` | `m_lastFruitUse` | 8 | G_MISC |
+| 706 | `time_t` | `m_lastGoldFruitUse` | 8 | G_MISC |
+| 725 | `int` | `m_lastBeltMountCount` | 4 | G_MOUNT_STATE |
+| 735 | `std::string` | `m_lastItemOnTitlePrefix` | 32 | G_INVENTORY |
+| 773 | `uint32_t` | `m_dwStateDuration` | 4 | G_STATE_MACHINE |
+| 793 | `uint8_t` | `m_lastAlignmentGrade` | 1 | G_MISC |
+| 794 | `int32_t` | `m_alignBonusHP` | 4 | G_VITALS |
+| 795 | `int32_t` | `m_alignBonusMonster` | 4 | G_MISC |
+| 796 | `int32_t` | `m_alignBonusHuman` | 4 | G_MISC |
+| 797 | `int32_t` | `m_alignBonusMetin` | 4 | G_MISC |
+| 798 | `int32_t` | `m_alignBonusBoss` | 4 | G_MISC |
+| 799 | `int32_t` | `m_alignBonusPvm` | 4 | G_VITALS |
+| 800 | `int32_t` | `m_alignBonusNormal` | 4 | G_MISC |
+| 801 | `int32_t` | `m_alignBonusSkill` | 4 | G_SKILLS |
+| 802 | `int32_t` | `m_alignAppliedHP` | 4 | G_VITALS |
+| 803 | `int32_t` | `m_alignAppliedMonster` | 4 | G_MISC |
+| 804 | `int32_t` | `m_alignAppliedHuman` | 4 | G_MISC |
+| 805 | `int32_t` | `m_alignAppliedMetin` | 4 | G_MISC |
+| 806 | `int32_t` | `m_alignAppliedBoss` | 4 | G_MISC |
+| 807 | `int32_t` | `m_alignAppliedPvm` | 4 | G_MISC |
+| 808 | `int32_t` | `m_alignAppliedNormal` | 4 | G_MISC |
+| 809 | `int32_t` | `m_alignAppliedSkill` | 4 | G_SKILLS |
+| 813 | `std::string` | `m_strLastSentDisplayedNameWithBelt` | 32 | G_IDENTITY |
+| 1065 | `uint32_t` | `m_dwPolymorphRace` | 4 | G_IDENTITY |
+| 1066 | `bool` | `m_bPolyMaintainStat` | 1 | G_POSITION |
+| 1067 | `uint32_t` | `m_dwLoginPlayTime` | 4 | G_POSITION |
+| 1068 | `uint32_t` | `m_dwPlayerID` | 4 | G_IDENTITY |
+| 1069 | `std::string` | `m_stName` | 32 | G_IDENTITY |
+| 1071 | `uint8_t` | `m_stImmortalSt` | 1 | G_MISC |
+| 1073 | `uint8_t` | `m_bCharType` | 1 | G_IDENTITY |
+| 1075 | `bool` | `m_bDungeonTicketExtraMetin` | 1 | G_SESSION |
+| 1079 | `uint32_t` | `m_newpetskillcd[4]` | 16 | G_SKILLS |
+| 1081 | `CHARACTER_POINT` | `m_points` | 2,092 | G_POINTS |
+| 1082 | `CHARACTER_POINT_INSTANT` | `m_pointsInstant` | 34,335 | G_POINTS |
+| 1084 | `int` | `m_iMoveCount` | 4 | G_POSITION |
+| 1085 | `uint32_t` | `m_dwPlayStartTime` | 4 | G_POSITION |
+| 1086 | `uint8_t` | `m_bAddChrState` | 1 | G_STATE_MACHINE |
+| 1087 | `bool` | `m_bSkipSave` | 1 | G_MISC |
+| 1088 | `std::string` | `m_stMobile` | 32 | G_IDENTITY |
+| 1089 | `char` | `m_szMobileAuth[5]` | 5 | G_IDENTITY |
+| 1090 | `uint8_t` | `m_bChatCounter` | 1 | G_MISC |
+| 1092 | `uint8_t` | `m_bMountCounter` | 1 | G_MOUNT_STATE |
+| 1112 | `bool` | `m_bFakePlayer` | 1 | G_POSITION |
+| 1170 | `float` | `m_fSyncTime` | 4 | G_SESSION |
+| 1171 | `LPCHARACTER` | `m_pkChrSyncOwner` | 8 | G_SESSION |
+| 1172 | `CHARACTER_LIST` | `m_kLst_pkChrSyncOwned` | 8 | G_SESSION |
+| 1174 | `PIXEL_POSITION` | `m_posDest` | 12 | G_POSITION |
+| 1175 | `PIXEL_POSITION` | `m_posStart` | 12 | G_MISC |
+| 1176 | `PIXEL_POSITION` | `m_posWarp` | 12 | G_SESSION |
+| 1177 | `int32_t` | `m_lWarpMapIndex` | 4 | G_SESSION |
+| 1179 | `PIXEL_POSITION` | `m_posExit` | 12 | G_POSITION |
+| 1180 | `int32_t` | `m_lExitMapIndex` | 4 | G_SESSION |
+| 1182 | `uint32_t` | `m_dwMoveStartTime` | 4 | G_POSITION |
+| 1183 | `uint32_t` | `m_dwMoveDuration` | 4 | G_STATE_MACHINE |
+| 1185 | `uint32_t` | `m_dwLastMoveTime` | 4 | G_POSITION |
+| 1186 | `uint32_t` | `m_dwLastAttackTime` | 4 | G_COMBAT_RUNTIME |
+| 1187 | `uint32_t` | `m_dwWalkStartTime` | 4 | G_POSITION |
+| 1188 | `uint32_t` | `m_dwStopTime` | 4 | G_STATE_MACHINE |
+| 1190 | `bool` | `m_bWalking` | 1 | G_POSITION |
+| 1191 | `bool` | `m_bNowWalking` | 1 | G_POSITION |
+| 1192 | `bool` | `m_bStaminaConsume` | 1 | G_VITALS |
+| 1229 | `offlineshop::CShop*` | `m_pkOfflineShop` | 8 | G_SOCIAL |
+| 1230 | `offlineshop::CShop*` | `m_pkOfflineShopGuest` | 8 | G_SOCIAL |
+| 1231 | `offlineshop::CShopSafebox*` | `m_pkShopSafebox` | 8 | G_SOCIAL |
+| 1232 | `offlineshop::CAuction*` | `m_pkAuction` | 8 | G_MISC |
+| 1233 | `offlineshop::CAuction*` | `m_pkAuctionGuest` | 8 | G_MISC |
+| 1236 | `bool` | `m_bIsLookingOfflineshopOfferList` | 1 | G_SOCIAL |
+| 1238 | `int` | `m_iOfflineShopUseTime` | 4 | G_SOCIAL |
+| 1242 | `TQuickslot` | `m_quickslot[QUICKSLOT_MAX_NUM]` | 288 | G_INVENTORY |
+| 1274 | `bool` | `m_bIsLoadedAffect` | 1 | G_AFFECTS |
+| 1275 | `TAffectFlag` | `m_afAffectFlag` | 16 | G_AFFECTS |
+| 1276 | `std::list<CAffect*>` | `m_list_pkAffect` | 24 | G_AFFECTS |
+| 1285 | `std::vector<TAffectSkills>` | `m_list_pkAffectSkills` | 24 | G_AFFECTS |
+| 1370 | `LPPARTY` | `m_pkParty` | 8 | G_SOCIAL |
+| 1371 | `uint32_t` | `m_dwLastDeadTime` | 4 | G_COMBAT_RUNTIME |
+| 1372 | `LPEVENT` | `m_pkPartyRequestEvent` | 8 | G_EVENT_HANDLES |
+| 1382 | `EventMap` | `m_PartyInviteEventMap` | 8 | G_SOCIAL |
+| 1393 | `LPDUNGEON` | `m_pkDungeon` | 8 | G_SESSION |
+| 1394 | `int` | `m_iEventAttr` | 4 | G_MISC |
+| 1406 | `CGuild*` | `m_pGuild` | 8 | G_SOCIAL |
+| 1407 | `uint32_t` | `m_dwUnderGuildWarInfoMessageTime` | 4 | G_SOCIAL |
+| 1408 | `CWarMap*` | `m_pWarMap` | 8 | G_SESSION |
+| 1436 | `int` | `m_sortExtraInventoryPulse` | 4 | G_INVENTORY |
+| 1584 | `bool` | `m_bItemLoaded` | 1 | G_INVENTORY |
+| 1585 | `int` | `m_iRefineAdditionalCell` | 4 | G_MISC |
+| 1586 | `bool` | `m_bUnderRefine` | 1 | G_MISC |
+| 1587 | `uint32_t` | `m_dwRefineNPCVID` | 4 | G_MISC |
+| 1644 | `LPSHOP` | `m_pkShop` | 8 | G_SOCIAL |
+| 1645 | `LPSHOP` | `m_pkMyShop` | 8 | G_SOCIAL |
+| 1647 | `uint8_t` | `m_bKasmirPaketBaslik` | 1 | G_MISC |
+| 1648 | `bool` | `m_bKasmirPaketDurum` | 1 | G_MISC |
+| 1650 | `std::string` | `m_stShopSign` | 32 | G_SOCIAL |
+| 1651 | `LPCHARACTER` | `m_pkChrShopOwner` | 8 | G_SOCIAL |
+| 1660 | `uint32_t` | `m_dwSkillColor[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT]` | 4 | G_SKILLS |
+| 1680 | `CExchange*` | `m_pkExchange` | 8 | G_SOCIAL |
+| 1840 | `uint8_t` | `m_bComboSequence` | 1 | G_SKILLS |
+| 1841 | `uint32_t` | `m_dwLastComboTime` | 4 | G_SKILLS |
+| 1842 | `int` | `m_iValidComboInterval` | 4 | G_SKILLS |
+| 1843 | `uint8_t` | `m_bComboIndex` | 1 | G_SKILLS |
+| 1844 | `int` | `m_iComboHackCount` | 4 | G_SKILLS |
+| 1845 | `uint32_t` | `m_dwSkipComboAttackByTime` | 4 | G_SKILLS |
+| 1851 | `uint32_t` | `m_dwFlyTargetID` | 4 | G_POSITION |
+| 1852 | `std::vector<uint32_t>` | `m_vec_dwFlyTargets` | 24 | G_POSITION |
+| 1853 | `TDamageMap` | `m_map_kDamage` | 8 | G_COMBAT_RUNTIME |
+| 1855 | `uint32_t` | `m_dwKillerPID` | 4 | G_COMBAT_RUNTIME |
+| 1857 | `uint32_t` | `m_iAlignment` | 4 | G_MISC |
+| 1858 | `uint32_t` | `m_iRealAlignment` | 4 | G_MISC |
+| 1859 | `int` | `m_iKillerModePulse` | 4 | G_COMBAT_RUNTIME |
+| 1860 | `uint8_t` | `m_bPKMode` | 1 | G_MISC |
+| 1863 | `uint32_t` | `m_dwLastVictimSetTime` | 4 | G_COMBAT_RUNTIME |
+| 1864 | `int` | `m_iMaxAggro` | 4 | G_COMBAT_RUNTIME |
+| 1895 | `LPCHARACTER` | `m_pkChrStone` | 8 | G_MISC |
+| 1896 | `CHARACTER_SET` | `m_set_pkChrSpawnedBy` | 8 | G_POSITION |
+| 1897 | `uint32_t` | `m_dwDropMetinStone` | 4 | G_MISC |
+| 1898 | `uint8_t` | `m_bDropMetinStonePct` | 1 | G_MISC |
+| 1899 | `uint32_t` | `m_dwDropMetinStofa` | 4 | G_MISC |
+| 1900 | `uint8_t` | `m_bDropMetinStofaPct` | 1 | G_MISC |
+| 1901 | `uint32_t` | `m_dwDropMetinSacca` | 4 | G_MISC |
+| 1902 | `uint8_t` | `m_bDropMetinSaccaPct` | 1 | G_MISC |
+| 1903 | `std::map<std::string, int>` | `m_protection_Time` | 48 | G_POSITION |
+| 1907 | `long long` | `m_lRankPoints[RANKING_MAX_CATEGORIES]` | 160 | G_VITALS |
+| 1909 | `bool` | `m_bSkillHit` | 1 | G_SKILLS |
+| 1998 | `bool` | `m_bDisableCooltime` | 1 | G_SKILLS |
+| 2003 | `int` | `m_mountPulse` | 4 | G_MOUNT_STATE |
+| 2014 | `uint32_t` | `m_adwMobSkillCooltime[MOB_SKILL_MAX_NUM]` | 20 | G_SKILLS |
+| 2027 | `LPEVENT` | `m_pkMuyeongEvent` | 8 | G_EVENT_HANDLES |
+| 2029 | `LPEVENT` | `m_pkGyeongGongEvent` | 8 | G_EVENT_HANDLES |
+| 2042 | `int` | `m_iChainLightingIndex` | 4 | G_COMBAT_RUNTIME |
+| 2043 | `CHARACTER_SET` | `m_setExceptChainLighting` | 8 | G_COMBAT_RUNTIME |
+| 2052 | `uint32_t` | `m_dwAffectedEunhyungLevel` | 4 | G_AFFECTS |
+| 2058 | `TPlayerSkill*` | `m_pSkillLevels` | 8 | G_SKILLS |
+| 2059 | `std::unordered_map<uint8_t, int>` | `m_SkillDamageBonus` | 56 | G_SKILLS |
+| 2060 | `std::map<int, TSkillUseInfo>` | `m_SkillUseInfo` | 48 | G_SKILLS |
+| 2092 | `entt::entity` | `m_entity` | 4 | G_POSITION |
+| 2093 | `uint32_t` | `m_dwLegacyVID` | 4 | G_POSITION |
+| 2094 | `entt::entity` | `m_eVictim` | 4 | G_COMBAT_RUNTIME |
+| 2097 | `uint32_t` | `m_dwLastChangeAttackPositionTime` | 4 | G_COMBAT_RUNTIME |
+| 2098 | `CTrigger` | `m_triggerOnClick` | 16 | G_MISC |
+| 2104 | `LPCHARACTER` | `m_pkChrTarget` | 8 | G_MISC |
+| 2105 | `CHARACTER_SET` | `m_set_pkChrTargetedBy` | 8 | G_POSITION |
+| 2158 | `CSafebox*` | `m_pkSafebox` | 8 | G_SOCIAL |
+| 2159 | `int` | `m_iSafeboxSize` | 4 | G_SOCIAL |
+| 2160 | `int` | `m_iSafeboxLoadTime` | 4 | G_SOCIAL |
+| 2161 | `bool` | `m_bOpeningSafebox` | 1 | G_SOCIAL |
+| 2163 | `CMountInventory*` | `m_pkMountInventory` | 8 | G_MOUNT_STATE |
+| 2164 | `bool` | `m_bMountInventoryLoaded` | 1 | G_MOUNT_STATE |
+| 2166 | `CSafebox*` | `m_pkMall` | 8 | G_SOCIAL |
+| 2167 | `int` | `m_iMallLoadTime` | 4 | G_SOCIAL |
+| 2169 | `PIXEL_POSITION` | `m_posSafeboxOpen` | 12 | G_SOCIAL |
+| 2215 | `CPetSystem*` | `m_petSystem` | 8 | G_POSITION |
+| 2230 | `CMountSystem*` | `m_mountSystem` | 8 | G_MOUNT_STATE |
+| 2238 | `CNewPetSystem*` | `m_newpetSystem` | 8 | G_POSITION |
+| 2254 | `LPCHARACTER` | `m_chHorse` | 8 | G_MOUNT_STATE |
+| 2255 | `LPCHARACTER` | `m_chRider` | 8 | G_MOUNT_STATE |
+| 2257 | `uint32_t` | `m_dwMountVnum` | 4 | G_MOUNT_STATE |
+| 2258 | `uint32_t` | `m_dwMountTime` | 4 | G_MOUNT_STATE |
+| 2260 | `uint8_t` | `m_bSendHorseLevel` | 1 | G_MOUNT_STATE |
+| 2261 | `uint8_t` | `m_bSendHorseHealthGrade` | 1 | G_MOUNT_STATE |
+| 2262 | `uint8_t` | `m_bSendHorseStaminaGrade` | 1 | G_MOUNT_STATE |
+| 2271 | `bool` | `m_bDetailLog` | 1 | G_MISC |
+| 2272 | `bool` | `m_bMonsterLog` | 1 | G_MISC |
+| 2282 | `uint8_t` | `m_bEmpire` | 1 | G_IDENTITY |
+| 2290 | `PIXEL_POSITION` | `m_posRegen` | 12 | G_SESSION |
+| 2291 | `float` | `m_fRegenAngle` | 4 | G_SESSION |
+| 2292 | `LPREGEN` | `m_pkRegen` | 8 | G_SESSION |
+| 2329 | `uint32_t` | `m_dwQuestNPCVID` | 4 | G_QUEST_STATE |
+| 2330 | `uint32_t` | `m_dwQuestByVnum` | 4 | G_QUEST_STATE |
+| 2331 | `LPITEM` | `m_pQuestItem` | 8 | G_QUEST_STATE |
+| 2344 | `CStateTemplate<CHARACTER>` | `m_stateBattle` | 8 | G_STATE_MACHINE |
+| 2345 | `CStateTemplate<CHARACTER>` | `m_stateIdle` | 8 | G_STATE_MACHINE |
+| 2346 | `uint32_t` | `m_dwNextStatePulse` | 4 | G_STATE_MACHINE |
+| 2358 | `marriage::WeddingMap*` | `m_pWeddingMap` | 8 | G_IDENTITY |
+| 2359 | `LPCHARACTER` | `m_pkChrMarried` | 8 | G_MISC |
+| 2370 | `LPEVENT` | `m_pkDeadEvent` | 8 | G_EVENT_HANDLES |
+| 2371 | `LPEVENT` | `m_pkStunEvent` | 8 | G_EVENT_HANDLES |
+| 2372 | `LPEVENT` | `m_pkSaveEvent` | 8 | G_EVENT_HANDLES |
+| 2373 | `LPEVENT` | `m_pkRecoveryEvent` | 8 | G_EVENT_HANDLES |
+| 2374 | `LPEVENT` | `m_pkTimedEvent` | 8 | G_EVENT_HANDLES |
+| 2375 | `LPEVENT` | `m_pkFishingEvent` | 8 | G_EVENT_HANDLES |
+| 2376 | `LPEVENT` | `m_pkAffectEvent` | 8 | G_EVENT_HANDLES |
+| 2377 | `LPEVENT` | `m_pkPoisonEvent` | 8 | G_EVENT_HANDLES |
+| 2383 | `LPEVENT` | `m_pkBleedingEvent` | 8 | G_EVENT_HANDLES |
+| 2385 | `LPEVENT` | `m_pkFireEvent` | 8 | G_EVENT_HANDLES |
+| 2386 | `LPEVENT` | `m_pkWarpNPCEvent` | 8 | G_EVENT_HANDLES |
+| 2391 | `LPEVENT` | `m_pkMiningEvent` | 8 | G_EVENT_HANDLES |
+| 2393 | `LPEVENT` | `m_pkWarpEvent` | 8 | G_EVENT_HANDLES |
+| 2394 | `LPEVENT` | `m_pkDestroyWhenIdleEvent` | 8 | G_EVENT_HANDLES |
+| 2395 | `LPEVENT` | `m_pkPetSystemUpdateEvent` | 8 | G_EVENT_HANDLES |
+| 2397 | `LPEVENT` | `m_pkNewPetSystemUpdateEvent` | 8 | G_EVENT_HANDLES |
+| 2398 | `LPEVENT` | `m_pkNewPetSystemExpireEvent` | 8 | G_EVENT_HANDLES |
+| 2402 | `bool` | `m_bHasPoisoned` | 1 | G_AFFECTS |
+| 2404 | `bool` | `m_bHasBled` | 1 | G_MISC |
+| 2407 | `const CMob*` | `m_pkMobData` | 8 | G_MISC |
+| 2408 | `CMobInstance*` | `m_pkMobInst` | 8 | G_MISC |
+| 2411 | `std::map<int, LPEVENT>` | `m_mapMobSkillEvent` | 48 | G_EVENT_HANDLES |
+| 2421 | `int` | `m_aiPremiumTimes[PREMIUM_MAX_NUM]` | 36 | G_MISC |
+| 2431 | `bool` | `m_isinPCBang` | 1 | G_MISC |
+| 2456 | `CArena*` | `m_pArena` | 8 | G_SESSION |
+| 2457 | `bool` | `m_ArenaObserver` | 1 | G_SESSION |
+| 2458 | `int` | `m_nPotionLimit` | 4 | G_MISC |
+| 2480 | `bool` | `m_isOpenSafebox` | 1 | G_SOCIAL |
+| 2488 | `int` | `m_iRefineTime` | 4 | G_MISC |
+| 2494 | `int` | `m_iSeedTime` | 4 | G_MISC |
+| 2500 | `int` | `m_iExchangeTime` | 4 | G_SOCIAL |
+| 2503 | `int` | `m_iMyShopTime` | 4 | G_SOCIAL |
+| 2523 | `int` | `m_deposit_pulse` | 4 | G_MISC |
+| 2547 | `AttackLog` | `m_kAttackLog` | 8 | G_MISC |
+| 2548 | `AttackedLog` | `m_AttackedLog` | 8 | G_MISC |
+| 2549 | `int` | `m_speed_hack_count` | 4 | G_VITALS |
+| 2558 | `std::string` | `m_strNewName` | 32 | G_IDENTITY |
+| 2568 | `std::set<uint32_t>` | `m_known_guild` | 48 | G_SOCIAL |
+| 2575 | `uint32_t` | `m_dwLogOffInterval` | 4 | G_MISC |
+| 2586 | `uint32_t` | `m_dwLastGoldDropTime` | 4 | G_MISC |
+| 2588 | `uint32_t` | `m_dwLastBoxUseTime` | 4 | G_POSITION |
+| 2589 | `uint32_t` | `m_dwLastBuySellTime` | 4 | G_POSITION |
+| 2609 | `TMapBuffOnAttrs` | `m_map_buff_on_attrs` | 8 | G_MISC |
+| 2618 | `bool` | `m_bIsPet` | 1 | G_VITALS |
+| 2626 | `bool` | `m_bIsMount` | 1 | G_MOUNT_STATE |
+| 2634 | `bool` | `m_bIsNewPet` | 1 | G_MISC |
+| 2635 | `int` | `m_eggvid` | 4 | G_MISC |
+| 2646 | `float` | `m_fAttMul` | 4 | G_MISC |
+| 2647 | `float` | `m_fDamMul` | 4 | G_MISC |
+| 2708 | `int` | `m_dwCmdAntiFloodPulse` | 4 | G_MISC |
+| 2709 | `uint32_t` | `m_dwCmdAntiFloodCount` | 4 | G_MISC |
+| 2720 | `timeval` | `m_tvLastSyncTime` | 8 | G_SESSION |
+| 2721 | `int` | `m_iSyncHackCount` | 4 | G_SESSION |
+| 2730 | `bool` | `m_bAcceCombination` | 1 | G_INVENTORY |
+| 2730 | `bool` | `m_bAcceAbsorption` | 1 | G_INVENTORY |
+| 2784 | `bool` | `m_bHideBodyCostume` | 1 | G_POSITION |
+| 2785 | `bool` | `m_bHideHairCostume` | 1 | G_MISC |
+| 2787 | `bool` | `m_bHideAcceCostume` | 1 | G_INVENTORY |
+| 2792 | `LPEVENT` | `m_pkBattlePassStayOnlineEvent` | 8 | G_EVENT_HANDLES |
+| 2797 | `bool` | `m_bHideWeaponCostume` | 1 | G_MISC |
+| 2882 | `bool` | `m_bIsLoadedBattlePass` | 1 | G_QUEST_STATE |
+| 2883 | `std::list<TPlayerBattlePassMission*>` | `m_listBattlePass` | 24 | G_QUEST_STATE |
+| 2889 | `uint32_t` | `m_dwBattlePassEndTime` | 4 | G_QUEST_STATE |
+| 2893 | `LPEVENT` | `m_pkStayOnlineEvent` | 8 | G_EVENT_HANDLES |
+| 2912 | `LPEVENT` | `m_pkFishingNewEvent` | 8 | G_EVENT_HANDLES |
+| 2927 | `uint8_t` | `m_bFishCatch` | 1 | G_MISC |
+| 2928 | `uint32_t` | `m_dwCatchFailed` | 4 | G_MISC |
+| 2929 | `int` | `m_dwLastCatch` | 4 | G_MISC |
+| 2936 | `int` | `m_iGoToXYTime` | 4 | G_POSITION |
+| 2944 | `int` | `m_iSavePointTime` | 4 | G_VITALS |
+| 2955 | `int` | `m_iSortInv1Time` | 4 | G_MISC |
+| 2956 | `int` | `m_iSortInv2Time` | 4 | G_MISC |
+| 2965 | `int` | `m_iLastBuyTime` | 4 | G_POSITION |
+| 2974 | `bool` | `m_deadByMonster` | 1 | G_COMBAT_RUNTIME |
+| 2985 | `int32_t` | `m_iLastUnlock` | 4 | G_MISC |
+| 2985 | `int32_t` | `m_iLastDSRefine` | 4 | G_MISC |
+| 3014 | `int32_t` | `m_firstReward` | 4 | G_MISC |
+| 3014 | `int32_t` | `m_rewardCount` | 4 | G_MISC |
+| 3014 | `int32_t` | `m_checkRepeated` | 4 | G_MISC |
+| 3014 | `int32_t` | `m_dropitemcount` | 4 | G_INVENTORY |
+| 3014 | `int32_t` | `m_lastdropitem` | 4 | G_INVENTORY |
+| 3017 | `LPEVENT` | `m_pkDropEvent` | 8 | G_EVENT_HANDLES |
+| 3022 | `int` | `m_dwItemUseAntiFloodPulse` | 4 | G_INVENTORY |
+| 3023 | `uint32_t` | `m_dwItemUseAntiFloodCount` | 4 | G_INVENTORY |
