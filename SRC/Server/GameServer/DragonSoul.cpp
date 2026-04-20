@@ -335,7 +335,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 	if (pItem->IsEquipped())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 623, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 623, "");
 #endif
 		return false;
 	}
@@ -383,7 +383,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		}
 		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_FAIL", "");
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 624, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 624, "");
 #endif
 		return false;
 	}
@@ -411,7 +411,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		s += "%s";
 		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_SUCCESS", s.c_str());
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 624, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 624, "");
 #endif
 		return true;
 	}
@@ -433,7 +433,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		if (iEmptyCell < 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 626, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 626, "");
 #endif
 			return false;
 		}
@@ -493,7 +493,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 			
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
 #endif
 			pItem->AddToCharacter(ch, DestCell);
 			return true;
@@ -517,15 +517,15 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 				LPITEM pByProduct = ch->AutoGiveItem(dwByProduct);
 #ifdef TEXTS_IMPROVEMENT
 				if (pByProduct) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
 				} else {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 536, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 536, "");
 				}
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 537, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 537, "");
 			}
 #endif
 		}
@@ -562,7 +562,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 			if (!pItem->IsDragonSoul())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 628, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 				return false;
@@ -597,7 +597,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		if (!m_pTable->GetRefineGradeValues(ds_type, grade_idx, need_count, fee, vec_probs))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 627, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 
@@ -618,7 +618,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		if (ds_type != GetType(pItem->GetVnum()) || grade_idx != GetGradeIdx(pItem->GetVnum()))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 
@@ -638,7 +638,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	if (ch->GetGold() < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -685,7 +685,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
 		LogManager::instance().ItemLog(ch, pResultItem, "DS_GRADE_REFINE_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 629, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 629, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
 		return true;
@@ -696,7 +696,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
 		LogManager::instance().ItemLog(ch, pResultItem, "DS_GRADE_REFINE_FAIL", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 630, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 630, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
 		return false;
@@ -728,7 +728,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 			if (!pItem->IsDragonSoul())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 628, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 				return false;
@@ -761,7 +761,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		if (!m_pTable->GetRefineStepValues(ds_type, step_idx, need_count, fee, vec_probs))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 627, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 			return false;
@@ -780,7 +780,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		if (ds_type != GetType(pItem->GetVnum()) || grade_idx != GetGradeIdx(pItem->GetVnum()) || step_idx != GetStepIdx(pItem->GetVnum()))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 			return false;
@@ -799,7 +799,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	if (ch->GetGold() < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -846,7 +846,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
 		LogManager::instance().ItemLog(ch, pResultItem, "DS_STEP_REFINE_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 629, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 629, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
 		return true;
@@ -857,7 +857,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
 		LogManager::instance().ItemLog(ch, pResultItem, "DS_STEP_REFINE_FAIL", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 630, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 630, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
 		return false;
@@ -939,7 +939,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
 			return false;
@@ -964,7 +964,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		if (!m_pTable->GetWeight(bType, bGrade, bStep, bStrength + 1, fWeight))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 627, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
 			return false;
@@ -973,7 +973,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		if (fWeight < FLT_EPSILON)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 627, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
 			return false;
@@ -984,7 +984,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	if (!m_pTable->GetRefineStrengthValues(bType, pRefineStone->GetSubType(), bStrength, fee, fProb))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
 
@@ -994,7 +994,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	if (ch->GetGold() < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -1024,7 +1024,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		sprintf(buf, "STRENGTH : %d -> %d", bStrength, bStrength + 1);
 		LogManager::instance().ItemLog(ch, pDragonSoul, "DS_STRENGTH_REFINE_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 629, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 629, "");
 #endif
 		ch->AutoGiveItem(pResult, true);
 		bSubHeader = DS_SUB_HEADER_REFINE_SUCCEED;
@@ -1049,7 +1049,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		// strength강화는 실패시 깨질 수도 있어, 원본 아이템을 바탕으로 로그를 남김.
 		LogManager::instance().ItemLog(ch, pDragonSoul, "DS_STRENGTH_REFINE_FAIL", buf);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 630, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 630, "");
 #endif
 		pDragonSoul->SetCount(pDragonSoul->GetCount() - 1);
 		pRefineStone->SetCount(pRefineStone->GetCount() - 1);
@@ -1082,7 +1082,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 		int32_t time = ch->GetLastDSREfine() - get_global_time();
 		if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 234, "%d", time);
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", time);
 #endif
 			return;
 		}
@@ -1165,7 +1165,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						if (ch->GetGold() < fee) {
 #ifdef TEXTS_IMPROVEMENT
-							ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+							ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 							endnow = true;
 							break;
@@ -1277,7 +1277,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						if (ch->GetGold() < fee) {
 #ifdef TEXTS_IMPROVEMENT
-							ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+							ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 							endnow = true;
 							break;
@@ -1473,3 +1473,4 @@ DSManager::~DSManager()
 	if (m_pTable)
 		delete m_pTable;
 }
+
