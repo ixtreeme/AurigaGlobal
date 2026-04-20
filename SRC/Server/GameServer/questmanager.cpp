@@ -743,7 +743,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return;
@@ -770,7 +770,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return;
@@ -796,7 +796,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return false;
@@ -825,7 +825,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return false;
@@ -870,7 +870,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return false;
@@ -925,7 +925,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pc);
 				if (ch) {
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 				}
 #endif
 				return false;
@@ -1357,7 +1357,7 @@ namespace quest
 			const std::string& flagname = it->first;
 			int value = it->second;
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 757, "%s#%d", flagname.c_str(), value);
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 757, "%s#%d", flagname.c_str(), value);
 #endif
 		}
 	}
@@ -1439,7 +1439,7 @@ namespace quest
 				if (!ch)
 					continue;
 
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "newyear_boom %d", value);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %d", value);
 			}
 		}
 		else if ( name == "eclipse" )
@@ -1463,7 +1463,7 @@ namespace quest
 				if (!ch)
 					continue;
 
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
 			}
 		}
 		else if (name == "day")
@@ -1478,12 +1478,12 @@ namespace quest
 				if (value)
 				{
 					// ¹ã
-					ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode dark");
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode dark");
 				}
 				else
 				{
 					// ³·
-					ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode light");
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode light");
 				}
 			}
 		}
@@ -1601,27 +1601,27 @@ namespace quest
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_snow")))
 		{
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_boom")))
 		{
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_tree")))
 		{
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("day")))
 		{
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode dark");
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("newyear_boom")))
 		{
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
 		}
 
 		if ( (iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("eclipse")) )
@@ -1631,7 +1631,7 @@ namespace quest
 			if ( iEventFlagValue == 1 ) mode = "dark";
 			else mode = "light";
 
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
 		}
 	}
 
@@ -1783,8 +1783,8 @@ namespace quest
 			LPCHARACTER ch = GetCurrentCharacterPtr();
 			if (ch)
 			{
-				ch->ChatPacket(CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ch->ChatPacket(CHAT_TYPE_PARTY, "%s", szMsg);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "%s", szMsg);
 			}
 		}
 	}
@@ -1804,8 +1804,8 @@ namespace quest
 			LPCHARACTER ch = GetCurrentCharacterPtr();
 			if (ch)
 			{
-				ch->ChatPacket(CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ch->ChatPacket(CHAT_TYPE_PARTY, "%s", szMsg);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "%s", szMsg);
 			}
 		}
 	}
@@ -1954,4 +1954,6 @@ namespace quest
 		return m_pOtherPCBlockRootPC;
 	}
 }
+
+
 
