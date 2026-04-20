@@ -18,6 +18,7 @@
 #include "questmanager.h"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/events.hpp"
+#include "ecs/CharacterAccessors.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
 : pid(ch->GetPlayerID()), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ch->GetName())
@@ -184,7 +185,7 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 
 	SendListOneToAll(p->dwPID);
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(p->dwPID);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(p->dwPID);
 
 	sys_log(0, "GUILD: AddMember PID %u, grade %u, job %u, level %u, offer %u, name %s ptr %p",
 			p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, get_pointer(ch));
@@ -238,7 +239,7 @@ bool CGuild::RemoveMember(uint32_t pid)
 
 	CGuildManager::instance().Unlink(pid);
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pid);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(pid);
 
 	if (ch)
 	{
@@ -1029,7 +1030,7 @@ void CGuild::Disband()
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPCHARACTER ch = *it;
+		auto* ch = *it;
 		ch->SetGuild(nullptr);
 		SendOnlineRemoveOnePacket(ch->GetPlayerID());
 		// @fixme401
@@ -1102,7 +1103,7 @@ void CGuild::RefreshComment(LPCHARACTER ch)
 
 void CGuild::RefreshCommentForce(uint32_t player_id)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(player_id);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(player_id);
 	if (ch == nullptr) {
 		return;
 	}
@@ -1292,7 +1293,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 
 void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 {
-	LPCHARACTER victim = nullptr;
+	auto* victim = static_cast<LPCHARACTER>(nullptr);
 
 	if (!GetMember(ch->GetPlayerID()) || !HasGradeAuth(GetMember(ch->GetPlayerID())->grade, GUILD_AUTH_USE_SKILL))
 		return;
@@ -1434,7 +1435,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 				for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
-					LPCHARACTER victim = *it;
+					auto* victim = *it;
 					victim->RemoveAffect(dwVnum);
 					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
 				}
@@ -2138,7 +2139,7 @@ void CGuild::RecvMoneyChange(int iGold)
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPCHARACTER ch = *it;
+		auto* ch = *it;
 		LPDESC d = ch->GetDesc();
 		d->BufferedPacket(&p, sizeof(p));
 		d->Packet(&iGold, sizeof(int));
@@ -2147,7 +2148,7 @@ void CGuild::RecvMoneyChange(int iGold)
 
 void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 {
-	LPCHARACTER ch = GetMasterCharacter();
+	auto* ch = GetMasterCharacter();
 
 	if (ch)
 	{
@@ -2613,7 +2614,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
  
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPCHARACTER ch = *it;
+		auto* ch = *it;
 		if (!ch)
 			continue;
 
@@ -2626,7 +2627,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	{
 		for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 		{
-			LPCHARACTER ch = *it;
+			auto* ch = *it;
 			if (ch)
 				ch->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
@@ -2682,7 +2683,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPCHARACTER ch = *it;
+		auto* ch = *it;
 		if (!ch)
 			continue;
 
@@ -2694,7 +2695,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 	{
 		for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 		{
-			LPCHARACTER ch = *it;
+			auto* ch = *it;
 			if (ch)
 				ch->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
@@ -2702,3 +2703,4 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 }
 
 #endif
+
