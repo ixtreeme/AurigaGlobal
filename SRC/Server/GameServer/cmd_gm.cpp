@@ -33,6 +33,7 @@
 #include "unique_item.h"
 #include "DragonSoul.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"
@@ -465,7 +466,7 @@ ACMD(do_goto)
 			empire = MINMAX(1, empire, 3);
 		}
 		else
-			empire = ch->GetEmpire();
+			empire = ecs::GetEmpire(ch);
 
 		if (CHARACTER_GoToName(ch, empire, mapIndex, arg1))
 		{
@@ -534,10 +535,10 @@ ACMD(do_warp)
 		}
 		else
 		{
-			x = tch->GetX() / 100;
-			y = tch->GetY() / 100;
+			x = ecs::GetX(tch) / 100;
+			y = ecs::GetY(tch) / 100;
 #ifdef __CMD_WARP_IN_DUNGEON__
-			mapIndex = tch->GetMapIndex();
+			mapIndex = ecs::GetMapIndex(tch);
 #endif
 		}
 	}
@@ -781,7 +782,7 @@ ACMD(do_mob_map)
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::GetMapIndex(ch));
 
 	if (tch)
-		ch->ChatPacket(CHAT_TYPE_INFO, "%s spawned in %dx%d", tch->GetName(), tch->GetX(), tch->GetY());
+		ch->ChatPacket(CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::GetName(tch), ecs::GetX(tch), ecs::GetY(tch));
 	else
 		ch->ChatPacket(CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -984,17 +985,17 @@ struct FuncPurge
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
 
-		int iDist = DISTANCE_APPROX(pkChr->GetX() - m_pkGM->GetX(), pkChr->GetY() - m_pkGM->GetY());
+		int iDist = DISTANCE_APPROX(ecs::GetX(pkChr) - ecs::GetX(m_pkGM), ecs::GetY(pkChr) - ecs::GetY(m_pkGM));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		sys_log(0, "PURGE: %s %d", pkChr->GetName(), iDist);
+		sys_log(0, "PURGE: %s %d", ecs::GetName(pkChr), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (pkChr->IsNPC() && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
+		if (ecs::IsNPC(pkChr) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
 #else
-		if (pkChr->IsNPC() && !pkChr->IsPet() && pkChr->GetRider() == NULL
+		if (ecs::IsNPC(pkChr) && !pkChr->IsPet() && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -1197,7 +1198,7 @@ ACMD(do_state)
 
 	char buf[256];
 
-	snprintf(buf, sizeof(buf), "%s's State: ", tch->GetName());
+	snprintf(buf, sizeof(buf), "%s's State: ", ecs::GetName(tch));
 
 	if (tch->IsPosition(POS_FIGHTING))
 		strlcat(buf, "Battle", sizeof(buf));
@@ -1216,23 +1217,23 @@ ACMD(do_state)
 
 	int len;
 	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
-			tch->GetX(), tch->GetY(), tch->GetX() / 100, tch->GetY() / 100);
+			ecs::GetX(tch), ecs::GetY(tch), ecs::GetX(tch) / 100, ecs::GetY(tch) / 100);
 
 	if (len < 0 || len >= (int) sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(tch->GetMapIndex(), tch->GetX(), tch->GetY());
+	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::GetMapIndex(tch), ecs::GetX(tch), ecs::GetY(tch));
 
 	if (pSec)
 	{
-		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(tch->GetMapIndex())->m_setting;
+		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(tch))->m_setting;
 		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
-			tch->GetMapIndex(), pSec->GetAttribute(tch->GetX(), tch->GetY()), (tch->GetX() - map_setting.iBaseX)/100, (tch->GetY() - map_setting.iBaseY)/100);
+			ecs::GetMapIndex(tch), pSec->GetAttribute(ecs::GetX(tch), ecs::GetY(tch)), (ecs::GetX(tch) - map_setting.iBaseX)/100, (ecs::GetY(tch) - map_setting.iBaseY)/100);
 	}
 
 	ch->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
 
-	ch->ChatPacket(CHAT_TYPE_INFO, "LEV %d", tch->GetLevel());
+	ch->ChatPacket(CHAT_TYPE_INFO, "LEV %d", ecs::GetLevel(tch));
 	ch->ChatPacket(CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), tch->GetMaxHP());
 	ch->ChatPacket(CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), tch->GetMaxSP());
 	ch->ChatPacket(CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
@@ -1395,13 +1396,13 @@ ACMD(do_state)
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
 		if (CPrivManager::instance().GetPriv(tch, i))
 		{
-			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(tch->GetEmpire(), i);
+			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(ecs::GetEmpire(tch), i);
 			int iByGuild = 0;
 
 			if (tch->GetGuild())
 				iByGuild = CPrivManager::instance().GetPrivByGuild(tch->GetGuild()->GetID(), i);
 
-			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(tch->GetPlayerID(), i);
+			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(ecs::GetPlayerID(tch), i);
 
 #ifdef TEXTS_IMPROVEMENT
 			if (iByEmpire) {
@@ -3102,7 +3103,7 @@ ACMD(do_socket_item)
 ACMD(do_block_chat_list)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || (ch->GetGMLevel() < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
+	if (!ch || (ecs::GetGMLevel(ch) < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ch->ChatPacketNew(CHAT_TYPE_INFO, 266, "");
@@ -3242,7 +3243,7 @@ ACMD(do_build)
 
 	char arg1[256], arg2[256], arg3[256], arg4[256];
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
-	uint8_t GMLevel = ch->GetGMLevel();
+	uint8_t GMLevel = ecs::GetGMLevel(ch);
 
 	CLand * pkLand = CManager::instance().FindLand(ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch));
 
@@ -3582,7 +3583,7 @@ ACMD(do_horse_level)
 	str_to_number(level, arg2);
 	level = MINMAX(0, level, HORSE_MAX_LEVEL);
 
-	ch->ChatPacket(CHAT_TYPE_INFO, "horse level set (%s: %d)", victim->GetName(), level);
+	ch->ChatPacket(CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::GetName(victim), level);
 
 	victim->SetHorseLevel(level);
 	victim->ComputePoints();
@@ -4000,7 +4001,7 @@ struct FCountInMap
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
 			if (ch && ecs::IsPC(ch))
-				++m_Count[ch->GetEmpire()];
+				++m_Count[ecs::GetEmpire(ch)];
 		}
 	}
 	int GetCount(uint8_t bEmpire) { return m_Count[bEmpire]; }
