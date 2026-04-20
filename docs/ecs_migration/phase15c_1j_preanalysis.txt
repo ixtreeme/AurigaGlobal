@@ -1,0 +1,165 @@
+Phase 15C-1j pre-analysis - EXP/damage semantic audit
+Date: 2026-04-20
+Mode: audit only
+
+Summary
+- The first `15C-1j` retry should not start from "mirror every direct `m_pointsInstant.points[]` access", because the current tree has almost no direct bypasses left.
+- The real risk is semantic: `POINT_EXP`, `POINT_GOLD`, `POINT_HP`, `POINT_SP`, `POINT_STAMINA`, `POINT_LEVEL` are not plain runtime array fields in live gameplay. They already have dedicated authorities (`m_points.exp`, `m_points.gold`, health/mana/stamina components, level getters).
+- The rolled-back regression is therefore much more consistent with a helper-semantics break than with a missed direct-array mirror.
+
+Step 1 - Direct `m_pointsInstant.points[]` access (outside grep scope there are only 3 survivors)
+
+1. [SRC/Server/GameServer/ecs/systems/PointSystem.cpp:162](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PointSystem.cpp:162)
+   Code: `int64_t val = m_pointsInstant.points[type];`
+   Context: `CHARACTER::GetPoint(uint8_t type) const`
+   Classification: Read
+   Determinable POINT index: dynamic (`type`)
+   Category: B/C helper boundary, not a bypass call site
+   Note: this is the central helper body itself, not an external direct read.
+
+2. [SRC/Server/GameServer/ecs/systems/PointSystem.cpp:190](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PointSystem.cpp:190)
+   Code: `int val = m_pointsInstant.points[type];`
+   Context: `CHARACTER::GetLimitPoint(uint8_t type) const`
+   Classification: Read
+   Determinable POINT index: dynamic (`type`)
+   Category: B helper boundary
+   Note: this helper still reads the instant array directly instead of routing through `GetPoint()`.
+
+3. [SRC/Server/GameServer/ecs/systems/PointSystem.cpp:245](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PointSystem.cpp:245)
+   Code: `m_pointsInstant.points[type] = val;`
+   Context: `CHARACTER::SetPoint(uint8_t type, int64_t val)`
+   Classification: Write
+   Determinable POINT index: dynamic (`type`)
+   Category: B helper boundary
+   Note: this is the central setter body itself, not a distributed external write site.
+
+Conclusion from Step 1
+- Current direct array access count in the GameServer tree: 3
+- All 3 are inside `PointSystem.cpp` helper internals.
+- No broad set of random combat/reward files bypasses `GetPoint()/SetPoint()/PointChange()` directly anymore.
+
+Step 2 - POINT_EXP chain
+
+Authoritative EXP chain
+1. Mob death / combat reward enters `CombatSystem.cpp`
+   - `GiveExp(...)` computes the reward
+   - final write is `to->PointChange(POINT_EXP, iExp, true);`
+2. `PointChange(POINT_EXP, ...)` is handled in `PointSystem.cpp`
+   - reads current EXP via `GetExp()`
+   - reads next-level threshold via `GetNextExp()`
+   - mutates EXP via `SetExp(...)`
+3. `GetExp()/SetExp()` are simple wrappers over `m_points.exp` in [char.h](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/char.h:862)
+4. `PointsPacket()` in `NetworkSyncSystem.cpp` serializes:
+   - `pack.points[POINT_EXP] = GetExp();`
+   - `pack.points[POINT_NEXT_EXP] = GetNextExp();`
+
+Key finding
+- Runtime EXP authority is NOT `m_pointsInstant.points[POINT_EXP]`.
+- Runtime EXP authority IS `m_points.exp`, reached through `GetExp()/SetExp()` and `PointChange(POINT_EXP, ...)`.
+- Therefore any `15C-1j` attempt that turned `GetPoint(POINT_EXP)` into a generic ECS-array lookup (or worse, mapped it directly to current EXP) risks breaking callers that conceptually expect a stat-array field, not the live EXP progression counter.
+
+Important POINT_EXP references
+- [CombatSystem.cpp:1259](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1259)
+- [CombatSystem.cpp:1411](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:1411)
+- [PointSystem.cpp:376-471 area](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/PointSystem.cpp:376)
+- [NetworkSyncSystem.cpp:737-738](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp:737)
+- [SessionSystem.cpp:213](E:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SessionSystem.cpp:213)
+
+Step 3 - Combat-critical direct point access bypass audit
+
+Searched direct `m_pointsInstant.points[...]` access for:
+- `POINT_ATT_GRADE`
+- `POINT_DEF_GRADE`
+- `POINT_ATT_SPEED`
+- `POINT_MOV_SPEED`
+- `POINT_LEVEL`
+- `POINT_GOLD`
+- `POINT_HP`
+- `POINT_MAX_HP`
+
+Result
+- No direct `m_pointsInstant.points[POINT_*]` external access sites were found for these combat-critical values.
+- This strongly suggests the rollback was not caused by unmirrored distributed direct array reads/writes for combat stats.
+
+Step 4 - Categorization of current direct access sites
+
+CATEGORY_A - must stay direct
+- None found for `m_pointsInstant.points[]` in the current tree.
+- There is no `memcpy`, DB bulk-load, or packet bulk-serialization surface directly tied to `m_pointsInstant.points[]`.
+
+CATEGORY_B - should be routed through helpers or treated specially
+- `PointSystem.cpp:162` `GetPoint()`
+- `PointSystem.cpp:190` `GetLimitPoint()`
+- `PointSystem.cpp:245` `SetPoint()`
+
+Why these are CATEGORY_B
+- They are helper boundaries that define point semantics for the whole game.
+- A naive ECS-array retry would move these 3 lines, but that is not sufficient unless the helper semantics for virtual/live points are preserved exactly.
+
+CATEGORY_C - performance optimizations
+- None observed in the current tree for `m_pointsInstant.points[]`.
+- There is no evidence that external systems are bypassing helpers for speed here.
+
+Step 5 - Root-cause assessment
+
+Most likely regression source
+- The failed `15C-1j` attempt likely broke semantic layering, not mechanical mirroring.
+- In this codebase, `POINT_*` indices fall into at least three classes:
+  1. true instant stat-array values
+  2. persistent/base values (`m_points.points[...]`)
+  3. live virtual values with dedicated authority:
+     - `POINT_EXP` -> `m_points.exp`
+     - `POINT_GOLD` -> `m_points.gold`
+     - `POINT_HP` / `POINT_MAX_HP` -> health authority
+     - `POINT_SP` / `POINT_MAX_SP` -> mana authority
+     - `POINT_STAMINA` / `POINT_MAX_STAMINA` -> stamina authority
+     - `POINT_LEVEL` -> level getter / base data
+- A flat ECS migration that treated all `POINT_*` indices as equivalent array-backed values was therefore semantically unsafe.
+
+Why the metin damage symptom also fits
+- Stone damage / break timing depends on multiple live values flowing through `GetPoint()`, `ComputePoints()`, `PointChange()`, and packet sync.
+- If helper semantics changed for even a handful of virtual/live points, damage, EXP, and packet-visible state could all desynchronize without any compile error.
+
+Pre-retry fix proposal
+
+Required before any new `15C-1j` retry
+1. Keep `CharacterStatsComponent` strictly limited to true stat-array values.
+2. Do NOT migrate the following through the generic stats array:
+   - `POINT_EXP`
+   - `POINT_NEXT_EXP`
+   - `POINT_GOLD`
+   - `POINT_LEVEL`
+   - `POINT_HP`
+   - `POINT_MAX_HP`
+   - `POINT_SP`
+   - `POINT_MAX_SP`
+   - `POINT_STAMINA`
+   - `POINT_MAX_STAMINA`
+3. In `GetPoint()` preserve explicit semantic routing for those indices before any generic array lookup.
+4. In `SetPoint()` either:
+   - reject virtual/live indices from generic array writes, or
+   - route them to their real authority (`SetExp`, gold setter, health/mana/stamina setter, etc.).
+5. `GetLimitPoint()` must stop reading raw `m_pointsInstant.points[type]` directly and instead operate on the same semantic view that `GetPoint()` exposes.
+6. `PointsPacket()` should continue to source live values from dedicated getters, not from a generic stats array.
+
+New mirror locations needed if retry happens
+- Not many distributed call sites.
+- The critical mirror/cutover boundaries are the helper bodies themselves:
+  - `GetPoint()`
+  - `SetPoint()`
+  - `GetLimitPoint()`
+  - `ComputePoints()`
+- If an ECS retry is attempted, the migration must be helper-semantic first, not grep/mirror first.
+
+Retry safety recommendation
+- Retrying `15C-1j` immediately as a flat `points[]` move is NOT safe.
+- Safe retry requires one pre-work step:
+  - split the `POINT_*` universe into:
+    - generic stat-array points
+    - virtual/live/dedicated-authority points
+- After that split, a retry becomes feasible with a narrower component that excludes EXP/gold/vitals/level semantics.
+
+Recommended next move
+- Do not retry full `POINT_MAX_NUM` migration yet.
+- First implement a semantic allowlist for array-backed points only.
+- Then retry only that reduced subset under drift logging.
