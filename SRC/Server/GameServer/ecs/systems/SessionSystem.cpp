@@ -744,7 +744,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
             else
             {
 #ifdef TEXTS_IMPROVEMENT
-                ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 372, "");
 #endif
                 return false;
             }
@@ -752,7 +752,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         else
         {
 #ifdef TEXTS_IMPROVEMENT
-            ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 372, "");
 #endif
             return false;
         }
@@ -764,7 +764,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         if (!pcci)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ChatPacketNew(CHAT_TYPE_INFO, 371, "");
+            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 371, "");
 #endif
             return false;
         }
@@ -772,14 +772,14 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         if (pcci->bChannel != g_bChannel)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ChatPacketNew(CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
+            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
 #endif
             return false;
         }
         else if (false == IS_SUMMONABLE_ZONE(pcci->lMapIndex))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 372, "");
 #endif
             return false;
         }
@@ -788,7 +788,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
             if (!CAN_ENTER_ZONE(this, pcci->lMapIndex))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ChatPacketNew(CHAT_TYPE_INFO, 372, "");
+                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 372, "");
 #endif
                 return false;
             }
@@ -800,7 +800,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
             pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
 
             if (test_server)
-                ChatPacket(CHAT_TYPE_PARTY, "sent find position packet for teleport");
+                ecs::ChatSystem::Send(this, CHAT_TYPE_PARTY, "sent find position packet for teleport");
         }
     }
     return true;
@@ -1111,14 +1111,14 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     if (!*pszPassword || strlen(pszPassword) > SAFEBOX_PASSWORD_MAX_LEN)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 188, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 188, "");
 #endif
         return;
     }
     else if (m_pkSafebox)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 189, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 189, "");
 #endif
         return;
     }
@@ -1128,7 +1128,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(10))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 190, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 190, "");
 #endif
         return;
     }
@@ -1136,7 +1136,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     else if (GetDistanceFromSafeboxOpen() > 1000)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 185, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 185, "");
 #endif
         return;
     }
@@ -1247,7 +1247,7 @@ void CHARACTER::CloseSafebox()
     M2_DELETE(m_pkSafebox);
     m_pkSafebox = nullptr;
 
-    ChatPacket(CHAT_TYPE_COMMAND, "CloseSafebox");
+    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "CloseSafebox");
 
     SetSafeboxLoadTime();
     m_bOpeningSafebox = false;
@@ -1317,7 +1317,7 @@ void CHARACTER::CloseMall()
     M2_DELETE(m_pkMall);
     m_pkMall = nullptr;
 
-    ChatPacket(CHAT_TYPE_COMMAND, "CloseMall");
+    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "CloseMall");
 }
 
 void CHARACTER::QuerySafeboxSize()
@@ -1344,3 +1344,4 @@ int CHARACTER::GetSafeboxSize() const
 {
     return m_iSafeboxSize;
 }
+

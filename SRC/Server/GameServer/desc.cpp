@@ -881,7 +881,7 @@ void DESC::DisconnectOfSameLogin()
 			return;
 
 #ifdef TEXTS_IMPROVEMENT
-		GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 295, "");
+		ecs::ChatSystem::SendNew(GetCharacter(), CHAT_TYPE_INFO, 295, "");
 #endif
 		DelayedDisconnect(3);
 	}
@@ -1121,5 +1121,6 @@ void DESC::ChatPacketNew(uint8_t type, uint32_t idx, const char * format, ...) {
 	Packet(buf.read_peek(), buf.size());
 }
 #endif
+
 
 

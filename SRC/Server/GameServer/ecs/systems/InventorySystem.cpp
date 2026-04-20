@@ -450,7 +450,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 			LPITEM pkItem = ch->GetWear(iFindCell);
 			if (pkItem) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 35, "%s", GetName());
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 35, "%s", GetName());
 #endif
 				M2_DESTROY_ITEM(this);
 				return false;
@@ -1717,3 +1717,4 @@ void CItem::ModifyPoints(bool bAdd)
 	break;
 	}
 }
+

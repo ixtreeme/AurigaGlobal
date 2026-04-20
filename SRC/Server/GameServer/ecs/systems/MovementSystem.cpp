@@ -696,9 +696,9 @@ void CHARACTER::StartStaminaConsume()
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = true;
     if (IsStaminaHalfConsume())
-        ChatPacket(CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
+        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
     else
-        ChatPacket(CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
+        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
 }
 
 void CHARACTER::StopStaminaConsume()
@@ -707,7 +707,7 @@ void CHARACTER::StopStaminaConsume()
         return;
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = false;
-    ChatPacket(CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
+    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
 }
 
 bool CHARACTER::IsStaminaConsume() const
@@ -951,3 +951,4 @@ void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_
 	pack.lY = y;
 	pack.dwDuration = dwDuration;
 }
+

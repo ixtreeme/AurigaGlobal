@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "constants.h"
 
 #include "config.h"
@@ -98,16 +98,16 @@ static void _send_bonus_info(LPCHARACTER ch)
 	exp_bonus = CPrivManager::instance().GetPriv(ch, PRIV_EXP_PCT);
 #ifdef TEXTS_IMPROVEMENT
 	if (item_drop_bonus) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
 	}
 	if (gold_drop_bonus) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
 	}
 	if (gold10_drop_bonus) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
 	}
 	if (exp_bonus) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
 	}
 #endif
 }
@@ -116,10 +116,10 @@ static bool FN_is_battle_zone(LPCHARACTER ch)
 {
 	switch (ch->GetMapIndex())
 	{
-	case 1:         // ż 1 
-	case 2:         // ż 2 
-	case 21:        // õ 1 
-	case 23:        // õ 2 
+	case 1:         // � 1 
+	case 2:         // � 2 
+	case 21:        // o 1 
+	case 23:        // o 2 
 	case 41:        //  1 
 	case 43:        //  2 
 	case 113:       // OX 
@@ -415,7 +415,7 @@ bool RaceToJob(unsigned race, unsigned* ret_job)
 	return true;
 }
 
-// ű ĳ 
+// � ? 
 bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_t shape, uint8_t bEmpire)
 {
 	if (race >= MAIN_RACE_MAX_NUM)
@@ -439,7 +439,7 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 	strlcpy(table->name, name, sizeof(table->name));
 
 	table->level = 1;
-	table->job = race; //   ִ´
+	table->job = race; //   ?�
 	table->voice = 0;
 	table->part_base = shape;
 
@@ -506,7 +506,7 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 	}
 #endif
 
-	//    ̸̰ų, ߸ ̸  
+	//    ??u, ? ?  
 	if (!check_name(pinfo->name) || pinfo->shape > 1)
 	{
 		d->Packet(&packFailure, sizeof(packFailure));
@@ -619,7 +619,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	CGuildManager::instance().LoginMember(ch);
 
-	// ĳ͸ ʿ ߰
+	// ?? ? ?
 	ch->Show(ch->GetMapIndex(), pos.x, pos.y, pos.z);
 	ch->ReviveInvisible(5);
 	d->SetPhase(PHASE_GAME);
@@ -668,8 +668,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 
-	if (ch->GetItemAward_cmd())																		// 
-		quest::CQuestManager::instance().ItemInformer(ch->GetPlayerID(), ch->GetItemAward_vnum());	//questmanager ȣ
+	if (ch->GetItemAward_cmd())																		// ?
+		quest::CQuestManager::instance().ItemInformer(ch->GetPlayerID(), ch->GetItemAward_vnum());	//questmanager ?
 
 	sys_log(0, "ENTERGAME: %s %dx%dx%d %s map_index %d",
 		ch->GetName(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
@@ -679,10 +679,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		ch->EnterHorse();
 	}
 
-	// ÷̽ð ڵ 
+	// �?? ? 
 	ch->ResetPlayTime();
 
-	// ڵ  ̺Ʈ ߰
+	// ?  ?T ?
 	ch->StartSaveEvent();
 	ch->StartRecoveryEvent();
 
@@ -756,7 +756,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 
 	if (ch->IsGM() == true)
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "ConsoleEnable");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ConsoleEnable");
 
 	if (ch->GetMapIndex() >= 10000)
 	{
@@ -841,10 +841,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			ch->RemoveAffect(AFFECT_MOUNT_BONUS);
 		}
 #endif
-		// ox ̺Ʈ 
+		// ox ?T 
 		if (COXEventManager::instance().Enter(ch) == false)
 		{
-			// ox   㰡  . ÷̾  
+			// ox   ?  . �?  
 			if (ch->GetGMLevel() == GM_PLAYER)
 				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
 		}
@@ -874,8 +874,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef TEXTS_IMPROVEMENT
 	if (g_noticeBattleZone) {
 		if (FN_is_battle_zone(ch)) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 637, "");
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 638, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 637, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 638, "");
 		}
 	}
 #endif
@@ -904,7 +904,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef __ENABLE_BLOCK_EXP__
 	int expret = ch->GetQuestFlag("exp.stat");
 	ch->Block_Exp = expret == 1 ? true : false;
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "manage_exp_status %d", ch->GetQuestFlag("exp.stat"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ch->GetQuestFlag("exp.stat"));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -916,10 +916,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_RUNE_SYSTEM
 	ch->SetPart(PART_RUNE, ch->GetRuneEffect());
 	ch->UpdatePacket();
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "rune_affect %d", ch->GetQuestFlag("rune.hide_effect"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", ch->GetQuestFlag("rune.hide_effect"));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "equipview %d", ch->GetQuestFlag(BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %d", ch->GetQuestFlag(BLOCK_EQUIPMENT_));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ch->GetWarMap()) {
@@ -945,7 +945,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	{
 		int biologisttime = ch->GetQuestFlag("biologist.time");
 		biologisttime = biologisttime > 0 ? biologisttime : 1;
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
 	}
 #endif
 
@@ -966,7 +966,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ch->PointChange(POINT_EXTRA_INVENTORY4, ch->GetQuestFlag("lock_extra.cat4"));
 	ch->PointChange(POINT_EXTRA_INVENTORY5, ch->GetQuestFlag("lock_extra.cat5"));
 	ch->PointChange(POINT_EXTRA_INVENTORY6, ch->GetQuestFlag("lock_extra.cat6"));
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "RefreshExpandInventory");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT
 	ch->ClearCheatChecks();
@@ -1316,4 +1316,5 @@ int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
 
 	return (iExtraLen);
 }
+
 

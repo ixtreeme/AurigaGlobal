@@ -11,7 +11,7 @@ ACMD(do_blockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: blockhwid <name>");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Usage: blockhwid <name>");
 		return;
 	}
 
@@ -30,7 +30,7 @@ ACMD(do_unblockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
 		return;
 	}
 
@@ -43,4 +43,5 @@ ACMD(do_unblockhwid)
 	CHwidManager::Instance().SendUnblockHwid(ecs::GetName(ch), targetname);
 }
 #endif
+
 

@@ -89,20 +89,20 @@ EVENTFUNC(pvp_check_disconnect)
 		{
 			chB->PointChange(POINT_GOLD, betMoney, true);
 #ifdef TEXTS_IMPROVEMENT
-			chB->ChatPacketNew(CHAT_TYPE_INFO, 514, "");
+			ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 514, "");
 #endif
 		}
 		
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		chB->ChatPacket(CHAT_TYPE_COMMAND, buf);	
+		ecs::ChatSystem::Send(chB, CHAT_TYPE_COMMAND, buf);	
 		
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
 			chB->SetQuestFlag(szTableStaticPvP[i], 0);	
 		}
 		
 #ifdef TEXTS_IMPROVEMENT
-		chB->ChatPacketNew(CHAT_TYPE_INFO, 513, "");
+		ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 513, "");
 #endif
 		event_cancel(&m_pCheckDisconnect);
 		m_pCheckDisconnect = nullptr;		
@@ -119,20 +119,20 @@ EVENTFUNC(pvp_check_disconnect)
 		{
 			chA->PointChange(POINT_GOLD, betMoney, true);
 #ifdef TEXTS_IMPROVEMENT
-			chA->ChatPacketNew(CHAT_TYPE_INFO, 514, "");
+			ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 514, "");
 #endif
 		}
 		
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		chA->ChatPacket(CHAT_TYPE_COMMAND, buf);	
+		ecs::ChatSystem::Send(chA, CHAT_TYPE_COMMAND, buf);	
 		
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
 			chA->SetQuestFlag(szTableStaticPvP[i], 0);	
 		}
 		
 #ifdef TEXTS_IMPROVEMENT
-		chA->ChatPacketNew(CHAT_TYPE_INFO, 513, "");
+		ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 513, "");
 #endif
 		event_cancel(&m_pCheckDisconnect);
 		m_pCheckDisconnect = nullptr;			
@@ -323,8 +323,8 @@ EVENTFUNC(pvp_duel_counter)
 			snprintf(chA_buf, sizeof(chA_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chB_Name, chB_Level, chB_Race, chA_[0], chA_[1], chA_[2], chA_[3], chA_[4], chA_[5], chA_[6], chA_[7], chA_[8]);
 			snprintf(chB_buf, sizeof(chB_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chA_Name, chA_Level, chA_Race, chB_[0], chB_[1], chB_[2], chB_[3], chB_[4], chB_[5], chB_[6], chB_[7], chB_[8]);
 			
-			chA->ChatPacket(CHAT_TYPE_COMMAND, chA_buf);
-			chB->ChatPacket(CHAT_TYPE_COMMAND, chB_buf);
+			ecs::ChatSystem::Send(chA, CHAT_TYPE_COMMAND, chA_buf);
+			ecs::ChatSystem::Send(chB, CHAT_TYPE_COMMAND, chB_buf);
 			
 			chA->SetHP(chA->GetMaxHP());
 			chB->SetHP(chB->GetMaxHP());
@@ -561,7 +561,7 @@ void RemoveStateFull(LPCHARACTER pkChr)
 			char buf[CHAT_MAX_LEN + 1];
 			snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
 					
-			pkChr->ChatPacket(CHAT_TYPE_COMMAND, buf);	
+			ecs::ChatSystem::Send(pkChr, CHAT_TYPE_COMMAND, buf);	
 			pkChr->SetQuestFlag(szTableStaticPvP[i], 0);
 		}
 	}
@@ -601,7 +601,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 			if (pkPVP->IsFight())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				pkChr->ChatPacketNew(CHAT_TYPE_INFO, 511, "");
+				ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 511, "");
 #endif
 				return;
 			}
@@ -614,7 +614,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 			RemoveStateFull(pkChr);
 			RemoveStateFull(pkVictim);
 #ifdef TEXTS_IMPROVEMENT
-			pkVictim->ChatPacketNew(CHAT_TYPE_INFO, 512, "%s", ecs::GetName(pkChr));
+			ecs::ChatSystem::SendNew(pkVictim, CHAT_TYPE_INFO, 512, "%s", ecs::GetName(pkChr));
 #endif
 		}
 	}
@@ -636,8 +636,8 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pkPVP->Agree(ecs::GetPlayerID(pkChr))) {
-			pkVictim->ChatPacketNew(CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkChr));
-			pkChr->ChatPacketNew(CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkVictim));
+			ecs::ChatSystem::SendNew(pkVictim, CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkChr));
+			ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkVictim));
 		}
 #endif
 		return;
@@ -656,8 +656,8 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	pkPVP->Packet();
 
 #ifdef TEXTS_IMPROVEMENT
-	pkVictim->ChatPacketNew(CHAT_TYPE_INFO, 17, "%s", ecs::GetName(pkChr));
-	pkChr->ChatPacketNew(CHAT_TYPE_INFO, 118, "%s", ecs::GetName(pkVictim));
+	ecs::ChatSystem::SendNew(pkVictim, CHAT_TYPE_INFO, 17, "%s", ecs::GetName(pkChr));
+	ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 118, "%s", ecs::GetName(pkVictim));
 #endif
 
 	// NOTIFY_PVP_MESSAGE
@@ -685,13 +685,13 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		
 		if (g)
 		{ 
-			pkVictim->ChatPacket(CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
+			ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
 			
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
 				pkChr->SendEquipment(pkVictim);	
 		}
 		else { 
-			pkVictim->ChatPacket(CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
+			ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
 			
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
 				pkChr->SendEquipment(pkVictim);
@@ -700,7 +700,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 #else
 #ifdef TEXTS_IMPROVEMENT
 	if (pkVictimDesc) {
-		pkVictimDesc->ChatPacketNew(CHAT_TYPE_INFO, 824, "%s", ecs::GetName(pkChr));
+		ecs::ChatSystem::SendNew(pkVictimDesc, CHAT_TYPE_INFO, 824, "%s", ecs::GetName(pkChr));
 	}
 #endif
 #endif
@@ -1110,3 +1110,4 @@ void CPVPManager::Process()
 		}
 	}
 }
+

@@ -28,7 +28,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 80, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 80, "");
 #endif
 		return;
 	}
@@ -36,7 +36,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->IsAcceOpen() || ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 81, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 81, "");
 #endif
 		return;
 	}
@@ -50,7 +50,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	
 	AttrTransfer_clean_item(ch);
 	ch->SetAttrTransferNpc(npc);
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer open");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
 		sys_log(1, "%s has open the Attr Transfer window.", ecs::GetName(ch));
@@ -62,7 +62,7 @@ void AttrTransfer_close(LPCHARACTER ch)
 	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
 	AttrTransfer_clean_item(ch);
 	ch->SetAttrTransferNpc(nullptr);
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer close");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{
 		sys_log(1, "%s has close the Attr Transfer window.", ecs::GetName(ch));
@@ -92,7 +92,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (!(ch)->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 82, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 82, "");
 #endif
 		return false;
 	}
@@ -108,7 +108,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (items[0] == nullptr || items[1] == nullptr || items[2] == nullptr)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 83, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 83, "");
 #endif
 		return false;
 	}
@@ -116,7 +116,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (items[0]->GetType() != ITEM_TRANSFER_SCROLL || items[1]->GetType() != ITEM_COSTUME || items[2]->GetType() != ITEM_COSTUME)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 83, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 83, "");
 #endif
 		return false;
 	}
@@ -132,7 +132,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (has_attr != 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 86, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 86, "");
 #endif
 		return false;
 	}
@@ -155,10 +155,10 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	items[2] = nullptr;
 
 	
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransfer success");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "AttrTransfer success");
 	LogManager::instance().AttrTransferLog(ecs::GetPlayerID(ch), ecs::GetX(ch), ecs::GetY(ch), items[1]->GetVnum());
 #ifdef TEXTS_IMPROVEMENT
-	ch->ChatPacketNew(CHAT_TYPE_INFO, 84, "");
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 84, "");
 #endif
 	return true;
 }
@@ -301,7 +301,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (w_index != 0 && attr_transfer_item[0] == nullptr)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 85, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 85, "");
 #endif
 		return;
 	}
@@ -309,7 +309,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	{
 		if (attr_transfer_item[2] == nullptr) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 79, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 79, "");
 #endif
 			return;
 		}
@@ -319,7 +319,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	
 	if (w_index == 1)
 	{
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "AttrTransferMessage");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "AttrTransferMessage");
 	}
 	
 	attr_transfer_item[w_index] = item;
@@ -342,4 +342,5 @@ void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
 	attr_transfer_item[w_index] = nullptr;
 	return;
 }
+
 

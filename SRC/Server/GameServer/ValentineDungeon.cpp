@@ -88,7 +88,7 @@ namespace
         std::vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ch->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", buf);
     }
 
     struct FForEachPC
@@ -124,7 +124,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
             {
                 if (pc)
-                    pc->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+                    ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "%s", buf);
             });
     }
 
@@ -772,7 +772,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ch->ChatPacket(CHAT_TYPE_INFO, "You were in Valentine Dungeon on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You were in Valentine Dungeon on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -789,12 +789,12 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     // Level check
     if (kMinLevel > 0 && ch->GetLevel() < kMinLevel)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Valentine: minimum level is %d.", kMinLevel);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Valentine: minimum level is %d.", kMinLevel);
         return true;
     }
     if (kMaxLevel > 0 && ch->GetLevel() > kMaxLevel)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Valentine: maximum level is %d.", kMaxLevel);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Valentine: maximum level is %d.", kMaxLevel);
         return true;
     }
 
@@ -803,14 +803,14 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ch->ChatPacket(CHAT_TYPE_INFO, "Valentine: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Valentine: you must wait %d seconds.", remain);
         return true;
     }
 
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Only the party leader can start Valentine Dungeon.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start Valentine Dungeon.");
         return true;
     }
 
@@ -836,7 +836,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
 
         if (!ok)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -852,7 +852,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
         });
 if (!f.ok)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "valaki", f.remain);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "valaki", f.remain);
             return true;
         }
     }
@@ -866,7 +866,7 @@ if (!f.ok)
     {
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Valentine: required to enter: %s (x1).", entryItemName);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Valentine: required to enter: %s (x1).", entryItemName);
             return true;
         }
     }
@@ -880,7 +880,7 @@ if (!f.ok)
         });
 if (!it.ok)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "%s doesn't have the entry item: %s (x1).",
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item: %s (x1).",
                 it.name ? it.name : "valaki", entryItemName);
             return true;
         }
@@ -890,7 +890,7 @@ if (!it.ok)
     LPDUNGEON d = CDungeonManager::instance().Create(kValOriginalMap);
     if (!d)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Valentine: failed to create the dungeon.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Valentine: failed to create the dungeon.");
         return true;
     }
 
@@ -941,3 +941,4 @@ if (!it.ok)
     s_val.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);
     return true;
 }
+

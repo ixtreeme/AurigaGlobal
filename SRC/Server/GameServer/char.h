@@ -975,7 +975,6 @@ public:
 	void			MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet);
 	void			Motion(uint8_t motion, LPCHARACTER victim = nullptr);
 
-	void			ChatPacket(uint8_t type, const char* format, ...);
 	void			SendGreetMessage();
 
 	void			ResetPoint(int iLv);
@@ -2863,7 +2862,6 @@ public:
 #endif
 #ifdef TEXTS_IMPROVEMENT
 public:
-	void ChatPacketNew(uint8_t type, uint32_t idx, const char* format, ...);
 #endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 public:
@@ -3011,6 +3009,7 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
+
 
 
 

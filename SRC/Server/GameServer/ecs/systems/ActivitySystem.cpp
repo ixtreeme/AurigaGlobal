@@ -113,16 +113,16 @@ EVENTFUNC(ecs_fishing_event)
             uint8_t lang = 0;
             if (LPDESC d = ch->GetDesc())
                 lang = d->GetLanguage();
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName[lang]);
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName[lang]);
 #else
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName);
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName);
 #endif
 #endif
         }
         else
         {
 #ifdef TEXTS_IMPROVEMENT
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 897, "");
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 897, "");
 #endif
         }
     }
@@ -163,14 +163,14 @@ void StartFishing(entt::entity fisher, uint32_t)
 
     if (tree->IsAttr(x, y, ATTR_BLOCK)) {
 #ifdef TEXTS_IMPROVEMENT
-        ch->ChatPacketNew(CHAT_TYPE_INFO, 894, "");
+        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 894, "");
 #endif
         return;
     }
 
     if (ch->GetEmptyInventory(1) == -1) {
 #ifdef TEXTS_IMPROVEMENT
-        ch->ChatPacketNew(CHAT_TYPE_INFO, 899, "");
+        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 899, "");
 #endif
         return;
     }
@@ -178,14 +178,14 @@ void StartFishing(entt::entity fisher, uint32_t)
     LPITEM rod = ch->GetWear(WEAR_WEAPON);
     if (!rod || rod->GetType() != ITEM_ROD) {
 #ifdef TEXTS_IMPROVEMENT
-        ch->ChatPacketNew(CHAT_TYPE_INFO, 895, "");
+        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 895, "");
 #endif
         return;
     }
 
     if (rod->GetSocket(2) == 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ch->ChatPacketNew(CHAT_TYPE_INFO, 281, "");
+        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 281, "");
 #endif
         return;
     }
@@ -327,13 +327,13 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
         {
             rod->SetSocket(0, rod->GetSocket(0) + 1);
 #ifdef TEXTS_IMPROVEMENT
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 283, "%d#%d", rod->GetSocket(0), rod->GetValue(2));
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 283, "%d#%d", rod->GetSocket(0), rod->GetValue(2));
 #endif
             if (rod->GetSocket(0) == rod->GetValue(2))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ch->ChatPacketNew(CHAT_TYPE_INFO, 279, "");
-                ch->ChatPacketNew(CHAT_TYPE_INFO, 280, "");
+                ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 279, "");
+                ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 280, "");
 #endif
             }
         }
@@ -501,11 +501,11 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
                 BroadcastNotice(buf);
             }
 
-            ch->ChatPacket(CHAT_TYPE_INFO, "%s kaptal.", szName);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s kaptal.", szName);
         }
         else
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "nincs hely az inventoryban.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "nincs hely az inventoryban.");
         }
     }
 
@@ -580,7 +580,7 @@ void CHARACTER::mining_cancel()
         sys_log(0, "XXX MINING CANCEL");
         event_cancel(&m_pkMiningEvent);
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 472, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 472, "");
 #endif
     }
 }
@@ -607,7 +607,7 @@ void CHARACTER::mining(LPCHARACTER chLoad)
     if (!pick || pick->GetType() != ITEM_PICK)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 252, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 252, "");
 #endif
         return;
     }
@@ -643,7 +643,7 @@ void CHARACTER::fishing()
         if (IS_SET(dwAttr, ATTR_BLOCK))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ChatPacketNew(CHAT_TYPE_INFO, 657, "");
+            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 657, "");
 #endif
             return;
         }
@@ -654,7 +654,7 @@ void CHARACTER::fishing()
     if (!rod || rod->GetType() != ITEM_ROD)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 281, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 281, "");
 #endif
         return;
     }
@@ -662,7 +662,7 @@ void CHARACTER::fishing()
     if (0 == rod->GetSocket(2))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ChatPacketNew(CHAT_TYPE_INFO, 351, "");
+        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 351, "");
 #endif
         return;
     }
@@ -690,3 +690,5 @@ void CHARACTER::fishing_take()
 }
 
 #endif
+
+

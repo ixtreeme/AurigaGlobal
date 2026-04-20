@@ -48,7 +48,7 @@ bool timed_event_cancel(LPCHARACTER ch)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return true;
@@ -150,7 +150,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 			return BATTLE_NONE;
 		}
 
-		//ch->ChatPacket(CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - ch->GetLastAttackTime());
+		//ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - ch->GetLastAttackTime());
 		//		if (!battle_distance_valid(ch, victim)) {
 		//			return BATTLE_NONE;
 		//		}
@@ -213,10 +213,10 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 
 #ifdef TEXTS_IMPROVEMENT
 	if (timed_event_cancel(ch)) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 456, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 456, "");
 	}
 	else if (timed_event_cancel(victim)) {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 456, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 456, "");
 	}
 #endif
 
@@ -685,8 +685,8 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				fAR,
 				szPT);
 
-		pkAttacker->ChatPacket(CHAT_TYPE_TALKING, "%s", szMeleeAttack);
-		pkVictim->ChatPacket(CHAT_TYPE_TALKING, "%s", szMeleeAttack);
+		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_TALKING, "%s", szMeleeAttack);
+		ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_TALKING, "%s", szMeleeAttack);
 	}
 
 	return CalcBattleDamage(iDam, pkAttacker->GetLevel(), pkVictim->GetLevel());
@@ -746,7 +746,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 
 	if (test_server)
 	{
-		pkAttacker->ChatPacket(CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
+		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
 				ecs::GetName(pkAttacker),
 				ecs::GetName(pkVictim),
 				iPureDam,
@@ -790,7 +790,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 			return BATTLE_NONE;
 		}
 
-//pkAttacker->ChatPacket(CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - pkAttacker->GetLastAttackTime());
+//ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - pkAttacker->GetLastAttackTime());
 //		if (!battle_distance_valid(pkAttacker, pkVictim)) {
 //			return BATTLE_NONE;
 //		}
@@ -952,7 +952,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //			iRetDam, pkAttacker->GetPlayerID()));
 //
 //		///*pkAttacker->*/viChatPacket(CHAT_TYPE_TALKING, "You hit a Skill Mob for %d damage!", iRetDam);
-//		pkAttacker->ChatPacket(CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
+//		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
 //		
 //		
 //
@@ -1015,7 +1015,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
 	
-					ch->ChatPacket(CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
 							ecs::GetName(ch),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
@@ -1034,7 +1034,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {
-					ch->ChatPacket(CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
 					ch->GetDesc()->DelayedDisconnect(3);
 				}
@@ -1051,5 +1051,6 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	return false;
 }
 #endif
+
 
 

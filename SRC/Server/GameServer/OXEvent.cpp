@@ -156,14 +156,14 @@ bool COXEventManager::ShowQuizList(LPCHARACTER pkChar)
 	for (size_t i = 0; i < m_vec_quiz.size(); ++i) {
 		for (size_t j = 0; j < m_vec_quiz[i].size(); ++j, ++c) {
 			if (m_vec_quiz[i][j].answer) {
-				pkChar->ChatPacketNew(CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
 			} else {
-				pkChar->ChatPacketNew(CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
 			}
 		}
 	}
 
-	pkChar->ChatPacketNew(CHAT_TYPE_INFO, 610, "%d", c);
+	ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 610, "%d", c);
 #endif
 	return true;
 }
@@ -453,5 +453,6 @@ count)
 
 	return true;
 }
+
 
 

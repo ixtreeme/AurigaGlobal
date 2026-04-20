@@ -720,7 +720,7 @@ void CHARACTER::MainCharacterPacket()
         GetDesc()->Packet(&pack, sizeof(TPacketGCMainCharacter));
 
         if (m_stMobile.length())
-            ChatPacket(CHAT_TYPE_COMMAND, "sms");
+            ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "sms");
     }
 }
 
@@ -1012,3 +1012,4 @@ void CItem::UpdatePacket()
 	sys_log(2, "UpdatePacket %s -> %s", GetName(), m_pOwner->GetName());
 	m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
 }
+

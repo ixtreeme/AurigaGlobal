@@ -1636,7 +1636,7 @@ void CheckClientVersion()
 
 		if (0 != g_stClientVersion.compare(d->GetClientVersion())) {
 #ifdef TEXTS_IMPROVEMENT
-			d->GetCharacter()->ChatPacketNew(CHAT_TYPE_INFO, 484, "");
+			ecs::ChatSystem::SendNew(d->GetCharacter(), CHAT_TYPE_INFO, 484, "");
 #endif
 			d->DelayedDisconnect(3);
 		}
@@ -1797,3 +1797,4 @@ void LoadMapConfig()
 		
 }
 #endif
+

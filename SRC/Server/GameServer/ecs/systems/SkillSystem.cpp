@@ -525,7 +525,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (!IsLearnableSkill(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
@@ -535,7 +535,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (pkSk->dwType == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 265, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 265, "");
 #endif
 		return false;
 	}
@@ -543,9 +543,9 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (GetSkillMasterType(dwSkillVnum) != SKILL_GRAND_MASTER) {
 #ifdef TEXTS_IMPROVEMENT
 		if (GetSkillMasterType(dwSkillVnum) > SKILL_GRAND_MASTER) {
-			ChatPacketNew(CHAT_TYPE_INFO, 422, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 422, "");
 		} else {
-			ChatPacketNew(CHAT_TYPE_INFO, 421, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 421, "");
 		}
 #endif
 		return false;
@@ -605,14 +605,14 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (bLastLevel == GetSkillLevel(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 397, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_FAIL", "");
 		return false;
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+	ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 304, "");
 #endif
 	LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_SUCCESS", "");
 	return true;
@@ -628,7 +628,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (!IsLearnableSkill(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
@@ -646,7 +646,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		if (GetExp() < need_exp)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 247, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 247, "");
 #endif
 			return false;
 		}
@@ -662,10 +662,10 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			if (GetSkillMasterType(dwSkillVnum) > SKILL_MASTER) {
-				ChatPacketNew(CHAT_TYPE_INFO, 423, "");
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 423, "");
 			}
 			else {
-				ChatPacketNew(CHAT_TYPE_INFO, 424, "");
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 424, "");
 			}
 #endif
 			return false;
@@ -678,7 +678,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		{
 			RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 465, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 465, "");
 #endif
 		}
 		else
@@ -687,7 +687,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 			return false;
 		}
@@ -704,7 +704,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			{
 				RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 465, "");
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 465, "");
 #endif
 			}
 			else
@@ -714,7 +714,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				int iHours = iTime / 3600;
 				int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 #else
 				SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
@@ -787,7 +787,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				SkillLevelPacket();
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 304, "");
 #endif
 				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
@@ -797,20 +797,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -848,7 +848,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 304, "");
 #endif
 				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
@@ -858,20 +858,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -923,7 +923,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 						pPC->SetFlag(flag, 0);
 
 #ifdef TEXTS_IMPROVEMENT
-						ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+						ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 304, "");
 #endif
 						LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 						return true;
@@ -934,19 +934,19 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 						switch (number(1, 3)) {
 						case 1:
-							ChatPacketNew(CHAT_TYPE_INFO, 319, "");
+							ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 319, "");
 							break;
 						case 2:
-							ChatPacketNew(CHAT_TYPE_INFO, 318, "");
+							ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 318, "");
 							break;
 						case 3:
 						default:
-							ChatPacketNew(CHAT_TYPE_INFO, 320, "");
+							ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 320, "");
 							break;
 						}
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ChatPacketNew(CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
+						ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
 #endif
 						return true;
 					}
@@ -958,14 +958,14 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (bLastLevel != GetSkillLevel(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 304, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 304, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 397, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "READ_FAIL", "");
 	}
@@ -1366,7 +1366,7 @@ bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 			{
 				if (GetLevel() < 90) {
 #ifdef TEXTS_IMPROVEMENT
-					ChatPacketNew(CHAT_TYPE_INFO, 92, "");
+					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 92, "");
 #endif
 					return false;
 				}
@@ -1387,12 +1387,12 @@ bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 
 	if (!bCan && !passive) {
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 93, "");
-		ChatPacketNew(CHAT_TYPE_INFO, 94, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 93, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 94, "");
 #endif
 	} else if (!bCan && passive) {
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 423, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 423, "");
 #endif
 	}
 
@@ -1411,7 +1411,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 313, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 313, "");
 #endif
 		return;
 	}
@@ -2480,7 +2480,7 @@ struct FuncSplashDamage
 //				iAmount, m_pkChr->GetPlayerID());
 //
 //			// (opcionális) debug üzenet a játékosnak
-//			m_pkChr->ChatPacket(CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
+//			ecs::ChatSystem::Send(m_pkChr, CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
 //		}
 //
 //#endif
@@ -2614,7 +2614,7 @@ EVENTFUNC(skill_gwihwan_event)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 241, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 241, "");
 	}
 #endif
 	return 0;
@@ -3533,7 +3533,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 					if (pkVictim->GetQuestFlag(BLOCK_BUFF)) 
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ChatPacketNew(CHAT_TYPE_INFO, 518, "%s", pkVictim->GetName()); 
+						ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 518, "%s", pkVictim->GetName()); 
 #endif
 						return false;
 					}
@@ -3640,7 +3640,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		else
 			m_bComboIndex = GetSkillLevel(SKILL_COMBO);
 
-		ChatPacket(CHAT_TYPE_COMMAND, "combo %d", m_bComboIndex);
+		ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "combo %d", m_bComboIndex);
 		return true;
 	}
 
@@ -3713,7 +3713,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 #ifdef TEXTS_IMPROVEMENT
 		if (test_server) {
-			ChatPacketNew(CHAT_TYPE_INFO, 104, "%s#%d", pkSk->szName, iNeededSP);
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 104, "%s#%d", pkSk->szName, iNeededSP);
 		}
 #endif
 		PointChange(POINT_SP, -iNeededSP);
@@ -3743,7 +3743,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
-					ChatPacket(CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+					ecs::ChatSystem::Send(this, CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 				return false;
 			}
 		}
@@ -3758,7 +3758,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 				   		lMaxHit))
 			{
 				if (test_server)
-					ChatPacket(CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+					ecs::ChatSystem::Send(this, CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 				return false;
 			}
 
@@ -3773,7 +3773,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 				   	lMaxHit))
 		{
 			if (test_server)
-				ChatPacket(CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+				ecs::ChatSystem::Send(this, CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 
 			return false;
 		}
@@ -4045,28 +4045,28 @@ void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
 {
 #ifdef TEXTS_IMPROVEMENT
 	if (ms < 3 * 60) {
-		ChatPacketNew(CHAT_TYPE_INFO, 345, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 345, "");
 	} else if (ms < 5 * 60) {
-		ChatPacketNew(CHAT_TYPE_INFO, 264, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 264, "");
 	} else if (ms < 10 * 60) {
-		ChatPacketNew(CHAT_TYPE_INFO, 262, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 262, "");
 	} else if (ms < 30 * 60) {
-		ChatPacketNew(CHAT_TYPE_INFO, 290, "");
-		ChatPacketNew(CHAT_TYPE_INFO, 263, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 290, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 263, "");
 	} else if (ms < 1 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 447, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 447, "");
 	} else if (ms < 2 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 407, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 407, "");
 	} else if (ms < 3 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 464, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 464, "");
 	} else if (ms < 6 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 479, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 479, "");
 	} else if (ms < 12 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 446, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 446, "");
 	} else if (ms < 18 * 3600) {
-		ChatPacketNew(CHAT_TYPE_INFO, 254, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 254, "");
 	} else {
-		ChatPacketNew(CHAT_TYPE_INFO, 435, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 435, "");
 	}
 #endif
 }
@@ -4941,3 +4941,5 @@ const uint32_t GetRandomSkillVnum(uint8_t bJob)
 	} while (true);
 	return dwSkillVnum;
 }
+
+

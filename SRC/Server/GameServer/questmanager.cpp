@@ -1764,7 +1764,7 @@ namespace quest
 
 		sys_err("LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
 		if (GetCurrentCharacterPtr() && test_server)
-			GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_PARTY, "LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
+			ecs::ChatSystem::Send(GetCurrentCharacterPtr(), CHAT_TYPE_PARTY, "LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
 	}
 
 #ifndef _WIN32
@@ -1954,6 +1954,7 @@ namespace quest
 		return m_pOtherPCBlockRootPC;
 	}
 }
+
 
 
 

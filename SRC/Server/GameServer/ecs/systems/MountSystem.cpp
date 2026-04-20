@@ -322,7 +322,7 @@ uint32_t GetMountVnum(entt::entity rider)
 
 bool CHARACTER::StartRiding()
 {
-	ChatPacket(CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StartRiding()");
+	ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StartRiding()");
 #ifdef ENABLE_BUG_FIXES
 	if (IsRiding()) {
 		return false;
@@ -332,7 +332,7 @@ bool CHARACTER::StartRiding()
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 852, "");
 #endif
 		RemoveAffect(AFFECT_MOUNT);
 		RemoveAffect(AFFECT_MOUNT_BONUS);
@@ -355,7 +355,7 @@ bool CHARACTER::StartRiding()
 	if (IsDead() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 356, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 356, "");
 #endif
 		return false;
 	}
@@ -363,7 +363,7 @@ bool CHARACTER::StartRiding()
 	if (IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 355, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 355, "");
 #endif
 		return false;
 	}
@@ -373,7 +373,7 @@ bool CHARACTER::StartRiding()
 	if (armor && (armor->GetVnum() >= 11901 && armor->GetVnum() <= 11904))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 410, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 410, "");
 #endif
 		return false;
 	}
@@ -387,11 +387,11 @@ bool CHARACTER::StartRiding()
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (GetHorseLevel() <= 0) {
-			ChatPacketNew(CHAT_TYPE_INFO, 333, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 333, "");
 		} else if (GetHorseHealth() <= 0) {
-			ChatPacketNew(CHAT_TYPE_INFO, 335, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 335, "");
 		} else if (GetHorseStamina() <= 0) {
-			ChatPacketNew(CHAT_TYPE_INFO, 334, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 334, "");
 		}
 #endif
 		return false;
@@ -414,7 +414,7 @@ bool CHARACTER::StartRiding()
 
 bool CHARACTER::StopRiding()
 {
-	ChatPacket(CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StopRiding()");
+	ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StopRiding()");
 
 	if (CHorseRider::StopRiding())
 	{
@@ -523,7 +523,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		if (!m_chHorse)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ChatPacketNew(CHAT_TYPE_INFO, 328, "");
+			ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 328, "");
 #endif
 			return;
 		}
@@ -652,7 +652,7 @@ void CHARACTER::ClearHorseInfo()
 {
 	if (!IsHorseRiding())
 	{
-		ChatPacket(CHAT_TYPE_COMMAND, "hide_horse_state");
+		ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "hide_horse_state");
 
 		m_bSendHorseLevel = 0;
 		m_bSendHorseHealthGrade = 0;
@@ -695,7 +695,7 @@ void CHARACTER::SendHorseInfo()
 				m_bSendHorseHealthGrade != iHealthGrade ||
 				m_bSendHorseStaminaGrade != iStaminaGrade)
 		{
-			ChatPacket(CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
+			ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
 
 			m_bSendHorseLevel = GetHorseLevel();
 			m_bSendHorseHealthGrade = iHealthGrade;
@@ -787,7 +787,7 @@ void CHARACTER::MountSummon(LPITEM mountItem)
 	if (IsPolymorphed() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 732, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 732, "");
 #endif
 		return;
 	}
@@ -1012,3 +1012,4 @@ void CHARACTER::ComputeMountInventoryBonuses()
 	for (const auto& it : mount_bonus_map)
 		PointChange(it.first, it.second);
 }
+

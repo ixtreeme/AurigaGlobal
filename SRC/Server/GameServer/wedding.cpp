@@ -105,7 +105,7 @@ namespace marriage
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
 		void operator() (LPCHARACTER ch) {
-			ch->ChatPacketNew(m_type, m_idx, m_format);
+			ecs::ChatSystem::SendNew(ch, m_type, m_idx, m_format);
 		}
 	};
 #endif
@@ -210,7 +210,7 @@ namespace marriage
 		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
 		{
 			LPCHARACTER ch = *it;
-			ch->ChatPacket(CHAT_TYPE_COMMAND, msg);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, msg);
 		}
 	}
 
@@ -269,11 +269,11 @@ namespace marriage
 		char szCommand[256];
 
 		if (m_isDark)
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode dark");
 		if (m_isSnow)
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "xmas_snow 1");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow 1");
 		if (m_isMusic)
-			ch->ChatPacket(CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
 	}
 
 	const char* WeddingMap::__BuildCommandPlayMusic(char* szCommand, size_t nCmdLen, uint8_t bSet, const char* c_szMusicFileName)
@@ -392,3 +392,4 @@ namespace marriage
 	}
 
 }
+

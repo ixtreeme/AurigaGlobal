@@ -146,7 +146,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
             if (pc)
-                pc->ChatPacket(CHAT_TYPE_BIG_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
             });
     }
 
@@ -160,7 +160,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
             if (pc && pc->GetDesc())
-                pc->ChatPacket(CHAT_TYPE_COMMAND, "%s", buf);
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "%s", buf);
             });
     }
 
@@ -1456,12 +1456,12 @@ bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
     // Block inside LostCastle instance maps to avoid skipping dungeon mechanics
     if (IsInRange(idx, kPrivateMin, kPrivateMax))
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
         return false;
     }
 
     PurgeTestClonesForTargetPID(ch->GetPlayerID(), idx);
-    ch->ChatPacket(CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
+    ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
     return true;
 }
 
@@ -1511,7 +1511,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (party->GetLeaderPID() != ch->GetPlayerID())
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Csak a party leader indithatja!");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Csak a party leader indithatja!");
             return true;
         }
 
@@ -1544,7 +1544,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
         if (!ok)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
             return true;
         }
     }
@@ -1552,12 +1552,12 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
             return true;
         }
     }
@@ -1566,7 +1566,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
         return true;
     }
 
@@ -1698,7 +1698,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         const int32_t bit = 1 << keyIndex;
         if (mask & bit)
         {
-            from->ChatPacket(CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
+            ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
             return true;
         }
 
@@ -1740,7 +1740,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         ConsumeOneGivenItem(item, "LOSTCASTLE_TILE");
 
         if (!s_lc.UnlockNextTile(idx))
-            from->ChatPacket(CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
+            ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
 
         return true;
     }
@@ -1784,3 +1784,4 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     // Clone -> Clone tiltás
     return false;
 }
+

@@ -227,7 +227,7 @@ namespace
 			if (d->GetCharacter())
 			{
 				if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
-					d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+					ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 			}
 		}
 	};
@@ -1050,6 +1050,7 @@ int io_loop(LPFDWATCH fdw)
 
 	return 1;
 }
+
 
 
 

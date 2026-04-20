@@ -379,7 +379,7 @@ void Cube_open (LPCHARACTER ch)
 	)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 815, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 815, "");
 #endif
 		return;
 	}
@@ -455,7 +455,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 			if (materialInfo.gold != 0){
 				if (ch->GetGold() < (materialInfo.gold*count_item)) {
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 					return;
 				}
@@ -465,7 +465,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				if ((int32_t)ch->GetGaya() < (int32_t)(materialInfo.gaya*count_item))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 524, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 524, "");
 #endif
 					return;
 				}
@@ -475,7 +475,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 			if (item_frozen && material_check)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 816, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 816, "");
 #endif
 				return;
 			}
@@ -567,7 +567,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				if (iEmptyPos < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 366, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 366, "");
 #endif
 					return;
 				}
@@ -590,7 +590,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				if(total_items_give <= 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 817, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 817, "");
 #endif
 					return;
 				}
@@ -611,7 +611,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #endif				
 				//toshow ChatPacket success item
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 818, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 818, "");
 #endif
 
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
@@ -764,7 +764,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 819, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 819, "");
 			}
 #endif
 		}

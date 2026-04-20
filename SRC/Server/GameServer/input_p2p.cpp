@@ -240,7 +240,7 @@ struct FuncShout
 		if (!d->GetCharacter() || (d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #endif
-		d->GetCharacter()->ChatPacket(CHAT_TYPE_SHOUT, "%s", m_str);
+		ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_SHOUT, "%s", m_str);
 	}
 };
 
@@ -555,4 +555,5 @@ void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
 	CSwitchbotManager::Instance().P2PReceiveSwitchbot(p->table);
 }
 #endif
+
 

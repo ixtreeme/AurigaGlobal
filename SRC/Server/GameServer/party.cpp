@@ -325,7 +325,7 @@ void CParty::Destroy()
 				p.pid = rMember.pCharacter->GetPlayerID();
 				rMember.pCharacter->GetDesc()->Packet(&p, sizeof(p));
 #ifdef TEXTS_IMPROVEMENT
-				rMember.pCharacter->ChatPacketNew(CHAT_TYPE_INFO, 213, "");
+				ecs::ChatSystem::SendNew(rMember.pCharacter, CHAT_TYPE_INFO, 213, "");
 #endif
 			}
 			else
@@ -361,7 +361,7 @@ void CParty::ChatPacketToAllMemberNew(uint8_t type, uint32_t idx, const char * f
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it) {
 		TMember & rMember = it->second;
 		if (rMember.pCharacter) {
-			rMember.pCharacter->ChatPacketNew(type, idx, "%s", chatbuf);
+			ecs::ChatSystem::SendNew(rMember.pCharacter, type, idx, "%s", chatbuf);
 		}
 	}
 }
@@ -1121,7 +1121,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	if (m_memberMap.find(pid) == m_memberMap.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		l->ChatPacketNew(CHAT_TYPE_INFO, 209, "");
+		ecs::ChatSystem::SendNew(l, CHAT_TYPE_INFO, 209, "");
 #endif
 		return;
 	}
@@ -1131,7 +1131,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	if (!ch)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		l->ChatPacketNew(CHAT_TYPE_INFO, 209, "");
+		ecs::ChatSystem::SendNew(l, CHAT_TYPE_INFO, 209, "");
 #endif
 		return;
 	}
@@ -1139,7 +1139,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	if (!ch->CanSummon(m_iLeadership))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		l->ChatPacketNew(CHAT_TYPE_INFO, 198, "");
+		ecs::ChatSystem::SendNew(l, CHAT_TYPE_INFO, 198, "");
 #endif
 		return;
 	}
@@ -1163,7 +1163,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 219, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 219, "");
 	}
 #endif
 }
@@ -1381,7 +1381,7 @@ void CParty::Update()
 
 #ifdef TEXTS_IMPROVEMENT
 		if (bLongTimeExpBonusChanged && ch->GetDesc()) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 487, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 487, "");
 		}
 #endif
 
@@ -1426,7 +1426,7 @@ void CParty::Update()
 				// send heal ready
 				if (0) // XXX  DELETEME 클라이언트 완료될때까지
 					if (GetLeaderCharacter())
-						GetLeaderCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "PartyHealReady");
+						ecs::ChatSystem::Send(GetLeaderCharacter(), CHAT_TYPE_COMMAND, "PartyHealReady");
 			}
 		}
 	}
@@ -1738,6 +1738,10 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 	}
 	return false;
 }
+
+
+
+
 
 
 

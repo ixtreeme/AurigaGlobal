@@ -593,7 +593,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(!pkChar->IsLoadedBattlePass())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 776, "");
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 776, "");
 #endif
 		return;
 	}
@@ -611,7 +611,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -622,7 +622,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -631,7 +631,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(itReward == m_map_battle_pass_reward.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 779, "%s", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 779, "%s", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -684,7 +684,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if (!bBattlePassId)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 780, "");
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 780, "");
 #endif
 		return;
 	}
@@ -694,7 +694,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -705,7 +705,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -742,7 +742,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	// mar atvette a vegso jutalmat ebben a ciklusban (honap)
 	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
 	{
-		pkChar->ChatPacket(CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
+		ecs::ChatSystem::Send(pkChar, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
 	}
 	
@@ -789,7 +789,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if (!bBattlePassId)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 780, "");
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 780, "");
 #endif
 		return;
 	}
@@ -797,7 +797,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	// plusz vedelem: ujra login / karaktervaltas utan se tudja ujra felvenni
 	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
 	{
-		pkChar->ChatPacket(CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
+		ecs::ChatSystem::Send(pkChar, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
 	}
 
@@ -806,7 +806,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -816,7 +816,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(itReward == m_map_battle_pass_reward.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChar->ChatPacketNew(CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(pkChar, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -925,4 +925,5 @@ void CBattlePass::RegisterPlayerKill(uint32_t dwKillerID, uint32_t dwPlayerID)
 	}
 }
 #endif
+
 

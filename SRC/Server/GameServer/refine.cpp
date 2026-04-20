@@ -57,7 +57,7 @@ CRefineManager::~CRefineManager()
 				if (ch->CountSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it]) < 1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 620, "%s", 
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 620, "%s", 
 #ifdef ENABLE_MULTI_NAMES
 					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -73,7 +73,7 @@ CRefineManager::~CRefineManager()
 		if (lTotal > 100 )
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 621, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 621, "");
 #endif
 			return false;
 		}
@@ -136,7 +136,7 @@ CRefineManager::~CRefineManager()
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 622, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 622, "");
 		}
 #endif
 	}
@@ -171,3 +171,4 @@ const TRefineTable* CRefineManager::GetRefineRecipe(uint32_t vnum)
 
 	return &it->second;
 }
+

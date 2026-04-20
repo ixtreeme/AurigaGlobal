@@ -756,7 +756,7 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 				if (ch->IsPC())
 				{
-					ch->ChatPacket(CHAT_TYPE_COMMAND, "%s", m_psz);
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "%s", m_psz);
 				}
 			}
 		}
@@ -801,14 +801,14 @@ namespace
 #ifdef TEXTS_IMPROVEMENT
 					if (m_big == true)
 					{
-						ch->ChatPacketNew(CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
+						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
 					}
 					else
 					{
-						ch->ChatPacketNew(CHAT_TYPE_NOTICE, m_idx, m_psz);
+						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_NOTICE, m_idx, m_psz);
 					}
 #else
-					ch->ChatPacket(CHAT_TYPE_NOTICE, "%s", m_psz);
+					ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "%s", m_psz);
 #endif
 				}
 			}
@@ -916,7 +916,7 @@ struct SUpdateMastHp
 			LPCHARACTER ch = (LPCHARACTER) ent;
 			if (ch->IsPC())
 			{
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
 			}
 		}
 	}
@@ -969,4 +969,5 @@ void CDungeon::RestoreMastPartialHP()
 	}
 }
 #endif
+
 

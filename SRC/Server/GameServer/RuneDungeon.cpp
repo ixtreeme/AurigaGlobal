@@ -1255,7 +1255,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiSpamUntil > now)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Please wait a moment.");
         return false;
     }
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamDelay);
@@ -1264,7 +1264,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t cooldownUntil = ch->GetQuestFlag(kQfCooldown);
     if (cooldownUntil > now)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Rune Dungeon is on cooldown.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Rune Dungeon is on cooldown.");
         return false;
     }
 
@@ -1298,7 +1298,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         // Only leader can start
         if (party->GetLeaderPID() != ch->GetPlayerID())
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Only the party leader can enter.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can enter.");
             return false;
         }
 
@@ -1336,9 +1336,9 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s has an invalid level (Lv%d).", badName ? badName : "A party member", badLevel);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d).", badName ? badName : "A party member", badLevel);
             return false;
         }
     }
@@ -1347,13 +1347,13 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         // Solo checks
         if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Invalid level for Rune Dungeon.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Invalid level for Rune Dungeon.");
             return false;
         }
 
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "You need the entry item.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You need the entry item.");
             return false;
         }
     }
@@ -1489,3 +1489,4 @@ bool CRuneDungeon::OnUseItem89100(CHARACTER* ch)
 
     return true;
 }
+

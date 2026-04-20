@@ -170,3 +170,5 @@ bool CShutdownManager::CheckCorrectSocialID(const char* szSocialID)
 
 	return true;
 }
+
+

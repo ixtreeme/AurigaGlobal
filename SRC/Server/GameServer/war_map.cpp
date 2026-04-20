@@ -327,8 +327,8 @@ struct FSendUserCount
 
 	void operator() (LPCHARACTER ch)
 	{
-		ch->ChatPacket(CHAT_TYPE_COMMAND, buf1);
-		ch->ChatPacket(CHAT_TYPE_COMMAND, buf2);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, buf1);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, buf2);
 	}
 };
 
@@ -388,8 +388,8 @@ void CWarMap::IncMember(LPCHARACTER ch)
 		sys_log(0, "WarMap +o %d", m_iObserverCount);
 		ch->SetObserverMode(true);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 255, "");
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 448, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 255, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 448, "");
 #endif
 	}
 
@@ -610,7 +610,7 @@ namespace
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
 		void operator() (LPCHARACTER ch) {
-			ch->ChatPacketNew(m_type, m_idx, m_format);
+			ecs::ChatSystem::SendNew(ch, m_type, m_idx, m_format);
 		}
 	};
 #endif
@@ -1115,4 +1115,5 @@ void CWarMapManager::OnShutdown()
 	while (it != m_mapWarMap.end())
 		(it++)->second->Draw();
 }
+
 

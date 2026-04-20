@@ -88,7 +88,7 @@ namespace quest
 		ostringstream s;
 		combine_lua_string(L, s);
 
-		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacterPtr(), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -98,7 +98,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_COMMAND, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacterPtr(), CHAT_TYPE_COMMAND, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -108,7 +108,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_INFO, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacterPtr(), CHAT_TYPE_INFO, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -118,7 +118,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacterPtr(), CHAT_TYPE_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -1009,7 +1009,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		CQuestManager::Instance().GetCurrentCharacterPtr()->ChatPacket(CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacterPtr(), CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -1943,6 +1943,12 @@ namespace quest
 		}
 	}
 }
+
+
+
+
+
+
 
 
 

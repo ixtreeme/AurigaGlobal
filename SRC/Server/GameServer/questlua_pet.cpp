@@ -41,7 +41,7 @@ namespace quest
 		if ((ch->GetDuel("BlockPet")))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 516, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 516, "");
 #endif
 			lua_pushnumber (L, 0);
 			return 1;
@@ -184,5 +184,6 @@ namespace quest
 #endif
 
 }
+
 
 

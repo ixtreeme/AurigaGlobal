@@ -639,7 +639,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ch->ChatPacket(CHAT_TYPE_INFO, "You were in Triton Temple on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You were in Triton Temple on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -656,7 +656,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     // Fresh entrance
     if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Triton Temple: level requirement is %d-%d.", kMinLevel, kMaxLevel);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Triton Temple: level requirement is %d-%d.", kMinLevel, kMaxLevel);
         return true;
     }
 
@@ -665,14 +665,14 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ch->ChatPacket(CHAT_TYPE_INFO, "Triton Temple: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Triton Temple: you must wait %d seconds.", remain);
         return true;
     }
 
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
         return true;
     }
 
@@ -687,7 +687,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         });
         if (!f.ok)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
             return true;
         }
     }
@@ -697,7 +697,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
             return true;
         }
     }
@@ -734,9 +734,9 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -744,7 +744,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kTritonOriginalMap);
     if (!d)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
         return true;
     }
 
@@ -789,3 +789,4 @@ d->JoinParty_Coords(party, kEnterX, kEnterY, ch->GetMapIndex());
 }
 
 #endif
+

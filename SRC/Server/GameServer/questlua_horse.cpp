@@ -71,7 +71,7 @@ namespace quest
 	if ((ch->GetDuel("BlockRide")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 516, "");
 #endif
 		return 0;
 	}
@@ -129,7 +129,7 @@ namespace quest
 	if ((ch->GetDuel("BlockRide")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 516, "");
 #endif
 		return 0;
 	}
@@ -503,6 +503,7 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("horse", horse_functions);
 	}
 }
+
 
 
 

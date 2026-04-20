@@ -280,7 +280,7 @@ namespace quest
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         if ( test_server )
-            ch->ChatPacket( CHAT_TYPE_INFO, "pc_warp %d %d %d",static_cast<int>(lua_tonumber(L, 1)), static_cast<int>(lua_tonumber(L, 2)),map_index );
+            ecs::ChatSystem::Send(ch,  CHAT_TYPE_INFO, "pc_warp %d %d %d",static_cast<int>(lua_tonumber(L, 1)), static_cast<int>(lua_tonumber(L, 2)),map_index );
         ch->WarpSet(static_cast<int32_t>(lua_tonumber(L, 1)), static_cast<int32_t>(lua_tonumber(L, 2)), map_index);
         lua_pushboolean(L, true);
         return 1;
@@ -530,7 +530,7 @@ namespace quest
 #ifdef TEXTS_IMPROVEMENT
 		for (int i = 0; i < count; i++) {
 			if (!item_gets[i]) {
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
 			}
 		}
 #endif
@@ -1856,7 +1856,7 @@ namespace quest
         if ((ch->GetDuel("BlockRide")))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 516, "");
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 516, "");
 #endif
             lua_pushnumber(L, 0);
             return 1;
@@ -2729,7 +2729,7 @@ namespace quest
 
 						if (SECTREE_MANAGER::instance().GetCenterPositionOfMap(pkCCI->lMapIndex, pos)) {
 #ifdef TEXTS_IMPROVEMENT
-							ch->ChatPacketNew(CHAT_TYPE_INFO, 737, "%d#%d", pos.x, pos.y);
+							ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 737, "%d#%d", pos.x, pos.y);
 #endif
 								if (auto* warpPos = ECS_TryGet<ecs::WarpPosition>(e))
 							{
@@ -2744,14 +2744,14 @@ namespace quest
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ch->ChatPacketNew(CHAT_TYPE_INFO, 367, "");
+						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 367, "");
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else if (nullptr == CHARACTER_MANAGER::instance().FindPC(arg1))
 				{
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 723, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 723, "");
 				}
 #endif
 				lua_pushnumber(L, 0 );
@@ -2770,7 +2770,7 @@ teleport_area:
 		x *= 100;
 		y *= 100;
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 737, "%d#%d", x, y);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
 		if (auto* warpPos = ECS_TryGet<ecs::WarpPosition>(e))
 		{
@@ -2901,7 +2901,7 @@ teleport_area:
             return 0;
         } else if (ch->GetParty()) {
 #ifdef TEXTS_IMPROVEMENT
-            ch->ChatPacketNew(CHAT_TYPE_INFO, 1245, "");
+            ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1245, "");
 #endif
             return 0;
         }
@@ -3874,7 +3874,7 @@ teleport_area:
 						if ((m_vnum = lua_tonumber(L, -1))<=0)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ch->ChatPacketNew(CHAT_TYPE_INFO, 738, "%d", m_vnum);
+							ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 738, "%d", m_vnum);
 #endif
 							return 0;
 						}
@@ -3884,7 +3884,7 @@ teleport_area:
 						if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, -1), m_vnum))
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ch->ChatPacketNew(CHAT_TYPE_INFO, 739, "%d", m_vnum);
+							ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 739, "%d", m_vnum);
 #endif
 							return 0;
 						}
@@ -4642,7 +4642,7 @@ teleport_area:
 		if (ch->IsOpenSafebox() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 294, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 294, "");
 #endif
 			return 0;
 		}
@@ -5000,7 +5000,7 @@ teleport_area:
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch) {
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologistch_clear");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologistch_clear");
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
 				if (biologistMissionInfo[i][11] == 1) {
@@ -5017,7 +5017,7 @@ teleport_area:
 									last = 1;
 								}
 
-								ch->ChatPacket(CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
+								ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
 							}
 						}
 					}
@@ -5026,10 +5026,10 @@ teleport_area:
 
 			if (last == 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 872, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 872, "");
 #endif
 			} else {
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "biologistch_open");
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologistch_open");
 			}
 		}
 		
@@ -5499,6 +5499,7 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
+
 
 
 

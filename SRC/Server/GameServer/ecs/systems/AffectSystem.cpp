@@ -78,7 +78,7 @@ EVENTFUNC(poison_event)
     auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetPoisonDamageRate(ch) / 1000;
     if (test_server) {
-        ch->ChatPacket(CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
     }
 
     const entt::entity poisonEntity = AIHelpers::EcsOf(ch);
@@ -146,7 +146,7 @@ EVENTFUNC(bleeding_event)
     auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = ch->GetMaxHP() * GetBleedingDamageRate(ch) / 1000;
     if (test_server) {
-        ch->ChatPacket(CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
     }
 
     const entt::entity bleedingEntity = AIHelpers::EcsOf(ch);
@@ -202,7 +202,7 @@ EVENTFUNC(fire_event)
     auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = info->amount;
     if (test_server) {
-        ch->ChatPacket(CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
     }
 
     const entt::entity fireEntity = AIHelpers::EcsOf(ch);
@@ -397,7 +397,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
     if (test_server && pkAttacker) {
         char buf[256];
         snprintf(buf, sizeof(buf), "POISON %s -> %s", pkAttacker->GetName(), ch->GetName());
-        pkAttacker->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+        ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "%s", buf);
     }
 }
 
@@ -460,7 +460,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
     if (test_server && pkAttacker) {
         char buf[256];
         snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", pkAttacker->GetName(), ch->GetName());
-        pkAttacker->ChatPacket(CHAT_TYPE_INFO, "%s", buf);
+        ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "%s", buf);
     }
 }
 
@@ -505,21 +505,21 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
 #endif
         {
             if (test_server && ch->IsPC()) {
-                ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ch->GetName());
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ch->GetName());
             }
 
             return true;
         }
 
         if (test_server && ch->IsPC()) {
-            ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ch->GetName());
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ch->GetName());
         }
 
         return false;
     }
 
     if (test_server && ch->IsPC()) {
-        ch->ChatPacket(CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ch->GetName());
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ch->GetName());
     }
 
     return false;
@@ -1564,7 +1564,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 	if (dwType == AFFECT_BLOCK_CHAT && lDuration > 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ChatPacketNew(CHAT_TYPE_INFO, 414, "%d", (lDuration / 60));
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 414, "%d", (lDuration / 60));
 #endif
 	}
 	// END_OF_CHAT_BLOCK
@@ -1758,7 +1758,7 @@ bool CHARACTER::RemoveAffect(uint32_t dwType)
 {
 #ifdef TEXTS_IMPROVEMENT
 	if (dwType == AFFECT_BLOCK_CHAT) {
-		ChatPacketNew(CHAT_TYPE_INFO, 474, "");
+		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 474, "");
 	}
 #endif
 
@@ -1955,3 +1955,5 @@ int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg)
 	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);
 	return 1;
 }
+
+

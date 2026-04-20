@@ -198,7 +198,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
             if (pc)
-                pc->ChatPacket(CHAT_TYPE_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -213,7 +213,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
             if (pc)
-                pc->ChatPacket(CHAT_TYPE_BIG_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -670,7 +670,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         }
         else if (race == kEntryNpcVnum)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "You are already inside the dungeon.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You are already inside the dungeon.");
             return true;
         }
     }
@@ -689,7 +689,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ch->GetPlayerID());
         if (d->GetFlag(rewardFlag) != 0)
         {
-            ch->ChatPacket(CHAT_TYPE_INFO, "You already took your reward.");
+            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
@@ -724,19 +724,19 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     if (!fromCompletedInside && !IsEntryMapForEmpire(ch))
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "You must be in the correct map to enter Bloody cathedral.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You must be in the correct map to enter Bloody cathedral.");
         return true;
     }
 
     if (!ch->CanWarp())
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "You have to wait a bit before entering.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You have to wait a bit before entering.");
         return true;
     }
 
     if (quest::CQuestManager::instance().GetEventFlag("Halloween2022Dungeon_block") == 1 && !ch->IsGM())
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "The Bloody cathedral is currently blocked.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "The Bloody cathedral is currently blocked.");
         return true;
     }
 
@@ -745,7 +745,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
@@ -753,7 +753,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Only the party leader can enter.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can enter.");
         return true;
     }
 
@@ -815,17 +815,17 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         switch (bad)
         {
             case BAD_LEVEL:
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
                 break;
             case BAD_WARP:
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
                 break;
             case BAD_ITEM:
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A party member");
                 break;
             case BAD_COOLDOWN:
                 FormatDuration(badVal, tmp, sizeof(tmp));
-                ch->ChatPacket(CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
                 break;
             default:
                 break;
@@ -836,7 +836,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ch->ChatPacket(CHAT_TYPE_INFO, "Failed to create dungeon instance.");
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 
@@ -1218,3 +1218,4 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
 
     return false;
 }
+

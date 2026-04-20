@@ -111,7 +111,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 {
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 	if (!ch->IsNextMountPulse()) {
-		ch->ChatPacket(CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return false;
 	}
 #endif
@@ -125,7 +125,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (m_pkOwner->GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		m_pkOwner->ChatPacketNew(CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 852, "");
 #endif
 		Unmount();
 		return false;
@@ -184,7 +184,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 	}
 	else
 	{
-		m_pkOwner->ChatPacket(CHAT_TYPE_INFO, "MountActor::Mount - Mount bonus already active, skipping duplicate apply.");
+		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_INFO, "MountActor::Mount - Mount bonus already active, skipping duplicate apply.");
 		
 	}
 
@@ -206,7 +206,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!ch->IsNextMountPulse()) {
-		ch->ChatPacket(CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
 #endif
@@ -219,7 +219,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (m_pkOwner->GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		m_pkOwner->ChatPacketNew(CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 852, "");
 #endif
 		Unmount();
 		return false;
@@ -790,4 +790,5 @@ void CMountSystem::UpdateMountSkin() {
 	}
 }
 #endif
+
 

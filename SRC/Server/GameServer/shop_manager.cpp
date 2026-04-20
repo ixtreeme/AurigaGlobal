@@ -120,7 +120,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (pkChr->IsOpenSafebox() || pkChr->GetExchange() || pkChr->GetMyShop() || pkChr->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		pkChr->ChatPacketNew(CHAT_TYPE_INFO, 294, "");
+		ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 294, "");
 #endif
 		return false;
 	}
@@ -226,7 +226,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 		if (get_dword_time() < ch->GetLastBuySellTime()+g_BuySellTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 #endif
 			return;
 		}
@@ -242,7 +242,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 		if (DISTANCE_APPROX(ch->GetX() - ch->GetShopOwner()->GetX(), ch->GetY() - ch->GetShopOwner()->GetY()) > 2000)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 381, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 381, "");
 #endif
 			return;
 		}
@@ -282,7 +282,7 @@ void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	if (ch->GetShopOwner()) {
 		if (DISTANCE_APPROX(ch->GetX() - ch->GetShopOwner()->GetX(), ch->GetY() - ch->GetShopOwner()->GetY()) > 2000) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 381, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 381, "");
 #endif
 			return;
 		}
@@ -348,7 +348,7 @@ uint8_t bCount
 		if (get_dword_time() < ch->GetLastBuySellTime()+g_BuySellTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
 #endif
 			return;
 		}
@@ -387,7 +387,7 @@ uint8_t bCount
 	if (item->IsEquipped() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 541, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 541, "");
 #endif
 		return;
 	}
@@ -435,7 +435,7 @@ uint8_t bCount
 	{
 		sys_err("[OVERFLOW_GOLD] id %u name %s gold %lld", ch->GetPlayerID(), ch->GetName(), ch->GetGold());
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 226, 
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 226, 
 		"%lld"
 
 		, GOLD_MAX);
@@ -695,3 +695,4 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 
 	return true;
 }
+
