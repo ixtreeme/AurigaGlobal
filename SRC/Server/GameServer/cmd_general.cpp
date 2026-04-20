@@ -358,7 +358,7 @@ struct SendDisconnectFunc
 	{
 		if (d->GetCharacter())
 		{
-			if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+			if (ecs::GetGMLevel(d->GetCharacter()) == GM_PLAYER)
 				d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}
@@ -1349,13 +1349,13 @@ ACMD(do_restart)
 				if (!wasDungeon)
 				{
 					PIXEL_POSITION pos;
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, ch->GetEmpire(), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, ecs::GetEmpire(ch), pos))
 					{
 						ch->WarpSet(pos.x, pos.y);
 					}
 					else
 					{
-						ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+						ch->WarpSet(EMPIRE_START_X(ecs::GetEmpire(ch)), EMPIRE_START_Y(ecs::GetEmpire(ch)));
 					}
 				}
 
@@ -2518,7 +2518,7 @@ ACMD(do_observer_exit)
 				ch->GetArena()->RemoveObserver(ecs::GetPlayerID(ch));
 
 			ch->SetArena(nullptr);
-			ch->WarpSet(ARENA_RETURN_POINT_X(ch->GetEmpire()), ARENA_RETURN_POINT_Y(ch->GetEmpire()));
+			ch->WarpSet(ARENA_RETURN_POINT_X(ecs::GetEmpire(ch)), ARENA_RETURN_POINT_Y(ecs::GetEmpire(ch)));
 		}
 		else
 		{
@@ -2530,7 +2530,7 @@ ACMD(do_observer_exit)
 
 ACMD(do_view_equip)
 {
-	if (ch->GetGMLevel() <= GM_PLAYER)
+	if (ecs::GetGMLevel(ch) <= GM_PLAYER)
 		return;
 
 	char arg1[256];
@@ -2540,7 +2540,7 @@ ACMD(do_view_equip)
 	{
 		uint32_t vid = 0;
 		str_to_number(vid, arg1);
-		LPCHARACTER tch = CHARACTER_MANAGER::instance().Find(vid);
+		auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 		if (!tch)
 			return;
@@ -2578,7 +2578,7 @@ ACMD(do_party_request)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().Find(vid);
+	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
 		if (!ch->RequestToParty(tch))
@@ -2595,7 +2595,7 @@ ACMD(do_party_request_accept)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().Find(vid);
+	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
 		ch->AcceptToParty(tch);
@@ -2611,7 +2611,7 @@ ACMD(do_party_request_deny)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().Find(vid);
+	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
 		ch->DenyToParty(tch);
@@ -3037,7 +3037,7 @@ namespace
 		if (!ch)
 			return nullptr;
 
-		LPCHARACTER npc = ch->GetQuestNPC();
+		auto* npc = ch->GetQuestNPC();
 		if (npc && npc->GetRaceNum() == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
@@ -3082,7 +3082,7 @@ ACMD(do_stonecraft)
 
 	if (!str_cmp(arg1, "open"))
 	{
-		LPCHARACTER npc = GetStoneCraftNpc(ch);
+		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
 			ch->ChatPacket(CHAT_TYPE_INFO, "You need to be closer to npc.");
@@ -3106,7 +3106,7 @@ ACMD(do_stonecraft)
 			return;
 		}
 
-		LPCHARACTER npc = GetStoneCraftNpc(ch);
+		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
 			ch->ChatPacket(CHAT_TYPE_INFO, "You are too far from npc.");
@@ -3133,7 +3133,7 @@ ACMD(do_stonecraft)
 	}
 	if (!str_cmp(arg1, "makeall"))
 	{
-		LPCHARACTER npc = GetStoneCraftNpc(ch);
+		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
 			ch->ChatPacket(CHAT_TYPE_INFO, "You are too far from npc");

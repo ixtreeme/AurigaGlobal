@@ -174,6 +174,42 @@ inline int GetLevel(LPCHARACTER ch)
     return ch->GetLevel();
 }
 
+inline uint8_t GetEmpire(LPCHARACTER ch)
+{
+    if (!ch) {
+        return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* empire = g_registry.try_get<ecs::EmpireComponent>(e)) {
+            return empire->value;
+        }
+    }
+
+    return ch->GetEmpire();
+}
+
+inline uint8_t GetGMLevel(LPCHARACTER ch)
+{
+    if (!ch) {
+        return 0;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e != entt::null) {
+        if (const auto* gm = g_registry.try_get<ecs::GMLevel>(e)) {
+            return gm->level;
+        }
+
+        if (const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e)) {
+            return flags->gmLevel;
+        }
+    }
+
+    return ch->GetGMLevel();
+}
+
 inline bool IsPC(LPCHARACTER ch)
 {
     if (!ch) {
