@@ -38,6 +38,7 @@
 
 #include "horsename_manager.h"
 #include "pcbang.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "gm.h"
 #include "map_location.h"
 #include "DragonSoul.h"
@@ -527,7 +528,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
 	{
-		LPCHARACTER p = d->GetCharacter();
+		auto* p = d->GetCharacter();
 		sys_err("login state already has main state (character %s %p)", p->GetName(), get_pointer(p));
 		return;
 	}
@@ -538,7 +539,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		return;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().CreateCharacter(pTab->name, pTab->id);
+	auto* ch = CHARACTER_MANAGER::instance().CreateCharacter(pTab->name, pTab->id);
 
 	ch->BindDesc(d);
 	ch->SetPlayerProto(pTab);
@@ -586,7 +587,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		p.bHeader = HEADER_GG_LOGIN;
 		strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
-		p.dwPID = ch->GetPlayerID();
+		p.dwPID = ecs::GetPlayerID(ch);
 		p.bEmpire = ch->GetEmpire();
 		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
 		p.bChannel = g_bChannel;
@@ -603,7 +604,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ch->GetDesc()->GetAccountTable().id, ch->GetPlayerID(), ch->GetLevel(), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+					ch->GetDesc()->GetAccountTable().id, ecs::GetPlayerID(ch), ecs::GetLevel(ch), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
 
 			if (0)
 				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ch->GetDesc()->GetHostName()));
@@ -640,7 +641,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	sys_log(0, "InputDB: player_load %s %dx%dx%d LEVEL %d MOV_SPEED %d JOB %d ATG %d DFG %d GMLv %d",
 			pTab->name,
 			ch->GetX(), ch->GetY(), ch->GetZ(),
-			ch->GetLevel(),
+			ecs::GetLevel(ch),
 			ch->GetPoint(POINT_MOV_SPEED),
 			ch->GetJob(),
 			ch->GetPoint(POINT_ATT_GRADE),
@@ -1172,7 +1173,7 @@ EVENTFUNC(quest_login_event)
 
 	uint32_t dwPID = info->dwPID;
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
 
 	if (!ch)
 		return 0;
@@ -1196,13 +1197,13 @@ EVENTFUNC(quest_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		sys_log(0, "QUEST_LOAD: Login pc %d by event", ch->GetPlayerID());
-		quest::CQuestManager::instance().Login(ch->GetPlayerID());
+		sys_log(0, "QUEST_LOAD: Login pc %d by event", ecs::GetPlayerID(ch));
+		quest::CQuestManager::instance().Login(ecs::GetPlayerID(ch));
 		return 0;
 	}
 	else
 	{
-		sys_err(0, "input_db.cpp:quest_login_event INVALID PHASE pid %d", ch->GetPlayerID());
+		sys_err(0, "input_db.cpp:quest_login_event INVALID PHASE pid %d", ecs::GetPlayerID(ch));
 		return 0;
 	}
 }
@@ -1212,7 +1213,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	if (nullptr == d)
 		return;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 
 	if (nullptr == ch)
 		return;
@@ -1225,16 +1226,16 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	{
 		if (dwCount != 0)
 		{
-			if (ch->GetPlayerID() != pQuestTable[0].dwPID)
+			if (ecs::GetPlayerID(ch) != pQuestTable[0].dwPID)
 			{
-				sys_err("PID differs %u %u", ch->GetPlayerID(), pQuestTable[0].dwPID);
+				sys_err("PID differs %u %u", ecs::GetPlayerID(ch), pQuestTable[0].dwPID);
 				return;
 			}
 		}
 
 		sys_log(0, "QUEST_LOAD: count %d", dwCount);
 
-		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
+		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
 
 		if (!pkPC)
 		{
@@ -1290,7 +1291,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		else
 		{
 			quest_login_event_info* info = AllocEventInfo<quest_login_event_info>();
-			info->dwPID = ch->GetPlayerID();
+			info->dwPID = ecs::GetPlayerID(ch);
 
 			event_create(quest_login_event, info, PASSES_PER_SEC(1));
 		}
@@ -1315,7 +1316,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 
 	uint8_t bSize = 1;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 
 	//PREVENT_TRADE_WINDOW
 	if (ch->GetShopOwner() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen() )
@@ -1670,7 +1671,7 @@ void CInputDB::GuildLadder(const char* c_pData)
 #ifdef __SKILL_COLOR_SYSTEM__
 void CInputDB::SkillColorLoad(LPDESC d, const char * c_pData)
 {
-	LPCHARACTER ch;
+	auto* ch = static_cast<LPCHARACTER>(nullptr);
 
 	if (!d || !(ch = d->GetCharacter()))
 		return;
@@ -1681,7 +1682,7 @@ void CInputDB::SkillColorLoad(LPDESC d, const char * c_pData)
 
 void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 {
-	LPCHARACTER ch;
+	auto* ch = static_cast<LPCHARACTER>(nullptr);
 
 	if (!d || !(ch = d->GetCharacter()))
 		return;
@@ -1701,7 +1702,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	{
 		if (LPITEM staleItem = ITEM_MANAGER::instance().Find(p->id))
 		{
-			const LPCHARACTER staleOwner = staleItem->GetOwner();
+			const auto* staleOwner = staleItem->GetOwner();
 			const bool samePlayer =
 				(staleOwner && staleOwner->GetPlayerID() == ch->GetPlayerID()) ||
 				(staleItem->GetLastOwnerPID() == ch->GetPlayerID());
@@ -1716,7 +1717,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			{
 				sys_err("CInputDB::ItemLoad: purging stale duplicate item id=%u owner_pid=%u window=%u",
 					p->id,
-					ch->GetPlayerID(),
+					ecs::GetPlayerID(ch),
 					p->window);
 				staleItem->SetSkipSave(true);
 				M2_DESTROY_ITEM(staleItem);
@@ -1778,7 +1779,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 					break;
 #endif
 				case EQUIPMENT:
-					if (item->CheckItemUseLevel(ch->GetLevel()) == true )
+					if (item->CheckItemUseLevel(ecs::GetLevel(ch)) == true )
 					{
 						if (item->EquipTo(ch, p->pos) == false )
 						{
@@ -1839,7 +1840,7 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 	if (!d || !d->GetCharacter())
 		return;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 	if (!ch)
 		return;
 
@@ -1861,7 +1862,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 	if (!d || !d->GetCharacter())
 		return;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 	if (!ch)
 		return;
 
@@ -1923,7 +1924,7 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	if (!d->GetCharacter())
 		return;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 
 	uint32_t dwPID = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
@@ -2204,7 +2205,7 @@ void CInputDB::BillingExpire(const char * c_pData)
 	if (!d)
 		return;
 
-	LPCHARACTER ch = d->GetCharacter();
+	auto* ch = d->GetCharacter();
 
 	if (p->dwRemainSeconds <= 60)
 	{
@@ -2381,12 +2382,12 @@ void CInputDB::WeddingEnd(TPacketWeddingEnd* p)
 // MYSHOP_PRICE_LIST
 void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
 {
-	LPCHARACTER ch;
+	auto* ch = static_cast<LPCHARACTER>(nullptr);
 
 	if (!d || !(ch = d->GetCharacter()) )
 		return;
 
-	sys_log(0, "RecvMyshopPricelistRes name[%s]", ch->GetName());
+	sys_log(0, "RecvMyshopPricelistRes name[%s]", ecs::GetName(ch));
 	ch->UseSilkBotaryReal(p );
 
 }
@@ -2421,7 +2422,7 @@ void CInputDB::ReloadAdmin(const char * c_pData )
 
 		c_pData += sizeof (tAdminInfo );
 
-		LPCHARACTER pChar = CHARACTER_MANAGER::instance().FindPC(rAdminInfo.m_szName );
+		auto* pChar = CHARACTER_MANAGER::instance().FindPC(rAdminInfo.m_szName );
 		if (pChar )
 		{
 			pChar->SetGMLevel();
@@ -3374,7 +3375,7 @@ void CInputDB::GuildChangeMaster(TPacketChangeGuildMaster* p)
 
 void CInputDB::DetailLog(const TPacketNeedLoginLogInfo* info)
 {
-	LPCHARACTER pChar = CHARACTER_MANAGER::instance().FindByPID( info->dwPlayerID );
+	auto* pChar = CHARACTER_MANAGER::instance().FindByPID( info->dwPlayerID );
 
 	if (nullptr != pChar)
 	{
@@ -3392,13 +3393,13 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 	{
 		if (d->GetCharacter())
 		{
-			LPCHARACTER ch = d->GetCharacter();
+			auto* ch = d->GetCharacter();
 			ch->SetItemAward_vnum(data->vnum);	// ch 에 임시 저장해놨다가 QuestLoad 함수에서 처리
 			ch->SetItemAward_cmd(data->command);
 
 			if(d->IsPhase(PHASE_GAME))			//게임페이즈일때
 			{
-				quest::CQuestManager::instance().ItemInformer(ch->GetPlayerID(),ch->GetItemAward_vnum());	//questmanager 호출
+				quest::CQuestManager::instance().ItemInformer(ecs::GetPlayerID(ch),ch->GetItemAward_vnum());	//questmanager 호출
 			}
 		}
 	}
@@ -3544,4 +3545,7 @@ void CInputDB::ItemShop(LPDESC d, const char* c_pData)
 	}
 }
 #endif
+
+
+
 
