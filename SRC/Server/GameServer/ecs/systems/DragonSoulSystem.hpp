@@ -17,5 +17,6 @@ void CleanUp(entt::entity owner);
 bool OpenRefineWindow(entt::entity owner, LPENTITY opener);
 bool CloseRefineWindow(entt::entity owner);
 bool CanRefine(entt::entity owner);
+LPENTITY GetRefineWindowOpener(entt::entity owner);
 
 } // namespace DragonSoulSystem

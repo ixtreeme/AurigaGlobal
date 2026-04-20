@@ -7,6 +7,7 @@
 #include "AIHelpers.hpp"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
+#include "components/character_runtime_components.hpp"
 #include "components/identity_components.hpp"
 #include "components/spatial_components.hpp"
 #include "components/transform_components.hpp"
@@ -32,6 +33,20 @@ inline LPCHARACTER LegacyCharOf(entt::entity e)
     }
 
     return nullptr;
+}
+
+inline ecs::CharacterRuntimeFlagsComponent* TryGetRuntimeFlags(LPCHARACTER ch)
+{
+    if (!ch) {
+        return nullptr;
+    }
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e)) {
+        return nullptr;
+    }
+
+    return g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
 }
 
 inline uint32_t GetPlayerID(LPCHARACTER ch)

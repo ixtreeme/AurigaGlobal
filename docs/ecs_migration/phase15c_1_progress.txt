@@ -66,3 +66,319 @@ Verification
 Next target
 - Ready for 15C-1f: G_DRAGONSOUL
 - Expected next large byte win: ~14,532 bytes per CHARACTER
+
+Phase 15C-1f - DragonSoul inventory migration
+
+Scope
+- Migrated the DragonSoul inventory storage and runtime window state out of `CHARACTER_POINT_INSTANT`.
+- Split the old legacy fields into two ECS components:
+  - `ecs::DragonSoulInventoryComponent`
+  - `ecs::DragonSoulRuntimeStateComponent`
+
+Components introduced
+- `ecs::DragonSoulInventoryComponent`
+  - `pItems[DRAGON_SOUL_INVENTORY_MAX_NUM]`
+  - `wItemGrid[DRAGON_SOUL_INVENTORY_MAX_NUM]`
+- `ecs::DragonSoulRuntimeStateComponent`
+  - `activeDeck`
+  - `pRefineWindowOpener`
+
+Implementation notes
+- `EntityFactory::CreatePC(...)` now attaches both DragonSoul components at entity creation.
+- `CHARACTER::GetItem(...)` for `DRAGON_SOUL_INVENTORY` now reads through `GetDragonSoulItem(...)`.
+- `CHARACTER::SetItem(...)` for `DRAGON_SOUL_INVENTORY` now writes directly into `DragonSoulInventoryComponent`.
+- `CHARACTER::CopyDragonSoulItemGrid(...)` now copies through `GetDragonSoulGrid(...)`.
+- `DragonSoulSystem` moved runtime state reads/writes to `DragonSoulRuntimeStateComponent`.
+- Legacy fields removed from `CHARACTER_POINT_INSTANT`:
+  - `pDSItems`
+  - `wDSItemGrid`
+  - `iDragonSoulActiveDeck`
+  - `m_pDragonSoulRefineWindowOpener`
+
+Bytes freed
+- This substep removes about `14,532` bytes per CHARACTER.
+- Cumulative `15C-1` reduction so far:
+  - previous total: `~11,088` bytes per CHARACTER
+  - plus DragonSoul: `~14,532` bytes per CHARACTER
+  - new total: `~25,620` bytes per CHARACTER
+  - at `1000` online characters: `~24.4 MiB`
+
+Verification
+- Build gate passed:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Fresh binary deployed to WinTest and full stack restarted cleanly.
+- Fresh boot/log smoke stayed clear of new DragonSoul-specific regressions:
+  - no new `VID_DRIFT`
+  - no new `DestroyCharacter ... not found`
+  - no new `SpawnMob: cannot create`
+  - no DragonSoul-specific null deref surfaced in boot smoke
+- Remaining `syserr` noise stayed in the known motion/content-warning bucket.
+
+Runtime status
+- Manual in-client DragonSoul regression is still required for full closeout:
+  - inventory display
+  - deck switching
+  - refine window open/close
+  - item movement in DragonSoul inventory
+  - logout/login persistence
+- Manual WinTest runtime confirmation completed:
+  - DragonSoul inventory works correctly
+  - no immediate gameplay regression observed in the migrated DragonSoul paths
+
+Next targets
+- `15C-1g`: `G_APPEARANCE_PARTS`
+- `15C-1h`: `G_VITALS_MAX`
+- `15C-1i`: `G_RUNTIME_FLAGS`
+- `15C-1j`: `G_INVENTORY_STORAGE + G_COMBAT_STATS`
+
+Phase 15C-1g-h - Appearance parts + vitals max batch migration
+
+Scope
+- Migrated the appearance-parts slice out of `CHARACTER_POINT_INSTANT`:
+  - `parts[PART_MAX_NUM]`
+  - `bBasePart`
+- Migrated the vitals-max slice out of `CHARACTER_POINT_INSTANT`:
+  - `iMaxHP`
+  - `iMaxSP`
+  - `iMaxStamina`
+
+Components introduced / reused
+- New:
+  - `ecs::AppearancePartsComponent`
+- Reused existing vital components:
+  - `ecs::Health::max`
+  - `ecs::Mana::max`
+  - `ecs::Stamina::max`
+
+Implementation notes
+- `EntityFactory::CreatePC(...)` now seeds `AppearancePartsComponent` from `TPlayerTable`.
+- `CreateMobEntity(...)` now attaches a zeroed `AppearancePartsComponent`, keeping the entity surface uniform.
+- `CHARACTER::SetPart(...)` now writes into `AppearancePartsComponent`.
+- `CHARACTER::GetPart(...)` now reads from `AppearancePartsComponent`.
+- `CHARACTER::GetOriginalPart(...)` now resolves the original main part through `AppearancePartsComponent::basePart`.
+- `SessionSystem::CreatePlayerProto(...)` now serializes `part_base` and `parts[]` from ECS instead of `m_pointsInstant`.
+- `CHARACTER::SetMaxHP/GetMaxHP`, `SetMaxSP/GetMaxSP`, and `SetMaxStamina/GetMaxStamina` now use ECS `Health/Mana/Stamina.max`.
+- `POINT_MAX_*` recompute paths stay coherent because `PointSystem` already routes through the `SetMax*` helper surface.
+- One stale quest binding survivor in `questlua_pc.cpp` was cleaned so `pc_get_part` / `pc_set_part` now go through `GetPart` / `SetPart`.
+
+Legacy fields removed
+- `parts`
+- `bBasePart`
+- `iMaxHP`
+- `iMaxSP`
+- `iMaxStamina`
+
+Bytes freed
+- `15C-1g` + `15C-1h` remove about `41` bytes per CHARACTER.
+- Cumulative `15C-1` reduction so far:
+  - previous total: `~25,620` bytes per CHARACTER
+  - plus appearance/vitals max: `~41` bytes per CHARACTER
+  - new total: `~25,661` bytes per CHARACTER
+  - at `1000` online characters: `~24.5 MiB`
+
+Verification
+- Build gate passed:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Fresh binary deployed to WinTest and full stack restarted cleanly.
+- Fresh boot/log smoke stayed clear of new regressions:
+  - no new `VID_DRIFT`
+  - no new `DestroyCharacter ... not found`
+  - no new `SpawnMob: cannot create`
+  - no appearance/vitals-specific boot null deref surfaced
+- Remaining `syserr` noise stayed in the known motion/content-warning bucket.
+
+Runtime status
+- Manual in-client regression is still required for full closeout:
+  - appearance correctness on login
+  - equipment-driven appearance updates
+  - mount / dismount / polymorph / unpolymorph appearance recovery
+  - HP/SP max display correctness
+  - buff/unbuff max-value recompute
+  - equipment/stat changes affecting max values
+
+Next targets
+- `15C-1i`: `G_RUNTIME_FLAGS`
+- `15C-1j`: `G_INVENTORY_STORAGE + G_COMBAT_STATS`
+
+Phase 15C-1i FINAL - Runtime flags fully on ECS (code-side cutover)
+
+Scope
+- Removed the temporary runtime-flag dual-authority window and completed the final cutover for the runtime flag cluster.
+- Removed the legacy runtime flag members from `CHARACTER_POINT_INSTANT`:
+  - `dwAIFlag`
+  - `instant_flag`
+  - `position`
+  - `dwImmuneFlag`
+  - `dwLastShoutPulse`
+  - `gm_level`
+  - `bBlockMode`
+  - `fRot`
+
+Component authority
+- `ecs::CharacterRuntimeFlagsComponent` is now the sole authority for the runtime flag slice.
+- Helper surface remains ECS-backed:
+  - `GetAIFlag()`
+  - `GetInstantFlag()`
+  - `GetPosition()`
+  - `GetRotation()`
+  - `GetImmuneFlag()`
+  - `GetLastShoutPulse()`
+  - `GetGMLevel()`
+  - `GetBlockMode()` / `IsBlockMode()`
+  - `IsAlive()`
+
+Implementation notes
+- Removed the temporary `RFLAG_DRIFT` detector from `VitalRegenSystem.cpp`.
+- Collapsed all remaining dual-authority mirrors to ECS-only writes.
+- Cleared the final direct `m_pointsInstant.<runtime-flag>` survivors from:
+  - `CombatSystem.cpp`
+  - `MovementSystem.cpp`
+  - `PlayerRuntimeSystem.cpp`
+  - `EntityFactory.cpp`
+- Zero legacy runtime flag references remain in the GameServer tree.
+
+Bytes freed
+- This substep removes about `26` bytes per CHARACTER.
+- Cumulative `15C-1` reduction so far:
+  - previous total: `~25,661` bytes per CHARACTER
+  - plus runtime flags: `~26` bytes per CHARACTER
+  - new total: `~25,687` bytes per CHARACTER
+  - at `1000` online characters: `~24.5 MiB`
+
+Verification
+- Build gate passed:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Fresh binary deployed to WinTest and full stack restarted.
+- Boot/log smoke stayed clean for the target regressions:
+  - no `RFLAG_DRIFT`
+  - no `VID_DRIFT`
+  - no fresh `DestroyCharacter ... not found`
+  - no fresh `SpawnMob: cannot create`
+- Remaining `syserr` noise stayed in the known motion/content-warning bucket.
+
+Runtime status
+- Code-side cutover is complete.
+- Manual WinTest runtime confirmation completed.
+- User confirmation: `teljesen j?l m?k?dik a j?t?k`.
+- `15C-1i` is now runtime-closed as well.
+
+Next target
+- `15C-1j`: main inventory + `points[]` / combat-stats slice (largest remaining cut)
+
+
+Phase 15C-1j - points[] migrated to ECS (code-side cutover)
+
+Scope
+- Migrated the `CHARACTER_POINT_INSTANT.points[POINT_MAX_NUM]` runtime stats array to `ecs::CharacterStatsComponent`.
+- Removed the legacy `points[]` field from `CHARACTER_POINT_INSTANT`.
+- This was the hottest remaining points-cluster surface and the last large stat-array slice before the main inventory cut.
+
+Authority model
+- Added `ecs::CharacterStatsComponent` with a flat `int64_t points[POINT_MAX_NUM]` array.
+- `EntityFactory` now seeds the component for both PC and mob/NPC entities.
+- `CHARACTER::SetPoint()` now writes into the ECS stats component.
+- `CHARACTER::GetPoint()` now resolves through ECS for the migrated stat array, with explicit direct getter handling for the live-value indices that already have dedicated authorities:
+  - `POINT_LEVEL`
+  - `POINT_EXP`
+  - `POINT_GOLD`
+  - `POINT_HP`
+  - `POINT_MAX_HP`
+  - `POINT_SP`
+  - `POINT_MAX_SP`
+  - `POINT_STAMINA`
+  - `POINT_MAX_STAMINA`
+- `CHARACTER::GetLimitPoint()` now routes through `GetPoint()` instead of touching legacy storage.
+- `CHARACTER::ComputePoints()` clears and rebuilds the ECS stats array directly.
+
+Legacy removal
+- Removed the final direct `m_pointsInstant.points[...]` accesses from `PointSystem.cpp` and `StatSystem.cpp`.
+- Removed the legacy `points[POINT_MAX_NUM]` member from `CHARACTER_POINT_INSTANT` in `char.h`.
+- Verified that the only remaining `points[POINT_MAX_NUM]` declaration in `char.h` is the persistent/base `CHARACTER_POINT.points` array, not the instant runtime array.
+
+Bytes freed
+- This substep frees about `2,040` bytes per CHARACTER.
+- Cumulative `15C-1` reduction is now about `27,727` bytes per CHARACTER.
+- At `1000` online characters this is about `26.4 MiB` removed from the old points-cluster residency.
+- Estimated `CHARACTER_POINT_INSTANT` remainder after `15C-1j` is now roughly the main inventory storage only (`pItems` + `bItemGrid`, about `6.6 KiB`).
+
+Verification
+- Build gate passed after the legacy field removal:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Fresh binary deployed to WinTest.
+- Full DB/auth/channel stack restarted cleanly.
+- Boot/log smoke stayed clean for the target regressions:
+  - no fresh `VID_DRIFT`
+  - no fresh `DestroyCharacter ... not found`
+  - no fresh `SpawnMob: cannot create`
+  - no immediate stat-cutover crash surfaced during boot/login stack startup
+- Remaining `syserr` noise stayed in the known motion/content-warning bucket.
+
+Runtime status
+- Code-side cutover is complete.
+- Manual in-client combat/stat regression is still required for full closeout:
+  - HP/SP/stat display correctness
+  - melee / skill damage correctness
+  - EXP / gold changes
+  - buff / unbuff recompute
+  - equip / unequip stat deltas
+  - logout / login persistence
+
+Next milestone
+- `15C-1k`: main inventory (`pItems` / `bItemGrid`)
+- After that, `CHARACTER_POINT_INSTANT` is effectively exhausted as a meaningful storage block.
+
+Phase 15C-1k - main inventory migrated to ECS (code-side cutover)
+
+Scope
+- Migrated the main inventory and equipment storage from CHARACTER_POINT_INSTANT to ecs::MainInventoryRuntimeComponent.
+- Removed the legacy pItems[INVENTORY_AND_EQUIP_SLOT_MAX] and ItemGrid[INVENTORY_AND_EQUIP_SLOT_MAX] members from CHARACTER_POINT_INSTANT.
+- Kept the migration surface intentionally narrow: all direct legacy accesses were already concentrated in ItemSystem.cpp.
+
+Authority model
+- Added ecs::MainInventoryRuntimeComponent with flat legacy-compatible arrays:
+  - LPITEM pItems[INVENTORY_AND_EQUIP_SLOT_MAX]
+  - uint16_t bItemGrid[INVENTORY_AND_EQUIP_SLOT_MAX]
+- EntityFactory::CreatePC() now initializes the component when the player entity is created.
+- CHARACTER::SetItem() inventory/equipment branch now writes only to the ECS component.
+- CHARACTER::GetItem() inventory/equipment branch now reads from the ECS component.
+- CHARACTER::GetWear() now resolves through the ECS-backed main inventory storage.
+- CHARACTER::IsEmptyItemGrid() inventory/equipment branch now reads occupancy from the ECS component.
+
+Legacy removal
+- Removed the main inventory legacy fields from char.h.
+- Verified with tree-wide grep that no m_pointsInstant.pItems[...] or m_pointsInstant.bItemGrid[...] references remain.
+- This completes the same storage-class migration pattern already proven on extra inventory and DragonSoul.
+
+Bytes freed
+- This substep frees about 6,600 bytes per CHARACTER.
+- Cumulative 15C-1 reduction is now about 34,327 bytes per CHARACTER.
+- At 1000 online characters this is about 32.7 MiB removed from the old CHARACTER_POINT_INSTANT residency.
+- Remaining meaningful instant-storage footprint is now essentially the still-legacy semantic points[] story that was intentionally rolled back for separate retry work.
+
+Verification
+- Build gate passed after the legacy field removal:
+  - cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+- Fresh binary deployed to WinTest share/bin.
+- ch1/core1, ch1/core2, and ch99/core99 were restarted on the new binary.
+- Binary hash match after deploy:
+  - 46AC840AC9D73B12B2E015AFC6C4DA86A795694C8B1D0CE101B4696D8262150D
+- Boot/log smoke stayed clean for the target regressions:
+  - no fresh VID_DRIFT
+  - no fresh DestroyCharacter ... not found
+  - no fresh SpawnMob: cannot create
+- Remaining syserr noise stayed in the known motion/content-warning bucket.
+
+Runtime status
+- Code-side cutover is complete.
+- Manual in-client inventory/equipment regression is still required for full closeout:
+  - pickup / move / drop
+  - equip / unequip
+  - stack / split
+  - consumable use
+  - shop/trade flow
+  - logout / login persistence
+
+Runtime verification update
+- Manual WinTest regression passed after the 15C-1k cutover.
+- User confirmed that inventory and equipment behavior is working normally.
+- This closes the remaining runtime gate for the main-inventory ECS migration.

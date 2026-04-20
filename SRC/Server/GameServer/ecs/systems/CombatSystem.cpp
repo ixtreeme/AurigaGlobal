@@ -14,6 +14,7 @@
 #include "../components/movement_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
+#include "../CharacterAccessors.hpp"
 #include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../events.hpp"
@@ -101,6 +102,16 @@ static inline entt::entity EntityOf(LegacyCharHandle ch)
     }
 
     return AIHelpers::EcsOf(ch);
+}
+
+static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(LegacyCharHandle ch)
+{
+    return ecs::TryGetRuntimeFlags(ch);
+}
+
+static inline const ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(const CHARACTER* ch)
+{
+    return ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(ch));
 }
 
 static inline bool HasMoveState(LegacyCharHandle ch)
@@ -1211,7 +1222,6 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
 	rateFactor += to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += to->GetPoint(POINT_MALL_EXPBONUS);
-	rateFactor += to->GetPoint(POINT_EXP);
 	// useless (never used except for china intoxication) = always 100
 	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(to)) / 100.0L;
 	// apply calculated rate bonus
@@ -1359,14 +1369,12 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 	iExp += (iExp * to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
 	iExp += (iExp * to->GetPoint(POINT_MALL_EXPBONUS) / 100);
-	iExp += (iExp * to->GetPoint(POINT_EXP) / 100);
 
 	if (test_server)
 	{
-		sys_log(0, "Bonus Exp : Ramadan Candy: %d MallExp: %d PointExp: %d",
+		sys_log(0, "Bonus Exp : Ramadan Candy: %d MallExp: %d",
 			to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP),
-			to->GetPoint(POINT_MALL_EXPBONUS),
-			to->GetPoint(POINT_EXP)
+			to->GetPoint(POINT_MALL_EXPBONUS)
 		);
 	}
 
@@ -1540,25 +1548,6 @@ typedef struct SDamageInfo
 LPCHARACTER CHARACTER::DistributeExp()
 {
 	int iExpToDistribute = GetExp();
-#ifdef ENABLE_NEWEXP_CALCULATION_RAZOR93
-	int map = GetMapIndex();
-	if (map == 41 || map == 363)//map1, map2
-	{
-		//+500%
-		iExpToDistribute = iExpToDistribute * 5;
-	}
-	else if (map == 364)//ice empore
-	{
-		// +300%
-		iExpToDistribute = iExpToDistribute * 4;
-	}
-	else if (map == 368 || map == 63)//,nephtype,desert
-	{
-		// +200%
-		iExpToDistribute = iExpToDistribute * 2;
-	}
-
-#endif
 
 	if (iExpToDistribute <= 0)
 		return nullptr;
@@ -1817,7 +1806,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 	//	m_dwKillerPID = 0;
 
-	//	SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_NO_REWARD);
+	//	if (auto* flags = RuntimeFlags(this))
+	//		SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 
 	//	SetPosition(POS_DEAD);
 	//	ClearAffect(true);
@@ -1832,7 +1822,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	//	pack.vid = GetPacketVID();
 	//	PacketAround(&pack, sizeof(pack));
 
-	//	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+	//	if (auto* flags = RuntimeFlags(this))
+	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
 	//	if (GetDungeon())
 	//		GetDungeon()->DeadCharacter(this);
@@ -2022,7 +2013,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #endif
 
 			sys_log(1, "DEAD: %s %p WITH PENALTY", GetName(), this);
-			SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+						if (auto* flags = RuntimeFlags(this))
+				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 			LogManager::instance().CharLog(this, pkKiller->GetRaceNum(), "DEAD_BY_NPC", pkKiller->GetName());
 		}
 		else
@@ -2031,7 +2023,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			SetDeadByMonster(false);
 #endif
 			sys_log(1, "DEAD_BY_PC: %s %p KILLER %s %p", GetName(), this, pkKiller->GetName(), get_pointer(pkKiller));
-			REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+						if (auto* flags = RuntimeFlags(this))
+				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
 			if (GetEmpire() != pkKiller->GetEmpire())
 			{
@@ -2173,7 +2166,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	else
 	{
 		sys_log(1, "DEAD: %s %p", GetName(), this);
-		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+				if (auto* flags = RuntimeFlags(this))
+			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 	}
 
 	ClearSync();
@@ -2191,7 +2185,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	else
 	{
 		// 忡 ݹ ʹ   Ѵ.
-		if (!IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_NO_REWARD))
+		if (!(RuntimeFlags(this) && IS_SET(RuntimeFlags(this)->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
 			if (!(pkKiller && pkKiller->IsPC() && pkKiller->GetGuild() && pkKiller->GetGuild()->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
@@ -2247,7 +2241,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	pack.vid = GetPacketVID();
 	PacketAround(&pack, sizeof(pack));
 
-	REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+		if (auto* flags = RuntimeFlags(this))
+		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
 	// ÷̾ ĳ̸
 	if (GetDesc() != nullptr) {
@@ -2406,7 +2401,7 @@ bool CHARACTER::CanBeginFight() const
 	if (!CanMove())
 		return false;
 
-	return m_pointsInstant.position == POS_STANDING && !IsDead() && !IsStun();
+	return GetPosition() == POS_STANDING && !IsDead() && !IsStun();
 }
 
 void CHARACTER::BeginFight(LPCHARACTER pkVictim)
@@ -2418,7 +2413,7 @@ void CHARACTER::BeginFight(LPCHARACTER pkVictim)
 
 bool CHARACTER::CanFight() const
 {
-	return m_pointsInstant.position >= POS_FIGHTING ? true : false;
+	return GetPosition() >= POS_FIGHTING ? true : false;
 }
 
 void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
@@ -2731,9 +2726,10 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 		return;
 	}
 
-	if (IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY))
+	if (RuntimeFlags(this) && IS_SET(RuntimeFlags(this)->instantFlag, INSTANT_FLAG_DEATH_PENALTY))
 	{
-		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_DEATH_PENALTY);
+				if (auto* flags = RuntimeFlags(this))
+			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
 		// NO_DEATH_PENALTY_BUG_FIX
 		if (!bTown) //   ڸ Ȱø  ȣ Ѵ. ( ͽô ġ гƼ )
@@ -4396,16 +4392,16 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 					for (int i = 0; i < iSplitCount; ++i)
 					{
+						const int64_t splitGold = iGold / iSplitCount;
 						if (isAutoLoot)
 						{
-							pkAttacker->GiveGold(iGold / iSplitCount);
+							pkAttacker->GiveGold(splitGold);
 						}
-						else if ((item = ITEM_MANAGER::instance().CreateItem(1, iGold / iSplitCount)))
+						else if ((item = ITEM_MANAGER::instance().CreateItem(1, splitGold)))
 						{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 
-							pkAttacker->GiveGold(iGold);
-							iTotalGold += iGold;
+							pkAttacker->GiveGold(splitGold);
 #else
 
 							pos.x = GetX() + (number(-7, 7) * 20);
@@ -5120,7 +5116,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 		else if (pAttacker->IsGuardNPC())
 		{
-			SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_NO_REWARD);
+						if (auto* flags = RuntimeFlags(this))
+				SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 			Stun();
 			return true;
 		}
@@ -6447,7 +6444,7 @@ LPCHARACTER CHARACTER::GetProtege() const // ȣؾ
 
 bool CHARACTER::IsStun() const
 {
-	if (IS_SET(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN))
+	if (RuntimeFlags(this) && IS_SET(RuntimeFlags(this)->instantFlag, INSTANT_FLAG_STUN))
 		return true;
 
 	return false;
@@ -6504,7 +6501,8 @@ void CHARACTER::Stun()
 	pack.vid = GetPacketVID();
 	PacketAround(&pack, sizeof(pack));
 
-	SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
 	if (m_pkStunEvent)
 		return;
@@ -6518,7 +6516,7 @@ void CHARACTER::Stun()
 
 bool CHARACTER::IsDead() const
 {
-	if (m_pointsInstant.position == POS_DEAD)
+	if (GetPosition() == POS_DEAD)
 		return true;
 
 	return false;
@@ -6871,29 +6869,31 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 
 bool CHARACTER::IsAggressive() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 void CHARACTER::SetAggressive()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_AGGRESSIVE);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_AGGRESSIVE);
 	AIHelpers::SetAggressive(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsCoward() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_COWARD) || AIHelpers::IsCoward(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_COWARD) || AIHelpers::IsCoward(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 void CHARACTER::SetCoward()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_COWARD);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_COWARD);
 	AIHelpers::SetCoward(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsBerserker() const
 {
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_BERSERK))
+	if (IS_SET(GetAIFlag(), AIFLAG_BERSERK))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
@@ -6904,7 +6904,7 @@ bool CHARACTER::IsBerserker() const
 
 bool CHARACTER::IsStoneSkinner() const
 {
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_STONESKIN))
+	if (IS_SET(GetAIFlag(), AIFLAG_STONESKIN))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
@@ -6915,7 +6915,7 @@ bool CHARACTER::IsStoneSkinner() const
 
 bool CHARACTER::IsGodSpeeder() const
 {
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_GODSPEED))
+	if (IS_SET(GetAIFlag(), AIFLAG_GODSPEED))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
@@ -6926,7 +6926,7 @@ bool CHARACTER::IsGodSpeeder() const
 
 bool CHARACTER::IsDeathBlower() const
 {
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_DEATHBLOW))
+	if (IS_SET(GetAIFlag(), AIFLAG_DEATHBLOW))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
@@ -6937,7 +6937,7 @@ bool CHARACTER::IsDeathBlower() const
 
 bool CHARACTER::IsReviver() const
 {
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_REVIVE))
+	if (IS_SET(GetAIFlag(), AIFLAG_REVIVE))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(AIHelpers::EcsOf(const_cast<CHARACTER*>(this))))
@@ -6948,46 +6948,50 @@ bool CHARACTER::IsReviver() const
 
 void CHARACTER::SetNoAttackShinsu()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKSHINSU);
 	AIHelpers::SetNoAttackShinsu(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsNoAttackShinsu() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 void CHARACTER::SetNoAttackChunjo()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKCHUNJO);
 	AIHelpers::SetNoAttackChunjo(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsNoAttackChunjo() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 void CHARACTER::SetNoAttackJinno()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKJINNO);
 	AIHelpers::SetNoAttackJinno(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsNoAttackJinno() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 void CHARACTER::SetAttackMob()
 {
-	SET_BIT(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB);
+		if (auto* flags = RuntimeFlags(this))
+		SET_BIT(flags->aiFlag, AIFLAG_ATTACKMOB);
 	AIHelpers::SetAttackMob(AIHelpers::EcsOf(this), true);
 }
 
 bool CHARACTER::IsAttackMob() const
 {
-	return IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
+	return IS_SET(GetAIFlag(), AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(AIHelpers::EcsOf(const_cast<CHARACTER*>(this)));
 }
 
 int CHARACTER::GetHPPct() const
@@ -7147,9 +7151,8 @@ struct FuncDeadSpawnedByStone
 
 	void operator () (LegacyCharHandle ch)
 	{
-		if (m_pkKiller && m_pkKiller->IsPC())
-			ch->RegisterDamageForExp(m_pkKiller, 1);
-
+		if (auto* flags = RuntimeFlags(ch))
+			SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 		ch->Dead(nullptr);
 		ch->SetStone(nullptr);
 	}
@@ -7640,7 +7643,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		return false;
 	}
 
-	if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE))
+	if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
 	{
 		if (pkChr->IsPC())
 		{

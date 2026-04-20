@@ -1051,7 +1051,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (it != g_vec_pkCommonDropItem[bRank].end())
+	while (!pkChr->IsStone() && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1086,7 +1086,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
 
-		if (it != m_map_pkDropItemGroup.end())
+		if (!pkChr->IsStone() && it != m_map_pkDropItemGroup.end())
 		{
 			auto v = it->second->GetVector();
 
@@ -1137,7 +1137,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
-			if (it->second->GetLevelLimit() <= (uint32_t)iLevel)
+			if (!pkChr->IsStone() && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
 				auto v = it->second->GetVector();
 
@@ -1153,11 +1153,11 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	// BuyerTheitGloves Item Group
 	{
-		if ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!pkChr->IsStone() && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
-			)
+			))
 		{
 			auto it = m_map_pkGloveItemGroup.find(pkChr->GetRaceNum());
 			if (it != m_map_pkGloveItemGroup.end())
@@ -1238,7 +1238,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	// Common Drop Items
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (it != g_vec_pkCommonDropItem[bRank].end())
+	while (!pkChr->IsStone() && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1287,7 +1287,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		}
 		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
 
-		if (it != m_map_pkDropItemGroup.end())
+		if (!pkChr->IsStone() && it != m_map_pkDropItemGroup.end())
 		{
 			auto v = it->second->GetVector();
 
@@ -1356,7 +1356,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
-			if (it->second->GetLevelLimit() <= (uint32_t)iLevel)
+			if (!pkChr->IsStone() && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
 				auto v = it->second->GetVector();
 
@@ -1374,11 +1374,11 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	{
-		if ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!pkChr->IsStone() && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
-			)
+			))
 		{
 			auto it = m_map_pkGloveItemGroup.find(pkChr->GetRaceNum());
 

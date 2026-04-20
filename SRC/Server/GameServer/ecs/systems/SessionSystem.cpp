@@ -26,7 +26,9 @@
 #include "../EventDispatcher.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
+#include "../Registry.hpp"
 #include "../events.hpp"
+#include "../components/appearance_components.hpp"
 #include "../../questmanager.h"
 #include "../../safebox.h"
 #include "../../sectree.h"
@@ -214,7 +216,11 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.gaya = GetGaya();
 #endif
     tab.job = m_points.job;
-    tab.part_base = m_pointsInstant.bBasePart;
+    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
+    {
+        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
+            tab.part_base = appearance->basePart;
+    }
     tab.skill_group = m_points.skill_group;
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
     tab.envanter = Inven_Point();
@@ -291,7 +297,11 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     if (!m_stMobile.empty() && !*m_szMobileAuth)
         strlcpy(tab.szMobile, m_stMobile.c_str(), sizeof(tab.szMobile));
 
-    memcpy(tab.parts, m_pointsInstant.parts, sizeof(tab.parts));
+    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
+    {
+        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
+            memcpy(tab.parts, appearance->parts, sizeof(tab.parts));
+    }
     memcpy(tab.skills, m_pSkillLevels, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
 
 #ifdef ENABLE_BATTLE_PASS
@@ -341,7 +351,21 @@ void CHARACTER::FlushDelayedSaveItem()
 
     for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
         if ((item = GetInventoryItem(i)))
-            ITEM_MANAGER::instance().FlushDelayedSave(item);
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+
+    for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
+        if ((item = GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i))))
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#ifdef ENABLE_EXTRA_INVENTORY
+    for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+        if ((item = GetItem(TItemPos(EXTRA_INVENTORY, i))))
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#endif
+#ifdef ENABLE_SWITCHBOT
+    for (int i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
+        if ((item = GetItem(TItemPos(SWITCHBOT, i))))
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#endif
 }
 
 void CHARACTER::StartSaveEvent()

@@ -3,35 +3,75 @@
 #include "VitalRegenSystem.hpp"
 
 #include "../Registry.hpp"
+#include "../PointSemantic.hpp"
+#include "../components/character_stats_components.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/vital_components.hpp"
+#include "../../char.h"
 #include "../../char_interface.hpp"
 #include "../../char_manager.h"
+#include "../../utils.h"
 
-namespace
-{
+#if defined(DEBUG_STATS_DRIFT)
+namespace {
 
-inline LPCHARACTER LegacyCharOf(entt::entity e)
+void DebugStatsDriftCheck(entt::registry& reg)
 {
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid) {
-        return nullptr;
+    static uint32_t s_lastCheckPulse = 0;
+    const uint32_t now = get_dword_time();
+    if (s_lastCheckPulse != 0 && now - s_lastCheckPulse < 1000) {
+        return;
     }
+    s_lastCheckPulse = now;
 
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    static constexpr uint32_t kCheckPoints[] = {
+        POINT_ST, POINT_HT, POINT_DX, POINT_IQ,
+        POINT_ATT_GRADE, POINT_DEF_GRADE,
+        POINT_ATT_SPEED, POINT_MOV_SPEED,
+        POINT_CRITICAL_PCT, POINT_PENETRATE_PCT,
+        POINT_STAT, POINT_SKILL,
+    };
+
+    auto view = reg.view<ecs::LegacyCharPtr, ecs::CharacterStatsComponent>();
+    for (auto entity : view) {
+        auto* ch = view.get<ecs::LegacyCharPtr>(entity).ptr;
+        auto& stats = view.get<ecs::CharacterStatsComponent>(entity);
+        if (!ch) {
+            continue;
+        }
+
+        for (uint32_t point : kCheckPoints) {
+            if (!ecs::IsStatArrayPoint(static_cast<uint8_t>(point))) {
+                continue;
+            }
+
+            if (stats.points[point] != ch->GetPoint(static_cast<uint8_t>(point))) {
+                sys_err("STATS_DRIFT pt=%u ecs=%lld legacy=%lld name=%s",
+                    point,
+                    static_cast<long long>(stats.points[point]),
+                    static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))),
+                    ch->GetName());
+            }
+        }
+    }
 }
 
 } // namespace
+#endif
 
 void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
 {
     (void)tick;
 
-    auto view = reg.view<ecs::VIDComponent, ecs::Health, ecs::Mana>();
-    view.each([&](const entt::entity entity, const ecs::VIDComponent&, ecs::Health& health, ecs::Mana& mana) {
-        LPCHARACTER ch = LegacyCharOf(entity);
+#if defined(DEBUG_STATS_DRIFT)
+    DebugStatsDriftCheck(reg);
+#endif
+
+    auto view = reg.view<ecs::LegacyCharPtr, ecs::Health, ecs::Mana>();
+    view.each([&](const entt::entity entity, const ecs::LegacyCharPtr& legacy, ecs::Health& health, ecs::Mana& mana) {
+        LPCHARACTER ch = legacy.ptr;
         if (!ch) {
             return;
         }

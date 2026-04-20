@@ -6,6 +6,7 @@
 
 #include "../../char.h"
 
+
 #include "../../config.h"
 #include "../../utils.h"
 #include "../../crc32.h"
@@ -104,8 +105,6 @@
 #include "../../VikingDungeon.h"
 #include "../../EasterDungeon.h"
 #endif
-
-
 
 void CHARACTER::ComputeBattlePoints()
 {
@@ -655,7 +654,7 @@ void CHARACTER::ComputePoints()
 	int64_t iCurHP = this->GetHP();
 	int64_t iCurSP = this->GetSP();
 
-	m_pointsInstant.dwImmuneFlag = 0;
+	uint32_t immuneFlag = 0;
 
 	for (int i = 0; i < WEAR_MAX_NUM; i++) {
 		LPITEM pItem = GetWear(i);
@@ -667,7 +666,7 @@ void CHARACTER::ComputePoints()
 #endif
 
 			pItem->ModifyPoints(true);
-			SET_BIT(m_pointsInstant.dwImmuneFlag, GetWear(i)->GetImmuneFlag());
+			SET_BIT(immuneFlag, GetWear(i)->GetImmuneFlag());
 		}
 	}
 
@@ -761,8 +760,14 @@ void CHARACTER::ComputePoints()
 	UpdatePacket();
 	ComputeBattlePoints();
 
+
 }
 
 // m_dwPlayStartTimeAÇ ´ÜA§´Â milisecond´U. µYAIAÍoLAI1o?!´Â o?´ÜA§·Î ±â·IÇI±â
 // ¶§1®?! ÇA·1AI1A°LA» °e»eÇO ¶§ / 60000 A¸·Î 3a´21­ ÇI´ÂµY, ±× 3a¸ÓÁö °aAI 323O
 // A» ¶§ ?©±â?! dwTimeRemainA¸·Î 3Ö3î1­ Á¦´ë·Î °e»eµÇµµ·I ÇOÁÖ3î3ß ÇN´U.
+
+
+
+
+

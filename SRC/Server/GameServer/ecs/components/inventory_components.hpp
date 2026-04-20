@@ -21,6 +21,11 @@ struct InventoryGrid {
     std::array<LPITEM, INVENTORY_MAX_NUM> items {};
 };
 
+struct MainInventoryRuntimeComponent {
+    LPITEM pItems[INVENTORY_AND_EQUIP_SLOT_MAX] {};
+    uint16_t bItemGrid[INVENTORY_AND_EQUIP_SLOT_MAX] {};
+};
+
 #ifdef ENABLE_EXTRA_INVENTORY
 struct ExtraInventoryRuntimeComponent {
     LPITEM pItems[EXTRA_INVENTORY_MAX_NUM] {};
@@ -31,6 +36,16 @@ struct ExtraInventoryRuntimeComponent {
 struct CubeWindowComponent {
     LPITEM pItems[CUBE_MAX_NUM] {};
     LPCHARACTER pNpc { nullptr };
+};
+
+struct DragonSoulInventoryComponent {
+    LPITEM pItems[DRAGON_SOUL_INVENTORY_MAX_NUM] {};
+    uint16_t wItemGrid[DRAGON_SOUL_INVENTORY_MAX_NUM] {};
+};
+
+struct DragonSoulRuntimeStateComponent {
+    int32_t activeDeck { -1 };
+    LPENTITY pRefineWindowOpener { nullptr };
 };
 
 #ifdef __ATTR_TRANSFER_SYSTEM__

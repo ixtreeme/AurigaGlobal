@@ -1274,7 +1274,6 @@ namespace quest
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
-            points->base.level = ecs::GetLevel(ch);
             points->base.points[POINT_SKILL] = ch->GetPoint(POINT_SKILL);
             points->base.points[POINT_SUB_SKILL] = ch->GetPoint(POINT_SUB_SKILL);
             points->base.points[POINT_STAT] = ch->GetPoint(POINT_STAT);
@@ -1681,15 +1680,6 @@ namespace quest
 			return 1;
 		}
 		const int part_idx = static_cast<int>(lua_tonumber(L, 1));
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
-		{
-			if (part_idx >= 0 && part_idx < PART_MAX_NUM)
-			{
-				lua_pushnumber(L, points->instant.parts[part_idx]);
-				return 1;
-			}
-		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		lua_pushnumber(L, ch ? ch->GetPart(part_idx) : 0);
@@ -1699,9 +1689,7 @@ namespace quest
     ALUA(pc_set_part)
     {
         // migrated from CHARACTER::SetPart
-        // DUAL-PATH: ECS update + legacy call during migration window
         CQuestManager& q = CQuestManager::instance();
-        entt::entity e = q.GetPCEntity(L);
         const entt::entity chEntity = q.GetCurrentPCEntity();
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch || !lua_isnumber(L,1) || !lua_isnumber(L,2))
@@ -1712,14 +1700,6 @@ namespace quest
         int part_value = (int)lua_tonumber(L, 2);
         ch->SetPart(part_idx, part_value);
         ch->UpdatePacket();
-        if (part_idx >= 0 && part_idx < PART_MAX_NUM)
-        {
-            if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
-            {
-                points->instant.parts[part_idx] = part_value;
-                g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            }
-        }
         return 0;
     }
 
@@ -4138,7 +4118,6 @@ teleport_area:
             mana->max = ch->GetMaxSP();
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
-            points->base.level = ecs::GetLevel(ch);
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         return 0;
@@ -5520,6 +5499,7 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
+
 
 
 

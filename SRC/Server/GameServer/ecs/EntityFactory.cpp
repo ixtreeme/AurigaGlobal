@@ -6,9 +6,13 @@
 #include <cstring>
 
 #include "ItemRegistry.hpp"
+#include "PointSemantic.hpp"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
+#include "components/appearance_components.hpp"
 #include "components/ai_components.hpp"
+#include "components/character_runtime_components.hpp"
+#include "components/character_stats_components.hpp"
 #include "components/combat_components.hpp"
 #include "components/identity_components.hpp"
 #include "components/inventory_components.hpp"
@@ -95,30 +99,30 @@ ecs::StatusFlags MakeDefaultStatusFlags()
     return ecs::StatusFlags {};
 }
 
+ecs::CharacterRuntimeFlagsComponent MakeDefaultRuntimeFlags()
+{
+    return ecs::CharacterRuntimeFlagsComponent {
+        0u,
+        0,
+        POS_STANDING,
+        0u,
+        0u,
+        GM_PLAYER,
+        0u,
+        0.0f,
+    };
+}
+
 ecs::CharacterPoints MakeCharacterPoints(const TPlayerTable& data)
 {
     ecs::CharacterPoints points {};
 
     points.base.job = data.job;
     points.base.voice = data.voice;
-    points.base.level = data.level;
-    points.base.exp = data.exp;
-    points.base.gold = data.gold;
-    points.base.hp = data.hp;
-    points.base.sp = data.sp;
     points.base.iRandomHP = data.sRandomHP;
     points.base.iRandomSP = data.sRandomSP;
-    points.base.stamina = data.stamina;
     points.base.skill_group = data.skill_group;
 
-    points.instant.fRot = static_cast<float>(data.dir);
-    points.instant.iMaxHP = data.hp;
-    points.instant.iMaxSP = data.sp;
-    points.instant.position = POS_STANDING;
-    points.instant.gm_level = 0;
-    points.instant.bBasePart = data.part_base;
-    points.instant.iMaxStamina = data.stamina;
-    std::copy_n(std::begin(data.parts), PART_MAX_NUM, std::begin(points.instant.parts));
 
     points.base.points[POINT_LEVEL] = data.level;
     points.base.points[POINT_EXP] = data.exp;
@@ -213,6 +217,24 @@ void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER
     }
 }
 
+void SeedCharacterStatsComponentFromLegacy(entt::registry& reg, entt::entity entity)
+{
+    const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
+    if (!legacy || !legacy->ptr) {
+        return;
+    }
+
+    auto& stats = reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
+
+    for (uint32_t i = 0; i < POINT_MAX_NUM; ++i) {
+        if (!ecs::IsStatArrayPoint(static_cast<uint8_t>(i))) {
+            continue;
+        }
+
+        stats.points[i] = legacy->ptr->GetPoint(static_cast<uint8_t>(i));
+    }
+}
+
 ecs::AIFlags MakeAIFlags(const TMobTable& data)
 {
     ecs::AIFlags flags {};
@@ -266,6 +288,12 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::LevelComponent>(entity, data.bLevel);
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, ecs::CharacterPoints {});
+    reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
+    SeedCharacterStatsComponentFromLegacy(reg, entity);
+    reg.emplace_or_replace<ecs::AppearancePartsComponent>(entity, ecs::AppearancePartsComponent {});
+    auto runtimeFlags = MakeDefaultRuntimeFlags();
+    runtimeFlags.aiFlag = data.dwAIFlag;
+    reg.emplace_or_replace<ecs::CharacterRuntimeFlagsComponent>(entity, runtimeFlags);
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(0));
     reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
     reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
@@ -473,9 +501,19 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::Health>(entity, data.hp, data.hp);
     reg.emplace_or_replace<ecs::Mana>(entity, data.sp, data.sp);
     reg.emplace_or_replace<ecs::Stamina>(entity, data.stamina, data.stamina);
+    auto runtimeFlags = MakeDefaultRuntimeFlags();
+    runtimeFlags.gmLevel = gmLevel.level;
+    runtimeFlags.rotation = static_cast<float>(data.dir);
+    reg.emplace_or_replace<ecs::CharacterRuntimeFlagsComponent>(entity, runtimeFlags);
+    ecs::AppearancePartsComponent appearance {};
+    appearance.basePart = data.part_base;
+    std::copy_n(std::begin(data.parts), PART_MAX_NUM, std::begin(appearance.parts));
+    reg.emplace_or_replace<ecs::AppearancePartsComponent>(entity, appearance);
     reg.emplace_or_replace<ecs::LevelComponent>(entity, data.level);
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.exp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, MakeCharacterPoints(data));
+    reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
+    SeedCharacterStatsComponentFromLegacy(reg, entity);
 
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));
     reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
@@ -491,10 +529,13 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     reg.emplace_or_replace<ecs::EquipmentSlots>(entity, ecs::EquipmentSlots {});
     reg.emplace_or_replace<ecs::InventoryGrid>(entity, ecs::InventoryGrid {});
+    reg.emplace_or_replace<ecs::MainInventoryRuntimeComponent>(entity, ecs::MainInventoryRuntimeComponent {});
 #ifdef ENABLE_EXTRA_INVENTORY
     reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
 #endif
     reg.emplace_or_replace<ecs::CubeWindowComponent>(entity, ecs::CubeWindowComponent {});
+    reg.emplace_or_replace<ecs::DragonSoulInventoryComponent>(entity, ecs::DragonSoulInventoryComponent {});
+    reg.emplace_or_replace<ecs::DragonSoulRuntimeStateComponent>(entity, ecs::DragonSoulRuntimeStateComponent {});
 #ifdef __ATTR_TRANSFER_SYSTEM__
     reg.emplace_or_replace<ecs::AttrTransferWindowComponent>(entity, ecs::AttrTransferWindowComponent {});
 #endif

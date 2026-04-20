@@ -264,6 +264,9 @@ void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pv
 
 	if (c_pvData)
 		buffer_write(m_lpOutputBuffer, c_pvData, dwSize);
+
+	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
+	ProcessOutput();
 }
 
 void CLIENT_DESC::Packet(const void * c_pvData, int iSize)
@@ -274,6 +277,8 @@ void CLIENT_DESC::Packet(const void * c_pvData, int iSize)
 		return;
 	}
 	buffer_write(m_lpOutputBuffer, c_pvData, iSize);
+	fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
+	ProcessOutput();
 }
 
 bool CLIENT_DESC::IsRetryWhenClosed()

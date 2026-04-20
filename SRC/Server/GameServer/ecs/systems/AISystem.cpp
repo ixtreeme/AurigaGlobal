@@ -161,7 +161,7 @@ void CHARACTER::__StateIdle_NPC()
     }
 #endif
 
-    if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE)) {
+    if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE)) {
         return;
     }
 
@@ -249,7 +249,7 @@ void CHARACTER::__StateIdle_Monster()
         }
     }
 
-    if (no_wander || IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE) || number(0, 6)) {
+    if (no_wander || IS_SET(GetAIFlag(), AIFLAG_NOMOVE) || number(0, 6)) {
         return;
     }
 

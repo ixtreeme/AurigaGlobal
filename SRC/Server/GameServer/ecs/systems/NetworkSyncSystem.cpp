@@ -353,7 +353,7 @@ LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOn
 
 bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 {
-    if (IS_SET(m_pointsInstant.dwAIFlag, AIFLAG_NOMOVE))
+    if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
         return false;
 
     if (ch)

@@ -21,6 +21,7 @@
 #include "../../questmanager.h"
 #include "../../mount_inventory_helper.h"
 #include "../../party.h"
+#include "../CharacterAccessors.hpp"
 #include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/dirty_components.hpp"
@@ -28,6 +29,7 @@
 #include "../components/movement_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/combat_components.hpp"
+#include "../components/character_runtime_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 
@@ -260,7 +262,14 @@ void CHARACTER::SetRotation(float fRot)
 #endif
 	}
 
-	m_pointsInstant.fRot = fRot;
+		if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+		runtime->rotation = fRot;
+
+	if (const entt::entity e = EcsEntityOf(this); e != entt::null && g_registry.valid(e))
+	{
+		if (auto* rotation = g_registry.try_get<ecs::RotationComponent>(e))
+			rotation->yaw = fRot;
+	}
 }
 
 // x, y 1aÇâA¸·?o¸°?1±´U.
@@ -731,7 +740,8 @@ void CHARACTER::SetPosition(int pos)
 	if (pos == POS_STANDING)
 	{
 		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
-		REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_STUN);
+		if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
 
 		event_cancel(&m_pkDeadEvent);
 		event_cancel(&m_pkStunEvent);
@@ -761,8 +771,34 @@ void CHARACTER::SetPosition(int pos)
 		}
 	}
 
-	m_pointsInstant.position = pos;
+	if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+		runtime->position = pos;
 }
+
+bool CHARACTER::IsPosition(int pos) const
+{
+	return GetPosition() == pos;
+}
+
+int CHARACTER::GetPosition() const
+{
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(this)))
+		return runtime->position;
+
+}
+
+float CHARACTER::GetRotation() const
+{
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(this)))
+		return runtime->rotation;
+
+}
+
+bool CHARACTER::IsAlive() const
+{
+	return GetPosition() != POS_DEAD;
+}
+
 const int aiRecoveryPercents[10] = { 1, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
 
 EVENTFUNC(recovery_event)

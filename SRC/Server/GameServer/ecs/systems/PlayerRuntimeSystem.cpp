@@ -2,6 +2,8 @@
 
 #include "PlayerRuntimeSystem.hpp"
 
+#include <algorithm>
+
 #include "../../char.h"
 #include "../../char_manager.h"
 #include "../../config.h"
@@ -18,11 +20,14 @@
 #include "../../ecs/AIHelpers.hpp"
 #include "../../ecs/SpatialHelpers.hpp"
 #include "../../ecs/Registry.hpp"
+#include "../../ecs/components/appearance_components.hpp"
+#include "../../ecs/components/character_runtime_components.hpp"
 #include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/vital_components.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
 #include "../../guild_manager.h"
@@ -68,6 +73,198 @@ inline entt::entity EcsEntityOf(const CHARACTER* ch)
         return entt::null;
 
     return ch->GetEntityHandle();
+}
+
+static ecs::AppearancePartsComponent* EnsureAppearancePartsComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::AppearancePartsComponent>(e);
+}
+
+static const ecs::AppearancePartsComponent* TryGetAppearancePartsComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::AppearancePartsComponent>(e);
+}
+
+static ecs::CharacterRuntimeFlagsComponent* EnsureRuntimeFlagsComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e);
+}
+
+static const ecs::CharacterRuntimeFlagsComponent* TryGetRuntimeFlagsComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+}
+
+static ecs::Health* EnsureHealthComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::Health>(e);
+}
+
+static ecs::Mana* EnsureManaComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::Mana>(e);
+}
+
+static ecs::Stamina* EnsureStaminaComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::Stamina>(e);
+}
+
+static ecs::LevelComponent* EnsureLevelComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::LevelComponent>(e);
+}
+
+static ecs::Experience* EnsureExperienceComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::Experience>(e);
+}
+
+static ecs::GoldAmount* EnsureGoldAmountComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::GoldAmount>(e);
+}
+
+static const ecs::Health* TryGetHealthComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::Health>(e);
+}
+
+static const ecs::Mana* TryGetManaComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::Mana>(e);
+}
+
+static const ecs::Stamina* TryGetStaminaComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::Stamina>(e);
+}
+
+static const ecs::LevelComponent* TryGetLevelComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::LevelComponent>(e);
+}
+
+static const ecs::Experience* TryGetExperienceComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::Experience>(e);
+}
+
+static const ecs::GoldAmount* TryGetGoldAmountComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = EcsEntityOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::GoldAmount>(e);
 }
 
 inline bool HasCombatState(const CHARACTER* ch)
@@ -375,7 +572,8 @@ uint8_t CHARACTER::GetJob() const
 
 void CHARACTER::SetLevel(uint8_t level)
 {
-    m_points.level = level;
+    if (auto* ecsLevel = EnsureLevelComponent(this))
+        ecsLevel->value = level;
 
     if (IsPC())
     {
@@ -388,6 +586,42 @@ void CHARACTER::SetLevel(uint8_t level)
     }
 }
 
+int CHARACTER::GetLevel() const
+{
+    if (const auto* ecsLevel = TryGetLevelComponent(this))
+        return ecsLevel->value;
+
+    return 0;
+}
+
+uint32_t CHARACTER::GetExp() const
+{
+    if (const auto* exp = TryGetExperienceComponent(this))
+        return static_cast<uint32_t>(std::clamp<int64_t>(exp->current, 0, UINT32_MAX));
+
+    return 0;
+}
+
+void CHARACTER::SetExp(uint32_t exp)
+{
+    if (auto* ecsExp = EnsureExperienceComponent(this))
+        ecsExp->current = exp;
+}
+
+int64_t CHARACTER::GetGold() const
+{
+    if (const auto* gold = TryGetGoldAmountComponent(this))
+        return gold->amount;
+
+    return 0;
+}
+
+void CHARACTER::SetGold(int64_t gold)
+{
+    if (auto* wallet = EnsureGoldAmountComponent(this))
+        wallet->amount = gold;
+}
+
 void CHARACTER::SetEmpire(uint8_t bEmpire)
 {
     m_bEmpire = bEmpire;
@@ -398,25 +632,106 @@ uint8_t CHARACTER::GetCharType() const
     return m_bCharType;
 }
 
+uint32_t CHARACTER::GetAIFlag() const
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->aiFlag;
+
+    return 0;
+}
+
+void CHARACTER::SetHP(int64_t hp)
+{
+    if (auto* health = EnsureHealthComponent(this))
+        health->current = static_cast<int32_t>(std::clamp<int64_t>(hp, 0, INT32_MAX));
+}
+
+int64_t CHARACTER::GetHP() const
+{
+    if (const auto* health = TryGetHealthComponent(this))
+        return health->current;
+
+    return 0;
+}
+
+void CHARACTER::SetSP(int64_t sp)
+{
+    if (auto* mana = EnsureManaComponent(this))
+        mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
+}
+
+int64_t CHARACTER::GetSP() const
+{
+    if (const auto* mana = TryGetManaComponent(this))
+        return mana->current;
+
+    return 0;
+}
+
+void CHARACTER::SetStamina(int stamina)
+{
+    if (auto* staminaComp = EnsureStaminaComponent(this))
+        staminaComp->current = static_cast<int32_t>(std::clamp<int64_t>(stamina, 0, INT32_MAX));
+}
+
+int CHARACTER::GetStamina() const
+{
+    if (const auto* stamina = TryGetStaminaComponent(this))
+        return stamina->current;
+
+    return 0;
+}
+
+int32_t CHARACTER::GetInstantFlag() const
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->instantFlag;
+
+    return 0;
+}
+
+uint32_t CHARACTER::GetLastShoutPulse() const
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->lastShoutPulse;
+
+    return 0;
+}
+
+void CHARACTER::SetLastShoutPulse(uint32_t pulse)
+{
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->lastShoutPulse = pulse;
+}
+
 uint8_t CHARACTER::GetGMLevel() const
 {
     if (test_server)
         return GM_IMPLEMENTOR;
 
-    return m_pointsInstant.gm_level;
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->gmLevel;
+
+    return GM_PLAYER;
 }
 
 void CHARACTER::SetGMLevel()
 {
+    uint8_t level = GM_PLAYER;
+
     if (GetDesc())
-        m_pointsInstant.gm_level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
-    else
-        m_pointsInstant.gm_level = GM_PLAYER;
+        level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
+
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->gmLevel = level;
+
+    if (const entt::entity e = EcsEntityOf(this); e != entt::null && g_registry.valid(e))
+        g_registry.emplace_or_replace<ecs::GMLevel>(e, ecs::GMLevel { level });
 }
 
 BOOL CHARACTER::IsGM() const
 {
-    if (m_pointsInstant.gm_level != GM_PLAYER)
+    if (GetGMLevel() != GM_PLAYER)
         return true;
 
     return test_server ? true : false;
@@ -474,9 +789,10 @@ LPDUNGEON CHARACTER::GetDungeonForce() const
 
 void CHARACTER::SetBlockMode(uint8_t bFlag)
 {
-    m_pointsInstant.bBlockMode = bFlag;
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->blockMode = bFlag;
 
-    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", m_pointsInstant.bBlockMode);
+    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
 
     SetQuestFlag("game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
     SetQuestFlag("game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
@@ -488,8 +804,37 @@ void CHARACTER::SetBlockMode(uint8_t bFlag)
 
 void CHARACTER::SetBlockModeForce(uint8_t bFlag)
 {
-    m_pointsInstant.bBlockMode = bFlag;
-    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", m_pointsInstant.bBlockMode);
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->blockMode = bFlag;
+
+    ChatPacket(CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
+}
+
+uint8_t CHARACTER::GetBlockMode() const
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->blockMode;
+
+    return 0;
+}
+
+bool CHARACTER::IsBlockMode(uint8_t bFlag) const
+{
+    return (GetBlockMode() & bFlag) != 0;
+}
+
+void CHARACTER::SetImmuneFlag(uint32_t dw)
+{
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->immuneFlag = dw;
+}
+
+uint32_t CHARACTER::GetImmuneFlag() const
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(this))
+        return flags->immuneFlag;
+
+    return 0;
 }
 
 bool CHARACTER::IsGuardNPC() const
@@ -1187,11 +1532,13 @@ void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
 void CHARACTER::SetShop(LPSHOP pkShop)
 {
     if ((m_pkShop = pkShop)) {
-        SET_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
+        if (auto* flags = EnsureRuntimeFlagsComponent(this))
+            SET_BIT(flags->instantFlag, INSTANT_FLAG_SHOP);
     }
     else
     {
-        REMOVE_BIT(m_pointsInstant.instant_flag, INSTANT_FLAG_SHOP);
+        if (auto* flags = EnsureRuntimeFlagsComponent(this))
+            REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_SHOP);
         SetShopOwner(nullptr);
     }
 }
@@ -2512,7 +2859,9 @@ void CHARACTER::SetDuel(const char* type, int value)
 void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
 {
     assert(bPartPos < PART_MAX_NUM);
-    m_pointsInstant.parts[bPartPos] = wVal;
+
+    if (auto* appearance = EnsureAppearancePartsComponent(this))
+        appearance->parts[bPartPos] = wVal;
 }
 
 uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
@@ -2563,7 +2912,10 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
     }
 #endif
 
-    return m_pointsInstant.parts[bPartPos];
+    if (const auto* appearance = TryGetAppearancePartsComponent(this))
+        return appearance->parts[bPartPos];
+
+    return 0;
 }
 
 uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
@@ -2582,7 +2934,10 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
         }
 #endif
 
-        return m_pointsInstant.bBasePart;
+        if (const auto* appearance = TryGetAppearancePartsComponent(this))
+            return appearance->basePart;
+
+        return 0;
     }
     case PART_HAIR:
     {
@@ -2637,6 +2992,48 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     default:
         return 0;
     }
+}
+
+void CHARACTER::SetMaxHP(int64_t iVal)
+{
+    if (auto* health = EnsureHealthComponent(this))
+        health->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
+}
+
+int64_t CHARACTER::GetMaxHP() const
+{
+    if (const auto* health = TryGetHealthComponent(this))
+        return health->max;
+
+    return 0;
+}
+
+void CHARACTER::SetMaxSP(int64_t iVal)
+{
+    if (auto* mana = EnsureManaComponent(this))
+        mana->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
+}
+
+int64_t CHARACTER::GetMaxSP() const
+{
+    if (const auto* mana = TryGetManaComponent(this))
+        return mana->max;
+
+    return 0;
+}
+
+void CHARACTER::SetMaxStamina(int64_t iVal)
+{
+    if (auto* stamina = EnsureStaminaComponent(this))
+        stamina->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
+}
+
+int64_t CHARACTER::GetMaxStamina() const
+{
+    if (const auto* stamina = TryGetStaminaComponent(this))
+        return stamina->max;
+
+    return 0;
 }
 
 void CHARACTER::Destroy()
@@ -3164,7 +3561,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_points.skill_group = t->skill_group;
 
-    m_pointsInstant.bBasePart = t->part_base;
+    if (auto* appearance = EnsureAppearancePartsComponent(this))
+        appearance->basePart = t->part_base;
     SetPart(PART_HAIR, t->parts[PART_HAIR]);
 #ifdef ENABLE_ACCE_SYSTEM
     SetPart(PART_ACCE, t->parts[PART_ACCE]);
@@ -3333,8 +3731,8 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     SetHP(GetMaxHP());
     SetSP(GetMaxSP());
-
-    m_pointsInstant.dwAIFlag = t->dwAIFlag;
+    if (auto* flags = EnsureRuntimeFlagsComponent(this))
+        flags->aiFlag = t->dwAIFlag;
     SetImmuneFlag(t->dwImmuneFlag);
 
     AssignTriggers(t);
@@ -4496,8 +4894,6 @@ void CHARACTER::Initialize()
     m_fAttMul = 1.0f;
     m_fDamMul = 1.0f;
 
-    m_pointsInstant.iDragonSoulActiveDeck = -1;
-
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     m_mountSystem = nullptr;
     m_bIsMount = false;
@@ -4823,4 +5219,3 @@ EVENTFUNC(drop_event)
     return PASSES_PER_SEC(1);
 }
 #endif
-

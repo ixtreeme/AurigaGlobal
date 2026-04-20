@@ -11,9 +11,9 @@
 #include "../../packet.h"
 #include "../AIHelpers.hpp"
 #include "../Registry.hpp"
-#include "../VIDRegistry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/inventory_components.hpp"
 #include "../components/session_components.hpp"
 
 namespace
@@ -24,19 +24,16 @@ LPCHARACTER LegacyCharacter(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid)
-        return nullptr;
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy ? legacy->ptr : nullptr;
 }
 
-ecs::DragonSoulState* GetDragonSoulState(entt::entity e)
+ecs::DragonSoulRuntimeStateComponent* GetDragonSoulState(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.get_or_emplace<ecs::DragonSoulState>(e);
+    return &g_registry.get_or_emplace<ecs::DragonSoulRuntimeStateComponent>(e);
 }
 
 void MarkDirty(entt::entity e)
@@ -213,8 +210,8 @@ bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
     if (!ch || !state)
         return false;
 
-    if (!state->refineWindowOpener)
-        state->refineWindowOpener = opener;
+    if (!state->pRefineWindowOpener)
+        state->pRefineWindowOpener = opener;
 
     TPacketGCDragonSoulRefine pack;
     pack.header = HEADER_GC_DRAGON_SOUL_REFINE;
@@ -238,7 +235,7 @@ bool CloseRefineWindow(entt::entity owner)
     if (!state)
         return false;
 
-    state->refineWindowOpener = nullptr;
+    state->pRefineWindowOpener = nullptr;
     MarkDirty(owner);
     return true;
 }
@@ -246,7 +243,13 @@ bool CloseRefineWindow(entt::entity owner)
 bool CanRefine(entt::entity owner)
 {
     auto* state = GetDragonSoulState(owner);
-    return state && state->refineWindowOpener != nullptr;
+    return state && state->pRefineWindowOpener != nullptr;
+}
+
+LPENTITY GetRefineWindowOpener(entt::entity owner)
+{
+    auto* state = GetDragonSoulState(owner);
+    return state ? state->pRefineWindowOpener : nullptr;
 }
 
 } // namespace DragonSoulSystem
@@ -255,7 +258,6 @@ void CHARACTER::DragonSoul_Initialize()
 {
     const entt::entity e = AIHelpers::EcsOf(this);
     DragonSoulSystem::Initialize(e);
-    m_pointsInstant.iDragonSoulActiveDeck = DragonSoulSystem::GetActiveDeck(e);
 }
 
 int CHARACTER::DragonSoul_GetActiveDeck() const
@@ -271,16 +273,12 @@ bool CHARACTER::DragonSoul_IsDeckActivated() const
 bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
 {
     const entt::entity e = AIHelpers::EcsOf(this);
-    const bool ok = DragonSoulSystem::ActivateDeck(e, deck_idx);
-    m_pointsInstant.iDragonSoulActiveDeck = DragonSoulSystem::GetActiveDeck(e);
-    return ok;
+    return DragonSoulSystem::ActivateDeck(e, deck_idx);
 }
 
 void CHARACTER::DragonSoul_DeactivateAll()
 {
-    const entt::entity e = AIHelpers::EcsOf(this);
-    DragonSoulSystem::DeactivateAll(e);
-    m_pointsInstant.iDragonSoulActiveDeck = -1;
+    DragonSoulSystem::DeactivateAll(AIHelpers::EcsOf(this));
 }
 
 void CHARACTER::DragonSoul_CleanUp()
@@ -290,26 +288,20 @@ void CHARACTER::DragonSoul_CleanUp()
 
 bool CHARACTER::DragonSoul_RefineWindow_Open(LPENTITY pEntity)
 {
-    const entt::entity e = AIHelpers::EcsOf(this);
-    const bool ok = DragonSoulSystem::OpenRefineWindow(e, pEntity);
-    if (ok && !m_pointsInstant.m_pDragonSoulRefineWindowOpener)
-        m_pointsInstant.m_pDragonSoulRefineWindowOpener = pEntity;
-    return ok;
+    return DragonSoulSystem::OpenRefineWindow(AIHelpers::EcsOf(this), pEntity);
 }
 
 bool CHARACTER::DragonSoul_RefineWindow_Close()
 {
-    const bool ok = DragonSoulSystem::CloseRefineWindow(AIHelpers::EcsOf(this));
-    if (ok)
-        m_pointsInstant.m_pDragonSoulRefineWindowOpener = nullptr;
-    return ok;
+    return DragonSoulSystem::CloseRefineWindow(AIHelpers::EcsOf(this));
+}
+
+LPENTITY CHARACTER::DragonSoul_RefineWindow_GetOpener()
+{
+    return DragonSoulSystem::GetRefineWindowOpener(AIHelpers::EcsOf(this));
 }
 
 bool CHARACTER::DragonSoul_RefineWindow_CanRefine()
 {
-    const entt::entity e = AIHelpers::EcsOf(this);
-    if (e == entt::null || !g_registry.valid(e))
-        return m_pointsInstant.m_pDragonSoulRefineWindowOpener != nullptr;
-
-    return DragonSoulSystem::CanRefine(e);
+    return DragonSoulSystem::CanRefine(AIHelpers::EcsOf(this));
 }

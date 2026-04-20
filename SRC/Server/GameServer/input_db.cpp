@@ -1699,6 +1699,30 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++p)
 	{
+		if (LPITEM staleItem = ITEM_MANAGER::instance().Find(p->id))
+		{
+			const LPCHARACTER staleOwner = staleItem->GetOwner();
+			const bool samePlayer =
+				(staleOwner && staleOwner->GetPlayerID() == ch->GetPlayerID()) ||
+				(staleItem->GetLastOwnerPID() == ch->GetPlayerID());
+
+#ifdef ENABLE_EXTRA_INVENTORY
+			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
+#else
+			const bool extraInventoryWindow = false;
+#endif
+
+			if (samePlayer || extraInventoryWindow)
+			{
+				sys_err("CInputDB::ItemLoad: purging stale duplicate item id=%u owner_pid=%u window=%u",
+					p->id,
+					ch->GetPlayerID(),
+					p->window);
+				staleItem->SetSkipSave(true);
+				M2_DESTROY_ITEM(staleItem);
+			}
+		}
+
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(p->vnum, p->count, p->id);
 
 		if (!item)

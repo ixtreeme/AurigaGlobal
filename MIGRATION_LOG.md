@@ -1,4 +1,4 @@
-# ECS Migration Log
+﻿# ECS Migration Log
 
 ## Phase 0 - Analysis
 - Status: completed
@@ -4245,10 +4245,10 @@ itt voltunk
 - result of the per-file audit:
   - several original hits were false positives from local/non-`CHARACTER` members with `m_*` names
     - examples:
-      - `party.cpp` / `party.h` → `CParty::m_pkDungeon`
-      - `input_main.cpp` → local `m_pkChrTarget` / struct `m_bEmpire`
-      - `new_offlineshop.cpp` → shop-local `m_stName` / `m_pkShop`
-      - `dungeon.cpp` → `CDungeon::m_pkDungeon` / `m_lWarpMapIndex`
+      - `party.cpp` / `party.h` â†’ `CParty::m_pkDungeon`
+      - `input_main.cpp` â†’ local `m_pkChrTarget` / struct `m_bEmpire`
+      - `new_offlineshop.cpp` â†’ shop-local `m_stName` / `m_pkShop`
+      - `dungeon.cpp` â†’ `CDungeon::m_pkDungeon` / `m_lWarpMapIndex`
   - actual unresolved `CHARACTER` internals remaining in this pass are concentrated in:
     - trigger click state
     - timed-event handles
@@ -5158,3 +5158,1534 @@ Open investigation scope when revisited:
      - pet summon/despawn
      - dungeon boss spawn/flag flows
   3. then proceed to VID-A7 (`vid.h` deletion), because the CHARACTER-side blockers are now removed
+
+
+## Phase 15B-1 - GayaSystem LPCHARACTER -> entt::entity pilot
+- checkpoint goal:
+  - use `GayaSystem` as the first small-scope ECS-system-internal cleanup pilot after VID unification
+  - remove the old `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)` pattern from Gaya internals
+  - establish a repeatable entity-first bridge pattern for later systems such as:
+    - `AffectSystem`
+    - `SkillSystem`
+    - `MountSystem`
+    - `ItemSystem`
+    - `CombatSystem`
+- audit result before editing:
+  - `SRC/Server/GameServer/ecs/systems/GayaSystem.hpp` was already fully entity-signature based:
+    - all public `GayaSystem::*` APIs took `entt::entity`
+  - the remaining legacy coupling was internal:
+    - a local helper resolved `entt::entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+    - almost every entity-entry function then created a local `LPCHARACTER ch`
+  - external gameplay callers did not call `GayaSystem::*` directly:
+    - they still went through `CHARACTER` wrappers such as:
+      - `CraftGayaItems`
+      - `MarketGayaItems`
+      - `RefreshGayaItems`
+      - `InfoGayaMarker`
+      - `UpdateItemsGayaMarker`
+    - this meant no caller cascade was required for the pilot
+- implementation applied:
+  - `SRC/Server/GameServer/ecs/systems/GayaSystem.cpp`
+    - removed the old helper path:
+      - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+    - replaced it with direct ECS bridge resolution:
+      - `entity -> LegacyCharPtr`
+    - all entity-entry functions now resolve the legacy pointer exactly once at the top through:
+      - `LegacyCharOf(entt::entity)`
+    - this keeps the public surface entity-first while isolating the remaining legacy authority to one bridge point per function
+  - `SRC/Server/GameServer/ecs/AIHelpers.hpp`
+    - added `EcsOf(const CHARACTER*)`
+    - this removed the remaining `const_cast<CHARACTER*>(this)` noise from the const wrapper path
+- important scope note:
+  - this pilot did **not** attempt ECS component expansion for Gaya state
+  - Gaya market/runtime state is still legacy-CHARACTER-owned at this phase:
+    - `load_gaya_items`
+    - `load_gaya_values`
+    - `info_items`
+    - `info_slots`
+    - `GayaUpdateTime`
+    - `GetGaya() / PointChange(POINT_GAYA, ...)`
+  - so the correct pilot pattern here was:
+    - entity-first public API
+    - one local legacy bridge per function
+    - no new component surface in this pass
+- measured result:
+  - baseline raw `LPCHARACTER / CHARACTER*` token count inside GayaSystem from the migration audit: `17`
+  - post-migration raw `LPCHARACTER / CHARACTER*` token count in:
+    - `SRC/Server/GameServer/ecs/systems/GayaSystem.cpp`
+    - `SRC/Server/GameServer/ecs/systems/GayaSystem.hpp`
+    - result: `0`
+  - remaining intentional bridge points:
+    - `LegacyCharOf(entity)` local bridge at the top of each entity-entry function
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart performed after the pilot
+  - fresh boot/log smoke:
+    - no new Gaya-specific `syserr`
+    - only the usual pre-existing motion asset warnings remained
+  - user-confirmed follow-up:
+    - a full 30-minute manual WinTest was executed
+    - no new Gaya regressions were observed
+    - checkpoint is therefore considered runtime-green, not only build-green
+- documentation created:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - it captures:
+    - per-function signature decisions
+    - Pattern A/B/C/D usage
+    - friction points
+    - recommendations for the next ECS-system cleanup target
+- commits:
+  - `703da2e` `Phase 15B-1: Convert GayaSystem internals to entity bridge`
+  - `970d517` `Phase 15B-1: Document ECS system migration patterns`
+- next recommended step after this pilot:
+  1. use the same bridge-cleanup pattern on `AffectSystem`
+  2. then move to `SkillSystem`
+  3. only after a couple more successful pilots, continue into heavier systems such as `CombatSystem`
+
+
+## Phase 15B-2 - AffectSystem LPCHARACTER -> entt::entity
+- checkpoint goal:
+  - apply the `Phase 15B-1` GayaSystem bridge-cleanup pattern to `AffectSystem`
+  - remove the old `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)` resolution path from the AffectSystem namespace
+  - preserve poison / bleeding / fire / generic affect add-remove-refresh lifecycle behavior
+- audit result before editing:
+  - raw `LPCHARACTER / CHARACTER*` token count in:
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+    - `SRC/Server/GameServer/ecs/systems/AffectSystem.hpp`
+    - baseline result: `32`
+  - public `AffectSystem` namespace API was already entity-first:
+    - `ApplyFire`
+    - `RemoveFire`
+    - `ApplyPoison`
+    - `RemovePoison`
+    - `ApplyBleeding`
+    - `RemoveBleeding`
+    - `IsImmune`
+    - `ApplyMobAttribute`
+    - `FindAffect`
+    - `AddAffect`
+    - `RemoveAffect`
+    - `ClearAffect`
+    - `RefreshAffect`
+    - `UpdateAffect`
+  - external `AffectSystem::*` callers outside the file were minimal:
+    - `main.cpp`
+      - `AffectSystem::UpdateAffect(g_registry, tick)`
+      - `AffectSystem_Update(g_registry, tick)`
+  - practical gameplay call fanout still came through the local `CHARACTER` wrappers defined in the same file
+- implementation applied:
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+    - replaced the local helper:
+      - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+      - with:
+      - `entity -> LegacyCharPtr`
+    - converted the internal bridge helper to:
+      - `LegacyCharOf(entt::entity)`
+    - converted the event-side dynamic handle dereferences from:
+      - `info->ch`
+      - to:
+      - `info->ch.Get()`
+    - converted internal locals from raw `LPCHARACTER` declarations to:
+      - `auto* ch = LegacyCharOf(entity);`
+      - `auto* pkAttacker = LegacyCharOf(attacker);`
+    - converted the affect sync/update registry pass from:
+      - `view<AffectList, VIDComponent>` + `Find(vid.value)`
+      - to:
+      - `view<AffectList, LegacyCharPtr>` + `legacy.ptr`
+- important scope note:
+  - this checkpoint did **not** move affect authority into new ECS components
+  - the AffectSystem namespace still intentionally bridges to legacy `CHARACTER` state for:
+    - `m_pkPoisonEvent`
+    - `m_pkBleedingEvent`
+    - `m_pkFireEvent`
+    - `m_list_pkAffect`
+    - `AddAffect / RemoveAffect / ClearAffect / RefreshAffect`
+  - this was deliberate:
+    - Phase 15B is bridge cleanup
+    - affect component expansion remains a later step
+- lifecycle-safety result:
+  - poison / bleed / fire events already had the correct null-safe pattern and kept it:
+    - null `event->info` -> return `0`
+    - null resolved character -> return `0`
+  - the critical improvement here was:
+    - stop re-resolving through `CHARACTER_MANAGER::Find(...)`
+    - prefer the already-attached `LegacyCharPtr`
+  - this reduces teardown sensitivity during:
+    - death
+    - logout
+    - timed affect tick
+- measured result:
+  - baseline raw `LPCHARACTER / CHARACTER*` token count: `32`
+  - post-migration raw token count: `3`
+  - the 3 intentional survivors are only the `CHARACTER` wrapper signatures:
+    - `void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, ...)`
+    - `void CHARACTER::AttackedByPoison(LPCHARACTER pkAttacker)`
+    - `void CHARACTER::AttackedByBleeding(LPCHARACTER pkAttacker)`
+  - accidental survivors inside AffectSystem internals: `0`
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new AffectSystem-specific `syserr`
+    - no new `VID_DRIFT`
+    - only the usual pre-existing motion / content warnings remained
+  - user-confirmed follow-up:
+    - manual affect gameplay test completed
+    - affect system reported working
+    - checkpoint is therefore considered runtime-green, not only build-green
+- documentation updated:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - appended with:
+    - AffectSystem-specific bridge findings
+    - lifecycle safety notes
+    - post-migration survivor classification
+- commits:
+  - `2fc33d1` `Phase 15B-2: Convert AffectSystem internals to entity bridge`
+  - `e855751` `Phase 15B-2: Update pattern document`
+- next recommended step:
+  1. continue with `SkillSystem` using the same entity-first bridge-cleanup model
+  2. only after another successful medium-risk pass, move into heavier runtime systems such as `CombatSystem`
+
+
+## Phase 15B-3 - SkillSystem LPCHARACTER -> entt::entity
+- checkpoint goal:
+  - apply the proven `Phase 15B-1/15B-2` bridge-cleanup pattern to `SkillSystem`
+  - remove the old `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)` resolution path from skill internals
+  - preserve skill cast, target resolution, splash damage, chain-lightning, and buff/debuff apply behavior
+- audit result before editing:
+  - raw `LPCHARACTER / CHARACTER*` token count in:
+    - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+    - `SRC/Server/GameServer/ecs/systems/SkillSystem.hpp`
+    - baseline result: `42`
+  - important groundwork from `VID-A6` was already in place before this step:
+    - `CheckSkillHit(..., entt::entity target)`
+    - `CheckSkillHitCount(..., entt::entity target)`
+    - `TSkillUseInfo::dwVID` as `entt::entity`
+    - `TSkillUseInfo::target_map` as `std::map<entt::entity, size_t>`
+  - practical high-risk hotspots before cleanup were:
+    - local `LegacyCharacter(entity)` helper using `VIDComponent + CHARACTER_MANAGER::Find(...)`
+    - `chain_lightning_event` storing runtime IDs that were later re-resolved
+    - splash / healer / party helper structs storing `LPCHARACTER`
+    - event callbacks reading `DynamicCharacterPtr` as a raw pointer
+- implementation applied:
+  - `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+    - replaced the local helper:
+      - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+      - with:
+      - `entity -> LegacyCharPtr`
+    - introduced a local bridge alias:
+      - `LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)`
+    - converted the internal bridge helper to:
+      - `LegacyCharOf(entt::entity)`
+    - converted the following helper/functor internals from raw `LPCHARACTER` storage to bridge-handle storage:
+      - `FFindNearVictim`
+      - `FuncSplashDamage`
+      - `FuncSplashAffect`
+      - `FComputeSkillParty`
+      - `FHealerParty`
+    - converted `chain_lightning_event_info` from runtime integer IDs to entity payload:
+      - `dwVictim -> entt::entity`
+      - `dwChr -> entt::entity`
+    - converted dynamic event dereference from:
+      - `info->ch`
+      - to:
+      - `info->ch.Get()`
+    - removed unnecessary const-cast ECS lookups in const `CHARACTER` wrappers by using:
+      - `AIHelpers::EcsOf(this)`
+- important scope note:
+  - this checkpoint did **not** rewrite the large legacy `CHARACTER` skill runtime surface yet
+  - the following four wrapper/runtime signatures intentionally stayed on `LPCHARACTER`:
+    - `int CHARACTER::ComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)`
+    - `int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)`
+    - `int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)`
+    - `bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster)`
+  - this was deliberate:
+    - Phase 15B is bridge cleanup inside ECS systems
+    - full runtime-wrapper collapse is a later step
+- lifecycle / null-safety result:
+  - attacker and victim are now resolved through `LegacyCharPtr` instead of a second lookup bounce
+  - event payload safety improved on the risky chain-lightning path because it now stores `entt::entity` directly
+  - dynamic event payloads are now read through `.Get()` before dereference
+  - the safe pattern in the converted internals is now:
+    - resolve once at the top
+    - null-check
+    - continue or abort gracefully if attacker / target disappeared mid-chain
+- measured result:
+  - baseline raw `LPCHARACTER / CHARACTER*` token count: `42`
+  - post-migration raw token count: `4`
+  - the 4 intentional survivors are only the large `CHARACTER` wrapper/runtime signatures listed above
+  - accidental survivors inside SkillSystem internals: `0`
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new SkillSystem-specific `syserr`
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - only the usual pre-existing motion / content warnings remained
+  - user-confirmed follow-up:
+    - skills manually tested and reported working
+    - melee manually tested and reported working
+    - checkpoint is therefore considered runtime-green, not only build-green
+- documentation updated:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - appended with:
+    - SkillSystem-specific bridge findings
+    - dual-entity bridge notes
+    - chain-lightning payload conversion notes
+    - cumulative 15B progress snapshot
+- commits:
+  - `c40189a` `Phase 15B-3: Convert SkillSystem internals to entity bridge`
+  - `5d12d2e` `Phase 15B-3: Update pattern document`
+- next recommended step:
+  1. move to the next 15B runtime system using the same `LegacyCharPtr` bridge model
+  2. prefer either a smaller stabilization target or a carefully scoped `CombatSystem` pass next
+
+
+## Phase 15B-4 - MountSystem LPCHARACTER -> entt::entity
+- checkpoint goal:
+  - apply the proven `Phase 15B-1/15B-2/15B-3` bridge-cleanup pattern to `MountSystem`
+  - remove the old `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)` resolution path from MountSystem ECS entry points
+  - preserve mount, dismount, rider lookup, and horse lifecycle behavior
+- audit result before editing:
+  - raw `LPCHARACTER / CHARACTER*` token count in:
+    - `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+    - `SRC/Server/GameServer/ecs/systems/MountSystem.hpp`
+    - baseline result: `22`
+  - public `MountSystem` namespace API was already entity-first:
+    - `StartRiding`
+    - `StopRiding`
+    - `SetRider`
+    - `GetRider`
+    - `HorseSummon`
+    - `GetMyHorseVnum`
+    - `HorseDie`
+    - `ReviveHorse`
+    - `ClearHorseInfo`
+    - `SendHorseInfo`
+    - `CanUseHorseSkill`
+    - `SetHorseLevel`
+    - `IsRiding`
+    - `GetMountVnum`
+  - external dependency audit showed that mounted state is still widely consumed through legacy `CHARACTER` methods in:
+    - `battle.cpp`
+    - `input_main.cpp`
+    - `ani.cpp`
+    - `cmd_emotion.cpp`
+    - `guild_war.cpp`
+    - `questlua_pc.cpp`
+  - the ECS-side issue was therefore not caller fanout, but the old bridge helper and event dereference path
+- implementation applied:
+  - `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+    - replaced the local helper:
+      - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+      - with:
+      - `entity -> LegacyCharPtr`
+    - introduced a local bridge alias:
+      - `LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)`
+    - converted the internal bridge helper to:
+      - `LegacyCharOf(entt::entity)`
+    - converted all MountSystem namespace entry points to resolve once at the top via `LegacyCharOf(...)`
+    - converted `horse_dead_event` from:
+      - `info->ch`
+      - to:
+      - `info->ch.Get()`
+    - removed the stray local `CHARACTER*` cast in the viewer-overhead loop and reused the bridge-handle style there too
+- important scope note:
+  - this checkpoint did **not** rewrite the large legacy `CHARACTER` mount runtime in the same file
+  - the following three wrapper/runtime signatures intentionally stayed on `LPCHARACTER`:
+    - `void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)`
+    - `void CHARACTER::SetRider(LPCHARACTER ch)`
+    - `LPCHARACTER CHARACTER::GetRider() const`
+  - this was deliberate:
+    - Phase 15B is ECS-system bridge cleanup
+    - full mount runtime collapse remains a later step
+- lifecycle / null-safety result:
+  - `horse_dead_event` now resolves its `DynamicCharacterPtr` safely through `.Get()`
+  - the ECS-facing mount entry points no longer bounce through `CHARACTER_MANAGER::Find(...)`
+  - rider and mount entity handling on the ECS side now consistently goes through `LegacyCharPtr`
+  - warp / death / logout mounted behavior still ultimately depends on the legacy runtime layer, but the ECS bridge path is now cleaner and less teardown-sensitive
+- measured result:
+  - baseline raw `LPCHARACTER / CHARACTER*` token count: `22`
+  - post-migration raw token count: `3`
+  - the 3 intentional survivors are only the wrapper/runtime signatures listed above
+  - accidental survivors inside MountSystem internals: `0`
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new mount-lifecycle `syserr`
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - only the usual pre-existing mount motion / content warnings remained
+  - user-confirmed follow-up:
+    - manual mount/unmount test completed
+    - mount / unmount reported working
+    - checkpoint is therefore considered runtime-green, not only build-green
+- documentation updated:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - appended with:
+    - MountSystem-specific bridge findings
+    - rider+mount dual-entity notes
+    - lifecycle notes for mount death / mounted state
+    - cumulative 15B progress snapshot
+- commits:
+  - `7709a4a` `Phase 15B-4: Convert MountSystem internals to entity bridge`
+  - `33db609` `Phase 15B-4: Update pattern document`
+- next recommended step:
+  1. continue with the next 15B runtime system using the same `LegacyCharPtr` bridge model
+  2. either take a smaller stabilization target first, or move carefully into `CombatSystem`
+
+
+## Phase 15B-5 - CombatSystem LPCHARACTER -> entt::entity
+- checkpoint goal:
+  - apply the proven `Phase 15B` bridge-cleanup pattern to the CombatSystem helper/event/iteration layer
+  - remove the old `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)` resolution path from CombatSystem internals
+  - preserve combat damage, death chain, drop distribution, aggro, and corpse cleanup behavior
+- audit result before editing:
+  - raw `LPCHARACTER / CHARACTER*` token count in:
+    - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - `SRC/Server/GameServer/ecs/systems/CombatSystem.hpp`
+    - baseline result: `154`
+  - this was much higher than the old phase estimate because the file now contains several layers in one compilation unit:
+    - ECS entry helpers
+    - aggro / reward / drop helper structs
+    - event handlers
+    - large legacy `CHARACTER` combat runtime wrappers
+  - important groundwork already in place before this step:
+    - `TDamageMap` keyed by `entt::entity`
+    - `m_eVictim` as `entt::entity`
+    - `dead_event` payload already using `entt::entity`
+- implementation applied:
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+    - replaced the local helper:
+      - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+      - with:
+      - `entity -> LegacyCharPtr`
+    - introduced a local bridge alias:
+      - `LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)`
+    - converted the internal bridge helper to:
+      - `LegacyCharOf(entt::entity)`
+    - converted the helper / utility / iterator layer from raw `LPCHARACTER` declarations to bridge-handle based flow, including:
+      - `FuncForgetMyAttacker`
+      - `FuncAggregateMonster`
+      - `FuncAggregateMonsterPlus`
+      - `FuncAttractRanger`
+      - `FuncPullMonster`
+      - `NPartyExpDistribute::FPartyTotaler`
+      - `NPartyExpDistribute::FPartyDistributor`
+      - `SDamageInfo`
+      - `CFuncShoot`
+      - `FuncSetLastAttacked`
+      - `FuncDeadSpawnedByStone`
+    - converted helper signatures from raw `LPCHARACTER` to bridge-handle form where safe, including:
+      - `AdjustExpByLevel_Combat`
+      - `GiveExp`
+      - `__UpdateBattlePassCollectProgress`
+      - `__TryAutoGiveRewardItem`
+      - `__GiveRewardItemToCharacterOrDrop`
+      - `MakeItemLink`
+      - `ProcessStoneSpawnStep`
+      - reference-damage helper declarations
+    - replaced the stale ECS runtime view:
+      - from `view<..., VIDComponent, ...>`
+      - to `view<..., LegacyCharPtr, ...>`
+- important scope note:
+  - this checkpoint did **not** collapse the large legacy `CHARACTER` combat wrapper surface
+  - the following wrapper/runtime signatures intentionally stayed on `LPCHARACTER`:
+    - `CHARACTER::Attack`
+    - `CHARACTER::Damage`
+    - `CHARACTER::Dead`
+    - `CHARACTER::BeginFight`
+    - `CHARACTER::DistributeHP`
+    - `CHARACTER::DistributeSP`
+    - `CHARACTER::ItemDropPenalty`
+    - `CHARACTER::RewardGold`
+    - `CHARACTER::GetVictim / SetVictim / GetNearestVictim`
+    - aggro update wrappers and a few related classic combat entry points
+  - this was deliberate:
+    - the Phase 15B target here was the accidental helper/event layer
+    - not the legacy wrapper signatures that are still called broadly from packet/runtime code
+- death / reward chain result:
+  - the death chain authority remained on the existing wrapper flow, but the internal helper resolution is now entity-first
+  - attacker resolution during exp/drop attribution now goes through `LegacyCharPtr` instead of the deleted VID route
+  - no new duplicate `VIDComponent + Find(...)` bounce-back path was introduced in CombatSystem internals
+- measured result:
+  - baseline raw `LPCHARACTER / CHARACTER*` token count: `154`
+  - post-migration raw token count remained wrapper-dominated and therefore still non-trivial
+  - the important outcome is:
+    - accidental internal survivors removed from the helper/event/iterator layer
+    - remaining matches are the intentional `CHARACTER::...` wrapper/runtime surface
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - no fresh combat-system startup regression was observed
+    - only the usual pre-existing motion / content warnings remained
+  - user-confirmed follow-up:
+    - practical testing so far looks fully good
+    - checkpoint currently appears runtime-green in real usage
+- documentation updated:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - appended with:
+    - CombatSystem-specific bridge findings
+    - wrapper-vs-helper ratio notes
+    - death/drop helper-chain notes
+    - cumulative 15B progress snapshot
+- commits:
+  - `1ba2596` `Phase 15B-5: Convert CombatSystem helpers to entity bridge`
+  - `63fd23a` `Phase 15B-5: Update pattern document`
+- next recommended step:
+  1. if runtime remains clean, either continue with another 15B system such as `ItemSystem`
+  2. or pivot to the next broader LPCHARACTER reduction phase now that the heavy combat helper layer is cleaned
+
+## 2026-04-19 - Phase 15B-6: ItemSystem entity-first cleanup
+
+- scope:
+  - applied the established `LegacyCharPtr` bridge pattern to the owner side of `ecs/systems/ItemSystem.cpp`
+  - target of this pass was the accidental `LPCHARACTER` helper/event layer on the owner side
+  - item-side `LPITEM / CItem*` internals were intentionally left out of scope for this phase
+- what changed:
+  - removed the old owner bridge path:
+    - `entity -> VIDComponent -> CHARACTER_MANAGER::Find(...)`
+  - replaced it with direct owner resolution through:
+    - `LegacyCharOf(entt::entity)`
+    - backed by `ecs::LegacyCharPtr`
+  - introduced a local bridge alias:
+    - `LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr)`
+  - converted owner-side helper / utility / iterator code to bridge-handle flow, including inventory/drop/pickup/refine helper paths and nearby party-money/item distribution helpers
+  - converted `kill_campfire_event` to runtime-safe pointer resolution through `.Get()`
+  - kept item-side `CItem::GetVID()` and similar non-CHARACTER local accessors untouched as intentional legacy/type-local surface
+- important scope note:
+  - inventory authority still remains on `CHARACTER::m_pointsInstant.pItems`
+  - this checkpoint did not attempt ECS component expansion for inventory storage
+  - this was strictly the ItemSystem owner-side LPCHARACTER cleanup pass
+- drop/pickup chain note:
+  - no new `VIDComponent + Find(...)` bounce-back path was introduced on the owner side
+  - attacker/owner resolution in the item drop and pickup chain now resolves through `LegacyCharPtr`
+  - this keeps the post-VID-A entity flow consistent with CombatSystem's `TDamageMap<entt::entity, ...>` side
+- measured result:
+  - baseline raw owner-side `LPCHARACTER / CHARACTER*` token count: `83`
+  - baseline item-side `LPITEM / CItem*` token count: `246`
+  - post-migration owner-side `LPCHARACTER / CHARACTER*` token count: `8`
+  - the remaining `8` matches are intentional wrapper/runtime surface:
+    - `NotifyRefineSuccess`
+    - `NotifyRefineFail`
+    - `CHARACTER::SetRefineNPC(LPCHARACTER ch)`
+    - `CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)`
+    - `CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const`
+    - `CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)`
+  - accidental internal owner-side survivors: `0`
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - no fresh item/inventory startup regression was observed
+    - only the usual pre-existing motion / content warnings remained
+  - user-confirmed follow-up:
+    - item system works in practical testing
+    - checkpoint is runtime-green
+- documentation updated:
+  - `docs/ecs_migration/phase15b_ecs_system_patterns.txt`
+  - appended with:
+    - ItemSystem findings
+    - dual-entity owner+item notes
+    - drop/pickup chain notes
+    - Phase 15B final summary
+- commits:
+  - `f2c07da` `Phase 15B: COMPLETE`
+  - `b15db1e` `Phase 15B-6: Update pattern document`
+- phase status:
+  - with user-confirmed runtime validation, `Phase 15B` is now effectively closed on the ECS-system cleanup side
+  - the established pattern remains:
+    - `LegacyCharOf(entt::entity)` once at the top
+    - `view<..., LegacyCharPtr>` for runtime iteration
+    - legacy wrapper signatures kept only where still broadly required by classic runtime entry points
+
+## 2026-04-19 - Phase 15D-1: Questlua LPCHARACTER mass migration
+
+- scope:
+  - targeted the dominant non-ECS questlua binding boilerplate built around:
+    - `GetCurrentCharacterPtr()`
+    - `GetCurrentNPCCharacterPtr()`
+  - goal of this pass was not full quest-core rewrite, but the mass removal of local `LPCHARACTER` binding setup in `questlua_*.cpp`
+- what changed:
+  - extended `CQuestManager` with explicit entity-first current-context helpers:
+    - `GetCurrentPCEntity() const`
+    - `GetCurrentNPCEntity() const`
+  - kept the older compatibility surface intact:
+    - `GetPCEntity(lua_State* L)`
+    - `GetNPCEntity(lua_State* L)`
+    now forward to the new current-context entity helpers
+  - added shared bridge helper:
+    - `ecs::LegacyCharOf(entt::entity)`
+    in `ecs/CharacterAccessors.hpp`
+  - migrated the dominant questlua assignment pattern from:
+    - `LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();`
+    - `LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();`
+    to entity-first flow:
+    - `const entt::entity chEntity = ...GetCurrentPCEntity();`
+    - `auto* ch = ecs::LegacyCharOf(chEntity);`
+    and the corresponding NPC form
+- files materially affected:
+  - `questlua_pc.cpp`
+  - `questlua_npc.cpp`
+  - `questlua_party.cpp`
+  - `questlua_horse.cpp`
+  - `questlua_global.cpp`
+  - `questlua_dungeon.cpp`
+  - `questlua_game.cpp`
+  - `questlua_affect.cpp`
+  - `questlua_petnew.cpp`
+  - `questlua_marriage.cpp`
+  - `questlua_item.cpp`
+  - `questlua_pet.cpp`
+  - `questlua_target.cpp`
+  - `questlua_guild.cpp`
+  - `questlua_arena.cpp`
+  - `questlua_building.cpp`
+  - plus the supporting `questmanager.*` surface
+- measured result:
+  - exact dominant quest-context assignment instances migrated: `345`
+  - aggregate questlua `LPCHARACTER` declaration count:
+    - before: `418`
+    - after: `73`
+    - reduction: `345`
+  - whole-tree `LPCHARACTER` declaration count:
+    - before pass: `940`
+    - after pass: `596`
+    - reduction from this pass alone: `344`
+- important scope note:
+  - this pass removed the dominant questlua boilerplate, but did **not** fully eliminate direct quest-context calls
+  - remaining direct `GetCurrentCharacterPtr()` / `GetCurrentNPCCharacterPtr()` survivors still exist in irregular places such as:
+    - direct singleton dereferences
+    - helper return wrappers
+    - a few `const LPCHARACTER` locals
+    - commented legacy examples
+  - these are now a smaller cleanup follow-up, not another mass-pattern wave
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy + restart completed
+  - fresh boot/log smoke:
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - no immediate quest bootstrap regression observed
+    - quest event flags loaded normally during boot
+    - only the usual pre-existing motion / content warnings remained
+  - user-confirmed follow-up:
+    - questlua batch works in practice
+    - checkpoint is runtime-green
+- documentation updated:
+  - `docs/ecs_migration/phase15d_progress.txt`
+  - includes:
+    - per-file before/after counts
+    - Pattern A/B/C distribution notes
+    - remaining direct quest-context survivor notes
+    - recommended next direction for `Phase 15D-2`
+- commit:
+  - `2f83f7b` `Phase 15D-1: Questlua mass migration COMPLETE`
+- next recommended step:
+  - move to `cmd_*.cpp` reduction (`cmd_general.cpp`, `cmd_gm.cpp`, `cmd_general2.cpp`, `cmd.cpp`, `cmd_emotion.cpp`)
+  - keep questlua follow-up as a smaller irregular-survivor cleanup later
+
+## 2026-04-19 - Phase 15C-0: CHARACTER member expansion priority audit
+
+- scope:
+  - audit only
+  - no runtime refactor, no new component creation, no CHARACTER field deletion
+  - objective was to pick the single highest-impact first component-expansion target after `15B` and early `15D`
+- what was measured:
+  - active `CHARACTER` member declarations found in the current build configuration: `257`
+    - this is higher than the earlier `237` estimate because multiple feature-flagged members are active in this build
+  - ECS component structs currently present under `ecs/components`: `91`
+  - rough size estimates for the two dominant internal blobs:
+    - `CHARACTER_POINT`: `~2,092` bytes
+    - `CHARACTER_POINT_INSTANT`: `~34,335` bytes
+  - rough summed `sizeof(CHARACTER)` estimate from member-by-member sizing:
+    - `~38,620` bytes (`~37.7 KiB`)
+- key finding:
+  - the clear first expansion target is the `m_pointsInstant + m_points` cluster
+  - this pair dominates CHARACTER object size and also sits directly on hot paths:
+    - combat stats
+    - movement/runtime flags
+    - inventory / equipment / DragonSoul arrays
+    - interaction window state
+  - estimated savings if this cluster is fully moved out of `CHARACTER`:
+    - per character: `~36,427` bytes
+    - at `1000` online characters: `~34.7 MiB`
+- recommended first target structure:
+  - `CharacterPointsBaseComponent`
+    - current `m_points`
+  - `CharacterRuntimePointsComponent`
+    - runtime points/max values/flags/parts currently inside `m_pointsInstant`
+  - `InventoryRuntimeComponent`
+    - `pItems`, `bItemGrid`, DragonSoul arrays, extra inventory arrays, cube/acce/attr-transfer window arrays
+  - `InteractionWindowComponent`
+    - transient NPC/window pointers currently embedded in `m_pointsInstant`
+- group ranking outcome:
+  - top priority by score:
+    - `G_POINTS`
+  - next roadmap candidates from the audit:
+    - `G_EVENT_HANDLES`
+    - `G_IDENTITY`
+    - `G_POSITION`
+    - `G_VITALS`
+    - `G_SOCIAL`
+- interpretation:
+  - `15C` should begin with the points/runtime blob, not with tiny pointer clusters
+  - later smaller groups are good follow-ups, but they do not move the size needle remotely as much
+  - this audit makes `15C` actionable without another discovery pass
+- documentation:
+  - created:
+    - `docs/ecs_migration/phase15c_expansion_audit.txt`
+- commit:
+  - `da573a2` `Phase 15C-0: Component expansion priority audit`
+
+## 2026-04-19 - Phase 15D-2: cmd_*.cpp trivial getter migration
+
+- scope:
+  - targeted the ACMD handler layer
+  - kept the legacy ACMD macro surface intact
+  - did **not** try to remove the entry `LPCHARACTER ch` parameter supplied by the ACMD macro
+  - focused only on safe trivial getter replacement on the handler entry variable
+- files materially changed:
+  - `cmd_general.cpp`
+  - `cmd_gm.cpp`
+  - `cmd_general2.cpp`
+- files audited but no-op for the requested trivial getter set:
+  - `cmd_emotion.cpp`
+  - `cmd.cpp`
+  - `cmd_oxevent.cpp`
+  - `cmd_gm2.cpp`
+  - `cmd_guild_renewal.cpp`
+- migration pattern used:
+  - kept complex command logic on the authoritative `LPCHARACTER ch`
+  - replaced direct trivial getter reads with ECS-backed accessors such as:
+    - `ecs::GetPlayerID(ch)`
+    - `ecs::GetName(ch)`
+    - `ecs::GetMapIndex(ch)`
+    - `ecs::GetX(ch)`
+    - `ecs::GetY(ch)`
+    - `ecs::GetLevel(ch)`
+    - `ecs::IsPC(ch)`
+- measured result:
+  - `cmd_*.cpp` local `LPCHARACTER` declaration count:
+    - before: `52`
+    - after: `52`
+  - explanation:
+    - this count stayed flat because the ACMD entry surface remains legacy by design in this pass
+  - meaningful reduction for this wave is the direct `ch->GetXxx()` surface on the command-entry variable:
+    - before: `141`
+    - after: `0`
+- build and runtime verification:
+  - build gate green:
+    - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - fresh WinTest deploy completed to:
+    - `share/bin/GameServer.exe`
+    - `auth/GameServer.exe`
+  - restarted:
+    - `Database`
+    - `auth/GameServer`
+    - `Login`
+    - `ch1/core1`
+    - `ch1/core2`
+    - `ch99/core99`
+  - fresh boot/log smoke:
+    - no new `VID_DRIFT`
+    - no new `DestroyCharacter ... not found`
+    - no new `SpawnMob: cannot create new character`
+    - only the usual pre-existing motion / content warnings remained
+- interpretation:
+  - `cmd_*.cpp` is not another declaration-reduction wave like `questlua_*`
+  - it is a command-entry accessor cleanup wave
+  - the next strong non-ECS declaration target should still be a file family that manufactures local `LPCHARACTER` boilerplate, not only ACMD wrappers
+- documentation:
+  - updated:
+    - `docs/ecs_migration/phase15d_progress.txt`
+- commits:
+  - `c474dfd` `Phase 15D-2: cmd_general2.cpp trivial getter migration`
+  - `cd355bf` `Phase 15D-2: cmd_gm.cpp trivial getter migration`
+  - `1ff22ce` `Phase 15D-2: cmd_general.cpp trivial getter migration`
+  - `17e906c` `Phase 15D-2: Document cmd accessor migration checkpoint`
+
+## 2026-04-19 - Phase 15C-1: CHARACTER points cluster migration audit
+
+- scope:
+  - audit only
+  - no component creation, no `CHARACTER` field movement, no authority flip
+  - goal was to turn the `15C-0` â€śpoints clusterâ€ť recommendation into a concrete implementation roadmap
+- what was confirmed:
+  - `CHARACTER_POINT_INSTANT` estimated size still lands at:
+    - `34,335` bytes
+  - the size is dominated by storage arrays, not by scalar runtime flags:
+    - `pDSItems`: `11,616` bytes
+    - `pExtraItems`: `8,640` bytes
+    - `pItems`: `5,280` bytes
+    - `wDSItemGrid`: `2,904` bytes
+    - `wExtraItemGrid`: `2,160` bytes
+    - `points[]`: `2,040` bytes
+    - `bItemGrid`: `1,320` bytes
+- field-access conclusion:
+  - the hottest direct fields are not necessarily the largest ones
+  - direct high-frequency fields:
+    - `dwAIFlag`
+    - `instant_flag`
+    - `bItemGrid`
+    - `wExtraItemGrid`
+    - `wDSItemGrid`
+  - helper-amplified hot fields:
+    - `points[]`
+    - `iMaxHP`
+    - `iMaxSP`
+    - `parts[]`
+    - `pItems`
+  - why helper amplification matters:
+    - `GetPoint()` whole-tree hits: `649`
+    - `PointChange()` whole-tree hits: `417`
+    - `ComputePoints()` whole-tree hits: `73`
+    - `PointsPacket()` whole-tree hits: `20`
+    - `GetItem()` whole-tree hits: `99`
+    - `GetPart()` / `SetPart()` whole-tree hits: `44` / `44`
+- important structural finding:
+  - no exact raw-layout pass surfaces were found for:
+    - `&m_pointsInstant`
+    - `memcpy(...m_pointsInstant...)`
+    - raw array-index handoff of the whole struct
+  - this means the migration risk is mainly **helper-boundary** risk, not raw-memory-layout risk
+  - critical helper boundaries identified:
+    - `CHARACTER::GetPoint`
+    - `CHARACTER::ComputeBattlePoints`
+    - `CHARACTER::ComputePoints`
+    - `CHARACTER::PointsPacket`
+    - `CHARACTER::GetItem`
+- logical grouping outcome inside `CHARACTER_POINT_INSTANT`:
+  - `G_COMBAT_STATS`
+  - `G_VITALS_MAX`
+  - `G_INVENTORY_STORAGE`
+  - `G_DRAGONSOUL`
+  - `G_EXTRA_INVENTORY`
+  - `G_SWITCHBOT`
+  - `G_CUBE`
+  - `G_ACCE`
+  - `G_ATTR_TRANSFER`
+  - `G_INTERACTION`
+  - `G_RUNTIME_FLAGS`
+  - `G_APPEARANCE_PARTS`
+- key decision:
+  - the full first **target** remains the points cluster
+  - but the first **implementation slice** inside that target should **not** be `points[]`
+  - recommended first implementable substep:
+    - `15C-1a: G_EXTRA_INVENTORY`
+    - proposed component:
+      - `ExtraInventoryRuntimeComponent`
+    - expected bytes freed per `CHARACTER`:
+      - `10,800`
+    - rationale:
+      - very large byte win
+      - access mostly localized to `ItemSystem`
+      - much lower blast radius than `points[]` or main `pItems/bItemGrid`
+- recommended substep order from the audit:
+  1. `G_EXTRA_INVENTORY`
+  2. `G_CUBE`
+  3. `G_ATTR_TRANSFER`
+  4. `G_ACCE`
+  5. `G_SWITCHBOT`
+  6. `G_DRAGONSOUL`
+  7. `G_APPEARANCE_PARTS`
+  8. `G_VITALS_MAX`
+  9. `G_RUNTIME_FLAGS`
+  10. `G_INVENTORY_STORAGE + G_COMBAT_STATS`
+- interpretation:
+  - the safe 15C path is no longer â€śmigrate the huge blob at onceâ€ť
+  - it is now:
+    - split the blob into coarse ECS-owned slices
+    - start with large-but-localized storage slices
+    - leave hot combat/stat authority cuts for the end
+- documentation:
+  - created:
+    - `docs/ecs_migration/phase15c_1_points_audit.txt`
+- commit:
+  - `5ad334d` `Phase 15C-1: Points cluster migration audit`
+
+## Phase 15C-1a ? Extra inventory component migration
+- Added `ecs::ExtraInventoryRuntimeComponent` to hold `pItems[EXTRA_INVENTORY_MAX_NUM]` and `wItemGrid[EXTRA_INVENTORY_MAX_NUM]` per CHARACTER entity.
+- Seeded the component during the dual-authority phase, then flipped all extra-inventory reads to ECS-backed helpers in `ItemSystem.cpp`.
+- Removed legacy `m_pointsInstant.pExtraItems` and `m_pointsInstant.wExtraItemGrid` from `CHARACTER_POINT_INSTANT`; `SetItem(EXTRA_INVENTORY)` now writes directly to the ECS component.
+- Estimated memory reduction: about `10,800` bytes per CHARACTER, or roughly `10.3 MiB` per 1000 online characters.
+- Build gate passed; deploy + WinTest boot/log smoke passed with no new `EXTRA_INV_DRIFT`, `VID_DRIFT`, `DestroyCharacter`, or `SpawnMob` regressions.
+- Remaining log noise after restart stayed in the known motion/content warning bucket.
+- User confirmed manual WinTest coverage: extra inventory works correctly in-game.
+
+## Phase 15C-1b-e ? Transient window components batch migration
+- Cleared the remaining small COLD-path window groups out of `CHARACTER_POINT_INSTANT`:
+  - cube window
+  - attribute transfer window
+  - accessory window materials
+  - switchbot window items
+- New ECS runtime components introduced:
+  - `ecs::CubeWindowComponent`
+  - `ecs::AttrTransferWindowComponent`
+  - `ecs::AcceWindowComponent`
+  - `ecs::SwitchbotRuntimeComponent`
+- Each substep followed the proven `15C-1a` pattern:
+  - component definition
+  - dual-authority seed/mirror
+  - ECS read flip
+  - legacy field removal
+- Legacy fields removed from `CHARACTER_POINT_INSTANT` in this batch:
+  - `pCubeItems`
+  - `pCubeNpc`
+  - `pAttrTransferItems`
+  - `pAttrTransferNpc`
+  - `pAcceMaterials`
+  - `pSwitchbotItems`
+- Cumulative points-cluster memory reduction so far:
+  - `15C-1a`: about `10,800` bytes per CHARACTER
+  - `15C-1b-e`: about `288` bytes per CHARACTER
+  - total: about `11,088` bytes per CHARACTER
+  - at `1000` online characters: about `10.6 MiB`
+- Substep commit chain:
+  - `19439ea` `Phase 15C-1b.1: Add CubeWindowComponent definition`
+  - `59d012b` `Phase 15C-1b.2: Seed + mirror cube window to ECS`
+  - `6934589` `Phase 15C-1b.3: Flip cube window reads to ECS`
+  - `5f66b1c` `Phase 15C-1b: COMPLETE - cube window on ECS`
+  - `fa40f66` `Phase 15C-1c.1: Add AttrTransferWindowComponent definition`
+  - `b2aeac6` `Phase 15C-1c.2: Seed + mirror attr transfer to ECS`
+  - `65f133a` `Phase 15C-1c.3: Flip attr transfer reads to ECS`
+  - `1e3cd1b` `Phase 15C-1c: COMPLETE`
+  - `5e60db1` `Phase 15C-1d.1: Add AcceWindowComponent definition`
+  - `b6d2aa6` `Phase 15C-1d.2: Seed + mirror acce window to ECS`
+  - `3235f5f` `Phase 15C-1d.3: Flip acce window reads to ECS`
+  - `5ecb4da` `Phase 15C-1d: COMPLETE`
+  - `da5bdf2` `Phase 15C-1e.1: Add SwitchbotRuntimeComponent definition`
+  - `048983f` `Phase 15C-1e.2: Seed + mirror switchbot to ECS`
+  - `b7b635a` `Phase 15C-1e.3: Flip switchbot reads to ECS`
+  - `315a638` `Phase 15C-1e: COMPLETE`
+- Combined post-batch deploy/restart completed on WinTest.
+- Fresh boot/log smoke after restart stayed clean for this batch:
+  - no new cube / attr transfer / acce / switchbot specific null deref
+  - no new `VID_DRIFT`
+  - no new `DestroyCharacter ... not found`
+  - no new `SpawnMob: cannot create`
+- Remaining `syserr` noise stayed in the known motion/content-warning bucket, plus older unrelated lines predating this batch.
+- Documentation written to:
+  - `docs/ecs_migration/phase15c_1_progress.txt`
+- Next recommended target:
+  - `15C-1f` `G_DRAGONSOUL`
+  - expected next large byte win: about `14,532` bytes per CHARACTER
+
+## Login incident checkpoint - DBPacket write-wakeup fix
+- Incident:
+  - Auth accepted login and channel reached `LOGIN_BY_KEY`, but DB did not receive/process the current `HEADER_GD_LOGIN_BY_KEY` packet.
+  - Symptom at runtime: client could not complete login even though auth-side login looked successful.
+- Root cause identified in:
+  - `SRC/Server/GameServer/desc_client.cpp`
+- Concrete fault:
+  - `CLIENT_DESC::DBPacket(...)` wrote to the DB output buffer but did not re-arm `FDW_WRITE`.
+  - Result: packets could remain buffered and never flush on an idle DB client socket.
+- Fix:
+  - Added `fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);` at the end of `CLIENT_DESC::DBPacket(...)`.
+- Verification:
+  - `GameServer` rebuilt successfully.
+  - Fresh binary deployed to WinTest and full stack restarted.
+  - User confirmed runtime result: login works again.
+- Impact note:
+  - This was not a `VID`/ECS authority regression.
+  - It was a transport/output-wakeup bug on the GameServer -> DB client connection.
+- Follow-up regression and final fix:
+  - A later login failure showed a second flush gap on the channel -> DB connector path.
+  - Symptom:
+    - auth-side `AuthLogin result 1`
+    - channel-side `LOGIN_BY_KEY`
+    - but the DB side intermittently missed `ProcessPacket Header [101]` / `LOGIN_BY_KEY success`
+  - Additional fix in `SRC/Server/GameServer/desc_client.cpp`:
+    - `CLIENT_DESC::DBPacket(...)` now triggers an immediate `ProcessOutput()` after arming `FDW_WRITE`
+    - `CLIENT_DESC::Packet(...)` now also arms `FDW_WRITE` and triggers `ProcessOutput()`
+  - Deployment note:
+    - channel binaries were discovered to be reparse-point links; these were replaced with fresh concrete executables during redeploy so the updated connector code actually ran on all cores
+  - Final verification:
+    - rebuild passed
+    - DB/auth/channel stack restarted cleanly
+    - user confirmed runtime result: login now works reliably again
+
+## Phase 15C-1f - DragonSoul inventory migration
+- Migrated the DragonSoul storage/runtime slice out of `CHARACTER_POINT_INSTANT`:
+  - `pDSItems`
+  - `wDSItemGrid`
+  - `iDragonSoulActiveDeck`
+  - `m_pDragonSoulRefineWindowOpener`
+- Introduced two ECS components:
+  - `ecs::DragonSoulInventoryComponent`
+  - `ecs::DragonSoulRuntimeStateComponent`
+- `EntityFactory::CreatePC(...)` now attaches both components during character entity creation.
+- `ItemSystem` authority flip:
+  - `CHARACTER::GetItem(DRAGON_SOUL_INVENTORY, ...)` now resolves through `GetDragonSoulItem(...)`
+  - `CHARACTER::SetItem(DRAGON_SOUL_INVENTORY, ...)` now writes directly into `DragonSoulInventoryComponent`
+  - `CHARACTER::CopyDragonSoulItemGrid(...)` now reads back through `GetDragonSoulGrid(...)`
+- `DragonSoulSystem` runtime state flip:
+  - active deck now lives in `DragonSoulRuntimeStateComponent::activeDeck`
+  - refine opener now lives in `DragonSoulRuntimeStateComponent::pRefineWindowOpener`
+  - `DragonSoul_RefineWindow_GetOpener()` now resolves through ECS instead of `m_pointsInstant`
+- Estimated memory win:
+  - this substep: about `14,532` bytes per CHARACTER
+  - cumulative `15C-1`: about `25,620` bytes per CHARACTER
+  - at `1000` online characters: about `24.4 MiB`
+- Verification completed:
+  - build gate passed
+  - fresh binary deployed to WinTest
+  - full stack restarted cleanly
+  - fresh boot/log smoke showed no new:
+    - `VID_DRIFT`
+    - `DestroyCharacter ... not found`
+    - `SpawnMob: cannot create`
+    - DragonSoul-specific boot null deref
+- Remaining limitation:
+  - manual DragonSoul runtime pass is now confirmed by user:
+    - inventory flow works
+    - migrated DragonSoul behavior looks correct in practice
+
+## Phase 15C-1g-h - Appearance parts + vitals max batch migration
+- Migrated the appearance-part slice out of `CHARACTER_POINT_INSTANT`:
+  - `parts[PART_MAX_NUM]`
+  - `bBasePart`
+- Introduced `ecs::AppearancePartsComponent` and seeded it from entity creation/login state.
+- `CHARACTER::SetPart(...)` / `GetPart(...)` / `GetOriginalPart(...)` now read and write through ECS appearance state instead of legacy `m_pointsInstant`.
+- `SessionSystem::CreatePlayerProto(...)` now serializes `part_base` and `parts[]` from ECS-backed appearance data.
+- Migrated vitals max storage out of `CHARACTER_POINT_INSTANT`:
+  - `iMaxHP`
+  - `iMaxSP`
+  - `iMaxStamina`
+- Reused existing ECS vital components as the new authority:
+  - `ecs::Health::max`
+  - `ecs::Mana::max`
+  - `ecs::Stamina::max`
+- `CHARACTER::SetMaxHP/GetMaxHP`, `SetMaxSP/GetMaxSP`, and `SetMaxStamina/GetMaxStamina` now resolve through ECS max values.
+- `POINT_MAX_*` recompute paths remain coherent because `PointSystem` already goes through the `SetMax*` helper surface.
+- A stale quest binding survivor in `questlua_pc.cpp` was cleaned up so `pc_get_part` / `pc_set_part` now route through `GetPart` / `SetPart`.
+- Estimated memory win:
+  - this batch: about `41` bytes per CHARACTER
+  - cumulative `15C-1`: about `25,661` bytes per CHARACTER
+  - at `1000` online characters: about `24.5 MiB`
+- Verification completed so far:
+  - build gate passed
+  - fresh binary deployed to WinTest
+  - full stack restarted cleanly
+  - fresh boot/log smoke showed no new:
+    - `VID_DRIFT`
+    - `DestroyCharacter ... not found`
+    - `SpawnMob: cannot create`
+    - appearance/vitals-specific boot null deref
+- Remaining limitation:
+  - manual in-client appearance + HP/SP max regression is still required before full closeout
+
+## Phase 15C-1i - Runtime flags dual-authority checkpoint
+
+Date: 2026-04-19
+Status: build-green, deploy-green, manual WinTest confirmed by user
+
+Summary:
+- Introduced `ecs::CharacterRuntimeFlagsComponent` for the hot runtime flag cluster.
+- Moved the helper surface to ECS-backed reads:
+  - `GetAIFlag()`
+  - `GetPosition()`
+  - `GetRotation()`
+  - `GetImmuneFlag()`
+  - `GetLastShoutPulse()`
+  - `GetGMLevel()`
+  - `IsBlockMode()`
+  - `IsAlive()`
+- Kept legacy fields alive for now and mirrored all critical writes in dual-authority mode.
+- Added temporary `RFLAG_DRIFT` runtime audit in `VitalRegenSystem.cpp` to catch divergence between legacy state and ECS state during the safe cutover window.
+
+Touched runtime fields:
+- `dwAIFlag`
+- `instant_flag`
+- `position`
+- `dwImmuneFlag`
+- `dwLastShoutPulse`
+- `gm_level`
+- `bBlockMode`
+- `fRot`
+
+Key implementation notes:
+- The migration was intentionally split into a safe phase first: ECS-read + mirrored writes.
+- `instant_flag` remained especially sensitive because stun/death/no-reward bits are combat-critical and updated with bitwise operations.
+- AI flag writes in combat/AI paths were mirrored after the legacy mutation so the ECS component always sees the post-update value.
+- Position/rotation remained dual-authority while helper reads now resolve through ECS first.
+
+Build / deployment:
+- Build gate passed: `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Deployed the updated `GameServer.exe` to WinTest.
+- Restarted DB/auth/channel stack.
+- Corrected the DB restart path during rollout after the first restart attempt connected channels before DB was listening on `30051`.
+
+Verification:
+- No fresh `RFLAG_DRIFT` in the WinTest logs after deploy/restart.
+- No fresh `VID_DRIFT`.
+- No fresh `DestroyCharacter ... not found`.
+- No fresh `SpawnMob: cannot create`.
+- Login path recovered and remained functional after restart.
+- User manual runtime verification: `j?l m?k?dik`.
+
+Important current state:
+- This is not yet the final legacy-field removal cut.
+- The hot-path runtime flags are currently in the safe dual-authority window.
+- Final removal of the legacy runtime flag members from `CHARACTER_POINT_INSTANT` should happen only after this runtime checkpoint is considered stable.
+
+## Phase 15C-1i final - Legacy runtime flag fields removed
+
+Date: 2026-04-19
+Status: build-green, deploy-green, boot/log smoke green, manual full regression pending
+
+Summary:
+- Removed the temporary `RFLAG_DRIFT` detector used during the dual-authority verification window.
+- Removed the legacy runtime flag fields from `CHARACTER_POINT_INSTANT`:
+  - `dwAIFlag`
+  - `instant_flag`
+  - `position`
+  - `dwImmuneFlag`
+  - `dwLastShoutPulse`
+  - `gm_level`
+  - `bBlockMode`
+  - `fRot`
+- Collapsed the dual-authority phase to ECS-only authority via `ecs::CharacterRuntimeFlagsComponent`.
+
+Key follow-up cleanup:
+- Removed all remaining direct `m_pointsInstant.<runtime-flag>` survivors in:
+  - `CombatSystem.cpp`
+  - `MovementSystem.cpp`
+  - `PlayerRuntimeSystem.cpp`
+  - `EntityFactory.cpp`
+  - `VitalRegenSystem.cpp`
+- Verified zero legacy runtime flag references remain in the GameServer source tree.
+
+Verification:
+- Build gate passed after legacy field removal.
+- Fresh binary deployed to WinTest.
+- Full stack restarted cleanly.
+- Boot/log smoke showed no fresh:
+  - `RFLAG_DRIFT`
+  - `VID_DRIFT`
+  - `DestroyCharacter ... not found`
+  - `SpawnMob: cannot create`
+- Only known pre-existing motion/content warnings remained visible in `syserr`.
+
+Runtime closeout:
+- Manual WinTest confirmation completed after the final legacy-field removal.
+- User confirmation: `teljesen j?l m?k?dik a j?t?k`.
+- `15C-1i` is fully runtime-closed.
+
+
+## Phase 15C-1j - points[] fully on ECS (code-side checkpoint)
+
+Date: 2026-04-19
+Status: build-green, deploy-green, boot/log smoke green, manual runtime regression pending
+
+Summary:
+- Added `ecs::CharacterStatsComponent` as the new authority for the migrated runtime stat array.
+- Moved the old `CHARACTER_POINT_INSTANT.points[POINT_MAX_NUM]` surface behind ECS-backed `GetPoint()` / `SetPoint()`.
+- Removed the legacy instant `points[]` member from `CHARACTER_POINT_INSTANT`.
+
+Key implementation notes:
+- The migration was intentionally concentrated at the helper boundary instead of hundreds of call sites:
+  - `GetPoint()` now resolves the migrated stat array through ECS.
+  - `SetPoint()` writes to `ecs::CharacterStatsComponent`.
+  - `GetLimitPoint()` now reads through `GetPoint()`.
+  - `ComputePoints()` clears and rebuilds the ECS stat array directly.
+- Live-value indices that already have separate authorities continue to resolve through their dedicated getters inside `GetPoint()`:
+  - `POINT_LEVEL`, `POINT_EXP`, `POINT_GOLD`
+  - `POINT_HP`, `POINT_MAX_HP`
+  - `POINT_SP`, `POINT_MAX_SP`
+  - `POINT_STAMINA`, `POINT_MAX_STAMINA`
+- `EntityFactory` now ensures a `CharacterStatsComponent` exists for PC and mob/NPC entities before runtime stat recompute occurs.
+
+Legacy cleanup:
+- Removed the final direct `m_pointsInstant.points[...]` survivors from:
+  - `PointSystem.cpp`
+  - `StatSystem.cpp`
+- Removed the instant `points[POINT_MAX_NUM]` member from `char.h`.
+- Verified no `m_pointsInstant.points[...]` references remain in the GameServer tree.
+
+Estimated impact:
+- This substep removes about `2,040` bytes per CHARACTER.
+- Cumulative `15C-1` reduction reaches about `27,727` bytes per CHARACTER.
+- At `1000` online characters that is about `26.4 MiB`.
+- Estimated `CHARACTER_POINT_INSTANT` remainder is now mostly just main inventory storage.
+
+Verification:
+- Build gate passed: `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Updated `GameServer.exe` deployed to WinTest.
+- Full DB/auth/channel stack restarted cleanly.
+- Fresh boot/log smoke showed no new:
+  - `VID_DRIFT`
+  - `DestroyCharacter ... not found`
+  - `SpawnMob: cannot create`
+  - immediate stat-cutover boot/login crash
+- Remaining visible `syserr` output stayed in the pre-existing motion/content-warning bucket.
+
+Runtime status:
+- Code-side cutover is complete.
+- Manual in-client regression is still required before the substep is fully runtime-closed.
+
+## 15C-1j runtime regression - points[] cutover rolled back
+
+Date: 2026-04-20
+Status: runtime-regression found, rollback applied, build/deploy green
+
+Summary
+- The first live 15C-1j points[] -> ECS cutover caused severe runtime gameplay regressions:
+  - EXP gain scaled far too aggressively on fresh characters.
+  - Damage / reward timing on metin stones became incorrect.
+  - Damage could appear delayed until the player stopped attacking.
+- The code-side cutover was therefore rolled back before continuing with further points-cluster work.
+
+Root cause notes
+- GetPoint(POINT_EXP) was no longer semantically aligned with the combat reward path.
+- Combat reward code in CombatSystem.cpp still consumed POINT_EXP as if it were a bonus/ratio input.
+- The resulting stat authority mismatch affected EXP, damage cadence, and downstream reward logic.
+
+Action taken
+- Restored the legacy stable m_pointsInstant.points[POINT_MAX_NUM] authority.
+- Reverted the ECS CharacterStatsComponent runtime cutover path from:
+  - PointSystem.cpp
+  - StatSystem.cpp
+  - EntityFactory.cpp
+  - char.h
+- Rebuilt, redeployed, and restarted the WinTest stack.
+
+Verification
+- Build gate passed after rollback.
+- Fresh binary was deployed and stack restarted.
+- Boot/log smoke returned to the expected baseline.
+- This rollback is intentionally uncommitted in the working tree.
+
+
+## Live reward-chain corrections after 15C-1j rollback
+
+Date: 2026-04-20
+Status: build-green, deploy-green, runtime-corrected
+
+Summary
+- After the 15C-1j rollback, several independent reward-chain issues still had to be corrected.
+- These were fixed incrementally and validated on WinTest through repeated user runtime checks.
+
+Corrections applied
+- Removed unintended map-based EXP multipliers from CombatSystem.cpp:
+  - map1/map2 x5
+  - ice x4
+  - desert/nephthys x2
+- Removed the broken POINT_EXP reward-bonus usage from the EXP formula in CombatSystem.cpp.
+- Fixed the split-gold autoloot path so shared gold no longer granted the full amount multiple times.
+- Removed fake kill credit from metin-spawned cleanup mobs:
+  - stopped awarding reward/quest/EXP/gold/drop from cleanup-only despawns
+  - applied INSTANT_FLAG_NO_REWARD to the stone cleanup path
+
+Observed outcome
+- EXP pacing returned to a near-normal progression curve.
+- Damage timing against stones normalized again.
+- Yang/gold inflation was reduced substantially.
+
+
+## Metin stone drop-chain retune
+
+Date: 2026-04-20
+Status: build-green, deploy-green, runtime-tuned
+
+Summary
+- After the reward-chain fixes, metin stone item drops were still excessive, then later over-corrected to nearly zero.
+- The stone drop stack was retuned in item_manager.cpp in multiple passes until EXP became correct and the remaining drop excess could be isolated.
+
+Changes made
+- Disabled generic non-stone-style reward layers for metin stones:
+  - common drop group path removed for stone handling
+  - normal DropItemGroup path removed for stone handling
+  - level item group path removed for stone handling
+  - extra glove/premium generic drop path removed for stone handling
+- Temporarily reduced the stone-specific drop formula too far, which led to 50-70 stones with no drop.
+- Restored the main stone-specific drop formula to:
+  - int iPercent = (pkChr->GetDropMetinStonePct() * iDeltaPercent) * 400;
+
+Runtime outcome
+- EXP became correct.
+- Drop amount was significantly reduced versus the broken state.
+- Remaining excess then turned out to be tied to extra-inventory runtime handling rather than the pure drop formula alone.
+
+
+## Extra inventory ECS runtime regression - overwrite bug fixed
+
+Date: 2026-04-20
+Status: fixed, build/deploy green, runtime confirmed
+
+Summary
+- Spirit stone drops started landing in extra inventory, but only the same small set of cells appeared usable and new drops overwrote older ones.
+- The issue was not drop-rate related; it was an ECS runtime storage bug.
+
+Root cause
+- EnsureExtraInventoryRuntimeComponent() in ecs/systems/ItemSystem.cpp recreated the entire ExtraInventoryRuntimeComponent on each write by using emplace_or_replace.
+- Every new extra-inventory write therefore reinitialized the whole runtime slot/grid state.
+- The same faulty pattern existed in several other item-window ECS helpers as well.
+
+Fix
+- Replaced the destructive emplace_or_replace helper pattern with:
+  - try_get(...) first
+  - emplace(...) only if the component does not already exist
+- Applied the same safe pattern to:
+  - ExtraInventoryRuntimeComponent
+  - DragonSoulInventoryComponent
+  - CubeWindowComponent
+  - AttrTransferWindowComponent
+  - AcceWindowComponent
+  - SwitchbotRuntimeComponent
+
+Runtime verification
+- User confirmed that extra inventory drops no longer overwrite each other.
+- Slot occupancy now advances correctly instead of collapsing onto the same cells.
+
+
+## Extra inventory relog disappearance - stale duplicate item fix
+
+Date: 2026-04-20
+Status: fixed, build/deploy green, runtime confirmed
+
+Summary
+- After the overwrite fix, extra inventory items still disappeared after relog.
+- The database still contained the items, so this was not a save-loss issue.
+
+Root cause
+- During login CInputDB::ItemLoad() hit ITEM_ID_DUP on extra inventory items.
+- That meant stale runtime CItem objects with the same item IDs still existed when DB item load tried to recreate them.
+- Because CreateItem(..., id) returned duplicate-ID failure, the DB-backed extra inventory items were skipped and the inventory looked empty.
+
+Evidence
+- Direct MariaDB queries showed EXTRA_INVENTORY rows still present for the affected player.
+- syserr.txt showed repeated:
+  - ITEM_MANAGER::CreateItem: ITEM_ID_DUP
+  - CInputDB::ItemLoad: cannot create item by vnum ...
+
+Fix
+- Added a stale duplicate purge in input_db.cpp before CreateItem(...) during item load.
+- If the server already holds an item object with the same DB item ID and it belongs to the same player (or the load row is for EXTRA_INVENTORY), that stale runtime item is destroyed first.
+- The DB-backed item can then be recreated and attached normally during login.
+
+Runtime verification
+- User confirmed:
+  - relog no longer removes extra inventory items
+  - previously missing extra inventory items returned after the fix
+
+
+## Logout item persistence hardening
+
+Date: 2026-04-20
+Status: active safeguard in place
+
+Summary
+- To reduce item persistence loss during relog/logout transitions, logout item save was hardened in SessionSystem.cpp.
+
+Change
+- CHARACTER::FlushDelayedSaveItem() now directly saves all current owned item surfaces with SaveSingleItem():
+  - inventory / equipment
+  - dragon soul inventory
+  - extra inventory
+  - switchbot
+
+Purpose
+- This acts as an explicit persistence barrier before disconnect teardown, instead of relying only on delayed save queue timing.
+
+
+## Login channel-to-DB flush incident
+
+Date: 2026-04-20
+Status: fixed
+
+Summary
+- A separate login incident temporarily blocked players from progressing past login.
+
+Root cause
+- CLIENT_DESC::DBPacket() in desc_client.cpp could enqueue DB packets without guaranteeing immediate output processing.
+- In practice this could leave LOGIN_BY_KEY buffered without reaching DB promptly.
+- Deployment was also briefly confused by channel executable/link layout during rollout.
+
+Fix
+- Added immediate output processing after arming the DB/client socket write watcher in desc_client.cpp.
+- Verified and redeployed the correct WinTest channel binary layout.
+
+Runtime verification
+- User confirmed that login recovered and worked normally afterward.
+
+
+## Current live state after the above fixes
+
+Date: 2026-04-20
+Status: user-confirmed stable checkpoint
+
+User-confirmed runtime state
+- extra inventory drops no longer overwrite each other
+- relog no longer removes extra inventory items
+- items previously lost during the broken window reappeared after the stale-duplicate purge
+- login works again
+- EXP progression is back in a good range
+
+Known remaining note
+- Metin stone drop tuning improved substantially, but this area remains a balance-sensitive live path and should be retested carefully after any further inventory / item-load changes.
+
+
+## Phase 15C-1k - main inventory migrated to ECS (code-side)
+
+Date: 2026-04-20
+Status: build-green, deployed, awaiting manual runtime validation
+
+Summary
+- Migrated the main inventory and equipment storage from legacy CHARACTER_POINT_INSTANT fields to ecs::MainInventoryRuntimeComponent.
+- This covers the last large item-storage block in CHARACTER_POINT_INSTANT after the earlier extra-inventory and DragonSoul migrations.
+
+Implementation
+- Added ecs::MainInventoryRuntimeComponent with legacy-compatible arrays:
+  - LPITEM pItems[INVENTORY_AND_EQUIP_SLOT_MAX]
+  - uint16_t bItemGrid[INVENTORY_AND_EQUIP_SLOT_MAX]
+- EntityFactory::CreatePC() now initializes the component on player entity creation.
+- CHARACTER::SetItem() inventory/equipment path now writes to the ECS component.
+- CHARACTER::GetItem() and CHARACTER::GetWear() now read from the ECS component.
+- CHARACTER::IsEmptyItemGrid() inventory/equipment checks now use ECS-backed grid occupancy.
+
+Legacy removal
+- Removed the legacy pItems and ItemGrid members from CHARACTER_POINT_INSTANT in char.h.
+- Tree-wide grep after the cutover showed zero remaining m_pointsInstant.pItems[...] / m_pointsInstant.bItemGrid[...] references.
+
+Verification
+- Build gate passed:
+  - cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+- Fresh binary deployed to WinTest share/bin.
+- ch1/core1, ch1/core2, and ch99/core99 restarted cleanly.
+- Deployed hash confirmed:
+  - 46AC840AC9D73B12B2E015AFC6C4DA86A795694C8B1D0CE101B4696D8262150D
+- Boot/log smoke showed no new target regressions:
+  - no fresh VID_DRIFT
+  - no fresh DestroyCharacter ... not found
+  - no fresh SpawnMob: cannot create
+- syserr tail remained in the usual motion/content-warning bucket only.
+
+Pending manual verification
+- inventory contents render correctly on login
+- pickup/drop/move/split/stack all behave normally
+- equip/unequip keeps slot state and stat deltas correct
+- logout/login persistence remains correct
+
+Runtime verification update
+- User confirmed that 15C-1k is working correctly in practice.
+- Main inventory and equipment behavior are currently stable after the ECS cutover.
+- This closes the manual runtime verification gate for the main inventory migration.
+
+
+## Phase 15C-1j retry - semantic subset attempt parked, stable runtime restored
+
+Date: 2026-04-20
+Status: parked / rolled back to stable legacy authority
+
+Summary
+- Retried the points[] migration using a semantic allowlist / blocklist split instead of a flat POINT_MAX_NUM migration.
+- The retry reached dual-authority and drift-detection stages, but runtime behavior still showed gameplay-facing semantic regressions.
+- The migration was not carried through to read-flip or legacy removal.
+
+Observed runtime regressions during retry
+- stone damage feedback became delayed: while attacking a metin stone, visible damage did not update correctly, then the stone collapsed suddenly after attack stop
+- stat point allocation became incorrect from the client perspective: the stat point was consumed, but the target attribute display did not update correctly
+- earlier in the retry sequence, aggressive drift diagnostics also caused avoidable runtime pressure and log flooding
+
+Stabilization actions
+- Removed the production-side stats drift detector from the normal WinTest runtime path
+- Reverted PointSystem / StatSystem changes that tried to route true stat-array points through the new ECS stats component
+- Restored stable legacy authority for CHARACTER_POINT_INSTANT::points[] reads/writes
+- Redeployed the corrected GameServer binary and restarted Database/auth/channel cores from the WinTest tree
+
+Current state
+- User confirmed that the server is now running again with the fresh binary
+- User confirmed that currently everything is working correctly
+
+Decision
+- Phase 15C-1j retry remains intentionally uncommitted and incomplete
+- points[] migration should not be resumed until a stricter semantic split is implemented around packet/update behavior and combat-visible point consumers
+
+## Phase 15C-2 follow-up — equipment panel / inventory window semantics fix
+
+Date: 2026-04-20
+Status: user-confirmed stable
+
+Context:
+- After the `Phase 15C-2` CHARACTER_POINT scalar-field migration, core gameplay remained correct:
+  - login
+  - character select
+  - logout/loading/enter game
+  - exp
+  - hp/mana
+  - attack
+- A UI regression remained in the item/equipment presentation path.
+
+Symptoms observed:
+- Character was actually equipped server-side and visually in-world.
+- Equipment window upper panel did not show equipped items.
+- One intermediate workaround then caused the opposite symptom:
+  - equipped items also appeared in the lower inventory region as if inventory/equipment semantics were mixed.
+
+Root cause:
+- Main inventory ECS migration (`MainInventoryRuntimeComponent`) preserved internal offset-based storage:
+  - inventory cells stored as `0..INVENTORY_MAX_NUM-1`
+  - equipment cells stored as `INVENTORY_MAX_NUM + wearSlot`
+- The broken part was not persistence/storage but packet/window semantics.
+- `SetWear()` / `SetItem()` / item packet emission were temporarily inconsistent about whether equipment should be represented as:
+  - `TItemPos(INVENTORY, INVENTORY_MAX_NUM + wearSlot)`
+  - or `TItemPos(EQUIPMENT, wearSlot)`
+  - or `TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wearSlot)`
+- The codebase expectation turned out to be hybrid:
+  - item runtime/equip detection uses `window = EQUIPMENT` together with offset cell values (`cell >= INVENTORY_MAX_NUM`)
+  - client-facing packet behavior also needed to align with that runtime form
+  - otherwise the client rendered equipped items in the wrong panel
+
+Failed intermediate attempt:
+- Added an explicit extra equipment packet workaround in `ItemSystem.cpp`.
+- Result:
+  - upper equipment panel started reacting
+  - but lower inventory region also showed equipment incorrectly
+- This workaround was removed.
+
+Final fix:
+- File: `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `GetWear()` now reads from ECS main-inventory storage using the internal offset cell.
+- `SetWear()` now routes through the dedicated equipment path again.
+- `GetItem(TItemPos)` and `SetItem(TItemPos, ...)` were repaired so that:
+  - ECS storage remains offset-based internally
+  - equipment accesses use the correct storage offset
+  - item runtime state stays coherent (`window/cell` pair)
+- Most importantly: packet emission in `SetItem()` now normalizes equipment packet cells to the form expected by the existing runtime/client contract:
+  - `TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wearSlot)`
+- This removed both failure modes:
+  - equipped items missing from upper panel
+  - equipped items appearing as normal inventory items below
+
+Verification:
+- Build gate: PASS
+- WinTest deploy/restart: PASS
+- Final deploy hash:
+  - `E8E6BAFCAEBD2CA5D4178BB93C78A2022F5E66ECD580E7E0138002DF40777E46`
+- User runtime confirmation:
+  - "oké .. így már jó"
+
+Outcome:
+- Equipment panel semantics restored.
+- Main inventory ECS migration remains intact.
+- No rollback required.

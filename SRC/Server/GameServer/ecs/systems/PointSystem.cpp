@@ -6,6 +6,7 @@
 
 #include "../../char.h"
 
+
 #include "../../config.h"
 #include "../../utils.h"
 #include "../../crc32.h"
@@ -207,7 +208,6 @@ int CHARACTER::GetLimitPoint(uint8_t type) const
 	case POINT_MOV_SPEED:
 		min_limit = 0;
 		limit = 350;
-
 		break;
 
 	case POINT_STEAL_HP:
@@ -243,9 +243,10 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 		return;
 	}
 
+
 	m_pointsInstant.points[type] = val;
 
-	// 3AÁ÷ AIµ?AI ´U 3E3!3µ´U¸é AIµ? 1A°L °e»eA» ´U1A ÇO3ß ÇN´U.
+
 	if (type == POINT_MOV_SPEED && get_dword_time() < m_dwMoveStartTime + m_dwMoveDuration)
 	{
 		CalculateMoveDuration();
@@ -974,43 +975,55 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		break;
 
 	case POINT_IMMUNE_STUN:		// 76
+	{
 		SetPoint(type, GetPoint(type) + amount);
 		val = GetPoint(type);
+		uint32_t immuneFlag = GetImmuneFlag();
 		if (val)
 		{
-			SET_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_STUN);
+			SET_BIT(immuneFlag, IMMUNE_STUN);
 		}
 		else
 		{
-			REMOVE_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_STUN);
+			REMOVE_BIT(immuneFlag, IMMUNE_STUN);
 		}
+		SetImmuneFlag(immuneFlag);
 		break;
+	}
 
 	case POINT_IMMUNE_SLOW:		// 77
+	{
 		SetPoint(type, GetPoint(type) + amount);
 		val = GetPoint(type);
+		uint32_t immuneFlag = GetImmuneFlag();
 		if (val)
 		{
-			SET_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_SLOW);
+			SET_BIT(immuneFlag, IMMUNE_SLOW);
 		}
 		else
 		{
-			REMOVE_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_SLOW);
+			REMOVE_BIT(immuneFlag, IMMUNE_SLOW);
 		}
+		SetImmuneFlag(immuneFlag);
 		break;
+	}
 
 	case POINT_IMMUNE_FALL:	// 78
+	{
 		SetPoint(type, GetPoint(type) + amount);
 		val = GetPoint(type);
+		uint32_t immuneFlag = GetImmuneFlag();
 		if (val)
 		{
-			SET_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_FALL);
+			SET_BIT(immuneFlag, IMMUNE_FALL);
 		}
 		else
 		{
-			REMOVE_BIT(m_pointsInstant.dwImmuneFlag, IMMUNE_FALL);
+			REMOVE_BIT(immuneFlag, IMMUNE_FALL);
 		}
+		SetImmuneFlag(immuneFlag);
 		break;
+	}
 
 	case POINT_ATT_GRADE_BONUS:
 		SetPoint(type, GetPoint(type) + amount);
@@ -1365,4 +1378,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	}
 	}
 }
+
+
+
+
+
+
+
 

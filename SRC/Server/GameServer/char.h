@@ -522,11 +522,6 @@ typedef struct character_point
 	uint8_t			job;
 	uint8_t			voice;
 
-	uint8_t			level;
-	uint32_t			exp;
-
-	int64_t		gold;
-
 #ifdef ENABLE_GAYA_SYSTEM
 	int				gaya;
 #endif
@@ -535,13 +530,8 @@ typedef struct character_point
 	int 			envanter;
 #endif
 
-	int64_t				hp;
-	int64_t				sp;
-
 	int				iRandomHP;
 	int				iRandomSP;
-
-	int				stamina;
 
 	uint8_t			skill_group;
 } CHARACTER_POINT;
@@ -551,30 +541,12 @@ typedef struct character_point_instant
 {
 	int64_t			points[POINT_MAX_NUM];
 
-	float			fRot;
-
-	int64_t				iMaxHP;
-	int64_t				iMaxSP;
-
-	int32_t			position;
-
-	int32_t			instant_flag;
-	uint32_t			dwAIFlag;
-	uint32_t			dwImmuneFlag;
-	uint32_t			dwLastShoutPulse;
-
-	uint16_t			parts[PART_MAX_NUM];
-
 	// 아... 진짜 욕을 안 할래야 안 할 수가 없다.
 	// char는 인벤을 uint8_t array로 grid를 관리하고, exchange나 cube는 CGrid로 grid를 관리하고 뭐냐 이거...
 	// grid를 만들어 놨으면 grid를 쓰란 말이야!!!
 	// ㅅㅂ 용혼석 인벤을 똑같이 따라서 만든 나도 잘못했다 ㅠㅠ
-	LPITEM			pItems[INVENTORY_AND_EQUIP_SLOT_MAX];
-	uint16_t			bItemGrid[INVENTORY_AND_EQUIP_SLOT_MAX];
 
 	// 용혼석 인벤토리.
-	LPITEM			pDSItems[DRAGON_SOUL_INVENTORY_MAX_NUM];
-	uint16_t			wDSItemGrid[DRAGON_SOUL_INVENTORY_MAX_NUM];
 #ifdef ENABLE_EXTRA_INVENTORY
 #endif
 #ifdef ENABLE_SWITCHBOT
@@ -586,16 +558,6 @@ typedef struct character_point_instant
 #endif
 	LPCHARACTER			battle_victim;
 
-	uint8_t			gm_level;
-
-	uint8_t			bBasePart;	// 평상복 번호
-
-	int64_t				iMaxStamina;
-
-	uint8_t			bBlockMode;
-
-	int				iDragonSoulActiveDeck;
-	LPENTITY		m_pDragonSoulRefineWindowOpener;
 } CHARACTER_POINT_INSTANT;
 
 #define TRIGGERPARAM		LPCHARACTER ch, LPCHARACTER causer
@@ -736,7 +698,8 @@ public:
 #endif
 
 public:
-	uint32_t GetAIFlag() const { return m_pointsInstant.dwAIFlag; }
+	uint32_t			GetAIFlag() const;
+	int32_t			GetInstantFlag() const;
 
 	void				SetAggressive();
 	bool				IsAggressive() const;
@@ -875,18 +838,17 @@ public:
 	bool IsDungeonTicketExtraMetin() const { return m_bDungeonTicketExtraMetin; }
 #endif
 
-	uint32_t			GetLastShoutPulse() const { return m_pointsInstant.dwLastShoutPulse; }
-	void			SetLastShoutPulse(uint32_t pulse) { m_pointsInstant.dwLastShoutPulse = pulse; }
-	int				GetLevel() const { return m_points.level; }
+	uint32_t			GetLastShoutPulse() const;
+	void			SetLastShoutPulse(uint32_t pulse);
+	int				GetLevel() const;
 	void			SetLevel(uint8_t level);
 
 	uint8_t			GetGMLevel() const;
 	BOOL 			IsGM() const;
 	void			SetGMLevel();
 
-	uint32_t			GetExp() const { return m_points.exp; }
-	void			SetExp(uint32_t exp) { m_points.exp = exp; }
-
+	uint32_t			GetExp() const;
+	void			SetExp(uint32_t exp);
 #ifdef __ENABLE_BLOCK_EXP__
 	bool			Block_Exp;
 #endif
@@ -901,30 +863,27 @@ public:
 	void			DistributeSP(LPCHARACTER pkKiller, int iMethod = 0);
 
 	void			SetPosition(int pos);
-	bool			IsPosition(int pos) const { return m_pointsInstant.position == pos ? true : false; }
-	int				GetPosition() const { return m_pointsInstant.position; }
+	bool			IsPosition(int pos) const;
+	int				GetPosition() const;
 
 	void			SetPart(uint8_t bPartPos, uint16_t wVal);
 	uint16_t			GetPart(uint8_t bPartPos) const;
 	uint16_t			GetOriginalPart(uint8_t bPartPos) const;
 
-	void			SetHP(int64_t hp) { m_points.hp = hp; }
-	int64_t				GetHP() const { return m_points.hp; }
+	void			SetHP(int64_t hp);
+	int64_t				GetHP() const;
+	void			SetSP(int64_t sp);
+	int64_t				GetSP() const;
+	void			SetStamina(int stamina);
+	int				GetStamina() const;
+	void			SetMaxHP(int64_t iVal);
+	int64_t				GetMaxHP() const;
 
-	void			SetSP(int64_t sp) { m_points.sp = sp; }
-	int64_t				GetSP() const { return m_points.sp; }
+	void			SetMaxSP(int64_t iVal);
+	int64_t				GetMaxSP() const;
 
-	void			SetStamina(int stamina) { m_points.stamina = stamina; }
-	int				GetStamina() const { return m_points.stamina; }
-
-	void			SetMaxHP(int64_t iVal) { m_pointsInstant.iMaxHP = iVal; }
-	int64_t				GetMaxHP() const { return m_pointsInstant.iMaxHP; }
-
-	void			SetMaxSP(int64_t iVal) { m_pointsInstant.iMaxSP = iVal; }
-	int64_t				GetMaxSP() const { return m_pointsInstant.iMaxSP; }
-
-	void			SetMaxStamina(int64_t iVal) { m_pointsInstant.iMaxStamina = iVal; }
-	int64_t				GetMaxStamina() const { return m_pointsInstant.iMaxStamina; }
+	void			SetMaxStamina(int64_t iVal);
+	int64_t				GetMaxStamina() const;
 
 	void			SetRandomHP(int v) { m_points.iRandomHP = v; }
 	void			SetRandomSP(int v) { m_points.iRandomSP = v; }
@@ -1011,7 +970,7 @@ public:
 	void			SetRotation(float fRot);
 #endif
 	void			SetRotationToXY(int32_t x, int32_t y);
-	float			GetRotation() const { return m_pointsInstant.fRot; }
+	float			GetRotation() const;
 
 	void			MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet);
 	void			Motion(uint8_t motion, LPCHARACTER victim = nullptr);
@@ -1023,7 +982,8 @@ public:
 
 	void			SetBlockMode(uint8_t bFlag);
 	void			SetBlockModeForce(uint8_t bFlag);
-	bool			IsBlockMode(uint8_t bFlag) const { return (m_pointsInstant.bBlockMode & bFlag) ? true : false; }
+	uint8_t			GetBlockMode() const;
+	bool			IsBlockMode(uint8_t bFlag) const;
 
 	bool			IsPolymorphed() const { return m_dwPolymorphRace > 0; }
 	bool			IsPolyMaintainStat() const { return m_bPolyMaintainStat; } // 이전 스텟을 유지하는 폴리모프.
@@ -1422,6 +1382,8 @@ public:
 #endif
 	LPITEM			GetItem(TItemPos Cell) const;
 	LPITEM			GetInventoryItem(uint16_t wCell) const;
+	LPITEM			GetDragonSoulItem(uint16_t wCell) const;
+	uint16_t			GetDragonSoulGrid(uint16_t wCell) const;
 #ifdef ENABLE_SWITCHBOT
 	LPITEM			GetSwitchbotItem(uint16_t wCell) const;
 #endif
@@ -1587,9 +1549,8 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Money related
 
-	int64_t				GetGold() const { return m_points.gold; }
-	void			SetGold(int64_t gold) { m_points.gold = gold; }
-
+	int64_t				GetGold() const;
+	void			SetGold(int64_t gold);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	int				Inven_Point() const { return m_points.envanter; }
 	int				Inventory_Size() const { return 90 + (5 * Inven_Point()); }
@@ -1719,7 +1680,7 @@ public:
 	void				ReviveInvisible(int iDur);
 
 	bool				Attack(LPCHARACTER pkVictim, uint8_t bType = 0);
-	bool				IsAlive() const { return m_pointsInstant.position == POS_DEAD ? false : true; }
+	bool				IsAlive() const;
 	bool				CanFight() const;
 
 	bool				CanBeginFight() const;
@@ -2295,8 +2256,8 @@ protected:
 public:
 	bool				CannotMoveByAffect() const;	// 특정 효과에 의해 움직일 수 없는 상태인가?
 	bool				IsImmune(uint32_t dwImmuneFlag);
-	void				SetImmuneFlag(uint32_t dw) { m_pointsInstant.dwImmuneFlag = dw; }
-	uint32_t			GetImmuneFlag() const { return m_pointsInstant.dwImmuneFlag; }
+	void			SetImmuneFlag(uint32_t dw);
+	uint32_t			GetImmuneFlag() const;
 
 protected:
 	void				ApplyMobAttribute(const TMobTable* table);
@@ -2677,7 +2638,7 @@ public:
 public:
 	bool		DragonSoul_RefineWindow_Open(LPENTITY pEntity);
 	bool		DragonSoul_RefineWindow_Close();
-	LPENTITY	DragonSoul_RefineWindow_GetOpener() { return  m_pointsInstant.m_pDragonSoulRefineWindowOpener; }
+	LPENTITY	DragonSoul_RefineWindow_GetOpener();
 	bool		DragonSoul_RefineWindow_CanRefine();
 #if defined(BL_OFFLINE_MESSAGE)
 protected:
@@ -3050,6 +3011,9 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
+
+
+
 
 
 

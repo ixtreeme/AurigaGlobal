@@ -123,6 +123,54 @@ LegacyCharHandle LegacyCharOf(entt::entity e)
     return legacy ? legacy->ptr : nullptr;
 }
 
+static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    if (auto* comp = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::MainInventoryRuntimeComponent>(e);
+}
+
+static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
+}
+
+static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
+{
+    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+        return nullptr;
+
+    if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
+        return comp->pItems[cell];
+
+    return nullptr;
+}
+
+static uint16_t GetMainInventoryGrid(const CHARACTER* ch, uint16_t cell)
+{
+    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+        return 0;
+
+    if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
+        return comp->bItemGrid[cell];
+
+    return 0;
+}
 #ifdef ENABLE_EXTRA_INVENTORY
 static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(LPCHARACTER ch)
 {
@@ -133,7 +181,10 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(e);
+    if (auto* comp = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(e);
 }
 
 static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(const CHARACTER* ch)
@@ -149,6 +200,34 @@ static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeCom
 }
 #endif
 
+static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    if (auto* comp = g_registry.try_get<ecs::DragonSoulInventoryComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(e);
+}
+
+static const ecs::DragonSoulInventoryComponent* TryGetDragonSoulInventoryComponent(const CHARACTER* ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const entt::entity e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::DragonSoulInventoryComponent>(e);
+}
+
+
 static ecs::CubeWindowComponent* EnsureCubeWindowComponent(LPCHARACTER ch)
 {
     if (!ch)
@@ -158,7 +237,10 @@ static ecs::CubeWindowComponent* EnsureCubeWindowComponent(LPCHARACTER ch)
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.emplace_or_replace<ecs::CubeWindowComponent>(e);
+    if (auto* comp = g_registry.try_get<ecs::CubeWindowComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::CubeWindowComponent>(e);
 }
 
 static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(const CHARACTER* ch)
@@ -183,7 +265,10 @@ static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(LPCHA
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.emplace_or_replace<ecs::AttrTransferWindowComponent>(e);
+    if (auto* comp = g_registry.try_get<ecs::AttrTransferWindowComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::AttrTransferWindowComponent>(e);
 }
 
 static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(const CHARACTER* ch)
@@ -209,7 +294,10 @@ static ecs::AcceWindowComponent* EnsureAcceWindowComponent(LPCHARACTER ch)
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.emplace_or_replace<ecs::AcceWindowComponent>(e);
+    if (auto* comp = g_registry.try_get<ecs::AcceWindowComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::AcceWindowComponent>(e);
 }
 
 static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(const CHARACTER* ch)
@@ -235,7 +323,10 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(LPCHARACT
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return &g_registry.emplace_or_replace<ecs::SwitchbotRuntimeComponent>(e);
+    if (auto* comp = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e))
+        return comp;
+
+    return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(e);
 }
 
 static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(const CHARACTER* ch)
@@ -2422,6 +2513,28 @@ LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
 }
 #endif
 
+LPITEM CHARACTER::GetDragonSoulItem(uint16_t wCell) const
+{
+	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+		return nullptr;
+
+	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
+		return comp->pItems[wCell];
+
+	return nullptr;
+}
+
+uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
+{
+	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+		return 0;
+
+	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
+		return comp->wItemGrid[wCell];
+
+	return 0;
+}
+
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -2458,21 +2571,29 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 	switch (window_type)
 	{
 	case INVENTORY:
-	case EQUIPMENT:
 		if (wCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
 			sys_err("CHARACTER::GetInventoryItem: invalid item cell %d", wCell);
 			return nullptr;
 		}
-		return m_pointsInstant.pItems[wCell];
+		return GetMainInventoryItem(this, wCell);
+	case EQUIPMENT:
+	{
+		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
+		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+		{
+			sys_err("CHARACTER::GetInventoryItem: invalid equipment cell %d", wCell);
+			return nullptr;
+		}
+		return GetMainInventoryItem(this, storageCell);
+	}
 	case DRAGON_SOUL_INVENTORY:
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
 			sys_err("CHARACTER::GetInventoryItem: invalid DS item cell %d", wCell);
 			return nullptr;
 		}
-		return m_pointsInstant.pDSItems[wCell];
-
+		return GetDragonSoulItem(wCell);
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	case EXTRA_INVENTORY:
@@ -2804,7 +2925,7 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 		return nullptr;
 	}
 
-	return m_pointsInstant.pItems[INVENTORY_MAX_NUM + bCell];
+	return GetMainInventoryItem(this, static_cast<uint16_t>(INVENTORY_MAX_NUM + bCell));
 }
 
 
@@ -2818,9 +2939,9 @@ void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 	}
 
 #ifdef __HIGHLIGHT_SYSTEM__
-	SetItem(TItemPos(INVENTORY, INVENTORY_MAX_NUM + bCell), item, false);
+	SetItem(TItemPos(EQUIPMENT, bCell), item, false);
 #else
-	SetItem(TItemPos(INVENTORY, INVENTORY_MAX_NUM + bCell), item);
+	SetItem(TItemPos(EQUIPMENT, bCell), item);
 #endif
 
 #ifndef ENABLE_BUG_FIXES
@@ -2833,8 +2954,6 @@ void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 	}
 #endif
 }
-
-
 bool CHARACTER::UnequipItem(LPITEM item)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -14058,122 +14177,146 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		assert(!"GetOwner exist");
 		return;
 	}
-	// ±âº» ÀÎº¥Åä¸®
+	// ��o� A�oYA丮
 	switch (window_type)
 	{
 	case INVENTORY:
-	case EQUIPMENT:
 	{
-		if (wCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+		const uint16_t storageCell = wCell;
+		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			sys_err("CHARACTER::SetItem: invalid item cell %d", wCell);
+			sys_err("CHARACTER::SetItem: invalid item cell %d", storageCell);
 			return;
 		}
 
-		LPITEM pOld = m_pointsInstant.pItems[wCell];
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
+		if (!pMainInventory)
+		{
+			sys_err("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			return;
+		}
+
+		LPITEM pOld = pMainInventory->pItems[storageCell];
 
 		if (pOld)
 		{
-			if (wCell < INVENTORY_MAX_NUM)
+			if (storageCell < INVENTORY_MAX_NUM)
 			{
 				for (int i = 0; i < pOld->GetSize(); ++i)
 				{
-					int p = wCell + (i * 5);
+					int p = storageCell + (i * 5);
 
 					if (p >= INVENTORY_MAX_NUM)
 						continue;
 
-					if (m_pointsInstant.pItems[p] && m_pointsInstant.pItems[p] != pOld)
+					if (pMainInventory->pItems[p] && pMainInventory->pItems[p] != pOld)
 						continue;
 
-					m_pointsInstant.bItemGrid[p] = 0;
+					pMainInventory->bItemGrid[p] = 0;
 				}
 			}
 			else
-				m_pointsInstant.bItemGrid[wCell] = 0;
+				pMainInventory->bItemGrid[storageCell] = 0;
 		}
 
 		if (pItem)
 		{
-			if (wCell < INVENTORY_MAX_NUM)
+			if (storageCell < INVENTORY_MAX_NUM)
 			{
 				for (int i = 0; i < pItem->GetSize(); ++i)
 				{
-					int p = wCell + (i * 5);
+					int p = storageCell + (i * 5);
 
 					if (p >= INVENTORY_MAX_NUM)
 						continue;
 
-					// wCell + 1 ·Î ÇÏ´Â °ÍÀº ºó°÷À» Ã¼Å©ÇÒ ¶§ °°Àº
-					// ¾ÆÀÌÅÛÀº ¿¹¿ÜÃ³¸®ÇÏ±â À§ÇÔ
-					m_pointsInstant.bItemGrid[p] = wCell + 1;
+					pMainInventory->bItemGrid[p] = storageCell + 1;
 				}
 			}
 			else
-				m_pointsInstant.bItemGrid[wCell] = wCell + 1;
+				pMainInventory->bItemGrid[storageCell] = storageCell + 1;
 		}
 
-		m_pointsInstant.pItems[wCell] = pItem;
+		pMainInventory->pItems[storageCell] = pItem;
 	}
 	break;
-	// ¿ëÈ¥¼® ÀÎº¥Åä¸®
+	case EQUIPMENT:
+	{
+		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
+		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+		{
+			sys_err("CHARACTER::SetItem: invalid equipment item cell %d", wCell);
+			return;
+		}
+
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
+		if (!pMainInventory)
+		{
+			sys_err("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			return;
+		}
+
+		LPITEM pOld = pMainInventory->pItems[storageCell];
+
+		if (pOld)
+			pMainInventory->bItemGrid[storageCell] = 0;
+
+		if (pItem)
+			pMainInventory->bItemGrid[storageCell] = storageCell + 1;
+
+		pMainInventory->pItems[storageCell] = pItem;
+	}
+	break;
+	// ?�EY1� A�oYA丮
 	case DRAGON_SOUL_INVENTORY:
 	{
-		LPITEM pOld = m_pointsInstant.pDSItems[wCell];
+		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+		{
+			sys_err("CHARACTER::SetItem: invalid DS item cell %d", wCell);
+			return;
+		}
+
+		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(this);
+		if (!pDragonSoulInventory)
+		{
+			sys_err("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
+			return;
+		}
+
+		LPITEM pOld = pDragonSoulInventory->pItems[wCell];
 
 		if (pOld)
 		{
-			if (wCell < DRAGON_SOUL_INVENTORY_MAX_NUM)
+			for (int i = 0; i < pOld->GetSize(); ++i)
 			{
-				for (int i = 0; i < pOld->GetSize(); ++i)
-				{
-					int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
+				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
 
-					if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-						continue;
+				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+					continue;
 
-					if (m_pointsInstant.pDSItems[p] && m_pointsInstant.pDSItems[p] != pOld)
-						continue;
+				if (pDragonSoulInventory->pItems[p] && pDragonSoulInventory->pItems[p] != pOld)
+					continue;
 
-					m_pointsInstant.wDSItemGrid[p] = 0;
-				}
+				pDragonSoulInventory->wItemGrid[p] = 0;
 			}
-			else
-				m_pointsInstant.wDSItemGrid[wCell] = 0;
 		}
 
 		if (pItem)
 		{
-			if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+			for (int i = 0; i < pItem->GetSize(); ++i)
 			{
-				sys_err("CHARACTER::SetItem: invalid DS item cell %d", wCell);
-				return;
+				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
+
+				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+					continue;
+
+				pDragonSoulInventory->wItemGrid[p] = wCell + 1;
 			}
-
-			if (wCell < DRAGON_SOUL_INVENTORY_MAX_NUM)
-			{
-				for (int i = 0; i < pItem->GetSize(); ++i)
-				{
-					int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
-
-					if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-						continue;
-
-					// wCell + 1 ·Î ÇÏ´Â °ÍÀº ºó°÷À» Ã¼Å©ÇÒ ¶§ °°Àº
-					// ¾ÆÀÌÅÛÀº ¿¹¿ÜÃ³¸®ÇÏ±â À§ÇÔ
-					m_pointsInstant.wDSItemGrid[p] = wCell + 1;
-				}
-			}
-			else
-				m_pointsInstant.wDSItemGrid[wCell] = wCell + 1;
 		}
 
-		m_pointsInstant.pDSItems[wCell] = pItem;
+		pDragonSoulInventory->pItems[wCell] = pItem;
 	}
 	break;
-
-
-
 #ifdef ENABLE_EXTRA_INVENTORY
 	case EXTRA_INVENTORY:
 	{
@@ -14278,14 +14421,18 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		return;
 	}
 
+	TItemPos packetCell = Cell;
+	if (window_type == EQUIPMENT)
+		packetCell = TItemPos(EQUIPMENT, static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell));
+
 	if (GetDesc())
 	{
-		// È®Àå ¾ÆÀÌÅÛ: ¼­¹ö¿¡¼­ ¾ÆÀÌÅÛ ÇÃ·¡±× Á¤º¸¸¦ º¸³½´Ù
+		// E�Aa 3AAIAU: 1�1�?!1� 3AAIAU �A�!�� ��o��� o�31�U
 		if (pItem)
 		{
 			TPacketGCItemSet pack;
 			pack.header = HEADER_GC_ITEM_SET;
-			pack.Cell = Cell;
+			pack.Cell = packetCell;
 
 			pack.count = pItem->GetCount();
 #ifdef ATTR_LOCK
@@ -14309,7 +14456,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		{
 			TPacketGCItemDelDeprecated pack;
 			pack.header = HEADER_GC_ITEM_DEL;
-			pack.Cell = Cell;
+			pack.Cell = packetCell;
 			pack.count = 0;
 #ifdef ATTR_LOCK
 			pack.lockedattr = -1;
@@ -14324,11 +14471,13 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 
 	if (pItem)
 	{
-		pItem->SetCell(this, wCell);
+		const uint16_t storageCell = (window_type == EQUIPMENT)
+			? static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell)
+			: wCell;
+		pItem->SetCell(this, storageCell);
 		switch (window_type)
 		{
 		case INVENTORY:
-		case EQUIPMENT:
 			if (wCell >= BELT_INVENTORY_SLOT_START && wCell < BELT_INVENTORY_SLOT_END)
 			{
 				if (CBeltInventoryHelper::CanMoveIntoBeltInventory(pItem))
@@ -14345,6 +14494,9 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 				pItem->SetWindow(EQUIPMENT);
 			}
 
+			break;
+		case EQUIPMENT:
+			pItem->SetWindow(EQUIPMENT);
 			break;
 		case DRAGON_SOUL_INVENTORY:
 			pItem->SetWindow(DRAGON_SOUL_INVENTORY);
@@ -14365,7 +14517,6 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		}
 	}
 }
-
 void CHARACTER::ClearItem()
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -14459,9 +14610,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 						if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
 							return false;
 
-						if (m_pointsInstant.bItemGrid[bCell])
+						if (GetMainInventoryGrid(this, bCell))
 						{
-							if (m_pointsInstant.bItemGrid[bCell] == iExceptionCell)
+							if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
 								return true;
 
 							return false;
@@ -14477,9 +14628,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 			// NE ellen?rizd az ov tipusat
 			// --> mindig engedelyezett
 
-			if (m_pointsInstant.bItemGrid[bCell])
+			if (GetMainInventoryGrid(this, bCell))
 			{
-				if (m_pointsInstant.bItemGrid[bCell] == iExceptionCell)
+				if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
 					return true;
 
 				return false;
@@ -14493,9 +14644,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else if (bCell >= Inventory_Size())
 			return false;
 
-		if (m_pointsInstant.bItemGrid[bCell])
+		if (GetMainInventoryGrid(this, bCell))
 		{
-			if (m_pointsInstant.bItemGrid[bCell] == iExceptionCell)
+			if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14512,8 +14663,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 						return false;
 
-					if (m_pointsInstant.bItemGrid[p])
-						if (m_pointsInstant.bItemGrid[p] != iExceptionCell)
+					if (GetMainInventoryGrid(this, p))
+						if (GetMainInventoryGrid(this, p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14540,8 +14691,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 					return false;
 
-				if (m_pointsInstant.bItemGrid[p])
-					if (m_pointsInstant.bItemGrid[p] != iExceptionCell)
+				if (GetMainInventoryGrid(this, p))
+					if (GetMainInventoryGrid(this, p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -14641,9 +14792,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 			if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
 				return false;
 
-			if (m_pointsInstant.bItemGrid[bCell])
+			if (GetMainInventoryGrid(this, bCell))
 			{
-				if (m_pointsInstant.bItemGrid[bCell] == iExceptionCell)
+				if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
 					return true;
 
 				return false;
@@ -14657,9 +14808,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else if (bCell >= INVENTORY_MAX_NUM)
 			return false;
 
-		if (m_pointsInstant.bItemGrid[bCell])
+		if (GetMainInventoryGrid(this, bCell))
 		{
-			if (m_pointsInstant.bItemGrid[bCell] == iExceptionCell)
+			if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14677,8 +14828,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 						return false;
 
-					if (m_pointsInstant.bItemGrid[p])
-						if (m_pointsInstant.bItemGrid[p] != iExceptionCell)
+					if (GetMainInventoryGrid(this, p))
+						if (GetMainInventoryGrid(this, p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14705,8 +14856,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 					return false;
 
-				if (m_pointsInstant.bItemGrid[p])
-					if (m_pointsInstant.bItemGrid[p] != iExceptionCell)
+				if (GetMainInventoryGrid(this, p))
+					if (GetMainInventoryGrid(this, p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -14812,9 +14963,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		// µû¶ó¼­ iExceptionCell¿¡ 1À» ´õÇØ ºñ±³ÇÑ´Ù.
 		iExceptionCell++;
 
-		if (m_pointsInstant.wDSItemGrid[wCell])
+		if (GetDragonSoulGrid(wCell))
 		{
-			if (m_pointsInstant.wDSItemGrid[wCell] == iExceptionCell)
+			if (GetDragonSoulGrid(wCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14828,8 +14979,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 						return false;
 
-					if (m_pointsInstant.wDSItemGrid[p])
-						if (m_pointsInstant.wDSItemGrid[p] != iExceptionCell)
+					if (GetDragonSoulGrid(p))
+						if (GetDragonSoulGrid(p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14853,8 +15004,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 					return false;
 
-				if (m_pointsInstant.bItemGrid[p])
-					if (m_pointsInstant.wDSItemGrid[p] != iExceptionCell)
+				if (GetMainInventoryGrid(this, p))
+					if (GetDragonSoulGrid(p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -15070,7 +15221,8 @@ void CHARACTER::CopyDragonSoulItemGrid(std::vector<uint16_t>&vDragonSoulItemGrid
 {
 	vDragonSoulItemGrid.resize(DRAGON_SOUL_INVENTORY_MAX_NUM);
 
-	std::copy(m_pointsInstant.wDSItemGrid, m_pointsInstant.wDSItemGrid + DRAGON_SOUL_INVENTORY_MAX_NUM, vDragonSoulItemGrid.begin());
+	for (uint16_t i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
+		vDragonSoulItemGrid[i] = GetDragonSoulGrid(i);
 }
 
 int CHARACTER::CountEmptyInventory() const
@@ -17637,6 +17789,9 @@ EVENTFUNC(soul_item_event)
 
 
 #endif
+
+
+
 
 
 
