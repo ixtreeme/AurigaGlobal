@@ -22,6 +22,7 @@
 #include "ani.h"
 #include "locale_service.h"
 #include <common/CommonDefines.h>
+#include "ecs/CharacterAccessors.hpp"
 
 #include "db.h"
 //#include <Database/DBManager.h>
@@ -157,7 +158,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 #endif
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
 
 	if (!victim || ch == victim)
 	{
@@ -165,7 +166,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
 
 	if (!battle_is_attackable(ch, victim))
 	{
@@ -173,7 +174,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ch->GetName(), victim->GetName());
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
 
 	// °Å¸® Ã¼Å©
 	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
@@ -204,7 +205,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		if (distance > max)
 		{
 			if (test_server)
-				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ch->GetName(), distance, max);
+				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ecs::GetName(ch), distance, max);
 
 			return BATTLE_NONE;
 		}
@@ -539,7 +540,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				break;
 
 			case WEAPON_BOW:
-				sys_err("CalcMeleeDamage should not handle bows (name: %s)", pkAttacker->GetName());
+				sys_err("CalcMeleeDamage should not handle bows (name: %s)", ecs::GetName(pkAttacker));
 				return 0;
 
 			default:
@@ -669,9 +670,9 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 		snprintf(szMeleeAttack, sizeof(szMeleeAttack),
 				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%d)+WP(%d)%s%s%s, AR=%.3g%s",
-				pkAttacker->GetName(),
+				ecs::GetName(pkAttacker),
 				iAtk,
-				pkVictim->GetName(),
+				ecs::GetName(pkVictim),
 				iDef,
 				iDam,
 				szUnknownDam,
@@ -746,8 +747,8 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	if (test_server)
 	{
 		pkAttacker->ChatPacket(CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
-				pkAttacker->GetName(),
-				pkVictim->GetName(),
+				ecs::GetName(pkAttacker),
+				ecs::GetName(pkVictim),
 				iPureDam,
 				iDist, iGap, iPercent);
 	}
@@ -798,7 +799,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	//PROF_UNIT puHit("Hit");
 	if (test_server)
-		sys_log(0, "battle_hit : [%s] attack to [%s] : dam :%d type :%d", pkAttacker->GetName(), pkVictim->GetName(), iRetDam);
+		sys_log(0, "battle_hit : [%s] attack to [%s] : dam :%d type :%d", ecs::GetName(pkAttacker), ecs::GetName(pkVictim), iRetDam);
 
 	int iDam = CalcMeleeDamage(pkAttacker, pkVictim);
 
@@ -957,7 +958,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //
 //
 //		sys_log(0, "DEBUG MAP1_SKILL_MOB: attacker=%s (id=%u) victimVnum=%d dmg=%d skillhit=%d",
-//			pkAttacker->GetName(),
+//			ecs::GetName(pkAttacker),
 //			pkAttacker->GetPlayerID(),
 //			pkVictim->GetRaceNum(),
 //			iRetDam,
@@ -993,7 +994,7 @@ void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	if (victim && ch && ch->IsPC()) {
-		victim->GetAttackedLogRef().dwPID = ch->GetPlayerID();
+		victim->GetAttackedLogRef().dwPID = ecs::GetPlayerID(ch);
 		victim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}
 }
@@ -1009,13 +1010,13 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 				if (test_server)
 				{
 					sys_log(0, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							ch->GetName(),
+							ecs::GetName(ch),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
 	
 					ch->ChatPacket(CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							ch->GetName(),
+							ecs::GetName(ch),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
@@ -1029,11 +1030,11 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	
 		SET_ATTACK_TIME(ch, victim, current_time);
 	
-		if (victim->GetAttackedLogRef().dwPID == ch->GetPlayerID()) {
+		if (victim->GetAttackedLogRef().dwPID == ecs::GetPlayerID(ch)) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {
-					ch->ChatPacket(CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ch->GetName());
+					ch->ChatPacket(CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
 					ch->GetDesc()->DelayedDisconnect(3);
 				}
@@ -1050,4 +1051,5 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	return false;
 }
 #endif
+
 
