@@ -138,7 +138,7 @@ ACMD(do_stat2)
 	
 	if (ch->IsPolymorphed()) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 314, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 314, "");
 #endif
 		return;
 	}
@@ -149,7 +149,7 @@ ACMD(do_stat2)
 	
 	if (ch->GetPoint(POINT_STAT) < limit) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 851,
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 851,
 
 		"%lld"
 
@@ -198,22 +198,22 @@ ACMD(do_open_biologist) {
 	int stat = ch->GetQuestFlag("biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 867, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
 	if (ecs::GetLevel(ch) < min) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 861, "%d", min);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 861, "%d", min);
 #endif
 		return;
 	}
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[stat][11], biologistMissionInfo[stat][3], biologistMissionInfo[stat][4], biologistMissionInfo[stat][5], biologistMissionInfo[stat][6], biologistMissionInfo[stat][7], biologistMissionInfo[stat][8], biologistMissionInfo[stat][9], biologistMissionInfo[stat][10]);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[stat][11], biologistMissionInfo[stat][3], biologistMissionInfo[stat][4], biologistMissionInfo[stat][5], biologistMissionInfo[stat][6], biologistMissionInfo[stat][7], biologistMissionInfo[stat][8], biologistMissionInfo[stat][9], biologistMissionInfo[stat][10]);
 	int time = ch->GetQuestFlag("biologist.time");
 	time = time > 0 ? time : 0;
 	int count = ch->GetQuestFlag("biologist.delivered");
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist %d#%d#%d#%d#%d#%d#%d", stat, biologistMissionInfo[stat][0], biologistMissionInfo[stat][1], count, biologistMissionInfo[stat][2], time, biologistMissionInfo[stat][1]-count > 0 ? 0 : 1);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist %d#%d#%d#%d#%d#%d#%d", stat, biologistMissionInfo[stat][0], biologistMissionInfo[stat][1], count, biologistMissionInfo[stat][2], time, biologistMissionInfo[stat][1]-count > 0 ? 0 : 1);
 }
 
 ACMD(do_delivery_biologist) {
@@ -229,14 +229,14 @@ ACMD(do_delivery_biologist) {
 	int stat = ch->GetQuestFlag("biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 867, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
 	if (ecs::GetLevel(ch) < min) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 861, "%d", min);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 861, "%d", min);
 #endif
 		return;
 	}
@@ -249,7 +249,7 @@ ACMD(do_delivery_biologist) {
 	int vnum = biologistMissionInfo[stat][0];
 	if (ch->CountSpecifyItem(vnum) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 866, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 866, "");
 #endif
 		return;
 	}
@@ -268,7 +268,7 @@ ACMD(do_delivery_biologist) {
 	int time = ch->GetQuestFlag("biologist.time") ;
 	if (time > 0 && time - get_global_time() > 0 && !elisir && !potion) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 871, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 871, "");
 #endif
 		return;
 	}
@@ -282,9 +282,9 @@ ACMD(do_delivery_biologist) {
 		if (ch->CountSpecifyItem(item) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
 			if (item == 40143) {
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 863, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 863, "");
 			} else {
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 862, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 862, "");
 			}
 #endif
 			return;
@@ -304,22 +304,22 @@ ACMD(do_delivery_biologist) {
 
 		ch->SetQuestFlag("biologist.delivered", count + 1);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 865, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 865, "");
 #endif
 		if (waittime != 0 && count + 1 >= biologistMissionInfo[stat][1]) {
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_delivered 1#%d#%d", count + 1, waittime - get_global_time());
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_delivered 1#%d#%d", count + 1, waittime - get_global_time());
 		} else {
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count + 1, waittime - get_global_time());
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count + 1, waittime - get_global_time());
 		}
 	}
 	else {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 864, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 864, "");
 #endif
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, waittime - get_global_time());
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, waittime - get_global_time());
 	}
 	ch->SetQuestFlag("biologist.time", waittime);
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_time %d", waittime);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_time %d", waittime);
 }
 
 ACMD(do_reward_biologist) {
@@ -335,7 +335,7 @@ ACMD(do_reward_biologist) {
 	int stat = ch->GetQuestFlag("biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 867, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
@@ -384,27 +384,27 @@ ACMD(do_reward_biologist) {
 			}
 		}
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 870, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 870, "");
 #endif
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 868, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 868, "");
 #endif
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_close");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_close");
 		return;
 	}
 	else if (newstat > 15) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 868, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 868, "");
 #endif
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_close");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_close");
 		return;
 	} else {
 		int min = biologistMissionInfo[newstat][12];
 		if (ecs::GetLevel(ch) < min) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 869, "%d", min);
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 869, "%d", min);
 #endif
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_close");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_close");
 			return;
 		} else {
 			if (biologistMissionInfo[stat][11] == 0) {
@@ -433,13 +433,13 @@ ACMD(do_reward_biologist) {
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 870, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 870, "");
 #endif
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[newstat][11], biologistMissionInfo[newstat][3], biologistMissionInfo[newstat][4], biologistMissionInfo[newstat][5], biologistMissionInfo[newstat][6], biologistMissionInfo[newstat][7], biologistMissionInfo[newstat][8], biologistMissionInfo[newstat][9], biologistMissionInfo[newstat][10]);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[newstat][11], biologistMissionInfo[newstat][3], biologistMissionInfo[newstat][4], biologistMissionInfo[newstat][5], biologistMissionInfo[newstat][6], biologistMissionInfo[newstat][7], biologistMissionInfo[newstat][8], biologistMissionInfo[newstat][9], biologistMissionInfo[newstat][10]);
 			int time = ch->GetQuestFlag("biologist.time");
 			time = time > 0 ? time - get_global_time() : 0;
 			int count = ch->GetQuestFlag("biologist.delivered");
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "biologist_next %d#%d#%d#%d#%d#%d#%d", newstat, biologistMissionInfo[newstat][0], biologistMissionInfo[newstat][1], count, biologistMissionInfo[newstat][2], time, biologistMissionInfo[newstat][1]-count > 0 ? 0 : 1);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_next %d#%d#%d#%d#%d#%d#%d", newstat, biologistMissionInfo[newstat][0], biologistMissionInfo[newstat][1], count, biologistMissionInfo[newstat][2], time, biologistMissionInfo[newstat][1]-count > 0 ? 0 : 1);
 		}
 	}
 }
@@ -491,9 +491,9 @@ ACMD(do_change_biologist) {
 		ch->RemoveAffect(idx);
 		ch->AddAffect(idx, type, biologistMissionInfo[iarg1][iarg2 + 1], 0, 315360000, 0, false);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 873, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 873, "");
 #endif
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "biologistch_close");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologistch_close");
 	}
 }
 #endif
@@ -514,14 +514,14 @@ ACMD(do_gotoxy)
 	int iPulse = thecore_pulse();
 	if (iPulse - ch->GetGoToXYTime() < PASSES_PER_SEC(10)) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 1285, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1285, "");
 #endif
 		return;
 	}
 
 	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ecs::GetMapIndex(ch) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 528, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 528, "");
 #endif
 		return;
 	}
@@ -534,7 +534,7 @@ ACMD(do_gotoxy)
 
 	if (ch->GetGold() < 1000000) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		return;
 	} else {
@@ -570,22 +570,22 @@ ACMD(do_open_savepoint) {
 			int id = atoi(data[c++]);
 			std::string name = data[c++];
 			int mapIdx = atoi(data[c++]), x = atoi(data[c++]), y = atoi(data[c++]);
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", id, name.c_str(), mapIdx, x, y);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", id, name.c_str(), mapIdx, x, y);
 			stat[id] = 1;
 		}
 
 		for (int i = 0; i < 6; i++) {
 			if (stat[i] == 0) {
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", i, "-", 0, 0, 0);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", i, "-", 0, 0, 0);
 			}
 		}
 	} else {
 		for (int i = 0; i < 6; i++) {
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", i, "-", 0, 0, 0);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "append_savepoint %d %s %d %d %d", i, "-", 0, 0, 0);
 		}
 	}
 
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "open_savepoint");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "open_savepoint");
 }
 
 ACMD(do_empty_savepoint) {
@@ -612,7 +612,7 @@ ACMD(do_empty_savepoint) {
 	char query[512] = {0};
 	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", ecs::GetPlayerID(ch), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, "-", 0, 0, 0);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, "-", 0, 0, 0);
 }
 
 ACMD(do_go_savepoint) {
@@ -638,14 +638,14 @@ ACMD(do_go_savepoint) {
 
 	if (!ch->CanWarp()) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 528, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 528, "");
 #endif
 		return; 
 	}
 
 	if (ecs::GetMapIndex(ch) > 10000) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 1288, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1288, "");
 #endif
 		return; 
 	}
@@ -667,7 +667,7 @@ ACMD(do_go_savepoint) {
 				nDist = sqrt(pow((float)x2, 2) + pow((float)y2, 2));
 				if (nDistant > nDist) {
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 1287, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1287, "");
 #endif
 					return;
 				}
@@ -708,7 +708,7 @@ ACMD(do_save_savepoint) {
 	int iPulse = thecore_pulse();
 	if (iPulse - ch->GetSavePointTime() < PASSES_PER_SEC(10)) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 1286, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1286, "");
 #endif
 		return;
 	}
@@ -716,7 +716,7 @@ ACMD(do_save_savepoint) {
 	std::string name = arg2;
 	if (name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890_") != std::string::npos || name.find_first_not_of(' ') == std::string::npos) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 1289, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1289, "");
 #endif
 		return;
 	}
@@ -730,7 +730,7 @@ ACMD(do_save_savepoint) {
 		int mapIdx = ecs::GetMapIndex(ch);
 		if (mapIdx > 10000) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 531, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 531, "");
 #endif
 			return;
 		}
@@ -739,7 +739,7 @@ ACMD(do_save_savepoint) {
 		for (int i = 0; i < (int)_countof(arrayMapIndexBlocked); i++) {
 			if (mapIdx == arrayMapIndexBlocked[i]) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 531, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 531, "");
 #endif
 				return;
 			}
@@ -757,7 +757,7 @@ ACMD(do_save_savepoint) {
 		char query2[512] = {0};
 		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", ecs::GetPlayerID(ch), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
 		std::unique_ptr<SQLMsg> res2(DBManager::instance().DirectQuery(query2));
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
 		ch->SetSavePointTime();
 	}
 }
@@ -823,3 +823,4 @@ ACMD(do_doctrine_choose) {
 	}
 }
 #endif
+
