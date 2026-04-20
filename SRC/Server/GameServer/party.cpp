@@ -8,6 +8,7 @@
 #include "desc_client.h"
 #include "dungeon.h"
 #include "unique_item.h"
+#include "ecs/CharacterAccessors.hpp"
 
 CPartyManager::CPartyManager()
 {
@@ -36,7 +37,7 @@ void CPartyManager::DeleteAllParty()
 
 bool CPartyManager::SetParty(LPCHARACTER ch)	// PC만 사용해야 한다!!
 {
-	TPartyMap::iterator it = m_map_pkParty.find(ch->GetPlayerID());
+	TPartyMap::iterator it = m_map_pkParty.find(ecs::GetPlayerID(ch));
 
 	if (it == m_map_pkParty.end())
 		return false;
@@ -143,13 +144,13 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 		//p.pid		= pLeader->GetPlayerID();
 		//P2P_MANAGER::instance().Send(&p, sizeof(p));
 		TPacketPartyCreate p;
-		p.dwLeaderPID = pLeader->GetPlayerID();
+		p.dwLeaderPID = ecs::GetPlayerID(pLeader);
 
 		db_clientdesc->DBPacket(HEADER_GD_PARTY_CREATE, 0, &p, sizeof(TPacketPartyCreate));
 
-		sys_log(0, "PARTY: Create %s pid %u", pLeader->GetName(), pLeader->GetPlayerID());
+		sys_log(0, "PARTY: Create %s pid %u", ecs::GetName(pLeader), ecs::GetPlayerID(pLeader));
 		pParty->SetPCParty(true);
-		pParty->Join(pLeader->GetPlayerID());
+		pParty->Join(ecs::GetPlayerID(pLeader));
 
 		m_set_pkPCParty.insert(pParty);
 	}
@@ -229,7 +230,7 @@ EVENTFUNC(party_update_event)
 	}
 
 	uint32_t pid = info->pid;
-	LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(pid);
+	auto* leader = CHARACTER_MANAGER::instance().FindByPID(pid);
 
 	if (leader && leader->GetDesc())
 	{
@@ -397,12 +398,12 @@ void CParty::P2PJoin(uint32_t dwPID)
 
 		if (m_bPCParty)
 		{
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+			auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
 
 			if (ch)
 			{
-				sys_log(0, "PARTY: Join %s pid %u leader %u", ch->GetName(), dwPID, m_dwLeaderPID);
-				Member.strName = ch->GetName();
+				sys_log(0, "PARTY: Join %s pid %u leader %u", ecs::GetName(ch), dwPID, m_dwLeaderPID);
+				Member.strName = ecs::GetName(ch);
 
 				if (Member.bRole == PARTY_ROLE_LEADER)
 					m_iLeadership = ch->GetLeadershipSkillLevel();
@@ -431,7 +432,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 			CPartyManager::instance().SetPartyMember(dwPID, this);
 			SendPartyJoinOneToAll(dwPID);
 
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+			auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
 
 			if (ch)
 				SendParameter(ch);
@@ -474,7 +475,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 	if (m_bPCParty)
 		RemoveBonusForOne(dwPID);
 
-	LPCHARACTER ch = it->second.pCharacter;
+	auto* ch = it->second.pCharacter;
 	uint8_t bRole = it->second.bRole;
 
 	m_memberMap.erase(it);
@@ -564,7 +565,7 @@ void CParty::Link(LPCHARACTER pkChr)
 			it->second.strName = pkChr->GetName();
 		}
 
-		SendPartyJoinOneToAll(pkChr->GetPlayerID());
+		SendPartyJoinOneToAll(ecs::GetPlayerID(pkChr));
 
 		SendPartyJoinAllToOne(pkChr);
 		SendPartyLinkOneToAll(pkChr);
@@ -580,7 +581,7 @@ void CParty::Link(LPCHARACTER pkChr)
 			pkChr->SetDungeon(GetDungeon());
 		}
 
-		RequestSetMemberLevel(pkChr->GetPlayerID(), pkChr->GetLevel());
+		RequestSetMemberLevel(ecs::GetPlayerID(pkChr), ecs::GetLevel(pkChr));
 
 	}
 }
@@ -721,7 +722,7 @@ void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_UNLINK;
-	p.pid = ch->GetPlayerID();
+	p.pid = ecs::GetPlayerID(ch);
 	p.vid = ch->GetPacketVID();
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
@@ -743,7 +744,7 @@ void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_LINK;
 	p.vid = ch->GetPacketVID();
-	p.pid = ch->GetPlayerID();
+	p.pid = ecs::GetPlayerID(ch);
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
@@ -769,7 +770,7 @@ void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 		if (it->second.pCharacter)
 		{
 			p.vid = it->second.pCharacter->GetPacketVID();
-			p.pid = it->second.pCharacter->GetPlayerID();
+			p.pid = ecs::GetPlayerID(it->second.pCharacter);
 			ch->GetDesc()->Packet(&p, sizeof(p));
 		}
 	}
@@ -875,7 +876,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 					TMember & rMember = it->second;
 					++it;
 
-					LPCHARACTER pkChr;
+					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
@@ -887,7 +888,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 
 						if (pkChr->Goto(x, y))
 						{
-							LPCHARACTER victim = pkChr->GetVictim();
+							auto* victim = pkChr->GetVictim();
 							sys_log(0, "%s %p RETURN victim %p", pkChr->GetName(), get_pointer(pkChr), get_pointer(victim));
 							pkChr->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 						}
@@ -899,7 +900,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 		case PM_ATTACKED_BY:	// 공격 받았음, 리더에게 도움을 요청
 			{
 				// 리더가 없을 때
-				LPCHARACTER pkChrVictim = ch->GetVictim();
+				auto* pkChrVictim = ch->GetVictim();
 
 				if (!pkChrVictim)
 					return;
@@ -911,7 +912,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 					TMember & rMember = it->second;
 					++it;
 
-					LPCHARACTER pkChr;
+					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
@@ -924,7 +925,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 
 		case PM_AGGRO_INCREASE:
 			{
-				LPCHARACTER victim = CHARACTER_MANAGER::instance().Find(dwArg2);
+				auto* victim = CHARACTER_MANAGER::instance().Find(dwArg2);
 
 				if (!victim)
 					return;
@@ -936,7 +937,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 					TMember & rMember = it->second;
 					++it;
 
-					LPCHARACTER pkChr;
+					auto* pkChr = static_cast<LPCHARACTER>(nullptr);
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
@@ -962,7 +963,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		return false;
 	}
 
-	LPCHARACTER ch = it->second.pCharacter;
+	auto* ch = it->second.pCharacter;
 
 	if (bSet)
 	{
@@ -1039,9 +1040,9 @@ void CParty::RemoveBonus()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch;
+		auto* ch = it->second.pCharacter;
 
-		if ((ch = it->second.pCharacter))
+		if (ch)
 		{
 			ComputeRolePoint(ch, it->second.bRole, false);
 		}
@@ -1057,9 +1058,9 @@ void CParty::RemoveBonusForOne(uint32_t pid)
 	if (it == m_memberMap.end())
 		return;
 
-	LPCHARACTER ch;
+	auto* ch = it->second.pCharacter;
 
-	if ((ch = it->second.pCharacter))
+	if (ch)
 		ComputeRolePoint(ch, it->second.bRole, false);
 }
 
@@ -1073,14 +1074,14 @@ void CParty::HealParty()
 		return;
 
 	TMemberMap::iterator it;
-	LPCHARACTER l = GetLeaderCharacter();
+	auto* l = GetLeaderCharacter();
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
 		if (!it->second.pCharacter)
 			continue;
 
-		LPCHARACTER ch = it->second.pCharacter;
+		auto* ch = it->second.pCharacter;
 
 		if (DISTANCE_APPROX(l->GetX()-ch->GetX(), l->GetY()-ch->GetY()) < PARTY_DEFAULT_RANGE)
 		{
@@ -1115,7 +1116,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	int x[12], y[12];
 
 	SECTREE_MANAGER & s = SECTREE_MANAGER::instance();
-	LPCHARACTER l = GetLeaderCharacter();
+	auto* l = GetLeaderCharacter();
 
 	if (m_memberMap.find(pid) == m_memberMap.end())
 	{
@@ -1125,7 +1126,7 @@ void CParty::SummonToLeader(uint32_t pid)
 		return;
 	}
 
-	LPCHARACTER ch = m_memberMap[pid].pCharacter;
+	auto* ch = m_memberMap[pid].pCharacter;
 
 	if (!ch)
 	{
@@ -1195,7 +1196,7 @@ LPCHARACTER CParty::GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y)
 
 	while (size-- > 0)
 	{
-		LPCHARACTER pkMember = m_itNextOwner->second.pCharacter;
+		auto* pkMember = m_itNextOwner->second.pCharacter;
 
 		if (pkMember && DISTANCE_APPROX(pkMember->GetX() - x, pkMember->GetY() - y) < 3000)
 		{
@@ -1306,7 +1307,7 @@ void CParty::Update()
 {
 	sys_log(1, "PARTY::Update");
 
-	LPCHARACTER l = GetLeaderCharacter();
+	auto* l = GetLeaderCharacter();
 
 	if (!l)
 		return;
@@ -1318,7 +1319,7 @@ void CParty::Update()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch = it->second.pCharacter;
+		auto* ch = it->second.pCharacter;
 
 		it->second.bNear = false;
 
@@ -1374,7 +1375,7 @@ void CParty::Update()
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch = it->second.pCharacter;
+		auto* ch = it->second.pCharacter;
 		if (!ch)
 			continue;
 
@@ -1557,7 +1558,7 @@ uint8_t CParty::CountMemberByVnum(uint32_t dwVnum)
 	if (m_bPCParty)
 		return 0;
 
-	LPCHARACTER tch;
+	auto* tch = static_cast<LPCHARACTER>(nullptr);
 	uint8_t bCount = 0;
 
 	TMemberMap::iterator it;
@@ -1685,7 +1686,7 @@ int CParty::ComputePartyBonusExpPercent()
 	if (GetNearMemberCount() <= 1)
 		return 0;
 
-	LPCHARACTER leader = GetLeaderCharacter();
+	auto* leader = GetLeaderCharacter();
 
 	int iBonusPartyExpFromItem = 0;
 
@@ -1714,7 +1715,7 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 	// 파티원이 mapIndex인 던젼안에 있는지 순서대로 검사
 	for(TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		LPCHARACTER ch = it->second.pCharacter;
+		auto* ch = it->second.pCharacter;
 
 		if(nullptr == ch)
 		{
@@ -1737,3 +1738,6 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 	}
 	return false;
 }
+
+
+
