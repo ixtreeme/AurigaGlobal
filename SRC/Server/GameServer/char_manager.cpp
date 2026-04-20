@@ -30,6 +30,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/components/identity_components.hpp"
 namespace
 {
@@ -131,7 +132,7 @@ namespace
 
 		for (const uint32_t vid : st.aliveVIDs)
 		{
-			LPCHARACTER ch = mgr.Find(vid);
+			auto* ch = mgr.Find(vid);
 			if (!ch)
 			{
 				toErase.push_back(vid);
@@ -153,7 +154,7 @@ namespace
 	{
 		for (const uint32_t vid : st.aliveVIDs)
 		{
-			if (LPCHARACTER ch = mgr.Find(vid))
+			if (auto* ch = mgr.Find(vid))
 				mgr.DestroyCharacter(ch);
 		}
 
@@ -200,7 +201,7 @@ namespace
 				const int32_t x = base.x + (tx * 100);
 				const int32_t y = base.y + (ty * 100);
 
-				if (LPCHARACTER mob = mgr.SpawnMob(st.mobVnum, st.mapIndex, x, y, 0, true, -1, true))
+				if (auto* mob = mgr.SpawnMob(st.mobVnum, st.mapIndex, x, y, 0, true, -1, true))
 				{
 					st.aliveVIDs.insert(mob->GetLegacyVID());
 					++spawned;
@@ -859,11 +860,11 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 		   if (is_regen_exception(x, y))
 		   continue;
 		 */
-		const LPCHARACTER ch = SpawnMob(dwVnum, lMapIndex, x, y, 0, bSpawnMotion);
+		auto* ch = SpawnMob(dwVnum, lMapIndex, x, y, 0, bSpawnMotion);
 
 		if (ch)
 		{
-			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ch->GetName(), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ecs::GetName(ch), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -1407,15 +1408,15 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 
 	for (auto it = m_map_pkChrByPID.begin(); it != m_map_pkChrByPID.end(); ++it)
 	{
-		LPCHARACTER ch = it->second;
+		auto* ch = it->second;
 
 		if (ch == except)
 			continue;
 
-		if (ch->GetLevel() < iMinLevel)
+		if (ecs::GetLevel(ch) < iMinLevel)
 			continue;
 
-		if (ch->GetLevel() > iMaxLevel)
+		if (ecs::GetLevel(ch) > iMaxLevel)
 			continue;
 
 		if (ch->GetMapIndex() != lMapIndex)
@@ -2130,7 +2131,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 
 		for (const auto& desc : c_ref_set)
 		{
-			LPCHARACTER ch = desc->GetCharacter();
+			auto* ch = desc->GetCharacter();
 			if (!ch) continue;
 
 #ifdef TEXTS_IMPROVEMENT
@@ -2146,7 +2147,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 	{
 		for (const auto& desc : c_ref_set)
 		{
-			LPCHARACTER ch = desc->GetCharacter();
+			auto* ch = desc->GetCharacter();
 			if (!ch)
 				continue;
 			if (eventData->empireFlag != 0)
