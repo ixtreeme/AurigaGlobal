@@ -38,6 +38,7 @@
 #include "typedef.h"
 #include "locale.hpp"
 #include "event.h"
+#include "ecs/systems/ChatSystem.hpp"
 
 #define PASSES_PER_SEC(sec) ((sec) * passes_per_sec)
 
