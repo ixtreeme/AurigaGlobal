@@ -111,7 +111,7 @@ ACMD(do_user_horse_ride)
 	{
 		if (ch->GetMountVnum()) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 532, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 532, "");
 #endif
 			return;
 		}
@@ -119,7 +119,7 @@ ACMD(do_user_horse_ride)
 		if (ch->GetHorse() == nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 332, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 332, "");
 #endif
 			return;
 		}
@@ -136,7 +136,7 @@ ACMD(do_daily_reward_reload){
 		return;
 	}
 
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ManagerGiftSystem DeleteRewards|");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ManagerGiftSystem DeleteRewards|");
 	std::string time = "";
 	std::string rewards = "";
 
@@ -147,7 +147,7 @@ ACMD(do_daily_reward_reload){
 			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
 			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ecs::GetPlayerID(ch)));
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 721, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 721, "");
 #endif
 			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
 			if (msg3->Get()->uiNumRows > 0) {
@@ -184,13 +184,13 @@ ACMD(do_daily_reward_reload){
 	if (msgend->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msgend->Get()->pSQLResult)) != nullptr) {
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
 		}
 	}
 
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ManagerGiftSystem SetTime|%s", time.c_str());
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ManagerGiftSystem SetDailyReward|%s", rewards.c_str());
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ManagerGiftSystem SetRewardDone|");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetTime|%s", time.c_str());
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetDailyReward|%s", rewards.c_str());
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ManagerGiftSystem SetRewardDone|");
 }
 
 ACMD(do_daily_reward_get_reward){
@@ -217,7 +217,7 @@ ACMD(do_daily_reward_get_reward){
 		// HWID limit: 1 gep / nap
 		if (!DailyReward_CheckHWIDLimit(ch))
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
 			return;
 		}
 #endif
@@ -242,7 +242,7 @@ ACMD(do_daily_reward_get_reward){
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 715, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 715, "");
 	}
 #endif
 }
@@ -266,19 +266,19 @@ ACMD(do_user_horse_back)
 	{
 		ch->HorseSummon(false);
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 331, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 331, "");
 #endif
 	}
 	else if (ch->IsHorseRiding() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 330, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 330, "");
 #endif
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 332, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 332, "");
 #endif
 	}
 }
@@ -293,10 +293,10 @@ ACMD(do_user_horse_feed)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (ch->IsHorseRiding() == false) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 332, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 332, "");
 		}
 		else {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 336, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 336, "");
 		}
 #endif
 		return;
@@ -310,7 +310,7 @@ ACMD(do_user_horse_feed)
 		ch->RemoveSpecifyItem(dwFood, 1);
 		ch->FeedHorse();
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 112, "%s", 
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 112, "%s", 
 #ifdef ENABLE_MULTI_NAMES
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -322,7 +322,7 @@ ACMD(do_user_horse_feed)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 111, "%s", 
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 111, "%s", 
 #ifdef ENABLE_MULTI_NAMES
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -359,7 +359,7 @@ struct SendDisconnectFunc
 		if (d->GetCharacter())
 		{
 			if (ecs::GetGMLevel(d->GetCharacter()) == GM_PLAYER)
-				d->GetCharacter()->ChatPacket(CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+				ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}
 };
@@ -482,7 +482,7 @@ ACMD(do_change_channel)
 	if (!ch->CanWarp())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 234, "10");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "10");
 #endif
 		return;
 	}
@@ -490,7 +490,7 @@ ACMD(do_change_channel)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return;
@@ -502,7 +502,7 @@ ACMD(do_change_channel)
 	if (!*arg1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 716, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 716, "");
 #endif
 		return;
 	}
@@ -510,7 +510,7 @@ ACMD(do_change_channel)
 	if (g_bChannel == 99)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 719, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 719, "");
 #endif
 		return;
 	}
@@ -521,7 +521,7 @@ ACMD(do_change_channel)
 	if (channel < 1 || channel > 6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 717, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 717, "");
 #endif
 		return;
 	}
@@ -529,7 +529,7 @@ ACMD(do_change_channel)
 	if (channel == g_bChannel)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 718, "%d", g_bChannel);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 718, "%d", g_bChannel);
 #endif
 		return;
 	}
@@ -537,7 +537,7 @@ ACMD(do_change_channel)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 720, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 720, "");
 #endif
 		return;
 	}
@@ -608,7 +608,7 @@ EVENTFUNC(timed_event)
 				break;
 
 			case SCMD_QUIT:
-				ch->ChatPacket(CHAT_TYPE_COMMAND, "quit");
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "quit");
 				break;
 
 			case SCMD_PHASE_SELECT:
@@ -628,7 +628,7 @@ EVENTFUNC(timed_event)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 103, "%d", info->left_second);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 103, "%d", info->left_second);
 #endif
 		--info->left_second;
 	}
@@ -641,7 +641,7 @@ ACMD(do_cmd)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return;
@@ -651,14 +651,14 @@ ACMD(do_cmd)
 	switch (subcmd)
 	{
 		case SCMD_LOGOUT:
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 326, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 326, "");
 			break;
 		case SCMD_QUIT:
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 240, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 240, "");
 			break;
 		case SCMD_PHASE_SELECT:
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 483, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 483, "");
 #endif
 			break;
 	}
@@ -709,7 +709,7 @@ ACMD(do_fishing)
 
 ACMD(do_console)
 {
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ConsoleEnable");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ConsoleEnable");
 }
 
 ACMD(do_restart)
@@ -731,7 +731,7 @@ ACMD(do_restart)
 		}
 	}
 
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "CloseRestartWindow");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "CloseRestartWindow");
 
 	ch->GetDesc()->SetPhase(PHASE_GAME);
 	ch->SetPosition(POS_STANDING);
@@ -1420,7 +1420,7 @@ ACMD(do_stat_minus)
 	if (ch->IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 312, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 312, "");
 #endif
 		return;
 	}
@@ -1489,7 +1489,7 @@ ACMD(do_stat)
 	if (ch->IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 312, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 312, "");
 #endif
 		return;
 	}
@@ -1546,7 +1546,7 @@ ACMD(do_pvp)
 	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -1561,7 +1561,7 @@ ACMD(do_pvp)
 	//// Fake PC / non-real target => ignore
 	//if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
 	//{
-	//	ch->ChatPacket(CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
+	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
 	//}
 	if (!pkVictim)
@@ -1578,8 +1578,8 @@ ACMD(do_pvp)
 	int itime = mytime <= 0 ? 0 : mytime - get_global_time();
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 888, "%d", itime);
-		pkVictim->ChatPacketNew(CHAT_TYPE_DIALOG, 889, "%s", ecs::GetName(ch));
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 888, "%d", itime);
+		ecs::ChatSystem::SendNew(pkVictim, CHAT_TYPE_DIALOG, 889, "%s", ecs::GetName(ch));
 #endif
 		return;
 	}
@@ -1603,8 +1603,8 @@ ACMD(do_pvp)
 
 		if ((ch->GetGold() < chA_nBetMoney) || (pkVictim->GetGold() < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 722, "");
-			pkVictim->ChatPacketNew(CHAT_TYPE_INFO, 722, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 722, "");
+			ecs::ChatSystem::SendNew(pkVictim, CHAT_TYPE_INFO, 722, "");
 #endif
 			CPVPManager::instance().Decline(ch, pkVictim);
 			CPVPManager::instance().Decline(pkVictim, ch);
@@ -1639,7 +1639,7 @@ ACMD(do_pvp)
 	if (!isdigit(*arg2) && !isdigit(*arg3) && !isdigit(*arg4) && !isdigit(*arg5) && !isdigit(*arg6) && !isdigit(*arg7) && !isdigit(*arg8) && !isdigit(*arg9) && !isdigit(*arg10))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 874, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 874, "");
 #endif
 		return;
 	}
@@ -1647,7 +1647,7 @@ ACMD(do_pvp)
 	if (m_BetMoney < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 875, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 875, "");
 #endif
 		return;
 	}	
@@ -1655,7 +1655,7 @@ ACMD(do_pvp)
 	if (m_BetMoney >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 876, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 876, "");
 #endif
 		return;
 	}
@@ -1663,7 +1663,7 @@ ACMD(do_pvp)
 	if (ch->GetGold() < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 877, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 877, "");
 #endif
 		return;
 	}
@@ -1671,7 +1671,7 @@ ACMD(do_pvp)
 	if ((ch->GetGold() + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 878, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 878, "");
 #endif
 		return;
 	}
@@ -1679,7 +1679,7 @@ ACMD(do_pvp)
 	if ((pkVictim->GetGold() + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 878, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 878, "");
 #endif
 		return;
 	}
@@ -1687,7 +1687,7 @@ ACMD(do_pvp)
 	if (pkVictim->GetGold() < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 879, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 879, "");
 #endif
 		return;
 	}
@@ -1718,7 +1718,7 @@ ACMD(do_pvp_advanced)
 	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -1732,7 +1732,7 @@ ACMD(do_pvp_advanced)
 	// Fake PC / non-real target => ignore
 	//if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
 	//{
-	//	ch->ChatPacket(CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
+	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
 	//}
 	if (!pkVictim)
@@ -1748,7 +1748,7 @@ ACMD(do_pvp_advanced)
 	if (ch->GetQuestFlag(szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 882, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 882, "");
 #endif
 		return;
 	}
@@ -1756,7 +1756,7 @@ ACMD(do_pvp_advanced)
 	if (pkVictim->GetQuestFlag(szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_DIALOG, 882, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_DIALOG, 882, "");
 #endif
 		return;
 	}
@@ -1778,13 +1778,13 @@ ACMD(do_pvp_advanced)
 	
 	if (g)
 	{ 
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 		
 		if (statusEq < 1)
 			pkVictim->SendEquipment(ch);
 	}
 	else { 
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 		
 		if (statusEq < 1)
 			pkVictim->SendEquipment(ch);
@@ -1835,14 +1835,14 @@ ACMD(do_block_equipment)
 		if (statusEq > 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 11, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 11, "");
 #endif
 		}
 		else {
 			ch->SetQuestFlag(BLOCK_EQUIPMENT_, 1);
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "equipview 1");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview 1");
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 12, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 12, "");
 #endif
 		}
 	}
@@ -1850,14 +1850,14 @@ ACMD(do_block_equipment)
 	{
 		if (statusEq != 0) {
 			ch->SetQuestFlag(BLOCK_EQUIPMENT_, 0);
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "equipview 0");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview 0");
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 14, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 14, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 13, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 13, "");
 		}
 #endif
 	}
@@ -1875,7 +1875,7 @@ ACMD(do_guildskillup)
 	if (!ch->GetGuild())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 138, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 138, "");
 #endif
 		return;
 	}
@@ -1890,7 +1890,7 @@ ACMD(do_guildskillup)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 890, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 890, "");
 	}
 #endif
 }
@@ -1991,7 +1991,7 @@ ACMD(do_safebox_change_password)
 	if (!*arg1 || strlen(arg1)>6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
@@ -1999,7 +1999,7 @@ ACMD(do_safebox_change_password)
 	if (!*arg2 || strlen(arg2)>6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
@@ -2021,7 +2021,7 @@ ACMD(do_mall_password)
 	if (!*arg1 || strlen(arg1) > 6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
@@ -2031,7 +2031,7 @@ ACMD(do_mall_password)
 	if (ch->GetMall())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 189, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 189, "");
 #endif
 		return;
 	}
@@ -2039,7 +2039,7 @@ ACMD(do_mall_password)
 	if (iPulse - ch->GetMallLoadTime() < passes_per_sec * 10) // 10ʿ ѹ û 
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 190, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 190, "");
 #endif
 		return;
 	}
@@ -2072,7 +2072,7 @@ ACMD(do_ungroup)
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
@@ -2080,7 +2080,7 @@ ACMD(do_ungroup)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 202, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 202, "");
 #endif
 		return;
 	}
@@ -2095,7 +2095,7 @@ ACMD(do_ungroup)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 215, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 215, "");
 #endif
 		//pParty->SendPartyRemoveOneToAll(ch);
 		pParty->Quit(ecs::GetPlayerID(ch));
@@ -2136,7 +2136,7 @@ ACMD(do_war)
 	if (g->UnderAnyWar())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 167, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 167, "");
 #endif
 		return;
 	}
@@ -2169,7 +2169,7 @@ ACMD(do_war)
 	if (gm_pid != ecs::GetPlayerID(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 144, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 144, "");
 #endif
 		return;
 	}
@@ -2180,7 +2180,7 @@ ACMD(do_war)
 	if (!opp_g)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 130, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 130, "");
 #endif
 		return;
 	}
@@ -2193,7 +2193,7 @@ ACMD(do_war)
 				if (opp_g->UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 157, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 157, "");
 #endif
 					return;
 				}
@@ -2203,7 +2203,7 @@ ACMD(do_war)
 				if (g->GetGuildMoney() < iWarPrice)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 172, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 172, "");
 #endif
 					return;
 				}
@@ -2211,7 +2211,7 @@ ACMD(do_war)
 				if (opp_g->GetGuildMoney() < iWarPrice)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 160, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 160, "");
 #endif
 					return;
 				}
@@ -2221,7 +2221,7 @@ ACMD(do_war)
 		case GUILD_WAR_SEND_DECLARE:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 438, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 438, "");
 #endif
 				return;
 			}
@@ -2232,7 +2232,7 @@ ACMD(do_war)
 				if (opp_g->UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ch->ChatPacketNew(CHAT_TYPE_INFO, 157, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 157, "");
 #endif
 					g->RequestRefuseWar(opp_g->GetID());
 					return;
@@ -2243,7 +2243,7 @@ ACMD(do_war)
 		case GUILD_WAR_RESERVE:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 169, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 169, "");
 #endif
 				return;
 			}
@@ -2254,7 +2254,7 @@ ACMD(do_war)
 
 		default:
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 168, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 168, "");
 #endif
 			g->RequestRefuseWar(opp_g->GetID());
 			return;
@@ -2266,14 +2266,14 @@ ACMD(do_war)
 		if (g->GetLadderPoint() == 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 159, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 159, "");
 #endif
 			sys_log(0, "GuildWar.StartError.NEED_LADDER_POINT");
 		}
 		else if (g->GetMemberCount() < GUILD_WAR_MIN_MEMBER_COUNT)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 145, "%d", GUILD_WAR_MIN_MEMBER_COUNT);
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 145, "%d", GUILD_WAR_MIN_MEMBER_COUNT);
 #endif
 			sys_log(0, "GuildWar.StartError.NEED_MINIMUM_MEMBER[%d]", GUILD_WAR_MIN_MEMBER_COUNT);
 		}
@@ -2289,9 +2289,9 @@ ACMD(do_war)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (opp_g->GetLadderPoint() == 0) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 153, "%s", opp_g->GetName());
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 153, "%s", opp_g->GetName());
 		} else if (opp_g->GetMemberCount() < GUILD_WAR_MIN_MEMBER_COUNT) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 158, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 158, "");
 		}
 #endif
 		return;
@@ -2308,7 +2308,7 @@ ACMD(do_war)
 			break;
 
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 507, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 507, "");
 #endif
 		g->RequestRefuseWar(opp_g->GetID());
 		return;
@@ -2326,7 +2326,7 @@ ACMD(do_war)
 			break;
 
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 507, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 507, "");
 #endif
 		g->RequestRefuseWar(opp_g->GetID());
 		return;
@@ -2353,7 +2353,7 @@ ACMD(do_nowar)
 	if (gm_pid != ecs::GetPlayerID(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 144, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 144, "");
 #endif
 		return;
 	}
@@ -2363,7 +2363,7 @@ ACMD(do_nowar)
 	if (!opp_g)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 130, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 130, "");
 #endif
 		return;
 	}
@@ -2406,7 +2406,7 @@ ACMD(do_messenger_auth)
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -2426,7 +2426,7 @@ ACMD(do_messenger_auth)
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg2);
 #ifdef TEXTS_IMPROVEMENT
 		if (tch) {
-			tch->ChatPacketNew(CHAT_TYPE_INFO, 107, "%s", ecs::GetName(ch));
+			ecs::ChatSystem::SendNew(tch, CHAT_TYPE_INFO, 107, "%s", ecs::GetName(ch));
 		}
 #endif
 	}
@@ -2498,7 +2498,7 @@ ACMD(do_unmount)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 366, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 366, "");
 	}
 #endif
 }
@@ -2557,7 +2557,7 @@ ACMD(do_party_request)
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -2565,7 +2565,7 @@ ACMD(do_party_request)
 	if (ch->GetParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 441, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 441, "");
 #endif
 		return;
 	}
@@ -2582,7 +2582,7 @@ ACMD(do_party_request)
 
 	if (tch)
 		if (!ch->RequestToParty(tch))
-			ch->ChatPacket(CHAT_TYPE_COMMAND, "PartyRequestDenied");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
 ACMD(do_party_request_accept)
@@ -2781,9 +2781,9 @@ ACMD(do_inventory)
 		item = ch->GetInventoryItem(index);
 #ifdef TEXTS_IMPROVEMENT
 		if (item) {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 727, "%d#%s", index, item->GetName());
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 727, "%d#%s", index, item->GetName());
 		} else {
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 728, "%d", index);
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 728, "%d", index);
 		}
 #endif
 		++index;
@@ -2793,7 +2793,7 @@ ACMD(do_inventory)
 //gift notify quest command
 ACMD(do_gift)
 {
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "gift");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "gift");
 }
 
 #ifdef __NEWPET_SYSTEM__
@@ -2852,7 +2852,7 @@ ACMD(do_PetSkill) {
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 }
@@ -2887,7 +2887,7 @@ ACMD(do_FeedCubePet) {
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 }
@@ -2896,7 +2896,7 @@ ACMD(do_PetEvo) {
 
 	if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 730, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 730, "");
 #endif
 		return;
 	}
@@ -2906,7 +2906,7 @@ ACMD(do_PetEvo) {
 #ifdef ENABLE_NEW_PET_EDITS
 			if (ch->GetNewPetSystem()->GetExp() < ch->GetNewPetSystem()->GetNextExpFromMob()) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 59, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 59, "");
 #endif
 				return;
 			}
@@ -2916,7 +2916,7 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum1 = 55003 + tmpevo;
 			if (ch->CountSpecifyItem(dwItemVnum1) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 60, "%d#%s", 10, 
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 60, "%d#%s", 10, 
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -2930,7 +2930,7 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum2 = 27992 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum2) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 60, "%d#%s", 10, 
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 60, "%d#%s", 10, 
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -2944,7 +2944,7 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum3 = 86056 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum3) < 3) {
 #ifdef TEXTS_IMPROVEMENT
-				ch->ChatPacketNew(CHAT_TYPE_INFO, 60, "%d#%s", 3, 
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 60, "%d#%s", 3, 
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ch->GetDesc()->GetLanguage()]
 #else
@@ -2965,14 +2965,14 @@ ACMD(do_PetEvo) {
 		}
 		else {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 730, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 730, "");
 #endif
 			return;
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 
@@ -3085,11 +3085,11 @@ ACMD(do_stonecraft)
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "You need to be closer to npc.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You need to be closer to npc.");
 			return;
 		}
 
-		ch->ChatPacket(CHAT_TYPE_COMMAND, "stone_craft_open");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "stone_craft_open");
 		return;
 	}
 
@@ -3102,33 +3102,33 @@ ACMD(do_stonecraft)
 
 		if (!IsStoneCraftMaterialVnum(materialVnum))
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Unknow stone.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Unknow stone.");
 			return;
 		}
 
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "You are too far from npc.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You are too far from npc.");
 			return;
 		}
 
 		const int materialCount = ch->CountSpecifyItemRenewal(materialVnum);
 		if (materialCount < STONE_CRAFT_NEED_COUNT)
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Not enough stone.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough stone.");
 			return;
 		}
 
 		LPITEM reward = ch->AutoGiveItem(STONE_CRAFT_REWARD_VNUM, 1);
 		if (!reward)
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Not enough space in inventory.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
 		}
 
 		ch->RemoveSpecifyItem(materialVnum, STONE_CRAFT_NEED_COUNT, true);
-		ch->ChatPacket(CHAT_TYPE_INFO, "Craft successful.");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Craft successful.");
 		return;
 	}
 	if (!str_cmp(arg1, "makeall"))
@@ -3136,7 +3136,7 @@ ACMD(do_stonecraft)
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "You are too far from npc");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You are too far from npc");
 			return;
 		}
 
@@ -3167,7 +3167,7 @@ ACMD(do_stonecraft)
 
 		if (totalCrafted <= 0)
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Not enough stone.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough stone.");
 			return;
 		}
 
@@ -3175,7 +3175,7 @@ ACMD(do_stonecraft)
 		LPITEM reward = ch->AutoGiveItem(STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
 		if (!reward)
 		{
-			ch->ChatPacket(CHAT_TYPE_INFO, "Not enough space in inventory.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
 		}
 
@@ -3190,7 +3190,7 @@ ACMD(do_stonecraft)
 				ch->RemoveSpecifyItem(materialVnum, craftCount * STONE_CRAFT_NEED_COUNT, true);
 		}
 
-		ch->ChatPacket(CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
 		return;
 	}
 }
@@ -3375,7 +3375,7 @@ ACMD(do_in_game_mall)
 			// g_strWebMallURL.c_str(), ecs::GetPlayerID(ch), language, g_server_id, sas);
 	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
 			ecs::GetPlayerID(ch), language, sas);
-	ch->ChatPacket(CHAT_TYPE_COMMAND, buf);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, buf);
 
 //	char buf[512+1];
 //	char sas[33];
@@ -3450,7 +3450,7 @@ ACMD(do_in_game_mall)
 //#else
 //	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s", websiteUrl, ch->GetAID(), sas);
 //#endif
-//	ch->ChatPacket(CHAT_TYPE_COMMAND, buf);
+//	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, buf);
 }
 
 // ֻ
@@ -3486,7 +3486,7 @@ ACMD(do_dice)
 #endif
 		, 544, "%s#%d#%d#%d", ecs::GetName(ch), n, start, end);
 	} else {
-		ch->ChatPacketNew(
+		ecs::ChatSystem::SendNew(ch, 
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else
@@ -3503,13 +3503,13 @@ ACMD(do_click_safebox)
 	if (ch->GetDungeon() || ch->GetWarMap())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 731, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 731, "");
 #endif
 		return;
 	}
 
 	ch->SetSafeboxOpenPosition();
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 }
 ACMD(do_force_logout)
 {
@@ -3522,7 +3522,7 @@ ACMD(do_force_logout)
 
 ACMD(do_click_mall)
 {
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "ShowMeMallPassword");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 }
 
 ACMD(do_ride)
@@ -3530,7 +3530,7 @@ ACMD(do_ride)
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!ch->IsNextMountPulse()) {
-		ch->ChatPacket( CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(ch,  CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
 #endif
@@ -3544,7 +3544,7 @@ ACMD(do_ride)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (ch->IsPolymorphed() == true){
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 732, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 732, "");
 #endif
 		return;
 	}
@@ -3631,7 +3631,7 @@ ACMD(do_ride)
 	//}
 
 #ifdef TEXTS_IMPROVEMENT
-	ch->ChatPacketNew(CHAT_TYPE_INFO, 5, "");
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 5, "");
 #endif
 }
 
@@ -3641,7 +3641,7 @@ ACMD(do_gaya_system)
 	if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 734, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 734, "");
 #endif
 		return;
 	}
@@ -3700,7 +3700,7 @@ ACMD(do_extend_range_npc)
 	if (ch->IsDead() || ch->GetExchange() || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 735, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 735, "");
 #endif
 		return;
 	}
@@ -3870,7 +3870,7 @@ ACMD(do_rune_charge)
 		int pos = ch->GetEmptyInventory(pkBottle->GetSize());
 		if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
-			ch->ChatPacketNew(CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 366, "");
 #endif
 			return;
 		}
@@ -3893,7 +3893,7 @@ ACMD(do_rune_charge)
 	int32_t lRemainPercent = pkRune->GetSocket(ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
 	if (lRemainPercent > 99) {
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 33, "%s", pkRune->GetName());
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 33, "%s", pkRune->GetName());
 #endif
 		return;
 	}
@@ -3904,7 +3904,7 @@ ACMD(do_rune_charge)
 	int32_t lValue = pkRune->GetSocket(ITEM_SOCKET_REMAIN_SEC) + add;
 	pkRune->SetSocket(ITEM_SOCKET_REMAIN_SEC, lValue);
 #ifdef TEXTS_IMPROVEMENT
-	ch->ChatPacketNew(CHAT_TYPE_INFO, 34, "%s#%d", pkRune->GetName(), dif);
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 34, "%s#%d", pkRune->GetName(), dif);
 #endif
 	pkBottle->SetSocket(0, lBottlePercent-dif);
 	if (pkBottle->GetSocket(0) < 1)
@@ -3926,7 +3926,7 @@ ACMD(do_rune_shop)
 	if (ch->IsOpenSafebox() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ch->ChatPacketNew(CHAT_TYPE_INFO, 294, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 294, "");
 #endif
 		return;
 	}
@@ -3959,7 +3959,7 @@ ACMD(do_rune_effect)
 	ch->SetQuestFlag("rune.hide_effect", iArg1);
 	ch->ComputePoints();
 	ch->UpdatePacket();
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }
 #endif
 #ifdef ENABLE_EVENT_MANAGER
@@ -3979,7 +3979,7 @@ ACMD(do_event_manager)
 
 		if (vecArgs.size() < 3) { 
 			
-			ch->ChatPacket(CHAT_TYPE_INFO, "put the event index!!");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "put the event index!!");
 			return; 
 		}
 
@@ -3987,9 +3987,9 @@ ACMD(do_event_manager)
 		str_to_number(removeIndex, vecArgs[2].c_str());
 
 		if(CHARACTER_MANAGER::Instance().CloseEventManuel(removeIndex))
-			ch->ChatPacket(CHAT_TYPE_INFO, "successfuly remove!");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "successfuly remove!");
 		else
-			ch->ChatPacket(CHAT_TYPE_INFO, "dont has any event!");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "dont has any event!");
 	}
 	else if (vecArgs[1] == "update")
 	{
@@ -4000,7 +4000,7 @@ ACMD(do_event_manager)
 		//db_clientdesc->Packet(&subHeader, sizeof(uint8_t));
 		db_clientdesc->DBPacket(HEADER_GD_EVENT_MANAGER, 0, &subHeader, sizeof(uint8_t));
 
-		ch->ChatPacket(CHAT_TYPE_INFO, "successfully update!");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "successfully update!");
 	}
 }
 #endif
@@ -4084,7 +4084,7 @@ ACMD(do_gr_open)
 	CGuild* g = ch ? ch->GetGuild() : nullptr;
 	if (!g)
 		return;
-	ch->ChatPacket(CHAT_TYPE_COMMAND, "GuildRenewalOpen");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GuildRenewalOpen");
 	g->SendRenewalInfoTo(ch);
 }
 
@@ -4138,7 +4138,7 @@ ACMD(do_gr_deposit_money)
 		return;
 	if ((int64_t)ch->GetGold() < amount)
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Not enough yang.");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough yang.");
 		return;
 	}
 	ch->PointChange(POINT_GOLD, (long)-amount, true);
@@ -4153,7 +4153,7 @@ ACMD(do_gr_set_tax)
 		return;
 	if (!g->IsGuildMaster(ecs::GetPlayerID(ch)))
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Only guild leader can set tax request.");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only guild leader can set tax request.");
 		return;
 	}
 
@@ -4162,14 +4162,14 @@ ACMD(do_gr_set_tax)
 	argument = two_arguments(argument, dateArg, sizeof(dateArg), moneyArg, sizeof(moneyArg));
 	if (!*dateArg || !*moneyArg)
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Usage: gr_set_tax <YYYY.MM.DD> <yang> <vnum1> <count1> ... <vnum5> <count5>");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Usage: gr_set_tax <YYYY.MM.DD> <yang> <vnum1> <count1> ... <vnum5> <count5>");
 		return;
 	}
 
 	int y=0, mo=0, d=0;
 	if (3 != sscanf(dateArg, "%d.%d.%d", &y, &mo, &d))
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Invalid date format. Use YYYY.MM.DD");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Invalid date format. Use YYYY.MM.DD");
 		return;
 	}
 	// Deadline: end of that day
@@ -4184,7 +4184,7 @@ ACMD(do_gr_set_tax)
 	time_t deadline = mktime(&t);
 	if (deadline <= 0)
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Invalid deadline.");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Invalid deadline.");
 		return;
 	}
 
@@ -4211,13 +4211,13 @@ ACMD(do_gr_set_tax)
 
 	if (!g->RenewalSetTax(ch, tax))
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "Failed to set tax request.");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Failed to set tax request.");
 		return;
 	}
 
 	// Notify everyone online in the guild
 	g->SendRenewalInfoToOnlineMembers();
-	ch->ChatPacket(CHAT_TYPE_INFO, "Guild tax request has been set.");
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Guild tax request has been set.");
 }
 
 ACMD(do_gr_pay_tax)
@@ -4228,7 +4228,7 @@ ACMD(do_gr_pay_tax)
 	std::string reason;
 	if (!g->RenewalPayTax(ch, &reason))
 	{
-		ch->ChatPacket(CHAT_TYPE_INFO, "%s", reason.c_str());
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", reason.c_str());
 	}
 	g->SendRenewalInfoTo(ch);
 }
@@ -4242,11 +4242,12 @@ ACMD(do_gr_levelup)
 	if (!g->DoRenewalLevelUp(ch, &reason))
 	{
 		if (!reason.empty())
-			ch->ChatPacket(CHAT_TYPE_INFO, "%s", reason.c_str());
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", reason.c_str());
 		else
-			ch->ChatPacket(CHAT_TYPE_INFO, "Guild cannot be upgraded.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Guild cannot be upgraded.");
 	}
 	g->SendRenewalInfoTo(ch);
 }
 
 #endif // ENABLE_GUILD_RENEWAL_BY_RAZOR93
+
