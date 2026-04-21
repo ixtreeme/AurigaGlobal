@@ -1,0 +1,200 @@
+Phase 15E - Honest legacy file list
+Date: 2026-04-21
+Purpose: files that lost fake CharacterAccessors sugar and are now explicitly legacy again.
+
+Notes
+- CASE B rule used here: `ecs::GetXxx(ch)` was replaced with the direct legacy call.
+- This is intentional. These files still hold `LPCHARACTER` and should read as legacy until they are fully entity-owned.
+- ECS system internals are not listed here unless they reverted to legacy outside their own bridge helpers.
+
+Low complexity
+- SRC/Server/GameServer/ani.cpp
+  - Reverted: GetName, GetRaceNum
+  - Why: animation helpers still receive LPCHARACTER directly.
+- SRC/Server/GameServer/arena.cpp
+  - Reverted: GetPlayerID
+  - Why: arena entry bookkeeping still LPCHARACTER-owned.
+- SRC/Server/GameServer/attr_transfer.cpp
+  - Reverted: GetName, GetPlayerID, GetX, GetY
+  - Why: window/NPC interaction code still character-pointer based.
+- SRC/Server/GameServer/building.cpp
+  - Reverted: GetMapIndex, GetX, GetY
+  - Why: region checks and land ownership checks still LPCHARACTER-first.
+- SRC/Server/GameServer/cmd.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: command logging layer still ACMD/LPCHARACTER based.
+- SRC/Server/GameServer/cmd_emotion.cpp
+  - Reverted: GetName, GetPlayerID, GetVID, GetX, GetY, IsPC
+  - Why: emotion command flow still ACMD/LPCHARACTER based.
+- SRC/Server/GameServer/cmd_gm2.cpp
+  - Reverted: GetName
+  - Why: small GM helper file still fully legacy.
+- SRC/Server/GameServer/db.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: DB response handlers still operate on LPCHARACTER.
+- SRC/Server/GameServer/entity_view.cpp
+  - Reverted: GetName
+  - Why: view/update code still legacy entity pointers.
+- SRC/Server/GameServer/guild_war.cpp
+  - Reverted: GetPlayerID
+  - Why: guild war quest hooks still LPCHARACTER-first.
+- SRC/Server/GameServer/horse_rider.cpp
+  - Reverted: GetVID
+  - Why: horse state code still bound to CHARACTER runtime.
+- SRC/Server/GameServer/input.cpp
+  - Reverted: GetName
+  - Why: low-level packet input still descriptor/CHARACTER based.
+- SRC/Server/GameServer/input_p2p.cpp
+  - Reverted: GetMapIndex, GetX, GetY
+  - Why: p2p packet encoding still LPCHARACTER-first.
+- SRC/Server/GameServer/log.cpp
+  - Reverted: GetName, GetPlayerID, GetX, GetY
+  - Why: logging helpers only need honest legacy reads.
+- SRC/Server/GameServer/marriage.cpp
+  - Reverted: GetPlayerID
+  - Why: marriage manager still holds LPCHARACTER during login/logout transitions.
+- SRC/Server/GameServer/mining.cpp
+  - Reverted: GetMapIndex, GetPlayerID, GetX, GetY
+  - Why: mining/refine flow is still direct character logic.
+- SRC/Server/GameServer/OXEvent.cpp
+  - Reverted: GetName, GetPlayerID, GetVID
+  - Why: event bookkeeping still LPCHARACTER-owned.
+- SRC/Server/GameServer/p2p.cpp
+  - Reverted: GetName, GetPlayerID, GetX, GetY
+  - Why: p2p relay layer still legacy.
+- SRC/Server/GameServer/polymorph.cpp
+  - Reverted: GetPlayerID
+  - Why: item/book use code still direct CHARACTER logic.
+- SRC/Server/GameServer/priv_manager.cpp
+  - Reverted: GetPlayerID
+  - Why: privilege lookup still LPCHARACTER-first.
+- SRC/Server/GameServer/questlua_arena.cpp
+  - Reverted: GetMapIndex, GetPlayerID
+  - Why: questlua glue still converts to legacy immediately.
+- SRC/Server/GameServer/questlua_danceevent.cpp
+  - Reverted: GetX, GetY, IsPC
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questlua_game.cpp
+  - Reverted: GetMapIndex, GetX, GetY
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questlua_guild.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questlua_horse.cpp
+  - Reverted: GetMapIndex, GetPlayerID
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questlua_marriage.cpp
+  - Reverted: GetMapIndex, GetPlayerID
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questlua_target.cpp
+  - Reverted: GetMapIndex, GetName, GetPlayerID
+  - Why: questlua glue still LPCHARACTER-owned.
+- SRC/Server/GameServer/questpc.cpp
+  - Reverted: GetPlayerID, IsPC
+  - Why: quest PC wrapper still LPCHARACTER-owned.
+- SRC/Server/GameServer/sectree.cpp
+  - Reverted: GetName, IsPC
+  - Why: entity iteration callbacks still receive CHARACTER pointers.
+- SRC/Server/GameServer/sectree_manager.cpp
+  - Reverted: GetMapIndex, GetName, IsPC
+  - Why: sectree logic still legacy pointer-based.
+- SRC/Server/GameServer/shopEx.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: shop extension still LPCHARACTER-first.
+- SRC/Server/GameServer/target.cpp
+  - Reverted: GetMapIndex, GetPlayerID, GetX, GetY
+  - Why: target system wrappers still direct character logic.
+- SRC/Server/GameServer/wheel_of_destiny.cpp
+  - Reverted: GetName
+  - Why: reward logging only needed honest legacy reads.
+- SRC/Server/GameServer/whisper_admin.cpp
+  - Reverted: GetName
+  - Why: simple admin helper still LPCHARACTER-first.
+
+Medium complexity
+- SRC/Server/GameServer/battle_pass.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: quest/pass bookkeeping still LPCHARACTER-first.
+- SRC/Server/GameServer/char_manager.cpp
+  - Reverted: GetLevel, GetName
+  - Why: lifecycle/registry file still heavily CHARACTER-owned.
+- SRC/Server/GameServer/cmd_general.cpp
+  - Reverted: GetEmpire, GetGMLevel, GetLevel, GetMapIndex, GetName, GetPlayerID, GetX, GetY, IsPC
+  - Why: ACMD handlers still hold `ch`; accessor sugar was fake.
+- SRC/Server/GameServer/cmd_general2.cpp
+  - Reverted: GetLevel, GetMapIndex, GetName, GetPlayerID, GetX, GetY
+  - Why: same ACMD pattern as cmd_general.
+- SRC/Server/GameServer/cmd_gm.cpp
+  - Reverted: GetEmpire, GetGMLevel, GetLevel, GetMapIndex, GetName, GetPlayerID, GetX, GetY, IsNPC, IsPC
+  - Why: GM ACMD handlers still LPCHARACTER-first.
+- SRC/Server/GameServer/guild_manager.cpp
+  - Reverted: GetLevel, GetPlayerID, IsPC
+  - Why: guild manager still stores and receives CHARACTER pointers.
+- SRC/Server/GameServer/input_db.cpp
+  - Reverted: GetLevel, GetName, GetPlayerID
+  - Why: DB load/save path still LPCHARACTER-owned.
+- SRC/Server/GameServer/messenger_manager.cpp
+  - Reverted: GetName, GetPlayerID, IsPC
+  - Why: messenger auth flow still direct character logic.
+- SRC/Server/GameServer/new_offlineshop.cpp
+  - Reverted: GetPlayerID, IsPC
+  - Why: runtime shop entity still LPCHARACTER-first.
+- SRC/Server/GameServer/new_offlineshop_manager.cpp
+  - Reverted: GetGMLevel, GetName, GetPlayerID
+  - Why: manager still holds CHARACTER and should be migrated file-wide later.
+- SRC/Server/GameServer/party.cpp
+  - Reverted: GetName, GetPlayerID, GetLevel
+  - Why: party bookkeeping still pointer-owned.
+- SRC/Server/GameServer/pvp.cpp
+  - Reverted: GetEmpire, GetLevel, GetMapIndex, GetName, GetPlayerID, GetRaceNum, IsNPC, IsPC
+  - Why: pvp still LPCHARACTER-first except for isolated event bridges.
+- SRC/Server/GameServer/questlua.cpp
+  - Reverted: GetMapIndex, GetPlayerID, IsPC
+  - Why: core quest bridge still converts immediately to LPCHARACTER.
+- SRC/Server/GameServer/questlua_dungeon.cpp
+  - Reverted: GetLevel, GetMapIndex, GetName, GetPlayerID, GetRaceNum, GetVID, IsPC
+  - Why: questlua bridge still mixed entity/legacy and needs deeper cleanup.
+- SRC/Server/GameServer/questlua_global.cpp
+  - Reverted: GetMapIndex, GetName, GetVID, GetX, GetY, IsPC
+  - Why: questlua glue still legacy after entity handoff.
+- SRC/Server/GameServer/questlua_npc.cpp
+  - Reverted: GetLevel, GetName, GetPlayerID, GetRaceNum, GetVID, GetX, IsPC
+  - Why: same questlua bridge issue.
+- SRC/Server/GameServer/questlua_party.cpp
+  - Reverted: GetMapIndex, GetName, GetPlayerID
+  - Why: questlua glue still legacy after entity handoff.
+- SRC/Server/GameServer/questlua_pc.cpp
+  - Reverted: GetLevel, GetMapIndex, GetName, GetPlayerID, GetRaceNum, GetVID, GetX, GetY
+  - Why: biggest questlua bridge file; still entity->legacy immediately.
+- SRC/Server/GameServer/trigger.cpp
+  - Reverted: GetLevel, GetRaceNum, GetVID, GetX, GetY, IsNPC
+  - Why: trigger callbacks still CHARACTER-based.
+
+High complexity
+- SRC/Server/GameServer/battle.cpp
+  - Reverted: GetName, GetPlayerID
+  - Why: combat logic still LPCHARACTER-first; real entity conversion must preserve semantics carefully.
+
+Not part of honest legacy list
+- SRC/Server/GameServer/ecs/CharacterAccessors.hpp
+  - LPCHARACTER-taking fake accessors deleted.
+- SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+  - Converted TryGetRuntimeFlags bridge to entity input.
+- SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+  - Converted TryGetRuntimeFlags bridge to entity input.
+- SRC/Server/GameServer/ecs/SpatialHelpers.hpp
+  - Renamed `ecs::GetMapIndex(x, y)` to `ecs::MapIndexAt(x, y)` to avoid false positives in CharacterAccessors verification.
+- SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+- SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+  - Updated to `ecs::MapIndexAt(...)`.
+
+Recommended next Phase 15E queue
+1. cmd_gm.cpp
+2. cmd_general.cpp
+3. new_offlineshop_manager.cpp
+4. pvp.cpp
+5. questlua_pc.cpp
+6. questlua_dungeon.cpp
+7. input_db.cpp
+8. party.cpp / guild_manager.cpp
+9. battle.cpp
