@@ -197,7 +197,7 @@ ACMD(do_wheel_open);
 ACMD(do_inputall)
 {
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 342, "");
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 342, "");
 #endif
 }
 
@@ -338,13 +338,13 @@ ACMD(do_manage_exp)
 	ch->Block_Exp = arg;
 #ifdef TEXTS_IMPROVEMENT
 	if (arg) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 77, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 77, "");
 	} else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 78, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 78, "");
 	}
 #endif
 	ch->SetQuestFlag("exp.stat", arg == true ? 1 : 0);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", arg == true ? 1 : 0);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", arg == true ? 1 : 0);
 }
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
@@ -363,14 +363,14 @@ ACMD(do_wheel_open)
 
 	if ((ch->IsObserverMode()) || (ch->IsDead()) || (ch->IsStun()))
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You Can't do this now");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You Can't do this now");
 		return;
 
 		if (ch->GetDungeon())
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot open in dungeon");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot open in dungeon");
 		return;
 	}
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ASKOPEN");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_ASKOPEN");
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
@@ -970,7 +970,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	if (*cmd_info[icmd].command == '\n')
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}
@@ -978,7 +978,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	if (cmd_info[icmd].gm_level && (cmd_info[icmd].gm_level > ch->GetGMLevel() || cmd_info[icmd].gm_level == GM_DISABLE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}

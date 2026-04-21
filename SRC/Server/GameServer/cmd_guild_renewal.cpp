@@ -72,7 +72,7 @@ ACMD(do_gr_open)
 		return;
 
 	// UI side can hook this to open the window.
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "gr_open");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_open");
 	CGuildRenewal::instance().SendFullStateTo(ch);
 }
 
@@ -131,7 +131,7 @@ ACMD(do_gr_set_tax)
 	if (!ch)
 		return;
 
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");
 	return;
 }
 
@@ -169,8 +169,8 @@ ACMD(do_gr_pay_tax)
 
 	if (nums.empty())
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Hasznalat: /gr_pay_tax <yang> <db0> <db1> <db2> <db3> <db4>");
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Vagy: /gr_pay_tax <yang> <vnum0> <db0> ... <vnum4> <db4>");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Hasznalat: /gr_pay_tax <yang> <db0> <db1> <db2> <db3> <db4>");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Vagy: /gr_pay_tax <yang> <vnum0> <db0> ... <vnum4> <db4>");
 		return;
 	}
 

@@ -364,12 +364,12 @@ void FishingPractice(LPCHARACTER ch)
 		{
 			rod->SetSocket(0, rod->GetSocket(0) + 1);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 283, "%d#%d", rod->GetSocket(0), rod->GetValue(2));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 283, "%d#%d", rod->GetSocket(0), rod->GetValue(2));
 #endif
 			if (rod->GetSocket(0) == rod->GetValue(2)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 279, "");
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 280, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 279, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 280, "");
 #endif
 			}
 		}
@@ -665,7 +665,7 @@ void Simulation(int level, int count, int prob_idx, LPCHARACTER ch)
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 98, "%d#%d", fished.size(), total_count);
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 98, "%d#%d", fished.size(), total_count);
 #endif
 }
 
@@ -701,7 +701,7 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 			case USED_NONE:
 			case USED_WATER_STONE:
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 248, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 248, "");
 #endif
 				break;
 			case USED_SHELLFISH:
@@ -745,7 +745,7 @@ void Grill(LPCHARACTER ch, LPITEM item)
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 116, "%s", item->GetName());
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 116, "%s", item->GetName());
 #endif
 	item->SetCount(0);
 	ch->AutoGiveItem(fish_info[idx].grill_vnum, count);

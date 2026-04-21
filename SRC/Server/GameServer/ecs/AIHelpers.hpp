@@ -7,23 +7,8 @@
 
 namespace AIHelpers {
 
-inline entt::entity EcsOf(LPCHARACTER ch)
-{
-    if (!ch) {
-        return entt::null;
-    }
-
-    return ch->GetEntityHandle();
-}
-
-inline entt::entity EcsOf(const CHARACTER* ch)
-{
-    if (!ch) {
-        return entt::null;
-    }
-
-    return ch->GetEntityHandle();
-}
+entt::entity EcsOf(LPCHARACTER ch);
+entt::entity EcsOf(const CHARACTER* ch);
 
 inline ecs::AIFlags* TryGetFlags(entt::entity e)
 {

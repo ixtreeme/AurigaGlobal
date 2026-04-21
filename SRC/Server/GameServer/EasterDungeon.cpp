@@ -103,7 +103,7 @@ namespace
         std::vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", buf);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
     }
 
     struct FForEachPC
@@ -139,7 +139,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
             {
                 if (pc)
-                    ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "%s", buf);
+                    ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_INFO, "%s", buf);
             });
     }
 
@@ -787,7 +787,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You were in Easter Dungeon on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You were in Easter Dungeon on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -804,12 +804,12 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     // Level check
     if (kMinLevel > 0 && ch->GetLevel() < kMinLevel)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Easter: minimum level is %d.", kMinLevel);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Easter: minimum level is %d.", kMinLevel);
         return true;
     }
     if (kMaxLevel > 0 && ch->GetLevel() > kMaxLevel)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Easter: maximum level is %d.", kMaxLevel);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Easter: maximum level is %d.", kMaxLevel);
         return true;
     }
 
@@ -818,14 +818,14 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Easter: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Easter: you must wait %d seconds.", remain);
         return true;
     }
 
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start Easter Dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Easter Dungeon.");
         return true;
     }
 
@@ -851,7 +851,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
 
         if (!ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -867,7 +867,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
         });
 if (!f.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "valaki", f.remain);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "valaki", f.remain);
             return true;
         }
     }
@@ -881,7 +881,7 @@ if (!f.ok)
     {
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Easter: required to enter: %s (x1).", entryItemName);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Easter: required to enter: %s (x1).", entryItemName);
             return true;
         }
     }
@@ -895,7 +895,7 @@ if (!f.ok)
         });
 if (!it.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item: %s (x1).",
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s doesn't have the entry item: %s (x1).",
                 it.name ? it.name : "valaki", entryItemName);
             return true;
         }
@@ -905,7 +905,7 @@ if (!it.ok)
     LPDUNGEON d = CDungeonManager::instance().Create(kEasterOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Easter: failed to create the dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Easter: failed to create the dungeon.");
         return true;
     }
 

@@ -696,9 +696,9 @@ void CHARACTER::StartStaminaConsume()
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = true;
     if (IsStaminaHalfConsume())
-        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
     else
-        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
 }
 
 void CHARACTER::StopStaminaConsume()
@@ -707,7 +707,7 @@ void CHARACTER::StopStaminaConsume()
         return;
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = false;
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
 }
 
 bool CHARACTER::IsStaminaConsume() const

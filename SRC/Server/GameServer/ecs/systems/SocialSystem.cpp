@@ -86,7 +86,7 @@ EVENTFUNC(party_request_event)
     if (ch)
     {
         sys_log(0, "PartyRequestEvent %s", ch->GetName());
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "PartyRequestDenied");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "PartyRequestDenied");
         ch->SetPartyRequestEvent(nullptr);
     }
 
@@ -101,7 +101,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
     if (!leader)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 488, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 488, "");
 #endif
         return false;
     }
@@ -124,36 +124,36 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
     case PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 208, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 208, "");
 #endif
         return false;
 
     case PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 200, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 200, "");
 #endif
         return false;
     case PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 195, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 195, "");
 #endif
         return false;
 
     case PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 194, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 194, "");
 #endif
         return false;
 
     case PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
     case PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 214, "");
 #endif
         return false;
 
@@ -162,7 +162,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
     case PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 199, "");
 #endif
         return false;
 
@@ -178,9 +178,9 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
     SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
 
-    ecs::ChatSystem::Send(leader, CHAT_TYPE_COMMAND, "PartyRequest %u", GetPacketVID());
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(leader), CHAT_TYPE_COMMAND, "PartyRequest %u", GetPacketVID());
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 106, "%s", leader->GetName());
+    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 106, "%s", leader->GetName());
 #endif
     return true;
 }
@@ -208,7 +208,7 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
 
     event_cancel(&member->m_pkPartyRequestEvent);
 
-    ecs::ChatSystem::Send(member, CHAT_TYPE_COMMAND, "PartyRequestDenied");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(member), CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
 void CHARACTER::AcceptToParty(LPCHARACTER member)
@@ -245,28 +245,28 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
         case PERR_NONE: member->PartyJoin(this); return;
         case PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 208, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 208, "");
 #endif
             break;
         case PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 200, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 200, "");
 #endif
             break;
         case PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 195, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 195, "");
 #endif
             break;
         case PERR_LOWLEVEL:
         case PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 194, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 194, "");
 #endif
             break;
         case PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 214, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 214, "");
 #endif
             break;
         case PERR_ALREADYJOIN:
@@ -274,8 +274,8 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
         case PERR_PARTYISFULL:
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 199, "");
-            ecs::ChatSystem::SendNew(member, CHAT_TYPE_INFO, 220, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 199, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(member), CHAT_TYPE_INFO, 220, "");
 #endif
             break;
         }
@@ -284,7 +284,7 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
         }
     }
 
-    ecs::ChatSystem::Send(member, CHAT_TYPE_COMMAND, "PartyRequestDenied");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(member), CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
 EVENTFUNC(party_invite_event)
@@ -313,14 +313,14 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     if (GetParty() && GetParty()->GetLeaderPID() != GetPlayerID())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 218, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 218, "");
 #endif
         return;
     }
     else if (pchInvitee->IsBlockMode(BLOCK_PARTY_INVITE))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
 #endif
         return;
     }
@@ -329,7 +329,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     else if ((GetDuel("BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 516, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
 #endif
         return;
     }
@@ -337,7 +337,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     else if ((pchInvitee->GetDuel("BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 517, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 517, "%s", pchInvitee->GetName());
 #endif
         return;
     }
@@ -352,42 +352,42 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 
     case PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 208, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 208, "");
 #endif
         return;
     case PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 200, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 200, "");
 #endif
         return;
     case PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 195, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 195, "");
 #endif
         return;
     case PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 194, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 194, "");
 #endif
         return;
     case PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 210, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 210, "%s", pchInvitee->GetName());
 #endif
         return;
     case PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 199, "");
 #endif
         return;
     default:
@@ -427,7 +427,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
     if (GetParty() && GetParty()->GetLeaderPID() != GetPlayerID())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 218, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 218, "");
 #endif
         return;
     }
@@ -440,43 +440,43 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
         break;
     case PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 208, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 208, "");
 #endif
         return;
     case PERR_DUNGEON:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 201, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 201, "");
 #endif
         return;
     case PERR_OBSERVER:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 195, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 195, "");
 #endif
         return;
     case PERR_LVBOUNDARY:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 194, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 194, "");
 #endif
         return;
     case PERR_LOWLEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case PERR_HILEVEL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 214, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 214, "");
 #endif
         return;
     case PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 212, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 212, "");
 #endif
         return;
     case PERR_PARTYISFULL:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 199, "");
-        ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 220, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 199, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 220, "");
 #endif
         return;
     default:
@@ -511,7 +511,7 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
 #ifdef TEXTS_IMPROVEMENT
     LPCHARACTER pchInvitee = CHARACTER_MANAGER::instance().FindByPID(dwPID);
     if (pchInvitee) {
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
     }
 #endif
 }
@@ -520,8 +520,8 @@ void CHARACTER::PartyJoin(LPCHARACTER pLeader)
 {
     if (pLeader && pLeader->GetParty()) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(pLeader, CHAT_TYPE_INFO, 1249, "%s", GetName());
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 193, "%s", pLeader->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pLeader), CHAT_TYPE_INFO, 1249, "%s", GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 193, "%s", pLeader->GetName());
 #endif
         pLeader->GetParty()->Join(GetPlayerID());
         pLeader->GetParty()->Link(this);

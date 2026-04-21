@@ -1229,7 +1229,7 @@ void CHARACTER_MANAGER::ProcessDelayedSave()
 bool CHARACTER_MANAGER::AddToStateList(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
 #endif
 	assert(ch != NULL);
 
@@ -1245,7 +1245,7 @@ bool CHARACTER_MANAGER::AddToStateList(LPCHARACTER ch)
 void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
 #endif
 	if (const auto it = m_set_pkChrState.find(ch); it != m_set_pkChrState.end())
 	{
@@ -1256,7 +1256,7 @@ void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
 
 void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
 		//////////FIX m_set_pkChrForDelayedSave.insert(ch);
 	if (const auto it = m_set_pkChrForDelayedSave.find(ch); it != m_set_pkChrForDelayedSave.end()) {
@@ -1269,7 +1269,7 @@ void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
 bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
 {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
 	const auto it = m_set_pkChrForDelayedSave.find(ch);
 
@@ -1284,7 +1284,7 @@ bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
 void CHARACTER_MANAGER::RegisterForMonsterLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	m_set_pkChrMonsterLog.insert(ch);
 }
@@ -1292,7 +1292,7 @@ void CHARACTER_MANAGER::RegisterForMonsterLog(LPCHARACTER ch)
 void CHARACTER_MANAGER::UnregisterForMonsterLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	m_set_pkChrMonsterLog.erase(ch);
 }
@@ -1300,7 +1300,7 @@ void CHARACTER_MANAGER::UnregisterForMonsterLog(LPCHARACTER ch)
 void CHARACTER_MANAGER::PacketMonsterLog(LPCHARACTER ch, const void* buf, int size)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	for (auto it = m_set_pkChrMonsterLog.begin(); it != m_set_pkChrMonsterLog.end(); ++it)
 	{
@@ -1342,7 +1342,7 @@ void CHARACTER_MANAGER::RegisterRaceNum(uint32_t dwVnum)
 void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
 	uint32_t dwVnum = ch->GetRaceNum();
 
@@ -1356,7 +1356,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 void CHARACTER_MANAGER::UnregisterRaceNumMap(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
 	uint32_t dwVnum = ch->GetRaceNum();
 
@@ -1440,7 +1440,7 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 int CHARACTER_MANAGER::GetMobItemRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobItemRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobItemRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch && ch->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0)
 		return m_iMobItemRatePremium;
@@ -1450,7 +1450,7 @@ int CHARACTER_MANAGER::GetMobItemRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobDamageRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobDamageRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobDamageRate");//INGAME_DEBUG_RAZOR93
 #endif
 	return m_iMobDamageRate;
 }
@@ -1458,7 +1458,7 @@ int CHARACTER_MANAGER::GetMobDamageRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobGoldAmountRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldAmountRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldAmountRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return m_iMobGoldAmountRate;
@@ -1471,7 +1471,7 @@ int CHARACTER_MANAGER::GetMobGoldAmountRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobGoldDropRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldDropRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldDropRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return m_iMobGoldDropRate;
@@ -1487,7 +1487,7 @@ int CHARACTER_MANAGER::GetMobGoldDropRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobExpRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobExpRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobExpRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return m_iMobExpRate;
@@ -1503,7 +1503,7 @@ int CHARACTER_MANAGER::GetMobExpRate(LPCHARACTER ch)
 int	CHARACTER_MANAGER::GetUserDamageRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetUserDamageRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetUserDamageRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return m_iUserDamageRate;
@@ -1593,7 +1593,7 @@ void CHARACTER_MANAGER::ClearEventData()
 void CHARACTER_MANAGER::CheckBonusEvent(LPCHARACTER ch)
 {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
 	//#endif
 	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ch->GetEmpire());
 	if (eventPtr)
@@ -2052,7 +2052,7 @@ void CHARACTER_MANAGER::UpdateAllPlayerEventData()
 void CHARACTER_MANAGER::SendDataPlayer(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::SendDataPlayer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::SendDataPlayer");//INGAME_DEBUG_RAZOR93
 #endif
 	auto desc = ch->GetDesc();
 	if (!desc)
@@ -2135,7 +2135,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 			if (!ch) continue;
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
 #endif
 		}
 	}
@@ -2206,7 +2206,7 @@ void CHARACTER_MANAGER::SetEventData(uint8_t dayIndex, const std::vector<TEventM
 void CHARACTER_MANAGER::LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLogReal");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLogReal");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2242,7 +2242,7 @@ void CHARACTER_MANAGER::LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData)
 void CHARACTER_MANAGER::LoadItemShopLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLog");//INGAME_DEBUG_RAZOR93
 #endif
 	uint8_t subIndex = ITEMSHOP_LOG;
 	uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
@@ -2254,7 +2254,7 @@ void CHARACTER_MANAGER::LoadItemShopLog(LPCHARACTER ch)
 void CHARACTER_MANAGER::LoadItemShopData(LPCHARACTER ch, bool isAll)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopData");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopData");//INGAME_DEBUG_RAZOR93
 #endif
 	TEMP_BUFFER buf;
 	TPacketGCItemShop p;
@@ -2372,7 +2372,7 @@ bool CHARACTER_MANAGER::GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData
 void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuyReal");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuyReal");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2381,21 +2381,21 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 
 	if (returnType == 0)
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You don't have enought dragon coin!");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You don't have enought dragon coin!");
 		return;
 	}
 	else if (returnType == 1)
 	{
 		const int weekMaxCount = *(int*)c_pData;
 		c_pData += sizeof(int);
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot exceed the weekly purchase count.");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot exceed the weekly purchase count.");
 		return;
 	}
 	else if (returnType == 2)
 	{
 		const int monthMaxCount = *(int*)c_pData;
 		c_pData += sizeof(int);
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot exceed the monthly purchase count.");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot exceed the monthly purchase count.");
 		return;
 	}
 
@@ -2525,14 +2525,14 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 	}*/
 
 	if (itemCount > 1)
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
 	else
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You bought from game itemshop :  Coins: %u", itemPrice);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You bought from game itemshop :  Coins: %u", itemPrice);
 }
 void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCount)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuy");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuy");//INGAME_DEBUG_RAZOR93
 #endif
 	if (itemCount > 20)
 		return;
@@ -2561,7 +2561,7 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 
 								if (itemPrice > dragonCoin)
 								{
-									ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You don't have enough DC");
+									ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You don't have enough DC");
 									return;
 								}
 
@@ -2604,7 +2604,7 @@ void RefreshItemShop(LPDESC d)
 		return;
 	if (ch->GetProtectTime("itemshop.load") == 1)
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "ItemShop was update!");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ItemShop was update!");
 		CHARACTER_MANAGER::Instance().LoadItemShopData(ch, true);
 	}
 }

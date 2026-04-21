@@ -532,7 +532,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
                 ForEachPcOnMap(idx, [&](LPCHARACTER p)
                     {
                         if (p)
-                            ecs::ChatSystem::Send(p, CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
+                            ecs::ChatSystem::Send(AIHelpers::EcsOf(p), CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
                     });
             }
         }
@@ -655,7 +655,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You were in Orc Dungeon on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You were in Orc Dungeon on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -672,7 +672,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     // Fresh entrance
     if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Orc Dungeon: level requirement is %d-%d.", kMinLevel, kMaxLevel);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: level requirement is %d-%d.", kMinLevel, kMaxLevel);
         return true;
     }
 
@@ -681,14 +681,14 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Orc Dungeon: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: you must wait %d seconds.", remain);
         return true;
     }
 
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
         return true;
     }
 
@@ -703,7 +703,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         });
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
             return true;
         }
     }
@@ -713,7 +713,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
             return true;
         }
     }
@@ -750,9 +750,9 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -760,7 +760,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOrcOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
         return true;
     }
 

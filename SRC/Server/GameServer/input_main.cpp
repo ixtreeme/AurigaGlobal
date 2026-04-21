@@ -113,7 +113,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate TargetInfoLoad handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "CInputMain::PartyInvite.");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "CInputMain::PartyInvite.");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGTargetInfoLoad* p = (TPacketCGTargetInfoLoad*)c_pData;
 	TPacketGCTargetInfo pInfo;
@@ -136,7 +136,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 	if (ITEM_MANAGER::instance().CreateDropItemVector(m_pkChrTarget, ch, s_vec_item) && (m_pkChrTarget->IsMonster() || m_pkChrTarget->IsStone()))
 	{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::  instance().CreateDropItemVector(");//INGAME_DEBUG_RAZOR93
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  instance().CreateDropItemVector(");//INGAME_DEBUG_RAZOR93
 #endif
 		if (s_vec_item.size() == 0);
 		else if (s_vec_item.size() == 1)
@@ -175,12 +175,12 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 void SendBlockChatInfo(LPCHARACTER ch, int sec)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
 #endif
 	if (sec <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 473, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 473, "");
 #endif
 		return;
 	}
@@ -191,16 +191,16 @@ void SendBlockChatInfo(LPCHARACTER ch, int sec)
 	int32_t min = (sec / 60);
 	sec -= min * 60;
 	if (hour > 0 && min > 0) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 475, "%d#%d#%d", hour, min, sec);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 475, "%d#%d#%d", hour, min, sec);
 	}
 	else if (hour > 0 && min == 0) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 476, "%d#%d", hour, sec);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 476, "%d#%d", hour, sec);
 	}
 	else if (hour == 0 && min > 0) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 477, "%d#%d", min, sec);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 477, "%d#%d", min, sec);
 	}
 	else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 478, "%d", sec);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 478, "%d", sec);
 	}
 #endif
 }
@@ -244,7 +244,7 @@ EVENTFUNC(block_chat_by_ip_event)
 bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetLevel() < g_iSpamBlockMaxLevel)
 	{
@@ -422,7 +422,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (ch->FindAffect(AFFECT_BLOCK_CHAT))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 639, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 639, "");
 #endif
 		return (iExtraLen);
 	}
@@ -502,7 +502,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 						int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 823, "%s",
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES
 						pTable->szLocaleName[Lang]
 #else
@@ -631,7 +631,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 #ifdef ENABLE_MULTI_NAMES
 						int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
 #endif
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 823, "%s",
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES
 						pTable->szLocaleName[Lang]
 #else
@@ -831,7 +831,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetGold() < 100000) 
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 768, "%d", 100000);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 768, "%d", 100000);
 #endif
 	}
 
@@ -844,7 +844,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 			int iRes = pRes->Get()->uiNumRows;
 			if (iRes > 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 50, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 50, "");
 #endif
 				return;
 			}
@@ -878,12 +878,12 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 		")", item->GetID(), p->petname, hp[number(0, 2)], mostri[number(0, 2)], medi[number(0, 2)], tmpskill[0], 0, tmpskill[1], 0, tmpskill[2], 0, tmpskill[3], 0, tmpdur, tmpdur, get_global_time());
 		std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 769, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 769, "");
 #endif
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else  {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 770, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 770, "");
 	}
 #endif
 }
@@ -936,7 +936,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ch->GetPlayerID());
 				if (!pkShop)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Nincs nyitott offline boltod./ You don't have open shop.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs nyitott offline boltod./ You don't have open shop.");
 					return iExtraLen;
 				}
 
@@ -944,9 +944,9 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				if (ch->GetLevel() < g_iShoutLimitLevel)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
 #else
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Nem megfelelo szint a kiabalashoz.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem megfelelo szint a kiabalashoz.");
 #endif
 					return iExtraLen;
 				}
@@ -1121,7 +1121,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				lang = desc != nullptr ? desc->GetLanguage() : 0;
 			}
 #endif
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 642, "%s", 
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 642, "%s", 
 #ifdef ENABLE_MULTI_NAMES
 			pTable->szLocaleName[lang]
 #else
@@ -1206,7 +1206,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			//	LPDESC d = *it;
 			//	LPCHARACTER rc;
 			//	if (!d || !(rc = d->GetCharacter())) continue;
-			//ecs::ChatSystem::SendNew(rc, CHAT_TYPE_INFO, 2181,
+			//ecs::ChatSystem::SendNew(AIHelpers::EcsOf(rc), CHAT_TYPE_INFO, 2181,
 			//	"%s#%d#",
 			//	ch->GetName(),            // %s (winner)
 			//	answer                   // %d (correct answer)
@@ -1244,7 +1244,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			{
 				LPDESC d = *it;
 				if (!d || !d->GetCharacter()) continue;
-				ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_INFO, "%s", msg);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, "%s", msg);
 			}
 #endif
 
@@ -1356,7 +1356,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 		if (ch->GetLevel() < g_iShoutLimitLevel) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
 #endif
 			return (iExtraLen);
 		}
@@ -1446,7 +1446,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			{
 				if (!ch->GetParty())
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 485, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 485, "");
 #endif
 				if (ch->GetParty())
 				{
@@ -1467,7 +1467,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 486, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 486, "");
 				}
 #endif
 			}
@@ -1487,7 +1487,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 271, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 271, "");
 				}
 #endif
 			}
@@ -1507,7 +1507,7 @@ void CInputMain::ItemUse(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemUse handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
 #endif
 	ch->UseItem(((struct command_item_use *) data)->Cell);
 }
@@ -1518,7 +1518,7 @@ void CInputMain::ItemToItem(LPCHARACTER ch, const char * pcData)
 // TODO Phase 8: migrate ItemToItem handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
 	if (ch)
@@ -1531,7 +1531,7 @@ void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemDrop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_drop * pinfo = (struct command_item_drop *) data;
 	if (!ch)
@@ -1556,7 +1556,7 @@ void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemDrop2 handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemDrop2 * pinfo = (TPacketCGItemDrop2 *) data;
 	if (!ch)
@@ -1580,7 +1580,7 @@ void CInputMain::ItemMove(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemMove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_move * pinfo = (struct command_item_move *) data;
 
@@ -1595,7 +1595,7 @@ void CInputMain::InventoryExpansion(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate InventoryExpansion handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch) 
 		ch->Update_Inven();
@@ -1608,7 +1608,7 @@ void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemPickup handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_pickup * pinfo = (struct command_item_pickup*) data;
 	if (ch) {
@@ -1628,7 +1628,7 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate QuickslotAdd handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotAdd");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotAdd");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_quickslot_add * pinfo = (struct command_quickslot_add *) data;
 #ifdef ENABLE_BUG_FIXES
@@ -1680,7 +1680,7 @@ void CInputMain::QuickslotDelete(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate QuickslotDelete handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_quickslot_del * pinfo = (struct command_quickslot_del *) data;
 	ch->DelQuickslot(pinfo->pos);
@@ -1692,7 +1692,7 @@ void CInputMain::QuickslotSwap(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate QuickslotSwap handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_quickslot_swap * pinfo = (struct command_quickslot_swap *) data;
 	ch->SwapQuickslot(pinfo->pos, pinfo->change_pos);
@@ -1704,7 +1704,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 // TODO Phase 8: migrate Messenger handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGMessenger* p = (TPacketCGMessenger*) c_pData;
 
@@ -1733,7 +1733,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 370, "%s", ch_companion->GetName());
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", ch_companion->GetName());
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
@@ -1746,7 +1746,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (ch->GetGMLevel() == GM_PLAYER && ch_companion->GetGMLevel() != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 184, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 184, "");
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
@@ -1770,7 +1770,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (ch->GetGMLevel() == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 184, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 184, "");
 #endif
 					return CHARACTER_NAME_MAX_LEN;
 				}
@@ -1784,7 +1784,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					if (tch->IsBlockMode(BLOCK_MESSENGER_INVITE) == true)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 370, "%s", tch->GetName());
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", tch->GetName());
 #endif
 					}
 					else
@@ -1796,7 +1796,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 108, "%s", name);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 108, "%s", name);
 				}
 #endif
 			}
@@ -1831,7 +1831,7 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 // TODO Phase 8: migrate BattlePass handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGBattlePassAction * p = (TPacketCGBattlePassAction *) data;
 
@@ -1876,7 +1876,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 // TODO Phase 8: migrate Shop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGShop * p = (TPacketCGShop *) data;
 
@@ -1997,7 +1997,7 @@ void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate OnClick handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_on_click *	pinfo = (struct command_on_click *) data;
 	LPCHARACTER			victim;
@@ -2016,7 +2016,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate Exchange handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_exchange * pinfo = (struct command_exchange *) data;
 	LPCHARACTER	to_ch = nullptr;
@@ -2031,7 +2031,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 		if (iPulse - to_ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(to_ch, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(to_ch), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 			return;
 		}
@@ -2047,7 +2047,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 	if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 		return;
 	}
@@ -2063,7 +2063,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 						return;
 					}
@@ -2071,14 +2071,14 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					if (iPulse - to_ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(to_ch, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(to_ch), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 						return;
 					}
 
 					if (ch->GetGold() >= GOLD_MAX) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 406,
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 406,
 
 						"%lld"
 
@@ -2105,7 +2105,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 						)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 292, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
 #endif
 						return;
 					}
@@ -2114,7 +2114,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					if (ch->IsAttrTransferOpen())
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 292, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
 #endif
 						return;
 					}
@@ -2154,7 +2154,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 				if (GOLD_MAX <= nTotalGold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 226,
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226,
 
 					"%lld"
 
@@ -2189,7 +2189,7 @@ void CInputMain::Position(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate Position handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_position * pinfo = (struct command_position *) data;
 
@@ -2220,7 +2220,7 @@ static const int ComboSequenceBySkillLevel[3][8] =
 void CInputMain::Move(LPCHARACTER ch, const char * data)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2392,7 +2392,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 // TODO Phase 8: migrate SetSkillColor handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2404,7 +2404,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 	if ((p->col1 != 0) || (p->col2 != 0) || (p->col3 != 0) || (p->col4 != 0) || (p->col5 != 0)) {
 		if (ch->CountSpecifyItem(164406) < 1) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 16, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 16, "");
 #endif
 			return;
 		} else {
@@ -2422,7 +2422,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 	data[p->skill][4] = p->col5;
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 15, "");
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 15, "");
 #endif
 
 	ch->SetSkillColor(data[0]);
@@ -2438,7 +2438,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
 #endif
 	if (nullptr == ch)
 		return;
@@ -2549,7 +2549,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 // TODO Phase 8: migrate SyncPosition handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGSyncPosition* pinfo = reinterpret_cast<const TPacketCGSyncPosition*>( c_pcData );
 
@@ -2700,7 +2700,7 @@ void CInputMain::FlyTarget(LPCHARACTER ch, const char * pcData, uint8_t bHeader)
 // TODO Phase 8: migrate FlyTarget handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFlyTargeting * p = (TPacketCGFlyTargeting *) pcData;
 	ch->FlyTarget(p->dwTargetVID, p->x, p->y, bHeader);
@@ -2712,7 +2712,7 @@ void CInputMain::UseSkill(LPCHARACTER ch, const char * pcData)
 // TODO Phase 8: migrate UseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGUseSkill * p = (TPacketCGUseSkill *) pcData;
 	ch->UseSkill(p->dwVnum, CHARACTER_MANAGER::instance().Find(p->dwVID));
@@ -2724,7 +2724,7 @@ void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
 // TODO Phase 8: migrate ScriptButton handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptButton * p = (TPacketCGScriptButton *) c_pData;
 	sys_log(0, "QUEST ScriptButton pid %d idx %u", ch->GetPlayerID(), p->idx);
@@ -2751,7 +2751,7 @@ void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
 // TODO Phase 8: migrate ScriptAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
 	sys_log(0, "QUEST ScriptAnswer pid %d answer %d", ch->GetPlayerID(), p->answer);
@@ -2774,7 +2774,7 @@ void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
 // TODO Phase 8: migrate ScriptSelectItem handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptSelectItem* p = (TPacketCGScriptSelectItem*) c_pData;
 	sys_log(0, "QUEST ScriptSelectItem pid %d answer %d", ch->GetPlayerID(), p->selection);
@@ -2788,7 +2788,7 @@ void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
 // TODO Phase 8: migrate QuestInputString handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGQuestInputString * p = (TPacketCGQuestInputString*) c_pData;
 
@@ -2805,7 +2805,7 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 // TODO Phase 8: migrate QuestConfirm handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGQuestConfirm* p = (TPacketCGQuestConfirm*) c_pData;
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
@@ -2824,7 +2824,7 @@ void CInputMain::Target(LPCHARACTER ch, const char * pcData)
 // TODO Phase 8: migrate Target handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGTarget * p = (TPacketCGTarget *) pcData;
 
@@ -2847,7 +2847,7 @@ void CInputMain::Warp(LPCHARACTER ch, const char * pcData)
 // TODO Phase 8: migrate Warp handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
 #endif
 	ch->WarpEnd();
 }
@@ -2858,7 +2858,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 // TODO Phase 8: migrate SafeboxCheckin handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckin");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckin");//INGAME_DEBUG_RAZOR93
 #endif
 
 	if (quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID())->IsRunning() == true)
@@ -2877,7 +2877,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (p->ItemPos.IsBeltInventoryPosition())
 	{
 
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot place items from the Belt inventory into the safebox.");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot place items from the Belt inventory into the safebox.");
 		//sys_log(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ch->GetName());
 		return;
 	}
@@ -2892,7 +2892,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (pkItem->IsEquipped())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1244, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1244, "");
 #endif
 		return;
 	}
@@ -2910,7 +2910,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 #endif
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 640, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 640, "");
 #endif
 		return;
 	}
@@ -2918,7 +2918,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (!pkSafebox->IsEmpty(p->bSafePos, pkItem->GetSize()))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 641, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 641, "");
 #endif
 		return;
 	}
@@ -2926,7 +2926,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (pkItem->GetVnum() == UNIQUE_ITEM_SAFEBOX_EXPAND)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
 #endif
 		return;
 	}
@@ -2934,7 +2934,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if( IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_SAFEBOX) )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
 #endif
 		return;
 	}
@@ -2942,7 +2942,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (true == pkItem->isLocked())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
 #endif
 		return;
 	}
@@ -2951,7 +2951,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (ITEM_BELT == pkItem->GetType() && CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 385, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 385, "");
 #endif
 		return;
 	}
@@ -2980,7 +2980,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 // TODO Phase 8: migrate SafeboxCheckout handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckout");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckout");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGSafeboxCheckout * p = (TPacketCGSafeboxCheckout *) c_pData;
 
@@ -3024,7 +3024,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		if (DRAGON_SOUL_INVENTORY != p->ItemPos.window_type)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 643, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 643, "");
 #endif
 			return;
 		}
@@ -3036,7 +3036,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 			if (iCell < 0)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 644, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 644, "");
 #endif
 				return ;
 			}
@@ -3053,7 +3053,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 //		if (p->ItemPos.window_type != EXTRA_INVENTORY)
 //		{
 //#ifdef TEXTS_IMPROVEMENT
-//			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1292, "");
+//			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1292, "");
 //#endif
 //			return;
 //		}
@@ -3073,7 +3073,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		// safebox to beltinventory tiltas
 		if (p->ItemPos.IsBeltInventoryPosition())
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Nem helyezhetsz tárgyat közvetlenül a belt inventoryba.");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem helyezhetsz tárgyat közvetlenül a belt inventoryba.");
 			sys_log(0, "BELT_BLOCKED_SFBCHECK: Tiltott belt slot próbálva: %d", p->ItemPos.cell);
 			return;
 		}
@@ -3082,7 +3082,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		if (EXTRA_INVENTORY == p->ItemPos.window_type)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 645, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 645, "");
 #endif
 			return;
 		}
@@ -3090,7 +3090,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		if (DRAGON_SOUL_INVENTORY == p->ItemPos.window_type)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 646, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 646, "");
 #endif
 			return;
 		}
@@ -3098,7 +3098,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		if (p->ItemPos.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory(pkItem))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 509, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 509, "");
 #endif
 			return;
 		}
@@ -3127,7 +3127,7 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 // DUAL-PATH: legacy only during migration window
 
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_move * pinfo = (struct command_item_move *) data;
 
@@ -3152,7 +3152,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate MountInventoryCheckin handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckin");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckin");
 #endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckin*>(c_pData);
@@ -3208,7 +3208,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 			if (it->GetVnum() == vnum)
 			{
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
 				return;
 			}
 		}
@@ -3228,7 +3228,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 				if ((ov / 10) == group)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
 					return;
 				}
 			}
@@ -3269,7 +3269,7 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate MountInventoryCheckout handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckout");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckout");
 #endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckout*>(c_pData);
@@ -3335,7 +3335,7 @@ void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 // TODO Phase 8: migrate MountInventoryItemMove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
 #endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryItemMove*>(data);
@@ -3372,7 +3372,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 // TODO Phase 8: migrate MapTeleporter handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->IsHack() || ch->GetExchange() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
@@ -3381,7 +3381,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 647, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 647, "");
 #endif
 		return;
 	}
@@ -3390,7 +3390,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 647, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 647, "");
 #endif
 		return;
 	}
@@ -3401,7 +3401,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 //	if (ch->GetDungeon())
 //	{
 //#ifdef TEXTS_IMPROVEMENT
-//		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 48, "");
+//		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 48, "");
 //#endif
 //		return;
 //	}
@@ -3415,7 +3415,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	if(ch->GetLevel() < rConf.iLevel)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
 #endif
 		return;
 	}
@@ -3423,7 +3423,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	if(rConf.iLevelMax != 0 && ch->GetLevel() > rConf.iLevelMax)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
 #endif
 		return;
 	}
@@ -3431,7 +3431,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	if(ch->GetGold() < rConf.price)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 773, "%d", rConf.price);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 773, "%d", rConf.price);
 #endif
 		return;
 	}
@@ -3473,12 +3473,12 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 // TODO Phase 8: migrate PartyInvite handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3502,12 +3502,12 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 // TODO Phase 8: migrate PartyInviteAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3517,7 +3517,7 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 	LPCHARACTER pInviter = CHARACTER_MANAGER::instance().Find(p->leader_vid);
 	if (!pInviter || !pInviter->GetDesc()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 217, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 217, "");
 #endif
 	}
 	else if (!p->accept) {
@@ -3534,12 +3534,12 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate PartySetState handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
@@ -3552,7 +3552,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetParty()->GetLeaderPID() != ch->GetPlayerID())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 206, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 206, "");
 #endif
 		return;
 	}
@@ -3560,7 +3560,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 	if (!ch->GetParty()->IsMember(p->pid))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 207, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 207, "");
 #endif
 		return;
 	}
@@ -3601,12 +3601,12 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate PartyRemove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3614,7 +3614,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
@@ -3622,7 +3622,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 203, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 203, "");
 #endif
 		return;
 	}
@@ -3640,7 +3640,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 			if(pParty->IsPartyInDungeon(351))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 648, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 648, "");
 #endif
 				return;
 			}
@@ -3657,7 +3657,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 				LPCHARACTER B = CHARACTER_MANAGER::instance().FindByPID(p->pid);
 				if (B) {
 					//pParty->SendPartyRemoveOneToAll(B);
-					ecs::ChatSystem::SendNew(B, CHAT_TYPE_INFO, 216, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(B), CHAT_TYPE_INFO, 216, "");
 					//pParty->Unlink(B);
 					//CPartyManager::instance().SetPartyMember(B->GetPlayerID(), NULL);
 				}
@@ -3667,7 +3667,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 205, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 205, "");
 		}
 #endif
 	}
@@ -3680,7 +3680,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 					CPartyManager::instance().DeleteParty(pParty);
 				} else {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 215, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 215, "");
 #endif
 					//pParty->SendPartyRemoveOneToAll(ch);
 					pParty->Quit(ch->GetPlayerID());
@@ -3690,13 +3690,13 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 204, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 204, "");
 			}
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 197, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 197, "");
 		}
 #endif
 	}
@@ -3708,7 +3708,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate AnswerMakeGuild handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGAnswerMakeGuild* p = (TPacketCGAnswerMakeGuild*) c_pData;
 
@@ -3723,14 +3723,14 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 
 	if (get_global_time() - ch->GetQuestFlag("guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
 #endif
 		return;
 	}
 
 	if (get_global_time() - ch->GetQuestFlag("guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 		return;
 	}
@@ -3749,7 +3749,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	if (cp.name[0] == 0 || !check_name(cp.name))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 455, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 455, "");
 #endif
 		return;
 	}
@@ -3759,7 +3759,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	if (dwGuildID)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 125, "%s", cp.name);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 125, "%s", cp.name);
 #endif
 		int GuildCreateFee = 200000;
 
@@ -3775,7 +3775,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 132, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 132, "");
 	}
 #endif
 }
@@ -3786,7 +3786,7 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate PartyUseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGPartyUseSkill* p = (TPacketCGPartyUseSkill*) c_pData;
 	if (!ch->GetParty())
@@ -3795,7 +3795,7 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetPlayerID() != ch->GetParty()->GetLeaderPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 211, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 211, "");
 #endif
 		return;
 	}
@@ -3813,7 +3813,7 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 209, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 209, "");
 				}
 #endif
 			}
@@ -3839,7 +3839,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 // TODO Phase 8: migrate RecvWikiPacket handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch || (ch && !ch->GetDesc()))
 		return;
@@ -3981,7 +3981,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 // TODO Phase 8: migrate Guild handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
 #endif
 	if (uiBytes < sizeof(TPacketCGGuild))
 		return -1;
@@ -4006,7 +4006,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 		if (SubHeader != GUILD_SUBHEADER_CG_GUILD_INVITE_ANSWER)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 138, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 138, "");
 #endif
 			return SubPacketLen;
 		}
@@ -4024,7 +4024,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 170, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 170, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4032,7 +4032,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (ch->GetGold() < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 126, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 126, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4051,7 +4051,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 170, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 170, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4068,7 +4068,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (!newmember)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 128, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 128, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4087,7 +4087,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (pGuild->UnderAnyWar() != 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 649, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 649, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4105,7 +4105,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (member->GetGuild() != pGuild)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 161, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 161, "");
 #endif
 						return SubPacketLen;
 					}
@@ -4113,7 +4113,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (!pGuild->HasGradeAuth(m->grade, GUILD_AUTH_REMOVE_MEMBER))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 139, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 139, "");
 #endif
 						return SubPacketLen;
 					}
@@ -4131,16 +4131,16 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (!pGuild->HasGradeAuth(m->grade, GUILD_AUTH_REMOVE_MEMBER))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 139, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 139, "");
 #endif
 						return SubPacketLen;
 					}
 					
 #ifdef TEXTS_IMPROVEMENT
 					if (pGuild->RequestRemoveMember(pid)) {
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 129, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 129, "");
 					} else {
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 128, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 128, "");
 					}
 #endif
 				}
@@ -4159,16 +4159,16 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 175, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 175, "");
 #endif
 				} else if (*c_pData == GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 143, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 143, "");
 #endif
 				}
 				else if (!check_name(gradename)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 171, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 171, "");
 #endif
 				}
 				else {
@@ -4185,11 +4185,11 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 174, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 174, "");
 #endif
 				} else if (*c_pData == GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 142, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 142, "");
 #endif
 				}
 				else {
@@ -4204,7 +4204,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (pGuild->GetLevel() >= GUILD_MAX_LEVEL)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 650, "%d", GUILD_MAX_LEVEL);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 650, "%d", GUILD_MAX_LEVEL);
 #endif
 				}
 				else
@@ -4213,9 +4213,9 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					offer *= 100;
 #ifdef TEXTS_IMPROVEMENT
 					if (pGuild->OfferExp(ch, offer)) {
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 121, "%u", offer);
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 121, "%u", offer);
 					} else {
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 122, "");
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 122, "");
 					}
 #endif
 				}
@@ -4230,14 +4230,14 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (offer < 0 || gold < offer || gold < 0 || ch->GetGold() < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 151, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 151, "");
 #endif
 					return SubPacketLen;
 				}
 
 #ifdef TEXTS_IMPROVEMENT
 				if (!pGuild->ChargeSP(ch, offer)) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 164, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 164, "");
 				}
 #endif
 			}
@@ -4266,7 +4266,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (length && !pGuild->HasGradeAuth(m->grade, GUILD_AUTH_NOTICE) && *(c_pData + 1) == '!')
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 127, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 127, "");
 #endif
 				}
 				else
@@ -4301,15 +4301,15 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 176, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 176, "");
 #endif
 				} else if (ch->GetPlayerID() == pid) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 143, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 143, "");
 #endif
 				} else if (grade == 1) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 141, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 141, "");
 #endif
 				} else {
 					pGuild->ChangeMemberGrade(pid, grade);
@@ -4336,9 +4336,9 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 #ifdef TEXTS_IMPROVEMENT
 				if (m->grade != GUILD_LEADER_GRADE) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 150, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 150, "");
 				} else if (!pGuild->ChangeMemberGeneral(pid, is_general)) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 149, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 149, "");
 				}
 #endif
 			}
@@ -4372,7 +4372,7 @@ void CInputMain::Fishing(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate Fishing handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
 	ch->SetRotation(p->dir * 5);
@@ -4386,7 +4386,7 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate ItemGive handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGGiveItem* p = (TPacketCGGiveItem*) c_pData;
 	LPCHARACTER to_ch = CHARACTER_MANAGER::instance().Find(p->dwTargetVID);
@@ -4402,7 +4402,7 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 403, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 403, "");
 	}
 #endif
 }
@@ -4413,7 +4413,7 @@ void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 // TODO Phase 8: migrate Hack handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGHack * p = (TPacketCGHack *) c_pData;
 
@@ -4432,7 +4432,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 // TODO Phase 8: migrate MyShop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGMyShop * p = (TPacketCGMyShop *) c_pData;
 	int iExtraLen = p->bCount * sizeof(TShopItemTable);
@@ -4443,7 +4443,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->GetGold() >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 226, 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226, 
 		"%lld"
 
 		, GOLD_MAX);
@@ -4457,7 +4457,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->GetExchange() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
 #endif
 		return (iExtraLen);
 	}
@@ -4466,7 +4466,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
 #endif
 		return (iExtraLen);
 	}
@@ -4487,7 +4487,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate Refine handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGRefine* p = reinterpret_cast<const TPacketCGRefine*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -4500,7 +4500,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetExchange() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 502, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 502, "");
 #endif
 		ch->ClearRefineMode();
 		return;
@@ -4510,7 +4510,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
 #endif
 		ch->ClearRefineMode();
 		return;
@@ -4589,7 +4589,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 361, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 361, "");
 			}
 #endif
 		}
@@ -4647,7 +4647,7 @@ void CInputMain::CubeRenewalSend(LPCHARACTER ch, const char* data)
 // TODO Phase 8: migrate CubeRenewalSend handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
 #endif
 	struct packet_send_cube_renewal * pinfo = (struct packet_send_cube_renewal *) data;
 	switch (pinfo->subheader)
@@ -4698,7 +4698,7 @@ const char* Decode(T*& pObj, const char* data, int* pbufferLeng = nullptr, int* 
 int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketCreateNewShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketCreateNewShop");//INGAME_DEBUG_RAZOR93
 #endif
 	TSubPacketCGShopCreate* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
@@ -4734,7 +4734,7 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 	if(!rManager.RecvShopCreateNewClientPacket(ch, rShopInfo, vec)) {
 		if (ch) {
 			offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CREATE_SHOP);
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefreshOfflineShop");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefreshOfflineShop");
 		}
 	}
 	
@@ -4745,7 +4745,7 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketChangeShopName");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketChangeShopName");//INGAME_DEBUG_RAZOR93
 #endif
 	TSubPacketCGShopChangeName* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
@@ -4765,7 +4765,7 @@ int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBuffe
 int OfflineshopPacketForceCloseShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
 #endif
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	if(!rManager.RecvShopForceCloseClientPacket(ch))
@@ -5202,7 +5202,7 @@ void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemDestroy handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_destroy * pinfo = (struct command_item_destroy *) data;
 	if (ch) {
@@ -5221,7 +5221,7 @@ void CInputMain::ItemDivision(LPCHARACTER ch, const char * data)
 // TODO Phase 8: migrate ItemDivision handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_division * pinfo = (struct command_item_division *) data;
 	if (ch)
@@ -5238,7 +5238,7 @@ void CInputMain::FishingNew(LPCHARACTER ch, const char* c_pData)
 // TODO Phase 8: migrate FishingNew handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return;
@@ -5311,7 +5311,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 		{
 			//if (ch->GetWheelDestiny()->IsTurning())
 			//{
-			//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Do not close now!!");
+			//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Do not close now!!");
 			//	return;
 			//}
 
@@ -5319,13 +5319,13 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 			if (ch->GetWheelDestiny()->GetGiftVnum())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1307, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1307, "");
 #endif
 			}
 			else
 			{
 				ch->SetWheelDestiny(nullptr);
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
 			}
 		}
 	}
@@ -5334,7 +5334,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 	{
 		if (ch->GetDungeon() != nullptr || ch->GetMapIndex() >= 10000)
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;
 		}
 		if (ch->GetWheelDestiny())
@@ -5344,7 +5344,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 			if (ch->CountSpecifyItem(WHEEL_TICKET_VNUM) < 1)
 			{
 
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
 				return;
 			}
 
@@ -5660,7 +5660,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 		case HEADER_CG_ANSWER_MAKE_GUILD:
 #ifdef ENABLE_NEWGUILDMAKE
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "<%s> AnswerMakeGuild disabled", __FUNCTION__);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "<%s> AnswerMakeGuild disabled", __FUNCTION__);
 #else
 			AnswerMakeGuild(ch, c_pData);
 #endif
@@ -5849,7 +5849,7 @@ int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 // TODO Phase 8: migrate Switchbot handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGSwitchbot* p = reinterpret_cast<const TPacketCGSwitchbot*>(data);
 
@@ -5905,7 +5905,7 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 // TODO Phase 8: migrate ChangeLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -5931,7 +5931,7 @@ void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
 // TODO Phase 8: migrate RequestLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;

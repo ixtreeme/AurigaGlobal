@@ -190,7 +190,7 @@ namespace
 
             // English notice
             ForEachPcOnMap(mapIndex, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
+                if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
                 });
         }
 
@@ -405,7 +405,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You were in Pyramid Dungeon on a different channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You were in Pyramid Dungeon on a different channel: %d", rejoinCh);
                 return true;
             }
 
@@ -431,7 +431,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     const int32_t antiUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiUntil > now)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Please wait %d seconds.", antiUntil - now);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Please wait %d seconds.", antiUntil - now);
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamSeconds);
@@ -440,7 +440,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
         return true;
     }
 
@@ -450,7 +450,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         const int32_t lv = ch->GetLevel();
         if (lv < kMinLevel || lv > kMaxLevel)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Pyramid Dungeon requires level %d-%d.", kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon requires level %d-%d.", kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -460,7 +460,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         party->ForEachOnMapMember(f, ch->GetMapIndex());
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
                 f.name ? f.name : "Someone", f.level, kMinLevel, kMaxLevel);
             return true;
         }
@@ -472,7 +472,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         const int32_t cdUntil = ch->GetQuestFlag(kQfCooldown);
         if (cdUntil > now)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);
             return true;
         }
     }
@@ -482,7 +482,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         party->ForEachOnMapMember(f, ch->GetMapIndex());
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
                 f.name ? f.name : "Someone", f.remain);
             return true;
         }
@@ -493,7 +493,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You don't have the entry item.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You don't have the entry item.");
             return true;
         }
     }
@@ -503,7 +503,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         party->ForEachOnMapMember(f, ch->GetMapIndex());
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
             return true;
         }
     }
@@ -532,7 +532,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
         return true;
     }
 
@@ -586,14 +586,14 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         d->SetFlag(kFlagStep, s);
 
         ForEachPcOnMap(mapIdx, [s](LPCHARACTER pc) {
-            if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
+            if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
             });
 
         if (s == 0)
         {
             d->SpawnMob(kStoneVnum, kStoneX, kStoneY);
             ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
+                if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
                 });
         }
         return;
@@ -606,7 +606,7 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         d->SpawnRegen(kRegen3, true);
 
         ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-            if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
+            if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
             });
         return;
     }
@@ -625,7 +625,7 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SetFlag(kFlagBossSpawned, 1);
             d->SpawnMob(kBossVnum, kBossX, kBossY);
             ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
+                if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
                 });
         }
         return;
@@ -660,7 +660,7 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
                 d->SpawnMob(kBonusMobVnum, kStoneX, kStoneY);
 
             ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
+                if (pc) ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
                 });
         }
     }

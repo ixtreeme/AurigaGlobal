@@ -11,7 +11,7 @@ ACMD(do_blockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Usage: blockhwid <name>");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Usage: blockhwid <name>");
 		return;
 	}
 
@@ -30,7 +30,7 @@ ACMD(do_unblockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
 		return;
 	}
 

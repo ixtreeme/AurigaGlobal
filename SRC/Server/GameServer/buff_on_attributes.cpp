@@ -139,7 +139,7 @@ bool CBuffOnAttributes::On(uint8_t bValue)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					if (pItem->GetOwner()) {
-						ecs::ChatSystem::SendNew(pItem->GetOwner(), CHAT_TYPE_INFO, 781, "%d#%s", j, pItem->GetName());
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pItem->GetOwner()), CHAT_TYPE_INFO, 781, "%d#%s", j, pItem->GetName());
 					}
 #endif
 					continue;

@@ -22,7 +22,7 @@ namespace
 
 		if ((uint64_t)cur >= maxCoins)
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
 			return;
 		}
 
@@ -31,7 +31,7 @@ namespace
 			return;
 
 		ch->SetDragonCoin(cur + (uint32_t)canAdd);
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
 	}
 
 	inline bool CheckCanUseNow(LPCHARACTER ch)
@@ -41,7 +41,7 @@ namespace
 
 		if (!ch->CanWarp())
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot use this item right now.");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item right now.");
 			return false;
 		}
 
@@ -90,13 +90,13 @@ namespace item_change
 				
 				if (ch->CountSpecifyItem(30279) < 100)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
 				ch->RemoveSpecifyItem(30279, 100);
 				ch->AutoGiveItem(30280, 1);
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Exchange complete.");
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
 			// kristaly
@@ -108,13 +108,13 @@ namespace item_change
 				
 				if (ch->CountSpecifyItem(30277) < 100)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
 				ch->RemoveSpecifyItem(30277, 100);
 				ch->AutoGiveItem(30278, 1);
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Exchange complete.");
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
 
@@ -151,7 +151,7 @@ namespace item_change
 
 				if (freeSpace <= 0)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 
@@ -159,7 +159,7 @@ namespace item_change
 				int32_t wantUse = (int32_t)(freeSpace / kYangPerItem);
 				if (wantUse <= 0)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Not enough Yang capacity to redeem even 1 item.");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough Yang capacity to redeem even 1 item.");
 					return true; // semmit nem vesz el
 				}
 
@@ -177,7 +177,7 @@ namespace item_change
 
 				if (realAdded <= 0)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 
@@ -185,7 +185,7 @@ namespace item_change
 				int32_t realUse = (int32_t)(realAdded / kYangPerItem);
 				if (realUse <= 0)
 				{
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 				if (realUse > count)
@@ -194,7 +194,7 @@ namespace item_change
 				 
 				item->SetCount(count - realUse);
 
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
 				return true;
 			}
 		}

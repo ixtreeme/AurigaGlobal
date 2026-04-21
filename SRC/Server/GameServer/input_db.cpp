@@ -1322,7 +1322,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	if (ch->GetShopOwner() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1332,7 +1332,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1394,10 +1394,10 @@ void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
 #ifdef TEXTS_IMPROVEMENT
 	TSafeboxChangePasswordPacketAnswer* p = (TSafeboxChangePasswordPacketAnswer*) c_pData;
 	if (p->flag) {
-		ecs::ChatSystem::SendNew(d->GetCharacter(), CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 187, "");
 	}
 	else {
-		ecs::ChatSystem::SendNew(d->GetCharacter(), CHAT_TYPE_INFO, 186, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 186, "");
 	}
 #endif
 }
@@ -1910,7 +1910,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 762, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 762, "");
 	}
 #endif
 }
@@ -2220,7 +2220,7 @@ void CInputDB::BillingExpire(const char * c_pData)
 			d->SetBillingExpireSecond(p->dwRemainSeconds);
 #ifdef TEXTS_IMPROVEMENT
 			if (ch) {
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 241, "%d", (p->dwRemainSeconds / 60));
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 241, "%d", (p->dwRemainSeconds / 60));
 			}
 #endif
 		}
@@ -3436,7 +3436,7 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 	TPacketReturnChannel* p = (TPacketReturnChannel*)pcData;
 	if (!p->lAddr || !p->port) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(d->GetCharacter(), CHAT_TYPE_INFO, 636, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 636, "");
 #endif
 		return;
 	}

@@ -34,8 +34,8 @@ CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
 	: ch(m_ch), gift_vnum(0), gift_count(1), turn_count(0)
 {
 	for (auto i = 0; i < WheelItemMax; i++)
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ch->GetWheelFreeCount());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ch->GetWheelFreeCount());
 }
 
 CWheelDestiny::~CWheelDestiny() {
@@ -61,7 +61,7 @@ void CWheelDestiny::TurnWheel()
 {
 	//if (m_bTurning)
 	//{
-	//	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Already spinning!");
+	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Already spinning!");
 	//	return;
 	//}
 
@@ -72,14 +72,14 @@ void CWheelDestiny::TurnWheel()
 
 
 	if (GetGiftVnum()) {
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Please wait!");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Please wait!");
 		return;
 	}
 
 	const auto WheelFreeCount = ch->GetWheelFreeCount();
 	
 	if (WheelFreeCount < 1 && ch->GetGold() < WheelPrice) {
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
 		return;
 	}
 
@@ -91,13 +91,13 @@ void CWheelDestiny::TurnWheel()
 
 	if (WheelFreeCount > 0) {
 		ch->SetWheelFreeCount(-1);
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "FREE");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "FREE");
 	}
 	else
 		ch->PointChange(POINT_GOLD, -WheelPrice);
 	
 	//vnum, count, spin count, pos
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
 
 	turn_count++;
 }

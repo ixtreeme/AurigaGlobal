@@ -881,7 +881,7 @@ void DESC::DisconnectOfSameLogin()
 			return;
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetCharacter(), CHAT_TYPE_INFO, 295, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetCharacter()), CHAT_TYPE_INFO, 295, "");
 #endif
 		DelayedDisconnect(3);
 	}

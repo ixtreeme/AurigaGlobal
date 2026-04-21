@@ -720,7 +720,7 @@ void CHARACTER::MainCharacterPacket()
         GetDesc()->Packet(&pack, sizeof(TPacketGCMainCharacter));
 
         if (m_stMobile.length())
-            ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "sms");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "sms");
     }
 }
 

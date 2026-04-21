@@ -69,7 +69,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	if (iPolyPercent <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pChar, CHAT_TYPE_INFO, 317, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 317, "");
 #endif
 		return false;
 	}
@@ -78,7 +78,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 		if (number(1, 100) > iPolyPercent)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pChar, CHAT_TYPE_INFO, 317, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 317, "");
 #endif
 			return false;
 		}
@@ -121,7 +121,7 @@ bool CPolymorphUtils::UpdateBookPracticeGrade(LPCHARACTER pChar, LPITEM pItem)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(pChar, CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 232, "");
 	}
 #endif
 	return true;

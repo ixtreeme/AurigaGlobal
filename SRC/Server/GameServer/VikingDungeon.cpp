@@ -235,7 +235,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
-            ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "%s", buf);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -249,7 +249,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
-            ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -1068,18 +1068,18 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
     if (ch->GetQuestFlag(kQfDisconnect) > 0)
     {
         ch->SetQuestFlag(kQfDisconnect, 0);
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_BIG_NOTICE, "Welcome back.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "Welcome back.");
 
         const int32_t limit = d->GetFlag(kFlagTimeLimit);
         if (d->GetFlag(kFlagCompleted) != 0)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_BIG_NOTICE, "This instance will close soon. Pick up your drops quickly.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "This instance will close soon. Pick up your drops quickly.");
         }
         else if (limit > get_global_time())
         {
             char tmp[64];
             FormatDuration(limit - get_global_time(), tmp, sizeof(tmp));
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_BIG_NOTICE, "Time remaining: %s.", tmp);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "Time remaining: %s.", tmp);
         }
     }
 
@@ -1096,20 +1096,20 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
 
     if (IsVikingDungeonMap(ch->GetMapIndex()))
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
         return true;
     }
 
     const int32_t cooldownUntil = ch->GetQuestFlag(kQfCooldown);
     if (cooldownUntil <= get_global_time())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You can already enter the dungeon.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can already enter the dungeon.");
         return true;
     }
 
     ch->RemoveSpecifyItem(kResetItemVnum, 1);
     ch->SetQuestFlag(kQfCooldown, 0);
-    ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
     return true;
 }
 
@@ -1140,13 +1140,13 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         snprintf(rewardFlag, sizeof(rewardFlag), "vk_reward_%u", ch->GetPlayerID());
         if (d->GetFlag(rewardFlag) != 0)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You already took your reward.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
         d->SetFlag(rewardFlag, 1);
         ch->AutoGiveItem(kRewardItemVnum, kRewardItemCount);
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Reward received.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Reward received.");
         return true;
     }
 
@@ -1170,19 +1170,19 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     //if (!IsEntryMapForEmpire(ch))
     //{
-    //    ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You must be in the correct map to enter Frostbane Fortress.");
+    //    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You must be in the correct map to enter Frostbane Fortress.");
     //    return true;
     //}
 
     if (!ch->CanWarp())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You have to wait a bit before entering.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
         return true;
     }
 
     if (quest::CQuestManager::instance().GetEventFlag("vikingdungeon_zone_block") == 1 && !ch->IsGM())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "The dungeon is currently blocked.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "The dungeon is currently blocked.");
         return true;
     }
 
@@ -1191,7 +1191,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
@@ -1201,19 +1201,19 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     {
         if (party->GetLeaderPID() != ch->GetPlayerID())
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Only the party leader can start the dungeon.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start the dungeon.");
             return true;
         }
 
         if (party->GetNearMemberCount() != party->GetMemberCount())
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Every party member must be online and near the NPC.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Every party member must be online and near the NPC.");
             return true;
         }
 
         if ((int32_t)party->GetMemberCount() < kMinMembers)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Your party needs at least %d members.", kMinMembers);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Your party needs at least %d members.", kMinMembers);
             return true;
         }
     }
@@ -1287,17 +1287,17 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         switch (bad)
         {
             case BAD_LEVEL:
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
                 break;
             case BAD_WARP:
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
                 break;
             case BAD_ITEM:
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A member");
                 break;
             case BAD_COOLDOWN:
                 FormatDuration(badVal, tmp, sizeof(tmp));
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
                 break;
             default:
                 break;
@@ -1308,7 +1308,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 

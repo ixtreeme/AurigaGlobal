@@ -48,14 +48,14 @@ bool timed_event_cancel(LPCHARACTER ch)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return true;
 	}
 
 	/* RECALL_DELAY
-	   ���� ������ ���� ��ȯ�� �����̰� ��� �Ǿ�� �� ��� �ּ� ����
+	   ???? ?????? ???? ????? ??????? ??? ???? ?? ??? ??? ????
 	   if (ch->m_pk_RecallEvent)
 	   {
 	   event_cancel(&ch->m_pkRecallEvent);
@@ -68,7 +68,7 @@ bool timed_event_cancel(LPCHARACTER ch)
 
 bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 {
-	// »ó´ë¹æÀÌ Á×¾úÀ¸¸é Áß´ÜÇÑ´Ù.
+	// ���1aAI ��3�A��� �ߴ��N�U.
 	if (victim->IsDead())
 	{
 		return false;
@@ -82,7 +82,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	}
 #endif
 
-	// ¾ÈÀüÁö´ë¸é Áß´Ü
+	// 3EA������ �ߴ�
 	{
 		SECTREE* sectree = nullptr;
 
@@ -99,7 +99,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 		}
 	}
 
-	// ³»°¡ Á×¾úÀ¸¸é Áß´ÜÇÑ´Ù.
+	// 3��! ��3�A��� �ߴ��N�U.
 	if (ch->IsStun() || ch->IsDead())
 	{
 		return false;
@@ -150,7 +150,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 			return BATTLE_NONE;
 		}
 
-		//ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - ch->GetLastAttackTime());
+		//ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - ch->GetLastAttackTime());
 		//		if (!battle_distance_valid(ch, victim)) {
 		//			return BATTLE_NONE;
 		//		}
@@ -176,7 +176,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	if (test_server && ch->IsPC())
 		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
 
-	// °Å¸® Ã¼Å©
+	// �A�� A1A�
 	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
 
 	if (!victim->IsBuilding())
@@ -185,12 +185,12 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 
 		if (false == ch->IsPC())
 		{
-			// ¸ó½ºÅÍÀÇ °æ¿ì ¸ó½ºÅÍ °ø°Ý °Å¸®¸¦ »ç¿ë
+			// ��1oA�A� �a?i ��1oA� �o�� �A���� ��?�
 			max = (int)(ch->GetMobAttackRange() * 1.15f);
 		}
 		else
 		{
-			// PCÀÏ °æ¿ì »ó´ë°¡ melee ¸÷ÀÏ °æ¿ì ¸÷ÀÇ °ø°Ý °Å¸®°¡ ÃÖ´ë °ø°Ý °Å¸®
+			// PCAI �a?i ���! melee ��AI �a?i ��A� �o�� �A���! Aִ� �o�� �A��
 			if (false == victim->IsPC() && BATTLE_TYPE_MELEE == victim->GetMobBattleType())
 				max = MAX(300, (int)(victim->GetMobAttackRange() * 1.15f));
 		}
@@ -213,10 +213,10 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 
 #ifdef TEXTS_IMPROVEMENT
 	if (timed_event_cancel(ch)) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 456, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 456, "");
 	}
 	else if (timed_event_cancel(victim)) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 456, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 456, "");
 	}
 #endif
 
@@ -232,7 +232,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 }
 
 
-// ���� GET_BATTLE_VICTIM�� NULL�� ����� �̺�Ʈ�� ĵ�� ��Ų��.
+// ???? GET_BATTLE_VICTIM?? NULL?? ????? ???T?? j?? ??U??.
 void battle_end_ex(LPCHARACTER ch)
 {
 	if (ch->IsPosition(POS_FIGHTING))
@@ -303,11 +303,11 @@ float CalcAttackRating(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnor
 
 int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 {
-	// PvP���� ������������
+	// PvP???? ????????????
 	if (!pkVictim->IsPC())
 		iAtk += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS);
 
-	// PvP���� ������������
+	// PvP???? ????????????
 	if (!pkAttacker->IsPC())
 	{
 		int iReduceDamagePct = pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
@@ -427,7 +427,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ������ ATTBONUS ó��
+			case JOB_WOLFMAN: // TODO: ?????? ATTBONUS �??
 				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_WOLFMAN)) / 100;
 				break;
 #endif
@@ -457,7 +457,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ������ ���� ó��
+			case JOB_WOLFMAN: // TODO: ?????? ???? �??
 				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_WOLFMAN)) / 100;
 				break;
 #endif
@@ -465,9 +465,9 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	}
 
 #ifdef ELEMENT_TARGET
-	//[ mob -> PC ] ���� �Ӽ� ��� ����
+	//[ mob -> PC ] ???? ??? ??? ????
 	//2013/01/17
-	//���� �Ӽ����� �������� 30%�� �ش��ϴ� ��ġ���� ������ �����.
+	//???? ??????? ???????? 30%?? ?????? ??g???? ?????? ?????.
 	if (pkAttacker->IsNPC() && pkVictim->IsPC())
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
@@ -685,8 +685,8 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				fAR,
 				szPT);
 
-		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_TALKING, "%s", szMeleeAttack);
-		ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_TALKING, "%s", szMeleeAttack);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_TALKING, "%s", szMeleeAttack);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_TALKING, "%s", szMeleeAttack);
 	}
 
 	return CalcBattleDamage(iDam, pkAttacker->GetLevel(), pkVictim->GetLevel());
@@ -700,7 +700,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	if (!pkArrow)
 		return 0;
 
-	// Ÿ��ġ ����
+	// Y??g ????
 	int iDist = (int) (DISTANCE_SQRT(pkAttacker->GetX() - pkVictim->GetX(), pkAttacker->GetY() - pkVictim->GetY()));
 	//int iGap = (iDist / 100) - 5 - pkBow->GetValue(5) - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
 	int iGap = (iDist / 100) - 5 - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
@@ -746,7 +746,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 
 	if (test_server)
 	{
-		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
 				ecs::GetName(pkAttacker),
 				ecs::GetName(pkVictim),
 				iPureDam,
@@ -760,7 +760,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 
 void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
-	// �� ������ Ư���ϹǷ� Ư�� ó��
+	// ?? ?????? U?????? U?? �??
 	if (pkAttacker->GetPoint(POINT_POISON_PCT) && !pkVictim->IsAffectFlag(AFF_POISON))
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(POINT_POISON_PCT))
@@ -790,7 +790,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 			return BATTLE_NONE;
 		}
 
-//ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - pkAttacker->GetLastAttackTime());
+//ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - pkAttacker->GetLastAttackTime());
 //		if (!battle_distance_valid(pkAttacker, pkVictim)) {
 //			return BATTLE_NONE;
 //		}
@@ -808,7 +808,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	NormalAttackAffect(pkAttacker, pkVictim);
 
-	// ������ ���
+	// ?????? ???
 	//iDam = iDam * (100 - pkVictim->GetPoint(POINT_RESIST)) / 100;
 	LPITEM pkWeapon = pkAttacker->GetWear(WEAR_WEAPON);
 
@@ -927,7 +927,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 		}
 
 
-	//�������� ������ ����. (2011�� 2�� ���� ��հŹ̿��Ը� ����.)
+	//???????? ?????? ????. (2011?? 2?? ???? ???�????? ????.)
 	float attMul = pkAttacker->GetAttMul();
 	float tempIDam = iDam;
 	iDam = attMul * tempIDam + 0.5f;
@@ -952,7 +952,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //			iRetDam, pkAttacker->GetPlayerID()));
 //
 //		///*pkAttacker->*/viChatPacket(CHAT_TYPE_TALKING, "You hit a Skill Mob for %d damage!", iRetDam);
-//		ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
+//		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
 //		
 //		
 //
@@ -1015,7 +1015,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
 	
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
 							ecs::GetName(ch),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
@@ -1034,7 +1034,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
 					ch->GetDesc()->DelayedDisconnect(3);
 				}

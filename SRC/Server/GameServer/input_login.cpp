@@ -98,16 +98,16 @@ static void _send_bonus_info(LPCHARACTER ch)
 	exp_bonus = CPrivManager::instance().GetPriv(ch, PRIV_EXP_PCT);
 #ifdef TEXTS_IMPROVEMENT
 	if (item_drop_bonus) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
 	}
 	if (gold_drop_bonus) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
 	}
 	if (gold10_drop_bonus) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
 	}
 	if (exp_bonus) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
 	}
 #endif
 }
@@ -756,7 +756,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 
 	if (ch->IsGM() == true)
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ConsoleEnable");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ConsoleEnable");
 
 	if (ch->GetMapIndex() >= 10000)
 	{
@@ -874,8 +874,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef TEXTS_IMPROVEMENT
 	if (g_noticeBattleZone) {
 		if (FN_is_battle_zone(ch)) {
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 637, "");
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 638, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 637, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 638, "");
 		}
 	}
 #endif
@@ -904,7 +904,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef __ENABLE_BLOCK_EXP__
 	int expret = ch->GetQuestFlag("exp.stat");
 	ch->Block_Exp = expret == 1 ? true : false;
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ch->GetQuestFlag("exp.stat"));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", ch->GetQuestFlag("exp.stat"));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -916,10 +916,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_RUNE_SYSTEM
 	ch->SetPart(PART_RUNE, ch->GetRuneEffect());
 	ch->UpdatePacket();
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", ch->GetQuestFlag("rune.hide_effect"));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", ch->GetQuestFlag("rune.hide_effect"));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %d", ch->GetQuestFlag(BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview %d", ch->GetQuestFlag(BLOCK_EQUIPMENT_));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ch->GetWarMap()) {
@@ -945,7 +945,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	{
 		int biologisttime = ch->GetQuestFlag("biologist.time");
 		biologisttime = biologisttime > 0 ? biologisttime : 1;
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
 	}
 #endif
 
@@ -966,7 +966,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ch->PointChange(POINT_EXTRA_INVENTORY4, ch->GetQuestFlag("lock_extra.cat4"));
 	ch->PointChange(POINT_EXTRA_INVENTORY5, ch->GetQuestFlag("lock_extra.cat5"));
 	ch->PointChange(POINT_EXTRA_INVENTORY6, ch->GetQuestFlag("lock_extra.cat6"));
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT
 	ch->ClearCheatChecks();

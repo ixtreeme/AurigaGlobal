@@ -48,12 +48,12 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
 		}
 	}
 }
@@ -76,14 +76,14 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
 			if (test_server)
-				ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_PARTY,
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY,
 						"%s(%d%%) -> %s SUCCESS", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 		else if (test_server)
 		{
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
-			ecs::ChatSystem::Send(pkVictim, CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 	}

@@ -751,7 +751,7 @@ void CHARACTER::SetBlockMode(uint8_t bFlag)
     if (auto* flags = EnsureRuntimeFlagsComponent(this))
         flags->blockMode = bFlag;
 
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
 
     SetQuestFlag("game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
     SetQuestFlag("game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
@@ -766,7 +766,7 @@ void CHARACTER::SetBlockModeForce(uint8_t bFlag)
     if (auto* flags = EnsureRuntimeFlagsComponent(this))
         flags->blockMode = bFlag;
 
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
 }
 
 uint8_t CHARACTER::GetBlockMode() const
@@ -1404,7 +1404,7 @@ uint16_t CHARACTER::GetRuneEffect() {
 bool CHARACTER::CanTakeInventoryItem(LPITEM item, TItemPos* cell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-    ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
 #endif
     int iEmpty = -1;
 
@@ -1590,7 +1590,7 @@ void CHARACTER::OpenAcce(bool bCombination)
     if (isAcceOpened(bCombination))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 659, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 659, "");
 #endif
         return;
     }
@@ -1600,7 +1600,7 @@ void CHARACTER::OpenAcce(bool bCombination)
         if (m_bAcceAbsorption)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 660, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 660, "");
 #endif
             return;
         }
@@ -1612,7 +1612,7 @@ void CHARACTER::OpenAcce(bool bCombination)
         if (m_bAcceCombination)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 661, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 661, "");
 #endif
             return;
         }
@@ -1854,14 +1854,14 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     else if (pkItem->isLocked())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
     else if ((pkItem->GetType() == ITEM_ARMOR) && (pkItem->GetSubType() == ARMOR_BODY))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
@@ -1869,7 +1869,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     else if ((pkItem->IsBind()) || (pkItem->IsUntilBind()))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
@@ -1883,7 +1883,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     else if ((m_bAcceCombination) && (bPos == 1) && (!AcceIsSameGrade(pkItem->GetValue(ACCE_GRADE_VALUE_FIELD))))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 662, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 662, "");
 #endif
         return;
     }
@@ -1891,7 +1891,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     else if ((m_bAcceCombination) && (pkItem->GetSubType() == COSTUME_STOLE) && (pkItem->GetValue(0) == 4))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 20, "%s", pkItem->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 20, "%s", pkItem->GetName());
 #endif
         return;
     }
@@ -1899,7 +1899,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     else if ((m_bAcceCombination) && (pkItem->GetSocket(ACCE_ABSORPTION_SOCKET) >= ACCE_GRADE_4_ABS_MAX))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 663, "%d", ACCE_GRADE_4_ABS_MAX);
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 663, "%d", ACCE_GRADE_4_ABS_MAX);
 #endif
         return;
     }
@@ -1908,14 +1908,14 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
         if ((pkItem->GetType() != ITEM_WEAPON) && (pkItem->GetType() != ITEM_ARMOR))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 520, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
 #endif
             return;
         }
         else if ((pkItem->GetType() == ITEM_ARMOR) && (pkItem->GetSubType() != ARMOR_BODY))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 520, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
 #endif
             return;
         }
@@ -1952,17 +1952,17 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     if ((!m_bAcceAbsorption) && (bPos == 1) && (pkItemMaterial[0]->GetSubType() != pkItem->GetSubType())) {
 #ifdef TEXTS_IMPROVEMENT
         if (pkItemMaterial[0]->GetSubType() == COSTUME_STOLE) {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 18, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 18, "");
         }
         else {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 822, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 822, "");
         }
 #endif
         return;
     }
     else if (!m_bAcceAbsorption && bPos == 1 && pkItemMaterial[0]->GetSubType() == COSTUME_STOLE && pkItemMaterial[0]->GetVnum() != pkItem->GetVnum()) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 1293, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1293, "");
 #endif
         return;
     }
@@ -2098,7 +2098,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
                 {
                     bReturn = 0;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 783, "");
+                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 783, "");
 #endif
                 }
             }
@@ -2187,7 +2187,7 @@ void CHARACTER::RefineAcceMaterials()
         if (GetGold() < dwPrice)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 232, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
 #endif
             return;
         }
@@ -2227,10 +2227,10 @@ void CHARACTER::RefineAcceMaterials()
 
 #ifdef TEXTS_IMPROVEMENT
             if (lVal == 4) {
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 521, "%d", dwAbs);
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 521, "%d", dwAbs);
             }
             else {
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 389, "");
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 389, "");
             }
 #endif
             EffectPacket(SE_EFFECT_ACCE_SUCCEDED);
@@ -2244,7 +2244,7 @@ void CHARACTER::RefineAcceMaterials()
             DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, pkItemMaterial[0]->GetVnum(), -dwPrice);
             ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "COMBINE (REFINE FAIL)");
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 390, "");
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
 #endif
             LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, 0, 0, 0, 0);
             pkItemMaterial[1] = nullptr;
@@ -2287,7 +2287,7 @@ void CHARACTER::RefineAcceMaterials()
         pkItemMaterial[0]->AttrLog();
 
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 629, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 629, "");
 #endif
         ClearAcceMaterials();
 
@@ -2346,7 +2346,7 @@ void CHARACTER::EditMyInven()
     int iPulse = thecore_pulse() - GetSortInv1Time();
     if (iPulse < PASSES_PER_SEC(30)) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 1290, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1290, "");
 #endif
         return;
     }
@@ -2354,7 +2354,7 @@ void CHARACTER::EditMyInven()
     if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 540, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 540, "");
 #endif
         return;
     }
@@ -2363,7 +2363,7 @@ void CHARACTER::EditMyInven()
     if (GetOfflineShopGuest() || GetAuctionGuest())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 782, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 782, "");
 #endif
         return;
     }
@@ -2452,7 +2452,7 @@ void CHARACTER::EditMyInven()
         }
     }
 
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "inv_sort_done");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "inv_sort_done");
     SetSortInv1Time();
 }
 
@@ -2471,7 +2471,7 @@ void CHARACTER::EditMyExtraInven()
     int iPulse = thecore_pulse() - GetSortInv2Time();
     if (iPulse < PASSES_PER_SEC(30)) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 1290, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1290, "");
 #endif
         return;
     }
@@ -2479,7 +2479,7 @@ void CHARACTER::EditMyExtraInven()
     if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 540, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 540, "");
 #endif
         return;
     }
@@ -2488,7 +2488,7 @@ void CHARACTER::EditMyExtraInven()
     if (GetOfflineShopGuest() || GetAuctionGuest())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 782, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 782, "");
 #endif
         return;
     }
@@ -2569,7 +2569,7 @@ void CHARACTER::EditMyExtraInven()
         }
     }
 
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "ext_sort_done");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "ext_sort_done");
     SetSortInv2Time();
 }
 #endif
@@ -2582,7 +2582,7 @@ bool CHARACTER::Update_Inven()
     int32_t time = GetLastUnlock() - get_global_time();
     if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 234, "%d", time);
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", time);
 #endif
         return false;
     }
@@ -2593,7 +2593,7 @@ bool CHARACTER::Update_Inven()
     if (CountSpecifyItem(key2) >= needkey) {
         RemoveSpecifyItem(key2, needkey);
         PointChange(POINT_INVEN, 1, false);
-        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "refreshinven");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "refreshinven");
         UpdatePacket();
 #ifdef ENABLE_SPAM_CHECK
         SetLastUnlock();
@@ -2602,7 +2602,7 @@ bool CHARACTER::Update_Inven()
     }
     else {
         int need_key = needkey - CountSpecifyItem(key2);
-        ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
         return false;
     }
 }
@@ -2619,7 +2619,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
     {
 #ifdef TEXTS_IMPROVEMENT
         if (bSendMsg) {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 234, "%d", limittime);
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
         }
 #endif
         return true;
@@ -2635,7 +2635,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
         {
 #ifdef TEXTS_IMPROVEMENT
             if (bSendMsg) {
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 236, "");
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 236, "");
             }
 #endif
             return true;
@@ -2651,7 +2651,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
         {
 #ifdef TEXTS_IMPROVEMENT
             if (bSendMsg) {
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 236, "");
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 236, "");
             }
 #endif
             return true;
@@ -2662,7 +2662,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
     {
 #ifdef TEXTS_IMPROVEMENT
         if (bSendMsg) {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 234, "%d", limittime);
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
         }
 #endif
         return true;
@@ -2672,7 +2672,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
     {
 #ifdef TEXTS_IMPROVEMENT
         if (bSendMsg) {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 234, "%d", limittime);
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
         }
 #endif
         return true;
@@ -2682,7 +2682,7 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
     {
 #ifdef TEXTS_IMPROVEMENT
         if (bSendMsg) {
-            ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 234, "%d", limittime);
+            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
         }
 #endif
         return true;
@@ -3294,7 +3294,7 @@ void CHARACTER::SendGreetMessage()
 
     for (auto it = v.begin(); it != v.end(); ++it)
     {
-        ecs::ChatSystem::Send(this, CHAT_TYPE_NOTICE, it->c_str());
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_NOTICE, it->c_str());
     }
 }
 
@@ -3885,7 +3885,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -3894,7 +3894,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -3905,7 +3905,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((pkChrCauser->GetExchange() || pkChrCauser->IsOpenSafebox() || pkChrCauser->GetMyShop() || pkChrCauser->GetShopOwner()) || pkChrCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -3914,7 +3914,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (pkChrCauser->IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -3923,7 +3923,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((GetExchange() || IsOpenSafebox() || IsCubeOpen()))
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 369, "%s", GetName());
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 369, "%s", GetName());
 #endif
                         return;
                     }
@@ -3932,7 +3932,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(pkChrCauser, CHAT_TYPE_INFO, 369, "%s", GetName());
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 369, "%s", GetName());
 #endif
                         return;
                     }
@@ -3993,7 +3993,7 @@ void CHARACTER::DestroyPvP()
 
             char szBuf[CHAT_MAX_LEN + 1];
             snprintf(szBuf, sizeof(szBuf), "BINARY_Duel_Delete");
-            ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, szBuf);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, szBuf);
 
             for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
             {
@@ -4143,7 +4143,7 @@ EVENTFUNC(switch_channel)
     if (info->secs > 0)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 658, "%d", info->secs);
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 658, "%d", info->secs);
 #endif
         --info->secs;
         return PASSES_PER_SEC(1);
@@ -4178,7 +4178,7 @@ void CHARACTER::BlockProcessed()
     }
     else {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 42, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 42, "");
 #endif
         event_cancel(&m_pkDropEvent);
         m_pkDropEvent = nullptr;
@@ -4194,14 +4194,14 @@ void CHARACTER::BlockDrop()
 
     if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 36, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 36, "");
 #endif
         return;
     }
 
     if (m_pkDropEvent) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 44, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 44, "");
 #endif
         return;
     }
@@ -4212,7 +4212,7 @@ void CHARACTER::BlockDrop()
     info->drop = false;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 43, "%d", 5);
+    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 43, "%d", 5);
 #endif
 }
 
@@ -4220,14 +4220,14 @@ void CHARACTER::UnblockDrop()
 {
     if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 36, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 36, "");
 #endif
         return;
     }
 
     if (m_pkDropEvent) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 44, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 44, "");
 #endif
         return;
     }
@@ -4238,7 +4238,7 @@ void CHARACTER::UnblockDrop()
     info->drop = true;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 43, "%d", 5);
+    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 43, "%d", 5);
 #endif
 }
 
@@ -4273,7 +4273,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (!CanHandleItem())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 291, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 291, "");
 #endif
         return;
     }
@@ -4288,7 +4288,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (GetPart(PART_MAIN) > 2)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 503, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 503, "");
 #endif
         return;
     }
@@ -4319,7 +4319,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (GOLD_MAX <= nTotalMoney)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 226,
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 226,
             "%lld"
 
             , GOLD_MAX);
@@ -4338,7 +4338,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (CBanwordManager::instance().CheckString(m_stShopSign.c_str(), m_stShopSign.length()))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 358, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 358, "");
 #endif
         return;
     }
@@ -4348,7 +4348,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (m_bKasmirPaketBaslik < 1 && m_bKasmirPaketBaslik > 6)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 46, "");
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 46, "");
 #endif
         return;
     }
@@ -4374,7 +4374,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 416, "%s", pkItem->GetName());
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 416, "%s", pkItem->GetName());
 #endif
                 return;
             }
@@ -4382,7 +4382,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (pkItem->IsEquipped() == true)
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 541, "");
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 541, "");
 #endif
                 return;
             }
@@ -4390,7 +4390,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (true == pkItem->isLocked())
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 656, "");
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 656, "");
 #endif
                 return;
             }
@@ -4498,7 +4498,7 @@ void CHARACTER::CloseMyShop()
 void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
 {
     m_bHideBodyCostume = hidden;
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "SetBodyCostumeHidden %d", m_bHideBodyCostume ? 1 : 0);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetBodyCostumeHidden %d", m_bHideBodyCostume ? 1 : 0);
     if (!pass) {
         SetQuestFlag("costume_option.hide_body", m_bHideBodyCostume ? 1 : 0);
     }
@@ -4507,7 +4507,7 @@ void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
 void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
 {
     m_bHideHairCostume = hidden;
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "SetHairCostumeHidden %d", m_bHideHairCostume ? 1 : 0);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetHairCostumeHidden %d", m_bHideHairCostume ? 1 : 0);
     if (!pass) {
         SetQuestFlag("costume_option.hide_hair", m_bHideHairCostume ? 1 : 0);
     }
@@ -4517,7 +4517,7 @@ void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
 void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
 {
     m_bHideAcceCostume = hidden;
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "SetAcceCostumeHidden %d", m_bHideAcceCostume ? 1 : 0);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetAcceCostumeHidden %d", m_bHideAcceCostume ? 1 : 0);
     if (!pass) {
         SetQuestFlag("costume_option.hide_acce", m_bHideAcceCostume ? 1 : 0);
     }
@@ -4528,7 +4528,7 @@ void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
 void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 {
     m_bHideWeaponCostume = hidden;
-    ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, "SetWeaponCostumeHidden %d", m_bHideWeaponCostume ? 1 : 0);
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetWeaponCostumeHidden %d", m_bHideWeaponCostume ? 1 : 0);
     if (!pass) {
         SetQuestFlag("costume_option.hide_weapon", m_bHideWeaponCostume ? 1 : 0);
     }
@@ -5080,7 +5080,7 @@ EVENTFUNC(drop_event)
     time_t diff = info->time - get_global_time();
     if (diff > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 43, "%d", diff);
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 43, "%d", diff);
 #endif
     }
     else {
@@ -5094,7 +5094,7 @@ EVENTFUNC(drop_event)
                 if (iStatus == 1) {
                     already = true;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 38, "");
+                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 38, "");
 #endif
                 }
                 else {
@@ -5108,14 +5108,14 @@ EVENTFUNC(drop_event)
                     if (c >= 2) {
                         already = true;
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 37, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 37, "");
 #endif
                     }
                     else {
                         ch->RemoveAffect(AFFECT_DROP_BLOCK);
                         ch->AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 40, "");
+                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 40, "");
 #endif
                     }
                 }
@@ -5124,14 +5124,14 @@ EVENTFUNC(drop_event)
                 if (iStatus == 0) {
                     already = true;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 39, "");
+                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 39, "");
 #endif
                 }
                 else {
                     ch->RemoveAffect(AFFECT_DROP_UNBLOCK);
                     ch->AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 41, "");
+                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 41, "");
 #endif
                 }
             }

@@ -44,7 +44,7 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 		LPCHARACTER ch = *it;
 #ifdef TEXTS_IMPROVEMENT
 		if (bWarState == GUILD_WAR_ON_WAR) {
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 147, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 147, "");
 		}
 #endif
 		
@@ -283,7 +283,7 @@ void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, 
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(ch, type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), type, idx, chatbuf);
 	}
 }
 #endif
@@ -667,7 +667,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 	if (gw.state != GUILD_WAR_ON_WAR)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 439, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 439, "");
 #endif
 		return;
 	}
@@ -757,12 +757,12 @@ void CGuild::SetLadderPoint(int point)
 			if (point > m_data.ladder_point) {
 				i = point - m_data.ladder_point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 152, "%d", i);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 152, "%d", i);
 				}
 			} else {
 				i = m_data.ladder_point - point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1284, "%d", i);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1284, "%d", i);
 				}
 			}
 		}

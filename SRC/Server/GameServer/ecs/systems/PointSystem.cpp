@@ -411,7 +411,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//							n -= 3;
 			//						}
 			//
-			//						ecs::ChatSystem::SendNew(this, 
+			//						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
 			//#ifdef ENABLE_NEW_CHAT
 			//						CHAT_TYPE_INFO_EXP
 			//#else
@@ -686,7 +686,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		//						n -= 3;
 		//					}
 		//
-		//					ecs::ChatSystem::SendNew(this, 
+		//					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
 		//#ifdef ENABLE_NEW_CHAT
 		//					CHAT_TYPE_INFO_VALUE
 		//#else

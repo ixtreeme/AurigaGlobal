@@ -130,7 +130,7 @@ namespace quest
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 		ch->SetSafeboxOpenPosition();
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 		return 0;
 	}
 
@@ -142,7 +142,7 @@ namespace quest
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		ch->SetSafeboxOpenPosition();
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 		return 0;
 	}
 
@@ -312,12 +312,12 @@ namespace quest
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 734, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 734, "");
 #endif
 			return 0;
 		}
 
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "OpenGuiGaya");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "OpenGuiGaya");
 		return 0;
 	}
 
@@ -331,7 +331,7 @@ namespace quest
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 734, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 734, "");
 #endif
 			return 0;
 		}
@@ -348,7 +348,7 @@ namespace quest
 			ch->StartCheckTimeMarket();
 		}
 
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "OpenGuiGayaMarket");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "OpenGuiGayaMarket");
 		return 0;
 	}
 #endif

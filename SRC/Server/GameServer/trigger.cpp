@@ -233,7 +233,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 		return 0;
 
 	causer->SetQuestNPCID(ecs::GetVID(ch));
-	ecs::ChatSystem::Send(causer, CHAT_TYPE_COMMAND, "stone_craft_open");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(causer), CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }
 #endif

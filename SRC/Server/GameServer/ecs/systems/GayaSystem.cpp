@@ -53,13 +53,13 @@ EVENTFUNC(check_time_market_event)
 	if (GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime() <= 0)
 	{
 		GayaSystem::SetState(e, "system_gaya.gaya_time_world_4", init_gayaTime() + (60 * 60 * 5));
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
 		GayaSystem::RefreshItemsMarket(e);
 		GayaSystem::InfoMarket(e);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
 	}
 
 	return PASSES_PER_SEC(2);
@@ -169,17 +169,17 @@ void InfoMarket(entt::entity pc)
 
 	ClearMarket(pc);
 	UpdateItems0(pc);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaMarketClear");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaMarketClear");
 
 	for (int i = 0; i < (int)ch->info_items.size(); ++i)
 	{
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaMarketItems %d %d %d", ch->info_items[i].value_1, ch->info_items[i].value_2, ch->info_items[i].value_3);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaMarketItems %d %d %d", ch->info_items[i].value_1, ch->info_items[i].value_2, ch->info_items[i].value_3);
 	}
 
 	if (ch->info_slots.empty())
 		return;
 
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaMarketSlotsDesblock %d %d %d %d %d %d",
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaMarketSlotsDesblock %d %d %d %d %d %d",
 		ch->info_slots[0].value_1, ch->info_slots[0].value_2, ch->info_slots[0].value_3,
 		ch->info_slots[0].value_4, ch->info_slots[0].value_5, ch->info_slots[0].value_6);
 }
@@ -214,7 +214,7 @@ void BuyItems(entt::entity pc, int slot)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 524, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 524, "");
 #endif
 		return;
 	}
@@ -371,7 +371,7 @@ void CraftItems(entt::entity pc, int slot)
 		return;
 
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_gaya.cpp::void CHARACTER::CraftGayaItemsm");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_gaya.cpp::void CHARACTER::CraftGayaItemsm");
 #endif
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -404,7 +404,7 @@ void CraftItems(entt::entity pc, int slot)
 	{
 		M2_DESTROY_ITEM(item_glimmerstone);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 525, "%d#%s", Count_Glimmerstone, item_glimmerstone->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", Count_Glimmerstone, item_glimmerstone->GetName());
 #endif
 		return;
 	}
@@ -412,7 +412,7 @@ void CraftItems(entt::entity pc, int slot)
 	if (ch->GetGold() < Cost_Gaya_Yang) {
 		M2_DESTROY_ITEM(item_glimmerstone);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif
 		return;
 	}
@@ -423,19 +423,19 @@ void CraftItems(entt::entity pc, int slot)
 #endif
 		ch->PointChange(POINT_GAYA, Point_Gaya);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 526, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 526, "");
 #endif
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 527, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 527, "");
 	}
 #endif
 
 	ch->RemoveSpecifyItem(ID_Glimmerstone, Count_Glimmerstone);
 	ch->PointChange(POINT_GOLD, -Cost_Gaya_Yang);
 	item->SetCount(item->GetCount() - 1);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "GayaCheck");
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaCheck");
 	MarkDirty(pc);
 }
 
@@ -467,7 +467,7 @@ void MarketItems(entt::entity pc, int slot)
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 525, "%d#%s", ch->load_gaya_values.gaya_expansion_count, item_gayarexpansion->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", ch->load_gaya_values.gaya_expansion_count, item_gayarexpansion->GetName());
 #endif
 				return;
 			}
@@ -500,7 +500,7 @@ void RefreshItems(entt::entity pc)
 	if (ch->CountSpecifyItem(ID_GayaMarketRefresh) < (int)ch->load_gaya_values.gaya_refresh_count)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 525, "%d#%s", ch->load_gaya_values.gaya_refresh_count, item_gayarefresh->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", ch->load_gaya_values.gaya_refresh_count, item_gayarefresh->GetName());
 #endif
 		return;
 	}

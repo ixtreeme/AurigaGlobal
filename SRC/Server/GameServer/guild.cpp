@@ -965,7 +965,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 	if (ch->GetExp() < (uint32_t) amount)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 173, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 173, "");
 #endif
 		return false;
 	}
@@ -1087,7 +1087,7 @@ void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
 
 	if (pmsg->Get()->uiAffectedRows == 0 || pmsg->Get()->uiAffectedRows == (uint32_t)-1) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 154, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 154, "");
 #endif
 	} else {
 		RefreshCommentForce(ch->GetPlayerID());
@@ -1341,7 +1341,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (GetSP() < iNeededSP)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 165, "%d#%d", GetSP(), iNeededSP);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 165, "%d#%d", GetSP(), iNeededSP);
 #endif
 		return;
 	}
@@ -1352,7 +1352,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (!abSkillUsable[dwRealVnum])
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 178, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 178, "");
 #endif
 		return;
 	}
@@ -1373,7 +1373,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	
 #ifdef TEXTS_IMPROVEMENT
 	if (test_server) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 120, "%d#%d#%d#%u", dwVnum, GetSP(), iNeededSP, pid);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 120, "%d#%d#%d#%u", dwVnum, GetSP(), iNeededSP, pid);
 	}
 #endif
 	
@@ -1398,13 +1398,13 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 155, "%d#%d", pcci->bChannel, g_bChannel);
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 155, "%d#%d", pcci->bChannel, g_bChannel);
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 156, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 156, "");
 				}
 #endif
 			}
@@ -1426,7 +1426,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 				if (!UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 134, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 134, "");
 #endif
 					return;
 				}
@@ -1665,9 +1665,9 @@ namespace
 		{
 #ifdef TEXTS_IMPROVEMENT
 			if (iRewardR > 0) {
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 760, "%d", iRewardR);
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 760, "%d", iRewardR);
 			} else {
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 761, "%d", iRewardR);
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 761, "%d", iRewardR);
 			}
 #endif
 
@@ -1927,7 +1927,7 @@ namespace
 
 		void operator()(LPCHARACTER ch)
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_GUILD, "%s", c_pszText);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_GUILD, "%s", c_pszText);
 		}
 	};
 }
@@ -2001,7 +2001,7 @@ bool CGuild::ChargeSP(LPCHARACTER ch, int iSP)
 
 	SendDBSkillUpdate(iSP);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 123, "%u", iSP);
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 123, "%u", iSP);
 #endif
 	return true;
 }
@@ -2070,7 +2070,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 	if (false==ch->CanDeposit())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 493, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 493, "");
 #endif
 		return;
 	}
@@ -2099,7 +2099,7 @@ void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
 	if (false==ch->CanDeposit())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 493, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 493, "");
 #endif
 		return;
 	}
@@ -2107,7 +2107,7 @@ void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
 	if (ch->GetPlayerID() != GetMasterPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 131, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 131, "");
 #endif
 		return;
 	}
@@ -2115,7 +2115,7 @@ void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
 	if (m_data.gold < iGold)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 126, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 126, "");
 #endif
 		return;
 	}
@@ -2213,7 +2213,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	if (quest::CQuestManager::instance().GetPCForce(pchInviter->GetPlayerID())->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 632, "%s", pchInvitee->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 632, "%s", pchInvitee->GetName());
 #endif
 		return;
 	}
@@ -2225,21 +2225,21 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	if ( pchInvitee->IsBlockMode( BLOCK_GUILD_INVITE ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 162, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 162, "");
 #endif
 		return;
 	}
 	else if ( !HasGradeAuth( GetMember( pchInviter->GetPlayerID() )->grade, GUILD_AUTH_ADD_MEMBER ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 140, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 140, "");
 #endif
 		return;
 	}
 /* 	else if ( pchInvitee->GetEmpire() != pchInviter->GetEmpire() )//razor93 mas birodalom cehbe hivasa
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 148, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 148, "");
 #endif
 		return;
 	} */
@@ -2251,32 +2251,32 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 163, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 163, "");
 #endif
 			return;
 		case GERR_GUILDISFULL:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 177, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 177, "");
 #endif
 			return;
 		case GERR_GUILD_IS_IN_WAR:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 633, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 633, "");
 #endif
 			return;
 		case GERR_INVITE_LIMIT:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInviter, CHAT_TYPE_INFO, 634, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 634, "");
 #endif
 			return;
 		default:
@@ -2334,32 +2334,32 @@ void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 163, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 163, "");
 #endif
 			return;
 		case GERR_GUILDISFULL:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 177, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 177, "");
 #endif
 			return;
 		case GERR_GUILD_IS_IN_WAR:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 633, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 633, "");
 #endif
 			return;
 		case GERR_INVITE_LIMIT:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(pchInvitee, CHAT_TYPE_INFO, 634, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInvitee), CHAT_TYPE_INFO, 634, "");
 #endif
 			return;
 		default:

@@ -661,9 +661,9 @@ void CSwitchbot::SwitchItems()
 
 #ifdef TEXTS_IMPROVEMENT
 				if (SWITCHBOT_PRICE_TYPE == 1) {
-					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 754, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 754, "");
 				} else {
-					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 755, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 755, "");
 				}
 #endif
 				return;

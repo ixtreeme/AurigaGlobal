@@ -240,7 +240,7 @@ struct FuncShout
 		if (!d->GetCharacter() || (d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #endif
-		ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_SHOUT, "%s", m_str);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_SHOUT, "%s", m_str);
 	}
 };
 

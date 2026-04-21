@@ -311,7 +311,7 @@ namespace mining
 		Pick_MaxCurExp(pick);
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 249, "%d", Pick_GetCurExp(pick));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 249, "%d", Pick_GetCurExp(pick));
 #endif
 	}
 
@@ -333,21 +333,21 @@ namespace mining
 			if (Pick_Refinable(pick))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 250, "");
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 273, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 250, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 273, "");
 #endif
 			}
 			else
 			{
 				Pick_IncCurExp(pick);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 253, "%d#%d", Pick_GetCurExp(pick), Pick_GetMaxExp(pick));
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 253, "%d#%d", Pick_GetCurExp(pick), Pick_GetMaxExp(pick));
 #endif
 				if (Pick_Refinable(pick))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 250, "");
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 273, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 250, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 273, "");
 #endif
 				}
 			}
@@ -378,7 +378,7 @@ namespace mining
 		if (!pick || !Pick_Check(*pick))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 251, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 251, "");
 #endif
 			return 0;
 		}
@@ -387,7 +387,7 @@ namespace mining
 		if (!load)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 309, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 309, "");
 #endif
 			return 0;
 		}
@@ -398,12 +398,12 @@ namespace mining
 		{
 			OreDrop(ch, load->GetRaceNum());
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 470, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 470, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 471, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 471, "");
 		}
 #endif
 

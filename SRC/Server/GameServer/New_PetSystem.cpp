@@ -215,7 +215,7 @@ void CNewPetActor::ItemCubeFeed(int type)
 							m_dwduration = m_dwtduration;
 						else
 							m_dwduration += tmp_dur;
-						ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
+						ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
 					}
 					ITEM_MANAGER::instance().RemoveItem(itemxp);
 				}
@@ -232,7 +232,7 @@ void CNewPetActor::ItemCubeFeed(int type)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 742, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 742, "");
 				}
 #endif
 			}
@@ -257,7 +257,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	
 	if (m_dwskill[iSlot] >= 10) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 58, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 58, "");
 #endif
 		return false;
 	}
@@ -280,7 +280,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	for (int i = 0; i < 4; i++) {
 		if ((iType == m_dwskillslot[i]) && (iSlot != i)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 55, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 55, "");
 #endif
 			return false;
 		}
@@ -295,13 +295,13 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 
 #ifdef TEXTS_IMPROVEMENT
 	if (m_dwskill[iSlot] == 1) {
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 57, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 57, "");
 	}
 	else {
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 56, "%d", m_dwskill[iSlot]);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 56, "%d", m_dwskill[iSlot]);
 	}
 #endif
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", iSlot, m_dwskillslot[iSlot], m_dwskill[iSlot]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", iSlot, m_dwskillslot[iSlot], m_dwskill[iSlot]);
 	
 	ClearBuff();
 	GiveBuff();
@@ -318,15 +318,15 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 			{
 				m_dwskill[i] += 1;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 743, "%d", m_dwskill[i]);
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 743, "%d", m_dwskill[i]);
 #endif
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
 				return true;
 			}
 			else 
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 744, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 744, "");
 #endif
 				return false;
 			}
@@ -340,9 +340,9 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 			m_dwskillslot[i] = skill;
 			m_dwskill[i] = 1;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 745, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 745, "");
 #endif
-			ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
 			return true;
 		}
 	}
@@ -352,7 +352,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	   imparare nuove skill 
 	*/
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 745, "");
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 745, "");
 #endif
 	return false;
 #endif
@@ -383,14 +383,14 @@ bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem)
 	
 	if (!bContinue) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 54, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 54, "");
 #endif
 		return false;
 	}
 	
 	if (m_dwskill[ret] >= 10) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 58, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 58, "");
 #endif
 		return false;
 	}
@@ -406,7 +406,7 @@ bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem)
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 51, "%d#%d", iHours, iMinutes);
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 51, "%d#%d", iHours, iMinutes);
 #endif
 			return false;
 		}
@@ -416,7 +416,7 @@ bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem)
 	
 	if (number(1, 100) < 30) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 52, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 52, "");
 #endif
 		return false;
 	}
@@ -424,9 +424,9 @@ bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem)
 	m_dwskill[ret] += 1;
 	
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 56, "%d", m_dwskill[ret]);
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 56, "%d", m_dwskill[ret]);
 #endif
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
 	
 	ClearBuff();
 	GiveBuff();
@@ -454,7 +454,7 @@ int CNewPetActor::ResetSkills()
 			m_dwskillslot[i] = 0;
 		
 		m_dwskill[i] = 0;
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
 	}
 	
 	ClearBuff();
@@ -480,7 +480,7 @@ int CNewPetActor::ResetSkill(int iType)
 	
 	m_dwskillslot[ret] = 0;
 	m_dwskill[ret] = 0;
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
 	
 	ClearBuff();
 	GiveBuff();
@@ -497,9 +497,9 @@ bool CNewPetActor::IncreasePetEvolution()
 		{
 			m_dwevolution += 1;
 			m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 1, GetLevel(), 1);
-			ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 747, "%d", m_dwevolution);
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 747, "%d", m_dwevolution);
 #endif
 			if (m_dwevolution == 3) 
 			{
@@ -520,12 +520,12 @@ bool CNewPetActor::IncreasePetEvolution()
 			m_dwexp = 0;
 			m_dwexpitem = 0;
 			m_pkChar->SetExp(0);
-			ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 #endif
 			int idx = m_dwevolution - 1;
 			m_dwskill[idx] = 0;
 			m_dwskillslot[idx] = 0;
-			ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", idx, m_dwskillslot[idx], m_dwskill[idx]);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", idx, m_dwskillslot[idx], m_dwskill[idx]);
 		}
 		else
 			return false;
@@ -533,7 +533,7 @@ bool CNewPetActor::IncreasePetEvolution()
 	else 
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 748, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 748, "");
 #endif
 		return false;
 	}
@@ -553,7 +553,7 @@ void CNewPetActor:: IncreasePetBonus()
 	if (tmplevel % 4 == 0) {
 		m_dwbonuspet[2][1] += float(number(1, 6));
 	}
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetBonus %d %d %d", m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetBonus %d %d %d", m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
 	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
 	if (pSummonItem != nullptr){
 		for (int b = 0; b < 3; b++){
@@ -575,7 +575,7 @@ void CNewPetActor::SetLevel(uint32_t level)
 {
 	m_pkChar->SetLevel(static_cast<char>(level));
 	m_dwlevel = level;
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);	
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);	
 	SetNextExp(m_pkChar->PetGetNextExp());
 	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
 	if (pSummonItem) {
@@ -611,19 +611,19 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 			if(GetEvolution() == 0 && GetLevel() == 40) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp - 1);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 			else if(GetEvolution() <= 1 && GetLevel() == 60) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp - 1);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 			else if(GetEvolution() <= 2 && GetLevel() == 80) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp - 1);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp - 1, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 		}
@@ -638,19 +638,19 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 			if(GetEvolution() == 0 && GetLevel() == 40) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 			else if(GetEvolution() == 1 && GetLevel() == 60) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 			else if(GetEvolution() == 2 && GetLevel() == 80) {
 				m_dwexp = (uint32_t) GetNextExpFromMob();
 				m_pkChar->SetExp(m_dwexp);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			}
 		}
@@ -671,7 +671,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 				m_dwexp = 0;
 				m_dwexpitem = 0;
 				m_pkChar->SetExp(0);
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 				//SetEvolution(GetLevel());
 				return;
 			}
@@ -680,14 +680,14 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 				m_pkChar->SendPetLevelUpEffect(m_pkChar->GetPacketVID(), 25, GetLevel(), 1);
 				m_dwlevelstep = 4;
 				exp = GetNextExpFromMob() - GetExp();
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 			}
 #endif
 		}
 		
 		m_dwexp += exp;
 		m_pkChar->SetExp(m_dwexp);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 		if (GetLevelStep() < 4) {
 			uint32_t dwNextExpQuart = GetNextExpFromMob() / 4;
 			if (m_dwexp >= dwNextExpQuart * 3 && m_dwlevelstep == 2) {
@@ -714,16 +714,16 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 #ifndef ENABLE_NEW_PET_EDITS
 				IncreasePetBonus();
 #endif
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 				return;
 			} else  {
 				exp = GetNextExpFromItem() - GetExpI();
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 			}
 		}
 
 		m_dwexpitem += exp;
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 	}
 	
 }
@@ -749,7 +749,7 @@ void CNewPetActor::UpdateTime(bool now)
 			if (lMinAge >= 1296000 && m_dwskillslot[3] == -1) {
 				m_dwskill[3] = 0;
 				m_dwskillslot[3] = 0;
-				ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 			}
 			
 			int idx = m_idx;
@@ -788,7 +788,7 @@ void CNewPetActor::UpdateTime(bool now)
 			pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
 #endif
 		}
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
 	}
 
 }
@@ -857,7 +857,7 @@ void CNewPetActor::Unsummon()
 		}
 
 		ClearBuff();
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetUnsummon");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetUnsummon");
 	}
 }
 
@@ -1029,36 +1029,36 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	m_pkOwner->ComputePoints();
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
 	
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetIcon %d", m_dwSummonItemVnum);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetName %s", m_name.c_str());
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetBonus %d %d %d",m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetIcon %d", m_dwSummonItemVnum);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetName %s", m_name.c_str());
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetBonus %d %d %d",m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
 #ifndef ENABLE_NEW_PET_EDITS
 	if (GetLevel() >= 80 && m_dwevolution == 3 )
 	{
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, m_dwskillslot[0], m_dwskill[0]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, m_dwskillslot[1], m_dwskill[1]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, m_dwskillslot[0], m_dwskill[0]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, m_dwskillslot[1], m_dwskill[1]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 	}
 	else 
 	{
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, -1, m_dwskill[0]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, -1, m_dwskill[1]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, -1, m_dwskill[2]);
-		ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, -1, m_dwskill[3]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, -1, m_dwskill[0]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, -1, m_dwskill[1]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, -1, m_dwskill[2]);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, -1, m_dwskill[3]);
 	}
 #else
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetAge %d", dwMinAge);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, m_dwskillslot[0], m_dwskill[0]);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, m_dwskillslot[1], m_dwskill[1]);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetAge %d", dwMinAge);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, m_dwskillslot[0], m_dwskill[0]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, m_dwskillslot[1], m_dwskill[1]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 #endif
 	
-	ecs::ChatSystem::Send(m_pkOwner, CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 	lMinAge = get_global_time() - dwMinAge;
 	m_idx = 0;
 	
@@ -1382,20 +1382,20 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 	{
 		if (get_global_time() - m_pkOwner->GetNewPetSkillCD(0) <= 480) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(0))));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(0))));
 #endif
 			return;
 		}
 		if (m_pkOwner->GetHPPct() > 20) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 750, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 750, "");
 #endif
 			return;
 		}
 		m_pkOwner->SetNewPetSkillCD(0, get_global_time());
 		int riphp = MIN(m_pkOwner->GetHP() + (int)Pet_Skill_Table[9][2 + m_dwskill[skillslot]], m_pkOwner->GetMaxHP());
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 751, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 751, "");
 #endif
 		m_pkOwner->PointChange(POINT_HP, riphp);
 		m_pkOwner->EffectPacket(SE_HPUP_RED);
@@ -1406,13 +1406,13 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 	{
 		if (get_global_time() - m_pkOwner->GetNewPetSkillCD(1) <= 600) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 749, "%d", (600 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(1))));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 749, "%d", (600 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(1))));
 #endif
 			return;
 		}
 		m_pkOwner->SetNewPetSkillCD(1, get_global_time());
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 752, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 752, "");
 #endif
 		m_pkOwner->SetImmortal(1);
 		m_dwslotimm = skillslot;
@@ -1423,13 +1423,13 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 	{
 		if (get_global_time() - m_pkOwner->GetNewPetSkillCD(2) <= 480) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(2))));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 749, "%d", (480 - (get_global_time() - m_pkOwner->GetNewPetSkillCD(2))));
 #endif
 			return;
 		}
 		m_pkOwner->SetNewPetSkillCD(2, get_global_time());
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pkOwner, CHAT_TYPE_INFO, 753, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 753, "");
 #endif
 		m_pkOwner->RemoveBadAffect();
 	}

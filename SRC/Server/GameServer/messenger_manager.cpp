@@ -169,7 +169,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 	if (quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 607, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 607, "");
 #endif
 		return;
 	}
@@ -186,7 +186,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	ecs::ChatSystem::Send(target, CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::GetName(ch));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::GetName(ch));
 }
 
 // @fixme130 void -> bool
@@ -223,7 +223,7 @@ void MessengerManager::__AddToList(MessengerManager::keyA account, MessengerMana
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
 	if (ch) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 183, "%s", companion.c_str());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 183, "%s", companion.c_str());
 	}
 #endif
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(companion.c_str());
@@ -619,7 +619,7 @@ void MessengerManager::__RemoveFromList(MessengerManager::keyA account, Messenge
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
 	if (ch) {
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 182, "%s", companion.c_str());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 182, "%s", companion.c_str());
 	}
 #endif
 }

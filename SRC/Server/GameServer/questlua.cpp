@@ -92,7 +92,7 @@ namespace quest
 
 	void FPartyChat::operator() (LPCHARACTER ch) const
 	{
-		ecs::ChatSystem::Send(ch, static_cast<uint8_t>(iChatType), "%s", str);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), static_cast<uint8_t>(iChatType), "%s", str);
 	}
 
 	void FPartyClearReady::operator() (LPCHARACTER ch) const
@@ -235,7 +235,7 @@ namespace quest
 	{
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentPartyMember(), CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentPartyMember()), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 

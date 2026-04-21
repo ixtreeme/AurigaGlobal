@@ -2052,7 +2052,7 @@ namespace offlineshop
 		
 		if ((rShopInfo.dwKasmirNpc != 30000) && (ch->CountSpecifyItem(88902) < 1)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 45, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 45, "");
 #endif
 			return false;
 		}
@@ -2154,7 +2154,7 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 		if ((rShopInfo.dwKasmirNpc != 30000) && (dwCountStyle1 <= dwCountStyle2)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 45, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 45, "");
 #endif
 			return false;
 		}

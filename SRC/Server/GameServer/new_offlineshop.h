@@ -121,127 +121,127 @@ namespace offlineshop
 		{
 			case CHAT_PACKET_CANNOT_CREATE_SHOP:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 825, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 825, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_CHANGE_NAME:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 826, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 826, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_FORCE_CLOSE:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 827, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 827, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SHOP:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 828, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 828, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SHOP_OWNER:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 829, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 829, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_ADD_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 830, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 830, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_BUY_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 831, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 831, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_REMOVE_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 832, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 832, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_EDIT_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 833, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 833, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_REMOVE_LAST_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 834, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 834, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_FILTER:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 835, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 835, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SEARCH_YET:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 836, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 836, "");
 				}
 				break;
 			case CHAT_PACKET_OFFER_CREATE:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 837, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 837, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_CREATE_OFFER:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 838, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 838, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_ACCEPT_OFFER:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 839, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 839, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SAFEBOX:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 840, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 840, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_GET_ITEM:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 841, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 841, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_GET_VALUTES:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 842, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 842, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_CLOSE:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 843, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 843, "");
 				}
 				break;
 			case CHAT_PACKET_RECV_ITEM_SAFEBOX:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 844, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 844, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_SEND_LIST:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 845, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 845, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_OPEN_AUCTION:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 846, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 846, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_CREATE_AUCTION:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 847, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 847, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_ADD_OFFER:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 848, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 848, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_DO_NOW:
 				{
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 849, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 849, "");
 				}
 				break;
 		default:

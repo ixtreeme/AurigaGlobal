@@ -60,8 +60,8 @@ namespace marriage
 		StopNearCheckEvent();
 		if (IsOnline())
 		{
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_divorce");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_divorce");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch1), CHAT_TYPE_COMMAND, "lover_divorce");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch2), CHAT_TYPE_COMMAND, "lover_divorce");
 		}
 		M2_DELETE(pWeddingInfo);
 		pWeddingInfo = nullptr;
@@ -390,14 +390,14 @@ namespace marriage
 		if (IsNear() && !isLastNear)
 		{
 			isLastNear = true;
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_near");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch1), CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch2), CHAT_TYPE_COMMAND, "lover_near");
 		}
 		else if (!IsNear() && isLastNear)
 		{
 			isLastNear = false;
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_far");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch1), CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch2), CHAT_TYPE_COMMAND, "lover_far");
 		}
 
 		if (byLastLovePoint != GetMarriagePoint())
@@ -474,8 +474,8 @@ namespace marriage
 			SendLoverInfo(ch1, name2, GetMarriagePoint());
 			SendLoverInfo(ch2, name1, GetMarriagePoint());
 
-			ecs::ChatSystem::Send(ch1, CHAT_TYPE_COMMAND, "lover_login");
-			ecs::ChatSystem::Send(ch2, CHAT_TYPE_COMMAND, "lover_login");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch1), CHAT_TYPE_COMMAND, "lover_login");
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch2), CHAT_TYPE_COMMAND, "lover_login");
 		}
 	}
 
@@ -496,10 +496,10 @@ namespace marriage
 				LPCHARACTER ch;
 				ch = CHARACTER_MANAGER::instance().FindByPID(m_pid1);
 				if (ch)
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
 				ch = CHARACTER_MANAGER::instance().FindByPID(m_pid2);
 				if (ch)
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "lovepoint bykill %.3g total %d", love_point / 1000000., GetMarriagePoint());
 			}
 		}
 	}

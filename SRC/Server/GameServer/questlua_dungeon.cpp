@@ -119,7 +119,7 @@ namespace quest
 			return 0;
 		}
 
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "CleanDungeonRanking");
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "CleanDungeonRanking");
 
 		std::string szRankType;
 		if (rank_type == 1)
@@ -158,7 +158,7 @@ namespace quest
 						str_to_number(points, row[c]);
 					}
 
-					ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "UpdateDungeonRanking %s %d %d", name, level, points);
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "UpdateDungeonRanking %s %d %d", name, level, points);
 				}
 			}
 		}
@@ -200,7 +200,7 @@ namespace quest
 					str_to_number(points, row[c]);
 				}
 
-				ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "UpdateMyDungeonRanking %d %s %d %d", p, name, level, points);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "UpdateMyDungeonRanking %d %s %d %d", p, name, level, points);
 			}
 		}
 

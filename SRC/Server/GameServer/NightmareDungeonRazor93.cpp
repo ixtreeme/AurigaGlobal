@@ -124,7 +124,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER ch)
             {
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", buf);
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
             });
     }
 
@@ -473,12 +473,12 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
         if (cur && cur->GetFlag(kFlagWasCompleted) != 0)
         {
             fromCompletedInside = true;
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Restarting the dungeon...");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Restarting the dungeon...");
             // Continue with the normal entrance flow below.
         }
         else
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] You are already inside.");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] You are already inside.");
             return true;
         }
     }
@@ -495,7 +495,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
-                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
                 ch->WarpSet(kRejoinX, kRejoinY, rejoinIdx);
                 ch->SetQuestFlag(kQfDisconnect, 0);
                 return true;
@@ -509,7 +509,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Please wait a moment.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamDelay);
@@ -518,7 +518,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     LPPARTY party = ch->GetParty();
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
         return true;
     }
 
@@ -570,7 +570,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     {
         if (badType == BAD_LEVEL)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] %s has an invalid level (Lv%d). Required: %d-%d.",
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] %s has an invalid level (Lv%d). Required: %d-%d.",
                 badName ? badName : "Someone", badVal, kMinLevel, kMaxLevel);
             return true;
         }
@@ -578,16 +578,16 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
         {
             char cdBuf[64];
             FormatCooldown(badVal, cdBuf, sizeof(cdBuf));
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] %s is still on cooldown (%s).", badName ? badName : "Someone", cdBuf);
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] %s is still on cooldown (%s).", badName ? badName : "Someone", cdBuf);
             return true;
         }
         if (badType == BAD_ITEM)
         {
-            ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] %s doesn't have the entry item.", badName ? badName : "Someone");
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] %s doesn't have the entry item.", badName ? badName : "Someone");
             return true;
         }
 
-        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Entry check failed.");
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Entry check failed.");
         return true;
     }
 
@@ -630,7 +630,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Clear rejoin flags for the leader (members will be set on logout if needed)
     ClearRejoinFlags(ch);
 
-    ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "[Nightmare] Entering...");
+    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Entering...");
     return true;
 }
 

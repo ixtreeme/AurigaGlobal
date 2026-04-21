@@ -99,7 +99,7 @@ ACMD(do_emotion_allow)
 	if ( ch->GetArena() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -145,7 +145,7 @@ ACMD(do_emotion)
 		if (ch->IsRiding())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 798, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 798, "");
 #endif
 			return;
 		}
@@ -169,7 +169,7 @@ ACMD(do_emotion)
 	if (!CHARACTER_CanEmotion(*ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 409, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 409, "");
 #endif
 		return;
 	}
@@ -177,7 +177,7 @@ ACMD(do_emotion)
 	if (IS_SET(emotion_types[i].flag, WOMAN_ONLY) && SEX_MALE==GET_SEX(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 383, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 383, "");
 #endif
 		return;
 	}
@@ -195,7 +195,7 @@ ACMD(do_emotion)
 		if (!victim)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 267, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 267, "");
 #endif
 			return;
 		}
@@ -209,7 +209,7 @@ ACMD(do_emotion)
 		if (victim->IsRiding())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 799, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 799, "");
 #endif
 			return;
 		}
@@ -219,7 +219,7 @@ ACMD(do_emotion)
 		if (distance < 10)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 288, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 288, "");
 #endif
 			return;
 		}
@@ -227,7 +227,7 @@ ACMD(do_emotion)
 		if (distance > 500)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 289, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 289, "");
 #endif
 			return;
 		}
@@ -237,7 +237,7 @@ ACMD(do_emotion)
 			if (GET_SEX(ch)==GET_SEX(victim))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 445, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 445, "");
 #endif
 				return;
 			}
@@ -256,7 +256,7 @@ ACMD(do_emotion)
 					if (0 == other || other != ecs::GetPlayerID(victim))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
 #endif
 						return;
 					}
@@ -264,7 +264,7 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
 #endif
 					return;
 				}

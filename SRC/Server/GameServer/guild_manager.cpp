@@ -86,7 +86,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 	if (!check_name(gcp.name))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 135, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 135, "");
 #endif
 		return 0;
 	}
@@ -108,7 +108,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 		if (!(row[0] && row[0][0] == '0'))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 166, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 166, "");
 #endif
 			return 0;
 		}
@@ -116,7 +116,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 136, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 136, "");
 #endif
 		return 0;
 	}
@@ -606,7 +606,7 @@ void CGuildManager::RefuseWar(uint32_t guild_id1, uint32_t guild_id2)
 	if (g1 && g2)
 	{
 		if (g2->GetMasterCharacter())
-			ecs::ChatSystem::SendNew(g2->GetMasterCharacter(), CHAT_TYPE_INFO, 124, "%s", g1->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(g2->GetMasterCharacter()), CHAT_TYPE_INFO, 124, "%s", g1->GetName());
 	}
 #endif
 	if ( g1 != nullptr)
@@ -796,7 +796,7 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 	{
 		LPCHARACTER master1 = g1->GetMasterCharacter();
 		if (master1) {
-			ecs::ChatSystem::SendNew(master1, CHAT_TYPE_INFO, 146, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(master1), CHAT_TYPE_INFO, 146, "");
 		}
 	}
 #endif
@@ -805,7 +805,7 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 	{
 		LPCHARACTER master2 = g2->GetMasterCharacter();
 		if (master2) {
-			ecs::ChatSystem::SendNew(master2, CHAT_TYPE_INFO, 146, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(master2), CHAT_TYPE_INFO, 146, "");
 		}
 	}
 
@@ -838,7 +838,7 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 		if (A && B)
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
 					A->GetName(), A->GetID(),
 					B->GetName(), B->GetID(),
 					get_global_time() - A->GetWarStartTime(B->GetID()));

@@ -139,7 +139,7 @@ struct whisper_packet_func
 
 		if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
 		{
-			ecs::ChatSystem::Send(d->GetCharacter(), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
 		}			
 	}
 };
@@ -192,7 +192,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetGMLevel() != GM_IMPLEMENTOR)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 774, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 774, "");
 #endif
 		return;
 	}
@@ -200,7 +200,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (strlen(f->szText) <= 0 || strlen(f->szLang) <= 0 || f->color < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 775, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 775, "");
 #endif
 		return;
 	}

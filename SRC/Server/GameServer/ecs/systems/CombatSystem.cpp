@@ -806,7 +806,7 @@ void CHARACTER::SendLeaderboardData()
 
 	//if (!pMsg || !pMsg->Get()->uiNumRows)
 	//{
-	//	ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "Nincs leaderboard adat.");
+	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Nincs leaderboard adat.");
 	//	return;
 	//}
 
@@ -1143,7 +1143,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
 	if (test_server && iExp < 0)
 	{
-		ecs::ChatSystem::Send(to, CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
 		return;
 	}
 	// decrease/increase exp based on player<>mob level
@@ -1227,7 +1227,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	// apply calculated rate bonus
 	iExp *= (rateFactor / 100.0L);
 	if (test_server)
-		ecs::ChatSystem::Send(to, CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
 	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
 	iExp = std::min(to->GetNextExp() / 10, (uint32_t)iExp);
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
@@ -1254,7 +1254,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #endif
 
 	if (test_server)
-		ecs::ChatSystem::Send(to, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
 	to->PointChange(POINT_EXP, iExp, true);
 	from->CreateFly(FLY_EXP, to);
@@ -1387,8 +1387,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	if (test_server)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("exp_bonus_log") && iBaseExp > 0)
-			ecs::ChatSystem::Send(to, CHAT_TYPE_INFO, "exp bonus %d%%", (iExp - iBaseExp) * 100 / iBaseExp);
-		ecs::ChatSystem::Send(to, CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "exp bonus %d%%", (iExp - iBaseExp) * 100 / iBaseExp);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
 	}
 
 	iExp = AdjustExpByLevel_Combat(to, iExp);
@@ -1898,7 +1898,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			{
 				pkKiller->PointChange(POINT_GOLD, betMoneyDead * 2, true);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pkKiller, CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
 #endif
 			}
 
@@ -1908,10 +1908,10 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(pkCh_Buf, sizeof(pkCh_Buf), "BINARY_Duel_Delete");
 				snprintf(pkKiller_Buf, sizeof(pkKiller_Buf), "BINARY_Duel_Delete");
 
-				ecs::ChatSystem::Send(this, CHAT_TYPE_COMMAND, pkCh_Buf);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, pkCh_Buf);
 				SetQuestFlag(szTableStaticPvP[i], 0);
 
-				ecs::ChatSystem::Send(pkKiller, CHAT_TYPE_COMMAND, pkKiller_Buf);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_COMMAND, pkKiller_Buf);
 				pkKiller->SetQuestFlag(szTableStaticPvP[i], 0);
 			}
 		}
@@ -2055,7 +2055,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 //
 //					if (number(1, 100) < iNoPenaltyProb) {
 //#ifdef TEXTS_IMPROVEMENT
-//						ecs::ChatSystem::SendNew(pkKiller, CHAT_TYPE_INFO, 413, "");
+//						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_INFO, 413, "");
 //#endif
 //					}
 //					else {
@@ -2217,7 +2217,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				{
 					pkKiller->m_dwUnderGuildWarInfoMessageTime = get_dword_time() + 60000;
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(pkKiller, CHAT_TYPE_INFO, 147, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_INFO, 147, "");
 #endif
 				}
 			}
@@ -2714,14 +2714,14 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 
 	if (GetLevel() < 10) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 412, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 412, "");
 #endif
 		return;
 	}
 
 	if (number(0, 2) == 1) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 412, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 412, "");
 #endif
 		return;
 	}
@@ -2737,7 +2737,7 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 			if (FindAffect(AFFECT_NO_DEATH_PENALTY))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 384, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 384, "");
 #endif
 				RemoveAffect(AFFECT_NO_DEATH_PENALTY);
 				return;
@@ -3053,7 +3053,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 #ifdef TEXTS_IMPROVEMENT
 				if (dwGivenCount > 0)
 				{
-					ecs::ChatSystem::SendNew(ch, 
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
 #ifdef ENABLE_NEW_CHAT
 						CHAT_TYPE_INFO_ITEM
 #else
@@ -3117,7 +3117,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 #ifdef TEXTS_IMPROVEMENT
 				if (dwGivenCount > 0)
 				{
-					ecs::ChatSystem::SendNew(ch, 
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
 #ifdef ENABLE_NEW_CHAT
 						CHAT_TYPE_INFO_ITEM
 #else
@@ -3167,7 +3167,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 #ifdef TEXTS_IMPROVEMENT
 	if (dwGivenCount > 0)
 	{
-		ecs::ChatSystem::SendNew(ch, 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
 #ifdef ENABLE_NEW_CHAT
 			CHAT_TYPE_INFO_ITEM
 #else
@@ -4262,7 +4262,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			// ---------     ----------
 			//
 			if (test_server)
-				ecs::ChatSystem::Send(pkAttacker, CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker));
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker));
 
 			//
 			// ---------   ó -------------
@@ -4642,7 +4642,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					IsPenetrate = true;
 #ifdef TEXTS_IMPROVEMENT
 					if (test_server) {
-						ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 257, "%d", GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100);
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 257, "%d", GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100);
 					}
 #endif
 					dam += GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100;
@@ -4670,8 +4670,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(pAttacker, CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
-					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 95, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_BLOCK));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 95, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_BLOCK));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
@@ -4685,8 +4685,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(pAttacker, CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
-					ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 96, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_DODGE));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 96, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_DODGE));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_DODGE);
@@ -5572,7 +5572,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 
-			ecs::ChatSystem::Send(pAttacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
 		}
 #endif
 		if (test_server)
@@ -5583,7 +5583,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 			if (pAttacker)
 			{
-				ecs::ChatSystem::Send(pAttacker, CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
 					GetName(),
 					dam,
 					GetHP(),
@@ -5593,7 +5593,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					IsDeathBlow ? "deathblow " : "");
 			}
 
-			ecs::ChatSystem::Send(this, CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
 				pAttacker ? pAttacker->GetName() : nullptr,
 				dam,
 				GetHP(),
@@ -5813,7 +5813,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 //
 //	//if (!pMsg || !pMsg->Get()->uiNumRows)
 //	//{
-//	//	ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "Nincs leaderboard adat.");
+//	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Nincs leaderboard adat.");
 //	//	return;
 //	//}
 //
@@ -5856,7 +5856,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 //
 //	//if (!pMsg || !pMsg->Get()->uiNumRows)
 //	//{
-//	//	ecs::ChatSystem::Send(this, CHAT_TYPE_INFO, "Nincs leaderboard adat.");
+//	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Nincs leaderboard adat.");
 //	//	return;
 //	//}
 //

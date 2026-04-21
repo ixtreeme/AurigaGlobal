@@ -66,7 +66,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (IsObserverMode())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 256, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 256, "");
 #endif
 		return false;
 	}
@@ -78,7 +78,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ((GetDuel("BlockExchange")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
 #endif
 		return false;
 	}
@@ -86,7 +86,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ((victim->GetDuel("BlockExchange")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 517, "%s", victim->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 517, "%s", victim->GetName());
 #endif
 		return false;
 	}
@@ -96,7 +96,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ( IsOpenSafebox() || GetShopOwner() || GetMyShop() || IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 292, "");
 #endif
 		return false;
 	}
@@ -104,7 +104,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ( victim->IsOpenSafebox() || victim->GetShopOwner() || victim->GetMyShop() || victim->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 293, "%s", victim->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 293, "%s", victim->GetName());
 #endif
 		return false;
 	}
@@ -113,7 +113,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 292, "");
 #endif
 		return false;
 	}
@@ -121,7 +121,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (victim->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 293, "%s", victim->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 293, "%s", victim->GetName());
 #endif
 		return false;
 	}
@@ -145,7 +145,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (victim->IsBlockMode(BLOCK_EXCHANGE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(this, CHAT_TYPE_INFO, 368, "%s", victim->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 368, "%s", victim->GetName());
 #endif
 		return false;
 	}
@@ -215,7 +215,7 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_GIVE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(m_pOwner, CHAT_TYPE_INFO, 402, "%s", item->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 402, "%s", item->GetName());
 #endif
 		return false;
 	}
@@ -1096,8 +1096,8 @@ bool CExchange::Accept(bool bAccept)
 		if (quest::CQuestManager::instance().GetPCForce(GetOwner()->GetPlayerID())->IsRunning() == true || quest::CQuestManager::instance().GetPCForce(victim->GetPlayerID())->IsRunning() == true)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 631, "");
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 631, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 631, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 631, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1109,9 +1109,9 @@ bool CExchange::Accept(bool bAccept)
 		if (!Check(&iItemCount))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 232, "");
 #endif
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 274, "%s", GetOwner()->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 274, "%s", GetOwner()->GetName());
 			goto EXCHANGE_END;
 		}
 
@@ -1119,8 +1119,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!CheckSpace())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 365, "%s", victim->GetName());
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 365, "%s", victim->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 366, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1129,8 +1129,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!GetCompany()->Check(&iItemCount))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 232, "");
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 274, "%s", victim->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 274, "%s", victim->GetName());
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1138,8 +1138,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!GetCompany()->CheckSpace())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 365, "%s", GetOwner()->GetName());
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 365, "%s", GetOwner()->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 366, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1148,8 +1148,8 @@ bool CExchange::Accept(bool bAccept)
 		{
 			sys_err("Cannot use exchange feature while DB cache connection is dead.");
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 759, "");
-			ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 759, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 759, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 759, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1165,8 +1165,8 @@ bool CExchange::Accept(bool bAccept)
 					victim->Save();
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetOwner(), CHAT_TYPE_INFO, 105, "%s", victim->GetName());
-				ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 105, "%s", GetOwner()->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 105, "%s", victim->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 105, "%s", GetOwner()->GetName());
 #endif
 			}
 		}

@@ -148,7 +148,7 @@ void CArenaMap::SendArenaMapListTo(LPCHARACTER pChar, uint32_t mapIdx)
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
-		ecs::ChatSystem::Send(pChar, CHAT_TYPE_INFO, "ArenaMapInfo Map: %d stA(%d, %d) stB(%d, %d)", mapIdx,
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, "ArenaMapInfo Map: %d stA(%d, %d) stB(%d, %d)", mapIdx,
 				(CArena*)(*iter)->GetStartPointA().x, (CArena*)(*iter)->GetStartPointA().y,
 				(CArena*)(*iter)->GetStartPointB().x, (CArena*)(*iter)->GetStartPointB().y);
 	}
@@ -230,7 +230,7 @@ EVENTFUNC(ready_to_start_event)
 		if (chA != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 299, "");
 #endif
 			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
@@ -238,7 +238,7 @@ EVENTFUNC(ready_to_start_event)
 		if (chB != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 299, "");
 #endif
 			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
@@ -262,8 +262,8 @@ EVENTFUNC(ready_to_start_event)
 				if (count > 10000)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 348, "");
-					ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 348, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 348, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 348, "");
 #endif
 				}
 				else
@@ -271,14 +271,14 @@ EVENTFUNC(ready_to_start_event)
 					chA->SetPotionLimit(count);
 					chB->SetPotionLimit(count);
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 349, "%d", count);
-					ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 349, "%d", count);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 349, "%d", count);
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 349, "%d", count);
 #endif
 				}
 				
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 222, "");
-				ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 222, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 222, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 222, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 222, "");
 #endif
 
@@ -290,8 +290,8 @@ EVENTFUNC(ready_to_start_event)
 		case 1:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 301, "");
-				ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 301, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 301, "");
 #endif
 				TPacketGCDuelStart duelStart;
@@ -363,8 +363,8 @@ EVENTFUNC(ready_to_start_event)
 				chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 301, "");
-				ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 301, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 301, "");
 #endif
 				pArena->ClearEvent();
@@ -416,7 +416,7 @@ EVENTFUNC(duel_time_out)
 		if (chA != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 299, "");
 #endif
 			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
@@ -424,7 +424,7 @@ EVENTFUNC(duel_time_out)
 		if (chB != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 299, "");
 #endif
 			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
@@ -441,8 +441,8 @@ EVENTFUNC(duel_time_out)
 		{
 			case 0:
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chA, CHAT_TYPE_INFO, 224, "");
-				ecs::ChatSystem::SendNew(chB, CHAT_TYPE_INFO, 224, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 224, "");
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 224, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 224, "");
 #endif
 
@@ -754,8 +754,8 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfA >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharA->GetName());
 #endif
 				sys_log(0, "ARENA: Duel is end. Winner %s(%d) Loser %s(%d)",
@@ -765,11 +765,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 #endif
 				sys_log(0, "ARENA: %s(%d) won a round vs %s(%d)", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
@@ -781,8 +781,8 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfB >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharB->GetName());
 #endif
 				sys_log(0, "ARENA: Duel is end. Winner(%d) Loser(%d)", GetPlayerBPID(), GetPlayerAPID());
@@ -791,11 +791,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 #endif
 				sys_log(0, "ARENA : PID(%d) won a round. Opp(%d)", GetPlayerBPID(), GetPlayerAPID());
@@ -820,10 +820,10 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pCharA != nullptr) {
-			ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 223, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 223, "");
 		}
 		if (pCharB != nullptr) {
-			ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 223, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 223, "");
 		}
 		
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 223, "");
@@ -843,11 +843,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pCharA != nullptr) {
-			ecs::ChatSystem::SendNew(pCharA, CHAT_TYPE_INFO, 221, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 221, "");
 		}
 		
 		if (pCharB != nullptr) {
-			ecs::ChatSystem::SendNew(pCharB, CHAT_TYPE_INFO, 221, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 221, "");
 		}
 		
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 221, "");
@@ -951,7 +951,7 @@ void CArena::OnDisconnect(uint32_t pid)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (GetPlayerB() != nullptr) {
-			ecs::ChatSystem::SendNew(GetPlayerB(), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetPlayerB()), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 		sys_log(0, "ARENA : Duel is end because of Opp(%d) is disconnect. MyPID(%d)", GetPlayerAPID(), GetPlayerBPID());
@@ -961,7 +961,7 @@ void CArena::OnDisconnect(uint32_t pid)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (GetPlayerA() != nullptr) {
-			ecs::ChatSystem::SendNew(GetPlayerA(), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetPlayerA()), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 		sys_log(0, "ARENA : Duel is end because of Opp(%d) is disconnect. MyPID(%d)", GetPlayerBPID(), GetPlayerAPID());
@@ -1003,7 +1003,7 @@ void CArena::SendChatPacketToObserver(uint8_t type, uint32_t idx, const char * f
 		LPCHARACTER pChar = iter->second;
 		if (pChar) {
 			if (pChar->GetDesc() != nullptr) {
-				ecs::ChatSystem::SendNew(pChar, type, idx, chatbuf);
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), type, idx, chatbuf);
 			}
 		}
 	}

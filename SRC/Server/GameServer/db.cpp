@@ -1104,12 +1104,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					MYSQL_ROW row;
 					while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
 					{
-						ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
+						ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 820, "");
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 820, "");
 				}
 #endif
 			}
@@ -1235,7 +1235,7 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(CardTaker, CHAT_TYPE_INFO, 101, "%d", item->GetSocket(1) / 60, item->GetSocket(0));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", item->GetSocket(1) / 60, item->GetSocket(0));
 #endif
 	LogManager::instance().VCardLog(p.dwID, CardTaker->GetX(), CardTaker->GetY(), g_stHostname.c_str(),
 			CardOwner->GetName(), CardOwner->GetDesc()->GetHostName(),

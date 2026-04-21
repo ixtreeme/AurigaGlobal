@@ -41,14 +41,6 @@ void ChatSystem::Send(entt::entity e, uint8_t type, const char* format, ...)
     va_end(args);
 }
 
-void ChatSystem::Send(LPCHARACTER ch, uint8_t type, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    SendV(ch, type, format, args);
-    va_end(args);
-}
-
 void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list args)
 {
     auto* ch = LegacyCharOf(e);
@@ -87,24 +79,11 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
     }
 }
 
-void ChatSystem::SendV(LPCHARACTER ch, uint8_t type, const char* format, va_list args)
-{
-    SendV(AIHelpers::EcsOf(ch), type, format, args);
-}
-
 void ChatSystem::SendNew(entt::entity e, uint8_t type, uint32_t idx, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
     SendNewV(e, type, idx, format, args);
-    va_end(args);
-}
-
-void ChatSystem::SendNew(LPCHARACTER ch, uint8_t type, uint32_t idx, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    SendNewV(ch, type, idx, format, args);
     va_end(args);
 }
 
@@ -156,20 +135,7 @@ void ChatSystem::SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char
     d->Packet(buf.read_peek(), buf.size());
 }
 
-void ChatSystem::SendNewV(LPCHARACTER ch, uint8_t type, uint32_t idx, const char* format, va_list args)
-{
-    SendNewV(AIHelpers::EcsOf(ch), type, idx, format, args);
-}
-
 void ChatSystem::Broadcast(entt::entity source, uint8_t type, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    BroadcastV(source, type, format, args);
-    va_end(args);
-}
-
-void ChatSystem::Broadcast(LPCHARACTER source, uint8_t type, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -204,11 +170,6 @@ void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* forma
     }
 
     ch->PacketAround(buf.read_peek(), buf.size());
-}
-
-void ChatSystem::BroadcastV(LPCHARACTER source, uint8_t type, const char* format, va_list args)
-{
-    BroadcastV(AIHelpers::EcsOf(source), type, format, args);
 }
 
 } // namespace ecs

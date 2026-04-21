@@ -117,7 +117,7 @@ void CEntity::SetObserverMode(bool bFlag)
 	if (IsType(ENTITY_CHARACTER))
 	{
 		LPCHARACTER ch = (LPCHARACTER) this;
-		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
 	}
 }
 
