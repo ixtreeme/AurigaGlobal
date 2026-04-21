@@ -984,7 +984,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	}
 
 	if (strncmp("phase", cmd_info[icmd].command, 5) != 0) //  ɾ ó
-		sys_log(0, "COMMAND: %s: %s", ecs::GetName(ch), cmd_info[icmd].command);
+		sys_log(0, "COMMAND: %s: %s", ((ch)->GetName()), cmd_info[icmd].command);
 
 	((*cmd_info[icmd].command_pointer) (ch, line, icmd, cmd_info[icmd].subcmd));
 
@@ -995,7 +995,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 			char buf[1024];
 			snprintf( buf, sizeof(buf), "%s", argument );
 
-			LogManager::instance().GMCommandLog(ecs::GetPlayerID(ch), ecs::GetName(ch), ch->GetDesc()->GetHostName(), g_bChannel, buf);
+			LogManager::instance().GMCommandLog(((ch)->GetPlayerID()), ((ch)->GetName()), ch->GetDesc()->GetHostName(), g_bChannel, buf);
 		}
 	}
 }

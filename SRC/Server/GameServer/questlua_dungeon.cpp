@@ -61,7 +61,7 @@ namespace quest
 			return 0;
 		}
 
-		uint32_t pid = ecs::GetPlayerID(ch);
+		uint32_t pid = ((ch)->GetPlayerID());
 
 		int map_index = int(lua_tonumber(L, 1));
 		int time = int(lua_tonumber(L, 2));
@@ -133,7 +133,7 @@ namespace quest
 			char szQuery[1024] = {0};
 			snprintf(szQuery, sizeof(szQuery), "SELECT d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ch->GetGMLevel() > GM_PLAYER ? ecs::GetPlayerID(ch) : 0, szRankType.c_str());
+				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ch->GetGMLevel() > GM_PLAYER ? ((ch)->GetPlayerID()) : 0, szRankType.c_str());
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
 			if (pMsg->Get()->uiNumRows > 0) {
@@ -169,12 +169,12 @@ namespace quest
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), ecs::GetPlayerID(ch));
+				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), ((ch)->GetPlayerID()));
 			} else {
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), ecs::GetPlayerID(ch));
+				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), ((ch)->GetPlayerID()));
 			}
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
@@ -221,7 +221,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		uint32_t pid = ecs::GetPlayerID(ch);
+		uint32_t pid = ((ch)->GetPlayerID());
 
 		int map_index = int(lua_tonumber(L, 1));
 		uint8_t rank_type = int(lua_tonumber(L, 2));
@@ -283,14 +283,14 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		int32_t index = ch ? ecs::GetMapIndex(ch) : -1;
+		int32_t index = ch ? ((ch)->GetMapIndex()) : -1;
 		if (index != -1) {
 			LPPARTY party = ch->GetParty();
 			if (!party)
 			{
 				pDungeon->Join_Coords(ch, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
-			else if (party->GetLeaderPID() == ecs::GetPlayerID(ch))
+			else if (party->GetLeaderPID() == ((ch)->GetPlayerID()))
 			{
 				pDungeon->JoinParty_Coords(party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
@@ -600,7 +600,7 @@ namespace quest
 		}
 #endif
 
-		lua_pushnumber(L, ecs::GetVID(ch));
+		lua_pushnumber(L, ((ch)->GetLegacyVID()));
 		return 1;
 	}
 
@@ -703,7 +703,7 @@ namespace quest
 		bool what = lua_toboolean(L, 2);
 		if (what == false && !lastmeley)
 		{
-			if (ecs::GetRaceNum(ch) == 6118 && ch->FindAffect(AFFECT_STATUE))
+			if (((ch)->GetRaceNum()) == 6118 && ch->FindAffect(AFFECT_STATUE))
 			{
 				ch->RemoveAffect(AFFECT_STATUE);
 			}
@@ -715,7 +715,7 @@ namespace quest
 		}
 		else
 		{
-			if (ecs::GetRaceNum(ch) == 6118 && !ch->FindAffect(AFFECT_STATUE))
+			if (((ch)->GetRaceNum()) == 6118 && !ch->FindAffect(AFFECT_STATUE))
 			{
 				lua_pushboolean(L, ch->SetInvincible(what));
 			}
@@ -933,9 +933,9 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ecs::IsPC(ch))
+			if (ch && ((ch)->IsPC()))
 			{
-				vecPIDs.push_back(ecs::GetPlayerID(ch));
+				vecPIDs.push_back(((ch)->GetPlayerID()));
 			}
 		}
 	};
@@ -979,7 +979,7 @@ namespace quest
 		LPPARTY party = ch->GetParty();
 		if (party)
 		{
-			if (party->GetLeaderPID() != ecs::GetPlayerID(ch))
+			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
 			{
 				lua_pushnumber(L, 2);
 				lua_pushnumber(L, 0);
@@ -988,36 +988,36 @@ namespace quest
 			}
 
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::IsPC(tch))
+				if (tch && ((tch)->IsPC()))
 				{
 					if (!tch->CanWarp())
 					{
 						m_result = 3;
-						m_resultname = ecs::GetName(tch);
+						m_resultname = ((tch)->GetName());
 					}
 
-					int32_t lvl = ecs::GetLevel(tch);
+					int32_t lvl = ((tch)->GetLevel());
 					if (lvl < m_minlvl)
 					{
 						m_result = 4;
-						m_resultname = ecs::GetName(tch);
+						m_resultname = ((tch)->GetName());
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 5;
-						m_resultname = ecs::GetName(tch);
+						m_resultname = ((tch)->GetName());
 						break;
 					}
 					else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 					{
 						m_result = 6;
-						m_resultname = ecs::GetName(tch);
+						m_resultname = ((tch)->GetName());
 						break;
 					}
 					else if (m_itemvnum2 > 0)
@@ -1025,7 +1025,7 @@ namespace quest
 						if (tch->CountSpecifyItem(m_itemvnum2) < m_itemcount && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 						{
 							m_result = 7;
-							m_resultname = ecs::GetName(tch);
+							m_resultname = ((tch)->GetName());
 							break;
 						}
 					}
@@ -1034,13 +1034,13 @@ namespace quest
 					if (m_resulttime > 0)
 					{
 						m_result = 8;
-						m_resultname = ecs::GetName(tch);
+						m_resultname = ((tch)->GetName());
 						break;
 					}
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1050,39 +1050,39 @@ namespace quest
 			if (!ch->CanWarp())
 			{
 				m_result = 3;
-				m_resultname = ecs::GetName(ch);
+				m_resultname = ((ch)->GetName());
 			}
 
-			int32_t lvl = ecs::GetLevel(ch);
+			int32_t lvl = ((ch)->GetLevel());
 			m_resulttime = ch->GetQuestFlag(m_questname.c_str()) - get_global_time();
 			if (lvl < m_minlvl)
 			{
 				m_result = 4;
-				m_resultname = ecs::GetName(ch);
+				m_resultname = ((ch)->GetName());
 			}
 			else if (lvl > m_maxlvl)
 			{
 				m_result = 5;
-				m_resultname = ecs::GetName(ch);
+				m_resultname = ((ch)->GetName());
 			}
 			else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 			{
 				m_result = 6;
-				m_resultname = ecs::GetName(ch);
+				m_resultname = ((ch)->GetName());
 			}
 			else if (m_itemvnum2 > 0)
 			{
 				if (ch->CountSpecifyItem(m_itemvnum2) < m_itemcount && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 				{
 					m_result = 7;
-					m_resultname = ecs::GetName(ch);
+					m_resultname = ((ch)->GetName());
 				}
 			}
 
 			if (m_result == 1 && m_resulttime > 0)
 			{
 				m_result = 8;
-				m_resultname = ecs::GetName(ch);
+				m_resultname = ((ch)->GetName());
 			}
 		}
 
@@ -1128,12 +1128,12 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::IsPC(tch))
+				if (tch && ((tch)->IsPC()))
 				{
 					bool ticket = false;
 					if (vnum2 > 0 && count2 > 0)
@@ -1215,7 +1215,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1335,23 +1335,23 @@ namespace quest
 			LPDUNGEON currentDungeon = ch->GetDungeon();
 			FPartyPIDCollectorDungeon f;
 			party->ForEachOnlineMember(f);
-			//party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			//party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::IsPC(tch))
+				if (tch && ((tch)->IsPC()))
 				{
 
 					if (currentDungeon)
 					{
 						LPDUNGEON memberDungeon = tch->GetDungeon();
-						if (memberDungeon && memberDungeon != currentDungeon && ecs::GetMapIndex(tch) != ecs::GetMapIndex(ch))
+						if (memberDungeon && memberDungeon != currentDungeon && ((tch)->GetMapIndex()) != ((ch)->GetMapIndex()))
 						{
 							continue;
 						}
 					}
-					else if (ecs::GetMapIndex(tch) != ecs::GetMapIndex(ch))
+					else if (((tch)->GetMapIndex()) != ((ch)->GetMapIndex()))
 					{
 						continue;
 					}
@@ -1375,7 +1375,7 @@ namespace quest
 					tch->SetQuestFlag(questname + ".enter_time", 0);
 					tch->SetQuestFlag(questname + ".ch", 0);
 					tch->SetQuestFlag(questname + ".cooldown", get_global_time() + cooldown);
-					int32_t pid = ecs::GetPlayerID(tch);
+					int32_t pid = ((tch)->GetPlayerID());
 					int32_t time = get_global_time() - enter_time;
 					int32_t damage = tch->GetQuestDamage(race);
 
@@ -1408,7 +1408,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -1434,7 +1434,7 @@ namespace quest
 			ch->SetQuestFlag(questname + ".enter_time", 0);
 			ch->SetQuestFlag(questname + ".ch", 0);
 			ch->SetQuestFlag(questname + ".cooldown", get_global_time() + cooldown);
-			int32_t pid = ecs::GetPlayerID(ch);
+			int32_t pid = ((ch)->GetPlayerID());
 			int32_t time = get_global_time() - enter_time;
 			int32_t damage = ch->GetQuestDamage(race);
 
@@ -1481,22 +1481,22 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ecs::IsPC(ch))
+			if (ch && ((ch)->IsPC()))
 			{
 				if (ch->GetGuild())
 				{
 					if (guildid == ch->GetGuild()->GetID())
 					{
-						vecPIDs.push_back(ecs::GetPlayerID(ch));
+						vecPIDs.push_back(((ch)->GetPlayerID()));
 					}
 					else
 					{
-						name = ecs::GetName(ch);
+						name = ((ch)->GetName());
 					}
 				}
 				else
 				{
-					name = ecs::GetName(ch);
+					name = ((ch)->GetName());
 				}
 			}
 		}
@@ -1555,7 +1555,7 @@ namespace quest
 		LPPARTY party = ch->GetParty();
 		if (party)
 		{
-			if (party->GetLeaderPID() != ecs::GetPlayerID(ch))
+			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
 			{
 				lua_pushnumber(L, 6);
 				lua_pushnumber(L, 0);
@@ -1566,7 +1566,7 @@ namespace quest
 			FPartyPIDCollectorDungeonGuild f;
 			f.guildid = guild->GetID();
 			f.name = "";
-			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			if (f.vecPIDs.size() < m_partycount)
 			{
@@ -1587,25 +1587,25 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::IsPC(tch))
+				if (tch && ((tch)->IsPC()))
 				{
 					if (!tch->CanWarp())
 					{
 						m_result = 8;
-						r = ecs::GetName(tch);
+						r = ((tch)->GetName());
 					}
 
-					int32_t lvl = ecs::GetLevel(tch);
+					int32_t lvl = ((tch)->GetLevel());
 					if (lvl < m_minlvl)
 					{
 						m_result = 9;
-						r = ecs::GetName(tch);
+						r = ((tch)->GetName());
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 10;
-						r = ecs::GetName(tch);
+						r = ((tch)->GetName());
 						break;
 					}
 
@@ -1613,13 +1613,13 @@ namespace quest
 					if (m_resulttime > 0)
 					{
 						m_result = 11;
-						r = ecs::GetName(tch);
+						r = ((tch)->GetName());
 						break;
 					}
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1667,12 +1667,12 @@ namespace quest
 		// if (party)
 		// {
 			// FPartyPIDCollectorDungeon f;
-			// party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			// party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			// {
 				// LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				// if (tch && ecs::IsPC(tch))
+				// if (tch && ((tch)->IsPC()))
 				// {
 					// if (vnum > 0)
 					// {
@@ -1688,7 +1688,7 @@ namespace quest
 				// }
 			// }
 
-			// if (!q.GetPC(ecs::GetPlayerID(ch)))
+			// if (!q.GetPC(((ch)->GetPlayerID())))
 			// {
 				// sys_err("cannot return to leader.");
 			// }

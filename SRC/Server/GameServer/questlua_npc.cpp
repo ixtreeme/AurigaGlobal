@@ -39,7 +39,7 @@ namespace quest
 		if (npcE == entt::null || !g_registry.valid(npcE)) {
 			const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
 			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushboolean(L, (npc && ecs::IsPC(npc)) ? 1 : 0);
+			lua_pushboolean(L, (npc && ((npc)->IsPC())) ? 1 : 0);
 			return 1;
 		}
 		lua_pushboolean(L, g_registry.all_of<ecs::TagPC>(npcE) ? 1 : 0);
@@ -178,7 +178,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(npc), ecs::GetY(ch) - ecs::GetY(npc)) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY())) < dist*100);
 			return 1;
 		}
 
@@ -213,7 +213,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(npc), ecs::GetY(ch) - ecs::GetY(npc)) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY())) < dist*100);
 			return 1;
 		}
 
@@ -232,10 +232,10 @@ namespace quest
 		auto* npc = ecs::LegacyCharOf(npcEntity);
 		if ( npc != nullptr)
 		{
-			if (ecs::IsPC(npc))
+			if (((npc)->IsPC()))
 				return 0;
 
-			if (npc->GetQuestNPCID() == ecs::GetPlayerID(ch))
+			if (npc->GetQuestNPCID() == ((ch)->GetPlayerID()))
 			{
 				npc->SetQuestNPCID(0);
 			}
@@ -252,15 +252,15 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (!npc || ecs::IsPC(npc))
+		if (!npc || ((npc)->IsPC()))
 		{
 			lua_pushboolean(L, true);
 			return 1;
 		}
 
-		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == ecs::GetPlayerID(ch))
+		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == ((ch)->GetPlayerID()))
 		{
-			npc->SetQuestNPCID(ecs::GetPlayerID(ch));
+			npc->SetQuestNPCID(((ch)->GetPlayerID()));
 			lua_pushboolean(L, true);
 		}
 		else
@@ -304,7 +304,7 @@ namespace quest
 		{
 			const entt::entity npcEntity = q.GetCurrentNPCEntity();
 			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushnumber(L, npc ? ecs::GetVID(npc) : 0);
+			lua_pushnumber(L, npc ? ((npc)->GetLegacyVID()) : 0);
 			return 1;
 		}
 		lua_pushnumber(L, vid->value);
@@ -411,7 +411,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ecs::GetLevel(npc));
+		lua_pushnumber(L, ((npc)->GetLevel()));
 		return 1;
 	}
 
@@ -422,7 +422,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushstring(L, ecs::GetName(npc));
+		lua_pushstring(L, ((npc)->GetName()));
 		return 1;
 	}
 
@@ -433,7 +433,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ecs::GetPlayerID(npc));
+		lua_pushnumber(L, ((npc)->GetPlayerID()));
 		return 1;
 	}
 
@@ -444,7 +444,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ecs::GetRaceNum(npc));
+		lua_pushnumber(L, ((npc)->GetRaceNum()));
 		return 1;
 	}
 

@@ -298,7 +298,7 @@ EVENTFUNC(ready_to_start_event)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
 
-				uint32_t dwOppList[8]; // ÃÖ´ë ÆÄÆ¼¿ø 8¸í ÀÌ¹Ç·Î..
+				uint32_t dwOppList[8]; // ï¿½Ö´ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ 8ï¿½ï¿½ ï¿½Ì¹Ç·ï¿½..
 
 				dwOppList[0] = chB->GetPacketVID();
 				TEMP_BUFFER buf;
@@ -347,7 +347,7 @@ EVENTFUNC(ready_to_start_event)
 
 				TEMP_BUFFER buf;
 				TEMP_BUFFER buf2;
-				uint32_t dwOppList[8]; // ÃÖ´ë ÆÄÆ¼¿ø 8¸í ÀÌ¹Ç·Î..
+				uint32_t dwOppList[8]; // ï¿½Ö´ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ 8ï¿½ï¿½ ï¿½Ì¹Ç·ï¿½..
 				TPacketGCDuelStart duelStart;
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
@@ -678,7 +678,7 @@ bool CArenaMap::CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim)
 
 bool CArena::CanAttack(uint32_t dwPIDA, uint32_t dwPIDB)
 {
-	// 1:1 Àü¿ë ´Ù´ë´Ù ÇÒ °æ¿ì ¼öÁ¤ ÇÊ¿ä
+	// 1:1 ï¿½ï¿½ï¿½ï¿½ ï¿½Ù´ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½
 	if (m_dwPIDA == dwPIDA && m_dwPIDB == dwPIDB) return true;
 	if (m_dwPIDA == dwPIDB && m_dwPIDB == dwPIDA) return true;
 
@@ -813,7 +813,7 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	}
 	else
 	{
-		// ¿À¸é ¾ÈµÈ´Ù ?!
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½ÈµÈ´ï¿½ ?!
 	}
 
 	if (restart == false)
@@ -900,7 +900,7 @@ bool CArena::IsMyObserver(uint16_t ObserverX, uint16_t ObserverY)
 
 bool CArena::AddObserver(LPCHARACTER pChar)
 {
-	uint32_t pid = ecs::GetPlayerID(pChar);
+	uint32_t pid = ((pChar)->GetPlayerID());
 
 	m_mapObserver.insert(std::make_pair(pid, (LPCHARACTER)nullptr));
 
@@ -1067,7 +1067,7 @@ bool CArenaMap::RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint16_t
 
 bool CArena::RegisterObserverPtr(LPCHARACTER pChar)
 {
-	uint32_t pid = ecs::GetPlayerID(pChar);
+	uint32_t pid = ((pChar)->GetPlayerID());
 
 	if (const auto iter = m_mapObserver.find(pid); iter == m_mapObserver.end())
 	{

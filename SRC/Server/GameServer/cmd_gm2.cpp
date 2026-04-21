@@ -17,11 +17,11 @@ ACMD(do_blockhwid)
 
 	const char* targetname = arg;
 
-	if (strcmp(ecs::GetName(ch), targetname) == 0) {
+	if (strcmp(((ch)->GetName()), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendBlockHwid(ecs::GetName(ch), targetname);
+	CHwidManager::Instance().SendBlockHwid(((ch)->GetName()), targetname);
 }
 
 ACMD(do_unblockhwid)
@@ -36,11 +36,11 @@ ACMD(do_unblockhwid)
 
 	const char* targetname = arg;
 
-	if (strcmp(ecs::GetName(ch), targetname) == 0) {
+	if (strcmp(((ch)->GetName()), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendUnblockHwid(ecs::GetName(ch), targetname);
+	CHwidManager::Instance().SendUnblockHwid(((ch)->GetName()), targetname);
 }
 #endif
 

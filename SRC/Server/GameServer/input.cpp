@@ -60,7 +60,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		uint8_t bHeader = (uint8_t) *(c_pData);
 		const char * c_pszName = nullptr;
 
-		if (bHeader == 0) // ¾ÏÈ£È­ Ã³¸®°¡ ÀÖÀ¸¹Ç·Î 0¹ø Çì´õ´Â ½ºÅµÇÑ´Ù.
+		if (bHeader == 0) // ï¿½ï¿½È£È­ Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ 0ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Åµï¿½Ñ´ï¿½.
 			iPacketLen = 1;
 		else if (!m_pPacketInfo->Get(bHeader, &iPacketLen, &c_pszName))
 		{
@@ -155,7 +155,7 @@ void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
-	sys_log(0, "VERSION: %s %s %s", ecs::GetName(ch), p->timestamp, p->filename);
+	sys_log(0, "VERSION: %s %s %s", ((ch)->GetName()), p->timestamp, p->filename);
 	ch->GetDesc()->SetClientVersion(p->timestamp);
 }
 
@@ -200,7 +200,7 @@ ACMD(do_block_chat);
 
 int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
-	if (bHeader == 10) // ¿£ÅÍ´Â ¹«½Ã
+	if (bHeader == 10) // ï¿½ï¿½ï¿½Í´ï¿½ ï¿½ï¿½ï¿½ï¿½
 		return 0;
 
 	/*if (bHeader == HEADER_CG_TEXT) {
@@ -210,13 +210,13 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	{
 		if (!guild_mark_server)
 		{
-			// ²÷¾î¹ö·Á! - ¸¶Å© ¼­¹ö°¡ ¾Æ´Ñµ¥ ¸¶Å©¸¦ ¿äÃ»ÇÏ·Á°í?
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½! - ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´Ñµï¿½ ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½Ã»ï¿½Ï·ï¿½ï¿½ï¿½?
 			sys_err("Guild Mark login requested but i'm not a mark server!");
 			d->SetPhase(PHASE_CLOSE);
 			return 0;
 		}
 
-		// ¹«Á¶°Ç ÀÎÁõ --;
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ --;
 		sys_log(0, "MARK_SERVER: Login");
 		d->SetPhase(PHASE_LOGIN);
 		return 0;

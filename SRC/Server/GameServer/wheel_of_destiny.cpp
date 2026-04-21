@@ -12,21 +12,21 @@ static constexpr auto WheelItemMax = 16;
 static constexpr std::tuple<uint32_t, std::uint8_t, std::uint8_t> m_Data[WheelItemMax] =
 {	
 	{ 39066, 10, 0 },	 //Gaya
-	{ 39067, 10, 25 },  //Utalvany (100 SÉ)
-	{ 70027, 1, 0 },	 //Misztikus áldástekercs
-	{ 89007, 1, 0 }, //1k sé
+	{ 39067, 10, 25 },  //Utalvany (100 Sï¿½)
+	{ 70027, 1, 0 },	 //Misztikus ï¿½ldï¿½stekercs
+	{ 89007, 1, 0 }, //1k sï¿½
 	{ 99999, 200, 0 }, //Run-pont
-	{ 70027, 3, 0 },	 //Misztikus áldástekercs
-	{ 70610, 3, 0 },	 //Battle Pass utalvány
-	{ 72100, 10, 0 },	 //Arany gyümölcs
-	{ 611586, 1, 25 },	 //hátas // 10 pörgetés után 
-	{ 30617, 1, 0 }, 	 //Legendás Bónuszoló
-	{ 30618, 1, 0 },	 //Legendás Megváltoztató
-	{ 80008, 5, 0 },	 //Aranyrög (400 millió
-	{ 89006, 1, 0 },  //500 sé utalvány
-	{ 71107, 5, 0 },	 //Élet Gyümölcse
-	{ 71129, 5, 0 },	 //Sárkány karom
-	{ 71123, 5, 0 },	 //Sárkány pikkely
+	{ 70027, 3, 0 },	 //Misztikus ï¿½ldï¿½stekercs
+	{ 70610, 3, 0 },	 //Battle Pass utalvï¿½ny
+	{ 72100, 10, 0 },	 //Arany gyï¿½mï¿½lcs
+	{ 611586, 1, 25 },	 //hï¿½tas // 10 pï¿½rgetï¿½s utï¿½n 
+	{ 30617, 1, 0 }, 	 //Legendï¿½s Bï¿½nuszolï¿½
+	{ 30618, 1, 0 },	 //Legendï¿½s Megvï¿½ltoztatï¿½
+	{ 80008, 5, 0 },	 //Aranyrï¿½g (400 milliï¿½
+	{ 89006, 1, 0 },  //500 sï¿½ utalvï¿½ny
+	{ 71107, 5, 0 },	 //ï¿½let Gyï¿½mï¿½lcse
+	{ 71129, 5, 0 },	 //Sï¿½rkï¿½ny karom
+	{ 71123, 5, 0 },	 //Sï¿½rkï¿½ny pikkely
 
 };
 
@@ -40,7 +40,7 @@ CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
 
 CWheelDestiny::~CWheelDestiny() {
 	if (GetGiftVnum())
-		sys_log(0, "<CWheelDestiny> player(%s) didn't get his gift(vnum: %lu(%d.x))!!", ecs::GetName(ch), GetGiftVnum(), GetGiftCount());
+		sys_log(0, "<CWheelDestiny> player(%s) didn't get his gift(vnum: %lu(%d.x))!!", ((ch)->GetName()), GetGiftVnum(), GetGiftCount());
 }
 
 template <typename T> std::string NumberToMoneyString(T val)
@@ -85,7 +85,7 @@ void CWheelDestiny::TurnWheel()
 
 	auto Rand = PickAGift();
 	if (Rand == -1) {
-		sys_err("CWheelDestiny::TurnWheel() Error Pick Gift (%s)", ecs::GetName(ch));
+		sys_err("CWheelDestiny::TurnWheel() Error Pick Gift (%s)", ((ch)->GetName()));
 		return;
 	}
 
@@ -146,7 +146,7 @@ void CWheelDestiny::GiveMyFuckingGift()
 		SetGift(0, 1); // reset
 	}
 	else
-		sys_err("Dude, where is the gift_vnum? <player: %s>", ecs::GetName(ch));
+		sys_err("Dude, where is the gift_vnum? <player: %s>", ((ch)->GetName()));
 }
 
 uint32_t CWheelDestiny::GetGiftVnum() const

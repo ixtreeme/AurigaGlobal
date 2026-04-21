@@ -106,12 +106,12 @@ static inline entt::entity EntityOf(LegacyCharHandle ch)
 
 static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(LegacyCharHandle ch)
 {
-    return ecs::TryGetRuntimeFlags(ch);
+    return ecs::TryGetRuntimeFlags(EntityOf(ch));
 }
 
 static inline const ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(const CHARACTER* ch)
 {
-    return ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(ch));
+    return ecs::TryGetRuntimeFlags(EntityOf(const_cast<CHARACTER*>(ch)));
 }
 
 static inline bool HasMoveState(LegacyCharHandle ch)

@@ -91,7 +91,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 {
 	if (GetStatus() == OXEVENT_FINISH)
 	{
-		sys_log(0, "OXEVENT : map finished. but char enter. %s", ecs::GetName(pkChar));
+		sys_log(0, "OXEVENT : map finished. but char enter. %s", ((pkChar)->GetName()));
 		return false;
 	}
 
@@ -116,7 +116,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 {
-	uint32_t pid = ecs::GetPlayerID(pkChar);
+	uint32_t pid = ((pkChar)->GetPlayerID());
 
 	m_map_char.insert(std::make_pair(pid, pid));
 	m_map_attender.insert(std::make_pair(pid, pid));
@@ -126,7 +126,7 @@ bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAudience(LPCHARACTER pkChar)
 {
-	uint32_t pid = ecs::GetPlayerID(pkChar);
+	uint32_t pid = ((pkChar)->GetPlayerID());
 
 	m_map_char.insert(std::make_pair(pid, pid));
 
@@ -313,19 +313,19 @@ bool COXEventManager::CheckAnswer(bool answer)
 				const auto iter_tmp = iter;
 				iter++;
 				m_map_attender.erase(iter_tmp);
-				m_map_miss.insert(std::make_pair(ecs::GetPlayerID(pkChar), ecs::GetPlayerID(pkChar)));
+				m_map_miss.insert(std::make_pair(((pkChar)->GetPlayerID()), ((pkChar)->GetPlayerID())));
 			}
 			else
 			{
 				// pkChar->CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), pkChar);
 				char chatbuf[256];
-				int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u", number(0, 1) == 1 ? "cheer1" : "cheer2", (uint32_t)ecs::GetVID(pkChar), 0);
+				int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u", number(0, 1) == 1 ? "cheer1" : "cheer2", (uint32_t)((pkChar)->GetLegacyVID()), 0);
 
-				// ¸®ÅÏ°ªÀÌ sizeof(chatbuf) ÀÌ»óÀÏ °æ¿ì truncateµÇ¾ú´Ù´Â ¶æ..
+				// ï¿½ï¿½ï¿½Ï°ï¿½ï¿½ï¿½ sizeof(chatbuf) ï¿½Ì»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ truncateï¿½Ç¾ï¿½ï¿½Ù´ï¿½ ï¿½ï¿½..
 				if (len < 0 || len >= (int) sizeof(chatbuf))
 					len = sizeof(chatbuf) - 1;
 
-				// \0 ¹®ÀÚ Æ÷ÇÔ
+				// \0 ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 				++len;
 
 				TPacketGCChat pack_chat;
@@ -442,11 +442,11 @@ count)
 #ifdef ENABLE_BLOCK_MULTIFARM
 			if (pkChar->FindAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
-				LogManager::instance().ItemLog(ecs::GetPlayerID(pkChar), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+				LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
 			}
 #else
 			pkChar->AutoGiveItem(dwItemVnum, count);
-			LogManager::instance().ItemLog(ecs::GetPlayerID(pkChar), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+			LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
 #endif
 		}
 	}

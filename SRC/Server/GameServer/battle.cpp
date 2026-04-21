@@ -68,7 +68,7 @@ bool timed_event_cancel(LPCHARACTER ch)
 
 bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 {
-	// »ó´ë1aAI Á×3úA¸¸é Áß´ÜÇN´U.
+	// ï¿½ï¿½ï¿½1aAI ï¿½ï¿½3ï¿½Aï¿½ï¿½ï¿½ ï¿½ß´ï¿½ï¿½Nï¿½U.
 	if (victim->IsDead())
 	{
 		return false;
@@ -82,7 +82,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	}
 #endif
 
-	// 3EAüÁö´ë¸é Áß´Ü
+	// 3EAï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß´ï¿½
 	{
 		SECTREE* sectree = nullptr;
 
@@ -99,7 +99,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 		}
 	}
 
-	// 3»°! Á×3úA¸¸é Áß´ÜÇN´U.
+	// 3ï¿½ï¿½! ï¿½ï¿½3ï¿½Aï¿½ï¿½ï¿½ ï¿½ß´ï¿½ï¿½Nï¿½U.
 	if (ch->IsStun() || ch->IsDead())
 	{
 		return false;
@@ -158,7 +158,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 #endif
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!victim || ch == victim)
 	{
@@ -166,7 +166,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!battle_is_attackable(ch, victim))
 	{
@@ -174,9 +174,9 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ecs::GetName(ch), ecs::GetName(victim));
+		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
 
-	// °A¸® A1A©
+	// ï¿½Aï¿½ï¿½ A1Aï¿½
 	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
 
 	if (!victim->IsBuilding())
@@ -185,12 +185,12 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 
 		if (false == ch->IsPC())
 		{
-			// ¸ó1oAÍAÇ °a?i ¸ó1oAÍ °o°Ý °A¸®¸¦ »ç?ë
+			// ï¿½ï¿½1oAï¿½Aï¿½ ï¿½a?i ï¿½ï¿½1oAï¿½ ï¿½oï¿½ï¿½ ï¿½Aï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½?ï¿½
 			max = (int)(ch->GetMobAttackRange() * 1.15f);
 		}
 		else
 		{
-			// PCAI °a?i »ó´ë°! melee ¸÷AI °a?i ¸÷AÇ °o°Ý °A¸®°! AÖ´ë °o°Ý °A¸®
+			// PCAI ï¿½a?i ï¿½ï¿½ï¿½! melee ï¿½ï¿½AI ï¿½a?i ï¿½ï¿½Aï¿½ ï¿½oï¿½ï¿½ ï¿½Aï¿½ï¿½ï¿½! AÖ´ï¿½ ï¿½oï¿½ï¿½ ï¿½Aï¿½ï¿½
 			if (false == victim->IsPC() && BATTLE_TYPE_MELEE == victim->GetMobBattleType())
 				max = MAX(300, (int)(victim->GetMobAttackRange() * 1.15f));
 		}
@@ -205,7 +205,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		if (distance > max)
 		{
 			if (test_server)
-				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ecs::GetName(ch), distance, max);
+				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ((ch)->GetName()), distance, max);
 
 			return BATTLE_NONE;
 		}
@@ -427,7 +427,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ?????? ATTBONUS ó??
+			case JOB_WOLFMAN: // TODO: ?????? ATTBONUS ï¿½??
 				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_WOLFMAN)) / 100;
 				break;
 #endif
@@ -457,7 +457,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ?????? ???? ó??
+			case JOB_WOLFMAN: // TODO: ?????? ???? ï¿½??
 				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_WOLFMAN)) / 100;
 				break;
 #endif
@@ -540,7 +540,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				break;
 
 			case WEAPON_BOW:
-				sys_err("CalcMeleeDamage should not handle bows (name: %s)", ecs::GetName(pkAttacker));
+				sys_err("CalcMeleeDamage should not handle bows (name: %s)", ((pkAttacker)->GetName()));
 				return 0;
 
 			default:
@@ -670,9 +670,9 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 		snprintf(szMeleeAttack, sizeof(szMeleeAttack),
 				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%d)+WP(%d)%s%s%s, AR=%.3g%s",
-				ecs::GetName(pkAttacker),
+				((pkAttacker)->GetName()),
 				iAtk,
-				ecs::GetName(pkVictim),
+				((pkVictim)->GetName()),
 				iDef,
 				iDam,
 				szUnknownDam,
@@ -747,8 +747,8 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	if (test_server)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
-				ecs::GetName(pkAttacker),
-				ecs::GetName(pkVictim),
+				((pkAttacker)->GetName()),
+				((pkVictim)->GetName()),
 				iPureDam,
 				iDist, iGap, iPercent);
 	}
@@ -760,7 +760,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 
 void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
-	// ?? ?????? U?????? U?? ó??
+	// ?? ?????? U?????? U?? ï¿½??
 	if (pkAttacker->GetPoint(POINT_POISON_PCT) && !pkVictim->IsAffectFlag(AFF_POISON))
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(POINT_POISON_PCT))
@@ -799,7 +799,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	//PROF_UNIT puHit("Hit");
 	if (test_server)
-		sys_log(0, "battle_hit : [%s] attack to [%s] : dam :%d type :%d", ecs::GetName(pkAttacker), ecs::GetName(pkVictim), iRetDam);
+		sys_log(0, "battle_hit : [%s] attack to [%s] : dam :%d type :%d", ((pkAttacker)->GetName()), ((pkVictim)->GetName()), iRetDam);
 
 	int iDam = CalcMeleeDamage(pkAttacker, pkVictim);
 
@@ -927,7 +927,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 		}
 
 
-	//???????? ?????? ????. (2011?? 2?? ???? ???????? ????.)
+	//???????? ?????? ????. (2011?? 2?? ???? ???ï¿½????? ????.)
 	float attMul = pkAttacker->GetAttMul();
 	float tempIDam = iDam;
 	iDam = attMul * tempIDam + 0.5f;
@@ -958,7 +958,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //
 //
 //		sys_log(0, "DEBUG MAP1_SKILL_MOB: attacker=%s (id=%u) victimVnum=%d dmg=%d skillhit=%d",
-//			ecs::GetName(pkAttacker),
+//			((pkAttacker)->GetName()),
 //			pkAttacker->GetPlayerID(),
 //			pkVictim->GetRaceNum(),
 //			iRetDam,
@@ -994,7 +994,7 @@ void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	if (victim && ch && ch->IsPC()) {
-		victim->GetAttackedLogRef().dwPID = ecs::GetPlayerID(ch);
+		victim->GetAttackedLogRef().dwPID = ((ch)->GetPlayerID());
 		victim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}
 }
@@ -1010,13 +1010,13 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 				if (test_server)
 				{
 					sys_log(0, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							ecs::GetName(ch),
+							((ch)->GetName()),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
 	
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							ecs::GetName(ch),
+							((ch)->GetName()),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
@@ -1030,11 +1030,11 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	
 		SET_ATTACK_TIME(ch, victim, current_time);
 	
-		if (victim->GetAttackedLogRef().dwPID == ecs::GetPlayerID(ch)) {
+		if (victim->GetAttackedLogRef().dwPID == ((ch)->GetPlayerID())) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::GetName(ch));
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ((ch)->GetName()));
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ch->GetDesc()->GetAccountTable().id));
 					ch->GetDesc()->DelayedDisconnect(3);
 				}

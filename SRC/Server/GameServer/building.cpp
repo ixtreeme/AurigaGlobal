@@ -113,7 +113,7 @@ void CObject::EncodeInsertPacket(LPENTITY entity)
 #ifdef ENABLE_MULTI_NAMES
 	pack.transname = true;
 #endif
-	// ºôµù È¸Àü Á¤º¸(º®ÀÏ¶§´Â ¹® À§Ä¡)¸¦ º¯È¯
+	// ï¿½ï¿½ï¿½ È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½Ï¶ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡)ï¿½ï¿½ ï¿½ï¿½È¯
 	pack.dwAffectFlag[0] = unsigned(m_data.xRot);
 	pack.dwAffectFlag[1] = unsigned(m_data.yRot);
 
@@ -299,7 +299,7 @@ void CObject::RegenNPC()
 
 	m_chNPC->SetGuild(pGuild);
 
-	// ÈûÀÇ ½ÅÀüÀÏ °æ¿ì ±æµå ·¹º§À» ±æ¸¶¿¡°Ô ÀúÀåÇØ³õ´Â´Ù
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½æ¸¶ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø³ï¿½ï¿½Â´ï¿½
 	if ( m_pProto->dwVnum == 14061 || m_pProto->dwVnum == 14062 || m_pProto->dwVnum == 14063 )
 	{
 		quest::PC* pPC = quest::CQuestManager::instance().GetPC(pGuild->GetMasterPID());
@@ -364,11 +364,11 @@ void CLand::PutData(const TLand * data)
 				{
 					LPCHARACTER ch = *(it++);
 
-					if (ecs::GetMapIndex(ch) != m_data.lMapIndex)
+					if (((ch)->GetMapIndex()) != m_data.lMapIndex)
 						continue;
 
-					int x = ecs::GetX(ch) - r->sx;
-					int y = ecs::GetY(ch) - r->sy;
+					int x = ((ch)->GetX()) - r->sx;
+					int y = ((ch)->GetY()) - r->sy;
 
 					if (x > m_data.x + m_data.width || x < m_data.x)
 						continue;
@@ -488,8 +488,8 @@ struct FIsIn
 			{
 				return;
 			}
-			if (sx <= ecs::GetX(ch) && ecs::GetX(ch) <= ex
-				&& sy <= ecs::GetY(ch) && ecs::GetY(ch) <= ey)
+			if (sx <= ((ch)->GetX()) && ((ch)->GetX()) <= ex
+				&& sy <= ((ch)->GetY()) && ((ch)->GetY()) <= ey)
 			{
 				bIn = true;
 			}
@@ -688,10 +688,10 @@ TObjectProto * CManager::GetObjectProto(uint32_t dwVnum)
 
 bool CManager::LoadLand(TLand * pTable) // from DB
 {
-	// MapAllow¿¡ ¾ø´Â ¸ÊÀÇ ¶¥ÀÏÁö¶óµµ load¸¦ ÇØ¾ßÇÑ´Ù.
-	//	°Ç¹°(object)ÀÌ ¾î´À ±æµå¿¡ ¼ÓÇØ ÀÖ´ÂÁö ¾Ë±â À§ÇØ¼­´Â °Ç¹°ÀÌ ¼¼À§Áø ¶¥ÀÌ ¾î´À ±æµå ¼Ò¼ÓÀÎÁö ¾Ë¾ÆÇÑ´Ù.
-	//	¸¸¾à ¶¥À» loadÇØ ³õÁö ¾ÊÀ¸¸é ±æµå °Ç¹°ÀÌ ¾î´À ±æµå¿¡ ¼Ò¼ÓµÈ °ÇÁö ¾ËÁö ¸øÇØ¼­
-	//	±æµå °Ç¹°¿¡ ÀÇÇÑ ±æµå ¹öÇÁ¸¦ ¹ÞÁö ¸øÇÑ´Ù.
+	// MapAllowï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ loadï¿½ï¿½ ï¿½Ø¾ï¿½ï¿½Ñ´ï¿½.
+	//	ï¿½Ç¹ï¿½(object)ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½å¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ï¿½ï¿½ ï¿½Ë±ï¿½ ï¿½ï¿½ï¿½Ø¼ï¿½ï¿½ï¿½ ï¿½Ç¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ò¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¾ï¿½ï¿½Ñ´ï¿½.
+	//	ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ loadï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ç¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½å¿¡ ï¿½Ò¼Óµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø¼ï¿½
+	//	ï¿½ï¿½ï¿½ ï¿½Ç¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ñ´ï¿½.
 	//if (!map_allow_find(pTable->lMapIndex))
 	//	return false;
 
@@ -1091,7 +1091,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 	int wall_half_w = 1000;
 	int wall_half_h = 1362;
 
-	if (rot == 0.0f) 		// ³²ÂÊ ¹®
+	if (rot == 0.0f) 		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	{
 		int door_x = wall_x;
 		int door_y = wall_y + wall_half_h;
@@ -1100,7 +1100,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x - wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x + wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 180.0f)		// ºÏÂÊ ¹®
+	else if (rot == 180.0f)		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	{
 		int door_x = wall_x;
 		int door_y = wall_y - wall_half_h;
@@ -1109,7 +1109,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x - wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x + wall_half_w, wall_y, door_x, door_y,   0.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 90.0f)		// µ¿ÂÊ ¹®
+	else if (rot == 90.0f)		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	{
 		int door_x = wall_x + wall_half_h;
 		int door_y = wall_y;
@@ -1118,7 +1118,7 @@ bool CLand::RequestCreateWall(int32_t nMapIndex, float rot)
 		RequestCreateObject(WALL_LEFT_VNUM,	nMapIndex, wall_x, wall_y - wall_half_w, door_x, door_y,  90.0f, WALL_ANOTHER_CHECKING_ENABLE);
 		RequestCreateObject(WALL_RIGHT_VNUM,	nMapIndex, wall_x, wall_y + wall_half_w, door_x, door_y,  90.0f, WALL_ANOTHER_CHECKING_ENABLE);
 	}
-	else if (rot == 270.0f)		// ¼­ÂÊ ¹®
+	else if (rot == 270.0f)		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	{
 		int door_x = wall_x - wall_half_h;
 		int door_y = wall_y;

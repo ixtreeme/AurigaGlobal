@@ -75,7 +75,7 @@ EVENTFUNC(target_event)
 	int x = 0, y = 0;
 	int iDist = 5000;
 
-	if (info->iMapIndex != ecs::GetMapIndex(pkChr))
+	if (info->iMapIndex != ((pkChr)->GetMapIndex()))
 		return MINMAX(passes_per_sec / 2, iDist / (1500 / passes_per_sec), passes_per_sec * 5);
 
 	switch (info->iType)
@@ -83,18 +83,18 @@ EVENTFUNC(target_event)
 		case TARGET_TYPE_POS:
 			x = info->iArg1;
 			y = info->iArg2;
-			iDist = DISTANCE_APPROX(ecs::GetX(pkChr) - x, ecs::GetY(pkChr) - y);
+			iDist = DISTANCE_APPROX(((pkChr)->GetX()) - x, ((pkChr)->GetY()) - y);
 			break;
 
 		case TARGET_TYPE_VID:
 			{
 				tch = CHARACTER_MANAGER::instance().Find(info->iArg1);
 
-				if (tch && ecs::GetMapIndex(tch) == ecs::GetMapIndex(pkChr))
+				if (tch && ((tch)->GetMapIndex()) == ((pkChr)->GetMapIndex()))
 				{
-					x = ecs::GetX(tch);
-					y = ecs::GetY(tch);
-					iDist = DISTANCE_APPROX(ecs::GetX(pkChr) - x, ecs::GetY(pkChr) - y);
+					x = ((tch)->GetX());
+					y = ((tch)->GetY());
+					iDist = DISTANCE_APPROX(((pkChr)->GetX()) - x, ((pkChr)->GetY()) - y);
 				}
 			}
 			break;
@@ -103,12 +103,12 @@ EVENTFUNC(target_event)
 	bool bRet = true;
 
 	if (iDist <= 500)
-		bRet = quest::CQuestManager::instance().Target(ecs::GetPlayerID(pkChr), info->dwQuestIndex, info->szTargetName, "arrive");
+		bRet = quest::CQuestManager::instance().Target(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName, "arrive");
 
 	if (!tch && info->iType == TARGET_TYPE_VID)
 	{
-		quest::CQuestManager::instance().Target(ecs::GetPlayerID(pkChr), info->dwQuestIndex, info->szTargetName, "die");
-		CTargetManager::instance().DeleteTarget(ecs::GetPlayerID(pkChr), info->dwQuestIndex, info->szTargetName);
+		quest::CQuestManager::instance().Target(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName, "die");
+		CTargetManager::instance().DeleteTarget(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName);
 	}
 
 	if (event->is_force_to_end)
@@ -153,7 +153,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 		return;
 	}
 
-	if (ecs::GetMapIndex(pkChr) != iMapIndex)
+	if (((pkChr)->GetMapIndex()) != iMapIndex)
 		return;
 
 	auto it = m_map_kListEvent.find(dwPID);

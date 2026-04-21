@@ -203,7 +203,7 @@ ACMD(do_open_biologist) {
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
-	if (ecs::GetLevel(ch) < min) {
+	if (((ch)->GetLevel()) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 861, "%d", min);
 #endif
@@ -234,7 +234,7 @@ ACMD(do_delivery_biologist) {
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
-	if (ecs::GetLevel(ch) < min) {
+	if (((ch)->GetLevel()) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 861, "%d", min);
 #endif
@@ -400,7 +400,7 @@ ACMD(do_reward_biologist) {
 		return;
 	} else {
 		int min = biologistMissionInfo[newstat][12];
-		if (ecs::GetLevel(ch) < min) {
+		if (((ch)->GetLevel()) < min) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 869, "%d", min);
 #endif
@@ -519,7 +519,7 @@ ACMD(do_gotoxy)
 		return;
 	}
 
-	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ecs::GetMapIndex(ch) >= 10000) {
+	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ((ch)->GetMapIndex()) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif
@@ -529,7 +529,7 @@ ACMD(do_gotoxy)
 	str_to_number(x, arg1);
 	str_to_number(y, arg2);
 	PIXEL_POSITION p;
-	if (!SECTREE_MANAGER::instance().GetMapBasePosition(ecs::GetX(ch), ecs::GetY(ch), p))
+	if (!SECTREE_MANAGER::instance().GetMapBasePosition(((ch)->GetX()), ((ch)->GetY()), p))
 		return;
 
 	if (ch->GetGold() < 1000000) {
@@ -543,7 +543,7 @@ ACMD(do_gotoxy)
 		y += p.y / 100;
 		x *= 100;
 		y *= 100;
-		ch->Show(ecs::GetMapIndex(ch), x, y, z);
+		ch->Show(((ch)->GetMapIndex()), x, y, z);
 		ch->Stop();
 		ch->SetGoToXYTime();
 	}
@@ -556,7 +556,7 @@ ACMD(do_open_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT slot, name, map, x, y FROM player.savepoint WHERE id = %u", ecs::GetPlayerID(ch));
+	snprintf(query, sizeof(query), "SELECT slot, name, map, x, y FROM player.savepoint WHERE id = %u", ((ch)->GetPlayerID()));
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		std::vector<int> stat;
@@ -610,7 +610,7 @@ ACMD(do_empty_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", ecs::GetPlayerID(ch), slot);
+	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, "-", 0, 0, 0);
 }
@@ -643,7 +643,7 @@ ACMD(do_go_savepoint) {
 		return; 
 	}
 
-	if (ecs::GetMapIndex(ch) > 10000) {
+	if (((ch)->GetMapIndex()) > 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1288, "");
 #endif
@@ -651,7 +651,7 @@ ACMD(do_go_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT g_x, g_y, map FROM player.savepoint WHERE id = %u AND slot = %d", ecs::GetPlayerID(ch), slot);
+	snprintf(query, sizeof(query), "SELECT g_x, g_y, map FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		MYSQL_ROW data;
@@ -659,9 +659,9 @@ ACMD(do_go_savepoint) {
 			int c = 0;
 			int x = atoi(data[c++]), y = atoi(data[c++]), mapIdx = atoi(data[c++]);
 
-			if (mapIdx == ecs::GetMapIndex(ch)) {
-				int x2 = x - ecs::GetX(ch);
-				int y2 = y - ecs::GetY(ch);
+			if (mapIdx == ((ch)->GetMapIndex())) {
+				int x2 = x - ((ch)->GetX());
+				int y2 = y - ((ch)->GetY());
 				double nDist = 0;
 				const double nDistant = 5000.0;
 				nDist = sqrt(pow((float)x2, 2) + pow((float)y2, 2));
@@ -722,12 +722,12 @@ ACMD(do_save_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", ecs::GetPlayerID(ch), slot);
+	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
-		sys_err("%s savepoint slot (%d) is not empty. Maybe a hacker?", ecs::GetName(ch), slot);
+		sys_err("%s savepoint slot (%d) is not empty. Maybe a hacker?", ((ch)->GetName()), slot);
 	} else {
-		int mapIdx = ecs::GetMapIndex(ch);
+		int mapIdx = ((ch)->GetMapIndex());
 		if (mapIdx > 10000) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 531, "");
@@ -750,12 +750,12 @@ ACMD(do_save_savepoint) {
 			return;
 		}
 
-		int x = (ecs::GetX(ch) - map->m_setting.iBaseX) / 100;
-		int y = (ecs::GetY(ch) - map->m_setting.iBaseY) / 100;
+		int x = (((ch)->GetX()) - map->m_setting.iBaseX) / 100;
+		int y = (((ch)->GetY()) - map->m_setting.iBaseY) / 100;
 		PIXEL_POSITION pos = ch->GetXYZ();
 
 		char query2[512] = {0};
-		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", ecs::GetPlayerID(ch), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
+		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", ((ch)->GetPlayerID()), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
 		std::unique_ptr<SQLMsg> res2(DBManager::instance().DirectQuery(query2));
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
 		ch->SetSavePointTime();
@@ -768,7 +768,7 @@ ACMD(do_doctrine_choose) {
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	if (!*arg1 || ecs::GetLevel(ch) < 5 || ch->GetSkillGroup() != 0) {
+	if (!*arg1 || ((ch)->GetLevel()) < 5 || ch->GetSkillGroup() != 0) {
 		return;
 	}
 
@@ -789,9 +789,9 @@ ACMD(do_doctrine_choose) {
 		if (!(pkAff = ch->FindAffect(AFFECT_HORSE_NAME))) {
 			ch->SetQuestFlag("horse_name.valid_till", get_global_time() + 126144000);
 			ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
-			std::string name = ecs::GetName(ch);
+			std::string name = ((ch)->GetName());
 			name += " Horse";
-			CHorseNameManager::instance().UpdateHorseName(ecs::GetPlayerID(ch), name.c_str(), true);
+			CHorseNameManager::instance().UpdateHorseName(((ch)->GetPlayerID()), name.c_str(), true);
 
 			if (ch->GetHorse()) {
 				ch->HorseSummon(false, true);

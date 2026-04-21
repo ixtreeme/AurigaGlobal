@@ -47,7 +47,7 @@ void SECTREE::Destroy()
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
 				sys_err("Sectree: destroying character: %s is_pc %d",
-					ecs::GetName(ch), ecs::IsPC(ch) ? 1 : 0);
+					((ch)->GetName()), ((ch)->IsPC()) ? 1 : 0);
 
 				if (ch->GetDesc())
 					DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
@@ -149,14 +149,14 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	{
 		LPCHARACTER pkChr = (LPCHARACTER) pkEnt;
 
-		if (ecs::IsPC(pkChr))
+		if (((pkChr)->IsPC()))
 		{
 			IncreasePC();
 
 			if (pkCurTree)
 				pkCurTree->DecreasePC();
 		}
-		else if (m_iPCCount > 0 && !pkChr->IsWarp() && !pkChr->IsGoto()) // PC°¡ ¾Æ´Ï°í ÀÌ °÷¿¡ PC°¡ ÀÖ´Ù¸é Idle event¸¦ ½ÃÀÛ ½ÃÅ²´Ù.
+		else if (m_iPCCount > 0 && !pkChr->IsWarp() && !pkChr->IsGoto()) // PCï¿½ï¿½ ï¿½Æ´Ï°ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ PCï¿½ï¿½ ï¿½Ö´Ù¸ï¿½ Idle eventï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å²ï¿½ï¿½.
 		{
 			pkChr->StartStateMachine();
 		}

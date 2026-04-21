@@ -143,12 +143,12 @@ uint32_t CGuild::GetGuildWarMapIndex(uint32_t dwOppGID)
 	return git->second.map_index;
 }
 
-bool CGuild::CanStartWar(uint8_t bGuildWarType) // Å¸ÀÔ¿¡ µû¶ó ´Ù¸¥ Á¶°ÇÀÌ »ý±æ ¼öµµ ÀÖÀ½
+bool CGuild::CanStartWar(uint8_t bGuildWarType) // Å¸ï¿½Ô¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 {
 	if (bGuildWarType >= GUILD_WAR_TYPE_MAX_NUM)
 		return false;
 
-	// Å×½ºÆ®½Ã¿¡´Â ÀÎ¿ø¼ö¸¦ È®ÀÎÇÏÁö ¾Ê´Â´Ù.
+	// ï¿½×½ï¿½Æ®ï¿½Ã¿ï¿½ï¿½ï¿½ ï¿½Î¿ï¿½ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
 	if (test_server || quest::CQuestManager::instance().GetEventFlag("guild_war_test") != 0)
 		return GetLadderPoint() > 0;
 
@@ -328,7 +328,7 @@ void CGuild::RequestDeclareWar(uint32_t dwOppGID, uint8_t type)
 			return;
 		}
 
-		// ÆÐÅ¶ º¸³»±â to another server
+		// ï¿½ï¿½Å¶ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ to another server
 		TPacketGuildWar p;
 		p.bType = type;
 		p.bWar = GUILD_WAR_SEND_DECLARE;
@@ -347,7 +347,7 @@ void CGuild::RequestDeclareWar(uint32_t dwOppGID, uint8_t type)
 
 				if (saved_type == GUILD_WAR_TYPE_FIELD)
 				{
-					// ¼±ÀüÆ÷°í ÇÑ°ÍÀ» ¹Þ¾Æµé¿´´Ù.
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ï¿½ï¿½ ï¿½Þ¾Æµé¿´ï¿½ï¿½.
 					TPacketGuildWar p;
 					p.bType = saved_type;
 					p.bWar = GUILD_WAR_ON_WAR;
@@ -456,14 +456,14 @@ void CGuild::StartWar(uint32_t dwOppGID)
 
 bool CGuild::WaitStartWar(uint32_t dwOppGID)
 {
-	//ÀÚ±âÀÚ½ÅÀÌ¸é
+	//ï¿½Ú±ï¿½ï¿½Ú½ï¿½ï¿½Ì¸ï¿½
 	if (dwOppGID == GetID())
 	{
 		sys_log(0 ,"GuildWar.WaitStartWar.DECLARE_WAR_SELF id(%u -> %u)", GetID(), dwOppGID);
 		return false;
 	}
 
-	//»ó´ë¹æ ±æµå TGuildWar ¸¦ ¾ò¾î¿Â´Ù.
+	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ TGuildWar ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
 	auto it = m_EnemyGuild.find(dwOppGID);
 	if (it == m_EnemyGuild.end())
 	{
@@ -471,7 +471,7 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 		return false;
 	}
 
-	//·¹ÆÛ·±½º¿¡ µî·ÏÇÏ°í
+	//ï¿½ï¿½ï¿½Û·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï°ï¿½
 	TGuildWar & gw(it->second);
 
 	if (gw.state == GUILD_WAR_WAIT_START)
@@ -480,10 +480,10 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 		return false;
 	}
 
-	//»óÅÂ¸¦ ÀúÀåÇÑ´Ù.
+	//ï¿½ï¿½ï¿½Â¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
 	gw.state = GUILD_WAR_WAIT_START;
 
-	//»ó´ëÆíÀÇ ±æµå Å¬·¡½º Æ÷ÀÎÅÍ¸¦ ¾ò¾î¿À°í
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	CGuild* g = CGuildManager::instance().FindGuild(dwOppGID);
 	if (!g)
 	{
@@ -496,14 +496,14 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 	// END_OF_GUILDWAR_INFO
 
 
-	// ÇÊµåÇüÀÌ¸é ¸Ê»ý¼º ¾ÈÇÔ
+	// ï¿½Êµï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½Ê»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (gw.type == GUILD_WAR_TYPE_FIELD)
 	{
 		sys_log(0 ,"GuildWar.WaitStartWar.FIELD_TYPE id(%u -> %u)", GetID(), dwOppGID);
 		return true;
 	}
 
-	// ÀüÀï ¼­¹ö ÀÎÁö È®ÀÎ
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
 	sys_log(0 ,"GuildWar.WaitStartWar.CheckWarServer id(%u -> %u), type(%d), map(%d)",
 			GetID(), dwOppGID, gw.type, rkGuildWarInfo.lMapIndex);
 
@@ -520,7 +520,7 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 	if (id1 > id2)
 		std::swap(id1, id2);
 
-	//¿öÇÁ ¸ÊÀ» »ý¼º
+	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	uint32_t lMapIndex = CWarMapManager::instance().CreateWarMap(rkGuildWarInfo, id1, id2);
 	if (!lMapIndex)
 	{
@@ -531,10 +531,10 @@ bool CGuild::WaitStartWar(uint32_t dwOppGID)
 
 	sys_log(0, "GuildWar.WaitStartWar.CreateMap id(%u vs %u), type(%u), map(%d) -> map_inst(%u)", id1, id2, gw.type, rkGuildWarInfo.lMapIndex, lMapIndex);
 
-	//±æµåÀü Á¤º¸¿¡ ¸ÊÀÎµ¦½º¸¦ ¼¼ÆÃ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	gw.map_index = lMapIndex;
 
-	//¾çÂÊ¿¡ µî·Ï(?)
+	//ï¿½ï¿½ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½(?)
 	SetGuildWarMapIndex(dwOppGID, lMapIndex);
 	g->SetGuildWarMapIndex(GetID(), lMapIndex);
 
@@ -561,7 +561,7 @@ void CGuild::RequestRefuseWar(uint32_t dwOppGID)
 
 	if (it != m_EnemyGuild.end() && it->second.state == GUILD_WAR_RECV_DECLARE)
 	{
-		// ¼±ÀüÆ÷°í¸¦ °ÅÀýÇß´Ù.
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ß´ï¿½.
 		TPacketGuildWar p;
 		p.bWar = GUILD_WAR_REFUSE;
 		p.dwGuildFrom = GetID();
@@ -688,7 +688,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 			ch->StopRiding();
 	}
 #endif
-	quest::PC * pPC = quest::CQuestManager::instance().GetPC(ecs::GetPlayerID(ch));
+	quest::PC * pPC = quest::CQuestManager::instance().GetPC(((ch)->GetPlayerID()));
 	pPC->SetFlag("war.is_war_member", 1);
 
 	ch->SaveExitLocation();
@@ -732,13 +732,13 @@ void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
 		unsigned int questIndex=CQuestManager::instance().GetQuestIndexByName("guild_war_join");
 		if (questIndex)
 		{
-			sys_log(0, "GuildWar.GuildWarEntryAsk.SendLetterToMember pid(%d), qid(%d)", ecs::GetPlayerID(ch), questIndex);
-			CQuestManager::instance().Letter(ecs::GetPlayerID(ch), questIndex, 0);
+			sys_log(0, "GuildWar.GuildWarEntryAsk.SendLetterToMember pid(%d), qid(%d)", ((ch)->GetPlayerID()), questIndex);
+			CQuestManager::instance().Letter(((ch)->GetPlayerID()), questIndex, 0);
 		}
 		else
 		{
 			sys_err("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid(%d), quest_name('guild_war_join.quest')",
-					ecs::GetPlayerID(ch), questIndex);
+					((ch)->GetPlayerID()), questIndex);
 			break;
 		}
 	}

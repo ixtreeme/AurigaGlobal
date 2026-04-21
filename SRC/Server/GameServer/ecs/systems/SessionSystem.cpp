@@ -573,7 +573,7 @@ void CHARACTER::WarpEnd()
         strlcpy(p.szName, GetName(), sizeof(p.szName));
         p.dwPID = GetPlayerID();
         p.bEmpire = GetEmpire();
-        p.lMapIndex = ecs::GetMapIndex(GetX(), GetY());
+        p.lMapIndex = ecs::MapIndexAt(GetX(), GetY());
         p.bChannel = g_bChannel;
 
         P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));

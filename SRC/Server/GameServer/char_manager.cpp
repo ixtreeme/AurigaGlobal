@@ -864,7 +864,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ecs::GetName(ch), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -1413,10 +1413,10 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 		if (ch == except)
 			continue;
 
-		if (ecs::GetLevel(ch) < iMinLevel)
+		if (((ch)->GetLevel()) < iMinLevel)
 			continue;
 
-		if (ecs::GetLevel(ch) > iMaxLevel)
+		if (((ch)->GetLevel()) > iMaxLevel)
 			continue;
 
 		if (ch->GetMapIndex() != lMapIndex)

@@ -15,9 +15,9 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
-				if ( ecs::IsPC(ch) == true && ch->IsGM() != true )
+				if ( ((ch)->IsPC()) == true && ch->IsGM() != true )
 				{
-					if ( ((ecs::GetX(ch) >= 764503 && ecs::GetX(ch) <= 772362) && (ecs::GetY(ch) >= 22807 && ecs::GetY(ch) <= 26499)) == false )
+					if ( ((((ch)->GetX()) >= 764503 && ((ch)->GetX()) <= 772362) && (((ch)->GetY()) >= 22807 && ((ch)->GetY()) <= 26499)) == false )
 					{
 						ch->GoHome();
 					}

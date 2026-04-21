@@ -184,7 +184,7 @@ void CHARACTER::StartRecoveryEvent()
 	if (IsDead() || IsStun())
 		return;
 
-	if (IsNPC() && GetHP() >= GetMaxHP()) // ¸ó1oAÍ´?A1·ÂAI ´U Â÷A?¸¸?1AAU 3E?´U.
+	if (IsNPC() && GetHP() >= GetMaxHP()) // ï¿½ï¿½1oAÍ´?A1ï¿½ï¿½AI ï¿½U ï¿½ï¿½A?ï¿½ï¿½?1AAU 3E?ï¿½U.
 		return;
 
 
@@ -262,7 +262,7 @@ void CHARACTER::SetRotation(float fRot)
 #endif
 	}
 
-		if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 		runtime->rotation = fRot;
 
 	if (const entt::entity e = EcsEntityOf(this); e != entt::null && g_registry.valid(e))
@@ -272,7 +272,7 @@ void CHARACTER::SetRotation(float fRot)
 	}
 }
 
-// x, y 1aÇâA¸·?o¸°?1±´U.
+// x, y 1aï¿½ï¿½Aï¿½ï¿½?oï¿½ï¿½?1ï¿½ï¿½U.
 void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
 {
 	SetRotation(GetDegreeFromPositionXY(GetX(), GetY(), x, y));
@@ -288,10 +288,10 @@ bool CHARACTER::CanMove() const
 	if (CannotMoveByAffect())
 		return false;
 
-	if (GetMyShop())	// »ó? ??»óA?!1???oÁ÷AI 1?3oA1
+	if (GetMyShop())	// ï¿½ï¿½? ??ï¿½ï¿½A?!1???oï¿½ï¿½AI 1?3oA1
 		return false;
 
-	// 0.2AE A?I¶ó¸é ?oÁ÷AI 1?3o´U.
+	// 0.2AE A?Iï¿½ï¿½ï¿½ ?oï¿½ï¿½AI 1?3oï¿½U.
 	/*
 	   if (get_float_time() - m_fSyncTime < 0.2f)
 	   return false;
@@ -299,7 +299,7 @@ bool CHARACTER::CanMove() const
 	return true;
 }
 
-// 1«Á¶°?x, y A§Ä!·Î AI? 1AA2´U.
+// 1ï¿½ï¿½ï¿½ï¿½?x, y Aï¿½ï¿½!ï¿½ï¿½ AI? 1AA2ï¿½U.
 bool CHARACTER::Sync(int32_t x, int32_t y)
 {
 	if (!GetSectree())
@@ -389,7 +389,7 @@ void CHARACTER::Stop()
 
 bool CHARACTER::Goto(int32_t x, int32_t y)
 {
-	// TODO °A¸®A1A????	// °°Ao A§Ä!¸é AI?? ???3oA1 (AÚµ? 1o°o)
+	// TODO ï¿½Aï¿½ï¿½A1A????	// ï¿½ï¿½Ao Aï¿½ï¿½!ï¿½ï¿½ AI?? ???3oA1 (AÚµ? 1oï¿½o)
 	if (GetX() == x && GetY() == y)
 		return false;
 
@@ -439,7 +439,7 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 
 
 	if (!HasMoveState(this)) {
-		MonsterLog("[MOVE] %s", GetVictim() ? "´ë»óA?u" : "±×3?I?");
+		MonsterLog("[MOVE] %s", GetVictim() ? "ï¿½ï¿½ï¿½A?u" : "ï¿½ï¿½3?I?");
 	}
 
 	const entt::entity e = EcsEntityOf(this);
@@ -576,14 +576,14 @@ void CHARACTER::CalculateMoveDuration()
 	m_dwMoveStartTime = get_dword_time();
 }
 
-// x y A§Ä!·Î AI? ?´U. (AI?? 1?AÖ´?? 3o´Â ?¸¦ E®A??°í Sync ?1Oµa·Î 1ÇÁ?AI? ?´U)
-// 1?ö´?charA?x, y °aA?1U·Î 1U2UÁö¸¸,
-// A¬¶?!1??AIA?A§Ä!?!1?1U2U x, y±îÁö interpolation?´U.
-// °E°A3a ¶U´Â °ÍAo charA?m_bNowWalking?! ?·ÁAÖ´U.
-// Warp¸¦ AÇµµÇN °ÍAI¶ó¸é Show¸¦ »ç?ëÇO °Í.
+// x y Aï¿½ï¿½!ï¿½ï¿½ AI? ?ï¿½U. (AI?? 1?AÖ´?? 3oï¿½ï¿½ ?ï¿½ï¿½ Eï¿½A??ï¿½ï¿½ Sync ?1Oï¿½aï¿½ï¿½ 1ï¿½ï¿½?AI? ?ï¿½U)
+// 1?ï¿½ï¿½?charA?x, y ï¿½aA?1Uï¿½ï¿½ 1U2Uï¿½ï¿½ï¿½ï¿½,
+// Aï¿½ï¿½?!1??AIA?Aï¿½ï¿½!?!1?1U2U x, yï¿½ï¿½ï¿½ï¿½ interpolation?ï¿½U.
+// ï¿½Eï¿½A3a ï¿½Uï¿½ï¿½ ï¿½ï¿½Ao charA?m_bNowWalking?! ?ï¿½ï¿½AÖ´U.
+// Warpï¿½ï¿½ AÇµï¿½ï¿½N ï¿½ï¿½AIï¿½ï¿½ï¿½ Showï¿½ï¿½ ï¿½ï¿½?ï¿½ï¿½O ï¿½ï¿½.
 bool CHARACTER::Move(int32_t x, int32_t y)
 {
-	// °°Ao A§Ä!¸é AI?? ???3oA1 (AÚµ? 1o°o)
+	// ï¿½ï¿½Ao Aï¿½ï¿½!ï¿½ï¿½ AI?? ???3oA1 (AÚµ? 1oï¿½o)
 	if (GetX() == x && GetY() == y)
 		return true;
 
@@ -682,9 +682,9 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
         if (IsNPC())
         {
             if (m_bNowWalking)
-                MonsterLog("°E´Â´U");
+                MonsterLog("ï¿½Eï¿½Â´U");
             else
-                MonsterLog("¶Ú´U");
+                MonsterLog("ï¿½Ú´U");
         }
     }
 }
@@ -740,7 +740,7 @@ void CHARACTER::SetPosition(int pos)
 	if (pos == POS_STANDING)
 	{
 		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
-		if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
 
 		event_cancel(&m_pkDeadEvent);
@@ -771,7 +771,7 @@ void CHARACTER::SetPosition(int pos)
 		}
 	}
 
-	if (auto* runtime = ecs::TryGetRuntimeFlags(this))
+	if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 		runtime->position = pos;
 }
 
@@ -782,14 +782,14 @@ bool CHARACTER::IsPosition(int pos) const
 
 int CHARACTER::GetPosition() const
 {
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(this)))
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 		return runtime->position;
 
 }
 
 float CHARACTER::GetRotation() const
 {
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(const_cast<CHARACTER*>(this)))
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 		return runtime->rotation;
 
 }

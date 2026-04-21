@@ -50,7 +50,7 @@ namespace
 		if (!ch)
 			return false;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 		if (!pc)
 			return false;
 
@@ -63,7 +63,7 @@ namespace
 		if (!ch)
 			return;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 		if (!pc)
 			return;
 
@@ -644,7 +644,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	{
 		missionInfo[i].dwMissionInfo[2] = pkChar->GetMissionProgress(missionInfo[i].bMissionType, bBattlePassId);
 
-		// BOOST: a kliens felé is felezett total menjen
+		// BOOST: a kliens felï¿½ is felezett total menjen
 		missionInfo[i].dwMissionInfo[1] = pkChar->GetBattlePassAdjustedTotal(
 			missionInfo[i].bMissionType, bBattlePassId, missionInfo[i].dwMissionInfo[1]
 		);
@@ -771,7 +771,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	if(bIsCompleted)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ecs::GetName(pkChar), battlePassName.c_str());
+		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ((pkChar)->GetName()), battlePassName.c_str());
 #endif
 		BattlePassReward(pkChar);
 	}
@@ -832,7 +832,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	
 	TBattlePassRegisterRanking ranking;
 	ranking.bBattlePassId = bBattlePassId;
-	strlcpy(ranking.playerName, ecs::GetName(pkChar), sizeof(ranking.playerName));
+	strlcpy(ranking.playerName, ((pkChar)->GetName()), sizeof(ranking.playerName));
 	db_clientdesc->DBPacket(HEADER_GD_REGISTER_BP_RANKING, 0, &ranking, sizeof(TBattlePassRegisterRanking));
 	SetBattlePassFinalRewardTaken(pkChar, bBattlePassId);
 }

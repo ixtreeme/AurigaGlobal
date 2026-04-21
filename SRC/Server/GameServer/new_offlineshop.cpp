@@ -598,7 +598,7 @@ namespace offlineshop
 				if (!ch)
 					continue;
 
-				if (ecs::GetPlayerID(ch) == m_dwPID)
+				if (((ch)->GetPlayerID()) == m_dwPID)
 					GetManager().SendShopOpenMyShopClientPacket(ch);
 
 				else
@@ -609,7 +609,7 @@ namespace offlineshop
 
 		else
 		{
-			if(ecs::GetPlayerID(ch) == m_dwPID)
+			if(((ch)->GetPlayerID()) == m_dwPID)
 				GetManager().SendShopOpenMyShopClientPacket(ch);
 
 			else
@@ -880,7 +880,7 @@ namespace offlineshop
 	void ShopEntity::EncodeInsertPacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !ecs::IsPC(ch))
+		if(!ch || !((ch)->IsPC()))
 			return;
 
 		GetManager().EncodeInsertShopEntity(*this, ch);
@@ -890,7 +890,7 @@ namespace offlineshop
 	void ShopEntity::EncodeRemovePacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !ecs::IsPC(ch))
+		if(!ch || !((ch)->IsPC()))
 			return;
 
 		GetManager().EncodeRemoveShopEntity(*this, ch);

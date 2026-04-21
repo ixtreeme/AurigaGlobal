@@ -69,7 +69,7 @@ bool CShopEx::AddGuest(LPCHARACTER ch,uint32_t owner_vid, bool bOtherEmpire)
 
 	pack2.owner_vid = owner_vid;
 	pack2.shop_tab_count = m_vec_shopTabs.size();
-	char temp[8096]; // ÃÖ´ë 1728 * 3
+	char temp[8096]; // ï¿½Ö´ï¿½ 1728 * 3
 	char* buf = &temp[0];
 	size_t size = 0;
 	for (auto it = m_vec_shopTabs.begin(); it != m_vec_shopTabs.end(); it++)
@@ -123,11 +123,11 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	uint8_t slotPos = pos % SHOP_HOST_ITEM_MAX_NUM;
 	if (tabIdx >= GetTabCount())
 	{
-		sys_log(0, "ShopEx::Buy : invalid position %d : %s", pos, ecs::GetName(ch));
+		sys_log(0, "ShopEx::Buy : invalid position %d : %s", pos, ((ch)->GetName()));
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	sys_log(0, "ShopEx::Buy : name %s pos %d", ecs::GetName(ch), pos);
+	sys_log(0, "ShopEx::Buy : name %s pos %d", ((ch)->GetName()), pos);
 
 	GuestMapType::iterator it = m_map_guest.find(ch);
 
@@ -153,7 +153,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 		if (ch->GetGold() < dwPrice)
 		{
-			sys_log(1, "ShopEx::Buy : Not enough money : %s has %lld, price %lld", ecs::GetName(ch), ch->GetGold(), dwPrice);
+			sys_log(1, "ShopEx::Buy : Not enough money : %s has %lld, price %lld", ((ch)->GetName()), ch->GetGold(), dwPrice);
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 
@@ -163,7 +163,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 			uint32_t count = ch->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
 			if (count < dwPrice)
 			{
-				sys_log(1, "ShopEx::Buy : Not enough myeongdojun : %s has %d, price %d", ecs::GetName(ch), count, dwPrice);
+				sys_log(1, "ShopEx::Buy : Not enough myeongdojun : %s has %d, price %d", ((ch)->GetName()), count, dwPrice);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 		}
@@ -195,7 +195,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (iEmptyPos < 0)
 	{
-		sys_log(1, "ShopEx::Buy : Inventory full : %s size %d", ecs::GetName(ch), item->GetSize());
+		sys_log(1, "ShopEx::Buy : Inventory full : %s size %d", ((ch)->GetName()), item->GetSize());
 		M2_DESTROY_ITEM(item);
 		return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 	}
@@ -225,19 +225,19 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (item->GetVnum() >= 80003 && item->GetVnum() <= 80007)
 	{
-		LogManager::instance().GoldBarLog(ecs::GetPlayerID(ch), item->GetID(), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), PERSONAL_SHOP_BUY, "");
 	}
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, item->GetVnum(), -dwPrice);
 
 	if (item)
-		sys_log(0, "ShopEx: BUY: name %s %s(x %d):%u price %u", ecs::GetName(ch), item->GetName(), item->GetCount(), item->GetID(), dwPrice);
+		sys_log(0, "ShopEx: BUY: name %s %s(x %d):%u price %u", ((ch)->GetName()), item->GetName(), item->GetCount(), item->GetID(), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
 		ch->SaveReal();
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
-		uint32_t pid = ecs::GetPlayerID(ch);
+		uint32_t pid = ((ch)->GetPlayerID());
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));
 	}
 #else

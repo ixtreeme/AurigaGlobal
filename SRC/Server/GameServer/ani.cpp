@@ -64,7 +64,7 @@ const char* FN_weapon_type(int weapon)
 class ANI
 {
 	protected:
-		// [Á¾Á·][ÀÏ¹Ý0Å»°Í1][¹«±â][ÄÞº¸]
+		// [ï¿½ï¿½ï¿½ï¿½][ï¿½Ï¹ï¿½0Å»ï¿½ï¿½1][ï¿½ï¿½ï¿½ï¿½][ï¿½Þºï¿½]
 		uint32_t m_speed[MAIN_RACE_MAX_NUM][2][WEAPON_NUM_TYPES][9];
 
 	public:
@@ -132,16 +132,16 @@ ANI::ANI()
 bool ANI::load()
 {
 	const char*	dir_name[MAIN_RACE_MAX_NUM] = {
-		"data/pc/warrior",		// ¹«»ç(³²)
-		"data/pc/assassin",		// ÀÚ°´(¿©)
-		"data/pc/sura",			// ¼ö¶ó(³²)
-		"data/pc/shaman",		// ¹«´ç(¿©)
-		"data/pc2/warrior",		// ¹«»ç(¿©)
-		"data/pc2/assassin",	// ÀÚ°´(³²)
-		"data/pc2/sura",		// ¼ö¶ó(¿©)
-		"data/pc2/shaman",		// ¹«´ç(³²)
+		"data/pc/warrior",		// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
+		"data/pc/assassin",		// ï¿½Ú°ï¿½(ï¿½ï¿½)
+		"data/pc/sura",			// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
+		"data/pc/shaman",		// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
+		"data/pc2/warrior",		// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
+		"data/pc2/assassin",	// ï¿½Ú°ï¿½(ï¿½ï¿½)
+		"data/pc2/sura",		// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
+		"data/pc2/shaman",		// ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		"data/pc3/wolfman",		// ¼öÀÎÁ·
+		"data/pc3/wolfman",		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #endif
 	};
 
@@ -218,13 +218,13 @@ bool ANI::load_one_race(int race, const char *dir_name)
 
 		for (uint8_t combo = 1; combo <= 8; ++combo)
 		{
-			// ¸» ¾ÈÅÀÀ» ¶§
+			// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 			m_speed[race][0][weapon][combo] = load_one_weapon(dir_name, weapon, combo, false);
-			m_speed[race][0][weapon][0] = MIN(m_speed[race][0][weapon][0], m_speed[race][0][weapon][combo]); // ÃÖ¼Ò°ª
+			m_speed[race][0][weapon][0] = MIN(m_speed[race][0][weapon][0], m_speed[race][0][weapon][combo]); // ï¿½Ö¼Ò°ï¿½
 
-			// ¸» ÅÀÀ» ¶§
+			// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 			m_speed[race][1][weapon][combo] = load_one_weapon(dir_name, weapon, combo, true);
-			m_speed[race][1][weapon][0] = MIN(m_speed[race][1][weapon][0], m_speed[race][1][weapon][combo]); // ÃÖ¼Ò°ª
+			m_speed[race][1][weapon][0] = MIN(m_speed[race][1][weapon][0], m_speed[race][1][weapon][combo]); // ï¿½Ö¼Ò°ï¿½
 
 			dev_log(LOG_DEB0, "combo%02d speed=%d horse=%d",
 					combo, m_speed[race][0][weapon][combo], m_speed[race][1][weapon][combo]);
@@ -353,19 +353,19 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (ITEM_WEAPON != item->GetType())
 		return speed;
 
-	int race = ecs::GetRaceNum(ch);
+	int race = ((ch)->GetRaceNum());
 	int weapon = item->GetSubType();
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
-			ecs::GetName(ch),
+			((ch)->GetName()),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
 			ch->GetPoint(POINT_ATT_SPEED));
 	*/
 
-	/* ÅõÇÚµðµå ¼ÒµåÀÇ °æ¿ì »ï¿¬Âü°ø°Ý°ú ½Â¸¶½Ã */
-	/* ¿À·ù°¡ ¸¹¾Æ ÇÑ¼Õ°Ë ¼Óµµ·Î »ý°¢ÇÏÀÚ       */
+	/* ï¿½ï¿½ï¿½Úµï¿½ï¿½ ï¿½Òµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿¬ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½ ï¿½Â¸ï¿½ï¿½ï¿½ */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ¼Õ°ï¿½ ï¿½Óµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½       */
 	if (weapon == WEAPON_TWO_HANDED)
 		weapon = WEAPON_SWORD;
 
@@ -379,7 +379,7 @@ uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 	if (nullptr == item || combo > 8)
 		return 1000;
 
-	return s_ANI.attack_speed(ecs::GetRaceNum(ch), item->GetSubType(), combo, ch->IsRiding());
+	return s_ANI.attack_speed(((ch)->GetRaceNum()), item->GetSubType(), combo, ch->IsRiding());
 }
 
 void ani_print_attack_speed()

@@ -408,7 +408,7 @@ void DBManager::FlushBilling(bool bForce)
 void DBManager::CheckBilling()
 {
 	std::vector<uint32_t> vec;
-	vec.push_back(0); // Ä«¿îÆ®¸¦ À§ÇØ ¹Ì¸® ºñ¿öµÐ´Ù.
+	vec.push_back(0); // Ä«ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½Ð´ï¿½.
 
 	//sys_log(0, "CheckBilling: map size %d", m_map_pkLoginData.size());
 
@@ -425,7 +425,7 @@ void DBManager::CheckBilling()
 		}
 	}
 
-	vec[0] = vec.size() - 1; // ºñ¿öµÐ °÷¿¡ »çÀÌÁî¸¦ ³Ö´Â´Ù, »çÀÌÁî ÀÚ½ÅÀº Á¦¿ÜÇØ¾ß ÇÏ¹Ç·Î -1
+	vec[0] = vec.size() - 1; // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½î¸¦ ï¿½Ö´Â´ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½Ï¹Ç·ï¿½ -1
 	db_clientdesc->DBPacket(HEADER_GD_BILLING_CHECK, 0, &vec[0], sizeof(uint32_t) * vec.size());
 }
 
@@ -619,7 +619,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					M2_DELETE(pinfo);
 					break;
 				}
-				//À§Ä¡ º¯°æ - By SeMinZ
+				//ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ - By SeMinZ
 				d->SetLogin(pinfo->login);
 
 				sys_log(0, "QID_AUTH_LOGIN: START %u %p", qi->dwIdent, get_pointer(d));
@@ -736,7 +736,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					int nPasswordDiff = strcmp(szEncrytPassword, szPassword);
 
-					//OpenID : OpenID ÀÇ °æ¿ì, ºñ¹Ð¹øÈ£ Ã¼Å©¸¦ ÇÏÁö ¾Ê´Â´Ù.
+					//OpenID : OpenID ï¿½ï¿½ ï¿½ï¿½ï¿½, ï¿½ï¿½Ð¹ï¿½È£ Ã¼Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
 					if (openid_server)
 					{
 						nPasswordDiff = 0;
@@ -1038,7 +1038,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						sys_log(0, "GIVE LOTTO FAIL TO pid %u", ecs::GetPlayerID(ch));
+						sys_log(0, "GIVE LOTTO FAIL TO pid %u", ((ch)->GetPlayerID()));
 					}
 					else
 					{
@@ -1046,12 +1046,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (pkItem)
 						{
-							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ecs::GetName(ch), qi->dwIdent);
+							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ((ch)->GetName()), qi->dwIdent);
 							pkItem->SetSocket(0, pMsg->Get()->uiInsertID);
 							pkItem->SetSocket(1, pdw[2]);
 						}
 						else
-							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ecs::GetPlayerID(ch));
+							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ((ch)->GetPlayerID()));
 					}
 				}
 
@@ -1362,7 +1362,7 @@ enum EAccountQID
 	QID_SPAM_DB,
 };
 
-// 10ºÐ¸¶´Ù ¸®·Îµå
+// 10ï¿½Ð¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½
 static LPEVENT s_pkReloadSpamEvent = nullptr;
 
 EVENTINFO(reload_spam_event_info)

@@ -1329,7 +1329,7 @@ bool CItem::HasAttr(uint8_t bApply)
 
 #ifdef ENABLE_PENDANT
 
-	// Talizmán / pendant: lehessen ugyanaz a bónusz az alap bónusz mellett is
+	// Talizmï¿½n / pendant: lehessen ugyanaz a bï¿½nusz az alap bï¿½nusz mellett is
 
 	if ((GetType() == ITEM_ARMOR && GetSubType() == ARMOR_NUM_TYPES) || (GetWearFlag() & WEARABLE_PENDANT))
 
@@ -1778,7 +1778,7 @@ void CItem::PutAttributeWithLevel(uint8_t bLevel)
 
 	int total = 0;
 
-	// ???? ?ö ?Ö´Â ?Ó?? ???­?» ±¸??
+	// ???? ?ï¿½ ?Ö´ï¿½ ?ï¿½?? ???ï¿½?ï¿½ ï¿½ï¿½??
 	for (int i = 0; i < MAX_APPLY_NUM; ++i)
 	{
 		const TItemAttrTable & r = g_map_itemAttr[i];
@@ -1812,7 +1812,7 @@ void CItem::PutAttributeWithLevel(uint8_t bLevel)
 		return;
 	}
 
-	// ±¸??µ? ???­·Î ?®·ü °?»??» ?ëÇ? ???? ?Ó?? ?±Á¤
+	// ï¿½ï¿½??ï¿½? ???ï¿½ï¿½ï¿½ ?ï¿½ï¿½ï¿½ ï¿½?ï¿½??ï¿½ ?ï¿½ï¿½? ???? ?ï¿½?? ?ï¿½ï¿½ï¿½
 	unsigned int prob = number(1, total);
 	int attr_idx = APPLY_NONE;
 
@@ -1837,7 +1837,7 @@ void CItem::PutAttributeWithLevel(uint8_t bLevel)
 
 	const TItemAttrTable & r = g_map_itemAttr[attr_idx];
 
-	// Á?·??° ?Ó?? ·??§ ?Ö´ë°? Á¦Ç?
+	// ï¿½?ï¿½??ï¿½ ?ï¿½?? ï¿½??ï¿½ ?Ö´ï¿½? ï¿½ï¿½ï¿½?
 	if (bLevel > r.bMaxLevelBySet[iAttributeSet])
 		bLevel = r.bMaxLevelBySet[iAttributeSet];
 
@@ -2064,7 +2064,7 @@ void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
 
 	int total = 0;
 
-	// ???? ?ö ?Ö´Â ?Ó?? ???­?» ±¸??
+	// ???? ?ï¿½ ?Ö´ï¿½ ?ï¿½?? ???ï¿½?ï¿½ ï¿½ï¿½??
 	for (int i = 0; i < MAX_APPLY_NUM; ++i)
 	{
 		const TItemAttrTable & r = g_map_itemRare[i];
@@ -2081,7 +2081,7 @@ void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
 		return;
 	}
 
-	// ±¸??µ? ???­·Î ?®·ü °?»??» ?ëÇ? ???? ?Ó?? ?±Á¤
+	// ï¿½ï¿½??ï¿½? ???ï¿½ï¿½ï¿½ ?ï¿½ï¿½ï¿½ ï¿½?ï¿½??ï¿½ ?ï¿½ï¿½? ???? ?ï¿½?? ?ï¿½ï¿½ï¿½
 	unsigned int prob = number(1, total);
 	int attr_idx = APPLY_NONE;
 
@@ -2106,7 +2106,7 @@ void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
 
 	const TItemAttrTable & r = g_map_itemRare[attr_idx];
 
-	// Á?·??° ?Ó?? ·??§ ?Ö´ë°? Á¦Ç?
+	// ï¿½?ï¿½??ï¿½ ?ï¿½?? ï¿½??ï¿½ ?Ö´ï¿½? ï¿½ï¿½ï¿½?
 	if (bLevel > r.bMaxLevelBySet[iAttributeSet])
 		bLevel = r.bMaxLevelBySet[iAttributeSet];
 
@@ -2729,7 +2729,7 @@ int CHARACTER::CountSpecifyItemRenewal(uint32_t vnum) const
 			item = GetInventoryItem(i);
 			if (nullptr != item && item->GetVnum() == vnum)
 			{
-				// °3AÎ »óÁ!?! µî·IµE 1°°ÇAI¸é 3N3î°L´U.
+				// ï¿½3Aï¿½ ï¿½ï¿½ï¿½!?! ï¿½ï¿½Iï¿½E 1ï¿½ï¿½ï¿½AIï¿½ï¿½ 3N3ï¿½Lï¿½U.
 				if (item->GetLockedAttr() != -1) {
 					continue;
 				}
@@ -2785,7 +2785,7 @@ int CHARACTER::CountSpecifyItem(uint32_t vnum) const
 			item = GetInventoryItem(i);
 			if (nullptr != item && item->GetVnum() == vnum)
 			{
-				// °3AÎ »óÁ!?! µî·IµE 1°°ÇAI¸é 3N3î°L´U.
+				// ï¿½3Aï¿½ ï¿½ï¿½ï¿½!?! ï¿½ï¿½Iï¿½E 1ï¿½ï¿½ï¿½AIï¿½ï¿½ 3N3ï¿½Lï¿½U.
 				if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
 				{
 					continue;
@@ -2889,7 +2889,7 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 			}
 		}
 
-	// ?1?ÜA3¸®°! 3aÇI´U.
+	// ?1?ï¿½A3ï¿½ï¿½ï¿½! 3aï¿½Iï¿½U.
 	if (count)
 		sys_log(0, "CHARACTER::RemoveSpecifyItem cannot remove enough item vnum %u, still remain %d", vnum, count);
 }
@@ -2918,7 +2918,7 @@ int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
 LPITEM CHARACTER::GetWear(uint8_t bCell) const
 {
 
-	// > WEAR_MAX_NUM : ?ëEY1® 11·Ôµé.
+	// > WEAR_MAX_NUM : ?ï¿½EY1ï¿½ 11ï¿½Ôµï¿½.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
 		sys_err("CHARACTER::GetWear: invalid wear cell %d", bCell);
@@ -2931,7 +2931,7 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 
 void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 {
-	// > WEAR_MAX_NUM : ?ëEY1® 11·Ôµé.
+	// > WEAR_MAX_NUM : ?ï¿½EY1ï¿½ 11ï¿½Ôµï¿½.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
 		sys_err("CHARACTER::SetItem: invalid item cell %d", bCell);
@@ -3045,7 +3045,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	if (iWearCell < 0)
 		return false;
 
-	// 1«3?°!¸¦ Ao »óAÂ?!1­ AÎ1Aµµ AÔ±â ±ÝÁö
+	// 1ï¿½3?ï¿½!ï¿½ï¿½ Ao ï¿½ï¿½Aï¿½?!1ï¿½ Aï¿½1Aï¿½ï¿½ AÔ±ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (iWearCell == WEAR_BODY && IsRiding() && (item->GetVnum() >= 11901 && item->GetVnum() <= 11904))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3069,7 +3069,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		return false;
 	}
 
-	//1A±Ô A»°Í »ç?ë1A ±âÁ¸ ¸» »ç?ë?©oÎ A1A©
+	//1Aï¿½ï¿½ Aï¿½ï¿½ï¿½ ï¿½ï¿½?ï¿½1A ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½?ï¿½?ï¿½oï¿½ A1Aï¿½
 	if (item->IsRideItem() && IsRiding())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3120,11 +3120,11 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	}
 #endif
 
-	// ?ëEY1® A—1ö A3¸®
+	// ?ï¿½EY1ï¿½ Aï¿½1ï¿½ A3ï¿½ï¿½
 	if (item->IsDragonSoul())
 	{
-		// °°Ao A¸AÔAÇ ?ëEY1®AI AI1I µé3î°! AÖ´U¸é Âo?ëÇO 1ö 3o´U.
-		// ?ëEY1®Ao swapA» Áö?oÇI¸é 3EµE.
+		// ï¿½ï¿½Ao Aï¿½Aï¿½Aï¿½ ?ï¿½EY1ï¿½AI AI1I ï¿½ï¿½3ï¿½! AÖ´Uï¿½ï¿½ ï¿½o?ï¿½ï¿½O 1ï¿½ 3oï¿½U.
+		// ?ï¿½EY1ï¿½Ao swapAï¿½ ï¿½ï¿½?oï¿½Iï¿½ï¿½ 3Eï¿½E.
 		if (GetInventoryItem(INVENTORY_MAX_NUM + iWearCell))
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -3138,13 +3138,13 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			return false;
 		}
 	}
-	// ?ëEY1®AI 3A´Ô.
+	// ?ï¿½EY1ï¿½AI 3Aï¿½ï¿½.
 	else
 	{
-		// Âo?ëÇO °÷?! 3AAIAUAI AÖ´U¸é,
+		// ï¿½o?ï¿½ï¿½O ï¿½ï¿½?! 3AAIAUAI AÖ´Uï¿½ï¿½,
 		if (GetWear(iWearCell) && !IS_SET(GetWear(iWearCell)->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 		{
-			// AI 3AAIAUAo ÇN1o 1ÚE÷¸é o—°a oO°!. swap ?a1A ?IAü oO°!
+			// AI 3AAIAUAo ï¿½N1o 1ï¿½Eï¿½ï¿½ï¿½ oï¿½ï¿½a oOï¿½!. swap ?a1A ?IAï¿½ oOï¿½!
 			if (item->GetWearFlag() == WEARABLE_ABILITY)
 				return false;
 
@@ -3166,13 +3166,13 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 
 	if (true == item->IsEquipped())
 	{
-		// 3AAIAU AÖAE »ç?ë AIEÄoÎAÍ´Â »ç?ëÇIÁö 3E3Aµµ 1A°LAI Â÷°¨µÇ´Â 1a1Ä A3¸®.
+		// 3AAIAU Aï¿½AE ï¿½ï¿½?ï¿½ AIEï¿½oï¿½AÍ´ï¿½ ï¿½ï¿½?ï¿½ï¿½Iï¿½ï¿½ 3E3Aï¿½ï¿½ 1Aï¿½LAI ï¿½ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ 1a1ï¿½ A3ï¿½ï¿½.
 		if (-1 != item->GetProto()->cLimitRealTimeFirstUseIndex)
 		{
-			// ÇN 1oAI¶óµµ »ç?ëÇN 3AAIAUAÎÁö ?©oÎ´Â Socket1A» o¸°í AÇ´ÜÇN´U. (Socket1?! »ç?ëE11ö ±â·I)
+			// ï¿½N 1oAIï¿½ï¿½ ï¿½ï¿½?ï¿½ï¿½N 3AAIAUAï¿½ï¿½ï¿½ ?ï¿½oÎ´ï¿½ Socket1Aï¿½ oï¿½ï¿½ï¿½ AÇ´ï¿½ï¿½Nï¿½U. (Socket1?! ï¿½ï¿½?ï¿½E11ï¿½ ï¿½ï¿½I)
 			if (0 == item->GetSocket(1))
 			{
-				// »ç?ë°!´É1A°LAo Default °aA¸·Î Limit Value °aA» »ç?ëÇIµÇ, Socket0?! °aAI AÖA¸¸é ±× °aA» »ç?ëÇIµµ·I ÇN´U. (´ÜA§´Â AE)
+				// ï¿½ï¿½?ï¿½!ï¿½ï¿½1Aï¿½LAo Default ï¿½aAï¿½ï¿½ï¿½ Limit Value ï¿½aAï¿½ ï¿½ï¿½?ï¿½ï¿½Iï¿½ï¿½, Socket0?! ï¿½aAI Aï¿½Aï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½aAï¿½ ï¿½ï¿½?ï¿½ï¿½Iï¿½ï¿½ï¿½I ï¿½Nï¿½U. (ï¿½ï¿½Aï¿½ï¿½ï¿½ AE)
 				int32_t duration = (0 != item->GetSocket(0)) ? item->GetSocket(0) : item->GetProto()->aLimits[(unsigned char)(item->GetProto()->cLimitRealTimeFirstUseIndex)].lValue;
 
 				if (0 == duration)
@@ -3190,27 +3190,27 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 
 		const uint32_t& dwVnum = item->GetVnum();
 
-		// ¶ó¸¶´Ü AIoYA® AE1Â´?AÇ 1ÝÁö(71135) Âo?ë1A AIAaA® 1ßµ?
+		// ï¿½ó¸¶´ï¿½ AIoYAï¿½ AE1Â´?Aï¿½ 1ï¿½ï¿½ï¿½(71135) ï¿½o?ï¿½1A AIAaAï¿½ 1ßµ?
 		if (true == CItemVnumHelper::IsRamadanMoonRing(dwVnum))
 		{
 			this->EffectPacket(SE_EQUIP_RAMADAN_RING);
 		}
-		// ÇO·ÎA© »çAÁ(71136) Âo?ë1A AIAaA® 1ßµ?
+		// ï¿½Oï¿½ï¿½Aï¿½ ï¿½ï¿½Aï¿½(71136) ï¿½o?ï¿½1A AIAaAï¿½ 1ßµ?
 		else if (true == CItemVnumHelper::IsHalloweenCandy(dwVnum))
 		{
 			this->EffectPacket(SE_EQUIP_HALLOWEEN_CANDY);
 		}
-		// Çao1AÇ 1ÝÁö(71143) Âo?ë1A AIAaA® 1ßµ?
+		// ï¿½ao1Aï¿½ 1ï¿½ï¿½ï¿½(71143) ï¿½o?ï¿½1A AIAaAï¿½ 1ßµ?
 		else if (true == CItemVnumHelper::IsHappinessRing(dwVnum))
 		{
 			this->EffectPacket(SE_EQUIP_HAPPINESS_RING);
 		}
-		// »ç¶uAÇ AO´oA®(71145) Âo?ë1A AIAaA® 1ßµ?
+		// ï¿½ï¿½uAï¿½ AOï¿½oAï¿½(71145) ï¿½o?ï¿½1A AIAaAï¿½ 1ßµ?
 		else if (true == CItemVnumHelper::IsLovePendant(dwVnum))
 		{
 			this->EffectPacket(SE_EQUIP_LOVE_PENDANT);
 		}
-		// ITEM_UNIQUEAÇ °a?i, SpecialItemGroup?! Á¤AÇµÇ3î AÖ°í, (item->GetSIGVnum() != NULL)
+		// ITEM_UNIQUEAï¿½ ï¿½a?i, SpecialItemGroup?! ï¿½ï¿½AÇµï¿½3ï¿½ AÖ°ï¿½, (item->GetSIGVnum() != NULL)
 		//
 		else if (ITEM_UNIQUE == item->GetType() && 0 != item->GetSIGVnum())
 		{
@@ -3300,7 +3300,7 @@ bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
 			return true;
 	}
 
-	// 3?3î1ÝÁöAÎ °a?i 3?3î1ÝÁö(°ßo») AÎÁöµµ A1A©ÇN´U.
+	// 3?3ï¿½1ï¿½ï¿½ï¿½Aï¿½ ï¿½a?i 3?3ï¿½1ï¿½ï¿½ï¿½(ï¿½ï¿½oï¿½) Aï¿½ï¿½ï¿½ï¿½ï¿½ A1Aï¿½ï¿½Nï¿½U.
 	if (dwItemVnum == UNIQUE_ITEM_RING_OF_LANGUAGE)
 		return IsEquipUniqueItem(UNIQUE_ITEM_RING_OF_LANGUAGE_SAMPLE);
 
@@ -3420,7 +3420,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 	case JOB_WOLFMAN:
 		if (item->GetAntiFlag() & ITEM_ANTIFLAG_WOLFMAN)
 			return false;
-		break; // TODO: 1öAÎÁ· 3AAIAU Âo?ë°!´É?©oÎ A3¸®
+		break; // TODO: 1ï¿½Aï¿½ï¿½ï¿½ 3AAIAU ï¿½o?ï¿½!ï¿½ï¿½?ï¿½oï¿½ A3ï¿½ï¿½
 #endif
 	}
 
@@ -3547,11 +3547,11 @@ bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const
 		return false;
 	}
 
-	// ?µ?oE÷ ÇOÁ¦ÇO 1ö 3o´Â 3AAIAU
+	// ?ï¿½?oEï¿½ ï¿½Oï¿½ï¿½ï¿½O 1ï¿½ 3oï¿½ï¿½ 3AAIAU
 	if (IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 		return false;
 
-	// 3AAIAU unequip1A AÎoYAä¸®·Î ?A±a ¶§ oó AÚ¸®°! AÖ´Â Áö E®AÎ
+	// 3AAIAU unequip1A Aï¿½oYAä¸®ï¿½ï¿½ ?Aï¿½a ï¿½ï¿½ oï¿½ AÚ¸ï¿½ï¿½! AÖ´ï¿½ ï¿½ï¿½ Eï¿½Aï¿½
 	{
 		int pos = -1;
 
@@ -14177,7 +14177,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		assert(!"GetOwner exist");
 		return;
 	}
-	// ±âo» AÎoYAä¸®
+	// ï¿½ï¿½oï¿½ Aï¿½oYAä¸®
 	switch (window_type)
 	{
 	case INVENTORY:
@@ -14267,7 +14267,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		pMainInventory->pItems[storageCell] = pItem;
 	}
 	break;
-	// ?ëEY1® AÎoYAä¸®
+	// ?ï¿½EY1ï¿½ Aï¿½oYAä¸®
 	case DRAGON_SOUL_INVENTORY:
 	{
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
@@ -14427,7 +14427,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 
 	if (GetDesc())
 	{
-		// E®Aa 3AAIAU: 1­1ö?!1­ 3AAIAU ÇA·!±× Á¤o¸¸¦ o¸31´U
+		// Eï¿½Aa 3AAIAU: 1ï¿½1ï¿½?!1ï¿½ 3AAIAU ï¿½Aï¿½!ï¿½ï¿½ ï¿½ï¿½oï¿½ï¿½ï¿½ oï¿½31ï¿½U
 		if (pItem)
 		{
 			TPacketGCItemSet pack;
@@ -15310,7 +15310,7 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 {
 	int idx;
 
-	if ((idx = ecs::GetMapIndex(item->GetSocket(0), item->GetSocket(1))) == 0)
+	if ((idx = ecs::MapIndexAt(item->GetSocket(0), item->GetSocket(1))) == 0)
 		return;
 
 	int iEmpireByMapIndex = -1;

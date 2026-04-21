@@ -276,7 +276,7 @@ namespace quest
         {
             warpPos->x = static_cast<int32_t>(lua_tonumber(L, 1));
             warpPos->y = static_cast<int32_t>(lua_tonumber(L, 2));
-            warpPos->mapIndex = map_index ? map_index : ecs::GetMapIndex(ch);
+            warpPos->mapIndex = map_index ? map_index : ((ch)->GetMapIndex());
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         if ( test_server )
@@ -409,7 +409,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		CGuild * g = ch ? ch->GetGuild() : nullptr;
-		lua_pushboolean(L, (g && ch && ecs::GetPlayerID(ch) == g->GetMasterPID()) ? 1 : 0);
+		lua_pushboolean(L, (g && ch && ((ch)->GetPlayerID()) == g->GetMasterPID()) ? 1 : 0);
 		return 1;
 	}
 
@@ -420,7 +420,7 @@ namespace quest
 		CGuild * g = ch->GetGuild();
 
 		if (g)
-			g->RequestDisband(ecs::GetPlayerID(ch));
+			g->RequestDisband(((ch)->GetPlayerID()));
 
 		return 0;
 	}
@@ -432,7 +432,7 @@ namespace quest
 		CGuild * g = ch->GetGuild();
 
 		if (g)
-			g->RequestRemoveMember(ecs::GetPlayerID(ch));
+			g->RequestRemoveMember(((ch)->GetPlayerID()));
 
 		return 0;
 	}
@@ -462,7 +462,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
         {
-            DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), iAmount);
+            DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), iAmount);
             ch->PointChange(POINT_GOLD, iAmount, true);
         }
         return 0;
@@ -600,7 +600,7 @@ namespace quest
 
 		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 		return 0;
 	}
 
@@ -619,7 +619,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ¹øÈ£ÀÎ°æ¿ì ¹øÈ£·Î ÁØ´Ù.
+		if (lua_isnumber(L, 1)) // ï¿½ï¿½È£ï¿½Î°ï¿½ï¿½ ï¿½ï¿½È£ï¿½ï¿½ ï¿½Ø´ï¿½.
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -643,17 +643,17 @@ namespace quest
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 )
 		{
-			LogManager::instance().GoldBarLog(ecs::GetPlayerID(ch), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), QUEST, "quest: give_item2");
 		}
 
 		if (nullptr != item)
@@ -677,7 +677,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ¹øÈ£ÀÎ°æ¿ì ¹øÈ£·Î ÁØ´Ù.
+		if (lua_isnumber(L, 1)) // ï¿½ï¿½È£ï¿½Î°ï¿½ï¿½ ï¿½ï¿½È£ï¿½ï¿½ ï¿½Ø´ï¿½.
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -715,9 +715,9 @@ namespace quest
 			ch->AutoGiveItem(item);
 
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
 
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
 		lua_pushnumber(L, (item) ? item->GetID() : 0);
 		return 1;
@@ -738,7 +738,7 @@ namespace quest
 
 		uint32_t dwVnum;
 
-		if (lua_isnumber(L, 1)) // ¹øÈ£ÀÎ°æ¿ì ¹øÈ£·Î ÁØ´Ù.
+		if (lua_isnumber(L, 1)) // ï¿½ï¿½È£ï¿½Î°ï¿½ï¿½ ï¿½ï¿½È£ï¿½ï¿½ ï¿½Ø´ï¿½.
 		{
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		}
@@ -759,11 +759,11 @@ namespace quest
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ecs::GetName(ch));
+		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
 		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
 
@@ -772,7 +772,7 @@ namespace quest
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 )
 		{
-			LogManager::instance().GoldBarLog(ecs::GetPlayerID(ch), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), QUEST, "quest: give_item2");
 		}
 
 		return 0;
@@ -789,7 +789,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetMapIndex(ch) : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetMapIndex()) : 0);
 		return 1;
 	}
 
@@ -804,7 +804,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetX(ch) / 100 : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetX()) / 100 : 0);
 		return 1;
 	}
 
@@ -819,7 +819,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetY(ch) / 100 : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetY()) / 100 : 0);
 		return 1;
 	}
 
@@ -841,8 +841,8 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
-		lua_pushnumber(L, pMap ? ((ecs::GetX(ch) - pMap->m_setting.iBaseX) / 100) : (ecs::GetX(ch) / 100));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		lua_pushnumber(L, pMap ? ((((ch)->GetX()) - pMap->m_setting.iBaseX) / 100) : (((ch)->GetX()) / 100));
 		return 1;
 	}
 
@@ -864,8 +864,8 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
-		lua_pushnumber(L, pMap ? ((ecs::GetY(ch) - pMap->m_setting.iBaseY) / 100) : (ecs::GetY(ch) / 100));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		lua_pushnumber(L, pMap ? ((((ch)->GetY()) - pMap->m_setting.iBaseY) / 100) : (((ch)->GetY()) / 100));
 		return 1;
 	}
 
@@ -1005,7 +1005,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetVID(ch) : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetLegacyVID()) : 0);
 		return 1;
 	}
 
@@ -1020,7 +1020,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, ch ? ecs::GetName(ch) : "");
+		lua_pushstring(L, ch ? ((ch)->GetName()) : "");
 		return 1;
 	}
 	ALUA(pc_get_next_exp)
@@ -1064,7 +1064,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetRaceNum(ch) : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetRaceNum()) : 0);
 		return 1;
 	}
 
@@ -1089,7 +1089,7 @@ namespace quest
         }
         const int result = ch->ChangeSex();
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(ecs::GetRaceNum(ch));
+            race->value = static_cast<uint16_t>(((ch)->GetRaceNum()));
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         lua_pushnumber(L, result);
@@ -1227,7 +1227,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::GetLevel(ch) : 0);
+		lua_pushnumber(L, ch ? ((ch)->GetLevel()) : 0);
 		return 1;
 	}
 
@@ -1246,13 +1246,13 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ecs::GetName(ch), (int)rint(lua_tonumber(L,1)));
+        sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), newLevel, 0);
-        ch->PointChange(POINT_SKILL, newLevel - ecs::GetLevel(ch));
-        ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(ecs::GetLevel(ch), 9));
-        ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ecs::GetLevel(ch)) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
-        ch->PointChange(POINT_LEVEL, newLevel - ecs::GetLevel(ch));
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), newLevel, 0);
+        ch->PointChange(POINT_SKILL, newLevel - ((ch)->GetLevel()));
+        ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(((ch)->GetLevel()), 9));
+        ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ((ch)->GetLevel())) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
+        ch->PointChange(POINT_LEVEL, newLevel - ((ch)->GetLevel()));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
         ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
@@ -1261,7 +1261,7 @@ namespace quest
         ch->PointsPacket();
         ch->SkillLevelPacket();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ecs::GetLevel(ch);
+            lv->value = ((ch)->GetLevel());
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -1281,7 +1281,7 @@ namespace quest
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvLevelUp{e, ecs::GetLevel(ch)});
+            g_dispatcher.trigger(ecs::EvLevelUp{e, ((ch)->GetLevel())});
         }
         return 0;
     }
@@ -1436,7 +1436,7 @@ namespace quest
 			sys_err("QUEST wrong ChangeGold %lld (now %lld)", gold, ch->GetGold());
 		else if (ch)
 		{
-			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gold);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
 			ch->PointChange(POINT_GOLD, gold, true);
 		}
 		return 0;
@@ -1589,7 +1589,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!lua_isnumber(L,1) || !ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp2 %d", ecs::GetName(ch), (int)rint(lua_tonumber(L,1)));
+        sys_log(0,"QUEST [REWARD] %s give exp2 %d", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,1));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1599,7 +1599,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), exp, 0);
         ch->PointChange(POINT_EXP, exp);
         return 0;
     }
@@ -1615,7 +1615,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp %s %d", ecs::GetName(ch), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
+        sys_log(0,"QUEST [REWARD] %s give exp %s %d", ((ch)->GetName()), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,2));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1625,7 +1625,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), exp, 0);
         pPC->GiveExp(lua_tostring(L,1), exp);
         return 0;
     }
@@ -1641,7 +1641,7 @@ namespace quest
             return 0;
         int lev = (int)rint(lua_tonumber(L,2));
         double proc = (lua_tonumber(L,3));
-        sys_log(0, "QUEST [REWARD] %s give exp %s lev %d percent %g%%", ecs::GetName(ch), lua_tostring(L, 1), lev, proc);
+        sys_log(0, "QUEST [REWARD] %s give exp %s lev %d percent %g%%", ((ch)->GetName()), lua_tostring(L, 1), lev, proc);
         uint32_t exp = (uint32_t)((exp_table[MINMAX(0, lev, PLAYER_MAX_LEVEL_CONST)] * proc) / 100);
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1651,7 +1651,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC * pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), exp, 0);
         pPC->GiveExp(lua_tostring(L, 1), exp);
         return 0;
     }
@@ -2206,7 +2206,7 @@ namespace quest
 
 		if (pct == 100 || number(1, 100) <= pct)
 		{
-			// °³·® ¼º°ø
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 			lua_pushboolean(L, 1);
 
 			LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(item->GetRefinedVnum(), 1, 0, false);
@@ -2243,7 +2243,7 @@ namespace quest
 		}
 		else
 		{
-			// °³·® ½ÇÆÐ
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 			lua_pushboolean(L, 0);
 		}
 
@@ -2282,7 +2282,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		sys_log(0, "TRY GIVE LOTTO TO pid %u", ecs::GetPlayerID(ch));
+		sys_log(0, "TRY GIVE LOTTO TO pid %u", ((ch)->GetPlayerID()));
 
 		uint32_t * pdw = M2_NEW uint32_t[3];
 
@@ -2290,10 +2290,10 @@ namespace quest
 		pdw[1] = 1;
 		pdw[2] = q.GetEventFlag("lotto_round");
 
-		// ÃßÃ·¼­´Â ¼ÒÄÏÀ» ¼³Á¤ÇÑ´Ù
-		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::GetPlayerID(ch), pdw,
+		// ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
+		DBManager::instance().ReturnQuery(QID_LOTTO, ((ch)->GetPlayerID()), pdw,
 				"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-				get_table_postfix(), ecs::GetPlayerID(ch));
+				get_table_postfix(), ((ch)->GetPlayerID()));
 
 		return 0;
 	}
@@ -2341,9 +2341,9 @@ namespace quest
 
 		if (new_ch)
 		{
-			CQuestManager::instance().GetPC(ecs::GetPlayerID(new_ch));
+			CQuestManager::instance().GetPC(((new_ch)->GetPlayerID()));
 
-			lua_pushnumber(L, ecs::GetPlayerID(ch));
+			lua_pushnumber(L, ((ch)->GetPlayerID()));
 		}
 		else
 		{
@@ -2366,11 +2366,11 @@ namespace quest
 
 		if (new_ch)
 		{
-			CQuestManager::instance().GetPC(ecs::GetPlayerID(new_ch));
+			CQuestManager::instance().GetPC(((new_ch)->GetPlayerID()));
 #ifdef ENABLE_BUG_FIXES
-			lua_pushnumber(L, ch ? (uint32_t)ecs::GetVID(ch) : 0);
+			lua_pushnumber(L, ch ? (uint32_t)((ch)->GetLegacyVID()) : 0);
 #else
-			lua_pushnumber(L, (uint32_t)ecs::GetVID(ch));
+			lua_pushnumber(L, (uint32_t)((ch)->GetLegacyVID()));
 #endif
 		}
 		else
@@ -2400,7 +2400,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngaged(ecs::GetPlayerID(ch))) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngaged(((ch)->GetPlayerID()))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2415,7 +2415,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsMarried(ecs::GetPlayerID(ch))) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsMarried(((ch)->GetPlayerID()))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2430,7 +2430,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngagedOrMarried(ecs::GetPlayerID(ch))) ? 1 : 0);
+		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngagedOrMarried(((ch)->GetPlayerID()))) ? 1 : 0);
 		return 1;
 	}
 
@@ -2654,20 +2654,20 @@ namespace quest
             }
             else
             {
-                exitPos->x = ecs::GetX(ch);
-                exitPos->y = ecs::GetY(ch);
+                exitPos->x = ((ch)->GetX());
+                exitPos->y = ((ch)->GetY());
             }
             if (const auto* mapIndex = ECS_TryGet<ecs::MapIndex>(e))
                 exitPos->mapIndex = mapIndex->value;
             else
-                exitPos->mapIndex = ecs::GetMapIndex(ch);
+                exitPos->mapIndex = ((ch)->GetMapIndex());
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SaveExitLocation();
         return 0;
     }
 
-	//ÅÚ·¹Æ÷Æ®
+	//ï¿½Ú·ï¿½ï¿½ï¿½Æ®
 	ALUA(pc_teleport)
 	{
 		// migrated from CHARACTER::WarpSet
@@ -2683,7 +2683,7 @@ namespace quest
 		int x=0,y=0;
 		if ( lua_isnumber(L, 1) )
 		{
-			// Áö¿ª¸í ¿öÇÁ
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 			const int TOWN_NUM = 10;
 			struct warp_by_town_name
 			{
@@ -2692,16 +2692,16 @@ namespace quest
 				uint32_t y;
 			} ws[TOWN_NUM] =
 			{
-				{"¿µ¾ÈÀ¾¼º",	4743,	9548},
-				{"ÀÓÁö°î",		3235,	9086},
-				{"ÀÚ¾çÇö",		3531,	8829},
-				{"Á¶¾ÈÀ¾¼º",	638,	1664},
-				{"½Â·æ°î",		1745,	1909},
-				{"º¹Á¤Çö",		1455,	2400},
-				{"Æò¹«À¾¼º",	9599,	2692},
-				{"¹æ»ê°î",		8036,	2984},
-				{"¹Ú¶óÇö",		8639,	2460},
-				{"¼­ÇÑ»ê",		4350,	2143},
+				{"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	4743,	9548},
+				{"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",		3235,	9086},
+				{"ï¿½Ú¾ï¿½ï¿½ï¿½",		3531,	8829},
+				{"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	638,	1664},
+				{"ï¿½Â·ï¿½ï¿½",		1745,	1909},
+				{"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",		1455,	2400},
+				{"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	9599,	2692},
+				{"ï¿½ï¿½ï¿½ï¿½",		8036,	2984},
+				{"ï¿½Ú¶ï¿½ï¿½ï¿½",		8639,	2460},
+				{"ï¿½ï¿½ï¿½Ñ»ï¿½",		4350,	2143},
 			};
 			int idx  = (int)lua_tonumber(L, 1);
 
@@ -2760,8 +2760,8 @@ namespace quest
 			}
 			else
 			{
-				x = ecs::GetX(tch) / 100;
-				y = ecs::GetY(tch) / 100;
+				x = ((tch)->GetX()) / 100;
+				y = ((tch)->GetY()) / 100;
 			}
 		}
 
@@ -2776,7 +2776,7 @@ teleport_area:
 		{
 			warpPos->x = x;
 			warpPos->y = y;
-			warpPos->mapIndex = ecs::GetMapIndex(ch);
+			warpPos->mapIndex = ((ch)->GetMapIndex());
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 		ch->WarpSet(x,y);
@@ -2993,11 +2993,11 @@ teleport_area:
                 return 1;
             }
         }
-        uint32_t pid = ecs::GetPlayerID(ch);
+        uint32_t pid = ((ch)->GetPlayerID());
         db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
         db_clientdesc->Packet(&pid, sizeof(uint32_t));
-        MessengerManager::instance().RemoveAllList(ecs::GetName(ch));
-        LogManager::instance().ChangeNameLog(pid, ecs::GetName(ch), szName, ch->GetDesc()->GetHostName());
+        MessengerManager::instance().RemoveAllList(((ch)->GetName()));
+        LogManager::instance().ChangeNameLog(pid, ((ch)->GetName()), szName, ch->GetDesc()->GetHostName());
         snprintf(szQuery, sizeof(szQuery), "UPDATE player%s SET name='%s' WHERE id=%u", get_table_postfix(), szName, pid);
         SQLMsg * msg = DBManager::instance().DirectQuery(szQuery);
         M2_DELETE(msg);
@@ -3060,12 +3060,12 @@ teleport_area:
 				if ( point == POINT_HT )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomHP((ecs::GetLevel(ch)-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+					ch->SetRandomHP((((ch)->GetLevel())-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
 				}
 				else if ( point == POINT_IQ )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomSP((ecs::GetLevel(ch)-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+					ch->SetRandomSP((((ch)->GetLevel())-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
 				}
 
 				ch->ComputePoints();
@@ -3301,7 +3301,7 @@ teleport_area:
 		const entt::entity pMeEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pMe = ecs::LegacyCharOf(pMeEntity);
 		LPCHARACTER pOther = CHARACTER_MANAGER::instance().Find(vid);
-		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(ecs::GetX(pMe) - pOther->GetX(), ecs::GetY(pMe) - pOther->GetY()) < range) ? 1 : 0);
+		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(((pMe)->GetX()) - pOther->GetX(), ((pMe)->GetY()) - pOther->GetY()) < range) ? 1 : 0);
 		return 1;
 	}
 
@@ -3422,7 +3422,7 @@ teleport_area:
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? ecs::GetPlayerID(pChar) : 0);
+		lua_pushnumber(L, pChar ? ((pChar)->GetPlayerID()) : 0);
 		return 1;
 	}
 
@@ -3652,7 +3652,7 @@ teleport_area:
 
 		const PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::GetPlayerID(ch), ecs::GetLevel(ch), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
 
 		lua_pushboolean(L, true);
 
@@ -3796,7 +3796,7 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_informer_type)	//µ¶ÀÏ ¼±¹° ±â´É
+	ALUA(pc_get_informer_type)	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	{
 		// migrated from CHARACTER::GetItemAward_cmd
 		// TODO Phase 8: dedicated ItemAward component
@@ -3972,10 +3972,10 @@ teleport_area:
 					else
 						pkNewItem->SetOwnership(ch);
 				case PCMI0_DROP:
-					pos.x = ecs::GetX(ch) + number(-200, 200);
-					pos.y = ecs::GetY(ch) + number(-200, 200);
+					pos.x = ((ch)->GetX()) + number(-200, 200);
+					pos.y = ((ch)->GetY()) + number(-200, 200);
 
-					pkNewItem->AddToGround(ecs::GetMapIndex(ch), pos);
+					pkNewItem->AddToGround(((ch)->GetMapIndex()), pos);
 					pkNewItem->StartDestroyEvent();
 					break;
 				default:
@@ -4022,7 +4022,7 @@ teleport_area:
                 break;
 #endif
         }
-        if (dwRace!=ecs::GetRaceNum(ch))
+        if (dwRace!=((ch)->GetRaceNum()))
         {
             ch->SetRace(dwRace);
             ch->ClearSkill();
@@ -4031,7 +4031,7 @@ teleport_area:
             ch->SetPolymorph(0);
         }
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(ecs::GetRaceNum(ch));
+            race->value = static_cast<uint16_t>(((ch)->GetRaceNum()));
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
             points->base.skill_group = ch->GetSkillGroup();
         if (e != entt::null && g_registry.valid(e))
@@ -4106,7 +4106,7 @@ teleport_area:
         ch->ClearSkill();
         ch->ClearSubSkill();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ecs::GetLevel(ch);
+            lv->value = ((ch)->GetLevel());
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -4625,7 +4625,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (CPVPManager::instance().IsFighting(ecs::GetPlayerID(ch)) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (CPVPManager::instance().IsFighting(((ch)->GetPlayerID())) ? 1 : 0) : 0);
 		return 1;
 	}
 
@@ -4671,7 +4671,7 @@ teleport_area:
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch->GetGuild())
 		{
-			lua_pushnumber(L, (ecs::GetPlayerID(ch) == ch->GetGuild()->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
+			lua_pushnumber(L, (((ch)->GetPlayerID()) == ch->GetGuild()->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
 			return 1;
 		}
 		const char* guild_name = lua_tostring(L, 1);
@@ -4798,7 +4798,7 @@ teleport_area:
 			return 0;
 		}
 
-		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), iAmount);
+		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), iAmount);
 		ch->PointChange(POINT_GAYA, iAmount, true);
 		return 0;
 	}
@@ -4820,7 +4820,7 @@ teleport_area:
 			sys_err("QUEST wrong ChangeGaya %d (now %d)", gaya, ch->GetGaya());
 		else if (ch)
 		{
-			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gaya);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gaya);
 			ch->PointChange(POINT_GAYA, gaya, true);
 		}
 		return 0;
@@ -4910,7 +4910,7 @@ teleport_area:
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch)
 		{
-			uint32_t dwPlayerId = ecs::GetPlayerID(ch);
+			uint32_t dwPlayerId = ((ch)->GetPlayerID());
 			uint8_t bIsGlobal = 1;
 			
 			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
@@ -5364,17 +5364,17 @@ teleport_area:
 
 			{ "charge_cash",		pc_charge_cash		},
 
-			{ "get_informer_type",	pc_get_informer_type	},	//µ¶ÀÏ ¼±¹° ±â´É
+			{ "get_informer_type",	pc_get_informer_type	},	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 			{ "get_informer_item",  pc_get_informer_item	},
 
-			{ "give_award",			pc_give_award			},	//ÀÏº» °èÁ¤´ç ÇÑ¹ø¾¿ ±Ý±« Áö±Þ
-			{ "give_award_socket",	pc_give_award_socket	},	//¸ô ÀÎº¥Åä¸®¿¡ ¾ÆÀÌÅÛ Áö±Þ. ¼ÒÄÏ ¼³Á¤À» À§ÇÑ ÇÔ¼ö.
+			{ "give_award",			pc_give_award			},	//ï¿½Ïºï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ¹ï¿½ï¿½ï¿½ ï¿½Ý±ï¿½ ï¿½ï¿½ï¿½ï¿½
+			{ "give_award_socket",	pc_give_award_socket	},	//ï¿½ï¿½ ï¿½Îºï¿½ï¿½ä¸®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½.
 
-			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	}, /* mob_vnum.kill ÀÌº¥Æ®¿¡¼­ killee¿Í pc¿ÍÀÇ level Â÷ÀÌ, pcÀÇ ÇÁ¸®¹Ì¾ö µå¶ø·ü µîµîÀ» °í·ÁÇÑ ¾ÆÀÌÅÛ µå¶ø È®·ü.
-																    * return °ªÀº (ºÐÀÚ, ºÐ¸ð).
-																    * (¸»ÀÌ º¹ÀâÇÑµ¥, CreateDropItemÀÇ GetDropPctÀÇ iDeltaPercent, iRandRange¸¦ returnÇÑ´Ù°í º¸¸é µÊ.)
-																	* (ÀÌ ¸»ÀÌ ´õ ¾î·Á¿ï¶ó³ª ¤Ð¤Ð)
-																	* ÁÖÀÇ»çÇ× : kill event¿¡¼­¸¸ »ç¿ëÇÒ °Í!
+			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	}, /* mob_vnum.kill ï¿½Ìºï¿½Æ®ï¿½ï¿½ï¿½ï¿½ killeeï¿½ï¿½ pcï¿½ï¿½ï¿½ï¿½ level ï¿½ï¿½ï¿½ï¿½, pcï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ È®ï¿½ï¿½.
+																    * return ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½, ï¿½Ð¸ï¿½).
+																    * (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñµï¿½, CreateDropItemï¿½ï¿½ GetDropPctï¿½ï¿½ iDeltaPercent, iRandRangeï¿½ï¿½ returnï¿½Ñ´Ù°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½.)
+																	* (ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ð¤ï¿½)
+																	* ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ï¿½ : kill eventï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½!
 																	*/
 
 #ifdef ENABLE_NEWSTUFF

@@ -305,16 +305,16 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 #else
-	if (ch && ecs::GetMapIndex(ch) < 10000)
+	if (ch && ((ch)->GetMapIndex()) < 10000)
 #endif
 	{
 		TPacketGGWarpCharacter pw;
 		pw.header = HEADER_GG_WARP_CHARACTER;
 		pw.pid = p->dwFromPID;
-		pw.x = ecs::GetX(ch);
-		pw.y = ecs::GetY(ch);
+		pw.x = ((ch)->GetX());
+		pw.y = ((ch)->GetY());
 #ifdef __CMD_WARP_IN_DUNGEON__
-		pw.mapIndex = (ecs::GetMapIndex(ch) < 10000) ? 0 : ecs::GetMapIndex(ch);
+		pw.mapIndex = (((ch)->GetMapIndex()) < 10000) ? 0 : ((ch)->GetMapIndex());
 #endif
 		d->Packet(&pw, sizeof(pw));
 	}

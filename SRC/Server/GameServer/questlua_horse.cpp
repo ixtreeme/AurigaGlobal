@@ -80,7 +80,7 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (ecs::GetMapIndex(ch) == 113 || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
+		if (((ch)->GetMapIndex()) == 113 || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
 			return 0;		
 #endif
 
@@ -138,7 +138,7 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (ecs::GetMapIndex(ch) == 113 || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
+		if (((ch)->GetMapIndex()) == 113 || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
 			return 0;		
 #endif
 
@@ -390,10 +390,10 @@ namespace quest
 	{
 		// migrated from CHARACTER::SetQuestFlag
 		// DUAL-PATH: legacy only during migration window
-		// ¸®ÅÏ°ª
-		// 0 : ¼ÒÀ¯ÇÑ ¸»ÀÌ ¾ø´Ù
-		// 1 : Àß¸øµÈ ÀÌ¸§ÀÌ´Ù
-		// 2 : ÀÌ¸§ ¹Ù²Ù±â ¼º°ø
+		// ï¿½ï¿½ï¿½Ï°ï¿½
+		// 0 : ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		// 1 : ï¿½ß¸ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½Ì´ï¿½
+		// 2 : ï¿½Ì¸ï¿½ ï¿½Ù²Ù±ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 		if ( lua_isstring(L, -1) != true ) return 0;
 
@@ -416,7 +416,7 @@ namespace quest
 				ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, PASSES_PER_SEC(nHorseNameDuration), 0, true);
 				std::string name = pHorseName;
 				name += " Horse";
-				CHorseNameManager::instance().UpdateHorseName(ecs::GetPlayerID(ch), name.c_str(), true);
+				CHorseNameManager::instance().UpdateHorseName(((ch)->GetPlayerID()), name.c_str(), true);
 
 				if (ch->GetHorse() != nullptr) {
 					ch->HorseSummon(false, true);
@@ -442,7 +442,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
-			const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::GetPlayerID(ch));
+			const char* pHorseName = CHorseNameManager::instance().GetHorseName(((ch)->GetPlayerID()));
 
 			if ( pHorseName != nullptr)
 			{

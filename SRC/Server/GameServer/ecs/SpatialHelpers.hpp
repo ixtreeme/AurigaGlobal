@@ -92,7 +92,7 @@ inline LPSECTREE_MAP GetMap(int32_t mapIndex)
 }
 
 // Map index from world coordinates.
-inline int32_t GetMapIndex(int32_t x, int32_t y)
+inline int32_t MapIndexAt(int32_t x, int32_t y)
 {
     return SECTREE_MANAGER::instance().GetMapIndex(x, y);
 }

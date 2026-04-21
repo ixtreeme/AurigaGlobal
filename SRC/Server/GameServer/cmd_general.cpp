@@ -45,7 +45,7 @@
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 {
-	if (!ch || !ecs::IsPC(ch) || !ch->GetDesc())
+	if (!ch || !((ch)->IsPC()) || !ch->GetDesc())
 		return std::string();
 
 	DESC* d = ch->GetDesc();
@@ -72,7 +72,7 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 
 static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 {
-	if (!ch || !ecs::IsPC(ch) || !ch->GetDesc())
+	if (!ch || !((ch)->IsPC()) || !ch->GetDesc())
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -91,7 +91,7 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
-		ecs::GetPlayerID(ch),
+		((ch)->GetPlayerID()),
 		ch->GetDesc()->GetAccountTable().id
 	));
 
@@ -140,16 +140,16 @@ ACMD(do_daily_reward_reload){
 	std::string time = "";
 	std::string rewards = "";
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
 	if (msg->Get()->uiNumRows > 0) {
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", ecs::GetPlayerID(ch)));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", ((ch)->GetPlayerID())));
 		if (msg2->Get()->uiNumRows > 0) {
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ecs::GetPlayerID(ch)));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ((ch)->GetPlayerID())));
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 721, "");
 #endif
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -158,7 +158,7 @@ ACMD(do_daily_reward_reload){
 				}
 			}
 		} else {
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -168,9 +168,9 @@ ACMD(do_daily_reward_reload){
 			}
 		}
 	} else {
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ecs::GetPlayerID(ch)));
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ((ch)->GetPlayerID())));
 		
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ecs::GetPlayerID(ch)));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
 		if (msg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row;
 			while ((row = mysql_fetch_row(msg2->Get()->pSQLResult)) != nullptr) {
@@ -202,7 +202,7 @@ ACMD(do_daily_reward_get_reward){
 	std::string rewards = "";
 	// and (NOW() - interval 30 minute > time) 
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", ecs::GetPlayerID(ch)));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", ((ch)->GetPlayerID())));
 	if (msg->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr) {
@@ -238,7 +238,7 @@ ACMD(do_daily_reward_get_reward){
 		str_to_number(item, items.c_str());
 		str_to_number(count, counts.c_str());
 		ch->AutoGiveItem(item, count);
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", ecs::GetPlayerID(ch)));
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", ((ch)->GetPlayerID())));
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -358,7 +358,7 @@ struct SendDisconnectFunc
 	{
 		if (d->GetCharacter())
 		{
-			if (ecs::GetGMLevel(d->GetCharacter()) == GM_PLAYER)
+			if (((d->GetCharacter())->GetGMLevel()) == GM_PLAYER)
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}
@@ -458,7 +458,7 @@ ACMD(do_shutdown)
 {
 	if (nullptr == ch)
 	{
-		sys_err("Accept shutdown command from %s.", ecs::GetName(ch));
+		sys_err("Accept shutdown command from %s.", ((ch)->GetName()));
 	}
 	TPacketGGShutdown p;
 	p.bHeader = HEADER_GG_SHUTDOWN;
@@ -544,7 +544,7 @@ ACMD(do_change_channel)
 
 	TPacketChangeChannel p;
 	p.channel = channel;
-	p.lMapIndex = ecs::GetMapIndex(ch);
+	p.lMapIndex = ((ch)->GetMapIndex());
 
 	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ch->GetDesc()->GetHandle(), &p, sizeof(p));
 }
@@ -714,7 +714,7 @@ ACMD(do_console)
 
 ACMD(do_restart)
 {
-	if (!ecs::IsPC(ch) || ch->GetPosition() != POS_DEAD)
+	if (!((ch)->IsPC()) || ch->GetPosition() != POS_DEAD)
 	{
 		return;
 	}
@@ -738,7 +738,7 @@ ACMD(do_restart)
 	ch->StartRecoveryEvent();
 
 
-	int32_t mapidx = ecs::GetMapIndex(ch);
+	int32_t mapidx = ((ch)->GetMapIndex());
 
 	if (ch->GetWarMap() && !ch->IsObserverMode())
 	{
@@ -788,7 +788,7 @@ ACMD(do_restart)
 					break;
 				default:
 					{
-						sys_err(0, "do_restart: unknown method for %s", ecs::GetName(ch));
+						sys_err(0, "do_restart: unknown method for %s", ((ch)->GetName()));
 					}
 					break;
 			}
@@ -1349,13 +1349,13 @@ ACMD(do_restart)
 				if (!wasDungeon)
 				{
 					PIXEL_POSITION pos;
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, ecs::GetEmpire(ch), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, ((ch)->GetEmpire()), pos))
 					{
 						ch->WarpSet(pos.x, pos.y);
 					}
 					else
 					{
-						ch->WarpSet(EMPIRE_START_X(ecs::GetEmpire(ch)), EMPIRE_START_Y(ecs::GetEmpire(ch)));
+						ch->WarpSet(EMPIRE_START_X(((ch)->GetEmpire())), EMPIRE_START_Y(((ch)->GetEmpire())));
 					}
 				}
 
@@ -1396,7 +1396,7 @@ ACMD(do_restart)
 			break;
 		default:
 			{
-				sys_err(0, "do_restart: unknown method for %s", ecs::GetName(ch));
+				sys_err(0, "do_restart: unknown method for %s", ((ch)->GetName()));
 			}
 			break;
 	}
@@ -1543,7 +1543,7 @@ ACMD(do_pvp)
 	if (!ch)
 		return;
 	
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
@@ -1579,7 +1579,7 @@ ACMD(do_pvp)
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 888, "%d", itime);
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_DIALOG, 889, "%s", ecs::GetName(ch));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_DIALOG, 889, "%s", ((ch)->GetName()));
 #endif
 		return;
 	}
@@ -1715,7 +1715,7 @@ ACMD(do_pvp_advanced)
 	if (!ch)
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::GetMapIndex(ch)) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
@@ -1825,7 +1825,7 @@ ACMD(do_block_equipment)
 	char arg1[256];
 	one_argument (argument, arg1, sizeof(arg1));
 	
-	if (!ecs::IsPC(ch) || nullptr == ch)
+	if (!((ch)->IsPC()) || nullptr == ch)
 		return;
 	
 	int statusEq = ch->GetQuestFlag(BLOCK_EQUIPMENT_);
@@ -1881,7 +1881,7 @@ ACMD(do_guildskillup)
 	}
 
 	CGuild* g = ch->GetGuild();
-	TGuildMember* gm = g->GetMember(ecs::GetPlayerID(ch));
+	TGuildMember* gm = g->GetMember(((ch)->GetPlayerID()));
 	if (gm->grade == GUILD_LEADER_GRADE)
 	{
 		uint32_t vnum = 0;
@@ -2098,7 +2098,7 @@ ACMD(do_ungroup)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 215, "");
 #endif
 		//pParty->SendPartyRemoveOneToAll(ch);
-		pParty->Quit(ecs::GetPlayerID(ch));
+		pParty->Quit(((ch)->GetPlayerID()));
 		//pParty->SendPartyRemoveAllToOne(ch);
 	}
 }
@@ -2166,7 +2166,7 @@ ACMD(do_war)
 	uint32_t gm_pid = g->GetMasterPID();
 
 	// üũ( 常 )
-	if (gm_pid != ecs::GetPlayerID(ch))
+	if (gm_pid != ((ch)->GetPlayerID()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
@@ -2350,7 +2350,7 @@ ACMD(do_nowar)
 
 	uint32_t gm_pid = g->GetMasterPID();
 
-	if (gm_pid != ecs::GetPlayerID(ch))
+	if (gm_pid != ((ch)->GetPlayerID()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
@@ -2395,7 +2395,7 @@ ACMD(do_pkmode)
 	if (mode == PK_MODE_PROTECT)
 		return;
 
-	if (ecs::GetLevel(ch) < PK_PROTECT_LEVEL && mode != 0)
+	if (((ch)->GetLevel()) < PK_PROTECT_LEVEL && mode != 0)
 		return;
 
 	ch->SetPKMode(mode);
@@ -2420,13 +2420,13 @@ ACMD(do_messenger_auth)
 	char answer = LOWER(*arg1);
 	// @fixme130 AuthToAdd void -> bool
 	bool bIsDenied = answer != 'y';
-	bool bIsAdded = MessengerManager::instance().AuthToAdd(ecs::GetName(ch), arg2, bIsDenied); // DENY
+	bool bIsAdded = MessengerManager::instance().AuthToAdd(((ch)->GetName()), arg2, bIsDenied); // DENY
 	if (bIsAdded && bIsDenied)
 	{
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg2);
 #ifdef TEXTS_IMPROVEMENT
 		if (tch) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(tch), CHAT_TYPE_INFO, 107, "%s", ecs::GetName(ch));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(tch), CHAT_TYPE_INFO, 107, "%s", ((ch)->GetName()));
 		}
 #endif
 	}
@@ -2515,10 +2515,10 @@ ACMD(do_observer_exit)
 			ch->SetArenaObserverMode(false);
 
 			if (ch->GetArena() != nullptr)
-				ch->GetArena()->RemoveObserver(ecs::GetPlayerID(ch));
+				ch->GetArena()->RemoveObserver(((ch)->GetPlayerID()));
 
 			ch->SetArena(nullptr);
-			ch->WarpSet(ARENA_RETURN_POINT_X(ecs::GetEmpire(ch)), ARENA_RETURN_POINT_Y(ecs::GetEmpire(ch)));
+			ch->WarpSet(ARENA_RETURN_POINT_X(((ch)->GetEmpire())), ARENA_RETURN_POINT_Y(((ch)->GetEmpire())));
 		}
 		else
 		{
@@ -2530,7 +2530,7 @@ ACMD(do_observer_exit)
 
 ACMD(do_view_equip)
 {
-	if (ecs::GetGMLevel(ch) <= GM_PLAYER)
+	if (((ch)->GetGMLevel()) <= GM_PLAYER)
 		return;
 
 	char arg1[256];
@@ -2663,7 +2663,7 @@ ACMD(do_attr_transfer)
 	if (!ch->CanDoAttrTransfer())
 		return;
 	
-	sys_log(1, "%s has used an Attr Transfer command: %s.", ecs::GetName(ch), argument);
+	sys_log(1, "%s has used an Attr Transfer command: %s.", ((ch)->GetName()), argument);
 	
 	int w_index = 0, i_index = 0;
 	const char *line;
@@ -3062,7 +3062,7 @@ namespace
 		if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 			return false;
 
-		const int32_t distance = DISTANCE_APPROX(ecs::GetX(ch) - npc->GetX(), ecs::GetY(ch) - npc->GetY());
+		const int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - npc->GetX(), ((ch)->GetY()) - npc->GetY());
 		if (distance >= STONE_CRAFT_MAX_DISTANCE)
 			return false;
 
@@ -3227,7 +3227,7 @@ ACMD(do_cube)
 	if (!ch->CanDoCube())
 		return;
 
-	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ecs::GetName(ch), argument);
+	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ((ch)->GetName()), argument);
 	int cube_index = 0, inven_index = 0;
 #ifdef ENABLE_EXTRA_INVENTORY
 	uint8_t window_type = 0;
@@ -3353,7 +3353,7 @@ ACMD(do_in_game_mall)
 	char language[3];
 	strcpy(language, "en");//If you have multilanguage, update this
 	
-	snprintf(buf, sizeof(buf), "%u%u%s", ecs::GetPlayerID(ch), ch->GetAID(), sas_key);
+	snprintf(buf, sizeof(buf), "%u%u%s", ((ch)->GetPlayerID()), ch->GetAID(), sas_key);
 
 	MD5Init(&ctx);
 	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
@@ -3372,9 +3372,9 @@ ACMD(do_in_game_mall)
 #endif
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
-			// g_strWebMallURL.c_str(), ecs::GetPlayerID(ch), language, g_server_id, sas);
+			// g_strWebMallURL.c_str(), ((ch)->GetPlayerID()), language, g_server_id, sas);
 	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
-			ecs::GetPlayerID(ch), language, sas);
+			((ch)->GetPlayerID()), language, sas);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, buf);
 
 //	char buf[512+1];
@@ -3484,7 +3484,7 @@ ACMD(do_dice)
 #else
 		CHAT_TYPE_INFO
 #endif
-		, 544, "%s#%d#%d#%d", ecs::GetName(ch), n, start, end);
+		, 544, "%s#%d#%d#%d", ((ch)->GetName()), n, start, end);
 	} else {
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
 #ifdef ENABLE_DICE_SYSTEM
@@ -3513,7 +3513,7 @@ ACMD(do_click_safebox)
 }
 ACMD(do_force_logout)
 {
-	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ecs::GetName(ch));
+	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(((ch)->GetName()));
 	if (!pDesc)
 		return;
 	pDesc->DelayedDisconnect(0);
@@ -3538,7 +3538,7 @@ ACMD(do_ride)
     if (ch->IsDead() || ch->IsStun())
 		return;
 
-	if (ecs::GetMapIndex(ch) == 113)
+	if (((ch)->GetMapIndex()) == 113)
 		return;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -4151,7 +4151,7 @@ ACMD(do_gr_set_tax)
 	CGuild* g = ch ? ch->GetGuild() : nullptr;
 	if (!g)
 		return;
-	if (!g->IsGuildMaster(ecs::GetPlayerID(ch)))
+	if (!g->IsGuildMaster(((ch)->GetPlayerID())))
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only guild leader can set tax request.");
 		return;

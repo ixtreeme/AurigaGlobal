@@ -78,8 +78,8 @@ LPSECTREE SECTREE_MAP::Find(uint32_t x, uint32_t y)
 
 void SECTREE_MAP::Build()
 {
-    // Å¬¶óÀÌ¾ðÆ®¿¡°Ô ¹Ý°æ 150m Ä³¸¯ÅÍÀÇ Á¤º¸¸¦ ÁÖ±âÀ§ÇØ
-    // 3x3Ä­ -> 5x5 Ä­À¸·Î ÁÖº¯sectree È®´ë(ÇÑ±¹)
+    // Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½Ý°ï¿½ 150m Ä³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½
+    // 3x3Ä­ -> 5x5 Ä­ï¿½ï¿½ï¿½ï¿½ ï¿½Öºï¿½sectree È®ï¿½ï¿½(ï¿½Ñ±ï¿½)
 	struct neighbor_coord_s
 	{
 		int x;
@@ -96,7 +96,7 @@ void SECTREE_MAP::Build()
 	};
 
 	//
-	// ¸ðµç sectree¿¡ ´ëÇØ ÁÖÀ§ sectreeµé ¸®½ºÆ®¸¦ ¸¸µç´Ù.
+	// ï¿½ï¿½ï¿½ sectreeï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ sectreeï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½.
 	//
 	MapType::iterator it = map_.begin();
 
@@ -104,7 +104,7 @@ void SECTREE_MAP::Build()
 	{
 		LPSECTREE tree = it->second;
 
-		tree->m_neighbor_list.push_back(tree); // ÀÚ½ÅÀ» ³Ö´Â´Ù.
+		tree->m_neighbor_list.push_back(tree); // ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½Ö´Â´ï¿½.
 
 		sys_log(3, "%dx%d", tree->m_id.coord.x, tree->m_id.coord.y);
 
@@ -172,7 +172,7 @@ LPSECTREE SECTREE_MANAGER::Get(int32_t dwIndex, int32_t x, int32_t y)
 }
 
 // -----------------------------------------------------------------------------
-// Setting.txt ·Î ºÎÅÍ SECTREE ¸¸µé±â
+// Setting.txt ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ SECTREE ï¿½ï¿½ï¿½ï¿½ï¿½
 // -----------------------------------------------------------------------------
 int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettingFileName, TMapSetting & r_setting)
 {
@@ -413,7 +413,7 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 	for (int y = 0; y < iHeight; ++y)
 		for (int x = 0; x < iWidth; ++x)
 		{
-			// UNION À¸·Î ÁÂÇ¥¸¦ ÇÕÃÄ¸¸µç uint32_t°ªÀ» ¾ÆÀÌµð·Î »ç¿ëÇÑ´Ù.
+			// UNION ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ uint32_tï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
 			SECTREEID id;
 			id.coord.x = (r_setting.iBaseX / SECTREE_SIZE) + x;
 			id.coord.y = (r_setting.iBaseY / SECTREE_SIZE) + y;
@@ -488,7 +488,7 @@ bool SECTREE_MANAGER::GetRecallPositionByEmpire(int32_t iMapIndex, uint8_t bEmpi
 {
 	auto it = m_vec_mapRegion.begin();
 
-	// 10000À» ³Ñ´Â ¸ÊÀº ÀÎ½ºÅÏ½º ´øÀü¿¡¸¸ ÇÑÁ¤µÇ¾îÀÖ´Ù.
+	// 10000ï¿½ï¿½ ï¿½Ñ´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Î½ï¿½ï¿½Ï½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½Ö´ï¿½.
 	if (iMapIndex >= 10000)
 	{
 		iMapIndex /= 10000;
@@ -635,7 +635,7 @@ const TMapRegion * SECTREE_MANAGER::FindRegionByPartialName(const char* szMapNam
 		//if (rRegion.index == lMapIndex)
 		//return &rRegion;
 		if (rRegion.strMapName.find(szMapName))
-			return &rRegion; // Ä³½Ì ÇØ¼­ ºü¸£°Ô ÇÏÀÚ
+			return &rRegion; // Ä³ï¿½ï¿½ ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	}
 
 	return nullptr;
@@ -735,7 +735,7 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 		if (true == test_server)
 			sys_log ( 0,"[BUILD] Build %s %s %d ",c_pszMapBasePath, szMapName, iIndex );
 
-		// ¸ÕÀú ÀÌ ¼­¹ö¿¡¼­ ÀÌ ¸ÊÀÇ ¸ó½ºÅÍ¸¦ ½ºÆùÇØ¾ß ÇÏ´Â°¡ È®ÀÎ ÇÑ´Ù.
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½Ï´Â°ï¿½ È®ï¿½ï¿½ ï¿½Ñ´ï¿½.
 		if (map_allow_find(iIndex))
 		{
 			LPSECTREE_MAP pkMapSectree = BuildSectreeFromSetting(setting);
@@ -939,7 +939,7 @@ bool SECTREE_MANAGER::GetRandomLocation(int32_t lMapIndex, PIXEL_POSITION & r_po
 
 int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 {
-	if (lMapIndex >= 10000) // 10000¹ø ÀÌ»óÀÇ ¸ÊÀº ¾ø´Ù. (È¤Àº ÀÌ¹Ì private ÀÌ´Ù)
+	if (lMapIndex >= 10000) // 10000ï¿½ï¿½ ï¿½Ì»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½. (È¤ï¿½ï¿½ ï¿½Ì¹ï¿½ private ï¿½Ì´ï¿½)
 		return 0;
 
 	LPSECTREE_MAP pkMapSectree = GetMap(lMapIndex);
@@ -1029,7 +1029,7 @@ struct FDestroyPrivateMapEntity
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			//sys_log(0, "PRIVAE_MAP: removing character %s", ecs::GetName(ch));
+			//sys_log(0, "PRIVAE_MAP: removing character %s", ((ch)->GetName()));
 
 			if (ch->GetDesc())
 				DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
@@ -1050,7 +1050,7 @@ struct FDestroyPrivateMapEntity
 
 void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 {
-	if (lMapIndex < 10000) // private map Àº ÀÎµ¦½º°¡ 10000 ÀÌ»ó ÀÌ´Ù.
+	if (lMapIndex < 10000) // private map ï¿½ï¿½ ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ 10000 ï¿½Ì»ï¿½ ï¿½Ì´ï¿½.
 		return;
 
 	LPSECTREE_MAP pkMapSectree = GetMap(lMapIndex);
@@ -1058,11 +1058,11 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 	if (!pkMapSectree)
 		return;
 
-	// ÀÌ ¸Ê À§¿¡ ÇöÀç Á¸ÀçÇÏ´Â °ÍµéÀ» ÀüºÎ ¾ø¾Ø´Ù.
+	// ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Íµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø´ï¿½.
 	// WARNING:
-	// ÀÌ ¸Ê¿¡ ÀÖÁö¸¸ ¾î¶² Sectree¿¡µµ Á¸ÀçÇÏÁö ¾ÊÀ» ¼ö ÀÖÀ½
-	// µû¶ó¼­ ¿©±â¼­ delete ÇÒ ¼ö ¾øÀ¸¹Ç·Î Æ÷ÀÎÅÍ°¡ ±úÁú ¼ö ÀÖÀ¸´Ï
-	// º°µµ Ã³¸®¸¦ ÇØ¾ßÇÔ
+	// ï¿½ï¿½ ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½î¶² Sectreeï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½â¼­ delete ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½Ø¾ï¿½ï¿½ï¿½
 	FDestroyPrivateMapEntity f;
 	pkMapSectree->for_each(f);
 
@@ -1090,7 +1090,7 @@ TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
 
 	if (it == m_map_pkArea.end())
 	{
-		return m_map_pkArea[-1]; // ÀÓ½Ã·Î ºó Area¸¦ ¸®ÅÏ
+		return m_map_pkArea[-1]; // ï¿½Ó½Ã·ï¿½ ï¿½ï¿½ Areaï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	}
 	return it->second;
 }
@@ -1101,7 +1101,7 @@ void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ecs::GetMapIndex(ch);
+	int32_t lMapIndex = ((ch)->GetMapIndex());
 
 	if (m_mapNPCPosition[lMapIndex].empty())
 		return;
@@ -1113,7 +1113,7 @@ void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 
 	TNPCPosition np = {};
 
-	// TODO m_mapNPCPosition[lMapIndex] ¸¦ º¸³»ÁÖ¼¼¿ä
+	// TODO m_mapNPCPosition[lMapIndex] ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö¼ï¿½ï¿½ï¿½
 
 
 	for (auto it = m_mapNPCPosition[lMapIndex].begin(); it != m_mapNPCPosition[lMapIndex].end(); ++it)
@@ -1164,7 +1164,7 @@ void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 	
-	int32_t lMapIndex = ecs::GetMapIndex(ch);
+	int32_t lMapIndex = ((ch)->GetMapIndex());
 	
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
@@ -1263,11 +1263,11 @@ class FRemoveIfAttr
 			{
 				LPCHARACTER ch = (LPCHARACTER) entity;
 
-				if (ecs::IsPC(ch))
+				if (((ch)->IsPC()))
 				{
 					PIXEL_POSITION pos;
 
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::GetMapIndex(ch), ch->GetEmpire(), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(((ch)->GetMapIndex()), ch->GetEmpire(), pos))
 						ch->WarpSet(pos.x, pos.y);
 					else
 						ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
@@ -1418,7 +1418,7 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 	}
 
 	//
-	// ¿µ¿ªÀÇ ÁÂÇ¥¸¦ Cell ÀÇ Å©±â¿¡ ¸ÂÃç È®ÀåÇÑ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ Cell ï¿½ï¿½ Å©ï¿½â¿¡ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ï¿½Ñ´ï¿½.
 	//
 
 	lStartX	-= lStartX % CELL_SIZE;
@@ -1427,7 +1427,7 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 	lEndY	+= lEndY % CELL_SIZE;
 
 	//
-	// Cell ÁÂÇ¥¸¦ ±¸ÇÑ´Ù.
+	// Cell ï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½Ñ´ï¿½.
 	//
 
 	int32_t lCX = lStartX / CELL_SIZE;

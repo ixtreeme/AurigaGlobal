@@ -174,11 +174,11 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //    char a1[256];
 //    one_argument(argument, a1, sizeof(a1));
 //
-//    const int32_t mapIndex = ecs::GetMapIndex(ch);
+//    const int32_t mapIndex = ((ch)->GetMapIndex());
 //
 //    if (!*a1)
 //    {
-//        CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(ecs::GetPlayerID(ch), mapIndex);
+//        CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(((ch)->GetPlayerID()), mapIndex);
 //        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve (target: te, map: %d)", mapIndex);
 //        return;
 //    }
@@ -284,8 +284,8 @@ ACMD(do_transfer)
 
 			pgg.bHeader = HEADER_GG_TRANSFER;
 			strlcpy(pgg.szName, arg1, sizeof(pgg.szName));
-			pgg.lX = ecs::GetX(ch);
-			pgg.lY = ecs::GetY(ch);
+			pgg.lX = ((ch)->GetX());
+			pgg.lY = ((ch)->GetY());
 
 			P2P_MANAGER::instance().Send(&pgg, sizeof(TPacketGGTransfer));
 #ifdef TEXTS_IMPROVEMENT
@@ -304,8 +304,8 @@ ACMD(do_transfer)
 		return;
 	}
 
-	//tch->Show(ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch), ch->GetZ());
-	tch->WarpSet(ecs::GetX(ch), ecs::GetY(ch), ecs::GetMapIndex(ch));
+	//tch->Show(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()), ch->GetZ());
+	tch->WarpSet(((ch)->GetX()), ((ch)->GetY()), ((ch)->GetMapIndex()));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -442,7 +442,7 @@ ACMD(do_goto)
 
 		PIXEL_POSITION p;
 
-		if (SECTREE_MANAGER::instance().GetMapBasePosition(ecs::GetX(ch), ecs::GetY(ch), p))
+		if (SECTREE_MANAGER::instance().GetMapBasePosition(((ch)->GetX()), ((ch)->GetY()), p))
 		{
 			x += p.x / 100;
 			y += p.y / 100;
@@ -466,7 +466,7 @@ ACMD(do_goto)
 			empire = MINMAX(1, empire, 3);
 		}
 		else
-			empire = ecs::GetEmpire(ch);
+			empire = ((ch)->GetEmpire());
 
 		if (CHARACTER_GoToName(ch, empire, mapIndex, arg1))
 		{
@@ -480,7 +480,7 @@ ACMD(do_goto)
 	x *= 100;
 	y *= 100;
 
-	ch->Show(ecs::GetMapIndex(ch), x, y, z);
+	ch->Show(((ch)->GetMapIndex()), x, y, z);
 	ch->Stop();
 }
 
@@ -535,10 +535,10 @@ ACMD(do_warp)
 		}
 		else
 		{
-			x = ecs::GetX(tch) / 100;
-			y = ecs::GetY(tch) / 100;
+			x = ((tch)->GetX()) / 100;
+			y = ((tch)->GetY()) / 100;
 #ifdef __CMD_WARP_IN_DUNGEON__
-			mapIndex = ecs::GetMapIndex(tch);
+			mapIndex = ((tch)->GetMapIndex());
 #endif
 		}
 	}
@@ -566,9 +566,9 @@ ACMD(do_warp)
 ACMD(do_rewarp)
 {
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ecs::GetX(ch), ecs::GetY(ch));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ((ch)->GetX()), ((ch)->GetY()));
 #endif
-	ch->WarpSet(ecs::GetX(ch), ecs::GetY(ch));
+	ch->WarpSet(((ch)->GetX()), ((ch)->GetY()));
 	ch->Stop();
 }
 #endif
@@ -682,7 +682,7 @@ ACMD(do_group_random)
 
 	uint32_t dwVnum = 0;
 	str_to_number(dwVnum, arg1);
-	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::GetMapIndex(ch), ecs::GetX(ch) - 500, ecs::GetY(ch) - 500, ecs::GetX(ch) + 500, ecs::GetY(ch) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
 }
 
 ACMD(do_group)
@@ -700,9 +700,9 @@ ACMD(do_group)
 	str_to_number(dwVnum, arg1);
 
 	if (test_server)
-		sys_log(0, "COMMAND GROUP SPAWN %u at %u %u %u", dwVnum, ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch));
+		sys_log(0, "COMMAND GROUP SPAWN %u at %u %u %u", dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 
-	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::GetMapIndex(ch), ecs::GetX(ch) - 500, ecs::GetY(ch) - 500, ecs::GetX(ch) + 500, ecs::GetY(ch) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
 }
 
 ACMD(do_mob_coward)
@@ -754,11 +754,11 @@ ACMD(do_mob_coward)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::GetMapIndex(ch),
-				ecs::GetX(ch) - number(200, 750),
-				ecs::GetY(ch) - number(200, 750),
-				ecs::GetX(ch) + number(200, 750),
-				ecs::GetY(ch) + number(200, 750),
+				((ch)->GetMapIndex()),
+				((ch)->GetX()) - number(200, 750),
+				((ch)->GetY()) - number(200, 750),
+				((ch)->GetX()) + number(200, 750),
+				((ch)->GetY()) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -779,10 +779,10 @@ ACMD(do_mob_map)
 
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::GetMapIndex(ch));
+	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ((ch)->GetMapIndex()));
 
 	if (tch)
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::GetName(tch), ecs::GetX(tch), ecs::GetY(tch));
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ((tch)->GetName()), ((tch)->GetX()), ((tch)->GetY()));
 	else
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -836,11 +836,11 @@ ACMD(do_mob_aggresive)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::GetMapIndex(ch),
-				ecs::GetX(ch) - number(200, 750),
-				ecs::GetY(ch) - number(200, 750),
-				ecs::GetX(ch) + number(200, 750),
-				ecs::GetY(ch) + number(200, 750),
+				((ch)->GetMapIndex()),
+				((ch)->GetX()) - number(200, 750),
+				((ch)->GetY()) - number(200, 750),
+				((ch)->GetX()) + number(200, 750),
+				((ch)->GetY()) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -903,11 +903,11 @@ ACMD(do_mob)
 	while (iCount--)
 	{
 		CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::GetMapIndex(ch),
-				ecs::GetX(ch) - number(200, 750),
-				ecs::GetY(ch) - number(200, 750),
-				ecs::GetX(ch) + number(200, 750),
-				ecs::GetY(ch) + number(200, 750),
+				((ch)->GetMapIndex()),
+				((ch)->GetX()) - number(200, 750),
+				((ch)->GetY()) - number(200, 750),
+				((ch)->GetX()) + number(200, 750),
+				((ch)->GetY()) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 	}
@@ -961,7 +961,7 @@ ACMD(do_mob_ld)
 
 
 	CHARACTER_MANAGER::instance().SpawnMob(vnum,
-		ecs::GetMapIndex(ch),
+		((ch)->GetMapIndex()),
 		x*100,
 		y*100,
 		ch->GetZ(),
@@ -985,17 +985,17 @@ struct FuncPurge
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
 
-		int iDist = DISTANCE_APPROX(ecs::GetX(pkChr) - ecs::GetX(m_pkGM), ecs::GetY(pkChr) - ecs::GetY(m_pkGM));
+		int iDist = DISTANCE_APPROX(((pkChr)->GetX()) - ((m_pkGM)->GetX()), ((pkChr)->GetY()) - ((m_pkGM)->GetY()));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		sys_log(0, "PURGE: %s %d", ecs::GetName(pkChr), iDist);
+		sys_log(0, "PURGE: %s %d", ((pkChr)->GetName()), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (ecs::IsNPC(pkChr) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
+		if (((pkChr)->IsNPC()) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
 #else
-		if (ecs::IsNPC(pkChr) && !pkChr->IsPet() && pkChr->GetRider() == NULL
+		if (((pkChr)->IsNPC()) && !pkChr->IsPet() && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -1018,7 +1018,7 @@ ACMD(do_purge)
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
-		sys_err("PURGE_ERROR.NULL_SECTREE(mapIndex=%d, pos=(%d, %d)", ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch));
+		sys_err("PURGE_ERROR.NULL_SECTREE(mapIndex=%d, pos=(%d, %d)", ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 }
 
 #define ENABLE_CMD_IPURGE_EX
@@ -1198,7 +1198,7 @@ ACMD(do_state)
 
 	char buf[256];
 
-	snprintf(buf, sizeof(buf), "%s's State: ", ecs::GetName(tch));
+	snprintf(buf, sizeof(buf), "%s's State: ", ((tch)->GetName()));
 
 	if (tch->IsPosition(POS_FIGHTING))
 		strlcat(buf, "Battle", sizeof(buf));
@@ -1217,23 +1217,23 @@ ACMD(do_state)
 
 	int len;
 	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
-			ecs::GetX(tch), ecs::GetY(tch), ecs::GetX(tch) / 100, ecs::GetY(tch) / 100);
+			((tch)->GetX()), ((tch)->GetY()), ((tch)->GetX()) / 100, ((tch)->GetY()) / 100);
 
 	if (len < 0 || len >= (int) sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::GetMapIndex(tch), ecs::GetX(tch), ecs::GetY(tch));
+	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(((tch)->GetMapIndex()), ((tch)->GetX()), ((tch)->GetY()));
 
 	if (pSec)
 	{
-		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(tch))->m_setting;
+		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(((tch)->GetMapIndex()))->m_setting;
 		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
-			ecs::GetMapIndex(tch), pSec->GetAttribute(ecs::GetX(tch), ecs::GetY(tch)), (ecs::GetX(tch) - map_setting.iBaseX)/100, (ecs::GetY(tch) - map_setting.iBaseY)/100);
+			((tch)->GetMapIndex()), pSec->GetAttribute(((tch)->GetX()), ((tch)->GetY())), (((tch)->GetX()) - map_setting.iBaseX)/100, (((tch)->GetY()) - map_setting.iBaseY)/100);
 	}
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "LEV %d", ecs::GetLevel(tch));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "LEV %d", ((tch)->GetLevel()));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), tch->GetMaxHP());
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), tch->GetMaxSP());
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
@@ -1396,13 +1396,13 @@ ACMD(do_state)
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
 		if (CPrivManager::instance().GetPriv(tch, i))
 		{
-			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(ecs::GetEmpire(tch), i);
+			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(((tch)->GetEmpire()), i);
 			int iByGuild = 0;
 
 			if (tch->GetGuild())
 				iByGuild = CPrivManager::instance().GetPrivByGuild(tch->GetGuild()->GetID(), i);
 
-			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(ecs::GetPlayerID(tch), i);
+			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(((tch)->GetPlayerID()), i);
 
 #ifdef TEXTS_IMPROVEMENT
 			if (iByEmpire) {
@@ -1608,7 +1608,7 @@ ACMD(do_notice)
 
 ACMD(do_map_notice)
 {
-	SendNoticeMap(argument, ecs::GetMapIndex(ch), false);
+	SendNoticeMap(argument, ((ch)->GetMapIndex()), false);
 }
 
 ACMD(do_big_notice)
@@ -1623,7 +1623,7 @@ ACMD(do_big_notice)
 #ifdef ENABLE_FULL_NOTICE
 ACMD(do_map_big_notice)
 {
-	SendNoticeMap(argument, ecs::GetMapIndex(ch), true);
+	SendNoticeMap(argument, ((ch)->GetMapIndex()), true);
 }
 
 ACMD(do_notice_test)
@@ -2101,7 +2101,7 @@ ACMD(do_respawn)
 	else
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Respaw around");
-		regen_reset(ecs::GetX(ch), ecs::GetY(ch));
+		regen_reset(((ch)->GetX()), ((ch)->GetY()));
 	}
 }
 
@@ -2156,7 +2156,7 @@ ACMD(do_makeguild)
 ACMD(do_deleteguild)
 {
 	if (ch->GetGuild())
-		ch->GetGuild()->RequestDisband(ecs::GetPlayerID(ch));
+		ch->GetGuild()->RequestDisband(((ch)->GetPlayerID()));
 }
 
 ACMD(do_greset)
@@ -2319,7 +2319,7 @@ ACMD(do_qf)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 	std::string questname = pPC->GetCurrentQuestName();
 
 	if (!questname.empty())
@@ -2751,7 +2751,7 @@ ACMD(do_set_state)
 	}
 	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(tch->GetPlayerID());
 #else
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 #endif
 	std::string questname = arg1;
 	std::string statename = arg2;
@@ -3020,7 +3020,7 @@ ACMD(do_priv_guild)
 			snprintf(buf, sizeof(buf), msg, g->GetID());
 
 			using namespace quest;
-			PC * pc = CQuestManager::instance().GetPC(ecs::GetPlayerID(ch));
+			PC * pc = CQuestManager::instance().GetPC(((ch)->GetPlayerID()));
 			QuestState qs = CQuestManager::instance().OpenState("ADMIN_QUEST", QUEST_FISH_REFINE_STATE_INDEX);
 			luaL_loadbuffer(qs.co, buf, strlen(buf), "ADMIN_QUEST");
 			pc->SetQuest("ADMIN_QUEST", qs);
@@ -3103,7 +3103,7 @@ ACMD(do_socket_item)
 ACMD(do_block_chat_list)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || (ecs::GetGMLevel(ch) < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
+	if (!ch || (((ch)->GetGMLevel()) < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
@@ -3111,7 +3111,7 @@ ACMD(do_block_chat_list)
 		return;
 	}
 
-	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, ecs::GetPlayerID(ch), nullptr,
+	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, ((ch)->GetPlayerID()), nullptr,
 			"SELECT p.name, a.lDuration FROM affect%s as a, player%s as p WHERE a.bType = %d AND a.dwPID = p.id",
 			get_table_postfix(), get_table_postfix(), AFFECT_BLOCK_CHAT);
 }
@@ -3243,15 +3243,15 @@ ACMD(do_build)
 
 	char arg1[256], arg2[256], arg3[256], arg4[256];
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
-	uint8_t GMLevel = ecs::GetGMLevel(ch);
+	uint8_t GMLevel = ((ch)->GetGMLevel());
 
-	CLand * pkLand = CManager::instance().FindLand(ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch));
+	CLand * pkLand = CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 
 	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ    
 	//       ޼  ʰ  Ѵ.
 	if (!pkLand)
 	{
-		sys_err("%s trying to build on not buildable area.", ecs::GetName(ch));
+		sys_err("%s trying to build on not buildable area.", ((ch)->GetName()));
 		return;
 	}
 
@@ -3267,14 +3267,14 @@ ACMD(do_build)
 		// ÷̾      Ȯؾ Ѵ.
 		if ((!ch->GetGuild() || ch->GetGuild()->GetID() != pkLand->GetOwner()))
 		{
-			sys_err("%s trying to build on not owned land.", ecs::GetName(ch));
+			sys_err("%s trying to build on not owned land.", ((ch)->GetName()));
 			return;
 		}
 
 		//  渶ΰ?
-		if (ch->GetGuild()->GetMasterPID() != ecs::GetPlayerID(ch))
+		if (ch->GetGuild()->GetMasterPID() != ((ch)->GetPlayerID()))
 		{
-			sys_err("%s trying to build while not the guild master.", ecs::GetName(ch));
+			sys_err("%s trying to build while not the guild master.", ((ch)->GetName()));
 			return;
 		}
 	}
@@ -3389,7 +3389,7 @@ ACMD(do_build)
 				str_to_number(map_y, arg3);
 
 				bool isSuccess = pkLand->RequestCreateObject(dwVnum,
-						ecs::GetMapIndex(ch),
+						((ch)->GetMapIndex()),
 						map_x,
 						map_y,
 						x_rot,
@@ -3444,7 +3444,7 @@ ACMD(do_build)
 		case 'w' :
 			if (GMLevel > GM_PLAYER)
 			{
-				int mapIndex = ecs::GetMapIndex(ch);
+				int mapIndex = ((ch)->GetMapIndex());
 
 				one_argument(line, arg1, sizeof(arg1));
 
@@ -3510,7 +3510,7 @@ ACMD(do_build)
 					str_to_number(door_south, arg5);
 					bool door_north = false;
 					str_to_number(door_north, arg6);
-					pkLand->RequestCreateWallBlocks(setID, ecs::GetMapIndex(ch), wallSize, door_east, door_west, door_south, door_north);
+					pkLand->RequestCreateWallBlocks(setID, ((ch)->GetMapIndex()), wallSize, door_east, door_west, door_south, door_north);
 				}
 			}
 			break;
@@ -3543,7 +3543,7 @@ ACMD(do_clear_quest)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 	pPC->ClearQuest(arg1);
 }
 
@@ -3583,7 +3583,7 @@ ACMD(do_horse_level)
 	str_to_number(level, arg2);
 	level = MINMAX(0, level, HORSE_MAX_LEVEL);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::GetName(victim), level);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "horse level set (%s: %d)", ((victim)->GetName()), level);
 
 	victim->SetHorseLevel(level);
 	victim->ComputePoints();
@@ -4000,8 +4000,8 @@ struct FCountInMap
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ch && ecs::IsPC(ch))
-				++m_Count[ecs::GetEmpire(ch)];
+			if (ch && ((ch)->IsPC()))
+				++m_Count[((ch)->GetEmpire())];
 		}
 	}
 	int GetCount(uint8_t bEmpire) { return m_Count[bEmpire]; }
@@ -4080,7 +4080,7 @@ struct FMobCounter
 
 ACMD(do_get_mob_count)
 {
-	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
+	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
 
 	if (pSectree == nullptr)
 		return;
@@ -4090,12 +4090,12 @@ ACMD(do_get_mob_count)
 
 	pSectree->for_each(f);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ecs::GetMapIndex(ch), f.nCount);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ((ch)->GetMapIndex()), f.nCount);
 }
 
 ACMD(do_clear_land)
 {
-	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::GetMapIndex(ch), ecs::GetX(ch), ecs::GetY(ch));
+	const building::CLand* pLand = building::CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 
 	if(nullptr == pLand )
 	{

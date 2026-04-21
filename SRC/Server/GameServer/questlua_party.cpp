@@ -107,7 +107,7 @@ namespace quest
 			if (pParty->GetMemberCount() == 2)
 				CPartyManager::instance().DeleteParty(pParty);
 			else
-				pParty->Quit(ecs::GetPlayerID(ch));
+				pParty->Quit(((ch)->GetPlayerID()));
 		}
 
 		lua_pushboolean(L, ch->GetParty()== nullptr);
@@ -120,10 +120,10 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch))
+		// if (!ch->GetParty()&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ch->GetParty()->GetLeaderPID() == ((ch)->GetPlayerID()))
 			// return 0;
 
-		if (ch->GetParty() && ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch))
+		if (ch->GetParty() && ch->GetParty()->GetLeaderPID() == ((ch)->GetPlayerID()))
 			CPartyManager::instance().DeleteParty(ch->GetParty());
 
 		lua_pushboolean(L, ch->GetParty()== nullptr);
@@ -151,11 +151,11 @@ namespace quest
 
         void operator()(LPCHARACTER ch)
         {
-            sys_log(0, "CINEMASEND_TRY %s", ecs::GetName(ch));
+            sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
 
             if (ch->GetDesc())
             {
-                sys_log(0, "CINEMASEND %s", ecs::GetName(ch));
+                sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
                 ch->GetDesc()->BufferedPacket(&pack, sizeof(struct packet_script));
                 ch->GetDesc()->Packet(data.c_str(),data.size());
             }
@@ -202,11 +202,11 @@ namespace quest
 
 		void operator()(LPCHARACTER ch)
 		{
-			sys_log(0, "CINEMASEND_TRY %s", ecs::GetName(ch));
+			sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
 
 			if (ch->GetDesc())
 			{
-				sys_log(0, "CINEMASEND %s", ecs::GetName(ch));
+				sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
 				ch->GetDesc()->BufferedPacket(&packet_script, sizeof(struct packet_script));
 				ch->GetDesc()->Packet(str,len);
 			}
@@ -284,7 +284,7 @@ namespace quest
 				return 1;
 			}
 
-			lua_pushboolean(L, ch->GetParty()->GetLeaderPID() == ecs::GetPlayerID(ch) ? 1 : 0);
+			lua_pushboolean(L, ch->GetParty()->GetLeaderPID() == ((ch)->GetPlayerID()) ? 1 : 0);
 			return 1;
 		}
 
@@ -373,7 +373,7 @@ namespace quest
 			f.flagname = pPC->GetCurrentQuestName() + "."+sz;
 			f.value = (int) rint(lua_tonumber(L, 2));
 
-			bool returnBool = pParty->ForEachOnMapMemberBool(f, ecs::GetMapIndex(ch));
+			bool returnBool = pParty->ForEachOnMapMemberBool(f, ((ch)->GetMapIndex()));
 			lua_pushboolean(L, returnBool);
 		}
 
@@ -469,8 +469,8 @@ namespace quest
 		}
 	};
 
-	// ÆÄÆ¼ ´ÜÀ§·Î ¹öÇÁ ÁÖ´Â ÇÔ¼ö.
-	// °°Àº ¸Ê¿¡ ÀÖ´Â ÆÄÆ¼¿ø¸¸ ¿µÇâÀ» ¹Þ´Â´Ù.
+	// ï¿½ï¿½Æ¼ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ô¼ï¿½.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ´Â´ï¿½.
 	ALUA(party_give_buff)
 	{
 		// migrated from CHARACTER::AddAffect
@@ -495,7 +495,7 @@ namespace quest
 
 		FGiveBuff f (dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
 		if (ch->GetParty())
-			ch->GetParty()->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			ch->GetParty()->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 		else
 			f(ch);
 
@@ -511,7 +511,7 @@ namespace quest
 		}
 		void operator () (LPCHARACTER ch)
 		{
-			vecPIDs.push_back(ecs::GetPlayerID(ch));
+			vecPIDs.push_back(((ch)->GetPlayerID()));
 		}
 	};
 
@@ -528,7 +528,7 @@ namespace quest
 			return 0;
 		}
 		FPartyPIDCollector f;
-		pParty->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+		pParty->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 		for (std::vector <uint32_t>::iterator it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 		{
@@ -557,11 +557,11 @@ namespace quest
 		{
 			int32_t pid = party->GetLeaderPID();
 			LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(pid);
-			name = leader != nullptr ? leader->GetName() : ecs::GetName(ch);
+			name = leader != nullptr ? leader->GetName() : ((ch)->GetName());
 		}
 		else
 		{
-			name = ecs::GetName(ch);
+			name = ((ch)->GetName());
 		}
 
 		lua_pushstring(L, name.c_str());
@@ -586,7 +586,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -599,13 +599,13 @@ namespace quest
 					}
 					else
 					{
-						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(tch), gold);
+						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((tch)->GetPlayerID()), gold);
 						tch->PointChange(POINT_GOLD, gold, true);
 					}
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -618,7 +618,7 @@ namespace quest
 			}
 			else
 			{
-				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::GetPlayerID(ch), gold);
+				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
 				ch->PointChange(POINT_GOLD, gold, true);
 			}
 		}
@@ -642,7 +642,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ecs::GetMapIndex(ch));
+			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 			{
@@ -653,7 +653,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(ecs::GetPlayerID(ch)))
+			if (!q.GetPC(((ch)->GetPlayerID())))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -691,7 +691,7 @@ namespace quest
 			{ "is_in_dungeon",	party_is_in_dungeon	},
 			{ "give_buff",		party_give_buff		},
 			{ "is_map_member_flag_lt",	party_is_map_member_flag_lt	},
-			{ "get_member_pids",		party_get_member_pids	}, // ÆÄÆ¼¿øµéÀÇ pid¸¦ return
+			{ "get_member_pids",		party_get_member_pids	}, // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ pidï¿½ï¿½ return
 			{"get_leader_name", party_get_leader_name},
 			{"give_gold", party_give_gold},
 			{"give_blacksmith", party_give_blacksmith},

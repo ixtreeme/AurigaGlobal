@@ -200,10 +200,10 @@ EVENTFUNC(pvp_duel_counter)
 				LPPARTY victimParty = chB->GetParty();
 				
 				if (chA->GetParty())
-					chParty->Quit(ecs::GetPlayerID(chA));
+					chParty->Quit(((chA)->GetPlayerID()));
 				
 				if (chB->GetParty())
-					victimParty->Quit(ecs::GetPlayerID(chB));
+					victimParty->Quit(((chB)->GetPlayerID()));
 			}
 			
 			if ((chA->GetDuel("BlockPet")) && (chB->GetDuel("BlockPet")))
@@ -306,14 +306,14 @@ EVENTFUNC(pvp_duel_counter)
 		{
 			const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
-			const char* chA_Name = ecs::GetName(chA);
-			const char* chB_Name = ecs::GetName(chB);
+			const char* chA_Name = ((chA)->GetName());
+			const char* chB_Name = ((chB)->GetName());
 			
-			int chA_Level = ecs::GetLevel(chA);
-			int chB_Level = ecs::GetLevel(chB);
+			int chA_Level = ((chA)->GetLevel());
+			int chB_Level = ((chB)->GetLevel());
 			
-			uint32_t chA_Race = ecs::GetRaceNum(chA);
-			uint32_t chB_Race = ecs::GetRaceNum(chB);
+			uint32_t chA_Race = ((chA)->GetRaceNum());
+			uint32_t chB_Race = ((chB)->GetRaceNum());
 			
 			int chA_[] = {(chA->GetQuestFlag(szTableStaticPvP[0])), (chA->GetQuestFlag(szTableStaticPvP[1])), (chA->GetQuestFlag(szTableStaticPvP[2])), (chA->GetQuestFlag(szTableStaticPvP[3])), (chA->GetQuestFlag(szTableStaticPvP[4])), (chA->GetQuestFlag(szTableStaticPvP[5])), (chA->GetQuestFlag(szTableStaticPvP[6])), (chA->GetQuestFlag(szTableStaticPvP[7])), (chA->GetQuestFlag(szTableStaticPvP[8]))};
 			int chB_[] = {(chB->GetQuestFlag(szTableStaticPvP[0])), (chB->GetQuestFlag(szTableStaticPvP[1])), (chB->GetQuestFlag(szTableStaticPvP[2])), (chB->GetQuestFlag(szTableStaticPvP[3])), (chB->GetQuestFlag(szTableStaticPvP[4])), (chB->GetQuestFlag(szTableStaticPvP[5])), (chB->GetQuestFlag(szTableStaticPvP[6])), (chB->GetQuestFlag(szTableStaticPvP[7])), (chB->GetQuestFlag(szTableStaticPvP[8]))};
@@ -511,7 +511,7 @@ void CPVP::Win(uint32_t dwPID)
 
 	m_bRevenge = true;
 
-	m_players[iSlot].bAgree = true; // ÀÚµ¿À¸·Î µ¿ÀÇ
+	m_players[iSlot].bAgree = true; // ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	m_players[!iSlot].bCanRevenge = true;
 	m_players[!iSlot].bAgree = false;
 
@@ -569,7 +569,7 @@ void RemoveStateFull(LPCHARACTER pkChr)
 
 void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 {
-	// Fake PC / desc nélküli entitás ne menjen be pvp state-be
+	// Fake PC / desc nï¿½lkï¿½li entitï¿½s ne menjen be pvp state-be
 	//if (pkChr->IsFakePlayer() || pkVictim->IsFakePlayer())
 	//	return;
 	if (pkChr && pkVictim)
@@ -578,7 +578,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		RemoveStateFull(pkVictim);
 	}
 
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(ecs::GetPlayerID(pkChr));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
 	
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -591,12 +591,12 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		CPVP * pkPVP = *it2++;
 		uint32_t dwCompanionPID;
 		
-		if (pkPVP->m_players[0].dwPID == ecs::GetPlayerID(pkChr))
+		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
 		
-		if (dwCompanionPID == ecs::GetPlayerID(pkVictim))
+		if (dwCompanionPID == ((pkVictim)->GetPlayerID()))
 		{
 			if (pkPVP->IsFight())
 			{
@@ -614,7 +614,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 			RemoveStateFull(pkChr);
 			RemoveStateFull(pkVictim);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 512, "%s", ecs::GetName(pkChr));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 512, "%s", ((pkChr)->GetName()));
 #endif
 		}
 	}
@@ -628,16 +628,16 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	if (pkChr->IsDead() || pkVictim->IsDead())
 		return;
 
-	CPVP kPVP(ecs::GetPlayerID(pkChr), ecs::GetPlayerID(pkVictim));
+	CPVP kPVP(((pkChr)->GetPlayerID()), ((pkVictim)->GetPlayerID()));
 
 	CPVP * pkPVP;
 
 	if ((pkPVP = Find(kPVP.m_dwCRC)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (pkPVP->Agree(ecs::GetPlayerID(pkChr))) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkChr));
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 115, "%s", ecs::GetName(pkVictim));
+		if (pkPVP->Agree(((pkChr)->GetPlayerID()))) {
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 115, "%s", ((pkChr)->GetName()));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 115, "%s", ((pkVictim)->GetName()));
 		}
 #endif
 		return;
@@ -645,19 +645,19 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 	pkPVP = M2_NEW CPVP(kPVP);
 
-	pkPVP->SetVID(ecs::GetPlayerID(pkChr), pkChr->GetPacketVID());
-	pkPVP->SetVID(ecs::GetPlayerID(pkVictim), pkVictim->GetPacketVID());
+	pkPVP->SetVID(((pkChr)->GetPlayerID()), pkChr->GetPacketVID());
+	pkPVP->SetVID(((pkVictim)->GetPlayerID()), pkVictim->GetPacketVID());
 
 	m_map_pkPVP.insert(map<uint32_t, CPVP *>::value_type(pkPVP->m_dwCRC, pkPVP));
 
-	m_map_pkPVPSetByID[ecs::GetPlayerID(pkChr)].insert(pkPVP);
-	m_map_pkPVPSetByID[ecs::GetPlayerID(pkVictim)].insert(pkPVP);
+	m_map_pkPVPSetByID[((pkChr)->GetPlayerID())].insert(pkPVP);
+	m_map_pkPVPSetByID[((pkVictim)->GetPlayerID())].insert(pkPVP);
 
 	pkPVP->Packet();
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 17, "%s", ecs::GetName(pkChr));
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 118, "%s", ecs::GetName(pkVictim));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 17, "%s", ((pkChr)->GetName()));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 118, "%s", ((pkVictim)->GetName()));
 #endif
 
 	// NOTIFY_PVP_MESSAGE
@@ -671,17 +671,17 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		
 		CGuild * g = pkChr->GetGuild();
 
-		const char* m_Name = ecs::GetName(pkChr);
+		const char* m_Name = ((pkChr)->GetName());
 		const char* m_GuildName = "-";
 		
 		int m_Vid = pkChr->GetPacketVID();	
-		int m_Level = ecs::GetLevel(pkChr);
+		int m_Level = ((pkChr)->GetLevel());
 		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
 		int m_MaxHP = pkChr->GetMaxHP();
 		int m_MaxSP = pkChr->GetMaxSP();
 		int PVP_BLOCK_VIEW_EQUIPMENT = pkChr->GetQuestFlag(BLOCK_EQUIPMENT_);
 		
-		uint32_t m_Race = ecs::GetRaceNum(pkChr);	
+		uint32_t m_Race = ((pkChr)->GetRaceNum());	
 		
 		if (g)
 		{ 
@@ -700,7 +700,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 #else
 #ifdef TEXTS_IMPROVEMENT
 	if (pkVictimDesc) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictimDesc), CHAT_TYPE_INFO, 824, "%s", ecs::GetName(pkChr));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictimDesc), CHAT_TYPE_INFO, 824, "%s", ((pkChr)->GetName()));
 	}
 #endif
 #endif
@@ -712,7 +712,7 @@ bool CPVPManager::IsFighting(LPCHARACTER pkChr)
 	if (!pkChr)
 		return false;
 
-	return IsFighting(ecs::GetPlayerID(pkChr));
+	return IsFighting(((pkChr)->GetPlayerID()));
 }
 
 bool CPVPManager::IsFighting(uint32_t dwPID)
@@ -737,7 +737,7 @@ bool CPVPManager::IsFighting(uint32_t dwPID)
 
 void CPVPManager::ConnectEx(LPCHARACTER pkChr, bool bDisconnect)
 {
-	const auto it = m_map_pkPVPSetByID.find(ecs::GetPlayerID(pkChr));
+	const auto it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -749,7 +749,7 @@ void CPVPManager::ConnectEx(LPCHARACTER pkChr, bool bDisconnect)
 	while (it2 != it->second.end())
 	{
 		CPVP * pkPVP = *it2++;
-		pkPVP->SetVID(ecs::GetPlayerID(pkChr), dwVID);
+		pkPVP->SetVID(((pkChr)->GetPlayerID()), dwVID);
 	}
 }
 
@@ -761,7 +761,7 @@ void CPVPManager::Connect(LPCHARACTER pkChr)
 void CPVPManager::Disconnect(LPCHARACTER pkChr)
 {
 #ifdef ENABLE_PVP_ADVANCED
-	const auto it = m_map_pkPVPSetByID.find(ecs::GetPlayerID(pkChr));
+	const auto it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
 	
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -778,12 +778,12 @@ void CPVPManager::Disconnect(LPCHARACTER pkChr)
 
 void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method is calling from no where yet.
 {
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(ecs::GetPlayerID(pkChr));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return;
 
-	sys_log(1, "PVPManager::Dead %d", ecs::GetPlayerID(pkChr));
+	sys_log(1, "PVPManager::Dead %d", ((pkChr)->GetPlayerID()));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -792,7 +792,7 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 
 		uint32_t dwCompanionPID;
 
-		if (pkPVP->m_players[0].dwPID == ecs::GetPlayerID(pkChr))
+		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
@@ -800,7 +800,7 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 		if (dwCompanionPID != dwKillerPID)
 			continue;
 
-		pkPVP->SetVID(ecs::GetPlayerID(pkChr), 0);
+		pkPVP->SetVID(((pkChr)->GetPlayerID()), 0);
 
 		m_map_pkPVPSetByID.erase(dwCompanionPID);
 
@@ -817,18 +817,18 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 	}
 }
 
-// ¸®ÅÏ°ª: 0 = PK, 1 = PVP
-// PVP¸¦ ¸®ÅÏÇÏ¸é °æÇèÄ¡³ª ¾ÆÀÌÅÛÀ» ¶³±¸°í PK¸é ¶³±¸Áö ¾Ê´Â´Ù.
+// ï¿½ï¿½ï¿½Ï°ï¿½: 0 = PK, 1 = PVP
+// PVPï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ PKï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
 bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 {
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(ecs::GetPlayerID(pkChr));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return false;
 
 	bool found = false;
 
-	sys_log(1, "PVPManager::Dead %d", ecs::GetPlayerID(pkChr));
+	sys_log(1, "PVPManager::Dead %d", ((pkChr)->GetPlayerID()));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -837,7 +837,7 @@ bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 
 		uint32_t dwCompanionPID;
 
-		if (pkPVP->m_players[0].dwPID == ecs::GetPlayerID(pkChr))
+		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
@@ -877,14 +877,14 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 			return false;
 	}
 
-	if (pkChr == pkVictim)  // ³»°¡ ³¯ Ä¥¶ó°í ÇÏ³× -_-
+	if (pkChr == pkVictim)  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ä¥ï¿½ï¿½ï¿½ ï¿½Ï³ï¿½ -_-
 		return false;
 
-	if (ecs::IsNPC(pkVictim) && ecs::IsNPC(pkChr) && !pkChr->IsGuardNPC())
+	if (((pkVictim)->IsNPC()) && ((pkChr)->IsNPC()) && !pkChr->IsGuardNPC())
 		return false;
 	// Non-PC combat stays allowed during the migration window.
 	// The mount restriction below only gates PC-vs-PC combat.
-	if (!ecs::IsPC(pkVictim) || !ecs::IsPC(pkChr))
+	if (!((pkVictim)->IsPC()) || !((pkChr)->IsPC()))
 		return true;
 	if( true == pkChr->IsHorseRiding() )
 	{
@@ -913,16 +913,16 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		return false;
 
 	{
-		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(ecs::GetMapIndex(pkChr));
+		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(((pkChr)->GetMapIndex()));
 
-		if ( ((pkChr->GetPKMode() == PK_MODE_PROTECT) && (ecs::GetEmpire(pkChr) == bMapEmpire)) ||
-				((pkVictim->GetPKMode() == PK_MODE_PROTECT) && (ecs::GetEmpire(pkVictim) == bMapEmpire)) )
+		if ( ((pkChr->GetPKMode() == PK_MODE_PROTECT) && (((pkChr)->GetEmpire()) == bMapEmpire)) ||
+				((pkVictim->GetPKMode() == PK_MODE_PROTECT) && (((pkVictim)->GetEmpire()) == bMapEmpire)) )
 		{
 			return false;
 		}
 	}
 
-	if (ecs::GetEmpire(pkChr) != ecs::GetEmpire(pkVictim))
+	if (((pkChr)->GetEmpire()) != ((pkVictim)->GetEmpire()))
 	{
 		// @warme005
 		{
@@ -992,7 +992,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		}
 	}
 
-	CPVP kPVP(ecs::GetPlayerID(pkChr), ecs::GetPlayerID(pkVictim));
+	CPVP kPVP(((pkChr)->GetPlayerID()), ((pkVictim)->GetPlayerID()));
 	CPVP * pkPVP = Find(kPVP.m_dwCRC);
 
 	if (!pkPVP || !pkPVP->IsFight())
@@ -1048,7 +1048,7 @@ void CPVPManager::SendList(LPDESC d)
 		if (!pkPVP->m_players[0].dwVID || !pkPVP->m_players[1].dwVID)
 			continue;
 
-		// VID°¡ µÑ´Ù ÀÖÀ» °æ¿ì¿¡¸¸ º¸³½´Ù.
+		// VIDï¿½ï¿½ ï¿½Ñ´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ì¿¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 		if (pkPVP->IsFight())
 		{
 			pack.bMode = PVP_MODE_FIGHT;
@@ -1103,7 +1103,7 @@ void CPVPManager::Process()
 	{
 		CPVP * pvp = (it++)->second;
 
-		if (get_dword_time() - pvp->GetLastFightTime() > 600000) // 10ºÐ ÀÌ»ó ½Î¿òÀÌ ¾ø¾úÀ¸¸é
+		if (get_dword_time() - pvp->GetLastFightTime() > 600000) // 10ï¿½ï¿½ ï¿½Ì»ï¿½ ï¿½Î¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			pvp->Packet(true);
 			Delete(pvp);

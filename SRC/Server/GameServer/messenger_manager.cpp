@@ -163,10 +163,10 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 
 void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 {
-	if (!ecs::IsPC(ch) || !target->IsPC())
+	if (!((ch)->IsPC()) || !target->IsPC())
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 607, "");
@@ -177,7 +177,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 	if (quest::CQuestManager::instance().GetPCForce(target->GetPlayerID())->IsRunning() == true)
 		return;
 
-	uint32_t dw1 = GetCRC32(ecs::GetName(ch), strlen(ecs::GetName(ch)));
+	uint32_t dw1 = GetCRC32(((ch)->GetName()), strlen(((ch)->GetName())));
 	uint32_t dw2 = GetCRC32(target->GetName(), strlen(target->GetName()));
 
 	char buf[64];
@@ -186,7 +186,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::GetName(ch));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ((ch)->GetName()));
 }
 
 // @fixme130 void -> bool
@@ -660,11 +660,11 @@ void MessengerManager::RemoveAllList(keyA account)
 		return;
 	// @fixme142 END
 
-	/* SQL Data »èÁ¦ */
+	/* SQL Data ï¿½ï¿½ï¿½ï¿½ */
 	DBManager::instance().Query("DELETE FROM messenger_list%s WHERE account='%s' OR companion='%s'",
 			get_table_postfix(), __account, __account);
 
-	/* ³»°¡ °¡Áö°íÀÖ´Â ¸®½ºÆ® »èÁ¦ */
+	/* ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ */
 	for (std::set<keyT>::iterator iter = company.begin();
 			iter != company.end();
 			iter++ )
@@ -672,7 +672,7 @@ void MessengerManager::RemoveAllList(keyA account)
 		this->RemoveFromList(account, *iter);
 	}
 
-	/* º¹»çÇÑ µ¥ÀÌÅ¸ »èÁ¦ */
+	/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Å¸ ï¿½ï¿½ï¿½ï¿½ */
 	for (std::set<keyT>::iterator iter = company.begin();
 			iter != company.end();
 			)

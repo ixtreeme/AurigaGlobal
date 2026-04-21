@@ -24,70 +24,70 @@ struct emotion_type_s
 	int32_t	flag;
 	float	extra_delay;
 } emotion_types[] = {
-	{ "Å°½º",	"french_kiss",	NEED_PC | BOTH_DISARM,		2.0f },
-	{ "»Ç»Ç",	"kiss",		NEED_PC | BOTH_DISARM,		1.5f },
-	{ "µû±Í",	"slap",		NEED_PC | SELF_DISARM,				1.5f },
-	{ "¹Ú¼ö",	"clap",		0,						1.0f },
-	{ "¿Í",		"cheer1",	0,						1.0f },
-	{ "¸¸¼¼",	"cheer2",	0,						1.0f },
+	{ "Å°ï¿½ï¿½",	"french_kiss",	NEED_PC | BOTH_DISARM,		2.0f },
+	{ "ï¿½Ç»ï¿½",	"kiss",		NEED_PC | BOTH_DISARM,		1.5f },
+	{ "ï¿½ï¿½ï¿½ï¿½",	"slap",		NEED_PC | SELF_DISARM,				1.5f },
+	{ "ï¿½Ú¼ï¿½",	"clap",		0,						1.0f },
+	{ "ï¿½ï¿½",		"cheer1",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",	"cheer2",	0,						1.0f },
 
 	// DANCE
-	{ "´í½º1",	"dance1",	0,						1.0f },
-	{ "´í½º2",	"dance2",	0,						1.0f },
-	{ "´í½º3",	"dance3",	0,						1.0f },
-	{ "´í½º4",	"dance4",	0,						1.0f },
-	{ "´í½º5",	"dance5",	0,						1.0f },
-	{ "´í½º6",	"dance6",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½1",	"dance1",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½2",	"dance2",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½3",	"dance3",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½4",	"dance4",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½5",	"dance5",	0,						1.0f },
+	{ "ï¿½ï¿½ï¿½6",	"dance6",	0,						1.0f },
 	// END_OF_DANCE
-	{ "ÃàÇÏ",	"congratulation",	0,				1.0f	},
-	{ "¿ë¼­",	"forgive",			0,				1.0f	},
-	{ "È­³²",	"angry",			0,				1.0f	},
-	{ "À¯È¤",	"attractive",		0,				1.0f	},
-	{ "½½ÇÄ",	"sad",				0,				1.0f	},
-	{ "ºê²ô",	"shy",				0,				1.0f	},
-	{ "ÀÀ¿ø",	"cheerup",			0,				1.0f	},
-	{ "ÁúÅõ",	"banter",			0,				1.0f	},
-	{ "±â»Ý",	"joy",				0,				1.0f	},
-	{ "±âÅõ",	"selfie",				0,				1.0f	},
-	{ "±â¿ø",	"dance7",				0,				1.0f	},
-	{ "±âÈ¤",	"doze",				0,				1.0f	},
-	{ "±âÇÄ",	"exercise",				0,				1.0f	},
-	{ "±âÇÏ",	"pushup",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"congratulation",	0,				1.0f	},
+	{ "ï¿½ë¼­",	"forgive",			0,				1.0f	},
+	{ "È­ï¿½ï¿½",	"angry",			0,				1.0f	},
+	{ "ï¿½ï¿½È¤",	"attractive",		0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"sad",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½",	"shy",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"cheerup",			0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"banter",			0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½",	"joy",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"selfie",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½",	"dance7",				0,				1.0f	},
+	{ "ï¿½ï¿½È¤",	"doze",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"exercise",				0,				1.0f	},
+	{ "ï¿½ï¿½ï¿½ï¿½",	"pushup",				0,				1.0f	},
 	{ "\n",	"\n",		0,						0.0f },
 	/*
-	//{ "Å°½º",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_FRENCH_KISS,	 1.0f },
-	{ "»Ç»Ç",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_KISS,		 1.0f },
-	{ "²¸¾È±â",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_SHORT_HUG,	 1.0f },
-	{ "Æ÷¿Ë",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_LONG_HUG,		 1.0f },
-	{ "¾î±úµ¿¹«",	NEED_PC | SELF_DISARM,				MOTION_ACTION_PUT_ARMS_SHOULDER, 0.0f },
-	{ "ÆÈÂ¯",		NEED_PC	| WOMAN_ONLY | SELF_DISARM,		MOTION_ACTION_FOLD_ARM,		 0.0f },
-	{ "µû±Í",		NEED_PC | SELF_DISARM,				MOTION_ACTION_SLAP,		 1.5f },
+	//{ "Å°ï¿½ï¿½",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_FRENCH_KISS,	 1.0f },
+	{ "ï¿½Ç»ï¿½",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_KISS,		 1.0f },
+	{ "ï¿½ï¿½ï¿½È±ï¿½",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_SHORT_HUG,	 1.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		NEED_PC | OTHER_SEX_ONLY | BOTH_DISARM,		MOTION_ACTION_LONG_HUG,		 1.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	NEED_PC | SELF_DISARM,				MOTION_ACTION_PUT_ARMS_SHOULDER, 0.0f },
+	{ "ï¿½ï¿½Â¯",		NEED_PC	| WOMAN_ONLY | SELF_DISARM,		MOTION_ACTION_FOLD_ARM,		 0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		NEED_PC | SELF_DISARM,				MOTION_ACTION_SLAP,		 1.5f },
 
-	{ "ÈÖÆÄ¶÷",		0,						MOTION_ACTION_CHEER_01,		 0.0f },
-	{ "¸¸¼¼",		0,						MOTION_ACTION_CHEER_02,		 0.0f },
-	{ "¹Ú¼ö",		0,						MOTION_ACTION_CHEER_03,		 0.0f },
+	{ "ï¿½ï¿½ï¿½Ä¶ï¿½",		0,						MOTION_ACTION_CHEER_01,		 0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_CHEER_02,		 0.0f },
+	{ "ï¿½Ú¼ï¿½",		0,						MOTION_ACTION_CHEER_03,		 0.0f },
 
 	{ "È£È£",		0,						MOTION_ACTION_LAUGH_01,		 0.0f },
 	{ "Å±Å±",		0,						MOTION_ACTION_LAUGH_02,		 0.0f },
-	{ "¿ìÇÏÇÏ",		0,						MOTION_ACTION_LAUGH_03,		 0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_LAUGH_03,		 0.0f },
 
-	{ "¾û¾û",		0,						MOTION_ACTION_CRY_01,		 0.0f },
-	{ "ÈæÈæ",		0,						MOTION_ACTION_CRY_02,		 0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_CRY_01,		 0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_CRY_02,		 0.0f },
 
-	{ "ÀÎ»ç",		0,						MOTION_ACTION_GREETING_01,	0.0f },
-	{ "¹ÙÀÌ",		0,						MOTION_ACTION_GREETING_02,	0.0f },
-	{ "Á¤ÁßÀÎ»ç",	0,						MOTION_ACTION_GREETING_03,	0.0f },
+	{ "ï¿½Î»ï¿½",		0,						MOTION_ACTION_GREETING_01,	0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_GREETING_02,	0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½",	0,						MOTION_ACTION_GREETING_03,	0.0f },
 
-	{ "ºñ³­",		0,						MOTION_ACTION_INSULT_01,	0.0f },
-	{ "¸ð¿å",		SELF_DISARM,					MOTION_ACTION_INSULT_02,	0.0f },
-	{ "¿ìÀ¡",		0,						MOTION_ACTION_INSULT_03,	0.0f },
+	{ "ï¿½ï¿½",		0,						MOTION_ACTION_INSULT_01,	0.0f },
+	{ "ï¿½ï¿½ï¿½",		SELF_DISARM,					MOTION_ACTION_INSULT_02,	0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_INSULT_03,	0.0f },
 
-	{ "°¼¿ì¶×",		0,						MOTION_ACTION_ETC_01,		0.0f },
-	{ "²ô´ö²ô´ö",	0,						MOTION_ACTION_ETC_02,		0.0f },
-	{ "µµ¸®µµ¸®",	0,						MOTION_ACTION_ETC_03,		0.0f },
-	{ "±ÜÀû±ÜÀû",	0,						MOTION_ACTION_ETC_04,		0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½",		0,						MOTION_ACTION_ETC_01,		0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	0,						MOTION_ACTION_ETC_02,		0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	0,						MOTION_ACTION_ETC_03,		0.0f },
+	{ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",	0,						MOTION_ACTION_ETC_04,		0.0f },
 	{ "Æ¡",		0,						MOTION_ACTION_ETC_05,		0.0f },
-	{ "»×",		0,						MOTION_ACTION_ETC_06,		0.0f },
+	{ "ï¿½ï¿½",		0,						MOTION_ACTION_ETC_06,		0.0f },
 	 */
 };
 
@@ -111,7 +111,7 @@ ACMD(do_emotion_allow)
 		return;
 
 	uint32_t	val = 0; str_to_number(val, arg1);
-	s_emotion_set.insert(std::make_pair(ecs::GetVID(ch), val));
+	s_emotion_set.insert(std::make_pair(((ch)->GetLegacyVID()), val));
 }
 
 #ifdef ENABLE_NEWSTUFF
@@ -124,11 +124,11 @@ bool CHARACTER_CanEmotion(CHARACTER& rch)
 	if (g_bDisableEmotionMask)
 		return true;
 #endif
-	// °áÈ¥½Ä ¸Ê¿¡¼­´Â »ç¿ëÇÒ ¼ö ÀÖ´Ù.
+	// ï¿½ï¿½È¥ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½.
 	if (marriage::WeddingManager::instance().IsWeddingMap(rch.GetMapIndex()))
 		return true;
 
-	// ¿­Á¤ÀÇ °¡¸é Âø¿ë½Ã »ç¿ëÇÒ ¼ö ÀÖ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½.
 	if (rch.IsEquipUniqueItem(UNIQUE_ITEM_EMOTION_MASK))
 		return true;
 
@@ -203,7 +203,7 @@ ACMD(do_emotion)
 
 	if (victim)
 	{
-		if (!ecs::IsPC(victim) || victim == ch)
+		if (!((victim)->IsPC()) || victim == ch)
 			return;
 
 		if (victim->IsRiding())
@@ -214,7 +214,7 @@ ACMD(do_emotion)
 			return;
 		}
 
-		int32_t distance = DISTANCE_APPROX(ecs::GetX(ch) - ecs::GetX(victim), ecs::GetY(ch) - ecs::GetY(victim));
+		int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - ((victim)->GetX()), ((ch)->GetY()) - ((victim)->GetY()));
 
 		if (distance < 10)
 		{
@@ -245,18 +245,18 @@ ACMD(do_emotion)
 
 		if (IS_SET(emotion_types[i].flag, NEED_PC))
 		{
-			if (s_emotion_set.find(std::make_pair(ecs::GetVID(victim), ecs::GetVID(ch))) == s_emotion_set.end())
+			if (s_emotion_set.find(std::make_pair(((victim)->GetLegacyVID()), ((ch)->GetLegacyVID()))) == s_emotion_set.end())
 			{
-				if (true == marriage::CManager::instance().IsMarried( ecs::GetPlayerID(ch) ))
+				if (true == marriage::CManager::instance().IsMarried( ((ch)->GetPlayerID()) ))
 				{
-					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( ecs::GetPlayerID(ch) );
+					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( ((ch)->GetPlayerID()) );
 
-					const uint32_t other = marriageInfo->GetOther( ecs::GetPlayerID(ch) );
+					const uint32_t other = marriageInfo->GetOther( ((ch)->GetPlayerID()) );
 
-					if (0 == other || other != ecs::GetPlayerID(victim))
+					if (0 == other || other != ((victim)->GetPlayerID()))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ((victim)->GetName()));
 #endif
 						return;
 					}
@@ -264,25 +264,25 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::GetName(victim));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ((victim)->GetName()));
 #endif
 					return;
 				}
 			}
 
-			s_emotion_set.insert(std::make_pair(ecs::GetVID(ch), ecs::GetVID(victim)));
+			s_emotion_set.insert(std::make_pair(((ch)->GetLegacyVID()), ((victim)->GetLegacyVID())));
 		}
 	}
 
 	char chatbuf[256+1];
 	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %u %u",
 			emotion_types[i].command_to_client,
-			(uint32_t) ecs::GetVID(ch), victim ? (uint32_t) ecs::GetVID(victim) : 0);
+			(uint32_t) ((ch)->GetLegacyVID()), victim ? (uint32_t) ((victim)->GetLegacyVID()) : 0);
 
 	if (len < 0 || len >= (int) sizeof(chatbuf))
 		len = sizeof(chatbuf) - 1;
 
-	++len;  // \0 ¹®ÀÚ Æ÷ÇÔ
+	++len;  // \0 ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 	TPacketGCChat pack_chat;
 	pack_chat.header = HEADER_GC_CHAT;
@@ -296,7 +296,7 @@ ACMD(do_emotion)
 	ch->PacketAround(buf.read_peek(), buf.size());
 
 	if (victim)
-		sys_log(1, "ACTION: %s TO %s", emotion_types[i].command, ecs::GetName(victim));
+		sys_log(1, "ACTION: %s TO %s", emotion_types[i].command, ((victim)->GetName()));
 	else
 		sys_log(1, "ACTION: %s", emotion_types[i].command);
 }

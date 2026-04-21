@@ -42,10 +42,10 @@ void P2P_MANAGER::Boot(LPDESC d)
 		it++;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ecs::GetName(ch), sizeof(p.szName));
-		p.dwPID = ecs::GetPlayerID(ch);
+		strlcpy(p.szName, ((ch)->GetName()), sizeof(p.szName));
+		p.dwPID = ((ch)->GetPlayerID());
 		p.bEmpire = ch->GetEmpire();
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::GetX(ch), ecs::GetY(ch));
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(((ch)->GetX()), ((ch)->GetY()));
 		p.bChannel = g_bChannel;
 
 		d->Packet(&p, sizeof(p));
@@ -171,7 +171,7 @@ void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
 	CGuildManager::instance().P2PLoginMember(pkCCI->dwPID);
 	CPartyManager::instance().P2PLogin(pkCCI->dwPID, pkCCI->szName);
 
-	// CCI°¡ »ý¼º½Ã¿¡¸¸ ¸Þ½ÅÀú¸¦ ¾÷µ¥ÀÌÆ®ÇÏ¸é µÈ´Ù.
+	// CCIï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ ï¿½Þ½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½Ï¸ï¿½ ï¿½È´ï¿½.
 	if (UpdateP2P) {
 		std::string name(pkCCI->szName);
 	    MessengerManager::instance().P2PLogin(name);

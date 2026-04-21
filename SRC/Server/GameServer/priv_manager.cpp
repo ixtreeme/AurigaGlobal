@@ -204,8 +204,8 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 
 int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 {
-	// Ä³¸¯ÅÍÀÇ º¯°æ ¼öÄ¡°¡ -¶ó¸é ¹«Á¶°Ç -¸¸ Àû¿ëµÇ°Ô
-	int val_ch = GetPrivByCharacter(ecs::GetPlayerID(ch), type);
+	// Ä³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ -ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç°ï¿½
+	int val_ch = GetPrivByCharacter(((ch)->GetPlayerID()), type);
 
 	if (val_ch < 0 && !ch->IsEquipUniqueItem(UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
 		return val_ch;
@@ -213,7 +213,7 @@ int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 	{
 		int val;
 
-		// °³ÀÎ, Á¦±¹, ±æµå, ÀüÃ¼ Áß Å« °ªÀ» ÃëÇÑ´Ù.
+		// ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½, ï¿½ï¿½Ã¼ ï¿½ï¿½ Å« ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ñ´ï¿½.
 		val = MAX(val_ch, GetPrivByEmpire(0, type));
 		val = MAX(val, GetPrivByEmpire(ch->GetEmpire(), type));
 

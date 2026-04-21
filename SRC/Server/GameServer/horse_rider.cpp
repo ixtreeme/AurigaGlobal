@@ -19,10 +19,10 @@ const int HORSE_STAMINA_REGEN_INTERVAL = 12 * 60;
 
 THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 /*
-   int iMinLevel;	// Å¾½ÂÇÒ ¼ö ÀÖ´Â ÃÖ¼Ò ·¹º§
+   int iMinLevel;	// Å¾ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½
    int iNPCRace;
-   int iMaxHealth;	// ¸»ÀÇ ÃÖ´ë Ã¼·Â
-   int iMaxStamina;	// ¸»ÀÇ ÃÖ´ë ½ºÅ×¹Ì³Ê
+   int iMaxHealth;	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ Ã¼ï¿½ï¿½
+   int iMaxStamina;	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½×¹Ì³ï¿½
    int iST;
    int iDX;
    int iHT;
@@ -34,7 +34,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
  */
 {//	pclvl	lo		h	s	st	dx  ht  iq      dm  dmax vedelem
 	{  0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0  },
-	{ 25,	20101,	3,	4,	26,	1,	18,	9,	54,	43,	64,	20 },	// 1 (ÃÊ±Þ)
+	{ 25,	20101,	3,	4,	26,	1,	18,	9,	54,	43,	64,	20 },	// 1 (ï¿½Ê±ï¿½)
 	{ 25,	20101,	4,	4,	27,	36,	18,	9,	55,	44,	66,	33 },
 	{ 25,	20101,	5,	5,	28,	38,	19,	9,	56,	44,	67,	33 },
 	{ 25,	20101,	7,	5,	29,	39,	19,	10,	57,	45,	68,	34 },
@@ -44,7 +44,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 	{ 25,	20101,	12,	7,	33,	44,	22,	11,	61,	48,	73,	36 },
 	{ 25,	20101,	13,	8,	34,	45,	22,	11,	62,	49,	74,	37 },
 	{ 25,	20101,	15,	10,	35,	46,	23,	12,	63,	50,	75,	37 },
-	{ 35,	20104,	18,	30,	40,	53,	27,	13,	69,	55,	82,	41 },	// 11 (Áß±Þ)
+	{ 35,	20104,	18,	30,	40,	53,	27,	13,	69,	55,	82,	41 },	// 11 (ï¿½ß±ï¿½)
 	{ 35,	20104,	19,	35,	41,	54,	27,	14,	70,	56,	84,	42 },
 	{ 35,	20104,	21,	40,	42,	56,	28,	14,	71,	56,	85,	42 },
 	{ 35,	20104,	22,	50,	43,	57,	28,	14,	72,	57,	86,	43 },
@@ -54,7 +54,7 @@ THorseStat c_aHorseStat[HORSE_MAX_LEVEL+1] =
 	{ 35,	20104,	28,	70,	46,	62,	31,	15,	76,	60,	91,	45 },
 	{ 35,	20104,	30,	80,	47,	63,	31,	16,	77,	61,	92,	46 },
 	{ 35,	20104,	32,	100,	48,	64,	32,	16,	78,	62,	93,	46 },
-	{ 50,	20107,	35,	120,	53,	71,	36,	18,	84,	67,	100,	50 },	// 21 (°í±Þ)
+	{ 50,	20107,	35,	120,	53,	71,	36,	18,	84,	67,	100,	50 },	// 21 (ï¿½ï¿½ï¿½)
 	{ 50,	20107,	36,	125,	55,	74,	37,	18,	86,	68,	103,	51 },
 	{ 50,	20107,	37,	130,	57,	76,	38,	19,	88,	70,	105,	52 },
 	{ 50,	20107,	38,	135,	59,	78,	39,	20,	90,	72,	108,	54 },
@@ -122,7 +122,7 @@ bool CHorseRider::ReviveHorse()
 	m_Horse.sHealth = c_aHorseStat[level].iMaxHealth;
 	m_Horse.sStamina = c_aHorseStat[level].iMaxStamina;
 
-	// 2005.03.24.ipkn.¸» »ì¸°ÈÄ ´Ù½Ã Á×´Â Çö»ó ¼öÁ¤
+	// 2005.03.24.ipkn.ï¿½ï¿½ ï¿½ì¸°ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½×´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	ResetHorseHealthDropTime();
 
 	StartStaminaRegenEvent();
@@ -143,12 +143,12 @@ short CHorseRider::GetHorseMaxStamina()
 
 void CHorseRider::FeedHorse()
 {
-	// ¸»A» °!Áö°í »i3AAÖA»¶§¸¸
+	// ï¿½ï¿½Aï¿½ ï¿½!ï¿½ï¿½ï¿½ï¿½ ï¿½i3AAï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½
 	if (GetHorseLevel() > 0 && GetHorseHealth() > 0)
 	{
 		UpdateHorseHealth(+1);
-		UpdateHorseStamina(+1);// etetésnél a kitartás is nö 
-		// 20050324. ipkn ¸» ¸Ô?´A»¶§µµ A1·Â °¨1O µô·1AI¸¦ ´A¸°´U.
+		UpdateHorseStamina(+1);// etetï¿½snï¿½l a kitartï¿½s is nï¿½ 
+		// 20050324. ipkn ï¿½ï¿½ ï¿½ï¿½?ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½ A1ï¿½ï¿½ ï¿½ï¿½1O ï¿½ï¿½1AIï¿½ï¿½ ï¿½Aï¿½ï¿½ï¿½U.
 		ResetHorseHealthDropTime();
 	}
 }
@@ -165,7 +165,7 @@ void CHorseRider::UpdateHorseDataByLogoff(uint32_t dwLogoffTime)
 		return;
 
 	if (dwLogoffTime >= 12 * 60)
-		UpdateHorseStamina(dwLogoffTime / 12 / 60, false); // ·Î±×¿ÀÇÁ 12ºÐ´ç 1¾¿ È¸º¹
+		UpdateHorseStamina(dwLogoffTime / 12 / 60, false); // ï¿½Î±×¿ï¿½ï¿½ï¿½ 12ï¿½Ð´ï¿½ 1ï¿½ï¿½ È¸ï¿½ï¿½
 }
 
 void CHorseRider::UpdateHorseStamina(int iStamina, bool bSend)
@@ -255,7 +255,7 @@ EVENTFUNC(horse_stamina_consume_event)
 	hr->CheckHorseHealthDropTime();
 	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
 	{
-		const entt::entity e = CVIDRegistry::Instance().Find(ecs::GetVID(ch));
+		const entt::entity e = CVIDRegistry::Instance().Find(((ch)->GetLegacyVID()));
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaConsume { e });
 	}
@@ -292,7 +292,7 @@ EVENTFUNC(horse_stamina_regen_event)
 	hr->CheckHorseHealthDropTime();
 	if (auto* ch = dynamic_cast<CHARACTER*>(hr))
 	{
-		const entt::entity e = CVIDRegistry::Instance().Find(ecs::GetVID(ch));
+		const entt::entity e = CVIDRegistry::Instance().Find(((ch)->GetLegacyVID()));
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaRegen { e });
 	}

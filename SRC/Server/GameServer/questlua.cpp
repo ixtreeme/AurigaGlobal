@@ -52,7 +52,7 @@ namespace quest
 
 	void FSetWarpLocation::operator() (LPCHARACTER ch) const
 	{
-		if (ecs::IsPC(ch))
+		if (((ch)->IsPC()))
 		{
 			ch->SetWarpLocation (map_index, x, y);
 		}
@@ -60,19 +60,19 @@ namespace quest
 
 	void FSetQuestFlag::operator() (LPCHARACTER ch) const
 	{
-		if (!ecs::IsPC(ch))
+		if (!((ch)->IsPC()))
 			return;
 
-		if (PC * pPC = CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch)))
+		if (PC * pPC = CQuestManager::instance().GetPCForce(((ch)->GetPlayerID())))
 			pPC->SetFlag(flagname, value);
 	}
 
 	bool FPartyCheckFlagLt::operator() (LPCHARACTER ch) const
 	{
-		if (!ecs::IsPC(ch))
+		if (!((ch)->IsPC()))
 			return false;
 
-		PC * pPC = CQuestManager::instance().GetPCForce(ecs::GetPlayerID(ch));
+		PC * pPC = CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 		bool returnBool = false;
 		if (pPC)
 		{
@@ -127,7 +127,7 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::IsPC(ch) && ch->GetEmpire() == m_bEmpire)
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ((ch)->IsPC()) && ch->GetEmpire() == m_bEmpire)
 			{
 				ch->WarpSet(m_x, m_y, m_lMapIndexTo);
 			}
@@ -277,7 +277,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
 		if (pMap == nullptr) {
 			return 0;
 		}
@@ -296,7 +296,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + (int32_t)(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + (int32_t)(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::GetMapIndex(ch), x, y, 0);
+				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ((ch)->GetMapIndex()), x, y, 0);
 
 				if (mob)
 					break;
@@ -348,7 +348,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::GetMapIndex(ch));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
 		if (pMap == nullptr) {
 			lua_pushnumber(L, 0);
 			return 1;
@@ -368,7 +368,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + static_cast<int32_t>(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + static_cast<int32_t>(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::GetMapIndex(ch), x, y, x, y, nullptr, bAggressive);
+				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ((ch)->GetMapIndex()), x, y, x, y, nullptr, bAggressive);
 
 				if (mob)
 					break;
@@ -629,7 +629,7 @@ namespace quest
 	}
 
 	/**
-	 * @version 05/06/08	Bang2ni - __get_guildid_byname ½ºÅ©¸³Æ® ÇÔ¼ö µî·Ï
+	 * @version 05/06/08	Bang2ni - __get_guildid_byname ï¿½ï¿½Å©ï¿½ï¿½Æ® ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½
 	 */
 	bool CQuestManager::InitializeLua()
 	{
@@ -898,7 +898,7 @@ namespace quest
 
 		if (chReply)
 		{
-			// ½Ã°£ Áö³ª¸é ¾Ë¾Æ¼­ ´ÝÈû
+			// ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¾Æ¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 		}
 
 		if (chWait)
@@ -919,12 +919,12 @@ namespace quest
 		sys_log(0, "GotoConfirmState vid %u msg '%s', timeout %d", dwVID, szMsg, iTimeout);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
-		if (ch && ecs::IsPC(ch))
+		if (ch && ((ch)->IsPC()))
 		{
 			ch->ConfirmWithMsg(szMsg, iTimeout, GetCurrentCharacterPtr()->GetPlayerID());
 		}
 
-		GetCurrentPC()->SetConfirmWait((ch && ecs::IsPC(ch))?ecs::GetPlayerID(ch):0);
+		GetCurrentPC()->SetConfirmWait((ch && ((ch)->IsPC()))?((ch)->GetPlayerID()):0);
 		ostringstream os;
 		os << "[CONFIRM_WAIT timeout;" << iTimeout << "]";
 		AddScript(os.str());
@@ -933,7 +933,7 @@ namespace quest
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
 		info->dwWaitPID = GetCurrentCharacterPtr()->GetPlayerID();
-		info->dwReplyPID = (ch && ecs::IsPC(ch)) ? ecs::GetPlayerID(ch) : 0;
+		info->dwReplyPID = (ch && ((ch)->IsPC())) ? ((ch)->GetPlayerID()) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
 	}

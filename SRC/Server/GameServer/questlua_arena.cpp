@@ -35,7 +35,7 @@ namespace quest
 			ch2->HorseSummon(false);
 		}
 
-		if ( CArenaManager::instance().IsMember(ecs::GetMapIndex(ch), ecs::GetPlayerID(ch)) != MEMBER_NO ||
+		if ( CArenaManager::instance().IsMember(((ch)->GetMapIndex()), ((ch)->GetPlayerID())) != MEMBER_NO ||
 				CArenaManager::instance().IsMember(ch2->GetMapIndex(), ch2->GetPlayerID()) != MEMBER_NO	)
 		{
 			lua_pushnumber(L, 2);
@@ -114,7 +114,7 @@ namespace quest
 		{
 			if ( ch->GetArena() == nullptr || ch->GetArenaObserverMode() == true )
 			{
-				if ( CArenaManager::instance().IsMember(ecs::GetMapIndex(ch), ecs::GetPlayerID(ch)) == MEMBER_DUELIST )
+				if ( CArenaManager::instance().IsMember(((ch)->GetMapIndex()), ((ch)->GetPlayerID())) == MEMBER_DUELIST )
 					lua_pushnumber(L, 1);
 				else
 					lua_pushnumber(L, 0);

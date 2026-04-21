@@ -185,7 +185,7 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 
 void CGuildManager::LoginMember(LPCHARACTER ch)
 {
-	TGuildMap::iterator it = m_map_pkGuildByPID.find(ecs::GetPlayerID(ch));
+	TGuildMap::iterator it = m_map_pkGuildByPID.find(((ch)->GetPlayerID()));
 
 	if (it != m_map_pkGuildByPID.end())
 	{
@@ -885,7 +885,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!killer->IsPC())
 		return;
 
-	if (!ecs::IsPC(victim))
+	if (!((victim)->IsPC()))
 		return;
 
 	if (killer->GetWarMap())
@@ -906,7 +906,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!gAttack->UnderWar(gDefend->GetID()))
 		return;
 
-	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), ecs::GetLevel(victim));
+	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), ((victim)->GetLevel()));
 }
 
 void CGuildManager::StopAllGuildWar()

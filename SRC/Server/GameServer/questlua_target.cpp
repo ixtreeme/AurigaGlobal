@@ -20,22 +20,22 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ecs::GetName(ch), iQuestIndex);
+			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
 		PIXEL_POSITION pos;
 
-		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(ecs::GetMapIndex(ch), pos))
+		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(((ch)->GetMapIndex()), pos))
 		{
-			sys_err("cannot find base position in this map %d", ecs::GetMapIndex(ch));
+			sys_err("cannot find base position in this map %d", ((ch)->GetMapIndex()));
 			return 0;
 		}
 
 		int x = pos.x + (int) lua_tonumber(L, 2) * 100;
 		int y = pos.y + (int) lua_tonumber(L, 3) * 100;
 
-		CTargetManager::instance().CreateTarget(ecs::GetPlayerID(ch),
+		CTargetManager::instance().CreateTarget(((ch)->GetPlayerID()),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_POS,
@@ -58,25 +58,25 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ecs::GetName(ch), iQuestIndex);
+			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
 
-		CTargetManager::instance().CreateTarget(ecs::GetPlayerID(ch),
+		CTargetManager::instance().CreateTarget(((ch)->GetPlayerID()),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_VID,
 				(int) lua_tonumber(L, 2),
 				0,
-				ecs::GetMapIndex(ch),
+				((ch)->GetMapIndex()),
 				lua_isstring(L, 3) ? lua_tostring(L, 3) : nullptr,
 				lua_isnumber(L, 4) ? (int)lua_tonumber(L, 4): 1);
 
 		return 0;
 	}
 
-	// ÇöÀç Äù½ºÆ®¿¡ µî·ÏµÈ Å¸°ÙÀ» »èÁ¦ ÇÑ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½Ïµï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ´ï¿½.
 	ALUA(target_delete)
 	{
 		// migrated from CHARACTER::DeleteTarget
@@ -87,16 +87,16 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ecs::GetName(ch), iQuestIndex);
+			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
-		CTargetManager::instance().DeleteTarget(ecs::GetPlayerID(ch), iQuestIndex, lua_tostring(L, 1));
+		CTargetManager::instance().DeleteTarget(((ch)->GetPlayerID()), iQuestIndex, lua_tostring(L, 1));
 
 		return 0;
 	}
 
-	// ÇöÀç Äù½ºÆ® ÀÎµ¦½º·Î µÇ¾îÀÖ´Â Å¸°ÙÀ» ¸ðµÎ »èÁ¦ÇÑ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ç¾ï¿½ï¿½Ö´ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
 	ALUA(target_clear)
 	{
 		// migrated from CHARACTER::DeleteTarget
@@ -105,7 +105,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
-		CTargetManager::instance().DeleteTarget(ecs::GetPlayerID(ch), iQuestIndex, nullptr);
+		CTargetManager::instance().DeleteTarget(((ch)->GetPlayerID()), iQuestIndex, nullptr);
 
 		return 0;
 	}
@@ -120,12 +120,12 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: %s, quest_index %u", ecs::GetName(ch), dwQuestIndex);
+			sys_err("invalid argument, name: %s, quest_index %u", ((ch)->GetName()), dwQuestIndex);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent(ecs::GetPlayerID(ch), dwQuestIndex, (const char *) lua_tostring(L, 1));
+		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent(((ch)->GetPlayerID()), dwQuestIndex, (const char *) lua_tostring(L, 1));
 
 		if (pkEvent)
 		{

@@ -26,19 +26,19 @@ namespace marriage
 		uint32_t dwVnum;
 		int value[MAX_LOVE_GRADE];
 	} g_ItemBonus[MAX_MARRIAGE_UNIQUE_ITEM] = {
-		{ 71069,	{ 4,	5,	6,	8,  } }, // °üÅë Áõ°¡
-		{ 71070,	{ 10,	12,	15,	20, } }, // °æÇèÄ¡ Áõ°¡
-		{ 71071,	{ 4,	5,	6,	8,  } }, // Å©¸®Æ¼ÄÃ Áõ°¡
-		{ 71072,	{ -4,	-5,	-6,	-8, } }, // »ó´ë¹æ °ø°Ý·Â °¨¼Ò
-		{ 71073,	{ 20,	25,	30,	40, } }, // °ø°Ý·Â Áõ°¡ (Àý´ë°ª)
-		{ 71074,	{ 12,	16,	20,	30, } }, // ¹æ¾î·Â Áõ°¡ (Àý´ë°ª)
+		{ 71069,	{ 4,	5,	6,	8,  } }, // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		{ 71070,	{ 10,	12,	15,	20, } }, // ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
+		{ 71071,	{ 4,	5,	6,	8,  } }, // Å©ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		{ 71072,	{ -4,	-5,	-6,	-8, } }, // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ý·ï¿½ ï¿½ï¿½ï¿½ï¿½
+		{ 71073,	{ 20,	25,	30,	40, } }, // ï¿½ï¿½ï¿½Ý·ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ë°ª)
+		{ 71074,	{ 12,	16,	20,	30, } }, // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ë°ª)
 
-		//{ 71069,	1,	2,	3,	6,	8,  }, // °üÅë Áõ°¡
-		//{ 71070,	5,	7,	10,	15,	20, }, // °æÇèÄ¡ Áõ°¡
-		//{ 71071,	1,	2,	3,	6,	8,  }, // Å©¸®Æ¼ÄÃ Áõ°¡
-		//{ 71072,	5,	10,	15,	20,	30, }, // »ó´ë¹æÀÌ ÀÔÀº µ¥¹ÌÁö¸¦ ³ª¿¡°Ô·Î
-		//{ 71073,	10,	15,	20,	25,	40, }, // °ø°Ý·Â Áõ°¡ (Àý´ë°ª)
-		//{ 71074,	5,	10,	15,	20,	30, }, // ¹æ¾î·Â Áõ°¡ (Àý´ë°ª)
+		//{ 71069,	1,	2,	3,	6,	8,  }, // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		//{ 71070,	5,	7,	10,	15,	20, }, // ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
+		//{ 71071,	1,	2,	3,	6,	8,  }, // Å©ï¿½ï¿½Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		//{ 71072,	5,	10,	15,	20,	30, }, // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ô·ï¿½
+		//{ 71073,	10,	15,	20,	25,	40, }, // ï¿½ï¿½ï¿½Ý·ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ë°ª)
+		//{ 71074,	5,	10,	15,	20,	30, }, // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ë°ª)
 	};
 
 	const int MARRIAGE_POINT_PER_DAY = 1;
@@ -106,17 +106,17 @@ namespace marriage
 		else
 			days /= 86400;
 
-		// ±âº» 50%
+		// ï¿½âº» 50%
 
-		// ¿ø¾ÓÀÇ ±êÅÐ »ç¿ëÁßÀÏ ¶§ :
-		// ³¯Â¥¿¡ ÀÇÇÑ ¿µÇâ 80% ÇÏ·ç´ç 8%
-		// ÀüÅõ¿¡ ÀÇÇÑ ¿µÇâ 80%
-		// ÅäÅ» 100%
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ :
+		// ï¿½ï¿½Â¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 80% ï¿½Ï·ï¿½ï¿½ 8%
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 80%
+		// ï¿½ï¿½Å» 100%
 
-		// ºñ»ç¿ëÁßÀÏ ¶§ :
-		// ³¯Â¥¿¡ ÀÇÇÑ ¿µÇâ 60% ÇÏ·ç´ç 6%
-		// ÀüÅõ¿¡ ÀÇÇÑ ¿µÇâ 60%
-		// ÅäÅ» 100%
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ :
+		// ï¿½ï¿½Â¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 60% ï¿½Ï·ï¿½ï¿½ 6%
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 60%
+		// ï¿½ï¿½Å» 100%
 		return MIN(50 + MIN(days * point_per_day, max_limit) + MIN(love_point / 1000000, max_limit), 100);
 	}
 
@@ -129,11 +129,11 @@ namespace marriage
 
 		return ch1->GetMapIndex() == ch2->GetMapIndex();
 
-		// ÆÄÆ¼ Ã¼Å©°¡ »ç¶óÁ³À½
+		// ï¿½ï¿½Æ¼ Ã¼Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		/*if (!ch1->GetParty() || ch1->GetParty() != ch2->GetParty())
 		  return false;*/
 
-		// °Å¸® Ã¼Å©°¡ »ç¶óÁ³À½
+		// ï¿½Å¸ï¿½ Ã¼Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		/*const int DISTANCE = 5000;
 
 		  if (labs(ch1->GetX() - ch2->GetX()) > DISTANCE)
@@ -145,15 +145,15 @@ namespace marriage
 		  return (DISTANCE_APPROX(ch1->GetX() - ch2->GetX(), ch1->GetY() - ch2->GetY()) < DISTANCE);*/
 	}
 
-	// ±Ý½½ ¼öÄ¡
+	// ï¿½Ý½ï¿½ ï¿½ï¿½Ä¡
 	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, LPCHARACTER me)
 	{
 		if (!is_married)
 			return 0;
 
-		// ÁÖº¯¿¡ ¾øÀ»¶§´Â ÀÚ±â ±â´É¸¸ Àû¿ëµÈ´Ù.
+		// ï¿½Öºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú±ï¿½ ï¿½ï¿½É¸ï¿½ ï¿½ï¿½ï¿½ï¿½È´ï¿½.
 
-		// ÇØ´ç ¾ÆÀÌÅÛÀÌ ¾î¶² ±â´ÉÀ» ÇÏ´ÂÁö Ã£´Â´Ù.
+		// ï¿½Ø´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½î¶² ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï´ï¿½ï¿½ï¿½ Ã£ï¿½Â´ï¿½.
 		int iFindedBonusIndex=0;
 		{
 			for (iFindedBonusIndex = 0; iFindedBonusIndex < MAX_MARRIAGE_UNIQUE_ITEM; ++iFindedBonusIndex)
@@ -195,7 +195,7 @@ namespace marriage
 
 		if (bShare)
 		{
-			// µÎ¸íÀÇ º¸³Ê½º¸¦ ÇÕÇÑ´Ù.
+			// ï¿½Î¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ñ´ï¿½.
 			int count = 0;
 			if (nullptr != ch1 && 
 #ifdef ENABLE_NEW_USE_POTION
@@ -222,7 +222,7 @@ namespace marriage
 		}
 		else
 		{
-			// »ó´ë¹æ °Í¸¸ °è»ê
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½
 			int count = 0;
 			if (me != ch1 && nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
@@ -251,20 +251,20 @@ namespace marriage
 
 	void TMarriage::Login(LPCHARACTER ch)
 	{
-		if (ecs::GetPlayerID(ch) == m_pid1)
+		if (((ch)->GetPlayerID()) == m_pid1)
 		{
 			ch1 = ch;
 			if (is_married)
 				SendLoverInfo(ch1, name2, GetMarriagePoint());
 		}
-		else if (ecs::GetPlayerID(ch) == m_pid2)
+		else if (((ch)->GetPlayerID()) == m_pid2)
 		{
 			ch2 = ch;
 			if (is_married)
 				SendLoverInfo(ch2, name1, GetMarriagePoint());
 		}
 
-		// µÑ ´Ù ÀÌ ÇÁ·Î¼¼½º¿¡ ·Î±×ÀÎ ÁßÀÌ¸é Æ÷ÀÎÅÍ¸¦ ¿¬°áÇÏ°í ÀÌº¥Æ® ¹ß»ý
+		// ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ìºï¿½Æ® ï¿½ß»ï¿½
 		if (IsOnline())
 		{
 			ch1->SetMarryPartner(ch2);
@@ -273,7 +273,7 @@ namespace marriage
 			StartNearCheckEvent();
 		}
 
-		// µÑ ´Ù ·Î±×ÀÎ µÇ¾î ÀÖ´Ù¸é ÆÐÅ¶À» º¸³½´Ù.
+		// ï¿½ï¿½ ï¿½ï¿½ ï¿½Î±ï¿½ï¿½ï¿½ ï¿½Ç¾ï¿½ ï¿½Ö´Ù¸ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 		if (is_married)
 		{
 			LPDESC d1, d2;
@@ -635,7 +635,7 @@ namespace marriage
 
 			if (A && B)
 			{
-				// ¿þµù ¸Ê ¿äÃ»À» º¸³½´Ù
+				// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ã»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 				TPacketWeddingRequest p;
 				p.dwPID1 = dwPID1;
 				p.dwPID2 = dwPID2;
@@ -737,7 +737,7 @@ namespace marriage
 
 	void CManager::Login(LPCHARACTER ch)
 	{
-		uint32_t pid = ecs::GetPlayerID(ch);
+		uint32_t pid = ((ch)->GetPlayerID());
 
 		TMarriage* pMarriage = Get(pid);
 		if (!pMarriage)
@@ -758,7 +758,7 @@ namespace marriage
 
 	void CManager::Logout(LPCHARACTER ch)
 	{
-		Logout(ecs::GetPlayerID(ch));
+		Logout(((ch)->GetPlayerID()));
 	}
 
 	void CManager::WeddingReady(uint32_t dwPID1, uint32_t dwPID2, uint32_t dwMapIndex)
@@ -796,11 +796,11 @@ namespace marriage
 		if (!pwi)
 			return;
 
-		// °áÈ¥ÀÚµéÀ» ¿öÇÁ½ÃÄÑ¾ßÇÔ
+		// ï¿½ï¿½È¥ï¿½Úµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½
 		pMarriage->WarpToWeddingMap(dwPID1);
 		pMarriage->WarpToWeddingMap(dwPID2);
 
-		// µî·ÏÇØ¼­ ¸Þ´ºÃ¢¿¡¼­ ÀÌ¸§³ª¿Í¾ßÇÔ
+		// ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½Þ´ï¿½Ã¢ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½Í¾ï¿½ï¿½ï¿½
 		m_setWedding.insert(make_pair(dwPID1, dwPID2));
 	}
 
@@ -819,7 +819,7 @@ namespace marriage
 			return;
 		}
 
-		// ¸Ê¿¡¼­ »©³»¾ßÇÕ´Ï´Ù
+		// ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½
 		if (map_allow_find(WEDDING_MAP_INDEX))
 			if (!WeddingManager::instance().End(pMarriage->pWeddingInfo->dwMapIndex))
 			{
