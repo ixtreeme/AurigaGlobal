@@ -1,0 +1,259 @@
+Phase 15E - Full migration quality audit
+Date: 2026-04-21
+Scope: SRC/Server/GameServer
+Mode: AUDIT ONLY
+
+Summary
+- The ChatSystem fix is real: ChatSystem itself is entity-only now.
+- The broader migration is still heavily mixed. Header/API quality is decent, but call-site quality is not.
+- Biggest fake surface is not new ECS systems; it is the transitional accessor layer plus widespread LPCHARACTER -> entity conversions in non-ECS code.
+
+Step 1 - ECS system APIs with LPCHARACTER public overloads
+Command intent: scan ecs/systems headers for LPCHARACTER/CHARACTER* in public API, excluding explicit bridge helpers.
+
+Result
+- One current fake public ECS system API remains:
+  - SRC/Server/GameServer/ecs/systems/ItemSystem.hpp
+    - void SyncExtraInventoryAll(LPCHARACTER ch);
+
+Assessment
+- This is a real backdoor in a public ECS system header.
+- Everything else in ecs/systems public headers scanned clean on this rule.
+
+Step 2 - CharacterAccessors.hpp LPCHARACTER wrappers
+File
+- SRC/Server/GameServer/ecs/CharacterAccessors.hpp
+
+LPCHARACTER-taking wrapper surface
+- TryGetRuntimeFlags(LPCHARACTER ch)                         7 call sites
+- GetPlayerID(LPCHARACTER ch)                             285 call sites
+- GetName(LPCHARACTER ch)                                 150 call sites
+- GetMapIndex(LPCHARACTER ch)                              91 call sites
+- GetVID(LPCHARACTER ch)                                   17 call sites
+- GetX(LPCHARACTER ch)                                     61 call sites
+- GetY(LPCHARACTER ch)                                     61 call sites
+- GetRaceNum(LPCHARACTER ch)                               23 call sites
+- GetLevel(LPCHARACTER ch)                                 40 call sites
+- GetEmpire(LPCHARACTER ch)                                 9 call sites
+- GetGMLevel(LPCHARACTER ch)                                5 call sites
+- IsPC(LPCHARACTER ch)                                     37 call sites
+- IsNPC(LPCHARACTER ch)                                     4 call sites
+
+Related reverse bridge in same file
+- LegacyCharOf(entt::entity e)                            345 call sites tree-wide
+
+Top files using LPCHARACTER-taking accessors
+- 77  SRC/Server/GameServer/questlua_pc.cpp
+- 73  SRC/Server/GameServer/cmd_gm.cpp
+- 56  SRC/Server/GameServer/questlua_dungeon.cpp
+- 54  SRC/Server/GameServer/new_offlineshop_manager.cpp
+- 46  SRC/Server/GameServer/cmd_general.cpp
+- 44  SRC/Server/GameServer/pvp.cpp
+- 28  SRC/Server/GameServer/questlua_marriage.cpp
+- 25  SRC/Server/GameServer/questlua_global.cpp
+- 22  SRC/Server/GameServer/cmd_general2.cpp
+- 20  SRC/Server/GameServer/questlua_party.cpp
+
+File overlap check
+- Files using fake LPCHARACTER accessors: 54
+- Files with non-ECS EcsOf(...) calls: 74
+- Overlap: 34 files
+
+Assessment
+- CharacterAccessors.hpp is still a fake migration layer.
+- It hides LPCHARACTER usage instead of removing it.
+- Some wrappers are especially bad:
+  - GetName(ch) is just legacy passthrough.
+  - GetMapIndex/GetVID/GetX/GetY/GetRaceNum/GetLevel/GetEmpire/GetGMLevel all do hidden EcsOf(ch) lookup inside the accessor.
+- In 34 files, both patterns coexist: the file already does entity conversion somewhere, yet still calls LPCHARACTER accessors elsewhere.
+
+Step 3 - EcsOf(ch) call sites outside ECS
+Total
+- 1332 non-ECS EcsOf(...) calls remain outside ecs/* and AIHelpers
+- Non-questlua subset: 1299
+
+Top files
+- 239  SRC/Server/GameServer/cmd_gm.cpp
+- 186  SRC/Server/GameServer/input_main.cpp
+- 148  SRC/Server/GameServer/cmd_general.cpp
+- 72   SRC/Server/GameServer/New_PetSystem.cpp
+- 47   SRC/Server/GameServer/cmd_general2.cpp
+- 37   SRC/Server/GameServer/guild_renewal.cpp
+- 36   SRC/Server/GameServer/arena.cpp
+- 32   SRC/Server/GameServer/guild.cpp
+- 30   SRC/Server/GameServer/DragonSoul.cpp
+- 30   SRC/Server/GameServer/char_manager.cpp
+- 25   SRC/Server/GameServer/new_offlineshop.h
+- 23   SRC/Server/GameServer/exchange.cpp
+- 22   SRC/Server/GameServer/questmanager.cpp
+- 22   SRC/Server/GameServer/VikingDungeon.cpp
+- 18   SRC/Server/GameServer/pvp.cpp
+
+Assessment
+- Every one of these is still an LPCHARACTER holder converting late.
+- This is not entity-first. It is LPCHARACTER-first with explicit conversion at point-of-use.
+
+Step 4 - LegacyCharOf outside ECS systems
+Rule
+- LegacyCharOf is acceptable inside ecs/systems internals.
+- Outside ecs/systems, it is backward conversion from entity -> CHARACTER and should be treated as wrong-direction migration.
+
+Total
+- 345 LegacyCharOf call sites outside allowed ECS locations
+- Non-questlua subset: 0
+
+Top files
+- 192  SRC/Server/GameServer/questlua_pc.cpp
+- 22   SRC/Server/GameServer/questlua_npc.cpp
+- 21   SRC/Server/GameServer/questlua_party.cpp
+- 21   SRC/Server/GameServer/questlua_horse.cpp
+- 14   SRC/Server/GameServer/questlua_marriage.cpp
+- 13   SRC/Server/GameServer/questlua_petnew.cpp
+- 13   SRC/Server/GameServer/questlua_global.cpp
+- 12   SRC/Server/GameServer/questlua_affect.cpp
+- 9    SRC/Server/GameServer/questlua_game.cpp
+- 9    SRC/Server/GameServer/questlua_dungeon.cpp
+- 5    SRC/Server/GameServer/questlua_pet.cpp
+- 5    SRC/Server/GameServer/questlua_target.cpp
+- 4    SRC/Server/GameServer/questlua_item.cpp
+- 2    SRC/Server/GameServer/questlua_arena.cpp
+- 2    SRC/Server/GameServer/questlua_guild.cpp
+- 1    SRC/Server/GameServer/questlua_building.cpp
+
+Assessment
+- The wrong-direction bridge is concentrated almost entirely in questlua glue.
+- This is still a fake entity migration if the real work immediately converts back to LPCHARACTER.
+
+Step 5 - LPCHARACTER count reintroduced inside ECS systems
+Suspicious ecs/system files by raw LPCHARACTER or CHARACTER* count
+- 47  SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+- 38  SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp
+- 26  SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+- 21  SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp
+- 15  SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+- 15  SRC/Server/GameServer/ecs/systems/SocialSystem.cpp
+- 14  SRC/Server/GameServer/ecs/systems/AISystem.cpp
+- 11  SRC/Server/GameServer/ecs/systems/InventorySystem.cpp
+- 10  SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp
+- 9   SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+- 6   SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp
+- 4   SRC/Server/GameServer/ecs/systems/SkillSystem.cpp
+- 3   SRC/Server/GameServer/ecs/systems/MountSystem.cpp
+- 3   SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+- 1   SRC/Server/GameServer/ecs/systems/VitalRegenSystem.cpp
+- 1   SRC/Server/GameServer/ecs/systems/ItemSystem.hpp
+
+Assessment
+- Phase 15B did not hold cleanly in several hot ECS system implementation files.
+- Anything above ~5 is suspect on the Phase 15B rule.
+- The worst offenders are CombatSystem, PlayerRuntimeSystem, ItemSystem, and NetworkSyncSystem.
+
+Step 6 - Phase 15D accessor migration audit
+Definition
+- ecs::GetXxx(ch) is fake progress: it still takes LPCHARACTER and hides the ECS lookup inside the accessor.
+
+Count
+- 700 fake accessor call sites in non-ECS files
+- Of those, 448 are outside questlua files
+
+Breakdown by accessor
+- 285 ecs::GetPlayerID(...)
+- 150 ecs::GetName(...)
+- 91  ecs::GetMapIndex(...)
+- 61  ecs::GetX(...)
+- 61  ecs::GetY(...)
+- 40  ecs::GetLevel(...)
+- 37  ecs::IsPC(...)
+- 23  ecs::GetRaceNum(...)
+- 17  ecs::GetVID(...)
+- 9   ecs::GetEmpire(...)
+- 5   ecs::GetGMLevel(...)
+- 4   ecs::IsNPC(...)
+
+Assessment
+- Phase 15D reduced visual ch->GetXxx noise, but most of that surface is still LPCHARACTER-first.
+- It should be scored as fake migration unless the file itself stops holding LPCHARACTER.
+
+Step 7 - Phase 15E fake migration audit on recent system headers
+Reference
+- Recent headers newer than SRC/Server/GameServer/ecs/systems/GayaSystem.hpp: 13
+
+Recent headers with LPCHARACTER/CHARACTER* in public API
+- SRC/Server/GameServer/ecs/systems/ItemSystem.hpp :: 1 hit
+
+Recent headers without LPCHARACTER/CHARACTER* in public API
+- ChatSystem.hpp
+- InventorySystem.hpp
+- MountSystem.hpp
+- MovementSystem.hpp
+- NetworkSyncSystem.hpp
+- PlayerRuntimeSystem.hpp
+- PointSystem.hpp
+- SessionSystem.hpp
+- SkillSystem.hpp
+- SocialSystem.hpp
+- StatSystem.hpp
+- VitalRegenSystem.hpp
+
+Assessment
+- Header/API quality in recent Phase 15E system work is mostly real.
+- ItemSystem.hpp is the one clear regression/backdoor.
+
+Step 8 - Real vs fake migration score
+This score is split in two, because header quality and call-site quality are very different.
+
+Header/API score
+- Real recent ECS system headers: 12
+- Fake recent ECS system headers: 1
+- Real ratio: 92.3%
+- Fake ratio: 7.7%
+
+Call-site/conversion score (heuristic)
+Real surface counted
+- 1325 non-ECS ChatSystem entity-only calls
+
+Fake surface counted
+- 700 fake ecs::GetXxx(ch) accessor calls
+- 1332 non-ECS EcsOf(...) conversions
+- 345 LegacyCharOf(...) backward conversions outside ECS systems
+- Total fake surface counted: 2377
+
+Heuristic ratio
+- Real: 1325
+- Fake: 2377
+- Real share: 35.8%
+- Fake share: 64.2%
+
+Interpretation
+- The migration looks good at the public header layer.
+- It still looks bad at the call-site layer.
+- Most visible "entity-first" progress is still wrapper-driven rather than ownership-driven.
+
+Priority fix list
+1. Delete or quarantine CharacterAccessors.hpp LPCHARACTER surface.
+   - Biggest fake surface: 700 calls.
+   - Replace wrapper usage with explicit entity ownership in callers.
+
+2. Attack non-ECS EcsOf(...) hotspots.
+   - Biggest holders: cmd_gm.cpp, input_main.cpp, cmd_general.cpp, New_PetSystem.cpp, guild.cpp, char_manager.cpp.
+   - These files still own LPCHARACTER and convert late.
+
+3. Collapse questlua reverse bridges.
+   - 345 wrong-direction LegacyCharOf(...) calls.
+   - Passing entity into Lua glue is not enough if the glue immediately converts back to CHARACTER.
+
+4. Remove the ItemSystem.hpp public LPCHARACTER backdoor.
+   - Current fake public ECS API:
+     - SyncExtraInventoryAll(LPCHARACTER ch)
+
+5. Re-clean ECS internals with high LPCHARACTER counts.
+   - CombatSystem.cpp
+   - PlayerRuntimeSystem.cpp
+   - ItemSystem.cpp
+   - NetworkSyncSystem.cpp
+   - MovementSystem.cpp
+
+Bottom line
+- Real migration exists: ChatSystem is clean, and recent system headers are mostly clean.
+- The codebase still carries a larger fake surface than real surface when measured at actual usage sites.
+- The main illusion is not public overloads anymore; it is transitional accessor sugar plus pervasive EcsOf(ch) and questlua LegacyCharOf bridges.
