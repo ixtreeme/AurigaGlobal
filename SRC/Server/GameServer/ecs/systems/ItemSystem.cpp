@@ -638,6 +638,59 @@ LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell)
     auto* ch = LegacyCharOf(e);
     return ch ? ch->GetExtraInventoryItem(cell) : nullptr;
 }
+
+void SyncExtraInventoryAll(entt::entity e)
+{
+    auto* ch = LegacyCharOf(e);
+    if (!ch || !ch->GetDesc())
+        return;
+
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
+    if (!inventory)
+        return;
+
+    for (uint16_t cell = 0; cell < EXTRA_INVENTORY_MAX_NUM; ++cell)
+    {
+        LPITEM item = inventory->pItems[cell];
+        const TItemPos packetCell(EXTRA_INVENTORY, cell);
+
+        if (item)
+        {
+            TPacketGCItemSet packet{};
+            packet.header = HEADER_GC_ITEM_SET;
+            packet.Cell = packetCell;
+            packet.count = item->GetCount();
+#ifdef ATTR_LOCK
+            packet.lockedattr = item->GetLockedAttr();
+#endif
+            packet.vnum = item->GetVnum();
+            packet.flags = item->GetFlag();
+            packet.anti_flags = item->GetAntiFlag();
+            packet.highlight = false;
+
+            memcpy(packet.alSockets, item->GetSockets(), sizeof(packet.alSockets));
+            memcpy(packet.aAttr, item->GetAttributes(), sizeof(packet.aAttr));
+
+            ch->GetDesc()->Packet(&packet, sizeof(packet));
+        }
+        else
+        {
+            TPacketGCItemDelDeprecated packet{};
+            packet.header = HEADER_GC_ITEM_DEL;
+            packet.Cell = packetCell;
+            packet.count = 0;
+#ifdef ATTR_LOCK
+            packet.lockedattr = -1;
+#endif
+            packet.vnum = 0;
+
+            ch->GetDesc()->Packet(&packet, sizeof(packet));
+        }
+    }
+}
 #endif
 
 LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
