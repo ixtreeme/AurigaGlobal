@@ -2873,7 +2873,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 			{
 				pkItem = GetInventoryItem(vec_bSlots[i]);
 
-				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+				if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
@@ -2911,7 +2911,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 			{
 				pkItem = GetWear(vec_bSlots[i]);
 
-				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+				if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
@@ -3012,7 +3012,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 	const char* szItemName = item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
 
 #ifdef ENABLE_EXTRA_INVENTORY
-	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
 	{
 #ifdef ENABLE_NEW_STACK_LIMIT
 		int bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
@@ -3076,9 +3076,9 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 		ItemSystem::SetItemCountEcs(
 			EntityFactory::CreateItemEntity(g_registry, item), bCount);
 	}
-	else if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+	else if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
 #else
-	if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+	if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
 #endif
 	{
 #ifdef ENABLE_NEW_STACK_LIMIT
