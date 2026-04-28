@@ -6149,6 +6149,72 @@ Commit status:
 - Code commits completed.
 - This log update committed separately as Phase 15E-40 completion documentation.
 
+## Phase 15E-41: Quest + Safebox subsystem cleanup
+
+Date: 2026-04-28
+
+Mode:
+- Code change with build gates.
+- Scope limited to `questlua_pc.cpp` and `safebox.cpp`.
+- Shop/offlineshop, cube/refine, DragonSoul, and pet paths intentionally untouched.
+
+Part A - `questlua_pc.cpp` destroy migration:
+- Replaced quest item insertion failure destroy with:
+```cpp
+ItemSystem::DestroyItemEntityEcs(
+    EntityFactory::CreateItemEntity(g_registry, item),
+    "QUEST_ITEM_FAIL");
+```
+- Replaced quest-created item cleanup failure destroy for `pkNewItem` with the same ECS destroy path.
+- Added `ecs/EntityFactory.hpp`.
+- Build passed after Part A.
+
+Part B - `safebox.cpp` transaction cleanup:
+- Replaced destructor cleanup:
+```cpp
+LPITEM removed = m_pkItems[i]->RemoveFromCharacter();
+ItemSystem::DestroyItemEntityEcs(
+    EntityFactory::CreateItemEntity(g_registry, removed),
+    "SAFEBOX_DESTRUCT");
+```
+- Replaced safebox stack split source decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced safebox stack split target increment with `ItemSystem::AddItemCountEcs`.
+- Preserved `RemoveFromCharacter()` before destroy in destructor cleanup.
+- Build passed after Part B.
+
+Verification:
+```text
+questlua_pc.cpp SetCount=0 M2_DESTROY_ITEM=0
+safebox.cpp     SetCount=0 M2_DESTROY_ITEM=0
+
+Tree-wide ->SetCount after Phase 15E-41: 35
+Tree-wide M2_DESTROY_ITEM real call sites after Phase 15E-41: 27
+```
+
+Final validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+
+Manual WinTest checklist:
+- Quest item reward path.
+- Quest-created item cleanup/failure path if reproducible.
+- Safebox open/close.
+- Deposit/withdraw normal item.
+- Deposit/withdraw stackable item with partial split.
+- Logout/relogin and verify safebox persistence.
+- Check `syserr.txt` for `QUEST_ITEM_FAIL`, `SAFEBOX_DESTRUCT`, transaction mismatch, orphan item, double-destroy, and `VID_DRIFT`.
+- Verify no delayed damage/metin collapse regression.
+
+Commits:
+- `Phase 15E-41 PART A: questlua_pc.cpp destroy paths to ECS`
+- `Phase 15E-41 PART B: safebox.cpp count and destroy to ECS`
+
+Commit status:
+- Code commits completed.
+- This log update committed separately as Phase 15E-41 completion documentation.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
