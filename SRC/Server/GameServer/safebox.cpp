@@ -86,7 +86,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 #ifdef ATTR_LOCK
 	pack.lockedattr = pkItem->GetLockedAttr();
 #endif
-	pack.anti_flags	= pkItem->GetAntiFlag();
+	pack.anti_flags	= ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem));
 	memcpy(pack.alSockets, pkItem->GetSockets(), sizeof(pack.alSockets));
 	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
 
@@ -224,7 +224,7 @@ count)
 		LPITEM item2;
 
 		if ((item2 = GetItem(bDestCell)) && item != item2 && item2->IsStackable() &&
-				!IS_SET(item2->GetAntiFlag(), ITEM_ANTIFLAG_STACK) &&
+				!IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item2)), ITEM_ANTIFLAG_STACK) &&
 				ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) // 합칠 수 있는 아이템의 경우
 		{
 			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
