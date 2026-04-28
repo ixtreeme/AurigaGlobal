@@ -427,10 +427,12 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 #endif
 	if (fCharge < FLT_EPSILON)
 	{
-		pItem->SetCount(pItem->GetCount() - 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pItem), 1);
 		if (nullptr != pExtractor)
 		{
-			pExtractor->SetCount(pExtractor->GetCount() - 1);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
 		}
 		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_FAIL", "");
 #ifdef TEXTS_IMPROVEMENT
@@ -448,10 +450,12 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 			return false;
 		}
 
-		pItem->SetCount(pItem->GetCount() - 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pItem), 1);
 		if (nullptr != pExtractor)
 		{
-			pExtractor->SetCount(pExtractor->GetCount() - 1);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
 		}
 
 		int iCharge = (int)(fCharge + 0.5f);
@@ -537,7 +541,8 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		if (nullptr != pExtractor)
 		{
 			iBonus = pExtractor->GetValue(ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
-			pExtractor->SetCount(pExtractor->GetCount() - 1);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
 			bSuccess = number(1, 100) <= iBonus ? true : false;
 		}
 	}
@@ -576,7 +581,9 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 			}
 			
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_FAILED", buf);
-			M2_DESTROY_ITEM(pItem);
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, pItem),
+				"DRAGON_SOUL_BYPRODUCT");
 			pItem = nullptr;
 			if (dwByProduct)
 			{
