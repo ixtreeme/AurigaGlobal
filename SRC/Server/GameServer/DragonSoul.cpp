@@ -210,12 +210,12 @@ bool DSManager::RefreshItemAttributes(LPITEM pDS)
 {
 	if (!pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", pDS->GetID());
+		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pDS)));
 		return false;
 	}
 
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(pDS->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDS)), ds_type, grade_idx, step_idx, strength_idx);
 
 	DragonSoulTable::TVecApplys vec_basic_applys;
 	DragonSoulTable::TVecApplys vec_addtional_applys;
@@ -280,12 +280,12 @@ bool DSManager::PutAttributes(LPITEM pDS)
 {
 	if (!pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", pDS->GetID());
+		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pDS)));
 		return false;
 	}
 
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(pDS->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDS)), ds_type, grade_idx, step_idx, strength_idx);
 
 	DragonSoulTable::TVecApplys vec_basic_applys;
 	DragonSoulTable::TVecApplys vec_addtional_applys;
@@ -391,7 +391,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		return false;
 	}
 
-	uint32_t dwVnum = pItem->GetVnum();
+	uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
 	GetDragonSoulInfo(dwVnum, ds_type, grade_idx, step_idx, strength_idx);
 
@@ -399,7 +399,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 
 	if (nullptr != pExtractor)
 	{
-		iBonus = pExtractor->GetValue(0);
+		iBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pExtractor), 0);
 	}
 
 	std::vector <float> vec_chargings;
@@ -524,10 +524,10 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 	float fDice;
 	// 용혼석 추출 성공 여부 결정.
 	{
-		//uint32_t dwVnum = pItem->GetVnum();
+		//uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 		uint8_t ds_type, grade_idx, step_idx, strength_idx;
-		GetDragonSoulInfo(pItem->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
 
 		// 추출 정보가 없다면 일단 무조건 성공하는 것이라 생각하자.
 		if (!m_pTable->GetDragonSoulExtValues(ds_type, grade_idx, fProb, dwByProduct))
@@ -540,7 +540,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		bSuccess = fDice <= (fProb * (100 + iBonus) / 100.f);
 		if (nullptr != pExtractor)
 		{
-			iBonus = pExtractor->GetValue(ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
+			iBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pExtractor), ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
 			ItemSystem::ConsumeItemEcs(
 				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
 			bSuccess = number(1, 100) <= iBonus ? true : false;
@@ -555,7 +555,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		{
 			if (pExtractor)
 			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d)", (int)fDice, (int)fProb, iBonus, pExtractor->GetVnum());
+				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pExtractor)));
 			}
 			else
 			{
@@ -573,7 +573,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		{
 			if (pExtractor)
 			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", (int)fDice, (int)fProb, iBonus, pExtractor->GetVnum(), dwByProduct);
+				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pExtractor)), dwByProduct);
 			}
 			else
 			{
@@ -681,7 +681,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	{
 		LPITEM pItem = *it;
 
-		GetDragonSoulInfo(pItem->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
 
 		if (!m_pTable->GetRefineGradeValues(ds_type, grade_idx, need_count, fee, vec_probs))
 		{
@@ -704,7 +704,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 			return false;
 		}
 
-		if (ds_type != GetType(pItem->GetVnum()) || grade_idx != GetGradeIdx(pItem->GetVnum()))
+		if (ds_type != GetType(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || grade_idx != GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
@@ -753,7 +753,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
 	{
 		LPITEM pItem = *it;
-		int n = pItem->GetCount();
+		int n = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 		if (left_count > n)
 		{
 			LPITEM removed = pItem->RemoveFromCharacter();
@@ -861,7 +861,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	std::set <LPITEM>::iterator it = set_items.begin();
 	{
 		LPITEM pItem = *it;
-		GetDragonSoulInfo(pItem->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
 
 		if (!m_pTable->GetRefineStepValues(ds_type, step_idx, need_count, fee, vec_probs))
 		{
@@ -882,7 +882,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		{
 			return false;
 		}
-		if (ds_type != GetType(pItem->GetVnum()) || grade_idx != GetGradeIdx(pItem->GetVnum()) || step_idx != GetStepIdx(pItem->GetVnum()))
+		if (ds_type != GetType(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || grade_idx != GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || step_idx != GetStepIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
@@ -931,7 +931,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
 	{
 		LPITEM pItem = *it;
-		int n = pItem->GetCount();
+		int n = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 		if (left_count > n)
 		{
 			LPITEM removed = pItem->RemoveFromCharacter();
@@ -987,11 +987,11 @@ bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGO
 
 bool IsDragonSoulRefineMaterial(LPITEM pItem)
 {
-	if (pItem->GetType() != ITEM_MATERIAL)
+	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) != ITEM_MATERIAL)
 		return false;
-	return (pItem->GetSubType() == MATERIAL_DS_REFINE_NORMAL ||
-		pItem->GetSubType() == MATERIAL_DS_REFINE_BLESSED ||
-		pItem->GetSubType() == MATERIAL_DS_REFINE_HOLLY);
+	return (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_NORMAL ||
+		ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_BLESSED ||
+		ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_HOLLY);
 }
 
 bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
@@ -1078,7 +1078,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 
 	if (nullptr != pDragonSoul)
 	{
-		GetDragonSoulInfo(pDragonSoul->GetVnum(), bType, bGrade, bStep, bStrength);
+		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), bType, bGrade, bStep, bStrength);
 
 		float fWeight = 0.f;
 		// 가중치 값이 없다면 강화할 수 없는 용혼석
@@ -1102,7 +1102,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	}
 
 	float fProb;
-	if (!m_pTable->GetRefineStrengthValues(bType, pRefineStone->GetSubType(), bStrength, fee, fProb))
+	if (!m_pTable->GetRefineStrengthValues(bType, ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pRefineStone)), bStrength, fee, fProb))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
@@ -1253,7 +1253,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
 					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
 					if (item && item->IsDragonSoul() && !item->IsEquipped()) {
-						if (GetGradeIdx(item->GetVnum()) == grade) {
+						if (GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == grade) {
 							set_items.insert(item);
 						}
 					}
@@ -1276,7 +1276,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 					if (n % 2 == 0) {
 						uint8_t ds_type, grade_idx, step_idx, strength_idx;
 						int32_t result_grade;
-						GetDragonSoulInfo(item->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+						GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ds_type, grade_idx, step_idx, strength_idx);
 
 						int32_t need_count = 0, fee = 0;
 						std::vector <float> vec_probs;
@@ -1295,7 +1295,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						int32_t vnum = itemold->GetVnum();
+						int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemold));
 						if (ds_type != GetType(vnum) || grade_idx != GetGradeIdx(vnum)) {
 							continue;
 						}
@@ -1369,7 +1369,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
 					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
 					if (item && item->IsDragonSoul() && !item->IsEquipped()) {
-						if (GetStepIdx(item->GetVnum()) == step) {
+						if (GetStepIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == step) {
 							set_items.insert(item);
 						}
 					}
@@ -1392,7 +1392,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 					if (n % 2 == 0) {
 						uint8_t ds_type, grade_idx, step_idx, strength_idx;
 						int32_t result_step;
-						GetDragonSoulInfo(item->GetVnum(), ds_type, grade_idx, step_idx, strength_idx);
+						GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ds_type, grade_idx, step_idx, strength_idx);
 
 						int32_t need_count = 0, fee = 0;
 						std::vector <float> vec_probs;
@@ -1411,7 +1411,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						int32_t vnum = itemold->GetVnum();
+						int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemold));
 						if (ds_type != GetType(vnum) || grade_idx != GetGradeIdx(vnum) || step_idx != GetStepIdx(vnum)) {
 							continue;
 						}
