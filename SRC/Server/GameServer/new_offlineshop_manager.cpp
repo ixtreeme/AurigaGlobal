@@ -2096,13 +2096,13 @@ namespace offlineshop
 			if(!item)
 				return false;
 			
-			if(IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_GIVE))
+			if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_GIVE))
 				return false;
 			
-			if(IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MYSHOP))
+			if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_MYSHOP))
 				return false;
 			
-			if (item->isLocked() || item->IsEquipped() || item->IsExchanging())
+			if (item->isLocked() || ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) || item->IsExchanging())
 			{
 				SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
@@ -2606,7 +2606,7 @@ namespace offlineshop
 		if(!pkItem)
 			return false;
 
-		if (pkItem->isLocked() || pkItem->IsEquipped() || pkItem->IsExchanging())
+		if (pkItem->isLocked() || ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem)) || pkItem->IsExchanging())
 		{
 			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
@@ -2619,9 +2619,9 @@ namespace offlineshop
 		}
 #endif
 
-		if(IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE))
+		if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_GIVE))
 			return false;
-		if(IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_MYSHOP))
+		if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_MYSHOP))
 			return false;
 
 //updated 25 - 01 - 2020  //topatch
@@ -3383,7 +3383,7 @@ namespace offlineshop
 		if(!item)
 			return false;
 
-		if(item->IsEquipped() || item->IsExchanging() || item->isLocked())
+		if(ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) || item->IsExchanging() || item->isLocked())
 			return false;
 
 
