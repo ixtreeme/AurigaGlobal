@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "SessionSystem.hpp"
+#include "ItemSystem.hpp"
 
 #include "../../char.h"
 #include "../../char_manager.h"
@@ -24,6 +25,7 @@
 #include "../../party.h"
 #include "../../pvp.h"
 #include "../EventDispatcher.hpp"
+#include "../EntityFactory.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
 #include "../Registry.hpp"
@@ -1200,7 +1202,9 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
             item->SetAttributes(pItems->aAttr);
 
             if (!m_pkSafebox->Add(pItems->pos, item))
-                M2_DESTROY_ITEM(item);
+                ItemSystem::DestroyItemEntityEcs(
+                    EntityFactory::CreateItemEntity(g_registry, item),
+                    "SAFEBOX_LOAD_ADD_FAILED");
             else
                 item->SetSkipSave(false);
         }
@@ -1300,7 +1304,9 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
             item->SetAttributes(pItems->aAttr);
 
             if (!m_pkMall->Add(pItems->pos, item))
-                M2_DESTROY_ITEM(item);
+                ItemSystem::DestroyItemEntityEcs(
+                    EntityFactory::CreateItemEntity(g_registry, item),
+                    "MALL_LOAD_ADD_FAILED");
             else
                 item->SetSkipSave(false);
         }
