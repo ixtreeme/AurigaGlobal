@@ -34,6 +34,7 @@
 #include "DragonSoul.h"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include <common/CommonDefines.h>
@@ -621,7 +622,9 @@ ACMD(do_item)
 			}
 			else
 			{
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 626, "");
 #endif
@@ -639,7 +642,9 @@ ACMD(do_item)
 			}
 			else
 			{
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 539, "");
 #endif
@@ -657,7 +662,9 @@ ACMD(do_item)
 			}
 			else
 			{
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
 #endif
@@ -2922,7 +2929,9 @@ ACMD(do_polymorph_item)
 			}
 			else
 			{
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
 #endif
@@ -4323,44 +4332,68 @@ ACMD (do_item_full_set)
 
 			item = ITEM_MANAGER::instance().CreateItem(19712);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);//pajzs
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );//cipi
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399 );//kard
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713 );//sisak
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );//karos
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );//fli
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );//nyaki
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 		}
 		break;
 	case JOB_WARRIOR:
@@ -4368,43 +4401,67 @@ ACMD (do_item_full_set)
 
 			item = ITEM_MANAGER::instance().CreateItem(19312);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(3269);//2kezes
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399);//kard
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 		}
 		break;
 	case JOB_SHAMAN:
@@ -4412,44 +4469,68 @@ ACMD (do_item_full_set)
 
 			item = ITEM_MANAGER::instance().CreateItem(19912);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(7349);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(5209);
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 		}
 		break;
 	case JOB_ASSASSIN:
@@ -4457,45 +4538,69 @@ ACMD (do_item_full_set)
 
 			item = ITEM_MANAGER::instance().CreateItem(19512);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1229);//tr
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);//fli
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);//nyaki
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(2249);//j
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 		}
 		break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -4504,28 +4609,44 @@ ACMD (do_item_full_set)
 
 			item = ITEM_MANAGER::instance().CreateItem(21049);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(13049);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(6049);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(21559);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);
 			if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"GM_CMD_DESTROY");
 		}
 		break;
 #endif
@@ -4805,5 +4926,4 @@ ACMD(do_open_whispersys) {
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "recv_whispersys");
 }
 #endif
-
 
