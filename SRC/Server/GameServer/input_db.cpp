@@ -1797,7 +1797,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 
 		if (false == item->OnAfterCreatedItem())
-			sys_err("Failed to call ITEM::OnAfterCreatedItem (vnum: %d, id: %d)", item->GetVnum(), item->GetID());
+			sys_err("Failed to call ITEM::OnAfterCreatedItem (vnum: %d, id: %d)", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		item->SetSkipSave(false);
 	}
