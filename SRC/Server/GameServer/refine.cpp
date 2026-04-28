@@ -5,6 +5,9 @@
 #include "char_interface.hpp"
 #include "item_manager.h"
 #include "item.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include "desc.h"
 
@@ -50,7 +53,7 @@ CRefineManager::~CRefineManager()
 			if (ar_ListType[it] > 0)
 			{
 				//@fix 12.01.2017
-				if (item->GetType() == ITEM_METIN)
+				if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_METIN)
 				{
 					return false;
 				}
