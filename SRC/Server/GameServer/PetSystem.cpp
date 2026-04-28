@@ -279,7 +279,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 		m_pkOwner->RemoveAffect(const_cast<CAffect*>(pAffect));
 	}
 	
-	m_pkOwner->AddAffect(AFFECT_RECALL1, APPLY_NONE, 0, pSummonItem->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
+	m_pkOwner->AddAffect(AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
@@ -468,15 +468,15 @@ void CPetActor::SetSummonItem (LPITEM pItem)
 	}
 
 	m_dwSummonItemVID = pItem->GetVID();
-	m_dwSummonItemVnum = pItem->GetVnum();
+	m_dwSummonItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
 		pet.owner = owner;
-		pet.itemID = pItem->GetID();
+		pet.itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItem));
 		pet.itemVID = pItem->GetVID();
-		pet.itemVnum = pItem->GetVnum();
+		pet.itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 		pet.level = 0;
 		pet.state = IsSummoned() ? 1u : 0u;
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
