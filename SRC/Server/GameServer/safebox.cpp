@@ -5,6 +5,9 @@
 #include "packet.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "desc_client.h"
 #include "item.h"
 #include "item_manager.h"
@@ -42,7 +45,10 @@ void CSafebox::__Destroy()
 			m_pkItems[i]->SetSkipSave(true);
 			ITEM_MANAGER::instance().FlushDelayedSave(m_pkItems[i]);
 
-			M2_DESTROY_ITEM(m_pkItems[i]->RemoveFromCharacter());
+			LPITEM removed = m_pkItems[i]->RemoveFromCharacter();
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, removed),
+				"SAFEBOX_DESTRUCT");
 			m_pkItems[i] = nullptr;
 		}
 	}
@@ -233,8 +239,12 @@ count)
 			if (item->GetCount() >= count)
 				Remove(bCell);
 
-			item->SetCount(item->GetCount() - count);
-			item2->SetCount(item2->GetCount() + count);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				count);
+			ItemSystem::AddItemCountEcs(
+				EntityFactory::CreateItemEntity(g_registry, item2),
+				count);
 
 			sys_log(1, "SAFEBOX: STACK %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item2->GetName(), item2->GetCount());
 			return true;
