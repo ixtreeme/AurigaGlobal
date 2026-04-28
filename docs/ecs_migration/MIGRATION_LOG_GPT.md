@@ -6353,6 +6353,79 @@ Commit status:
 - Code commits completed.
 - This log update committed separately as Phase 15E-43 completion documentation.
 
+## Phase 15E-44: Pet duration consume + DragonSoul charge/refine
+
+Date: 2026-04-28
+
+Mode:
+- Code change with build gates.
+- Pet first, then DragonSoul segmented cleanup.
+- DragonSoul persistence/refine semantics preserved; legacy DS algorithms were not rewritten.
+
+Part A - `New_PetSystem.cpp` pet book consume:
+- Replaced both `bookItem->SetCount(bookItem->GetCount() - 1)` calls with `ItemSystem::ConsumeItemEcs`.
+- Existing summon success/failure control flow was preserved; consume still happens only where legacy code consumed the book.
+- Target file result: `New_PetSystem.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part A.
+
+Part B segment 1 - DragonSoul extract / pull-out paths:
+- Replaced DS extract source decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced extractor decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced pull-out failure byproduct/source cleanup with `ItemSystem::DestroyItemEntityEcs(..., "DRAGON_SOUL_BYPRODUCT")`.
+- Build passed after segment 1.
+
+Part B segment 2 - DragonSoul grade/step refine material consume:
+- Replaced full material consume branches with `RemoveFromCharacter()` followed by `ItemSystem::DestroyItemEntityEcs(..., "DRAGON_SOUL_REFINE_CONSUME")`.
+- Replaced partial/final consume branches with `ItemSystem::ConsumeItemEcs`.
+- This preserves auto-destroy when `left_count` consumes the full stack.
+- Build passed after segment 2.
+
+Part B segment 3 - DragonSoul strength refine consume:
+- Replaced `pDragonSoul` success/failure decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced `pRefineStone` success/failure decrement with `ItemSystem::ConsumeItemEcs`.
+- Build passed after segment 3.
+
+Part B segment 4 - DragonSoul invalid destroy paths:
+- Replaced invalid DS pair destroys with `RemoveFromCharacter()` followed by `ItemSystem::DestroyItemEntityEcs(..., "DRAGON_SOUL_INVALID")`.
+- Preserved legacy remove-before-destroy ordering.
+- Build passed after segment 4.
+
+Final count verification:
+```text
+New_PetSystem.cpp SetCount=0 M2_DESTROY_ITEM=0
+DragonSoul.cpp    SetCount=0 M2_DESTROY_ITEM=0
+
+Tree-wide ->SetCount after Phase 15E-44: 5
+Tree-wide M2_DESTROY_ITEM real call sites after Phase 15E-44: 7
+```
+
+Final validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+
+Manual WinTest checklist:
+- Pet: summon with pet book, count decreases or item disappears at one count, failure path does not consume unexpectedly.
+- DragonSoul extract: DS/extractor counts decrease correctly, extractor one-count destroy works, result heart item appears.
+- DragonSoul pull-out: success returns item, failure destroys source and gives byproduct if applicable.
+- DragonSoul grade/step refine: source materials consumed, result DS appears, invalid paths do not crash.
+- DragonSoul strength refine: DS and refine stone consumed on success/failure, result behavior unchanged.
+- Logout/login after DS operations to verify persistence.
+- Check `syserr.txt` for `DRAGON_SOUL_INVALID`, `DRAGON_SOUL_BYPRODUCT`, `DRAGON_SOUL_REFINE_CONSUME`, DS count desync, pet book loss/duplication, orphan/double-destroy, and `VID_DRIFT`.
+- Verify no delayed damage/metin collapse regression.
+
+Commits:
+- `Phase 15E-44 PART A: New_PetSystem.cpp pet book consume to ECS`
+- `Phase 15E-44 PART B segment 1: DragonSoul extract paths to ECS`
+- `Phase 15E-44 PART B segment 2: DragonSoul refine material consume to ECS`
+- `Phase 15E-44 PART B segment 3: DragonSoul strength refine consume to ECS`
+- `Phase 15E-44 PART B segment 4: DragonSoul invalid destroy paths to ECS`
+
+Commit status:
+- Code commits completed.
+- This log update committed separately as Phase 15E-44 completion documentation.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
