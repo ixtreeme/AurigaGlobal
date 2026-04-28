@@ -10,11 +10,13 @@
 #include "../../log.h"
 #include "../../packet.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/inventory_components.hpp"
 #include "../components/session_components.hpp"
+#include "ItemSystem.hpp"
 
 namespace
 {
@@ -125,9 +127,9 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
         if (!DSManager::instance().IsTimeLeftDragonSoul(item))
             expired = true;
 
-        gradeList[j] = (item->GetVnum() / 1000) % 10;
-        stepList[j] = (item->GetVnum() / 100) % 10;
-        strengthList[j] = (item->GetVnum() / 10) % 10;
+        gradeList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 1000) % 10;
+        stepList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 100) % 10;
+        strengthList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 10) % 10;
         ++j;
 #endif
     }
