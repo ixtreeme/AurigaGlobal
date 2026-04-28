@@ -388,12 +388,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 #ifdef ENABLE_EXTRA_INVENTORY
 		if (item->IsExtraItem()) {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
 		} else {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
 		}
 #else
-		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
 #endif
 
 		if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90008 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90009) // VCARD
@@ -420,7 +420,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (item->IsExtraItem()) {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int 
 #else
@@ -478,7 +478,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 			else {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int 
 #else
@@ -552,7 +552,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem()) {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int 
 #else
@@ -610,7 +610,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 		else {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int 
 #else
