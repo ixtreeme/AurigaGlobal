@@ -978,7 +978,7 @@ void CHARACTER::ComputeMountInventoryBonuses()
 		if (!valid_items.contains(vnum))
 			continue;
 
-		const TItemTable* proto = item->GetProto();
+		const TItemTable* proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
 		if (!proto)
 			continue;
 
