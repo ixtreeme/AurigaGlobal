@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "MountSystem.hpp"
+#include "ItemSystem.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -21,6 +22,7 @@
 #include "../../desc.h"
 #include "../../PetSystem.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/dirty_components.hpp"
@@ -182,7 +184,9 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
         item->SetAttributes(entry.aAttr);
 
         if (!m_pkMountInventory->Add(entry.slot, item, true))
-            M2_DESTROY_ITEM(item);
+            ItemSystem::DestroyItemEntityEcs(
+                EntityFactory::CreateItemEntity(g_registry, item),
+                "MOUNT_INVENTORY_LOAD_ADD_FAILED");
     }
 
     m_bMountInventoryLoaded = true;
