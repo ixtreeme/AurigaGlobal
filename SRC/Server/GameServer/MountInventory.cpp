@@ -4,6 +4,9 @@
 #include "db.h"
 #include "desc.h"
 #include "item_manager.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include <cstring>
 namespace
@@ -288,7 +291,10 @@ void CMountInventory::Destroy()
 
         item->SetSkipSave(true);
         ITEM_MANAGER::instance().FlushDelayedSave(item);
-        M2_DESTROY_ITEM(item->RemoveFromCharacter());
+        LPITEM removed = item->RemoveFromCharacter();
+        ItemSystem::DestroyItemEntityEcs(
+            EntityFactory::CreateItemEntity(g_registry, removed),
+            "MOUNT_INVENTORY_DESTROY");
     }
 
     m_items.clear();

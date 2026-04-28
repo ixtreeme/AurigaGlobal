@@ -4,6 +4,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "desc_manager.h"
@@ -59,7 +62,9 @@ void SECTREE::Destroy()
 				LPITEM item = (LPITEM)ent;
 
 				sys_err("Sectree: destroying item: %s", item->GetName());
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+					EntityFactory::CreateItemEntity(g_registry, item),
+					"SECTREE_DESTROY_ITEM");
 			}
 			else
 			{

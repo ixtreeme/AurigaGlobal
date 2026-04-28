@@ -14,7 +14,10 @@
 #include "utils.h"
 #include "questmanager.h"
 #include "ecs/EventDispatcher.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/events.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 CDungeon::CDungeon(IdType id, int32_t lOriginalMapIndex, int32_t lMapIndex)
 	: m_id(id),
@@ -636,7 +639,9 @@ namespace
 			else if (ent->IsType(ENTITY_ITEM))
 			{
 				LPITEM item = (LPITEM) ent;
-				M2_DESTROY_ITEM(item);
+				ItemSystem::DestroyItemEntityEcs(
+					EntityFactory::CreateItemEntity(g_registry, item),
+					"DUNGEON_ENTITY_CLEANUP");
 			}
 			else
 				sys_err("unknown entity type %d is in dungeon", ent->GetType());

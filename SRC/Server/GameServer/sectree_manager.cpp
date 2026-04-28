@@ -12,6 +12,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "buffer_manager.h"
@@ -1041,7 +1044,9 @@ struct FDestroyPrivateMapEntity
 			LPITEM item = (LPITEM) ent;
 			sys_log(0, "PRIVATE_MAP: removing item %s", item->GetName());
 
-			M2_DESTROY_ITEM(item);
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"PRIVATE_MAP_ITEM_CLEANUP");
 		}
 		else
 			sys_err("PRIVAE_MAP: trying to remove unknown entity %d", ent->GetType());
@@ -1257,7 +1262,10 @@ class FRemoveIfAttr
 
 			if (entity->IsType(ENTITY_ITEM))
 			{
-				M2_DESTROY_ITEM((LPITEM) entity);
+				LPITEM item = (LPITEM) entity;
+				ItemSystem::DestroyItemEntityEcs(
+					EntityFactory::CreateItemEntity(g_registry, item),
+					"SECTREE_ATTR_ITEM_CLEANUP");
 			}
 			else if (entity->IsType(ENTITY_CHARACTER))
 			{
