@@ -116,7 +116,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 		return false;
 	}
 	
-	if (items[0]->GetType() != ITEM_TRANSFER_SCROLL || items[1]->GetType() != ITEM_COSTUME || items[2]->GetType() != ITEM_COSTUME)
+	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[0])) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[1])) != ITEM_COSTUME || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[2])) != ITEM_COSTUME)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 83, "");
@@ -161,7 +161,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 
 	
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog(((ch)->GetPlayerID()), ((ch)->GetX()), ((ch)->GetY()), items[1]->GetVnum());
+	LogManager::instance().AttrTransferLog(((ch)->GetPlayerID()), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 84, "");
 #endif
@@ -179,13 +179,13 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (item == nullptr)
 		return;
 	
-	if (w_index == 0 && item->GetType() != ITEM_TRANSFER_SCROLL)
+	if (w_index == 0 && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_TRANSFER_SCROLL)
 		return;
 	
-	if (((w_index == 1) || (w_index == 2)) && (item->GetType() != ITEM_COSTUME))
+	if (((w_index == 1) || (w_index == 2)) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_COSTUME))
 		return;
 
-	int32_t vnum = item->GetVnum();
+	int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 	if (vnum == 73001 ||
 		vnum == 73002 ||
 		vnum == 73003 ||
@@ -286,9 +286,9 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 		return;
 	}
 
-	if ((item->GetSubType() != COSTUME_BODY) && (item->GetSubType() != COSTUME_HAIR) && (item->GetSubType() != COSTUME_WEAPON)
+	if ((ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_BODY) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_HAIR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_WEAPON)
 #ifdef ENABLE_STOLE_COSTUME
-	 && (item->GetSubType() != COSTUME_STOLE)
+	 && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_STOLE)
 #endif
 	)
 		return;
@@ -318,7 +318,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 #endif
 			return;
 		}
-		else if (item->GetSubType() != attr_transfer_item[2]->GetSubType())
+		else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, attr_transfer_item[2])))
 			return;
 	}
 	
