@@ -3,6 +3,9 @@
 #include "item.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "buff_on_attributes.h"
 #include <algorithm>
 
@@ -51,7 +54,7 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 			}
 			else
 			{
-				sys_err ("Buff ERROR(type %d). This item(%d) attr_type(%d) was not in buff pool", m_bPointType, pItem->GetVnum(), attr.bType);
+				sys_err ("Buff ERROR(type %d). This item(%d) attr_type(%d) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), attr.bType);
 				return;
 			}
 		}
