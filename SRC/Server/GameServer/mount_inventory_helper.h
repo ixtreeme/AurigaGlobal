@@ -2,6 +2,9 @@
 
 #include "typedef.h"
 #include "item.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include <set>
 
@@ -57,7 +60,7 @@ public:
 		if (!item)
 			return false;
 
-		return GetAllowedItems().contains(item->GetVnum());
+		return GetAllowedItems().contains(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 	}
 
 	// Mount bonus: ugyanaz a lista (mint eddig a char.cpp valid_mount_items)
