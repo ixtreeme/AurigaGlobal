@@ -4,6 +4,10 @@
 
 #include <common/VnumHelper.h>
 
+#include "../EntityFactory.hpp"
+#include "../Registry.hpp"
+#include "ItemSystem.hpp"
+
 #include "../../char.h"
 
 
@@ -203,16 +207,16 @@ void CHARACTER::ComputeBattlePoints()
 		LPITEM pkItem;
 
 		for (int i = 0; i < WEAR_MAX_NUM; ++i)
-			if ((pkItem = GetWear(i)) && pkItem->GetType() == ITEM_ARMOR)
+			if ((pkItem = GetWear(i)) && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR)
 			{
 #ifdef ENABLE_PENDANT
-				if (pkItem->GetSubType() == ARMOR_BODY || pkItem->GetSubType() == ARMOR_HEAD || pkItem->GetSubType() == ARMOR_FOOTS || pkItem->GetSubType() == ARMOR_SHIELD || pkItem->GetSubType() == ARMOR_PENDANT)
+				if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_PENDANT)
 #else
-				if (pkItem->GetSubType() == ARMOR_BODY || pkItem->GetSubType() == ARMOR_HEAD || pkItem->GetSubType() == ARMOR_FOOTS || pkItem->GetSubType() == ARMOR_SHIELD)
+				if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD)
 #endif
 				{
-					iArmor += pkItem->GetValue(1);
-					iArmor += (2 * pkItem->GetValue(5));
+					iArmor += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 1);
+					iArmor += (2 * ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 5));
 				}
 			}
 
@@ -604,7 +608,7 @@ void CHARACTER::ComputePoints()
 		if (!item)
 			continue;
 
-		uint32_t vnum = item->GetVnum();
+		uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 		if (valid_mount_items.contains(vnum))
 		{
 			const TItemTable* proto = item->GetProto();
@@ -660,7 +664,7 @@ void CHARACTER::ComputePoints()
 		LPITEM pItem = GetWear(i);
 		if (pItem) {
 #ifdef ENABLE_RUNE_SYSTEM
-			if (pItem->IsRune() && pItem->GetSocket(1) != 1) {
+			if (pItem->IsRune() && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) != 1) {
 				continue;
 			}
 #endif
