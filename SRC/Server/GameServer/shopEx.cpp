@@ -9,6 +9,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "buffer_manager.h"
@@ -196,7 +199,9 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	if (iEmptyPos < 0)
 	{
 		sys_log(1, "ShopEx::Buy : Inventory full : %s size %d", ((ch)->GetName()), item->GetSize());
-		M2_DESTROY_ITEM(item);
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			"SHOP_EX_TRANSACTION");
 		return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 	}
 
