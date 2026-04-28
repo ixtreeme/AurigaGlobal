@@ -167,12 +167,12 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 		if (item.pkItem)
 		{
-			item.vnum = pkItem->GetVnum();
-			item.count = pkItem->GetCount(); // PC 샵의 경우 아이템 개수는 진짜 아이템의 개수여야 한다.
+			item.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			item.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)); // PC 샵의 경우 아이템 개수는 진짜 아이템의 개수여야 한다.
 #ifndef ENABLE_BUY_WITH_ITEM
 			item.price = pTable->price;
 #endif
-			item.itemid	= pkItem->GetID();
+			item.itemid	= ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem));
 		}
 		else
 		{
@@ -303,7 +303,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		if (quest::CQuestManager::instance().GetEventFlag("hivalue_item_sell") == 0)
 		{
 			//축복의 구슬 && 만년한철 이벤트
-			if (item->GetVnum() == 70024 || item->GetVnum() == 70035)
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 70024 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 70035)
 			{
 				return SHOP_SUBHEADER_GC_END;
 			}
@@ -396,7 +396,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
 #endif
 
-		if (item->GetVnum() == 90008 || item->GetVnum() == 90009) // VCARD
+		if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90008 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90009) // VCARD
 		{
 			VCardUse(m_pkPC, ch, item);
 			item = nullptr;
@@ -405,11 +405,11 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		{
 			char buf[512];
 
-			if (item->GetVnum() >= 80003 && item->GetVnum() <= 80007)
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 			{
 				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ch->GetPlayerID(), m_pkPC->GetPlayerID(), dwPrice);
-				LogManager::instance().GoldBarLog(ch->GetPlayerID(), item->GetID(), SHOP_BUY, buf);
-				LogManager::instance().GoldBarLog(m_pkPC->GetPlayerID(), item->GetID(), SHOP_SELL, buf);
+				LogManager::instance().GoldBarLog(ch->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_BUY, buf);
+				LogManager::instance().GoldBarLog(m_pkPC->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_SELL, buf);
 			}
 
 			item->RemoveFromCharacter();
@@ -426,16 +426,16 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 					uint8_t 
 #endif
-					bCount = item->GetCount();
+					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
 						LPITEM item2 = ch->GetExtraInventoryItem(i);
 						if (!item2)
 							continue;
 
-						if (item2->GetVnum() == item->GetVnum()) {
+						if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
 							int j = 0;
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (item2->GetSocket(j) != item->GetSocket(j))
+								if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -446,7 +446,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 							uint8_t 
 #endif
-							bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 							bCount -= bCount2;
 
 							ItemSystem::AddItemCountEcs(
@@ -484,16 +484,16 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 					uint8_t 
 #endif
-					bCount = item->GetCount();
+					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
 						LPITEM item2 = ch->GetInventoryItem(i);
 						if (!item2)
 							continue;
 
-						if (item2->GetVnum() == item->GetVnum()) {
+						if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
 							int j = 0;
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (item2->GetSocket(j) != item->GetSocket(j))
+								if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -504,7 +504,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 							uint8_t 
 #endif
-							bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 							bCount -= bCount2;
 
 							ItemSystem::AddItemCountEcs(
@@ -558,16 +558,16 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 				uint8_t 
 #endif
-				bCount = item->GetCount();
+				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
 					LPITEM item2 = ch->GetExtraInventoryItem(i);
 					if (!item2)
 						continue;
 
-					if (item2->GetVnum() == item->GetVnum()) {
+					if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
 						int j = 0;
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (item2->GetSocket(j) != item->GetSocket(j))
+							if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -578,7 +578,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 						uint8_t 
 #endif
-						bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 						bCount -= bCount2;
 
 						ItemSystem::AddItemCountEcs(
@@ -616,16 +616,16 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 				uint8_t 
 #endif
-				bCount = item->GetCount();
+				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
 					LPITEM item2 = ch->GetInventoryItem(i);
 					if (!item2)
 						continue;
 
-					if (item2->GetVnum() == item->GetVnum()) {
+					if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
 						int j = 0;
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (item2->GetSocket(j) != item->GetSocket(j))
+							if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -636,7 +636,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 						uint8_t 
 #endif
-						bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 						bCount -= bCount2;
 
 						ItemSystem::AddItemCountEcs(
