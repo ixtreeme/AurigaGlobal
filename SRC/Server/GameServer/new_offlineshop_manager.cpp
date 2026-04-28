@@ -2116,7 +2116,7 @@ namespace offlineshop
 #endif
 			
 #ifdef KASMIR_PAKET_SYSTEM
-			if (item->GetVnum() == 88902) {
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 88902) {
 				dwCountStyle2 += 1;
 			}
 #endif
@@ -2138,8 +2138,8 @@ namespace offlineshop
 			memcpy(itemInfo.item.aAttr ,	item->GetAttributes(),	sizeof(itemInfo.item.aAttr));
 			memcpy(itemInfo.item.alSockets,	item->GetSockets(),		sizeof(itemInfo.item.alSockets));
 
-			itemInfo.item.dwVnum	= item->GetVnum();
-			itemInfo.item.dwCount	= item->GetCount();
+			itemInfo.item.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+			itemInfo.item.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 			//patch 08-03-2020
 			itemInfo.item.expiration = GetItemExpiration(item);
 
@@ -2150,7 +2150,7 @@ namespace offlineshop
 			itemInfo.item.iLockedAttr = item->GetLockedAttr();
 #endif
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-			LogManager::instance().OfflineshopLog(((ch)->GetPlayerID()), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, item->GetID());
+			LogManager::instance().OfflineshopLog(((ch)->GetPlayerID()), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 #endif
 			CopyObject(itemInfo.price, rShopItem.price);
 			vecItem.push_back(itemInfo);
@@ -2636,8 +2636,8 @@ namespace offlineshop
 		ZeroObject(itemInfo);
 
 		itemInfo.dwOwnerID		= ((ch)->GetPlayerID());
-		itemInfo.item.dwVnum	= pkItem->GetVnum();
-		itemInfo.item.dwCount	= pkItem->GetCount();
+		itemInfo.item.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
+		itemInfo.item.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem));
 		//patch 08-03-2020
 		itemInfo.item.expiration = GetItemExpiration(pkItem);
 
@@ -2653,7 +2653,7 @@ namespace offlineshop
 		CopyObject(itemInfo.price, price);
 
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		LogManager::instance().OfflineshopLog(((ch)->GetPlayerID()), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, pkItem->GetID());
+		LogManager::instance().OfflineshopLog(((ch)->GetPlayerID()), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 #endif
 
 		LPITEM removed = pkItem->RemoveFromCharacter();
@@ -3388,7 +3388,7 @@ namespace offlineshop
 
 
 
-		TItemTable* pItemTable= ITEM_MANAGER::instance().GetTable(item->GetVnum());
+		TItemTable* pItemTable= ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 		if(!pItemTable)
 			return false;
 
@@ -3412,8 +3412,8 @@ namespace offlineshop
 
 
 		TItemInfoEx& itemInfo = auction.item;
-		itemInfo.dwCount	= item->GetCount();
-		itemInfo.dwVnum		= item->GetVnum();
+		itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+		itemInfo.dwVnum		= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 		
 		//patch 08-03-2020
 		itemInfo.expiration = GetItemExpiration(item);
