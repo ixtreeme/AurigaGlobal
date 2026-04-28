@@ -1169,7 +1169,7 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
     if (d->GetFlag(kFlagFloor) != 5 || d->GetFlag(kFlagType) != 6)
         return false;
 
-    if (item->GetVnum() != kFloorKey)
+    if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kFloorKey)
         return false;
 
     // Consume the exact item that was given (Lua: item.remove())
