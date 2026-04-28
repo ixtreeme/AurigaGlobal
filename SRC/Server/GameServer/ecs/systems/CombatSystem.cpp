@@ -2548,15 +2548,26 @@ int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/
 {
 	LPITEM pkBow;
 
-	if (!(pkBow = GetWear(WEAR_WEAPON)) || pkBow->GetProto()->bSubType != WEAPON_BOW)
+	if (!(pkBow = GetWear(WEAR_WEAPON)))
+	{
+		return 0;
+	}
+
+	const TItemTable* bowProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkBow));
+	if (!bowProto || bowProto->bSubType != WEAPON_BOW)
 	{
 		return 0;
 	}
 
 	LPITEM pkArrow;
 
-	if (!(pkArrow = GetWear(WEAR_ARROW)) || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkArrow)) != ITEM_WEAPON ||
-		pkArrow->GetProto()->bSubType != WEAPON_ARROW)
+	if (!(pkArrow = GetWear(WEAR_ARROW)) || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkArrow)) != ITEM_WEAPON)
+	{
+		return 0;
+	}
+
+	const TItemTable* arrowProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkArrow));
+	if (!arrowProto || arrowProto->bSubType != WEAPON_ARROW)
 	{
 		return 0;
 	}
@@ -4507,7 +4518,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 		LPITEM pkWeap = pAttacker->GetWear(WEAR_WEAPON);
-		if (pkWeap && pkWeap->GetProto()->bSubType == WEAPON_BOW)
+		const TItemTable* weaponProto = pkWeap ? ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkWeap)) : nullptr;
+		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 			 
 			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
