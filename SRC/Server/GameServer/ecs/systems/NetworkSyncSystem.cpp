@@ -16,12 +16,15 @@
 #include "../../party.h"
 #include "../../sectree.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
+#include "../Registry.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/session_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
+#include "ItemSystem.hpp"
 
 static inline LPCHARACTER LegacyCharOf(entt::entity e)
 {
@@ -777,10 +780,10 @@ std::string CHARACTER::GetItemOnTitlePrefix() const
     if (!pTitleItem)
         return std::string();
 
-    if (pTitleItem->GetType() != ITEM_BELT)
+    if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pTitleItem)) != ITEM_BELT)
         return std::string();
 
-    if (pTitleItem->GetValue(5) != 1)
+    if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pTitleItem), 5) != 1)
         return std::string();
 
     const TItemTable* pProto = pTitleItem->GetProto();
@@ -888,8 +891,8 @@ void CHARACTER::SendEquipment(LPCHARACTER ch)
     {
         LPITEM item = GetWear(pos[i]);
         if (item) {
-            p.equips[i].vnum = item->GetVnum();
-            p.equips[i].count = item->GetCount();
+            p.equips[i].vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+            p.equips[i].count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
             memcpy(p.equips[i].alSockets, item->GetSockets(), sizeof(p.equips[i].alSockets));
             memcpy(p.equips[i].aAttr, item->GetAttributes(), sizeof(p.equips[i].aAttr));
