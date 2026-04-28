@@ -588,16 +588,16 @@ uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
 	{
 		LPITEM it = ch->GetInventoryItem(i);
-		if (it && it->GetVnum() == vnum)
-			total += it->GetCount();
+		if (it && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
+			total += ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
 	}
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM; i++)
 	{
 		LPITEM it = ch->GetExtraInventoryItem(i);
-		if (it && it->GetVnum() == vnum)
-			total += it->GetCount();
+		if (it && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
+			total += ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
 	}
 #endif
 
@@ -614,10 +614,10 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
 	{
 		LPITEM it = ch->GetInventoryItem(i);
-		if (!it || it->GetVnum() != vnum)
+		if (!it || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) != vnum)
 			continue;
 
-		uint32_t cur = it->GetCount();
+		uint32_t cur = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
@@ -628,10 +628,10 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM && need>0; i++)
 	{
 		LPITEM it = ch->GetExtraInventoryItem(i);
-		if (!it || it->GetVnum() != vnum)
+		if (!it || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) != vnum)
 			continue;
 
-		uint32_t cur = it->GetCount();
+		uint32_t cur = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
@@ -776,14 +776,14 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	if (!item)
 		return false;
 
-	const uint32_t haveCount = item->GetCount();
+	const uint32_t haveCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 	if (haveCount == 0)
 		return false;
 
 	if (count == 0 || count > haveCount)
 		count = haveCount;
 
-	const uint32_t vnum = item->GetVnum();
+	const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
 	// Csak azokat engedjk, amiket ppen kr a ch a kvetkez szinthez
 	int reqIdx = -1;
