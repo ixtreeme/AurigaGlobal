@@ -4,6 +4,8 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "over9refine.h"
 #include "log.h"
@@ -288,7 +290,7 @@ namespace quest
 
 		if ( item == nullptr) return 0;
 
-		lua_pushnumber(L, COver9RefineManager::instance().canOver9Refine(item->GetVnum()));
+		lua_pushnumber(L, COver9RefineManager::instance().canOver9Refine(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))));
 
 		return 1;
 	}
