@@ -31,6 +31,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
 namespace
 {
@@ -1642,7 +1643,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			std::vector<LPITEM> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(vItem->GetVnum(), vItem->GetCount(), 0, true);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 				if (rewardItem) m_cache.emplace_back(rewardItem);
 			}
 			for (const auto& rItem : m_cache)
@@ -1680,7 +1681,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			std::vector<LPITEM> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(vItem->GetVnum(), vItem->GetCount(), 0, true);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 				if (rewardItem)
 					m_cache.emplace_back(rewardItem);
 			}
@@ -1727,7 +1728,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			std::vector<LPITEM> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(vItem->GetVnum(), vItem->GetCount(), 0, true);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 				if (rewardItem)
 					m_cache.emplace_back(rewardItem);
 			}
@@ -1747,12 +1748,12 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		std::vector<LPITEM> m_cache;
 		for (const auto& vItem : vec_item)
 		{
-			const uint32_t itemVnum = vItem->GetVnum();
+			const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem));
 			for (const auto& missionBook : m_lbookItems)
 			{
 				if (missionBook == itemVnum)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, vItem->GetCount(), 0, true);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 					if (rewardItem) m_cache.emplace_back(rewardItem);
 
 					break;
@@ -1771,12 +1772,12 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		std::vector<LPITEM> m_cache;
 		for (const auto& vItem : vec_item)
 		{
-			const uint32_t itemVnum = vItem->GetVnum();
+			const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem));
 			for (const auto& ticketItem : m_lticketItems)
 			{
 				if (ticketItem == itemVnum)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, vItem->GetCount(), 0, true);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 					if (rewardItem) m_cache.emplace_back(rewardItem);
 
 					break;
@@ -1996,9 +1997,9 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			for (const auto& vItem : vec_item)
 			{
 
-				if (vItem->GetVnum() == 30271)
+				if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)) == 30271)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, vItem->GetCount(), 0, true);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
 					if (rewardItem)
 						m_cache.emplace_back(rewardItem);
 				}
