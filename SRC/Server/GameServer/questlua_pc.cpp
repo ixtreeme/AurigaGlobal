@@ -24,6 +24,7 @@
 #include "mob_manager.h"
 #include "dungeon.h"
 #include "ecs/quest_helpers.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "ecs/events.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
@@ -3646,7 +3647,9 @@ teleport_area:
 
 		if (-1 == iEmptyCell)
 		{
-			M2_DESTROY_ITEM(item);
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"QUEST_ITEM_FAIL");
 			lua_pushboolean(L, false);
 			return 1;
 		}
@@ -3963,7 +3966,9 @@ teleport_area:
 					iEmptyCell = ch->GetEmptyInventory(pkNewItem->GetSize());
 					if (-1 == iEmptyCell)
 					{
-						M2_DESTROY_ITEM(pkNewItem);
+						ItemSystem::DestroyItemEntityEcs(
+							EntityFactory::CreateItemEntity(g_registry, pkNewItem),
+							"QUEST_ITEM_FAIL");
 						lua_pushboolean(L, false);
 						return 1;
 					}
@@ -5502,7 +5507,6 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
-
 
 
 
