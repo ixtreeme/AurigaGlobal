@@ -6047,6 +6047,108 @@ Validation:
 Commit status:
 - Documentation/report commit planned.
 
+## Phase 15E-40: Combat ECS cleanup + cmd_gm bulk destroy migration
+
+Date: 2026-04-28
+
+Mode:
+- Code change with build gates.
+- ECS system cleanup first, then GM bulk destroy and world cleanup paths.
+- DragonSoul, shop/trade/safebox, refine/cube, and pet internals intentionally left for later phases.
+
+Part A - ECS system internal cleanup:
+- `CombatSystem.cpp`
+  - Replaced stack merge target `SetCount(+bCount2)` with `ItemSystem::AddItemCountEcs`.
+  - Replaced `SetCount(0) + M2_DESTROY_ITEM(item)` full consume branches with `ItemSystem::ConsumeItemEcs`.
+  - Replaced partial remaining-count assignment with `ItemSystem::SetItemCountEcs`.
+  - Replaced shared dungeon drop template destroy with `ItemSystem::DestroyItemEntityEcs`.
+- `PlayerRuntimeSystem.cpp`
+  - Replaced acce clean-attr material decrement with `ItemSystem::ConsumeItemEcs`.
+- `GayaSystem.cpp`
+  - Replaced temporary glimmerstone destroy paths with `ItemSystem::DestroyItemEntityEcs`.
+  - Preserved item name before destroy in the missing-material chat path to avoid post-destroy pointer read.
+- `InventorySystem.cpp`
+  - Replaced rune add failure `M2_DESTROY_ITEM(this)` with `ItemSystem::DestroyItemEntityEcs`.
+- `SessionSystem.cpp`
+  - Replaced safebox/mall load add-failure destroys with `ItemSystem::DestroyItemEntityEcs`.
+- `MountSystem.cpp`
+  - Replaced mount inventory load add-failure destroy with `ItemSystem::DestroyItemEntityEcs`.
+
+Part B - `cmd_gm.cpp` bulk destroy migration:
+- Replaced all 60 direct `M2_DESTROY_ITEM(item)` calls with:
+```cpp
+ItemSystem::DestroyItemEntityEcs(
+    EntityFactory::CreateItemEntity(g_registry, item),
+    "GM_CMD_DESTROY");
+```
+- Added `ecs/EntityFactory.hpp`.
+- Direct `M2_DESTROY_ITEM(item)` count in `cmd_gm.cpp`: 60 -> 0.
+
+Part C - World cleanup destroy paths:
+- `dungeon.cpp`: dungeon entity item cleanup now uses `DestroyItemEntityEcs`.
+- `sectree.cpp`: sectree destroy item cleanup now uses `DestroyItemEntityEcs`.
+- `sectree_manager.cpp`: private-map and attr cleanup item destroy now uses `DestroyItemEntityEcs`.
+- `MountInventory.cpp`: `RemoveFromCharacter()` is still executed first, then the removed item is destroyed through `DestroyItemEntityEcs`.
+- `char_manager.cpp` audit hit is inside a commented-out legacy mall block and was not changed.
+
+Validation:
+- Build passed after each modified ECS system file in Part A.
+- Build passed after `cmd_gm.cpp` bulk migration.
+- Build passed after world cleanup migration.
+- Final build passed:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Count results:
+```text
+Tree-wide ->SetCount before Phase 15E-40: 44
+Tree-wide ->SetCount after Phase 15E-40:  37
+
+Tree-wide M2_DESTROY_ITEM real call sites before Phase 15E-40: 105
+Tree-wide M2_DESTROY_ITEM real call sites after Phase 15E-40:   30
+```
+
+Remaining `->SetCount` hot files:
+- `DragonSoul.cpp`: 11.
+- `shop.cpp`: 8.
+- `cuberenewal.cpp`: 5.
+- `New_PetSystem.cpp`: 2.
+- `attr_transfer.cpp`: 2.
+- `safebox.cpp`: 2.
+- Single remaining matches in `ItemSystem.cpp`, `ItemSystem_LegacyBridge.cpp`, `item_manager.cpp`, `cmd_general.cpp`, `mining.cpp`, `questlua_item.cpp`, and commented `ItemUse.cpp`.
+
+Remaining `M2_DESTROY_ITEM` hot files:
+- `DragonSoul.cpp`: 7.
+- `shop.cpp`: 5.
+- `new_offlineshop_manager.cpp`: 5.
+- `ItemSystem_LegacyBridge.cpp`: 3 core CItem boundary calls.
+- `ItemSystem.cpp`: 2 bridge calls.
+- `questlua_pc.cpp`: 2.
+- `cuberenewal.cpp`: 2.
+- Single remaining matches in `shopEx.cpp`, `safebox.cpp`, `char_manager.cpp` commented block, and `item_manager.cpp`.
+
+Commits:
+- `Phase 15E-40 PART A: CombatSystem ECS legacy mutation cleanup`
+- `Phase 15E-40 PART A: PlayerRuntimeSystem ECS count cleanup`
+- `Phase 15E-40 PART A: GayaSystem ECS destroy cleanup`
+- `Phase 15E-40 PART A: InventorySystem ECS destroy cleanup`
+- `Phase 15E-40 PART A: SessionSystem ECS destroy cleanup`
+- `Phase 15E-40 PART A: MountSystem ECS destroy cleanup`
+- `Phase 15E-40 PART B: cmd_gm.cpp bulk M2_DESTROY_ITEM migration`
+- `Phase 15E-40 PART C: World cleanup destroy paths to ECS`
+
+Manual WinTest checklist:
+- Combat: mob death, drop appears, pickup to inventory, stack merge, full-stack source disappears, partial stack source remains correct.
+- GM: `/item <vnum>`, job/full item commands, create+destroy failure paths, no orphan registry entries.
+- World cleanup: ground item cleanup, dungeon clear, sectree cleanup, mount inventory destroy path, safebox/mall load failure if reproducible.
+- Check `syserr.txt` for item destroy errors, ECS orphan warnings, double destruction, and `VID_DRIFT`.
+- Verify no delayed damage/metin collapse regression.
+
+Commit status:
+- Code commits completed.
+- This log update committed separately as Phase 15E-40 completion documentation.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
