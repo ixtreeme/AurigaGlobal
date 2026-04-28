@@ -428,7 +428,7 @@ namespace mining
 		if (!ch || !npc)
 			return false;
 
-		if (item->GetOwner() != ch)
+		if (ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, item)) != AIHelpers::EcsOf(ch))
 		{
 			sys_err("wrong owner");
 			return false;
