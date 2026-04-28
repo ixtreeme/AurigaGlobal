@@ -330,7 +330,7 @@ namespace
 
 		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.
 		// (Nincs SetRefineLevel API nalatok.)
-		const uint32_t vnum = srcW->GetOriginalVnum() ? srcW->GetOriginalVnum() : srcW->GetVnum();
+		const uint32_t vnum = srcW->GetOriginalVnum() ? srcW->GetOriginalVnum() : ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, srcW));
 
 		LPITEM w = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, true);
         if (!w)
@@ -1689,7 +1689,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
 	if (statueVid && npc->GetPacketVID() != statueVid)
             return false;
 
-        const uint32_t vnum = item->GetVnum();
+        const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
         int keyIndex = -1;
         for (int i = 0; i < 5; ++i)
         {
@@ -1738,7 +1738,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
 	if (totemVid && npc->GetPacketVID() != totemVid)
             return false;
 
-        if (item->GetVnum() != kTileItemVnum)
+        if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kTileItemVnum)
             return false;
 
         ConsumeOneGivenItem(item, "LOSTCASTLE_TILE");
