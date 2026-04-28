@@ -1138,8 +1138,10 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		pDragonSoul->CopyAttributeTo(pResult);
 		RefreshItemAttributes(pResult);
 
-		pDragonSoul->SetCount(pDragonSoul->GetCount() - 1);
-		pRefineStone->SetCount(pRefineStone->GetCount() - 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pDragonSoul), 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pRefineStone), 1);
 
 		char buf[128];
 		sprintf(buf, "STRENGTH : %d -> %d", bStrength, bStrength + 1);
@@ -1172,8 +1174,10 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
 #endif
-		pDragonSoul->SetCount(pDragonSoul->GetCount() - 1);
-		pRefineStone->SetCount(pRefineStone->GetCount() - 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pDragonSoul), 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pRefineStone), 1);
 		if (nullptr != pResult)
 			ch->AutoGiveItem(pResult, true);
 
