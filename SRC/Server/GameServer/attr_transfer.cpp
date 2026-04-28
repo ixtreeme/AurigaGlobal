@@ -6,6 +6,9 @@
 #include "log.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
@@ -149,9 +152,11 @@ bool AttrTransfer_make(LPCHARACTER ch)
 #endif
 	}
 	
-	items[0]->SetCount(items[0]->GetCount() - 1);
+	ItemSystem::ConsumeItemEcs(
+		EntityFactory::CreateItemEntity(g_registry, items[0]), 1);
 	items[0] = nullptr;
-	items[2]->SetCount(items[2]->GetCount() - 1);
+	ItemSystem::ConsumeItemEcs(
+		EntityFactory::CreateItemEntity(g_registry, items[2]), 1);
 	items[2] = nullptr;
 
 	
