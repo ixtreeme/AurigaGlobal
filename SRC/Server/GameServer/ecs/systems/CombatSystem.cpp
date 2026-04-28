@@ -3048,7 +3048,8 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 
 			bCount -= bCount2;
 			dwGivenCount += bCount2;
-			item2->SetCount(item2->GetCount() + bCount2);
+			ItemSystem::AddItemCountEcs(
+				EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
 
 			if (bCount == 0)
 			{
@@ -3065,13 +3066,15 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 				}
 #endif
 
-				item->SetCount(0);
-				M2_DESTROY_ITEM(item);
+				ItemSystem::ConsumeItemEcs(
+					EntityFactory::CreateItemEntity(g_registry, item),
+					item->GetCount());
 				return true;
 			}
 		}
 
-		item->SetCount(bCount);
+		ItemSystem::SetItemCountEcs(
+			EntityFactory::CreateItemEntity(g_registry, item), bCount);
 	}
 	else if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 #else
@@ -3112,7 +3115,8 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 
 			bCount -= bCount2;
 			dwGivenCount += bCount2;
-			item2->SetCount(item2->GetCount() + bCount2);
+			ItemSystem::AddItemCountEcs(
+				EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
 
 			if (bCount == 0)
 			{
@@ -3129,13 +3133,15 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 				}
 #endif
 
-				item->SetCount(0);
-				M2_DESTROY_ITEM(item);
+				ItemSystem::ConsumeItemEcs(
+					EntityFactory::CreateItemEntity(g_registry, item),
+					item->GetCount());
 				return true;
 			}
 		}
 
-		item->SetCount(bCount);
+		ItemSystem::SetItemCountEcs(
+			EntityFactory::CreateItemEntity(g_registry, item), bCount);
 	}
 
 	int iEmptyCell = -1;
@@ -3790,7 +3796,9 @@ void CHARACTER::Reward(bool bItemDrop)
 							for (LPITEM srcItem : s_vec_item)
 							{
 								if (srcItem)
-									M2_DESTROY_ITEM(srcItem);
+									ItemSystem::DestroyItemEntityEcs(
+										EntityFactory::CreateItemEntity(g_registry, srcItem),
+										"COMBAT_SHARED_DROP_TEMPLATE");
 							}
 
 							s_vec_item.clear();
