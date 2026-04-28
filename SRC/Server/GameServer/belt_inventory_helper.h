@@ -3,6 +3,9 @@
 
 #include "char_interface.hpp"
 #include "item.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 class CBeltInventoryHelper
 {
@@ -279,7 +282,7 @@ public:
 			//611666
 		};
 
-		return belt_allowed_items.contains(item->GetVnum());
+		return belt_allowed_items.contains(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 	}
 
 
