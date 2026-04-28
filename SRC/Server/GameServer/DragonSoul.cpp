@@ -1183,7 +1183,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 
 	}
 
-	SendRefineResultPacket(ch, bSubHeader, nullptr == pResult? NPOS : TItemPos (pResult->GetWindow(), pResult->GetCell()));
+	SendRefineResultPacket(ch, bSubHeader, nullptr == pResult? NPOS : TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResult)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResult))));
 
 	return true;
 }
