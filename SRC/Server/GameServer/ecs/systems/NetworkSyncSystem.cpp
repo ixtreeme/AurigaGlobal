@@ -786,7 +786,7 @@ std::string CHARACTER::GetItemOnTitlePrefix() const
     if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pTitleItem), 5) != 1)
         return std::string();
 
-    const TItemTable* pProto = pTitleItem->GetProto();
+    const TItemTable* pProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pTitleItem));
     const char* szProtoName = pProto ? pProto->szName : nullptr;
     if (!szProtoName || szProtoName[0] != '[')
         return std::string();
