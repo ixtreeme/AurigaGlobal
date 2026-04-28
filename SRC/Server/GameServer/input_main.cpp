@@ -42,6 +42,7 @@
 #include "locale_service.h"
 #include "DragonSoul.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/EntityFactory.hpp"
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #endif
@@ -146,8 +147,8 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 			pkInfoItem = s_vec_item[0];
 			pInfo.dwVID	= m_pkChrTarget->GetPacketVID();
 			pInfo.race = m_pkChrTarget->GetRaceNum();
-			pInfo.dwVnum = pkInfoItem->GetVnum();
-			pInfo.count = pkInfoItem->GetCount();
+			pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
+			pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 			ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
 		}
 		else
@@ -165,8 +166,8 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 
 					pInfo.dwVID	= m_pkChrTarget->GetPacketVID();
 					pInfo.race = m_pkChrTarget->GetRaceNum();
-					pInfo.dwVnum = pkInfoItem->GetVnum();
-					pInfo.count = pkInfoItem->GetCount();
+					pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
+					pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 					ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
 			}
 		}
@@ -877,7 +878,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 #ifdef ENABLE_NEW_PET_EDITS
 		", %lld"
 #endif
-		")", item->GetID(), p->petname, hp[number(0, 2)], mostri[number(0, 2)], medi[number(0, 2)], tmpskill[0], 0, tmpskill[1], 0, tmpskill[2], 0, tmpskill[3], 0, tmpdur, tmpdur, get_global_time());
+		")", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), p->petname, hp[number(0, 2)], mostri[number(0, 2)], medi[number(0, 2)], tmpskill[0], 0, tmpskill[1], 0, tmpskill[2], 0, tmpskill[3], 0, tmpdur, tmpdur, get_global_time());
 		std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 769, "");
@@ -1662,11 +1663,11 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 		if (!(item = ch->GetItem(srcCell)))
 			return;
 
-		if (item->GetType() != ITEM_USE && item->GetType() != ITEM_QUEST)
+		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_USE && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_QUEST)
 			return;
 
 #ifdef ENABLE_EXTRA_INVENTORY
-		if (type == QUICKSLOT_TYPE_ITEM_EXTRA && item->GetType() == ITEM_USE && item->GetSubType() == USE_POTION) {
+		if (type == QUICKSLOT_TYPE_ITEM_EXTRA && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_POTION) {
 			return;
 		}
 #endif
@@ -2936,7 +2937,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 		return;
 	}
 
-	if (pkItem->GetVnum() == UNIQUE_ITEM_SAFEBOX_EXPAND)
+	if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SAFEBOX_EXPAND)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
@@ -2961,7 +2962,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	}
 
 	// @fixme140 BEGIN
-	if (ITEM_BELT == pkItem->GetType() && CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
+	if (ITEM_BELT == ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) && CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 385, "");
@@ -2983,7 +2984,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	pkSafebox->Add(p->bSafePos, pkItem);
 
 	char szHint[128];
-	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), pkItem->GetCount());
+	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	LogManager::instance().ItemLog(ch, pkItem, "SAFEBOX PUT", szHint);
 }
 
@@ -3121,12 +3122,12 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
 	}
 
-	uint32_t dwID = pkItem->GetID();
+	uint32_t dwID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem));
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(uint32_t));
 	db_clientdesc->Packet(&dwID, sizeof(uint32_t));
 
 	char szHint[128];
-	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), pkItem->GetCount());
+	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	if (bMall)
 		LogManager::instance().ItemLog(ch, pkItem, "MALL GET", szHint);
 	else
@@ -3210,7 +3211,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 	// duplikáció tiltás + 18000 group szabály
 	{
-		const uint32_t vnum = item->GetVnum();
+		const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 		const int total = mi->GetWidth() * mi->GetSize();
 
 		for (int i = 0; i < total; ++i)
@@ -3219,7 +3220,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 			if (!it)
 				continue;
 
-			if (it->GetVnum() == vnum)
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
 			{
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
 				return;
@@ -3235,7 +3236,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 				if (!it)
 					continue;
 
-				const uint32_t ov = it->GetVnum();
+				const uint32_t ov = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it));
 				if (ov < 18000 || ov > 18149)
 					continue;
 
@@ -3325,7 +3326,7 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 	ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 	// extra biztos flush
-	uint32_t dwID = item->GetID();
+	uint32_t dwID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item));
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(uint32_t));
 	db_clientdesc->Packet(&dwID, sizeof(uint32_t));
 
