@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "mob_manager.h"
 #include "affect.h"
 #include "item.h"
@@ -64,7 +67,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	// dwDuration *= 60;
 
 	// ���� Ȯ�� = ĳ���� ���� - �� ���� + �а��� ���� + 29 + �а� ��ų ����
-	iPolyPercent = pChar->GetLevel() - pMob->m_table.bLevel + pItem->GetSocket(2) + (29 + bySkillLevel);
+	iPolyPercent = pChar->GetLevel() - pMob->m_table.bLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) + (29 + bySkillLevel);
 
 	if (iPolyPercent <= 0)
 	{
@@ -87,7 +90,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	pChar->AddAffect(AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
 
 	// ���� ���ʽ� = �а� ��ų ���� + �а��� ����
-	dwBonusPercent = bySkillLevel + pItem->GetSocket(2);
+	dwBonusPercent = bySkillLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2);
 
 	switch (GetBonusType(pMob->m_table.dwVnum))
 	{
@@ -116,8 +119,8 @@ bool CPolymorphUtils::UpdateBookPracticeGrade(LPCHARACTER pChar, LPITEM pItem)
 	if (pChar == nullptr || pItem == nullptr)
 		return false;
 
-	if (pItem->GetSocket(1) > 0) {
-		pItem->SetSocket(1, pItem->GetSocket(1) - 1);
+	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) > 0) {
+		pItem->SetSocket(1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) - 1);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -157,8 +160,8 @@ bool CPolymorphUtils::BookUpgrade(LPCHARACTER pChar, LPITEM pItem)
 	if (pChar == nullptr || pItem == nullptr)
 		return false;
 
-	pItem->SetSocket(1, pItem->GetSocket(2) * 50);
-	pItem->SetSocket(2, pItem->GetSocket(2)+1);
+	pItem->SetSocket(1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) * 50);
+	pItem->SetSocket(2, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2)+1);
 	return true;
 }
 
