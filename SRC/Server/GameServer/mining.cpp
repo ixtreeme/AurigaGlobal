@@ -3,6 +3,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item_manager.h"
 #include "item.h"
 #include "config.h"
@@ -443,7 +446,9 @@ namespace mining
 			return false;
 
 		ch->SetRefineNPC(npc);
-		item->SetCount(item->GetCount() - ORE_COUNT_FOR_REFINE);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, item),
+			ORE_COUNT_FOR_REFINE);
 		int64_t iCost = ch->ComputeRefineFee(cost, 1);
 
 		if (ch->GetGold() < iCost)
