@@ -1320,10 +1320,14 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						ch->PointChange(POINT_GOLD, -fee);
 
-						itemold->RemoveFromCharacter();
-						M2_DESTROY_ITEM(itemold);
-						item->RemoveFromCharacter();
-						M2_DESTROY_ITEM(item);
+						LPITEM removedOld = itemold->RemoveFromCharacter();
+						ItemSystem::DestroyItemEntityEcs(
+							EntityFactory::CreateItemEntity(g_registry, removedOld),
+							"DRAGON_SOUL_INVALID");
+						LPITEM removedItem = item->RemoveFromCharacter();
+						ItemSystem::DestroyItemEntityEcs(
+							EntityFactory::CreateItemEntity(g_registry, removedItem),
+							"DRAGON_SOUL_INVALID");
 
 						if (ch->AutoGiveDS(itemres, true)) {
 							char buf[128];
@@ -1432,10 +1436,14 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						ch->PointChange(POINT_GOLD, -fee);
 
-						itemold->RemoveFromCharacter();
-						M2_DESTROY_ITEM(itemold);
-						item->RemoveFromCharacter();
-						M2_DESTROY_ITEM(item);
+						LPITEM removedOld = itemold->RemoveFromCharacter();
+						ItemSystem::DestroyItemEntityEcs(
+							EntityFactory::CreateItemEntity(g_registry, removedOld),
+							"DRAGON_SOUL_INVALID");
+						LPITEM removedItem = item->RemoveFromCharacter();
+						ItemSystem::DestroyItemEntityEcs(
+							EntityFactory::CreateItemEntity(g_registry, removedItem),
+							"DRAGON_SOUL_INVALID");
 
 						if (ch->AutoGiveDS(itemres, true)) {
 							char buf[128];
