@@ -228,15 +228,15 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	ITEM_MANAGER::instance().FlushDelayedSave(item);
 	LogManager::instance().ItemLog(ch, item, "BUY", item->GetName());
 
-	if (item->GetVnum() >= 80003 && item->GetVnum() <= 80007)
+	if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 	{
-		LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), PERSONAL_SHOP_BUY, "");
 	}
 
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, item->GetVnum(), -dwPrice);
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), -dwPrice);
 
 	if (item)
-		sys_log(0, "ShopEx: BUY: name %s %s(x %d):%u price %u", ((ch)->GetName()), item->GetName(), item->GetCount(), item->GetID(), dwPrice);
+		sys_log(0, "ShopEx: BUY: name %s %s(x %d):%u price %u", ((ch)->GetName()), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
