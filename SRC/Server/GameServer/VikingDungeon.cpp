@@ -15,6 +15,9 @@
 #include "item.h"
 #include "questmanager.h"
 #include "event.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 namespace
 {
@@ -1091,7 +1094,7 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
     if (!ch || !item)
         return false;
 
-    if (item->GetVnum() != kResetItemVnum)
+    if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kResetItemVnum)
         return false;
 
     if (IsVikingDungeonMap(ch->GetMapIndex()))
@@ -1361,7 +1364,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
         return false;
 
     const uint32_t npcVnum = npc->GetRaceNum();
-    const uint32_t itemVnum = item->GetVnum();
+    const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (floor == 1 && itemVnum == kFloor1ItemVnum)
