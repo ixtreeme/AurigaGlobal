@@ -671,7 +671,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				else if (pItem->IsExtraItem())
 				{
 					iEmptyPos = ch->GetEmptyExtraInventory(pItem);
-					if (pItem->IsStackable() && !IS_SET(pItem->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 						int 
 #else
@@ -726,7 +726,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #endif
 				else {
 					iEmptyPos = ch->GetEmptyInventory(pItem->GetSize());
-					if (pItem->IsStackable() && !IS_SET(pItem->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) {
+					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 						int 
 #else
@@ -810,7 +810,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 			LPITEM item = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum, materialInfo.reward.count);
 			//tofix item not stackable
-			if (item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)){
+			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)){
 				pack.date_cube_renewal.item_reward_stackable = true;
 			}else{
 				pack.date_cube_renewal.item_reward_stackable = false;
