@@ -22,7 +22,10 @@
 #include "../../mount_inventory_helper.h"
 #include "../../party.h"
 #include "../CharacterAccessors.hpp"
+#include "../EntityFactory.hpp"
+#include "../Registry.hpp"
 #include "../AIHelpers.hpp"
+#include "ItemSystem.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -461,7 +464,11 @@ uint32_t CHARACTER::GetMotionMode() const
 
 	if ((pkItem = GetWear(WEAR_WEAPON)))
 	{
-		switch (pkItem->GetProto()->bSubType)
+		const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
+		if (!itemProto)
+			return dwMode;
+
+		switch (itemProto->bSubType)
 		{
 		case WEAPON_SWORD:
 			dwMode = MOTION_MODE_ONEHAND_SWORD;
