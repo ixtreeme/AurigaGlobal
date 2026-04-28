@@ -398,21 +398,30 @@ void CraftItems(entt::entity pc, int slot)
 		return;
 
 	if (item->GetType() != ITEM_METIN || item->GetRefineLevel() > Grade_Stone) {
-		M2_DESTROY_ITEM(item_glimmerstone);
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item_glimmerstone),
+			"GAYA_INVALID_GLIMMERSTONE");
 		return;
 	}
 
 	if (ch->CountSpecifyItem(ID_Glimmerstone) < Count_Glimmerstone)
 	{
-		M2_DESTROY_ITEM(item_glimmerstone);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", Count_Glimmerstone, item_glimmerstone->GetName());
+		const std::string glimmerstoneName = item_glimmerstone->GetName();
+#endif
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item_glimmerstone),
+			"GAYA_MISSING_GLIMMERSTONE");
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", Count_Glimmerstone, glimmerstoneName.c_str());
 #endif
 		return;
 	}
 
 	if (ch->GetGold() < Cost_Gaya_Yang) {
-		M2_DESTROY_ITEM(item_glimmerstone);
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, item_glimmerstone),
+			"GAYA_MISSING_GOLD");
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif
