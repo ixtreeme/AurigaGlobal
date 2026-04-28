@@ -2555,13 +2555,13 @@ int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/
 
 	LPITEM pkArrow;
 
-	if (!(pkArrow = GetWear(WEAR_ARROW)) || pkArrow->GetType() != ITEM_WEAPON ||
+	if (!(pkArrow = GetWear(WEAR_ARROW)) || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkArrow)) != ITEM_WEAPON ||
 		pkArrow->GetProto()->bSubType != WEAPON_ARROW)
 	{
 		return 0;
 	}
 
-	iArrowCount = std::min(iArrowCount, pkArrow->GetCount());
+	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkArrow))));
 
 	*ppkBow = pkBow;
 	*ppkArrow = pkArrow;
@@ -2926,7 +2926,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		pkItem = GetWear(WEAR_UNIQUE1);
 
-		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		if (pkItem && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
 			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
@@ -2934,7 +2934,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		pkItem = GetWear(WEAR_UNIQUE2);
 
-		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		if (pkItem && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
 			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
@@ -3015,9 +3015,9 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 	{
 #ifdef ENABLE_NEW_STACK_LIMIT
-		int bCount = item->GetCount();
+		int bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 #else
-		uint8_t bCount = item->GetCount();
+		uint8_t bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 #endif
 		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 		{
@@ -3025,13 +3025,13 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 			if (!item2)
 				continue;
 
-			if (item2->GetVnum() != item->GetVnum())
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) != ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
 				continue;
 
 			int j = 0;
 			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
 			{
-				if (item2->GetSocket(j) != item->GetSocket(j))
+				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 					break;
 			}
 
@@ -3039,9 +3039,9 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 				continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-			int bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+			int bCount2 = std::min(static_cast<int>(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2))), bCount);
 #else
-			uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+			uint8_t bCount2 = std::min(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 #endif
 			if (bCount2 <= 0)
 				continue;
@@ -3068,7 +3068,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 
 				ItemSystem::ConsumeItemEcs(
 					EntityFactory::CreateItemEntity(g_registry, item),
-					item->GetCount());
+					ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 				return true;
 			}
 		}
@@ -3082,9 +3082,9 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 #endif
 	{
 #ifdef ENABLE_NEW_STACK_LIMIT
-		int bCount = item->GetCount();
+		int bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 #else
-		uint8_t bCount = item->GetCount();
+		uint8_t bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 #endif
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
@@ -3092,13 +3092,13 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 			if (!item2)
 				continue;
 
-			if (item2->GetVnum() != item->GetVnum())
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) != ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
 				continue;
 
 			int j = 0;
 			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
 			{
-				if (item2->GetSocket(j) != item->GetSocket(j))
+				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
 					break;
 			}
 
@@ -3106,9 +3106,9 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 				continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-			int bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+			int bCount2 = std::min(static_cast<int>(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2))), bCount);
 #else
-			uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+			uint8_t bCount2 = std::min(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 #endif
 			if (bCount2 <= 0)
 				continue;
@@ -3135,7 +3135,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 
 				ItemSystem::ConsumeItemEcs(
 					EntityFactory::CreateItemEntity(g_registry, item),
-					item->GetCount());
+					ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 				return true;
 			}
 		}
@@ -3168,7 +3168,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 	if (iEmptyCell == -1)
 		return false;
 
-	const uint32_t dwDirectCount = item->GetCount();
+	const uint32_t dwDirectCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 	item->AddToCharacter(ch, pos);
 	dwGivenCount += dwDirectCount;
 
@@ -3186,7 +3186,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 #endif
 
 	char szHint[32 + 1];
-	snprintf(szHint, sizeof(szHint), "%s %u %u", item->GetName(), item->GetCount(), item->GetOriginalVnum());
+	snprintf(szHint, sizeof(szHint), "%s %u %u", item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), item->GetOriginalVnum());
 	LogManager::instance().ItemLog(ch, item, "GET", szHint);
 	return true;
 }
@@ -3197,7 +3197,7 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 		return;
 
 	uint32_t dwGivenCount = 0;
-	const uint32_t dwItemVnum = item->GetVnum();
+	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
 	if (ch && __TryAutoGiveRewardItem(ch, item, dwGivenCount))
 	{
@@ -3229,10 +3229,10 @@ static std::string MakeItemLink(LPITEM pkItem, LegacyCharHandle pkKiller, Legacy
 
 	// item link alap
 	len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-		pkItem->GetVnum(),
-		pkItem->GetSocket(0),
-		pkItem->GetSocket(1),
-		pkItem->GetSocket(2),
+		ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 2),
 		0, 0);
 
 	// bonuszok
@@ -3584,7 +3584,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
 		for (auto& item : s_vec_item)
 		{
-			if (verjema_szadba_ixtreeme.find(item->GetVnum()) != verjema_szadba_ixtreeme.end())
+			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) != verjema_szadba_ixtreeme.end())
 			{
 				std::string message = MakeItemLink(item, pkAttacker, this);
 				BroadcastNotice(message.c_str());
@@ -3731,11 +3731,11 @@ void CHARACTER::Reward(bool bItemDrop)
 									continue;
 
 								SPartySharedDropItem di{};
-								di.vnum = srcItem->GetVnum();
-								di.count = srcItem->GetCount();
+								di.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, srcItem));
+								di.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, srcItem));
 
 								for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-									di.sockets[i] = srcItem->GetSocket(i);
+									di.sockets[i] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, srcItem), i);
 
 								for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 									di.attrs[i] = srcItem->GetAttribute(i);
@@ -5900,8 +5900,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 void CHARACTER::UseArrow(LPITEM pkArrow, uint32_t dwArrowCount)
 {
-	int iCount = pkArrow->GetCount();
-	uint32_t dwVnum = pkArrow->GetVnum();
+	int iCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkArrow));
+	uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkArrow));
 #if !defined(__INFINITE_ARROW__)
 	iCount = iCount - MIN(iCount, dwArrowCount);
 #endif
@@ -6752,7 +6752,7 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 	int64_t dam = 0;
 
 	LPITEM pkWeapon = pAttacker->GetWear(WEAR_WEAPON);
-	if (pkWeapon && pkWeapon->GetType() == ITEM_WEAPON && pkWeapon->GetSubType() == WEAPON_BOW)
+	if (pkWeapon && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == ITEM_WEAPON && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == WEAPON_BOW)
 		dam = CalcReferenceBowHitDamage(pAttacker, pVictim);
 	else
 		dam = CalcReferenceNormalHitDamage(pAttacker, pVictim);
@@ -6780,7 +6780,7 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	{
 		int32_t lValue = 0;
 
-		switch (pkWeapon->GetSubType())
+		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
 		{
 		case WEAPON_SWORD:
 			lValue = pVictim->GetPoint(POINT_RESIST_SWORD);
@@ -7382,7 +7382,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 		if (m_pkChrTarget->IsPC()) {
 			LPITEM item = m_pkChrTarget->GetWear(WEAR_PENDANT);
 			if (item) {
-				uint32_t vnum = item->GetVnum();
+				uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 				if (vnum >= 10750 && vnum <= 10950) {
 					p.bElement = 1;
 				}
