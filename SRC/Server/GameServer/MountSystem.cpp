@@ -14,12 +14,32 @@
 #include "item.h"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/pet_mount_components.hpp"
 #include "ecs/events.hpp"
 
 namespace
 {
+entt::entity FindSummonItemByVID(uint32_t vid)
+{
+	return ItemSystem::FindItemByVID(vid);
+}
+
+bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
+{
+	const entt::entity item = FindSummonItemByVID(vid);
+	return item != entt::null && ItemSystem::GetItemOwner(item) == AIHelpers::EcsOf(owner);
+}
+
+LPITEM LegacyItemFromEntity(entt::entity item)
+{
+	const uint32_t id = ItemSystem::GetItemID(item);
+	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+}
+
 bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
 {
 	if (!follower || !owner)
@@ -455,8 +475,7 @@ bool CMountActor::Update(uint32_t deltaTime)
 	bool bResult = true;
 
 	if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead())
-		|| nullptr == ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())
-		|| ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetOwner() != this->GetOwner()
+		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 	{
 		this->Unsummon();
@@ -510,6 +529,19 @@ void CMountActor::SetSummonItem(LPITEM pItem)
 
 	m_dwSummonItemVID = pItem->GetVID();
 	m_dwSummonItemVnum = pItem->GetVnum();
+
+	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
+	if (owner != entt::null && g_registry.valid(owner)) {
+		auto& mount = g_registry.emplace_or_replace<ecs::MountComponent>(owner);
+		mount.owner = owner;
+		mount.itemID = pItem->GetID();
+		mount.itemVID = pItem->GetVID();
+		mount.itemVnum = pItem->GetVnum();
+		mount.level = 0;
+		mount.state = IsSummoned() ? 1u : 0u;
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			mount.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), i));
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -693,7 +725,7 @@ void CMountSystem::Mount(uint32_t mobVnum, LPITEM mountItem)
 
 	this->Unsummon(mobVnum, false);
 	mountActor->Mount(mountItem);
-	mountItem->SetSocket(2, 1);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 2, 1);
 }
 
 void CMountSystem::Unmount(uint32_t mobVnum)
@@ -710,7 +742,7 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 
 	if(LPITEM pSummonItem = m_pkOwner->GetWear(WEAR_COSTUME_MOUNT))
 	{
-		pSummonItem->SetSocket(2, 0);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, 0);
 		this->Summon(mobVnum, pSummonItem, false);
 	}
 }
@@ -772,7 +804,7 @@ size_t CMountSystem::CountSummoned() const
 
 #ifdef ENABLE_COSTUME_MOUNT
 void CMountActor::UpdateMountSkin() {
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
 		Summon(pSummonItem, false);

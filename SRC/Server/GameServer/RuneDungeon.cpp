@@ -23,6 +23,9 @@
 #include <common/tables.h>
 #include "item.h"
 #include "item_manager.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
@@ -1171,10 +1174,11 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
 
     // Consume the exact item that was given (Lua: item.remove())
     // NOTE: ReceiveItem() is triggered by dragging the item onto the NPC, so `item` is the actual stack being given.
-    if (item->GetCount() > 1)
-        item->SetCount(item->GetCount() - 1);
+    const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+    if (ItemSystem::GetItemCount(itemEntity) > 1)
+        ItemSystem::ConsumeItemEcs(itemEntity);
     else
-        ITEM_MANAGER::instance().RemoveItem(item, "RUNE_DUNGEON_TAKE");
+        ItemSystem::DestroyItemEntityEcs(itemEntity, "RUNE_DUNGEON_TAKE");
 
     // Purge the NPC (Lua: npc.purge())
     M2_DESTROY_CHARACTER(npc);

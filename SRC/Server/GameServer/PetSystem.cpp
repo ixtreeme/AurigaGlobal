@@ -16,9 +16,29 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/components/movement_components.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/pet_mount_components.hpp"
 
 namespace
 {
+entt::entity FindSummonItemByVID(uint32_t vid)
+{
+	return ItemSystem::FindItemByVID(vid);
+}
+
+bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
+{
+	const entt::entity item = FindSummonItemByVID(vid);
+	return item != entt::null && ItemSystem::GetItemOwner(item) == AIHelpers::EcsOf(owner);
+}
+
+LPITEM LegacyItemFromEntity(entt::entity item)
+{
+	const uint32_t id = ItemSystem::GetItemID(item);
+	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+}
+
 bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
 {
 	if (!follower || !owner)
@@ -135,7 +155,7 @@ void CPetActor::Unmount()
 
 #ifdef ENABLE_COSTUME_PET
 void CPetActor::UpdatePetSkin() {
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
 		Summon("Noname", pSummonItem, false);
@@ -159,9 +179,9 @@ void CPetActor::Unsummon()
 {
 	if (true == this->IsSummoned())
 	{
-		LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 		if (pSummonItem) {
-			pSummonItem->SetSocket(2, false);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, false);
 			pSummonItem->Lock(false);
 		}
 		
@@ -251,7 +271,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 	this->SetSummonItem(pSummonItem);
 	m_pkOwner->ComputePoints();
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
-	pSummonItem->SetSocket(2, true);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
 	pSummonItem->Lock(true);
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL1);
@@ -393,8 +413,7 @@ bool CPetActor::Update(uint32_t deltaTime)
 	// 펫을 소환한 아이템이 없거나, 내가 가진 상태가 아니라면 펫을 없앰.
 	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead())
 	if ((IsSummoned() && m_pkChar->IsDead())
-		|| nullptr == ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())
-		|| ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetOwner() != this->GetOwner()
+		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 	{
 		this->Unsummon();
@@ -450,6 +469,19 @@ void CPetActor::SetSummonItem (LPITEM pItem)
 
 	m_dwSummonItemVID = pItem->GetVID();
 	m_dwSummonItemVnum = pItem->GetVnum();
+
+	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
+	if (owner != entt::null && g_registry.valid(owner)) {
+		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
+		pet.owner = owner;
+		pet.itemID = pItem->GetID();
+		pet.itemVID = pItem->GetVID();
+		pet.itemVnum = pItem->GetVnum();
+		pet.level = 0;
+		pet.state = IsSummoned() ? 1u : 0u;
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), i));
+	}
 }
 
 bool __PetCheckBuff(const CPetActor* pPetActor)
@@ -472,7 +504,7 @@ void CPetActor::GiveBuff()
 	// 파황 펫 버프는 던전에서만 발생함.
 	if (!__PetCheckBuff(this))
 		return;
-	LPITEM item = ITEM_MANAGER::instance().FindByVID(m_dwSummonItemVID);
+	LPITEM item = LegacyItemFromEntity(FindSummonItemByVID(m_dwSummonItemVID));
 	if (nullptr != item)
 		item->ModifyPoints(true);
 	return ;

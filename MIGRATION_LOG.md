@@ -6689,3 +6689,377 @@ Outcome:
 - Equipment panel semantics restored.
 - Main inventory ECS migration remains intact.
 - No rollback required.
+
+## Phase 15D continuation — non-ECS LPCHARACTER reduction batch
+
+Date: 2026-04-20
+Status: user-confirmed stable
+
+Scope:
+- `party.cpp`
+- `guild.cpp`
+- `input_db.cpp`
+- `battle.cpp`
+- `char_manager.cpp`
+- `pvp.cpp` intentionally deferred in this batch
+
+What changed:
+- Continued the non-ECS LPCHARACTER reduction with the established conservative bridge pattern.
+- Replaced multiple local `LPCHARACTER` declarations with inferred/raw local pointers where the legacy surface remained required.
+- Swapped only clearly trivial getter reads to ECS accessors in safe locations:
+  - `GetName`
+  - `GetPlayerID`
+  - `GetLevel`
+- Kept risky surfaces intentionally unchanged:
+  - no battle function signature changes
+  - no combat formula rewrites
+  - no `char_manager.cpp` lifecycle refactor (`CreateCharacter`, `DestroyCharacter`, internal maps)
+- `pvp.cpp` was audited but deferred because its event path still relies on `DynamicCharacterPtr`, so it did not fit the same safe batch pattern.
+
+Counts:
+- Before batch:
+  - local decl: `599`
+  - LPCHARACTER param: `1246`
+  - direct `ch->Method()`-style calls: `6144`
+- After batch:
+  - local decl: `540`
+  - LPCHARACTER param: `1244`
+  - direct `ch->Method()`-style calls: `6110`
+- Net reduction in this batch:
+  - local decl: `-59`
+  - param: `-2`
+  - calls: `-34`
+
+Per-file result:
+- `party.cpp`: local decl cleanup + trivial getter accessor migration
+- `guild.cpp`: conservative local decl cleanup
+- `input_db.cpp`: local decl cleanup + safe identity/level getter migration around DB response handling
+- `battle.cpp`: only log/PID/trivial getter cleanup, no combat calculation logic changes
+- `char_manager.cpp`: only helper/loop-side trivial cleanup, no lifecycle function changes
+- `pvp.cpp`: deferred for a dedicated follow-up
+
+Fresh hot-file ranking after batch:
+- `input_main.cpp`: `886`
+- `cmd_general.cpp`: `651`
+- `cmd_gm.cpp`: `469`
+- `questlua_pc.cpp`: `355`
+- `char_manager.cpp`: `311`
+- `battle.cpp`: `310`
+- `new_offlineshop_manager.cpp`: `277`
+
+Verification:
+- Build gate after each processed file: PASS
+- WinTest deploy/restart smoke: PASS
+- Restarted:
+  - `Database`
+  - `auth/GameServer`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+- Boot/log review showed no new target regressions from this batch.
+- Remaining visible noise was the same pre-existing content/runtime noise:
+  - motion/content warnings
+  - auth-side `Cube_Init failed`
+  - auth-side `Blend_Item_init fail`
+
+Runtime result:
+- User confirmed: the game works well after the batch.
+
+Commits:
+- `285ab03` `Phase 15D: party.cpp LPCHARACTER reduction`
+- `3a66c01` `Phase 15D: guild.cpp LPCHARACTER reduction`
+- `0d08e46` `Phase 15D: input_db.cpp LPCHARACTER reduction`
+- `cddf914` `Phase 15D: battle.cpp trivial getter cleanup`
+- `d2cf0a7` `Phase 15D: char_manager.cpp trivial getter cleanup`
+- `21ef4ff` `Phase 15D continuation: batch checkpoint`
+
+## Phase 15D-3 — cmd_general / cmd_gm / new_offlineshop_manager / pvp safe getter cleanup
+
+Date: 2026-04-20
+Status: user-confirmed stable
+
+Scope:
+- `cmd_general.cpp`
+- `cmd_gm.cpp`
+- `new_offlineshop_manager.cpp`
+- `pvp.cpp` (safe subset only; DynamicCharacterPtr event storage kept intact)
+- `ecs/CharacterAccessors.hpp` (`GetEmpire`, `GetGMLevel` added)
+
+What changed:
+- Continued the non-ECS LPCHARACTER reduction with the same conservative getter-only strategy.
+- Added ECS accessors for `GetEmpire()` and `GetGMLevel()` so command/offlineshop cleanup could stay uniform.
+- Replaced only trivial getter reads with ECS accessors:
+  - `GetName`
+  - `GetPlayerID`
+  - `GetLevel`
+  - `GetMapIndex`
+  - `GetX / GetY`
+  - `GetRaceNum`
+  - `GetEmpire`
+  - `GetGMLevel`
+  - `IsPC / IsNPC`
+- Kept all command surfaces and business logic unchanged:
+  - no ACMD macro changes
+  - no GM command logic rewrite
+  - no offline-shop transaction/ownership rewrite
+  - no PvP event storage rewrite
+
+Counts:
+- Before batch:
+  - local decl: `540`
+  - LPCHARACTER param: `1244`
+  - direct `ch->Method()`-style calls: `6110`
+- After batch:
+  - local decl: `532`
+  - LPCHARACTER param: `1244`
+  - direct `ch->Method()`-style calls: `6029`
+- Net reduction in this batch:
+  - local decl: `-8`
+  - param: `0`
+  - calls: `-81`
+
+Per-file result:
+- `cmd_general.cpp`: trivial getter cleanup on GM level / empire / local target pointer sites
+- `cmd_gm.cpp`: trivial getter cleanup on empire/map/coords/name/race/GM level sites
+- `new_offlineshop_manager.cpp`: high-volume owner/buyer identity/name getter cleanup
+- `pvp.cpp`: safe manager-side getter cleanup; DynamicCharacterPtr event path intentionally left intact
+
+Fresh hot-file ranking after batch:
+- `input_main.cpp`: `886`
+- `cmd_general.cpp`: `637`
+- `cmd_gm.cpp`: `459`
+- `questlua_pc.cpp`: `355`
+- `char_manager.cpp`: `311`
+- `battle.cpp`: `310`
+- `new_offlineshop_manager.cpp`: `223`
+
+Verification:
+- Build gate after each processed file: PASS
+- WinTest deploy/restart smoke: PASS
+- Deploy hash:
+  - `E1D641ABB875F1702A6B95F3EA9F755F89B4DC255B15175D24B5FC284CFC8A8D`
+- Restarted:
+  - `Database`
+  - `auth/GameServer`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+- Boot/log review showed no new target regressions from this batch.
+- Remaining visible noise was unchanged pre-existing noise:
+  - motion/content warnings
+  - auth-side `Cube_Init failed`
+  - auth-side `Blend_Item_init fail`
+
+Runtime result:
+- User confirmed: `oké .. minden rendben`
+
+Commits:
+- `799c87f` `Phase 15D-3: cmd_general.cpp trivial getter cleanup`
+- `05cfb71` `Phase 15D-3: cmd_gm.cpp trivial getter cleanup`
+- `2d0dd1c` `Phase 15D-3: new_offlineshop_manager.cpp getter cleanup`
+- `9912f9f` `Phase 15D-3: pvp.cpp safe getter cleanup`
+- `825124a` `Phase 15D-3: batch complete`
+
+## Phase 15E-1a — ChatSystem::Send replaces CHARACTER chat calls
+
+Scope:
+- `ecs/systems/ChatSystem.hpp`
+- `ecs/systems/ChatSystem.cpp`
+- broad GameServer call-site migration across 78 server files
+- `char.h` / `ecs/systems/PlayerRuntimeSystem.cpp` cleanup of `CHARACTER::ChatPacket` and `CHARACTER::ChatPacketNew`
+
+What changed:
+- Added entity-first chat API:
+  - `ecs::ChatSystem::Send(...)`
+  - `ecs::ChatSystem::SendNew(...)`
+  - `ecs::ChatSystem::Broadcast(...)`
+- Implementation intentionally bridges through legacy character / DESC state internally.
+- Replaced `ch->ChatPacket(...)` and `ch->ChatPacketNew(...)` call sites with `ecs::ChatSystem` sends.
+- Removed `CHARACTER::ChatPacket` / `CHARACTER::ChatPacketNew` declarations from `char.h` and removed their definitions from the character runtime implementation.
+
+Signature audit finding:
+- `ChatPacketNew` real legacy signature includes `idx`:
+  - `void ChatPacketNew(uint8_t type, uint32_t idx, const char* format, ...);`
+- `ChatSystem::SendNew(...)` mirrors this exact semantic shape.
+
+Counts / closure:
+- Initial exact call volume audited for this phase:
+  - `ChatPacket`: `729`
+  - `ChatPacketNew`: `710`
+  - total: `1439`
+- Final exact `CHARACTER`-style arrow call sites:
+  - `->ChatPacket(`: `0`
+  - `->ChatPacketNew(`: `0`
+- Remaining raw references are intentional and non-target:
+  - `DESC::ChatPacket*` declaration/definition in `desc.h/.cpp`
+  - `LPDESC` call sites in `marriage.cpp` and `shutdown_manager.cpp`
+
+Verification:
+- Build gate: PASS
+- WinTest deploy/restart smoke: PASS
+- Deploy hash:
+  - `EDDC80BE3C692D231A97FFB11138198C5EA059D5C5C863447181CDFA42BE613F`
+- Restarted:
+  - `Database`
+  - `auth/GameServer`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+- Boot/log review showed no new chat-specific regressions.
+- Remaining visible noise unchanged from baseline:
+  - motion/content warnings
+  - auth-side `Cube_Init failed`
+  - auth-side `Blend_Item_init fail`
+
+Runtime result:
+- User confirmed: `működik a chat`
+
+Commits:
+- `f3c13fb` `Phase 15E-1a.1: Create ChatSystem with entity-first API`
+- `bcac627` `Phase 15E-1a: Migrate ChatPacket in cmd_gm.cpp`
+- `e947aff` `Phase 15E-1a: Migrate ChatPacket in cmd_general.cpp`
+- `2399cce` `Phase 15E-1a: Migrate ChatPacket in input_main.cpp`
+- `37f02b2` `Phase 15E-1a: Migrate ChatPacket in New_PetSystem.cpp`
+- `19b4f62` `Phase 15E-1a: Migrate ChatPacket in cmd_general2.cpp`
+- `e505bcb` `Phase 15E-1a: Migrate ChatPacket in guild_renewal.cpp`
+- `89c9e37` `Phase 15E-1a: Migrate ChatPacket in arena.cpp`
+- `2e2b24d` `Phase 15E-1a: Migrate ChatPacket in guild.cpp`
+- `b748b53` `Phase 15E-1a: Migrate ChatPacket in char_manager.cpp`
+- `8a1b108` `Phase 15E-1a: Migrate ChatPacket in DragonSoul.cpp`
+- `cbb9f0e` `Phase 15E-1a: Migrate ChatPacket in new_offlineshop.h`
+- `ddf5805` `Phase 15E-1a: Migrate ChatPacket in questmanager.cpp`
+- `2e4b315` `Phase 15E-1a: Complete ChatPacket call site migration`
+
+## Live Lag Investigation — core99 movement rubberband fix
+
+Context:
+- User reported that the server still lagged during metin stone combat.
+- Symptom was not generic FPS drop; it manifested as delayed combat feedback:
+  - hit damage appeared several seconds late
+  - mob spawn after stone hits appeared late
+  - metin stone collapse / break visuals appeared late
+
+Initial log review:
+- The earlier `TEST_SERVER: 1` debug flood was real and was disabled on WinTest:
+  - `C:\AurigaGlobal-WinTest\srv1\auth\CONFIG`
+  - `C:\AurigaGlobal-WinTest\srv1\chan\ch1\core1\CONFIG`
+  - `C:\AurigaGlobal-WinTest\srv1\chan\ch1\core2\CONFIG`
+  - `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\CONFIG`
+  - `C:\AurigaGlobal-WinTest\srv1\db\conf.txt`
+- That removed packet / attack / item-save flood logging, but did not fully remove the gameplay lag.
+
+Live core99 observation:
+- A targeted live watch on `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\syslog.txt` during active play showed the dominant runtime issue was movement rubberbanding, not fresh `heart_idle` stalls.
+- Repeated lines during the lag window:
+  - `MOVE: [DEV]Ixtreeme trying to move too far (...)`
+  - immediate `SHOW: [DEV]Ixtreeme ...`
+  - intermittent `SECTREE DIFFER ...`
+- This meant the server was repeatedly rejecting legitimate follow-up movement packets and snapping the player back.
+- That server-side movement correction explained the delayed combat feedback:
+  - the client kept swinging locally
+  - the server-side authoritative position caught up later
+  - therefore hit result / stone break / spawned mobs became visible only after correction
+
+Root cause:
+- `SRC/Server/GameServer/input_main.cpp`
+- The anti-teleport move validation compared each new client move target only against the current committed server position:
+  - `ch->GetX()`
+  - `ch->GetY()`
+- During in-flight movement this is too strict, because the next client target often legitimately extends from the current pending destination rather than the last committed position.
+- As a result, valid chained move packets were treated as too-far moves and the server rubberbanded the player.
+
+Fix:
+- `SRC/Server/GameServer/char.h`
+  - added:
+    - `GetCurrentDestX()`
+    - `GetCurrentDestY()`
+- `SRC/Server/GameServer/input_main.cpp`
+  - updated the move anti-teleport check so that during active movement it also compares the next target against the pending destination:
+    - uses `GetCurrentMoveDuration()`
+    - uses `GetCurrentDestX()/GetCurrentDestY()`
+    - takes the smaller of:
+      - distance from current committed position
+      - distance from current pending destination
+  - log line expanded to include both evaluated distances for future debugging.
+
+Build / deploy:
+- Build gate: PASS
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+- Full WinTest restart after clean stop/copy/start:
+  - `Database`
+  - `auth/GameServer`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+- Deployed binary hash:
+  - `FB1F8CBD6320138B09B7D64F8187089D7DA11103D7C5817E076001AC1B984A49`
+
+Runtime result:
+- User confirmed:
+  - `most jól működik a sebzés és minden ami hozzá tartozik`
+- Interpreted result:
+  - damage is now shown in time
+  - metin stone combat feedback is now timely
+  - associated spawn / collapse feedback is also behaving correctly again
+
+## Live Lag Investigation Follow-up — inconsistent WinTest binary deployment
+
+Context:
+- After the movement rubberband fix had already been validated once, the user later reported that the same slow-damage / delayed metin feedback behavior had returned.
+- Symptom matched the previous incident:
+  - metin damage appeared several seconds late
+  - spawned mobs appeared late
+  - stone break / collapse appeared late
+
+Key finding:
+- This time the main issue was not a fresh source regression in `input_main.cpp`.
+- The WinTest environment was running inconsistent `GameServer.exe` binaries across the stack.
+- Hash check showed three different binaries:
+  - local build:
+    - `BC19F4FB117BF0E733BBE1A9D2B3A9953A2FE50F4FB3EA66F451CA0217E9D589`
+  - running `share/bin` copy:
+    - stale and different from local build
+  - running `auth` copy:
+    - `FB1F8CBD6320138B09B7D64F8187089D7DA11103D7C5817E076001AC1B984A49`
+- This explained why previously fixed behavior appeared to regress: different server roles were not running the same build.
+
+Observed logs during incident:
+- `C:\AurigaGlobal-WinTest\srv1\chan\ch99\core99\syserr.txt`
+  - still contained old:
+    - `heart_idle: losing 40 seconds. (lag occured)`
+- But the fresh gameplay tail did not show a new dominant wave of `trying to move too far` spam during the checked window.
+- That made the deployment mismatch the strongest root cause.
+
+Corrective action:
+- Performed a full stop/copy/start cycle for the whole WinTest stack.
+- Force-stopped:
+  - `GameServer.exe`
+  - `Database.exe`
+- Re-copied the exact same fresh build to:
+  - `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+  - `C:\AurigaGlobal-WinTest\srv1\auth\GameServer.exe`
+- Restarted:
+  - `Database`
+  - `auth/GameServer`
+  - `ch1/core1`
+  - `ch1/core2`
+  - `ch99/core99`
+
+Post-fix verification:
+- Hashes after redeploy matched everywhere:
+  - local build:
+    - `BC19F4FB117BF0E733BBE1A9D2B3A9953A2FE50F4FB3EA66F451CA0217E9D589`
+  - `share/bin`:
+    - `BC19F4FB117BF0E733BBE1A9D2B3A9953A2FE50F4FB3EA66F451CA0217E9D589`
+  - `auth`:
+    - `BC19F4FB117BF0E733BBE1A9D2B3A9953A2FE50F4FB3EA66F451CA0217E9D589`
+- Fresh `core99` boot tail after restart:
+  - no new `heart_idle`
+  - no fresh `trying to move too far` flood in the immediate post-restart window
+
+Runtime result:
+- User confirmed:
+  - `ezzel a módosítással megoldódott`
+- Interpreted result:
+  - the reappearing slow-damage / delayed-metinstone behavior was resolved by consistent binary redeploy
+  - the previous movement fix was still valid; the environment had simply not been running one consistent build

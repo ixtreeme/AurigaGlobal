@@ -28,6 +28,7 @@
 #include "desc.h"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -389,10 +390,10 @@ namespace quest
 		if ( lua_isstring(L, 2) ) how = lua_tostring(L, 2);
 		if ( lua_tostring(L, 3) ) hint = lua_tostring(L, 3);
 
-		LPITEM item = ITEM_MANAGER::instance().Find(dwItemID);
+		const entt::entity item = ItemSystem::FindItemByID(dwItemID);
 
-		if (item)
-			LogManager::instance().ItemLog(ch, item, how, hint);
+		if (item != entt::null)
+			LogManager::instance().ItemLogEntity(ch, item, how, hint);
 
 		return 0;
 	}

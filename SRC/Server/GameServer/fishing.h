@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/service.h>
+#include <entt/entt.hpp>
 #include "item.h"
 
 namespace fishing
@@ -34,7 +35,9 @@ namespace fishing
 	extern void Take(fishing_event_info* info, LPCHARACTER ch);
 	extern void Simulation(int level, int count, int map_grade, LPCHARACTER ch);
 	extern void UseFish(LPCHARACTER ch, LPITEM item);
+	extern bool UseFishEcs(entt::entity owner, entt::entity item);
 	extern void Grill(LPCHARACTER ch, LPITEM item);
+	extern bool GrillFishEcs(entt::entity owner, entt::entity item);
 
 	extern bool RefinableRod(LPITEM rod);
 	extern int RealRefineRod(LPCHARACTER ch, LPITEM rod);

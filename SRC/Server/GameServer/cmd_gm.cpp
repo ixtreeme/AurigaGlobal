@@ -35,6 +35,7 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -4229,11 +4230,12 @@ ACMD(do_set_stat)
 
 ACMD(do_get_item_id_list)
 {
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; i++)
 	{
-		LPITEM item = ch->GetInventoryItem(i);
-		if (item != nullptr)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "cell : %d, name : %s, id : %d", item->GetCell(), item->GetName(), item->GetID());
+		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+		if (item != entt::null)
+			ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "cell : %d, name : %s, id : %d", ItemSystem::GetItemCell(item), ItemSystem::GetItemName(item), ItemSystem::GetItemID(item));
 	}
 }
 
@@ -4302,17 +4304,18 @@ ACMD (do_all_skill_master)
 ACMD (do_item_full_set)
 {
 	uint8_t job = ch->GetJob();
-	LPITEM item;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	for (int i = 0; i < 6; i++)
 	{
-		item = ch->GetWear(i);
-		if (item != nullptr)
-			ch->UnequipItem(item);
+		const entt::entity equippedItem = ItemSystem::GetWearItem(owner, i);
+		if (equippedItem != entt::null)
+			ItemSystem::UnequipItemEcs(owner, equippedItem);
 	}
-	item = ch->GetWear(WEAR_SHIELD);
-	if (item != nullptr)
-		ch->UnequipItem(item);
+	const entt::entity shield = ItemSystem::GetWearItem(owner, WEAR_SHIELD);
+	if (shield != entt::null)
+		ItemSystem::UnequipItemEcs(owner, shield);
 
+	LPITEM item;
 	switch (job)
 	{
 	case JOB_SURA:

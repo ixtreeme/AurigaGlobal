@@ -1,0 +1,360 @@
+Phase 15E-2 - Public ECS Header Leak Audit
+Date: 2026-04-26
+Mode: AUDIT ONLY
+
+Scope
+- Scanned public ECS headers under:
+  - SRC/Server/GameServer/ecs
+- Target symbols:
+  - LPCHARACTER
+  - CHARACTER*
+  - LPITEM
+  - LPENTITY
+  - LPSECTREE
+
+Command equivalent
+- grep -RInE "LPCHARACTER|CHARACTER\s*\*|LPITEM|LPENTITY|LPSECTREE" SRC/Server/GameServer/ecs --include="*.hpp" --include="*.h"
+
+Summary
+- Total matches: 58
+- Public API leak: mostly ItemSystem.hpp, DragonSoulSystem.hpp, SpatialHelpers.hpp
+- Acceptable transitional component storage: ECS components holding legacy pointers during migration
+- Legacy bootstrap exception: LegacyCharPtr and EntityFactory bootstrap APIs
+- Helper bridge exception: AIHelpers and spatial helper internals/comments
+
+Findings
+
+1. SRC/Server/GameServer/ecs/components/identity_components.hpp:12
+   Symbol/signature: struct LegacyCharPtr { LPCHARACTER ptr; };
+   Classification: legacy bootstrap exception
+   Risk: Low
+   Suggested next task: Keep until final CHARACTER bridge removal.
+
+2. SRC/Server/GameServer/ecs/components/inventory_components.hpp:17
+   Symbol/signature: std::array<LPITEM, WEAR_MAX_NUM> items {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Later replace with item entity/ID storage.
+
+3. SRC/Server/GameServer/ecs/components/inventory_components.hpp:21
+   Symbol/signature: std::array<LPITEM, INVENTORY_MAX_NUM> items {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Later replace with item entity/ID storage.
+
+4. SRC/Server/GameServer/ecs/components/inventory_components.hpp:25
+   Symbol/signature: LPITEM pItems[INVENTORY_AND_EQUIP_SLOT_MAX] {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Main inventory item-entity migration.
+
+5. SRC/Server/GameServer/ecs/components/inventory_components.hpp:31
+   Symbol/signature: LPITEM pItems[EXTRA_INVENTORY_MAX_NUM] {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Extra inventory item-entity migration.
+
+6. SRC/Server/GameServer/ecs/components/inventory_components.hpp:37
+   Symbol/signature: LPITEM pItems[CUBE_MAX_NUM] {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Cube window item-entity migration.
+
+7. SRC/Server/GameServer/ecs/components/inventory_components.hpp:38
+   Symbol/signature: LPCHARACTER pNpc { nullptr };
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Replace cube NPC pointer with entt::entity.
+
+8. SRC/Server/GameServer/ecs/components/inventory_components.hpp:42
+   Symbol/signature: LPITEM pItems[DRAGON_SOUL_INVENTORY_MAX_NUM] {};
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: DragonSoul item-entity migration.
+
+9. SRC/Server/GameServer/ecs/components/inventory_components.hpp:48
+   Symbol/signature: LPENTITY pRefineWindowOpener { nullptr };
+   Classification: acceptable transitional component storage
+   Risk: Medium
+   Suggested next task: Replace refine opener with entt::entity.
+
+10. SRC/Server/GameServer/ecs/components/inventory_components.hpp:53
+    Symbol/signature: LPITEM pItems[MAX_ATTR_TRANSFER_SLOT] {};
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Attr transfer item-entity migration.
+
+11. SRC/Server/GameServer/ecs/components/inventory_components.hpp:54
+    Symbol/signature: LPCHARACTER pNpc { nullptr };
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Replace attr-transfer NPC pointer with entt::entity.
+
+12. SRC/Server/GameServer/ecs/components/inventory_components.hpp:60
+    Symbol/signature: LPITEM pMaterials[ACCE_WINDOW_MAX_MATERIALS] {};
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Acce item-entity migration.
+
+13. SRC/Server/GameServer/ecs/components/inventory_components.hpp:66
+    Symbol/signature: LPITEM pItems[SWITCHBOT_SLOT_COUNT] {};
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Switchbot item-entity migration.
+
+14. SRC/Server/GameServer/ecs/components/quest_components.hpp:13
+    Symbol/signature: LPITEM questItem { nullptr };
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Replace quest item pointer with item entity/ID.
+
+15. SRC/Server/GameServer/ecs/components/session_components.hpp:31
+    Symbol/signature: LPENTITY refineWindowOpener { nullptr };
+    Classification: acceptable transitional component storage
+    Risk: Medium
+    Suggested next task: Replace with entt::entity.
+
+16. SRC/Server/GameServer/ecs/components/social_components.hpp:36
+    Symbol/signature: LPCHARACTER partner { nullptr };
+    Classification: acceptable transitional component storage
+    Risk: High
+    Suggested next task: Replace marriage/social partner pointer with entt::entity.
+
+17. SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp:17
+    Symbol/signature: bool OpenRefineWindow(entt::entity owner, LPENTITY opener);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Convert opener parameter to entt::entity.
+
+18. SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp:20
+    Symbol/signature: LPENTITY GetRefineWindowOpener(entt::entity owner);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return entt::entity or nullable component state.
+
+19. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:13
+    Symbol/signature: LPITEM GetItem(entt::entity e, TItemPos cell);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Introduce item entity/handle API.
+
+20. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:14
+    Symbol/signature: LPITEM GetInventoryItem(entt::entity e, uint16_t cell);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity/ID or typed inventory view.
+
+21. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:16
+    Symbol/signature: LPITEM GetExtraInventoryItem(entt::entity e, uint16_t cell);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity/ID.
+
+22. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:19
+    Symbol/signature: LPITEM FindSpecifyItem(entt::entity e, uint32_t vnum
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity/ID.
+
+23. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:24
+    Symbol/signature: LPITEM FindItemByID(entt::entity e, uint32_t id);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity from item registry.
+
+24. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:31
+    Symbol/signature: LPITEM GetWearItem(entt::entity e, uint8_t wearPos);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity/ID.
+
+25. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:32
+    Symbol/signature: void SetWearItem(entt::entity e, uint8_t wearPos, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+26. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:33
+    Symbol/signature: bool UnequipItem(entt::entity e, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+27. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:34
+    Symbol/signature: bool EquipItem(entt::entity e, LPITEM item, int candidateCell = -1);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+28. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:38
+    Symbol/signature: bool CanEquipNow(entt::entity e, const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+29. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:39
+    Symbol/signature: bool CanUnequipNow(entt::entity e, const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+30. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:61
+    Symbol/signature: bool UseItemEx(entt::entity e, LPITEM item, TItemPos destCell = NPOS);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+31. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:65
+    Symbol/signature: void AutoGiveItem(entt::entity e, LPITEM item, bool longOwnerShip = false
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+32. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:71
+    Symbol/signature: bool AutoGiveDS(entt::entity e, LPITEM item, bool longOwnerShip = false);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+33. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:73
+    Symbol/signature: LPITEM AutoGiveItem(entt::entity e, uint32_t itemVnum,
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return item entity/ID.
+
+34. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:85
+    Symbol/signature: bool CanReceiveItem(entt::entity receiver, entt::entity from, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+35. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:86
+    Symbol/signature: void ReceiveItem(entt::entity receiver, entt::entity from, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+36. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:90
+    Symbol/signature: std::vector<LPITEM>& itemGets
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return vector of item entities/IDs.
+
+37. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:97
+    Symbol/signature: bool DoRefine(entt::entity e, LPITEM item, bool moneyOnly = false);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+38. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:98
+    Symbol/signature: bool DoRefineWithScroll(entt::entity e, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+39. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:99
+    Symbol/signature: bool DoRefineItemSoul(entt::entity e, LPITEM item);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID.
+
+40. SRC/Server/GameServer/ecs/systems/ItemSystem.hpp:101
+    Symbol/signature: bool RefineItem(entt::entity e, LPITEM item, LPITEM target);
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Accept item entity/ID pair.
+
+41. SRC/Server/GameServer/ecs/AIHelpers.hpp:10
+    Symbol/signature: entt::entity EcsOf(LPCHARACTER ch);
+    Classification: helper bridge exception
+    Risk: Medium
+    Suggested next task: Keep only until legacy callers receive entities.
+
+42. SRC/Server/GameServer/ecs/AIHelpers.hpp:11
+    Symbol/signature: entt::entity EcsOf(const CHARACTER* ch);
+    Classification: helper bridge exception
+    Risk: Medium
+    Suggested next task: Keep only until legacy callers receive entities.
+
+43. SRC/Server/GameServer/ecs/EntityFactory.hpp:11
+    Symbol/signature: static entt::entity EnsureLegacyCharacterEntity(entt::registry& reg, LPCHARACTER ch, uint32_t legacyVID);
+    Classification: legacy bootstrap exception
+    Risk: Medium
+    Suggested next task: Keep during character bootstrap phase.
+
+44. SRC/Server/GameServer/ecs/EntityFactory.hpp:16
+    Symbol/signature: static entt::entity CreateItemEntity(entt::registry& reg, LPITEM item);
+    Classification: legacy bootstrap exception
+    Risk: Medium
+    Suggested next task: Keep until item entity creation no longer starts from LPITEM.
+
+45. SRC/Server/GameServer/ecs/EntityFactory.hpp:17
+    Symbol/signature: static void DestroyItemEntity(entt::registry& reg, LPITEM item);
+    Classification: legacy bootstrap exception
+    Risk: Medium
+    Suggested next task: Keep until item teardown no longer starts from LPITEM.
+
+46. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:12
+    Symbol/signature: // Resolve the legacy LPSECTREE for an ECS entity.
+    Classification: helper bridge exception
+    Risk: Low
+    Suggested next task: No code action.
+
+47. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:14
+    Symbol/signature: inline LPSECTREE SectorOf(entt::registry& reg, entt::entity e)
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return sector entity/handle or keep bridge internal .cpp.
+
+48. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:40
+    Symbol/signature: // Calls func(LPENTITY) for each entity in the sector and its neighbors.
+    Classification: helper bridge exception
+    Risk: Low
+    Suggested next task: No code action.
+
+49. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:45
+    Symbol/signature: LPSECTREE tree = SectorOf(reg, e);
+    Classification: helper bridge exception
+    Risk: Medium
+    Suggested next task: Becomes internal if SectorOf moves out of header.
+
+50. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:52
+    Symbol/signature: // Resolve LPSECTREE directly from map coordinates.
+    Classification: helper bridge exception
+    Risk: Low
+    Suggested next task: No code action.
+
+51. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:53
+    Symbol/signature: inline LPSECTREE SectorAt(int32_t mapIndex, int32_t x, int32_t y)
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Return sector handle or move legacy lookup behind .cpp.
+
+52. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:69
+    Symbol/signature: LPSECTREE tree = SectorAt(mapIndex, x, y);
+    Classification: helper bridge exception
+    Risk: Medium
+    Suggested next task: Becomes internal if SectorAt moves out of header.
+
+53. SRC/Server/GameServer/ecs/SpatialHelpers.hpp:89
+    Symbol/signature: inline LPSECTREE_MAP GetMap(int32_t mapIndex)
+    Classification: public API leak
+    Risk: High
+    Suggested next task: Hide map pointer behind ECS spatial API.
+
+Priority next tasks
+1. ItemSystem.hpp LPITEM public API cleanup.
+   - Largest leak surface.
+   - Split into item-query, item-mutation, refine, and give/receive batches.
+
+2. DragonSoulSystem.hpp opener API cleanup.
+   - Convert LPENTITY opener parameter and return to entt::entity.
+
+3. SpatialHelpers.hpp cleanup.
+   - Move legacy LPSECTREE / LPSECTREE_MAP helpers out of public inline headers or wrap behind entity/coordinate APIs.
+
+4. Component storage cleanup later.
+   - LPITEM, LPCHARACTER, and LPENTITY inside components are transitional storage but still architectural debt.
+
+5. Keep AIHelpers.hpp and EntityFactory.hpp as explicit bridge/bootstrap exceptions until their owning migration phases remove the need.
+

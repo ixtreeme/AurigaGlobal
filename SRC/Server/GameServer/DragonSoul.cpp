@@ -9,6 +9,11 @@
 #include "dragon_soul_table.h"
 #include "log.h"
 #include "DragonSoul.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 //#include <boost/lexical_cast.hpp>
 
 template <typename T> T MINMAX(T min, T value, T max)
@@ -20,6 +25,41 @@ template <typename T> T MINMAX(T min, T value, T max)
 }
 
 typedef std::vector <std::string> TTokenVector;
+
+
+namespace {
+
+LPITEM LegacyDragonSoulItemOf(entt::entity item)
+{
+	const uint32_t id = ItemSystem::GetItemID(item);
+	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+}
+
+void SyncDragonSoulItemEntity(entt::entity item)
+{
+	if (item != entt::null)
+		ItemSystem::SyncItemStateFromLegacy(item);
+}
+
+void SyncDragonSoulItemPtr(LPITEM item)
+{
+	SyncDragonSoulItemEntity(EntityFactory::CreateItemEntity(g_registry, item));
+}
+
+void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	if (!ch)
+		return;
+
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
+	{
+		LPITEM item = ch->GetItem(aItemPoses[i]);
+		if (item)
+			SyncDragonSoulItemPtr(item);
+	}
+}
+
+} // namespace
 
 int Gamble(std::vector<float>& vec_probs)
 {
@@ -118,10 +158,15 @@ void DSManager::GetDragonSoulInfo(uint32_t dwVnum, uint8_t& bType, uint8_t& bGra
 
 bool DSManager::IsValidCellForThisItem(const LPITEM pItem, const TItemPos& Cell) const
 {
-	if (nullptr == pItem)
+	return IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, pItem), Cell);
+}
+
+bool DSManager::IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) const
+{
+	if (!ItemSystem::IsValidItem(item))
 		return false;
 
-	uint16_t wBaseCell = GetBasePosition(pItem);
+	uint16_t wBaseCell = GetBasePosition(item);
 	if (WORD_MAX == wBaseCell)
 		return false;
 
@@ -132,18 +177,23 @@ bool DSManager::IsValidCellForThisItem(const LPITEM pItem, const TItemPos& Cell)
 	}
 	else
 		return true;
-
 }
+
 
 uint16_t DSManager::GetBasePosition(const LPITEM pItem) const
 {
-	if (nullptr == pItem)
+	return GetBasePosition(EntityFactory::CreateItemEntity(g_registry, pItem));
+}
+
+uint16_t DSManager::GetBasePosition(entt::entity item) const
+{
+	if (!ItemSystem::IsValidItem(item))
 		return WORD_MAX;
 
 	uint8_t type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(pItem->GetVnum(), type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), type, grade_idx, step_idx, strength_idx);
 
-	uint8_t col_type = pItem->GetSubType();
+	uint8_t col_type = ItemSystem::GetItemSubType(item);
 	uint8_t row_type = grade_idx;
 	if (row_type > DRAGON_SOUL_GRADE_MAX)
 		return WORD_MAX;
@@ -154,6 +204,7 @@ uint16_t DSManager::GetBasePosition(const LPITEM pItem) const
 	return 300 + (col_type * DRAGON_SOUL_STEP_MAX * DRAGON_SOUL_BOX_SIZE + row_type * DRAGON_SOUL_BOX_SIZE);
 #endif
 }
+
 
 bool DSManager::RefreshItemAttributes(LPITEM pDS)
 {
@@ -417,6 +468,21 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 	}
 }
 
+bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor)
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
+	LPITEM legacyExtractor = extractor != entt::null ? LegacyDragonSoulItemOf(extractor) : nullptr;
+	if (!ch || !legacyItem)
+		return false;
+
+	const bool result = ExtractDragonHeart(ch, legacyItem, legacyExtractor);
+	SyncDragonSoulItemEntity(item);
+	SyncDragonSoulItemEntity(extractor);
+	return result;
+}
+
+
 // 특정 용혼석을 장비창에서 제거할 때에 성공 여부를 결정하고, 실패시 부산물을 주는 함수.
 bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM pExtractor)
 {
@@ -533,6 +599,22 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 
 	return bSuccess;
 }
+
+bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& item, entt::entity extractor)
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
+	LPITEM legacyExtractor = extractor != entt::null ? LegacyDragonSoulItemOf(extractor) : nullptr;
+	if (!ch || !legacyItem)
+		return false;
+
+	const bool result = PullOut(ch, DestCell, legacyItem, legacyExtractor);
+	item = EntityFactory::CreateItemEntity(g_registry, legacyItem);
+	SyncDragonSoulItemEntity(item);
+	SyncDragonSoulItemEntity(extractor);
+	return result;
+}
+
 
 bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
@@ -703,6 +785,18 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	}
 }
 
+bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
+		return false;
+
+	const bool result = DoRefineGrade(ch, aItemPoses);
+	SyncDragonSoulGridItems(ch, aItemPoses);
+	return result;
+}
+
+
 bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
 	if (nullptr == ch)
@@ -863,6 +957,18 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		return false;
 	}
 }
+
+bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
+		return false;
+
+	const bool result = DoRefineStep(ch, aItemPoses);
+	SyncDragonSoulGridItems(ch, aItemPoses);
+	return result;
+}
+
 
 bool IsDragonSoulRefineMaterial(LPITEM pItem)
 {
@@ -1062,6 +1168,18 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 
 	return true;
 }
+
+bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
+		return false;
+
+	const bool result = DoRefineStrength(ch, aItemPoses);
+	SyncDragonSoulGridItems(ch, aItemPoses);
+	return result;
+}
+
 
 #ifdef ENABLE_DS_REFINE_ALL
 void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t grade) {
@@ -1326,6 +1444,22 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 	return;
 }
+
+void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade)
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
+		return;
+
+	DoRefineAll(ch, subheader, type, grade);
+	for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
+	{
+		LPITEM item = ch->GetDragonSoulItem(i);
+		if (item)
+			SyncDragonSoulItemPtr(item);
+	}
+}
+
 #endif
 
 void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const TItemPos& pos)
@@ -1350,42 +1484,56 @@ void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const
 
 int DSManager::LeftTime(LPITEM pItem) const
 {
-	if (pItem == nullptr)
+	return LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem));
+}
+
+int DSManager::LeftTime(entt::entity item) const
+{
+	if (!ItemSystem::IsValidItem(item))
 		return false;
 
-	// 일단은 timer based on wear인 용혼석만 시간 다 되어도 안 없어진다.
-	if (pItem->GetProto()->cLimitTimerBasedOnWearIndex >= 0)
+	if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) >= 0)
 	{
-		return pItem->GetSocket(ITEM_SOCKET_REMAIN_SEC);
+		return ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
 	}
-	// 다른 limit type인 용혼석들은 시간 되면 모두 사라지기 때문에 여기 들어온 아이템은 일단 시간이 남았다고 판단.
 	else
 	{
 		return INT_MAX;
 	}
 }
 
+
 bool DSManager::IsTimeLeftDragonSoul(LPITEM pItem) const
 {
-	if (pItem == nullptr)
+	return IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem));
+}
+
+bool DSManager::IsTimeLeftDragonSoul(entt::entity item) const
+{
+	if (!ItemSystem::IsValidItem(item))
 		return false;
 
-	// 일단은 timer based on wear인 용혼석만 시간 다 되어도 안 없어진다.
-	if (pItem->GetProto()->cLimitTimerBasedOnWearIndex >= 0)
+	if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) >= 0)
 	{
-		return pItem->GetSocket(ITEM_SOCKET_REMAIN_SEC) > 0;
+		return ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) > 0;
 	}
-	// 다른 limit type인 용혼석들은 시간 되면 모두 사라지기 때문에 여기 들어온 아이템은 일단 시간이 남았다고 판단.
 	else
 	{
 		return true;
 	}
 }
 
+
 bool DSManager::IsActiveDragonSoul(LPITEM pItem) const
 {
-	return pItem->GetSocket(ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX);
+	return IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem));
 }
+
+bool DSManager::IsActiveDragonSoul(entt::entity item) const
+{
+	return ItemSystem::GetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX) != 0;
+}
+
 
 bool DSManager::ActivateDragonSoul(LPITEM pItem)
 {
@@ -1419,6 +1567,18 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 		return false;
 }
 
+bool DSManager::ActivateDragonSoulEcs(entt::entity item)
+{
+	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
+	if (!legacyItem)
+		return false;
+
+	const bool result = ActivateDragonSoul(legacyItem);
+	SyncDragonSoulItemEntity(item);
+	return result;
+}
+
+
 bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveState)
 {
 	if (nullptr == pItem)
@@ -1444,6 +1604,18 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 
 	return true;
 }
+
+bool DSManager::DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState)
+{
+	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
+	if (!legacyItem)
+		return false;
+
+	const bool result = DeactivateDragonSoul(legacyItem, bSkipRefreshOwnerActiveState);
+	SyncDragonSoulItemEntity(item);
+	return result;
+}
+
 
 void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 {

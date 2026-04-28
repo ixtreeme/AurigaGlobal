@@ -23,6 +23,9 @@
 #include "item_manager.h"
 #include "packet.h"
 #include "log.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "mob_manager.h"
 #include "pvp.h"
 #include "battle.h" 
@@ -190,13 +193,14 @@ namespace
         if (!item)
             return false;
 
-        if (item->GetCount() > 1)
+        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+        if (ItemSystem::GetItemCount(itemEntity) > 1)
         {
-            item->SetCount(item->GetCount() - 1);
+            ItemSystem::ConsumeItemEcs(itemEntity);
             return true;
         }
 
-        ITEM_MANAGER::instance().RemoveItem(item, reason);
+        ItemSystem::DestroyItemEntityEcs(itemEntity, reason);
         return true;
     }
 

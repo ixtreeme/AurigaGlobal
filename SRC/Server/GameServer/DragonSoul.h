@@ -2,6 +2,7 @@
 #define __INC_METIN_II_GAME_DRAGON_SOUL_H__
 
 #include <common/length.h>
+#include <entt/entt.hpp>
 
 class CHARACTER;
 class CItem;
@@ -18,11 +19,14 @@ public:
 	void	GetDragonSoulInfo(uint32_t dwVnum, OUT uint8_t& bType, OUT uint8_t& bGrade, OUT uint8_t& bStep, OUT uint8_t& bRefine) const;
 	// fixme : titempos로
 	uint16_t	GetBasePosition(const LPITEM pItem) const;
+	uint16_t	GetBasePosition(entt::entity item) const;
 	bool	IsValidCellForThisItem(const LPITEM pItem, const TItemPos& Cell) const;
+	bool	IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) const;
 	int		GetDuration(const LPITEM pItem) const;
 
 	// 용혼석을 받아서 특정 용심을 추출하는 함수
 	bool	ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtractor = nullptr);
+	bool	ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor = entt::null);
 
 	// 특정 용혼석(pItem)을 장비창에서 제거할 때에 성공 여부를 결정하고,
 	// 실패시 부산물을 주는 함수.(부산물은 dragon_soul_table.txt에 정의)
@@ -31,22 +35,32 @@ public:
 	// 추출아이템이 있다면 추출 성공 확률이 pExtractor->GetValue(0)%만큼 증가함.
 	// 부산물은 언제나 자동 추가.
 	bool	PullOut(LPCHARACTER ch, TItemPos DestCell, IN OUT LPITEM& pItem, LPITEM pExtractor = nullptr);
+	bool	PullOutEcs(entt::entity owner, TItemPos DestCell, IN OUT entt::entity& item, entt::entity extractor = entt::null);
 
 	// 용혼석 업그레이드 함수
 	bool	DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 	bool	DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 	bool	DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 #ifdef ENABLE_DS_REFINE_ALL
 	void DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t grade);
+	void DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade);
 #endif
 
 	bool	DragonSoulItemInitialize(LPITEM pItem);
 
 	bool	IsTimeLeftDragonSoul(LPITEM pItem) const;
+	bool	IsTimeLeftDragonSoul(entt::entity item) const;
 	int		LeftTime(LPITEM pItem) const;
+	int		LeftTime(entt::entity item) const;
 	bool	ActivateDragonSoul(LPITEM pItem);
+	bool	ActivateDragonSoulEcs(entt::entity item);
 	bool	DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveState = false);
+	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	IsActiveDragonSoul(LPITEM pItem) const;
+	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT
 	bool	PutAttributes(LPITEM pDS);
 #endif

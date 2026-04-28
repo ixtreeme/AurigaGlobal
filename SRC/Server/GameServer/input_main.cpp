@@ -41,6 +41,7 @@
 #include "OXEvent.h"
 #include "locale_service.h"
 #include "DragonSoul.h"
+#include "ecs/AIHelpers.hpp"
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #endif
@@ -53,6 +54,7 @@
 #include "ecs/components/combat_components.hpp"
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/movement_components.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
@@ -1186,7 +1188,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			int count = qm.GetEventFlag("quiz_count");
 			if (count <= 0) count = 1;
 
-			ch->AutoGiveItem(vnum, count);
+			ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), vnum, count);
 
 			// T?gyn?
 			const TItemTable* pTable = ITEM_MANAGER::instance().GetTable(vnum);
@@ -2251,11 +2253,22 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 //	if (!test_server)
 	{
+		const float fDistFromCurrent = DISTANCE_SQRT((ch->GetX() - pinfo->lX) / 100, (ch->GetY() - pinfo->lY) / 100);
+		float fDist = fDistFromCurrent;
 
-		const float fDist = DISTANCE_SQRT((ch->GetX() - pinfo->lX) / 100, (ch->GetY() - pinfo->lY) / 100);
+		// When movement is already in-flight, compare the next client target against the
+		// pending server destination as well. Without this, legitimate follow-up move
+		// packets get treated as teleports and the server rubberbands the player.
+		if (pinfo->bFunc == FUNC_MOVE &&
+			ch->GetCurrentMoveDuration() > 0 &&
+			(ch->GetCurrentDestX() != ch->GetX() || ch->GetCurrentDestY() != ch->GetY()))
+		{
+			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
+			fDist = std::min(fDistFromCurrent, fDistFromDest);
+		}
 		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ch->GetMapIndex())
 		{
-			sys_log(0, "MOVE: %s trying to move too far (dist: %.1fm) Riding(%d)", ch->GetName(), fDist, ch->IsRiding());
+			sys_log(0, "MOVE: %s trying to move too far (dist: %.1fm current: %.1fm) Riding(%d)", ch->GetName(), fDist, fDistFromCurrent, ch->IsRiding());
 
 			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
@@ -4534,6 +4547,8 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, p->pos);
 	LPITEM item = ch->GetInventoryItem(p->pos);
 
 
@@ -4558,32 +4573,31 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	if (p->type == REFINE_TYPE_NORMAL)
 	{
 		sys_log (0, "refine_type_noraml");
-		ch->DoRefine(item);
+		ItemSystem::DoRefine(owner, itemEntity);
 	}
 	else if (p->type == REFINE_TYPE_SCROLL || p->type == REFINE_TYPE_HYUNIRON || p->type == REFINE_TYPE_MUSIN || p->type == REFINE_TYPE_BDRAGON)
 	{
 		sys_log (0, "refine_type_scroll, ...");
-		ch->DoRefineWithScroll(item);
+		ItemSystem::DoRefineWithScroll(owner, itemEntity);
 	}
 
 #ifdef ENABLE_SOUL_SYSTEM
 	else if (p->type == REFINE_TYPE_SOUL)
 	{
 		sys_log (0, "refine_type_soul, ...");
-		ch->DoRefineItemSoul(item);
+		ItemSystem::DoRefineItemSoul(owner, itemEntity);
 	}
 #endif
 	else if (p->type == REFINE_TYPE_MONEY_ONLY) {
-		const LPITEM item = ch->GetInventoryItem(p->pos);
 		if (item) {
 			if (ch->GetQuestFlag("deviltower_zone.can_refine"))
 			{
 #ifdef ENABLE_BUG_FIXES
-				if (ch->DoRefine(item, true)) {
+				if (ItemSystem::DoRefine(owner, itemEntity, true)) {
 					ch->SetQuestFlag("deviltower_zone.can_refine", 0);
 				}
 #else
-				ch->DoRefine(item, true);
+				ItemSystem::DoRefine(owner, itemEntity, true);
 				ch->SetQuestFlag("deviltower_zone.can_refine", 0);
 #endif
 			}
@@ -5747,17 +5761,17 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 					break;
 				case DS_SUB_HEADER_DO_REFINE_GRADE:
 					{
-						DSManager::instance().DoRefineGrade(ch, p->ItemGrid);
+						DSManager::instance().DoRefineGradeEcs(AIHelpers::EcsOf(ch), p->ItemGrid);
 					}
 					break;
 				case DS_SUB_HEADER_DO_REFINE_STEP:
 					{
-						DSManager::instance().DoRefineStep(ch, p->ItemGrid);
+						DSManager::instance().DoRefineStepEcs(AIHelpers::EcsOf(ch), p->ItemGrid);
 					}
 					break;
 				case DS_SUB_HEADER_DO_REFINE_STRENGTH:
 					{
-						DSManager::instance().DoRefineStrength(ch, p->ItemGrid);
+						DSManager::instance().DoRefineStrengthEcs(AIHelpers::EcsOf(ch), p->ItemGrid);
 					}
 					break;
 				}
@@ -5766,7 +5780,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef ENABLE_DS_REFINE_ALL
 		case HEADER_CG_DRAGON_SOUL_REFINE_ALL: {
 			TPacketDragonSoulRefineAll* p = reinterpret_cast <TPacketDragonSoulRefineAll*>((void*)c_pData);
-			DSManager::instance().DoRefineAll(ch, p->subheader, p->type, p->grade);
+			DSManager::instance().DoRefineAllEcs(AIHelpers::EcsOf(ch), p->subheader, p->type, p->grade);
 		} break;
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__

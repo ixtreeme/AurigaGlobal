@@ -19,6 +19,9 @@
 #include "locale_service.h"
 #include "desc_client.h"
 #include "shop_manager.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "group_text_parse_tree.h"
 #include "shopEx.h"
 #include <boost/algorithm/string/predicate.hpp>
@@ -459,7 +462,7 @@ uint8_t bCount
 	if (bCount == item->GetCount())
 		ITEM_MANAGER::instance().RemoveItem(item, "SELL");
 	else
-		item->SetCount(item->GetCount() - bCount);
+		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount);
 
 	ch->PointChange(POINT_GOLD, dwPrice, false);
 }

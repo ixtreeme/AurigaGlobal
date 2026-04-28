@@ -108,8 +108,10 @@ namespace quest
 		bool		SIGUse(unsigned int pc, uint32_t sig_vnum, LPITEM item, bool bReceiveAll);
 		bool		TakeItem(unsigned int pc, unsigned int npc, LPITEM item);
 		LPITEM		GetCurrentItem();
+		entt::entity	GetCurrentItemEntity();
 		void		ClearCurrentItem();
 		void		SetCurrentItem(LPITEM item);
+		void		SetCurrentItem(entt::entity item);
 		void		AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event);
 		void		ClearServerTimer(const std::string& name, uint32_t arg);
 		void		ClearServerTimerNotCancel(const std::string& name, uint32_t arg);

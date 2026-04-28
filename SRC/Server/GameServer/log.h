@@ -2,6 +2,7 @@
 #define __INC_LOG_MANAGER_H__
 
 #include <SQL/AsyncSQL.h>
+#include <entt/entt.hpp>
 #include "any_function.h"
 #include "locale_service.h"
 
@@ -48,6 +49,7 @@ class LogManager : public singleton<LogManager>
 
 		void		ItemLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwItemID, const char * c_pszText, const char * c_pszHint, const char * c_pszIP, uint32_t dwVnum);
 		void		ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, const char * c_pszHint);
+		void		ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c_pszText, const char * c_pszHint);
 		void		ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint);
 
 		void		CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dw, const char * c_pszText, const char * c_pszHint, const char * c_pszIP);

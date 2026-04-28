@@ -23,6 +23,10 @@
 
 #include "affect.h"
 #include "unique_item.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
@@ -671,7 +675,9 @@ void Simulation(int level, int count, int prob_idx, LPCHARACTER ch)
 
 void UseFish(LPCHARACTER ch, LPITEM item)
 {
-	int idx = item->GetVnum() - fish_info[2].vnum+2;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	int idx = ItemSystem::GetItemVnum(itemEntity) - fish_info[2].vnum+2;
 
 	// ÇÇ¶ó1I »ç?ëoO°!, »i3AAÖ´Â°Ô 3A´N°Ç »ç?ëoO°!
 
@@ -680,14 +686,14 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 
 	int r = number(1, 100);
 
-	item->SetCount(item->GetCount()-1);
+	ItemSystem::ConsumeItemEcs(itemEntity);
 
 	if (r >= 70) {
-		ch->AutoGiveItem(fish_info[idx].dead_vnum);
+		ItemSystem::AutoGiveItemEcs(owner, fish_info[idx].dead_vnum);
 	}
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 	else {
-		ch->AutoGiveItem(FISH_BONE_VNUM);
+		ItemSystem::AutoGiveItemEcs(owner, FISH_BONE_VNUM);
 	}
 #else
 	else {
@@ -705,13 +711,13 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 #endif
 				break;
 			case USED_SHELLFISH:
-				ch->AutoGiveItem(SHELLFISH_VNUM);
+				ItemSystem::AutoGiveItemEcs(owner, SHELLFISH_VNUM);
 				break;
 			case USED_EARTHWARM:
-				ch->AutoGiveItem(EARTHWORM_VNUM);
+				ItemSystem::AutoGiveItemEcs(owner, EARTHWORM_VNUM);
 				break;
 			default:
-				ch->AutoGiveItem(fish_info[idx].used_table[u_index]);
+				ItemSystem::AutoGiveItemEcs(owner, fish_info[idx].used_table[u_index]);
 				break;
 		}
 	}
@@ -720,8 +726,10 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 
 void Grill(LPCHARACTER ch, LPITEM item)
 {
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
 	int idx = -1;
-	uint32_t vnum = item->GetVnum();
+	uint32_t vnum = ItemSystem::GetItemVnum(itemEntity);
 	if (vnum >= 27803 && vnum <= 27830)
 		return;
 	if (vnum >= 27833 && vnum <= 27860)
@@ -729,7 +737,7 @@ void Grill(LPCHARACTER ch, LPITEM item)
 	if (idx == -1)
 		return;
 
-	int count = item->GetCount();
+	int count = ItemSystem::GetItemCount(itemEntity);
 	
 #ifdef ENABLE_BATTLE_PASS
 	uint8_t bBattlePassId = ch->GetBattlePassId();
@@ -745,10 +753,37 @@ void Grill(LPCHARACTER ch, LPITEM item)
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 116, "%s", item->GetName());
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 116, "%s", ItemSystem::GetItemName(itemEntity));
 #endif
-	item->SetCount(0);
-	ch->AutoGiveItem(fish_info[idx].grill_vnum, count);
+	ItemSystem::DestroyItemEntityEcs(itemEntity, "FISH_GRILL");
+	ItemSystem::AutoGiveItemEcs(owner, fish_info[idx].grill_vnum, count);
+}
+
+
+bool UseFishEcs(entt::entity owner, entt::entity fishItem)
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	const uint32_t itemId = ItemSystem::GetItemID(fishItem);
+	LPITEM legacyItem = itemId != 0 ? ITEM_MANAGER::instance().Find(itemId) : nullptr;
+	if (!ch || !legacyItem)
+		return false;
+
+	UseFish(ch, legacyItem);
+	ItemSystem::SyncItemStateFromLegacy(fishItem);
+	return true;
+}
+
+bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
+{
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	const uint32_t itemId = ItemSystem::GetItemID(fishItem);
+	LPITEM legacyItem = itemId != 0 ? ITEM_MANAGER::instance().Find(itemId) : nullptr;
+	if (!ch || !legacyItem)
+		return false;
+
+	Grill(ch, legacyItem);
+	ItemSystem::SyncItemStateFromLegacy(fishItem);
+	return true;
 }
 
 bool RefinableRod(LPITEM rod)

@@ -24,6 +24,11 @@ struct ItemCount {
     int count { 0 };
 };
 
+struct ItemPrototypeMeta {
+    uint8_t type { 0 };
+    uint8_t subType { 0 };
+};
+
 struct ItemOwner {
     uint32_t ownerPID { 0 };
     uint32_t lastOwnerPID { 0 };
@@ -32,6 +37,7 @@ struct ItemOwner {
 
 struct ItemEquipped {
     bool equipped { false };
+    uint8_t slot { 0 };
 };
 
 struct ItemFlags {

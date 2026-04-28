@@ -8,8 +8,12 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "questmanager.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "text_file_loader.h"
 #include "item.h"
+#include "item_manager.h"
 #include "config.h"
 #include "target.h"
 #include "party.h"
@@ -802,7 +806,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(item);
+			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
 			return m_mapNPC[npc].OnTakeItem(*pPC);
 		}
 		else
@@ -831,7 +835,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(item);
+			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
 			/*
 			if (test_server)
 			{
@@ -876,7 +880,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(item);
+			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
 
 			return m_mapNPC[sig_vnum].OnSIGUse(*pPC, bReceiveAll);
 		}
@@ -1283,6 +1287,11 @@ namespace quest
 		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestItemPtr() : nullptr;
 	}
 
+	entt::entity CQuestManager::GetCurrentItemEntity()
+	{
+		return EntityFactory::CreateItemEntity(g_registry, GetCurrentItem());
+	}
+
 	void CQuestManager::ClearCurrentItem()
 	{
 		if (GetCurrentCharacterPtr())
@@ -1294,6 +1303,18 @@ namespace quest
 		LPCHARACTER ch = GetCurrentCharacterPtr();
 		if (ch)
 			ch->SetQuestItemPtr(item);
+	}
+
+	void CQuestManager::SetCurrentItem(entt::entity item)
+	{
+		if (item == entt::null)
+		{
+			ClearCurrentItem();
+			return;
+		}
+
+		const uint32_t id = ItemSystem::GetItemID(item);
+		SetCurrentItem(id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr);
 	}
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const

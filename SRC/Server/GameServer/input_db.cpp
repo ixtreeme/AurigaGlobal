@@ -54,6 +54,8 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/vital_components.hpp"
 #include "ecs/components/inventory_components.hpp"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -1700,12 +1702,13 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++p)
 	{
-		if (LPITEM staleItem = ITEM_MANAGER::instance().Find(p->id))
+		const entt::entity staleItem = ItemSystem::FindItemByID(p->id);
+		if (staleItem != entt::null && ItemSystem::IsValidItem(staleItem))
 		{
-			const auto* staleOwner = staleItem->GetOwner();
+			const entt::entity staleOwner = ItemSystem::GetItemOwner(staleItem);
 			const bool samePlayer =
-				(staleOwner && staleOwner->GetPlayerID() == ch->GetPlayerID()) ||
-				(staleItem->GetLastOwnerPID() == ch->GetPlayerID());
+				(staleOwner == AIHelpers::EcsOf(ch)) ||
+				(ItemSystem::GetItemLastOwnerPID(staleItem) == ch->GetPlayerID());
 
 #ifdef ENABLE_EXTRA_INVENTORY
 			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
@@ -1719,8 +1722,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 					p->id,
 					((ch)->GetPlayerID()),
 					p->window);
-				staleItem->SetSkipSave(true);
-				M2_DESTROY_ITEM(staleItem);
+				ItemSystem::DestroyLoadedDuplicateItem(staleItem);
 			}
 		}
 

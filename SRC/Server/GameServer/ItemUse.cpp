@@ -4,6 +4,9 @@
 
 #include "char_interface.hpp"
 #include "item.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 
 #include <algorithm>
 #include <stdint.h>
@@ -128,7 +131,7 @@ namespace item_change
 				if (item->GetCount() < 1)
 					return true;
 
-				item->SetCount(item->GetCount() - 1);
+				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
 				AddDragonCoinSafe(ch, 100);
 				return true;
 			}
@@ -192,7 +195,7 @@ namespace item_change
 					realUse = count;
 
 				 
-				item->SetCount(count - realUse);
+				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), realUse);
 
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
 				return true;

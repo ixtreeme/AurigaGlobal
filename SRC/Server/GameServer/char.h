@@ -1083,6 +1083,8 @@ public:
 	void			CalculateMoveDuration();
 	void			SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f);
 	uint32_t			GetCurrentMoveDuration() const { return m_dwMoveDuration; }
+	int32_t			GetCurrentDestX() const { return m_posDest.x; }
+	int32_t			GetCurrentDestY() const { return m_posDest.y; }
 	uint32_t			GetWalkStartTime() const { return m_dwWalkStartTime; }
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }

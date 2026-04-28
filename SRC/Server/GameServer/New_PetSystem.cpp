@@ -17,9 +17,32 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/components/movement_components.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/pet_mount_components.hpp"
 
 //#define DISABLE_TRADE_UNSUMMON // this disable the unsummon of pet when a excange/trade/shop/myshop/safebox windows is open, MAKE SURE to have set the items with vnum 55401/55402/55403/55404 with antiflag ANTI_SAFEBOX | ANTI_PKDROP | ANTI_DROP | ANTI_SELL | ANTI_GIVE | ANTI_STACK | ANTI_MYSHOP
 //USE AT OWN YOUR RISK								
+
+namespace
+{
+entt::entity FindSummonItemByVID(uint32_t vid)
+{
+	return ItemSystem::FindItemByVID(vid);
+}
+
+bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
+{
+	const entt::entity item = FindSummonItemByVID(vid);
+	return item != entt::null && ItemSystem::GetItemOwner(item) == AIHelpers::EcsOf(owner);
+}
+
+LPITEM LegacyItemFromEntity(entt::entity item)
+{
+	const uint32_t id = ItemSystem::GetItemID(item);
+	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+}
+}
 
 
 extern int passes_per_sec;
@@ -194,7 +217,7 @@ void CNewPetActor::ItemCubeFeed(int type)
 			LPITEM itemxp = m_pkOwner->GetInventoryItem(m_dwpetslotitem[i]);
 			if (!itemxp)
 				return;
-			if (itemxp->GetID() == ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetID() || m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
+			if (itemxp->GetID() == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
 				return;
 			if(type == 1)
 			{
@@ -503,7 +526,7 @@ bool CNewPetActor::IncreasePetEvolution()
 #endif
 			if (m_dwevolution == 3) 
 			{
-				LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+				LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 				if (pSummonItem != nullptr){
 					Unsummon();
 					Summon("Noname", pSummonItem, false);
@@ -554,7 +577,7 @@ void CNewPetActor:: IncreasePetBonus()
 		m_dwbonuspet[2][1] += float(number(1, 6));
 	}
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetBonus %d %d %d", m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		for (int b = 0; b < 3; b++){
 			pSummonItem->SetForceAttribute(b, 1, m_dwbonuspet[b][1]);
@@ -577,12 +600,12 @@ void CNewPetActor::SetLevel(uint32_t level)
 	m_dwlevel = level;
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);	
 	SetNextExp(m_pkChar->PetGetNextExp());
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem) {
 #ifdef ENABLE_NEW_PET_EDITS
 	pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
 #else
-	pSummonItem->SetSocket(1,m_dwlevel);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
 	}
 }
@@ -743,7 +766,7 @@ void CNewPetActor::UpdateTime(bool now)
 {
 	m_dwTimePet += 1;
 	if (m_dwTimePet >= 60 || now) {
-		LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 		if (pSummonItem != nullptr) {
 			lMinAge = get_global_time() - dwMinAge;
 			if (lMinAge >= 1296000 && m_dwskillslot[3] == -1) {
@@ -782,7 +805,7 @@ void CNewPetActor::UpdateTime(bool now)
 		m_dwTimePet = 0;
 		if (pSummonItem != nullptr){
 #ifdef ENABLE_NEW_PET_EDITS
-			pSummonItem->SetSocket(1, m_dwduration);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
 #else
 			pSummonItem->SetForceAttribute(3, 1, m_dwduration);
 			pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
@@ -806,11 +829,11 @@ void CNewPetActor::Unsummon()
 {
 	if (true == this->IsSummoned())
 	{
-		LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 
 		if (pSummonItem != nullptr)
 		{
-			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET level = %d, evolution=%d, exp=%d, expi=%d, bonus0=%d, bonus1=%d, bonus2=%d, skill0=%d, skill0lv= %d, skill1=%d, skill1lv= %d, skill2=%d, skill2lv= %d, skill3=%d, skill3lv= %d, duration=%d, tduration=%d WHERE id = %lu ", this->GetLevel(), this->m_dwevolution, this->GetExp(), this->GetExpI(), this->m_dwbonuspet[0][1], this->m_dwbonuspet[1][1], this->m_dwbonuspet[2][1], this->m_dwskillslot[0], this->m_dwskill[0], this->m_dwskillslot[1], this->m_dwskill[1], this->m_dwskillslot[2], this->m_dwskill[2], this->m_dwskillslot[3], this->m_dwskill[3], this->m_dwduration, this->m_dwtduration, ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetID()));
+			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET level = %d, evolution=%d, exp=%d, expi=%d, bonus0=%d, bonus1=%d, bonus2=%d, skill0=%d, skill0lv= %d, skill1=%d, skill1lv= %d, skill2=%d, skill2lv= %d, skill3=%d, skill3lv= %d, duration=%d, tduration=%d WHERE id = %lu ", this->GetLevel(), this->m_dwevolution, this->GetExp(), this->GetExpI(), this->m_dwbonuspet[0][1], this->m_dwbonuspet[1][1], this->m_dwbonuspet[2][1], this->m_dwskillslot[0], this->m_dwskill[0], this->m_dwskillslot[1], this->m_dwskill[1], this->m_dwskillslot[2], this->m_dwskill[2], this->m_dwskillslot[3], this->m_dwskill[3], this->m_dwduration, this->m_dwtduration, ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID()))));
 			this->ClearBuff();
 
 			for (int b = 0; b < 3; b++)
@@ -820,14 +843,14 @@ void CNewPetActor::Unsummon()
 			
 #ifdef ENABLE_NEW_PET_EDITS
 			pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
-			pSummonItem->SetSocket(1, m_dwduration);
-			pSummonItem->SetSocket(2, m_dwtduration);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
 #else
 			pSummonItem->SetForceAttribute(3, 1, m_dwduration);
 			pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
-			pSummonItem->SetSocket(1,m_dwlevel);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
-			pSummonItem->SetSocket(0, false);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, false);
 			pSummonItem->Lock(false);
 		}
 
@@ -1070,14 +1093,14 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	
 #ifdef ENABLE_NEW_PET_EDITS
 	pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
-	pSummonItem->SetSocket(1, m_dwduration);
-	pSummonItem->SetSocket(2, m_dwtduration);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
 #else
 	pSummonItem->SetForceAttribute(3, 1, m_dwduration);
 	pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
-	pSummonItem->SetSocket(1,m_dwlevel);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
-	pSummonItem->SetSocket(0, true);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, true);
 	pSummonItem->Lock(true);
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL2);
@@ -1223,15 +1246,13 @@ bool CNewPetActor::Update(uint32_t deltaTime)
 #ifdef DISABLE_TRADE_UNSUMMON
 	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
 	if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
-		|| NULL == ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())
-		|| ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetOwner() != this->GetOwner()
+		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 #else
 	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
 	//if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
 	if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
-		|| nullptr == ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())
-		|| ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID())->GetOwner() != this->GetOwner()
+		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 #endif
 	{
@@ -1290,6 +1311,19 @@ void CNewPetActor::SetSummonItem (LPITEM pItem)
 	m_dwSummonItemVID = pItem->GetVID();
 	m_dwSummonItemID = pItem->GetID();
 	m_dwSummonItemVnum = pItem->GetVnum();
+
+	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
+	if (owner != entt::null && g_registry.valid(owner)) {
+		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
+		pet.owner = owner;
+		pet.itemID = pItem->GetID();
+		pet.itemVID = pItem->GetVID();
+		pet.itemVnum = pItem->GetVnum();
+		pet.level = m_dwlevel;
+		pet.state = IsSummoned() ? 1u : 0u;
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), i));
+	}
 }
 
 void CNewPetActor::GiveBuff()
@@ -1984,7 +2018,7 @@ size_t CNewPetSystem::CountSummoned() const
 
 #ifdef ENABLE_COSTUME_PET
 void CNewPetActor::UpdatePetSkin() {
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
 		Summon("Noname", pSummonItem, false);
@@ -2025,7 +2059,7 @@ void CNewPetActor::ChangeName(const char * name) {
 	snprintf(query2, sizeof(query2), "UPDATE player.new_petsystem SET name='%s' WHERE name='%s' LIMIT 1;", name, m_name.c_str());
 	std::unique_ptr<SQLMsg> pRes(DBManager::instance().DirectQuery(query2));
 
-	LPITEM pSummonItem = ITEM_MANAGER::instance().FindByVID(this->GetSummonItemVID());
+	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
 		Summon("Noname", pSummonItem, false);

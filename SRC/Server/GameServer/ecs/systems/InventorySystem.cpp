@@ -71,7 +71,13 @@ void SyncItemEquipped(entt::entity e, bool equipped)
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped);
+	uint8_t slot = 0;
+	if (equipped) {
+		if (LPITEM item = LegacyItemOf(e); item && item->GetCell() >= INVENTORY_MAX_NUM)
+			slot = static_cast<uint8_t>(item->GetCell() - INVENTORY_MAX_NUM);
+	}
+
+	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped, slot);
 }
 
 void SyncCharacterEquipmentSlot(LPCHARACTER ch, uint8_t wearCell, LPITEM item)

@@ -25,6 +25,7 @@
 #include "dungeon.h"
 #include "ecs/quest_helpers.hpp"
 #include "ecs/events.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 
 #ifdef ENABLE_NEWSTUFF
@@ -649,15 +650,16 @@ namespace quest
 
 		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
-		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
+		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
+		const uint32_t itemId = ItemSystem::GetItemID(item);
 
-		if ( dwVnum >= 80003 && dwVnum <= 80007 )
+		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
 		{
-			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), itemId, QUEST, "quest: give_item2");
 		}
 
-		if (nullptr != item)
-			lua_pushnumber (L, item->GetID());
+		if (item != entt::null)
+			lua_pushnumber (L, itemId);
 		else
 			lua_pushnumber (L, 0);
 		return 1;
@@ -765,14 +767,15 @@ namespace quest
 
 		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
-		LPITEM item = ch->AutoGiveItem(dwVnum, icount);
+		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
+		const uint32_t itemId = ItemSystem::GetItemID(item);
 
-		if (nullptr != item)
+		if (item != entt::null)
 			CQuestManager::Instance().SetCurrentItem(item);
 
-		if ( dwVnum >= 80003 && dwVnum <= 80007 )
+		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
 		{
-			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), item->GetID(), QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), itemId, QUEST, "quest: give_item2");
 		}
 
 		return 0;

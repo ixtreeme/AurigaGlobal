@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "ActivitySystem.hpp"
+#include "ItemSystem.hpp"
 
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 
@@ -476,8 +477,8 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
 
         p.subheader = FISHING_SUBHEADER_NEW_CATCH_SUCCESS;
 
-        LPITEM pReward = ch->AutoGiveItem(itemVnum, 1, -1, false);
-        if (pReward)
+        const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), itemVnum, 1, -1, false);
+        if (reward != entt::null)
         {
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
@@ -490,7 +491,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
             TItemTable* pTable = ITEM_MANAGER::instance().GetTable(itemVnum);
             const char* szName = (pTable ? pTable->szLocaleName : "UNKNOWN_ITEM");
 #endif
-            const uint32_t rewardVnum = pReward ? pReward->GetVnum() : 0;
+            const uint32_t rewardVnum = ItemSystem::GetItemVnum(reward);
 
             if (rewardVnum == 611516)
             {

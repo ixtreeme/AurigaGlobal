@@ -19,8 +19,10 @@
 #include "../SpatialHelpers.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
+#include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
+#include "ItemSystem.hpp"
 #include "../../utils.h"
 #include "../../config.h"
 #include "../../constants.h"
@@ -5895,7 +5897,7 @@ void CHARACTER::UseArrow(LPITEM pkArrow, uint32_t dwArrowCount)
 #if !defined(__INFINITE_ARROW__)
 	iCount = iCount - MIN(iCount, dwArrowCount);
 #endif
-	pkArrow->SetCount(iCount);
+	ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, pkArrow), iCount);
 
 	if (iCount == 0)
 	{

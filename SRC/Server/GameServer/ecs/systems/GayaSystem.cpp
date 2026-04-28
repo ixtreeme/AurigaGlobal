@@ -9,6 +9,8 @@
 #include "../../locale_service.h"
 #include "../../questmanager.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
+#include "ItemSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -434,7 +436,7 @@ void CraftItems(entt::entity pc, int slot)
 
 	ch->RemoveSpecifyItem(ID_Glimmerstone, Count_Glimmerstone);
 	ch->PointChange(POINT_GOLD, -Cost_Gaya_Yang);
-	item->SetCount(item->GetCount() - 1);
+	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaCheck");
 	MarkDirty(pc);
 }

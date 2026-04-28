@@ -4,6 +4,7 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "item.h"
 #include "item_manager.h"
+#include "ecs/systems/ItemSystem.hpp"
 #include "over9refine.h"
 #include "log.h"
 #include "db.h"
@@ -23,14 +24,8 @@ namespace quest
 
 	ALUA(item_get_cell)
 	{
-		CQuestManager& q = CQuestManager::instance();
-
-		if (q.GetCurrentItem())
-		{
-			lua_pushnumber(L, q.GetCurrentItem()->GetCell());
-		}
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemCell(item) : 0);
 		return 1;
 	}
 
@@ -44,11 +39,9 @@ namespace quest
 		uint32_t cell = (uint32_t) lua_tonumber(L, 1);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
+		const entt::entity item = ItemSystem::GetInventoryItem(chEntity, cell);
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ch->GetInventoryItem(cell) : nullptr;
-
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			return 1;
 		}
@@ -67,9 +60,9 @@ namespace quest
 			return 1;
 		}
 		uint32_t id = (uint32_t) lua_tonumber(L, 1);
-		LPITEM item = ITEM_MANAGER::instance().Find(id);
+		const entt::entity item = ItemSystem::FindItemByID(CQuestManager::instance().GetCurrentPCEntity(), id);
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			return 1;
 		}
@@ -82,26 +75,20 @@ namespace quest
 
 	ALUA(item_get_id)
 	{
-		CQuestManager& q = CQuestManager::instance();
-
-		if (q.GetCurrentItem())
-		{
-			lua_pushnumber(L, q.GetCurrentItem()->GetID());
-		}
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemID(item) : 0);
 		return 1;
 	}
 
 	ALUA(item_remove)
 	{
 		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-		if (item != nullptr) {
-			if (q.GetCurrentCharacterPtr() == item->GetOwner()) {
-				ITEM_MANAGER::instance().RemoveItem(item);
+		const entt::entity item = q.GetCurrentItemEntity();
+		if (ItemSystem::IsValidItem(item)) {
+			if (q.GetCurrentPCEntity() == ItemSystem::GetItemOwner(item)) {
+				ItemSystem::ConsumeItem(item, ItemSystem::GetItemCount(item));
 			} else {
-				sys_err("Tried to remove invalid item %p", get_pointer(item));
+				sys_err("Tried to remove invalid item entity %u", static_cast<uint32_t>(item));
 			}
 			q.ClearCurrentItem();
 		}
@@ -111,14 +98,11 @@ namespace quest
 
 	ALUA(item_get_socket)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		if (q.GetCurrentItem() && lua_isnumber(L, 1))
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (ItemSystem::IsValidItem(item) && lua_isnumber(L, 1))
 		{
 			int idx = (int) lua_tonumber(L, 1);
-			if (idx < 0 || idx >= ITEM_SOCKET_MAX_NUM)
-				lua_pushnumber(L,0);
-			else
-				lua_pushnumber(L, q.GetCurrentItem()->GetSocket(idx));
+			lua_pushnumber(L, ItemSystem::GetItemSocket(item, idx));
 		}
 		else
 		{
@@ -129,34 +113,26 @@ namespace quest
 
 	ALUA(item_set_socket)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		if (q.GetCurrentItem() && lua_isnumber(L,1) && lua_isnumber(L,2))
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (ItemSystem::IsValidItem(item) && lua_isnumber(L,1) && lua_isnumber(L,2))
 		{
 			int idx = (int) lua_tonumber(L, 1);
 			int value = (int) lua_tonumber(L, 2);
-			if (idx >=0 && idx < ITEM_SOCKET_MAX_NUM)
-				q.GetCurrentItem()->SetSocket(idx, value);
+			ItemSystem::SetItemSocketEcs(item, idx, value);
 		}
 		return 0;
 	}
 
 	ALUA(item_get_vnum)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetVnum());
-		else
-			lua_pushnumber(L, 0);
-
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemVnum(item) : 0);
 		return 1;
 	}
 
 	ALUA(item_has_flag)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
 		if (!lua_isnumber(L, 1))
 		{
@@ -165,24 +141,23 @@ namespace quest
 			return 1;
 		}
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
 		int32_t lCheckFlag = (int32_t) lua_tonumber(L, 1);
-		lua_pushboolean(L, IS_SET(item->GetFlag(), lCheckFlag));
+		lua_pushboolean(L, IS_SET(ItemSystem::GetItemFlags(item), lCheckFlag));
 
 		return 1;
 	}
 
 	ALUA(item_get_value)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber(L, 0);
 			return 1;
@@ -203,17 +178,16 @@ namespace quest
 			lua_pushnumber(L, 0);
 		}
 		else
-			lua_pushnumber(L, item->GetValue(index));
+			lua_pushnumber(L, ItemSystem::GetItemValue(item, index));
 
 		return 1;
 	}
 
 	ALUA(item_set_value)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber(L, 0);
 			return 1;
@@ -226,7 +200,8 @@ namespace quest
 			return 1;
 		}
 
-		item->SetForceAttribute(
+		ItemSystem::SetItemForceAttributeEcs(
+			item,
 			lua_tonumber(L, 1),		// index
 			lua_tonumber(L, 2),		// apply type
 			lua_tonumber(L, 3)		// apply value
@@ -237,77 +212,45 @@ namespace quest
 
 	ALUA(item_get_name)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-		if (item)
-			lua_pushstring(L, item->GetName());
-		else
-			lua_pushstring(L, "");
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushstring(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemName(item) : "");
 
 		return 1;
 	}
 
 	ALUA(item_get_size)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetSize());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemSize(item) : 0);
 
 		return 1;
 	}
 
 	ALUA(item_get_count)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetCount());
-		else
-			lua_pushnumber(L, 0);
-
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemCount(item) : 0);
 		return 1;
 	}
 
 	ALUA(item_get_type)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetType());
-		else
-			lua_pushnumber(L, 0);
-
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemType(item) : 0);
 		return 1;
 	}
 
 	ALUA(item_get_sub_type)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetSubType());
-		else
-			lua_pushnumber(L, 0);
-
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemSubType(item) : 0);
 		return 1;
 	}
 
 	ALUA(item_get_refine_vnum)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetRefinedVnum());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemRefineVnum(item) : 0);
 
 		return 1;
 	}
@@ -333,13 +276,8 @@ namespace quest
 
 	ALUA(item_get_level)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetRefineLevel());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemRefineLevel(item) : 0);
 
 		return 1;
 	}
@@ -394,15 +332,16 @@ namespace quest
 
 	ALUA(item_get_level_limit)
 	{
-		CQuestManager& q = CQuestManager::instance();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		if (q.GetCurrentItem())
+		if (ItemSystem::IsValidItem(item))
 		{
-			if (q.GetCurrentItem()->GetType() != ITEM_WEAPON && q.GetCurrentItem()->GetType() != ITEM_ARMOR)
+			const uint8_t type = ItemSystem::GetItemType(item);
+			if (type != ITEM_WEAPON && type != ITEM_ARMOR)
 			{
 				return 0;
 			}
-			lua_pushnumber(L, q.GetCurrentItem() -> GetLevelLimit());
+			lua_pushnumber(L, ItemSystem::GetItemLevelLimit(item));
 			return 1;
 		}
 		return 0;
@@ -412,10 +351,9 @@ namespace quest
 	ALUA (item_pet_death)
 	{
 		CQuestManager& q = CQuestManager::instance();
-		uint32_t itemid = 0;
-		if (q.GetCurrentItem())
+		uint32_t itemid = ItemSystem::GetItemID(q.GetCurrentItemEntity());
+		if (itemid != 0)
 		{
-			itemid = q.GetCurrentItem()->GetID();
 			char szQuery1[1024];
 			snprintf(szQuery1, sizeof(szQuery1), "SELECT duration FROM new_petsystem WHERE id = %u LIMIT 1", itemid);
 			std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
@@ -437,10 +375,9 @@ namespace quest
 	ALUA (item_pet_revive)
 	{
 		CQuestManager& q = CQuestManager::instance();
-		uint32_t itemid = 0;
-		if (q.GetCurrentItem())
+		uint32_t itemid = ItemSystem::GetItemID(q.GetCurrentItemEntity());
+		if (itemid != 0)
 		{
-			itemid = q.GetCurrentItem()->GetID();
 			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", itemid));
 		}
 		return 0;
@@ -498,21 +435,15 @@ namespace quest
 #ifdef ENABLE_NEWSTUFF
 	ALUA(item_get_wearflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetWearFlag());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemWearFlags(item) : 0);
 
 		return 1;
 	}
 
 	ALUA(item_has_wearflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
 		if (!lua_isnumber(L, 1))
 		{
@@ -521,32 +452,25 @@ namespace quest
 			return 1;
 		}
 
-		if (item)
-			lua_pushboolean(L, IS_SET(item->GetWearFlag(), (int32_t)lua_tonumber(L, 1)));
+		if (ItemSystem::IsValidItem(item))
+			lua_pushboolean(L, IS_SET(ItemSystem::GetItemWearFlags(item), (int32_t)lua_tonumber(L, 1)));
 		else
 			lua_pushboolean(L, false);
 
 		return 1;
 	}
 
-
 	ALUA(item_get_antiflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetAntiFlag());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemAntiFlags(item) : 0);
 
 		return 1;
 	}
 
 	ALUA(item_has_antiflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
 		if (!lua_isnumber(L, 1))
 		{
@@ -555,32 +479,25 @@ namespace quest
 			return 1;
 		}
 
-		if (item)
-			lua_pushboolean(L, IS_SET(item->GetAntiFlag(), static_cast<uint32_t>(lua_tonumber(L, 1))));
+		if (ItemSystem::IsValidItem(item))
+			lua_pushboolean(L, IS_SET(ItemSystem::GetItemAntiFlags(item), static_cast<uint32_t>(lua_tonumber(L, 1))));
 		else
 			lua_pushboolean(L, false);
 
 		return 1;
 	}
 
-
 	ALUA(item_get_immuneflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if (item)
-			lua_pushnumber(L, item->GetImmuneFlag());
-		else
-			lua_pushnumber(L, 0);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemImmuneFlags(item) : 0);
 
 		return 1;
 	}
 
 	ALUA(item_has_immuneflag0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
 		if (!lua_isnumber(L, 1))
 		{
@@ -589,8 +506,8 @@ namespace quest
 			return 1;
 		}
 
-		if (item)
-			lua_pushboolean(L, IS_SET(item->GetImmuneFlag(), static_cast<uint32_t>(lua_tonumber(L, 1))));
+		if (ItemSystem::IsValidItem(item))
+			lua_pushboolean(L, IS_SET(ItemSystem::GetItemImmuneFlags(item), static_cast<uint32_t>(lua_tonumber(L, 1))));
 		else
 			lua_pushboolean(L, false);
 
@@ -608,6 +525,7 @@ namespace quest
 		NS_ITEM_GETMODE0(m_mode);
 
 		CQuestManager& q = CQuestManager::instance();
+		const entt::entity itemEntity = q.GetCurrentItemEntity();
 		LPITEM item = q.GetCurrentItem();
 
 		if(item)
@@ -623,7 +541,7 @@ namespace quest
 				if (m_count>m_reqsf && m_reqsf!=0)
 					m_count = m_reqsf;
 				for (int i=0; i<m_count; i++)
-					item->AddAttribute();
+					ItemSystem::AddItemAttributeEcs(itemEntity);
 			}
 			if (m_mode==2 || m_mode==0)
 			{
@@ -642,12 +560,13 @@ namespace quest
 		NS_ITEM_GETMODE0(m_mode);
 
 		CQuestManager& q = CQuestManager::instance();
+		const entt::entity itemEntity = q.GetCurrentItemEntity();
 		LPITEM item = q.GetCurrentItem();
 
 		if(item)
 		{
 			if (m_mode==0 || m_mode==1)
-				item->ChangeAttribute();
+				ItemSystem::ChangeItemAttributeEcs(itemEntity);
 			if (m_mode==0 || m_mode==2)
 				item->ChangeRareAttribute();
 		}
@@ -658,8 +577,9 @@ namespace quest
 	{
 		NS_ITEM_GETMODE0(m_mode);
 
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!ItemSystem::IsValidItem(item))
+			return 0;
 
 		int m_start = 0;
 		int m_end = ITEM_ATTRIBUTE_MAX_NUM;
@@ -670,7 +590,7 @@ namespace quest
 			m_start = ITEM_ATTRIBUTE_NORM_NUM;
 
 		for (int i=m_start; i<m_end; i++)
-			item->SetForceAttribute(i, 0, 0);
+			ItemSystem::ClearItemAttribute(item, i);
 		return 0;
 	}
 
@@ -708,11 +628,9 @@ namespace quest
 
 	ALUA(item_get_attr0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		TPlayerItemAttribute m_attr;
-		if (item)
+		if (ItemSystem::IsValidItem(item))
 		{
 			// it returns a table like:
 			// {id, value, id, value, id, value, id, value, id, value, id, value, id, value}
@@ -720,12 +638,11 @@ namespace quest
 			lua_newtable(L);
 			for (int i=0; i<ITEM_ATTRIBUTE_MAX_NUM; i++)
 			{
-				m_attr = item->GetAttribute(i);
 				// push type
-				lua_pushnumber(L, m_attr.bType);
+				lua_pushnumber(L, ItemSystem::GetItemAttributeType(item, i));
 				lua_rawseti(L, -2, (i*2)+1);
 				// push value
-				lua_pushnumber(L, m_attr.sValue);
+				lua_pushnumber(L, ItemSystem::GetItemAttributeValue(item, i));
 				lua_rawseti(L, -2, (i*2)+2);
 			}
 		}
@@ -740,8 +657,9 @@ namespace quest
 		if (!lua_istable(L, 1))
 			return 0;
 
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!ItemSystem::IsValidItem(item))
+			return 0;
 
 		int m_attr[ITEM_ATTRIBUTE_MAX_NUM*2] = {0};
 		int m_idx = 0;
@@ -754,7 +672,7 @@ namespace quest
 		}
 		// end
 		for (int i=0; i<ITEM_ATTRIBUTE_MAX_NUM; i++)
-			item->SetForceAttribute(i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
+			ItemSystem::SetItemForceAttributeEcs(item, i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
 		return 0;
 	}
 
@@ -763,11 +681,10 @@ namespace quest
 		if(!lua_isnumber(L, 1))
 			return 0;
 
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		if (item)
-			item->SetCount(lua_tonumber(L, 1));
+		if (ItemSystem::IsValidItem(item))
+			ItemSystem::SetItemCountEcs(item, lua_tonumber(L, 1));
 			//item->SetCount(MINMAX(1, lua_tonumber(L, 1), g_bItemCountLimit));
 
 		return 0;
@@ -796,10 +713,9 @@ namespace quest
 
 	ALUA(item_is_available0)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		lua_pushboolean(L, item!= nullptr);
+		lua_pushboolean(L, ItemSystem::IsValidItem(item));
 		return 1;
 	}
 

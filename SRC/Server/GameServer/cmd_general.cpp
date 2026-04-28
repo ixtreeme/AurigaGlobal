@@ -12,6 +12,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "motion.h"
 #include "packet.h"
 #include "affect.h"
@@ -237,7 +240,7 @@ ACMD(do_daily_reward_get_reward){
 		
 		str_to_number(item, items.c_str());
 		str_to_number(count, counts.c_str());
-		ch->AutoGiveItem(item, count);
+		ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), item, count);
 		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", ((ch)->GetPlayerID())));
 	}
 #ifdef TEXTS_IMPROVEMENT
@@ -254,9 +257,10 @@ ACMD(do_user_horse_back)
 	CMountSystem* mountSystem = ch->GetMountSystem();
 	if (mountSystem) {
 		if ((mountSystem->CountSummoned() > 0) || (ch->GetMountVnum())) {
-			LPITEM pkItem = ch->GetWear(WEAR_COSTUME_MOUNT);
-			if (pkItem) {
-				ch->UnequipItem(pkItem);
+			const entt::entity owner = AIHelpers::EcsOf(ch);
+			const entt::entity item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
+			if (item != entt::null) {
+				ItemSystem::UnequipItemEcs(owner, item);
 				return;
 			}
 		}
@@ -3120,8 +3124,8 @@ ACMD(do_stonecraft)
 			return;
 		}
 
-		LPITEM reward = ch->AutoGiveItem(STONE_CRAFT_REWARD_VNUM, 1);
-		if (!reward)
+		const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), STONE_CRAFT_REWARD_VNUM, 1);
+		if (reward == entt::null)
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
@@ -3172,8 +3176,8 @@ ACMD(do_stonecraft)
 		}
 
 
-		LPITEM reward = ch->AutoGiveItem(STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
-		if (!reward)
+		const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
+		if (reward == entt::null)
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
@@ -4122,7 +4126,7 @@ ACMD(do_gr_deposit_item)
 	if (count >= item->GetCount())
 		ITEM_MANAGER::instance().RemoveItem(item);
 	else
-		item->SetCount(item->GetCount() - count);
+		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
 
 	g->RenewalDepositItem(ch, vnum, count, false);
 	g->SendRenewalInfoTo(ch);

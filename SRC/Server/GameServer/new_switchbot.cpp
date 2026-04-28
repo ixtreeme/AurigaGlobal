@@ -10,6 +10,9 @@
 #include "char_interface.hpp"
 #include "config.h"
 #include "p2p.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
 #endif
@@ -475,7 +478,7 @@ void CSwitchbot::SwitchItems()
 					LPITEM tpkItem = pkOwner->FindSpecifyItem(86060, true);
 					if (tpkItem && !stop)
 					{
-						tpkItem->SetCount(tpkItem->GetCount() - SWITCHBOT_PRICE_AMOUNT);
+						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
 #ifdef ENABLE_RANKING
 						pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
 #endif
@@ -503,7 +506,7 @@ void CSwitchbot::SwitchItems()
 							}
 						}
 #endif
-						pkItem->ChangeAttribute();
+						ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
 						SendItemUpdate(pkOwner, bSlot, pkItem);
 
 
@@ -551,7 +554,7 @@ void CSwitchbot::SwitchItems()
 									LPITEM tpkItem = pkOwner->FindSpecifyItem(itemVnum, true);
 									if (tpkItem && !stop)
 									{
-										tpkItem->SetCount(tpkItem->GetCount() - SWITCHBOT_PRICE_AMOUNT);
+										ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
 #ifdef ENABLE_RANKING
 										if (tpkItem->GetVnum() == 86051 || tpkItem->GetVnum() == 88965)
 											pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
@@ -583,7 +586,7 @@ void CSwitchbot::SwitchItems()
 											}
 										}
 #endif
-										pkItem->ChangeAttribute();
+										ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
 										SendItemUpdate(pkOwner, bSlot, pkItem);
 										break;
 									}
@@ -603,7 +606,7 @@ void CSwitchbot::SwitchItems()
 						LPITEM tpkItem = pkOwner->FindSpecifyItem(itemVnum, true);
 						if (tpkItem && !stop)
 						{
-							tpkItem->SetCount(tpkItem->GetCount() - SWITCHBOT_PRICE_AMOUNT);
+							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
 #ifdef ENABLE_RANKING
 							if (tpkItem->GetVnum() == 86051 || tpkItem->GetVnum() == 88965)
 								pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
@@ -635,7 +638,7 @@ void CSwitchbot::SwitchItems()
 								}
 							}
 #endif
-							pkItem->ChangeAttribute();
+							ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
 							SendItemUpdate(pkOwner, bSlot, pkItem);
 							break;
 						}

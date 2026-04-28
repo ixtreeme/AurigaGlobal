@@ -5,6 +5,7 @@
 
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "desc.h"
 #include "item.h"
 
@@ -88,6 +89,21 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 	        nullptr == c_pszText ? "" : c_pszText,
 		   	c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "",
 		   	item->GetOriginalVnum());
+}
+
+void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c_pszText, const char * c_pszHint)
+{
+	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
+	if (nullptr == ch || item == entt::null || !ItemSystem::IsValidItem(item))
+	{
+		sys_err("character or item entity nil (ch %p item %u text %s)", get_pointer(ch), static_cast<uint32_t>(item), c_pszText);
+		return;
+	}
+
+	ItemLog(((ch)->GetPlayerID()), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemID(item),
+	        nullptr == c_pszText ? "" : c_pszText,
+		   	c_pszHint, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "",
+		   	ItemSystem::GetItemOriginalVnum(item));
 }
 
 void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)

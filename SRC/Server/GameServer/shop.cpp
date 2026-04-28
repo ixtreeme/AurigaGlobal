@@ -18,6 +18,8 @@
 #include "mob_manager.h"
 #include "locale_service.h"
 #include "battle_pass.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 //#define ENABLE_SHOP_BLACKLIST
 /* ------------------------------------------------------------------------------------ */
@@ -252,13 +254,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	SHOP_ITEM& r_item = m_itemVector[pos];
 	if (!ismultiple) {
-		LPITEM pkSelectedItem = ITEM_MANAGER::instance().Find(r_item.itemid);
+		const entt::entity selectedItem = ItemSystem::FindItemByID(r_item.itemid);
 
 		if (IsPCShop()) {
-			if (!pkSelectedItem) {
+			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
 				sys_log(0, "Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:%d SellerPID:%d", ch->GetPlayerID(), m_pkPC->GetPlayerID());
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
-			} else if ((pkSelectedItem->GetOwner() != m_pkPC)) {
+			} else if (ItemSystem::GetItemOwner(selectedItem) != AIHelpers::EcsOf(m_pkPC)) {
 				sys_log(0, "Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:%d SellerPID:%d", ch->GetPlayerID(), m_pkPC->GetPlayerID());
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			}

@@ -384,6 +384,14 @@ ecs::ItemCount MakeItemCount(LPITEM item)
     return ecs::ItemCount { item->GetCount() };
 }
 
+ecs::ItemPrototypeMeta MakeItemPrototypeMeta(LPITEM item)
+{
+    return ecs::ItemPrototypeMeta {
+        item->GetType(),
+        item->GetSubType(),
+    };
+}
+
 ecs::ItemOwner MakeItemOwner(LPITEM item)
 {
     uint32_t ownerPID = 0;
@@ -401,7 +409,12 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
 
 ecs::ItemEquipped MakeItemEquipped(LPITEM item)
 {
-    return ecs::ItemEquipped { item->IsEquipped() };
+    uint8_t slot = 0;
+    if (item->IsEquipped() && item->GetCell() >= INVENTORY_MAX_NUM) {
+        slot = static_cast<uint8_t>(item->GetCell() - INVENTORY_MAX_NUM);
+    }
+
+    return ecs::ItemEquipped { item->IsEquipped(), slot };
 }
 
 ecs::ItemFlags MakeItemFlags(LPITEM item)
@@ -433,6 +446,7 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
     reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
     reg.emplace_or_replace<ecs::ItemCount>(entity, MakeItemCount(item));
+    reg.emplace_or_replace<ecs::ItemPrototypeMeta>(entity, MakeItemPrototypeMeta(item));
     reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
     reg.emplace_or_replace<ecs::ItemEquipped>(entity, MakeItemEquipped(item));
     reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
@@ -604,12 +618,13 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
     const entt::entity existing = CItemRegistry::Instance().Find(itemID);
     if (existing != entt::null && reg.valid(existing)) {
         SyncItemEntity(reg, existing, item);
+        CItemRegistry::Instance().Register(itemID, item->GetVID(), existing);
         return existing;
     }
 
     const entt::entity entity = reg.create();
     SyncItemEntity(reg, entity, item);
-    CItemRegistry::Instance().Register(itemID, entity);
+    CItemRegistry::Instance().Register(itemID, item->GetVID(), entity);
     return entity;
 }
 

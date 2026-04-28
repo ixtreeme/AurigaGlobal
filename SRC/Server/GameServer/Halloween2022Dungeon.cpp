@@ -17,6 +17,9 @@
 #include "item_manager.h"
 #include "questmanager.h"
 #include "event.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 
 namespace
 {
@@ -284,10 +287,11 @@ namespace
     {
         if (!item)
             return;
-        if (item->GetCount() > 1)
-            item->SetCount(item->GetCount() - 1);
+        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+        if (ItemSystem::GetItemCount(itemEntity) > 1)
+            ItemSystem::ConsumeItemEcs(itemEntity);
         else
-            ITEM_MANAGER::instance().RemoveItem(item, why);
+            ItemSystem::DestroyItemEntityEcs(itemEntity, why);
     }
 
     void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)

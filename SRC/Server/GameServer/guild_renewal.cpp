@@ -15,6 +15,9 @@
 #include "item.h"
 #include "item_manager.h"
 #include "utils.h"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/EntityFactory.hpp"
 
 #include <memory>
 #include <cstdio>
@@ -618,7 +621,7 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
-		it->SetCount(newCount);
+		ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, it), newCount);
 	}
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -632,7 +635,7 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
-		it->SetCount(newCount);
+		ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, it), newCount);
 	}
 #endif
 
@@ -829,7 +832,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	}
 
 	// Levons a jtkostl
-	item->SetCount(haveCount - allowed);
+	ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item), haveCount - allowed);
 
 	// Befizets nyilvntarts (sszestve + rszletes bonts memriban)
 	auto& c = GetCache(guildId);
