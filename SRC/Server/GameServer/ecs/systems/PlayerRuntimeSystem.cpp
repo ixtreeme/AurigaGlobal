@@ -1846,7 +1846,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     LPITEM pkItem = GetItem(tPos);
     if (!pkItem)
         return;
-    else if ((pkItem->GetCell() >= INVENTORY_MAX_NUM) || (pkItem->IsEquipped()) || (tPos.IsBeltInventoryPosition()) || (pkItem->IsDragonSoul()))
+    else if ((ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= INVENTORY_MAX_NUM) || (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem))) || (tPos.IsBeltInventoryPosition()) || (pkItem->IsDragonSoul()))
         return;
     else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_COSTUME) && (m_bAcceCombination))
         return;
@@ -2390,7 +2390,7 @@ void CHARACTER::EditMyInven()
             continue;
 
         v.push_back(myitems);
-        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), myitems->GetCell()));
+        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, myitems))));
         myitems->RemoveFromCharacter();
     }
     std::sort(v.begin(), v.end(), SortMyItems);
@@ -2511,7 +2511,7 @@ void CHARACTER::EditMyExtraInven()
             continue;
 
         v.push_back(myitems);
-        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), myitems->GetCell()));
+        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, myitems))));
         myitems->RemoveFromCharacter();
     }
     std::sort(v.begin(), v.end(), SortMyExtraItems);
@@ -4381,7 +4381,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
                 return;
             }
 
-            if (pkItem->IsEquipped() == true)
+            if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem)) == true)
             {
 #ifdef TEXTS_IMPROVEMENT
                 ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 541, "");
