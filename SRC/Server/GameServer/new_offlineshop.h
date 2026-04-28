@@ -12,6 +12,9 @@
 #define AS_GUESTID(some) (some)
 #endif
 #include <common/service.h>
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 template <class T>
 void ZeroObject(T& obj){
@@ -63,7 +66,7 @@ namespace offlineshop
 		for (const auto limit : proto->aLimits) {
 			if (limit.bType == LIMIT_REAL_TIME)
 				return offlineshop::ExpirationType::EXPIRE_REAL_TIME;
-			else if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE && item->GetSocket(1) != 0)
+			else if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) != 0)
 				return offlineshop::ExpirationType::EXPIRE_REAL_TIME_FIRST_USE;
 		} return offlineshop::ExpirationType::EXPIRE_NONE;
 	}
