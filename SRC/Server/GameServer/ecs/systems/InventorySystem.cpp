@@ -56,8 +56,8 @@ void SyncItemLocation(entt::entity e, LPITEM item)
 		return;
 
 	g_registry.emplace_or_replace<ecs::ItemLocation>(e,
-		static_cast<uint8_t>(item->GetWindow()),
-		static_cast<uint16_t>(item->GetCell()));
+		static_cast<uint8_t>(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, item))),
+		static_cast<uint16_t>(ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item))));
 }
 
 void SyncItemOwner(entt::entity e, uint32_t ownerPID, uint32_t lastOwnerPID, uint32_t ownershipPID)
@@ -75,8 +75,8 @@ void SyncItemEquipped(entt::entity e, bool equipped)
 
 	uint8_t slot = 0;
 	if (equipped) {
-		if (LPITEM item = LegacyItemOf(e); item && item->GetCell() >= INVENTORY_MAX_NUM)
-			slot = static_cast<uint8_t>(item->GetCell() - INVENTORY_MAX_NUM);
+		if (LPITEM item = LegacyItemOf(e); item && ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) >= INVENTORY_MAX_NUM)
+			slot = static_cast<uint8_t>(ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) - INVENTORY_MAX_NUM);
 	}
 
 	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped, slot);
