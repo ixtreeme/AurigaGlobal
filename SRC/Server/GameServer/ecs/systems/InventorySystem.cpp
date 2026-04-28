@@ -334,7 +334,7 @@ void CHARACTER::ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos)
 		{
 			TQuickslot slot;
 			slot.type = bType;
-			slot.pos = pItem->GetCell();
+			slot.pos = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 			SetQuickslot(i, slot);
 			break;
