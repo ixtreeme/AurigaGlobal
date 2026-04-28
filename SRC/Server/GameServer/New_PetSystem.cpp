@@ -309,7 +309,8 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 		}
 	}
 	
-	bookItem->SetCount(bookItem->GetCount() - 1);
+	ItemSystem::ConsumeItemEcs(
+		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
 	
 	if (idx == 0)
 		m_dwskillslot[iSlot] = iType;
@@ -435,7 +436,8 @@ bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem)
 		}
 	}
 	
-	bookItem->SetCount(bookItem->GetCount() - 1);
+	ItemSystem::ConsumeItemEcs(
+		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
 	
 	if (number(1, 100) < 30) {
 #ifdef TEXTS_IMPROVEMENT
