@@ -23,6 +23,9 @@
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include <boost/mpl/min_max.hpp>
 
@@ -878,7 +881,9 @@ namespace offlineshop
 			TItemPos pos;
 			if (!ch->CanTakeInventoryItem(pkItem, &pos)) 
 			{
-				M2_DESTROY_ITEM(pkItem);
+				ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, pkItem),
+			"OFFLINESHOP_TEMP");
 
 				CShopSafebox* pSafebox = ch->GetShopSafebox()? ch->GetShopSafebox() : GetShopSafeboxByOwnerID(((ch)->GetPlayerID()));
 				if (!pSafebox)
@@ -2164,7 +2169,10 @@ namespace offlineshop
 		{
 			TShopItemInfo& rShopItem = vec[i];
 			LPITEM item = ch->GetItem(rShopItem.pos);
-			M2_DESTROY_ITEM(item->RemoveFromCharacter());
+			LPITEM removed = item->RemoveFromCharacter();
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, removed),
+			"OFFLINESHOP_SELL");
 		}
 
 		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ((ch)->GetName()));
@@ -2648,7 +2656,10 @@ namespace offlineshop
 		LogManager::instance().OfflineshopLog(((ch)->GetPlayerID()), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, pkItem->GetID());
 #endif
 
-		M2_DESTROY_ITEM( pkItem->RemoveFromCharacter() );
+		LPITEM removed = pkItem->RemoveFromCharacter();
+	ItemSystem::DestroyItemEntityEcs(
+		EntityFactory::CreateItemEntity(g_registry, removed),
+		"OFFLINESHOP_SELL");
 
 		SendShopAddItemDBPacket(((ch)->GetPlayerID()), itemInfo);
 		return true;
@@ -3155,7 +3166,9 @@ namespace offlineshop
 		TItemPos itemPos;
 		if (!ch->CanTakeInventoryItem(pkItem, &itemPos))
 		{
-			M2_DESTROY_ITEM(pkItem);
+			ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, pkItem),
+			"OFFLINESHOP_TEMP");
 			return false;
 		}
 
@@ -3416,7 +3429,10 @@ namespace offlineshop
 #endif
 
 		//destroy/remove/send
-		M2_DESTROY_ITEM(item->RemoveFromCharacter());
+		LPITEM removed = item->RemoveFromCharacter();
+		ItemSystem::DestroyItemEntityEcs(
+			EntityFactory::CreateItemEntity(g_registry, removed),
+			"OFFLINESHOP_SELL");
 		SendAuctionCreateDBPacket(auction);
 		return true;
 	}
