@@ -65,7 +65,7 @@ namespace item_change
 		if (CVikingDungeon::instance().OnUseItem(ch, item))
 			return true;
 #endif
-		switch (item->GetVnum())
+		switch (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
 		{
 			//-----------------------------------------//
 			//        EZT A CHAR_ITEM.CPP KEZELI       //
@@ -76,10 +76,10 @@ namespace item_change
 			//	if (!CheckCanUseNow(ch))
 			//		return true;
 
-			//	if (item->GetCount() < 1)
+			//	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < 1)
 			//		return true;
 
-			//	item->SetCount(item->GetCount() - 1);
+			//	item->SetCount(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) - 1);
 			//	AddDragonCoinSafe(ch, 1);
 			//	return true;
 			//}
@@ -128,7 +128,7 @@ namespace item_change
 				if (!CheckCanUseNow(ch))
 					return true;
 
-				if (item->GetCount() < 1)
+				if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < 1)
 					return true;
 
 				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -142,7 +142,7 @@ namespace item_change
 				if (!CheckCanUseNow(ch))
 					return true;
 
-				const int32_t count = item->GetCount();
+				const int32_t count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				if (count <= 0)
 					return true;
 
