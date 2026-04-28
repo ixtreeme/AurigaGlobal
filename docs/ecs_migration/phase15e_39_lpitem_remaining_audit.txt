@@ -1,0 +1,988 @@
+Phase 15E-39 LPITEM Remaining Work Audit
+Generated: 2026-04-28
+Mode: AUDIT ONLY - no code changes.
+
+Executive summary
+- Tree-wide direct ->SetCount call sites: 44
+- Tree-wide M2_DESTROY_ITEM matches including macro definitions: 107
+- Tree-wide M2_DESTROY_ITEM real call sites excluding macro definitions: 105
+- Files with LPITEM local declarations: 68
+- Files with LPITEM parameters: 68
+
+1. ->SetCount remaining: per-file, per-subsystem
+
+- DragonSoul: 11
+- Shop/storage/trade/offlineshop: 10
+- Refine/crafting/material consume: 8
+- Combat: 6
+- Pet: 2
+- Command/GM: 1
+- Other gameplay: 1
+- Core item engine: 1
+- Quest/questlua: 1
+- ItemSystem ECS bridge/sync: 1
+- ItemSystem legacy bridge / CItem boundary: 1
+- PlayerRuntime: 1
+
+Detailed ->SetCount call sites
+SRC\Server\GameServer\attr_transfer.cpp:152
+  subsystem: Refine/crafting/material consume
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 86, "");
+  code: items[0]->SetCount(items[0]->GetCount() - 1);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\attr_transfer.cpp:154
+  subsystem: Refine/crafting/material consume
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 86, "");
+  code: items[2]->SetCount(items[2]->GetCount() - 1);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\cmd_general.cpp:3882
+  subsystem: Command/GM
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
+  code: pkBottle->SetCount(pkBottle->GetCount() - 1);
+  classification: MEDIUM - command-side consume; candidate if no special bottle/socket semantics.
+SRC\Server\GameServer\cuberenewal.cpp:514
+  subsystem: Refine/crafting/material consume
+  context: LPITEM item = ch->GetInventoryItem(index_item_improve);
+  code: item->SetCount(item->GetCount()-porcent_item_improve);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\cuberenewal.cpp:698
+  subsystem: Refine/crafting/material consume
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\cuberenewal.cpp:708
+  subsystem: Refine/crafting/material consume
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: pItem->SetCount(bCount);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\cuberenewal.cpp:747
+  subsystem: Refine/crafting/material consume
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\cuberenewal.cpp:757
+  subsystem: Refine/crafting/material consume
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: pItem->SetCount(bCount);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:430
+  subsystem: DragonSoul
+  context: int idx = Gamble(vec_probs);
+  code: pItem->SetCount(pItem->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:433
+  subsystem: DragonSoul
+  context: int idx = Gamble(vec_probs);
+  code: pExtractor->SetCount(pExtractor->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:451
+  subsystem: DragonSoul
+  context: LPITEM pDH = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
+  code: pItem->SetCount(pItem->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:454
+  subsystem: DragonSoul
+  context: LPITEM pDH = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
+  code: pExtractor->SetCount(pExtractor->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:540
+  subsystem: DragonSoul
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 626, "");
+  code: pExtractor->SetCount(pExtractor->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:758
+  subsystem: DragonSoul
+  context: int n = pItem->GetCount();
+  code: pItem->SetCount(n - left_count);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:932
+  subsystem: DragonSoul
+  context: int n = pItem->GetCount();
+  code: pItem->SetCount(n - left_count);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:1126
+  subsystem: DragonSoul
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+  code: pDragonSoul->SetCount(pDragonSoul->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:1127
+  subsystem: DragonSoul
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+  code: pRefineStone->SetCount(pRefineStone->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:1160
+  subsystem: DragonSoul
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
+  code: pDragonSoul->SetCount(pDragonSoul->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\DragonSoul.cpp:1161
+  subsystem: DragonSoul
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
+  code: pRefineStone->SetCount(pRefineStone->GetCount() - 1);
+  classification: UNSAFE - DragonSoul refine/extract/charge count semantics; needs DS ECS wrapper phase.
+SRC\Server\GameServer\ItemUse.cpp:82
+  subsystem: Other gameplay
+  context: LPITEM item = (LPITEM)itemRaw;
+  code: //	item->SetCount(item->GetCount() - 1);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\item_manager.cpp:335
+  subsystem: Core item engine
+  context: m_map_pkItemByID.insert(std::map<uint32_t, LPITEM>::value_type(item->GetID(), item));
+  code: if (!item->SetCount(count))
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\mining.cpp:446
+  subsystem: Refine/crafting/material consume
+  context: uint32_t dwRefinedVnum = GetRefineFromRawOre(item->GetVnum());
+  code: item->SetCount(item->GetCount() - ORE_COUNT_FOR_REFINE);
+  classification: UNSAFE/MEDIUM - material/refine/crafting consume or stack merge; migrate only with subsystem wrapper.
+SRC\Server\GameServer\New_PetSystem.cpp:312
+  subsystem: Pet
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 55, "");
+  code: bookItem->SetCount(bookItem->GetCount() - 1);
+  classification: UNSAFE - pet book/duration/state path; needs pet ECS mutation wrapper.
+SRC\Server\GameServer\New_PetSystem.cpp:438
+  subsystem: Pet
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 51, "%d#%d", iHours, iMinutes);
+  code: bookItem->SetCount(bookItem->GetCount() - 1);
+  classification: UNSAFE - pet book/duration/state path; needs pet ECS mutation wrapper.
+SRC\Server\GameServer\questlua_item.cpp:688
+  subsystem: Quest/questlua
+  context: const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+  code: //item->SetCount(MINMAX(1, lua_tonumber(L, 1), g_bItemCountLimit));
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\safebox.cpp:236
+  subsystem: Shop/storage/trade/offlineshop
+  context: count = static_cast<uint32_t>(std::abs(static_cast<int>(count)));
+  code: item->SetCount(item->GetCount() - count);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\safebox.cpp:237
+  subsystem: Shop/storage/trade/offlineshop
+  context: count = static_cast<uint32_t>(std::abs(static_cast<int>(count)));
+  code: item2->SetCount(item2->GetCount() + count);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:448
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:458
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: item->SetCount(bCount);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:500
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:510
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: item->SetCount(bCount);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:568
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:578
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: item->SetCount(bCount);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:620
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\shop.cpp:630
+  subsystem: Shop/storage/trade/offlineshop
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: item->SetCount(bCount);
+  classification: UNSAFE - transaction/stack split/merge path; needs storage/shop ECS ownership wrapper.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3051
+  subsystem: Combat
+  context: uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3068
+  subsystem: Combat
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: item->SetCount(0);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3074
+  subsystem: Combat
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: item->SetCount(bCount);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3115
+  subsystem: Combat
+  context: uint8_t bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+  code: item2->SetCount(item2->GetCount() + bCount2);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3132
+  subsystem: Combat
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: item->SetCount(0);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3138
+  subsystem: Combat
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: item->SetCount(bCount);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+SRC\Server\GameServer\ecs\systems\ItemSystem.cpp:1490
+  subsystem: ItemSystem ECS bridge/sync
+  context: static void MirrorItemCountToLegacyNonDestroy(entt::entity item, uint32_t count)
+  code: legacyItem->SetCount(count);
+  classification: BRIDGE MIRROR - legacy mirror inside ECS count API; acceptable until CItem mirror is removed.
+SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp:826
+  subsystem: ItemSystem legacy bridge / CItem boundary
+  context: LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
+  code: pItem->SetCount(pItem->GetCount() + count);
+  classification: CORE INTERNAL - CItem::SetCount boundary/delete-on-zero; do not migrate as caller-side consume.
+SRC\Server\GameServer\ecs\systems\PlayerRuntimeSystem.cpp:2328
+  subsystem: PlayerRuntime
+  context: bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
+  code: pkItem->SetCount(pkItem->GetCount() - 1);
+  classification: MEDIUM - ECS system still has legacy stack/count mutation; candidate for next focused migration.
+
+2. M2_DESTROY_ITEM remaining: per-file, per-subsystem
+
+- Command/GM: 60
+- Shop/storage/trade/offlineshop: 12
+- DragonSoul: 7
+- ECS system: 6
+- World/dungeon/sectree cleanup: 5
+- Combat: 3
+- ItemSystem legacy bridge / CItem boundary: 3
+- Refine/crafting/material consume: 2
+- Mount: 2
+- Quest/questlua: 2
+- ItemSystem ECS bridge/sync: 2
+- Core item engine: 1
+
+Detailed M2_DESTROY_ITEM call sites
+SRC\Server\GameServer\char_manager.cpp:2523
+  subsystem: World/dungeon/sectree cleanup
+  variable/argument: item
+  context: LPITEM item = ITEM_MANAGER::instance().CreateItem(mallItem.vnum, mallItem.count, mallItem.id);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\cmd_gm.cpp:624
+  subsystem: Command/GM
+  variable/argument: item
+  context: int iEmptyPos = ch->GetEmptyDragonSoulInventory(item);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:642
+  subsystem: Command/GM
+  variable/argument: item
+  context: int iEmptyPos = ch->GetEmptyExtraInventory(item);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:660
+  subsystem: Command/GM
+  variable/argument: item
+  context: int iEmptyPos = ch->GetEmptyInventory(item->GetSize());
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:2925
+  subsystem: Command/GM
+  variable/argument: item
+  context: int iEmptyPos = ch->GetEmptyInventory(item->GetSize());
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4326
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4329
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4332
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4335
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4338
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4341
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4344
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4347
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4352
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4356
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4359
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4363
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4371
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4374
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4377
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4380
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4383
+  subsystem: Command/GM
+  variable/argument: item
+  context: uint8_t job = ch->GetJob();
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4386
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4389
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4392
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4396
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4400
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4403
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4407
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4415
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4418
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4421
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4424
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4427
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4430
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4433
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4436
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4441
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4445
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4448
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4452
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4460
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4463
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4466
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4469
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4472
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4475
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4478
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4481
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4487
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4491
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4494
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4498
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4507
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4510
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4513
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4516
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4519
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4522
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4525
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cmd_gm.cpp:4528
+  subsystem: Command/GM
+  variable/argument: item
+  context: (context not found)
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - GM cleanup/debug destroy; candidate for DestroyItemEntityEcs if item entity can be resolved.
+SRC\Server\GameServer\cuberenewal.cpp:700
+  subsystem: Refine/crafting/material consume
+  variable/argument: pItem
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: M2_DESTROY_ITEM(pItem);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\cuberenewal.cpp:749
+  subsystem: Refine/crafting/material consume
+  variable/argument: pItem
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: M2_DESTROY_ITEM(pItem);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\DragonSoul.cpp:579
+  subsystem: DragonSoul
+  variable/argument: pItem
+  context: sprintf(buf, "dice(%d) prob(%d) ByProd(VNUM:%d)", (int)fDice, (int)fProb, dwByProduct);
+  code: M2_DESTROY_ITEM(pItem);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:753
+  subsystem: DragonSoul
+  variable/argument: pItem
+  context: int n = pItem->GetCount();
+  code: M2_DESTROY_ITEM(pItem);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:927
+  subsystem: DragonSoul
+  variable/argument: pItem
+  context: int n = pItem->GetCount();
+  code: M2_DESTROY_ITEM(pItem);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:1305
+  subsystem: DragonSoul
+  variable/argument: itemold
+  context: sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
+  code: M2_DESTROY_ITEM(itemold);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:1307
+  subsystem: DragonSoul
+  variable/argument: item
+  context: sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:1417
+  subsystem: DragonSoul
+  variable/argument: itemold
+  context: sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
+  code: M2_DESTROY_ITEM(itemold);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\DragonSoul.cpp:1419
+  subsystem: DragonSoul
+  variable/argument: item
+  context: sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - DragonSoul destruction/refine paths need DS ECS wrapper.
+SRC\Server\GameServer\dungeon.cpp:639
+  subsystem: World/dungeon/sectree cleanup
+  variable/argument: item
+  context: LPITEM item = (LPITEM) ent;
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\item_manager.cpp:683
+  subsystem: Core item engine
+  variable/argument: item
+  context: const bool bWasMountInventory = (item && item->GetWindow() == MOUNT_INVENTORY);
+  code: M2_DESTROY_ITEM(item);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\item_manager.h:522
+  subsystem: Core item engine
+  variable/argument: ptr
+  context: bool IsExtraItem(uint32_t vnum);
+  code: #define M2_DESTROY_ITEM(ptr) ITEM_MANAGER::instance().DestroyItem(ptr)
+  classification: MACRO DEFINITION - not a call site.
+SRC\Server\GameServer\item_manager.h:524
+  subsystem: Core item engine
+  variable/argument: ptr
+  context: bool IsExtraItem(uint32_t vnum);
+  code: #define M2_DESTROY_ITEM(ptr) ITEM_MANAGER::instance().DestroyItem(ptr, __FILE__, __LINE__)
+  classification: MACRO DEFINITION - not a call site.
+SRC\Server\GameServer\MountInventory.cpp:291
+  subsystem: Mount
+  variable/argument: item->RemoveFromCharacter(
+  context: void CMountInventory::Destroy()
+  code: M2_DESTROY_ITEM(item->RemoveFromCharacter());
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\new_offlineshop_manager.cpp:881
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: pkItem
+  context: LPITEM pkItem = pItem->CreateItem();
+  code: M2_DESTROY_ITEM(pkItem);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\new_offlineshop_manager.cpp:2167
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item->RemoveFromCharacter(
+  context: LPITEM item = ch->GetItem(rShopItem.pos);
+  code: M2_DESTROY_ITEM(item->RemoveFromCharacter());
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\new_offlineshop_manager.cpp:2651
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: pkItem->RemoveFromCharacter(
+  context: LPITEM pkItem = ch->GetItem(pos);
+  code: M2_DESTROY_ITEM( pkItem->RemoveFromCharacter() );
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\new_offlineshop_manager.cpp:3158
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: pkItem
+  context: LPITEM pkItem = pItem->CreateItem();
+  code: M2_DESTROY_ITEM(pkItem);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\new_offlineshop_manager.cpp:3419
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item->RemoveFromCharacter(
+  context: LPITEM item = ch->GetItem(pos);
+  code: M2_DESTROY_ITEM(item->RemoveFromCharacter());
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\questlua_pc.cpp:3649
+  subsystem: Quest/questlua
+  variable/argument: item
+  context: int iEmptyCell = ch->GetEmptyInventory(item->GetSize());
+  code: M2_DESTROY_ITEM(item);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\questlua_pc.cpp:3966
+  subsystem: Quest/questlua
+  variable/argument: pkNewItem
+  context: LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(m_vnum, 1, 0, false);
+  code: M2_DESTROY_ITEM(pkNewItem);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\safebox.cpp:45
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: m_pkItems[i]->RemoveFromCharacter(
+  context: void CSafebox::__Destroy()
+  code: M2_DESTROY_ITEM(m_pkItems[i]->RemoveFromCharacter());
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\sectree.cpp:62
+  subsystem: World/dungeon/sectree cleanup
+  variable/argument: item
+  context: LPITEM item = (LPITEM)ent;
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\sectree_manager.cpp:1044
+  subsystem: World/dungeon/sectree cleanup
+  variable/argument: item
+  context: LPITEM item = (LPITEM) ent;
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\sectree_manager.cpp:1260
+  subsystem: World/dungeon/sectree cleanup
+  variable/argument: (LPITEM
+  context: M2_DESTROY_ITEM((LPITEM) entity);
+  code: M2_DESTROY_ITEM((LPITEM) entity);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\shop.cpp:338
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: LPITEM item = m_pkPC ? r_item.pkItem : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\shop.cpp:450
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\shop.cpp:502
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\shop.cpp:570
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: LPITEM item2 = ch->GetExtraInventoryItem(i);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\shop.cpp:622
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: LPITEM item2 = ch->GetInventoryItem(i);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\shopEx.cpp:199
+  subsystem: Shop/storage/trade/offlineshop
+  variable/argument: item
+  context: uint32_t count = ch->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
+  code: M2_DESTROY_ITEM(item);
+  classification: UNSAFE - transactional storage/shop destruction; wrapper required.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3069
+  subsystem: Combat
+  variable/argument: item
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: M2_DESTROY_ITEM(item);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3133
+  subsystem: Combat
+  variable/argument: item
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+  code: M2_DESTROY_ITEM(item);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\ecs\systems\CombatSystem.cpp:3793
+  subsystem: Combat
+  variable/argument: srcItem
+  context: LPITEM newItem = ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
+  code: M2_DESTROY_ITEM(srcItem);
+  classification: REVIEW - classify manually before migrating.
+SRC\Server\GameServer\ecs\systems\GayaSystem.cpp:401
+  subsystem: ECS system
+  variable/argument: item_glimmerstone
+  context: LPITEM item_glimmerstone = ITEM_MANAGER::instance().CreateItem(ID_Glimmerstone, Count_Glimmerstone, 0, true);
+  code: M2_DESTROY_ITEM(item_glimmerstone);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\GayaSystem.cpp:407
+  subsystem: ECS system
+  variable/argument: item_glimmerstone
+  context: LPITEM item_glimmerstone = ITEM_MANAGER::instance().CreateItem(ID_Glimmerstone, Count_Glimmerstone, 0, true);
+  code: M2_DESTROY_ITEM(item_glimmerstone);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\GayaSystem.cpp:415
+  subsystem: ECS system
+  variable/argument: item_glimmerstone
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 525, "%d#%s", Count_Glimmerstone, item_glimmerstone->GetName());
+  code: M2_DESTROY_ITEM(item_glimmerstone);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\InventorySystem.cpp:461
+  subsystem: ECS system
+  variable/argument: this
+  context: ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 35, "%s", GetName());
+  code: M2_DESTROY_ITEM(this);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\ItemSystem.cpp:1190
+  subsystem: ItemSystem ECS bridge/sync
+  variable/argument: legacyItem
+  context: SetItemCount(candidate, static_cast<uint32_t>(count.count) + GetItemCount(item));
+  code: M2_DESTROY_ITEM(legacyItem);
+  classification: ECS DESTROY BRIDGE - intentional legacy destruction behind ItemSystem API.
+SRC\Server\GameServer\ecs\systems\ItemSystem.cpp:2100
+  subsystem: ItemSystem ECS bridge/sync
+  variable/argument: legacyItem
+  context: LPITEM legacyItem = ResolveLegacyItemForDestruction(item);
+  code: M2_DESTROY_ITEM(legacyItem);
+  classification: ECS DESTROY BRIDGE - intentional legacy destruction behind ItemSystem API.
+SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp:827
+  subsystem: ItemSystem legacy bridge / CItem boundary
+  variable/argument: this
+  context: LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
+  code: M2_DESTROY_ITEM(this);
+  classification: CORE INTERNAL - CItem::SetCount / CItem destruction boundary.
+SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp:832
+  subsystem: ItemSystem legacy bridge / CItem boundary
+  variable/argument: RemoveFromCharacter(
+  context: LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
+  code: M2_DESTROY_ITEM(RemoveFromCharacter());
+  classification: CORE INTERNAL - CItem::SetCount / CItem destruction boundary.
+SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp:848
+  subsystem: ItemSystem legacy bridge / CItem boundary
+  variable/argument: RemoveFromCharacter(
+  context: const uint8_t bType = pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*1 + pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*2;
+  code: M2_DESTROY_ITEM(RemoveFromCharacter());
+  classification: CORE INTERNAL - CItem::SetCount / CItem destruction boundary.
+SRC\Server\GameServer\ecs\systems\MountSystem.cpp:185
+  subsystem: Mount
+  variable/argument: item
+  context: LPITEM item = ITEM_MANAGER::instance().CreateItem(entry.vnum, entry.count, entry.id);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\SessionSystem.cpp:1203
+  subsystem: ECS system
+  variable/argument: item
+  context: LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+SRC\Server\GameServer\ecs\systems\SessionSystem.cpp:1303
+  subsystem: ECS system
+  variable/argument: item
+  context: LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+  code: M2_DESTROY_ITEM(item);
+  classification: MEDIUM - cleanup path; candidate for DestroyItemEntityEcs after iteration/lifecycle audit.
+
+3. LPITEM declarations: top 20 hot files
+  133  SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp
+   62  SRC\Server\GameServer\ecs\systems\ItemSystem.cpp
+   34  SRC\Server\GameServer\DragonSoul.cpp
+   34  SRC\Server\GameServer\questlua_pc.cpp
+   18  SRC\Server\GameServer\cmd_gm.cpp
+   18  SRC\Server\GameServer\ecs\systems\PlayerRuntimeSystem.cpp
+   17  SRC\Server\GameServer\ecs\systems\CombatSystem.cpp
+   12  SRC\Server\GameServer\char_manager.cpp
+   12  SRC\Server\GameServer\cmd_general.cpp
+   11  SRC\Server\GameServer\questlua_item.cpp
+   10  SRC\Server\GameServer\input_main.cpp
+   10  SRC\Server\GameServer\item_manager.cpp
+    9  SRC\Server\GameServer\fishing.cpp
+    9  SRC\Server\GameServer\New_PetSystem.cpp
+    7  SRC\Server\GameServer\ecs\systems\ActivitySystem.cpp
+    7  SRC\Server\GameServer\ecs\systems\AffectSystem.cpp
+    7  SRC\Server\GameServer\ecs\systems\MountSystem.cpp
+    6  SRC\Server\GameServer\cuberenewal.cpp
+    6  SRC\Server\GameServer\new_offlineshop_manager.cpp
+    6  SRC\Server\GameServer\shop.cpp
+
+4. LPITEM parameters: top 20 hot files
+   53  SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp
+   33  SRC\Server\GameServer\char.h
+   31  SRC\Server\GameServer\ecs\systems\ItemSystem.cpp
+   14  SRC\Server\GameServer\DragonSoul.cpp
+   12  SRC\Server\GameServer\DragonSoul.h
+   12  SRC\Server\GameServer\ecs\EntityFactory.cpp
+   10  SRC\Server\GameServer\item_manager.h
+    9  SRC\Server\GameServer\item_manager.cpp
+    8  SRC\Server\GameServer\ecs\systems\CombatSystem.cpp
+    7  SRC\Server\GameServer\MountSystem.cpp
+    6  SRC\Server\GameServer\ecs\systems\PlayerRuntimeSystem.cpp
+    5  SRC\Server\GameServer\exchange.cpp
+    5  SRC\Server\GameServer\mining.cpp
+    5  SRC\Server\GameServer\MountInventory.cpp
+    5  SRC\Server\GameServer\MountSystem.h
+    5  SRC\Server\GameServer\New_PetSystem.cpp
+    5  SRC\Server\GameServer\New_PetSystem.h
+    5  SRC\Server\GameServer\new_switchbot.cpp
+    5  SRC\Server\GameServer\ecs\systems\InventorySystem.cpp
+    4  SRC\Server\GameServer\fishing.cpp
+
+5. CItem method call frequency: top 30 methods
+  485  GetVnum  top files: ItemSystem_LegacyBridge.cpp:272, DragonSoul.cpp:21, PlayerRuntimeSystem.cpp:19, new_switchbot.cpp:16, shop.cpp:15
+  350  GetValue  top files: ItemSystem_LegacyBridge.cpp:199, MountSystem.cpp:18, InventorySystem.cpp:17, dragon_soul_table.cpp:15, item_manager.cpp:13
+  260  GetSocket  top files: ItemSystem_LegacyBridge.cpp:153, questlua_pc.cpp:14, PlayerRuntimeSystem.cpp:13, fishing.cpp:9, shop.cpp:8
+  234  GetID  top files: ItemSystem_LegacyBridge.cpp:68, guild_manager.cpp:26, building.cpp:9, cmd_general.cpp:8, item_manager.cpp:7
+  214  GetType  top files: ItemSystem_LegacyBridge.cpp:103, item_manager.cpp:14, PlayerRuntimeSystem.cpp:14, new_switchbot.cpp:9, ActivitySystem.cpp:7
+  201  GetCount  top files: ItemSystem_LegacyBridge.cpp:81, CombatSystem.cpp:15, shop.cpp:13, cuberenewal.cpp:11, DragonSoul.cpp:11
+  178  GetSubType  top files: ItemSystem_LegacyBridge.cpp:92, PlayerRuntimeSystem.cpp:23, StatSystem.cpp:9, new_switchbot.cpp:8, item_manager.cpp:7
+   94  GetCell  top files: ItemSystem_LegacyBridge.cpp:29, DragonSoul.cpp:21, item_manager.cpp:9, PlayerRuntimeSystem.cpp:6, buff_on_attributes.cpp:4
+   66  IsEquipped  top files: ItemSystem_LegacyBridge.cpp:44, DragonSoul.cpp:7, new_offlineshop_manager.cpp:3, ItemSystem.cpp:3, input_main.cpp:2
+   54  GetOwner  top files: item_manager.cpp:11, ItemSystem_LegacyBridge.cpp:8, exchange.cpp:7, building.cpp:4, new_offlineshop.cpp:4
+   52  GetAntiFlag  top files: ItemSystem_LegacyBridge.cpp:27, CombatSystem.cpp:5, new_offlineshop_manager.cpp:4, shop.cpp:4, ItemSystem.cpp:4
+   38  GetProto  top files: ItemSystem_LegacyBridge.cpp:11, MountSystem.cpp:6, MountInventory.cpp:4, CombatSystem.cpp:3, ItemSystem.cpp:3
+   32  GetWindow  top files: DragonSoul.cpp:17, item_manager.cpp:6, ItemSystem_LegacyBridge.cpp:4, ItemSystem.cpp:2, exchange.cpp:1
+   14  GetWearFlag  top files: ItemSystem_LegacyBridge.cpp:13, ItemSystem.cpp:1
+   12  GetAttribute  top files: buff_on_attributes.cpp:3, char_manager.cpp:2, new_switchbot.cpp:2, CombatSystem.cpp:2, cmd_gm.cpp:1
+
+6. Recommended next phase priorities
+
+Priority 1 - Phase 15E-40 DragonSoul count/destroy bridge
+- DragonSoul still owns multiple direct SetCount and M2_DESTROY_ITEM sites. Keep DS internals intact, add/expand ECS wrapper boundaries first.
+
+Priority 2 - Phase 15E-41 shop/storage/cube stack split/merge
+- shop.cpp, safebox.cpp, cuberenewal.cpp and related storage paths still mutate counts and destroy items in transactional flows. These need ownership/location-safe ECS wrappers, not simple replacements.
+
+Priority 3 - Phase 15E-42 CombatSystem/PlayerRuntime direct count cleanup
+- CombatSystem and PlayerRuntimeSystem are already ECS system files but still call legacy SetCount/M2_DESTROY_ITEM directly. They are good candidates for focused ECS API replacement after validating stack merge semantics.
+
+Priority 4 - Phase 15E-43 command/GM and world cleanup destroy
+- cmd_gm.cpp contains many direct M2_DESTROY_ITEM calls, mostly generated/debug cleanup style blocks. Convert only after confirming no iteration/destruction side effects.
+
+Priority 5 - CItem method accessor migration
+- Top external CItem reads are GetCount, GetVnum, GetSocket, GetID, GetOwner, GetType. Continue replacing read-only callers with ItemSystem accessors before deleting CItem surface.
+
+Core boundary notes
+- ItemSystem_LegacyBridge.cpp line 826 and M2_DESTROY_ITEM(this/RemoveFromCharacter()) are CItem internals, not caller-side legacy usage.
+- ItemSystem.cpp M2_DESTROY_ITEM(legacyItem) and legacyItem->SetCount(count) are bridge/mirror internals behind ECS APIs and should remain until CItem itself is replaced.

@@ -5987,6 +5987,66 @@ Manual WinTest checklist:
 Commit status:
 - Documentation-only commit planned.
 
+## Phase 15E-39: Per-subsystem direct SetCount / M2_DESTROY_ITEM audit
+
+Date: 2026-04-28
+
+Mode:
+- Audit only.
+- No code changes.
+- Report generated for remaining LPITEM purge work.
+
+Generated report:
+- `docs/ecs_migration/phase15e_39_lpitem_remaining_audit.txt`
+
+Tree-wide counts:
+- Direct `->SetCount(...)` matches: 44.
+- `M2_DESTROY_ITEM(...)` matches including macro definitions: 107.
+- Real `M2_DESTROY_ITEM(...)` call sites excluding macro definitions: 105.
+
+Top remaining `->SetCount` subsystems:
+- DragonSoul: 11.
+- Shop/storage/trade/offlineshop: 10.
+- Refine/crafting/material consume: 8.
+- Combat: 6.
+- Pet: 2.
+- Command/GM: 1.
+- Other gameplay: 1.
+- Core item engine: 1.
+- Quest/questlua: 1.
+- ItemSystem ECS bridge/sync: 1.
+
+Important classification:
+- `ItemSystem_LegacyBridge.cpp` line 826 is core `CItem::SetCount` boundary logic, not caller-side count consume.
+- `ItemSystem.cpp` direct legacy `SetCount` and `M2_DESTROY_ITEM(legacyItem)` are ECS bridge/mirror internals behind public entity APIs.
+- DragonSoul, shop/storage/offlineshop, refine/crafting, and transaction flows must not be blindly converted; they need subsystem wrappers because count/destroy is tied to ownership, stack merge, packet sync, or refine semantics.
+
+Top remaining `M2_DESTROY_ITEM` subsystems:
+- Command/GM: 60.
+- Shop/storage/trade/offlineshop: 12.
+- DragonSoul: 7.
+- ECS system cleanup paths: 6.
+- World/dungeon/sectree cleanup: 5.
+- Combat: 3.
+- ItemSystem legacy bridge / CItem boundary: 3.
+- Refine/crafting/material consume: 2.
+- Mount: 2.
+- Quest/questlua: 2.
+
+Recommended next priorities:
+- Phase 15E-40: DragonSoul count/destroy bridge, wrapper-first.
+- Phase 15E-41: shop/storage/cube stack split/merge wrappers.
+- Phase 15E-42: CombatSystem/PlayerRuntime direct count cleanup.
+- Phase 15E-43: command/GM and world cleanup destroy conversion.
+- Continue replacing high-frequency read-only `CItem` methods with `ItemSystem` accessors before attempting CItem surface deletion.
+
+Validation:
+- Audit-only phase; no source code was changed.
+- Build gate run after report generation.
+
+Commit status:
+- Documentation/report commit planned.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
