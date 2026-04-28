@@ -13,7 +13,12 @@ namespace
 {
     bool StartMountExpireIfNeeded(LPITEM item)
     {
-        if (!item || !item->GetProto())
+        if (!item)
+            return false;
+
+        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+        const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
+        if (!itemProto)
             return false;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -24,18 +29,18 @@ namespace
         if (!bIsMountLikeItem)
             return false;
 
-        if (-1 == item->GetProto()->cLimitRealTimeFirstUseIndex)
+        if (-1 == itemProto->cLimitRealTimeFirstUseIndex)
             return false;
 
         bool bChanged = false;
 
-        if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) == 0)
+        if (ItemSystem::GetItemSocket(itemEntity, 1) == 0)
         {
-            const uint8_t idx = static_cast<uint8_t>(item->GetProto()->cLimitRealTimeFirstUseIndex);
+            const uint8_t idx = static_cast<uint8_t>(itemProto->cLimitRealTimeFirstUseIndex);
 
-            int32_t duration = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
+            int32_t duration = ItemSystem::GetItemSocket(itemEntity, 0);
             if (duration == 0)
-                duration = item->GetProto()->aLimits[idx].lValue;
+                duration = itemProto->aLimits[idx].lValue;
 
             if (duration == 0)
                 duration = 60 * 60 * 24 * 7;
