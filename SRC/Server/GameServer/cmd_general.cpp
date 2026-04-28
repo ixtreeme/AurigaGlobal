@@ -2470,13 +2470,13 @@ ACMD(do_unmount)
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
-				mobVnum = mount->GetValue(1);
+				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 		}
 		else
-			mobVnum = mount->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #else
-		if(mount->GetValue(1) != 0)
-			mobVnum = mount->GetValue(1);
+		if(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1) != 0)
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #endif
 
 		if (ch->GetMountVnum())
@@ -3569,13 +3569,13 @@ ACMD(do_ride)
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
-				mobVnum = mount->GetValue(1);
+				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 		}
 		else
-			mobVnum = mount->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #else
-		if(mount->GetValue(1) != 0)
-			mobVnum = mount->GetValue(1);
+		if(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1) != 0)
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #endif
 
 		if (ch->GetMountVnum())
@@ -3615,7 +3615,7 @@ ACMD(do_ride)
 		if (nullptr == item)
 			continue;
 
-		if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_MOUNT)	{
+		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_COSTUME && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == COSTUME_MOUNT)	{
 			ch->UseItem(TItemPos (INVENTORY, i));
 			return;
 		}
@@ -3627,7 +3627,7 @@ ACMD(do_ride)
 //		if (!item)
 //			continue;
 //
-//		if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_MOUNT)
+//		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_COSTUME && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == COSTUME_MOUNT)
 //		{
 //			ch->UseItem(TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
 //			return;
@@ -3860,17 +3860,17 @@ ACMD(do_rune_charge)
 	
 	if (!pkRune->IsRune())
 		return;
-	else if (pkRune->GetSubType() == RUNE_SLOT7)
+	else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkRune)) == RUNE_SLOT7)
 		return;
 	
 	LPITEM pkBottle = ch->GetInventoryItem(iArg2);
 	if (!pkBottle)
 		return;
 	
-	if ((pkBottle->GetType() != ITEM_USE) && (pkBottle->GetSubType() != USE_RUNE_PERC_CHARGE))
+	if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != ITEM_USE) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != USE_RUNE_PERC_CHARGE))
 		return;
 	
-	if (pkBottle->GetCount() > 1) {
+	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkBottle)) > 1) {
 		int pos = ch->GetEmptyInventory(pkBottle->GetSize());
 		if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
@@ -3881,7 +3881,7 @@ ACMD(do_rune_charge)
 		
 		ItemSystem::ConsumeItemEcs(
 			EntityFactory::CreateItemEntity(g_registry, pkBottle), 1);
-		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(pkBottle->GetVnum(), 1);
+		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkBottle)), 1);
 		if (!item2)
 			return;
 		
@@ -3889,13 +3889,13 @@ ACMD(do_rune_charge)
 		pkBottle = item2;
 	}
 	
-	int32_t lBottlePercent = pkBottle->GetSocket(0);
+	int32_t lBottlePercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0);
 	if (lBottlePercent < 1)
 		return;
 	
-	int32_t lMaxTime = pkRune->GetValue(0);
+	int32_t lMaxTime = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0);
 	int32_t lOnePercent = lMaxTime / 100;
-	int32_t lRemainPercent = pkRune->GetSocket(ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
+	int32_t lRemainPercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
 	if (lRemainPercent > 99) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 33, "%s", pkRune->GetName());
@@ -3906,18 +3906,18 @@ ACMD(do_rune_charge)
 	int32_t dif = 100 - lRemainPercent;
 	dif = dif > lBottlePercent ? lBottlePercent : dif;
 	int32_t add = lOnePercent * dif;
-	int32_t lValue = pkRune->GetSocket(ITEM_SOCKET_REMAIN_SEC) + add;
+	int32_t lValue = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) + add;
 	pkRune->SetSocket(ITEM_SOCKET_REMAIN_SEC, lValue);
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 34, "%s#%d", pkRune->GetName(), dif);
 #endif
 	pkBottle->SetSocket(0, lBottlePercent-dif);
-	if (pkBottle->GetSocket(0) < 1)
+	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0) < 1)
 		pkBottle->RemoveFromCharacter();
 	
 	pkRune->ChangeRuneAttr(lValue);
-	if ((!ch->FindAffect(AFFECT_RUNE2)) && (pkRune->GetSocket(1) == 1)) {
-		if (int32_t(lValue / (pkRune->GetValue(0) / 100)) >= 50) {
+	if ((!ch->FindAffect(AFFECT_RUNE2)) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), 1) == 1)) {
+		if (int32_t(lValue / (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0) / 100)) >= 50) {
 			pkRune->ActivateRuneBonus();
 		}
 	}
@@ -4118,13 +4118,13 @@ ACMD(do_gr_deposit_item)
 	LPITEM item = ch->GetInventoryItem(cell);
 	if (!item)
 		return;
-	if (count > item->GetCount())
-		count = item->GetCount();
+	if (count > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
+		count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
-	const uint32_t vnum = item->GetVnum();
+	const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
 	// Remove from player
-	if (count >= item->GetCount())
+	if (count >= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
 		ITEM_MANAGER::instance().RemoveItem(item);
 	else
 		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
