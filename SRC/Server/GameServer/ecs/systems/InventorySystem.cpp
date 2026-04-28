@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "InventorySystem.hpp"
+#include "ItemSystem.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -13,6 +14,7 @@
 #include "../../sectree_manager.h"
 #include "../../../common/VnumHelper.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
@@ -458,7 +460,9 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 35, "%s", GetName());
 #endif
-				M2_DESTROY_ITEM(this);
+				ItemSystem::DestroyItemEntityEcs(
+					EntityFactory::CreateItemEntity(g_registry, this),
+					"INVENTORY_RUNE_ADD_FAILED");
 				return false;
 			}
 			else {
