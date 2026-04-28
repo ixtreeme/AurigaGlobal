@@ -6284,6 +6284,75 @@ Commit status:
 - Code commits completed.
 - This log update committed separately as Phase 15E-42 completion documentation.
 
+## Phase 15E-43: Cube / Refine / Attr_transfer / Mining material consume cleanup
+
+Date: 2026-04-28
+
+Mode:
+- Code change with build gates after every part.
+- Scope limited to material consume paths in `cuberenewal.cpp`, `attr_transfer.cpp`, `mining.cpp`, and `cmd_general.cpp`.
+- DragonSoul and pet paths intentionally untouched.
+
+Part A - `cuberenewal.cpp` cube refining:
+- Replaced improve material partial decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced cube stack merge target increments with `ItemSystem::AddItemCountEcs`.
+- Replaced cube partial remaining source count with `ItemSystem::SetItemCountEcs`.
+- Replaced full source cleanup with `ItemSystem::DestroyItemEntityEcs(..., "CUBE_REFINING_CONSUME")`.
+- Target file result: `cuberenewal.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part A.
+- Note: first build attempt timed out due to stale MSBuild processes; stale processes were stopped and the clean rerun passed.
+
+Part B - `attr_transfer.cpp` material consume:
+- Replaced source attribute item decrement with `ItemSystem::ConsumeItemEcs`.
+- Replaced material item decrement with `ItemSystem::ConsumeItemEcs`.
+- Target file result: `attr_transfer.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part B.
+
+Part C - `mining.cpp` ore refining:
+- Replaced `item->SetCount(item->GetCount() - ORE_COUNT_FOR_REFINE)` with `ItemSystem::ConsumeItemEcs`.
+- Target file result: `mining.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part C.
+
+Part D - `cmd_general.cpp` bottle consume:
+- Replaced `pkBottle->SetCount(pkBottle->GetCount() - 1)` with `ItemSystem::ConsumeItemEcs`.
+- Target file result: `cmd_general.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part D.
+
+Final count verification:
+```text
+cuberenewal.cpp  SetCount=0 M2_DESTROY_ITEM=0
+attr_transfer.cpp SetCount=0 M2_DESTROY_ITEM=0
+mining.cpp       SetCount=0 M2_DESTROY_ITEM=0
+cmd_general.cpp  SetCount=0 M2_DESTROY_ITEM=0
+
+Tree-wide ->SetCount after Phase 15E-43: 18
+Tree-wide M2_DESTROY_ITEM real call sites after Phase 15E-43: 14
+```
+
+Final validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+
+Manual WinTest checklist:
+- Cube refining: material consume partial/full, result item creation, excess material return, stack merge behavior.
+- Attribute transfer: source and material item consume independently, target receives attributes.
+- Mining: ore stack decreases by `ORE_COUNT_FOR_REFINE`, refined ore created.
+- Bottle/water command: bottle count decreases and disappears at zero.
+- Check `syserr.txt` for `CUBE_REFINING_CONSUME`, item count mismatch, stack merge errors, orphan/double-destroy, and `VID_DRIFT`.
+- Verify no delayed damage/metin collapse regression.
+
+Commits:
+- `Phase 15E-43 PART A: cuberenewal.cpp cube refining to ECS`
+- `Phase 15E-43 PART B: attr_transfer.cpp material consume to ECS`
+- `Phase 15E-43 PART C: mining.cpp ore refining to ECS`
+- `Phase 15E-43 PART D: cmd_general.cpp bottle consume to ECS`
+
+Commit status:
+- Code commits completed.
+- This log update committed separately as Phase 15E-43 completion documentation.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
