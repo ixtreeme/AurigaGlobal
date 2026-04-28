@@ -2903,7 +2903,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 		return;
 
 #ifdef ENABLE_BUG_FIXES
-	if (pkItem->IsEquipped())
+	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1244, "");
@@ -2918,9 +2918,9 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (pkItem->GetCell() >= ch->Inventory_Size() && IS_SET(pkItem->GetFlag(),ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= ch->Inventory_Size() && IS_SET(pkItem->GetFlag(),ITEM_FLAG_IRREMOVABLE))
 #else
-	if (pkItem->GetCell() >= INVENTORY_MAX_NUM && IS_SET(pkItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= INVENTORY_MAX_NUM && IS_SET(pkItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 #endif
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2945,7 +2945,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 		return;
 	}
 
-	if( IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_SAFEBOX) )
+	if( IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_SAFEBOX) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
@@ -3190,7 +3190,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 	if (!mi->IsValidPosition(p->wMountPos) || !mi->IsEmpty(p->wMountPos, item->GetSize()))
 		return;
 
-	if (item->IsEquipped() || item->IsExchanging() || item->isLocked())
+	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) || item->IsExchanging() || item->isLocked())
 		return;
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -3199,9 +3199,9 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (item->GetCell() >= ch->Inventory_Size() && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) >= ch->Inventory_Size() && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 #else
-	if (item->GetCell() >= INVENTORY_MAX_NUM && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) >= INVENTORY_MAX_NUM && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 #endif
 		return;
 
