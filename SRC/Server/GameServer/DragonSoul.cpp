@@ -756,13 +756,17 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		int n = pItem->GetCount();
 		if (left_count > n)
 		{
-			pItem->RemoveFromCharacter();
-			M2_DESTROY_ITEM(pItem);
+			LPITEM removed = pItem->RemoveFromCharacter();
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, removed),
+				"DRAGON_SOUL_REFINE_CONSUME");
 			left_count -= n;
 		}
 		else
 		{
-			pItem->SetCount(n - left_count);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, pItem),
+				left_count);
 		}
 	}
 
@@ -930,13 +934,17 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		int n = pItem->GetCount();
 		if (left_count > n)
 		{
-			pItem->RemoveFromCharacter();
-			M2_DESTROY_ITEM(pItem);
+			LPITEM removed = pItem->RemoveFromCharacter();
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, removed),
+				"DRAGON_SOUL_REFINE_CONSUME");
 			left_count -= n;
 		}
 		else
 		{
-			pItem->SetCount(n - left_count);
+			ItemSystem::ConsumeItemEcs(
+				EntityFactory::CreateItemEntity(g_registry, pItem),
+				left_count);
 		}
 	}
 
