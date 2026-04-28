@@ -15,6 +15,9 @@
 #include "locale_service.h"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/events.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 EVENTINFO(war_map_info)
 {
@@ -278,10 +281,11 @@ void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 	if (!ch->GetGuild())
 		return;
 
-	if (!item->GetProto())
+	const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+	if (!itemProto)
 		return;
 
-	int iPrice = item->GetProto()->dwGold;
+	int iPrice = itemProto->dwGold;
 
 	uint32_t gid = ch->GetGuild()->GetID();
 
