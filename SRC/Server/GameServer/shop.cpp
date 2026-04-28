@@ -113,7 +113,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 				continue;
 			}
 
-			item_table = pkItem->GetProto();
+			item_table = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
 		}
 		else
 		{
