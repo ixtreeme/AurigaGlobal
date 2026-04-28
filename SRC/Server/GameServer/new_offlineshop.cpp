@@ -74,7 +74,11 @@ namespace offlineshop
 		{
 			//basic info
 			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-			m_dwOwnerID			= pItem->GetOwner() ? pItem->GetOwner()->GetPlayerID() : 0;
+			{
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+				auto* owner = ecs::LegacyCharOf(ownerEntity);
+				m_dwOwnerID			= owner ? owner->GetPlayerID() : 0;
+			}
 			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 			//patch 08-03-2020
 			m_itemInfo.expiration = GetItemExpiration(pItem);
@@ -152,7 +156,11 @@ namespace offlineshop
 		{
 			//basic info
 			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-			m_dwOwnerID			= pItem->GetOwner() ? pItem->GetOwner()->GetPlayerID() : 0;
+			{
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+				auto* owner = ecs::LegacyCharOf(ownerEntity);
+				m_dwOwnerID			= owner ? owner->GetPlayerID() : 0;
+			}
 			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 			//attributes
