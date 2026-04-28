@@ -2459,7 +2459,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 					alSockets[i] = itemData.alSocket[i];
 
-				const TItemTable* itemProto = item->GetProto();
+				const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
 				if (itemProto != nullptr && alSockets[ITEM_SOCKET_REMAIN_SEC] == 0)
 				{
 					for (const auto& limit : itemProto->aLimits)
