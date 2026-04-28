@@ -6040,6 +6040,74 @@ Manual WinTest checklist:
 Commit status:
 - File-by-file commits created for the migrated files.
 
+### Phase 15E-45 continuation: remaining caller-side CItem read cleanup
+
+Date: 2026-04-28
+
+Mode:
+- Read-only call-site migration continuation.
+- Build gate after each migration group.
+- File-by-file commits.
+
+Additional files migrated:
+- `SRC/Server/GameServer/input_main.cpp`
+- `SRC/Server/GameServer/shop_manager.cpp`
+- `SRC/Server/GameServer/battle.cpp`
+- `SRC/Server/GameServer/char_manager.cpp`
+- `SRC/Server/GameServer/guild_renewal.cpp`
+- `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp`
+- `SRC/Server/GameServer/blend_item.cpp`
+- `SRC/Server/GameServer/questmanager.cpp`
+- `SRC/Server/GameServer/VikingDungeon.cpp`
+- `SRC/Server/GameServer/LostCastleDungeon.cpp`
+- `SRC/Server/GameServer/ani.cpp`
+- `SRC/Server/GameServer/polymorph.cpp`
+- `SRC/Server/GameServer/db.cpp`
+- `SRC/Server/GameServer/input_db.cpp`
+- `SRC/Server/GameServer/over9refine.cpp`
+- `SRC/Server/GameServer/RuneDungeon.cpp`
+- `SRC/Server/GameServer/Halloween2022Dungeon.cpp`
+- `SRC/Server/GameServer/questlua_item.cpp`
+- `SRC/Server/GameServer/mount_inventory_helper.h`
+- `SRC/Server/GameServer/belt_inventory_helper.h`
+- `SRC/Server/GameServer/buff_on_attributes.cpp`
+- `SRC/Server/GameServer/new_offlineshop.h`
+- `SRC/Server/GameServer/ecs/systems/GayaSystem.cpp`
+- `SRC/Server/GameServer/refine.cpp`
+
+Counts:
+```text
+Bridge-excluded target read calls after prior 15E-45 batch: 381
+Bridge-excluded target read calls after continuation:       245
+```
+
+Remaining scan notes:
+- `item_manager.cpp`: core item manager/lifecycle island; deferred because entity wrapping during item creation/save/remove requires a separate core design.
+- `InventorySystem.cpp`: remaining hits are `this->Get...` inside legacy `CItem` method bodies; deferred with bridge/core work.
+- `ItemSystem.cpp`, `EntityFactory.cpp`, `ItemRegistry*`, and `ItemSystem_LegacyBridge.cpp`: intentionally excluded bridge/internal files.
+- Most remaining non-excluded matches are false positives for this phase: guild/building/shop/table parser/descriptor APIs such as `CGuild::GetID`, `CShopEx::GetVnum`, `CGroupNode::GetValue`, `DESC::GetSocket`, `CEntity::GetType`.
+- `CItem` method declarations and implementations were not removed.
+
+Validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed after each group and final verification.
+- `ItemSystem.hpp` pointer scan stayed clean.
+
+Manual WinTest checklist:
+- Login and inventory item display.
+- Tooltip vnum/count/type/socket/value display.
+- Equip weapon/armor and verify stat behavior.
+- Shop/offlineshop/exchange item display and transaction smoke test.
+- Quest item use/reward checks.
+- Dungeon key/item gates.
+- DragonSoul, polymorph, refine, Gaya, pet/mount smoke tests.
+- Verify no duplicate/missing item, wrong owner/window/cell, or VID drift.
+
+Commit status:
+- Additional file-by-file commits created.
+
 ## Phase 15E-45-prep: Full pointer typedef audit
 
 Date: 2026-04-28
