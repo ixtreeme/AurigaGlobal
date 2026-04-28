@@ -16,6 +16,9 @@
 #include "desc_client.h"
 #include "battle_pass.h"
 #include "config.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -511,7 +514,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 					if(porcent_item_improve != 0)
 					{
-						item->SetCount(item->GetCount()-porcent_item_improve);
+						ItemSystem::ConsumeItemEcs(
+							EntityFactory::CreateItemEntity(g_registry, item),
+							porcent_item_improve);
 					}
 				}
 
@@ -695,9 +700,13 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 								bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 								bCount -= bCount2;
 
-								item2->SetCount(item2->GetCount() + bCount2);
+								ItemSystem::AddItemCountEcs(
+									EntityFactory::CreateItemEntity(g_registry, item2),
+									bCount2);
 								if (bCount == 0) {
-									M2_DESTROY_ITEM(pItem);
+									ItemSystem::DestroyItemEntityEcs(
+									EntityFactory::CreateItemEntity(g_registry, pItem),
+									"CUBE_REFINING_CONSUME");
 									pItem = nullptr;
 									break;
 								}
@@ -705,7 +714,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 						}
 
 						if (pItem != nullptr) {
-							pItem->SetCount(bCount);
+							ItemSystem::SetItemCountEcs(
+							EntityFactory::CreateItemEntity(g_registry, pItem),
+							bCount);
 							pItem->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 						}
 					} else {
@@ -744,9 +755,13 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 								bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 								bCount -= bCount2;
 
-								item2->SetCount(item2->GetCount() + bCount2);
+								ItemSystem::AddItemCountEcs(
+									EntityFactory::CreateItemEntity(g_registry, item2),
+									bCount2);
 								if (bCount == 0) {
-									M2_DESTROY_ITEM(pItem);
+									ItemSystem::DestroyItemEntityEcs(
+									EntityFactory::CreateItemEntity(g_registry, pItem),
+									"CUBE_REFINING_CONSUME");
 									pItem = nullptr;
 									break;
 								}
@@ -754,7 +769,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 						}
 
 						if (pItem != nullptr) {
-							pItem->SetCount(bCount);
+							ItemSystem::SetItemCountEcs(
+							EntityFactory::CreateItemEntity(g_registry, pItem),
+							bCount);
 							pItem->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
 						}
 					} else {
