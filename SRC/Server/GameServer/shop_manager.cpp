@@ -403,8 +403,8 @@ uint8_t bCount
 	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))
 		return;
 
-	if (bCount == 0 || bCount > item->GetCount())
-		bCount = item->GetCount();
+	if (bCount == 0 || bCount > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
+		bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
 	int64_t dwPrice = item->GetShopBuyPrice();
 
@@ -430,7 +430,7 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		sys_log(0, "Sell Item price id %d %s itemid %d", ch->GetPlayerID(), ch->GetName(), item->GetID());
+		sys_log(0, "Sell Item price id %d %s itemid %d", ch->GetPlayerID(), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 	const int64_t nTotalMoney = ch->GetGold() + dwPrice;
 
@@ -446,7 +446,7 @@ uint8_t bCount
 		return;
 	}
 
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, item->GetVnum(), dwPrice);
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), dwPrice);
 #ifdef ENABLE_BATTLE_PASS
 	uint8_t bBattlePassId = ch->GetBattlePassId();
 	if(bBattlePassId)
@@ -454,12 +454,12 @@ uint8_t bCount
 		uint32_t dwItemVnum, dwSellCount;
 		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SELL_ITEM, &dwItemVnum, &dwSellCount))
 		{
-			if(dwItemVnum == item->GetVnum() && ch->GetMissionProgress(SELL_ITEM, bBattlePassId) < dwSellCount)
+			if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) && ch->GetMissionProgress(SELL_ITEM, bBattlePassId) < dwSellCount)
 				ch->UpdateMissionProgress(SELL_ITEM, bBattlePassId, bCount, dwSellCount);
 		}
 	}
 #endif
-	if (bCount == item->GetCount())
+	if (bCount == ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
 		ITEM_MANAGER::instance().RemoveItem(item, "SELL");
 	else
 		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount);
