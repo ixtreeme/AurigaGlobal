@@ -80,8 +80,8 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 
 	pack.header	= m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_SET : HEADER_GC_MALL_SET;
 	pack.Cell	= TItemPos(m_bWindowMode, dwPos);
-	pack.vnum	= pkItem->GetVnum();
-	pack.count	= pkItem->GetCount();
+	pack.vnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
+	pack.count	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem));
 	pack.flags	= pkItem->GetFlag();
 #ifdef ATTR_LOCK
 	pack.lockedattr = pkItem->GetLockedAttr();
@@ -91,7 +91,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
 
 	m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
-	sys_log(1, "SAFEBOX: ADD %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), pkItem->GetCount());
+	sys_log(1, "SAFEBOX: ADD %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return true;
 }
 
@@ -125,7 +125,7 @@ LPITEM CSafebox::Remove(uint32_t dwPos)
 	pack.pos	= dwPos;
 
 	m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
-	sys_log(1, "SAFEBOX: REMOVE %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), pkItem->GetCount());
+	sys_log(1, "SAFEBOX: REMOVE %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return pkItem;
 }
 
@@ -217,7 +217,7 @@ count)
 	if (item->IsExchanging())
 		return false;
 
-	if (item->GetCount() < count)
+	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < count)
 		return false;
 
 	{
@@ -225,18 +225,18 @@ count)
 
 		if ((item2 = GetItem(bDestCell)) && item != item2 && item2->IsStackable() &&
 				!IS_SET(item2->GetAntiFlag(), ITEM_ANTIFLAG_STACK) &&
-				item2->GetVnum() == item->GetVnum()) // 합칠 수 있는 아이템의 경우
+				ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) // 합칠 수 있는 아이템의 경우
 		{
 			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-				if (item2->GetSocket(i) != item->GetSocket(i))
+				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), i) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i))
 					return false;
 
 			if (count == 0)
-				count = item->GetCount();
+				count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
-			count = MIN(g_bItemCountLimit - item2->GetCount(), count);
+			count = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), count);
 
-			if (item->GetCount() >= count)
+			if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) >= count)
 				Remove(bCell);
 
 			ItemSystem::ConsumeItemEcs(
@@ -246,7 +246,7 @@ count)
 				EntityFactory::CreateItemEntity(g_registry, item2),
 				count);
 
-			sys_log(1, "SAFEBOX: STACK %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item2->GetName(), item2->GetCount());
+			sys_log(1, "SAFEBOX: STACK %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
 			return true;
 		}
 
@@ -266,7 +266,7 @@ count)
 			m_pkGrid->Put(bCell, 1, item->GetSize());
 		}
 
-		sys_log(1, "SAFEBOX: MOVE %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item->GetName(), item->GetCount());
+		sys_log(1, "SAFEBOX: MOVE %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		Remove(bCell);
 		Add(bDestCell, item);
