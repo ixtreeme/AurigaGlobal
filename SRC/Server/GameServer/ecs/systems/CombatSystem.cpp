@@ -3749,7 +3749,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									di.sockets[i] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, srcItem), i);
 
 								for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-									di.attrs[i] = srcItem->GetAttribute(i);
+									di.attrs[i] = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, srcItem), i);
 
 								drops.push_back(di);
 							}
