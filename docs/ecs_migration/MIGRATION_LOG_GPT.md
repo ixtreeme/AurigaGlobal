@@ -5945,6 +5945,116 @@ Manual WinTest checklist for this pass:
 Commit status:
 - Not committed. User requested review before commit.
 
+---
+
+## Phase 15E-46 - CItem ownership + proto read accessors
+
+Date: 2026-04-28
+
+Mode:
+- Entity-first read accessor migration.
+- Code changes committed in small per-file commits.
+
+Goal:
+- Move next-tier CItem read accessors behind `ItemSystem` ECS APIs.
+- Keep public `ItemSystem.hpp` entity-only and pointer-clean.
+
+New / verified ECS read APIs:
+- `ItemSystem::GetItemCell(entt::entity)`
+- `ItemSystem::GetItemWindow(entt::entity)`
+- `ItemSystem::IsItemEquipped(entt::entity)`
+- `ItemSystem::GetItemOwnerEntity(entt::entity)`
+- `ItemSystem::GetItemAntiFlag(entt::entity)`
+- `ItemSystem::GetItemWearFlag(entt::entity)`
+- `ItemSystem::GetItemProto(entt::entity)`
+- `ItemSystem::GetItemAttribute(entt::entity, int)`
+
+Files changed:
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.hpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `SRC/Server/GameServer/DragonSoul.cpp`
+- `SRC/Server/GameServer/buff_on_attributes.cpp`
+- `SRC/Server/GameServer/mining.cpp`
+- `SRC/Server/GameServer/new_offlineshop.cpp`
+- `SRC/Server/GameServer/new_switchbot.cpp`
+- `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/StatSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+- `SRC/Server/GameServer/char_manager.cpp`
+- `SRC/Server/GameServer/shop.cpp`
+- `SRC/Server/GameServer/MountInventory.cpp`
+- `SRC/Server/GameServer/new_offlineshop.h`
+- `SRC/Server/GameServer/war_map.cpp`
+- `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- `SRC/Server/GameServer/exchange.cpp`
+- `SRC/Server/GameServer/questlua_item.cpp`
+
+Migrations performed:
+- `GetCell` / `GetWindow` caller-side item position reads moved to `ItemSystem`.
+- `IsEquipped` caller-side equipment checks moved to `ItemSystem`.
+- `GetAntiFlag` / `GetWearFlag` proto-flag reads moved to `ItemSystem`.
+- `GetAttribute` item attribute reads moved to `ItemSystem`.
+- `GetOwner` item-owner reads now use `GetItemOwnerEntity`; legacy `LPCHARACTER` is recovered only at bridge boundaries via `ecs::LegacyCharOf`.
+- `GetProto` reads now use `GetItemProto` with null checks before dereference.
+
+Final bridge-excluded scan:
+```text
+GetCell remaining:       8
+IsEquipped remaining:    1
+GetOwner remaining:      29
+GetAntiFlag remaining:   0
+GetProto remaining:      1
+GetWindow remaining:     5
+GetWearFlag remaining:   0
+GetAttribute remaining:  6
+```
+
+Remaining blockers / false positives:
+- `item_manager.cpp`: core legacy item persistence/destruction internals still intentionally call CItem accessors.
+- `building.cpp`, `cmd_gm.cpp`: land owner false positives, not CItem ownership.
+- `exchange.cpp`, `input_main.cpp`: exchange company owner false positives, not CItem ownership.
+- `MountSystem.cpp`, `New_PetSystem.cpp`, `PetSystem.cpp`: actor/system owner false positives, not CItem ownership.
+- `ActivitySystem.cpp`, `CombatSystem.cpp`, `SkillSystem.cpp`, `char_manager.cpp`, `cmd_gm.cpp`: `CSectree::GetAttribute` false positives, not item attributes.
+
+Validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed after owner batch.
+- Build passed after proto batch.
+- Build passed after final remaining cell/window/attribute cleanup.
+- Existing warnings remain unrelated.
+- Existing post-build message remained:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+  but build exit code was `0`.
+
+Header validation:
+```powershell
+Select-String -Path SRC/Server/GameServer/ecs/systems/ItemSystem.hpp -Pattern 'LPITEM|LPCHARACTER|CHARACTER\s*\*'
+```
+- Result: no matches.
+
+Manual WinTest checklist:
+- Login/relog.
+- Inventory open and item tooltip display.
+- Equip/unequip weapon and armor.
+- Move item between inventory slots.
+- Drop item and pick it back up.
+- Trade item / ownership transfer smoke test.
+- DragonSoul activate/deactivate and refine smoke test.
+- Mount inventory expiration smoke test.
+- Offline shop item expiration display.
+- Quest copy/remove item path.
+- Verify no wrong owner, wrong window/cell, missing item, duplicate item, or VID drift.
+
+Commit status:
+- Committed as per-file Phase 15E-46 commits.
+
 ## Phase 15E-45: CItem read accessor migration batch
 
 Date: 2026-04-28
