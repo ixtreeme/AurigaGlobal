@@ -141,8 +141,9 @@ bool CBuffOnAttributes::On(uint8_t bValue)
 				if (pItem->GetLockedAttr() == j)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					if (pItem->GetOwner()) {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pItem->GetOwner()), CHAT_TYPE_INFO, 781, "%d#%s", j, pItem->GetName());
+					const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+					if (ownerEntity != entt::null) {
+						ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 781, "%d#%s", j, pItem->GetName());
 					}
 #endif
 					continue;
