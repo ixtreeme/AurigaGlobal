@@ -5945,6 +5945,101 @@ Manual WinTest checklist for this pass:
 Commit status:
 - Not committed. User requested review before commit.
 
+## Phase 15E-45: CItem read accessor migration batch
+
+Date: 2026-04-28
+
+Mode:
+- Read-only call-site migration.
+- Commit after each file.
+- `ItemSystem_LegacyBridge.cpp` skipped by design because it is the legacy bridge.
+
+Goal:
+- Move caller-side CItem read access from `item->GetVnum/GetValue/GetSocket/GetID/GetType/GetCount/GetSubType` to entity-first `ItemSystem` accessors.
+- Keep behavior read-only and preserve all lifecycle/storage semantics.
+
+Accessor status:
+- Existing entity accessors were present and reused:
+```cpp
+ItemSystem::GetItemID
+ItemSystem::GetItemVnum
+ItemSystem::GetItemType
+ItemSystem::GetItemSubType
+ItemSystem::GetItemCount
+ItemSystem::GetItemValue
+ItemSystem::GetItemSocket
+```
+- No public `LPITEM` API was added.
+
+Files migrated in this batch:
+- `SRC/Server/GameServer/PlayerRuntimeSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `SRC/Server/GameServer/cmd_general.cpp`
+- `SRC/Server/GameServer/questlua_pc.cpp`
+- `SRC/Server/GameServer/new_switchbot.cpp`
+- `SRC/Server/GameServer/shop.cpp`
+- `SRC/Server/GameServer/DragonSoul.cpp`
+- `SRC/Server/GameServer/fishing.cpp`
+- `SRC/Server/GameServer/ecs/systems/StatSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+- `SRC/Server/GameServer/cuberenewal.cpp`
+- `SRC/Server/GameServer/New_PetSystem.cpp`
+- `SRC/Server/GameServer/attr_transfer.cpp`
+- `SRC/Server/GameServer/safebox.cpp`
+- `SRC/Server/GameServer/mining.cpp`
+- `SRC/Server/GameServer/shopEx.cpp`
+- `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- `SRC/Server/GameServer/new_offlineshop_manager.cpp`
+- `SRC/Server/GameServer/exchange.cpp`
+- `SRC/Server/GameServer/new_offlineshop.cpp`
+- `SRC/Server/GameServer/MountInventory.cpp`
+- `SRC/Server/GameServer/PetSystem.cpp`
+- `SRC/Server/GameServer/ItemUse.cpp`
+
+Counts:
+```text
+Bridge-excluded target read calls before this batch: 929
+Bridge-excluded target read calls after this batch:  381
+```
+
+Skipped / deferred:
+- `SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp`: intentionally skipped; it is the legacy CItem bridge.
+- `SRC/Server/GameServer/item_manager.cpp`: core item manager / lifecycle island, deferred.
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`: internal bridge/system implementation, deferred.
+- `guild_manager.cpp`, `guild_renewal.cpp`, `cmd_gm.cpp`, `battle_pass.cpp`, `dragon_soul_table.cpp`, `building.cpp`: current grep hits are largely non-CItem APIs such as guild/table/row/building `GetID/GetValue/GetType`; skipped to avoid false-positive migration.
+- `CItem` declarations/implementations were not removed.
+
+Validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed after each implemented group.
+- `GameServer.exe` linked successfully.
+- Existing post-build message remained:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+  but build exit code was `0`.
+
+Known warnings:
+- Existing C4805/C4804/C4244 warnings remain in unrelated legacy areas.
+
+Manual WinTest checklist:
+- Login and inventory item display.
+- Item tooltip vnum/count/type/socket/value display.
+- Equip weapon/armor and verify stat behavior.
+- Pet/mount summon and mount inventory persistence.
+- Safebox deposit/withdraw and stack split.
+- Shop/offlineshop/exchange item display and transaction smoke test.
+- DragonSoul/fishing/cube/refine smoke tests for read-path regressions.
+- Verify no duplicate item, no missing item, no wrong owner/window/cell, no VID drift.
+
+Commit status:
+- File-by-file commits created for the migrated files.
+
 ## Phase 15E-38: Timed/recall item count consume to ECS
 
 Date: 2026-04-28
