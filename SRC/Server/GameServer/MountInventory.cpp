@@ -29,11 +29,11 @@ namespace
 
         bool bChanged = false;
 
-        if (item->GetSocket(1) == 0)
+        if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) == 0)
         {
             const uint8_t idx = static_cast<uint8_t>(item->GetProto()->cLimitRealTimeFirstUseIndex);
 
-            int32_t duration = item->GetSocket(0);
+            int32_t duration = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
             if (duration == 0)
                 duration = item->GetProto()->aLimits[idx].lValue;
 
@@ -125,7 +125,7 @@ bool CMountInventory::DetachSlot(uint32_t pos, LPITEM expectedItem, bool skipDbD
     m_items[pos] = nullptr;
 
     if (!skipDbDelete)
-        DeleteItem(pos, item->GetID());
+        DeleteItem(pos, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
     return true;
 }
@@ -205,10 +205,10 @@ void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) c
             continue;
 
         TMountInventoryItemTable entry{};
-        entry.id = item->GetID();
+        entry.id = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item));
         entry.slot = pos;
-        entry.vnum = item->GetVnum();
-        entry.count = item->GetCount();
+        entry.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+        entry.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
         auto sockets = item->GetSockets();
         memcpy(entry.alSockets, sockets, sizeof(entry.alSockets));
@@ -239,11 +239,11 @@ void CMountInventory::SaveItem(uint32_t pos, LPITEM item)
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
         "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5) "
         "VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
-        item->GetID(),
+        ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)),
         accountId,
         pos,
-        item->GetVnum(),
-        item->GetCount(),
+        ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)),
+        ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)),
         sockets[0],
         sockets[1],
         sockets[2],
