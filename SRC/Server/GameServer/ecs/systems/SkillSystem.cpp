@@ -38,11 +38,13 @@
 
 #include "../SpatialHelpers.hpp"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/skill_components.hpp"
+#include "ItemSystem.hpp"
 
 namespace
 {
@@ -1729,13 +1731,13 @@ void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, LPITEM pkWeapo
 {
 	if (ch->IsPC())
 	{
-		if (pkWeapon && pkWeapon->GetType() == ITEM_WEAPON)
+		if (pkWeapon && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == ITEM_WEAPON)
 		{
-			int iWep = number(pkWeapon->GetValue(3), pkWeapon->GetValue(4));
-			iWep += pkWeapon->GetValue(5);
+			int iWep = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 3), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 4));
+			iWep += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 5);
 
-			int iMtk = number(pkWeapon->GetValue(1), pkWeapon->GetValue(2));
-			iMtk += pkWeapon->GetValue(5);
+			int iMtk = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 1), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 2));
+			iMtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 5);
 
 			pkSk->SetPointVar("wep", iWep);
 			pkSk->SetPointVar("mtk", iMtk);
@@ -1909,7 +1911,7 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (m_pkChr->GetWear(WEAR_WEAPON) && m_pkChr->GetWear(WEAR_WEAPON)->GetSubType() == WEAPON_DAGGER)
+				if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
 				{
 					adjust += 0.5f;
 				}
@@ -1921,7 +1923,7 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (m_pkChr->GetWear(WEAR_WEAPON) && m_pkChr->GetWear(WEAR_WEAPON)->GetSubType() == WEAPON_DAGGER)
+				if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
 					adjust += 0.5f;
 			}
 
@@ -1931,7 +1933,7 @@ struct FuncSplashDamage
 		{
 			float adjust = 1.0;
 
-			if (m_pkChr->GetWear(WEAR_WEAPON) && m_pkChr->GetWear(WEAR_WEAPON)->GetSubType() == WEAPON_DAGGER)
+			if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
 			{
 				adjust = 1.35f;
 			}
@@ -1943,7 +1945,7 @@ struct FuncSplashDamage
 		{
 			float adjust = 1.0;
 
-			if (m_pkChr->GetWear(WEAR_WEAPON) && m_pkChr->GetWear(WEAR_WEAPON)->GetSubType() == WEAPON_CLAW)
+			if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_CLAW)
 			{
 				adjust = 1.35f;
 			}
@@ -1980,7 +1982,7 @@ struct FuncSplashDamage
 
 					LPITEM pkWeapon = m_pkChr->GetWear(WEAR_WEAPON);
 					if (pkWeapon) {
-						switch (pkWeapon->GetSubType())
+						switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
 						{
 							case WEAPON_SWORD:
 							{
@@ -3606,7 +3608,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 	// END_OF_NO_GRANDMASTER
 
 	// MINING
-	if (GetWear(WEAR_WEAPON) && (GetWear(WEAR_WEAPON)->GetType() == ITEM_ROD || GetWear(WEAR_WEAPON)->GetType() == ITEM_PICK))
+	if (GetWear(WEAR_WEAPON) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, GetWear(WEAR_WEAPON))) == ITEM_ROD || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, GetWear(WEAR_WEAPON))) == ITEM_PICK))
 		return false;
 	// END_OF_MINING
 
