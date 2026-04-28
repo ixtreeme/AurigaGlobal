@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 #include "log.h"
 #include "char_interface.hpp"
@@ -33,7 +36,7 @@ int COver9RefineManager::canOver9Refine(uint32_t dwVnum)
 
 bool COver9RefineManager::Change9ToOver9(LPCHARACTER pChar, LPITEM item)
 {
-	OVER9ITEM_MAP::iterator iter = m_mapItem.find(item->GetVnum());
+	OVER9ITEM_MAP::iterator iter = m_mapItem.find(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 
 	if (iter == m_mapItem.end())
 		return false;
@@ -58,7 +61,7 @@ bool COver9RefineManager::Change9ToOver9(LPCHARACTER pChar, LPITEM item)
 	over9->AddToCharacter(pChar, TItemPos(INVENTORY, iEmptyCell));
 
 	char szBuf[256];
-	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", over9->GetID(), over9->GetName(), over9->GetOriginalVnum());
+	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, over9)), over9->GetName(), over9->GetOriginalVnum());
 	LogManager::instance().ItemLog(pChar, item, "REFINE OVER9", szBuf);
 	return true;
 }
@@ -88,7 +91,7 @@ bool COver9RefineManager::Over9Refine(LPCHARACTER pChar, LPITEM item)
 	over9->AddToCharacter(pChar, TItemPos(INVENTORY, iEmptyCell));
 
 	char szBuf[256];
-	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", over9->GetID(), over9->GetName(), over9->GetOriginalVnum());
+	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, over9)), over9->GetName(), over9->GetOriginalVnum());
 	LogManager::instance().ItemLog(pChar, item, "REFINE OVER9", szBuf);
 	return true;
 }
