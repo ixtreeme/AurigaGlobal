@@ -498,14 +498,14 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 					if(item != nullptr)
 					{
 
-						if(item->GetCount() <= 40){
-							if (materialInfo.percent+item->GetCount() <= 100){
-								porcent_item_improve = item->GetCount();
+						if(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) <= 40){
+							if (materialInfo.percent+ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) <= 100){
+								porcent_item_improve = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 							}
 
 							if(materialInfo.percent < 100)
 							{
-								if (materialInfo.percent+item->GetCount() > 100){
+								if (materialInfo.percent+ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) > 100){
 									porcent_item_improve = 100 - materialInfo.percent;
 								}
 							}
@@ -535,7 +535,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				pItem = ch->FindSpecifyItem(materialInfo.allowCopy);
 
 				if(pItem != nullptr){
-					if ((pItem->GetType() == ITEM_WEAPON  || pItem->GetType() == ITEM_ARMOR) && item->GetSubType() == pItem->GetSubType() && item_copy_bonus == false)
+					if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_WEAPON  || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_ARMOR) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) && item_copy_bonus == false)
 					{
 
 						for (int a = 0; a < ITEM_ATTRIBUTE_MAX_NUM; a++)
@@ -546,7 +546,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 							
 						for (int a = 0; a < ITEM_SOCKET_MAX_NUM; a++)
 						{
-							copySocket[a] = pItem->GetSocket(a);
+							copySocket[a] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), a);
 						}
 
 						item_copy_bonus = true;
@@ -633,13 +633,13 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #endif
 
 #ifdef ENABLE_BUG_FIXES
-				if (!item_copy_bonus && pItem->GetType() == ITEM_COSTUME)
+				if (!item_copy_bonus && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_COSTUME)
 				{
 					pItem->ClearAttribute();
 #ifdef ENABLE_STOLE_COSTUME
-					if (pItem->GetSubType() == COSTUME_STOLE)
+					if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == COSTUME_STOLE)
 					{
-						uint8_t grade = pItem->GetValue(0);
+						uint8_t grade = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pItem), 0);
 						if (grade > 0)
 						{
 							grade = grade > 4 ? 4 : grade;
@@ -677,16 +677,16 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #else
 						uint8_t 
 #endif
-						bCount = pItem->GetCount();
+						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 						for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
 							LPITEM item2 = ch->GetExtraInventoryItem(i);
 							if (!item2)
 								continue;
 
-							if (item2->GetVnum() == pItem->GetVnum()) {
+							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) {
 								int j = 0;
 								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (item2->GetSocket(j) != pItem->GetSocket(j))
+									if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j))
 										break;
 
 								if (j != ITEM_SOCKET_MAX_NUM)
@@ -697,7 +697,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #else
 								uint8_t 
 #endif
-								bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 								bCount -= bCount2;
 
 								ItemSystem::AddItemCountEcs(
@@ -732,16 +732,16 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #else
 						uint8_t 
 #endif
-						bCount = pItem->GetCount();
+						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 						for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
 							LPITEM item2 = ch->GetInventoryItem(i);
 							if (!item2)
 								continue;
 
-							if (item2->GetVnum() == pItem->GetVnum()) {
+							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) {
 								int j = 0;
 								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (item2->GetSocket(j) != pItem->GetSocket(j))
+									if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j))
 										break;
 
 								if (j != ITEM_SOCKET_MAX_NUM)
@@ -752,7 +752,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #else
 								uint8_t 
 #endif
-								bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
+								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 								bCount -= bCount2;
 
 								ItemSystem::AddItemCountEcs(
