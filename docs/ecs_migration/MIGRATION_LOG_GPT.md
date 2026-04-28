@@ -6040,6 +6040,74 @@ Manual WinTest checklist:
 Commit status:
 - File-by-file commits created for the migrated files.
 
+## Phase 15E-45-prep: Full pointer typedef audit
+
+Date: 2026-04-28
+
+Mode:
+- AUDIT ONLY.
+- No code/gameplay changes.
+
+Goal:
+- Identify all `LPxxx` pointer-style typedefs that matter before claiming full EnTT migration.
+- Categorize each as GAME ENTITY, SERVICE OBJECT, INFRASTRUCTURE, or DATA STRUCTURE.
+
+Report:
+- Saved comprehensive audit to:
+```text
+docs/ecs_migration/phase15e_45_pointer_audit.txt
+```
+
+Findings:
+```text
+Unique LP types found: 22
+GameServer LP types: 17
+Core/infrastructure LP types additionally found under SRC/Server: 5
+```
+
+Largest remaining pointer surfaces by token refs:
+```text
+LPCHARACTER  2020
+LPITEM       1038
+LPDESC        370
+LPDUNGEON     208
+LPEVENT       203
+LPENTITY      135
+LPPARTY        94
+LPSECTREE_MAP  85
+LPSECTREE      64
+LPFDWATCH      61
+LPBUFFER       53
+```
+
+Category totals:
+```text
+GAME ENTITY:     LPCHARACTER, LPITEM, LPENTITY, LPOBJECT
+SERVICE OBJECT:  LPPARTY, LPSHOP, LPSHOPEX, LPDUNGEON
+INFRASTRUCTURE:  LPDESC, LPCLIENT_DESC, LPDESC_P2P, LPEVENT, LPBUFFER, LPFDWATCH, LPKEVENT, LPHEART, LPLOGFILE
+DATA STRUCTURE:  LPSECTREE, LPSECTREE_LIST, LPSECTREE_MAP, LPREGEN, LPREGEN_EXCEPTION
+```
+
+Roadmap conclusion:
+- Full EnTT requires finishing `LPCHARACTER` and `LPITEM`, then migrating generic `LPENTITY` and `LPOBJECT` public handles.
+- Party/shop/dungeon should remain service classes but expose entity-first APIs.
+- Descriptor/buffer/fdwatch/heart/logfile should remain infrastructure, not gameplay entities.
+- `LPEVENT` needs separate scheduler/Flecs design.
+- Sectree and regen should remain data structures initially, with entity-facing adapter APIs.
+
+Validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- `GameServer.exe` linked successfully.
+
+Commit status:
+- Committed as:
+```text
+Phase 15E-45-prep: Full pointer typedef audit
+```
+
 ## Phase 15E-38: Timed/recall item count consume to ECS
 
 Date: 2026-04-28

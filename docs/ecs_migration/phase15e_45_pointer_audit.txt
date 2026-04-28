@@ -1,0 +1,148 @@
+# Phase 15E-45-prep: Full pointer typedef audit
+
+Date: 2026-04-28
+
+Mode: AUDIT ONLY. No gameplay/code changes.
+
+Scope notes:
+- Primary scan target was `SRC/Server/GameServer` as requested.
+- Full typedef discovery also scanned `SRC/Server` to catch Core infrastructure aliases referenced by GameServer (`LPBUFFER`, `LPFDWATCH`, `LPHEART`, etc.).
+- `rg.exe` was unavailable in this environment due to an access-denied error, so the audit used a latin-1 tolerant Python tree scan.
+- Usage counts are token references / declaration-like matches / parameter-like matches. They are sizing numbers, not guaranteed semantic call-site counts.
+
+## 1. LP typedef definitions
+
+| Type | Underlying type | File:line | Declaration |
+|---|---:|---|---|
+| `LPBUFFER` | `struct buffer *` | `SRC/Server/Core/buffer.h:7` | `typedef struct buffer * LPBUFFER;` |
+| `LPFDWATCH` | `struct fdwatch *` | `SRC/Server/Core/fdwatch.h:7` | `typedef struct fdwatch * LPFDWATCH;` |
+| `LPKEVENT` | `struct kevent *` | `SRC/Server/Core/fdwatch.h:19` | `typedef struct kevent * LPKEVENT;` |
+| `LPFDWATCH` | `struct fdwatch *` | `SRC/Server/Core/fdwatch.h:41` | `typedef struct fdwatch * LPFDWATCH;` |
+| `LPHEART` | `struct heart *` | `SRC/Server/Core/heart.h:4` | `typedef struct heart* LPHEART;` |
+| `LPLOGFILE` | `struct log_file_s *` | `SRC/Server/Core/log.cpp:14` | `typedef struct log_file_s * LPLOGFILE;` |
+| `LPSHOP` | `class CShop *` | `SRC/Server/GameServer/char.h:630` | `typedef class CShop* LPSHOP;` |
+| `LPCHARACTER` | `CHARACTER *` | `SRC/Server/GameServer/char_fwd.hpp:4` | `using LPCHARACTER = CHARACTER*;` |
+| `LPEVENT` | `boost::intrusive_ptr<EVENT>` | `SRC/Server/GameServer/event.h:37` | `typedef boost::intrusive_ptr<EVENT> LPEVENT;` |
+| `LPSHOPEX` | `CShopEx *` | `SRC/Server/GameServer/shopEx.h:33` | `typedef CShopEx* LPSHOPEX;` |
+| `LPSHOP` | `class CShop *` | `SRC/Server/GameServer/shop_manager.h:5` | `typedef class CShop * LPSHOP;` |
+| `LPDESC` | `DebugPtr<DESC> / DESC *` | `SRC/Server/GameServer/typedef.h:8` | `typedef DebugPtr<DESC> LPDESC; / typedef DESC* LPDESC;` |
+| `LPCLIENT_DESC` | `DebugPtr<CLIENT_DESC> / CLIENT_DESC *` | `SRC/Server/GameServer/typedef.h:15` | `typedef DebugPtr<CLIENT_DESC> LPCLIENT_DESC; / typedef CLIENT_DESC* LPCLIENT_DESC;` |
+| `LPDESC_P2P` | `DebugPtr<DESC_P2P> / DESC_P2P *` | `SRC/Server/GameServer/typedef.h:22` | `typedef DebugPtr<DESC_P2P> LPDESC_P2P; / typedef DESC_P2P* LPDESC_P2P;` |
+| `LPITEM` | `DebugPtr<CItem> / CItem *` | `SRC/Server/GameServer/typedef.h:33` | `typedef DebugPtr<CItem> LPITEM; / typedef CItem* LPITEM;` |
+| `LPOBJECT` | `DebugPtr<CObject> / CObject *` | `SRC/Server/GameServer/typedef.h:41` | `typedef DebugPtr<CObject> LPOBJECT; / typedef CObject* LPOBJECT;` |
+| `LPREGEN` | `struct regen *` | `SRC/Server/GameServer/typedef.h:47` | `typedef struct regen* LPREGEN;` |
+| `LPREGEN_EXCEPTION` | `struct regen_exception *` | `SRC/Server/GameServer/typedef.h:48` | `typedef struct regen_exception* LPREGEN_EXCEPTION;` |
+| `LPENTITY` | `DebugPtr<CEntity> / CEntity *` | `SRC/Server/GameServer/typedef.h:52` | `typedef DebugPtr<CEntity> LPENTITY; / typedef CEntity* LPENTITY;` |
+| `LPSECTREE` | `DebugPtr<SECTREE> / SECTREE *` | `SRC/Server/GameServer/typedef.h:61` | `typedef DebugPtr<SECTREE> LPSECTREE; / typedef SECTREE* LPSECTREE;` |
+| `LPSECTREE_LIST` | `std::list<LPSECTREE>` | `SRC/Server/GameServer/typedef.h:65` | `typedef std::list<LPSECTREE> LPSECTREE_LIST;` |
+| `LPSECTREE_MAP` | `DebugPtr<SECTREE_MAP> / SECTREE_MAP *` | `SRC/Server/GameServer/typedef.h:69` | `typedef DebugPtr<SECTREE_MAP> LPSECTREE_MAP; / typedef SECTREE_MAP* LPSECTREE_MAP;` |
+| `LPDUNGEON` | `DebugPtr<CDungeon> / CDungeon *` | `SRC/Server/GameServer/typedef.h:76` | `typedef DebugPtr<CDungeon> LPDUNGEON; / typedef CDungeon* LPDUNGEON;` |
+| `LPPARTY` | `DebugPtr<CParty> / CParty *` | `SRC/Server/GameServer/typedef.h:83` | `typedef DebugPtr<CParty> LPPARTY; / typedef CParty* LPPARTY;` |
+
+Unique LP types found:
+
+```text
+LPBUFFER, LPCHARACTER, LPCLIENT_DESC, LPDESC, LPDESC_P2P, LPDUNGEON, LPENTITY, LPEVENT, LPFDWATCH, LPHEART, LPITEM, LPKEVENT, LPLOGFILE, LPOBJECT, LPPARTY, LPREGEN, LPREGEN_EXCEPTION, LPSECTREE, LPSECTREE_LIST, LPSECTREE_MAP, LPSHOP, LPSHOPEX
+```
+
+## 2. Usage counts
+
+| Type | Refs | Local decl-like | Param-like | Files |
+|---|---:|---:|---:|---:|
+| `LPCHARACTER` | 2020 | 1914 | 1361 | 179 |
+| `LPITEM` | 1038 | 937 | 331 | 105 |
+| `LPDESC` | 370 | 350 | 222 | 67 |
+| `LPDUNGEON` | 208 | 204 | 32 | 26 |
+| `LPEVENT` | 203 | 136 | 95 | 58 |
+| `LPENTITY` | 135 | 125 | 99 | 45 |
+| `LPPARTY` | 94 | 86 | 22 | 34 |
+| `LPSECTREE_MAP` | 85 | 79 | 8 | 26 |
+| `LPSECTREE` | 64 | 57 | 7 | 17 |
+| `LPFDWATCH` | 61 | 59 | 47 | 14 |
+| `LPBUFFER` | 53 | 46 | 32 | 9 |
+| `LPOBJECT` | 36 | 28 | 10 | 6 |
+| `LPREGEN` | 31 | 29 | 15 | 9 |
+| `LPSHOP` | 27 | 25 | 2 | 8 |
+| `LPCLIENT_DESC` | 18 | 12 | 4 | 6 |
+| `LPHEART` | 14 | 13 | 8 | 6 |
+| `LPLOGFILE` | 14 | 12 | 7 | 1 |
+| `LPSECTREE_LIST` | 7 | 1 | 0 | 3 |
+| `LPREGEN_EXCEPTION` | 6 | 5 | 0 | 3 |
+| `LPKEVENT` | 3 | 2 | 0 | 1 |
+| `LPDESC_P2P` | 2 | 0 | 0 | 1 |
+| `LPSHOPEX` | 2 | 1 | 0 | 2 |
+
+## 3. Category totals
+
+| Category | Types | Refs | Decl-like | Param-like |
+|---|---:|---:|---:|---:|
+| DATA STRUCTURE | 5 | 193 | 171 | 30 |
+| GAME ENTITY | 4 | 3229 | 3004 | 1801 |
+| INFRASTRUCTURE | 9 | 738 | 630 | 415 |
+| SERVICE OBJECT | 4 | 331 | 316 | 56 |
+
+## 4. Classification and migration estimate
+
+| Type | Calls/refs | Category | Complexity | Depends on | Proposed phase | Rationale |
+|---|---:|---|---|---|---|---|
+| `LPCHARACTER` | 2020 | GAME ENTITY | HIGH | - | 15E-46 | World actor/player/NPC with gameplay state, position, packets, combat, ownership. Target representation is entt::entity; legacy pointer remains bridge-only until final collapse. |
+| `LPITEM` | 1038 | GAME ENTITY | HIGH | LPCHARACTER | 15E-47 | World/inventory object with ownership, count, sockets, attributes and persistence. Migration is advanced but core item manager and bridge islands remain. |
+| `LPDESC` | 370 | INFRASTRUCTURE | MEDIUM | LPCHARACTER session split | 17A | Network connection wrapper should remain C++ infrastructure, linked to session/character entity through components. Do not convert DESC itself to entity. |
+| `LPDUNGEON` | 208 | SERVICE OBJECT | MEDIUM | LPCHARACTER, LPENTITY | 16C | Dungeon instance/service should remain class-like but expose entity handles for actors/items. |
+| `LPEVENT` | 203 | INFRASTRUCTURE | HARD | - | 17B | Scheduler/event handle. Best target is Flecs/ECS scheduler or centralized EventSystem, not direct entt::entity. |
+| `LPENTITY` | 135 | GAME ENTITY | MEDIUM | LPCHARACTER, LPITEM | 15E-48 | Base runtime world entity pointer used for generic views/sectree dispatch. Replace external signatures with entt::entity after concrete CHARACTER/ITEM paths are stable. |
+| `LPPARTY` | 94 | SERVICE OBJECT | MEDIUM | LPCHARACTER | 16A | Party should remain a service/domain object, but member APIs should accept/store character entities rather than LPCHARACTER where possible. |
+| `LPSECTREE_MAP` | 85 | DATA STRUCTURE | MEDIUM | LPSECTREE | 18A | Spatial map container; likely remains infrastructure/data. |
+| `LPSECTREE` | 64 | DATA STRUCTURE | MEDIUM | LPENTITY | 18A | Spatial partition node. Probably remains data structure, but APIs should consume entity ids instead of LPENTITY where useful. |
+| `LPFDWATCH` | 61 | INFRASTRUCTURE | EASY | LPDESC | 17C | Core fd watcher. Keep/RAII; outside gameplay ECS. |
+| `LPBUFFER` | 53 | INFRASTRUCTURE | EASY | LPDESC | 17C | Core packet buffer. Keep as infrastructure or replace with RAII buffer type; not a gameplay entity. |
+| `LPOBJECT` | 36 | GAME ENTITY | MEDIUM | LPENTITY | 15E-49 | World/building object. Likely becomes entity with object/building components; service code should accept entt::entity. |
+| `LPREGEN` | 31 | DATA STRUCTURE | EASY | LPCHARACTER | 18B | Spawn table/config data. Keep data structure; emitted spawns should produce entities. |
+| `LPSHOP` | 27 | SERVICE OBJECT | MEDIUM | LPITEM, LPCHARACTER | 16B | Shop remains transactional service; public signatures should become entity-first while class owns shop state. |
+| `LPCLIENT_DESC` | 18 | INFRASTRUCTURE | EASY | LPDESC | 17A | DB/client descriptor infrastructure; keep wrapper, reduce signature leakage. |
+| `LPHEART` | 14 | INFRASTRUCTURE | EASY | LPEVENT | 17D | Core heartbeat loop handle. Future scheduler integration, not entt entity. |
+| `LPLOGFILE` | 14 | INFRASTRUCTURE | EASY | - | 17D | Core logging file handle; not ECS. |
+| `LPSECTREE_LIST` | 7 | DATA STRUCTURE | EASY | LPSECTREE | 18A | Container alias for sectree pointers; likely internal only. |
+| `LPREGEN_EXCEPTION` | 6 | DATA STRUCTURE | EASY | LPREGEN | 18B | Spawn exception config data; keep. |
+| `LPKEVENT` | 3 | INFRASTRUCTURE | EASY | LPFDWATCH | 17C | Platform fdwatch detail, no gameplay migration. |
+| `LPDESC_P2P` | 2 | INFRASTRUCTURE | EASY | LPDESC | 17A | P2P descriptor alias with negligible surface. |
+| `LPSHOPEX` | 2 | SERVICE OBJECT | EASY | LPSHOP | 16B | Extended shop service wrapper with very low pointer surface. |
+
+## 5. Roadmap
+
+Tier 1 - GAME ENTITY migration:
+- Finish `LPCHARACTER` and `LPITEM` public/API cleanup, then collapse remaining bridge/core islands.
+- Convert `LPENTITY` generic world APIs after concrete character/item paths are stable.
+- Convert `LPOBJECT`/building-object flows to entity + components after `LPENTITY` is no longer public-facing.
+
+Tier 2 - SERVICE OBJECT signatures:
+- Refactor `CParty`, `CShop`/`CShopEx`, and `CDungeon` APIs to accept `entt::entity` for actors/items while keeping the service objects themselves as C++ classes.
+- Avoid converting party/shop/dungeon classes themselves into entities unless they need world position/lifecycle semantics.
+
+Tier 3 - INFRASTRUCTURE:
+- Keep `DESC`, `CLIENT_DESC`, `DESC_P2P`, buffers, fdwatch, heart, and logfile as infrastructure/RAII wrappers.
+- Migrate `LPEVENT` separately to a Flecs/ECS scheduler or central `EventSystem`; do not mix with gameplay entity migration.
+
+Tier 4 - DATA STRUCTURE:
+- Keep `SECTREE`, `SECTREE_MAP`, `SECTREE_LIST`, `regen`, and regen exception structures as data structures initially.
+- Add entity-facing adapter APIs where gameplay code currently passes `LPENTITY`/`LPCHARACTER` into spatial or spawn systems.
+
+## 6. Recommended next phases
+
+| Phase | Focus | Exit criteria |
+|---|---|---|
+| 15E-46 | Complete `LPCHARACTER` API cleanup | Public gameplay systems accept `entt::entity`; legacy char pointer bridge isolated. |
+| 15E-47 | Complete `LPITEM` read/core island cleanup | Caller-side CItem reads gone outside core/bridge; ItemManager lookup remains internal only. |
+| 15E-48 | `LPENTITY` generic world API migration | `CEntity*` no longer used as public gameplay handle; sectree/view dispatch accepts entity ids. |
+| 15E-49 | `LPOBJECT` building/world object migration | Building/object flows represented as entities/components or isolated service data. |
+| 16A | Party service entity-first signatures | Party membership APIs use `entt::entity` for players. |
+| 16B | Shop/shopEx service entity-first signatures | Shop transactions use entity ids for actor/item boundary APIs. |
+| 16C | Dungeon service entity-first signatures | Dungeon APIs expose entity-based actor/item operations. |
+| 17A | Descriptor/session boundary cleanup | Network descriptors remain infra; session components map descriptors to character entities. |
+| 17B | Event scheduler migration | `LPEVENT` use replaced or isolated behind ECS/Flecs scheduler facade. |
+| 18A | Sectree adapter pass | Spatial APIs become entity-facing without deleting sectree structures. |
+| 18B | Regen adapter pass | Spawn configs stay data; spawn outputs are entities. |
+
+## 7. Conclusion
+
+Full EnTT cannot be claimed with only `LPCHARACTER` and `LPITEM` migrated. The next mandatory gameplay handles are `LPENTITY` and `LPOBJECT`; service objects (`LPPARTY`, `LPSHOP`, `LPDUNGEON`) should keep their classes but become entity-first at API boundaries. Infrastructure aliases should not be blindly converted to `entt::entity`; especially `LPEVENT` needs a dedicated scheduler design.
