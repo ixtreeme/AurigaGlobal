@@ -1566,7 +1566,8 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 {
 	if (nullptr == pItem)
 		return false;
-	LPCHARACTER pOwner = pItem->GetOwner();
+	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
 	if (nullptr == pOwner)
 		return false;
 
@@ -1611,7 +1612,8 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 	if (nullptr == pItem)
 		return false;
 
-	LPCHARACTER pOwner = pItem->GetOwner();
+	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
 	if (nullptr == pOwner)
 		return false;
 
