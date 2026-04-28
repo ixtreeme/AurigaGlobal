@@ -848,10 +848,10 @@ namespace quest
 				}
 			}
 			if(test_server)
-			sys_log( 0, "questmanager:useItem: mapNPCVnum : %d\n", m_mapNPC[item->GetVnum()].GetVnum());
+			sys_log( 0, "questmanager:useItem: mapNPCVnum : %d\n", m_mapNPC[ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))].GetVnum());
 			*/
 
-			return m_mapNPC[item->GetVnum()].OnUseItem(*pPC, bReceiveAll);
+			return m_mapNPC[ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))].OnUseItem(*pPC, bReceiveAll);
 		}
 		else
 		{
