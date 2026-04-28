@@ -3879,7 +3879,8 @@ ACMD(do_rune_charge)
 			return;
 		}
 		
-		pkBottle->SetCount(pkBottle->GetCount() - 1);
+		ItemSystem::ConsumeItemEcs(
+			EntityFactory::CreateItemEntity(g_registry, pkBottle), 1);
 		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(pkBottle->GetVnum(), 1);
 		if (!item2)
 			return;
