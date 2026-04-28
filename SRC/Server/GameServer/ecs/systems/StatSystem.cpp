@@ -611,7 +611,7 @@ void CHARACTER::ComputePoints()
 		uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 		if (valid_mount_items.contains(vnum))
 		{
-			const TItemTable* proto = item->GetProto();
+			const TItemTable* proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
 			if (!proto)
 				continue;
 
