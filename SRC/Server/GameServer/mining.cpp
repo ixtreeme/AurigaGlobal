@@ -150,7 +150,7 @@ namespace mining
 		item->StartDestroyEvent();
 		item->SetOwnership(ch, 15);
 
-		DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, item->GetVnum(), item->GetCount());
+		DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 	}
 
 	int GetOrePct(LPCHARACTER ch)
@@ -160,7 +160,7 @@ namespace mining
 
 		LPITEM pick = ch->GetWear(WEAR_WEAPON);
 
-		if (!pick || pick->GetType() != ITEM_PICK)
+		if (!pick || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pick)) != ITEM_PICK)
 			return 0;
 
 		return defaultPct + SkillLevelAddPct[MINMAX(0, iSkillLevel, 40)] + PickGradeAddPct[MINMAX(0, pick->GetRefineLevel(), 9)];
@@ -245,8 +245,8 @@ namespace mining
 
 		if (!Pick_Check(*item))
 		{
-			sys_err("REFINE_PICK_HACK pid(%u) item(%s:%d) type(%d)", ((ch)->GetPlayerID()), item->GetName(), item->GetID(), item->GetType());
-			rkLogMgr.RefineLog(((ch)->GetPlayerID()), item->GetName(), item->GetID(), -1, 1, "PICK_HACK");
+			sys_err("REFINE_PICK_HACK pid(%u) item(%s:%d) type(%d)", ((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
+			rkLogMgr.RefineLog(((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "PICK_HACK");
 			return 2;
 		}
 
@@ -434,13 +434,13 @@ namespace mining
 			return false;
 		}
 
-		if (item->GetCount() < ORE_COUNT_FOR_REFINE)
+		if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < ORE_COUNT_FOR_REFINE)
 		{
 			sys_err("not enough count");
 			return false;
 		}
 
-		uint32_t dwRefinedVnum = GetRefineFromRawOre(item->GetVnum());
+		uint32_t dwRefinedVnum = GetRefineFromRawOre(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		if (dwRefinedVnum == 0)
 			return false;
