@@ -6215,6 +6215,75 @@ Commit status:
 - Code commits completed.
 - This log update committed separately as Phase 15E-41 completion documentation.
 
+## Phase 15E-42: Shop / OfflineShop / shopEx subsystem cleanup
+
+Date: 2026-04-28
+
+Mode:
+- Code change with build gates.
+- Scope limited to `shop.cpp`, `new_offlineshop_manager.cpp`, and `shopEx.cpp`.
+- Cube/refine/attr_transfer, DragonSoul, and pet paths intentionally untouched.
+
+Part A - `shop.cpp` NPC shop transactions:
+- Replaced NPC shop stack merge target increments with `ItemSystem::AddItemCountEcs`.
+- Replaced partial remaining source count assignments with `ItemSystem::SetItemCountEcs`.
+- Replaced full source stack cleanup and temporary item cleanup with `ItemSystem::DestroyItemEntityEcs`.
+- Added `ecs/EntityFactory.hpp` and `ecs/Registry.hpp`.
+- Target file result: `shop.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part A.
+
+Part B - `new_offlineshop_manager.cpp` player offline shop destroys:
+- Replaced temp item cleanup with `ItemSystem::DestroyItemEntityEcs(..., "OFFLINESHOP_TEMP")`.
+- Replaced sell/remove cleanup with:
+```cpp
+LPITEM removed = item->RemoveFromCharacter();
+ItemSystem::DestroyItemEntityEcs(
+    EntityFactory::CreateItemEntity(g_registry, removed),
+    "OFFLINESHOP_SELL");
+```
+- Preserved `RemoveFromCharacter()` before destruction for attached items.
+- Target file result: `new_offlineshop_manager.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part B.
+
+Part C - `shopEx.cpp` destroy migration:
+- Replaced the extended shop inventory-full temporary item destroy with `ItemSystem::DestroyItemEntityEcs(..., "SHOP_EX_TRANSACTION")`.
+- Target file result: `shopEx.cpp SetCount=0 M2_DESTROY_ITEM=0`.
+- Build passed after Part C.
+
+Final count verification:
+```text
+shop.cpp                    SetCount=0 M2_DESTROY_ITEM=0
+new_offlineshop_manager.cpp SetCount=0 M2_DESTROY_ITEM=0
+shopEx.cpp                  SetCount=0 M2_DESTROY_ITEM=0
+
+Tree-wide ->SetCount after Phase 15E-42: 27
+Tree-wide M2_DESTROY_ITEM real call sites after Phase 15E-42: 16
+```
+
+Final validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+
+Manual WinTest checklist:
+- NPC shop: buy stackable merge, buy stackable new slot, buy non-stackable item.
+- NPC shop: sell stackable partial, sell stackable full consume, sell non-stackable item.
+- Verify gold balance after each transaction.
+- Offline shop: create shop, buy item from another player, close shop, return items, logout/login owner state.
+- Extended shop: inventory-full buy failure and normal buy if available.
+- Check `syserr.txt` for `SHOP_TRANSACTION`, `SHOP_EX_TRANSACTION`, `OFFLINESHOP_TEMP`, `OFFLINESHOP_SELL`, item count desync, duplicate/missing items, gold mismatch, and `VID_DRIFT`.
+- Verify no delayed damage/metin collapse regression.
+
+Commits:
+- `Phase 15E-42 PART A: shop.cpp NPC shop transactions to ECS`
+- `Phase 15E-42 PART B: new_offlineshop_manager.cpp destroys to ECS`
+- `Phase 15E-42 PART C: shopEx.cpp destroy to ECS`
+
+Commit status:
+- Code commits completed.
+- This log update committed separately as Phase 15E-42 completion documentation.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
