@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "ItemSystem.hpp"
 
 #include <algorithm>
 
@@ -2325,7 +2326,8 @@ bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
         pkTarget->SetForceAttribute(i, 0, 0);
 
-    pkItem->SetCount(pkItem->GetCount() - 1);
+    ItemSystem::ConsumeItemEcs(
+        EntityFactory::CreateItemEntity(g_registry, pkItem));
     LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT (CLEAN ATTR)", pkTarget->GetName());
     return true;
 }
