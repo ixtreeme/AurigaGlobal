@@ -13,6 +13,7 @@
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/EntityFactory.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
 #endif
@@ -325,7 +326,8 @@ void CSwitchbot::SwitchItems()
 			continue;
 		}
 
-		LPCHARACTER pkOwner = pkItem->GetOwner();
+		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pkItem));
+		LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
 		if (!pkOwner)
 		{
 			return;
@@ -718,9 +720,11 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 					{
 						lastNoticedTime[itemID] = now;
 
-						if (pkItem->GetOwner())
+						const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pkItem));
+						LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
+						if (pkOwner)
 						{
-							std::string chatMsg = MakeFullItemLink(pkItem, pkItem->GetOwner());
+							std::string chatMsg = MakeFullItemLink(pkItem, pkOwner);
 							BroadcastNotice(chatMsg.c_str());
 						}
 					}
