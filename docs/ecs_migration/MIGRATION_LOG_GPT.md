@@ -6057,6 +6057,98 @@ Manual WinTest checklist:
 Commit status:
 - Not committed.
 
+## Phase 15E-37: Cleanup destroy paths to ECS
+
+Date: 2026-04-28
+
+Mode:
+- Audit + verification.
+- No code change required in this pass.
+- Documentation commit only.
+
+Context:
+- Phase 15E-21 through 15E-36d were consolidated in commit `4a9477b`.
+- The cleanup destroy migrations requested for 15E-37 were already included in that consolidated state.
+
+Target:
+- `SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp`
+
+Audit result:
+```text
+M2_DESTROY_ITEM(item): 0
+M2_DESTROY_ITEM(all direct bridge matches): 3
+```
+
+Remaining direct `M2_DESTROY_ITEM` matches:
+```text
+827: M2_DESTROY_ITEM(this)
+832: M2_DESTROY_ITEM(RemoveFromCharacter())
+848: M2_DESTROY_ITEM(RemoveFromCharacter())
+```
+- All three remaining matches are inside core `CItem::SetCount` internals.
+- They are not ground gold pickup, inventory cleanup, logout/disconnect cleanup, or item destroy event paths.
+- They are out of scope for Phase 15E-37 and need a later core `CItem::SetCount` isolation/removal phase.
+
+Cleanup paths verified already on ECS destroy:
+```text
+Ground gold pickup:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "PICKUP_GOLD")
+
+CHARACTER::ClearItem inventory loop:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "CLEAR_ITEM_INVENTORY")
+
+CHARACTER::ClearItem DragonSoul inventory loop:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "CLEAR_ITEM_DRAGON_SOUL")
+
+CHARACTER::ClearItem extra inventory loop:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "CLEAR_ITEM_EXTRA_INVENTORY")
+
+CHARACTER::ClearItem switchbot loop:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "CLEAR_ITEM_SWITCHBOT")
+
+item_destroy_event:
+  ItemSystem::DestroyItemEntityEcs(CreateItemEntity(...), "ITEM_DESTROY_EVENT")
+```
+
+Destroy API verification:
+```text
+DestroyItemEntityEcs(item, reason)
+  -> DestroyItemEntityAndLegacy(item, reason)
+     -> EntityFactory::DestroyItemEntity(g_registry, legacyItem)
+     -> ITEM_MANAGER::RemoveItem(legacyItem, reason)
+```
+- Handles ECS unregister/destroy before legacy item removal.
+- Does not expose LPITEM publicly.
+- Does not require caller-side packet formatting.
+- Works for cleanup contexts where item has already been removed from character before destroy.
+
+Header validation:
+```powershell
+Select-String -Path 'SRC/Server/GameServer/ecs/systems/ItemSystem.hpp' -Pattern 'LPITEM|LPCHARACTER|CHARACTER\s*\*'
+```
+- Result: no matches.
+
+Build validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- `GameServer.exe` linked successfully.
+- CMake reconfigured because unrelated root `CMakeLists.txt` is newer in the dirty worktree.
+- The Phase 15E-37 GameServer target still built successfully.
+
+Manual WinTest checklist:
+- Login -> existing items present.
+- Pick up ground gold -> gold added, ground item gone.
+- Logout -> no cleanup syserr.
+- Re-login -> inventory items persist.
+- Force-quit client -> cleanup path clean.
+- Verify no duplicate item, missing item, stale ECS item, wrong owner/window/cell.
+- Verify no delayed damage/metin collapse regression.
+
+Commit status:
+- Documentation-only commit for Phase 15E-37.
+
 ## Phase 15E-36b/c/d: Pet, DragonSoul and refine count consume migration
 
 Date: 2026-04-28
