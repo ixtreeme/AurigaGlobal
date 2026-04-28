@@ -387,7 +387,7 @@ uint8_t bCount
 	if (!item)
 		return;
 
-	if (item->IsEquipped() == true)
+	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 541, "");
@@ -400,7 +400,7 @@ uint8_t bCount
 		return;
 	}
 
-	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))
+	if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_SELL))
 		return;
 
 	if (bCount == 0 || bCount > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
