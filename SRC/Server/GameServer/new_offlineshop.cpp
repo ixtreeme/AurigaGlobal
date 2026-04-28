@@ -7,6 +7,9 @@
 #include "desc.h"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
@@ -70,9 +73,9 @@ namespace offlineshop
 		if (pItem)
 		{
 			//basic info
-			m_itemInfo.dwCount	= pItem->GetCount();
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 			m_dwOwnerID			= pItem->GetOwner() ? pItem->GetOwner()->GetPlayerID() : 0;
-			m_itemInfo.dwVnum	= pItem->GetVnum();
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 			//patch 08-03-2020
 			m_itemInfo.expiration = GetItemExpiration(pItem);
 
@@ -148,9 +151,9 @@ namespace offlineshop
 		if (pItem)
 		{
 			//basic info
-			m_itemInfo.dwCount	= pItem->GetCount();
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 			m_dwOwnerID			= pItem->GetOwner() ? pItem->GetOwner()->GetPlayerID() : 0;
-			m_itemInfo.dwVnum	= pItem->GetVnum();
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 			//attributes
 			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();
