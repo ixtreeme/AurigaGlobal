@@ -56,7 +56,9 @@ namespace offlineshop
 {
 	//patch 08-03-2020
 	inline offlineshop::ExpirationType GetItemExpiration(LPITEM item) {
-		auto proto = item->GetProto();
+		auto proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+		if (!proto)
+			return offlineshop::ExpirationType::EXPIRE_NONE;
 #ifdef ENABLE_NEW_USE_POTION
 		if (proto->bType == ITEM_USE && proto->bSubType == USE_NEW_POTIION) {
 			return offlineshop::ExpirationType::EXPIRE_NONE;
