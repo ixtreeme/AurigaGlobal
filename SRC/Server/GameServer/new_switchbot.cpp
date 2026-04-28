@@ -31,13 +31,13 @@ bool SwitchbotHelper::IsValidItem(LPITEM pkItem)
 		return false;
 	}
 
-	switch (pkItem->GetType())
+	switch (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
 	{
 	case ITEM_WEAPON:
 		return true;
 
 	case ITEM_ARMOR:
-		switch (pkItem->GetSubType())
+		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
 		{
 		case ARMOR_BODY:
 		case ARMOR_HEAD:
@@ -272,10 +272,10 @@ std::string MakeFullItemLink(LPITEM pkItem, LPCHARACTER pkKiller)
 	int len = 0;
 
 	len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-		pkItem->GetVnum(),
-		pkItem->GetSocket(0),
-		pkItem->GetSocket(1),
-		pkItem->GetSocket(2),
+		ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1),
+		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 2),
 		0, // transmute
 		0  // transmute2
 	);
@@ -420,7 +420,7 @@ void CSwitchbot::SwitchItems()
 			bool stop = true;
 			if (SWITCHBOT_PRICE_TYPE == 1)
 			{
-				uint32_t dwTargetVnum = pkItem->GetVnum();
+				uint32_t dwTargetVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
 				bool bZodiacItem = (
 #ifdef DISABLE_ZODIAC_ATT
 	
@@ -489,19 +489,19 @@ void CSwitchbot::SwitchItems()
 							uint32_t dwItemVnum, dwUseCount;
 							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 							{
-								if(dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+								if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 							}
 
 							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 							{
-								if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+								if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 							}
 
 							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 							{
-								if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+								if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 							}
 						}
@@ -519,15 +519,15 @@ void CSwitchbot::SwitchItems()
 						//CHECK_LIMITED_ITEM START
 						if (itemVnum == 71151 || itemVnum == 76023)
 						{
-							if ((pkItem->GetType() == ITEM_WEAPON) || ((pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_BODY)
+							if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_WEAPON) || ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY)
 #define __USE_ADD_WITH_ALL_ITEMS__
 #ifdef __USE_ADD_WITH_ALL_ITEMS__
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_HEAD)
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_SHIELD)
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_WRIST)
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_FOOTS)
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_NECK)
-								|| (pkItem->GetType() == ITEM_ARMOR && pkItem->GetSubType() == ARMOR_EAR)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_WRIST)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_NECK)
+								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_EAR)
 #endif
 								))
 							{
@@ -556,7 +556,7 @@ void CSwitchbot::SwitchItems()
 									{
 										ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
 #ifdef ENABLE_RANKING
-										if (tpkItem->GetVnum() == 86051 || tpkItem->GetVnum() == 88965)
+										if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 86051 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 88965)
 											pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
 										else
 											pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
@@ -569,19 +569,19 @@ void CSwitchbot::SwitchItems()
 											uint32_t dwItemVnum, dwUseCount;
 											if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 											{
-												if(dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+												if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 											}
 
 											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 											{
-												if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+												if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 											}
 
 											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 											{
-												if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+												if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 											}
 										}
@@ -608,7 +608,7 @@ void CSwitchbot::SwitchItems()
 						{
 							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
 #ifdef ENABLE_RANKING
-							if (tpkItem->GetVnum() == 86051 || tpkItem->GetVnum() == 88965)
+							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 86051 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 88965)
 								pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
 							else
 								pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
@@ -621,19 +621,19 @@ void CSwitchbot::SwitchItems()
 								uint32_t dwItemVnum, dwUseCount;
 								if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 								{
-									if(dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+									if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 								{
-									if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+									if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 								{
-									if (dwItemVnum == tpkItem->GetVnum() && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+									if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 								}
 							}
@@ -713,7 +713,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 				
 				if (curAttr.bType == APPLY_NORMAL_HIT_DAMAGE_BONUS && curAttr.sValue > BONUSZ)
 				{
-					uint32_t itemID = pkItem->GetID(); // vagy más egyedi azonosító
+					uint32_t itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem)); // vagy más egyedi azonosító
 					if (now - lastNoticedTime[itemID] > BONUSZ_TIME) // csak 10 másodpercenként 1x
 					{
 						lastNoticedTime[itemID] = now;
@@ -825,8 +825,8 @@ void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, LPITEM item)
 
 	TSwitchbotUpdateItem update = {};
 	update.slot = slot;
-	update.vnum = item->GetVnum();
-	update.count = item->GetCount();
+	update.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+	update.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 
 	memcpy(update.alSockets, item->GetSockets(), sizeof(update.alSockets));
 	memcpy(update.aAttr, item->GetAttributes(), sizeof(update.aAttr));
