@@ -23,6 +23,9 @@
 #include "locale_service.h"
 #include <common/CommonDefines.h>
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include "db.h"
 //#include <Database/DBManager.h>
@@ -502,18 +505,18 @@ void Item_GetDamage(LPITEM pkItem, int* pdamMin, int* pdamMax)
 	if (!pkItem)
 		return;
 
-	switch (pkItem->GetType())
+	switch (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
 	{
 		case ITEM_ROD:
 		case ITEM_PICK:
 			return;
 	}
 
-	if (pkItem->GetType() != ITEM_WEAPON)
-		sys_err("Item_GetDamage - !ITEM_WEAPON vnum=%d, type=%d", pkItem->GetOriginalVnum(), pkItem->GetType());
+	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_WEAPON)
+		sys_err("Item_GetDamage - !ITEM_WEAPON vnum=%d, type=%d", pkItem->GetOriginalVnum(), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 
-	*pdamMin = pkItem->GetValue(3);
-	*pdamMax = pkItem->GetValue(4);
+	*pdamMin = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 3);
+	*pdamMax = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 4);
 }
 
 int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDefense, bool bIgnoreTargetRating)
@@ -523,10 +526,10 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 	if (pWeapon && !(bPolymorphed && !pkAttacker->IsPolyMaintainStat()))
 	{
-		if (pWeapon->GetType() != ITEM_WEAPON)
+		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pWeapon)) != ITEM_WEAPON)
 			return 0;
 
-				switch (pWeapon->GetSubType())
+				switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pWeapon)))
 		{
 			case WEAPON_SWORD:
 			case WEAPON_DAGGER:
@@ -600,10 +603,10 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 	if (pWeapon)
 	{
-		iAtk += pWeapon->GetValue(5) * 2;
+		iAtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pWeapon), 5) * 2;
 
 		// 2004.11.12.myevan.TESTSERVER_SHOW_ATTACKINFO
-		DEBUG_iDamBonus = pWeapon->GetValue(5) * 2;
+		DEBUG_iDamBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pWeapon), 5) * 2;
 		///////////////////////////////////////////////
 	}
 
@@ -694,7 +697,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, LPITEM pkArrow, bool bIgnoreDefense)
 {
-	if (!pkBow || pkBow->GetType() != ITEM_WEAPON || pkBow->GetSubType() != WEAPON_BOW)
+	if (!pkBow || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkBow)) != ITEM_WEAPON || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkBow)) != WEAPON_BOW)
 		return 0;
 
 	if (!pkArrow)
@@ -702,7 +705,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 
 	// Y??g ????
 	int iDist = (int) (DISTANCE_SQRT(pkAttacker->GetX() - pkVictim->GetX(), pkAttacker->GetY() - pkVictim->GetY()));
-	//int iGap = (iDist / 100) - 5 - pkBow->GetValue(5) - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
+	//int iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
 	int iGap = (iDist / 100) - 5 - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
 	int iPercent = 100 - (iGap * 5);
 
@@ -714,7 +717,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	int iDam = 0;
 
 	float fAR = CalcAttackRating(pkAttacker, pkVictim, false);
-	iDam = number(pkBow->GetValue(3), pkBow->GetValue(4)) * 2 + pkArrow->GetValue(3);
+	iDam = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 3), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 4)) * 2 + ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkArrow), 3);
 	int iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
@@ -723,7 +726,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	iAtk += pkAttacker->GetLevel() * 2; // and add again
 
 	// Refine Grade
-	iAtk += pkBow->GetValue(5) * 2;
+	iAtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) * 2;
 
 	iAtk += pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
 	iAtk = (int) (iAtk * (100 + (pkAttacker->GetPoint(POINT_ATT_BONUS) + pkAttacker->GetPoint(POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
@@ -982,7 +985,7 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 	int32_t real_speed = (ani_speed * 100) / (default_bonus + ch->GetPoint(POINT_ATT_SPEED) + riding_bonus);
 
 	LPITEM item = ch->GetWear(WEAR_WEAPON);
-	return item && item->GetSubType() == WEAPON_DAGGER ? real_speed / 2 : real_speed;
+	return item && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == WEAPON_DAGGER ? real_speed / 2 : real_speed;
 }
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
