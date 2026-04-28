@@ -702,7 +702,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 
 			for (uint8_t attrIdx = 0; attrIdx < MAX_NORM_ATTR_NUM; ++attrIdx)
 			{
-				const TPlayerItemAttribute& curAttr = pkItem->GetAttribute(attrIdx);
+				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, pkItem), attrIdx);
 
 				if (curAttr.bType != destAttr.bType || curAttr.sValue < destAttr.sValue)
 					continue;
@@ -780,7 +780,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 
 			for (uint8_t attrIdx = 0; attrIdx < MAX_NORM_ATTR_NUM; ++attrIdx)
 			{
-				const TPlayerItemAttribute& curAttr = pkItem->GetAttribute(attrIdx);
+				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, pkItem), attrIdx);
 
 				if (curAttr.bType != destAttr.bType || curAttr.sValue < destAttr.sValue)
 				{
