@@ -5945,6 +5945,48 @@ Manual WinTest checklist for this pass:
 Commit status:
 - Not committed. User requested review before commit.
 
+## Phase 15E-38: Timed/recall item count consume to ECS
+
+Date: 2026-04-28
+
+Mode:
+- Audit + verification.
+- No code change required.
+- Documentation-only phase.
+
+Context:
+- The timed/recall `SetCount` sites from the earlier audit were already migrated during the consolidated 15E-21 through 15E-36d work.
+- This phase verified the current code state and socket-state safety instead of reapplying an already completed migration.
+
+Audit result:
+- `ItemSystem_LegacyBridge.cpp` direct `->SetCount` count: 1.
+- Remaining direct `SetCount` is `pItem->SetCount(pItem->GetCount() + count)` inside core `CItem::SetCount` internals and is outside Phase 15E-38 scope.
+- `GiveRecallItem` uses `ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item))`.
+- `ProcessRecallItem` uses `ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item))`.
+
+Socket preservation:
+- `GiveRecallItem` preserves recall coordinates before consume. For single-count items it writes socket 0/1 on the current item; for stacked items it creates a split recall item with copied coordinates, then consumes one count from the original stack through ECS.
+- `ProcessRecallItem` reads socket 0/1 for map/warp coordinates before ECS consume.
+- No additional socket clearing or socket sync hook was needed because `ConsumeItemEcs` runs only after coordinate state is used or copied.
+
+Validation:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- `ItemSystem.hpp` remains pointer-clean: no `LPITEM`, `LPCHARACTER`, or `CHARACTER*` public exposure.
+
+Manual WinTest checklist:
+- Use recall item with count 1 and verify warp target is correct and the item is destroyed at zero.
+- Use stacked recall item and verify split/copy coordinates are preserved while the original stack decrements.
+- Use timed item if available and verify expiration/count behavior.
+- Logout/login with timed/recall items.
+- Check `syserr.txt` for socket, destroy, registry, and `VID_DRIFT` errors.
+- Verify no delayed damage/metin collapse regression.
+
+Commit status:
+- Documentation-only commit planned.
+
 ## Phase 15E-36a: Count authority split
 
 Date: 2026-04-28
