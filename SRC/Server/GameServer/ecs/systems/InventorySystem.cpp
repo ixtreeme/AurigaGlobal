@@ -47,7 +47,7 @@ entt::entity ItemEntityOf(LPITEM item)
 	if (!item)
 		return entt::null;
 
-	return CItemRegistry::Instance().Find(item->GetID());
+	return CItemRegistry::Instance().Find(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 }
 
 void SyncItemLocation(entt::entity e, LPITEM item)
@@ -1430,22 +1430,22 @@ void CItem::ModifyPoints(bool bAdd)
 				uint32_t toSetValueEffect;
 				switch (this->GetSubType()) {
 				case WEAPON_SWORD:
-					toSetValueEffect = item->GetValue(0);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0);
 					break;
 				case WEAPON_DAGGER:
-					toSetValueEffect = item->GetValue(2);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 2);
 					break;
 				case WEAPON_BOW:
-					toSetValueEffect = item->GetValue(3);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 3);
 					break;
 				case WEAPON_TWO_HANDED:
-					toSetValueEffect = item->GetValue(1);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
 					break;
 				case WEAPON_BELL:
-					toSetValueEffect = item->GetValue(4);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 4);
 					break;
 				case WEAPON_FAN:
-					toSetValueEffect = item->GetValue(5);
+					toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 5);
 					break;
 				default:
 					toSetValueEffect = 0;
@@ -1498,7 +1498,7 @@ void CItem::ModifyPoints(bool bAdd)
 			CItem* item = m_pOwner->GetWear(WEAR_COSTUME_EFFECT_BODY);
 			if (item) {
 				uint32_t toSetValueEffect;
-				toSetValueEffect = item->GetValue(0);
+				toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0);
 				if ((!bAdd) && (!m_pOwner->GetWear(WEAR_COSTUME_BODY)))
 					toSetValueEffect = 0;
 
@@ -1537,7 +1537,7 @@ void CItem::ModifyPoints(bool bAdd)
 			CItem* item = m_pOwner->GetWear(WEAR_COSTUME_EFFECT_BODY);
 			if (item) {
 				uint32_t toSetValueEffect;
-				toSetValueEffect = item->GetValue(0);
+				toSetValueEffect = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0);
 				if ((!bAdd) && (!m_pOwner->GetWear(WEAR_BODY)))
 					toSetValueEffect = 0;
 
@@ -1549,7 +1549,7 @@ void CItem::ModifyPoints(bool bAdd)
 			if (false == bAdd)
 			{
 				const CItem* pArmor = m_pOwner->GetWear(WEAR_BODY);
-				toSetValue = (nullptr != pArmor) ? pArmor->GetVnum() : m_pOwner->GetOriginalPart(PART_MAIN);
+				toSetValue = (nullptr != pArmor) ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, const_cast<LPITEM>(pArmor))) : m_pOwner->GetOriginalPart(PART_MAIN);
 			}
 		}
 #ifdef ENABLE_RUNE_SYSTEM
@@ -1577,7 +1577,7 @@ void CItem::ModifyPoints(bool bAdd)
 #ifdef ENABLE_STOLE_COSTUME
 			const CItem* pAcce = m_pOwner->GetWear(WEAR_COSTUME_ACCE);
 			if (pAcce) {
-				toSetValue = pAcce->GetVnum();
+				toSetValue = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, const_cast<LPITEM>(pAcce)));
 				toSetValue -= 85000;
 				toSetValue += 1000;
 			}
@@ -1595,9 +1595,9 @@ void CItem::ModifyPoints(bool bAdd)
 				if (!pAcce)
 					toSetValue = 0;
 				else {
-					toSetValue = pAcce->GetVnum();
+					toSetValue = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, const_cast<LPITEM>(pAcce)));
 					toSetValue -= 85000;
-					if (pAcce->GetSocket(ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
+					if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, const_cast<LPITEM>(pAcce)), ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
 						toSetValue += 1000;
 				}
 			}
@@ -1628,7 +1628,7 @@ void CItem::ModifyPoints(bool bAdd)
 			if (bAdd) {
 				CItem* item = m_pOwner->GetWear(WEAR_WEAPON);
 				if (item) {
-					switch (item->GetSubType()) {
+					switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item))) {
 					case WEAPON_SWORD:
 						toSetValue = this->GetValue(0);
 						break;
@@ -1653,7 +1653,7 @@ void CItem::ModifyPoints(bool bAdd)
 					}
 
 					if (toSetValue > 0) {
-						uint32_t dwWeaponVnum = item->GetVnum();
+						uint32_t dwWeaponVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 						if (((dwWeaponVnum >= 1180) && (dwWeaponVnum <= 1189)) ||
 							((dwWeaponVnum >= 1090) && (dwWeaponVnum <= 1099)) ||
 							(dwWeaponVnum == 1199) ||
@@ -1690,7 +1690,7 @@ void CItem::ModifyPoints(bool bAdd)
 			{
 				const CItem* pWeapon = m_pOwner->GetWear(WEAR_WEAPON);
 				if (pWeapon != nullptr) {
-					toSetValue = (nullptr != pWeapon) ? pWeapon->GetVnum() : m_pOwner->GetOriginalPart(PART_WEAPON);
+					toSetValue = (nullptr != pWeapon) ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, const_cast<LPITEM>(pWeapon))) : m_pOwner->GetOriginalPart(PART_WEAPON);
 				}
 				else {
 					toSetValue = 0;
