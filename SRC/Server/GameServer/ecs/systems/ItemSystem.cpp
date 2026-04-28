@@ -1460,6 +1460,11 @@ uint32_t GetItemWearFlags(entt::entity item)
     return 0;
 }
 
+uint32_t GetItemWearFlag(entt::entity item)
+{
+    return GetItemWearFlags(item);
+}
+
 uint32_t GetItemAntiFlags(entt::entity item)
 {
     if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
@@ -1468,12 +1473,25 @@ uint32_t GetItemAntiFlags(entt::entity item)
     return 0;
 }
 
+uint32_t GetItemAntiFlag(entt::entity item)
+{
+    return GetItemAntiFlags(item);
+}
+
 uint32_t GetItemImmuneFlags(entt::entity item)
 {
     if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
         return legacyItem->GetImmuneFlag();
 
     return 0;
+}
+
+const TItemTable* GetItemProto(entt::entity item)
+{
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        return legacyItem->GetProto();
+
+    return nullptr;
 }
 
 static void SetItemCountComponentOnly(entt::entity item, uint32_t count)
@@ -1572,6 +1590,11 @@ entt::entity GetItemOwner(entt::entity item)
     return entt::null;
 }
 
+entt::entity GetItemOwnerEntity(entt::entity item)
+{
+    return GetItemOwner(item);
+}
+
 uint32_t GetItemLastOwnerPID(entt::entity item)
 {
     if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item))
@@ -1595,6 +1618,20 @@ bool HasItemSocket(entt::entity item, int index)
 {
     return index >= 0 && index < ITEM_SOCKET_MAX_NUM &&
            g_registry.try_get<ecs::ItemSockets>(item) != nullptr;
+}
+
+TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
+{
+    if (index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
+        return {};
+
+    if (const auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item))
+        return attrs->attrs[index];
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        return legacyItem->GetAttribute(index);
+
+    return {};
 }
 
 int GetItemAttributeType(entt::entity item, int index)

@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 
 #include "../../../common/length.h"
+#include "../../tables.h"
 #include "../../typedef.h"
 
 namespace ItemSystem {
@@ -95,8 +96,11 @@ int GetItemLevelLimit(entt::entity item);
 int GetItemLimitTimerBasedOnWearIndex(entt::entity item);
 int32_t GetItemFlags(entt::entity item);
 uint32_t GetItemWearFlags(entt::entity item);
+uint32_t GetItemWearFlag(entt::entity item);
 uint32_t GetItemAntiFlags(entt::entity item);
+uint32_t GetItemAntiFlag(entt::entity item);
 uint32_t GetItemImmuneFlags(entt::entity item);
+const TItemTable* GetItemProto(entt::entity item);
 void SetItemCount(entt::entity item, uint32_t count);
 bool ConsumeItem(entt::entity item, uint32_t amount = 1);
 bool SetItemCountEcs(entt::entity item, uint32_t count);
@@ -104,9 +108,11 @@ bool AddItemCountEcs(entt::entity item, int delta);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
 entt::entity GetItemOwner(entt::entity item);
+entt::entity GetItemOwnerEntity(entt::entity item);
 uint32_t GetItemLastOwnerPID(entt::entity item);
 uint32_t GetItemSocket(entt::entity item, int index);
 bool HasItemSocket(entt::entity item, int index);
+TPlayerItemAttribute GetItemAttribute(entt::entity item, int index);
 int GetItemAttributeType(entt::entity item, int index);
 int GetItemAttributeValue(entt::entity item, int index);
 bool SetItemSocket(entt::entity item, int index, uint32_t value);
