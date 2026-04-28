@@ -4,6 +4,9 @@
 #include "desc.h"
 #include "desc_client.h"
 #include "char_interface.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "packet.h"
@@ -256,17 +259,17 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 		exchange_packet(m_pOwner,
 				EXCHANGE_SUBHEADER_GC_ITEM_ADD,
 				true,
-				item->GetVnum(),
+				ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)),
 				TItemPos(RESERVED_WINDOW, display_pos),
-				item->GetCount(),
+				ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)),
 				item);
 
 		exchange_packet(GetCompany()->GetOwner(),
 				EXCHANGE_SUBHEADER_GC_ITEM_ADD,
 				false,
-				item->GetVnum(),
+				ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)),
 				TItemPos(RESERVED_WINDOW, display_pos),
-				item->GetCount(),
+				ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)),
 				item);
 
 		sys_log(0, "EXCHANGE AddItem success %s pos(%d, %d) %d", item->GetName(), item_pos.window_type, item_pos.cell, display_pos);
@@ -1005,7 +1008,7 @@ bool CExchange::Done()
 
 		assert(empty_pos >= 0);
 
-		if (item->GetVnum() == 90008 || item->GetVnum() == 90009) // VCARD
+		if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90008 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90009) // VCARD
 		{
 			VCardUse(m_pOwner, victim, item);
 			continue;
@@ -1036,16 +1039,16 @@ bool CExchange::Done()
 		{
 			char exchange_buf[51];
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), GetOwner()->GetPlayerID(), item->GetCount());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), GetOwner()->GetPlayerID(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 			LogManager::instance().ItemLog(victim, item, "EXCHANGE_TAKE", exchange_buf);
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), victim->GetPlayerID(), item->GetCount());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), victim->GetPlayerID(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 			LogManager::instance().ItemLog(GetOwner(), item, "EXCHANGE_GIVE", exchange_buf);
 
-			if (item->GetVnum() >= 80003 && item->GetVnum() <= 80007)
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 			{
-				LogManager::instance().GoldBarLog(victim->GetPlayerID(), item->GetID(), EXCHANGE_TAKE, "");
-				LogManager::instance().GoldBarLog(GetOwner()->GetPlayerID(), item->GetID(), EXCHANGE_GIVE, "");
+				LogManager::instance().GoldBarLog(victim->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_TAKE, "");
+				LogManager::instance().GoldBarLog(GetOwner()->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_GIVE, "");
 			}
 		}
 
