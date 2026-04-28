@@ -361,16 +361,16 @@ void FishingPractice(LPCHARACTER ch)
 		return;
 
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
-	if (rod && rod->GetType() == ITEM_ROD)
+	if (rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
 	{
 		// AÖ´ë 1ö·Aµµ°! 3A´N °a?i 3¬1A´ë 1ö·A
-		if ( rod->GetRefinedVnum()>0 && rod->GetSocket(0) < rod->GetValue(2) && number(1,rod->GetValue(1))==1 )
+		if ( rod->GetRefinedVnum()>0 && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) < ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2) && number(1,ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 1))==1 )
 		{
-			rod->SetSocket(0, rod->GetSocket(0) + 1);
+			rod->SetSocket(0, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) + 1);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 283, "%d#%d", rod->GetSocket(0), rod->GetValue(2));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 283, "%d#%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2));
 #endif
-			if (rod->GetSocket(0) == rod->GetValue(2)) {
+			if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) == ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2)) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 279, "");
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 280, "");
@@ -413,7 +413,7 @@ EVENTFUNC(fishing_event)
 
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
 
-	if (!(rod && rod->GetType() == ITEM_ROD))
+	if (!(rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD))
 	{
 		ch->GetFishingEventRef() = nullptr;
 		return 0;
@@ -475,10 +475,10 @@ int GetFishingLevel(LPCHARACTER ch)
 {
 	LPITEM rod = ch->GetWear(WEAR_WEAPON);
 
-	if (!rod || rod->GetType()!= ITEM_ROD)
+	if (!rod || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod))!= ITEM_ROD)
 		return 0;
 
-	return rod->GetSocket(2) + rod->GetValue(0);
+	return ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2) + ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 0);
 }
 
 int Compute(uint32_t fish_id, uint32_t ms, uint32_t* item, int level) {
@@ -562,7 +562,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 					if (item)
 					{
 #ifdef ENABLE_RANKING
-						if ((item->GetType() == ITEM_FISH) || (item->GetVnum() == 27802)) {
+						if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_FISH) || (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 27802)) {
 							ch->SetRankPoints(14, ch->GetRankPoints(14) + 1);
 						}
 #endif
@@ -577,7 +577,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 
 							TPacketGDHighscore p;
 							p.dwPID = ch->GetPlayerID();
-							p.lValue = item->GetSocket(0);
+							p.lValue = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
 
 							if (info->fish_id == 5)
 							{
@@ -602,7 +602,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 							GetFishingLevel(ch),
 							ms,
 							true,
-							item ? item->GetSocket(0) : 0);
+							item ? ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0) : 0);
 
 				}
 				else
@@ -788,13 +788,13 @@ bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
 
 bool RefinableRod(LPITEM rod)
 {
-	if (rod->GetType() != ITEM_ROD)
+	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) != ITEM_ROD)
 		return false;
 
 	if (rod->IsEquipped())
 		return false;
 
-	return (rod->GetSocket(0) == rod->GetValue(2));
+	return (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) == ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2));
 }
 
 int RealRefineRod(LPCHARACTER ch, LPITEM item)
@@ -804,18 +804,18 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 
 	if (!RefinableRod(item))
 	{
-		sys_err("REFINE_ROD_HACK pid(%u) item(%s:%d)", ch->GetPlayerID(), item->GetName(), item->GetID());
-		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), -1, 1, "ROD_HACK");
+		sys_err("REFINE_ROD_HACK pid(%u) item(%s:%d)", ch->GetPlayerID(), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "ROD_HACK");
 		return 6;
 	}
 
 	LPITEM rod = item;
 
-	int iAdv = rod->GetValue(0) / 10;
+	int iAdv = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 0) / 10;
 
-	if (number(1, 100) <= rod->GetValue(3))
+	if (number(1, 100) <= ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 3))
 	{
-		LogManager::instance().RefineLog(ch->GetPlayerID(), rod->GetName(), rod->GetID(), iAdv, 1, "ROD");
+		LogManager::instance().RefineLog(ch->GetPlayerID(), rod->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, rod)), iAdv, 1, "ROD");
 		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(rod->GetRefinedVnum(), 1);
 		if (!pkNewItem)
 			return 4;
@@ -826,13 +826,13 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", pkNewItem->GetName());
 		return 1;
 	} else {
-		LogManager::instance().RefineLog(ch->GetPlayerID(), rod->GetName(), rod->GetID(), iAdv, 0, "ROD");
+		LogManager::instance().RefineLog(ch->GetPlayerID(), rod->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, rod)), iAdv, 0, "ROD");
 #ifdef ENABLE_FISHINGROD_RENEWAL
-		int cur = rod->GetSocket(0);
+		int cur = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0);
 		rod->SetSocket(0, (cur > 0) ? (cur - (cur * 20 / 100)) : 0);
 		LogManager::instance().ItemLog(ch, rod, "REFINE FISH_ROD FAIL", rod->GetName());
 #else
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(rod->GetValue(4), 1);
+		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 4), 1);
 		if (!pkNewItem)
 			return 3;
 		
