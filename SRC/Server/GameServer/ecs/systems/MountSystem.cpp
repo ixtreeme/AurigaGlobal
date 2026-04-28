@@ -374,7 +374,7 @@ bool CHARACTER::StartRiding()
 
 	LPITEM armor = GetWear(WEAR_BODY);
 
-	if (armor && (armor->GetVnum() >= 11901 && armor->GetVnum() <= 11904))
+	if (armor && (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, armor)) >= 11901 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, armor)) <= 11904))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 410, "");
@@ -816,13 +816,13 @@ void CHARACTER::MountSummon(LPITEM mountItem)
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = mountItem->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 	}
 	else
-		mobVnum = mountItem->GetValue(1);
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
+	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #endif
 
 	if (IsHorseRiding())
@@ -850,13 +850,13 @@ void CHARACTER::MountUnsummon(LPITEM mountItem)
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = mountItem->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 	}
 	else
-		mobVnum = mountItem->GetValue(1);
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
+	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #endif
 
 	if (GetMountVnum() == mobVnum)
@@ -882,13 +882,13 @@ void CHARACTER::CheckMount()
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = mountItem->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 	}
 	else
-		mobVnum = mountItem->GetValue(1);
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #else
-	if (mountItem->GetValue(1) != 0)
-		mobVnum = mountItem->GetValue(1);
+	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
 #endif
 
 	if (mountSystem->CountSummoned() == 0)
@@ -913,7 +913,7 @@ void CHARACTER::UpdatePetSkin() {
 
 uint32_t CHARACTER::GetPetSkinVnum() {
 	LPITEM item = GetWear(WEAR_COSTUME_PET_SKIN);
-	return item != nullptr ? item->GetValue(0) : 0;
+	return item != nullptr ? ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) : 0;
 }
 #endif
 
@@ -937,13 +937,13 @@ void CHARACTER::UpdateMountSkin() {
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
-				mobVnum = item->GetValue(1);
+				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
 		}
 		else
-			mobVnum = item->GetValue(1);
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
 #else
-		if (item->GetValue(1) != 0)
-			mobVnum = item->GetValue(1);
+		if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1) != 0)
+			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
 #endif
 
 		m_mountSystem->Unmount(mobVnum);
@@ -953,7 +953,7 @@ void CHARACTER::UpdateMountSkin() {
 
 uint32_t CHARACTER::GetMountSkinVnum() {
 	LPITEM item = GetWear(WEAR_COSTUME_MOUNT_SKIN);
-	return item != nullptr ? item->GetValue(0) : 0;
+	return item != nullptr ? ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) : 0;
 }
 #endif
 
@@ -974,7 +974,7 @@ void CHARACTER::ComputeMountInventoryBonuses()
 		if (!item)
 			continue;
 
-		const uint32_t vnum = item->GetVnum();
+		const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 		if (!valid_items.contains(vnum))
 			continue;
 
