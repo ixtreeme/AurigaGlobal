@@ -179,7 +179,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : mountItem->GetSocket(0) - time(nullptr);
+	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
 
 	//  Duplikacio elleni vedelem
 	if (!m_pkOwner->FindAffect(AFFECT_MOUNT_BONUS))
@@ -270,7 +270,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : mountItem->GetSocket(0) - time(nullptr);
+	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
 	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 	{
 		if (mountItem->GetProto()->aApplies[i].bType == APPLY_NONE)
@@ -528,15 +528,15 @@ void CMountActor::SetSummonItem(LPITEM pItem)
 	}
 
 	m_dwSummonItemVID = pItem->GetVID();
-	m_dwSummonItemVnum = pItem->GetVnum();
+	m_dwSummonItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& mount = g_registry.emplace_or_replace<ecs::MountComponent>(owner);
 		mount.owner = owner;
-		mount.itemID = pItem->GetID();
+		mount.itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItem));
 		mount.itemVID = pItem->GetVID();
-		mount.itemVnum = pItem->GetVnum();
+		mount.itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 		mount.level = 0;
 		mount.state = IsSummoned() ? 1u : 0u;
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
@@ -692,7 +692,7 @@ void CMountSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar)
 	uint32_t mountVID = mountActor->Summon(pSummonItem, bSpawnFar);
 
 	if (!mountVID)
-		sys_err("[CMountSystem::Summon(%d)] Null Pointer (mountVID)", pSummonItem->GetID());
+		sys_err("[CMountSystem::Summon(%d)] Null Pointer (mountVID)", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
 
 	if (nullptr == m_pkMountSystemUpdateEvent)
 	{
@@ -703,7 +703,7 @@ void CMountSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar)
 		m_pkMountSystemUpdateEvent = event_create(mountsystem_update_event, info, PASSES_PER_SEC(1) / 4);
 	}
 
-	if (pSummonItem->GetSocket(2) == 1) {
+	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2) == 1) {
 		Mount(mobVnum, pSummonItem);
 	}
 
