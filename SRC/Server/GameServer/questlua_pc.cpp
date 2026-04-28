@@ -722,7 +722,7 @@ namespace quest
 
 		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
-		lua_pushnumber(L, (item) ? item->GetID() : 0);
+		lua_pushnumber(L, (item) ? ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
 	}
 #endif
@@ -1297,13 +1297,13 @@ namespace quest
 		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
 		{
 			LPITEM item = equipment->items[WEAR_WEAPON];
-			lua_pushnumber(L, item ? item->GetVnum() : 0);
+			lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch ? ch->GetWear(WEAR_WEAPON) : nullptr;
-		lua_pushnumber(L, item ? item->GetVnum() : 0);
+		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
 	}
 
@@ -1314,13 +1314,13 @@ namespace quest
 		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
 		{
 			LPITEM item = equipment->items[WEAR_BODY];
-			lua_pushnumber(L, item ? item->GetVnum() : 0);
+			lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch ? ch->GetWear(WEAR_BODY) : nullptr;
-		lua_pushnumber(L, item ? item->GetVnum() : 0);
+		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
 	}
 
@@ -1340,7 +1340,7 @@ namespace quest
 			if (!item)
 				lua_pushnil(L);
 			else
-				lua_pushnumber(L, item->GetVnum());
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -1349,7 +1349,7 @@ namespace quest
 		if (!item)
 			lua_pushnil(L);
 		else
-			lua_pushnumber(L, item->GetVnum());
+			lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
 		return 1;
 	}
 
@@ -2065,12 +2065,12 @@ namespace quest
 			if (!item)
 				continue;
 
-			if (item->GetType() == ITEM_USE &&
-					item->GetSubType() == USE_TALISMAN &&
-					(item->GetValue(0) == 1 || item->GetValue(0) == 2))
+			if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE &&
+					ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_TALISMAN &&
+					(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 1 || ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 2))
 			{
-				int x = item->GetSocket(0);
-				int y = item->GetSocket(1);
+				int x = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
+				int y = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1);
 				//if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
 				if (region->sx <=x && region->sy <= y && x <= region->ex && y <= region->ey)
 				{
@@ -2130,12 +2130,12 @@ namespace quest
 			if (!item)
 				continue;
 
-			if (item->GetType() == ITEM_USE &&
-					item->GetSubType() == USE_TALISMAN &&
-					(item->GetValue(0) == 1 || item->GetValue(0) == 2))
+			if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE &&
+					ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_TALISMAN &&
+					(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 1 || ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 2))
 			{
-				int item_x = item->GetSocket(0);
-				int item_y = item->GetSocket(1);
+				int item_x = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
+				int item_y = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1);
 				if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
 				{
 					bFind = true;
@@ -2218,7 +2218,7 @@ namespace quest
 			if (pkNewItem)
 			{
 				for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-					if (!item->GetSocket(i))
+					if (!ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i))
 						break;
 					else
 						pkNewItem->SetSocket(i, 1);
@@ -2226,7 +2226,7 @@ namespace quest
 				int set = 0;
 				for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
 				{
-					int32_t socket = item->GetSocket(i);
+					int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i);
 					if (socket > 2 && socket != 28960)
 					{
 						pkNewItem->SetSocket(set++, socket);
@@ -3325,7 +3325,7 @@ teleport_area:
 				int j = 0;
 				for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 				{
-					int32_t socket = pItem->GetSocket(j);
+					int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j);
 					if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
 					{
 						TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
@@ -3357,7 +3357,7 @@ teleport_area:
 			int j = 0;
 			for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 			{
-				int32_t socket = pItem->GetSocket(j);
+				int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j);
 				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
 				{
 					TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
@@ -3498,21 +3498,21 @@ teleport_area:
 #endif
 			if (unique1 && unique1->GetSpecialGroup() == UNIQUE_GROUP_SPECIAL_RIDE)
 			{
-				lua_pushnumber(L, unique1->GetVnum());
-				lua_pushnumber(L, unique1->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, unique1)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, unique1), 0));
 				return 2;
 			}
 			if (unique2 && unique2->GetSpecialGroup() == UNIQUE_GROUP_SPECIAL_RIDE)
 			{
-				lua_pushnumber(L, unique2->GetVnum());
-				lua_pushnumber(L, unique2->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, unique2)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, unique2), 0));
 				return 2;
 			}
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 			if (mountCostume)
 			{
-				lua_pushnumber(L, mountCostume->GetVnum());
-				lua_pushnumber(L, mountCostume->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, mountCostume)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountCostume), 0));
 				return 2;
 			}
 #endif
@@ -3528,21 +3528,21 @@ teleport_area:
 #endif
 			if (Unique1 && UNIQUE_GROUP_SPECIAL_RIDE == Unique1->GetSpecialGroup())
 			{
-				lua_pushnumber(L, Unique1->GetVnum());
-				lua_pushnumber(L, Unique1->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, Unique1)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, Unique1), 0));
 				return 2;
 			}
 			if (Unique2 && UNIQUE_GROUP_SPECIAL_RIDE == Unique2->GetSpecialGroup())
 			{
-				lua_pushnumber(L, Unique2->GetVnum());
-				lua_pushnumber(L, Unique2->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, Unique2)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, Unique2), 0));
 				return 2;
 			}
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 			if (MountCostume)
 			{
-				lua_pushnumber(L, MountCostume->GetVnum());
-				lua_pushnumber(L, MountCostume->GetSocket(0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, MountCostume)));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, MountCostume), 0));
 				return 2;
 			}
 #endif
@@ -3678,7 +3678,7 @@ teleport_area:
 				LPITEM item = inventory->items[i];
 				if (item != nullptr && item->GetSIGVnum() == group_vnum)
 				{
-					lua_pushnumber(L, item->GetID());
+					lua_pushnumber(L, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 					++count;
 				}
 			}
@@ -3693,7 +3693,7 @@ teleport_area:
 				LPITEM item = ch->GetInventoryItem(i);
 				if (item != nullptr && item->GetSIGVnum() == group_vnum)
 				{
-					lua_pushnumber(L, item->GetID());
+					lua_pushnumber(L, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 					++count;
 				}
 			}
