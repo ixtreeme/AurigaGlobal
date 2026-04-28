@@ -791,7 +791,7 @@ bool RefinableRod(LPITEM rod)
 	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) != ITEM_ROD)
 		return false;
 
-	if (rod->IsEquipped())
+	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, rod)))
 		return false;
 
 	return (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) == ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2));
@@ -820,7 +820,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		if (!pkNewItem)
 			return 4;
 
-		uint8_t bCell = rod->GetCell();
+		uint8_t bCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, rod));
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
 		pkNewItem->AddToCharacter(ch, TItemPos (INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", pkNewItem->GetName());
@@ -836,7 +836,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		if (!pkNewItem)
 			return 3;
 		
-		uint8_t bCell = rod->GetCell();
+		uint8_t bCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, rod));
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
 		pkNewItem->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD FAIL", pkNewItem->GetName());
