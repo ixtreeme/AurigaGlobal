@@ -2218,7 +2218,7 @@ void CHARACTER::RefineAcceMaterials()
             PointChange(POINT_GOLD, -dwPrice);
             DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])), -dwPrice);
 
-            uint16_t wCell = pkItemMaterial[0]->GetCell();
+            uint16_t wCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]));
             ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[0], "COMBINE (REFINE SUCCESS)");
             ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "COMBINE (REFINE SUCCESS)");
 
@@ -2450,7 +2450,7 @@ void CHARACTER::EditMyInven()
                 );
 
             if (isQuickSlotItem)
-                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, newItem->GetCell());
+                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, newItem)));
         }
     }
 
@@ -2567,7 +2567,7 @@ void CHARACTER::EditMyExtraInven()
                 );
 
             if (isQuickSlotItem)
-                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, newItem->GetCell());
+                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, newItem)));
         }
     }
 
