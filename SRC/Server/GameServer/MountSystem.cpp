@@ -180,19 +180,22 @@ bool CMountActor::Mount(LPITEM mountItem)
 	}
 
 	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
+	const TItemTable* mountProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, mountItem));
+	if (!mountProto)
+		return false;
 
 	//  Duplikacio elleni vedelem
 	if (!m_pkOwner->FindAffect(AFFECT_MOUNT_BONUS))
 	{
 		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 		{
-			if (mountItem->GetProto()->aApplies[i].bType == APPLY_NONE)
+			if (mountProto->aApplies[i].bType == APPLY_NONE)
 				continue;
 
 			m_pkOwner->AddAffect(
 				AFFECT_MOUNT_BONUS,
-				aApplyInfo[mountItem->GetProto()->aApplies[i].bType].bPointType,
-				mountItem->GetProto()->aApplies[i].lValue,
+				aApplyInfo[mountProto->aApplies[i].bType].bPointType,
+				mountProto->aApplies[i].lValue,
 				AFF_NONE,
 				dwTime,
 				0,
@@ -271,12 +274,16 @@ bool CMountActor::Mount(LPITEM mountItem)
 	}
 
 	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
+	const TItemTable* mountProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, mountItem));
+	if (!mountProto)
+		return false;
+
 	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 	{
-		if (mountItem->GetProto()->aApplies[i].bType == APPLY_NONE)
+		if (mountProto->aApplies[i].bType == APPLY_NONE)
 			continue;
 
-		m_pkOwner->AddAffect(AFFECT_MOUNT_BONUS, aApplyInfo[mountItem->GetProto()->aApplies[i].bType].bPointType, mountItem->GetProto()->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
+		m_pkOwner->AddAffect(AFFECT_MOUNT_BONUS, aApplyInfo[mountProto->aApplies[i].bType].bPointType, mountProto->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
 	}
 
 
