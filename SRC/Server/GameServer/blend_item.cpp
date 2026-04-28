@@ -14,6 +14,9 @@
 #include "locale_service.h"
 #include "item.h"
 #include "blend_item.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #define DO_ALL_BLEND_INFO(iter)	for ((iter)=s_blend_info.begin(); (iter)!=s_blend_info.end(); ++(iter))
 
@@ -199,13 +202,13 @@ bool	Blend_Item_set_value(LPITEM item)
 	DO_ALL_BLEND_INFO(iter)
 	{
 		blend_info = *iter;
-		if (blend_info->item_vnum == item->GetVnum())
+		if (blend_info->item_vnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
 		{
 			int	apply_type;
 			int	apply_value;
 			int	apply_duration;
 
-			if (item->GetVnum() == 51002)
+			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 51002)
 			{
 				apply_type		= blend_info->apply_type;
 				apply_value		= blend_info->apply_value		[FN_ECS_random_index()];
