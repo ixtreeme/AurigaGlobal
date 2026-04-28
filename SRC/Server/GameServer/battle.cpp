@@ -816,7 +816,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 	LPITEM pkWeapon = pkAttacker->GetWear(WEAR_WEAPON);
 
 	if (pkWeapon)
-		switch (pkWeapon->GetSubType())
+		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
 		{
 			case WEAPON_SWORD:
 			{
