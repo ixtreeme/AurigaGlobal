@@ -37,7 +37,11 @@ void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg
 	if (sub_header == EXCHANGE_SUBHEADER_GC_ITEM_ADD && pvData)
 	{
 #ifdef WJ_ENABLE_TRADABLE_ICON
-		pack_exchg.arg4 = TItemPos(((LPITEM) pvData)->GetWindow(), ((LPITEM) pvData)->GetCell());
+		{
+			LPITEM item = static_cast<LPITEM>(pvData);
+			const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+			pack_exchg.arg4 = TItemPos(ItemSystem::GetItemWindow(itemEntity), ItemSystem::GetItemCell(itemEntity));
+		}
 #endif
 		memcpy(&pack_exchg.alSockets, ((LPITEM) pvData)->GetSockets(), sizeof(pack_exchg.alSockets));
 		memcpy(&pack_exchg.aAttr, ((LPITEM) pvData)->GetAttributes(), sizeof(pack_exchg.aAttr));
