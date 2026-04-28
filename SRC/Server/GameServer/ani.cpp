@@ -10,6 +10,9 @@
 #include "stdafx.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "ani.h"
 #include "dev_log.h"
@@ -350,11 +353,11 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (nullptr == item)
 		return speed;
 
-	if (ITEM_WEAPON != item->GetType())
+	if (ITEM_WEAPON != ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)))
 		return speed;
 
 	int race = ((ch)->GetRaceNum());
-	int weapon = item->GetSubType();
+	int weapon = ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item));
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
@@ -379,7 +382,7 @@ uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 	if (nullptr == item || combo > 8)
 		return 1000;
 
-	return s_ANI.attack_speed(((ch)->GetRaceNum()), item->GetSubType(), combo, ch->IsRiding());
+	return s_ANI.attack_speed(((ch)->GetRaceNum()), ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)), combo, ch->IsRiding());
 }
 
 void ani_print_attack_speed()
