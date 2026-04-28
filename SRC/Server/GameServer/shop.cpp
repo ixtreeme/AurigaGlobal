@@ -19,6 +19,8 @@
 #include "locale_service.h"
 #include "battle_pass.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
 //#define ENABLE_SHOP_BLACKLIST
@@ -335,7 +337,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		else
 		{
 			sys_log(1, "Shop::Buy : Inventory full : %s size %d", ch->GetName(), item->GetSize());
-			M2_DESTROY_ITEM(item);
+			ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"SHOP_TRANSACTION");
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 	}
@@ -445,9 +449,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 							bCount -= bCount2;
 
-							item2->SetCount(item2->GetCount() + bCount2);
+							ItemSystem::AddItemCountEcs(
+								EntityFactory::CreateItemEntity(g_registry, item2),
+								bCount2);
 							if (bCount == 0) {
-								M2_DESTROY_ITEM(item);
+								ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"SHOP_TRANSACTION");
 								item = nullptr;
 								break;
 							}
@@ -455,7 +463,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					}
 
 					if (item != nullptr) {
-						item->SetCount(bCount);
+						ItemSystem::SetItemCountEcs(
+						EntityFactory::CreateItemEntity(g_registry, item),
+						bCount);
 						item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 					}
 				} else {
@@ -497,9 +507,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 							bCount -= bCount2;
 
-							item2->SetCount(item2->GetCount() + bCount2);
+							ItemSystem::AddItemCountEcs(
+								EntityFactory::CreateItemEntity(g_registry, item2),
+								bCount2);
 							if (bCount == 0) {
-								M2_DESTROY_ITEM(item);
+								ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"SHOP_TRANSACTION");
 								item = nullptr;
 								break;
 							}
@@ -507,7 +521,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					}
 
 					if (item != nullptr) {
-						item->SetCount(bCount);
+						ItemSystem::SetItemCountEcs(
+						EntityFactory::CreateItemEntity(g_registry, item),
+						bCount);
 						item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
 					}
 				} else {
@@ -565,9 +581,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 						bCount -= bCount2;
 
-						item2->SetCount(item2->GetCount() + bCount2);
+						ItemSystem::AddItemCountEcs(
+								EntityFactory::CreateItemEntity(g_registry, item2),
+								bCount2);
 						if (bCount == 0) {
-							M2_DESTROY_ITEM(item);
+							ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"SHOP_TRANSACTION");
 							item = nullptr;
 							break;
 						}
@@ -575,7 +595,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 				}
 
 				if (item != nullptr) {
-					item->SetCount(bCount);
+					ItemSystem::SetItemCountEcs(
+						EntityFactory::CreateItemEntity(g_registry, item),
+						bCount);
 					item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 			} else {
@@ -617,9 +639,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						bCount2 = MIN(g_bItemCountLimit - item2->GetCount(), bCount);
 						bCount -= bCount2;
 
-						item2->SetCount(item2->GetCount() + bCount2);
+						ItemSystem::AddItemCountEcs(
+								EntityFactory::CreateItemEntity(g_registry, item2),
+								bCount2);
 						if (bCount == 0) {
-							M2_DESTROY_ITEM(item);
+							ItemSystem::DestroyItemEntityEcs(
+				EntityFactory::CreateItemEntity(g_registry, item),
+				"SHOP_TRANSACTION");
 							item = nullptr;
 							break;
 						}
@@ -627,7 +653,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 				}
 
 				if (item != nullptr) {
-					item->SetCount(bCount);
+					ItemSystem::SetItemCountEcs(
+						EntityFactory::CreateItemEntity(g_registry, item),
+						bCount);
 					item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
 				}
 			} else {
