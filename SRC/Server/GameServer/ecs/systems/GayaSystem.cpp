@@ -397,7 +397,7 @@ void CraftItems(entt::entity pc, int slot)
 	if (!item_glimmerstone)
 		return;
 
-	if (item->GetType() != ITEM_METIN || item->GetRefineLevel() > Grade_Stone) {
+	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_METIN || item->GetRefineLevel() > Grade_Stone) {
 		ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, item_glimmerstone),
 			"GAYA_INVALID_GLIMMERSTONE");
