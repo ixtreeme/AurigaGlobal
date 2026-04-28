@@ -1093,7 +1093,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
 
     const int32_t floor = d->GetFlag(kFlagFloor);
     const uint32_t npcVnum = npc->GetRaceNum();
-    const uint32_t itemVnum = item->GetVnum();
+    const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
     // Angel statue
     if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
