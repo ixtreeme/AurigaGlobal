@@ -4371,7 +4371,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 
         if (pkItem)
         {
-            const TItemTable* item_table = pkItem->GetProto();
+            const TItemTable* item_table = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
 
             if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
             {
