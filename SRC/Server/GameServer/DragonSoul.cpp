@@ -383,7 +383,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 {
 	if (nullptr == ch || nullptr == pItem)
 		return false;
-	if (pItem->IsEquipped())
+	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 623, "");
@@ -514,7 +514,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		}
 	}
 
-	if (!pItem->IsEquipped() || !pItem->RemoveFromCharacter())
+	if (!ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)) || !pItem->RemoveFromCharacter())
 		return false;
 
 	bool bSuccess;
@@ -653,7 +653,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
 #endif
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 				return false;
 			}
 
@@ -688,7 +688,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 
 			return false;
 		}
@@ -699,7 +699,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 
 		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
 		// 별도의 알림 처리는 안함.
-		if (pItem->IsEquipped())
+		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		{
 			return false;
 		}
@@ -709,7 +709,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 
 			return false;
 		}
@@ -780,7 +780,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 629, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
 		return true;
 	}
 	else
@@ -791,7 +791,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
 		return false;
 	}
 }
@@ -835,7 +835,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
 #endif
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 				return false;
 			}
 			set_items.insert(pItem);
@@ -868,7 +868,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 			return false;
 		}
 	}
@@ -878,7 +878,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		LPITEM pItem = *it;
 		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
 		// 별도의 알림 처리는 안함.
-		if (pItem->IsEquipped())
+		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		{
 			return false;
 		}
@@ -887,7 +887,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 			return false;
 		}
 	}
@@ -957,7 +957,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 629, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
 		return true;
 	}
 	else
@@ -968,7 +968,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (pResultItem->GetWindow(), pResultItem->GetCell()));
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
 		return false;
 	}
 }
@@ -1032,7 +1032,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		LPITEM pItem = *it;
 		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
 		// 별도의 알림 처리는 안함.
-		if (pItem->IsEquipped())
+		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		{
 			return false;
 		}
@@ -1043,7 +1043,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		{
 			if (pDragonSoul != nullptr)
 			{
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 				return false;
 			}
 			pDragonSoul = pItem;
@@ -1052,7 +1052,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		{
 			if (pRefineStone != nullptr)
 			{
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 				return false;
 			}
 			pRefineStone = pItem;
@@ -1062,7 +1062,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pItem->GetWindow(), pItem->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
 			return false;
 		}
 	}
@@ -1087,7 +1087,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
 			return false;
 		}
 		// 강화했을 때 가중치가 0이라면 더 이상 강화되서는 안된다.
@@ -1096,7 +1096,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
 			return false;
 		}
 	}
@@ -1107,7 +1107,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(pDragonSoul->GetWindow(), pDragonSoul->GetCell()));
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
 
 		return false;
 	}
@@ -1252,7 +1252,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
 					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
-					if (item && item->IsDragonSoul() && !item->IsEquipped()) {
+					if (item && item->IsDragonSoul() && !ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item))) {
 						if (GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == grade) {
 							set_items.insert(item);
 						}
@@ -1340,7 +1340,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							}
 						}
 					} else {
-						cell = item->GetCell();
+						cell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item));
 					}
 				}
 
@@ -1368,7 +1368,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
 					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
-					if (item && item->IsDragonSoul() && !item->IsEquipped()) {
+					if (item && item->IsDragonSoul() && !ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item))) {
 						if (GetStepIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == step) {
 							set_items.insert(item);
 						}
@@ -1456,7 +1456,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							}
 						}
 					} else {
-						cell = item->GetCell();
+						cell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item));
 					}
 				}
 
@@ -1575,8 +1575,8 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 	if (deck_idx < 0)
 		return false;
 
-	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= pItem->GetCell() &&
-			pItem->GetCell() < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
+	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) &&
+			ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
 	{
 		if (IsTimeLeftDragonSoul(pItem) && !IsActiveDragonSoul(pItem))
 		{
