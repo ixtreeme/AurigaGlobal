@@ -12,6 +12,9 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "p2p.h"
@@ -1227,7 +1230,7 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 {
 	TPacketGDVCard p;
 
-	p.dwID = item->GetSocket(0);
+	p.dwID = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
 	strlcpy(p.szSellCharacter, CardOwner->GetName(), sizeof(p.szSellCharacter));
 	strlcpy(p.szSellAccount, CardOwner->GetDesc()->GetAccountTable().login, sizeof(p.szSellAccount));
 	strlcpy(p.szBuyCharacter, CardTaker->GetName(), sizeof(p.szBuyCharacter));
@@ -1235,7 +1238,7 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", item->GetSocket(1) / 60, item->GetSocket(0));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) / 60, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0));
 #endif
 	LogManager::instance().VCardLog(p.dwID, CardTaker->GetX(), CardTaker->GetY(), g_stHostname.c_str(),
 			CardOwner->GetName(), CardOwner->GetDesc()->GetHostName(),
