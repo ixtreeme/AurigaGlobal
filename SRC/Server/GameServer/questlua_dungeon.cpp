@@ -1685,8 +1685,8 @@ namespace quest
 						// }
 					// }
 
-					// tch->SetQuestFlag(m_questname + ".enter_time", get_global_time());
-					// tch->SetQuestFlag(m_questname + ".cooldown", get_global_time() + cooldown);
+					// ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".enter_time", get_global_time());
+					// ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".cooldown", get_global_time() + cooldown);
 				// }
 			// }
 

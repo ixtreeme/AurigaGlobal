@@ -8431,6 +8431,59 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-53 - QuestSystem::GetFlag / SetFlag Replaces CHARACTER Quest Calls
+
+Mode:
+- Entity-first public quest flag routing.
+- Quest flag storage authority and DB save/load paths unchanged.
+- No `LPCHARACTER` overload exposed in `QuestSystem`.
+
+Completed batches:
+- Added `ecs::QuestSystem::GetFlag(entt::entity, const std::string&)` and `ecs::QuestSystem::SetFlag(entt::entity, const std::string&, int32_t)`.
+  - Implementation resolves the legacy character through the ECS bridge and delegates to existing `CHARACTER::GetQuestFlag` / `SetQuestFlag`.
+  - Commit: `0a3fc7d Phase 15E-53.1: Add QuestSystem flag API`
+- Migrated all caller-side `->GetQuestFlag` / `->SetQuestFlag` call sites.
+  - Main affected groups: dungeon entry/rejoin cooldowns, command/GM toggles, questlua helpers, PvP duel flags, login restore flags, refine/costume options, Gaya/skill/player runtime internals, and legacy item bridge flag reads.
+  - Commit: `7267ab4 Phase 15E-53: Migrate QuestFlag caller paths`
+- Cleaned stale commented `tch->SetQuestFlag` examples in `questlua_dungeon.cpp` so required caller-side grep stays clean.
+
+Counts:
+```text
+Caller-side quest flag audit before 15E-53: 302
+  ->SetQuestFlag: 181
+  ->GetQuestFlag: 121
+Caller-side quest flag count after 15E-53: 0
+Tree-wide ->GetQuestFlag/->SetQuestFlag after 15E-53:
+  2, both inside QuestSystem.cpp bridge
+```
+
+Declaration status:
+- `CHARACTER::GetQuestFlag` and `CHARACTER::SetQuestFlag` declarations were retained.
+- Reason: internal legacy member method bodies still call `GetQuestFlag(...)` / `SetQuestFlag(...)` without `->`, and `QuestSystem` intentionally delegates to these methods to preserve existing quest flag semantics and DB behavior.
+- Removing or privatizing the declarations needs a dedicated internal member-body migration or private bridge phase.
+
+Build results:
+- Initial full caller migration build failed because two LF-only files missed the new include (`LostCastleDungeon.cpp`, `war_map.cpp`).
+- Includes were fixed without rollback; the next build passed.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Login loads quest flags correctly.
+- Dungeon rejoin/cooldown flags persist and reset correctly.
+- Biologist and questlua flag flows progress correctly.
+- PvP duel flags reset after duel.
+- Guild/war flags behave correctly.
+- Costume/rune/hide option flags persist after relog.
+- Quest reward and completion flag updates persist after relog.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- API and caller migration committed.
+- WinTest not run in this environment.
+
 ## Phase 15E-52 - PointSystem::Change Replaces CHARACTER::PointChange
 
 Mode:
