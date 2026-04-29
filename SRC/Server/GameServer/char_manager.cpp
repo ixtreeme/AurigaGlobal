@@ -2484,13 +2484,13 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 				}
 
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-					item->SetSocket(i, alSockets[i]);
+					ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i, alSockets[i]);
 
 				for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					const TPlayerItemAttribute& attribute = itemData.aAttr[i];
 					if (attribute.bType != 0)
-						item->SetForceAttribute(i, attribute.bType, attribute.sValue);
+						ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), i, attribute.bType, attribute.sValue);
 				}
 
 				ch->AutoGiveItem(item);
@@ -2512,14 +2512,14 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(mallItem.vnum, mallItem.count, mallItem.id);
 		if (item)
 		{
-			item->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
 			item->SetSockets(mallItem.alSockets);
 			item->SetAttributes(mallItem.aAttr);
 #ifdef ATTR_LOCK
 			item->SetLockedAttr(mallItem.lockedattr);
 #endif
 			if (ch->GetMall()->Add(mallItem.pos, item))
-				item->SetSkipSave(false);
+				ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
 			else
 				M2_DESTROY_ITEM(item);
 		}
