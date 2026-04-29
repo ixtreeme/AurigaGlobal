@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -15,6 +16,18 @@ void Shutdown();
 std::shared_ptr<spdlog::logger> GetLogger();
 std::shared_ptr<spdlog::logger> GetErrorLogger();
 }
+
+template <typename T, typename Char>
+struct fmt::formatter<T, Char, std::enable_if_t<std::is_enum_v<T>>>
+    : fmt::formatter<std::underlying_type_t<T>, Char>
+{
+    template <typename FormatContext>
+    auto format(T value, FormatContext& ctx) const
+    {
+        using Underlying = std::underlying_type_t<T>;
+        return fmt::formatter<Underlying, Char>::format(static_cast<Underlying>(value), ctx);
+    }
+};
 
 #ifdef LOG_TRACE
 #undef LOG_TRACE
