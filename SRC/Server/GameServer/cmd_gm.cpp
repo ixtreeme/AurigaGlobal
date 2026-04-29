@@ -2383,7 +2383,7 @@ ACMD(do_book)
 	}
 
 	LPITEM item = ch->AutoGiveItem(50300);
-	item->SetSocket(0, pkProto->dwVnum);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, pkProto->dwVnum);
 }
 
 ACMD(do_setskillother)
@@ -2919,7 +2919,7 @@ ACMD(do_polymorph_item)
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(70104, 1, 0, true);
 		if (item)
 		{
-			item->SetSocket(0, dwVnum);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, dwVnum);
 			int iEmptyPos = ch->GetEmptyInventory(item->GetSize());
 
 			if (iEmptyPos != -1)
@@ -3100,7 +3100,7 @@ ACMD(do_socket_item)
 		if (item)
 		{
 			for (int i = 0; i < iSocketCount; ++i)
-				item->SetSocket(i, 1);
+				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i, 1);
 		}
 		else
 		{
@@ -4262,7 +4262,7 @@ ACMD(do_set_socket)
 
 	LPITEM item = ITEM_MANAGER::instance().Find (item_id);
 	if (item)
-		item->SetSocket (socket_num, value);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), socket_num, value);
 }
 
 ACMD (do_can_dead)
@@ -4671,121 +4671,121 @@ ACMD (do_attr_full_set)
 			item = ch->GetWear(WEAR_HEAD);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute( 0, APPLY_HP_REGEN, 25);
-				item->SetForceAttribute( 1, APPLY_POISON_REDUCE, 10);
-				item->SetForceAttribute( 2, APPLY_RESIST_MAGIC, 15);
-				item->SetForceAttribute( 3, APPLY_RESIST_BOW, 60);
-				item->SetForceAttribute( 4, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_HP_REGEN, 25);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_POISON_REDUCE, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_MAGIC, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BOW, 60);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_WEAPON);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute( 0, APPLY_NORMAL_HIT_DAMAGE_BONUS, 53);
-				item->SetForceAttribute( 1, APPLY_SKILL_DAMAGE_BONUS, 10);
-				item->SetForceAttribute( 2, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute( 3, APPLY_ATTBONUS_DEVIL, 20);
-				item->SetForceAttribute( 4, APPLY_ATTBONUS_ORC, 20);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_NORMAL_HIT_DAMAGE_BONUS, 53);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_SKILL_DAMAGE_BONUS, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_ATTBONUS_DEVIL, 20);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_ATTBONUS_ORC, 20);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_SHIELD);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute( 0, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute( 1, APPLY_BLOCK, 15);
-				item->SetForceAttribute( 2, APPLY_REFLECT_MELEE, 10);
-				item->SetForceAttribute( 3, APPLY_IMMUNE_STUN, 1);
-				item->SetForceAttribute( 4, APPLY_IMMUNE_SLOW, 1);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 50);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_BLOCK, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_REFLECT_MELEE, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_IMMUNE_STUN, 1);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_IMMUNE_SLOW, 1);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 50);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_BODY);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute( 0, APPLY_RESIST_SWORD, 15);
-				item->SetForceAttribute( 1, APPLY_RESIST_TWOHAND, 15);
-				item->SetForceAttribute( 2, APPLY_RESIST_DAGGER, 15);
-				item->SetForceAttribute( 3, APPLY_RESIST_BELL, 15);
-				item->SetForceAttribute( 4, APPLY_RESIST_FAN, 15);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_FOOTS);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute(0, APPLY_RESIST_SWORD, 15);
-				item->SetForceAttribute(1, APPLY_RESIST_TWOHAND, 15);
-				item->SetForceAttribute(2, APPLY_RESIST_DAGGER, 15);
-				item->SetForceAttribute(3, APPLY_RESIST_BELL, 15);
-				item->SetForceAttribute(4, APPLY_RESIST_FAN, 15);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_WRIST);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute( 0, APPLY_MAX_HP, 2500);
-				item->SetForceAttribute( 1, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute( 2, APPLY_PENETRATE_PCT, 12);
-				item->SetForceAttribute( 3, APPLY_STEAL_HP, 10);
-				item->SetForceAttribute( 4, APPLY_RESIST_MAGIC, 15);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_MAX_HP, 2500);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_PENETRATE_PCT, 12);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_STEAL_HP, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_MAGIC, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_NECK);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute(0, APPLY_RESIST_SWORD, 15);
-				item->SetForceAttribute(1, APPLY_RESIST_TWOHAND, 15);
-				item->SetForceAttribute(2, APPLY_RESIST_DAGGER, 15);
-				item->SetForceAttribute(3, APPLY_RESIST_BELL, 15);
-				item->SetForceAttribute(4, APPLY_RESIST_FAN, 15);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			
 			item = ch->GetWear(WEAR_EAR);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute(0, APPLY_RESIST_SWORD, 15);
-				item->SetForceAttribute(1, APPLY_RESIST_TWOHAND, 15);
-				item->SetForceAttribute(2, APPLY_RESIST_DAGGER, 15);
-				item->SetForceAttribute(3, APPLY_RESIST_BELL, 15);
-				item->SetForceAttribute(4, APPLY_RESIST_FAN, 15);
-				item->SetForceAttribute(5, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(6, APPLY_MAX_HP, 4000);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
 			item = ch->GetWear(WEAR_PENDANT);
 			if (item != nullptr)
 			{
-				item->ClearAttribute();
-				item->SetForceAttribute(0, APPLY_RESIST_MEZZIUOMINI, 10);
-				item->SetForceAttribute(1, APPLY_ATTBONUS_HUMAN, 10);
-				item->SetForceAttribute(2, APPLY_CRITICAL_PCT, 15);
+				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_MEZZIUOMINI, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_ATTBONUS_HUMAN, 10);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_CRITICAL_PCT, 15);
 
 				item->ModifyPoints(true);
 			}
