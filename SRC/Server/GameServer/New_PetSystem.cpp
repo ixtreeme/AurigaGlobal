@@ -582,7 +582,7 @@ void CNewPetActor:: IncreasePetBonus()
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		for (int b = 0; b < 3; b++){
-			pSummonItem->SetForceAttribute(b, 1, m_dwbonuspet[b][1]);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 		}
 		
 	}
@@ -605,7 +605,7 @@ void CNewPetActor::SetLevel(uint32_t level)
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem) {
 #ifdef ENABLE_NEW_PET_EDITS
-	pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
+	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
 #else
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
@@ -809,8 +809,8 @@ void CNewPetActor::UpdateTime(bool now)
 #ifdef ENABLE_NEW_PET_EDITS
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
 #else
-			pSummonItem->SetForceAttribute(3, 1, m_dwduration);
-			pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
 #endif
 		}
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
@@ -840,16 +840,16 @@ void CNewPetActor::Unsummon()
 
 			for (int b = 0; b < 3; b++)
 			{
-				pSummonItem->SetForceAttribute(b, 1, m_dwbonuspet[b][1]);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 			}
 			
 #ifdef ENABLE_NEW_PET_EDITS
-			pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
 #else
-			pSummonItem->SetForceAttribute(3, 1, m_dwduration);
-			pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, false);
@@ -1090,16 +1090,16 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	UpdateTime(true);
 
 	for (int b = 0; b < 3; b++){
-		pSummonItem->SetForceAttribute(b, 1, m_dwbonuspet[b][1]);
+		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 	}
 	
 #ifdef ENABLE_NEW_PET_EDITS
-	pSummonItem->SetForceAttribute(3, 1, m_dwlevel);
+	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
 #else
-	pSummonItem->SetForceAttribute(3, 1, m_dwduration);
-	pSummonItem->SetForceAttribute(4, 1, m_dwtduration);
+	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
+	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, true);
