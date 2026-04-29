@@ -8537,6 +8537,50 @@ Migration approach:
 Commit status:
 - `Phase 16-2.1` audit/approach commit in progress.
 
+Batch 1 completed:
+- `input_db.cpp`: 134 legacy log call sites migrated to `LOG_INFO` / `LOG_ERROR`.
+- `ecs/systems/ItemSystem_LegacyBridge.cpp`: 117 legacy log call sites migrated; commented legacy examples renamed to avoid grep false positives.
+- `ecs/systems/SkillSystem.cpp`: 87 legacy log call sites migrated.
+- `dragon_soul_table.cpp`: 85 legacy log call sites migrated.
+- `ecs/systems/CombatSystem.cpp`: 70 legacy log call sites migrated.
+
+Compatibility helpers added during Batch 1:
+- `Logging.hpp` now undefines pre-existing `LOG_*` macros before defining the modern spdlog macros, avoiding the legacy `dev_log.h` `LOG_INFO` / `LOG_WARN` name collision.
+- `Logging.hpp` formats enum values numerically, preserving old `%d` enum logging semantics.
+- `Logging.hpp` formats non-character object pointers as `const void*`, preserving old `%p` pointer logging semantics where direct casts are not practical.
+
+Quest-specific skip:
+- `questlua_pc.cpp` and `questlua_dungeon.cpp` intentionally skipped in this batch.
+- Both files locally redefine `sys_err` to `quest::CQuestManager::QuestError(...)`.
+- Those call sites are not the Core `sys_err` compatibility bridge and need a separate QuestError modernization pass.
+
+Counts after Batch 1:
+```text
+GameServer sys_log: 807
+GameServer sys_err: 1067
+GameServer _sys_err: 2
+Total GameServer legacy log call sites: 1876
+Batch 1 reduction: 491
+```
+
+Build results:
+- Build passed after every migrated file.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Commit status:
+- `bc189d3 Phase 16-2.1: Confirm LOG macro logging migration approach`
+- `c9de540 Phase 16-2.2: Expose LOG macros to GameServer sources`
+- `716dde9 Phase 16-2.3: Avoid dev_log LOG macro collision`
+- `fbf4938 Phase 16-2: Migrate logging format in input_db.cpp`
+- `ffe93ef Phase 16-2: Migrate logging format in ItemSystem_LegacyBridge.cpp`
+- `23e23f6 Phase 16-2: Migrate logging format in SkillSystem.cpp`
+- `e7f8ef5 Phase 16-2: Migrate logging format in dragon_soul_table.cpp`
+- `d33c38c Phase 16-2: Migrate logging format in CombatSystem.cpp`
+- WinTest not run in this environment.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
