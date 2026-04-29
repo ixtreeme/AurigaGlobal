@@ -31,6 +31,9 @@ namespace {
 
 LPITEM LegacyDragonSoulItemOf(entt::entity item)
 {
+	if (item == entt::null)
+		return nullptr;
+
 	const uint32_t id = ItemSystem::GetItemID(item);
 	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
 }
@@ -41,9 +44,9 @@ void SyncDragonSoulItemEntity(entt::entity item)
 		ItemSystem::SyncItemStateFromLegacy(item);
 }
 
-void SyncDragonSoulItemPtr(LPITEM item)
+void SyncDragonSoulItemPtr(entt::entity item)
 {
-	SyncDragonSoulItemEntity(EntityFactory::CreateItemEntity(g_registry, item));
+	SyncDragonSoulItemEntity(item);
 }
 
 void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
@@ -55,7 +58,7 @@ void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON
 	{
 		LPITEM item = ch->GetItem(aItemPoses[i]);
 		if (item)
-			SyncDragonSoulItemPtr(item);
+			SyncDragonSoulItemPtr(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 }
 
@@ -206,16 +209,17 @@ uint16_t DSManager::GetBasePosition(entt::entity item) const
 }
 
 
-bool DSManager::RefreshItemAttributes(LPITEM pDS)
+bool DSManager::RefreshItemAttributes(entt::entity item)
 {
-	if (!pDS->IsDragonSoul())
+	LPITEM pDS = LegacyDragonSoulItemOf(item);
+	if (!pDS || !pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pDS)));
+		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
 	}
 
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDS)), ds_type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
 
 	DragonSoulTable::TVecApplys vec_basic_applys;
 	DragonSoulTable::TVecApplys vec_addtional_applys;
@@ -254,7 +258,7 @@ bool DSManager::RefreshItemAttributes(LPITEM pDS)
 		uint8_t bType = basic_apply.apply_type;
 		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
 
-		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, sValue);
+		ItemSystem::SetItemForceAttributeEcs(item, i, bType, sValue);
 	}
 
 	for (int i = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
@@ -271,21 +275,22 @@ bool DSManager::RefreshItemAttributes(LPITEM pDS)
 				break;
 			}
 		}
-		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, (short)(ceil((float)sValue * fWeight - 0.01f)));
+		ItemSystem::SetItemForceAttributeEcs(item, i, bType, (short)(ceil((float)sValue * fWeight - 0.01f)));
 	}
 	return true;
 }
 
-bool DSManager::PutAttributes(LPITEM pDS)
+bool DSManager::PutAttributes(entt::entity item)
 {
-	if (!pDS->IsDragonSoul())
+	LPITEM pDS = LegacyDragonSoulItemOf(item);
+	if (!pDS || !pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pDS)));
+		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
 	}
 
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDS)), ds_type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
 
 	DragonSoulTable::TVecApplys vec_basic_applys;
 	DragonSoulTable::TVecApplys vec_addtional_applys;
@@ -323,7 +328,7 @@ bool DSManager::PutAttributes(LPITEM pDS)
 		uint8_t bType = basic_apply.apply_type;
 		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
 
-		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, sValue);
+		ItemSystem::SetItemForceAttributeEcs(item, i, bType, sValue);
 	}
 
 	uint8_t additional_attr_num = MIN(number (add_min, add_max), 4);
@@ -350,21 +355,22 @@ bool DSManager::PutAttributes(LPITEM pDS)
 			uint8_t bType = additional_attr.apply_type;
 			short sValue = (short)(ceil((float)additional_attr.apply_value * fWeight - 0.01f));
 
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i, bType, sValue);
+			ItemSystem::SetItemForceAttributeEcs(item, DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i, bType, sValue);
 		}
 	}
 
 	return true;
 }
 
-bool DSManager::DragonSoulItemInitialize(LPITEM pItem)
+bool DSManager::DragonSoulItemInitialize(entt::entity item)
 {
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
 	if (nullptr == pItem || !pItem->IsDragonSoul())
 		return false;
-	PutAttributes(pItem);
+	PutAttributes(item);
 	int time = DSManager::instance().GetDuration(pItem);
 	if (time > 0)
-		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_REMAIN_SEC, time);
+		ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, time);
 	return true;
 }
 
@@ -1136,7 +1142,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 //		pDragonSoul->RemoveFromCharacter(); ds duplicate fix razor93
 
 		pDragonSoul->CopyAttributeTo(pResult);
-		RefreshItemAttributes(pResult);
+		RefreshItemAttributes(EntityFactory::CreateItemEntity(g_registry, pResult));
 
 		ItemSystem::ConsumeItemEcs(
 			EntityFactory::CreateItemEntity(g_registry, pDragonSoul), 1);
@@ -1163,7 +1169,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 				return false;
 			}
 			pDragonSoul->CopyAttributeTo(pResult);
-			RefreshItemAttributes(pResult);
+			RefreshItemAttributes(EntityFactory::CreateItemEntity(g_registry, pResult));
 		}
 		bSubHeader = DS_SUB_HEADER_REFINE_FAIL;
 
@@ -1483,7 +1489,7 @@ void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t ty
 	{
 		LPITEM item = ch->GetDragonSoulItem(i);
 		if (item)
-			SyncDragonSoulItemPtr(item);
+			SyncDragonSoulItemPtr(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 }
 

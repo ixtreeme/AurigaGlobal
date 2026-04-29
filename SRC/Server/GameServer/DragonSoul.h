@@ -49,7 +49,7 @@ public:
 	void DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade);
 #endif
 
-	bool	DragonSoulItemInitialize(LPITEM pItem);
+	bool	DragonSoulItemInitialize(entt::entity item);
 
 	bool	IsTimeLeftDragonSoul(entt::entity item) const;
 	int		LeftTime(entt::entity item) const;
@@ -59,7 +59,7 @@ public:
 	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT
-	bool	PutAttributes(LPITEM pDS);
+	bool	PutAttributes(entt::entity item);
 #endif
 private:
 	void	SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const TItemPos& pos);
@@ -68,9 +68,9 @@ private:
 	void	RefreshDragonSoulState(LPCHARACTER ch);
 
 	uint32_t	MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t step, uint8_t refine);
-	bool	RefreshItemAttributes(LPITEM pItem);
+	bool	RefreshItemAttributes(entt::entity item);
 #ifndef ENABLE_DS_ENCHANT
-	bool	PutAttributes(LPITEM pDS);
+	bool	PutAttributes(entt::entity item);
 #endif
 	DragonSoulTable*	m_pTable;
 };

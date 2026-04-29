@@ -9400,7 +9400,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			for (int i = 0; i < ITEM_ATTRIBUTE_RARE_END; i++)
 				item2->SetForceAttribute(i, 0, 0);
 
-			bool bRet = DSManager::instance().PutAttributes(item2);
+			bool bRet = DSManager::instance().PutAttributes(EntityFactory::CreateItemEntity(g_registry, item2));
 			if (!bRet)
 				return false;
 

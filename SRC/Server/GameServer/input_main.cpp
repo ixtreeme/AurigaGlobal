@@ -3032,7 +3032,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 	{
 		if (bMall)
 		{
-			DSManager::instance().DragonSoulItemInitialize(pkItem);
+			DSManager::instance().DragonSoulItemInitialize(EntityFactory::CreateItemEntity(g_registry, pkItem));
 		}
 
 		if (DRAGON_SOUL_INVENTORY != p->ItemPos.window_type)

@@ -485,7 +485,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	// 货肺 积己登绰 侩去籍 贸府.
 	if (item->IsDragonSoul() && 0 == id)
 	{
-		DSManager::instance().DragonSoulItemInitialize(item);
+		DSManager::instance().DragonSoulItemInitialize(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 #ifdef ENABLE_RUNE_SYSTEM
