@@ -23,6 +23,7 @@
 #include "packet.h"
 #include "start_position.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 
 uint16_t SECTREE_MANAGER::current_sectree_version = MAKEWORD(0, 3);
 
@@ -111,7 +112,7 @@ void SECTREE_MAP::Build()
 
 		tree->m_neighbor_list.push_back(tree); // �ڽ��� �ִ´�.
 
-		sys_log(3, "%dx%d", tree->m_id.coord.x, tree->m_id.coord.y);
+		LOG_INFO("{}x{}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
 
 		int x = tree->m_id.coord.x * SECTREE_SIZE;
 		int y = tree->m_id.coord.y * SECTREE_SIZE;
@@ -122,7 +123,7 @@ void SECTREE_MAP::Build()
 
 			if (tree2)
 			{
-				sys_log(3, "   %d %dx%d", i, tree2->m_id.coord.x, tree2->m_id.coord.y);
+				LOG_INFO("   {} {}x{}", i, static_cast<int32_t>(tree2->m_id.coord.x), static_cast<int32_t>(tree2->m_id.coord.y));
 				tree->m_neighbor_list.push_back(tree2);
 			}
 		}
@@ -187,7 +188,7 @@ int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettin
 
 	if (!fp)
 	{
-		sys_err("cannot open file: %s", c_pszSettingFileName);
+		LOG_ERROR("cannot open file: {}", c_pszSettingFileName);
 		return 0;
 	}
 
@@ -216,7 +217,7 @@ int SECTREE_MANAGER::LoadSettingFile(int32_t lMapIndex, const char * c_pszSettin
 
 	if ((iWidth == 0 && iHeight == 0) || r_setting.iCellScale == 0)
 	{
-		sys_err("Invalid Settings file: %s", c_pszSettingFileName);
+		LOG_ERROR("Invalid Settings file: {}", c_pszSettingFileName);
 		return 0;
 	}
 
@@ -243,7 +244,7 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 			tree->m_id.coord.x = x / SECTREE_SIZE;
 			tree->m_id.coord.y = y / SECTREE_SIZE;
 			pkMapSectree->Add(tree->m_id.package, tree);
-			sys_log(3, "new sectree %d x %d", tree->m_id.coord.x, tree->m_id.coord.y);
+			LOG_INFO("new sectree {} x {}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
 		}
 	}
 
@@ -308,7 +309,7 @@ void SECTREE_MANAGER::LoadDungeon(int iIndex, const char * c_pszFileName)
 
 	fclose(fp);
 
-	sys_log(0, "Dungeon Position Load [%3d]%s count %d", iIndex, c_pszFileName, count);
+	LOG_INFO("Dungeon Position Load [{:3}]{} count {}", iIndex, c_pszFileName, count);
 }
 
 bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_setting, const char * c_pszMapName)
@@ -316,7 +317,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 	FILE * fp = fopen(c_pszFileName, "r");
 
 	if ( test_server )
-		sys_log( 0, "[LoadMapRegion] file(%s)", c_pszFileName );
+		LOG_INFO("[LoadMapRegion] file({})", c_pszFileName);
 
 	if (!fp)
 		return false;
@@ -336,11 +337,11 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 	if( iEmpirePositionCount == 6 )
 	{
 		for ( int n = 0; n < 3; ++n )
-			sys_log( 0 ,"LoadMapRegion %d %d ", pos[n].x, pos[n].y );
+			LOG_INFO("LoadMapRegion {} {} ", pos[n].x, pos[n].y);
 	}
 	else
 	{
-		sys_log( 0, "LoadMapRegion no empire specific start point" );
+		LOG_INFO("LoadMapRegion no empire specific start point");
 	}
 
 	TMapRegion region;
@@ -358,14 +359,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 	r_setting.posSpawn = region.posSpawn;
 
-	sys_log(0, "LoadMapRegion %d x %d ~ %d y %d ~ %d, town %d %d",
-			region.index,
-			region.sx,
-			region.ex,
-			region.sy,
-			region.ey,
-			region.posSpawn.x,
-			region.posSpawn.y);
+	LOG_INFO("LoadMapRegion {} x {} ~ {} y {} ~ {}, town {} {}", region.index, region.sx, region.ex, region.sy, region.ey, region.posSpawn.x, region.posSpawn.y);
 
 	if (iEmpirePositionCount == 6)
 	{
@@ -384,7 +378,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 	m_vec_mapRegion.emplace_back(region);
 
-	sys_log(0,"LoadMapRegion %d End", region.index);
+	LOG_INFO("LoadMapRegion {} End", region.index);
 	return true;
 }
 
@@ -394,7 +388,7 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 
 	if (!fp)
 	{
-		sys_err("SECTREE_MANAGER::LoadAttribute : cannot open %s", c_pszFileName);
+		LOG_ERROR("SECTREE_MANAGER::LoadAttribute : cannot open {}", c_pszFileName);
 		return false;
 	}
 
@@ -428,10 +422,9 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 			// SERVER_ATTR_LOAD_ERROR
 			if (tree == nullptr)
 			{
-				sys_err("FATAL ERROR! LoadAttribute(%s) - cannot find sectree(package=%x, coord=(%u, %u), map_index=%u, map_base=(%u, %u))",
-						c_pszFileName, id.package, id.coord.x, id.coord.y, r_setting.iIndex, r_setting.iBaseX, r_setting.iBaseY);
-				sys_err("ERROR_ATTR_POS(%d, %d) attr_size(%d, %d)", x, y, iWidth, iHeight);
-				sys_err("CHECK! 'Setting.txt' and 'server_attr' MAP_SIZE!!");
+				LOG_ERROR("FATAL ERROR! LoadAttribute({}) - cannot find sectree(package={:x}, coord=({}, {}), map_index={}, map_base=({}, {}))", c_pszFileName, static_cast<uint32_t>(id.package), static_cast<int32_t>(id.coord.x), static_cast<int32_t>(id.coord.y), r_setting.iIndex, r_setting.iBaseX, r_setting.iBaseY);
+				LOG_ERROR("ERROR_ATTR_POS({}, {}) attr_size({}, {})", x, y, iWidth, iHeight);
+				LOG_ERROR("CHECK! 'Setting.txt' and 'server_attr' MAP_SIZE!!");
 
 				pkMapSectree->DumpAllToSysErr();
 				abort();
@@ -446,8 +439,7 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 
 			if (tree->m_id.package != id.package)
 			{
-				sys_err("returned tree id mismatch! return %u, request %u",
-						tree->m_id.package, id.package);
+				LOG_ERROR("returned tree id mismatch! return {}, request {}", tree->m_id.package, id.package);
 				fclose(fp);
 
 				M2_DELETE_ARRAY(attr);
@@ -466,8 +458,7 @@ bool SECTREE_MANAGER::LoadAttribute(LPSECTREE_MAP pkMapSectree, const char * c_p
 
 			if (uiDestSize != sizeof(uint32_t) * (SECTREE_SIZE / CELL_SIZE) * (SECTREE_SIZE / CELL_SIZE))
 			{
-				sys_err("SECTREE_MANAGER::LoadAttribte : %s : %d %d size mismatch! %d",
-						c_pszFileName, tree->m_id.coord.x, tree->m_id.coord.y, uiDestSize);
+				LOG_ERROR("SECTREE_MANAGER::LoadAttribte : {} : {} {} size mismatch! {}", c_pszFileName, static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y), uiDestSize);
 				fclose(fp);
 
 				M2_DELETE_ARRAY(attr);
@@ -673,13 +664,13 @@ int32_t SECTREE_MANAGER::GetMapIndex(int32_t x, int32_t y)
 			return rRegion.index;
 	}
 
-	sys_log(0, "SECTREE_MANAGER::GetMapIndex(%d, %d)", x, y);
+	LOG_INFO("SECTREE_MANAGER::GetMapIndex({}, {})", x, y);
 
 	std::vector<TMapRegion>::iterator i;
 	for (i = m_vec_mapRegion.begin(); i !=m_vec_mapRegion.end(); ++i)
 	{
 		TMapRegion & rRegion = *i;
-		sys_log(0, "%d: (%d, %d) ~ (%d, %d)", rRegion.index, rRegion.sx, rRegion.sy, rRegion.ex, rRegion.ey);
+		LOG_INFO("{}: ({}, {}) ~ ({}, {})", rRegion.index, rRegion.sx, rRegion.sy, rRegion.ex, rRegion.ey);
 	}
 
 	return 0;
@@ -689,7 +680,7 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 {
 	if (true == test_server)
 	{
-		sys_log ( 0, "[BUILD] Build %s %s ", c_pszListFileName, c_pszMapBasePath );
+		LOG_INFO("[BUILD] Build {} {} ", c_pszListFileName, c_pszMapBasePath);
 	}
 
 	FILE* fp = fopen(c_pszListFileName, "r");
@@ -723,7 +714,7 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 
 		if (!LoadSettingFile(iIndex, szFilename, setting))
 		{
-			sys_err("can't load file %s in LoadSettingFile", szFilename);
+			LOG_ERROR("can't load file {} in LoadSettingFile", szFilename);
 			fclose(fp);
 			return 0;
 		}
@@ -732,19 +723,19 @@ int SECTREE_MANAGER::Build(const char * c_pszListFileName, const char* c_pszMapB
 
 		if (!LoadMapRegion(szFilename, setting, szMapName))
 		{
-			sys_err("can't load file %s in LoadMapRegion", szFilename);
+			LOG_ERROR("can't load file {} in LoadMapRegion", szFilename);
 			fclose(fp);
 			return 0;
 		}
 
 		if (true == test_server)
-			sys_log ( 0,"[BUILD] Build %s %s %d ",c_pszMapBasePath, szMapName, iIndex );
+			LOG_INFO("[BUILD] Build {} {} {} ", c_pszMapBasePath, szMapName, iIndex);
 
 		// ���� �� �������� �� ���� ���͸� �����ؾ� �ϴ°� Ȯ�� �Ѵ�.
 		if (map_allow_find(iIndex))
 		{
 			LPSECTREE_MAP pkMapSectree = BuildSectreeFromSetting(setting);
-			sys_log ( 0, "[BUILD] Build %s %s [w/h %d %d, base %d %d]", c_pszListFileName, c_pszMapBasePath, setting.iWidth, setting.iHeight, setting.iBaseX, setting.iBaseY);
+			LOG_INFO("[BUILD] Build {} {} [w/h {} {}, base {} {}]", c_pszListFileName, c_pszMapBasePath, setting.iWidth, setting.iHeight, setting.iBaseX, setting.iBaseY);
 			m_map_pkSectree.insert(std::map<uint32_t, LPSECTREE_MAP>::value_type(iIndex, pkMapSectree));
 
 			snprintf(szFilename, sizeof(szFilename), "%s/%s/server_attr", c_pszMapBasePath, szMapName);
@@ -838,7 +829,7 @@ bool SECTREE_MANAGER::GetValidLocation(int32_t lMapIndex, int32_t x, int32_t y, 
 		}
 		else
 		{
-			sys_err("cannot find sectree_map by map index %d", lMapIndex);
+			LOG_ERROR("cannot find sectree_map by map index {}", lMapIndex);
 			return false;
 		}
 	}
@@ -860,7 +851,7 @@ bool SECTREE_MANAGER::GetValidLocation(int32_t lMapIndex, int32_t x, int32_t y, 
 
 			if (!tree)
 			{
-				sys_err("cannot find tree by %d %d (map index %d)", x, y, lMapIndex);
+				LOG_ERROR("cannot find tree by {} {} (map index {})", x, y, lMapIndex);
 				return false;
 			}
 
@@ -871,7 +862,7 @@ bool SECTREE_MANAGER::GetValidLocation(int32_t lMapIndex, int32_t x, int32_t y, 
 		}
 	}
 
-	sys_err("invalid location (map index %d %d x %d)", lRealMapIndex, x, y);
+	LOG_ERROR("invalid location (map index {} {} x {})", lRealMapIndex, x, y);
 	return false;
 }
 
@@ -951,7 +942,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 
 	if (!pkMapSectree)
 	{
-		sys_err("Cannot find map index %d", lMapIndex);
+		LOG_ERROR("Cannot find map index {}", lMapIndex);
 		return 0;
 	}
 
@@ -994,7 +985,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 	}
 
 	if ( test_server )
-		sys_log( 0, "Create Dungeon : OrginalMapindex %d NewMapindex %d", lMapIndex, i );
+		LOG_INFO("Create Dungeon : OrginalMapindex {} NewMapindex {}", lMapIndex, i);
 
 	if ( lMapIndex == 107 || lMapIndex == 108 || lMapIndex == 109 )
 	{
@@ -1013,7 +1004,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 
 	if (i == 10000)
 	{
-		sys_err("not enough private map index (map_index %d)", lMapIndex);
+		LOG_ERROR("not enough private map index (map_index {})", lMapIndex);
 		return 0;
 	}
 
@@ -1023,7 +1014,7 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 	pkMapSectree = M2_NEW SECTREE_MAP(*pkMapSectree);
 	m_map_pkSectree.insert(std::map<uint32_t, LPSECTREE_MAP>::value_type(lNewMapIndex, pkMapSectree));
 
-	sys_log(0, "PRIVATE_MAP: %d created (original %d)", lNewMapIndex, lMapIndex);
+	LOG_INFO("PRIVATE_MAP: {} created (original {})", lNewMapIndex, lMapIndex);
 	return lNewMapIndex;
 }
 
@@ -1034,7 +1025,7 @@ struct FDestroyPrivateMapEntity
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			//sys_log(0, "PRIVAE_MAP: removing character %s", ((ch)->GetName()));
+			//0, "PRIVAE_MAP: removing character %s", ((ch)->GetName()));
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -1044,14 +1035,14 @@ struct FDestroyPrivateMapEntity
 		else if (ent->IsType(ENTITY_ITEM))
 		{
 			LPITEM item = (LPITEM) ent;
-			sys_log(0, "PRIVATE_MAP: removing item %s", item->GetName());
+			LOG_INFO("PRIVATE_MAP: removing item {}", item->GetName());
 
 			ItemSystem::DestroyItemEntityEcs(
 				EntityFactory::CreateItemEntity(g_registry, item),
 				"PRIVATE_MAP_ITEM_CLEANUP");
 		}
 		else
-			sys_err("PRIVAE_MAP: trying to remove unknown entity %d", ent->GetType());
+			LOG_ERROR("PRIVAE_MAP: trying to remove unknown entity {}", ent->GetType());
 	}
 };
 
@@ -1088,7 +1079,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 
 	M2_DELETE(pkMapSectree);
 
-	sys_log(0, "PRIVATE_MAP: %d destroyed", lMapIndex);
+	LOG_INFO("PRIVATE_MAP: {} destroyed", lMapIndex);
 }
 
 TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
@@ -1321,7 +1312,7 @@ bool SECTREE_MANAGER::ForAttrRegionCell(int32_t lMapIndex, int32_t lCX, int32_t 
 			break;
 
 		default:
-			sys_err("Unknown region mode %u", mode);
+			LOG_ERROR("Unknown region mode {}", mode);
 			break;
 	}
 
@@ -1376,7 +1367,7 @@ bool SECTREE_MANAGER::ForAttrRegionFreeAngle(int32_t lMapIndex, int32_t lCX, int
 
 	if (0 == fdx1 || 0 == fdx2)
 	{
-		sys_err( "SECTREE_MANAGER::ForAttrRegion - Unhandled exception. MapIndex: %d", lMapIndex );
+		LOG_ERROR("SECTREE_MANAGER::ForAttrRegion - Unhandled exception. MapIndex: {}", lMapIndex);
 		return false;
 	}
 
@@ -1423,7 +1414,7 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 
 	if (!pkMapSectree)
 	{
-		sys_err("Cannot find SECTREE_MAP by map index %d", lMapIndex);
+		LOG_ERROR("Cannot find SECTREE_MAP by map index {}", lMapIndex);
 		return mode == ATTR_REGION_MODE_CHECK ? true : false;
 	}
 
@@ -1445,7 +1436,7 @@ bool SECTREE_MANAGER::ForAttrRegion(int32_t lMapIndex, int32_t lStartX, int32_t 
 	int32_t lCW = (lEndX - lStartX) / CELL_SIZE;
 	int32_t lCH = (lEndY - lStartY) / CELL_SIZE;
 
-	sys_log(1, "ForAttrRegion %d %d ~ %d %d", lStartX, lStartY, lEndX, lEndY);
+	LOG_INFO("ForAttrRegion {} {} ~ {} {}", lStartX, lStartY, lEndX, lEndY);
 
 	lRotate = lRotate % 360;
 
@@ -1465,7 +1456,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 			pMap = pMapSrc;
 		else
 		{
-			sys_err("cannot find sectree_map %d", lMapIndex);
+			LOG_ERROR("cannot find sectree_map {}", lMapIndex);
 			return false;
 		}
 	}
@@ -1475,17 +1466,17 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 
 	if (iMapHeight < 0 || iMapWidth < 0)
 	{
-		sys_err("map size error w %d h %d", iMapWidth, iMapHeight);
+		LOG_ERROR("map size error w {} h {}", iMapWidth, iMapHeight);
 		return false;
 	}
 
-	sys_log(0, "SaveAttributeToImage w %d h %d file %s", iMapWidth, iMapHeight, c_pszFileName);
+	LOG_INFO("SaveAttributeToImage w {} h {} file {}", iMapWidth, iMapHeight, c_pszFileName);
 
 	CTargaImage image;
 
 	image.Create(512 * iMapWidth, 512 * iMapHeight);
 
-	sys_log(0, "1");
+	LOG_INFO("1");
 
 	uint32_t * pdwDest = (uint32_t *) image.GetBasePointer();
 
@@ -1493,7 +1484,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 	int x, x2;
 	int y, y2;
 
-	sys_log(0, "2 %p", pdwDest);
+	LOG_INFO("2 {}", static_cast<const void*>(pdwDest));
 
 	uint32_t * pdwLine = M2_NEW uint32_t[SECTREE_SIZE / CELL_SIZE];
 
@@ -1512,7 +1503,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 
 				if (!pSec)
 				{
-					sys_err("cannot get sectree for %d %d %d %d", id.coord.x, id.coord.y, pMap->m_setting.iBaseX, pMap->m_setting.iBaseY);
+					LOG_ERROR("cannot get sectree for {} {} {} {}", static_cast<int32_t>(id.coord.x), static_cast<int32_t>(id.coord.y), pMap->m_setting.iBaseX, pMap->m_setting.iBaseY);
 					continue;
 				}
 
@@ -1520,7 +1511,7 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 
 				if (!pdwLine)
 				{
-					sys_err("cannot get attribute line pointer");
+					LOG_ERROR("cannot get attribute line pointer");
 					M2_DELETE_ARRAY(pdwLine);
 					continue;
 				}
@@ -1546,16 +1537,16 @@ bool SECTREE_MANAGER::SaveAttributeToImage(int32_t lMapIndex, const char * c_psz
 	}
 
 	M2_DELETE_ARRAY(pdwLine);
-	sys_log(0, "3");
+	LOG_INFO("3");
 
 	if (image.Save(c_pszFileName))
 	{
-		sys_log(0, "SECTREE: map %d attribute saved to %s (%d bytes)", lMapIndex, c_pszFileName, pixels);
+		LOG_INFO("SECTREE: map {} attribute saved to {} ({} bytes)", lMapIndex, c_pszFileName, pixels);
 		return true;
 	}
 	else
 	{
-		sys_err("cannot save file, map_index %d filename %s", lMapIndex, c_pszFileName);
+		LOG_ERROR("cannot save file, map_index {} filename {}", lMapIndex, c_pszFileName);
 		return false;
 	}
 }
