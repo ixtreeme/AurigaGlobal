@@ -14,6 +14,7 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
 //#include <boost/lexical_cast.hpp>
 
 template <typename T> T MINMAX(T min, T value, T max)
@@ -744,7 +745,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		return false;
 	}
 
-	ch->PointChange(POINT_GOLD, -fee);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
 	int left_count = need_count;
 
 	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
@@ -923,7 +924,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		return false;
 	}
 
-	ch->PointChange(POINT_GOLD, -fee);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
 	int left_count = need_count;
 	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
 	{
@@ -1118,7 +1119,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		return false;
 	}
 
-	ch->PointChange(POINT_GOLD, -fee);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
 	LPITEM pResult = nullptr;
 	uint8_t bSubHeader;
 
@@ -1315,7 +1316,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						ch->PointChange(POINT_GOLD, -fee);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
 
 						LPITEM removedOld = itemold->RemoveFromCharacter();
 						ItemSystem::DestroyItemEntityEcs(
@@ -1431,7 +1432,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						ch->PointChange(POINT_GOLD, -fee);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
 
 						LPITEM removedOld = itemold->RemoveFromCharacter();
 						ItemSystem::DestroyItemEntityEcs(

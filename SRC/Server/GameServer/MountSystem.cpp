@@ -18,6 +18,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/components/pet_mount_components.hpp"
 #include "ecs/events.hpp"
 
@@ -333,10 +334,10 @@ void CMountActor::Unmount()
 		m_pkOwner->HorseSummon(false);
 
 
-	m_pkOwner->PointChange(POINT_ST, 0);
-	m_pkOwner->PointChange(POINT_DX, 0);
-	m_pkOwner->PointChange(POINT_HT, 0);
-	m_pkOwner->PointChange(POINT_IQ, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_ST, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_DX, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_HT, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_IQ, 0);
 
 
 }
