@@ -2221,7 +2221,7 @@ namespace quest
 					if (!ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i))
 						break;
 					else
-						pkNewItem->SetSocket(i, 1);
+						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, 1);
 
 				int set = 0;
 				for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
@@ -2229,7 +2229,7 @@ namespace quest
 					int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i);
 					if (socket > 2 && socket != 28960)
 					{
-						pkNewItem->SetSocket(set++, socket);
+						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), set++, socket);
 					}
 				}
 
@@ -3639,7 +3639,7 @@ teleport_area:
 			return 1;
 		}
 
-		item->SetSocket(0, dwVnum);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, dwVnum);
 
 		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
@@ -3952,10 +3952,10 @@ teleport_area:
 		{
 			// socket
 			for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
-				pkNewItem->SetSocket(i, m_socket[i]);
+				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, m_socket[i]);
 			// attr
 			for (int i=0; i<ITEM_ATTRIBUTE_MAX_NUM; i++)
-				pkNewItem->SetForceAttribute(i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
+				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
 			// state
 			int iEmptyCell = -1;
 			int m_sec = 0;
@@ -4614,9 +4614,9 @@ teleport_area:
 		if (item)
 		{
 			if (lua_isnumber(L, 1))
-				item->SetSocket(0, ::GetRandomSkillVnum(lua_tonumber(L, 1)));
+				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, ::GetRandomSkillVnum(lua_tonumber(L, 1)));
 			else
-				item->SetSocket(0, ::GetRandomSkillVnum());
+				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, ::GetRandomSkillVnum());
 		}
 		lua_pushboolean(L, item!= nullptr);
 		return 1;
