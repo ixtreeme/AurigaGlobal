@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "desc_client.h"
@@ -1905,7 +1906,7 @@ ACMD(do_set)
 				str_to_number(gold, arg3);
 				DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 3, gold);
 				int64_t before_gold = tch->GetGold();
-				tch->PointChange(POINT_GOLD, gold, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GOLD, gold, true);
 				int64_t after_gold = tch->GetGold();
 				if (after_gold < 0)
 				{
@@ -2000,7 +2001,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				tch->PointChange(POINT_EXP, amount, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_EXP, amount, true);
 			}
 			break;
 
@@ -2008,7 +2009,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				tch->PointChange(POINT_MAX_HP, amount, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_MAX_HP, amount, true);
 			}
 			break;
 
@@ -2016,7 +2017,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				tch->PointChange(POINT_MAX_SP, amount, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_MAX_SP, amount, true);
 			}
 			break;
 
@@ -2024,7 +2025,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				tch->PointChange(POINT_SKILL, amount, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_SKILL, amount, true);
 			}
 			break;
 
@@ -2043,7 +2044,7 @@ ACMD(do_set)
 			int gaya = 0;
 			str_to_number(gaya, arg3);
 			int before_gaya = tch->GetGaya();
-			tch->PointChange(POINT_GAYA, gaya, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GAYA, gaya, true);
 			int after_gaya = tch->GetGaya();
 			if (0 == after_gaya && 0 != before_gaya)
 			{
@@ -2066,8 +2067,8 @@ ACMD(do_set)
 
 ACMD(do_reset)
 {
-	ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-	ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 	ch->Save();
 }
 
@@ -2480,7 +2481,7 @@ ACMD(do_set_skill_point)
 
 	ch->SetRealPoint(POINT_SKILL, skill_point);
 	ch->SetPoint(POINT_SKILL, ch->GetRealPoint(POINT_SKILL));
-	ch->PointChange(POINT_SKILL, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, 0);
 }
 
 ACMD(do_set_skill_group)
@@ -2682,7 +2683,7 @@ struct FuncWeaken
 			return;
 
 		if (pkChr->IsNPC())
-			pkChr->PointChange(POINT_HP, (10 - pkChr->GetHP()));
+			ecs::PointSystem::Change(AIHelpers::EcsOf(pkChr), POINT_HP, (10 - pkChr->GetHP()));
 	}
 };
 
@@ -3413,7 +3414,7 @@ ACMD(do_build)
 
 				if (test_server || GMLevel == GM_PLAYER)
 				{
-					ch->PointChange(POINT_GOLD, -static_cast<int64_t>(t->dwPrice));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -static_cast<int64_t>(t->dwPrice));
 
 					{
 						for (int i = 0; i < OBJECT_MATERIAL_MAX_NUM; ++i)
@@ -3965,9 +3966,9 @@ ACMD(do_stat_plus_amount)
 		ch->SetRealPoint(subcmd, ch->GetRealPoint(subcmd) + nPoint);
 		ch->SetPoint(subcmd, ch->GetPoint(subcmd) + nPoint);
 		ch->ComputePoints();
-		ch->PointChange(subcmd, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), subcmd, 0);
 
-		ch->PointChange(POINT_STAT, -nPoint);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -nPoint);
 		ch->ComputePoints();
 	}
 }
@@ -4226,9 +4227,9 @@ ACMD(do_set_stat)
 		tch->SetRealPoint(subcmd, nPoint);
 		tch->SetPoint(subcmd, tch->GetPoint(subcmd) + nChangeAmount);
 		tch->ComputePoints();
-		tch->PointChange(subcmd, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(tch), subcmd, 0);
 
-		tch->PointChange(POINT_STAT, -nChangeAmount);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_STAT, -nChangeAmount);
 		tch->ComputePoints();
 
 		const char* stat_name[4] = {"con", "int", "str", "dex"};

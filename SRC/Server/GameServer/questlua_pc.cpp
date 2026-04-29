@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 
 #include "config.h"
 #include "questmanager.h"
@@ -465,7 +467,7 @@ namespace quest
         if (ch)
         {
             DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), iAmount);
-            ch->PointChange(POINT_GOLD, iAmount, true);
+            ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iAmount, true);
         }
         return 0;
     }
@@ -1175,7 +1177,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (val > 0)
 		{
-			if (ch) ch->PointChange(POINT_SP, val);
+			if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, val);
 		}
 		else if (val < 0)
 		{
@@ -1184,7 +1186,7 @@ namespace quest
 				lua_pushboolean(L, 0);
 				return 1;
 			}
-			if (ch) ch->PointChange(POINT_SP, val);
+			if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, val);
 		}
 		lua_pushboolean(L, 1);
 		return 1;
@@ -1253,14 +1255,14 @@ namespace quest
         sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
         LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), newLevel, 0);
-        ch->PointChange(POINT_SKILL, newLevel - ((ch)->GetLevel()));
-        ch->PointChange(POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(((ch)->GetLevel()), 9));
-        ch->PointChange(POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ((ch)->GetLevel())) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
-        ch->PointChange(POINT_LEVEL, newLevel - ((ch)->GetLevel()));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - ((ch)->GetLevel()));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(((ch)->GetLevel()), 9));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ((ch)->GetLevel())) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_LEVEL, newLevel - ((ch)->GetLevel()));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
-        ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-        ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
         ch->ComputePoints();
         ch->PointsPacket();
         ch->SkillLevelPacket();
@@ -1441,7 +1443,7 @@ namespace quest
 		else if (ch)
 		{
 			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
-			ch->PointChange(POINT_GOLD, gold, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, gold, true);
 		}
 		return 0;
 	}
@@ -1604,7 +1606,7 @@ namespace quest
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
         LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), exp, 0);
-        ch->PointChange(POINT_EXP, exp);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, exp);
         return 0;
     }
 
@@ -2608,7 +2610,7 @@ namespace quest
         }
         ch->SetRealPoint(POINT_SKILL, newPoint);
         ch->SetPoint(POINT_SKILL, ch->GetRealPoint(POINT_SKILL));
-        ch->PointChange(POINT_SKILL, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, 0);
         ch->ComputePoints();
         ch->PointsPacket();
         return 0;
@@ -3071,7 +3073,7 @@ teleport_area:
 				ch->SetRealPoint(point, 1);
 				ch->SetPoint(point, ch->GetRealPoint(point));
 
-				ch->PointChange(POINT_STAT, old_val-1);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, old_val-1);
 
 				if ( point == POINT_HT )
 				{
@@ -3089,11 +3091,11 @@ teleport_area:
 
 				if ( point == POINT_HT )
 				{
-					ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
 				}
 				else if ( point == POINT_IQ )
 				{
-					ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 				}
 
 				switch ( idx )
@@ -3159,8 +3161,8 @@ teleport_area:
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SetRealPoint(POINT_HT, newPoint);
-        ch->PointChange(POINT_HT, 0);
-        ch->PointChange(POINT_STAT, -usedPoint);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
         ch->PointsPacket();
         return 1;
@@ -3202,8 +3204,8 @@ teleport_area:
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SetRealPoint(POINT_IQ, newPoint);
-        ch->PointChange(POINT_IQ, 0);
-        ch->PointChange(POINT_STAT, -usedPoint);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
         ch->PointsPacket();
         return 1;
@@ -3245,8 +3247,8 @@ teleport_area:
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SetRealPoint(POINT_ST, newPoint);
-        ch->PointChange(POINT_ST, 0);
-        ch->PointChange(POINT_STAT, -usedPoint);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
         ch->PointsPacket();
         return 1;
@@ -3288,8 +3290,8 @@ teleport_area:
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SetRealPoint(POINT_DX, newPoint);
-        ch->PointChange(POINT_DX, 0);
-        ch->PointChange(POINT_STAT, -usedPoint);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
         ch->PointsPacket();
         return 1;
@@ -3596,7 +3598,7 @@ teleport_area:
         const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
         auto* pChar = ecs::LegacyCharOf(pCharEntity);
         if (nullptr != pChar)
-            pChar->PointChange(POINT_SKILL, -1);
+            ecs::PointSystem::Change(AIHelpers::EcsOf(pChar), POINT_SKILL, -1);
         return 0;
     }
 
@@ -4098,7 +4100,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch) ch->PointChange(type, amount, broadcast, ignoreMax);
+		if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), type, amount, broadcast, ignoreMax);
 		return 0;
 	}
 
@@ -4447,8 +4449,8 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-        ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -4819,7 +4821,7 @@ teleport_area:
 		}
 
 		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), iAmount);
-		ch->PointChange(POINT_GAYA, iAmount, true);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, iAmount, true);
 		return 0;
 	}
 
@@ -4841,7 +4843,7 @@ teleport_area:
 		else if (ch)
 		{
 			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gaya);
-			ch->PointChange(POINT_GAYA, gaya, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, gaya, true);
 		}
 		return 0;
 	}

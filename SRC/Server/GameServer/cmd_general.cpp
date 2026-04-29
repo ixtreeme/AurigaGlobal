@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
 #include <md5.h>
 #else
@@ -766,8 +768,8 @@ ACMD(do_restart)
 							ch->ExitToSavedLocation();
 						}
 
-						ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-						ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -779,8 +781,8 @@ ACMD(do_restart)
 					{
 						sys_log(0, "do_restart: restart here");
 						ch->RestartAtSamePos();
-						ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-						ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -1363,8 +1365,8 @@ ACMD(do_restart)
 					}
 				}
 
-				ch->PointChange(POINT_HP, ch->GetMaxHP() - ch->GetHP());
-				ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 				ch->DeathPenalty(1);
 				if (showed)
 				{
@@ -1383,11 +1385,11 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ch->PointChange(POINT_HP, ch->GetDeadByMonster() ? (ch->GetMaxHP() - ch->GetHP()) / 2 : 50 - ch->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetDeadByMonster() ? (ch->GetMaxHP() - ch->GetHP()) / 2 : 50 - ch->GetHP());
 #else
-				ch->PointChange(POINT_HP, 50 - ch->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, 50 - ch->GetHP());
 #endif
-				ch->PointChange(POINT_SP, ch->GetMaxSP() - ch->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
 				ch->DeathPenalty(0);
 				ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1410,7 +1412,7 @@ ACMD(do_restart)
 
 ACMD(do_stat_reset)
 {
-	ch->PointChange(POINT_STAT_RESET_COUNT, 12 - ch->GetPoint(POINT_STAT_RESET_COUNT));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, 12 - ch->GetPoint(POINT_STAT_RESET_COUNT));
 }
 
 ACMD(do_stat_minus)
@@ -1440,7 +1442,7 @@ ACMD(do_stat_minus)
 		ch->SetRealPoint(POINT_ST, ch->GetRealPoint(POINT_ST) - 1);
 		ch->SetPoint(POINT_ST, ch->GetPoint(POINT_ST) - 1);
 		ch->ComputePoints();
-		ch->PointChange(POINT_ST, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
 	}
 	else if (!strcmp(arg1, "dx"))
 	{
@@ -1450,7 +1452,7 @@ ACMD(do_stat_minus)
 		ch->SetRealPoint(POINT_DX, ch->GetRealPoint(POINT_DX) - 1);
 		ch->SetPoint(POINT_DX, ch->GetPoint(POINT_DX) - 1);
 		ch->ComputePoints();
-		ch->PointChange(POINT_DX, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
 	}
 	else if (!strcmp(arg1, "ht"))
 	{
@@ -1460,8 +1462,8 @@ ACMD(do_stat_minus)
 		ch->SetRealPoint(POINT_HT, ch->GetRealPoint(POINT_HT) - 1);
 		ch->SetPoint(POINT_HT, ch->GetPoint(POINT_HT) - 1);
 		ch->ComputePoints();
-		ch->PointChange(POINT_HT, 0);
-		ch->PointChange(POINT_MAX_HP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
 	}
 	else if (!strcmp(arg1, "iq"))
 	{
@@ -1471,14 +1473,14 @@ ACMD(do_stat_minus)
 		ch->SetRealPoint(POINT_IQ, ch->GetRealPoint(POINT_IQ) - 1);
 		ch->SetPoint(POINT_IQ, ch->GetPoint(POINT_IQ) - 1);
 		ch->ComputePoints();
-		ch->PointChange(POINT_IQ, 0);
-		ch->PointChange(POINT_MAX_SP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
 	}
 	else
 		return;
 
-	ch->PointChange(POINT_STAT, +1);
-	ch->PointChange(POINT_STAT_RESET_COUNT, -1);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, +1);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, -1);
 	ch->ComputePoints();
 }
 
@@ -1520,18 +1522,18 @@ ACMD(do_stat)
 	ch->SetRealPoint(idx, ch->GetRealPoint(idx) + 1);
 	ch->SetPoint(idx, ch->GetPoint(idx) + 1);
 	ch->ComputePoints();
-	ch->PointChange(idx, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
 
 	if (idx == POINT_IQ)
 	{
-		ch->PointChange(POINT_MAX_HP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
 	}
 	else if (idx == POINT_HT)
 	{
-		ch->PointChange(POINT_MAX_SP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
 	}
 
-	ch->PointChange(POINT_STAT, -1);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -1);
 	ch->ComputePoints();
 }
 
@@ -1620,8 +1622,8 @@ ACMD(do_pvp)
 		
 		if (chA_nBetMoney > 0 && chA_nBetMoney > 0)
 		{
-			ch->PointChange(POINT_GOLD, - chA_nBetMoney, true);	
-			pkVictim->PointChange(POINT_GOLD, - chB_nBetMoney, true);	
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, - chA_nBetMoney, true);	
+			ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), POINT_GOLD, - chB_nBetMoney, true);	
 		}
 		
 		CPVPManager::instance().Insert(ch, pkVictim);
@@ -4146,7 +4148,7 @@ ACMD(do_gr_deposit_money)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough yang.");
 		return;
 	}
-	ch->PointChange(POINT_GOLD, (long)-amount, true);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, (long)-amount, true);
 	g->RenewalDepositMoney(ch, amount, false);
 	g->SendRenewalInfoTo(ch);
 }
