@@ -1050,8 +1050,8 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						if (pkItem)
 						{
 							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ((ch)->GetName()), qi->dwIdent);
-							pkItem->SetSocket(0, pMsg->Get()->uiInsertID);
-							pkItem->SetSocket(1, pdw[2]);
+							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0, pMsg->Get()->uiInsertID);
+							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, pdw[2]);
 						}
 						else
 							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ((ch)->GetPlayerID()));
