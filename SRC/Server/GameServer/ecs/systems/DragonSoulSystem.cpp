@@ -124,7 +124,7 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
 
         DSManager::instance().ActivateDragonSoul(item);
 #ifdef ENABLE_DS_SET
-        if (!DSManager::instance().IsTimeLeftDragonSoul(item))
+        if (!DSManager::instance().IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, item)))
             expired = true;
 
         gradeList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 1000) % 10;

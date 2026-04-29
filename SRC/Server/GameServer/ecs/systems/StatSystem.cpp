@@ -690,7 +690,7 @@ void CHARACTER::ComputePoints()
 			LPITEM pItem = GetWear(i);
 			if (pItem)
 			{
-				if (DSManager::instance().IsTimeLeftDragonSoul(pItem))
+				if (DSManager::instance().IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
 					pItem->ModifyPoints(true);
 			}
 		}

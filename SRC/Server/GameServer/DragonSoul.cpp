@@ -1509,11 +1509,6 @@ void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const
 	}
 }
 
-int DSManager::LeftTime(LPITEM pItem) const
-{
-	return LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem));
-}
-
 int DSManager::LeftTime(entt::entity item) const
 {
 	if (!ItemSystem::IsValidItem(item))
@@ -1530,11 +1525,6 @@ int DSManager::LeftTime(entt::entity item) const
 }
 
 
-bool DSManager::IsTimeLeftDragonSoul(LPITEM pItem) const
-{
-	return IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem));
-}
-
 bool DSManager::IsTimeLeftDragonSoul(entt::entity item) const
 {
 	if (!ItemSystem::IsValidItem(item))
@@ -1550,11 +1540,6 @@ bool DSManager::IsTimeLeftDragonSoul(entt::entity item) const
 	}
 }
 
-
-bool DSManager::IsActiveDragonSoul(LPITEM pItem) const
-{
-	return IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem));
-}
 
 bool DSManager::IsActiveDragonSoul(entt::entity item) const
 {
@@ -1579,10 +1564,10 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) &&
 			ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
 	{
-		if (IsTimeLeftDragonSoul(pItem) && !IsActiveDragonSoul(pItem))
+		if (IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)) && !IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		{
 			char buf[128];
-			sprintf (buf, "LEFT TIME(%d)", LeftTime(pItem));
+			sprintf (buf, "LEFT TIME(%d)", LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem)));
 			LogManager::instance().ItemLog(pOwner, pItem, "DS_ACTIVATE", buf);
 			pItem->ModifyPoints(true);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
@@ -1617,7 +1602,7 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 	if (nullptr == pOwner)
 		return false;
 
-	if (!IsActiveDragonSoul(pItem))
+	if (!IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		return false;
 
 	char buf[128];
@@ -1625,7 +1610,7 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
 	pItem->ModifyPoints(false);
 
-	sprintf (buf, "LEFT TIME(%d)", LeftTime(pItem));
+	sprintf (buf, "LEFT TIME(%d)", LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem)));
 	LogManager::instance().ItemLog(pOwner, pItem, "DS_DEACTIVATE", buf);
 
 	if (false == bSkipRefreshOwnerActiveState)
@@ -1655,7 +1640,7 @@ void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 		LPITEM pItem = ch->GetWear(i);
 		if (pItem != nullptr)
 		{
-			if(IsActiveDragonSoul(pItem))
+			if(IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
 			{
 				return;
 			}

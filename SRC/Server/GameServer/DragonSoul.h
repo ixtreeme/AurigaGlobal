@@ -51,15 +51,12 @@ public:
 
 	bool	DragonSoulItemInitialize(LPITEM pItem);
 
-	bool	IsTimeLeftDragonSoul(LPITEM pItem) const;
 	bool	IsTimeLeftDragonSoul(entt::entity item) const;
-	int		LeftTime(LPITEM pItem) const;
 	int		LeftTime(entt::entity item) const;
 	bool	ActivateDragonSoul(LPITEM pItem);
 	bool	ActivateDragonSoulEcs(entt::entity item);
 	bool	DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveState = false);
 	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
-	bool	IsActiveDragonSoul(LPITEM pItem) const;
 	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT
 	bool	PutAttributes(LPITEM pDS);
