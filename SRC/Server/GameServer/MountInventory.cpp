@@ -46,8 +46,8 @@ namespace
             if (duration == 0)
                 duration = 60 * 60 * 24 * 7;
 
-            item->SetSocket(0, time(nullptr) + duration);
-            item->SetSocket(1, 1); // innentol "aktivalt"
+            ItemSystem::SetItemSocket(itemEntity, 0, time(nullptr) + duration);
+            ItemSystem::SetItemSocket(itemEntity, 1, 1); // innentol "aktivalt"
             bChanged = true;
         }
 
