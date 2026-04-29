@@ -14,6 +14,7 @@
 #include "safebox.h"
 #include "blend_item.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
@@ -44,7 +45,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 
 		if (!loader.GetTokenInteger("rank", &rank))
 		{
-			sys_err("CommonDropitem : Syntax error %s : no rank, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("CommonDropitem : Syntax error {} : no rank, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
@@ -64,7 +65,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 					str_to_number(vnum, pTok->at(3).c_str());
 					if (!ITEM_MANAGER::instance().GetTable(vnum))
 					{
-						sys_err("CommonDropitem : there is no item node %s : vnum %d", stName.c_str(), vnum);
+						LOG_ERROR("CommonDropitem : there is no item node {} : vnum {}", stName.c_str(), vnum);
 						return false;
 					}
 				}
@@ -73,7 +74,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 				str_to_number(lvlStart, pTok->at(0).c_str());
 				if (lvlStart < 1)
 				{
-					sys_err("CommonDropitem : lvlStart negative node %s : lvlstart %d", stName.c_str(), lvlStart);
+					LOG_ERROR("CommonDropitem : lvlStart negative node {} : lvlstart {}", stName.c_str(), lvlStart);
 					return false;
 				}
 
@@ -81,13 +82,13 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 				str_to_number(lvlEnd, pTok->at(1).c_str());
 				if (lvlEnd < 1)
 				{
-					sys_err("CommonDropitem : lvlEnd negative node %s : lvlEnd %d", stName.c_str(), lvlEnd);
+					LOG_ERROR("CommonDropitem : lvlEnd negative node {} : lvlEnd {}", stName.c_str(), lvlEnd);
 					return false;
 				}
 
 				if (lvlStart > lvlEnd)
 				{
-					sys_err("CommonDropitem : lvlStart and lvlEnd >< node %s : lvlStart %d lvlEnd %d", stName.c_str(), lvlStart, lvlEnd);
+					LOG_ERROR("CommonDropitem : lvlStart and lvlEnd >< node {} : lvlStart {} lvlEnd {}", stName.c_str(), lvlStart, lvlEnd);
 					return false;
 				}
 
@@ -101,7 +102,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 				if (lvlStart == 0)
 					continue;
 
-				sys_log(0, "CommonDropItem ADD: Rank %d  LvlStart %d  LvlEnd %d   dwPct %d   Vnum %d", rank, lvlStart, lvlEnd, dwPct, vnum);
+				LOG_INFO("CommonDropItem ADD: Rank {}  LvlStart {}  LvlEnd {}   dwPct {}   Vnum {}", rank, lvlStart, lvlEnd, dwPct, vnum);
 
 				g_vec_pkCommonDropItem[rank].push_back(CItemDropInfo(lvlStart, lvlEnd, dwPct, vnum));
 			}
@@ -119,7 +120,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 
 	if (!fp)
 	{
-		sys_err("Cannot open %s", c_pszFileName);
+		LOG_ERROR("Cannot open {}", c_pszFileName);
 		return false;
 	}
 
@@ -174,7 +175,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 				str_to_number(dwItemVnum, d[i].szItemName);
 				if (!ITEM_MANAGER::instance().GetTable(dwItemVnum))
 				{
-					sys_err("No such an item (name: %s)", d[i].szItemName);
+					LOG_ERROR("No such an item (name: {})", d[i].szItemName);
 					fclose(fp);
 					return false;
 				}
@@ -196,12 +197,12 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 
 		std::vector<CItemDropInfo>::iterator it = v.begin();
 
-		sys_log(1, "CommonItemDrop rank %d", i);
+		LOG_INFO("CommonItemDrop rank {}", i);
 
 		while (it != v.end())
 		{
 			const CItemDropInfo & c = *(it++);
-			sys_log(1, "CommonItemDrop %d %d %d %u", c.m_iLevelStart, c.m_iLevelEnd, c.m_iPercent, c.m_dwVnum);
+			LOG_INFO("CommonItemDrop {} {} {} {}", c.m_iLevelStart, c.m_iLevelEnd, c.m_iPercent, c.m_dwVnum);
 		}
 	}
 
@@ -229,12 +230,12 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 
 		if (!loader.GetTokenInteger("vnum", &iVnum))
 		{
-			sys_err("ReadSpecialDropItemFile : Syntax error %s : no vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("ReadSpecialDropItemFile : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
 
-		sys_log(0,"DROP_ITEM_GROUP %s %d", stName.c_str(), iVnum);
+		LOG_INFO("DROP_ITEM_GROUP {} {}", stName.c_str(), iVnum);
 
 		TTokenVector * pTok;
 
@@ -277,14 +278,14 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						apply_type = FN_get_apply_type(pTok->at(0).c_str());
 						if (0 == apply_type)
 						{
-							sys_err ("Invalid APPLY_TYPE %s in Special Item Group Vnum %d", pTok->at(0).c_str(), iVnum);
+							LOG_ERROR("Invalid APPLY_TYPE {} in Special Item Group Vnum {}", pTok->at(0).c_str(), iVnum);
 							return false;
 						}
 					}
 					str_to_number(apply_value, pTok->at(1).c_str());
 					if (apply_type > MAX_APPLY_NUM)
 					{
-						sys_err ("Invalid APPLY_TYPE %u in Special Item Group Vnum %d", apply_type, iVnum);
+						LOG_ERROR("Invalid APPLY_TYPE {} in Special Item Group Vnum {}", apply_type, iVnum);
 						M2_DELETE(pkGroup);
 						return false;
 					}
@@ -352,7 +353,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 							str_to_number(dwVnum, name.c_str());
 							if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 							{
-								sys_err("ReadSpecialDropItemFile : there is no item %s : node %s", name.c_str(), stName.c_str());
+								LOG_ERROR("ReadSpecialDropItemFile : there is no item {} : node {}", name.c_str(), stName.c_str());
 								M2_DELETE(pkGroup);
 
 								return false;
@@ -371,7 +372,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						str_to_number(iRarePct, pTok->at(3).c_str());
 					}
 
-					sys_log(0,"        name %s count %d prob %d rare %d", name.c_str(), iCount, iProb, iRarePct);
+					LOG_INFO("        name {} count {} prob {} rare {}", name.c_str(), iCount, iProb, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iProb, iRarePct);
 
 #ifdef __INGAME_WIKI__
@@ -426,7 +427,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 	FILE *fp = fopen("special_item_group_vnum.txt", "w");
 	if (!fp)
 	{
-		sys_err("could not open file (%s)", "special_item_group_vnum.txt");
+		LOG_ERROR("could not open file ({})", "special_item_group_vnum.txt");
 		return false;
 	}
 
@@ -450,7 +451,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 
 		if (!loader.GetTokenInteger("vnum", &iVnum))
 		{
-			sys_err("ConvSpecialDropItemFile : Syntax error %s : no vnum, node %s", szSpecialItemGroupFileName, stName.c_str());
+			LOG_ERROR("ConvSpecialDropItemFile : Syntax error {} : no vnum, node {}", szSpecialItemGroupFileName, stName.c_str());
 			loader.SetParentNode();
 			fclose(fp);
 			return false;
@@ -526,7 +527,7 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 						str_to_number(dwVnum, name.c_str());
 						if (!ITEM_MANAGER::instance().GetTable(dwVnum) && type!=4)
 						{
-							sys_err("ReadSpecialDropItemFile : there is no item %s : node %s", name.c_str(), stName.c_str());
+							LOG_ERROR("ReadSpecialDropItemFile : there is no item {} : node {}", name.c_str(), stName.c_str());
 							fclose(fp);
 
 							return false;
@@ -583,7 +584,7 @@ bool ITEM_MANAGER::ReadEtcDropItemFile(const char * c_pszFileName)
 
 	if (!fp)
 	{
-		sys_err("Cannot open %s", c_pszFileName);
+		LOG_ERROR("Cannot open {}", c_pszFileName);
 		return false;
 	}
 
@@ -621,19 +622,19 @@ bool ITEM_MANAGER::ReadEtcDropItemFile(const char * c_pszFileName)
 			str_to_number(dwItemVnum, szItemName);
 			if (!ITEM_MANAGER::instance().GetTable(dwItemVnum))
 			{
-				sys_err("No such an item (name/vnum: %s)", szItemName);
+				LOG_ERROR("No such an item (name/vnum: {})", szItemName);
 				fclose(fp);
 				return false;
 			}
 #else
-			sys_err("No such an item (name: %s)", szItemName);
+			LOG_ERROR("No such an item (name: {})", szItemName);
 			fclose(fp);
 			return false;
 #endif
 		}
 
 		m_map_dwEtcItemDropProb[dwItemVnum] = (uint32_t) (fProb * 10000.0f);
-		sys_log(0, "ETC_DROP_ITEM: %s prob %f", szItemName, fProb);
+		LOG_INFO("ETC_DROP_ITEM: {} prob {:f}", szItemName, fProb);
 	}
 
 	fclose(fp);
@@ -666,14 +667,14 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 		if (!loader.GetTokenString("type", &strType))
 		{
-			sys_err("ReadMonsterDropItemGroup : Syntax error %s : no type (kill|drop), node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no type (kill|drop), node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
 
 		if (!loader.GetTokenInteger("mob", &iMobVnum))
 		{
-			sys_err("ReadMonsterDropItemGroup : Syntax error %s : no mob vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no mob vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
@@ -682,7 +683,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		{
 			if (!loader.GetTokenInteger("kill_drop", &iKillDrop))
 			{
-				sys_err("ReadMonsterDropItemGroup : Syntax error %s : no kill drop count, node %s", c_pszFileName, stName.c_str());
+				LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : no kill drop count, node {}", c_pszFileName, stName.c_str());
 				loader.SetParentNode();
 				return false;
 			}
@@ -696,7 +697,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		{
 			if ( !loader.GetTokenInteger("level_limit", &iLevelLimit) )
 			{
-				sys_err("ReadmonsterDropItemGroup : Syntax error %s : no level_limit, node %s", c_pszFileName, stName.c_str());
+				LOG_ERROR("ReadmonsterDropItemGroup : Syntax error {} : no level_limit, node {}", c_pszFileName, stName.c_str());
 				loader.SetParentNode();
 				return false;
 			}
@@ -706,7 +707,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 			iLevelLimit = 0;
 		}
 
-		sys_log(0,"MOB_ITEM_GROUP %s [%s] %d %d", stName.c_str(), strType.c_str(), iMobVnum, iKillDrop);
+		LOG_INFO("MOB_ITEM_GROUP {} [{}] {} {}", stName.c_str(), strType.c_str(), iMobVnum, iKillDrop);
 
 		if (iKillDrop == 0)
 		{
@@ -727,7 +728,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 				if (loader.GetTokenVector(buf, &pTok))
 				{
-					//sys_log(1, "               %s %s", pTok->at(0).c_str(), pTok->at(1).c_str());
+					//1, "               %s %s", pTok->at(0).c_str(), pTok->at(1).c_str());
 					std::string& name = pTok->at(0);
 					uint32_t dwVnum = 0;
 
@@ -736,7 +737,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 						str_to_number(dwVnum, name.c_str());
 						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 						{
-							sys_err("ReadMonsterDropItemGroup : there is no item %s : node %s : vnum %d", name.c_str(), stName.c_str(), dwVnum);
+							LOG_ERROR("ReadMonsterDropItemGroup : there is no item {} : node {} : vnum {}", name.c_str(), stName.c_str(), dwVnum);
 							return false;
 						}
 					}
@@ -746,7 +747,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					if (iCount<1)
 					{
-						sys_err("ReadMonsterDropItemGroup : there is no count for item %s : node %s : vnum %d, count %d", name.c_str(), stName.c_str(), dwVnum, iCount);
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {} : vnum {}, count {}", name.c_str(), stName.c_str(), dwVnum, iCount);
 						return false;
 					}
 
@@ -755,7 +756,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					if (iPartPct == 0)
 					{
-						sys_err("ReadMonsterDropItemGroup : there is no drop percent for item %s : node %s : vnum %d, count %d, pct %d", name.c_str(), stName.c_str(), iPartPct);
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no drop percent for item {} : node {} : vnum {}, count {}, pct {}", name.c_str(), stName.c_str(), dwVnum, iCount, iPartPct);
 						return false;
 					}
 
@@ -763,7 +764,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 					str_to_number(iRarePct, pTok->at(3).c_str());
 					iRarePct = MINMAX(0, iRarePct, 100);
 
-					sys_log(0,"        %s count %d rare %d", name.c_str(), iCount, iRarePct);
+					LOG_INFO("        {} count {} rare {}", name.c_str(), iCount, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iPartPct, iRarePct);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -822,7 +823,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 						str_to_number(dwVnum, name.c_str());
 						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 						{
-							sys_err("ReadDropItemGroup : there is no item %s : node %s", name.c_str(), stName.c_str());
+							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 							M2_DELETE(pkGroup);
 
 							return false;
@@ -834,7 +835,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					if (iCount < 1)
 					{
-						sys_err("ReadMonsterDropItemGroup : there is no count for item %s : node %s", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkGroup);
 
 						return false;
@@ -844,7 +845,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
 
-					sys_log(0,"        name %s pct %d count %d", name.c_str(), dwPct, iCount);
+					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkGroup->AddItem(dwVnum, dwPct, iCount);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -893,7 +894,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 						str_to_number(dwItemVnum, name.c_str());
 						if ( !ITEM_MANAGER::instance().GetTable(dwItemVnum) )
 						{
-							sys_err("ReadDropItemGroup : there is no item %s : node %s", name.c_str(), stName.c_str());
+							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 							M2_DELETE(pkLevelItemGroup);
 							return false;
 						}
@@ -904,7 +905,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					if (iCount < 1)
 					{
-						sys_err("ReadMonsterDropItemGroup : there is no count for item %s : node %s", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkLevelItemGroup);
 						return false;
 					}
@@ -912,7 +913,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 					float fPct = atof(pTok->at(2).c_str());
 					uint32_t dwPct = (uint32_t)(10000.0f * fPct);
 
-					sys_log(0,"        name %s pct %d count %d", name.c_str(), dwPct, iCount);
+					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkLevelItemGroup->AddItem(dwItemVnum, dwPct, iCount);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -960,7 +961,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 						str_to_number(dwVnum, name.c_str());
 						if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 						{
-							sys_err("ReadDropItemGroup : there is no item %s : node %s", name.c_str(), stName.c_str());
+							LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 							M2_DELETE(pkGroup);
 
 							return false;
@@ -972,7 +973,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					if (iCount < 1)
 					{
-						sys_err("ReadMonsterDropItemGroup : there is no count for item %s : node %s", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadMonsterDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
 						M2_DELETE(pkGroup);
 
 						return false;
@@ -982,7 +983,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
 
-					sys_log(0,"        name %s pct %d count %d", name.c_str(), dwPct, iCount);
+					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkGroup->AddItem(dwVnum, dwPct, iCount);
 
 					continue;
@@ -995,7 +996,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 		}
 		else
 		{
-			sys_err("ReadMonsterDropItemGroup : Syntax error %s : invalid type %s (kill|drop), node %s", c_pszFileName, strType.c_str(), stName.c_str());
+			LOG_ERROR("ReadMonsterDropItemGroup : Syntax error {} : invalid type {} (kill|drop), node {}", c_pszFileName, strType.c_str(), stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
@@ -1026,19 +1027,19 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 
 		if (!loader.GetTokenInteger("vnum", &iVnum))
 		{
-			sys_err("ReadDropItemGroup : Syntax error %s : no vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("ReadDropItemGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
 
 		if (!loader.GetTokenInteger("mob", &iMobVnum))
 		{
-			sys_err("ReadDropItemGroup : Syntax error %s : no mob vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("ReadDropItemGroup : Syntax error {} : no mob vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			return false;
 		}
 
-		sys_log(0,"DROP_ITEM_GROUP %s %d", stName.c_str(), iMobVnum);
+		LOG_INFO("DROP_ITEM_GROUP {} {}", stName.c_str(), iMobVnum);
 
 		TTokenVector * pTok;
 
@@ -1066,7 +1067,7 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 					str_to_number(dwVnum, name.c_str());
 					if (!ITEM_MANAGER::instance().GetTable(dwVnum))
 					{
-						sys_err("ReadDropItemGroup : there is no item %s : node %s", name.c_str(), stName.c_str());
+						LOG_ERROR("ReadDropItemGroup : there is no item {} : node {}", name.c_str(), stName.c_str());
 
 						if (it == m_map_pkDropItemGroup.end())
 							M2_DELETE(pkGroup);
@@ -1085,7 +1086,7 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 
 				if (iCount < 1)
 				{
-					sys_err("ReadDropItemGroup : there is no count for item %s : node %s", name.c_str(), stName.c_str());
+					LOG_ERROR("ReadDropItemGroup : there is no count for item {} : node {}", name.c_str(), stName.c_str());
 
 					if (it == m_map_pkDropItemGroup.end())
 						M2_DELETE(pkGroup);
@@ -1093,7 +1094,7 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 					return false;
 				}
 
-				sys_log(0,"        %s %d %d", name.c_str(), dwPct, iCount);
+				LOG_INFO("        {} {} {}", name.c_str(), dwPct, iCount);
 				pkGroup->AddItem(dwVnum, dwPct, iCount);
 				continue;
 			}
