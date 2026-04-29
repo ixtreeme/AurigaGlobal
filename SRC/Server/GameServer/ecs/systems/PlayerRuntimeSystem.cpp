@@ -4,6 +4,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "QuestSystem.hpp"
 #include "../AIHelpers.hpp"
+#include "../CharacterAccessors.hpp"
 #include "ItemSystem.hpp"
 
 #include <algorithm>
@@ -58,6 +59,16 @@
 #include "../../war_map.h"
 #include "../../wedding.h"
 #include "../../DragonSoul.h"
+
+namespace ecs::PlayerRuntime {
+
+LPDESC GetDesc(entt::entity e)
+{
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetDesc() : nullptr;
+}
+
+} // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
 #ifdef ENABLE_ANTICHEAT
