@@ -2,6 +2,7 @@
 #define __INC_METIN_II_GAME_BATTLE_H__
 
 #include "char_interface.hpp"
+#include <entt/entt.hpp>
 
 enum EBattleTypes       // 상대방 기준
 {
@@ -15,7 +16,7 @@ extern int	CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk);
 extern int	CalcBattleDamage(int iDam, int iAttackerLev, int iVictimLev);
 extern int	CalcMeleeDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim, bool bIgnoreDefense = false, bool bIgnoreTargetRating = false);
 extern int	CalcMagicDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
-extern int	CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, LPITEM pkArrow, bool bIgnoreDefense = false);
+extern int	CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense = false);
 extern float	CalcAttackRating(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreTargetRating = false);
 
 extern bool	battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);

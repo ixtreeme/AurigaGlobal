@@ -695,12 +695,12 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	return CalcBattleDamage(iDam, pkAttacker->GetLevel(), pkVictim->GetLevel());
 }
 
-int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, LPITEM pkArrow, bool bIgnoreDefense)
+int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
 {
-	if (!pkBow || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkBow)) != ITEM_WEAPON || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkBow)) != WEAPON_BOW)
+	if (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW)
 		return 0;
 
-	if (!pkArrow)
+	if (arrow == entt::null)
 		return 0;
 
 	// Y??g ????
@@ -717,7 +717,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	int iDam = 0;
 
 	float fAR = CalcAttackRating(pkAttacker, pkVictim, false);
-	iDam = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 3), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 4)) * 2 + ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkArrow), 3);
+	iDam = number(ItemSystem::GetItemValue(bow, 3), ItemSystem::GetItemValue(bow, 4)) * 2 + ItemSystem::GetItemValue(arrow, 3);
 	int iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
@@ -726,7 +726,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, LPITEM pkBow, 
 	iAtk += pkAttacker->GetLevel() * 2; // and add again
 
 	// Refine Grade
-	iAtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) * 2;
+	iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
 
 	iAtk += pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
 	iAtk = (int) (iAtk * (100 + (pkAttacker->GetPoint(POINT_ATT_BONUS) + pkAttacker->GetPoint(POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);

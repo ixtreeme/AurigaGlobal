@@ -5993,7 +5993,7 @@ public:
 						m_me->PointChange(POINT_SP, -5);
 					}
 
-				iDam = CalcArrowDamage(m_me, pkVictim, pkBow, pkArrow);
+				iDam = CalcArrowDamage(m_me, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow));
 				m_me->UseArrow(pkArrow, 1);
 
 #ifdef ENABLE_ANTICHEAT
@@ -6720,7 +6720,7 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
 		return 0;
 
-	int64_t dam = CalcArrowDamage(pAttacker, pVictim, pkBow, pkArrow);
+	int64_t dam = CalcArrowDamage(pAttacker, pVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow));
 	if (dam <= 0)
 		return 0;
 

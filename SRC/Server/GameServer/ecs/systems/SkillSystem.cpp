@@ -1848,7 +1848,7 @@ struct FuncSplashDamage
 			LPITEM pkBow, pkArrow;
 
 			if (1 == m_pkChr->GetArrowAndBow(&pkBow, &pkArrow, 1))
-				m_pkSk->SetPointVar("atk", CalcArrowDamage(m_pkChr, pkChrVictim, pkBow, pkArrow, true));
+				m_pkSk->SetPointVar("atk", CalcArrowDamage(m_pkChr, pkChrVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
 		}
@@ -2678,7 +2678,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		LPITEM pkBow, pkArrow;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, this, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, this, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
 		}
 		else
 		{
@@ -2986,7 +2986,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	LPITEM pkBow, pkArrow;
 
 	if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1)) {
-		pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+		pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
 	} else {
 		pkSk->SetPointVar("atk", CalcMeleeDamage(this, pkVictim, true, false));
 	}
@@ -3129,7 +3129,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		LPITEM pkBow, pkArrow;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
 		}
 		else
 		{
@@ -3149,7 +3149,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		LPITEM pkBow, pkArrow;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
 		}
 		else
 		{
