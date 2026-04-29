@@ -497,26 +497,26 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	return iAtk;
 }
 
-void Item_GetDamage(LPITEM pkItem, int* pdamMin, int* pdamMax)
+void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 {
 	*pdamMin = 0;
 	*pdamMax = 1;
 
-	if (!pkItem)
+	if (item == entt::null)
 		return;
 
-	switch (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
+	switch (ItemSystem::GetItemType(item))
 	{
 		case ITEM_ROD:
 		case ITEM_PICK:
 			return;
 	}
 
-	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_WEAPON)
-		sys_err("Item_GetDamage - !ITEM_WEAPON vnum=%d, type=%d", pkItem->GetOriginalVnum(), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	if (ItemSystem::GetItemType(item) != ITEM_WEAPON)
+		sys_err("Item_GetDamage - !ITEM_WEAPON vnum=%d, type=%d", ItemSystem::GetItemOriginalVnum(item), ItemSystem::GetItemType(item));
 
-	*pdamMin = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 3);
-	*pdamMax = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 4);
+	*pdamMin = ItemSystem::GetItemValue(item, 3);
+	*pdamMax = ItemSystem::GetItemValue(item, 4);
 }
 
 int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDefense, bool bIgnoreTargetRating)
@@ -563,7 +563,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	if (bPolymorphed && !pkAttacker->IsPolyMaintainStat())
 	{
 		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(pWeapon, &iDamMin, &iDamMax);
+		Item_GetDamage(EntityFactory::CreateItemEntity(g_registry, pWeapon), &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 
 		uint32_t dwMobVnum = pkAttacker->GetPolymorphVnum();
@@ -579,7 +579,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	else if (pWeapon)
 	{
 		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(pWeapon, &iDamMin, &iDamMax);
+		Item_GetDamage(EntityFactory::CreateItemEntity(g_registry, pWeapon), &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 	}
 	else if (pkAttacker->IsNPC())
