@@ -8330,3 +8330,103 @@ Manual WinTest checklist for this batch:
 
 Commit status:
 - Committed in separate Phase 15E-48 commits; no squash.
+
+## Phase 15E-49 — LPITEM Signature Migration: Subsystem Batches
+
+Mode:
+- Subsystem-by-subsystem LPITEM parameter signature migration.
+- No `char_item.cpp`, `item_manager.cpp`, or core CItem deletion attempted.
+- `ItemSystem.hpp` remained pointer-clean.
+
+Completed batches:
+- PART A Switchbot:
+  - `new_switchbot.cpp/.h` switchbot item helper signatures changed from `LPITEM` to `entt::entity`.
+  - Commit: `292610e Phase 15E-49 PART A: Switchbot signatures entity-first`
+- PART B MountInventory:
+  - `CMountInventory::Add`, `RemoveByItem`, `DetachSlot`, and `SaveItem` item parameters changed to `entt::entity`.
+  - Commit: `a0cd8f8 Phase 15E-49 PART B: MountInventory signatures entity-first`
+- PART C QuestManager:
+  - `UseItem`, `SIGUse`, and `TakeItem` now take `entt::entity`.
+  - Removed public `SetCurrentItem(LPITEM)` overload; `SetCurrentItem(entt::entity)` keeps the legacy quest item pointer bridge internally.
+  - Commit: `b6ef0b6 Phase 15E-49 PART C: QuestManager item signatures`
+- PART D Mining:
+  - `RealRefinePick`, `CHEAT_MAX_PICK`, and `OreRefine` now take `entt::entity`.
+  - Mining internals still resolve legacy CItem privately because pick/refine helpers still operate on `CItem&`.
+  - Commit: `b5aaaa2 Phase 15E-49 PART D: Mining signatures entity-first`
+- PART E InventorySystem:
+  - Internal `SyncCharacterEquipmentSlot` now takes `entt::entity`.
+  - `EquipmentSlots` still stores `LPITEM`; this is an ECS component storage cleanup blocker for a later phase.
+  - Commit: `e755f5e Phase 15E-49 PART E: InventorySystem signatures entity-first`
+- PART F PlayerRuntimeSystem:
+  - Local inventory-sort quickslot checker lambdas now take `entt::entity`.
+  - Class APIs `SetQuestItemPtr`, `CanTakeInventoryItem`, and `CleanAcceAttr` intentionally deferred.
+  - Commit: `97bae2d Phase 15E-49 PART F: PlayerRuntimeSystem signatures entity-first`
+- PART G CombatSystem:
+  - Static reward/drop helpers `__TryAutoGiveRewardItem` and `__GiveRewardItemToCharacterOrDrop` now take `entt::entity`.
+  - Legacy CItem is resolved privately inside the helper for AddToCharacter/AddToGround/log side effects.
+  - Commit: `1fe5c13 Phase 15E-49 PART G: CombatSystem signatures entity-first`
+- PART H Mount/Pet:
+  - `CMountActor`, `CMountSystem`, `CPetActor`, `CPetSystem`, `CNewPetActor`, and `CNewPetSystem` summon/mount/book item parameters changed to `entt::entity` where safe.
+  - Legacy CItem resolution remains private inside the subsystem implementations for DB/socket/state side effects.
+  - Commits:
+    - `ce501d5 Phase 15E-49 PART H seg 1: MountSystem signatures`
+    - `17dacfd Phase 15E-49 PART H seg 2: PetSystem signatures`
+    - `0c0693e Phase 15E-49 PART H seg 3: NewPetSystem signatures`
+
+Counts:
+```text
+Scoped LPITEM parameter count before 15E-49: 161
+Scoped LPITEM parameter count after 15E-49:  90
+Reduction: 71
+```
+
+Top remaining scoped LPITEM parameter files:
+```text
+DragonSoul.cpp: 9
+DragonSoul.h: 8
+item.h: 4
+CombatSystem.cpp: 4
+new_offlineshop.h: 3
+polymorph.cpp/h: 3 each
+exchange.cpp: 3
+PlayerRuntimeSystem.cpp: 3
+InventorySystem.cpp: 3
+```
+
+DragonSoul status:
+- PART I was audited but not migrated in this pass.
+- A broad local edit attempt was rejected before commit because it touched DS refine/extract internals too widely.
+- `DragonSoul.cpp/.h` were restored to HEAD for this phase; no DS behavior change shipped.
+- Remaining DS LPITEM signatures are still legacy engine boundaries: `PullOut`, `ExtractDragonHeart`, `DragonSoulItemInitialize`, `PutAttributes`, `RefreshItemAttributes`, activation/deactivation legacy entry points, and refine material helper.
+
+Remaining blockers:
+- DragonSoul needs a dedicated DS-only signature phase with segment commits.
+- `InventorySystem` component storage still contains `std::array<LPITEM, ...>` and needs an entity-storage phase.
+- `PlayerRuntimeSystem` remaining signatures are `CHARACTER::` class APIs and require caller-wide migration.
+- `CombatSystem::GetArrowAndBow` and `UseArrow` still expose LPITEM through core combat/weapon APIs.
+- Offlineshop/exchange/polymorph/refine/file-core islands remain intentionally out of this batch.
+
+Build results:
+- Build passed after every committed batch.
+- One MountSystem build failed with two missed same-file callers; fixed before commit.
+- One PetSystem build failed with three missed same-file callers; fixed before commit.
+- DragonSoul broad edit was restored before build/commit.
+- Final successful command used repeatedly:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Switchbot configure/run/stop.
+- Mount summon/mount/unmount/skin update.
+- Pet summon/unsummon and old pet quest summon.
+- NewPet summon/book skill/evolution/rename skin refresh.
+- Mining pick refine and ore refine with metinstone.
+- Quest item use/take current item flow.
+- Combat reward drop and instant inventory merge path.
+- Inventory equip/unequip quickslot sync.
+- Full login/relog persistence.
+
+Commit status:
+- Code batches committed individually.
+- WinTest not run in this environment.
