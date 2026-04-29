@@ -1153,7 +1153,7 @@ public:
 	bool			SetQuickslot(uint8_t pos, TQuickslot& rSlot);
 	bool			DelQuickslot(uint8_t pos);
 	bool			SwapQuickslot(uint8_t a, uint8_t b);
-	void			ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos);
+	void			ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOldPos);
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 public:
 	offlineshop::CShop* GetOfflineShop() { return m_pkOfflineShop; }

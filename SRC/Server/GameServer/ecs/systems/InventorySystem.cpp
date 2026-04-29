@@ -323,9 +323,10 @@ bool CHARACTER::SwapQuickslot(uint8_t a, uint8_t b)
 	return true;
 }
 
-void CHARACTER::ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos)
+void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOldPos)
 {
-	if (pItem->IsDragonSoul())
+	LPITEM pItem = LegacyItemOf(item);
+	if (pItem && pItem->IsDragonSoul())
 		return;
 
 	for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i)
@@ -334,7 +335,7 @@ void CHARACTER::ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos)
 		{
 			TQuickslot slot;
 			slot.type = bType;
-			slot.pos = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem));
+			slot.pos = ItemSystem::GetItemCell(item);
 
 			SetQuickslot(i, slot);
 			break;
