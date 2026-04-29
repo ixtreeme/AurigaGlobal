@@ -4,6 +4,7 @@
 #include "db.h"
 #include "desc.h"
 #include "item_manager.h"
+#include "ecs/AIHelpers.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -95,9 +96,10 @@ bool CMountInventory::Add(uint32_t pos, LPITEM item, bool skipSave)
     if (!IsEmpty(pos, item->GetSize()))
         return false;
 
-    item->SetSkipSave(true);
-    item->SetWindow(MOUNT_INVENTORY);
-    item->SetCell(m_pkOwner, pos);
+    const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+    ItemSystem::SetItemSkipSave(itemEntity, true);
+    ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY);
+    ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkOwner), pos);
 
     m_grid->Put(pos, 1, item->GetSize());
     m_items[pos] = item;
@@ -187,7 +189,7 @@ bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
     m_items[from] = nullptr;
     m_items[to] = item;
 
-    item->SetCell(m_pkOwner, to);
+    ItemSystem::SetItemCell(EntityFactory::CreateItemEntity(g_registry, item), AIHelpers::EcsOf(m_pkOwner), to);
     SaveItem(to, item);
     DeleteItem(from, 0);
     return true;
@@ -294,7 +296,7 @@ void CMountInventory::Destroy()
 
         m_items[pos] = nullptr;
 
-        item->SetSkipSave(true);
+        ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
         ITEM_MANAGER::instance().FlushDelayedSave(item);
         LPITEM removed = item->RemoveFromCharacter();
         ItemSystem::DestroyItemEntityEcs(
