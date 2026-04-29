@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 
 #include "config.h"
@@ -960,12 +962,12 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 #endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	ch->PointChange(POINT_EXTRA_INVENTORY1, ch->GetQuestFlag("lock_extra.cat1"));
-	ch->PointChange(POINT_EXTRA_INVENTORY2, ch->GetQuestFlag("lock_extra.cat2"));
-	ch->PointChange(POINT_EXTRA_INVENTORY3, ch->GetQuestFlag("lock_extra.cat3"));
-	ch->PointChange(POINT_EXTRA_INVENTORY4, ch->GetQuestFlag("lock_extra.cat4"));
-	ch->PointChange(POINT_EXTRA_INVENTORY5, ch->GetQuestFlag("lock_extra.cat5"));
-	ch->PointChange(POINT_EXTRA_INVENTORY6, ch->GetQuestFlag("lock_extra.cat6"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY1, ch->GetQuestFlag("lock_extra.cat1"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY2, ch->GetQuestFlag("lock_extra.cat2"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY3, ch->GetQuestFlag("lock_extra.cat3"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY4, ch->GetQuestFlag("lock_extra.cat4"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY5, ch->GetQuestFlag("lock_extra.cat5"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY6, ch->GetQuestFlag("lock_extra.cat6"));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT

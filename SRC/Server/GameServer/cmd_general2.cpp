@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <common/service.h>
 #include <common/CommonDefines.h>
 #include <common/length.h>
@@ -177,16 +179,16 @@ ACMD(do_stat2)
 	ch->SetRealPoint(idx, ch->GetRealPoint(idx) + limit);
 	ch->SetPoint(idx, ch->GetPoint(idx) + limit);
 	ch->ComputePoints();
-	ch->PointChange(idx, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
 	
 	if (idx == POINT_IQ) {
-		ch->PointChange(POINT_MAX_HP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
 	}
 	else if (idx == POINT_HT) {
-		ch->PointChange(POINT_MAX_SP, 0);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
 	}
 	
-	ch->PointChange(POINT_STAT, -limit);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -limit);
 	ch->ComputePoints();
 }
 
@@ -538,7 +540,7 @@ ACMD(do_gotoxy)
 #endif
 		return;
 	} else {
-		ch->PointChange(POINT_GOLD, -1000000);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -1000000);
 		x += p.x / 100;
 		y += p.y / 100;
 		x *= 100;

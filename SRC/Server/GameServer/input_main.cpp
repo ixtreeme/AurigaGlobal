@@ -56,6 +56,7 @@
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/movement_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
 
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
@@ -855,7 +856,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 #endif
 		
 		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), -100000);
-		ch->PointChange(POINT_GOLD, -100000, true);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -100000, true);
 		ch->RemoveSpecifyItem(vid, 1);
 		LPITEM item = ch->AutoGiveItem(vid + 300, 1);
 #ifdef ENABLE_NEW_PET_EDITS
@@ -3450,7 +3451,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		return;
 	}
 
-	ch->PointChange(POINT_GOLD, -rConf.price);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -rConf.price);
 
 	for (auto itemVnum : rConf.items)
 		if (ch->CountSpecifyItem(itemVnum) == 0)
@@ -3777,7 +3778,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 #endif
 		int GuildCreateFee = 200000;
 
-		ch->PointChange(POINT_GOLD, -GuildCreateFee);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -GuildCreateFee);
 		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ch->GetPlayerID(), -GuildCreateFee);
 
 		char Log[128];
