@@ -221,9 +221,9 @@ bool	Blend_Item_set_value(LPITEM item)
 				apply_duration	= blend_info->apply_duration	[FN_random_index()];
 			}
 			sys_log (0, "blend_item : type : %d, value : %d, du : %d", apply_type, apply_value, apply_duration);
-			item->SetSocket(0, apply_type);
-			item->SetSocket(1, apply_value);
-			item->SetSocket(2, apply_duration);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, apply_type);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1, apply_value);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 2, apply_duration);
 			return true;
 		}
 
