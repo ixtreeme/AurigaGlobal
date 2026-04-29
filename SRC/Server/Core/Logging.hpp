@@ -16,6 +16,22 @@ std::shared_ptr<spdlog::logger> GetLogger();
 std::shared_ptr<spdlog::logger> GetErrorLogger();
 }
 
+#ifdef LOG_TRACE
+#undef LOG_TRACE
+#endif
+#ifdef LOG_DEBUG
+#undef LOG_DEBUG
+#endif
+#ifdef LOG_INFO
+#undef LOG_INFO
+#endif
+#ifdef LOG_WARN
+#undef LOG_WARN
+#endif
+#ifdef LOG_ERROR
+#undef LOG_ERROR
+#endif
+
 #define LOG_TRACE(...) SPDLOG_LOGGER_TRACE(logging::GetLogger(), __VA_ARGS__)
 #define LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(logging::GetLogger(), __VA_ARGS__)
 #define LOG_INFO(...) SPDLOG_LOGGER_INFO(logging::GetLogger(), __VA_ARGS__)

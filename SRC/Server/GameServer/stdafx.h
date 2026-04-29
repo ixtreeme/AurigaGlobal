@@ -12,7 +12,6 @@
 #include "debug_allocator.h"
 
 #include <Core/stdafx.h>
-#include <Core/Logging.hpp>
 
 #include <common/singleton.h>
 #include <common/utils.h>
