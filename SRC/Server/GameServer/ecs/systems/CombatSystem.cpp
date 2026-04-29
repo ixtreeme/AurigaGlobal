@@ -3233,23 +3233,23 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
-static std::string MakeItemLink(LPITEM pkItem, LegacyCharHandle pkKiller, LegacyCharHandle pkMob)
+static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, LegacyCharHandle pkMob)
 {
 	char itemlink[512];
 	int len = 0;
 
 	// item link alap
 	len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-		ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 2),
+		ItemSystem::GetItemVnum(item),
+		ItemSystem::GetItemSocket(item, 0),
+		ItemSystem::GetItemSocket(item, 1),
+		ItemSystem::GetItemSocket(item, 2),
 		0, 0);
 
 	// bonuszok
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
-		uint8_t type = pkItem->GetAttributeType(i);
-		short   val = pkItem->GetAttributeValue(i);
+		uint8_t type = ItemSystem::GetItemAttributeType(item, i);
+		short   val = ItemSystem::GetItemAttributeValue(item, i);
 		if (type && val)
 			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
 	}
@@ -3299,7 +3299,7 @@ static std::string MakeItemLink(LPITEM pkItem, LegacyCharHandle pkKiller, Legacy
 		pkKiller ? pkKiller->GetName() : "Player",
 		pkMob ? pkMob->GetName() : "Mob",
 		itemlink,
-		pkItem ? pkItem->GetName() : "item");
+		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
 	return std::string(szChat);
 }
@@ -3597,7 +3597,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		{
 			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) != verjema_szadba_ixtreeme.end())
 			{
-				std::string message = MakeItemLink(item, pkAttacker, this);
+		std::string message = MakeItemLink(EntityFactory::CreateItemEntity(g_registry, item), pkAttacker, this);
 				BroadcastNotice(message.c_str());
 			}
 		}
@@ -7802,6 +7802,5 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	return true;
 }
-
 
 
