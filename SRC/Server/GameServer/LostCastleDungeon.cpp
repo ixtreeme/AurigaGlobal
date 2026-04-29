@@ -337,7 +337,7 @@ namespace
             return;
 
 		// klon item: ne menjen DB save/DelayedSave
-		w->SetSkipSave(true);
+		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, w), true);
 
 		// Sockets + Attributes masolasa publikus API-val
 		w->SetSockets(srcW->GetSockets());
