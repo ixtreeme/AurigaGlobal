@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -29,7 +30,7 @@ CDungeon::CDungeon(IdType id, int32_t lOriginalMapIndex, int32_t lMapIndex)
 	m_map_Area(SECTREE_MANAGER::instance().GetDungeonArea(lOriginalMapIndex))
 {
 	Initialize();
-	//sys_log(0,"DUNGEON create orig %d real %d", lOriginalMapIndex, lMapIndex);
+	//0,"DUNGEON create orig %d real %d", lOriginalMapIndex, lMapIndex);
 }
 
 CDungeon::~CDungeon()
@@ -42,7 +43,7 @@ CDungeon::~CDungeon()
 		m_pParty->SetDungeon_for_Only_party (nullptr);
 	}
 
-	//sys_log(0,"DUNGEON destroy orig %d real %d", m_lOrigMapIndex, m_lMapIndex	);
+	//0,"DUNGEON destroy orig %d real %d", m_lOrigMapIndex, m_lMapIndex	);
 
 	ClearRegen();
 
@@ -82,7 +83,7 @@ void CDungeon::Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index)
 {
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) 
 	{
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 	X*=100;
@@ -97,7 +98,7 @@ void CDungeon::JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t in
 
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) 
 	{
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 	X*=100;
@@ -178,7 +179,7 @@ struct FWarpToDungeon
 void CDungeon::Join(LPCHARACTER ch)
 {
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) {
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 	FWarpToDungeon(m_lMapIndex, this) (ch);
@@ -190,18 +191,18 @@ void CDungeon::JoinParty(LPPARTY pParty)
 	m_map_pkParty.insert(std::make_pair(pParty,0));
 
 	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) {
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 	FWarpToDungeon f(m_lMapIndex, this);
 	pParty->ForEachOnlineMember(f);
-	//sys_log(0, "DUNGEON-PARTY join %p %p", this, pParty);
+	//0, "DUNGEON-PARTY join %p %p", this, pParty);
 }
 
 void CDungeon::QuitParty(LPPARTY pParty)
 {
 	pParty->SetDungeon(nullptr);
-	//sys_log(0, "DUNGEON-PARTY quit %p %p", this, pParty);
+	//0, "DUNGEON-PARTY quit %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty); // @warme011 boom! crash!
 	if (it != m_map_pkParty.end())
 		m_map_pkParty.erase(it);
@@ -223,7 +224,7 @@ EVENTFUNC(dungeon_dead_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "dungeon_dead_event> <Factor> Null pointer" );
+		LOG_ERROR("dungeon_dead_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -270,7 +271,7 @@ void CDungeon::DecMember(LPCHARACTER ch)
 
 void CDungeon::IncPartyMember(LPPARTY pParty, LPCHARACTER ch)
 {
-	//sys_log(0, "DUNGEON-PARTY inc %p %p", this, pParty);
+	//0, "DUNGEON-PARTY inc %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
 	if (it != m_map_pkParty.end())
@@ -283,11 +284,11 @@ void CDungeon::IncPartyMember(LPPARTY pParty, LPCHARACTER ch)
 
 void CDungeon::DecPartyMember(LPPARTY pParty, LPCHARACTER ch)
 {
-	//sys_log(0, "DUNGEON-PARTY dec %p %p", this, pParty);
+	//0, "DUNGEON-PARTY dec %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
 	if (it == m_map_pkParty.end())
-		sys_err("cannot find party");
+		LOG_ERROR("cannot find party");
 	else
 	{
 		it->second--;
@@ -337,7 +338,7 @@ void CDungeon::JumpAll(int32_t idx, int32_t x, int32_t y)
 	LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(idx);
 	if (!pMap)
 	{
-		sys_err("cannot find map by index %d", idx);
+		LOG_ERROR("cannot find map by index {}", idx);
 		return;
 	}
 
@@ -354,7 +355,7 @@ void CDungeon::SetPartyNull()
 
 void CDungeonManager::Destroy(CDungeon::IdType dungeon_id)
 {
-	sys_log(0, "DUNGEON destroy : map index %u", dungeon_id);
+	LOG_INFO("DUNGEON destroy : map index {}", dungeon_id);
 	LPDUNGEON pDungeon = Find(dungeon_id);
 	if (pDungeon == nullptr) {
 		return;
@@ -394,7 +395,7 @@ LPDUNGEON CDungeonManager::Create(int32_t lOriginalMapIndex)
 
 	if (!lMapIndex)
 	{
-		sys_log( 0, "Fail to Create Dungeon : OrginalMapindex %d NewMapindex %d", lOriginalMapIndex, lMapIndex );
+		LOG_INFO("Fail to Create Dungeon : OrginalMapindex {} NewMapindex {}", lOriginalMapIndex, lMapIndex);
 		return nullptr;
 	}
 
@@ -407,7 +408,7 @@ LPDUNGEON CDungeonManager::Create(int32_t lOriginalMapIndex)
 	LPDUNGEON pDungeon = M2_NEW CDungeon(id, lOriginalMapIndex, lMapIndex);
 	if (!pDungeon)
 	{
-		sys_err("M2_NEW CDungeon failed");
+		LOG_ERROR("M2_NEW CDungeon failed");
 		return nullptr;
 	}
 
@@ -430,7 +431,7 @@ void CDungeon::SetUnique(const char* key, uint32_t vid)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 	if (!ch) {
-		sys_err("Unknown monster: %d for dungeon %d.", vid, m_lMapIndex);
+		LOG_ERROR("Unknown monster: {} for dungeon {}.", vid, m_lMapIndex);
 		return;
 	}
 
@@ -443,7 +444,7 @@ void CDungeon::KillUnique(const std::string& key)
 	auto it = m_map_UniqueMob.find(key);
 	if (it == m_map_UniqueMob.end())
 	{
-		sys_err("Unknown get unique: %s for dungeon %d.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown get unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
 		return;
 	}
 
@@ -457,7 +458,7 @@ int32_t CDungeon::GetUniqueVid(const std::string& key)
 	auto it = m_map_UniqueMob.find(key);
 	if (it == m_map_UniqueMob.end())
 	{
-		sys_err("Unknown get unique: %s for dungeon %d.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown get unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
 		return false;
 	}
 
@@ -490,7 +491,7 @@ bool CDungeon::IsUniqueDead(const std::string& key)
 	auto it = m_map_UniqueMob.find(key);
 	if (it == m_map_UniqueMob.end())
 	{
-		sys_err("Unknown unique: %s for dungeon %d.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
 		return false;
 	}
 
@@ -501,7 +502,7 @@ LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
 {
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map) {
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return nullptr;
 	}
 
@@ -513,7 +514,7 @@ LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
 	}
 	else
 	{
-		sys_err("cannot spawn: vnum(%d), x(%d), y(%d), dir(%d) inside the map %d", vnum, x, y, dir, m_lMapIndex);
+		LOG_ERROR("cannot spawn: vnum({}), x({}), y({}), dir({}) inside the map {}", vnum, x, y, dir, m_lMapIndex);
 	}
 
 	return ch;
@@ -523,14 +524,14 @@ void CDungeon::SpawnRegen(const char* filename, bool once)
 {
 	if (!filename)
 	{
-		sys_err("CDungeon::SpawnRegen(filename=NULL, once=%d) - m_lMapIndex[%d]", once, m_lMapIndex);
+		LOG_ERROR("CDungeon::SpawnRegen(filename=NULL, once={}) - m_lMapIndex[{}]", once, m_lMapIndex);
 		return;
 	}
 
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map)
 	{
-		sys_err("CDungeon::SpawnRegen(filename=%s, once=%d) - m_lMapIndex[%d]", filename, once, m_lMapIndex);
+		LOG_ERROR("CDungeon::SpawnRegen(filename={}, once={}) - m_lMapIndex[{}]", filename, once, m_lMapIndex);
 		return;
 	}
 
@@ -647,7 +648,7 @@ namespace
 					"DUNGEON_ENTITY_CLEANUP");
 			}
 			else
-				sys_err("unknown entity type %d is in dungeon", ent->GetType());
+				LOG_ERROR("unknown entity type {} is in dungeon", ent->GetType());
 		}
 	};
 }
@@ -657,7 +658,7 @@ void CDungeon::KillAll()
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (map == nullptr)
 	{
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 
@@ -670,7 +671,7 @@ void CDungeon::KillAllMonsters()
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (map == nullptr)
 	{
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 
@@ -684,7 +685,7 @@ void CDungeon::KillAllMonstersHydra()
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (map == nullptr)
 	{
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 
@@ -697,7 +698,7 @@ void CDungeon::Purge()
 {
 	LPSECTREE_MAP pkMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (pkMap == nullptr) {
-		sys_err("CDungeon: SECTREE_MAP not found for #%ld", m_lMapIndex);
+		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
 	}
 	FPurgeSectree f;
@@ -738,7 +739,7 @@ void CDungeon::ExitAllLobby(uint8_t lobby)
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map)
 	{
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return;
 	}
 
@@ -778,7 +779,7 @@ void CDungeon::CmdChat(const char* msg)
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map)
 	{
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return;
 	}
 
@@ -840,11 +841,11 @@ const char* msg
 #endif
 )
 {
-	sys_log(0, "XXX Dungeon Notice %p %s", this, msg);
+	LOG_INFO("XXX Dungeon Notice {} {}", static_cast<const void*>(this), msg);
 	LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!pMap)
 	{
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return;
 	}
 
@@ -862,7 +863,7 @@ EVENTFUNC(dungeon_jump_to_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "dungeon_jump_to_event> <Factor> Null pointer" );
+		LOG_ERROR("dungeon_jump_to_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -875,7 +876,7 @@ EVENTFUNC(dungeon_jump_to_event)
 		g_dispatcher.trigger(ecs::EvDungeonPrepare { info->dungeon_id });
 	}
 	else
-		sys_err("cannot find dungeon with map index %u", info->dungeon_id);
+		LOG_ERROR("cannot find dungeon with map index {}", info->dungeon_id);
 
 	return 0;
 }
@@ -901,7 +902,7 @@ void CDungeon::JumpToEliminateLocation()
 
 		if (!pMap)
 		{
-			sys_err("no map by index %d", m_lMapIndex);
+			LOG_ERROR("no map by index {}", m_lMapIndex);
 			return;
 		}
 
@@ -937,7 +938,7 @@ void CDungeon::UpdateMastHP()
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map)
 	{
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return;
 	}
 
@@ -954,7 +955,7 @@ void CDungeon::RestoreMastPartialHP()
 	LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(m_lMapIndex);
 	if (!map)
 	{
-		sys_err("cannot find map by index %d", m_lMapIndex);
+		LOG_ERROR("cannot find map by index {}", m_lMapIndex);
 		return;
 	}
 
