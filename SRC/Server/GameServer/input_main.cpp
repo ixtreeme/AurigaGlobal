@@ -3320,7 +3320,7 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 	mi->Remove(p->wMountPos);
 
 	// FONTOS: vissza kell kapcsolni a mentést
-	item->SetSkipSave(false);
+	ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
 
 	item->AddToCharacter(ch, p->ItemPos);
 	ITEM_MANAGER::instance().FlushDelayedSave(item);
