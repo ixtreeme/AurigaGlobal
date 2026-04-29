@@ -14,9 +14,32 @@
 #include "../../packet.h"
 #include "../../party.h"
 #include "../../utils.h"
+#include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
+
+namespace ecs::SocialSystem {
+
+LPPARTY GetParty(entt::entity e)
+{
+    auto* ch = ecs::LegacyCharOf(e);
+    if (!ch)
+        return nullptr;
+
+    return ch->GetParty();
+}
+
+CGuild* GetGuild(entt::entity e)
+{
+    auto* ch = ecs::LegacyCharOf(e);
+    if (!ch)
+        return nullptr;
+
+    return ch->GetGuild();
+}
+
+} // namespace ecs::SocialSystem
 
 void CHARACTER::SetParty(LPPARTY pkParty)
 {
@@ -675,5 +698,4 @@ void CHARACTER::SendGuildName(uint32_t dwGuildID)
 {
     SendGuildName(CGuildManager::instance().FindGuild(dwGuildID));
 }
-
 
