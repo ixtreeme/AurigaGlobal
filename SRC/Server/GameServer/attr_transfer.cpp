@@ -143,12 +143,12 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
 #ifdef ENABLE_ATTR_COSTUMES
 		if ((i == 5) || (i == 6)) {
-			items[1]->SetForceAttribute(i, 0, 0);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, 0, 0);
 		}
 		else
-			items[1]->SetForceAttribute(i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
 #else
-		items[1]->SetForceAttribute(i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
+		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
 #endif
 	}
 	
