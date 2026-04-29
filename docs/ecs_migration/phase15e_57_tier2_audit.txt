@@ -1,0 +1,221 @@
+Phase 15E-57 - Tier 2 CHARACTER Method Audit
+
+Scope: SRC/Server/GameServer, excluding ItemSystem_LegacyBridge.cpp, char.cpp, char_battle.cpp, char_item.cpp.
+Mode: AUDIT ONLY, no code changes.
+
+1. Top 40 `ch->Method()` calls
+
+  148 GetPlayerID
+  143 GetName
+  138 GetMapIndex
+  106 IsPC
+   63 GetWear
+   63 GetPoint
+   63 Show
+   62 WarpSet
+   59 GetX
+   59 GetY
+   55 GetGMLevel
+   54 GetEmpire
+   49 CountSpecifyItem
+   46 GetGold
+   41 RemoveSpecifyItem
+   37 GetInventoryItem
+   37 GetLevel
+   35 GetExchange
+   35 ComputePoints
+   35 FindAffect
+   34 GetRealPoint
+   31 IsObserverMode
+   30 GetMaxHP
+   30 GetNewPetSystem
+   29 GetHP
+   29 IsAffectFlag
+   28 ExitToSavedLocation
+   26 GetItem
+   25 AutoGiveItem
+   25 GetPacketVID
+   21 GetOfflineShop
+   20 SetOfflineShopUseTime
+   19 IsDead
+   19 GetDungeon
+   19 GetJob
+   19 GetHorseLevel
+   18 GetShopOwner
+   17 GetMobTable
+   17 HorseSummon
+   16 GetMyShop
+
+2. Top 40 tracked alias calls (`pkChr|pTarget|pkAttacker|pkVictim|tch`)
+
+  180 GetPoint
+  122 GetRaceNum
+   45 GetName
+   37 IsPC
+   33 GetX
+   33 GetY
+   31 GetLevel
+   24 IsRaceFlag
+   18 IsStone
+   17 GetSectree
+   14 GetPlayerID
+   13 IsNPC
+   13 CanBeginFight
+   13 BeginFight
+   12 GetMobRank
+   12 IsAffectFlag
+   12 OnMove
+   11 GetPacketVID
+   11 CountSpecifyItem
+   10 GetMapIndex
+   10 SetDuel
+   10 GetEmpire
+    9 RemoveSpecifyItem
+    7 GetGold
+    6 GetJob
+    6 IsFakePlayer
+    6 GetMaxHP
+    6 GetMaxSP
+    6 GetMobDropItemVnum
+    6 GetPKMode
+    5 SendEquipment
+    4 GetMobDamageMultiply
+    4 Damage
+    4 GetLegacyVID
+    4 SetPolymorph
+    4 UpdateAlignment
+    4 IsEquipUniqueGroup
+    4 GetPolymorphItemVnum
+    4 GetDropMetinStoneVnum
+    4 GetDropMetinStofaVnum
+
+3. Combined top 40 for `ch` plus tracked aliases
+
+  243 GetPoint
+  188 GetName
+  162 GetPlayerID
+  148 GetMapIndex
+  143 IsPC
+  132 GetRaceNum
+   92 GetX
+   92 GetY
+   68 GetLevel
+   65 GetWear
+   65 Show
+   64 GetEmpire
+   64 WarpSet
+   60 CountSpecifyItem
+   57 GetGMLevel
+   53 GetGold
+   50 RemoveSpecifyItem
+   41 IsAffectFlag
+   38 ComputePoints
+   38 FindAffect
+   37 GetExchange
+   37 GetInventoryItem
+   37 GetRealPoint
+   36 GetMaxHP
+   36 GetPacketVID
+   33 IsObserverMode
+   31 GetHP
+   30 IsStone
+   30 GetNewPetSystem
+   28 ExitToSavedLocation
+   26 GetItem
+   25 GetJob
+   25 AutoGiveItem
+   24 GetSectree
+   24 IsRaceFlag
+   23 IsDead
+   22 GetMaxSP
+   21 GetDungeon
+   21 GetOfflineShop
+   20 SetDuel
+
+4. Categorized top methods
+
+- GetPoint: count=243; category=GAME STATE READ; files=battle.cpp:89, cmd_gm.cpp:87, party.cpp:18, CombatSystem.cpp:11; action=Use PointSystem::Get/Read accessor; high risk because points[] has semantic classes.
+- GetName: count=188; category=IDENTITY/META; files=input_main.cpp:59, CombatSystem.cpp:18, guild.cpp:10, party.cpp:10; action=Use ecs::PlayerName; preserve const char*/c_str lifetime semantics carefully.
+- GetPlayerID: count=162; category=IDENTITY/META; files=input_main.cpp:45, guild.cpp:25, fishing.cpp:10, InventorySystem.cpp:7; action=Use ecs::PlayerID via CharacterIdentity/PlayerRuntime accessor; low risk read.
+- GetMapIndex: count=148; category=POSITION/PHYSICS; files=input_login.cpp:19, CombatSystem.cpp:12, char_manager.cpp:11, input_main.cpp:11; action=Use ecs::MapIndex / PositionSystem accessor; high adoption value with GetX/GetY.
+- IsPC: count=143; category=TYPE PREDICATE; files=battle.cpp:24, CombatSystem.cpp:18, dungeon.cpp:11, AffectSystem.cpp:9; action=Use ecs::TagPC or CharacterType accessor; easy but many false semantic checks.
+- GetRaceNum: count=132; category=IDENTITY/META; files=char_manager.cpp:87, item_manager.cpp:18, CombatSystem.cpp:16, battle.cpp:3; action=Use ecs::RaceComponent / status raceVnum; be careful polymorph/mob vnum semantics.
+- GetX: count=92; category=POSITION/PHYSICS; files=CombatSystem.cpp:26, char_manager.cpp:15, SkillSystem.cpp:14, input_main.cpp:7; action=Use ecs::Position.x accessor; pair with GetY/GetMapIndex.
+- GetY: count=92; category=POSITION/PHYSICS; files=CombatSystem.cpp:26, char_manager.cpp:15, SkillSystem.cpp:14, input_main.cpp:7; action=Use ecs::Position.y accessor; pair with GetX/GetMapIndex.
+- GetLevel: count=68; category=GAME STATE READ; files=battle.cpp:11, item_manager.cpp:10, CombatSystem.cpp:9, AffectSystem.cpp:8; action=Use ecs::LevelComponent accessor; preserve mob/player level semantics.
+- GetWear: count=65; category=ITEM/EQUIPMENT READ; files=InventorySystem.cpp:15, cmd_gm.cpp:14, questlua_pc.cpp:9, cmd_general.cpp:8; action=Use ItemSystem::GetWearItem / equipment entity accessor; depends on item ECS.
+- Show: count=65; category=GAME STATE WRITE; files=cmd_general.cpp:54, char_manager.cpp:2, cmd_gm.cpp:2, input_main.cpp:2; action=Movement/visibility spawn; needs Movement/Network wrapper; medium-high risk.
+- GetEmpire: count=64; category=IDENTITY/META; files=input_main.cpp:22, input_login.cpp:7, char_manager.cpp:4, Halloween2022Dungeon.cpp:4; action=Use ecs::EmpireComponent accessor; low risk.
+- WarpSet: count=64; category=GAME STATE WRITE; files=cmd_gm.cpp:6, dungeon.cpp:6, RuneDungeon.cpp:6, questlua_pc.cpp:5; action=Movement/teleport mutation; wrap via MovementSystem::WarpSet entity API.
+- CountSpecifyItem: count=60; category=ITEM INVENTORY READ; files=questlua_dungeon.cpp:22, input_main.cpp:5, cmd_general.cpp:4, cmd_general2.cpp:3; action=Use Inventory/ItemSystem count query by vnum; medium due windows/special inventories.
+- GetGMLevel: count=57; category=IDENTITY/META; files=input_main.cpp:31, shop_manager.cpp:8, questlua_pc.cpp:4, shop.cpp:4; action=Use ecs::GMLevel accessor; low risk.
+- GetGold: count=53; category=GAME STATE READ; files=cmd_general.cpp:7, input_main.cpp:7, DragonSoul.cpp:5, questlua_party.cpp:4; action=PointSystem::Get POINT_GOLD or gold accessor; medium due DB/account sync.
+- RemoveSpecifyItem: count=50; category=ITEM INVENTORY WRITE; files=questlua_dungeon.cpp:18, input_main.cpp:7, cmd_general.cpp:6, cmd_general2.cpp:3; action=Use ItemSystem consume-by-vnum wrapper; medium/high due deletion semantics.
+- IsAffectFlag: count=41; category=AFFECT READ; files=cmd_general2.cpp:14, trigger.cpp:7, questlua_pc.cpp:6, MovementSystem.cpp:4; action=Use AffectSystem flag query; medium.
+- ComputePoints: count=38; category=GAME STATE WRITE; files=cmd_general.cpp:8, cmd_gm.cpp:7, questlua_pc.cpp:7, party.cpp:5; action=Stat recompute engine; should remain legacy until PointSystem authority is stable.
+- FindAffect: count=38; category=AFFECT READ; files=cmd_general2.cpp:5, questlua_pc.cpp:5, guild.cpp:3, questlua_affect.cpp:3; action=Use AffectSystem::FindAffect entity API; low/medium.
+- GetExchange: count=37; category=SERVICE OBJECT; files=input_main.cpp:20, cmd_general.cpp:6, questlua_pc.cpp:3, attr_transfer.cpp:1; action=Exchange remains service object; add TradeSystem/ExchangeSystem accessor later.
+- GetInventoryItem: count=37; category=ITEM INVENTORY READ; files=cmd_gm.cpp:9, cmd_general.cpp:5, questlua_pc.cpp:5, guild_renewal.cpp:3; action=Use InventorySystem/ItemSystem slot entity accessor; medium due window/cell semantics.
+- GetRealPoint: count=37; category=GAME STATE READ; files=questlua_pc.cpp:17, cmd_general.cpp:11, cmd_general2.cpp:4, cmd_gm.cpp:3; action=PointSystem real stat accessor; medium due points[] semantics.
+- GetMaxHP: count=36; category=VITAL READ; files=MovementSystem.cpp:8, questlua_pc.cpp:7, cmd_general.cpp:5, CombatSystem.cpp:4; action=Use Vital/Point accessor; low if Health component authoritative.
+- GetPacketVID: count=36; category=IDENTITY/META; files=fishing.cpp:5, party.cpp:5, ActivitySystem.cpp:5, CombatSystem.cpp:5; action=Use VIDComponent accessor; low risk.
+- IsObserverMode: count=33; category=GAME STATE READ; files=input_main.cpp:16, cmd_general2.cpp:5, cmd_general.cpp:4, cmd.cpp:3; action=Runtime/session flag accessor; low/medium.
+- GetHP: count=31; category=UNCLASSIFIED/LOWER PRIORITY; files=questlua_pc.cpp:7, cmd_general.cpp:6, VikingDungeon.cpp:4, MovementSystem.cpp:4; action=Needs manual subsystem-specific review before migration.
+- IsStone: count=30; category=TYPE PREDICATE; files=item_manager.cpp:12, char_manager.cpp:11, CombatSystem.cpp:3, dungeon.cpp:2; action=Use TagStone; low risk.
+- GetNewPetSystem: count=30; category=SERVICE OBJECT; files=cmd_general.cpp:17, questlua_petnew.cpp:12, cmd_gm.cpp:1; action=Pet service pointer; keep pointer return but entity-first accessor possible.
+- ExitToSavedLocation: count=28; category=GAME STATE WRITE; files=cmd_general.cpp:20, EasterDungeon.cpp:2, ValentineDungeon.cpp:2, party.cpp:1; action=Movement/session restore; high risk.
+- GetItem: count=26; category=ITEM INVENTORY READ; files=DragonSoul.cpp:8, cmd_gm.cpp:6, new_offlineshop_manager.cpp:4, input_main.cpp:3; action=Use ItemSystem entity lookup by position/window; medium.
+- GetJob: count=25; category=UNCLASSIFIED/LOWER PRIORITY; files=questlua_pc.cpp:7, cmd_gm.cpp:6, cmd_general.cpp:4, battle.cpp:2; action=Needs manual subsystem-specific review before migration.
+- AutoGiveItem: count=25; category=ITEM INVENTORY WRITE; files=DragonSoul.cpp:6, cmd_gm.cpp:2, ItemUse.cpp:2, questlua_pc.cpp:2; action=Already has AutoGiveItemEcs; finish residual callers.
+- GetSectree: count=24; category=POSITION/PHYSICS; files=SkillSystem.cpp:16, cmd_gm.cpp:2, trigger.cpp:2, SessionSystem.cpp:2; action=Use spatial/SectorPlacement or sector lookup; medium.
+- IsRaceFlag: count=24; category=IDENTITY/META; files=battle.cpp:24; action=Use mob table/race metadata accessor; medium.
+- IsDead: count=23; category=UNCLASSIFIED/LOWER PRIORITY; files=cmd_general.cpp:5, cmd.cpp:3, input_main.cpp:3, CombatSystem.cpp:3; action=Needs manual subsystem-specific review before migration.
+- GetMaxSP: count=22; category=UNCLASSIFIED/LOWER PRIORITY; files=questlua_pc.cpp:7, cmd_general.cpp:5, cmd_gm.cpp:2, CombatSystem.cpp:2; action=Needs manual subsystem-specific review before migration.
+- GetDungeon: count=21; category=UNCLASSIFIED/LOWER PRIORITY; files=input_main.cpp:5, cmd_general.cpp:3, char_manager.cpp:2, party.cpp:2; action=Needs manual subsystem-specific review before migration.
+- GetOfflineShop: count=21; category=UNCLASSIFIED/LOWER PRIORITY; files=new_offlineshop_manager.cpp:21; action=Needs manual subsystem-specific review before migration.
+- SetDuel: count=20; category=UNCLASSIFIED/LOWER PRIORITY; files=cmd_general.cpp:20; action=Needs manual subsystem-specific review before migration.
+
+5. Already-migrated patterns and ECS availability
+
+- ChatPacket: caller-side complete; use ecs::ChatSystem.
+- PointChange: caller-side complete for writes; PointSystem::Change bridges legacy routing. Read side (`GetPoint`, `GetRealPoint`, `GetGold`) remains a major Tier 2 target and must respect the 15C-1j points[] semantic split.
+- Quest flags: caller-side complete; use ecs::QuestSystem::GetFlag/SetFlag.
+- Party/Guild: caller-side complete; service object return types remain LPPARTY/CGuild*.
+- Affect add/remove: caller-side complete; affect read queries (`FindAffect`, `IsAffectFlag`) remain next-tier candidates.
+- GetDesc: caller-side CHARACTER access complete; DESC remains infrastructure pointer. LPENTITY->GetDesc paths are intentionally out of scope.
+- Identity components exist: ecs::PlayerID, ecs::PlayerName, ecs::EmpireComponent, ecs::RaceComponent, ecs::GMLevel, ecs::VIDComponent, TagPC/TagNPC/TagMonster/TagStone.
+- Position components exist: ecs::Position and ecs::MapIndex, plus SectorPlacement. Adoption is partial; `GetMapIndex/GetX/GetY/GetSectree` remain heavily used.
+- Vital/stat components exist: ecs::LevelComponent, Health/Mana components, CharacterStatsComponent. Adoption is partial and point reads remain hybrid.
+- Inventory/item accessors exist from 15E item phases: GetWearItem, GetItemCount/Vnum/etc., AutoGiveItemEcs. `GetWear/GetInventoryItem/GetItem/CountSpecifyItem/RemoveSpecifyItem` remain a separate item/inventory accessor batch.
+
+6. Recommended next phases
+
+Phase 15E-58: Character identity/type read accessors
+- Target methods: GetPlayerID, GetName, GetEmpire, GetGMLevel, GetPacketVID, IsPC, IsNPC, IsMonster/IsStone where present.
+- Combined tracked count estimate: GetPlayerID 148, GetName 174, GetEmpire 45, GetGMLevel 37, GetPacketVID 31, IsPC 138, IsNPC 16, IsStone 18 = about 607 tracked calls before broader aliases.
+- Risk: Easy/Medium. Mostly read-only. Main caution is `GetName()` lifetime and type predicate false positives.
+- Approach: add/verify `ecs::CharacterSystem` or `PlayerRuntime` identity accessors, then migrate in file batches. Keep `const char*` compatibility wrapper if needed.
+
+Phase 15E-59: Position/map read accessors
+- Target methods: GetMapIndex, GetX, GetY, GetSectree, possibly GetXYZ-style helpers.
+- Combined tracked count estimate: GetMapIndex 128, GetX 63, GetY 42+ from alias scan, GetSectree 17 = about 250+ tracked calls.
+- Risk: Medium. Reads are simple but map/sector/teleport code is sensitive; do not mutate movement here.
+- Approach: add `MovementSystem::GetMapIndex/GetX/GetY/GetPosition/GetSectree` entity-first reads, migrate read-only callers, leave `WarpSet/Show/OnMove` for a write phase.
+
+Phase 15E-60: Point/stat and affect read accessors
+- Target methods: GetPoint, GetRealPoint, GetGold, GetMaxHP, GetMaxSP, GetLevel, FindAffect, IsAffectFlag.
+- Combined tracked count estimate: GetPoint 221, GetRealPoint 22, GetGold 52, GetMaxHP 24, GetMaxSP 16, GetLevel 58, FindAffect 34, IsAffectFlag 37 = about 464 tracked calls.
+- Risk: Medium/High. Point read semantics must follow the 15C-1j split: true stat-array vs virtual/live vs computed.
+- Approach: first add read-only `PointSystem::Get/Real/GetGold/GetMaxHP/GetMaxSP/GetLevel` wrappers that delegate to legacy routing; only later move storage authority. Add `AffectSystem::HasFlag/Find` wrappers for affect reads.
+
+Deferred later phases
+- Inventory/item service accessors: GetWear, GetInventoryItem, GetItem, CountSpecifyItem, RemoveSpecifyItem, AutoGiveItem residual. Estimated tracked count >180. Risk Medium/High due ownership/window/delete semantics.
+- Movement/write methods: WarpSet, Show, ExitToSavedLocation, OnMove. Estimated tracked count >100. Risk High due packets, sectree, and persistence.
+- Combat/service object methods: CanBeginFight, BeginFight, GetExchange, GetDungeon, GetNewPetSystem. Keep for subsystem-specific phases.
+
+7. Estimated remaining caller-side method count
+
+- `ch->...` tracked count in this audit: 3297.
+- tracked aliases (`pkChr|pTarget|pkAttacker|pkVictim|tch`) count: 962.
+- combined tracked count: 4259.
+- Broader `object->Method()` total is higher because many variable names are subsystem-specific and include non-CHARACTER classes; use targeted method scans per phase to avoid false positives.
