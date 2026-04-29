@@ -254,7 +254,7 @@ bool DSManager::RefreshItemAttributes(LPITEM pDS)
 		uint8_t bType = basic_apply.apply_type;
 		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
 
-		pDS->SetForceAttribute(i, bType, sValue);
+		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, sValue);
 	}
 
 	for (int i = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
@@ -271,7 +271,7 @@ bool DSManager::RefreshItemAttributes(LPITEM pDS)
 				break;
 			}
 		}
-		pDS->SetForceAttribute(i, bType, (short)(ceil((float)sValue * fWeight - 0.01f)));
+		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, (short)(ceil((float)sValue * fWeight - 0.01f)));
 	}
 	return true;
 }
@@ -323,7 +323,7 @@ bool DSManager::PutAttributes(LPITEM pDS)
 		uint8_t bType = basic_apply.apply_type;
 		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
 
-		pDS->SetForceAttribute(i, bType, sValue);
+		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), i, bType, sValue);
 	}
 
 	uint8_t additional_attr_num = MIN(number (add_min, add_max), 4);
@@ -350,7 +350,7 @@ bool DSManager::PutAttributes(LPITEM pDS)
 			uint8_t bType = additional_attr.apply_type;
 			short sValue = (short)(ceil((float)additional_attr.apply_value * fWeight - 0.01f));
 
-			pDS->SetForceAttribute(DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i, bType, sValue);
+			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pDS), DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i, bType, sValue);
 		}
 	}
 
@@ -364,7 +364,7 @@ bool DSManager::DragonSoulItemInitialize(LPITEM pItem)
 	PutAttributes(pItem);
 	int time = DSManager::instance().GetDuration(pItem);
 	if (time > 0)
-		pItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, time);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_REMAIN_SEC, time);
 	return true;
 }
 
@@ -459,7 +459,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		}
 
 		int iCharge = (int)(fCharge + 0.5f);
-		pDH->SetSocket(ITEM_SOCKET_CHARGING_AMOUNT_IDX, iCharge);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pDH), ITEM_SOCKET_CHARGING_AMOUNT_IDX, iCharge);
 		ch->AutoGiveItem(pDH, true);
 
 		auto s = std::to_string(iCharge);
@@ -1585,7 +1585,7 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 			sprintf (buf, "LEFT TIME(%d)", LeftTime(pItem));
 			LogManager::instance().ItemLog(pOwner, pItem, "DS_ACTIVATE", buf);
 			pItem->ModifyPoints(true);
-			pItem->SetSocket(ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
+			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
 
 			pItem->StartTimerBasedOnWearExpireEvent();
 		}
@@ -1622,7 +1622,7 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 
 	char buf[128];
 	pItem->StopTimerBasedOnWearExpireEvent();
-	pItem->SetSocket(ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
 	pItem->ModifyPoints(false);
 
 	sprintf (buf, "LEFT TIME(%d)", LeftTime(pItem));

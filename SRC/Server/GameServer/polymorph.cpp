@@ -120,7 +120,7 @@ bool CPolymorphUtils::UpdateBookPracticeGrade(LPCHARACTER pChar, LPITEM pItem)
 		return false;
 
 	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) > 0) {
-		pItem->SetSocket(1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) - 1);
+		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) - 1);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -149,9 +149,9 @@ bool CPolymorphUtils::GiveBook(LPCHARACTER pChar, uint32_t dwMobVnum, uint32_t d
 		return false;
 	}
 
-	pItem->SetSocket(0, dwMobVnum);			// �а��� ���� ��ȣ
-	pItem->SetSocket(1, dwPracticeCount);		// �����ؾ��� Ƚ��
-	pItem->SetSocket(2, BookLevel);			// ���÷���
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 0, dwMobVnum);			// �а��� ���� ��ȣ
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, dwPracticeCount);		// �����ؾ��� Ƚ��
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2, BookLevel);			// ���÷���
 	return true;
 }
 
@@ -160,8 +160,8 @@ bool CPolymorphUtils::BookUpgrade(LPCHARACTER pChar, LPITEM pItem)
 	if (pChar == nullptr || pItem == nullptr)
 		return false;
 
-	pItem->SetSocket(1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) * 50);
-	pItem->SetSocket(2, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2)+1);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) * 50);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2)+1);
 	return true;
 }
 
