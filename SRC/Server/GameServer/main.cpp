@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
 #include "event.h"
@@ -192,9 +193,9 @@ void ContinueOnFatalError()
 
 	free(symbols);
 
-	sys_err("FatalError on %s", oss.str().c_str());
+	LOG_ERROR("FatalError on {}", oss.str().c_str());
 #else
-	sys_err("FatalError");
+	LOG_ERROR("FatalError");
 #endif
 }
 
@@ -202,7 +203,7 @@ void ShutdownOnFatalError()
 {
 	if (!g_bShutdown)
 	{
-		sys_err("ShutdownOnFatalError!!!!!!!!!!");
+		LOG_ERROR("ShutdownOnFatalError!!!!!!!!!!");
 #ifdef TEXTS_IMPROVEMENT
 		SendNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 570, "");
 		SendNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 571, "");
@@ -293,7 +294,7 @@ void heartbeat(LPHEART ht, int pulse)
 
 					if (++count > 50)
 					{
-						sys_log(0, "FLUSH_SENT");
+						LOG_INFO("FLUSH_SENT");
 						break;
 					}
 				}
@@ -308,7 +309,7 @@ void heartbeat(LPHEART ht, int pulse)
 				for (int i = 0; i < count; ++i, ++save_idx)
 					db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, 0, &g_vec_save[save_idx], sizeof(TPlayerTable));
 
-				sys_log(0, "SAVE_FLUSH %d", count);
+				LOG_INFO("SAVE_FLUSH {}", count);
 			}
 		}
 	}
@@ -501,7 +502,7 @@ int main(int argc, char **argv)
 //		str_to_number(exppet_table_common[exppet_table_counter], temp_exp_line.c_str());
 //		if (exppet_table_common[exppet_table_counter] < 2147483647) 
 //		{
-//			sys_log(0, "Livelli Pet caricati da exppettable.txt: %d !", exppet_table_common[exppet_table_counter]);
+//			0, "Livelli Pet caricati da exppettable.txt: %d !", exppet_table_common[exppet_table_counter]);
 //			exppet_table_counter++;
 //		}
 //		//else 
@@ -521,7 +522,7 @@ int main(int argc, char **argv)
 
 	while (idle());
 
-	sys_log(0, "<shutdown> Starting...");
+	LOG_INFO("<shutdown> Starting...");
 	g_bShutdown = true;
 	g_bNoMoreClient = true;
 
@@ -535,7 +536,7 @@ int main(int argc, char **argv)
 		do
 		{
 			uint32_t dwCount = DBManager::instance().CountQuery();
-			sys_log(0, "Queries %u", dwCount);
+			LOG_INFO("Queries {}", dwCount);
 
 			if (dwCount == 0)
 				break;
@@ -551,39 +552,39 @@ int main(int argc, char **argv)
 //	Offlineshop_CleanUpLibrary();
 //#endif
 
-	sys_log(0, "<shutdown> Destroying CArenaManager...");
+	LOG_INFO("<shutdown> Destroying CArenaManager...");
 	arena_manager.Destroy();
-	sys_log(0, "<shutdown> Destroying COXEventManager...");
+	LOG_INFO("<shutdown> Destroying COXEventManager...");
 	OXEvent_manager.Destroy();
 
-	sys_log(0, "<shutdown> Disabling signal timer...");
+	LOG_INFO("<shutdown> Disabling signal timer...");
 	signal_timer_disable();
 
-	sys_log(0, "<shutdown> Shutting down CHARACTER_MANAGER...");
+	LOG_INFO("<shutdown> Shutting down CHARACTER_MANAGER...");
 	char_manager.GracefulShutdown();
-	sys_log(0, "<shutdown> Shutting down ITEM_MANAGER...");
+	LOG_INFO("<shutdown> Shutting down ITEM_MANAGER...");
 	item_manager.GracefulShutdown();
 
-	sys_log(0, "<shutdown> Flushing db_clientdesc...");
+	LOG_INFO("<shutdown> Flushing db_clientdesc...");
 	db_clientdesc->FlushOutput();
-	sys_log(0, "<shutdown> Flushing p2p_manager...");
+	LOG_INFO("<shutdown> Flushing p2p_manager...");
 	p2p_manager.FlushOutput();
 
-	sys_log(0, "<shutdown> Destroying CShopManager...");
+	LOG_INFO("<shutdown> Destroying CShopManager...");
 	shop_manager.Destroy();
-	sys_log(0, "<shutdown> Destroying CHARACTER_MANAGER...");
+	LOG_INFO("<shutdown> Destroying CHARACTER_MANAGER...");
 	char_manager.Destroy();
-	sys_log(0, "<shutdown> Destroying ITEM_MANAGER...");
+	LOG_INFO("<shutdown> Destroying ITEM_MANAGER...");
 	item_manager.Destroy();
-	sys_log(0, "<shutdown> Destroying DESC_MANAGER...");
+	LOG_INFO("<shutdown> Destroying DESC_MANAGER...");
 	desc_manager.Destroy();
 #ifdef __NEW_EVENT_HANDLER__
-	sys_log(0, "<shutdown> Destroying CEventFunctionHandler...");
+	LOG_INFO("<shutdown> Destroying CEventFunctionHandler...");
 	CEventFunctionHandler::instance().Destroy();
 #endif
-	sys_log(0, "<shutdown> Destroying quest::CQuestManager...");
+	LOG_INFO("<shutdown> Destroying quest::CQuestManager...");
 	quest_manager.Destroy();
-	sys_log(0, "<shutdown> Destroying building::CManager...");
+	LOG_INFO("<shutdown> Destroying building::CManager...");
 	building_manager.Destroy();
 
 	if (g_bAuthServer)
@@ -782,8 +783,7 @@ int start(int argc, char **argv)
 	}
 	else
 	{
-		sys_log(0, "SPAM_CONFIG: duration %u score %u reload cycle %u\n",
-				g_uiSpamBlockDuration, g_uiSpamBlockScore, g_uiSpamReloadCycle);
+		LOG_INFO("SPAM_CONFIG: duration {} score {} reload cycle {}\n", g_uiSpamBlockDuration, g_uiSpamBlockScore, g_uiSpamReloadCycle);
 
 		extern void LoadSpamDB();
 		LoadSpamDB();
@@ -795,29 +795,29 @@ int start(int argc, char **argv)
 
 void destroy()
 {
-	sys_log(0, "<shutdown> Canceling ReloadSpamEvent...");
+	LOG_INFO("<shutdown> Canceling ReloadSpamEvent...");
 	CancelReloadSpamEvent();
 
-	sys_log(0, "<shutdown> regen_free()...");
+	LOG_INFO("<shutdown> regen_free()...");
 	regen_free();
 
-	sys_log(0, "<shutdown> Closing sockets...");
+	LOG_INFO("<shutdown> Closing sockets...");
 	socket_close(tcp_socket);
 #ifndef __UDP_BLOCK__
 	socket_close(udp_socket);
 #endif
 	socket_close(p2p_socket);
 
-	sys_log(0, "<shutdown> fdwatch_delete()...");
+	LOG_INFO("<shutdown> fdwatch_delete()...");
 	fdwatch_delete(main_fdw);
 
-	sys_log(0, "<shutdown> event_destroy()...");
+	LOG_INFO("<shutdown> event_destroy()...");
 	event_destroy();
 
-	sys_log(0, "<shutdown> CTextFileLoader::DestroySystem()...");
+	LOG_INFO("<shutdown> CTextFileLoader::DestroySystem()...");
 	CTextFileLoader::DestroySystem();
 
-	sys_log(0, "<shutdown> thecore_destroy()...");
+	LOG_INFO("<shutdown> thecore_destroy()...");
 	thecore_destroy();
 }
 
@@ -879,7 +879,7 @@ int idle()
 				(void)entity;
 				++ecsCount;
 			}
-			sys_log(0, "ECS registry: %zu alive entities", ecsCount);
+			LOG_INFO("ECS registry: {} alive entities", ecsCount);
 		}
 	}
 	db_clientdesc->Update(t);
@@ -1000,7 +1000,7 @@ int io_loop(LPFDWATCH fdw)
 					int size = d->ProcessInput();
 
 					if (size)
-						sys_log(1, "DB_BYTES_READ: %d", size);
+						LOG_INFO("DB_BYTES_READ: {}", size);
 
 					if (size < 0)
 					{
@@ -1027,7 +1027,7 @@ int io_loop(LPFDWATCH fdw)
 					}
 
 					if (buf_size)
-						sys_log(1, "DB_BYTES_WRITE: size %d sock_buf %d ret %d", buf_size, sock_buf_size, ret);
+						LOG_INFO("DB_BYTES_WRITE: size {} sock_buf {} ret {}", buf_size, sock_buf_size, ret);
 				}
 				else if (d->ProcessOutput() < 0)
 				{
@@ -1042,7 +1042,7 @@ int io_loop(LPFDWATCH fdw)
 				break;
 
 			default:
-				sys_err("fdwatch_check_event returned unknown %d", iRet);
+				LOG_ERROR("fdwatch_check_event returned unknown {}", iRet);
 				d->SetPhase(PHASE_CLOSE);
 				break;
 		}
