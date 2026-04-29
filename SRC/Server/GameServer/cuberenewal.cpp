@@ -621,9 +621,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
 				if (materialInfo.allowCopy != 0 && item_copy_bonus == true) {
-					pItem->ClearAttribute();
+					ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, pItem));
 					for (int a = 0; a < ITEM_ATTRIBUTE_MAX_NUM; a++) {
-						pItem->SetForceAttribute(a, copyAttr[a][0], copyAttr[a][1]);
+						ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pItem), a, copyAttr[a][0], copyAttr[a][1]);
 					}
 
 					for (int b = 0; b < ITEM_SOCKET_MAX_NUM; b++) {
@@ -635,7 +635,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #ifdef ENABLE_BUG_FIXES
 				if (!item_copy_bonus && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_COSTUME)
 				{
-					pItem->ClearAttribute();
+					ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, pItem));
 #ifdef ENABLE_STOLE_COSTUME
 					if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == COSTUME_STOLE)
 					{
@@ -647,7 +647,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 							for (int i = 0; i < MAX_ATTR; i++)
 							{
-								pItem->SetForceAttribute(i, stoleInfoTable[i][0], stoleInfoTable[i][number(random - 3, random)]);
+								ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pItem), i, stoleInfoTable[i][0], stoleInfoTable[i][number(random - 3, random)]);
 							}
 						}
 					}
