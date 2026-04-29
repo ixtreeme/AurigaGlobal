@@ -258,7 +258,7 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 		m_abItemDisplayPos[i]	= display_pos;
 		m_pGrid->Put(display_pos, 1, item->GetSize());
 
-		item->SetExchanging(true);
+		ItemSystem::SetItemExchanging(EntityFactory::CreateItemEntity(g_registry, item), true);
 
 		exchange_packet(m_pOwner,
 				EXCHANGE_SUBHEADER_GC_ITEM_ADD,
@@ -294,7 +294,7 @@ bool CExchange::RemoveItem(uint8_t pos)
 		return false;
 
 	TItemPos PosOfInventory = m_aItemPos[pos];
-	m_apItems[pos]->SetExchanging(false);
+	ItemSystem::SetItemExchanging(EntityFactory::CreateItemEntity(g_registry, m_apItems[pos]), false);
 
 	m_pGrid->Get(m_abItemDisplayPos[pos], 1, m_apItems[pos]->GetSize());
 
@@ -1039,7 +1039,7 @@ bool CExchange::Done()
 			item->AddToCharacter(victim, TItemPos(INVENTORY, empty_pos));
 		ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-		item->SetExchanging(false);
+		ItemSystem::SetItemExchanging(EntityFactory::CreateItemEntity(g_registry, item), false);
 		{
 			char exchange_buf[51];
 
@@ -1200,7 +1200,7 @@ void CExchange::Cancel()
 	for (int i = 0; i < EXCHANGE_ITEM_MAX_NUM; ++i)
 	{
 		if (m_apItems[i])
-			m_apItems[i]->SetExchanging(false);
+			ItemSystem::SetItemExchanging(EntityFactory::CreateItemEntity(g_registry, m_apItems[i]), false);
 	}
 
 	if (GetCompany())
