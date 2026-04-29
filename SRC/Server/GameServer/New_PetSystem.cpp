@@ -1,6 +1,7 @@
 
 
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "vector.h"
 #include "char_interface.hpp"
@@ -1441,7 +1442,7 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 751, "");
 #endif
-		m_pkOwner->PointChange(POINT_HP, riphp);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_HP, riphp);
 		m_pkOwner->EffectPacket(SE_HPUP_RED);
 	}
 	break;

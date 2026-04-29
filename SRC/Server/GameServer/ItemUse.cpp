@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 
 #include "ItemUse.h"
 
@@ -172,7 +174,7 @@ namespace item_change
 				const int64_t wantAdd = kYangPerItem * (int64_t)wantUse;
 
 				 
-				ch->PointChange(POINT_GOLD, wantAdd, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, wantAdd, true);
 
 				 
 				const int64_t afterGold = (int64_t)ch->GetGold();

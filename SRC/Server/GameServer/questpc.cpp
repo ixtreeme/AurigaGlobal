@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "config.h"
 #include "constants.h"
 #include "questmanager.h"
@@ -682,9 +684,9 @@ namespace quest
 					sys_log(0, "EXP cur %d add %d next %d",ch->GetExp(), it->value1, ch->GetNextExp());
 
 					if (ch->GetExp() + it->value1 > ch->GetNextExp())
-						ch->PointChange(POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
 					else
-						ch->PointChange(POINT_EXP, it->value1);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, it->value1);
 
 					break;
 

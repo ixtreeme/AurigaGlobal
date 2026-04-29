@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "wheel_of_destiny.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -94,7 +96,7 @@ void CWheelDestiny::TurnWheel()
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "FREE");
 	}
 	else
-		ch->PointChange(POINT_GOLD, -WheelPrice);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -WheelPrice);
 	
 	//vnum, count, spin count, pos
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);

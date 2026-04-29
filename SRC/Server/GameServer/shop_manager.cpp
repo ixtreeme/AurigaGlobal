@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
 #include "utils.h"
@@ -464,7 +466,7 @@ uint8_t bCount
 	else
 		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount);
 
-	ch->PointChange(POINT_GOLD, dwPrice, false);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, dwPrice, false);
 }
 
 bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)

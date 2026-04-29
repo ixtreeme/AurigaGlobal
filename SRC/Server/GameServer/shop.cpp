@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
 #include "utils.h"
@@ -345,7 +346,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 
 	if (dwPrice > 0) {
-		ch->PointChange(POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -dwPrice, false);
 	}
 
 #ifdef ENABLE_BUY_WITH_ITEM
@@ -542,7 +543,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		r_item.pkItem = nullptr;
 		BroadcastUpdateItem(pos);
 
-		m_pkPC->PointChange(POINT_GOLD, dwPrice, false);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkPC), POINT_GOLD, dwPrice, false);
 	}
 	else
 	{

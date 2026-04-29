@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
 #include "pvp.h"
 #include "crc32.h"
@@ -87,7 +89,7 @@ EVENTFUNC(pvp_check_disconnect)
 		
 		if (betMoney > 0)
 		{
-			chB->PointChange(POINT_GOLD, betMoney, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(chB), POINT_GOLD, betMoney, true);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 514, "");
 #endif
@@ -117,7 +119,7 @@ EVENTFUNC(pvp_check_disconnect)
 		
 		if (betMoney > 0)
 		{
-			chA->PointChange(POINT_GOLD, betMoney, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_GOLD, betMoney, true);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 514, "");
 #endif

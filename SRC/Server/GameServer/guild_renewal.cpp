@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
 
@@ -926,7 +928,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 		return false;
 
 	// Levons + hozzads
-	ch->PointChange(POINT_GOLD, -allowed, true);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -allowed, true);
 	c.money += allowed;
 	DB_SaveMoney(guildId);
 
@@ -1030,7 +1032,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 			if (allowed > playerGold) allowed = playerGold;
 			if (allowed > 0)
 			{
-				ch->PointChange(POINT_GOLD, -allowed, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -allowed, true);
 				c.money += allowed;
 				DB_SaveMoney(guildId);
 

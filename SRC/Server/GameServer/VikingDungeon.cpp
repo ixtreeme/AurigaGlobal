@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "VikingDungeon.h"
 
 #include <unordered_map>
@@ -363,7 +365,7 @@ namespace
             if (dmg >= ch->GetHP())
                 dmg = ch->GetHP() - 1;
             if (dmg > 0)
-                ch->PointChange(POINT_HP, -dmg);
+                ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, -dmg);
         });
     }
 

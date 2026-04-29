@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include <sstream>
 
 #include "desc.h"
@@ -600,7 +602,7 @@ namespace quest
 					else
 					{
 						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((tch)->GetPlayerID()), gold);
-						tch->PointChange(POINT_GOLD, gold, true);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GOLD, gold, true);
 					}
 				}
 			}
@@ -619,7 +621,7 @@ namespace quest
 			else
 			{
 				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
-				ch->PointChange(POINT_GOLD, gold, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, gold, true);
 			}
 		}
 

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
 #include "utils.h"
@@ -208,7 +210,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	switch (shopTab.coinType)
 	{
 	case SHOP_COIN_TYPE_GOLD:
-		ch->PointChange(POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -dwPrice, false);
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
 		ch->RemoveSpecifyTypeItem(ITEM_SECONDARY_COIN, dwPrice);

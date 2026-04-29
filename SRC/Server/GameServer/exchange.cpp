@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
 #include "utils.h"
 #include "desc.h"
@@ -1061,8 +1063,8 @@ bool CExchange::Done()
 
 	if (m_lGold)
 	{
-		GetOwner()->PointChange(POINT_GOLD, -m_lGold, true);
-		victim->PointChange(POINT_GOLD, m_lGold, true);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(GetOwner()), POINT_GOLD, -m_lGold, true);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(victim), POINT_GOLD, m_lGold, true);
 
 		if (m_lGold > 1000)
 		{

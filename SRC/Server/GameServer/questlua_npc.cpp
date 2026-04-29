@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "questmanager.h"
@@ -470,7 +472,7 @@ namespace quest
 		if (npc && percent > 0 && percent <= 100)
 		{
 			int damage = npc->GetMaxHP() * percent / 100;
-			npc->PointChange(POINT_HP, -damage);  // HP-t csökkentjük
+			ecs::PointSystem::Change(AIHelpers::EcsOf(npc), POINT_HP, -damage);  // HP-t csökkentjük
 			lua_pushboolean(L, 1);
 		}
 		else

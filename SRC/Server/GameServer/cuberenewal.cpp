@@ -2,6 +2,8 @@
 #define _cube_cpp_
 
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
 #include "utils.h"
 #include "log.h"
@@ -583,13 +585,13 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				}
 
 				if (materialInfo.gold != 0){
-					ch->PointChange(POINT_GOLD, -materialInfo.gold*count_item, false);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -materialInfo.gold*count_item, false);
 						
 				}
 #ifdef ENABLE_GAYA_SYSTEM
 				if (materialInfo.gaya != 0) 
 				{
-					ch->PointChange(POINT_GAYA, -static_cast<int64_t>(materialInfo.gaya*count_item), false);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, -static_cast<int64_t>(materialInfo.gaya*count_item), false);
 				}
 #endif
 				if(total_items_give <= 0)
