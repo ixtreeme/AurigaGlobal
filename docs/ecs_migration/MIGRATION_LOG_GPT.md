@@ -8431,6 +8431,66 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-54 - Party/Guild Accessor Migration
+
+Mode:
+- Entity-first social accessor migration.
+- `LPPARTY` / `CGuild*` remain service-object return types.
+- No `LPCHARACTER` overload added.
+- No `CParty` / `CGuild` internal signature rewrite.
+
+Completed batches:
+- STEP 1 audit:
+  - Initial raw caller-side scan found 247 `->GetParty` / `->GetGuild` matches.
+  - Split: `GetParty=164`, `GetGuild=83`.
+  - Top caller files included `questlua_party.cpp`, `input_main.cpp`, `CombatSystem.cpp`, `cmd_general.cpp`, `war_map.cpp`, and `cmd_gm.cpp`.
+- STEP 2 SocialSystem API:
+  - Added `ecs::SocialSystem::GetParty(entt::entity)` returning `LPPARTY`.
+  - Added `ecs::SocialSystem::GetGuild(entt::entity)` returning `CGuild*`.
+  - Implementation bridges through `ecs::LegacyCharOf(e)` and returns `nullptr` for invalid/null entities.
+  - Commit: `060dc33 Phase 15E-54.1: Add SocialSystem party guild accessors`
+- STEP 3 caller migration:
+  - Migrated caller-side `ch->GetParty()` / `ch->GetGuild()` accessors across gameplay, quest, dungeon, combat, guild, PvP, war-map, and command paths.
+  - Caller-side residual count excluding bridge/internal deferrals is now zero.
+  - Commit: `37d4906 Phase 15E-54: Migrate Party Guild caller accessors`
+
+Counts:
+```text
+Initial raw ->GetParty / ->GetGuild matches: 247
+Initial GetParty matches: 164
+Initial GetGuild matches: 83
+Final tree-wide raw matches: 14
+Final GetParty matches: 12
+Final GetGuild matches: 2
+Final caller-side matches excluding SocialSystem.cpp + party.h: 0
+```
+
+Remaining intentional/deferred sites:
+- `ecs/systems/SocialSystem.cpp`: 11 direct calls remain inside the bridge and legacy `CHARACTER` social method bodies.
+- `party.h`: 3 direct calls remain inside inline `FPartyDropDiceRoll` helper.
+- `party.h` migration was attempted and rolled back because converting the inline header helper caused a broad include cascade with more than 20 build errors. This should be handled in a dedicated header-boundary phase, either by moving the helper body out of the header or adding a narrow non-header bridge.
+
+Build results:
+- Build passed after adding the SocialSystem API.
+- Build initially failed after the broad caller sweep due `party.h` include cascade and one duplicated `ch` declaration in `questlua_party.cpp`.
+- `party.h` was restored, the `questlua_party.cpp` duplicate declaration was fixed, and the build passed.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Create party, invite member, verify leader/member state.
+- Party EXP share on kill.
+- Leave/disband party returns null party state.
+- Guild member login, guild chat, guild master commands.
+- Guild war / cross-guild combat.
+- Verify `VID_DRIFT` remains zero.
+
+Commit status:
+- API and caller migration committed.
+- WinTest not run in this environment.
+
 ## Phase 15E-53 - QuestSystem::GetFlag / SetFlag Replaces CHARACTER Quest Calls
 
 Mode:
