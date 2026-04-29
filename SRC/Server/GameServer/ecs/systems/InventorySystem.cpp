@@ -50,14 +50,14 @@ entt::entity ItemEntityOf(LPITEM item)
 	return CItemRegistry::Instance().Find(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 }
 
-void SyncItemLocation(entt::entity e, LPITEM item)
+void SyncItemLocation(entt::entity e)
 {
-	if (e == entt::null || !item || !g_registry.valid(e))
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
 	g_registry.emplace_or_replace<ecs::ItemLocation>(e,
-		static_cast<uint8_t>(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, item))),
-		static_cast<uint16_t>(ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item))));
+		static_cast<uint8_t>(ItemSystem::GetItemWindow(e)),
+		static_cast<uint16_t>(ItemSystem::GetItemCell(e)));
 }
 
 void SyncItemOwner(entt::entity e, uint32_t ownerPID, uint32_t lastOwnerPID, uint32_t ownershipPID)
@@ -359,7 +359,7 @@ LPITEM CItem::RemoveFromCharacter()
 		Save();
 
 		const entt::entity itemEntity = ItemEntityOf(this);
-		SyncItemLocation(itemEntity, this);
+		SyncItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
@@ -377,7 +377,7 @@ LPITEM CItem::RemoveFromCharacter()
 			Save();
 
 			const entt::entity itemEntity = ItemEntityOf(this);
-			SyncItemLocation(itemEntity, this);
+			SyncItemLocation(itemEntity);
 			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 			g_registry.remove<ecs::ItemEquipped>(itemEntity);
 			return (this);
@@ -432,7 +432,7 @@ LPITEM CItem::RemoveFromCharacter()
 		Save();
 
 		const entt::entity itemEntity = ItemEntityOf(this);
-		SyncItemLocation(itemEntity, this);
+		SyncItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
@@ -478,7 +478,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 				const entt::entity itemEntity = ItemEntityOf(this);
 				SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
-				SyncItemLocation(itemEntity, this);
+				SyncItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
 			}
@@ -573,7 +573,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 	const entt::entity itemEntity = ItemEntityOf(this);
 	SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
-	SyncItemLocation(itemEntity, this);
+	SyncItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
 }
@@ -597,7 +597,7 @@ LPITEM CItem::RemoveFromGround()
 
 		Save();
 
-		SyncItemLocation(itemEntity, this);
+		SyncItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 	}
@@ -645,7 +645,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	ecs::SyncSectorPlacement(g_registry, itemEntity, lMapIndex, GetX(), GetY());
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ViewActiveTag>(itemEntity);
-	SyncItemLocation(itemEntity, this);
+	SyncItemLocation(itemEntity);
 	g_registry.remove<ecs::ItemOwner>(itemEntity);
 	g_registry.remove<ecs::ItemEquipped>(itemEntity);
 	return true;
@@ -1074,7 +1074,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	const entt::entity itemEntity = ItemEntityOf(this);
 	SyncItemEquipped(itemEntity, true);
-	SyncItemLocation(itemEntity, this);
+	SyncItemLocation(itemEntity);
 	SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
 	SyncCharacterEquipmentSlot(ch, bWearCell, this);
 	g_dispatcher.trigger(ecs::EvItemEquipped { AIHelpers::EcsOf(ch), itemEntity });
@@ -1169,7 +1169,7 @@ bool CItem::Unequip()
 	m_bEquipped = false;
 
 	SyncItemEquipped(itemEntity, false);
-	SyncItemLocation(itemEntity, this);
+	SyncItemLocation(itemEntity);
 	SyncCharacterEquipmentSlot(owner, wearCell, nullptr);
 	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
 	return true;
@@ -1727,4 +1727,3 @@ void CItem::ModifyPoints(bool bAdd)
 	break;
 	}
 }
-
