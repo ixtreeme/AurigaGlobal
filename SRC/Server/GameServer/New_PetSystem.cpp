@@ -853,7 +853,7 @@ void CNewPetActor::Unsummon()
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, false);
-			pSummonItem->Lock(false);
+			ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 		}
 
 		this->SetSummonItem(nullptr);
@@ -1103,7 +1103,7 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
 #endif
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, true);
-	pSummonItem->Lock(true);
+	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL2);
 	if (pAffect) {
