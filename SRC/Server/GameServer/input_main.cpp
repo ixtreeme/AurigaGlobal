@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -164,7 +165,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 
 				if (!pkInfoItem)
 				{
-					sys_err("pkInfoItem null in vector idx %d", iItemIdx + 1);
+					LOG_ERROR("pkInfoItem null in vector idx {}", iItemIdx + 1);
 					continue;
 				}
 
@@ -231,7 +232,7 @@ EVENTFUNC(block_chat_by_ip_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "block_chat_by_ip_event> <Factor> Null pointer" );
+		LOG_ERROR("block_chat_by_ip_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -275,7 +276,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 		it->second.first += score;
 
 		if (word)
-			sys_log(0, "SPAM_SCORE: %s text: %s score: %u total: %u word: %s", ch->GetName(), buf, score, it->second.first, word);
+			LOG_INFO("SPAM_SCORE: {} text: {} score: {} total: {} word: {}", ch->GetName(), buf, score, it->second.first, word);
 
 		if (it->second.first >= g_uiSpamBlockScore)
 		{
@@ -283,7 +284,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 			strlcpy(info->host, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), sizeof(info->host));
 
 			it->second.second = event_create(block_chat_by_ip_event, info, PASSES_PER_SEC(g_uiSpamBlockDuration));
-			sys_log(0, "SPAM_IP: %s for %u seconds", info->host, g_uiSpamBlockDuration);
+			LOG_INFO("SPAM_IP: {} for {} seconds", info->host, g_uiSpamBlockDuration);
 
 			LogManager::instance().CharLog(ch, 0, "SPAM", word);
 
@@ -421,7 +422,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 
 	if (iExtraLen < 0)
 	{
-		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->wSize, uiBytes);
+		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->wSize, uiBytes);
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
@@ -446,9 +447,9 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (test_server)
 	{
 		if (!pkChr)
-			sys_log(0, "Whisper to %s(%s) from %s", "Null", pinfo->szNameTo, ch->GetName());
+			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ch->GetName());
 		else
-			sys_log(0, "Whisper to %s(%s) from %s", pkChr->GetName(), pinfo->szNameTo, ch->GetName());
+			LOG_INFO("Whisper to {}({}) from {}", pkChr->GetName(), pinfo->szNameTo, ch->GetName());
 	}
 
 	if (ch->IsBlockMode(BLOCK_WHISPER))
@@ -477,7 +478,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			bOpponentEmpire = pkCCI->bEmpire;
 
 			if (test_server)
-				sys_log(0, "Whisper to %s from %s (Channel %d Mapindex %d)", "Null", ch->GetName(), pkCCI->bChannel, pkCCI->lMapIndex);
+				LOG_INFO("Whisper to {} from {} (Channel {} Mapindex {})", "Null", ch->GetName(), pkCCI->bChannel, pkCCI->lMapIndex);
 		}
 	}
 	else
@@ -554,7 +555,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			pack.wSize = sizeof(TPacketGCWhisper);
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(TPacketGCWhisper));
-			sys_log(0, "WHISPER: no player");
+			LOG_INFO("WHISPER: no player");
 #endif
 		}
 	}
@@ -674,7 +675,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				pkDesc->Packet(tmpbuf.read_peek(), tmpbuf.size());
 
 				// @warme006
-				// sys_log(0, "WHISPER: %s -> %s : %s", ch->GetName(), pinfo->szNameTo, buf);
+				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ch->GetName(), pinfo->szNameTo, buf);
 #ifdef ENABLE_CHAT_LOGGING
 				if (ch->IsGM())
 				{
@@ -912,7 +913,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 	if (iExtraLen < 0)
 	{
-		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->size, uiBytes);
+		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->size, uiBytes);
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
@@ -1501,7 +1502,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			break;
 
 		default:
-			sys_err("Unknown chat type %d", pinfo->type);
+			LOG_ERROR("Unknown chat type {}", pinfo->type);
 			break;
 	}
 
@@ -1824,7 +1825,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 			return CHARACTER_NAME_MAX_LEN;
 
 		default:
-			sys_err("CInputMain::Messenger : Unknown subheader %d : %s", p->subheader, ch->GetName());
+			LOG_ERROR("CInputMain::Messenger : Unknown subheader {} : {}", p->subheader, ch->GetName());
 			break;
 	}
 
@@ -1891,7 +1892,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 		return -1;
 
 	if (test_server)
-		sys_log(0, "CInputMain::Shop() ==> SubHeader %d", p->subheader);
+		LOG_INFO("CInputMain::Shop() ==> SubHeader {}", p->subheader);
 
 	const char * c_pData = data + sizeof(TPacketCGShop);
 	uiBytes -= sizeof(TPacketCGShop);
@@ -1899,7 +1900,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 	switch (p->subheader)
 	{
 		case SHOP_SUBHEADER_CG_END:
-			sys_log(1, "INPUT: %s SHOP: END", ch->GetName());
+			LOG_INFO("INPUT: {} SHOP: END", ch->GetName());
 			CShopManager::instance().StopShopping(ch);
 			return 0;
 
@@ -1909,7 +1910,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 					return -1;
 
 				uint8_t bPos = *(c_pData + 1);
-				sys_log(1, "INPUT: %s SHOP: BUY %d", ch->GetName(), bPos);
+				LOG_INFO("INPUT: {} SHOP: BUY {}", ch->GetName(), bPos);
 				CShopManager::instance().Buy(ch, bPos);
 				return (sizeof(uint8_t) + sizeof(uint8_t));
 			}
@@ -1921,7 +1922,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t pos = *c_pData;
 
-				sys_log(0, "INPUT: %s SHOP: SELL", ch->GetName());
+				LOG_INFO("INPUT: {} SHOP: SELL", ch->GetName());
 				CShopManager::instance().Sell(ch, pos);
 				return sizeof(uint8_t);
 			}
@@ -1954,7 +1955,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 				uint8_t count = *(c_pData);
 #endif
 
-				sys_log(0, "INPUT: %s SHOP: SELL2", ch->GetName());
+				LOG_INFO("INPUT: {} SHOP: SELL2", ch->GetName());
 				CShopManager::instance().Sell(ch,
 #ifdef ENABLE_EXTRA_INVENTORY
 				TItemPos(window, cell), 
@@ -1985,13 +1986,13 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t p = *(c_pData++);
 				uint8_t c = *(c_pData);
-				sys_log(1, "INPUT: %s SHOP: MULTIPLE BUY %d COUNT %d", ch->GetName(), p, c);
+				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ch->GetName(), p, c);
 				CShopManager::instance().MultipleBuy(ch, p, c);
 				return size;
 			}
 #endif
 		default:
-			sys_err("CInputMain::Shop : Unknown subheader %d : %s", p->subheader, ch->GetName());
+			LOG_ERROR("CInputMain::Shop : Unknown subheader {} : {}", p->subheader, ch->GetName());
 			break;
 	}
 
@@ -2013,7 +2014,7 @@ void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 		victim->OnClick(ch);
 	else if (test_server)
 	{
-		sys_err("CInputMain::OnClick %s.Click.NOT_EXIST_VID[%d]", ch->GetName(), pinfo->vid);
+		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ch->GetName(), pinfo->vid);
 	}
 }
 
@@ -2049,7 +2050,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 		}
 	}
 
-	sys_log(0, "CInputMain()::Exchange()  SubHeader %d ", pinfo->sub_header);
+	LOG_INFO("CInputMain()::Exchange()  SubHeader {} ", pinfo->sub_header);
 
 	if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 	{
@@ -2098,7 +2099,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					{
 						if (quest::CQuestManager::instance().GiveItemToPC(ch->GetPlayerID(), to_ch))
 						{
-							sys_log(0, "Exchange canceled by quest %s %s", ch->GetName(), to_ch->GetName());
+							LOG_INFO("Exchange canceled by quest {} {}", ch->GetName(), to_ch->GetName());
 							return;
 						}
 					}
@@ -2177,7 +2178,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 		case EXCHANGE_SUBHEADER_CG_ACCEPT:	// arg1 == not used
 			if (ch->GetExchange())
 			{
-				sys_log(0, "CInputMain()::Exchange() ==> ACCEPT ");
+				LOG_INFO("CInputMain()::Exchange() ==> ACCEPT ");
 				ch->GetExchange()->Accept(true);
 			}
 
@@ -2238,7 +2239,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
 	{
-		sys_err("invalid move type: %s", ch->GetName());
+		LOG_ERROR("invalid move type: {}", ch->GetName());
 		return;
 	}
 
@@ -2273,7 +2274,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ch->GetMapIndex())
 		{
-			sys_log(0, "MOVE: %s trying to move too far (dist: %.1fm current: %.1fm) Riding(%d)", ch->GetName(), fDist, fDistFromCurrent, ch->IsRiding());
+			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ch->GetName(), fDist, fDistFromCurrent, ch->IsRiding());
 
 			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
@@ -2288,7 +2289,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 #ifdef ENABLE_CHECK_GHOSTMODE
 		if (ch->IsPC() && ch->IsDead())
 		{
-			sys_log(0, "MOVE: %s trying to move as dead", ch->GetName());
+			LOG_INFO("MOVE: {} trying to move as dead", ch->GetName());
 
 			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
@@ -2304,10 +2305,10 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 				int iDelta = (int)(dwCurTime - pinfo->dwTime);
 				int iServerDelta = (int)(dwCurTime - ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientTime());
 				if (iDelta >= 30000) {
-					sys_log(0, "SPEEDHACK: slow timer name %s delta %d", ch->GetName(), iDelta);
+					LOG_INFO("SPEEDHACK: slow timer name {} delta {}", ch->GetName(), iDelta);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				} else if (iDelta < -(iServerDelta / 50)) {
-					sys_log(0, "SPEEDHACK: DETECTED! %s (delta %d %d)", ch->GetName(), iDelta, iServerDelta);
+					LOG_INFO("SPEEDHACK: DETECTED! {} (delta {} {})", ch->GetName(), iDelta, iServerDelta);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				}
 			}
@@ -2391,8 +2392,8 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	}
 */
 	/*
-	sys_log(0,
-			"MOVE: %s Func:%u Arg:%u Pos:%dx%d Time:%u Dist:%.1f",
+	LOG_INFO(
+			"MOVE: {} Func:{} Arg:{} Pos:{}x{} Time:{} Dist:{:.1f}",
 			ch->GetName(),
 			pinfo->bFunc,
 			pinfo->bArg,
@@ -2578,14 +2579,14 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 	if (iExtraLen < 0)
 	{
-		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->wSize, uiBytes);
+		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->wSize, uiBytes);
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
 	if (0 != (iExtraLen % sizeof(TPacketCGSyncPositionElement)))
 	{
-		sys_err("invalid packet length %d (name: %s)", pinfo->wSize, ch->GetName());
+		LOG_ERROR("invalid packet length {} (name: {})", pinfo->wSize, ch->GetName());
 		return iExtraLen;
 	}
 
@@ -2599,7 +2600,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	if( iCount > nCountLimit )
 	{
 		//LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
-		sys_err( "Too many SyncPosition Count(%d) from Name(%s)", iCount, ch->GetName() );
+		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ch->GetName());
 		//ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		//return -1;
 		iCount = nCountLimit;
@@ -2646,9 +2647,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-				sys_err( "Too far SyncPosition DistanceWithSyncOwner(%f)(%s) from Name(%s) CH(%d,%d) VICTIM(%d,%d) SYNC(%d,%d)",
-					fDistWithSyncOwner, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(),
-					e->lX, e->lY );
+				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2674,9 +2673,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			{
 				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
 
-				sys_err("Too often SyncPosition Interval(%ldms)(%s) from Name(%s) VICTIM(%d,%d) SYNC(%d,%d)",
-					tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, victim->GetName(), ch->GetName(), victim->GetX(), victim->GetY(),
-					e->lX, e->lY);
+				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, victim->GetName(), ch->GetName(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2687,9 +2684,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-			sys_err( "Too far SyncPosition Distance(%f)(%s) from Name(%s) CH(%d,%d) VICTIM(%d,%d) SYNC(%d,%d)",
-				   	fDist, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(),
-				  e->lX, e->lY );
+			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2745,7 +2740,7 @@ void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptButton * p = (TPacketCGScriptButton *) c_pData;
-	sys_log(0, "QUEST ScriptButton pid %d idx %u", ch->GetPlayerID(), p->idx);
+	LOG_INFO("QUEST ScriptButton pid {} idx {}", ch->GetPlayerID(), p->idx);
 
 	quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
 	if (pc && pc->IsConfirmWait())
@@ -2772,7 +2767,7 @@ void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
-	sys_log(0, "QUEST ScriptAnswer pid %d answer %d", ch->GetPlayerID(), p->answer);
+	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ch->GetPlayerID(), p->answer);
 
 	if (p->answer > 250) // ´ÙÀ½ ¹öÆ°¿¡ ´ëÇÑ ÀÀ´äÀ¸·Î ¿Â ÆÐÅ¶ÀÎ °æ¿ì
 	{
@@ -2795,7 +2790,7 @@ void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptSelectItem* p = (TPacketCGScriptSelectItem*) c_pData;
-	sys_log(0, "QUEST ScriptSelectItem pid %d answer %d", ch->GetPlayerID(), p->selection);
+	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ch->GetPlayerID(), p->selection);
 	quest::CQuestManager::Instance().SelectItem(ch->GetPlayerID(), p->selection);
 }
 // END_OF_SCRIPT_SELECT_ITEM
@@ -2812,7 +2807,7 @@ void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
 
 	char msg[65];
 	strlcpy(msg, p->msg, sizeof(msg));
-	sys_log(0, "QUEST InputString pid %u msg %s", ch->GetPlayerID(), msg);
+	LOG_INFO("QUEST InputString pid {} msg {}", ch->GetPlayerID(), msg);
 
 	quest::CQuestManager::Instance().Input(ch->GetPlayerID(), msg);
 }
@@ -2829,7 +2824,7 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
 	if (p->answer)
 		p->answer = quest::CONFIRM_YES;
-	sys_log(0, "QuestConfirm from %s pid %u name %s answer %d", ch->GetName(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ch->GetName(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
 	if (ch_wait)
 	{
 		quest::CQuestManager::Instance().Confirm(ch_wait->GetPlayerID(), (quest::EQuestConfirmType) p->answer, ch->GetPlayerID());
@@ -2896,7 +2891,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	{
 
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot place items from the Belt inventory into the safebox.");
-		//sys_log(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ch->GetName());
+		//LOG_INFO(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ch->GetName());
 		return;
 	}
 
@@ -3092,7 +3087,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		if (p->ItemPos.IsBeltInventoryPosition())
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem helyezhetsz tárgyat közvetlenül a belt inventoryba.");
-			sys_log(0, "BELT_BLOCKED_SFBCHECK: Tiltott belt slot próbálva: %d", p->ItemPos.cell);
+			LOG_INFO("BELT_BLOCKED_SFBCHECK: Tiltott belt slot próbálva: {}", p->ItemPos.cell);
 			return;
 		}
 
@@ -3507,7 +3502,7 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 
 	if (!pInvitee || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pInvitee)))
 	{
-		sys_err("PARTY Cannot find invited character");
+		LOG_ERROR("PARTY Cannot find invited character");
 		return;
 	}
 
@@ -3584,7 +3579,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 	}
 
 	uint32_t pid = p->pid;
-	sys_log(0, "PARTY SetRole pid %d to role %d state %s", pid, p->byRole, p->flag ? "on" : "off");
+	LOG_INFO("PARTY SetRole pid {} to role {} state {}", pid, p->byRole, p->flag ? "on" : "off");
 
 	switch (p->byRole)
 	{
@@ -3608,7 +3603,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 			}
 			break;
 		default:
-			sys_err("wrong byRole in PartySetState Packet name %s state %d", ch->GetName(), p->byRole);
+			LOG_ERROR("wrong byRole in PartySetState Packet name {} state {}", ch->GetName(), p->byRole);
 			break;
 	}
 }
@@ -3892,12 +3887,12 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 								(refine_infos_count * sizeof(CommonWikiData::TWikiRefineInfo));
 		
 		if (chest_info_count != _gV.size()) {
-			sys_err("Item Vnum : %d || ERROR TYPE -> 1", p->vnum);
+			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 1", p->vnum);
 			return;
 		}
 		
 		if (refine_infos_count != _rV.size()) {
-			sys_err("Item Vnum : %d || ERROR TYPE -> 2", p->vnum);
+			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 2", p->vnum);
 			return;
 		}
 		
@@ -3939,7 +3934,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 		
 		if (!_mobVec_size) {
 			if (test_server)
-				sys_log(0, "Mob Vnum: %d : || LOG TYPE -> 1", p->vnum);
+				LOG_INFO("Mob Vnum: {} : || LOG TYPE -> 1", p->vnum);
 			return;
 		}
 		
@@ -4268,7 +4263,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (length > GUILD_COMMENT_MAX_LEN)
 				{
 					// Àß¸øµÈ ±æÀÌ.. ²÷¾îÁÖÀÚ.
-					sys_err("POST_COMMENT: %s comment too long (length: %u)", ch->GetName(), length);
+					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ch->GetName(), length);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 					return -1;
 				}
@@ -4438,7 +4433,7 @@ void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 	char buf[sizeof(p->szBuf)];
 	strlcpy(buf, p->szBuf, sizeof(buf));
 
-	sys_err("HACK_DETECT: %s %s", ch->GetName(), buf);
+	LOG_ERROR("HACK_DETECT: {} {}", ch->GetName(), buf);
 
 	// ÇöÀç Å¬¶óÀÌ¾ðÆ®¿¡¼­ ÀÌ ÆÐÅ¶À» º¸³»´Â °æ¿ì°¡ ¾øÀ¸¹Ç·Î ¹«Á¶°Ç ²÷µµ·Ï ÇÑ´Ù
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
@@ -4490,7 +4485,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	}
 #endif
 	
-	sys_log(0, "MyShop count %d", p->bCount);
+	LOG_INFO("MyShop count {}", p->bCount);
 	ch->OpenMyShop(p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
 #ifdef KASMIR_PAKET_SYSTEM
 	, p->dwKasmirNpc, p->bKasmirBaslik
@@ -4577,19 +4572,19 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 
 	if (p->type == REFINE_TYPE_NORMAL)
 	{
-		sys_log (0, "refine_type_noraml");
+		LOG_INFO("refine_type_noraml");
 		ItemSystem::DoRefine(owner, itemEntity);
 	}
 	else if (p->type == REFINE_TYPE_SCROLL || p->type == REFINE_TYPE_HYUNIRON || p->type == REFINE_TYPE_MUSIN || p->type == REFINE_TYPE_BDRAGON)
 	{
-		sys_log (0, "refine_type_scroll, ...");
+		LOG_INFO("refine_type_scroll, ...");
 		ItemSystem::DoRefineWithScroll(owner, itemEntity);
 	}
 
 #ifdef ENABLE_SOUL_SYSTEM
 	else if (p->type == REFINE_TYPE_SOUL)
 	{
-		sys_log (0, "refine_type_soul, ...");
+		LOG_INFO("refine_type_soul, ...");
 		ItemSystem::DoRefineItemSoul(owner, itemEntity);
 	}
 #endif
@@ -4730,7 +4725,7 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 
 	//fix flooding
 	if (rShopInfo.dwCount > 500 || rShopInfo.dwCount == 0) {
-		sys_err("tried to open a shop with 500+ items.");
+		LOG_ERROR("tried to open a shop with 500+ items.");
 		return -1;
 	}
 
@@ -5208,7 +5203,7 @@ int OfflineshopPacket(const char* data , LPCHARACTER ch, int32_t iBufferLeft)
 		return /*sizeof(TPacketCGNewOfflineshop) +*/ OfflineshopPacketCloseMyAuction(ch);
 
 	default:
-		sys_err("UNKNOWN SUBHEADER %d ",pPack->bSubHeader);
+		LOG_ERROR("UNKNOWN SUBHEADER {} ", pPack->bSubHeader);
 		return -1;
 	}
 
@@ -5384,7 +5379,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 	break;
 	default:
 	{
-		sys_err("CInputMain::WheelDestiny : Unknown option %d : %s", pinfo->option, ch->GetName());
+		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ch->GetName());
 	}
 	break;
 	}
@@ -5398,7 +5393,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	if (!(ch = d->GetCharacter()))
 	{
-		sys_err("no character on desc");
+		LOG_ERROR("no character on desc");
 		d->SetPhase(PHASE_CLOSE);
 		return (0);
 	}
@@ -5406,7 +5401,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	int iExtraLen = 0;
 
 	if (test_server && bHeader != HEADER_CG_MOVE)
-		sys_log(0, "CInputMain::Analyze() ==> Header [%d] ", bHeader);
+		LOG_INFO("CInputMain::Analyze() ==> Header [{}] ", bHeader);
 
 	switch (bHeader)
 	{
@@ -5422,7 +5417,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			if (test_server)
 			{
 				const auto pBuf = const_cast<char*>(c_pData);
-				sys_log(0, "%s", pBuf + sizeof(TPacketCGChat));
+				LOG_INFO("{}", pBuf + sizeof(TPacketCGChat));
 			}
 
 			if ((iExtraLen = Chat(ch, c_pData, m_iBufferLeft)) < 0)
@@ -5823,7 +5818,7 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	if (!(ch = d->GetCharacter()))
 	{
-		sys_err("no character on desc");
+		LOG_ERROR("no character on desc");
 		return 0;
 	}
 
