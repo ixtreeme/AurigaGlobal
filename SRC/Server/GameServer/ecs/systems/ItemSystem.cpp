@@ -1793,6 +1793,97 @@ bool SyncLegacyAttributesFromEcs(entt::entity item)
     return true;
 }
 
+bool SetItemExchanging(entt::entity item, bool flag)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return false;
+
+    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
+    flags.exchanging = flag;
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        legacyItem->SetExchanging(flag);
+
+    return true;
+}
+
+bool LockItem(entt::entity item, bool locked)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return false;
+
+    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
+    flags.isLocked = locked;
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        legacyItem->Lock(locked);
+
+    return true;
+}
+
+bool UnlockItem(entt::entity item)
+{
+    return LockItem(item, false);
+}
+
+bool SetItemSkipSave(entt::entity item, bool flag)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return false;
+
+    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
+    flags.skipSave = flag;
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        legacyItem->SetSkipSave(flag);
+
+    return true;
+}
+
+bool SetItemWindow(entt::entity item, uint8_t window)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return false;
+
+    auto& location = g_registry.get_or_emplace<ecs::ItemLocation>(item);
+    location.window = window;
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        legacyItem->SetWindow(window);
+
+    return true;
+}
+
+bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return false;
+
+    auto& location = g_registry.get_or_emplace<ecs::ItemLocation>(item);
+    location.cell = cell;
+
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    if (!legacyOwner)
+        legacyOwner = ResolveLegacyItemForLegacySideEffect(item)
+            ? ResolveLegacyItemForLegacySideEffect(item)->GetOwner()
+            : nullptr;
+
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+        legacyItem->SetCell(legacyOwner, cell);
+
+    return true;
+}
+
+bool AlterItemToMagicItem(entt::entity item)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+
+    legacyItem->AlterToMagicItem();
+    return SyncItemStateFromLegacy(item);
+}
+
 uint8_t GetItemWindow(entt::entity item)
 {
     if (const auto* location = g_registry.try_get<ecs::ItemLocation>(item))
