@@ -8489,6 +8489,54 @@ Commit status:
 - `124ae3e Phase 16-1.3: Route sys_log sys_err through spdlog`
 - WinTest not run in this environment.
 
+## Phase 16-2 - sys_log/sys_err Call Site Format Modernization
+
+Mode:
+- Call-site migration from legacy printf-style logging to fmt-style `LOG_*` macros.
+- Keep the Phase 16-1 `sys_log` / `sys_err` compatibility bridge until all call sites are migrated.
+- No behavior changes outside logging format syntax.
+
+Initial audit:
+```text
+GameServer sys_log: 1057
+GameServer sys_err: 1308
+GameServer _sys_err: 2
+Total GameServer legacy log call sites: 2367
+```
+
+Top files by legacy logging call count:
+```text
+134 input_db.cpp
+117 ecs/systems/ItemSystem_LegacyBridge.cpp
+ 87 ecs/systems/SkillSystem.cpp
+ 87 questlua_pc.cpp
+ 85 dragon_soul_table.cpp
+ 80 questlua_dungeon.cpp
+ 70 ecs/systems/CombatSystem.cpp
+ 68 questmanager.cpp
+ 62 input_main.cpp
+ 49 item_manager_read_tables.cpp
+ 49 sectree_manager.cpp
+ 48 item_manager.cpp
+ 47 db.cpp
+ 43 questlua_global.cpp
+ 38 input_login.cpp
+ 38 dungeon.cpp
+ 36 guild.cpp
+ 35 char_manager.cpp
+ 34 main.cpp
+ 33 building.cpp
+```
+
+Migration approach:
+- Use direct `LOG_INFO` / `LOG_ERROR` migration rather than overloaded `sys_log` format detection.
+- Convert format strings from `%` placeholders to `{}` fmt placeholders.
+- Keep the old `sys_log` / `sys_err` functions for unmigrated files.
+- Build after every migrated file.
+
+Commit status:
+- `Phase 16-2.1` audit/approach commit in progress.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
