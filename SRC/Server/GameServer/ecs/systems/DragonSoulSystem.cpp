@@ -59,7 +59,7 @@ void Initialize(entt::entity owner)
     {
         LPITEM item = ch->GetItem(TItemPos(INVENTORY, i));
         if (item)
-            item->SetSocket(ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
+            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
     }
 
     state->activeDeck = -1;
