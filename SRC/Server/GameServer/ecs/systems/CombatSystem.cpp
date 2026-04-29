@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 
 #include "CombatSystem.hpp"
 
@@ -1258,7 +1259,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	if (test_server)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(to), CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
-	to->PointChange(POINT_EXP, iExp, true);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(to), POINT_EXP, iExp, true);
 	from->CreateFly(FLY_EXP, to);
 	// marriage
 	{
@@ -1410,7 +1411,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 #endif
 
-	to->PointChange(POINT_EXP, iExp, true);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(to), POINT_EXP, iExp, true);
 	from->CreateFly(FLY_EXP, to);
 
 	{
@@ -1898,7 +1899,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 			if (betMoneyDead > 0 && betMoneyKiller > 0)
 			{
-				pkKiller->PointChange(POINT_GOLD, betMoneyDead * 2, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_GOLD, betMoneyDead * 2, true);
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
 #endif
@@ -2033,7 +2034,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), pkKiller->GetPoint(POINT_EMPIRE_POINT));
 
 				PointChange(POINT_EMPIRE_POINT, -(iEP / 10));
-				pkKiller->PointChange(POINT_EMPIRE_POINT, iEP / 5);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_EMPIRE_POINT, iEP / 5);
 
 
 				char buf[256];
@@ -2616,7 +2617,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 				else
 					CreateFly(FLY_SP_SMALL, pkKiller);
 
-				pkKiller->PointChange(POINT_SP, iAmount);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
 			}
 		}
 	}
@@ -2634,7 +2635,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 				iAmount = 10 + GetMaxSP() * 3 / 100; // 
 
 			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
-			pkKiller->PointChange(POINT_SP, iAmount);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
 		}
 		else
 		{
@@ -2654,7 +2655,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			}
 
 			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
-			pkKiller->PointChange(POINT_SP, iAmount);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
 		}
 	}
 }
@@ -3554,14 +3555,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			if (pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY))
 			{
 				int iHP = pkAttacker->GetMaxHP() * pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY) / 100;
-				pkAttacker->PointChange(POINT_HP, iHP);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_HP, iHP);
 				CreateFly(FLY_HP_SMALL, pkAttacker);
 			}
 
 			if (pkAttacker->GetPoint(POINT_KILL_SP_RECOVER))
 			{
 				int iSP = pkAttacker->GetMaxSP() * pkAttacker->GetPoint(POINT_KILL_SP_RECOVER) / 100;
-				pkAttacker->PointChange(POINT_SP, iSP);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_SP, iSP);
 				CreateFly(FLY_SP_SMALL, pkAttacker);
 			}
 		}
@@ -4210,7 +4211,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					gold += (gold * pkAttacker->GetPoint(POINT_MALL_GOLDBONUS) / 100);
 				}
 
-				pkAttacker->PointChange(POINT_GOLD, gold, true);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_GOLD, gold, true);
 			}
 		}
 		else {
@@ -4836,7 +4837,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < pAttacker->GetMaxHP()) && (GetHP() > 0) && (iHP > 0)) {
 						CreateFly(FLY_HP_MEDIUM, pAttacker);
-						pAttacker->PointChange(POINT_HP, iHP);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = GetRaceNum();
 						if (
@@ -4874,7 +4875,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < pAttacker->GetMaxSP()) && (GetSP() > 0) && (iSP > 0))
 						{
 							CreateFly(FLY_SP_MEDIUM, pAttacker);
-							pAttacker->PointChange(POINT_SP, iSP);
+							ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSP);
 							PointChange(POINT_SP, -iSP);
 						}
 					}
@@ -4893,7 +4894,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
 						CreateFly(FLY_HP_SMALL, pAttacker);
-						pAttacker->PointChange(POINT_HP, iHP);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
 #if defined(ENABLE_DS_RUNE)
@@ -4940,7 +4941,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					if (iSP > 0 && iCur >= iSP)
 					{
 						CreateFly(FLY_SP_SMALL, pAttacker);
-						pAttacker->PointChange(POINT_SP, iSP);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSP);
 
 						if (IsPC())
 							PointChange(POINT_SP, -iSP);
@@ -4955,7 +4956,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				if (number(1, 100) <= pAttacker->GetPoint(POINT_STEAL_GOLD))
 				{
 					int iAmount = number(1, GetLevel());
-					pAttacker->PointChange(POINT_GOLD, iAmount);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_GOLD, iAmount);
 					DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 1, iAmount);
 				}
 			}
@@ -4967,7 +4968,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					int iHPAbso = std::min(dam, GetHP()) * pAttacker->GetPoint(POINT_HIT_HP_RECOVERY) / 100;
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < pAttacker->GetMaxHP()) && (GetHP() > 0) && (iHPAbso > 0)) {
 						CreateFly(FLY_HP_SMALL, pAttacker);
-						pAttacker->PointChange(POINT_HP, iHPAbso);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHPAbso);
 					}
 				}
 			}
@@ -4978,7 +4979,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					int64_t iSPAbso = std::min(dam, GetSP()) * pAttacker->GetPoint(POINT_HIT_SP_RECOVERY) / 100;
 					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < pAttacker->GetMaxSP()) && (GetSP() > 0) && (iSPAbso > 0)) {
 						CreateFly(FLY_SP_SMALL, pAttacker);
-						pAttacker->PointChange(POINT_SP, iSPAbso);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSPAbso);
 					}
 				}
 			}
@@ -4991,7 +4992,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				if (i)
 				{
 					CreateFly(FLY_HP_SMALL, pAttacker);
-					pAttacker->PointChange(POINT_HP, i);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, i);
 				}
 			}
 
@@ -5003,7 +5004,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				if (i)
 				{
 					CreateFly(FLY_SP_SMALL, pAttacker);
-					pAttacker->PointChange(POINT_SP, i);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, i);
 				}
 			}
 #endif
@@ -5138,11 +5139,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				int iDrain = GetMonsterDrainSPPoint();
 
 				if (iDrain <= pAttacker->GetSP())
-					pAttacker->PointChange(POINT_SP, -iDrain);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, -iDrain);
 				else
 				{
 					int iSP = pAttacker->GetSP();
-					pAttacker->PointChange(POINT_SP, -iSP);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, -iSP);
 				}
 			}
 
@@ -6001,7 +6002,7 @@ public:
 						if (m_me->GetSP() < 5)
 							return;
 
-						m_me->PointChange(POINT_SP, -5);
+						ecs::PointSystem::Change(AIHelpers::EcsOf(m_me), POINT_SP, -5);
 					}
 
 				iDam = CalcArrowDamage(m_me, pkVictim, pkBow, pkArrow);
