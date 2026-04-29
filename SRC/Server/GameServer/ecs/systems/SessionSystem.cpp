@@ -1197,7 +1197,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
                 continue;
             }
 
-            item->SetSkipSave(true);
+            ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
@@ -1206,7 +1206,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
                     EntityFactory::CreateItemEntity(g_registry, item),
                     "SAFEBOX_LOAD_ADD_FAILED");
             else
-                item->SetSkipSave(false);
+                ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
         }
     }
 }
@@ -1299,7 +1299,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
                 continue;
             }
 
-            item->SetSkipSave(true);
+            ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
@@ -1308,7 +1308,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
                     EntityFactory::CreateItemEntity(g_registry, item),
                     "MALL_LOAD_ADD_FAILED");
             else
-                item->SetSkipSave(false);
+                ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
         }
     }
 }
