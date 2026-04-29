@@ -188,12 +188,11 @@ namespace
             item->SetOwnership(owner, 60 * 3);
     }
 
-    bool ConsumeOneGivenItem(LPITEM item, const char* reason)
+    bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)
     {
-        if (!item)
+        if (itemEntity == entt::null)
             return false;
 
-        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
         if (ItemSystem::GetItemCount(itemEntity) > 1)
         {
             ItemSystem::ConsumeItemEcs(itemEntity);
@@ -1706,7 +1705,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
             return true;
         }
 
-        ConsumeOneGivenItem(item, "LOSTCASTLE_KEY");
+        ConsumeOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "LOSTCASTLE_KEY");
         mask |= bit;
         d->SetFlag(kFlagKeyMask, mask);
 
@@ -1741,7 +1740,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kTileItemVnum)
             return false;
 
-        ConsumeOneGivenItem(item, "LOSTCASTLE_TILE");
+        ConsumeOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "LOSTCASTLE_TILE");
 
         if (!s_lc.UnlockNextTile(idx))
             ecs::ChatSystem::Send(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
@@ -1788,4 +1787,3 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     // Clone -> Clone tiltás
     return false;
 }
-

@@ -283,11 +283,10 @@ namespace
         });
     }
 
-    void RemoveOneGivenItem(LPITEM item, const char* why)
+    void RemoveOneGivenItem(entt::entity itemEntity, const char* why)
     {
-        if (!item)
+        if (itemEntity == entt::null)
             return;
-        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
         if (ItemSystem::GetItemCount(itemEntity) > 1)
             ItemSystem::ConsumeItemEcs(itemEntity);
         else
@@ -1098,7 +1097,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Angel statue
     if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
     {
-        RemoveOneGivenItem(item, "HALLOWEEN22_STATUE");
+        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_STATUE");
         d->SetFlag(kFlagCanDestroyStatue, 0);
         d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
         M2_DESTROY_CHARACTER(npc);
@@ -1127,7 +1126,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Small seal -> starts wave 1
     if (floor == 1 && npcVnum == kSealSmallNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(item, "HALLOWEEN22_SEAL_SMALL");
+        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_SMALL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagFloor1Monsters, 1);
@@ -1141,7 +1140,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Middle seal -> spawn boss again
     if (floor == 1 && npcVnum == kSealMiddleNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(item, "HALLOWEEN22_SEAL_MIDDLE");
+        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_MIDDLE");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagKillFirstBoss, 1);
@@ -1154,7 +1153,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Full seal -> transition to floor 2
     if (floor == 1 && npcVnum == kSealFullNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(item, "HALLOWEEN22_SEAL_FULL");
+        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_FULL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagFloor, 2);
         d->KillAll();
@@ -1182,7 +1181,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Empty calyx -> floor 2 progression
     if (floor == 2 && npcVnum == kCalyxEmptyNpc && d->GetFlag(kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
     {
-        RemoveOneGivenItem(item, "HALLOWEEN22_CALYX");
+        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_CALYX");
         d->SetFlag(kFlagCanFillCalyx, 0);
         d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, npc);
