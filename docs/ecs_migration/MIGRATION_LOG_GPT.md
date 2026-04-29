@@ -6128,11 +6128,12 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 ```
 - Build passed after each implemented group.
 - `GameServer.exe` linked successfully.
-- Existing post-build message remained:
+- Earlier batch builds still showed the existing post-build message:
 ```text
 'pwsh.exe' is not recognized as an internal or external command
 ```
   but build exit code was `0`.
+- The final build completed without that post-build message.
 
 Known warnings:
 - Existing C4805/C4804/C4244 warnings remain in unrelated legacy areas.
@@ -8080,3 +8081,167 @@ Manual WinTest checklist:
 
 Commit status:
 - Not committed. User requested review before commit.
+
+## Phase 15E-47 state mutation accessor migration
+
+Date: 2026-04-29
+
+Mode:
+- Entity-first CItem state setter migration.
+- Public ECS API remains pointer-clean.
+
+Goal:
+- Move caller-side CItem state mutation calls behind `ecs::ItemSystem` entity APIs.
+- Leave only core item-manager initialization, comments, and non-CItem false positives outside the legacy bridge.
+
+New / extended ECS APIs:
+```cpp
+bool SetItemExchanging(entt::entity item, bool flag);
+bool LockItem(entt::entity item, bool locked = true);
+bool UnlockItem(entt::entity item);
+bool SetItemSkipSave(entt::entity item, bool flag);
+bool SetItemWindow(entt::entity item, uint8_t window);
+bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell);
+bool AlterItemToMagicItem(entt::entity item);
+```
+Existing ECS setter APIs reused:
+```cpp
+SetItemSocket
+SetItemForceAttributeEcs
+ClearItemAttributesEcs
+SetItemAttributeEcs
+```
+
+Files changed:
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.hpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/SocialSystem.cpp`
+- `SRC/Server/GameServer/attr_transfer.cpp`
+- `SRC/Server/GameServer/blend_item.cpp`
+- `SRC/Server/GameServer/char_manager.cpp`
+- `SRC/Server/GameServer/cmd_general.cpp`
+- `SRC/Server/GameServer/cmd_gm.cpp`
+- `SRC/Server/GameServer/cuberenewal.cpp`
+- `SRC/Server/GameServer/db.cpp`
+- `SRC/Server/GameServer/DragonSoul.cpp`
+- `SRC/Server/GameServer/exchange.cpp`
+- `SRC/Server/GameServer/fishing.cpp`
+- `SRC/Server/GameServer/input_db.cpp`
+- `SRC/Server/GameServer/input_main.cpp`
+- `SRC/Server/GameServer/LostCastleDungeon.cpp`
+- `SRC/Server/GameServer/marriage.cpp`
+- `SRC/Server/GameServer/MountInventory.cpp`
+- `SRC/Server/GameServer/New_PetSystem.cpp`
+- `SRC/Server/GameServer/PetSystem.cpp`
+- `SRC/Server/GameServer/polymorph.cpp`
+- `SRC/Server/GameServer/questlua_pc.cpp`
+- `SRC/Server/GameServer/safebox.cpp`
+
+Initial setter audit, excluding ItemSystem internals and bridge:
+```text
+SetSocket:          76
+SetAttribute:        1
+SetForceAttribute:  85
+SetVnum:             0
+SetExchanging:       4
+Lock:               18
+Unlock:              0
+SetSkipSave:        17
+SetWindow:           3
+SetCell:             3
+SetOwner:            3
+StartUseDelay:       0
+SetCreator:          0
+AddProtoFlag:        0
+RemoveProtoFlag:     0
+Set6thAttribute:     0
+MoveItemSlot:        0
+AlterToMagicItem:    4
+AlterToSocketItem:   1
+```
+
+Final setter audit, excluding ItemSystem internals and bridge:
+```text
+SetSocket:          24
+SetAttribute:        1
+SetForceAttribute:   1
+SetVnum:             0
+SetExchanging:       0
+Lock:                1
+Unlock:              0
+SetSkipSave:         3
+SetWindow:           1
+SetCell:             0
+SetOwner:            3
+StartUseDelay:       0
+SetCreator:          0
+AddProtoFlag:        0
+RemoveProtoFlag:     0
+Set6thAttribute:     0
+MoveItemSlot:        0
+AlterToMagicItem:    2
+AlterToSocketItem:   1
+```
+
+Final remaining classification:
+- `item_manager.cpp`: core item creation / initialization / alter logic; intentionally left as legacy core boundary.
+- `sectree_manager.cpp`: `pSec->SetAttribute`, not CItem.
+- `new_offlineshop.cpp`: `CShopItem::SetWindow`, not CItem.
+- `PlayerRuntimeSystem.cpp`: safebox/shop owner setters, not CItem.
+- `guild.cpp`: commented land owner setter, not CItem.
+- `AffectSystem.cpp`: commented legacy item lock/socket lines.
+
+Migrated systems:
+- Quest reward item socket/attribute setup.
+- DragonSoul state socket and attribute writes through ECS wrappers.
+- Polymorph book socket state through ECS wrappers.
+- GM item socket/attribute commands.
+- Exchange lock state.
+- Safebox/mount inventory window/cell/skip-save state.
+- Pet summon item locking and pet item attribute setup.
+- Cube, blend, fishing, combat, session, input, DB restore and runtime setter paths.
+
+Build results:
+- Build passed after API addition.
+- Build passed after each file/batch migration.
+- Final build command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- `GameServer.exe` linked successfully.
+- Existing post-build message remained:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+  but build exit code was `0`.
+
+Header validation:
+```powershell
+Select-String -Path 'SRC/Server/GameServer/ecs/systems/ItemSystem.hpp' -Pattern 'LPITEM|LPCHARACTER|CHARACTER\s*\*'
+```
+- Result: no matches.
+
+Manual WinTest checklist:
+- Refine an item and verify socket/attribute state.
+- DragonSoul activate/deactivate and refine smoke test.
+- Polymorph book generate / practice / upgrade smoke test.
+- GM item socket/attribute commands.
+- Trade/exchange lock/unlock behavior.
+- Safebox deposit/withdraw/relog.
+- Mount inventory item move/relog.
+- Pet summon book and pet attribute setup.
+- Fishing rod/fish socket state.
+- Quest reward item with sockets/attributes.
+- Inventory open/relog.
+- Verify no duplicate/missing item, wrong socket, wrong attribute, wrong owner/window/cell.
+- Verify VID_DRIFT remains zero.
+
+Commit status:
+- Committed in multiple Phase 15E-47 commits; no squash.
