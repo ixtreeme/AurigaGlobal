@@ -26,6 +26,7 @@
 #include "../Registry.hpp"
 #include "../AIHelpers.hpp"
 #include "ItemSystem.hpp"
+#include "PointSystem.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -856,7 +857,7 @@ EVENTFUNC(recovery_event)
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-					ch->PointChange(POINT_HP, iAmount, false);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
 			}
@@ -882,7 +883,7 @@ EVENTFUNC(recovery_event)
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-					ch->PointChange(POINT_HP, iAmount, false);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
 			}
@@ -896,7 +897,7 @@ EVENTFUNC(recovery_event)
 			const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 			if (recoveryEntity != entt::null)
 				g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, static_cast<int32_t>(hpGain), 0 });
-			ch->PointChange(POINT_HP, hpGain);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, hpGain);
 		}
 
 		if (ch->GetHP() >= ch->GetMaxHP())
@@ -942,7 +943,7 @@ EVENTFUNC(recovery_event)
 		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 		if (recoveryEntity != entt::null)
 			g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-		ch->PointChange(POINT_HP, iAmount, false);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
 		return PASSES_PER_SEC(3);
 	}
 }

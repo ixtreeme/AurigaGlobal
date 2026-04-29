@@ -5,8 +5,10 @@
 #include <common/VnumHelper.h>
 
 #include "../EntityFactory.hpp"
+#include "../AIHelpers.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
+#include "PointSystem.hpp"
 
 #include "../../char.h"
 
@@ -722,9 +724,9 @@ void CHARACTER::ComputePoints()
 	if (IsPC())
 	{
 		if (this->GetHP() != iCurHP)
-			this->PointChange(POINT_HP, iCurHP - this->GetHP());
+			ecs::PointSystem::Change(AIHelpers::EcsOf(this), POINT_HP, iCurHP - this->GetHP());
 		if (this->GetSP() != iCurSP)
-			this->PointChange(POINT_SP, iCurSP - this->GetSP());
+			ecs::PointSystem::Change(AIHelpers::EcsOf(this), POINT_SP, iCurSP - this->GetSP());
 	}
 	//#ifdef ENABLE_FAKE_SHOP_HEADER
 	//	UpdateMountCountOverhead();

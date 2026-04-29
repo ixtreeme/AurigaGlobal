@@ -11,6 +11,7 @@
 #include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "ItemSystem.hpp"
+#include "PointSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -209,7 +210,7 @@ void BuyItems(entt::entity pc, int slot)
 
 	if (ch->GetGaya() >= ch->info_items[slot].value_2)
 	{
-		ch->PointChange(POINT_GAYA, -ch->info_items[slot].value_2);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, -ch->info_items[slot].value_2);
 		ch->AutoGiveItem(ch->info_items[slot].value_1, ch->info_items[slot].value_3);
 		MarkDirty(pc);
 	}
@@ -432,7 +433,7 @@ void CraftItems(entt::entity pc, int slot)
 #ifdef ENABLE_RANKING
 		ch->SetRankPoints(11, ch->GetRankPoints(11) + Point_Gaya);
 #endif
-		ch->PointChange(POINT_GAYA, Point_Gaya);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, Point_Gaya);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 526, "");
 #endif
@@ -444,7 +445,7 @@ void CraftItems(entt::entity pc, int slot)
 #endif
 
 	ch->RemoveSpecifyItem(ID_Glimmerstone, Count_Glimmerstone);
-	ch->PointChange(POINT_GOLD, -Cost_Gaya_Yang);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -Cost_Gaya_Yang);
 	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GayaCheck");
 	MarkDirty(pc);
