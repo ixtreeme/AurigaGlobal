@@ -244,7 +244,7 @@ void StopFishing(entt::entity fisher)
 
     LPITEM rod = ch->GetWear(WEAR_WEAPON);
     if (rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
-        rod->SetSocket(2, 0);
+        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2, 0);
 
     SyncLegacyFishing(ch, *state);
     MarkFishing(fisher, false);
@@ -327,7 +327,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
     {
         if (rod->GetRefinedVnum() > 0 && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) < ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2) && number(1, ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 1)) == 1)
         {
-            rod->SetSocket(0, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) + 1);
+            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) + 1);
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 283, "%d#%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2));
 #endif
@@ -340,7 +340,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
             }
         }
 
-        rod->SetSocket(2, 0);
+        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2, 0);
     }
 
     uint8_t chance = 0;
