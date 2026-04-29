@@ -11,6 +11,9 @@
 #include "questmanager.h"
 #ifdef ENABLE_NEW_USE_POTION
 #include "item.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "unique_item.h"
 #endif
 
@@ -701,8 +704,8 @@ namespace marriage
 				if (pAffect != nullptr) {
 					pkItem = p1->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {
-						pkItem->Lock(false);
-						pkItem->SetSocket(1, 0);
+						ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItem));
+						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
 					}
 
 					p1->RemoveAffect(dwAffect);
@@ -718,8 +721,8 @@ namespace marriage
 				if (pAffect != nullptr) {
 					pkItem = p2->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {
-						pkItem->Lock(false);
-						pkItem->SetSocket(1, 0);
+						ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItem));
+						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
 					}
 
 					p2->RemoveAffect(dwAffect);
