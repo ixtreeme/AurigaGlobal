@@ -8431,6 +8431,64 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 16-1 - spdlog + fmt Integration
+
+Mode:
+- Foundation-only logging modernization.
+- No call-site migration in this phase.
+- Existing `sys_log` / `sys_err` names and printf-style format strings remain compatible.
+
+Tooling/library decision:
+- Project C++ standard: C++23 (`CMAKE_CXX_STANDARD 23`).
+- `fmt` is still preferred over `std::format` because spdlog integrates with fmt directly and the transition layer needs stable printf-compatible formatting support.
+- Vendored header-only dependencies:
+  - `extern/fmt/include/fmt` from fmt 10.2.1.
+  - `extern/spdlog/include/spdlog` from spdlog 1.13.0.
+
+Files changed:
+- `SRC/Server/CMakeLists.txt`
+- `SRC/Server/Core/Logging.hpp`
+- `SRC/Server/Core/Logging.cpp`
+- `SRC/Server/Core/log.cpp`
+- `extern/fmt/include/fmt/*`
+- `extern/spdlog/include/spdlog/*`
+
+Implementation summary:
+- Added `logging::Init`, `logging::Shutdown`, `logging::GetLogger`, and `logging::GetErrorLogger`.
+- Added modern `LOG_TRACE`, `LOG_DEBUG`, `LOG_INFO`, `LOG_WARN`, and `LOG_ERROR` macros.
+- Configured async spdlog loggers with rotating file sinks:
+  - `./log/syslog.txt`
+  - `./log/syserr.txt`
+  - 50 MB per file, 10 rotated files.
+- Routed legacy `sys_log` through the async syslog logger.
+- Routed legacy `sys_err` / `_sys_err` through the async syserr logger and mirrored errors to syslog.
+- Kept legacy `PTS.txt` handling on the old `pt_log` path.
+- Avoided double-opening `syslog.txt` / `syserr.txt` with legacy `FILE*`; spdlog now owns those files.
+
+Build results:
+- Build passed after vendored dependency integration.
+- Build passed after adding the logging infrastructure.
+- Build passed after routing `sys_log` / `sys_err` through spdlog.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Server starts cleanly.
+- `./log/syslog.txt` and `./log/syserr.txt` are created.
+- Existing calls such as `sys_log(0, "user %s", name)` still format correctly.
+- Error entries flush promptly to `syserr.txt`.
+- File rotation works at the configured size threshold.
+- Shutdown flushes pending async log entries.
+- High-frequency logging does not block the game thread.
+
+Commit status:
+- `44e595c Phase 16-1.1: Integrate fmt + spdlog headers`
+- `1a77bb1 Phase 16-1.2: Add modern logging infrastructure`
+- `124ae3e Phase 16-1.3: Route sys_log sys_err through spdlog`
+- WinTest not run in this environment.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
