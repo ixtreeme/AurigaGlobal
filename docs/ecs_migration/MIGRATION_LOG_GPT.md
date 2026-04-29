@@ -8581,6 +8581,73 @@ Commit status:
 - `d33c38c Phase 16-2: Migrate logging format in CombatSystem.cpp`
 - WinTest not run in this environment.
 
+Batch 2 completed:
+- `questmanager.cpp`: 68 legacy log call sites migrated to `LOG_INFO` / `LOG_ERROR`.
+- `input_main.cpp`: 62 legacy log call sites migrated.
+- `item_manager_read_tables.cpp`: 49 legacy log call sites migrated.
+- `sectree_manager.cpp`: 49 legacy log call sites migrated.
+- `item_manager.cpp`: 48 legacy log call sites migrated.
+- `db.cpp`: 47 legacy log call sites migrated.
+
+Batch 2 gotchas:
+- `item_manager_read_tables.cpp` includes `dev_log.h`; `Core/Logging.hpp` must be included after it so the modern `LOG_*` macros win.
+- `sectree_manager.cpp` uses bitfield-like sectree coordinate members; fmt/spdlog needed explicit integer casts for those log arguments.
+- `db.cpp` had two legacy `sys_err(0, "...")` calls; these were normalized to `LOG_ERROR("...", ...)`.
+- `questlua_pc.cpp` and `questlua_dungeon.cpp` remain deferred because their local `sys_err` macro redirects to `QuestError`.
+
+Counts after Batch 2:
+```text
+Before Batch 2:
+GameServer sys_log: 807
+GameServer sys_err: 1067
+GameServer _sys_err: 2
+Total: 1876
+
+After Batch 2:
+GameServer sys_log: 631
+GameServer sys_err: 922
+GameServer _sys_err: 0
+Total: 1553
+
+Batch 2 reduction: 323
+Phase 16-2 cumulative reduction: 814
+```
+
+Remaining top files:
+```text
+87 questlua_pc.cpp
+80 questlua_dungeon.cpp
+43 questlua_global.cpp
+38 input_login.cpp
+38 dungeon.cpp
+36 guild.cpp
+35 char_manager.cpp
+34 main.cpp
+33 building.cpp
+33 questlua.cpp
+32 party.cpp
+32 questpc.cpp
+30 questnpc.cpp
+30 ecs/systems/PlayerRuntimeSystem.cpp
+29 guild_war.cpp
+```
+
+Build results:
+- Build passed after every Batch 2 migrated file.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Commit status:
+- `f884d6f Phase 16-2: Migrate logging format in questmanager.cpp`
+- `03f69dc Phase 16-2: Migrate logging format in input_main.cpp`
+- `aafd760 Phase 16-2: Migrate logging format in item_manager_read_tables.cpp`
+- `061cbc4 Phase 16-2: Migrate logging format in sectree_manager.cpp`
+- `1481d76 Phase 16-2: Migrate logging format in item_manager.cpp`
+- `4700a2c Phase 16-2: Migrate logging format in db.cpp`
+- WinTest not run in this environment.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
