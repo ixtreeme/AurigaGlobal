@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "PointSystem.hpp"
 
 #include "../../utils.h"
 #include "../../vector.h"
@@ -2450,13 +2451,13 @@ struct FuncSplashDamage
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_HP_ABSORB))
 		{
 			int iPct = (int) m_pkSk->kPointPoly2.Eval();
-			m_pkChr->PointChange(POINT_HP, iDam * iPct / 100);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkChr), POINT_HP, iDam * iPct / 100);
 		}
 
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_SP_ABSORB))
 		{
 			int iPct = (int) m_pkSk->kPointPoly2.Eval();
-			m_pkChr->PointChange(POINT_SP, iDam * iPct / 100);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkChr), POINT_SP, iDam * iPct / 100);
 		}
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN && m_pkChr->GetChainLightningIndex() < m_pkChr->GetChainLightningMaxCount())
@@ -3300,7 +3301,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				pkVictim->PointChange(pkSk->bPointOn2, iAmount2);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
 			}
 		}
 
@@ -3330,7 +3331,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				pkVictim->PointChange(pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn3, iAmount3);
 			}
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
@@ -3389,7 +3390,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				}
 				else
 				{
-					pkVictim->PointChange(pkSk->bPointOn2, iAmount2);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
 				}
 
 				uint32_t affact_flag = pkSk->dwAffectFlag;
@@ -3433,7 +3434,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		else
 		{
 			if (!pkSk->IsChargeSkill())
-				pkVictim->PointChange(pkSk->bPointOn, iAmount);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn, iAmount);
 
 			if (pkSk->bPointOn2 != POINT_NONE)
 			{
@@ -3452,7 +3453,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				}
 				else
 				{
-					pkVictim->PointChange(pkSk->bPointOn2, iAmount2);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
 				}
 
 			}
@@ -3486,7 +3487,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				pkVictim->PointChange(pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn3, iAmount3);
 			}
 		}
 

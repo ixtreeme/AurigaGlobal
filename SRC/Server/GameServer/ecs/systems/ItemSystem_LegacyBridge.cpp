@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "ItemSystem.hpp"
+#include "PointSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../VIDRegistry.hpp"
 
@@ -3375,7 +3376,7 @@ namespace NPartyPickupDistribute
 			if (ch != c)
 				if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
 				{
-					ch->PointChange(POINT_GOLD, iMoney, true);
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iMoney, true);
 
 					if (iMoney > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 					{
@@ -16886,10 +16887,10 @@ void CItem::ClearMountAttributeAndAffect()
 
 	ch->MountVnum(0);
 
-	ch->PointChange(POINT_ST, 0);
-	ch->PointChange(POINT_DX, 0);
-	ch->PointChange(POINT_HT, 0);
-	ch->PointChange(POINT_IQ, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
 }
 
 int32_t CItem::FindApplyValue(uint8_t bApplyType)
