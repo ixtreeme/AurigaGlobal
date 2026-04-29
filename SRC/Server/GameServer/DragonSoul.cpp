@@ -991,13 +991,13 @@ bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGO
 }
 
 
-bool IsDragonSoulRefineMaterial(LPITEM pItem)
+bool IsDragonSoulRefineMaterial(entt::entity item)
 {
-	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) != ITEM_MATERIAL)
+	if (ItemSystem::GetItemType(item) != ITEM_MATERIAL)
 		return false;
-	return (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_NORMAL ||
-		ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_BLESSED ||
-		ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == MATERIAL_DS_REFINE_HOLLY);
+	return (ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_NORMAL ||
+		ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_BLESSED ||
+		ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_HOLLY);
 }
 
 bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
@@ -1054,7 +1054,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 			}
 			pDragonSoul = pItem;
 		}
-		else if(IsDragonSoulRefineMaterial(pItem))
+		else if(IsDragonSoulRefineMaterial(EntityFactory::CreateItemEntity(g_registry, pItem)))
 		{
 			if (pRefineStone != nullptr)
 			{
