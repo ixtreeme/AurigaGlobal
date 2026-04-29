@@ -2400,9 +2400,9 @@ void CHARACTER::EditMyInven()
         if (quick.type == QUICKSLOT_TYPE_ITEM)
             vecItemQuickslot.push_back(&quick);
 
-    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](LPITEM pItemLocal)
+    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](entt::entity itemEntity)
         {
-            auto iter = mapOldPosition.find(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItemLocal)));
+            auto iter = mapOldPosition.find(ItemSystem::GetItemID(itemEntity));
             if (iter == mapOldPosition.end())
                 return (TQuickslot*)nullptr;
 
@@ -2426,7 +2426,7 @@ void CHARACTER::EditMyInven()
         LPITEM item = *(it++);
         if (item)
         {
-            TQuickslot* pQuickSlot = lambdaChecker(item);
+            TQuickslot* pQuickSlot = lambdaChecker(EntityFactory::CreateItemEntity(g_registry, item));
             bool isQuickSlotItem = pQuickSlot != nullptr;
 
             LPITEM newItem = item;
@@ -2521,9 +2521,9 @@ void CHARACTER::EditMyExtraInven()
         if (quick.type == QUICKSLOT_TYPE_ITEM)
             vecItemQuickslot.push_back(&quick);
 
-    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](LPITEM pItemLocal)
+    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](entt::entity itemEntity)
         {
-            auto iter = mapOldPosition.find(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItemLocal)));
+            auto iter = mapOldPosition.find(ItemSystem::GetItemID(itemEntity));
             if (iter == mapOldPosition.end())
                 return (TQuickslot*)nullptr;
 
@@ -2547,7 +2547,7 @@ void CHARACTER::EditMyExtraInven()
         LPITEM item = *(it++);
         if (item)
         {
-            TQuickslot* pQuickSlot = lambdaChecker(item);
+            TQuickslot* pQuickSlot = lambdaChecker(EntityFactory::CreateItemEntity(g_registry, item));
             bool isQuickSlotItem = pQuickSlot != nullptr;
 
             LPITEM newItem = item;
@@ -5150,6 +5150,5 @@ EVENTFUNC(drop_event)
     return PASSES_PER_SEC(1);
 }
 #endif
-
 
 
