@@ -12,14 +12,17 @@
 #include <cstring>
 namespace
 {
-    bool StartMountExpireIfNeeded(LPITEM item)
+    bool StartMountExpireIfNeeded(entt::entity itemEntity)
     {
-        if (!item)
+        if (itemEntity == entt::null)
             return false;
 
-        const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
         const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
         if (!itemProto)
+            return false;
+
+        LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
+        if (!item)
             return false;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -104,7 +107,7 @@ bool CMountInventory::Add(uint32_t pos, LPITEM item, bool skipSave)
     m_grid->Put(pos, 1, item->GetSize());
     m_items[pos] = item;
 
-    const bool bExpireStateChanged = StartMountExpireIfNeeded(item);
+    const bool bExpireStateChanged = StartMountExpireIfNeeded(itemEntity);
 
     if (!skipSave || bExpireStateChanged)
         SaveItem(pos, item);
