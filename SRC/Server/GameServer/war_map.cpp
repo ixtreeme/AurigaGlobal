@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -158,10 +159,10 @@ CWarMap::~CWarMap()
 	{
 		LPCHARACTER ch = *(it++);
 
-		if (ch->GetDesc())
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		{
 			sys_log(0, "WarMap::~WarMap : disconnecting %s", ch->GetName());
-			DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+			DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 		}
 	}
 
@@ -405,7 +406,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 	m_set_pkChr.insert(ch);
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	SendWarPacket(d);
 	SendScorePacket(0, d);
@@ -602,7 +603,7 @@ namespace
 
 		void operator () (LPCHARACTER ch)
 		{
-			ch->GetDesc()->Packet(m_pvData, m_iSize);
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(m_pvData, m_iSize);
 		}
 
 		const void * m_pvData;

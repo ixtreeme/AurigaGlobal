@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -58,7 +59,7 @@ namespace marriage
 		p.header = HEADER_GC_LOVER_INFO;
 		strlcpy(p.name, lover_name.c_str(), sizeof(p.name));
 		p.love_point = love_point;
-		ch->GetDesc()->Packet(&p, sizeof(p));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 
 	TMarriage::~TMarriage()
@@ -285,7 +286,7 @@ namespace marriage
 			LPDESC d1, d2;
 			CCI * pkCCI;
 
-			d1 = ch1 ? ch1->GetDesc() : nullptr;
+			d1 = ch1 ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch1)) : nullptr;
 
 			if (!d1)
 			{
@@ -298,7 +299,7 @@ namespace marriage
 				}
 			}
 
-			d2 = ch2 ? ch2->GetDesc() : nullptr;
+			d2 = ch2 ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch2)) : nullptr;
 
 			if (!d2)
 			{
@@ -345,7 +346,7 @@ namespace marriage
 			LPDESC d1, d2;
 			CCI * pkCCI;
 
-			d1 = ch1 ? ch1->GetDesc() : nullptr;
+			d1 = ch1 ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch1)) : nullptr;
 
 			if (!d1)
 			{
@@ -362,7 +363,7 @@ namespace marriage
 				d1->ChatPacket(CHAT_TYPE_COMMAND, "lover_logout");
 			}
 
-			d2 = ch2 ? ch2->GetDesc() : nullptr;
+			d2 = ch2 ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch2)) : nullptr;
 
 			if (!d2)
 			{
@@ -413,8 +414,8 @@ namespace marriage
 			p.header = HEADER_GC_LOVE_POINT_UPDATE;
 			p.love_point = byLastLovePoint;
 
-			ch1->GetDesc()->Packet(&p, sizeof(p));
-			ch2->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch1))->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch2))->Packet(&p, sizeof(p));
 		}
 	}
 

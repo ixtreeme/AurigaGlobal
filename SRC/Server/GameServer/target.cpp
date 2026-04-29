@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
 #include "questmanager.h"
@@ -120,7 +122,7 @@ EVENTFUNC(target_event)
 	if (x != info->iOldX || y != info->iOldY)
 	{
 		if (info->bSendToClient)
-			SendTargetUpdatePacket(pkChr->GetDesc(), info->iID, x, y);
+			SendTargetUpdatePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), info->iID, x, y);
 
 		info->iOldX = x;
 		info->iOldY = y;
@@ -178,7 +180,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 				sys_log(0, "CreateTarget : same target will be replaced");
 
 				if (existInfo->bSendToClient)
-					SendTargetDeletePacket(pkChr->GetDesc(), existInfo->iID);
+					SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), existInfo->iID);
 
 				if (c_pszTargetDesc)
 				{
@@ -197,7 +199,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 				existInfo->iOldY = 0;
 				existInfo->bSendToClient = iSendFlag ? true : false;
 
-				SendTargetCreatePacket(pkChr->GetDesc(), existInfo);
+				SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), existInfo);
 				return;
 			}
 		}
@@ -234,7 +236,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 	{
 		m_map_kListEvent[dwPID].push_back(event);
 
-		SendTargetCreatePacket(pkChr->GetDesc(), newInfo);
+		SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), newInfo);
 	}
 }
 
@@ -265,10 +267,10 @@ void CTargetManager::DeleteTarget(uint32_t dwPID, uint32_t dwQuestIndex, const c
 			{
 				if (info->bSendToClient) {
 					// <Factor> Removed pkChr
-					//SendTargetDeletePacket(info->pkChr->GetDesc(), info->iID);
+					// SendTargetDeletePacket for info->pkChr was replaced with PlayerRuntime::GetDesc.
 					LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(info->dwPID);
 					if (pkChr != nullptr) {
-						SendTargetDeletePacket(pkChr->GetDesc(), info->iID);
+						SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), info->iID);
 					}
 				}
 

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "item.h"
 #include "item_manager.h"
@@ -564,7 +565,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 			
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
 #endif
 			pItem->AddToCharacter(ch, DestCell);
 			return true;
@@ -591,7 +592,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 				LPITEM pByProduct = ch->AutoGiveItem(dwByProduct);
 #ifdef TEXTS_IMPROVEMENT
 				if (pByProduct) {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
 				} else {
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 536, "");
 				}
@@ -1496,7 +1497,7 @@ void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const
 	{
 		pack.Pos = pos;
 	}
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (nullptr == d)
 	{
 		return ;

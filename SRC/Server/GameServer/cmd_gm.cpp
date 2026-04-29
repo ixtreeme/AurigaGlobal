@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -155,7 +156,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //        return;
 //    }
 //
-//    if (!source->GetDesc() || !target->GetDesc())
+//    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(source)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(target)))
 //    {
 //        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A celpont nem elerheto.");
 //        return;
@@ -3169,7 +3170,7 @@ ACMD(do_vote_block_chat)
 
 			strlcpy(p.szName, name, sizeof(p.szName));
 			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle() : 0, &p, sizeof(p));
 
 		}
 
@@ -3235,7 +3236,7 @@ ACMD(do_block_chat)
 
 			strlcpy(p.szName, name, sizeof(p.szName));
 			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ch->GetDesc()->GetHandle() : 0, &p, sizeof(p));
+			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle() : 0, &p, sizeof(p));
 		}
 
 #ifdef TEXTS_IMPROVEMENT

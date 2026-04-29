@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -613,7 +615,7 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	}
 	t.count = (uint32_t)item->GetCount();
 	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? item->GetOwner()->GetDesc()->GetAccountTable().id : item->GetOwner()->GetPlayerID();
+	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(item->GetOwner()))->GetAccountTable().id : item->GetOwner()->GetPlayerID();
 	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
 	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
 

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "ItemSystem.hpp"
 #include "../EntityFactory.hpp"
@@ -699,7 +700,7 @@ entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell)
 void SyncExtraInventoryAll(entt::entity e)
 {
     auto* ch = LegacyCharOf(e);
-    if (!ch || !ch->GetDesc())
+    if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
         return;
 
     if (e == entt::null || !g_registry.valid(e))
@@ -731,7 +732,7 @@ void SyncExtraInventoryAll(entt::entity e)
             memcpy(packet.alSockets, item->GetSockets(), sizeof(packet.alSockets));
             memcpy(packet.aAttr, item->GetAttributes(), sizeof(packet.aAttr));
 
-            ch->GetDesc()->Packet(&packet, sizeof(packet));
+            ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&packet, sizeof(packet));
         }
         else
         {
@@ -744,7 +745,7 @@ void SyncExtraInventoryAll(entt::entity e)
 #endif
             packet.vnum = 0;
 
-            ch->GetDesc()->Packet(&packet, sizeof(packet));
+            ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&packet, sizeof(packet));
         }
     }
 }
@@ -1127,7 +1128,7 @@ static void SendAutoGiveMessage(entt::entity owner, uint32_t count, LPITEM item)
                              CHAT_TYPE_INFO
 #endif
                              , 102, "%d#%s", count,
-                             item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0));
+                             item->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
 #else
     (void)count;
 #endif

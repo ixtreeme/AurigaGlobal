@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -158,11 +159,11 @@ namespace quest
         {
             sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
 
-            if (ch->GetDesc())
+            if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
             {
                 sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
-                ch->GetDesc()->BufferedPacket(&pack, sizeof(struct packet_script));
-                ch->GetDesc()->Packet(data.c_str(),data.size());
+                ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(struct packet_script));
+                ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data.c_str(),data.size());
             }
         }
     };
@@ -209,11 +210,11 @@ namespace quest
 		{
 			sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
 
-			if (ch->GetDesc())
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
 				sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
-				ch->GetDesc()->BufferedPacket(&packet_script, sizeof(struct packet_script));
-				ch->GetDesc()->Packet(str,len);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet_script, sizeof(struct packet_script));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(str,len);
 			}
 		}
 	};

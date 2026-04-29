@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 
 #include "ItemSystem.hpp"
@@ -726,7 +727,7 @@ const char* CItem::GetName(uint8_t Lang)
 
 		if (m_pOwner)
 		{
-			if (LPDESC d = m_pOwner->GetDesc())
+			if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner)))
 			{
 				const uint8_t dlang = d->GetLanguage();
 				if (dlang != 0)
@@ -1256,9 +1257,9 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 		const char * pszIP = nullptr;
 
-		if (GetOwner() && GetOwner()->GetDesc())
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
 
-			pszIP = GetOwner()->GetDesc()->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
 
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
 
@@ -1292,9 +1293,9 @@ void CItem::SetAttribute2(int i, uint8_t bType, short sValue)
 
 
 
-		if (GetOwner() && GetOwner()->GetDesc())
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
 
-			pszIP = GetOwner()->GetDesc()->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
 
 
 
@@ -1330,9 +1331,9 @@ void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
 
 
 
-		if (GetOwner() && GetOwner()->GetDesc())
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
 
-			pszIP = GetOwner()->GetDesc()->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
 
 
 
@@ -1697,7 +1698,7 @@ bool CItem::ChangeRareAttribute()
 
 	SyncItemAttributesComponent(this);
 
-	if (GetOwner() && GetOwner()->GetDesc())
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(GetOwner(), this, "SET_RARE_CHANGE", ""))
 	else
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(0, 0, 0, GetID(), "SET_RARE_CHANGE", "", "", GetOriginalVnum()))
@@ -1755,8 +1756,8 @@ bool CItem::AddRareAttribute()
 
 	const char * pszIP = nullptr;
 
-	if (GetOwner() && GetOwner()->GetDesc())
-		pszIP = GetOwner()->GetDesc()->GetHostName();
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+		pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
 
 	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(pos, attr.bType, attr.sValue, GetID(), "SET_RARE", "", pszIP ? pszIP : "", GetOriginalVnum()));
 	return true;
@@ -4113,7 +4114,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					if (viewer == this)
 						continue;
 
-					if (viewer->IsPC() && viewer->GetDesc())
+					if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
 						UpdateMountInventoryCountOverhead(viewer);
 				}
 #endif
@@ -16686,8 +16687,8 @@ void CItem::AttrLog()
 {
 	const char* pszIP = nullptr;
 
-	if (GetOwner() && GetOwner()->GetDesc())
-		pszIP = GetOwner()->GetDesc()->GetHostName();
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+		pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
 
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
@@ -17565,7 +17566,7 @@ EVENTFUNC(real_time_expire_event)
 	{
 		auto* pkOwner = item->GetOwner();
 
-		if (pkOwner && pkOwner->GetDesc() && item->GetWindow() == MOUNT_INVENTORY)
+		if (pkOwner && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner)) && item->GetWindow() == MOUNT_INVENTORY)
 		{
 			TPacketGCWhisper pack;
 			char msg[CHAT_MAX_LEN + 1];
@@ -17577,8 +17578,8 @@ EVENTFUNC(real_time_expire_event)
 			pack.wSize = static_cast<uint16_t>(sizeof(TPacketGCWhisper) + len + 1);
 			strlcpy(pack.szNameFrom, "[MountInventory]", sizeof(pack.szNameFrom));
 
-			pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
-			pkOwner->GetDesc()->Packet(msg, len + 1);
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->BufferedPacket(&pack, sizeof(pack));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->Packet(msg, len + 1);
 		}
 
 		if (item->IsNewMountItem()) {

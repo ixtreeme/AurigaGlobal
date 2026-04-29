@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -115,9 +116,9 @@ bool CShopEx::AddGuest(LPCHARACTER ch,uint32_t owner_vid, bool bOtherEmpire)
 
 	pack.size = sizeof(pack) + sizeof(pack2) + size;
 
-	ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
-	ch->GetDesc()->BufferedPacket(&pack2, sizeof(TPacketGCShopStartEx));
-	ch->GetDesc()->Packet(temp, size);
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(TPacketGCShop));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack2, sizeof(TPacketGCShopStartEx));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(temp, size);
 
 	return true;
 }

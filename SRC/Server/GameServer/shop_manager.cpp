@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -268,7 +269,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 		pack.subheader	= ret;
 		pack.size	= sizeof(TPacketGCShop);
 
-		ch->GetDesc()->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 	}
 }
 
@@ -305,7 +306,7 @@ void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 		pack.subheader = ret;
 		pack.size = sizeof(TPacketGCShop);
 
-		ch->GetDesc()->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 	}
 }
 #endif

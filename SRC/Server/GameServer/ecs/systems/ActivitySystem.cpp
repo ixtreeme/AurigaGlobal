@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "ActivitySystem.hpp"
 #include "ItemSystem.hpp"
@@ -113,7 +114,7 @@ EVENTFUNC(ecs_fishing_event)
 #ifdef TEXTS_IMPROVEMENT
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
-            if (LPDESC d = ch->GetDesc())
+            if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
                 lang = d->GetLanguage();
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName[lang]);
 #else
@@ -483,7 +484,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
         {
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
-            if (LPDESC d = ch->GetDesc())
+            if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
                 lang = d->GetLanguage();
 
             TItemTable* pTable = ITEM_MANAGER::instance().GetTable(itemVnum);

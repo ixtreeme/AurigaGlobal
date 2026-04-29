@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -152,7 +153,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 			pInfo.race = m_pkChrTarget->GetRaceNum();
 			pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 			pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-			ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
 		}
 		else
 		{
@@ -171,7 +172,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 					pInfo.race = m_pkChrTarget->GetRaceNum();
 					pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 					pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-					ch->GetDesc()->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
 			}
 		}
 	}
@@ -254,12 +255,12 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 #endif
 	if (ch->GetLevel() < g_iSpamBlockMaxLevel)
 	{
-		auto it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+		auto it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
 
 		if (it == spam_score_of_ip.end())
 		{
-			spam_score_of_ip.insert(std::make_pair(ch->GetDesc()->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
-			it = spam_score_of_ip.find(ch->GetDesc()->GetHostName());
+			spam_score_of_ip.insert(std::make_pair(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
+			it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
 		}
 
 		if (it->second.second)
@@ -279,7 +280,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 		if (it->second.first >= g_uiSpamBlockScore)
 		{
 			spam_event_info* info = AllocEventInfo<spam_event_info>();
-			strlcpy(info->host, ch->GetDesc()->GetHostName(), sizeof(info->host));
+			strlcpy(info->host, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), sizeof(info->host));
 
 			it->second.second = event_create(block_chat_by_ip_event, info, PASSES_PER_SEC(g_uiSpamBlockDuration));
 			sys_log(0, "SPAM_IP: %s for %u seconds", info->host, g_uiSpamBlockDuration);
@@ -421,7 +422,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (iExtraLen < 0)
 	{
 		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->wSize, uiBytes);
-		ch->GetDesc()->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
@@ -452,14 +453,14 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 
 	if (ch->IsBlockMode(BLOCK_WHISPER))
 	{
-		if (ch->GetDesc())
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		{
 			TPacketGCWhisper pack;
 			pack.bHeader = HEADER_GC_WHISPER;
 			pack.bType = WHISPER_TYPE_SENDER_BLOCKED;
 			pack.wSize = sizeof(TPacketGCWhisper);
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-			ch->GetDesc()->Packet(&pack, sizeof(pack));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 		}
 		
 		return iExtraLen;
@@ -481,13 +482,13 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	}
 	else
 	{
-		pkDesc = pkChr->GetDesc();
+		pkDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr));
 		bOpponentEmpire = pkChr->GetEmpire();
 	}
 
 	if (!pkDesc)
 	{
-		if (ch->GetDesc())
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		{
 #if defined(BL_OFFLINE_MESSAGE)
 			const uint8_t bDelay = 10;
@@ -505,7 +506,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 					TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
 					if (pTable) {
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+						int Lang = ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0;
 #endif
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 823, "%s",
@@ -544,7 +545,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			TEMP_BUFFER buf;
 			buf.write(&pack, sizeof(TPacketGCWhisper));
 			buf.write(msg, len);
-			ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 
 #else
 			TPacketGCWhisper pack;
@@ -552,7 +553,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			pack.bType = WHISPER_TYPE_NOT_EXIST;
 			pack.wSize = sizeof(TPacketGCWhisper);
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-			ch->GetDesc()->Packet(&pack, sizeof(TPacketGCWhisper));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(TPacketGCWhisper));
 			sys_log(0, "WHISPER: no player");
 #endif
 		}
@@ -561,26 +562,26 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	{
 		if (ch->IsBlockMode(BLOCK_WHISPER))
 		{
-			if (ch->GetDesc())
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
 				TPacketGCWhisper pack;
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.bType = WHISPER_TYPE_SENDER_BLOCKED;
 				pack.wSize = sizeof(TPacketGCWhisper);
 				strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-				ch->GetDesc()->Packet(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 			}
 		}
 		else if (pkChr && pkChr->IsBlockMode(BLOCK_WHISPER))
 		{
-			if (ch->GetDesc())
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
 				TPacketGCWhisper pack;
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.bType = WHISPER_TYPE_TARGET_BLOCKED;
 				pack.wSize = sizeof(TPacketGCWhisper);
 				strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-				ch->GetDesc()->Packet(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 			}
 		}
 		else
@@ -628,14 +629,14 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			int processReturn = ProcessTextTag(ch, buf, buflen);
 			if (0!=processReturn)
 			{
-				if (ch->GetDesc())
+				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				{
 					TItemTable * pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
 
 					if (pTable)
 					{
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+						int Lang = ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0;
 #endif
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES
@@ -679,7 +680,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
-					LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+					LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 				}
 #endif
 			}
@@ -703,10 +704,10 @@ struct RawPacketToCharacterFunc
 
 	void operator () (LPCHARACTER c)
 	{
-		if (!c->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(c)))
 			return;
 
-		c->GetDesc()->Packet(m_buf, m_buf_len);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(c))->Packet(m_buf, m_buf_len);
 	}
 };
 
@@ -828,7 +829,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate BraveRequestPetName handler ECS
 // DUAL-PATH: legacy only during migration window
-	if (!ch->GetDesc()) { return; }
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) { return; }
 	int vid = ch->GetEggVid();
 	if (vid == 0) { return; }
 
@@ -912,7 +913,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	if (iExtraLen < 0)
 	{
 		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->size, uiBytes);
-		ch->GetDesc()->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
@@ -1123,7 +1124,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 #ifdef ENABLE_MULTI_NAMES
 			int lang = 0;
 			if (ch) {
-				LPDESC desc = ch->GetDesc();
+				LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				lang = desc != nullptr ? desc->GetLanguage() : 0;
 			}
 #endif
@@ -1441,7 +1442,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, "", "NORMAL", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1467,7 +1468,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1487,7 +1488,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1744,7 +1745,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
 
-				LPDESC d = ch_companion->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch_companion));
 
 				if (!d)
 					return sizeof(TPacketCGMessengerAddByVID);
@@ -1757,7 +1758,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
 
-				if (ch->GetDesc() == d) // 자신은 추가할 수 없다.
+				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) == d) // 자신은 추가할 수 없다.
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				MessengerManager::instance().RequestToAdd(ch, ch_companion);
@@ -1862,7 +1863,7 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 			uint32_t dwPlayerId = ch->GetPlayerID();
 			uint8_t bIsGlobal = 0;
 			
-			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
 			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
 			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
 		}
@@ -2296,18 +2297,18 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 #endif
 
 		uint32_t dwCurTime = get_dword_time();
-		if (ch->GetDesc()) {
-			bool CheckSpeedHack = (false == ch->GetDesc()->IsHandshaking() && dwCurTime - ch->GetDesc()->GetClientTime() > 7000);
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
+			bool CheckSpeedHack = (false == ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->IsHandshaking() && dwCurTime - ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientTime() > 7000);
 			if (CheckSpeedHack)
 			{
 				int iDelta = (int)(dwCurTime - pinfo->dwTime);
-				int iServerDelta = (int)(dwCurTime - ch->GetDesc()->GetClientTime());
+				int iServerDelta = (int)(dwCurTime - ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientTime());
 				if (iDelta >= 30000) {
 					sys_log(0, "SPEEDHACK: slow timer name %s delta %d", ch->GetName(), iDelta);
-					ch->GetDesc()->DelayedDisconnect(3);
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				} else if (iDelta < -(iServerDelta / 50)) {
 					sys_log(0, "SPEEDHACK: DETECTED! %s (delta %d %d)", ch->GetName(), iDelta, iServerDelta);
-					ch->GetDesc()->DelayedDisconnect(3);
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				}
 			}
 
@@ -2319,7 +2320,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	}
 
 	// migrated from CHARACTER::Move
-	entt::entity e = (ch && ch->GetDesc()) ? ch->GetDesc()->GetEntity() : entt::null;
+	entt::entity e = (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetEntity() : entt::null;
 	if (e != entt::null && g_registry.valid(e))
 	{
 		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(pinfo->lX), static_cast<int32_t>(pinfo->lY));
@@ -2349,7 +2350,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 			if (!ch->IsUsableSkillMotion(motion))
 			{
-				ch->GetDesc()->DelayedDisconnect(number(150, 500));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(number(150, 500));
 			}
 
 			ch->OnMove();
@@ -2379,13 +2380,13 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 /*
 	if (pinfo->dwTime == 10653691) // 디버거 발견
 	{
-		if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(number(15, 30)))
 			LogManager::instance().HackLog("Debugger", ch);
 
 	}
 	else if (pinfo->dwTime == 10653971) // Softice 발견
 	{
-		if (ch->GetDesc()->DelayedDisconnect(number(15, 30)))
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(number(15, 30)))
 			LogManager::instance().HackLog("Softice", ch);
 	}
 */
@@ -2504,14 +2505,14 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	{
 		case HEADER_CG_ATTACK:
 			{
-				if (nullptr == ch->GetDesc())
+				if (nullptr == ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				{
 					return;
 				}
 
 				const TPacketCGAttack* const packMelee = reinterpret_cast<const TPacketCGAttack*>(data);
 
-				ch->GetDesc()->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
 
 				LPCHARACTER	victim = CHARACTER_MANAGER::instance().Find(packMelee->dwVID);
 
@@ -2537,7 +2538,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 				}
 
 				// migrated from CHARACTER::Attack
-				entt::entity attacker = (ch && ch->GetDesc()) ? ch->GetDesc()->GetEntity() : entt::null;
+				entt::entity attacker = (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetEntity() : entt::null;
 				entt::entity target = CVIDRegistry::Instance().Find(packMelee->dwVID);
 				if (attacker != entt::null && target != entt::null && g_registry.valid(attacker) && g_registry.valid(target))
 				{
@@ -2578,7 +2579,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	if (iExtraLen < 0)
 	{
 		sys_err("invalid packet length (len %d size %u buffer %u)", iExtraLen, pinfo->wSize, uiBytes);
-		ch->GetDesc()->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
@@ -2599,7 +2600,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	{
 		//LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 		sys_err( "Too many SyncPosition Count(%d) from Name(%s)", iCount, ch->GetName() );
-		//ch->GetDesc()->SetPhase(PHASE_CLOSE);
+		//ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		//return -1;
 		iCount = nCountLimit;
 	}
@@ -2649,7 +2650,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 					fDistWithSyncOwner, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(),
 					e->lX, e->lY );
 
-				ch->GetDesc()->SetPhase(PHASE_CLOSE);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
 				return -1;
 			}
@@ -2677,7 +2678,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 					tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, victim->GetName(), ch->GetName(), victim->GetX(), victim->GetY(),
 					e->lX, e->lY);
 
-				ch->GetDesc()->SetPhase(PHASE_CLOSE);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
 				return -1;
 			}
@@ -2690,7 +2691,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 				   	fDist, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(),
 				  e->lX, e->lY );
 
-			ch->GetDesc()->SetPhase(PHASE_CLOSE);
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
 			return -1;
 		} else{
@@ -2852,7 +2853,7 @@ void CInputMain::Target(LPCHARACTER ch, const char * pcData)
 		TPacketGCTarget pckTarget;
 		pckTarget.header = HEADER_GC_TARGET;
 		pckTarget.dwVID = p->dwVID;
-		ch->GetDesc()->Packet(&pckTarget, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pckTarget, sizeof(TPacketGCTarget));
 	}
 	else
 		ch->SetTarget(CHARACTER_MANAGER::instance().Find(p->dwVID));
@@ -3504,7 +3505,7 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 
 	LPCHARACTER pInvitee = CHARACTER_MANAGER::instance().Find(p->vid);
 
-	if (!pInvitee || !ch->GetDesc() || !pInvitee->GetDesc())
+	if (!pInvitee || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pInvitee)))
 	{
 		sys_err("PARTY Cannot find invited character");
 		return;
@@ -3532,7 +3533,7 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 	TPacketCGPartyInviteAnswer * p = (TPacketCGPartyInviteAnswer*) c_pData;
 
 	LPCHARACTER pInviter = CHARACTER_MANAGER::instance().Find(p->leader_vid);
-	if (!pInviter || !pInviter->GetDesc()) {
+	if (!pInviter || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pInviter))) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 217, "");
 #endif
@@ -3858,7 +3859,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch || (ch && !ch->GetDesc()))
+	if (!ch || (ch && !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))))
 		return;
 	
 	if (!c_pData)
@@ -3929,7 +3930,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 					buf.write(&(_rV[idx]), sizeof(CommonWikiData::TWikiRefineInfo));
 		}
 		
-		ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 	}
 	else
 	{
@@ -3963,7 +3964,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 			}
 		}
 		
-		ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 	}
 }
 #endif
@@ -4268,7 +4269,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				{
 					// 잘못된 길이.. 끊어주자.
 					sys_err("POST_COMMENT: %s comment too long (length: %u)", ch->GetName(), length);
-					ch->GetDesc()->SetPhase(PHASE_CLOSE);
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 					return -1;
 				}
 
@@ -4440,7 +4441,7 @@ void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 	sys_err("HACK_DETECT: %s %s", ch->GetName(), buf);
 
 	// 현재 클라이언트에서 이 패킷을 보내는 경우가 없으므로 무조건 끊도록 한다
-	ch->GetDesc()->SetPhase(PHASE_CLOSE);
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 }
 
 int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
@@ -5928,10 +5929,10 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 	if (!ch)
 		return;
 	
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
-	uint8_t bCurrentLanguage = ch->GetDesc()->GetLanguage();
+	uint8_t bCurrentLanguage = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage();
 	
 	if(bCurrentLanguage == bLanguage)
 		return;
@@ -5939,7 +5940,7 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 	if(bLanguage > LANGUAGE_DEFAULT && bLanguage < LANGUAGE_MAX_NUM)
 	{
 		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ch->GetAID()));
-		ch->GetDesc()->SetLanguage(bLanguage);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetLanguage(bLanguage);
 	}
 }
 
@@ -5954,7 +5955,7 @@ void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
 	if (!ch)
 		return;
 	
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
 	

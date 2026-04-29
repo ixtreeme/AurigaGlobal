@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include <fstream>
@@ -1190,7 +1191,7 @@ namespace quest
 		buf.write(&m_strScript[0], m_strScript.size());
 
 		LPCHARACTER ch = GetCurrentCharacterPtr();
-		LPDESC desc = ch ? ch->GetDesc() : nullptr;
+		LPDESC desc = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 		if (!ch || !desc)
 		{

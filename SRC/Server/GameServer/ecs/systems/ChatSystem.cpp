@@ -1,4 +1,6 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
+#include "../AIHelpers.hpp"
 
 #include "ChatSystem.hpp"
 
@@ -48,7 +50,7 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
         return;
     }
 
-    LPDESC d = ch->GetDesc();
+    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d) {
         return;
     }
@@ -109,7 +111,7 @@ void ChatSystem::SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char
         return;
     }
 
-    LPDESC d = ch->GetDesc();
+    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d) {
         return;
     }

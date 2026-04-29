@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "fishing.h"
 #include "locale_service.h"
@@ -435,7 +436,7 @@ EVENTFUNC(fishing_event)
 				p.header	= HEADER_GC_FISHING;
 				p.subheader	= FISHING_SUBHEADER_GC_FISH;
 				p.info	= fish_info[info->fish_id].vnum;
-				ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(TPacketGCFishing));
 			}
 			return (PASSES_PER_SEC(6));
 
@@ -544,7 +545,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 					p.header = HEADER_GC_FISHING;
 					p.subheader = FISHING_SUBHEADER_GC_FISH;
 					p.info = item_vnum;
-					ch->GetDesc()->Packet(&p, sizeof(TPacketGCFishing));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(TPacketGCFishing));
 
 #ifdef ENABLE_BATTLE_PASS
 						uint8_t bBattlePassId = ch->GetBattlePassId();

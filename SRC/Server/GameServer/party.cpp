@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -235,7 +236,7 @@ EVENTFUNC(party_update_event)
 	uint32_t pid = info->pid;
 	auto* leader = CHARACTER_MANAGER::instance().FindByPID(pid);
 
-	if (leader && leader->GetDesc())
+	if (leader && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(leader)))
 	{
 		LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(leader));
 
@@ -321,12 +322,12 @@ void CParty::Destroy()
 
 		if (rMember.pCharacter)
 		{
-			if (rMember.pCharacter->GetDesc())
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rMember.pCharacter)))
 			{
 				TPacketGCPartyRemove p;
 				p.header = HEADER_GC_PARTY_REMOVE;
 				p.pid = rMember.pCharacter->GetPlayerID();
-				rMember.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rMember.pCharacter))->Packet(&p, sizeof(p));
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(rMember.pCharacter), CHAT_TYPE_INFO, 213, "");
 #endif
@@ -676,8 +677,8 @@ void CParty::SendPartyRemoveOneToAll(uint32_t pid)
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 	}
 }
 
@@ -693,14 +694,14 @@ void CParty::SendPartyJoinOneToAll(uint32_t pid)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 	}
 }
 
 void CParty::SendPartyJoinAllToOne(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TPacketGCPartyAdd p;
@@ -712,13 +713,13 @@ void CParty::SendPartyJoinAllToOne(LPCHARACTER ch)
 	{
 		p.pid = it->first;
 		strlcpy(p.name, it->second.strName.c_str(), sizeof(p.name));
-		ch->GetDesc()->Packet(&p, sizeof(p));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }
 
 void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TMemberMap::iterator it;
@@ -730,16 +731,16 @@ void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
 		{
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
 }
 
 void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TMemberMap::iterator it;
@@ -751,16 +752,16 @@ void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
 		{
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
 }
 
 void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TMemberMap::iterator it;
@@ -774,7 +775,7 @@ void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 		{
 			p.vid = it->second.pCharacter->GetPacketVID();
 			p.pid = ((it->second.pCharacter)->GetPlayerID());
-			ch->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -802,17 +803,17 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
 			//sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
 }
 
 void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TMemberMap::iterator it;
@@ -823,10 +824,10 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
-		if ((it->second.pCharacter) && (it->second.pCharacter->GetDesc()))
+		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
 			sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
 }
@@ -847,13 +848,13 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 			p.pid = pid;
 			p.percent_hp = 255;
 			p.role = it->second.bRole;
-			ch->GetDesc()->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 			continue;
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
 		sys_log(2, "PARTY send info %s[%d] to %s[%d]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
-		ch->GetDesc()->Packet(&p, sizeof(p));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }
 
@@ -1383,7 +1384,7 @@ void CParty::Update()
 			continue;
 
 #ifdef TEXTS_IMPROVEMENT
-		if (bLongTimeExpBonusChanged && ch->GetDesc()) {
+		if (bLongTimeExpBonusChanged && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 487, "");
 		}
 #endif
@@ -1455,8 +1456,8 @@ void CParty::UpdateOnlineState(uint32_t dwPID, const char* name)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 	}
 }
 void CParty::UpdateOfflineState(uint32_t dwPID)
@@ -1470,8 +1471,8 @@ void CParty::UpdateOfflineState(uint32_t dwPID)
 
 	for (TMemberMap::iterator it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
-		if (it->second.pCharacter && it->second.pCharacter->GetDesc())
-			it->second.pCharacter->GetDesc()->Packet(&p, sizeof(p));
+		if (it->second.pCharacter && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter)))
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 	}
 }
 
@@ -1588,7 +1589,7 @@ void CParty::SendParameter(LPCHARACTER ch)
 	p.bHeader = HEADER_GC_PARTY_PARAMETER;
 	p.bDistributeMode = m_iExpDistributionMode;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (d)
 	{

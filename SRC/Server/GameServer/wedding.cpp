@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "char_manager.h"
@@ -150,8 +152,8 @@ namespace marriage
 		{
 			sys_log(0, "WeddingMap::DestroyAll: %s", ch->GetName());
 
-			if (ch->GetDesc())
-				DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 			else
 				M2_DESTROY_CHARACTER(ch);
 		}

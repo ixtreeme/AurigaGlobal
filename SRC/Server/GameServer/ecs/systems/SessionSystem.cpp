@@ -1,4 +1,6 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
+#include "../AIHelpers.hpp"
 
 #include "SessionSystem.hpp"
 #include "ItemSystem.hpp"
@@ -79,7 +81,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
     if (!ch || !ch->IsPC())
         return false;
 
-    DESC* desc = ch->GetDesc();
+    DESC* desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!desc)
         return false;
 
@@ -103,7 +105,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
             if (!other->IsPC())
                 return;
 
-            DESC* otherDesc = other->GetDesc();
+            DESC* otherDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(other));
             if (!otherDesc)
                 return;
 
@@ -148,7 +150,7 @@ EVENTFUNC(battle_pass_stay_online_event_session)
 
     LPCHARACTER ch = info->ch;
 
-    if (!ch->GetDesc())
+    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
         return PASSES_PER_SEC(60);
 
     const uint8_t bBattlePassId = ch->GetBattlePassId();
@@ -943,7 +945,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             if (viewer == this)
                 continue;
 
-            if (viewer->IsPC() && viewer->GetDesc())
+            if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
                 UpdateMountInventoryCountOverhead(viewer);
         }
     }

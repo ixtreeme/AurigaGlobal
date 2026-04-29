@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -49,7 +50,7 @@ namespace
 
 		void operator() (LPCHARACTER ch)
 		{
-			LPDESC d = ch->GetDesc();
+			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 			if (d)
 			{
@@ -360,7 +361,7 @@ void CGuild::SendOnlineRemoveOnePacket(uint32_t pid)
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -369,7 +370,7 @@ void CGuild::SendOnlineRemoveOnePacket(uint32_t pid)
 
 void CGuild::SendAllGradePacket(LPCHARACTER ch)
 {
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
 
@@ -418,7 +419,7 @@ void CGuild::SendListOneToAll(uint32_t pid)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!= m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 		if (!d)
 			continue;
 
@@ -450,7 +451,7 @@ void CGuild::SendListPacket(LPCHARACTER ch)
 
 	 */
 	LPDESC d;
-	if (!(d=ch->GetDesc()))
+	if (!(d=ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))))
 		return;
 
 	TPacketGCGuild pack;
@@ -506,7 +507,7 @@ void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
 	   header 4
 	   pid 4
 	 */
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TPacketGCGuild pack;
@@ -520,7 +521,7 @@ void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
 
 	buf.write(&pid, 4);
 
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 }
 
 void CGuild::SendLogoutPacket(LPCHARACTER ch, LPCHARACTER chLogout)
@@ -535,7 +536,7 @@ void CGuild::SendLogoutPacket(LPCHARACTER ch, uint32_t pid)
 	   header 4
 	   pid 4
 	 */
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TPacketGCGuild pack;
@@ -548,7 +549,7 @@ void CGuild::SendLogoutPacket(LPCHARACTER ch, uint32_t pid)
 	buf.write(&pack, sizeof(pack));
 	buf.write(&pid, 4);
 
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 }
 
 void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
@@ -765,7 +766,7 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 			{
-				LPDESC d = (*it)->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 				if (d)
 					d->Packet(buf.read_peek(), buf.size());
@@ -792,7 +793,7 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 			{
-				LPDESC d = (*it)->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 				if (d)
 				{
 					d->Packet(buf.read_peek(), buf.size());
@@ -869,7 +870,7 @@ void CGuild::ChangeGradeName(uint8_t grade, const char* grade_name)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -909,7 +910,7 @@ void CGuild::ChangeGradeAuth(uint8_t grade, uint8_t auth)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -918,7 +919,7 @@ void CGuild::ChangeGradeAuth(uint8_t grade, uint8_t auth)
 
 void CGuild::SendGuildInfoPacket(LPCHARACTER ch)
 {
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return;
@@ -1001,7 +1002,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
@@ -1122,7 +1123,7 @@ void CGuild::RefreshCommentForce(uint32_t player_id)
 
 	uint8_t count = pmsg->Get()->uiNumRows;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return;
@@ -1185,7 +1186,7 @@ bool CGuild::ChangeMemberGeneral(uint32_t pid, uint8_t is_general)
 
 	while (itOnline != m_memberOnline.end())
 	{
-		LPDESC d = (*(itOnline++))->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*(itOnline++)));
 
 		if (!d)
 			continue;
@@ -1220,7 +1221,7 @@ void CGuild::ChangeMemberGrade(uint32_t pid, uint8_t grade)
 
 	while (itOnline != m_memberOnline.end())
 	{
-		LPDESC d = (*(itOnline++))->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*(itOnline++)));
 
 		if (!d)
 			continue;
@@ -1455,7 +1456,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 void CGuild::SendSkillInfoPacket(LPCHARACTER ch) const
 {
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return;
@@ -1646,7 +1647,7 @@ void CGuild::ChangeTrophies(bool bWinner, bool bDraw)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -1754,7 +1755,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 				buf.write(&m_data.exp,4);
 				for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
-					LPDESC d = (*it)->GetDesc();
+					LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 					if (d) d->Packet(buf.read_peek(), buf.size());
 				}
 				if (save)
@@ -1823,7 +1824,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
-				LPDESC d = (*it)->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 				if (d)
 					d->Packet(buf.read_peek(), buf.size());
@@ -1879,7 +1880,7 @@ void CGuild::LevelChange(uint32_t pid, uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 		{
@@ -1909,7 +1910,7 @@ void CGuild::ChangeMemberData(uint32_t pid, uint32_t offer, uint8_t level, uint8
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
@@ -1967,7 +1968,7 @@ void CGuild::Packet(const void* buf, int size)
 {
 	for (auto it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 
 		if (d)
 			d->Packet(buf, size);
@@ -2145,7 +2146,7 @@ void CGuild::RecvMoneyChange(int iGold)
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		auto* ch = *it;
-		LPDESC d = ch->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 		d->BufferedPacket(&p, sizeof(p));
 		d->Packet(&iGold, sizeof(int));
 	}
@@ -2317,7 +2318,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	buf.write( &gid, sizeof(uint32_t) );
 	buf.write( GetName(), GUILD_NAME_MAX_LEN + 1 );
 
-	pchInvitee->GetDesc()->Packet( buf.read_peek(), buf.size() );
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pchInvitee))->Packet( buf.read_peek(), buf.size() );
 }
 
 void CGuild::InviteAccept( LPCHARACTER pchInvitee )
@@ -2602,7 +2603,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
 	}
@@ -2673,7 +2674,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = (*it)->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(*it));
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
 	}

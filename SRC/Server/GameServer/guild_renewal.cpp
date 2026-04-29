@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -648,7 +649,7 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 
 void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 {
-	if (!ch || !ch->GetDesc())
+	if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
@@ -811,7 +812,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	const uint64_t haveInStorage = Storage_Count(guildId, vnum);
 	if (haveInStorage >= totalNeedForVnum)
 	{
-		const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
 		const char* name = GetItemNameByVnum(vnum, lang);
 		if (name && *name)
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: %s", name);
@@ -853,7 +854,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	// Info, ha kevesebbet fogadott el (mert mr csak ennyi hinyzott)
 	if (allowed < requested)
 	{
-		const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
 		const char* name = GetItemNameByVnum(vnum, lang);
 		if (name && *name)
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott): %s", (unsigned)allowed, name);
@@ -1226,7 +1227,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 			needByVnum[req.vnum[i]] += req.count[i];
 		}
 
-		const uint8_t lang = (ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
 		bool hasMissing = false;
 
 		for (const auto& kv : needByVnum)

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -193,11 +194,11 @@ namespace quest
                 return 0;
         }
         LPCHARACTER ch = GetGuildQuestCharacter();
-        if (!ch || !ch->GetDesc())
+        if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
             return 0;
         TPacketGDGuildWarBet p;
         p.dwWarID = (uint32_t) lua_tonumber(L, 1);
-        strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+        strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
         p.dwGuild = (uint32_t) lua_tonumber(L, 2);
         p.dwGold = (uint32_t) lua_tonumber(L, 3);
         sys_log(0, "GUILD_WAR_BET: %s login %s war_id %u guild %u gold %u",
@@ -217,7 +218,7 @@ namespace quest
 		}
 
 		bool bBet = CGuildManager::instance().IsBet((uint32_t) lua_tonumber(L, 1),
-				CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().login);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->GetAccountTable().login);
 
 		lua_pushboolean(L, bBet);
 		return 1;

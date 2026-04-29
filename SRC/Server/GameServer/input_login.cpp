@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -797,7 +798,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			duelStart.header = HEADER_GC_DUEL_START;
 			duelStart.wSize = sizeof(TPacketGCDuelStart);
 
-			ch->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
 
 			if (ch->IsHorseRiding() == true)
 			{
@@ -915,8 +916,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_MULTI_LANGUAGE
 	TPacketChangeLanguage packet;
 	packet.bHeader = HEADER_GC_REQUEST_CHANGE_LANGUAGE;
-	packet.bLanguage = ch->GetDesc()->GetLanguage();
-	ch->GetDesc()->Packet(&packet, sizeof(TPacketChangeLanguage));
+	packet.bLanguage = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage();
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&packet, sizeof(TPacketChangeLanguage));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
 	ch->SetPart(PART_RUNE, ch->GetRuneEffect());

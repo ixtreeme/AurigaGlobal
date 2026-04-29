@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
@@ -846,7 +847,7 @@ void CHARACTER::SendLeaderboardData()
 
 void CHARACTER::SendLeaderboardDataSkillMob(LPCHARACTER viewer)
 {
-	if (!viewer || !viewer->GetDesc())
+	if (!viewer || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
 		return;
 
 	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
@@ -876,7 +877,7 @@ void CHARACTER::SendLeaderboardDataSkillMob(LPCHARACTER viewer)
 	p.header = HEADER_GC_LEADERBOARD_NEWS;
 	strlcpy(p.data, result.c_str(), sizeof(p.data));
 
-	viewer->GetDesc()->Packet(&p, sizeof(p));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer))->Packet(&p, sizeof(p));
 }
 
 #ifdef LEADERBOARD_RAZOR93
@@ -2103,7 +2104,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
 				{
 #ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-					if ((GetDesc()->GetHostName() != pkKiller->GetDesc()->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
+					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
 					{
 						if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
 						{
@@ -3034,7 +3035,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 	if (!ch || !item)
 		return false;
 
-	const char* szItemName = item->GetName(ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0);
+	const char* szItemName = item->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
@@ -3271,8 +3272,8 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 
 	int lang = LANGUAGE_EN;
-	if (pkKiller && pkKiller->GetDesc())
-		lang = pkKiller->GetDesc()->GetLanguage();
+	if (pkKiller && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller)))
+		lang = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetLanguage();
 
 
 	const char* fmt = "|cffc71585[%s]|r looted a special item from |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r"; // EN default
@@ -3667,10 +3668,10 @@ void CHARACTER::Reward(bool bItemDrop)
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
 						auto MakeHwidHostKey = [&](LegacyCharHandle ch) -> std::string
 							{
-								if (!ch || !ch->IsPC() || !ch->GetDesc())
+								if (!ch || !ch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 									return std::string();
 
-								DESC* d = ch->GetDesc();
+								DESC* d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 								const char* hwid = d->GetHwid();
 								const char* host = d->GetHostName();
 
@@ -3693,7 +3694,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						pDungeon->ForEachMember([&](LegacyCharHandle mch)
 							{
-								if (!mch || !mch->IsPC() || !mch->GetDesc())
+								if (!mch || !mch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(mch)))
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
@@ -3712,7 +3713,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 								// ha nincs hwid/host, fallback: account (ne kapjon duplan)
 								if (key.empty())
-									key = "ACC:" + std::to_string(mch->GetDesc()->GetAccountTable().id);
+									key = "ACC:" + std::to_string(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(mch))->GetAccountTable().id);
 
 								auto it = mapWinnerByKey.find(key);
 								if (it == mapWinnerByKey.end())
@@ -3773,7 +3774,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							for (const auto& kv : mapWinnerByKey)
 							{
 								auto* rch = kv.second;
-								if (!rch || !rch->IsPC() || !rch->GetDesc())
+								if (!rch || !rch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rch)))
 									continue;
 
 								PIXEL_POSITION mpos = pos;
@@ -6629,9 +6630,9 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 			GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
 		}
 
-		if (pAttacker->GetDesc() != nullptr)
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pAttacker)) != nullptr)
 		{
-			pAttacker->GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pAttacker))->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
 		}
 
 		if (GetArenaObserverMode() == false && GetArena() != nullptr) {
@@ -7264,13 +7265,13 @@ void CHARACTER::ClearTarget()
 		LPCHARACTER pkChr = *(it++);
 		pkChr->m_pkChrTarget = nullptr;
 
-		if (!pkChr->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)))
 		{
 			sys_err("%s %p does not have desc", pkChr->GetName(), get_pointer(pkChr));
 			abort();
 		}
 
-		pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(&p, sizeof(TPacketGCTarget));
 	}
 
 	m_set_pkChrTargetedBy.clear();
@@ -7493,13 +7494,13 @@ void CHARACTER::BroadcastTargetPacket()
 	{
 		LPCHARACTER pkChr = *it++;
 
-		if (!pkChr->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)))
 		{
 			sys_err("%s %p does not have desc", pkChr->GetName(), get_pointer(pkChr));
 			abort();
 		}
 
-		pkChr->GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(&p, sizeof(TPacketGCTarget));
 	}
 }
 

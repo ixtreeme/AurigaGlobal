@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include <Base/targa.h>
 #include <Base/attribute.h>
@@ -1034,8 +1036,8 @@ struct FDestroyPrivateMapEntity
 			LPCHARACTER ch = (LPCHARACTER) ent;
 			//sys_log(0, "PRIVAE_MAP: removing character %s", ((ch)->GetName()));
 
-			if (ch->GetDesc())
-				DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 			else
 				M2_DESTROY_CHARACTER(ch);
 		}
@@ -1102,7 +1104,7 @@ TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
 
 void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 {
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
 
@@ -1165,7 +1167,7 @@ const char* szName
 #ifdef ENABLE_ATLAS_BOSS
 void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 {
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
 	

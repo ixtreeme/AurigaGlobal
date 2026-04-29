@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include "constants.h"
 #include "char_interface.hpp"
@@ -734,7 +736,7 @@ namespace quest
 
 			if (pTable)
 #ifdef ENABLE_MULTI_NAMES
-				lua_pushstring(L,pTable->szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+				lua_pushstring(L,pTable->szLocaleName[ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0]);
 #else
 				lua_pushstring(L,pTable->szLocaleName);
 #endif
@@ -762,7 +764,7 @@ namespace quest
 
 			if (pkMob)
 #ifdef ENABLE_MULTI_NAMES
-				lua_pushstring(L, pkMob->m_table.szLocaleName[ch && ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0]);
+				lua_pushstring(L, pkMob->m_table.szLocaleName[ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0]);
 #else
 				lua_pushstring(L, pkMob->m_table.szLocaleName);
 #endif

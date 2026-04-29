@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -37,7 +38,7 @@ namespace
 
 		void operator()(LPCHARACTER ch)
 		{
-			LPDESC d = ch->GetDesc();
+			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 			if (d)
 			{
@@ -651,7 +652,7 @@ struct FSendWarList
 
 	void operator() (LPCHARACTER ch)
 	{
-		LPDESC d = ch->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 		if (d)
 		{
@@ -851,7 +852,7 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 void CGuildManager::SendGuildWar(LPCHARACTER ch)
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	TEMP_BUFFER buf;
@@ -867,7 +868,7 @@ void CGuildManager::SendGuildWar(LPCHARACTER ch)
 		buf.write(&it->second, sizeof(uint32_t));
 	}
 
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 }
 
 void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iBetScoreDelta)

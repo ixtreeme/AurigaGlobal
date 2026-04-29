@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "config.h"
 #include "utils.h"
@@ -600,16 +601,16 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ch->GetDesc()->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ch->GetMapIndex(), ch->GetAlignment());
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ch->GetMapIndex(), ch->GetAlignment());
 		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ch->GetDesc()->GetAccountTable().id, ((ch)->GetPlayerID()), ((ch)->GetLevel()), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, ((ch)->GetPlayerID()), ((ch)->GetLevel()), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
 
 			if (0)
-				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ch->GetDesc()->GetHostName()));
+				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName()));
 		}
 #endif
 	}
@@ -1180,7 +1181,7 @@ EVENTFUNC(quest_login_event)
 	if (!ch)
 		return 0;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return 0;
@@ -1285,7 +1286,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		pkPC->SetLoaded();
 		pkPC->Build();
 
-		if (ch->GetDesc()->IsPhase(PHASE_GAME))
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->IsPhase(PHASE_GAME))
 		{
 			sys_log(0, "QUEST_LOAD: Login pc %d", pQuestTable[0].dwPID);
 			quest::CQuestManager::instance().Login(pQuestTable[0].dwPID);
@@ -1906,8 +1907,8 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 			packet.wSize = sizeof(packet) + sizeof(TBattlePassRanking) * sendVector.size();
 			packet.bIsGlobal = bIsGlobal;
 
-			ch->GetDesc()->BufferedPacket(&packet, sizeof(packet));
-			ch->GetDesc()->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet, sizeof(packet));
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT

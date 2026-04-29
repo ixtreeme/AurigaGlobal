@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -3018,7 +3019,7 @@ teleport_area:
         db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
         db_clientdesc->Packet(&pid, sizeof(uint32_t));
         MessengerManager::instance().RemoveAllList(((ch)->GetName()));
-        LogManager::instance().ChangeNameLog(pid, ((ch)->GetName()), szName, ch->GetDesc()->GetHostName());
+        LogManager::instance().ChangeNameLog(pid, ((ch)->GetName()), szName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
         snprintf(szQuery, sizeof(szQuery), "UPDATE player%s SET name='%s' WHERE id=%u", get_table_postfix(), szName, pid);
         SQLMsg * msg = DBManager::instance().DirectQuery(szQuery);
         M2_DELETE(msg);
@@ -3458,9 +3459,9 @@ teleport_area:
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && pChar->GetDesc())
+		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
 		{
-			lua_pushnumber(L, pChar->GetDesc()->GetAccountTable().id);
+			lua_pushnumber(L, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetAccountTable().id);
 			return 1;
 		}
 		lua_pushnumber(L, 0);
@@ -3478,9 +3479,9 @@ teleport_area:
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && pChar->GetDesc())
+		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
 		{
-			lua_pushstring(L, pChar->GetDesc()->GetAccountTable().login);
+			lua_pushstring(L, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetAccountTable().login);
 			return 1;
 		}
 		lua_pushstring(L, "");
@@ -3732,7 +3733,7 @@ teleport_area:
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch == nullptr || ch->GetDesc() == nullptr)
+		if (ch == nullptr || ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) == nullptr)
 		{
 			lua_pushboolean(L, 0);
 			return 1;
@@ -3746,7 +3747,7 @@ teleport_area:
 		}
 
 		TRequestChargeCash packet;
-		packet.aid = ch->GetDesc()->GetAccountTable().id;
+		packet.aid = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 		packet.amount = amount;
 
 		db_clientdesc->DBPacketHeader(HEADER_GD_REQUEST_CHARGE_CASH, 0, sizeof(TRequestChargeCash));
@@ -3772,14 +3773,14 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall)select '%s', %d, %d, now(), '%s', 1 from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			ch->GetDesc()->GetAccountTable().login,
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
 			dwVnum,
 			icount,
 			lua_tostring(L,3),
-			ch->GetDesc()->GetAccountTable().login,
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
 			lua_tostring(L,3));
 
 		lua_pushnumber (L, 0);
@@ -3802,17 +3803,17 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ch->GetDesc()->GetAccountTable().login);
+		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2)select '%s', %d, %d, now(), '%s', 1, %s, %s, %s from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			ch->GetDesc()->GetAccountTable().login,
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
 			dwVnum,
 			icount,
 			lua_tostring(L,3),
 			lua_tostring(L,4),
 			lua_tostring(L,5),
 			lua_tostring(L,6),
-			ch->GetDesc()->GetAccountTable().login,
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
 			lua_tostring(L,3));
 
 		lua_pushnumber (L, 0);
@@ -4480,7 +4481,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, (ch && ch->GetDesc()) ? ch->GetDesc()->GetHostName() : "");
+		lua_pushstring(L, (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 		return 1;
 	}
 
@@ -4495,7 +4496,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, (ch && ch->GetDesc() && ch->GetDesc()->GetClientVersion()) ? ch->GetDesc()->GetClientVersion() : "");
+		lua_pushstring(L, (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientVersion()) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientVersion() : "");
 		return 1;
 	}
 
@@ -4505,7 +4506,7 @@ teleport_area:
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		bool bRet = ch->GetDesc()->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
+		bool bRet = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
 		lua_pushboolean(L, bRet);
 		return 1;
 	}
@@ -4763,9 +4764,9 @@ teleport_area:
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && pChar->GetDesc())
+		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
 		{
-			lua_pushstring(L, LC_CONVERT(pChar->GetDesc()->GetLanguage()));
+			lua_pushstring(L, LC_CONVERT(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetLanguage()));
 			return 1;
 		}
 
@@ -4938,7 +4939,7 @@ teleport_area:
 			uint32_t dwPlayerId = ((ch)->GetPlayerID());
 			uint8_t bIsGlobal = 1;
 			
-			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ch->GetDesc()->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
 			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
 			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
 		}
@@ -5073,7 +5074,7 @@ teleport_area:
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch) {
 			if (!ch->FindAffect(AFFECT_VOTEFORBONUS)) {
-				LPDESC d = ch->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				if (d) {
 					std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(vote_time)-UNIX_TIMESTAMP(NOW()) FROM account.account WHERE id=%u", d->GetAccountTable().id));
 					if (msg->Get()->uiNumRows > 0) {

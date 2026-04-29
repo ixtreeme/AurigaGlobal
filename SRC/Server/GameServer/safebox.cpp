@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
 #include "safebox.h"
@@ -92,7 +93,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 	memcpy(pack.alSockets, pkItem->GetSockets(), sizeof(pack.alSockets));
 	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
 
-	m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
 	sys_log(1, "SAFEBOX: ADD %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return true;
 }
@@ -126,7 +127,7 @@ LPITEM CSafebox::Remove(uint32_t dwPos)
 	pack.header	= m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_DEL : HEADER_GC_MALL_DEL;
 	pack.pos	= dwPos;
 
-	m_pkChrOwner->GetDesc()->Packet(&pack, sizeof(pack));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
 	sys_log(1, "SAFEBOX: REMOVE %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return pkItem;
 }
@@ -137,7 +138,7 @@ void CSafebox::Save()
 
 	memset(&t, 0, sizeof(TSafeboxTable));
 
-	t.dwID = m_pkChrOwner->GetDesc()->GetAccountTable().id;
+	t.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->GetAccountTable().id;
 	t.dwGold = m_lGold;
 
 	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));

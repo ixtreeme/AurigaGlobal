@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "battle_pass.h"
@@ -589,7 +590,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(!pkChar)
 		return;
 	
-	if(!pkChar->GetDesc())
+	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 	
 	if(!pkChar->IsLoadedBattlePass())
@@ -669,9 +670,9 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 		packet.wSize = sizeof(packet) + sizeof(TBattlePassMissionInfo) * missionInfo.size();
 		packet.wRewardSize = sizeof(TBattlePassRewardItem) * rewardInfo.size();
 
-		pkChar->GetDesc()->BufferedPacket(&packet, sizeof(packet));
-		pkChar->GetDesc()->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
-		pkChar->GetDesc()->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->BufferedPacket(&packet, sizeof(packet));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
 	}
 }
 
@@ -680,7 +681,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if(!pkChar)
 		return;
 	
-	if(!pkChar->GetDesc())
+	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 
 	if (!bBattlePassId)
@@ -734,7 +735,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	if(!pkChar)
 		return;
 	
-	if(!pkChar->GetDesc())
+	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 	
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();
@@ -784,7 +785,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(!pkChar)
 		return;
 	
-	if(!pkChar->GetDesc())
+	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -98,7 +99,7 @@ namespace quest
 		}
 		else
 		{
-			std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ch->GetDesc() ? ch->GetDesc()->GetAccountTable().id : 0, pid, map_index, 1, time, damage));
+			std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id : 0, pid, map_index, 1, time, damage));
 		}
 
 		return 1;
@@ -1406,7 +1407,7 @@ namespace quest
 					}
 					else
 					{
-						LPDESC desc = tch->GetDesc();
+						LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(tch));
 						std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
 					}
 				}
@@ -1465,7 +1466,7 @@ namespace quest
 			}
 			else
 			{
-				LPDESC desc = ch->GetDesc();
+				LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
 			}
 		}

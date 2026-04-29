@@ -4163,7 +4163,7 @@ EVENTFUNC(switch_channel)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
 
-    if (!ch->GetDesc())
+    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
         return 0;
 
     if (info->secs > 0)
@@ -5095,7 +5095,7 @@ EVENTFUNC(drop_event)
         return 0;
     }
 
-    LPDESC d = ch->GetDesc();
+    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d) {
         sys_err("<drop_event> %s have no desc connector.", ch->GetName());
         return 0;
@@ -5110,7 +5110,7 @@ EVENTFUNC(drop_event)
 #endif
     }
     else {
-        std::string login = ch->GetDesc()->GetAccountTable().login;
+        std::string login = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login;
         std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
         if (msg->Get()->uiNumRows > 0) {
             MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);

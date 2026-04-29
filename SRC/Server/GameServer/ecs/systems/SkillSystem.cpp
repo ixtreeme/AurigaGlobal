@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 
 #include <sstream>
@@ -3534,7 +3535,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			if (pkVictim)
 			{
-				if (this != pkVictim && this->GetDesc() && pkVictim->GetDesc())
+				if (this != pkVictim && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(this)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
 				{
 					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_BUFF)) 
 					{

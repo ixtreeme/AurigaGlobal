@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 
 #include "DragonSoulSystem.hpp"
@@ -220,7 +221,7 @@ bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
     pack.header = HEADER_GC_DRAGON_SOUL_REFINE;
     pack.bSubType = DS_SUB_HEADER_OPEN;
 
-    LPDESC d = ch->GetDesc();
+    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d)
     {
         sys_err("User(%s)'s DESC is NULL POINT.", ch->GetName());

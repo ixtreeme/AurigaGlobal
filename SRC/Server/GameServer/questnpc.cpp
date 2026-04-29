@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <fstream>
 #include <sstream>
 #include "questmanager.h"
@@ -940,7 +942,7 @@ namespace quest
 				uint8_t bLang = 0;
 				LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 				if (ch) {
-					LPDESC d = ch->GetDesc();
+					LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 					if (d) {
 						bLang = d->GetLanguage(); 
 					}

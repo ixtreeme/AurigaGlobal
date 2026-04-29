@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
@@ -106,9 +107,9 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 			}
 		}
 	}
@@ -117,10 +118,10 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ch->GetDesc())
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
 				if (ch->GetEmpire() == bEmpire)
-					ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 			}
 		}
 	}

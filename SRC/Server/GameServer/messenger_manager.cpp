@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "gm.h"
 #include "messenger_manager.h"
@@ -300,7 +302,7 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return;
@@ -389,7 +391,7 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 void MessengerManager::SendTeamLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 	if (!d)
 		return;
@@ -415,7 +417,7 @@ void MessengerManager::SendTeamLogout(MessengerManager::keyA account, MessengerM
 		return;
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 	if (!d)
 		return;
@@ -470,7 +472,7 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
 
@@ -560,7 +562,7 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 void MessengerManager::SendHelperLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!d)
 	{
 		return;
@@ -591,7 +593,7 @@ void MessengerManager::SendHelperLogout(MessengerManager::keyA account, Messenge
 	}
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 	if (!d)
 	{
@@ -691,7 +693,7 @@ void MessengerManager::SendList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 		return;
@@ -750,7 +752,7 @@ void MessengerManager::SendList(MessengerManager::keyA account)
 void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 	if (!d)
 		return;
@@ -780,7 +782,7 @@ void MessengerManager::SendLogout(MessengerManager::keyA account, MessengerManag
 		return;
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ch->GetDesc() : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
 
 	if (!d)
 		return;

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "MountInventory.h"
 #include "char_interface.hpp"
 #include "db.h"
@@ -200,7 +201,7 @@ bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
 
 uint32_t CMountInventory::GetAccountId() const
 {
-    return m_pkOwner && m_pkOwner->GetDesc() ? m_pkOwner->GetDesc()->GetAccountTable().id : 0;
+    return m_pkOwner && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkOwner)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkOwner))->GetAccountTable().id : 0;
 }
 
 void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) const

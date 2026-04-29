@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -24,7 +25,7 @@ void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg
 void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg1, TItemPos arg2, uint32_t arg3, void * pvData)
 
 {
-	if (!ch->GetDesc())
+	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	struct packet_exchange pack_exchg;
@@ -63,7 +64,7 @@ void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg
 #endif
 	}
 
-	ch->GetDesc()->Packet(&pack_exchg, sizeof(pack_exchg));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack_exchg, sizeof(pack_exchg));
 }
 
 // 교환을 시작

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include <vector>
 #include <common/billing.h>
@@ -1232,17 +1234,17 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 
 	p.dwID = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
 	strlcpy(p.szSellCharacter, CardOwner->GetName(), sizeof(p.szSellCharacter));
-	strlcpy(p.szSellAccount, CardOwner->GetDesc()->GetAccountTable().login, sizeof(p.szSellAccount));
+	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetAccountTable().login, sizeof(p.szSellAccount));
 	strlcpy(p.szBuyCharacter, CardTaker->GetName(), sizeof(p.szBuyCharacter));
-	strlcpy(p.szBuyAccount, CardTaker->GetDesc()->GetAccountTable().login, sizeof(p.szBuyAccount));
+	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetAccountTable().login, sizeof(p.szBuyAccount));
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) / 60, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0));
 #endif
 	LogManager::instance().VCardLog(p.dwID, CardTaker->GetX(), CardTaker->GetY(), g_stHostname.c_str(),
-			CardOwner->GetName(), CardOwner->GetDesc()->GetHostName(),
-			CardTaker->GetName(), CardTaker->GetDesc()->GetHostName());
+			CardOwner->GetName(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetHostName(),
+			CardTaker->GetName(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetHostName());
 
 	ITEM_MANAGER::instance().RemoveItem(item);
 

@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -165,7 +166,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
-            if (pc && pc->GetDesc())
+            if (pc && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pc)))
                 ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_COMMAND, "%s", buf);
             });
     }
@@ -245,7 +246,7 @@ namespace
 
     void SendAdditionalInfo(LPCHARACTER viewer, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
     {
-        if (!viewer || !viewer->GetDesc() || !target)
+        if (!viewer || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)) || !target)
             return;
 
         TPacketGCCharacterAdditionalInfo p;
@@ -256,7 +257,7 @@ namespace
         for (int i = 0; i < CHR_EQUIPPART_NUM; ++i)
             p.awPart[i] = parts ? parts[i] : 0;
 
-        viewer->GetDesc()->Packet(&p, sizeof(p));
+        ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer))->Packet(&p, sizeof(p));
     }
 
     void SendAdditionalInfoToMap(int32_t mapIndex, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])

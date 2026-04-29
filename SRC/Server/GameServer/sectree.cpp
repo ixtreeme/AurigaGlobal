@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <Base/attribute.h>
 #include "sectree_manager.h"
 #include "char_interface.hpp"
@@ -52,8 +54,8 @@ void SECTREE::Destroy()
 				sys_err("Sectree: destroying character: %s is_pc %d",
 					((ch)->GetName()), ((ch)->IsPC()) ? 1 : 0);
 
-				if (ch->GetDesc())
-					DESC_MANAGER::instance().DestroyDesc(ch->GetDesc());
+				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 				else
 					M2_DESTROY_CHARACTER(ch);
 			}

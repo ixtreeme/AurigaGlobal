@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/billing.h>
@@ -102,10 +103,10 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 				}
 		}
 
-		pkChr->GetDesc()->Packet(buf, p->lSize);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(buf, p->lSize);
 	}
 	else
-		pkChr->GetDesc()->Packet(c_pbData, p->lSize);
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(c_pbData, p->lSize);
 
 	return (p->lSize);
 }

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "questlua.h"
@@ -68,7 +69,7 @@ namespace quest
 		// migrated from CHARACTER::GetDesc()->Packet
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPDESC d = q.GetCurrentCharacterPtr()->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
 		if (d)
 		{
 			uint8_t header = HEADER_GC_REQUEST_MAKE_GUILD;
@@ -110,9 +111,9 @@ namespace quest
 		}
 
 		TSafeboxChangeSizePacket p;
-		p.dwID = q.GetCurrentCharacterPtr()->GetDesc()->GetAccountTable().id;
+		p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()))->GetAccountTable().id;
 		p.bSize = size;
-		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, q.GetCurrentCharacterPtr()->GetDesc()->GetHandle(), &p, sizeof(p));
+		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()))->GetHandle(), &p, sizeof(p));
 		q.GetCurrentCharacterPtr()->SetSafeboxSize(SAFEBOX_PAGE_SIZE * size);
 		return 0;
 	}

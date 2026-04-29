@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "AffectSystem.hpp"
 #include "QuestSystem.hpp"
@@ -1286,7 +1287,7 @@ EVENTFUNC(load_affect_login_event)
 		return 0;
 	}
 
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (!d)
 	{

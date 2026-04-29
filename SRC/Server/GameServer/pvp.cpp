@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -666,7 +667,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 #endif
 
 	// NOTIFY_PVP_MESSAGE
-	LPDESC pkVictimDesc = pkVictim->GetDesc();
+	LPDESC pkVictimDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim));
 #ifdef ENABLE_PVP_ADVANCED
 	if (pkVictimDesc)
 	{
@@ -1082,18 +1083,18 @@ void CPVPManager::SendList(LPDESC d)
 		if (pkPVP->m_players[0].dwVID == dwVID)
 		{
 			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(pkPVP->m_players[1].dwVID);
-			if (ch && ch->GetDesc())
+			if (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				LPDESC d = ch->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				d->Packet(&pack, sizeof(pack));
 			}
 		}
 		else if (pkPVP->m_players[1].dwVID == dwVID)
 		{
 			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(pkPVP->m_players[0].dwVID);
-			if (ch && ch->GetDesc())
+			if (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				LPDESC d = ch->GetDesc();
+				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				d->Packet(&pack, sizeof(pack));
 			}
 		}

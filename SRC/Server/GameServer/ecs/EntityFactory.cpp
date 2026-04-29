@@ -1,4 +1,6 @@
 #include "../stdafx.h"
+#include "systems/PlayerRuntimeSystem.hpp"
+#include "AIHelpers.hpp"
 
 #include "EntityFactory.hpp"
 
@@ -211,7 +213,7 @@ void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER
     reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
     if (ch) {
         ch->SetEntityHandle(entity);
-        if (LPDESC desc = ch->GetDesc()) {
+        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
             desc->SetEntity(entity);
         }
     }

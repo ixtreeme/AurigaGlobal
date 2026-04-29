@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <sstream>
 
 #include "desc.h"
@@ -156,7 +158,7 @@ void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
 	sys_log(0, "VERSION: %s %s %s", ((ch)->GetName()), p->timestamp, p->filename);
-	ch->GetDesc()->SetClientVersion(p->timestamp);
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetClientVersion(p->timestamp);
 }
 
 void LoginFailure(LPDESC d, const char * c_pszStatus)

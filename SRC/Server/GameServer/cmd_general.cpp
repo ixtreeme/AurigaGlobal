@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -53,10 +54,10 @@
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 {
-	if (!ch || !((ch)->IsPC()) || !ch->GetDesc())
+	if (!ch || !((ch)->IsPC()) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return std::string();
 
-	DESC* d = ch->GetDesc();
+	DESC* d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	const char* hwid = d->GetHwid();
 	const char* host = d->GetHostName();
 
@@ -80,7 +81,7 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 
 static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 {
-	if (!ch || !((ch)->IsPC()) || !ch->GetDesc())
+	if (!ch || !((ch)->IsPC()) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -100,7 +101,7 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
 		((ch)->GetPlayerID()),
-		ch->GetDesc()->GetAccountTable().id
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id
 	));
 
 	return true;
@@ -321,7 +322,7 @@ ACMD(do_user_horse_feed)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 112, "%s", 
 #ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
 #endif
@@ -333,7 +334,7 @@ ACMD(do_user_horse_feed)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 111, "%s", 
 #ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ch->GetDesc()->GetLanguage()]
+		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
 #endif
@@ -555,7 +556,7 @@ ACMD(do_change_channel)
 	p.channel = channel;
 	p.lMapIndex = ((ch)->GetMapIndex());
 
-	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
 }
 #endif
 
@@ -587,7 +588,7 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	LPDESC d = ch->GetDesc();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 	if (info->left_second <= 0)
 	{
@@ -600,7 +601,7 @@ EVENTFUNC(timed_event)
 			case SCMD_PHASE_SELECT:
 				{
 					TPacketNeedLoginLogInfo acc_info;
-					acc_info.dwPlayerID = ch->GetDesc()->GetAccountTable().id;
+					acc_info.dwPlayerID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 
 					db_clientdesc->DBPacket( HEADER_GD_VALID_LOGOUT, 0, &acc_info, sizeof(acc_info) );
 
@@ -742,7 +743,7 @@ ACMD(do_restart)
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "CloseRestartWindow");
 
-	ch->GetDesc()->SetPhase(PHASE_GAME);
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_GAME);
 	ch->SetPosition(POS_STANDING);
 	ch->StartRecoveryEvent();
 
@@ -1568,7 +1569,7 @@ ACMD(do_pvp)
 	str_to_number(vid, arg1);	
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
 	//// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
 	//{
 	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
@@ -1739,7 +1740,7 @@ ACMD(do_pvp_advanced)
 	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
 	// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !pkVictim->GetDesc())
+	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
 	//{
 	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
@@ -2015,11 +2016,11 @@ ACMD(do_safebox_change_password)
 
 	TSafeboxChangePasswordPacket p;
 
-	p.dwID = ch->GetDesc()->GetAccountTable().id;
+	p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 	strlcpy(p.szOldPassword, arg1, sizeof(p.szOldPassword));
 	strlcpy(p.szNewPassword, arg2, sizeof(p.szNewPassword));
 
-	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
 }
 
 ACMD(do_mall_password)
@@ -2056,11 +2057,11 @@ ACMD(do_mall_password)
 	ch->SetMallLoadTime(iPulse);
 
 	TSafeboxLoadPacket p;
-	p.dwID = ch->GetDesc()->GetAccountTable().id;
-	strlcpy(p.szLogin, ch->GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
+	p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+	strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
 	strlcpy(p.szPassword, arg1, sizeof(p.szPassword));
 
-	db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ch->GetDesc()->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
 }
 
 ACMD(do_mall_close)
@@ -2927,7 +2928,7 @@ ACMD(do_PetEvo) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10, 
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ch->GetDesc()->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName
 #endif
@@ -2941,7 +2942,7 @@ ACMD(do_PetEvo) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10, 
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ch->GetDesc()->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName
 #endif
@@ -2955,7 +2956,7 @@ ACMD(do_PetEvo) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 3, 
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ch->GetDesc()->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName
 #endif
@@ -3410,7 +3411,7 @@ ACMD(do_in_game_mall)
 //#endif
 //
 //#ifdef ENABLE_MULTI_LANGUAGE
-//	uint8_t lang = ch->GetDesc() ? ch->GetDesc()->GetLanguage() : 0;
+//	uint8_t lang = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0;
 //	std::string str_lang;
 //	switch (lang) {
 //		case LANGUAGE_RO: {

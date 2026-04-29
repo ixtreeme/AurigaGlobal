@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/tables.h>
@@ -743,7 +744,7 @@ namespace offlineshop
 
 	void CShopManager::EncodeInsertShopEntity(ShopEntity& shop, LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 		
 		TPacketGCNewOfflineshop pack;
@@ -766,8 +767,8 @@ namespace offlineshop
 
 		strncpy(subpack.szName, shop.GetShopName(), sizeof(subpack.szName));
 
-		ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
-		ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&subpack, sizeof(subpack));
 	}
 
 
@@ -775,7 +776,7 @@ namespace offlineshop
 
 	void CShopManager::EncodeRemoveShopEntity(ShopEntity& shop, LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 		
 		TPacketGCNewOfflineshop pack;
@@ -786,8 +787,8 @@ namespace offlineshop
 		TSubPacketGCRemoveShopEntity subpack;
 		subpack.dwVID = shop.GetVID();
 
-		ch->GetDesc()->BufferedPacket(&pack, sizeof(pack));
-		ch->GetDesc()->Packet(&subpack, sizeof(subpack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&subpack, sizeof(subpack));
 	}
 
 
@@ -2233,7 +2234,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopRequestListClientPacket(LPCHARACTER ch)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return false;
 
 		SendShopListClientPacket(ch);
@@ -2243,7 +2244,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopOpenClientPacket(LPCHARACTER ch, uint32_t dwOwnerID)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return false;
 
 		CShop* pkShop = GetShopByOwnerID(dwOwnerID);
@@ -2270,7 +2271,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopOpenMyShopClientPacket(LPCHARACTER ch)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return false;
 
 		ch->SetOfflineShopUseTime();
@@ -2364,7 +2365,7 @@ namespace offlineshop
 
 	void CShopManager::SendShopListClientPacket(LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TEMP_BUFFER buff;
@@ -2398,13 +2399,13 @@ namespace offlineshop
 			buff.write(&shopInfo, sizeof(shopInfo));
 		}
 		
-		ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek() , buff.size());
 	}
 
 
 	void CShopManager::SendShopOpenClientPacket(LPCHARACTER ch, CShop* pkShop)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		CShop::VECSHOPITEM* pVec = pkShop->GetItems();
@@ -2441,13 +2442,13 @@ namespace offlineshop
 			buff.write(&itemInfo, sizeof(itemInfo));
 		}
 		
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
 
 	void CShopManager::SendShopOpenMyShopNoShopClientPacket(LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -2456,12 +2457,12 @@ namespace offlineshop
 		pack.wSize		= sizeof(pack);
 
 
-		ch->GetDesc()->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 	}
 
 	void CShopManager::SendShopBuyItemFromSearchClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, uint32_t dwItemID)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 		
 		TPacketGCNewOfflineshop pack;
@@ -2477,13 +2478,13 @@ namespace offlineshop
 		buff.write(&pack,		sizeof(pack));
 		buff.write(&subpack,	sizeof(subpack));
 
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
 
 	void CShopManager::SendShopOpenMyShopClientPacket(LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		if(!ch->GetOfflineShop())
@@ -2557,7 +2558,7 @@ namespace offlineshop
 		if(!pVecOffer->empty())
 			buff.write(&pVecOffer->at(0), sizeof(TOfferInfo) * pVecOffer->size());
 
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 
 
 		for (auto it = pVecOffer->begin(); it != pVecOffer->end(); it++)
@@ -2574,7 +2575,7 @@ namespace offlineshop
 	void CShopManager::SendShopForceClosedClientPacket(uint32_t dwOwnerID)
 	{
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwOwnerID);
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -2582,7 +2583,7 @@ namespace offlineshop
 		pack.bSubHeader	= SUBHEADER_GC_SHOP_OPEN_OWNER;
 
 		pack.wSize = sizeof(pack);
-		ch->GetDesc()->Packet(&pack , sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack , sizeof(pack));
 	}
 
 
@@ -2809,7 +2810,7 @@ namespace offlineshop
 
 
 #ifdef ENABLE_MULTI_NAMES
-				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ch->GetDesc()->GetLanguage()] , strnlen(pTable->szLocaleName[ch->GetDesc()->GetLanguage()], ITEM_NAME_MAX_LEN)))
+				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()] , strnlen(pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()], ITEM_NAME_MAX_LEN)))
 #else
 				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName , strnlen(pTable->szLocaleName, ITEM_NAME_MAX_LEN)))
 #endif
@@ -2848,7 +2849,7 @@ namespace offlineshop
 
 	void CShopManager::SendShopFilterResultClientPacket(LPCHARACTER ch, const std::vector<TItemInfo>& items)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TEMP_BUFFER buff;
@@ -2870,7 +2871,7 @@ namespace offlineshop
 		}
 
 
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
 
@@ -3049,7 +3050,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvOfferListRequestPacket(LPCHARACTER ch) //offlineshop-updated 03/08/19
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return false;
 
 		TPacketGCNewOfflineshop pack;
@@ -3072,7 +3073,7 @@ namespace offlineshop
 
 			OFFSHOP_DEBUG("return because not found or empty vec : found > %s  (id %u) ",it!=m_mapOffer.end()?"TRUE":"FALSE" , ((ch)->GetPlayerID()));
 
-			ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek() , buff.size());
 			return true;
 		}
 
@@ -3123,7 +3124,7 @@ namespace offlineshop
 
 		//offlineshop-updated 05/08/19
 		ch->SetLookingOfflineshopOfferList(true);
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 		return true;
 	}
 
@@ -3242,7 +3243,7 @@ namespace offlineshop
 
 	void CShopManager::SendShopSafeboxRefresh(LPCHARACTER ch, const TValutesInfo& valute, const std::vector<CShopItem>& vec)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		if(!ch || !ch->GetShopSafebox())
@@ -3279,7 +3280,7 @@ namespace offlineshop
 			buff.write(&item,		sizeof(item));
 		}
 
-		ch->GetDesc()->Packet(buff.read_peek() , buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek() , buff.size());
 	}
 
 
@@ -3539,7 +3540,7 @@ namespace offlineshop
 
 	void CShopManager::SendAuctionListClientPacket(LPCHARACTER ch, const std::vector<TAuctionListElement>& auctionVec, bool owner)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -3558,7 +3559,7 @@ namespace offlineshop
 		if(!auctionVec.empty())
 			buff.write(&auctionVec[0], sizeof(auctionVec[0]) * auctionVec.size());
 		
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
 
@@ -3566,7 +3567,7 @@ namespace offlineshop
 
 	void CShopManager::SendAuctionOpenAuctionClientPacket(LPCHARACTER ch, const TAuctionInfo& auction, const std::vector<TAuctionOfferInfo>& vec)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -3586,14 +3587,14 @@ namespace offlineshop
 		if(!vec.empty())
 			buff.write(&vec[0], sizeof(vec[0]) * vec.size());
 
-		ch->GetDesc()->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
 
 	
 	void CShopManager::SendAuctionOpenMyAuctionNoAuctionClientPacket(LPCHARACTER ch)
 	{
-		if (!ch->GetDesc())
+		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -3601,7 +3602,7 @@ namespace offlineshop
 		pack.bSubHeader	= SUBHEADER_GC_OPEN_MY_AUCTION_NO_AUCTION;
 		pack.wSize		= sizeof(pack);
 
-		ch->GetDesc()->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 	}
 
 
@@ -3609,7 +3610,7 @@ namespace offlineshop
 
 	void CShopManager::RecvCloseBoardClientPacket(LPCHARACTER ch)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 
 		//auction
@@ -3641,7 +3642,7 @@ namespace offlineshop
 
 	void CShopManager::RecvCloseMyAuction(LPCHARACTER ch)
 	{
-		if(!ch || !ch->GetDesc())
+		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
 		
 		if (ch->GetAuction())

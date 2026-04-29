@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -307,7 +308,7 @@ EVENTFUNC(ready_to_start_event)
 
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
-				chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(buf.read_peek(), buf.size());
 
 
 				dwOppList[0] = chA->GetPacketVID();
@@ -315,7 +316,7 @@ EVENTFUNC(ready_to_start_event)
 
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
-				chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chB))->Packet(buf2.read_peek(), buf2.size());
 
 				return 0;
 			}
@@ -333,14 +334,14 @@ EVENTFUNC(ready_to_start_event)
 				chA->Show(chA->GetMapIndex(), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
 				chB->Show(chB->GetMapIndex(), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
 
-				chA->GetDesc()->SetPhase(PHASE_GAME);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();
 				chA->SetPosition(POS_STANDING);
 				ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_HP, chA->GetMaxHP() - chA->GetHP());
 				ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_SP, chA->GetMaxSP() - chA->GetSP());
 				chA->ViewReencode();
 
-				chB->GetDesc()->SetPhase(PHASE_GAME);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chB))->SetPhase(PHASE_GAME);
 				chB->StartRecoveryEvent();
 				chB->SetPosition(POS_STANDING);
 				ecs::PointSystem::Change(AIHelpers::EcsOf(chB), POINT_HP, chB->GetMaxHP() - chB->GetHP());
@@ -357,12 +358,12 @@ EVENTFUNC(ready_to_start_event)
 				dwOppList[0] = chB->GetPacketVID();
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
-				chA->GetDesc()->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(buf.read_peek(), buf.size());
 
 				dwOppList[0] = chA->GetPacketVID();
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
-				chB->GetDesc()->Packet(buf2.read_peek(), buf2.size());
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chB))->Packet(buf2.read_peek(), buf2.size());
 
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 301, "");
@@ -452,8 +453,8 @@ EVENTFUNC(duel_time_out)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart);
 
-				chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
-				chA->GetDesc()->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
 
 				info->state++;
 
@@ -985,8 +986,8 @@ void CArena::SendPacketToObserver(const void * c_pvData, int iSize)
 	{
 		LPCHARACTER pChar = iter->second;
 		if (pChar != nullptr) {
-			if (pChar->GetDesc() != nullptr) {
-				pChar->GetDesc()->Packet(c_pvData, iSize);
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)) != nullptr) {
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->Packet(c_pvData, iSize);
 			}
 		}
 	}
@@ -1004,7 +1005,7 @@ void CArena::SendChatPacketToObserver(uint8_t type, uint32_t idx, const char * f
 	for (auto iter = m_mapObserver.begin(); iter != m_mapObserver.end(); ++iter) {
 		LPCHARACTER pChar = iter->second;
 		if (pChar) {
-			if (pChar->GetDesc() != nullptr) {
+			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)) != nullptr) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), type, idx, chatbuf);
 			}
 		}

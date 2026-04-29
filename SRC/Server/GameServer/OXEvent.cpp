@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "config.h"
 #include "questmanager.h"
@@ -442,11 +444,11 @@ count)
 #ifdef ENABLE_BLOCK_MULTIFARM
 			if (pkChar->FindAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
-				LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+				LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
 			}
 #else
 			pkChar->AutoGiveItem(dwItemVnum, count);
-			LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", pkChar->GetDesc()->GetHostName(), dwItemVnum);
+			LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
 #endif
 		}
 	}

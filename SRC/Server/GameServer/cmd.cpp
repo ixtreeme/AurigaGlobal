@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -905,7 +906,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 		}
 		if (ch->IncreaseCmdAntiFloodCount()>=50)
 		{
-			ch->GetDesc()->DelayedDisconnect(0);
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(0);
 			return;
 		}
 	}
@@ -997,7 +998,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 			char buf[1024];
 			snprintf( buf, sizeof(buf), "%s", argument );
 
-			LogManager::instance().GMCommandLog(((ch)->GetPlayerID()), ((ch)->GetName()), ch->GetDesc()->GetHostName(), g_bChannel, buf);
+			LogManager::instance().GMCommandLog(((ch)->GetPlayerID()), ((ch)->GetName()), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), g_bChannel, buf);
 		}
 	}
 }

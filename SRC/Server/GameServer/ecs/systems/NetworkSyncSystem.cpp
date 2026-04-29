@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "NetworkSyncSystem.hpp"
 
@@ -306,7 +307,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     if (IsPC() && entity->IsType(ENTITY_CHARACTER))
     {
         LPCHARACTER viewer = (LPCHARACTER)entity;
-        if (viewer->IsPC() && viewer->GetDesc())
+        if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif
@@ -509,7 +510,7 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 
     for (const entt::entity entity : view) {
         LPCHARACTER ch = LegacyCharOf(entity);
-        if (!ch || !ch->GetDesc()) {
+        if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
             continue;
         }
 
@@ -901,7 +902,7 @@ void CHARACTER::SendEquipment(LPCHARACTER ch)
             p.equips[i].vnum = 0;
         }
     }
-    ch->GetDesc()->Packet(&p, sizeof(p));
+    ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 }
 
 void CHARACTER::ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID)
@@ -990,7 +991,7 @@ void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use*
 
 void CItem::UpdatePacket()
 {
-	if (!m_pOwner || !m_pOwner->GetDesc())
+	if (!m_pOwner || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner)))
 		return;
 
 #ifdef ENABLE_SWITCHBOT
@@ -1013,6 +1014,6 @@ void CItem::UpdatePacket()
 	memcpy(pack.aAttr, GetAttributes(), sizeof(pack.aAttr));
 
 	sys_log(2, "UpdatePacket %s -> %s", GetName(), m_pOwner->GetName());
-	m_pOwner->GetDesc()->Packet(&pack, sizeof(pack));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner))->Packet(&pack, sizeof(pack));
 }
 

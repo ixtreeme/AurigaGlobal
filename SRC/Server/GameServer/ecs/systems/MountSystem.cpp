@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "MountSystem.hpp"
 #include "ItemSystem.hpp"
@@ -262,7 +263,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
     if (!viewer || !viewer->IsPC())
         return;
 
-    if (!viewer->GetDesc())
+    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
         return;
 
     TPacketGCFakeShopSign p;
@@ -271,7 +272,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
     p.iMountCount = GetMountCount();
     p.iBeltCount = GetBeltCount();
 
-    viewer->GetDesc()->Packet(&p, sizeof(p));
+    ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer))->Packet(&p, sizeof(p));
 }
 
 void CHARACTER::UpdateMountCountOverheadToViewers()
@@ -289,7 +290,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
         if (!viewer || viewer == this)
             continue;
 
-        if (viewer->IsPC() && viewer->GetDesc())
+        if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
@@ -291,8 +293,8 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 	// killer nyelve (fallback: EN)
 	int lang = LANGUAGE_EN;
-	if (pkKiller && pkKiller->GetDesc())
-		lang = pkKiller->GetDesc()->GetLanguage();
+	if (pkKiller && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller)))
+		lang = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetLanguage();
 
 	const char* fmt = GetHighAvgDmgFmtByLang(lang);
 
@@ -336,7 +338,7 @@ void CSwitchbot::SwitchItems()
 
 		if (CheckItem(itemEntity, bSlot))
 		{
-			LPDESC desc = pkOwner->GetDesc();
+			LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner));
 			if (desc)
 			{
 				char buf[512];
@@ -401,8 +403,8 @@ void CSwitchbot::SwitchItems()
 				int len = snprintf(buf, sizeof(buf), LC_TEXT("Bonuschange of %s (Slot: %d) successfully finished."), pkItem->GetName(), bSlot + 1);
 #endif
 				pack.wSize = sizeof(TPacketGCWhisper) + len;
-				pkOwner->GetDesc()->BufferedPacket(&pack, sizeof(pack));
-				pkOwner->GetDesc()->Packet(buf, len);
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->BufferedPacket(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->Packet(buf, len);
 			}
 
 			SetActive(bSlot, false);
@@ -817,7 +819,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 #endif
 void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item)
 {
-	LPDESC desc = ch->GetDesc();
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!desc)
 	{
 		return;
@@ -1056,7 +1058,7 @@ void CSwitchbotManager::SendItemAttributeInformations(LPCHARACTER ch)
 		return;
 	}
 
-	LPDESC desc = ch->GetDesc();
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!desc)
 	{
 		return;
@@ -1113,7 +1115,7 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 		return;
 	}
 
-	LPDESC desc = ch->GetDesc();
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!desc)
 	{
 		return;

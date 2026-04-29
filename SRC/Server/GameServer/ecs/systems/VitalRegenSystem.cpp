@@ -1,4 +1,6 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
+#include "../AIHelpers.hpp"
 
 #include "VitalRegenSystem.hpp"
 
@@ -80,7 +82,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
             return;
         }
 
-        if (!ch->GetDesc() && !ch->IsNPC()) {
+        if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && !ch->IsNPC()) {
             return;
         }
 

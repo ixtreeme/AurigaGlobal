@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
@@ -468,7 +469,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 			}
 			else {
 				this->EquipTo(ch, iFindCell);
-				if (ch->GetDesc())
+				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 					m_dwLastOwnerPID = ch->GetPlayerID();
 
 				event_cancel(&m_pkDestroyEvent);
@@ -524,7 +525,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 		}
 	}
 #endif
-	if (ch->GetDesc())
+	if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		m_dwLastOwnerPID = ch->GetPlayerID();
 
 

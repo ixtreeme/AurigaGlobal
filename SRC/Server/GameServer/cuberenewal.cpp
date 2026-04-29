@@ -2,6 +2,7 @@
 #define _cube_cpp_
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -846,7 +847,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 			
 			memcpy (pack.date_cube_renewal.category, 	materialInfo.category.c_str(), 		sizeof(pack.date_cube_renewal.category));
 
-			LPDESC d = ch->GetDesc();
+			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 			if (nullptr == d)
 			{
@@ -859,7 +860,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 	}
 	else{
 
-		LPDESC d = ch->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 		if (nullptr == d)
 		{

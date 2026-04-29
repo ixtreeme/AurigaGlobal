@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "utils.h"
 #include "desc.h"
@@ -1310,7 +1312,7 @@ void CHARACTER_MANAGER::PacketMonsterLog(LPCHARACTER ch, const void* buf, int si
 		if (ch && DISTANCE_APPROX(c->GetX() - ch->GetX(), c->GetY() - ch->GetY()) > 6000)
 			continue;
 
-		LPDESC d = c->GetDesc();
+		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(c));
 
 		if (d)
 			d->Packet(buf, size);
@@ -2055,7 +2057,7 @@ void CHARACTER_MANAGER::SendDataPlayer(LPCHARACTER ch)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::SendDataPlayer");//INGAME_DEBUG_RAZOR93
 #endif
-	auto desc = ch->GetDesc();
+	auto desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!desc)
 		return;
 	TEMP_BUFFER buf;
@@ -2238,7 +2240,7 @@ void CHARACTER_MANAGER::LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData)
 	if (logCount)
 		buf.write(m_vec.data(), sizeof(TIShopLogData) * logCount);
 
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 }
 void CHARACTER_MANAGER::LoadItemShopLog(LPCHARACTER ch)
 {
@@ -2246,9 +2248,9 @@ void CHARACTER_MANAGER::LoadItemShopLog(LPCHARACTER ch)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLog");//INGAME_DEBUG_RAZOR93
 #endif
 	uint8_t subIndex = ITEMSHOP_LOG;
-	uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+	uint32_t accountID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 
-	db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
+	db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
 	db_clientdesc->Packet(&subIndex, sizeof(uint8_t));
 	db_clientdesc->Packet(&accountID, sizeof(uint32_t));
 }
@@ -2344,7 +2346,7 @@ void CHARACTER_MANAGER::LoadItemShopData(LPCHARACTER ch, bool isAll)
 		int categoryTotalSize = 9999;
 		buf.write(&categoryTotalSize, sizeof(int));
 	}
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 }
 
 
@@ -2444,7 +2446,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 
 		buf.write(&logData, sizeof(TIShopLogData));
 	}
-	ch->GetDesc()->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 
 	if (returnType == 3)
 	{
@@ -2566,13 +2568,13 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 									return;
 								}
 
-								uint32_t accountID = ch->GetDesc()->GetAccountTable().id;
+								uint32_t accountID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 								uint8_t subIndex = ITEMSHOP_BUY;
 								char playerName[CHARACTER_NAME_MAX_LEN + 1];
 								strlcpy(playerName, ch->GetName(), sizeof(playerName));
 
 								char ipAdress[16];
-								strlcpy(ipAdress, ch->GetDesc()->GetHostName(), sizeof(ipAdress));
+								strlcpy(ipAdress, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), sizeof(ipAdress));
 
 								TEMP_BUFFER buf;
 								buf.write(&subIndex, sizeof(uint8_t));
@@ -2584,7 +2586,7 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 								bool isLogOpen = ch->GetProtectTime("itemshop.log") == 1 ? true : false;
 								buf.write(&isLogOpen, sizeof(bool));
 
-								db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ch->GetDesc()->GetHandle(), buf.size());
+								db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), buf.size());
 								db_clientdesc->Packet(buf.read_peek(), buf.size());
 
 								return;

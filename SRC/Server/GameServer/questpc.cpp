@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "config.h"
@@ -298,7 +299,7 @@ namespace quest
 			sys_log(1, "QUEST Icon File %s", m_RunningQuestState->_icon_file.c_str());
 		}
 
-		CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->Packet(buf.read_peek(), buf.size());
 
 		m_iSendToClient = 0;
 //		if (m_iSendToClient & QUEST_SEND_TITLE) {
@@ -346,7 +347,7 @@ namespace quest
 //		}
 //		qi.szIconFileName[24] = '\0';
 //
-//		CQuestManager::instance().GetCurrentCharacterPtr()->GetDesc()->Packet(&qi, sizeof(qi));
+//		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->Packet(&qi, sizeof(qi));
 //		m_iSendToClient = 0;
 	}
 

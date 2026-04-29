@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -214,7 +215,7 @@ namespace
                 }
                 else
                 {
-                    LPDESC desc = ch->GetDesc();
+                    LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
                     const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
                     DBManager::instance().DirectQuery(
                         "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",

@@ -1,4 +1,6 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
+#include "../AIHelpers.hpp"
 
 #include "SocialSystem.hpp"
 
@@ -434,7 +436,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     TPacketGCPartyInvite p;
     p.header = HEADER_GC_PARTY_INVITE;
     p.leader_vid = GetPacketVID();
-    pchInvitee->GetDesc()->Packet(&p, sizeof(p));
+    ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pchInvitee))->Packet(&p, sizeof(p));
 }
 
 void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)

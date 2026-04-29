@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
@@ -858,8 +859,8 @@ bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 
 	pack.size = sizeof(pack) + sizeof(pack2);
 
-	ch->GetDesc()->BufferedPacket(&pack, sizeof(TPacketGCShop));
-	ch->GetDesc()->Packet(&pack2, sizeof(TPacketGCShopStart));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(TPacketGCShop));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack2, sizeof(TPacketGCShopStart));
 	return true;
 }
 
@@ -877,7 +878,7 @@ void CShop::RemoveGuest(LPCHARACTER ch)
 	pack.subheader	= SHOP_SUBHEADER_GC_END;
 	pack.size		= sizeof(TPacketGCShop);
 
-	ch->GetDesc()->Packet(&pack, sizeof(pack));
+	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 }
 
 void CShop::Broadcast(const void * data, int bytes)
@@ -892,8 +893,8 @@ void CShop::Broadcast(const void * data, int bytes)
 	{
 		LPCHARACTER ch = it->first;
 
-		if (ch->GetDesc())
-			ch->GetDesc()->Packet(data, bytes);
+		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data, bytes);
 
 		++it;
 	}
