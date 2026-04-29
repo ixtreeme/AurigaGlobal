@@ -14,6 +14,9 @@
 #include "../../packet.h"
 #include "../../party.h"
 #include "../../utils.h"
+#include "../EntityFactory.hpp"
+#include "../Registry.hpp"
+#include "ItemSystem.hpp"
 
 void CHARACTER::SetParty(LPPARTY pkParty)
 {
@@ -37,8 +40,8 @@ void CHARACTER::SetParty(LPPARTY pkParty)
         if (pAffect) {
             LPITEM pkItem = FindItemByID(pAffect->dwFlag);
             if (pkItem) {
-                pkItem->Lock(false);
-                pkItem->SetSocket(1, 0);
+                ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItem));
+                ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
             }
 
             RemoveAffect(AFFECT_NEW_POTION31);
