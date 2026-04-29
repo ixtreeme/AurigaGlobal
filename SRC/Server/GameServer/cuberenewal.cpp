@@ -627,7 +627,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 					}
 
 					for (int b = 0; b < ITEM_SOCKET_MAX_NUM; b++) {
-						pItem->SetSocket(b, copySocket[b]);
+						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), b, copySocket[b]);
 					}
 				}
 #endif
@@ -653,10 +653,10 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 					}
 					else
 					{
-						pItem->AlterToMagicItem();
+						ItemSystem::AlterItemToMagicItem(EntityFactory::CreateItemEntity(g_registry, pItem));
 					}
 #else
-					pItem->AlterToMagicItem();
+					ItemSystem::AlterItemToMagicItem(EntityFactory::CreateItemEntity(g_registry, pItem));
 #endif
 				}
 #endif
