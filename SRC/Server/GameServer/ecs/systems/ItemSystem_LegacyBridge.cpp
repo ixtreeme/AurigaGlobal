@@ -15628,7 +15628,7 @@ void CHARACTER::AutoRecallProcess()
 					CPetSystem* petSystem = GetPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CPetActor* pPet = petSystem->Summon(pItem->GetValue(1), pItem, "", false);
+							CPetActor* pPet = petSystem->Summon(pItem->GetValue(1), EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}

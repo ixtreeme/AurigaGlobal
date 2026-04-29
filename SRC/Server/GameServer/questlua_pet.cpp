@@ -10,6 +10,8 @@
 #include "utils.h"
 
 #include "PetSystem.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -58,7 +60,7 @@ namespace quest
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		// 소환수의 이름
-		CPetActor* pet = petSystem->Summon(mobVnum, pItem, "", false);
+		CPetActor* pet = petSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
 
 		if (pet != nullptr)
 			lua_pushnumber (L, pet->GetVID());

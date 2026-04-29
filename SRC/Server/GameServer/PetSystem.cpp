@@ -35,6 +35,9 @@ bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 
 LPITEM LegacyItemFromEntity(entt::entity item)
 {
+	if (item == entt::null)
+		return nullptr;
+
 	const uint32_t id = ItemSystem::GetItemID(item);
 	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
 }
@@ -158,7 +161,7 @@ void CPetActor::UpdatePetSkin() {
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
-		Summon("Noname", pSummonItem, false);
+		Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 
 	}
 }
@@ -187,7 +190,7 @@ void CPetActor::Unsummon()
 		
 		// 버프 삭제
 		this->ClearBuff();
-		this->SetSummonItem(nullptr);
+		this->SetSummonItem(entt::null);
 		if (nullptr != m_pkOwner)
 			m_pkOwner->ComputePoints();
 
@@ -199,8 +202,11 @@ void CPetActor::Unsummon()
 	}
 }
 
-uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnFar)
+uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
 {
+	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
+	if (!pSummonItem)
+		return 0;
 	int32_t x = m_pkOwner->GetX();
 	int32_t y = m_pkOwner->GetY();
 	int32_t z = m_pkOwner->GetZ();
@@ -268,7 +274,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 	this->SetName("");
 
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
-	this->SetSummonItem(pSummonItem);
+	this->SetSummonItem(pSummonItemEntity);
 	m_pkOwner->ComputePoints();
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
@@ -458,8 +464,9 @@ bool CPetActor::Follow(float fMinDistance)
 	return true;
 }
 
-void CPetActor::SetSummonItem (LPITEM pItem)
+void CPetActor::SetSummonItem (entt::entity pItemEntity)
 {
+	LPITEM pItem = LegacyItemFromEntity(pItemEntity);
 	if (nullptr == pItem)
 	{
 		m_dwSummonItemVID = 0;
@@ -688,7 +695,7 @@ void CPetSystem::UnsummonAll()
 	}
 }
 
-CPetActor* CPetSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, const char* petName, bool bSpawnFar, uint32_t options)
+CPetActor* CPetSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, const char* petName, bool bSpawnFar, uint32_t options)
 {
 	CPetActor* petActor = this->GetByVnum(mobVnum);
 
