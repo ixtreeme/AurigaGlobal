@@ -8488,6 +8488,67 @@ Commit status:
 - Code batch committed.
 - WinTest not run in this environment.
 
+## Phase 15E-56 - GetDesc Accessor Migration
+
+Mode:
+- Entity-first `GetDesc` accessor migration.
+- `DESC*` / `LPDESC` remains an infrastructure pointer and was not converted to an entity.
+- No `LPCHARACTER` overload added.
+
+Audit:
+- Initial raw `->GetDesc` matches: 455.
+- Top caller files were `input_main.cpp`, `new_offlineshop_manager.cpp`, `party.cpp`, `guild.cpp`, `cmd_general.cpp`, `questlua_pc.cpp`, `CombatSystem.cpp`, `ItemSystem_LegacyBridge.cpp`, `NetworkSyncSystem.cpp`, and `log.cpp`.
+- Common patterns were packet send, buffered packet send, DB packet handle lookup, account/login lookup, disconnect/phase checks, and language lookup.
+
+Completed batches:
+- Added `ecs::PlayerRuntime::GetDesc(entt::entity)` returning `LPDESC`.
+- Implementation bridges through `ecs::LegacyCharOf(e)` and returns `nullptr` for invalid/null entities.
+- Commit: `f19f415 Phase 15E-56.1: Add PlayerRuntime GetDesc API`
+- Migrated caller-side `ch->GetDesc()` usage across 71 files.
+- Labeled `LPENTITY->GetDesc()` paths as infrastructure and left them unchanged.
+- Commit: `3b155f9 Phase 15E-56: Migrate GetDesc caller accessors`
+
+Rollback note:
+- A first broad sweep was rolled back because it exceeded the 20-error safety gate.
+- Root cause: the naive replacement hit `LPENTITY` variables and member chains such as `it->second.pCharacter->GetDesc()`, and also inserted a wrong include path in `ecs/EntityFactory.cpp`.
+- The second pass used narrower standalone identifier matching plus targeted member-chain fixes for `party.cpp`, `guild.cpp`, quest current-character chains, owner chains, and PlayerRuntime helper internals.
+
+Counts:
+```text
+Initial raw ->GetDesc matches: 455
+Final raw ->GetDesc matches: 14
+Final caller-side CHARACTER matches excluding PlayerRuntime bridge and LPENTITY infrastructure paths: 0
+```
+
+Remaining intentional/non-target sites:
+- `ecs/systems/PlayerRuntimeSystem.cpp`: 1 bridge call to legacy `ch->GetDesc()`.
+- `ecs/systems/NetworkSyncSystem.cpp`: 9 `LPENTITY->GetDesc()` infrastructure/entity-base calls.
+- `building.cpp`: 2 `LPENTITY->GetDesc()` calls.
+- `entity.cpp`: 2 `LPENTITY->GetDesc()` calls.
+- These are not `CHARACTER::GetDesc` caller accessors and should be handled in a later `LPENTITY`/network infrastructure phase if needed.
+
+Build results:
+- Build passed after adding the API.
+- Build passed after the narrowed caller migration and targeted fixes.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Login establishes a valid DESC.
+- Chat sends packets correctly.
+- Movement/combat packet send paths work.
+- Shop/offlineshop windows send packet streams correctly.
+- Quest packets and target packets reach the client.
+- Logout/disconnect cleanup clears DESC safely.
+- Re-login creates a fresh DESC.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- API and caller migration committed.
+- WinTest not run in this environment.
+
 ## Phase 15E-54 - Party/Guild Accessor Migration
 
 Mode:
