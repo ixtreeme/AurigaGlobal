@@ -8430,3 +8430,66 @@ Manual WinTest checklist:
 Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
+
+## Phase 15E-50 — DragonSoul LPITEM Signature Migration
+
+Mode:
+- DragonSoul-only LPITEM parameter migration.
+- Segment-by-segment commits with build gates.
+- No DragonSoul DB persistence rewrite.
+- No DragonSoul algorithm rewrite beyond signature/caller migration.
+
+Completed segments:
+- SEG 1 Initialization/setup:
+  - `DragonSoulItemInitialize`, `PutAttributes`, and `RefreshItemAttributes` now take `entt::entity`.
+  - Callers in item creation/load and bridge paths now pass ECS item entities.
+  - Commit: `03918ad Phase 15E-50 SEG 1: DragonSoul initialization signatures`
+- SEG 2 Activation:
+  - `ActivateDragonSoul` and `DeactivateDragonSoul` now take `entt::entity`.
+  - ECS wrappers and gameplay callers now route through entity signatures.
+  - Commit: `498ef38 Phase 15E-50 SEG 2: DragonSoul activation signatures`
+- SEG 3 Extract/charge:
+  - `ExtractDragonHeart` and `PullOut` now take `entt::entity` item parameters.
+  - Existing ECS consume/destroy/socket paths remain in place internally.
+  - Commit: `d884df8 Phase 15E-50 SEG 3: DragonSoul extract charge signatures`
+- SEG 4 Refine helper:
+  - `IsDragonSoulRefineMaterial` now takes `entt::entity`.
+  - Refine internals still use legacy CItem locally where the DS transaction engine has not been rewritten.
+  - Commit: `61935ab Phase 15E-50 SEG 4: DragonSoul refine signatures`
+- SEG 5 Query compatibility:
+  - Removed remaining public `const LPITEM` overloads for `GetBasePosition`, `IsValidCellForThisItem`, and `GetDuration`.
+  - Callers in `ItemSystem_LegacyBridge.cpp`, `exchange.cpp`, and `input_main.cpp` now pass ECS item entities.
+  - Commit: `fafd3ea Phase 15E-50 SEG 5: DragonSoul query signatures`
+
+Counts:
+```text
+Scoped LPITEM parameter count before 15E-50: 90
+Scoped LPITEM parameter count after 15E-50:  73
+DragonSoul.cpp/.h LPITEM parameter signatures: 0
+Reduction: 17
+```
+
+Remaining DragonSoul LPITEM usage:
+- Internal local `LPITEM` variables remain inside `DragonSoul.cpp`.
+- These are legacy engine internals for refine/grid iteration/item creation side effects and are not public signatures.
+- Next cleanup should target DragonSoul internal storage/sets and transaction-local CItem variables only after the DS mutation engine is fully entity-native.
+
+Build results:
+- Build passed after every segment.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- DragonSoul inventory opens and displays correctly.
+- Activate/deactivate DS item applies/removes affects.
+- Deck switch preserves active state.
+- DragonSoul refine consumes source/material and creates result.
+- DragonHeart extract/charge paths consume items correctly.
+- Logout/login preserves DS state.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- Code batches committed individually.
+- WinTest not run in this environment.
