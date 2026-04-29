@@ -34,6 +34,7 @@
 #include "motion.h"
 
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 
 #include "log.h"
 
@@ -91,8 +92,7 @@ player.y,
 player.lAddr,
 player.wPort))
 		{
-			sys_err("location error name %s mapindex %d %d x %d empire %d",
-			        player.szName, lIndex, player.x, player.y, rTab.bEmpire);
+			LOG_ERROR("location error name {} mapindex {} {} x {} empire {}", player.szName, lIndex, player.x, player.y, rTab.bEmpire);
 
 			player.x = EMPIRE_START_X(rTab.bEmpire);
 			player.y = EMPIRE_START_Y(rTab.bEmpire);
@@ -105,11 +105,7 @@ rTab.bChannel,
 #endif
 player.x, player.y, lIndex, player.lAddr, player.wPort))
 			{
-				sys_err("cannot find server for mapindex %d %d x %d (name %s)",
-						lIndex,
-						player.x,
-						player.y,
-						player.szName);
+				LOG_ERROR("cannot find server for mapindex {} {} x {} (name {})", lIndex, player.x, player.y, player.szName);
 
 				continue;
 			}
@@ -117,7 +113,7 @@ player.x, player.y, lIndex, player.lAddr, player.wPort))
 
 		struct in_addr in;
 		in.s_addr = player.lAddr;
-		sys_log(0, "success to %s:%d", inet_ntoa(in), player.wPort);
+		LOG_INFO("success to {}:{}", inet_ntoa(in), player.wPort);
 	}
 
 	return bFound;
@@ -126,7 +122,7 @@ player.x, player.y, lIndex, player.lAddr, player.wPort))
 
 void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 {
-	sys_log(0, "LoginSuccess");
+	LOG_INFO("LoginSuccess");
 
 	TAccountTable* pTab = (TAccountTable*)data;
 
@@ -134,7 +130,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 
 	if (!d)
 	{
-		sys_log(0, "CInputDB::LoginSuccess - cannot find handle [%s]", pTab->login);
+		LOG_INFO("CInputDB::LoginSuccess - cannot find handle [{}]", pTab->login);
 
 		TLogoutPacket pack;
 
@@ -145,7 +141,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 
 	if (strcmp(pTab->status, "OK")) // OK�� �ƴϸ�
 	{
-		sys_log(0, "CInputDB::LoginSuccess - status[%s] is not OK [%s]", pTab->status, pTab->login);
+		LOG_INFO("CInputDB::LoginSuccess - status[{}] is not OK [{}]", pTab->status, pTab->login);
 
 		TLogoutPacket pack;
 
@@ -159,7 +155,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 	for (int i = 0; i != PLAYER_PER_ACCOUNT; ++i)
 	{
 		TSimplePlayer& player = pTab->players[i];
-		sys_log(0, "\tplayer(%s).job(%d)", player.szName, player.byJob);
+		LOG_INFO("\tplayer({}).job({})", player.szName, player.byJob);
 	}
 
 	bool bFound = GetServerLocation(*pTab, pTab->bEmpire);
@@ -192,7 +188,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 	// __SHUTDOWN::Shutdown Register
 	CShutdownManager::Instance().AddDesc(d);
 
-	sys_log(0, "InputDB::login_success: %s", pTab->login);
+	LOG_INFO("InputDB::login_success: {}", pTab->login);
 }
 
 void CInputDB::PlayerCreateFailure(LPDESC d, uint8_t bType)
@@ -233,11 +229,7 @@ d->GetAccountTable().bChannel,
 				pPacketDB->player.lAddr,
 				pPacketDB->player.wPort))
 	{
-		sys_err("InputDB::PlayerCreateSuccess: cannot find server for mapindex %d %d x %d (name %s)",
-				lIndex,
-				pPacketDB->player.x,
-				pPacketDB->player.y,
-				pPacketDB->player.szName);
+		LOG_ERROR("InputDB::PlayerCreateSuccess: cannot find server for mapindex {} {} x {} (name {})", lIndex, pPacketDB->player.x, pPacketDB->player.y, pPacketDB->player.szName);
 	}
 
 	TAccountTable & r_Tab = d->GetAccountTable();
@@ -514,7 +506,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	// by rtsummit
 	if (!SECTREE_MANAGER::instance().GetValidLocation(pTab->lMapIndex, pTab->x, pTab->y, lMapIndex, pos, d->GetEmpire()))
 	{
-		sys_err("InputDB::PlayerLoad : cannot find valid location %d x %d (name: %s)", pTab->x, pTab->y, pTab->name);
+		LOG_ERROR("InputDB::PlayerLoad : cannot find valid location {} x {} (name: {})", pTab->x, pTab->y, pTab->name);
 #ifdef ENABLE_GOHOME_IF_MAP_NOT_EXIST
 		lMapIndex = EMPIRE_START_MAP(d->GetAccountTable().bEmpire);
 		pos.x = EMPIRE_START_X(d->GetAccountTable().bEmpire);
@@ -532,13 +524,13 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
 	{
 		auto* p = d->GetCharacter();
-		sys_err("login state already has main state (character %s %p)", p->GetName(), get_pointer(p));
+		LOG_ERROR("login state already has main state (character {} {})", p->GetName(), static_cast<const void*>(get_pointer(p)));
 		return;
 	}
 
 	if (nullptr != CHARACTER_MANAGER::Instance().FindPC(pTab->name))
 	{
-		sys_err("InputDB: PlayerLoad : %s already exist in game", pTab->name);
+		LOG_ERROR("InputDB: PlayerLoad : {} already exist in game", pTab->name);
 		return;
 	}
 
@@ -558,8 +550,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             d,
             ch->GetLegacyVID());
         d->SetEntity(ecs_e);
-        sys_log(0, "ECS: PC entity created VID=%u pid=%u",
-                ch->GetLegacyVID(), ch->GetPlayerID());
+        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ch->GetPlayerID());
 
 
         // Phase 7: sync ECS vital components from DB result
@@ -622,8 +613,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(ch, lMapIndex))
 	if (!map_allow_find(lPublicMapIndex))
 	{
-		sys_err("InputDB::PlayerLoad : entering %d map is not allowed here (name: %s, empire %u)",
-				lMapIndex, pTab->name, d->GetEmpire());
+		LOG_ERROR("InputDB::PlayerLoad : entering {} map is not allowed here (name: {}, empire {})", lMapIndex, pTab->name, d->GetEmpire());
 
 		ch->SetWarpLocation(EMPIRE_START_MAP(d->GetEmpire()),
 				EMPIRE_START_X(d->GetEmpire()) / 100,
@@ -641,15 +631,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	ch->PointsPacket();
 	ch->SkillLevelPacket();
 
-	sys_log(0, "InputDB: player_load %s %dx%dx%d LEVEL %d MOV_SPEED %d JOB %d ATG %d DFG %d GMLv %d",
-			pTab->name,
-			ch->GetX(), ch->GetY(), ch->GetZ(),
-			((ch)->GetLevel()),
-			ch->GetPoint(POINT_MOV_SPEED),
-			ch->GetJob(),
-			ch->GetPoint(POINT_ATT_GRADE),
-			ch->GetPoint(POINT_DEF_GRADE),
-			ch->GetGMLevel());
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ch->GetX(), ch->GetY(), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ch->GetGMLevel());
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();
@@ -667,27 +649,27 @@ void CInputDB::Boot(const char* data)
 	uint8_t bVersion = decode_byte(data);
 	data += 1;
 
-	sys_log(0, "BOOT: PACKET: %d", dwPacketSize);
-	sys_log(0, "BOOT: VERSION: %d", bVersion);
+	LOG_INFO("BOOT: PACKET: {}", dwPacketSize);
+	LOG_INFO("BOOT: VERSION: {}", bVersion);
 	if (bVersion != 6)
 	{
-		sys_err("boot version error");
+		LOG_ERROR("boot version error");
 		thecore_shutdown();
 	}
 
-	sys_log(0, "sizeof(TMobTable) = %d", sizeof(TMobTable));
-	sys_log(0, "sizeof(TItemTable) = %d", sizeof(TItemTable));
-	sys_log(0, "sizeof(TShopTable) = %d", sizeof(TShopTable));
-	sys_log(0, "sizeof(TSkillTable) = %d", sizeof(TSkillTable));
-	sys_log(0, "sizeof(TRefineTable) = %d", sizeof(TRefineTable));
-	sys_log(0, "sizeof(TItemAttrTable) = %d", sizeof(TItemAttrTable));
-	sys_log(0, "sizeof(TItemRareTable) = %d", sizeof(TItemAttrTable));
-	sys_log(0, "sizeof(TBanwordTable) = %d", sizeof(TBanwordTable));
-	sys_log(0, "sizeof(TLand) = %d", sizeof(building::TLand));
-	sys_log(0, "sizeof(TObjectProto) = %d", sizeof(building::TObjectProto));
-	sys_log(0, "sizeof(TObject) = %d", sizeof(building::TObject));
+	LOG_INFO("sizeof(TMobTable) = {}", sizeof(TMobTable));
+	LOG_INFO("sizeof(TItemTable) = {}", sizeof(TItemTable));
+	LOG_INFO("sizeof(TShopTable) = {}", sizeof(TShopTable));
+	LOG_INFO("sizeof(TSkillTable) = {}", sizeof(TSkillTable));
+	LOG_INFO("sizeof(TRefineTable) = {}", sizeof(TRefineTable));
+	LOG_INFO("sizeof(TItemAttrTable) = {}", sizeof(TItemAttrTable));
+	LOG_INFO("sizeof(TItemRareTable) = {}", sizeof(TItemAttrTable));
+	LOG_INFO("sizeof(TBanwordTable) = {}", sizeof(TBanwordTable));
+	LOG_INFO("sizeof(TLand) = {}", sizeof(building::TLand));
+	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
+	LOG_INFO("sizeof(TObject) = {}", sizeof(building::TObject));
 	//ADMIN_MANAGER
-	sys_log(0, "sizeof(TAdminManager) = %d", sizeof (TAdminInfo) );
+	LOG_INFO("sizeof(TAdminManager) = {}", sizeof (TAdminInfo));
 	//END_ADMIN_MANAGER
 
 	uint16_t size;
@@ -698,7 +680,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data)!=sizeof(TMobTable))
 	{
-		sys_err("mob table size error");
+		LOG_ERROR("mob table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -706,7 +688,7 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: MOB: %d", size);
+	LOG_INFO("BOOT: MOB: {}", size);
 
 	if (size)
 	{
@@ -720,7 +702,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data) != sizeof(TItemTable))
 	{
-		sys_err("item table size error");
+		LOG_ERROR("item table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -728,7 +710,7 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: ITEM: %d", size);
+	LOG_INFO("BOOT: ITEM: {}", size);
 
 
 	if (size)
@@ -743,7 +725,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data) != sizeof(TShopTable))
 	{
-		sys_err("shop table size error");
+		LOG_ERROR("shop table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -751,14 +733,14 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: SHOP: %d", size);
+	LOG_INFO("BOOT: SHOP: {}", size);
 
 
 	if (size)
 	{
 		if (!CShopManager::instance().Initialize((TShopTable *) data, size))
 		{
-			sys_err("shop table Initialize error");
+			LOG_ERROR("shop table Initialize error");
 			thecore_shutdown();
 			return;
 		}
@@ -771,7 +753,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data) != sizeof(TSkillTable))
 	{
-		sys_err("skill table size error");
+		LOG_ERROR("skill table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -779,13 +761,13 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: SKILL: %d", size);
+	LOG_INFO("BOOT: SKILL: {}", size);
 
 	if (size)
 	{
 		if (!CSkillManager::instance().Initialize((TSkillTable *) data, size))
 		{
-			sys_err("cannot initialize skill table");
+			LOG_ERROR("cannot initialize skill table");
 			thecore_shutdown();
 			return;
 		}
@@ -799,7 +781,7 @@ void CInputDB::Boot(const char* data)
 	 */
 	if (decode_2bytes(data) != sizeof(TRefineTable))
 	{
-		sys_err("refine table size error");
+		LOG_ERROR("refine table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -807,7 +789,7 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: REFINE: %d", size);
+	LOG_INFO("BOOT: REFINE: {}", size);
 
 	if (size)
 	{
@@ -820,7 +802,7 @@ void CInputDB::Boot(const char* data)
 	 */
 	if (decode_2bytes(data) != sizeof(TItemAttrTable))
 	{
-		sys_err("item attr table size error");
+		LOG_ERROR("item attr table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -828,7 +810,7 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: ITEM_ATTR: %d", size);
+	LOG_INFO("BOOT: ITEM_ATTR: {}", size);
 
 	if (size)
 	{
@@ -840,7 +822,7 @@ void CInputDB::Boot(const char* data)
 				continue;
 
 			g_map_itemAttr[p->dwApplyIndex] = *p;
-			sys_log(0, "ITEM_ATTR[%d]: %s %u", p->dwApplyIndex, p->szApply, p->dwProb);
+			LOG_INFO("ITEM_ATTR[{}]: {} {}", p->dwApplyIndex, p->szApply, p->dwProb);
 		}
 	}
 
@@ -852,7 +834,7 @@ void CInputDB::Boot(const char* data)
      */
 	if (decode_2bytes(data) != sizeof(TItemAttrTable))
 	{
-		sys_err("item rare table size error");
+		LOG_ERROR("item rare table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -860,7 +842,7 @@ void CInputDB::Boot(const char* data)
 
 	size = decode_2bytes(data);
 	data += 2;
-	sys_log(0, "BOOT: ITEM_RARE: %d", size);
+	LOG_INFO("BOOT: ITEM_RARE: {}", size);
 
 	if (size)
 	{
@@ -872,7 +854,7 @@ void CInputDB::Boot(const char* data)
 				continue;
 
 			g_map_itemRare[p->dwApplyIndex] = *p;
-			sys_log(0, "ITEM_RARE[%d]: %s %u", p->dwApplyIndex, p->szApply, p->dwProb);
+			LOG_INFO("ITEM_RARE[{}]: {} {}", p->dwApplyIndex, p->szApply, p->dwProb);
 		}
 	}
 
@@ -885,7 +867,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data) != sizeof(TBanwordTable))
 	{
-		sys_err("ban word table size error");
+		LOG_ERROR("ban word table size error");
 		thecore_shutdown();
 		return;
 	}
@@ -906,7 +888,7 @@ void CInputDB::Boot(const char* data)
 
 		if (decode_2bytes(data) != sizeof(TLand))
 		{
-			sys_err("land table size error");
+			LOG_ERROR("land table size error");
 			thecore_shutdown();
 			return;
 		}
@@ -927,7 +909,7 @@ void CInputDB::Boot(const char* data)
 
 		if (decode_2bytes(data) != sizeof(TObjectProto))
 		{
-			sys_err("object proto table size error");
+			LOG_ERROR("object proto table size error");
 			thecore_shutdown();
 			return;
 		}
@@ -944,7 +926,7 @@ void CInputDB::Boot(const char* data)
 		 */
 		if (decode_2bytes(data) != sizeof(TObject))
 		{
-			sys_err("object table size error");
+			LOG_ERROR("object table size error");
 			thecore_shutdown();
 			return;
 		}
@@ -965,7 +947,7 @@ void CInputDB::Boot(const char* data)
 
 	if (decode_2bytes(data) != sizeof(TItemIDRangeTable) )
 	{
-		sys_err("ITEM ID RANGE size error");
+		LOG_ERROR("ITEM ID RANGE size error");
 		thecore_shutdown();
 		return;
 	}
@@ -986,11 +968,11 @@ void CInputDB::Boot(const char* data)
 	data += 2;
 	int HostSize = decode_2bytes(data );
 	data += 2;
-	sys_log(0, "GM Value Count %d %d", HostSize, ChunkSize  );
+	LOG_INFO("GM Value Count {} {}", HostSize, ChunkSize);
 	for (int n = 0; n < HostSize; ++n )
 	{
 		gm_new_host_inert(data );
-		sys_log(0, "GM HOST : IP[%s] ", data );
+		LOG_INFO("GM HOST : IP[{}] ", data);
 		data += ChunkSize;
 	}
 
@@ -1013,24 +995,24 @@ void CInputDB::Boot(const char* data)
 	uint16_t endCheck=decode_2bytes(data);
 	if (endCheck != 0xffff)
 	{
-		sys_err("boot packet end check error [%x]!=0xffff", endCheck);
+		LOG_ERROR("boot packet end check error [{:x}]!=0xffff", endCheck);
 		thecore_shutdown();
 		return;
 	}
 	else
-		sys_log(0, "boot packet end check ok [%x]==0xffff", endCheck );
+		LOG_INFO("boot packet end check ok [{:x}]==0xffff", endCheck);
 	data +=2;
 
 	if (!ITEM_MANAGER::instance().SetMaxItemID(*range))
 	{
-		sys_err("not enough item id contact your administrator!");
+		LOG_ERROR("not enough item id contact your administrator!");
 		thecore_shutdown();
 		return;
 	}
 
 	if (!ITEM_MANAGER::instance().SetMaxSpareItemID(*rangespare))
 	{
-		sys_err("not enough item id for spare contact your administrator!");
+		LOG_ERROR("not enough item id for spare contact your administrator!");
 		thecore_shutdown();
 		return;
 	}
@@ -1065,67 +1047,67 @@ void CInputDB::Boot(const char* data)
 	snprintf(szDragonSoulTableFileName, sizeof(szDragonSoulTableFileName),
 			"%s/dragon_soul_table.txt", LocaleService_GetBasePath().c_str());
 
-	sys_log(0, "Initializing Informations of Cube System");
+	LOG_INFO("Initializing Informations of Cube System");
 	Cube_InformationInitialize();
 
-	sys_log(0, "LoadLocaleFile: CommonDropItem: %s", szCommonDropItemFileName);
+	LOG_INFO("LoadLocaleFile: CommonDropItem: {}", szCommonDropItemFileName);
 	if (!ITEM_MANAGER::instance().ReadCommonDropItemFile(szCommonDropItemFileName))
 	{
-		sys_err("cannot load CommonDropItem: %s", szCommonDropItemFileName);
+		LOG_ERROR("cannot load CommonDropItem: {}", szCommonDropItemFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: ETCDropItem: %s", szETCDropItemFileName);
+	LOG_INFO("LoadLocaleFile: ETCDropItem: {}", szETCDropItemFileName);
 	if (!ITEM_MANAGER::instance().ReadEtcDropItemFile(szETCDropItemFileName))
 	{
-		sys_err("cannot load ETCDropItem: %s", szETCDropItemFileName);
+		LOG_ERROR("cannot load ETCDropItem: {}", szETCDropItemFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: DropItemGroup: %s", szDropItemGroupFileName);
+	LOG_INFO("LoadLocaleFile: DropItemGroup: {}", szDropItemGroupFileName);
 	if (!ITEM_MANAGER::instance().ReadDropItemGroup(szDropItemGroupFileName))
 	{
-		sys_err("cannot load DropItemGroup: %s", szDropItemGroupFileName);
+		LOG_ERROR("cannot load DropItemGroup: {}", szDropItemGroupFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: SpecialItemGroup: %s", szSpecialItemGroupFileName);
+	LOG_INFO("LoadLocaleFile: SpecialItemGroup: {}", szSpecialItemGroupFileName);
 	if (!ITEM_MANAGER::instance().ReadSpecialDropItemFile(szSpecialItemGroupFileName))
 	{
-		sys_err("cannot load SpecialItemGroup: %s", szSpecialItemGroupFileName);
+		LOG_ERROR("cannot load SpecialItemGroup: {}", szSpecialItemGroupFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: ItemVnumMaskTable : %s", szItemVnumMaskTableFileName);
+	LOG_INFO("LoadLocaleFile: ItemVnumMaskTable : {}", szItemVnumMaskTableFileName);
 	if (!ITEM_MANAGER::instance().ReadItemVnumMaskTable(szItemVnumMaskTableFileName))
 	{
-		sys_log(0, "Could not open MaskItemTable");
+		LOG_INFO("Could not open MaskItemTable");
 	}
 
-	sys_log(0, "LoadLocaleFile: MOBDropItemFile: %s", szMOBDropItemFileName);
+	LOG_INFO("LoadLocaleFile: MOBDropItemFile: {}", szMOBDropItemFileName);
 	if (!ITEM_MANAGER::instance().ReadMonsterDropItemGroup(szMOBDropItemFileName))
 	{
-		sys_err("cannot load MOBDropItemFile: %s", szMOBDropItemFileName);
+		LOG_ERROR("cannot load MOBDropItemFile: {}", szMOBDropItemFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: MapIndex: %s", szMapIndexFileName);
+	LOG_INFO("LoadLocaleFile: MapIndex: {}", szMapIndexFileName);
 	if (!SECTREE_MANAGER::instance().Build(szMapIndexFileName, LocaleService_GetMapPath().c_str()))
 	{
-		sys_err("cannot load MapIndex: %s", szMapIndexFileName);
+		LOG_ERROR("cannot load MapIndex: {}", szMapIndexFileName);
 		thecore_shutdown();
 		return;
 	}
 
-	sys_log(0, "LoadLocaleFile: DragonSoulTable: %s", szDragonSoulTableFileName);
+	LOG_INFO("LoadLocaleFile: DragonSoulTable: {}", szDragonSoulTableFileName);
 	if (!DSManager::instance().ReadDragonSoulTableFile(szDragonSoulTableFileName))
 	{
-		sys_err("cannot load DragonSoulTable: %s", szDragonSoulTableFileName);
+		LOG_ERROR("cannot load DragonSoulTable: {}", szDragonSoulTableFileName);
 		//thecore_shutdown();
 		//return;
 	}
@@ -1133,10 +1115,10 @@ void CInputDB::Boot(const char* data)
 	// END_OF_LOCALE_SERVICE
 
 #ifdef ENABLE_BATTLE_PASS
-	sys_log(0, "LoadLocaleFile: BattlePassInfo");
+	LOG_INFO("LoadLocaleFile: BattlePassInfo");
 	if (!CBattlePass::instance().ReadBattlePassFile())
 	{
-		sys_err("Cannot load battle_pass.txt");
+		LOG_ERROR("Cannot load battle_pass.txt");
 	}
 #endif
 
@@ -1170,7 +1152,7 @@ EVENTFUNC(quest_login_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "quest_login_event> <Factor> Null pointer" );
+		LOG_ERROR("quest_login_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -1200,13 +1182,13 @@ EVENTFUNC(quest_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		sys_log(0, "QUEST_LOAD: Login pc %d by event", ((ch)->GetPlayerID()));
+		LOG_INFO("QUEST_LOAD: Login pc {} by event", ((ch)->GetPlayerID()));
 		quest::CQuestManager::instance().Login(((ch)->GetPlayerID()));
 		return 0;
 	}
 	else
 	{
-		sys_err(0, "input_db.cpp:quest_login_event INVALID PHASE pid %d", ((ch)->GetPlayerID()));
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ((ch)->GetPlayerID()));
 		return 0;
 	}
 }
@@ -1231,18 +1213,18 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		{
 			if (((ch)->GetPlayerID()) != pQuestTable[0].dwPID)
 			{
-				sys_err("PID differs %u %u", ((ch)->GetPlayerID()), pQuestTable[0].dwPID);
+				LOG_ERROR("PID differs {} {}", ((ch)->GetPlayerID()), pQuestTable[0].dwPID);
 				return;
 			}
 		}
 
-		sys_log(0, "QUEST_LOAD: count %d", dwCount);
+		LOG_INFO("QUEST_LOAD: count {}", dwCount);
 
 		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
 
 		if (!pkPC)
 		{
-			sys_err("null quest::PC with id %u", pQuestTable[0].dwPID);
+			LOG_ERROR("null quest::PC with id {}", pQuestTable[0].dwPID);
 			return;
 		}
 
@@ -1256,7 +1238,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 			st += ".";
 			st += pQuestTable[i].szState;
 
-			sys_log(0,  "            %s %d", st.c_str(), pQuestTable[i].lValue);
+			LOG_INFO("            {} {}", st.c_str(), pQuestTable[i].lValue);
 #ifdef ENABLE_QUEST_SYSTEM_BUGFIXES
 			int val = pQuestTable[i].lValue;
 			bool skipSave = true; // load-n�l ne spameld a DB-t
@@ -1270,8 +1252,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 				if (!stateName || !*stateName)
 					 {
 					const int startIdx = quest::CQuestManager::instance().GetQuestStateIndex(pQuestTable[i].szName, "start");
-					sys_err("QUEST __status invalid: pid=%u quest=%s val=%d -> start=%d",
-						+pQuestTable[i].dwPID, pQuestTable[i].szName, val, startIdx);
+					LOG_ERROR("QUEST __status invalid: pid={} quest={} val={} -> start={}", +pQuestTable[i].dwPID, pQuestTable[i].szName, val, startIdx);
 					val = startIdx ? startIdx : 0; // 0 -> DeleteFlag
 					skipSave = false; // ezt ments�k is vissza, hogy a DB kijavuljon
 					}
@@ -1288,7 +1269,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 
 		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->IsPhase(PHASE_GAME))
 		{
-			sys_log(0, "QUEST_LOAD: Login pc %d", pQuestTable[0].dwPID);
+			LOG_INFO("QUEST_LOAD: Login pc {}", pQuestTable[0].dwPID);
 			quest::CQuestManager::instance().Login(pQuestTable[0].dwPID);
 		}
 		else
@@ -1310,7 +1291,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 
 	if (d->GetAccountTable().id != p->dwID)
 	{
-		sys_err("SafeboxLoad: safebox has different id %u != %u", d->GetAccountTable().id, p->dwID);
+		LOG_ERROR("SafeboxLoad: safebox has different id {} != {}", d->GetAccountTable().id, p->dwID);
 		return;
 	}
 
@@ -1414,7 +1395,7 @@ void CInputDB::MallLoad(LPDESC d, const char * c_pData)
 
 	if (d->GetAccountTable().id != p->dwID)
 	{
-		sys_err("safebox has different id %u != %u", d->GetAccountTable().id, p->dwID);
+		LOG_ERROR("safebox has different id {} != {}", d->GetAccountTable().id, p->dwID);
 		return;
 	}
 
@@ -1454,7 +1435,7 @@ void CInputDB::LoginAlready(LPDESC d, const char * c_pData)
 
 void CInputDB::EmpireSelect(LPDESC d, const char * c_pData)
 {
-	sys_log(0, "EmpireSelect %p", get_pointer(d));
+	LOG_INFO("EmpireSelect {}", static_cast<const void*>(get_pointer(d)));
 
 	if (!d)
 		return;
@@ -1483,7 +1464,7 @@ void CInputDB::MapLocations(const char * c_pData)
 {
 	uint8_t bCount = *(uint8_t *) (c_pData++);
 
-	sys_log(0, "InputDB::MapLocations %d", bCount);
+	LOG_INFO("InputDB::MapLocations {}", bCount);
 
 	TMapLocation * pLoc = (TMapLocation *) c_pData;
 
@@ -1515,7 +1496,7 @@ void CInputDB::P2P(const char * c_pData)
 
 	if (false == DESC_MANAGER::instance().IsP2PDescExist(p->szHost, p->wPort))
 	{
-		sys_log(0, "InputDB:P2P %s:%u", p->szHost, p->wPort);
+		LOG_INFO("InputDB:P2P {}:{}", p->szHost, p->wPort);
 	    LPCLIENT_DESC pkDesc = DESC_MANAGER::instance().CreateConnectionDesc(
 		    main_fdw, p->szHost, p->wPort, PHASE_P2P, false);
 		mgr.RegisterConnector(pkDesc);
@@ -1545,7 +1526,7 @@ void CInputDB::GuildWar(const char* c_pData)
 {
 	TPacketGuildWar * p = (TPacketGuildWar*) c_pData;
 
-	sys_log(0, "InputDB::GuildWar %u %u state %d", p->dwGuildFrom, p->dwGuildTo, p->bWar);
+	LOG_INFO("InputDB::GuildWar {} {} state {}", p->dwGuildFrom, p->dwGuildTo, p->bWar);
 
 	switch (p->bWar)
 	{
@@ -1583,7 +1564,7 @@ void CInputDB::GuildWar(const char* c_pData)
 			break;
 
 		default:
-			sys_err("Unknown guild war state");
+			LOG_ERROR("Unknown guild war state");
 			break;
 	}
 }
@@ -1610,7 +1591,7 @@ void CInputDB::GuildSkillRecharge()
 void CInputDB::GuildExpUpdate(const char* c_pData)
 {
 	TPacketGuildSkillUpdate * p = (TPacketGuildSkillUpdate *) c_pData;
-	sys_log(1, "GuildExpUpdate %d", p->amount);
+	LOG_INFO("GuildExpUpdate {}", p->amount);
 
 	CGuild * g = CGuildManager::instance().TouchGuild(p->guild_id);
 
@@ -1647,7 +1628,7 @@ void CInputDB::GuildChangeGrade(const char* c_pData)
 
 void CInputDB::GuildChangeMemberData(const char* c_pData)
 {
-	sys_log(0, "Recv GuildChangeMemberData");
+	LOG_INFO("Recv GuildChangeMemberData");
 	TPacketGuildChangeMemberData * p = (TPacketGuildChangeMemberData *) c_pData;
 	CGuild * g = CGuildManager::instance().TouchGuild(p->guild_id);
 
@@ -1664,7 +1645,7 @@ void CInputDB::GuildDisband(const char* c_pData)
 void CInputDB::GuildLadder(const char* c_pData)
 {
 	TPacketGuildLadder* p = (TPacketGuildLadder*) c_pData;
-	sys_log(0, "Recv GuildLadder %u %d / w %d d %d l %d", p->dwGuild, p->lLadderPoint, p->lWin, p->lDraw, p->lLoss);
+	LOG_INFO("Recv GuildLadder {} {} / w {} d {} l {}", p->dwGuild, p->lLadderPoint, p->lWin, p->lDraw, p->lLoss);
 	CGuild * g = CGuildManager::instance().TouchGuild(p->dwGuild);
 
 	g->SetLadderPoint(p->lLadderPoint);
@@ -1696,7 +1677,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	sys_log(0, "ITEM_LOAD: COUNT %s %u", ch->GetName(), dwCount);
+	LOG_INFO("ITEM_LOAD: COUNT {} {}", ch->GetName(), dwCount);
 
 	std::vector<LPITEM> v;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
@@ -1719,10 +1700,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 			if (samePlayer || extraInventoryWindow)
 			{
-				sys_err("CInputDB::ItemLoad: purging stale duplicate item id=%u owner_pid=%u window=%u",
-					p->id,
-					((ch)->GetPlayerID()),
-					p->window);
+				LOG_ERROR("CInputDB::ItemLoad: purging stale duplicate item id={} owner_pid={} window={}", p->id, ((ch)->GetPlayerID()), p->window);
 				ItemSystem::DestroyLoadedDuplicateItem(staleItem);
 			}
 		}
@@ -1731,7 +1709,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 		if (!item)
 		{
-			sys_err("cannot create item by vnum %u (name %s id %u)", p->vnum, ch->GetName(), p->id);
+			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ch->GetName(), p->id);
 			continue;
 		}
 
@@ -1752,7 +1730,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if ((p->window == INVENTORY && ch->GetInventoryItem(p->pos)) ||
 				(p->window == EQUIPMENT && ch->GetWear(p->pos)))
 		{
-			sys_log(0, "ITEM_RESTORE: %s %s", ch->GetName(), item->GetName());
+			LOG_INFO("ITEM_RESTORE: {} {}", ch->GetName(), item->GetName());
 			v.push_back(item);
 		}
 		else
@@ -1798,7 +1776,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 
 		if (false == item->OnAfterCreatedItem())
-			sys_err("Failed to call ITEM::OnAfterCreatedItem (vnum: %d, id: %d)", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
 	}
@@ -1839,7 +1817,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #ifdef ENABLE_BATTLE_PASS
 void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 {
-	//sys_err("BattlePassLoad");
+	//LOG_ERROR("BattlePassLoad");
 	if (!d || !d->GetCharacter())
 		return;
 
@@ -1861,7 +1839,7 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 
 void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 {
-	//sys_err("BattlePassLoadRanking");
+	//LOG_ERROR("BattlePassLoadRanking");
 	if (!d || !d->GetCharacter())
 		return;
 
@@ -1878,7 +1856,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	//sys_err("BattlePassLoadRanking count %d playerid %d", dwCount, dwPID);
+	//LOG_ERROR("BattlePassLoadRanking count {} playerid {}", dwCount, dwPID);
 	
 	if (ch->GetPlayerID() != dwPID)
 		return;
@@ -2029,7 +2007,7 @@ void CInputDB::ReloadProto(const char * c_pData)
 	 */
 	wSize = decode_2bytes(c_pData);
 	c_pData += 2;
-	sys_log(0, "RELOAD: ITEM: %d", wSize);
+	LOG_INFO("RELOAD: ITEM: {}", wSize);
 
 	if (wSize)
 	{
@@ -2042,7 +2020,7 @@ void CInputDB::ReloadProto(const char * c_pData)
 	 */
 	wSize = decode_2bytes(c_pData);
 	c_pData += 2;
-	sys_log(0, "RELOAD: MOB: %d", wSize);
+	LOG_INFO("RELOAD: MOB: {}", wSize);
 
 	if (wSize)
 	{
@@ -2088,7 +2066,7 @@ void CInputDB::AuthLogin(LPDESC d, const char * c_pData)
 
 	d->Packet(&ptoc, sizeof(TPacketGCAuthSuccess));
 
-	sys_log(0, "AuthLogin result %u key %u", bResult, d->GetLoginKey());
+	LOG_INFO("AuthLogin result {} key {}", bResult, d->GetLoginKey());
 }
 
 void CInputDB::ChangeEmpirePriv(const char* c_pData)
@@ -2195,7 +2173,7 @@ void CInputDB::BillingRepair(const char * c_pData)
 		pkLD->SetLogin(p->szLogin);
 		pkLD->SetIP(p->szHost);
 
-		sys_log(0, "BILLING: REPAIR %s host %s", p->szLogin, p->szHost);
+		LOG_INFO("BILLING: REPAIR {} host {}", p->szLogin, p->szHost);
 	}
 }
 
@@ -2213,7 +2191,7 @@ void CInputDB::BillingExpire(const char * c_pData)
 	if (p->dwRemainSeconds <= 60)
 	{
 		int i = MAX(5, p->dwRemainSeconds);
-		sys_log(0, "BILLING_EXPIRE: %s %u", p->szLogin, p->dwRemainSeconds);
+		LOG_INFO("BILLING_EXPIRE: {} {}", p->szLogin, p->dwRemainSeconds);
 		d->DelayedDisconnect(i);
 	}
 	else
@@ -2258,7 +2236,7 @@ void CInputDB::BillingCheck(const char * c_pData)
 		uint32_t dwKey = *(uint32_t *) c_pData;
 		c_pData += sizeof(uint32_t);
 
-		sys_log(0, "BILLING: NOT_LOGIN %u", dwKey);
+		LOG_INFO("BILLING: NOT_LOGIN {}", dwKey);
 		DBManager::instance().SetBilling(dwKey, 0, true);
 	}
 }
@@ -2275,12 +2253,12 @@ void CInputDB::VCard(const char * c_pData)
 {
 	TPacketGDVCard * p = (TPacketGDVCard *) c_pData;
 
-	sys_log(0, "VCARD: %u %s %s %s %s", p->dwID, p->szSellCharacter, p->szSellAccount, p->szBuyCharacter, p->szBuyAccount);
+	LOG_INFO("VCARD: {} {} {} {} {}", p->dwID, p->szSellCharacter, p->szSellAccount, p->szBuyCharacter, p->szBuyAccount);
 
 	std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery("SELECT sell_account, buy_account, time FROM vcard WHERE id=%u", p->dwID));
 	if (pmsg->Get()->uiNumRows != 1)
 	{
-		sys_log(0, "VCARD_FAIL: no data");
+		LOG_INFO("VCARD_FAIL: no data");
 		return;
 	}
 
@@ -2288,13 +2266,13 @@ void CInputDB::VCard(const char * c_pData)
 
 	if (strcmp(row[0], p->szSellAccount))
 	{
-		sys_log(0, "VCARD_FAIL: sell account differ %s", row[0]);
+		LOG_INFO("VCARD_FAIL: sell account differ {}", row[0]);
 		return;
 	}
 
 	if (!row[1] || *row[1])
 	{
-		sys_log(0, "VCARD_FAIL: buy account already exist");
+		LOG_INFO("VCARD_FAIL: buy account already exist");
 		return;
 	}
 
@@ -2303,7 +2281,7 @@ void CInputDB::VCard(const char * c_pData)
 
 	if (!row[2] || time < 0)
 	{
-		sys_log(0, "VCARD_FAIL: time null");
+		LOG_INFO("VCARD_FAIL: time null");
 		return;
 	}
 
@@ -2311,7 +2289,7 @@ void CInputDB::VCard(const char * c_pData)
 
 	if (pmsg1->Get()->uiAffectedRows == 0 || pmsg1->Get()->uiAffectedRows == (uint32_t)-1)
 	{
-		sys_log(0, "VCARD_FAIL: cannot modify GameTime table");
+		LOG_INFO("VCARD_FAIL: cannot modify GameTime table");
 		return;
 	}
 
@@ -2319,11 +2297,11 @@ void CInputDB::VCard(const char * c_pData)
 
 	if (pmsg2->Get()->uiAffectedRows == 0 || pmsg2->Get()->uiAffectedRows == (uint32_t)-1)
 	{
-		sys_log(0, "VCARD_FAIL: cannot modify vcard table");
+		LOG_INFO("VCARD_FAIL: cannot modify vcard table");
 		return;
 	}
 
-	sys_log(0, "VCARD_SUCCESS: %s %s", p->szBuyAccount, p->szBuyCharacter);
+	LOG_INFO("VCARD_SUCCESS: {} {}", p->szBuyAccount, p->szBuyCharacter);
 }
 
 void CInputDB::GuildWarReserveAdd(TGuildWarReserve * p)
@@ -2343,19 +2321,19 @@ void CInputDB::GuildWarBet(TPacketGDGuildWarBet * p)
 
 void CInputDB::MarriageAdd(TPacketMarriageAdd * p)
 {
-	sys_log(0, "MarriageAdd %u %u %u %s %s", p->dwPID1, p->dwPID2, (uint32_t)p->tMarryTime, p->szName1, p->szName2);
+	LOG_INFO("MarriageAdd {} {} {} {} {}", p->dwPID1, p->dwPID2, (uint32_t)p->tMarryTime, p->szName1, p->szName2);
 	marriage::CManager::instance().Add(p->dwPID1, p->dwPID2, p->tMarryTime, p->szName1, p->szName2);
 }
 
 void CInputDB::MarriageUpdate(TPacketMarriageUpdate * p)
 {
-	sys_log(0, "MarriageUpdate %u %u %d %d", p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
+	LOG_INFO("MarriageUpdate {} {} {} {}", p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
 	marriage::CManager::instance().Update(p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
 }
 
 void CInputDB::MarriageRemove(TPacketMarriageRemove * p)
 {
-	sys_log(0, "MarriageRemove %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("MarriageRemove {} {}", p->dwPID1, p->dwPID2);
 	marriage::CManager::instance().Remove(p->dwPID1, p->dwPID2);
 }
 
@@ -2366,19 +2344,19 @@ void CInputDB::WeddingRequest(TPacketWeddingRequest* p)
 
 void CInputDB::WeddingReady(TPacketWeddingReady* p)
 {
-	sys_log(0, "WeddingReady %u %u %u", p->dwPID1, p->dwPID2, p->dwMapIndex);
+	LOG_INFO("WeddingReady {} {} {}", p->dwPID1, p->dwPID2, p->dwMapIndex);
 	marriage::CManager::instance().WeddingReady(p->dwPID1, p->dwPID2, p->dwMapIndex);
 }
 
 void CInputDB::WeddingStart(TPacketWeddingStart* p)
 {
-	sys_log(0, "WeddingStart %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("WeddingStart {} {}", p->dwPID1, p->dwPID2);
 	marriage::CManager::instance().WeddingStart(p->dwPID1, p->dwPID2);
 }
 
 void CInputDB::WeddingEnd(TPacketWeddingEnd* p)
 {
-	sys_log(0, "WeddingEnd %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("WeddingEnd {} {}", p->dwPID1, p->dwPID2);
 	marriage::CManager::instance().WeddingEnd(p->dwPID1, p->dwPID2);
 }
 
@@ -2390,7 +2368,7 @@ void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* 
 	if (!d || !(ch = d->GetCharacter()) )
 		return;
 
-	sys_log(0, "RecvMyshopPricelistRes name[%s]", ((ch)->GetName()));
+	LOG_INFO("RecvMyshopPricelistRes name[{}]", ((ch)->GetName()));
 	ch->UseSilkBotaryReal(p );
 
 }
@@ -2503,7 +2481,7 @@ void OfflineShopLoadTables(const char* data)
 
 		if (!pkShop)
 		{
-			sys_err("CANNOT FIND SHOP BY OWNERID (TOfferInfo) %d ",pOffer->dwOwnerID);
+			LOG_ERROR("CANNOT FIND SHOP BY OWNERID (TOfferInfo) {} ", pOffer->dwOwnerID);
 			continue;
 		}
 
@@ -2892,7 +2870,7 @@ void OfflineshopPacket(const char* data)
 
 
 	default:
-		sys_err("UKNOWN SUB HEADER %d ", pPack->bSubHeader);
+		LOG_ERROR("UKNOWN SUB HEADER {} ", pPack->bSubHeader);
 		return;
 	}
 }
@@ -2905,7 +2883,7 @@ void LoadItemExtraProto(const char* data)
 {
 	TPacketDGLoadItemExtraProto* Pack = (TPacketDGLoadItemExtraProto*)data;
 	if (Pack->dwTableSize != sizeof(TItemExtraProto)) {
-		sys_err("Invalid TItemExtraProto size %u (known %u) ", Pack->dwTableSize, sizeof(TItemExtraProto));
+		LOG_ERROR("Invalid TItemExtraProto size {} (known {}) ", Pack->dwTableSize, sizeof(TItemExtraProto));
 		return;
 	}
 
@@ -2965,11 +2943,11 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		break;
 
 	case HEADER_DG_PLAYER_LOAD_FAILED:
-		//sys_log(0, "PLAYER_LOAD_FAILED");
+		//LOG_INFO("PLAYER_LOAD_FAILED");
 		break;
 
 	case HEADER_DG_PLAYER_DELETE_FAILED:
-		//sys_log(0, "PLAYER_DELETE_FAILED");
+		//LOG_INFO("PLAYER_DELETE_FAILED");
 		PlayerDeleteFail(DESC_MANAGER::instance().FindByHandle(m_dwHandle));
 		break;
 
@@ -3344,7 +3322,7 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 		m_dwHandle	= *((uint32_t *) (c_pData + 1));	// 4
 		iSize		= *((uint32_t *) (c_pData + 5));	// 4
 
-		sys_log(1, "DBCLIENT: header %d handle %d size %d bytes %d", bHeader, m_dwHandle, iSize, bytes);
+		LOG_INFO("DBCLIENT: header {} handle {} size {} bytes {}", bHeader, m_dwHandle, iSize, bytes);
 
 		if (m_iBufferLeft - 9 < iSize)
 			return true;
@@ -3353,8 +3331,7 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 
 		if (Analyze(d, bHeader, pRealData) < 0)
 		{
-			sys_err("in InputDB: UNKNOWN HEADER: %d, LAST HEADER: %d(%d), REMAIN BYTES: %d, DESC: %d",
-					bHeader, bLastHeader, iLastPacketLen, m_iBufferLeft, d->GetSocket());
+			LOG_ERROR("in InputDB: UNKNOWN HEADER: {}, LAST HEADER: {}({}), REMAIN BYTES: {}, DESC: {}", bHeader, bLastHeader, iLastPacketLen, m_iBufferLeft, d->GetSocket());
 
 			//printdata((uint8_t*) orig, bytes);
 			//d->SetPhase(PHASE_CLOSE);
@@ -3432,7 +3409,7 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 {
 	if (!d || !d->GetCharacter())
 	{
-		sys_err("Change channel request with empty or invalid description handle!");
+		LOG_ERROR("Change channel request with empty or invalid description handle!");
 		return;
 	}
 
