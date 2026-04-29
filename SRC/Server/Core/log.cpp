@@ -1,5 +1,6 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
+#include "Logging.hpp"
 
 #ifndef _WIN32
 #define SYSLOG_FILENAME "syslog"
@@ -37,6 +38,26 @@ void log_file_set_dir(const char *dir);
 
 static unsigned int log_level_bits = 0;
 
+namespace
+{
+constexpr std::size_t LOG_FORMAT_BUFFER_SIZE = 4096;
+
+void FormatLegacyLogMessage(char* buffer, std::size_t bufferSize, const char* format, va_list args)
+{
+	if (!buffer || bufferSize == 0)
+		return;
+
+	if (!format)
+	{
+		buffer[0] = '\0';
+		return;
+	}
+
+	vsnprintf(buffer, bufferSize, format, args);
+	buffer[bufferSize - 1] = '\0';
+}
+}
+
 void log_set_level(unsigned int bit)
 {
 	log_level_bits |= bit;
@@ -61,112 +82,63 @@ int log_init(void)
 {
 	log_file_set_dir("./log");
 
-	do
+	try
 	{
-		log_file_sys = log_file_init(SYSLOG_FILENAME, "a+");
-		if( NULL == log_file_sys ) break;
-
-		log_file_err = log_file_init(SYSERR_FILENAME, "a+");
-		if( NULL == log_file_err ) break;
-
-		log_file_pt = log_file_init(PTS_FILENAME, "w");
-		if( NULL == log_file_pt ) break;
-
-		return true;
+		logging::Init(log_dir);
 	}
-	while( false );
+	catch (const std::exception&)
+	{
+		return false;
+	}
 
-	return false;
+	log_file_pt = log_file_init(PTS_FILENAME, "w");
+	if (NULL == log_file_pt)
+		return false;
+
+	return true;
+
 }
 
 void log_destroy(void)
 {
-	log_file_destroy(log_file_sys);
-	log_file_destroy(log_file_err);
 	log_file_destroy(log_file_pt);
 
 	log_file_sys = NULL;
 	log_file_err = NULL;
 	log_file_pt = NULL;
+
+	logging::Shutdown();
 }
 
 void log_rotate(void)
 {
-	log_file_check(log_file_sys);
-	log_file_check(log_file_err);
 	log_file_check(log_file_pt);
 
-	log_file_rotate(log_file_sys);
+	log_file_rotate(log_file_pt);
 }
 
-#ifndef _WIN32
 void _sys_err(const char *func, int line, const char *format, ...)
 {
 	va_list args;
-	time_t ct = time(0);
-	char *time_s = asctime(localtime(&ct));
+	char buf[LOG_FORMAT_BUFFER_SIZE];
 
-	char buf[1024 + 2];
-	int len;
+	va_start(args, format);
+	FormatLegacyLogMessage(buf, sizeof(buf), format, args);
+	va_end(args);
 
-	if (!log_file_err)
-		return;
-
-	time_s[strlen(time_s) - 1] = '\0';
-	len = snprintf(buf, 1024, "SYSERR: %-15.15s :: %s: ", time_s + 4, func);
-	buf[1025] = '\0';
-
-	if (len < 1024)
+	if (auto errorLogger = logging::GetErrorLogger())
 	{
-		va_start(args, format);
-		vsnprintf(buf + len, 1024 - len, format, args);
-		va_end(args);
+		errorLogger->log(
+			spdlog::source_loc{"", line, func ? func : ""},
+			spdlog::level::err,
+			"{}",
+			buf);
+		errorLogger->flush();
 	}
 
-	strcat(buf, "\n");
-
-	fputs(buf, log_file_err->fp);
-	fflush(log_file_err->fp);
-
-	fputs(buf, log_file_sys->fp);
-	fflush(log_file_sys->fp);
+	if (auto logger = logging::GetLogger())
+		logger->error("SYSERR: {}: {}", func ? func : "", buf);
 }
-#else
-void _sys_err(const char *func, int line, const char *format, ...)
-{
-	va_list args;
-	time_t ct = time(0);  
-	char *time_s = asctime(localtime(&ct));
-
-	char buf[1024 + 2];
-	int len;
-
-	if (!log_file_err)
-		return;
-
-	time_s[strlen(time_s) - 1] = '\0';
-	len = snprintf(buf, 1024, "SYSERR: %-15.15s :: %s: ", time_s + 4, func);
-	buf[1025] = '\0';
-
-	if (len < 1024)
-	{
-		va_start(args, format);
-		vsnprintf(buf + len, 1024 - len, format, args);
-		va_end(args);
-	}
-
-	strcat(buf, "\n");
-
-	fputs(buf, log_file_err->fp);
-	fflush(log_file_err->fp);
-
-	fputs(buf, log_file_sys->fp);
-	fflush(log_file_sys->fp);
-
-	fputs(buf, stdout);
-	fflush(stdout);
-}
-#endif
 
 static char sys_log_header_string[33] = { 0, };
 
@@ -178,43 +150,17 @@ void sys_log_header(const char *header)
 void sys_log(unsigned int bit, const char *format, ...)
 {
 	va_list	args;
+	char buf[LOG_FORMAT_BUFFER_SIZE];
 
 	if (bit != 0 && !(log_level_bits & bit))
 		return;
 
-	if (log_file_sys)
-	{
-		time_t ct = time(0);
-		char *time_s = asctime(localtime(&ct));
+	va_start(args, format);
+	FormatLegacyLogMessage(buf, sizeof(buf), format, args);
+	va_end(args);
 
-		fprintf(log_file_sys->fp, sys_log_header_string);
-
-		time_s[strlen(time_s) - 1] = '\0';
-		fprintf(log_file_sys->fp, "%-15.15s :: ", time_s + 4);
-
-		va_start(args, format);
-		vfprintf(log_file_sys->fp, format, args);
-		va_end(args);
-
-		fputc('\n', log_file_sys->fp);
-		fflush(log_file_sys->fp);
-	}
-
-#ifndef _WIN32
-	if (log_level_bits > 1)
-	{
-#endif
-		fprintf(stdout, sys_log_header_string);
-
-		va_start(args, format);
-		vfprintf(stdout, format, args);
-		va_end(args);
-
-		fputc('\n', stdout);
-		fflush(stdout);
-#ifndef _WIN32
-	}
-#endif
+	if (auto logger = logging::GetLogger())
+		logger->info("{}{}", sys_log_header_string, buf);
 }
 
 void pt_log(const char *format, ...)
@@ -283,6 +229,9 @@ void log_file_destroy(LPLOGFILE logfile)
 
 void log_file_check(LPLOGFILE logfile)
 {
+	if (logfile == NULL)
+		return;
+
 	struct stat	sb;
 
 	if (stat(logfile->filename, &sb) != 0 && errno == ENOENT)
@@ -381,6 +330,9 @@ void log_file_delete_old(const char *filename)
 
 void log_file_rotate(LPLOGFILE logfile)
 {
+	if (logfile == NULL)
+		return;
+
     struct tm	curr_tm;
 	time_t	time_s;
     char	dir[128];
