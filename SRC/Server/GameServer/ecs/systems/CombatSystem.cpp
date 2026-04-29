@@ -3013,10 +3013,20 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 #endif
 }
 
-static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& dwGivenCount)
+static LPITEM __LegacyCombatItem(entt::entity item)
+{
+	if (item == entt::null)
+		return nullptr;
+
+	const uint32_t id = ItemSystem::GetItemID(item);
+	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+}
+
+static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity, uint32_t& dwGivenCount)
 {
 	dwGivenCount = 0;
 
+	LPITEM item = __LegacyCombatItem(itemEntity);
 	if (!ch || !item)
 		return false;
 
@@ -3202,15 +3212,16 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, LPITEM item, uint32_t& 
 	return true;
 }
 
-static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, LPITEM item, const PIXEL_POSITION& pos, bool bTrackBattlePass)
+static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
+	LPITEM item = __LegacyCombatItem(itemEntity);
 	if (!item)
 		return;
 
 	uint32_t dwGivenCount = 0;
 	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
-	if (ch && __TryAutoGiveRewardItem(ch, item, dwGivenCount))
+	if (ch && __TryAutoGiveRewardItem(ch, itemEntity, dwGivenCount))
 	{
 		if (bTrackBattlePass && dwGivenCount > 0)
 			__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
@@ -3781,7 +3792,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch, this, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rch, this, EntityFactory::CreateItemEntity(g_registry, newItem), mpos, true);
 									}
 									else
 									{
@@ -3839,7 +3850,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
-					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, item, pos, true);
+					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, EntityFactory::CreateItemEntity(g_registry, item), pos, true);
 				}
 				else
 				{
@@ -3960,7 +3971,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(ch, this, item, pos, true);
+							__GiveRewardItemToCharacterOrDrop(ch, this, EntityFactory::CreateItemEntity(g_registry, item), pos, true);
 						}
 						else
 						{
@@ -7802,5 +7813,3 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	return true;
 }
-
-
