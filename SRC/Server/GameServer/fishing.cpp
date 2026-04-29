@@ -673,10 +673,8 @@ void Simulation(int level, int count, int prob_idx, LPCHARACTER ch)
 #endif
 }
 
-void UseFish(LPCHARACTER ch, LPITEM item)
+void UseFish(entt::entity owner, entt::entity itemEntity)
 {
-	const entt::entity owner = AIHelpers::EcsOf(ch);
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
 	int idx = ItemSystem::GetItemVnum(itemEntity) - fish_info[2].vnum+2;
 
 	// ÇÇ¶ó1I »ç?ëoO°!, »i3AAÖ´Â°Ô 3A´N°Ç »ç?ëoO°!
@@ -707,7 +705,7 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 			case USED_NONE:
 			case USED_WATER_STONE:
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 248, "");
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 248, "");
 #endif
 				break;
 			case USED_SHELLFISH:
@@ -724,10 +722,8 @@ void UseFish(LPCHARACTER ch, LPITEM item)
 #endif
 }
 
-void Grill(LPCHARACTER ch, LPITEM item)
+void Grill(entt::entity owner, entt::entity itemEntity)
 {
-	const entt::entity owner = AIHelpers::EcsOf(ch);
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
 	int idx = -1;
 	uint32_t vnum = ItemSystem::GetItemVnum(itemEntity);
 	if (vnum >= 27803 && vnum <= 27830)
@@ -740,6 +736,9 @@ void Grill(LPCHARACTER ch, LPITEM item)
 	int count = ItemSystem::GetItemCount(itemEntity);
 	
 #ifdef ENABLE_BATTLE_PASS
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
+		return;
 	uint8_t bBattlePassId = ch->GetBattlePassId();
 	if(bBattlePassId)
 	{
@@ -762,26 +761,20 @@ void Grill(LPCHARACTER ch, LPITEM item)
 
 bool UseFishEcs(entt::entity owner, entt::entity fishItem)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	const uint32_t itemId = ItemSystem::GetItemID(fishItem);
-	LPITEM legacyItem = itemId != 0 ? ITEM_MANAGER::instance().Find(itemId) : nullptr;
-	if (!ch || !legacyItem)
+	if (owner == entt::null || fishItem == entt::null)
 		return false;
 
-	UseFish(ch, legacyItem);
+	UseFish(owner, fishItem);
 	ItemSystem::SyncItemStateFromLegacy(fishItem);
 	return true;
 }
 
 bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	const uint32_t itemId = ItemSystem::GetItemID(fishItem);
-	LPITEM legacyItem = itemId != 0 ? ITEM_MANAGER::instance().Find(itemId) : nullptr;
-	if (!ch || !legacyItem)
+	if (owner == entt::null || fishItem == entt::null)
 		return false;
 
-	Grill(ch, legacyItem);
+	Grill(owner, fishItem);
 	ItemSystem::SyncItemStateFromLegacy(fishItem);
 	return true;
 }
