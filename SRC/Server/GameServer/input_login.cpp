@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -803,7 +804,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 				ch->HorseSummon(false);
 			}
 
-			LPPARTY pParty = ch->GetParty();
+			LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 			if (pParty != nullptr)
 			{
 				if (pParty->GetMemberCount() == 2)

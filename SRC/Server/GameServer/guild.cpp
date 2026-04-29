@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -150,7 +151,7 @@ CGuild::~CGuild()
 
 void CGuild::RequestAddMember(LPCHARACTER ch, int grade)
 {
-	if (ch->GetGuild())
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		return;
 
 	TPacketGDGuildAddMember gd;
@@ -2399,7 +2400,7 @@ CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const LPCHARACTER 
 		return GERR_COMMISSIONPENALTY;
 	*/
 
-	if (pchInvitee->GetGuild())
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pchInvitee)))
 		return GERR_ALREADYJOIN;
 	else if (GetMemberCount() >= GetMaxMemberCount())
 	{

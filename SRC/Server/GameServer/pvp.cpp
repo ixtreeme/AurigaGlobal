@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -199,13 +200,13 @@ EVENTFUNC(pvp_duel_counter)
 		{
 			if ((chA->GetDuel("BlockParty")) && (chB->GetDuel("BlockParty")))	
 			{	
-				LPPARTY chParty = chA->GetParty();
-				LPPARTY victimParty = chB->GetParty();
+				LPPARTY chParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chA));
+				LPPARTY victimParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB));
 				
-				if (chA->GetParty())
+				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chA)))
 					chParty->Quit(((chA)->GetPlayerID()));
 				
-				if (chB->GetParty())
+				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB)))
 					victimParty->Quit(((chB)->GetPlayerID()));
 			}
 			
@@ -672,7 +673,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 		int mTable[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[8]))};
 		
-		CGuild * g = pkChr->GetGuild();
+		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr));
 
 		const char* m_Name = ((pkChr)->GetName());
 		const char* m_GuildName = "-";
@@ -944,7 +945,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 
 	bool beKillerMode = false;
 
-	if (pkVictim->GetParty() && pkVictim->GetParty() == pkChr->GetParty())
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim)) && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim)) == ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChr)))
 	{
 		return false;
 		// Cannot attack same party on any pvp model
@@ -962,7 +963,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 			case PK_MODE_PEACE:
 			case PK_MODE_REVENGE:
 				// Cannot attack same guild
-				if (pkVictim->GetGuild() && pkVictim->GetGuild() == pkChr->GetGuild())
+				if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim)) && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim)) == ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr)))
 					break;
 
 				/*if (pkChr->GetPKMode() == PK_MODE_REVENGE)
@@ -979,7 +980,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 
 			case PK_MODE_GUILD:
 				// Same implementation from PK_MODE_FREE except for attacking same guild
-				if (!pkChr->GetGuild() || (pkVictim->GetGuild() != pkChr->GetGuild()))
+				if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr)) || (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim)) != ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr))))
 				{
 					pkChr->SetKillerMode(true);
 					return true;

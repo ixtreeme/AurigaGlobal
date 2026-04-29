@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "Halloween2022Dungeon.h"
@@ -363,7 +364,7 @@ namespace
             return 0;
         auto fn = [&](LPCHARACTER pc)
         {
-            if (pc && pc->GetParty() == party)
+            if (pc && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) == party)
                 ++count;
         };
         party->ForEachOnMapMember(fn, mapIndex);
@@ -755,7 +756,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can enter.");

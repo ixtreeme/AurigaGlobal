@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
 
@@ -1449,11 +1450,11 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 		case CHAT_TYPE_PARTY:
 			{
-				if (!ch->GetParty())
+				if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 485, "");
 #endif
-				if (ch->GetParty())
+				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 				{
 					TEMP_BUFFER tbuf;
 
@@ -1461,12 +1462,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					tbuf.write(chatbuf, len);
 
 					RawPacketToCharacterFunc f(tbuf.read_peek(), tbuf.size());
-					ch->GetParty()->ForEachOnlineMember(f);
+					ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachOnlineMember(f);
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetParty()->GetLeaderPID(), "", "PARTY", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
 					}
 #endif
 				}
@@ -1480,13 +1481,13 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 		case CHAT_TYPE_GUILD:
 			{
-				if (ch->GetGuild()) {
-					ch->GetGuild()->Chat(chatbuf);
+				if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))) {
+					ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->Chat(chatbuf);
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ch->GetGuild()->GetID(), ch->GetGuild()->GetName(), "GUILD", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ch->GetDesc() ? ch->GetDesc()->GetHostName() : "");
 					}
 #endif
 				}
@@ -3562,10 +3563,10 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 
 	TPacketCGPartySetState* p = (TPacketCGPartySetState*) c_pData;
 
-	if (!ch->GetParty())
+	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ch->GetParty()->GetLeaderPID() != ch->GetPlayerID())
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() != ch->GetPlayerID())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 206, "");
@@ -3573,7 +3574,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 
-	if (!ch->GetParty()->IsMember(p->pid))
+	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->IsMember(p->pid))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 207, "");
@@ -3595,7 +3596,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 		case PARTY_ROLE_SKILL_MASTER:
 		case PARTY_ROLE_HASTE:
 		case PARTY_ROLE_DEFENDER:
-			if (ch->GetParty()->SetRole(pid, p->byRole, p->flag))
+			if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SetRole(pid, p->byRole, p->flag))
 			{
 				TPacketPartyStateChange pack;
 				pack.dwLeaderPID = ch->GetPlayerID();
@@ -3645,10 +3646,10 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 
 	TPacketCGPartyRemove* p = (TPacketCGPartyRemove*) c_pData;
 
-	if (!ch->GetParty())
+	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
-	LPPARTY pParty = ch->GetParty();
+	LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 	if (pParty->GetLeaderPID() == ch->GetPlayerID())
 	{
 		if (!ch->GetDungeon()) {
@@ -3751,7 +3752,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 
-	if (ch->GetGuild())
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		return;
 
 	CGuildManager& gm = CGuildManager::instance();
@@ -3805,10 +3806,10 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGPartyUseSkill* p = (TPacketCGPartyUseSkill*) c_pData;
-	if (!ch->GetParty())
+	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ch->GetPlayerID() != ch->GetParty()->GetLeaderPID())
+	if (ch->GetPlayerID() != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 211, "");
@@ -3819,13 +3820,13 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	switch (p->bySkillIndex)
 	{
 		case PARTY_SKILL_HEAL:
-			ch->GetParty()->HealParty();
+			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->HealParty();
 			break;
 		case PARTY_SKILL_WARP:
 			{
 				LPCHARACTER pch = CHARACTER_MANAGER::instance().Find(p->vid);
 				if (pch) {
-					ch->GetParty()->SummonToLeader(pch->GetPlayerID());
+					ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SummonToLeader(pch->GetPlayerID());
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -3844,8 +3845,8 @@ void CInputMain::PartyParameter(LPCHARACTER ch, const char * c_pData)
 // DUAL-PATH: legacy only during migration window
 	TPacketCGPartyParameter * p = (TPacketCGPartyParameter *) c_pData;
 
-	if (ch->GetParty())
-		ch->GetParty()->SetParameter(p->bDistributeMode);
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+		ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SetParameter(p->bDistributeMode);
 }
 
 #ifdef __INGAME_WIKI__
@@ -4015,7 +4016,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 		return -1;
 	}
 
-	CGuild* pGuild = ch->GetGuild();
+	CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 
 	if (nullptr == pGuild)
 	{
@@ -4118,7 +4119,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				if (member)
 				{
-					if (member->GetGuild() != pGuild)
+					if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(member)) != pGuild)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 161, "");

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -926,7 +927,7 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     if (d->GetFlag(kFlagFloor) == 0)
     {
         bool isLeader = true;
-        if (LPPARTY party = ch->GetParty())
+        if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
         {
             if (party->GetLeaderPID() != ch->GetPlayerID())
                 isLeader = false;
@@ -1028,7 +1029,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
         if (isType1Mob && number(1, 100) <= 5)
         {
-            LPPARTY party = killer->GetParty();
+            LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer));
             if (!party)
             {
                 if (killer->CountSpecifyItem(kKeyFragment) < 10 && killer->CountSpecifyItem(kFloorKey) < 1)
@@ -1139,7 +1140,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SpawnMob(kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
 
         // Global broadcast
-        if (LPPARTY party = killer->GetParty())
+        if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
         {
             const char* leaderName = killer->GetName();
             if (LPCHARACTER leader = party->GetLeaderCharacter())
@@ -1296,7 +1297,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             pc->RemoveSpecifyItem(kFloorKey, k);
         };
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 
     // --- Validate party / solo requirements BEFORE creating the dungeon ---
     if (party)
@@ -1317,7 +1318,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
             if (!ok || !pc || !pc->IsPC())
                 return;
-            if (pc->GetParty() != party)
+            if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
 
             if (pc->GetLevel() < kMinLevel || pc->GetLevel() > kMaxLevel)
@@ -1394,7 +1395,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
-            if (!pc || !pc->IsPC() || pc->GetParty() != party)
+            if (!pc || !pc->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
             setupMember(pc);
             });
@@ -1431,7 +1432,7 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
         return false;
 
     // Only leader (or solo) can progress
-    if (LPPARTY party = ch->GetParty())
+    if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
     {
         if (party->GetLeaderPID() != ch->GetPlayerID())
             return false;
@@ -1465,7 +1466,7 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
     if (ch->CountSpecifyItem(kKeyFragment) < 10)
         return false;
 
-    if (LPPARTY party = ch->GetParty())
+    if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
     {
         if (party->GetLeaderPID() != ch->GetPlayerID())
             return false;

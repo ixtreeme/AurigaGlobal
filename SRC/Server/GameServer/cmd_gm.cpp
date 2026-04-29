@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
@@ -1409,8 +1410,8 @@ ACMD(do_state)
 			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(((tch)->GetEmpire()), i);
 			int iByGuild = 0;
 
-			if (tch->GetGuild())
-				iByGuild = CPrivManager::instance().GetPrivByGuild(tch->GetGuild()->GetID(), i);
+			if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(tch)))
+				iByGuild = CPrivManager::instance().GetPrivByGuild(ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(tch))->GetID(), i);
 
 			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(((tch)->GetPlayerID()), i);
 
@@ -2135,7 +2136,7 @@ ACMD(do_safebox_size)
 
 ACMD(do_makeguild)
 {
-	if (ch->GetGuild())
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		return;
 
 	CGuildManager& gm = CGuildManager::instance();
@@ -2165,14 +2166,14 @@ ACMD(do_makeguild)
 
 ACMD(do_deleteguild)
 {
-	if (ch->GetGuild())
-		ch->GetGuild()->RequestDisband(((ch)->GetPlayerID()));
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+		ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->RequestDisband(((ch)->GetPlayerID()));
 }
 
 ACMD(do_greset)
 {
-	if (ch->GetGuild())
-		ch->GetGuild()->Reset();
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+		ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->Reset();
 }
 
 // REFINE_ROD_HACK_BUG_FIX
@@ -3278,14 +3279,14 @@ ACMD(do_build)
 	if (GMLevel == GM_PLAYER)
 	{
 		// ÷̾      Ȯؾ Ѵ.
-		if ((!ch->GetGuild() || ch->GetGuild()->GetID() != pkLand->GetOwner()))
+		if ((!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() != pkLand->GetOwner()))
 		{
 			sys_err("%s trying to build on not owned land.", ((ch)->GetName()));
 			return;
 		}
 
 		//  渶ΰ?
-		if (ch->GetGuild()->GetMasterPID() != ((ch)->GetPlayerID()))
+		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID() != ((ch)->GetPlayerID()))
 		{
 			sys_err("%s trying to build while not the guild master.", ((ch)->GetName()));
 			return;
@@ -3825,7 +3826,7 @@ ACMD(do_duel)
 		pChar1->RemoveBadAffect();
 		pChar2->RemoveBadAffect();
 
-		LPPARTY pParty = pChar1->GetParty();
+		LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pChar1));
 		if (pParty != nullptr)
 		{
 			if (pParty->GetMemberCount() == 2)
@@ -3841,7 +3842,7 @@ ACMD(do_duel)
 			}
 		}
 
-		pParty = pChar2->GetParty();
+		pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pChar2));
 		if (pParty != nullptr)
 		{
 			if (pParty->GetMemberCount() == 2)

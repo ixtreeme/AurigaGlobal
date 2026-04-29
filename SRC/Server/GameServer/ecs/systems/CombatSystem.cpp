@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
+#include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
 
 #include "CombatSystem.hpp"
@@ -1589,15 +1590,15 @@ LPCHARACTER CHARACTER::DistributeExp()
 			iMostDam = iDam;
 		}
 
-		if (pAttacker->GetParty())
+		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pAttacker)))
 		{
-			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(pAttacker->GetParty());
+			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pAttacker)));
 			if (it == map_party_damage.end())
 			{
 				TDamageInfo di;
 				di.iDam = iDam;
 				di.pAttacker = nullptr;
-				di.pParty = pAttacker->GetParty();
+				di.pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pAttacker));
 				map_party_damage.insert(std::make_pair(di.pParty, di));
 			}
 			else
@@ -1924,7 +1925,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		if (IsPC())
 		{
 			CGuild* g1 = GetGuild();
-			CGuild* g2 = pkKiller->GetGuild();
+			CGuild* g2 = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller));
 
 			if (g1 && g2)
 				if (g1->UnderWar(g2->GetID()))
@@ -2063,10 +2064,10 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 //#endif
 //					}
 //					else {
-//						if (pkKiller->GetParty())
+//						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller)))
 //						{
 //							FPartyAlignmentCompute f(-20000, pkKiller->GetX(), pkKiller->GetY());
-//							pkKiller->GetParty()->ForEachOnlineMember(f);
+//							ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller))->ForEachOnlineMember(f);
 //
 //							if (f.m_iCount == 0)
 //								pkKiller->UpdateAlignment(-20000);
@@ -2075,7 +2076,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 //								sys_log(0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
 //
 //								f.m_iStep = 1;
-//								pkKiller->GetParty()->ForEachOnlineMember(f);
+//								ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller))->ForEachOnlineMember(f);
 //							}
 //						}
 //						else
@@ -2191,7 +2192,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		// 忡 ݹ ʹ   Ѵ.
 		if (!(RuntimeFlags(this) && IS_SET(RuntimeFlags(this)->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
-			if (!(pkKiller && pkKiller->IsPC() && pkKiller->GetGuild() && pkKiller->GetGuild()->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
+			if (!(pkKiller && pkKiller->IsPC() && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller)) && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller))->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
 				// Ȱϴ ʹ   ʴ´.
 				if (GetMobTable().dwResurrectionVnum)
@@ -2457,7 +2458,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 		}
 	}
 #endif
-	// if (pkVictim->GetParty())
+	// if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim)))
 	   // return false;
 
    // @fixme131
@@ -3655,7 +3656,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
 				)
 			{
-				if (pkAttacker->GetParty()) // CSAK partyra
+				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker))) // CSAK partyra
 				{
 					CDungeon* pDungeon = GetDungeon();
 
@@ -3703,7 +3704,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									return;
 
 								// ugyanabban a partyban legyen
-								if (mch->GetParty() != pkAttacker->GetParty())
+								if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(mch)) != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
 									return;
 
 								std::string key = MakeHwidHostKey(mch);
@@ -3845,7 +3846,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				item = s_vec_item[0];
 
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-				const bool bKeepGroundDrop = (pkAttacker && pkAttacker->GetParty());
+				const bool bKeepGroundDrop = (pkAttacker && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)));
 #else
 				const bool bKeepGroundDrop = false;
 #endif
@@ -3861,7 +3862,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
 					{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-						if (pkAttacker->GetParty())
+						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
 						{
 							FPartyDropDiceRoll f(item, pkAttacker);
 							f.Process(this);
@@ -3957,8 +3958,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						auto* ch = *it;
 
-						if (ch->GetParty())
-							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
+						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+							ch = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetNextOwnership(ch, GetX(), GetY());
 
 						++it;
 
@@ -3966,7 +3967,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							it = v.begin();
 
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-						const bool bKeepGroundDrop = (ch && ch->GetParty());
+						const bool bKeepGroundDrop = (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
 #else
 						const bool bKeepGroundDrop = false;
 #endif
@@ -3982,7 +3983,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
 							{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-								if (ch->GetParty())
+								if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 								{
 									FPartyDropDiceRoll f(item, ch);
 									f.Process(this);
@@ -4018,7 +4019,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
 				{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-					if (pkAttacker->GetParty())
+					if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
 					{
 						FPartyDropDiceRoll f(item, pkAttacker);
 						f.Process(this);
@@ -4115,8 +4116,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						auto* ch = *it;
 
-						if (ch->GetParty())
-							ch = ch->GetParty()->GetNextOwnership(ch, GetX(), GetY());
+						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+							ch = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetNextOwnership(ch, GetX(), GetY());
 
 						++it;
 
@@ -4126,7 +4127,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
 						{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-							if (ch->GetParty())
+							if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 							{
 								FPartyDropDiceRoll f(item, ch);
 								f.Process(this);
@@ -5379,7 +5380,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					}
 					else if (type == 3 && step == 0)
 					{
-						LPPARTY party = pAttacker->GetParty();
+						LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pAttacker));
 						if (party)
 						{
 							if (party->GetLeaderPID() == pAttacker->GetPlayerID())

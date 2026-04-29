@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -1202,7 +1203,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
     if (party)
     {
         if (party->GetLeaderPID() != ch->GetPlayerID())
@@ -1528,15 +1529,15 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     {
         const char* leaderName = killer->GetName();
 
-        if (killer->GetParty())
+        if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
         {
-            LPCHARACTER leader = killer->GetParty()->GetLeaderCharacter();
+            LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
             if (leader)
                 leaderName = leader->GetName();
         }
 
         char notice[256];
-        if (killer->GetParty())
+        if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Fagyos dungeont!", leaderName);
         else
             std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", killer->GetName());

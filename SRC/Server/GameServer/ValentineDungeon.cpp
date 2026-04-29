@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -809,7 +810,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
         return true;
     }
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Valentine Dungeon.");
@@ -824,7 +825,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
         int32_t badLevel = 0;
 
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!ok || !m || !m->IsPC() || m->GetParty() != party)
+            if (!ok || !m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
             if ((kMinLevel > 0 && m->GetLevel() < kMinLevel) || (kMaxLevel > 0 && m->GetLevel() > kMaxLevel))
@@ -848,7 +849,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     {
         FCooldownCheck f(now, "valentine_dungeon.cooldown");
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || m->GetParty() != party)
+            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
         });
@@ -876,7 +877,7 @@ if (!f.ok)
     {
         FEntryItemCheck it(kEntryItemVnum);
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || m->GetParty() != party)
+            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             it(m);
         });
@@ -929,7 +930,7 @@ if (!it.ok)
     else
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || m->GetParty() != party)
+            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             applyMember(m);
         });

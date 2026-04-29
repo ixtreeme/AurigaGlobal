@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -389,7 +390,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetGuild()) ? 1 : 0);
+		lua_pushboolean(L, (ch && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))) ? 1 : 0);
 		return 1;
 	}
 
@@ -397,7 +398,7 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch->GetGuild() ? ch->GetGuild()->GetID() : 0);
+		lua_pushnumber(L, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() : 0);
 		return 1;
 	}
 
@@ -413,7 +414,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ch ? ch->GetGuild() : nullptr;
+		CGuild * g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 		lua_pushboolean(L, (g && ch && ((ch)->GetPlayerID()) == g->GetMasterPID()) ? 1 : 0);
 		return 1;
 	}
@@ -422,7 +423,7 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ch->GetGuild();
+		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 
 		if (g)
 			g->RequestDisband(((ch)->GetPlayerID()));
@@ -434,7 +435,7 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ch->GetGuild();
+		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 
 		if (g)
 			g->RequestRemoveMember(((ch)->GetPlayerID()));
@@ -711,7 +712,7 @@ namespace quest
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(dwVnum, icount);
-		if (ch->GetParty())
+		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		{
 			FPartyDropDiceRoll f(item, ch);
 			f.Process(nullptr);
@@ -2918,7 +2919,7 @@ teleport_area:
 #ifdef ENABLE_BUG_FIXES
         if (!ch) {
             return 0;
-        } else if (ch->GetParty()) {
+        } else if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) {
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1245, "");
 #endif
@@ -4692,9 +4693,9 @@ teleport_area:
 		// 3 player already guild master
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch->GetGuild())
+		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		{
-			lua_pushnumber(L, (((ch)->GetPlayerID()) == ch->GetGuild()->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
+			lua_pushnumber(L, (((ch)->GetPlayerID()) == ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID())?MKGLD_ALREADY_MASTER_GUILD:MKGLD_ALREADY_GUILDED);
 			return 1;
 		}
 		const char* guild_name = lua_tostring(L, 1);

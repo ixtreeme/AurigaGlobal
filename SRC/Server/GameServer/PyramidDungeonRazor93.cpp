@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -360,7 +361,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
     if (d->GetFlag(kFlagFloor) == 0)
     {
-        LPPARTY party = ch->GetParty();
+        LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
         if (!party || party->GetLeaderPID() == ch->GetPlayerID())
         {
             d->SetFlag(kFlagFloor, 2);
@@ -439,7 +440,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamSeconds);
 
     // Leader-only if party
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
@@ -641,9 +642,9 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SetFlag(kFlagWasCompleted, 1);
 
             // Global notice
-            if (killer->GetParty())
+            if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             {
-                LPCHARACTER leader = killer->GetParty()->GetLeaderCharacter();
+                LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
                 { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? leader->GetName() : killer->GetName())); SendNotice(buf); }
             }
             else

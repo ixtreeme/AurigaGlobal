@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -498,9 +499,9 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 #ifdef TEXTS_IMPROVEMENT
             // Global notice with existing text IDs
-            if (killer->GetParty())
+            if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             {
-                LPCHARACTER leader = killer->GetParty()->GetLeaderCharacter();
+                LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
                 BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? leader->GetName() : killer->GetName());
             }
             else
@@ -687,7 +688,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         return true;
     }
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
     if (party && party->GetLeaderPID() != ch->GetPlayerID())
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
@@ -699,7 +700,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     {
         FCooldownCheck f(now, kQfCooldown);
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || m->GetParty() != party)
+            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
         });
@@ -727,7 +728,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         bool missingItem = false;
 
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!ok || !m || !m->IsPC() || m->GetParty() != party)
+            if (!ok || !m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
             if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
@@ -798,7 +799,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     else
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || m->GetParty() != party)
+            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             applyMember(m);
         });

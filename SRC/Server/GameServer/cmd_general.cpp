@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -760,7 +761,7 @@ ACMD(do_restart)
 						sys_log(0, "do_restart: restart town");
 
 						PIXEL_POSITION pos;
-						if (CWarMapManager::instance().GetStartPosition(mapidx, ch->GetGuild()->GetID() < dwGuildOpponent ? 0 : 1, pos))
+						if (CWarMapManager::instance().GetStartPosition(mapidx, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() < dwGuildOpponent ? 0 : 1, pos))
 						{
 							ch->Show(mapidx, pos.x, pos.y);
 						}
@@ -1770,7 +1771,7 @@ ACMD(do_pvp_advanced)
 	
 	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_EQUIPMENT_);
 	
-	CGuild * g = pkVictim->GetGuild();
+	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim));
 
 	const char* m_Name = pkVictim->GetName();	
 	const char* m_GuildName = "-";
@@ -1879,7 +1880,7 @@ ACMD(do_guildskillup)
 	if (!*arg1)
 		return;
 
-	if (!ch->GetGuild())
+	if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 138, "");
@@ -1887,7 +1888,7 @@ ACMD(do_guildskillup)
 		return;
 	}
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	TGuildMember* gm = g->GetMember(((ch)->GetPlayerID()));
 	if (gm->grade == GUILD_LEADER_GRADE)
 	{
@@ -2073,7 +2074,7 @@ ACMD(do_mall_close)
 
 ACMD(do_ungroup)
 {
-	if (!ch->GetParty())
+	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (!CPartyManager::instance().IsEnablePCParty())
@@ -2092,7 +2093,7 @@ ACMD(do_ungroup)
 		return;
 	}
 
-	LPPARTY pParty = ch->GetParty();
+	LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 
 	if (pParty->GetMemberCount() == 2)
 	{
@@ -2134,7 +2135,7 @@ ACMD(do_set_run_mode)
 ACMD(do_war)
 {
 	//   
-	CGuild * g = ch->GetGuild();
+	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 
 	if (!g)
 		return;
@@ -2345,7 +2346,7 @@ ACMD(do_war)
 
 ACMD(do_nowar)
 {
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 
@@ -2569,7 +2570,7 @@ ACMD(do_party_request)
 		return;
 	}
 
-	if (ch->GetParty())
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 441, "");
@@ -3484,8 +3485,8 @@ ACMD(do_dice)
 	start = MIN(start, end);
 
 	int n = number(start, end);
-	if (ch->GetParty()) {
-		ch->GetParty()->ChatPacketToAllMemberNew(
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) {
+		ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ChatPacketToAllMemberNew(
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else
@@ -4089,7 +4090,7 @@ static bool ParseDateToEpochEndOfDay(const char* s, time_t& outEpoch)
 
 ACMD(do_gr_open)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GuildRenewalOpen");
@@ -4098,7 +4099,7 @@ ACMD(do_gr_open)
 
 ACMD(do_gr_load)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	g->RequestRenewalLoad();
@@ -4107,7 +4108,7 @@ ACMD(do_gr_load)
 
 ACMD(do_gr_deposit_item)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 
@@ -4138,7 +4139,7 @@ ACMD(do_gr_deposit_item)
 
 ACMD(do_gr_deposit_money)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	const int64_t amount = atoll(argument);
@@ -4156,7 +4157,7 @@ ACMD(do_gr_deposit_money)
 
 ACMD(do_gr_set_tax)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	if (!g->IsGuildMaster(((ch)->GetPlayerID())))
@@ -4230,7 +4231,7 @@ ACMD(do_gr_set_tax)
 
 ACMD(do_gr_pay_tax)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	std::string reason;
@@ -4243,7 +4244,7 @@ ACMD(do_gr_pay_tax)
 
 ACMD(do_gr_levelup)
 {
-	CGuild* g = ch ? ch->GetGuild() : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
 	std::string reason;

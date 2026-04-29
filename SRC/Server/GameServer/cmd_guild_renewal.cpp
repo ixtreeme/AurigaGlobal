@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
 
@@ -52,7 +54,7 @@ namespace
 			if (!member)
 				continue;
 
-			CGuild* mg = member->GetGuild();
+			CGuild* mg = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(member));
 			if (!mg)
 				continue;
 
@@ -68,7 +70,7 @@ ACMD(do_gr_open)
 {
 	if (!ch)
 		return;
-	if (!ch->GetGuild())
+	if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		return;
 
 	// UI side can hook this to open the window.
@@ -80,7 +82,7 @@ ACMD(do_gr_deposit_item)
 {
 	if (!ch)
 		return;
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 
@@ -106,7 +108,7 @@ ACMD(do_gr_deposit_yang)
 {
 	if (!ch)
 		return;
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 
@@ -140,7 +142,7 @@ ACMD(do_gr_pay_tax)
 	if (!ch)
 		return;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 
@@ -221,7 +223,7 @@ ACMD(do_gr_levelup)
 {
 	if (!ch)
 		return;
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "desc.h"
@@ -110,8 +112,8 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 
 	if (ch->IsPC() && victim->IsPC())
 	{
-		CGuild* g1 = ch->GetGuild();
-		CGuild* g2 = victim->GetGuild();
+		CGuild* g1 = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild* g2 = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(victim));
 
 		if (g1 && g2)
 		{

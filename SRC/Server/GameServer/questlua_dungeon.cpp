@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "constants.h"
@@ -287,7 +288,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		int32_t index = ch ? ((ch)->GetMapIndex()) : -1;
 		if (index != -1) {
-			LPPARTY party = ch->GetParty();
+			LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 			if (!party)
 			{
 				pDungeon->Join_Coords(ch, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
@@ -978,7 +979,7 @@ namespace quest
 		int32_t m_resulttime = 0;
 		std::string m_resultname = "";
 
-		LPPARTY party = ch->GetParty();
+		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
 			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
@@ -1126,7 +1127,7 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 17);
 		std::string m_questname = lua_tostring(L, 18);
 
-		LPPARTY party = ch->GetParty();
+		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
 			FPartyPIDCollectorDungeon f;
@@ -1331,7 +1332,7 @@ namespace quest
 		const int32_t idx = (int32_t)lua_tonumber(L, 3);
 		const std::string questname = lua_tostring(L, 4);
 
-		LPPARTY party = ch->GetParty();
+		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
 			LPDUNGEON currentDungeon = ch->GetDungeon();
@@ -1485,9 +1486,9 @@ namespace quest
 		{
 			if (ch && ((ch)->IsPC()))
 			{
-				if (ch->GetGuild())
+				if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 				{
-					if (guildid == ch->GetGuild()->GetID())
+					if (guildid == ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID())
 					{
 						vecPIDs.push_back(((ch)->GetPlayerID()));
 					}
@@ -1529,7 +1530,7 @@ namespace quest
 			return 3;
 		}
 
-		CGuild * guild = ch->GetGuild();
+		CGuild * guild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 		if (!guild)
 		{
 			lua_pushnumber(L, 2);
@@ -1554,7 +1555,7 @@ namespace quest
 			return 3;
 		}
 
-		LPPARTY party = ch->GetParty();
+		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
 			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
@@ -1665,7 +1666,7 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 2);
 		std::string m_questname = lua_tostring(L, 3);
 
-		// LPPARTY party = ch->GetParty();
+		// LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		// if (party)
 		// {
 			// FPartyPIDCollectorDungeon f;

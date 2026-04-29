@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "LostCastleDungeon.h"
@@ -1510,7 +1511,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t lobbyX = ch->GetX() / 100;
     const int32_t lobbyY = ch->GetY() / 100;
 
-    LPPARTY party = ch->GetParty();
+    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 
     if (party)
     {

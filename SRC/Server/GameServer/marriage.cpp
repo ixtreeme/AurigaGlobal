@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
@@ -133,7 +135,7 @@ namespace marriage
 		return ch1->GetMapIndex() == ch2->GetMapIndex();
 
 		// ��Ƽ üũ�� �������
-		/*if (!ch1->GetParty() || ch1->GetParty() != ch2->GetParty())
+		/*if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch1)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch1)) != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch2)))
 		  return false;*/
 
 		// �Ÿ� üũ�� �������

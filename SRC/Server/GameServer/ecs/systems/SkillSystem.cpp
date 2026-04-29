@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
 
@@ -1692,9 +1693,9 @@ EVENTFUNC(ChainLightningEvent)
 
 	sys_log(1, "chainlighting event %s", pkChr->GetName());
 
-	if (pkChrVictim->GetParty()) // ĆÄĆĽ ¸ŐŔú
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))) // ĆÄĆĽ ¸ŐŔú
 	{
-		pkTarget = pkChrVictim->GetParty()->GetNextOwnership(nullptr, pkChrVictim->GetX(), pkChrVictim->GetY());
+		pkTarget = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))->GetNextOwnership(nullptr, pkChrVictim->GetX(), pkChrVictim->GetY());
 		if (pkTarget == pkChrVictim || !number(0, 2) || pkChr->GetChainLightingExcept().find(pkTarget) != pkChr->GetChainLightingExcept().end())
 			pkTarget = nullptr;
 	}
@@ -3794,7 +3795,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 	if (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111) {
 		if (GetParty() && pkVictim)
 		{
-			LPPARTY party = pkVictim->GetParty();
+			LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim));
 			if (party && GetParty()) {
 				ComputeSkillParty(dwVnum, this);
 			}
@@ -3861,8 +3862,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			return false;
 		}
 
-		if (pkVictim->GetParty()){
-			if (pkVictim->GetParty() == GetParty()){
+		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim))){
+			if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim)) == GetParty()){
 				ComputeSkillParty(dwVnum, this);
 			}
 		}

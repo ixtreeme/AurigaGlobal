@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "war_map.h"
@@ -245,9 +246,9 @@ uint8_t CWarMap::GetType()
 
 uint32_t CWarMap::GetGuildOpponent(LPCHARACTER ch)
 {
-	if (ch->GetGuild())
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 	{
-		uint32_t gid = ch->GetGuild()->GetID();
+		uint32_t gid = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 		uint8_t idx;
 
 		if (GetTeamIndex(gid, idx))
@@ -280,7 +281,7 @@ void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 	if (ch->IsObserverMode())
 		return;
 
-	if (!ch->GetGuild())
+	if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		return;
 
 	const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
@@ -289,7 +290,7 @@ void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 
 	int iPrice = itemProto->dwGold;
 
-	uint32_t gid = ch->GetGuild()->GetID();
+	uint32_t gid = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 
 	if (gid == m_TeamData[0].dwID)
 		m_TeamData[0].iUsePotionPrice += iPrice;
@@ -358,8 +359,8 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	sys_log(0, "WarMap::IncMember");
 	uint32_t gid = 0;
 
-	if (ch->GetGuild())
-		gid = ch->GetGuild()->GetID();
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+		gid = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 
 	bool isWarMember = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "war.is_war_member") > 0 ? true : false;
 
@@ -418,8 +419,8 @@ void CWarMap::DecMember(LPCHARACTER ch)
 	sys_log(0, "WarMap::DecMember");
 	uint32_t gid = 0;
 
-	if (ch->GetGuild())
-		gid = ch->GetGuild()->GetID();
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+		gid = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 
 	if (!ch->IsObserverMode())
 	{
@@ -808,11 +809,11 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 	uint32_t dwKillerGuild = 0;
 	uint32_t dwDeadGuild = 0;
 
-	if (killer->GetGuild())
-		dwKillerGuild = killer->GetGuild()->GetID();
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(killer)))
+		dwKillerGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(killer))->GetID();
 
-	if (ch->GetGuild())
-		dwDeadGuild = ch->GetGuild()->GetID();
+	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+		dwDeadGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 
 	uint8_t idx;
 

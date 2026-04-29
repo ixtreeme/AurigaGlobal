@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 
@@ -333,7 +334,7 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 		if (!member)
 			continue;
 
-		CGuild* g = member->GetGuild();
+		CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(member));
 		if (!g)
 			continue;
 
@@ -650,7 +651,7 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 	if (!ch || !ch->GetDesc())
 		return;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return;
 
@@ -750,7 +751,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	if (!ch)
 		return false;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return false;
 
@@ -876,7 +877,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 	if (!ch)
 		return false;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return false;
 
@@ -967,7 +968,7 @@ bool CGuildRenewal::SetTaxRequest(CHARACTER* leader, int deadlineUnix, int64_t p
 	if (!leader)
 		return false;
 
-	CGuild* g = leader->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(leader));
 	if (!g)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(leader), CHAT_TYPE_INFO, "Nincs cehed.");
@@ -992,7 +993,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 	if (!ch)
 		return false;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 		return false;
 
@@ -1169,7 +1170,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 	if (!ch)
 		return false;
 
-	CGuild* g = ch->GetGuild();
+	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 	if (!g)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs cehed.");

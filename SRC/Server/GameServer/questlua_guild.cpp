@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 
@@ -36,7 +37,7 @@ namespace quest
                 return gm->guild;
 
             LPCHARACTER ch = GetGuildQuestCharacter();
-            return ch ? ch->GetGuild() : nullptr;
+            return ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
         }
     }
 
@@ -483,7 +484,7 @@ namespace quest
 	// {
 		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-		// CGuild* pGuild = ch->GetGuild();
+		// CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 		// if (pGuild)
 			// pGuild->SetWarData(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
 		// return 0;
@@ -493,7 +494,7 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild* pGuild = ch->GetGuild();
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillLevel(lua_tonumber(L, 1)):0);
 		return 1;
 	}
@@ -512,7 +513,7 @@ namespace quest
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild* pGuild = ch->GetGuild();
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillPoint():0);
 		return 1;
 	}

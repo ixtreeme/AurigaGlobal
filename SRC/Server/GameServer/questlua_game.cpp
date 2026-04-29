@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "questlua.h"
 #include "questmanager.h"
 #include "desc_client.h"
@@ -255,7 +257,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch->GetParty())
+		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		{
 			FPartyDropDiceRoll f(item, ch);
 			f.Process(nullptr);

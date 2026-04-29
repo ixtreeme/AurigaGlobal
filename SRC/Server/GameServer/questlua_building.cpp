@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "config.h"
 #include "questmanager.h"
 #include "sectree_manager.h"
@@ -153,7 +155,7 @@ namespace quest
 		if (!npc)
 			return 0;
 
-		CGuild* pGuild = npc->GetGuild();
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(npc));
 		if (!pGuild)
 			return 0;
 

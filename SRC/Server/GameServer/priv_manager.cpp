@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "constants.h"
 #include "priv_manager.h"
 #include "char_interface.hpp"
@@ -217,8 +219,8 @@ int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 		val = MAX(val_ch, GetPrivByEmpire(0, type));
 		val = MAX(val, GetPrivByEmpire(ch->GetEmpire(), type));
 
-		if (ch->GetGuild())
-			val = MAX(val, GetPrivByGuild(ch->GetGuild()->GetID(), type));
+		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+			val = MAX(val, GetPrivByGuild(ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), type));
 
 		return val;
 	}

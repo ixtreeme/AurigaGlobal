@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include <fstream>
 #include "constants.h"
 #include "buffer_manager.h"
@@ -579,7 +581,7 @@ namespace quest
 #ifdef ENABLE_PARTYKILL
 			// party_kill call script
 			LPCHARACTER ch = GetCurrentCharacterPtr();
-			LPPARTY pParty = ch->GetParty();
+			LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 			LPCHARACTER leader = pParty ? pParty->GetLeaderCharacter() : ch;
 			if (leader)
 			{

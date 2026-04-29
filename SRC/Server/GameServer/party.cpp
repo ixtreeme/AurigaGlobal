@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
@@ -133,8 +134,8 @@ void CPartyManager::P2PDeleteParty(uint32_t pid)
 
 LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 {
-	if (pLeader->GetParty())
-		return pLeader->GetParty();
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pLeader)))
+		return ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pLeader));
 
 	LPPARTY pParty = M2_NEW CParty;
 
@@ -236,7 +237,7 @@ EVENTFUNC(party_update_event)
 
 	if (leader && leader->GetDesc())
 	{
-		LPPARTY pParty = leader->GetParty();
+		LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(leader));
 
 		if (pParty)
 			pParty->Update();
@@ -858,7 +859,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 
 void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2)
 {
-	if (ch->GetParty() != this)
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) != this)
 	{
 		sys_err("%s is not member of this party %p", ch->GetName(), this);
 		return;

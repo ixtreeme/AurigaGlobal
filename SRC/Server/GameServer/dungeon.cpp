@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "dungeon.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -163,7 +165,7 @@ struct FWarpToDungeon
 	{
 		ch->SaveExitLocation();
 		ch->WarpSet(m_x, m_y, m_lMapIndex);
-		//m_pkDungeon->IncPartyMember(ch->GetParty());
+		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
 	}
 
 	int32_t m_lMapIndex;

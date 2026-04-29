@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "constants.h"
 #include "utils.h"
 #include "config.h"
@@ -894,8 +896,8 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 		return;
 	}
 
-	CGuild * gAttack = killer->GetGuild();
-	CGuild * gDefend = victim->GetGuild();
+	CGuild * gAttack = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(killer));
+	CGuild * gDefend = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(victim));
 
 	if (!gAttack || !gDefend)
 		return;

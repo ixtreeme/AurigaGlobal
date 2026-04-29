@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
@@ -85,7 +86,7 @@ namespace quest
 			CQuestManager& q = CQuestManager::instance();
 			const entt::entity npcEntity = q.GetCurrentNPCEntity();
 			auto* npc = ecs::LegacyCharOf(npcEntity);
-			CGuild* pGuild = npc ? npc->GetGuild() : nullptr;
+			CGuild* pGuild = npc ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(npc)) : nullptr;
 			lua_pushnumber(L, pGuild ? pGuild->GetID() : 0);
 			return 1;
 		}
@@ -281,11 +282,11 @@ namespace quest
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
 #ifdef ENABLE_BUG_FIXES
-		LPPARTY party = npc ? npc->GetParty() : nullptr;
+		LPPARTY party = npc ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc)) : nullptr;
 		LPCHARACTER leader = party ? party->GetLeader() : nullptr;
 		lua_pushnumber(L, leader ? leader->GetPacketVID() : 0);
 #else
-		PPARTY party = npc->GetParty();
+		PPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc));
 		LPCHARACTER leader = party->GetLeader();
 
 		if (leader)
