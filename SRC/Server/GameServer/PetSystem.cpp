@@ -182,7 +182,7 @@ void CPetActor::Unsummon()
 		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 		if (pSummonItem) {
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, false);
-			pSummonItem->Lock(false);
+			ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 		}
 		
 		// 버프 삭제
@@ -272,7 +272,7 @@ uint32_t CPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnF
 	m_pkOwner->ComputePoints();
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
-	pSummonItem->Lock(true);
+	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL1);
 	if (pAffect) {
