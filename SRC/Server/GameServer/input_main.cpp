@@ -3044,7 +3044,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		}
 
 		TItemPos DestPos = p->ItemPos;
-		if (!DSManager::instance().IsValidCellForThisItem(pkItem, DestPos))
+		if (!DSManager::instance().IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, pkItem), DestPos))
 		{
 			int iCell = ch->GetEmptyDragonSoulInventory(pkItem);
 			if (iCell < 0)

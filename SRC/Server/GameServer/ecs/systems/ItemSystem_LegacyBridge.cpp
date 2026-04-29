@@ -3847,7 +3847,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					return false;
 				}
 
-				if (!DSManager::instance().IsValidCellForThisItem(item, DestCell))
+				if (!DSManager::instance().IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, item), DestCell))
 				{
 					return false;
 				}
@@ -6565,7 +6565,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 				else {
-					uint32_t duration = DSManager::instance().GetDuration(pDestItem);
+					uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, pDestItem));
 					uint32_t remain_sec = pDestItem->GetSocket(ITEM_SOCKET_REMAIN_SEC);
 					if (remain_sec == duration)
 						return false;
@@ -15054,7 +15054,7 @@ int CHARACTER::GetEmptyDragonSoulInventory(LPITEM pItem) const
 		return -1;
 
 	uint8_t bSize = pItem->GetSize();
-	uint16_t wBaseCell = DSManager::instance().GetBasePosition(pItem);
+	uint16_t wBaseCell = DSManager::instance().GetBasePosition(EntityFactory::CreateItemEntity(g_registry, pItem));
 
 	if (WORD_MAX == wBaseCell)
 		return -1;
@@ -16768,7 +16768,7 @@ int CItem::GiveMoreTime_Per(float fPercent)
 {
 	if (IsDragonSoul())
 	{
-		uint32_t duration = DSManager::instance().GetDuration(this);
+		uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, this));
 		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
 		uint32_t given_time = fPercent * duration / 100u;
 		if (remain_sec == duration)
@@ -16793,7 +16793,7 @@ int CItem::GiveMoreTime_Fix(uint32_t dwTime)
 {
 	if (IsDragonSoul())
 	{
-		uint32_t duration = DSManager::instance().GetDuration(this);
+		uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, this));
 		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
 		if (remain_sec == duration)
 			return false;

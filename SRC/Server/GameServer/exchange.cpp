@@ -751,7 +751,7 @@ bool CExchange::CheckSpace()
 			}
 			
 			bool bExistEmptySpace = false;
-			uint16_t wBasePos = DSManager::instance().GetBasePosition(item);
+			uint16_t wBasePos = DSManager::instance().GetBasePosition(EntityFactory::CreateItemEntity(g_registry, item));
 			if (wBasePos >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 				return false;
 			

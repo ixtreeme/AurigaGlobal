@@ -159,11 +159,6 @@ void DSManager::GetDragonSoulInfo(uint32_t dwVnum, uint8_t& bType, uint8_t& bGra
 	bStrength = GetStrengthIdx(dwVnum);
 }
 
-bool DSManager::IsValidCellForThisItem(const LPITEM pItem, const TItemPos& Cell) const
-{
-	return IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, pItem), Cell);
-}
-
 bool DSManager::IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) const
 {
 	if (!ItemSystem::IsValidItem(item))
@@ -182,11 +177,6 @@ bool DSManager::IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) 
 		return true;
 }
 
-
-uint16_t DSManager::GetBasePosition(const LPITEM pItem) const
-{
-	return GetBasePosition(EntityFactory::CreateItemEntity(g_registry, pItem));
-}
 
 uint16_t DSManager::GetBasePosition(entt::entity item) const
 {
@@ -368,7 +358,7 @@ bool DSManager::DragonSoulItemInitialize(entt::entity item)
 	if (nullptr == pItem || !pItem->IsDragonSoul())
 		return false;
 	PutAttributes(item);
-	int time = DSManager::instance().GetDuration(pItem);
+	int time = DSManager::instance().GetDuration(item);
 	if (time > 0)
 		ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, time);
 	return true;
@@ -379,9 +369,10 @@ uint32_t DSManager::MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t ste
 	return bType * 10000 + grade * 1000 + step * 100 + refine * 10;
 }
 
-int DSManager::GetDuration(const LPITEM pItem) const
+int DSManager::GetDuration(entt::entity item) const
 {
-	return pItem->GetDuration();
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
+	return pItem ? pItem->GetDuration() : 0;
 }
 
 // 용혼석을 받아서 용심을 추출하는 함수

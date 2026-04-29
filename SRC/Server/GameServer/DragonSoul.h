@@ -18,11 +18,9 @@ public:
 
 	void	GetDragonSoulInfo(uint32_t dwVnum, OUT uint8_t& bType, OUT uint8_t& bGrade, OUT uint8_t& bStep, OUT uint8_t& bRefine) const;
 	// fixme : titempos로
-	uint16_t	GetBasePosition(const LPITEM pItem) const;
 	uint16_t	GetBasePosition(entt::entity item) const;
-	bool	IsValidCellForThisItem(const LPITEM pItem, const TItemPos& Cell) const;
 	bool	IsValidCellForThisItem(entt::entity item, const TItemPos& Cell) const;
-	int		GetDuration(const LPITEM pItem) const;
+	int		GetDuration(entt::entity item) const;
 
 	// 용혼석을 받아서 특정 용심을 추출하는 함수
 	bool	ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::entity extractor = entt::null);
