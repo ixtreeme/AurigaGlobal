@@ -8431,6 +8431,63 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
+
+Mode:
+- Entity-first affect add/remove caller migration.
+- No `LPCHARACTER` overload added.
+- Affect storage and duration ticking unchanged.
+
+Audit:
+- Initial tree-wide raw `->AddAffect` matches: 95.
+- Initial tree-wide raw `->RemoveAffect` matches: 115.
+- Top caller files were `questlua_pc.cpp`, `cmd_general2.cpp`, `DragonSoulSystem.cpp`, `SkillSystem.cpp`, `ItemSystem_LegacyBridge.cpp`, `MountSystem.cpp`, `questlua_affect.cpp`, `New_PetSystem.cpp`, guild/PvP paths, and login/GM paths.
+
+Completed batches:
+- Verified existing entity-first API in `AffectSystem.hpp`:
+  - `AffectSystem::AddAffect(entt::entity, ...)`
+  - `AffectSystem::RemoveAffect(entt::entity, uint32_t)`
+- Added missing entity-first overload:
+  - `AffectSystem::RemoveAffect(entt::entity, CAffect*)`
+  - This preserves legacy `RemoveAffect(CAffect*)` call semantics without exposing `LPCHARACTER`.
+- Migrated caller-side `ch->AddAffect(...)` and `ch->RemoveAffect(...)` across quest, command, mount/pet, DragonSoul, skill, PvP, guild, login, dungeon, battle-pass, and item bridge paths.
+- Commit: `205fa9f Phase 15E-55: Migrate Affect caller accessors`
+
+Counts:
+```text
+Initial AddAffect raw matches: 95
+Initial RemoveAffect raw matches: 115
+Final tree-wide raw matches: 9
+Final caller-side matches excluding AffectSystem.cpp: 0
+```
+
+Remaining intentional sites:
+- `ecs/systems/AffectSystem.cpp`: 9 direct calls remain inside the affect bridge and legacy `CHARACTER` affect method bodies.
+- These are the internal bridge boundary used by the entity-first API.
+
+Build results:
+- First migration build produced fewer than 20 errors; all were `RemoveAffect(CAffect*)` overload mismatches plus one non-simple questlua expression.
+- Added the entity-first `CAffect*` overload and fixed the questlua expression.
+- Build passed after fixes.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Potion/buff applies and expires.
+- Manual affect removal works.
+- DragonSoul activate/deactivate applies/removes affects.
+- Mount/dismount affects apply/remove.
+- Skill affects apply/remove.
+- Death affect cleanup behavior remains correct.
+- Logout/login preserves infinite-duration affects.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- Code batch committed.
+- WinTest not run in this environment.
+
 ## Phase 15E-54 - Party/Guild Accessor Migration
 
 Mode:
