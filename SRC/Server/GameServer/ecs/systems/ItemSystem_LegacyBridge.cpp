@@ -9436,7 +9436,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				bool bClean = CleanAcceAttr(item, item2);
+				bool bClean = CleanAcceAttr(EntityFactory::CreateItemEntity(g_registry, item), EntityFactory::CreateItemEntity(g_registry, item2));
 				if (bClean) {
 					{
 						char buf[21];
@@ -9632,7 +9632,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_ACCE_SYSTEM
 			if (item->GetValue(0) == ACCE_CLEAN_ATTR_VALUE0)
 			{
-				if (!CleanAcceAttr(item, item2))
+				if (!CleanAcceAttr(EntityFactory::CreateItemEntity(g_registry, item), EntityFactory::CreateItemEntity(g_registry, item2)))
 					return false;
 
 				return true;

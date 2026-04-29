@@ -1311,7 +1311,7 @@ namespace quest
 			return;
 
 		const uint32_t id = ItemSystem::GetItemID(item);
-		ch->SetQuestItemPtr(id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr);
+		ch->SetQuestItemPtr(id != 0 ? ItemSystem::FindItemByID(id) : entt::null);
 	}
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const

@@ -1499,7 +1499,7 @@ public:
 #ifdef ENABLE_DS_REFINE_ALL
 	bool	AutoGiveDS(LPITEM item, bool longOwnerShip = false);
 #endif
-	bool			CanTakeInventoryItem(LPITEM item, TItemPos* pos);
+	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	int				GetEmptyExtraInventory(LPITEM pItem) const;
@@ -2272,7 +2272,7 @@ public:
 	uint32_t				GetQuestNPCID() const { return m_dwQuestNPCVID; }
 	LPCHARACTER			GetQuestNPC() const;
 
-	void				SetQuestItemPtr(LPITEM item);
+	void				SetQuestItemPtr(entt::entity item);
 	void				ClearQuestItemPtr();
 	LPITEM				GetQuestItemPtr() const;
 
@@ -2693,7 +2693,7 @@ public:
 	void	OpenAcce(bool bCombination);
 	void	CloseAcce();
 	void	ClearAcceMaterials();
-	bool	CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget);
+	bool	CleanAcceAttr(entt::entity item, entt::entity target);
 	LPITEM* GetAcceMaterials();
 	bool	AcceIsSameGrade(int32_t lGrade);
 	uint32_t	GetAcceCombinePrice(int32_t lGrade

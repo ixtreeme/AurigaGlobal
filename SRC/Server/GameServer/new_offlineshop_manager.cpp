@@ -879,7 +879,7 @@ namespace offlineshop
 			}
 
 			TItemPos pos;
-			if (!ch->CanTakeInventoryItem(pkItem, &pos)) 
+			if (!ch->CanTakeInventoryItem(EntityFactory::CreateItemEntity(g_registry, pkItem), &pos)) 
 			{
 				ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, pkItem),
@@ -3164,7 +3164,7 @@ namespace offlineshop
 
 
 		TItemPos itemPos;
-		if (!ch->CanTakeInventoryItem(pkItem, &itemPos))
+		if (!ch->CanTakeInventoryItem(EntityFactory::CreateItemEntity(g_registry, pkItem), &itemPos))
 		{
 			ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, pkItem),

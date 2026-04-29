@@ -724,9 +724,10 @@ LPCHARACTER CHARACTER::GetQuestNPC() const
     return CHARACTER_MANAGER::instance().Find(m_dwQuestNPCVID);
 }
 
-void CHARACTER::SetQuestItemPtr(LPITEM item)
+void CHARACTER::SetQuestItemPtr(entt::entity item)
 {
-    m_pQuestItem = item;
+    const uint32_t id = ItemSystem::GetItemID(item);
+    m_pQuestItem = id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
 }
 
 void CHARACTER::ClearQuestItemPtr()
@@ -1402,30 +1403,35 @@ uint16_t CHARACTER::GetRuneEffect() {
 }
 #endif
 
-bool CHARACTER::CanTakeInventoryItem(LPITEM item, TItemPos* cell)
+bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
     ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
 #endif
+    const uint32_t itemID = ItemSystem::GetItemID(item);
+    LPITEM legacyItem = itemID != 0 ? ITEM_MANAGER::instance().Find(itemID) : nullptr;
+    if (!legacyItem)
+        return false;
+
     int iEmpty = -1;
 
-    if (item->IsDragonSoul())
+    if (legacyItem->IsDragonSoul())
     {
         cell->window_type = DRAGON_SOUL_INVENTORY;
-        cell->cell = iEmpty = GetEmptyDragonSoulInventory(item);
+        cell->cell = iEmpty = GetEmptyDragonSoulInventory(legacyItem);
     }
 
 #ifdef ENABLE_EXTRA_INVENTORY
-    else if (item->IsExtraItem())
+    else if (legacyItem->IsExtraItem())
     {
         cell->window_type = EXTRA_INVENTORY;
-        cell->cell = iEmpty = GetEmptyExtraInventory(item);
+        cell->cell = iEmpty = GetEmptyExtraInventory(legacyItem);
     }
 #endif
     else
     {
         cell->window_type = INVENTORY;
-        cell->cell = iEmpty = GetEmptyInventory(item->GetSize());
+        cell->cell = iEmpty = GetEmptyInventory(ItemSystem::GetItemSize(item));
     }
 
     return iEmpty != -1;
@@ -2310,25 +2316,29 @@ void CHARACTER::RefineAcceMaterials()
     }
 }
 
-bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
+bool CHARACTER::CleanAcceAttr(entt::entity pkItem, entt::entity pkTarget)
 {
     if (!CanHandleItem())
         return false;
-    else if ((!pkItem) || (!pkTarget))
-        return false;
-    else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkTarget)) != ITEM_COSTUME) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkTarget)) != COSTUME_ACCE))
+    else if (!ItemSystem::IsValidItem(pkItem) || !ItemSystem::IsValidItem(pkTarget))
         return false;
 
-    if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkTarget), ACCE_ABSORBED_SOCKET) <= 0)
+    const uint32_t targetID = ItemSystem::GetItemID(pkTarget);
+    LPITEM legacyTarget = targetID != 0 ? ITEM_MANAGER::instance().Find(targetID) : nullptr;
+    if (!legacyTarget)
+        return false;
+    else if ((ItemSystem::GetItemType(pkTarget) != ITEM_COSTUME) && (ItemSystem::GetItemSubType(pkTarget) != COSTUME_ACCE))
         return false;
 
-    ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkTarget), ACCE_ABSORBED_SOCKET, 0);
+    if (ItemSystem::GetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET) <= 0)
+        return false;
+
+    ItemSystem::SetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET, 0);
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkTarget), i, 0, 0);
+        ItemSystem::SetItemForceAttributeEcs(pkTarget, i, 0, 0);
 
-    ItemSystem::ConsumeItemEcs(
-        EntityFactory::CreateItemEntity(g_registry, pkItem));
-    LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT (CLEAN ATTR)", pkTarget->GetName());
+    ItemSystem::ConsumeItemEcs(pkItem);
+    LogManager::instance().ItemLog(this, legacyTarget, "USE_DETACHMENT (CLEAN ATTR)", legacyTarget->GetName());
     return true;
 }
 
