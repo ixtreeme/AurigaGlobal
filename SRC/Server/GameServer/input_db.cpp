@@ -1734,7 +1734,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			continue;
 		}
 
-		item->SetSkipSave(true);
+		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
 		item->SetSockets(p->alSockets);
 		item->SetAttributes(p->aAttr);
 #ifdef ATTR_LOCK
@@ -1799,7 +1799,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if (false == item->OnAfterCreatedItem())
 			sys_err("Failed to call ITEM::OnAfterCreatedItem (vnum: %d, id: %d)", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
-		item->SetSkipSave(false);
+		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
 	}
 
 	auto it = v.begin();
