@@ -2506,7 +2506,13 @@ namespace quest
 		LPITEM item = CQuestManager::instance().GetCurrentItem();
 
 		if (item)
-			lua_pushboolean(L, mining::OreRefine(ch, npc, item, cost, pct, nullptr));
+			lua_pushboolean(L, mining::OreRefine(
+				ch,
+				npc,
+				EntityFactory::CreateItemEntity(g_registry, item),
+				cost,
+				pct,
+				entt::null));
 		else
 			lua_pushboolean(L, 0);
 
@@ -2543,7 +2549,13 @@ namespace quest
 			metinstone_item = ch->GetInventoryItem(cell);
 
 		if (item && metinstone_item)
-			lua_pushboolean(L, mining::OreRefine(ch, npc, item, cost, pct, metinstone_item));
+			lua_pushboolean(L, mining::OreRefine(
+				ch,
+				npc,
+				EntityFactory::CreateItemEntity(g_registry, item),
+				cost,
+				pct,
+				EntityFactory::CreateItemEntity(g_registry, metinstone_item)));
 		else
 			lua_pushboolean(L, 0);
 

@@ -2198,8 +2198,9 @@ ACMD(do_refine_pick)
 	LPITEM item = ch->GetInventoryItem(cell);
 	if (item)
 	{
-		mining::CHEAT_MAX_PICK(ch, item);
-		mining::RealRefinePick(ch, item);
+		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+		mining::CHEAT_MAX_PICK(ch, itemEntity);
+		mining::RealRefinePick(ch, itemEntity);
 	}
 }
 
@@ -2213,7 +2214,7 @@ ACMD(do_max_pick)
 	LPITEM item = ch->GetInventoryItem(cell);
 	if (item)
 	{
-		mining::CHEAT_MAX_PICK(ch, item);
+		mining::CHEAT_MAX_PICK(ch, EntityFactory::CreateItemEntity(g_registry, item));
 	}
 }
 // END_OF_REFINE_PICK
@@ -4926,4 +4927,3 @@ ACMD(do_open_whispersys) {
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "recv_whispersys");
 }
 #endif
-

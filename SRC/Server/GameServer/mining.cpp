@@ -16,6 +16,15 @@
 #define ENABLE_PICKAXE_RENEWAL
 namespace mining
 {
+	LPITEM LegacyMiningItem(entt::entity item)
+	{
+		if (item == entt::null)
+			return nullptr;
+
+		const uint32_t id = ItemSystem::GetItemID(item);
+		return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+	}
+
 	enum
 	{
 		MAX_ORE = 19,
@@ -235,8 +244,9 @@ namespace mining
 		return (number(1,100) <= pick.GetValue(3));
 	}
 
-	int RealRefinePick(LPCHARACTER ch, LPITEM item)
+	int RealRefinePick(LPCHARACTER ch, entt::entity itemEntity)
 	{
+		LPITEM item = LegacyMiningItem(itemEntity);
 		if (!ch || !item)
 			return 2;
 
@@ -302,8 +312,9 @@ namespace mining
 		}
 	}
 
-	void CHEAT_MAX_PICK(LPCHARACTER ch, LPITEM item)
+	void CHEAT_MAX_PICK(LPCHARACTER ch, entt::entity itemEntity)
 	{
+		LPITEM item = LegacyMiningItem(itemEntity);
 		if (!item)
 			return;
 
@@ -318,8 +329,9 @@ namespace mining
 #endif
 	}
 
-	void PracticePick(LPCHARACTER ch, LPITEM item)
+	void PracticePick(LPCHARACTER ch, entt::entity itemEntity)
 	{
+		LPITEM item = LegacyMiningItem(itemEntity);
 		if (!item)
 			return;
 
@@ -410,7 +422,7 @@ namespace mining
 		}
 #endif
 
-		PracticePick(ch, pick);
+		PracticePick(ch, EntityFactory::CreateItemEntity(g_registry, pick));
 		return 0;
 	}
 
@@ -423,31 +435,35 @@ namespace mining
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
 	}
 
-	bool OreRefine(LPCHARACTER ch, LPCHARACTER npc, LPITEM item, int cost, int pct, LPITEM metinstone_item)
+	bool OreRefine(LPCHARACTER ch, LPCHARACTER npc, entt::entity itemEntity, int cost, int pct, entt::entity metinstoneItemEntity)
 	{
 		if (!ch || !npc)
 			return false;
 
-		if (ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, item)) != AIHelpers::EcsOf(ch))
+		LPITEM item = LegacyMiningItem(itemEntity);
+		if (!item)
+			return false;
+
+		if (ItemSystem::GetItemOwnerEntity(itemEntity) != AIHelpers::EcsOf(ch))
 		{
 			sys_err("wrong owner");
 			return false;
 		}
 
-		if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < ORE_COUNT_FOR_REFINE)
+		if (ItemSystem::GetItemCount(itemEntity) < ORE_COUNT_FOR_REFINE)
 		{
 			sys_err("not enough count");
 			return false;
 		}
 
-		uint32_t dwRefinedVnum = GetRefineFromRawOre(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+		uint32_t dwRefinedVnum = GetRefineFromRawOre(ItemSystem::GetItemVnum(itemEntity));
 
 		if (dwRefinedVnum == 0)
 			return false;
 
 		ch->SetRefineNPC(npc);
 		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, item),
+			itemEntity,
 			ORE_COUNT_FOR_REFINE);
 		int64_t iCost = ch->ComputeRefineFee(cost, 1);
 
@@ -456,7 +472,7 @@ namespace mining
 
 		ch->PayRefineFee(iCost);
 
-		if (metinstone_item)
+		if (LPITEM metinstone_item = LegacyMiningItem(metinstoneItemEntity))
 			ITEM_MANAGER::instance().RemoveItem(metinstone_item, "REMOVE (MELT)");
 
 		if (number(1, 100) <= pct)
@@ -478,6 +494,5 @@ namespace mining
 		return false;
 	}
 }
-
 
 

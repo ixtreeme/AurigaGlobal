@@ -513,7 +513,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		LPITEM item = ch->GetInventoryItem(bCell);
 
-		int ret = mining::RealRefinePick(ch, item);
+		int ret = mining::RealRefinePick(ch, EntityFactory::CreateItemEntity(g_registry, item));
 		lua_pushnumber(L, ret);
 		return 1;
 	}
