@@ -25,6 +25,8 @@
 #endif
 #include "../../utils.h"
 #include "../AIHelpers.hpp"
+#include "../EntityFactory.hpp"
+#include "ItemSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -1384,7 +1386,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			if (nullptr == item)
 				continue;
 			
-			item->Lock(true);
+			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 #ifdef ENABLE_NEW_USE_POTION
 		else if (AFFECT_AUTO_HP_RECOVERY2 == pElements->dwType || AFFECT_AUTO_SP_RECOVERY2 == pElements->dwType)
@@ -1393,13 +1395,13 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			if (nullptr == item)
 				continue;
 			
-			item->Lock(true);
+			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
 		{
 			LPITEM item = FindItemByID(pElements->dwFlag);
 			if (item)
-				item->Lock(true);
+				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 			else
 				continue;
 		}
@@ -1424,7 +1426,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		{
 			LPITEM item = FindItemByID(pElements->dwFlag);
 			if (item)
-				item->Lock(true);
+				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 			else
 				continue;
 		}
@@ -1434,7 +1436,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		{
 			LPITEM item = FindItemByID(pElements->dwFlag);
 			if (item)
-				item->Lock(true);
+				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 			else
 				continue;
 		}
@@ -1449,7 +1451,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			if (!item)
 				continue;
 
-			item->Lock(true);
+			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 #endif
 
