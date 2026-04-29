@@ -37,7 +37,16 @@ function(auriga_add_server_executable target)
 endfunction()
 
 add_library(SERVER INTERFACE)
-target_include_directories(SERVER INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(SERVER INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_SOURCE_DIR}/extern/fmt/include
+    ${CMAKE_SOURCE_DIR}/extern/spdlog/include
+)
+target_compile_definitions(SERVER INTERFACE
+    FMT_HEADER_ONLY=1
+    SPDLOG_FMT_EXTERNAL=1
+    SPDLOG_HEADER_ONLY=1
+)
 if(TARGET auriga_sanitizers)
     target_link_libraries(SERVER INTERFACE auriga_sanitizers)
 endif()
