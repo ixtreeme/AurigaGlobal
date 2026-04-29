@@ -25,20 +25,20 @@ bool ValidPosition(uint32_t wCell)
 
 const float c_fSpeed = 0.20f;
 
-bool SwitchbotHelper::IsValidItem(LPITEM pkItem)
+bool SwitchbotHelper::IsValidItem(entt::entity item)
 {
-	if (!pkItem)
+	if (item == entt::null)
 	{
 		return false;
 	}
 
-	switch (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
+	switch (ItemSystem::GetItemType(item))
 	{
 	case ITEM_WEAPON:
 		return true;
 
 	case ITEM_ARMOR:
-		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)))
+		switch (ItemSystem::GetItemSubType(item))
 		{
 		case ARMOR_BODY:
 		case ARMOR_HEAD:
@@ -267,24 +267,24 @@ static const char* GetHighAvgDmgFmtByLang(int lang)
 }
 
 // --- 
-std::string MakeFullItemLink(LPITEM pkItem, LPCHARACTER pkKiller)
+std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 {
 	char itemlink[512];
 	int len = 0;
 
 	len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-		ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1),
-		ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 2),
+		ItemSystem::GetItemVnum(item),
+		ItemSystem::GetItemSocket(item, 0),
+		ItemSystem::GetItemSocket(item, 1),
+		ItemSystem::GetItemSocket(item, 2),
 		0, // transmute
 		0  // transmute2
 	);
 
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
-		uint8_t type = pkItem->GetAttributeType(i);
-		short   val = pkItem->GetAttributeValue(i);
+		uint8_t type = ItemSystem::GetItemAttributeType(item, i);
+		short   val = ItemSystem::GetItemAttributeValue(item, i);
 		if (type && val)
 			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
 	}
@@ -300,7 +300,7 @@ std::string MakeFullItemLink(LPITEM pkItem, LPCHARACTER pkKiller)
 	snprintf(szChat, sizeof(szChat), fmt,
 		pkKiller ? pkKiller->GetName() : "Player",
 		itemlink,
-		pkItem ? pkItem->GetName() : "item");
+		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
 	return std::string(szChat);
 }
@@ -326,14 +326,15 @@ void CSwitchbot::SwitchItems()
 			continue;
 		}
 
-		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pkItem));
+		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(itemEntity);
 		LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
 		if (!pkOwner)
 		{
 			return;
 		}
 
-		if (CheckItem(pkItem, bSlot))
+		if (CheckItem(itemEntity, bSlot))
 		{
 			LPDESC desc = pkOwner->GetDesc();
 			if (desc)
@@ -509,7 +510,7 @@ void CSwitchbot::SwitchItems()
 						}
 #endif
 						ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
-						SendItemUpdate(pkOwner, bSlot, pkItem);
+						SendItemUpdate(pkOwner, bSlot, itemEntity);
 
 
 
@@ -589,7 +590,7 @@ void CSwitchbot::SwitchItems()
 										}
 #endif
 										ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
-										SendItemUpdate(pkOwner, bSlot, pkItem);
+										SendItemUpdate(pkOwner, bSlot, itemEntity);
 										break;
 									}
 								}
@@ -641,7 +642,7 @@ void CSwitchbot::SwitchItems()
 							}
 #endif
 							ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
-							SendItemUpdate(pkOwner, bSlot, pkItem);
+							SendItemUpdate(pkOwner, bSlot, itemEntity);
 							break;
 						}
 					}
@@ -677,12 +678,12 @@ void CSwitchbot::SwitchItems()
 	}
 }
 #ifdef ENABLE_APPLY_NORMAL_HIT_DAMAGE_BONUS_50_NOTICE_RAZOR93
-bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
+bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 {
 	if (!ValidPosition(slot))
 		return false;
 
-	if (!pkItem)
+	if (item == entt::null)
 		return false;
 
 	bool checked = false;
@@ -704,7 +705,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 
 			for (uint8_t attrIdx = 0; attrIdx < MAX_NORM_ATTR_NUM; ++attrIdx)
 			{
-				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, pkItem), attrIdx);
+				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(item, attrIdx);
 
 				if (curAttr.bType != destAttr.bType || curAttr.sValue < destAttr.sValue)
 					continue;
@@ -715,16 +716,16 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 				
 				if (curAttr.bType == APPLY_NORMAL_HIT_DAMAGE_BONUS && curAttr.sValue > BONUSZ)
 				{
-					uint32_t itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem)); // vagy más egyedi azonosító
+					uint32_t itemID = ItemSystem::GetItemID(item); // vagy más egyedi azonosító
 					if (now - lastNoticedTime[itemID] > BONUSZ_TIME) // csak 10 másodpercenként 1x
 					{
 						lastNoticedTime[itemID] = now;
 
-						const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pkItem));
+						const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
 						LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
 						if (pkOwner)
 						{
-							std::string chatMsg = MakeFullItemLink(pkItem, pkOwner);
+							std::string chatMsg = MakeFullItemLink(item, pkOwner);
 							BroadcastNotice(chatMsg.c_str());
 						}
 					}
@@ -749,14 +750,14 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 }
 #else
 
-bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
+bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 {
 	if (!ValidPosition(slot))
 	{
 		return false;
 	}
 
-	if (!pkItem)
+	if (item == entt::null)
 	{
 		return false;
 	}
@@ -784,7 +785,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 
 			for (uint8_t attrIdx = 0; attrIdx < MAX_NORM_ATTR_NUM; ++attrIdx)
 			{
-				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, pkItem), attrIdx);
+				const TPlayerItemAttribute& curAttr = ItemSystem::GetItemAttribute(item, attrIdx);
 
 				if (curAttr.bType != destAttr.bType || curAttr.sValue < destAttr.sValue)
 				{
@@ -814,7 +815,7 @@ bool CSwitchbot::CheckItem(LPITEM pkItem, uint8_t slot)
 	return false;
 }
 #endif
-void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, LPITEM item)
+void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item)
 {
 	LPDESC desc = ch->GetDesc();
 	if (!desc)
@@ -829,11 +830,13 @@ void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, LPITEM item)
 
 	TSwitchbotUpdateItem update = {};
 	update.slot = slot;
-	update.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
-	update.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+	update.vnum = ItemSystem::GetItemVnum(item);
+	update.count = ItemSystem::GetItemCount(item);
 
-	memcpy(update.alSockets, item->GetSockets(), sizeof(update.alSockets));
-	memcpy(update.aAttr, item->GetAttributes(), sizeof(update.aAttr));
+	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		update.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		update.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
 	desc->BufferedPacket(&pack, sizeof(pack));
 	desc->Packet(&update, sizeof(TSwitchbotUpdateItem));

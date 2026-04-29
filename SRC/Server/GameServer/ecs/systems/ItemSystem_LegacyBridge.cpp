@@ -3771,7 +3771,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		return false;
 	}
 
-	if (DestCell.IsSwitchbotPosition() && !SwitchbotHelper::IsValidItem(item))
+	if (DestCell.IsSwitchbotPosition() && !SwitchbotHelper::IsValidItem(EntityFactory::CreateItemEntity(g_registry, item)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 691, "");

@@ -2,11 +2,12 @@
 
 #ifdef ENABLE_SWITCHBOT
 #include <common/tables.h>
+#include <entt/entt.hpp>
 
 class SwitchbotHelper
 {
 public:
-	static bool IsValidItem(LPITEM pkItem);
+	static bool IsValidItem(entt::entity item);
 };
 
 class CSwitchbot
@@ -37,9 +38,9 @@ public:
 	void Pause();
 
 	void SwitchItems();
-	bool CheckItem(LPITEM pkItem, uint8_t slot);
+	bool CheckItem(entt::entity item, uint8_t slot);
 
-	void SendItemUpdate(LPCHARACTER ch, uint8_t slot, LPITEM item);
+	void SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item);
 
 protected:
 	TSwitchbotTable m_table;
