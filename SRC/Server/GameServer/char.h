@@ -2180,8 +2180,8 @@ public:
 public:
 	CMountSystem* GetMountSystem() { return m_mountSystem; }
 
-	void 				MountSummon(LPITEM mountItem);
-	void 				MountUnsummon(LPITEM mountItem);
+	void 				MountSummon(entt::entity mountItem);
+	void 				MountUnsummon(entt::entity mountItem);
 	void 				CheckMount();
 	bool 				IsRidingMount();
 

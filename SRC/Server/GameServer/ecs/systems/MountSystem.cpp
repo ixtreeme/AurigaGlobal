@@ -784,7 +784,7 @@ bool CHARACTER::IsRiding() const
 }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-void CHARACTER::MountSummon(LPITEM mountItem)
+void CHARACTER::MountSummon(entt::entity mountItem)
 {
 #define MOUNT_SYSTEM_FIX_POLY
 #ifdef MOUNT_SYSTEM_FIX_POLY
@@ -805,24 +805,26 @@ void CHARACTER::MountSummon(LPITEM mountItem)
 	CMountSystem* mountSystem = GetMountSystem();
 	uint32_t mobVnum = 0;
 
-	if (!mountSystem || !mountItem)
+	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
 
 #ifdef __CHANGELOOK_SYSTEM__
-	if (mountItem->GetTransmutation())
+	const uint32_t mountItemID = ItemSystem::GetItemID(mountItem);
+	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
+	if (legacyMountItem && legacyMountItem->GetTransmutation())
 	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
+		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
 
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+			mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 	}
 	else
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 #else
-	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+	if (ItemSystem::GetItemValue(mountItem, 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 #endif
 
 	if (IsHorseRiding())
@@ -831,32 +833,34 @@ void CHARACTER::MountSummon(LPITEM mountItem)
 	if (GetHorse())
 		HorseSummon(false);
 
-	mountSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, mountItem), false);
+	mountSystem->Summon(mobVnum, mountItem, false);
 }
 
-void CHARACTER::MountUnsummon(LPITEM mountItem)
+void CHARACTER::MountUnsummon(entt::entity mountItem)
 {
 	CMountSystem* mountSystem = GetMountSystem();
 	uint32_t mobVnum = 0;
 
-	if (!mountSystem || !mountItem)
+	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
 
 #ifdef __CHANGELOOK_SYSTEM__
-	if (mountItem->GetTransmutation())
+	const uint32_t mountItemID = ItemSystem::GetItemID(mountItem);
+	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
+	if (legacyMountItem && legacyMountItem->GetTransmutation())
 	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
+		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
 
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+			mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 	}
 	else
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 #else
-	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+	if (ItemSystem::GetItemValue(mountItem, 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
 #endif
 
 	if (GetMountVnum() == mobVnum)
@@ -869,31 +873,34 @@ void CHARACTER::CheckMount()
 {
 	CMountSystem* mountSystem = GetMountSystem();
 	LPITEM mountItem = GetWear(WEAR_COSTUME_MOUNT);
+	const entt::entity mountEntity = EntityFactory::CreateItemEntity(g_registry, mountItem);
 	uint32_t mobVnum = 0;
 
-	if (!mountSystem || !mountItem)
+	if (!mountSystem || !ItemSystem::IsValidItem(mountEntity))
 		return;
 
 #ifdef __CHANGELOOK_SYSTEM__
-	if (mountItem->GetTransmutation())
+	const uint32_t mountItemID = ItemSystem::GetItemID(mountEntity);
+	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
+	if (legacyMountItem && legacyMountItem->GetTransmutation())
 	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mountItem->GetTransmutation());
+		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
 
 		if (itemTable)
 			mobVnum = itemTable->alValues[1];
 		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+			mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
 	}
 	else
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+		mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
 #else
-	if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mountItem), 1);
+	if (ItemSystem::GetItemValue(mountEntity, 1) != 0)
+		mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
 #endif
 
 	if (mountSystem->CountSummoned() == 0)
 	{
-		mountSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, mountItem), false);
+		mountSystem->Summon(mobVnum, mountEntity, false);
 	}
 }
 

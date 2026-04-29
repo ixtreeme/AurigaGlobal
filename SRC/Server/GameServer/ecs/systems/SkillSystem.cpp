@@ -1727,17 +1727,17 @@ EVENTFUNC(ChainLightningEvent)
 	return 0;
 }
 
-void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, LPITEM pkWeapon)
+void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, entt::entity pkWeapon)
 {
 	if (ch->IsPC())
 	{
-		if (pkWeapon && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == ITEM_WEAPON)
+		if (ItemSystem::IsValidItem(pkWeapon) && ItemSystem::GetItemType(pkWeapon) == ITEM_WEAPON)
 		{
-			int iWep = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 3), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 4));
-			iWep += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 5);
+			int iWep = number(ItemSystem::GetItemValue(pkWeapon, 3), ItemSystem::GetItemValue(pkWeapon, 4));
+			iWep += ItemSystem::GetItemValue(pkWeapon, 5);
 
-			int iMtk = number(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 1), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 2));
-			iMtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkWeapon), 5);
+			int iMtk = number(ItemSystem::GetItemValue(pkWeapon, 1), ItemSystem::GetItemValue(pkWeapon, 2));
+			iMtk += ItemSystem::GetItemValue(pkWeapon, 5);
 
 			pkSk->SetPointVar("wep", iWep);
 			pkSk->SetPointVar("mtk", iMtk);
@@ -1761,7 +1761,7 @@ void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, LPITEM pkWeapo
 
 struct FuncSplashDamage
 {
-	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LegacyCharHandle pkChr, int iAmount, int iAG, int iMaxHit, LPITEM pkWeapon, bool bDisableCooltime, TSkillUseInfo* pInfo, uint8_t bUseSkillPower)
+	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LegacyCharHandle pkChr, int iAmount, int iAG, int iMaxHit, entt::entity pkWeapon, bool bDisableCooltime, TSkillUseInfo* pInfo, uint8_t bUseSkillPower)
 		:
 		m_x(x), m_y(y), m_pkSk(pkSk), m_pkChr(pkChr), m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_pInfo(pInfo), m_bUseSkillPower(bUseSkillPower)
 		{
@@ -2496,7 +2496,7 @@ struct FuncSplashDamage
 	int		m_iAG;
 	int		m_iCount;
 	int		m_iMaxHit;
-	LPITEM	m_pkWeapon;
+	entt::entity	m_pkWeapon;
 	bool m_bDisableCooltime;
 	TSkillUseInfo* m_pInfo;
 	uint8_t m_bUseSkillPower;
@@ -2709,7 +2709,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
 
 	pkSk->SetDurationVar("k", k/*bSkillLevel*/);
 
@@ -2750,7 +2750,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
@@ -3009,13 +3009,13 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	
 	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
 	int iAmount = (int) pkSk->kPointPoly2.Eval();
 
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+		FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 		if (pkVictim->GetSectree())
 			pkVictim->GetSectree()->ForEachAround(f);
 		else
@@ -3180,7 +3180,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
 
 	pkSk->kDurationPoly.SetVar("k", k/*bSkillLevel*/);
 	pkSk->kDurationPoly2.SetVar("k", k/*bSkillLevel*/);
@@ -3231,7 +3231,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			SetSkillHit(true);
 #endif
 
-			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (pkVictim->GetSectree())
@@ -3493,7 +3493,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (pkVictim->GetSectree())
 				pkVictim->GetSectree()->ForEachAround(f);
 			

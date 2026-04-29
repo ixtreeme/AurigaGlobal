@@ -1054,7 +1054,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
-		ch->MountSummon(this);
+		ch->MountSummon(EntityFactory::CreateItemEntity(g_registry, this));
 #endif
 	m_pOwner->UpdatePacket();
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
@@ -1106,7 +1106,7 @@ bool CItem::Unequip()
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
-		m_pOwner->MountUnsummon(this);
+		m_pOwner->MountUnsummon(EntityFactory::CreateItemEntity(g_registry, this));
 #endif
 
 	if (IsRideItem())
