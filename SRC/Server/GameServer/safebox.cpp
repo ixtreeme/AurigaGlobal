@@ -5,6 +5,7 @@
 #include "packet.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -42,7 +43,7 @@ void CSafebox::__Destroy()
 	{
 		if (m_pkItems[i])
 		{
-			m_pkItems[i]->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, m_pkItems[i]), true);
 			ITEM_MANAGER::instance().FlushDelayedSave(m_pkItems[i]);
 
 			LPITEM removed = m_pkItems[i]->RemoveFromCharacter();
@@ -68,8 +69,9 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 		return false;
 	}
 
-	pkItem->SetWindow(m_bWindowMode);
-	pkItem->SetCell(m_pkChrOwner, dwPos);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+	ItemSystem::SetItemWindow(itemEntity, m_bWindowMode);
+	ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkChrOwner), dwPos);
 	pkItem->Save(); // 강제로 Save를 불러줘야 한다.
 	ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
 
