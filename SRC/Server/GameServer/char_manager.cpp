@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -184,7 +185,7 @@ namespace
 		PIXEL_POSITION base;
 		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(st.mapIndex, base))
 		{
-			sys_err("Map1Wave_SpawnWave: cannot find base position for map %d", st.mapIndex);
+			LOG_ERROR("Map1Wave_SpawnWave: cannot find base position for map {}", st.mapIndex);
 			return 0;
 		}
 
@@ -409,7 +410,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	// <Factor> Check whether it has been already deleted or not.
 	const auto it = m_map_pkChrByVID.find(ch->GetLegacyVID());
 	if (it == m_map_pkChrByVID.end()) {
-		sys_err("[CHARACTER_MANAGER::DestroyCharacter] <Factor> %d not found", ch->GetLegacyVID());
+		LOG_ERROR("[CHARACTER_MANAGER::DestroyCharacter] <Factor> {} not found", ch->GetLegacyVID());
 		return; // prevent duplicated destrunction
 	}
 
@@ -508,12 +509,12 @@ LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 	if (m_map_pkChrByVID.end() == it)
 		return nullptr;
 
-	sys_err("VID_DRIFT fallback in CHARACTER_MANAGER::Find(%u)", dwVID);
+	LOG_ERROR("VID_DRIFT fallback in CHARACTER_MANAGER::Find({})", dwVID);
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
 	if (found != nullptr && dwVID != found->GetLegacyVID()) {
-		sys_err("[CHARACTER_MANAGER::Find] <Factor> %u != %u", dwVID, found->GetLegacyVID());
+		LOG_ERROR("[CHARACTER_MANAGER::Find] <Factor> {} != {}", dwVID, found->GetLegacyVID());
 		return nullptr;
 	}
 	return found;
@@ -529,7 +530,7 @@ LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
 	if (found != nullptr && dwPID != found->GetPlayerID()) {
-		sys_err("[CHARACTER_MANAGER::FindByPID] <Factor> %u != %u", dwPID, found->GetPlayerID());
+		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, found->GetPlayerID());
 		return nullptr;
 	}
 	return found;
@@ -547,7 +548,7 @@ LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
 	if (found != nullptr && strncasecmp(szName, found->GetName(), CHARACTER_NAME_MAX_LEN) != 0) {
-		sys_err("[CHARACTER_MANAGER::FindPC] <Factor> %s != %s", name, found->GetName());
+		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, found->GetName());
 		return nullptr;
 	}
 	return found;
@@ -559,13 +560,13 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	if (!pkMob)
 	{
-		sys_err("no mob data for vnum %u", dwVnum);
+		LOG_ERROR("no mob data for vnum {}", dwVnum);
 		return nullptr;
 	}
 
 	if (!map_allow_find(lMapIndex))
 	{
-		sys_err("not allowed map %u", lMapIndex);
+		LOG_ERROR("not allowed map {}", lMapIndex);
 		return nullptr;
 	}
 
@@ -599,7 +600,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	if (i == 2000)
 	{
-		sys_err("cannot find valid location");
+		LOG_ERROR("cannot find valid location");
 		return nullptr;
 	}
 
@@ -607,7 +608,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	if (!sectree)
 	{
-		sys_log(0, "SpawnMobRandomPosition: cannot create monster at non-exist sectree %d x %d (map %d)", x, y, lMapIndex);
+		LOG_INFO("SpawnMobRandomPosition: cannot create monster at non-exist sectree {} x {} (map {})", x, y, lMapIndex);
 		return nullptr;
 	}
 
@@ -619,7 +620,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	if (!ch)
 	{
-		sys_log(0, "SpawnMobRandomPosition: cannot create new character");
+		LOG_INFO("SpawnMobRandomPosition: cannot create new character");
 		return nullptr;
 	}
 
@@ -635,7 +636,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	if (!ch->Show(lMapIndex, x, y, 0, false))
 	{
 		M2_DESTROY_CHARACTER(ch);
-		sys_err(0, "SpawnMobRandomPosition: cannot show monster");
+		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
 		return nullptr;
 	}
 
@@ -666,7 +667,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	const CMob* pkMob = CMobManager::instance().Get(dwVnum);
 	if (!pkMob)
 	{
-		sys_err("SpawnMob: no mob data for vnum %u", dwVnum);
+		LOG_ERROR("SpawnMob: no mob data for vnum {}", dwVnum);
 		return nullptr;
 	}
 
@@ -676,8 +677,8 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 		if (!tree)
 		{
-			sys_log(0, "no sectree for spawn at %d %d mobvnum %d mapindex %d", x, y, dwVnum, lMapIndex);
-			//sys_err("no sectree for spawn at %d %d mobvnum %d mapindex %d", x, y, dwVnum, lMapIndex);
+			LOG_INFO("no sectree for spawn at {} {} mobvnum {} mapindex {}", x, y, dwVnum, lMapIndex);
+			//"no sectree for spawn at %d %d mobvnum %d mapindex %d", x, y, dwVnum, lMapIndex);
 			return nullptr;
 		}
 
@@ -711,16 +712,16 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 			}
 
 			if (s_isLog)
-				//sys_err("SpawnMob: BLOCKED position for spawn %s %u at %d %d (attr %u)", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
-				sys_log(0, "SpawnMob: BLOCKED position for spawn %s %u at %d %d (attr %u)", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
+				//"SpawnMob: BLOCKED position for spawn %s %u at %d %d (attr %u)", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
+				LOG_INFO("SpawnMob: BLOCKED position for spawn {} {} at {} {} (attr {})", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
 			// END_OF_SPAWN_BLOCK_LOG
 			return nullptr;
 		}
 
 		if (IS_SET(dwAttr, ATTR_BANPK))
 		{
-			//sys_err("SpawnMob: BAN_PK position for mob spawn %s %u at %d %d", pkMob->m_table.szName, dwVnum, x, y);
-			sys_log(0, "SpawnMob: BAN_PK position for mob spawn %s %u at %d %d", pkMob->m_table.szName, dwVnum, x, y);
+			//"SpawnMob: BAN_PK position for mob spawn %s %u at %d %d", pkMob->m_table.szName, dwVnum, x, y);
+			LOG_INFO("SpawnMob: BAN_PK position for mob spawn {} {} at {} {}", pkMob->m_table.szName, dwVnum, x, y);
 			return nullptr;
 		}
 	}
@@ -729,8 +730,8 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	if (!sectree)
 	{
-		//sys_err("SpawnMob: cannot create monster at non-exist sectree %d x %d (map %d)", x, y, lMapIndex);
-		sys_log(0, "SpawnMob: cannot create monster at non-exist sectree %d x %d (map %d)", x, y, lMapIndex);
+		//"SpawnMob: cannot create monster at non-exist sectree %d x %d (map %d)", x, y, lMapIndex);
+		LOG_INFO("SpawnMob: cannot create monster at non-exist sectree {} x {} (map {})", x, y, lMapIndex);
 		return nullptr;
 	}
 
@@ -742,8 +743,8 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	if (!ch)
 	{
-		//sys_err("SpawnMob: cannot create new character");
-		sys_log(0, "SpawnMob: cannot create new character");
+		//"SpawnMob: cannot create new character");
+		LOG_INFO("SpawnMob: cannot create new character");
 		return nullptr;
 	}
 
@@ -770,8 +771,8 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	if (bShow && !ch->Show(lMapIndex, x, y, z, bSpawnMotion))
 	{
 		M2_DESTROY_CHARACTER(ch);
-		//sys_err("SpawnMob: cannot show monster");
-		sys_log(0, "SpawnMob: cannot show monster");
+		//"SpawnMob: cannot show monster");
+		LOG_INFO("SpawnMob: cannot show monster");
 		return nullptr;
 	}
 #ifdef ENABLE_EVENT_MANAGER
@@ -867,7 +868,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			sys_log(1, "MOB_SPAWN: %s(%d) %dx%d", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			LOG_INFO("MOB_SPAWN: {}({}) {}x{}", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -893,7 +894,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 
 	if (!pkGroup)
 	{
-		sys_err("NOT_EXIST_GROUP_VNUM(%u) Map(%u) ", dwVnum, lMapIndex);
+		LOG_ERROR("NOT_EXIST_GROUP_VNUM({}) Map({}) ", dwVnum, lMapIndex);
 		return false;
 	}
 
@@ -963,7 +964,7 @@ bool CHARACTER_MANAGER::SpawnGroupGroup(uint32_t dwVnum, int32_t lMapIndex, int 
 	}
 	else
 	{
-		sys_err("NOT_EXIST_GROUP_GROUP_VNUM(%u) MAP(%ld)", dwVnum, lMapIndex);
+		LOG_ERROR("NOT_EXIST_GROUP_GROUP_VNUM({}) MAP({})", dwVnum, lMapIndex);
 		return false;
 	}
 }
@@ -978,7 +979,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 
 	if (!pkGroup)
 	{
-		sys_err("NOT_EXIST_GROUP_VNUM(%u) Map(%u) ", dwVnum, lMapIndex);
+		LOG_ERROR("NOT_EXIST_GROUP_VNUM({}) Map({}) ", dwVnum, lMapIndex);
 		return nullptr;
 	}
 
@@ -1208,7 +1209,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 	// ׽Ʈ  60ʸ ĳ  
 	if (test_server && 0 == iPulse % PASSES_PER_SEC(60))
-		sys_log(0, "CHARACTER COUNT vid %zu pid %zu", m_map_pkChrByVID.size(), m_map_pkChrByPID.size());
+		LOG_INFO("CHARACTER COUNT vid {} pid {}", m_map_pkChrByVID.size(), m_map_pkChrByPID.size());
 
 	//  DestroyCharacter ϱ
 	FlushPendingDestroy();
@@ -1252,7 +1253,7 @@ void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
 #endif
 	if (const auto it = m_set_pkChrState.find(ch); it != m_set_pkChrState.end())
 	{
-		//sys_log(0, "RemoveFromStateList %p", ch);
+		//0, "RemoveFromStateList %p", ch);
 		m_set_pkChrState.erase(it);
 	}
 }
@@ -1351,7 +1352,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
 	{
-		sys_log(0, "RegisterRaceNumMap %s %u", ch->GetName(), dwVnum);
+		LOG_INFO("RegisterRaceNumMap {} {}", ch->GetName(), dwVnum);
 		m_map_pkChrByRaceNum[dwVnum].insert(ch);
 	}
 }
@@ -1557,7 +1558,7 @@ void CHARACTER_MANAGER::FlushPendingDestroy()
 
 	if (!m_set_pkChrPendingDestroy.empty())
 	{
-		sys_log(0, "FlushPendingDestroy size %d", m_set_pkChrPendingDestroy.size());
+		LOG_INFO("FlushPendingDestroy size {}", m_set_pkChrPendingDestroy.size());
 
 		auto it = m_set_pkChrPendingDestroy.begin();
 		for (const auto end = m_set_pkChrPendingDestroy.end(); it != end; ++it) {
@@ -2499,12 +2500,12 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 			}
 			else
 			{
-				sys_err("ItemShop purchase failed to create item vnum %u for %s", itemVnum, ch->GetName());
+				LOG_ERROR("ItemShop purchase failed to create item vnum {} for {}", itemVnum, ch->GetName());
 			}
 		}
 		else
 		{
-			sys_err("ItemShop purchase could not find item data for vnum %u", itemVnum);
+			LOG_ERROR("ItemShop purchase could not find item data for vnum {}", itemVnum);
 		}
 	}
 
