@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "config.h"
 #include "packet.h"
@@ -334,15 +336,15 @@ EVENTFUNC(ready_to_start_event)
 				chA->GetDesc()->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();
 				chA->SetPosition(POS_STANDING);
-				chA->PointChange(POINT_HP, chA->GetMaxHP() - chA->GetHP());
-				chA->PointChange(POINT_SP, chA->GetMaxSP() - chA->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_HP, chA->GetMaxHP() - chA->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_SP, chA->GetMaxSP() - chA->GetSP());
 				chA->ViewReencode();
 
 				chB->GetDesc()->SetPhase(PHASE_GAME);
 				chB->StartRecoveryEvent();
 				chB->SetPosition(POS_STANDING);
-				chB->PointChange(POINT_HP, chB->GetMaxHP() - chB->GetHP());
-				chB->PointChange(POINT_SP, chB->GetMaxSP() - chB->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(chB), POINT_HP, chB->GetMaxHP() - chB->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(chB), POINT_SP, chB->GetMaxSP() - chB->GetSP());
 				chB->ViewReencode();
 
 				TEMP_BUFFER buf;
@@ -500,11 +502,11 @@ bool CArena::StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint
 
 	m_pTimeOutEvent = event_create(duel_time_out, info, PASSES_PER_SEC(nMinute*60));
 
-	pCharFrom->PointChange(POINT_HP, pCharFrom->GetMaxHP() - pCharFrom->GetHP());
-	pCharFrom->PointChange(POINT_SP, pCharFrom->GetMaxSP() - pCharFrom->GetSP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharFrom), POINT_HP, pCharFrom->GetMaxHP() - pCharFrom->GetHP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharFrom), POINT_SP, pCharFrom->GetMaxSP() - pCharFrom->GetSP());
 
-	pCharTo->PointChange(POINT_HP, pCharTo->GetMaxHP() - pCharTo->GetHP());
-	pCharTo->PointChange(POINT_SP, pCharTo->GetMaxSP() - pCharTo->GetSP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharTo), POINT_HP, pCharTo->GetMaxHP() - pCharTo->GetHP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharTo), POINT_SP, pCharTo->GetMaxSP() - pCharTo->GetSP());
 
 	sys_log(0, "ARENA: Start Duel with PID_A(%d) vs PID_B(%d)", GetPlayerAPID(), GetPlayerBPID());
 	return true;
@@ -549,8 +551,8 @@ void CArena::EndDuel()
 		playerA->SetPKMode(PK_MODE_PEACE);
 		playerA->StartRecoveryEvent();
 		playerA->SetPosition(POS_STANDING);
-		playerA->PointChange(POINT_HP, playerA->GetMaxHP() - playerA->GetHP());
-		playerA->PointChange(POINT_SP, playerA->GetMaxSP() - playerA->GetSP());
+		ecs::PointSystem::Change(AIHelpers::EcsOf(playerA), POINT_HP, playerA->GetMaxHP() - playerA->GetHP());
+		ecs::PointSystem::Change(AIHelpers::EcsOf(playerA), POINT_SP, playerA->GetMaxSP() - playerA->GetSP());
 
 		playerA->SetArena(nullptr);
 
@@ -562,8 +564,8 @@ void CArena::EndDuel()
 		playerB->SetPKMode(PK_MODE_PEACE);
 		playerB->StartRecoveryEvent();
 		playerB->SetPosition(POS_STANDING);
-		playerB->PointChange(POINT_HP, playerB->GetMaxHP() - playerB->GetHP());
-		playerB->PointChange(POINT_SP, playerB->GetMaxSP() - playerB->GetSP());
+		ecs::PointSystem::Change(AIHelpers::EcsOf(playerB), POINT_HP, playerB->GetMaxHP() - playerB->GetHP());
+		ecs::PointSystem::Change(AIHelpers::EcsOf(playerB), POINT_SP, playerB->GetMaxSP() - playerB->GetSP());
 
 		playerB->SetArena(nullptr);
 

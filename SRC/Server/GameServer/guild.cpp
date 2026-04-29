@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -976,7 +978,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 		return false;
 	}
 
-	ch->PointChange(POINT_EXP, -amount
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, -amount
 #ifdef __ENABLE_BLOCK_EXP__
 	, false, false, true
 #endif
@@ -1273,7 +1275,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 	  TGuildMemberOnlineContainer::iterator it;
 
 	  for (it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-	  (*it)->PointChange(POINT_DEF_GRADE, 1);
+	  ecs::PointSystem::Change(AIHelpers::EcsOf((*it)), POINT_DEF_GRADE, 1);
 	  }
 	  break;
 	  case GUILD_SKILL_HIM:
@@ -1281,7 +1283,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 	  TGuildMemberOnlineContainer::iterator it;
 
 	  for (it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-	  (*it)->PointChange(POINT_ATT_GRADE, 1);
+	  ecs::PointSystem::Change(AIHelpers::EcsOf((*it)), POINT_ATT_GRADE, 1);
 	  }
 	  break;
 	  }*/
@@ -1488,19 +1490,19 @@ int CGuild::GetSkillLevel(uint32_t vnum)
 /*void CGuild::GuildUpdateAffect(LPCHARACTER ch)
   {
   if (GetSkillLevel(GUILD_SKILL_GAHO))
-  ch->PointChange(POINT_DEF_GRADE, GetSkillLevel(GUILD_SKILL_GAHO));
+  ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DEF_GRADE, GetSkillLevel(GUILD_SKILL_GAHO));
 
   if (GetSkillLevel(GUILD_SKILL_HIM))
-  ch->PointChange(POINT_ATT_GRADE, GetSkillLevel(GUILD_SKILL_HIM));
+  ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ATT_GRADE, GetSkillLevel(GUILD_SKILL_HIM));
   }*/
 
 /*void CGuild::GuildRemoveAffect(LPCHARACTER ch)
   {
   if (GetSkillLevel(GUILD_SKILL_GAHO))
-  ch->PointChange(POINT_DEF_GRADE, -(int) GetSkillLevel(GUILD_SKILL_GAHO));
+  ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DEF_GRADE, -(int) GetSkillLevel(GUILD_SKILL_GAHO));
 
   if (GetSkillLevel(GUILD_SKILL_HIM))
-  ch->PointChange(POINT_ATT_GRADE, -(int) GetSkillLevel(GUILD_SKILL_HIM));
+  ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ATT_GRADE, -(int) GetSkillLevel(GUILD_SKILL_HIM));
   }*/
 
 void CGuild::UpdateSkill(uint8_t skill_point, uint8_t* skill_levels)
@@ -1522,8 +1524,8 @@ void CGuild::UpdateSkill(uint8_t skill_point, uint8_t* skill_levels)
 	  {
 	  for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	  {
-	  (*it)->PointChange(POINT_ATT_GRADE, iAttMoreBonus);
-	  (*it)->PointChange(POINT_DEF_GRADE, iDefMoreBonus);
+	  ecs::PointSystem::Change(AIHelpers::EcsOf((*it)), POINT_ATT_GRADE, iAttMoreBonus);
+	  ecs::PointSystem::Change(AIHelpers::EcsOf((*it)), POINT_DEF_GRADE, iDefMoreBonus);
 	  }
 	  }*/
 
@@ -1674,7 +1676,7 @@ namespace
 			if (ch->GetGold() + iRewardR < 0)
 				ch->SetGold(0);
 			else
-				ch->PointChange(POINT_GOLD, iRewardR);
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iRewardR);
 		}
 	};
 }
@@ -1996,7 +1998,7 @@ bool CGuild::ChargeSP(LPCHARACTER ch, int iSP)
 		gold = iSP * 100;
 	}
 
-	ch->PointChange(POINT_GOLD, -gold);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -gold);
 	DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, 1, -gold);
 
 	SendDBSkillUpdate(iSP);
@@ -2079,7 +2081,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 		return;
 
 
-	ch->PointChange(POINT_GOLD, -iGold);
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -iGold);
 
 	TPacketGDGuildMoney p;
 	p.dwGuild = GetID();
@@ -2152,7 +2154,7 @@ void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 
 	if (ch)
 	{
-		ch->PointChange(POINT_GOLD, iChangeGold);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iChangeGold);
 		sys_log(0, "GUILD: WITHDRAW %s:%u player %s[%u] gold %d", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iChangeGold);
 	}
 

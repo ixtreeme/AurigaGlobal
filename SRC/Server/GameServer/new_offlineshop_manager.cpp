@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <common/tables.h>
 #include "packet.h"
 #include "item.h"
@@ -1197,9 +1199,9 @@ namespace offlineshop
 		OFFSHOP_DEBUG("can buy %u",dwItemID);
 
 		TPriceInfo* pPrice = pkItem->GetPrice();
-		ch->PointChange(POINT_GOLD, -pPrice->illYang);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -pPrice->illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ch->PointChange(POINT_CHEQUE, -pPrice->iCheque);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_CHEQUE, -pPrice->iCheque);
 #endif
 		
 		SendShopBuyDBPacket(dwBuyerID, dwOwnerID, dwItemID);
@@ -2921,9 +2923,9 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ch->PointChange(POINT_GOLD, -offer.price.illYang);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -offer.price.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ch->PointChange(POINT_CHEQUE, -offer.price.iCheque);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_CHEQUE, -offer.price.iCheque);
 
 		// converting won to yang
 		offer.price.illYang = offer.price.GetTotalYangAmount();
@@ -3214,9 +3216,9 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ch->PointChange(POINT_GOLD, valutes.illYang);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, valutes.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ch->PointChange(POINT_CHEQUE, valutes.iCheque);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_CHEQUE, valutes.iCheque);
 #endif
 
 		pkSafebox->RefreshToOwner();
@@ -3496,9 +3498,9 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ch->PointChange(POINT_GOLD,-price.illYang);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD,-price.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ch->PointChange(POINT_CHEQUE, -price.iCheque);
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_CHEQUE, -price.iCheque);
 #endif
 
 		TAuctionOfferInfo offer;
