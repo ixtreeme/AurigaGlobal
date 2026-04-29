@@ -104,13 +104,12 @@ namespace quest
 
 		void		SetCurrentEventIndex(int index) { m_iRunningEventIndex = index; }
 
-		bool		UseItem(unsigned int pc, LPITEM item, bool bReceiveAll);
-		bool		SIGUse(unsigned int pc, uint32_t sig_vnum, LPITEM item, bool bReceiveAll);
-		bool		TakeItem(unsigned int pc, unsigned int npc, LPITEM item);
+		bool		UseItem(unsigned int pc, entt::entity item, bool bReceiveAll);
+		bool		SIGUse(unsigned int pc, uint32_t sig_vnum, entt::entity item, bool bReceiveAll);
+		bool		TakeItem(unsigned int pc, unsigned int npc, entt::entity item);
 		LPITEM		GetCurrentItem();
 		entt::entity	GetCurrentItemEntity();
 		void		ClearCurrentItem();
-		void		SetCurrentItem(LPITEM item);
 		void		SetCurrentItem(entt::entity item);
 		void		AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event);
 		void		ClearServerTimer(const std::string& name, uint32_t arg);

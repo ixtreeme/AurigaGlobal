@@ -788,7 +788,7 @@ namespace quest
 		}
 	}
 
-	bool CQuestManager::TakeItem(unsigned int pc, unsigned int npc, LPITEM item)
+	bool CQuestManager::TakeItem(unsigned int pc, unsigned int npc, entt::entity item)
 	{
 		//m_CurrentNPCRace = npc;
 		PC* pPC;
@@ -806,7 +806,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
+			SetCurrentItem(item);
 			return m_mapNPC[npc].OnTakeItem(*pPC);
 		}
 		else
@@ -817,10 +817,10 @@ namespace quest
 		}
 	}
 
-	bool CQuestManager::UseItem(unsigned int pc, LPITEM item, bool bReceiveAll)
+	bool CQuestManager::UseItem(unsigned int pc, entt::entity item, bool bReceiveAll)
 	{
 		if (test_server)
-			sys_log( 0, "questmanager::UseItem Start : itemVnum : %d PC : %d", item->GetOriginalVnum(), pc);
+			sys_log( 0, "questmanager::UseItem Start : itemVnum : %d PC : %d", ItemSystem::GetItemOriginalVnum(item), pc);
 		PC* pPC;
 		if ((pPC = GetPC(pc)))
 		{
@@ -835,7 +835,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
+			SetCurrentItem(item);
 			/*
 			if (test_server)
 			{
@@ -851,7 +851,7 @@ namespace quest
 			sys_log( 0, "questmanager:useItem: mapNPCVnum : %d\n", m_mapNPC[ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))].GetVnum());
 			*/
 
-			return m_mapNPC[ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))].OnUseItem(*pPC, bReceiveAll);
+			return m_mapNPC[ItemSystem::GetItemVnum(item)].OnUseItem(*pPC, bReceiveAll);
 		}
 		else
 		{
@@ -862,10 +862,10 @@ namespace quest
 	}
 
 	// Speical Item Group에 정의된 Group Use
-	bool CQuestManager::SIGUse(unsigned int pc, uint32_t sig_vnum, LPITEM item, bool bReceiveAll)
+	bool CQuestManager::SIGUse(unsigned int pc, uint32_t sig_vnum, entt::entity item, bool bReceiveAll)
 	{
 		if (test_server)
-			sys_log( 0, "questmanager::SIGUse Start : itemVnum : %d PC : %d", item->GetOriginalVnum(), pc);
+			sys_log( 0, "questmanager::SIGUse Start : itemVnum : %d PC : %d", ItemSystem::GetItemOriginalVnum(item), pc);
 		PC* pPC;
 		if ((pPC = GetPC(pc)))
 		{
@@ -880,7 +880,7 @@ namespace quest
 				return false;
 			}
 			// call script
-			SetCurrentItem(EntityFactory::CreateItemEntity(g_registry, item));
+			SetCurrentItem(item);
 
 			return m_mapNPC[sig_vnum].OnSIGUse(*pPC, bReceiveAll);
 		}
@@ -1298,13 +1298,6 @@ namespace quest
 			GetCurrentCharacterPtr()->ClearQuestItemPtr();
 	}
 
-	void CQuestManager::SetCurrentItem(LPITEM item)
-	{
-		LPCHARACTER ch = GetCurrentCharacterPtr();
-		if (ch)
-			ch->SetQuestItemPtr(item);
-	}
-
 	void CQuestManager::SetCurrentItem(entt::entity item)
 	{
 		if (item == entt::null)
@@ -1313,8 +1306,12 @@ namespace quest
 			return;
 		}
 
+		LPCHARACTER ch = GetCurrentCharacterPtr();
+		if (!ch)
+			return;
+
 		const uint32_t id = ItemSystem::GetItemID(item);
-		SetCurrentItem(id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr);
+		ch->SetQuestItemPtr(id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr);
 	}
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const

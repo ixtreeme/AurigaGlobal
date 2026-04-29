@@ -2993,7 +2993,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 #endif
 			)
 		{
-			quest::CQuestManager::instance().UseItem(GetPlayerID(), item, false);
+			quest::CQuestManager::instance().UseItem(GetPlayerID(), EntityFactory::CreateItemEntity(g_registry, item), false);
 		}
 
 	}
@@ -5726,11 +5726,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			if (item->GetSIGVnum() == 0)
 			{
-				quest::CQuestManager::instance().UseItem(GetPlayerID(), item, false);
+				quest::CQuestManager::instance().UseItem(GetPlayerID(), EntityFactory::CreateItemEntity(g_registry, item), false);
 			}
 			else
 			{
-				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), item, false);
+				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), EntityFactory::CreateItemEntity(g_registry, item), false);
 			}
 		}
 
@@ -13454,7 +13454,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 			// TAKE_ITEM_BUG_FIX
 			from->SetQuestNPCID(GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
-			quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
+			quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
 		}
 		break;
 
@@ -13600,7 +13600,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 	default:
 		sys_log(0, "TakeItem %s %d %s", from->GetName(), GetRaceNum(), item->GetName());
 		from->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), item);
+		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
 		break;
 	}
 }
