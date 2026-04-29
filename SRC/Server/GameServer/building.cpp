@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "sectree_manager.h"
 #include "item_manager.h"
@@ -97,8 +98,7 @@ void CObject::EncodeInsertPacket(LPENTITY entity)
 	if (!(d = entity->GetDesc()))
 		return;
 
-	sys_log(0, "ObjectInsertPacket vid %u vnum %u rot %f %f %f",
-			m_dwVID, m_data.dwVnum, m_data.xRot, m_data.yRot, m_data.zRot);
+	LOG_INFO("ObjectInsertPacket vid {} vnum {} rot {:f} {:f} {:f}", m_dwVID, m_data.dwVnum, m_data.xRot, m_data.yRot, m_data.zRot);
 
 	TPacketGCCharacterAdd pack = {};
 
@@ -133,7 +133,7 @@ void CObject::EncodeRemovePacket(LPENTITY entity)
 	if (!(d = entity->GetDesc()))
 		return;
 
-	sys_log(0, "ObjectRemovePacket vid %u", m_dwVID);
+	LOG_INFO("ObjectRemovePacket vid {}", m_dwVID);
 
 	TPacketGCCharacterDelete pack;
 
@@ -154,7 +154,7 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 
 	if (!tree)
 	{
-		sys_err("cannot find sectree by %dx%d mapindex %d", x, y, lMapIndex);
+		LOG_ERROR("cannot find sectree by {}x{} mapindex {}", x, y, lMapIndex);
 		return false;
 	}
 
@@ -293,7 +293,7 @@ void CObject::RegenNPC()
 
 	if (!m_chNPC)
 	{
-		sys_err("Cannot create guild npc");
+		LOG_ERROR("Cannot create guild npc");
 		return;
 	}
 
@@ -459,7 +459,7 @@ void CLand::DeleteObject(uint32_t dwID)
 	if (!(pkObj = FindObject(dwID)))
 		return;
 
-	sys_log(0, "Land::DeleteObject %u", dwID);
+	LOG_INFO("Land::DeleteObject {}", dwID);
 	CManager::instance().UnregisterObject(pkObj);
 	M2_DESTROY_CHARACTER (pkObj->GetNPC());
 
@@ -504,15 +504,14 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 
 	if (!pkProto)
 	{
-		sys_err("Invalid Object vnum %u", dwVnum);
+		LOG_ERROR("Invalid Object vnum {}", dwVnum);
 		return false;
 	}
 	const TMapRegion * r = rkSecTreeMgr.GetMapRegion(lMapIndex);
 	if (!r)
 		return false;
 
-	sys_log(0, "RequestCreateObject(vnum=%u, map=%d, pos=(%d,%d), rot=(%.1f,%.1f,%.1f) region(%d,%d ~ %d,%d)",
-			dwVnum, lMapIndex, x, y, xRot, yRot, zRot, r->sx, r->sy, r->ex, r->ey);
+	LOG_INFO("RequestCreateObject(vnum={}, map={}, pos=({},{}), rot=({:.1f},{:.1f},{:.1f}) region({},{} ~ {},{})", dwVnum, lMapIndex, x, y, xRot, yRot, zRot, r->sx, r->sy, r->ex, r->ey);
 
 	x += r->sx;
 	y += r->sy;
@@ -537,7 +536,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 
 	if (tsx < sx || tex > ex || tsy < sy || tey > ey)
 	{
-		sys_err("invalid position: object is outside of land region\nLAND: %d %d ~ %d %d\nOBJ: %d %d ~ %d %d", sx, sy, ex, ey, osx, osy, oex, oey);
+		LOG_ERROR("invalid position: object is outside of land region\nLAND: {} {} ~ {} {}\nOBJ: {} {} ~ {} {}", sx, sy, ex, ey, osx, osy, oex, oey);
 		return false;
 	}
 
@@ -546,7 +545,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 	{
 		if (rkSecTreeMgr.ForAttrRegion(lMapIndex, osx, osy, oex, oey, (int32_t)zRot, ATTR_OBJECT, ATTR_REGION_MODE_CHECK))
 		{
-			sys_err("another object already exist");
+			LOG_ERROR("another object already exist");
 			return false;
 		}
 		FIsIn f (osx, osy, oex, oey);
@@ -554,7 +553,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 
 		if (f.bIn)
 		{
-			sys_err("another object already exist");
+			LOG_ERROR("another object already exist");
 			return false;
 		}
 	}
@@ -579,12 +578,12 @@ void CLand::RequestDeleteObject(uint32_t dwID)
 {
 	if (!FindObject(dwID))
 	{
-		sys_err("no object by id %u", dwID);
+		LOG_ERROR("no object by id {}", dwID);
 		return;
 	}
 
 	db_clientdesc->DBPacket(HEADER_GD_DELETE_OBJECT, 0, &dwID, sizeof(uint32_t));
-	sys_log(0, "RequestDeleteObject id %u", dwID);
+	LOG_INFO("RequestDeleteObject id {}", dwID);
 }
 
 void CLand::RequestDeleteObjectByVID(uint32_t dwVID)
@@ -593,13 +592,13 @@ void CLand::RequestDeleteObjectByVID(uint32_t dwVID)
 
 	if (!(pkObj = FindObjectByVID(dwVID)))
 	{
-		sys_err("no object by vid %u", dwVID);
+		LOG_ERROR("no object by vid {}", dwVID);
 		return;
 	}
 
 	uint32_t dwID = pkObj->GetID();
 	db_clientdesc->DBPacket(HEADER_GD_DELETE_OBJECT, 0, &dwID, sizeof(uint32_t));
-	sys_log(0, "RequestDeleteObject vid %u id %u", dwVID, dwID);
+	LOG_INFO("RequestDeleteObject vid {} id {}", dwVID, dwID);
 }
 
 void CLand::SetOwner(uint32_t dwGuild)
@@ -619,7 +618,7 @@ void CLand::RequestUpdate(uint32_t dwGuild)
 	a[1] = dwGuild;
 
 	db_clientdesc->DBPacket(HEADER_GD_UPDATE_LAND, 0, &a[0], sizeof(uint32_t) * 2);
-	sys_log(0, "RequestUpdate id %u guild %u", a[0], a[1]);
+	LOG_INFO("RequestUpdate id {} guild {}", a[0], a[1]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -652,8 +651,7 @@ bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
 		TObjectProto & r = m_vec_kObjectProto[i];
 
 		// BUILDING_NPC
-		sys_log(0, "ObjectProto %u price %u upgrade %u upg_limit %u life %d NPC %u",
-				r.dwVnum, r.dwPrice, r.dwUpgradeVnum, r.dwUpgradeLimitTime, r.lLife, r.dwNPCVnum);
+		LOG_INFO("ObjectProto {} price {} upgrade {} upg_limit {} life {} NPC {}", r.dwVnum, r.dwPrice, r.dwUpgradeVnum, r.dwUpgradeLimitTime, r.lLife, r.dwNPCVnum);
 		// END_OF_BUILDING_NPC
 
 		for (int j = 0; j < OBJECT_MATERIAL_MAX_NUM; ++j)
@@ -663,11 +661,11 @@ bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
 
 			if (nullptr == ITEM_MANAGER::instance().GetTable(r.kMaterials[j].dwItemVnum))
 			{
-				sys_err("          mat: ERROR!! no item by vnum %u", r.kMaterials[j].dwItemVnum);
+				LOG_ERROR("          mat: ERROR!! no item by vnum {}", r.kMaterials[j].dwItemVnum);
 				return false;
 			}
 
-			sys_log(0, "          mat: %u %u", r.kMaterials[j].dwItemVnum, r.kMaterials[j].dwCount);
+			LOG_INFO("          mat: {} {}", r.kMaterials[j].dwItemVnum, r.kMaterials[j].dwCount);
 		}
 
 		m_map_pkObjectProto.insert(std::make_pair(r.dwVnum, &m_vec_kObjectProto[i]));
@@ -698,8 +696,7 @@ bool CManager::LoadLand(TLand * pTable) // from DB
 	CLand * pkLand = M2_NEW CLand(pTable);
 	m_map_pkLand.insert(std::make_pair(pkLand->GetID(), pkLand));
 
-	sys_log(0, "LAND: %u map %d %dx%d w %u h %u",
-			pTable->dwID, pTable->lMapIndex, pTable->x, pTable->y, pTable->width, pTable->height);
+	LOG_INFO("LAND: {} map {} {}x{} w {} h {}", pTable->dwID, pTable->lMapIndex, pTable->x, pTable->y, pTable->width, pTable->height);
 
 	return true;
 }
@@ -710,7 +707,7 @@ void CManager::UpdateLand(TLand * pTable)
 
 	if (!pkLand)
 	{
-		sys_err("cannot find land by id %u", pTable->dwID);
+		LOG_ERROR("cannot find land by id {}", pTable->dwID);
 		return;
 	}
 
@@ -734,7 +731,7 @@ void CManager::UpdateLand(TLand * pTable)
 	e.height = pTable->height;
 	e.dwGuildID = pTable->dwGuildID;
 
-	sys_log(0, "BUILDING: UpdateLand %u pos %dx%d guild %u", e.dwID, e.x, e.y, e.dwGuildID);
+	LOG_INFO("BUILDING: UpdateLand {} pos {}x{} guild {}", e.dwID, e.x, e.y, e.dwGuildID);
 
 	CGuild *guild = CGuildManager::instance().FindGuild(pTable->dwGuildID);
 	while (it != cont.end())
@@ -764,7 +761,7 @@ CLand * CManager::FindLand(uint32_t dwID)
 
 CLand * CManager::FindLand(int32_t lMapIndex, int32_t x, int32_t y)
 {
-	sys_log(0, "BUILDING: FindLand %d %d %d", lMapIndex, x, y);
+	LOG_INFO("BUILDING: FindLand {} {} {}", lMapIndex, x, y);
 
 	const TMapRegion * r = SECTREE_MANAGER::instance().GetMapRegion(lMapIndex);
 
@@ -817,7 +814,7 @@ bool CManager::LoadObject(TObject * pTable, bool isBoot) // from DB
 
 	if (!pkLand)
 	{
-		sys_log(0, "Cannot find land by id %u", pTable->dwLandID);
+		LOG_INFO("Cannot find land by id {}", pTable->dwLandID);
 		return false;
 	}
 
@@ -825,11 +822,11 @@ bool CManager::LoadObject(TObject * pTable, bool isBoot) // from DB
 
 	if (!pkProto)
 	{
-		sys_err("Cannot find object %u in prototype (id %u)", pTable->dwVnum, pTable->dwID);
+		LOG_ERROR("Cannot find object {} in prototype (id {})", pTable->dwVnum, pTable->dwID);
 		return false;
 	}
 
-	sys_log(0, "OBJ: id %u vnum %u map %d pos %dx%d", pTable->dwID, pTable->dwVnum, pTable->lMapIndex, pTable->x, pTable->y);
+	LOG_INFO("OBJ: id {} vnum {} map {} pos {}x{}", pTable->dwID, pTable->dwVnum, pTable->lMapIndex, pTable->x, pTable->y);
 
 	LPOBJECT pkObj = M2_NEW CObject(pTable, pkProto);
 
@@ -878,7 +875,7 @@ void CManager::FinalizeBoot()
 	}
 
 	// BUILDING_NPC
-	sys_log(0, "FinalizeBoot");
+	LOG_INFO("FinalizeBoot");
 	// END_OF_BUILDING_NPC
 
 	auto it2 = m_map_pkLand.begin();
@@ -890,7 +887,7 @@ void CManager::FinalizeBoot()
 		const TLand & r = pkLand->GetData();
 
 		// LAND_MASTER_LOG
-		sys_log(0, "LandMaster map_index=%d pos=(%d, %d)", r.lMapIndex, r.x, r.y);
+		LOG_INFO("LandMaster map_index={} pos=({}, {})", r.lMapIndex, r.x, r.y);
 		// END_OF_LAND_MASTER_LOG
 
 		if (r.dwGuildID != 0)
@@ -909,7 +906,7 @@ void CManager::FinalizeBoot()
 
 void CManager::DeleteObject(uint32_t dwID) // from DB
 {
-	sys_log(0, "OBJ_DEL: %u", dwID);
+	LOG_INFO("OBJ_DEL: {}", dwID);
 
 	auto it = m_map_pkObjByID.find(dwID);
 
@@ -973,7 +970,7 @@ void CManager::SendLandList(LPDESC d, int32_t lMapIndex)
 		++wCount;
 	}
 
-	sys_log(0, "SendLandList map %d count %u elem_size: %d", lMapIndex, wCount, buf.size());
+	LOG_INFO("SendLandList map {} count {} elem_size: {}", lMapIndex, wCount, buf.size());
 
 	if (wCount != 0)
 	{
@@ -994,13 +991,13 @@ void CManager::ClearLand(uint32_t dwLandID)
 
 	if ( pLand == nullptr)
 	{
-		sys_log(0, "LAND_CLEAR: there is no LAND id like %d", dwLandID);
+		LOG_INFO("LAND_CLEAR: there is no LAND id like {}", dwLandID);
 		return;
 	}
 
 	pLand->ClearLand();
 
-	sys_log(0, "LAND_CLEAR: request Land Clear. LandID: %d", pLand->GetID());
+	LOG_INFO("LAND_CLEAR: request Land Clear. LandID: {}", pLand->GetID());
 }
 
 void CManager::ClearLandByGuildID(uint32_t dwGuildID)
@@ -1009,13 +1006,13 @@ void CManager::ClearLandByGuildID(uint32_t dwGuildID)
 
 	if ( pLand == nullptr)
 	{
-		sys_log(0, "LAND_CLEAR: there is no GUILD id like %d", dwGuildID);
+		LOG_INFO("LAND_CLEAR: there is no GUILD id like {}", dwGuildID);
 		return;
 	}
 
 	pLand->ClearLand();
 
-	sys_log(0, "LAND_CLEAR: request Land Clear. LandID: %d", pLand->GetID());
+	LOG_INFO("LAND_CLEAR: request Land Clear. LandID: {}", pLand->GetID());
 }
 
 void CLand::ClearLand()
