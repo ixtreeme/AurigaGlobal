@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -160,7 +161,7 @@ void CGuild::RequestAddMember(LPCHARACTER ch, int grade)
 
 	if (m_member.find(ch->GetPlayerID()) != m_member.end())
 	{
-		sys_err("Already a member in guild %s[%d]", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("Already a member in guild {}[{}]", ch->GetName(), ch->GetPlayerID());
 		return;
 	}
 
@@ -193,8 +194,7 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 
 	auto* ch = CHARACTER_MANAGER::instance().FindByPID(p->dwPID);
 
-	sys_log(0, "GUILD: AddMember PID %u, grade %u, job %u, level %u, offer %u, name %s ptr %p",
-			p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, get_pointer(ch));
+	LOG_INFO("GUILD: AddMember PID {}, grade {}, job {}, level {}, offer {}, name {} ptr {}", p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, static_cast<const void*>(get_pointer(ch)));
 
 	if (ch)
 		LoginMember(ch),
@@ -228,7 +228,7 @@ bool CGuild::RequestRemoveMember(uint32_t pid)
 
 bool CGuild::RemoveMember(uint32_t pid)
 {
-	sys_log(0, "Receive Guild P2P RemoveMember");
+	LOG_INFO("Receive Guild P2P RemoveMember");
 	TGuildMemberContainer::iterator it;
 
 	if ((it = m_member.find(pid)) == m_member.end())
@@ -267,7 +267,7 @@ void CGuild::P2PLoginMember(uint32_t pid)
 {
 	if (m_member.find(pid) == m_member.end())
 	{
-		sys_err("GUILD [%d] is not a memeber of guild.", pid);
+		LOG_ERROR("GUILD [{}] is not a memeber of guild.", pid);
 		return;
 	}
 
@@ -284,7 +284,7 @@ void CGuild::LoginMember(LPCHARACTER ch)
 {
 	if (m_member.find(ch->GetPlayerID()) == m_member.end())
 	{
-		sys_err("GUILD %s[%d] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
 		return;
 	}
 
@@ -311,7 +311,7 @@ void CGuild::P2PLogoutMember(uint32_t pid)
 {
 	if (m_member.find(pid)==m_member.end())
 	{
-		sys_err("GUILD [%d] is not a memeber of guild.", pid);
+		LOG_ERROR("GUILD [{}] is not a memeber of guild.", pid);
 		return;
 	}
 
@@ -329,7 +329,7 @@ void CGuild::LogoutMember(LPCHARACTER ch)
 {
 	if (m_member.find(ch->GetPlayerID())==m_member.end())
 	{
-		sys_err("GUILD %s[%d] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
 		return;
 	}
 
@@ -478,7 +478,7 @@ void CGuild::SendListPacket(LPCHARACTER ch)
 		buf.write(c, CHARACTER_NAME_MAX_LEN+1 );
 
 		if ( test_server )
-			sys_log(0 ,"name %s job %d  ", it->second.name.c_str(), it->second.job );
+			LOG_INFO("name {} job {}  ", it->second.name.c_str(), it->second.job);
 	}
 
 	d->Packet(buf.read_peek(), buf.size());
@@ -591,7 +591,7 @@ void CGuild::LoadGuildGradeData(SQLMsg* pmsg)
     // 15 ƴ ɼ 
 	if (pmsg->Get()->iNumRows != 15)
 	{
-		sys_err("Query failed: getting guild grade data. GuildID(%d)", GetID());
+		LOG_ERROR("Query failed: getting guild grade data. GuildID({})", GetID());
 		return;
 	}
 	*/
@@ -605,7 +605,7 @@ void CGuild::LoadGuildGradeData(SQLMsg* pmsg)
 
 		if (grade >= 1 && grade <= 15)
 		{
-			//sys_log(0, "GuildGradeLoad %s", name);
+			//0, "GuildGradeLoad %s", name);
 			strlcpy(m_data.grade_array[grade-1].grade_name, name, sizeof(m_data.grade_array[grade-1].grade_name));
 			m_data.grade_array[grade-1].auth_flag = auth;
 		}
@@ -615,7 +615,7 @@ void CGuild::LoadGuildData(SQLMsg* pmsg)
 {
 	if (pmsg->Get()->uiNumRows == 0)
 	{
-		sys_err("Query failed: getting guild data %s", pmsg->stQuery.c_str());
+		LOG_ERROR("Query failed: getting guild data {}", pmsg->stQuery.c_str());
 		return;
 	}
 
@@ -663,7 +663,7 @@ void CGuild::Load(uint32_t guild_id)
 #endif
 			" FROM guild%s WHERE id = %u", get_table_postfix(), m_data.guild_id);
 
-	sys_log(0, "GUILD: loading guild id %12s %u", m_data.name, guild_id);
+	LOG_INFO("GUILD: loading guild id {:12} {}", m_data.name, guild_id);
 
 	DBManager::instance().FuncQuery(std::bind(&CGuild::LoadGuildGradeData, this, std::placeholders::_1),
 			"SELECT grade, name, auth+0 FROM guild_grade%s WHERE guild_id = %u", get_table_postfix(), m_data.guild_id);
@@ -836,7 +836,7 @@ void CGuild::ChangeGradeName(uint8_t grade, const char* grade_name)
 
 	if (grade < 1 || grade > 15)
 	{
-		sys_err("Wrong guild grade value %d", grade);
+		LOG_ERROR("Wrong guild grade value {}", grade);
 		return;
 	}
 
@@ -884,7 +884,7 @@ void CGuild::ChangeGradeAuth(uint8_t grade, uint8_t auth)
 
 	if (grade < 1 || grade > 15)
 	{
-		sys_err("Wrong guild grade value %d", grade);
+		LOG_ERROR("Wrong guild grade value {}", grade);
 		return;
 	}
 
@@ -948,8 +948,8 @@ void CGuild::SendGuildInfoPacket(LPCHARACTER ch)
 	pack_sub.draw	= m_data.draw;
 #endif	
 
-	sys_log(0, "GMC guild_name %s", m_data.name);
-	sys_log(0, "GMC master %d", m_data.master_pid);
+	LOG_INFO("GMC guild_name {}", m_data.name);
+	LOG_INFO("GMC master {}", m_data.master_pid);
 
 	d->BufferedPacket(&pack, sizeof(TPacketGCGuild));
 	d->Packet(&pack_sub, sizeof(TPacketGCGuildInfo));
@@ -978,7 +978,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 
 	if (ch->GetExp() - (uint32_t) amount > ch->GetExp())
 	{
-		sys_err("Wrong guild offer amount %d by %s[%u]", amount, ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("Wrong guild offer amount {} by {}[{}]", amount, ch->GetName(), ch->GetPlayerID());
 		return false;
 	}
 
@@ -1028,7 +1028,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 
 void CGuild::Disband()
 {
-	sys_log(0, "GUILD: Disband %s:%u", GetName(), GetID());
+	LOG_INFO("GUILD: Disband {}:{}", GetName(), GetID());
 
 	//building::CLand* pLand = building::CManager::instance().FindLandByGuild(GetID());
 	//if (pLand)
@@ -1255,7 +1255,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 
 	if (!pkSk)
 	{
-		sys_err("There is no such guild skill by number %u", dwVnum);
+		LOG_ERROR("There is no such guild skill by number {}", dwVnum);
 		return;
 	}
 
@@ -1294,7 +1294,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 
 	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
 
-	sys_log(0, "Guild SkillUp: %s %d level %d type %u", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
+	LOG_INFO("Guild SkillUp: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
 
 void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
@@ -1304,7 +1304,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (!GetMember(ch->GetPlayerID()) || !HasGradeAuth(GetMember(ch->GetPlayerID())->grade, GUILD_AUTH_USE_SKILL))
 		return;
 
-	sys_log(0,"GUILD_USE_SKILL : cname(%s), skill(%d)", ch ? ch->GetName() : "", dwVnum);
+	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ch->GetName() : "", dwVnum);
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
@@ -1318,7 +1318,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 	if (!pkSk)
 	{
-		sys_err("There is no such guild skill by number %u", dwVnum);
+		LOG_ERROR("There is no such guild skill by number {}", dwVnum);
 		return;
 	}
 
@@ -1711,7 +1711,7 @@ void CGuild::WarReward(bool bWinner, bool bDraw)
 	else
 		return;
 	
-	sys_log(0, "CGuild::WarReward(guild=%s, reward=%d)", GetName(), iReward);
+	LOG_INFO("CGuild::WarReward(guild={}, reward={})", GetName(), iReward);
 	std::for_each(m_memberOnline.begin(), m_memberOnline.end(), FGuildReward(iReward));
 }
 #endif
@@ -2022,7 +2022,7 @@ void CGuild::SkillUsableChange(uint32_t dwSkillVnum, bool bUsable)
 	abSkillUsable[dwRealVnum] = bUsable;
 
 	// GUILD_SKILL_COOLTIME_BUG_FIX
-	sys_log(0, "CGuild::SkillUsableChange(guild=%s, skill=%d, usable=%d)", GetName(), dwSkillVnum, bUsable);
+	LOG_INFO("CGuild::SkillUsableChange(guild={}, skill={}, usable={})", GetName(), dwSkillVnum, bUsable);
 	// END_OF_GUILD_SKILL_COOLTIME_BUG_FIX
 }
 
@@ -2030,7 +2030,7 @@ void CGuild::SkillUsableChange(uint32_t dwSkillVnum, bool bUsable)
 void CGuild::SetMemberCountBonus(int iBonus)
 {
 	m_iMemberCountBonus = iBonus;
-	sys_log(0, "GUILD_IS_FULL_BUG : Bonus set to %d(val:%d)", iBonus, m_iMemberCountBonus);
+	LOG_INFO("GUILD_IS_FULL_BUG : Bonus set to {}(val:{})", iBonus, m_iMemberCountBonus);
 }
 
 void CGuild::BroadcastMemberCountBonus()
@@ -2097,7 +2097,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 	LogManager::instance().CharLog(ch, iGold, "GUILD_DEPOSIT", buf);
 
 	ch->UpdateDepositPulse();
-	sys_log(0, "GUILD: DEPOSIT %s:%u player %s[%u] gold %d", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iGold);
+	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iGold);
 }
 
 void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
@@ -2159,7 +2159,7 @@ void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 	if (ch)
 	{
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iChangeGold);
-		sys_log(0, "GUILD: WITHDRAW %s:%u player %s[%u] gold %d", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iChangeGold);
+		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iChangeGold);
 	}
 
 	TPacketGDGuildMoneyWithdrawGiveReply p;
@@ -2198,7 +2198,7 @@ EVENTFUNC( GuildInviteEvent )
 
 	if ( pInfo == nullptr)
 	{
-		sys_err( "GuildInviteEvent> <Factor> Null pointer" );
+		LOG_ERROR("GuildInviteEvent> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -2206,7 +2206,7 @@ EVENTFUNC( GuildInviteEvent )
 
 	if ( pGuild )
 	{
-		sys_log( 0, "GuildInviteEvent %s", pGuild->GetName() );
+		LOG_INFO("GuildInviteEvent {}", pGuild->GetName());
 		pGuild->InviteDeny( pInfo->dwInviteePID );
 	}
 
@@ -2286,7 +2286,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 #endif
 			return;
 		default:
-			sys_err( "ignore guild join error(%d)", errcode );
+			LOG_ERROR("ignore guild join error({})", errcode);
 			return;
 	}
 
@@ -2326,7 +2326,7 @@ void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 	EventMap::iterator itFind = m_GuildInviteEventMap.find( pchInvitee->GetPlayerID() );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
-		sys_log( 0, "GuildInviteAccept from not invited character(invite guild: %s, invitee: %s)", GetName(), pchInvitee->GetName() );
+		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), pchInvitee->GetName());
 		return;
 	}
 
@@ -2369,7 +2369,7 @@ void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 #endif
 			return;
 		default:
-			sys_err( "ignore guild join error(%d)", errcode );
+			LOG_ERROR("ignore guild join error({})", errcode);
 			return;
 	}
 
@@ -2381,7 +2381,7 @@ void CGuild::InviteDeny( uint32_t dwPID )
 	EventMap::iterator itFind = m_GuildInviteEventMap.find( dwPID );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
-		sys_log( 0, "GuildInviteDeny from not invited character(invite guild: %s, invitee PID: %d)", GetName(), dwPID );
+		LOG_INFO("GuildInviteDeny from not invited character(invite guild: {}, invitee PID: {})", GetName(), dwPID);
 		return;
 	}
 
@@ -2406,8 +2406,7 @@ CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const LPCHARACTER 
 		return GERR_ALREADYJOIN;
 	else if (GetMemberCount() >= GetMaxMemberCount())
 	{
-		sys_log(1, "GuildName = %s, GetMemberCount() = %d, GetMaxMemberCount() = %d (32 + MAX(level(%d)-10, 0) * 2 + bonus(%d)",
-			GetName(), GetMemberCount(), GetMaxMemberCount(), m_data.level, m_iMemberCountBonus);
+		LOG_INFO("GuildName = {}, GetMemberCount() = {}, GetMaxMemberCount() = {} (32 + MAX(level({})-10, 0) * 2 + bonus({})", GetName(), GetMemberCount(), GetMaxMemberCount(), m_data.level, m_iMemberCountBonus);
 		return GERR_GUILDISFULL;
 	}
 	else if (UnderAnyWar() != 0)
@@ -2480,7 +2479,7 @@ void CGuild::SetSkillLevel(uint32_t dwVnum, uint8_t level, uint8_t point)
 
 	if (!pkSk)
 	{
-		sys_err("There is no such guild skill by number %u", dwVnum);
+		LOG_ERROR("There is no such guild skill by number {}", dwVnum);
 		return;
 	}
 
@@ -2502,7 +2501,7 @@ void CGuild::SetSkillLevel(uint32_t dwVnum, uint8_t level, uint8_t point)
 
 	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
 
-	sys_log(0, "Guild SetSkillLevel: %s %d level %d type %u", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
+	LOG_INFO("Guild SetSkillLevel: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
 
 uint32_t CGuild::GetSkillPoint()
