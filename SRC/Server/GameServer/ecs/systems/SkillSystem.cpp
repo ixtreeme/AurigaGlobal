@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include <Core/Logging.hpp>
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 
@@ -349,7 +350,7 @@ time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
     {
-        sys_err("vnum overflow (vnum: %u)", dwVnum);
+        LOG_ERROR("vnum overflow (vnum: {})", dwVnum);
         return 0;
     }
 
@@ -385,7 +386,7 @@ void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
 
     if (dwVnum >= SKILL_MAX_NUM)
     {
-        sys_err("vnum overflow (vnum %u)", dwVnum);
+        LOG_ERROR("vnum overflow (vnum {})", dwVnum);
         return;
     }
 
@@ -424,8 +425,8 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
     {
-        sys_err("%s skill vnum overflow %u", GetName(), dwVnum);
-        sys_log(0, "%s skill vnum overflow %u", GetName(), dwVnum);
+        LOG_ERROR("{} skill vnum overflow {}", GetName(), dwVnum);
+        LOG_INFO("{} skill vnum overflow {}", GetName(), dwVnum);
         return 0;
     }
 
@@ -537,7 +538,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 		return false;
 	}
 
-	sys_log(0, "learn grand master skill[%d] cur %d, next %d", dwSkillVnum, get_global_time(), GetSkillNextReadTime(dwSkillVnum));
+	LOG_INFO("learn grand master skill[{}] cur {}, next {}", dwSkillVnum, get_global_time(), GetSkillNextReadTime(dwSkillVnum));
 
 	if (pkSk->dwType == 0)
 	{
@@ -568,7 +569,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	uint8_t bLastLevel = GetSkillLevel(dwSkillVnum);
 	int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 30);
 
-	sys_log(0, "LearnGrandMasterSkill %s table idx %d value %d", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
+	LOG_INFO("LearnGrandMasterSkill {} table idx {} value {}", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
 
 	int iTotalReadCount = GetQuestFlag(strTrainSkill) + 1;
 	SetQuestFlag(strTrainSkill, iTotalReadCount);
@@ -589,11 +590,11 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	}
 
 	int n = number(1, iBookCount);
-	sys_log(0, "Number(%d)", n);
+	LOG_INFO("Number({})", n);
 
 	uint32_t nextTime = get_global_time() + number(g_dwSkillBookNextReadMin, g_dwSkillBookNextReadMax);
 
-	sys_log(0, "GrandMaster SkillBookCount min %d cur %d max %d (next_time=%d)", iMinReadCount, iTotalReadCount, iMaxReadCount, nextTime);
+	LOG_INFO("GrandMaster SkillBookCount min {} cur {} max {} (next_time={})", iMinReadCount, iTotalReadCount, iMaxReadCount, nextTime);
 
 	bool bSuccess = n == 2;
 
@@ -741,19 +742,19 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
 		}
 
-		sys_log(0, "LearnSkillByBook Pct %u prob %d", dwSkillVnum, bProb);
+		LOG_INFO("LearnSkillByBook Pct {} prob {}", dwSkillVnum, bProb);
 
 		if (number(1, 100) <= bProb)
 		{
 			if (test_server)
-				sys_log(0, "LearnSkillByBook %u SUCC", dwSkillVnum);
+				LOG_INFO("LearnSkillByBook {} SUCC", dwSkillVnum);
 
 			SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
 		}
 		else
 		{
 			if (test_server)
-				sys_log(0, "LearnSkillByBook %u FAIL", dwSkillVnum);
+				LOG_INFO("LearnSkillByBook {} FAIL", dwSkillVnum);
 		}
 	}
 
@@ -890,7 +891,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	{
 		int idx = MIN(9, GetSkillLevel(dwSkillVnum) - 20);
 
-		sys_log(0, "LearnSkillByBook %s table idx %d value %d", GetName(), idx, aiSkillBookCountForLevelUp[idx]);
+		LOG_INFO("LearnSkillByBook {} table idx {} value {}", GetName(), idx, aiSkillBookCountForLevelUp[idx]);
 
 		{
 			int need_bookcount = 0;
@@ -1017,7 +1018,7 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 		if (eIsMount != MOUNT_TYPE_MILITARY)
 		{
 			if (test_server)
-				sys_log(0, "CanUseSkill: Mount can't skill. vnum(%u) type(%d)", GetMountVnum(), static_cast<int>(eIsMount));
+				LOG_INFO("CanUseSkill: Mount can't skill. vnum({}) type({})", GetMountVnum(), static_cast<int>(eIsMount));
 			return false;
 		}
 #endif
@@ -1048,7 +1049,7 @@ bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID
 
 	if (iter == m_SkillUseInfo.end())
 	{
-		sys_log(0, "SkillHack: Skill(%u) is not in container", SkillID);
+		LOG_INFO("SkillHack: Skill({}) is not in container", SkillID);
 		return false;
 	}
 
@@ -1056,7 +1057,7 @@ bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID
 
 	if (false == rSkillUseInfo.bUsed)
 	{
-		sys_log(0, "SkillHack: not used skill(%u)", SkillID);
+		LOG_INFO("SkillHack: not used skill({})", SkillID);
 		return false;
 	}
 
@@ -1066,7 +1067,7 @@ bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID
 		case SKILL_HWAYEOMPOK:
 		case SKILL_DAEJINGAK:
 		case SKILL_PAERYONG:
-			sys_log(0, "SkillHack: cannot use attack packet for skill(%u)", SkillID);
+			LOG_INFO("SkillHack: cannot use attack packet for skill({})", SkillID);
 			return false;
 	}
 
@@ -1101,7 +1102,7 @@ bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID
 
 		if (iterTargetMap->second >= MaxAttackCountPerTarget)
 		{
-			sys_log(0, "SkillHack: Too Many Hit count from SkillID(%u) count(%u)", SkillID, iterTargetMap->second);
+			LOG_INFO("SkillHack: Too Many Hit count from SkillID({}) count({})", SkillID, iterTargetMap->second);
 			return false;
 		}
 
@@ -1176,7 +1177,7 @@ bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
 	if (!bUsed)
 		return false;
 
-	sys_log(1, "__HitOnce NextUse %u current %u count %d scount %d", dwNextSkillUsableTime, get_dword_time(), iHitCount, iSplashCount);
+	LOG_INFO("__HitOnce NextUse {} current {} count {} scount {}", dwNextSkillUsableTime, get_dword_time(), iHitCount, iSplashCount);
 
 	if (dwNextSkillUsableTime && dwNextSkillUsableTime<get_dword_time() && dwVnum != SKILL_MUYEONG && dwVnum != SKILL_HORSE_WILDATTACK
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
@@ -1184,20 +1185,20 @@ bool TSkillUseInfo::HitOnce(uint32_t dwVnum)
 #endif
 	)
 	{
-		sys_log(1, "__HitOnce can't hit");
+		LOG_INFO("__HitOnce can't hit");
 
 		return false;
 	}
 
 	if (iHitCount == -1)
 	{
-		sys_log(1, "__HitOnce OK %d %d %d", dwNextSkillUsableTime, get_dword_time(), iHitCount);
+		LOG_INFO("__HitOnce OK {} {} {}", dwNextSkillUsableTime, get_dword_time(), iHitCount);
 		return true;
 	}
 
 	if (iHitCount)
 	{
-		sys_log(1, "__HitOnce OK %d %d %d", dwNextSkillUsableTime, get_dword_time(), iHitCount);
+		LOG_INFO("__HitOnce OK {} {} {}", dwNextSkillUsableTime, get_dword_time(), iHitCount);
 		iHitCount--;
 		return true;
 	}
@@ -1214,7 +1215,7 @@ bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCo
 	// ľĆÁ÷ ÄđĹ¸ŔÓŔĚ łˇłŞÁö ľĘľŇ´Ů.
 	if (bUsed && dwNextSkillUsableTime > dwCur)
 	{
-		sys_log(0, "cooltime is not over delta %u", dwNextSkillUsableTime - dwCur);
+		LOG_INFO("cooltime is not over delta {}", dwNextSkillUsableTime - dwCur);
 		iHitCount = 0;
 		return false;
 	}
@@ -1230,7 +1231,7 @@ bool TSkillUseInfo::UseSkill(bool isGrandMaster, entt::entity vid, uint32_t dwCo
 	iMaxHitCount = iHitCount = hitcount;
 
 	if (test_server)
-		sys_log(0, "UseSkill NextUse %u  current %u cooltime %d hitcount %d/%d", dwNextSkillUsableTime, dwCur, dwCooltime, iHitCount, iMaxHitCount);
+		LOG_INFO("UseSkill NextUse {}  current {} cooltime {} hitcount {}/{}", dwNextSkillUsableTime, dwCur, dwCooltime, iHitCount, iMaxHitCount);
 
 	dwVID = vid;
 	iSplashCount = splashcount;
@@ -1277,7 +1278,7 @@ bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
 
 	if (!pkSk)
 	{
-		sys_err("There is no such skill by number %u", dwVnum);
+		LOG_ERROR("There is no such skill by number {}", dwVnum);
 		return false;
 	}
 
@@ -1316,7 +1317,7 @@ bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
 			idx = POINT_HORSE_SKILL;
 			break;
 		default:
-			sys_err("Wrong skill type %d skill vnum %d", pkSk->dwType, pkSk->dwVnum);
+			LOG_ERROR("Wrong skill type {} skill vnum {}", pkSk->dwType, pkSk->dwVnum);
 			return false;
 
 	}
@@ -1324,7 +1325,7 @@ bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
 	PointChange(idx, +1);
 	SetSkillLevel(pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bLevel - 1);
 
-	sys_log(0, "SkillDown: %s %u %u %u type %u", GetName(), pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bMasterType, m_pSkillLevels[pkSk->dwVnum].bLevel, pkSk->dwType);
+	LOG_INFO("SkillDown: {} {} {} {} type {}", GetName(), pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bMasterType, m_pSkillLevels[pkSk->dwVnum].bLevel, pkSk->dwType);
 	Save();
 
 	ComputePoints();
@@ -1438,13 +1439,13 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 
 	if (!pkSk)
 	{
-		sys_err("There is no such skill by number (vnum %u)", dwVnum);
+		LOG_ERROR("There is no such skill by number (vnum {})", dwVnum);
 		return;
 	}
 
 	if (pkSk->dwVnum >= SKILL_MAX_NUM)
 	{
-		sys_err("Skill Vnum overflow (vnum %u)", dwVnum);
+		LOG_ERROR("Skill Vnum overflow (vnum {})", dwVnum);
 		return;
 	}
 
@@ -1519,7 +1520,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				break;
 
 			default:
-				sys_err("Wrong skill type %d skill vnum %d", pkSk->dwType, pkSk->dwVnum);
+				LOG_ERROR("Wrong skill type {} skill vnum {}", pkSk->dwType, pkSk->dwVnum);
 				return;
 		}
 
@@ -1580,7 +1581,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	snprintf(szSkillUp, sizeof(szSkillUp), "SkillUp: %s %u %d %d[Before:%d] type %u",
 			GetName(), pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bMasterType, m_pSkillLevels[pkSk->dwVnum].bLevel, SkillPointBefore, pkSk->dwType);
 
-	sys_log(0, "%s", szSkillUp);
+	LOG_INFO("{}", szSkillUp);
 
 	LogManager::instance().CharLog(this, pkSk->dwVnum, "SKILLUP", szSkillUp);
 	Save();
@@ -1602,7 +1603,7 @@ void CHARACTER::ComputePassiveSkill(uint32_t dwVnum)
 	pkSk->SetPointVar("k", GetSkillLevel(dwVnum));
 	int iAmount = (int) pkSk->kPointPoly.Eval();
 
-	sys_log(2, "%s passive #%d on %d amount %d", GetName(), dwVnum, pkSk->bPointOn, iAmount);
+	LOG_INFO("{} passive #{} on {} amount {}", GetName(), dwVnum, pkSk->bPointOn, iAmount);
 	PointChange(pkSk->bPointOn, iAmount);
 }
 
@@ -1689,11 +1690,11 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (!pkChr || !pkChrVictim)
 	{
-		sys_log(1, "use chainlighting, but no character");
+		LOG_INFO("use chainlighting, but no character");
 		return 0;
 	}
 
-	sys_log(1, "chainlighting event %s", pkChr->GetName());
+	LOG_INFO("chainlighting event {}", pkChr->GetName());
 
 	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))) // ĆÄĆĽ ¸ŐŔú
 	{
@@ -1726,7 +1727,7 @@ EVENTFUNC(ChainLightningEvent)
 	}
 	else
 	{
-		sys_log(1, "%s use chainlighting, but find victim failed near %s", pkChr->GetName(), pkChrVictim->GetName());
+		LOG_INFO("{} use chainlighting, but find victim failed near {}", pkChr->GetName(), pkChrVictim->GetName());
 	}
 
 	return 0;
@@ -1776,7 +1777,7 @@ struct FuncSplashDamage
 	{
 		if (!ent->IsType(ENTITY_CHARACTER))
 		{
-			//if (m_pkSk->dwVnum == SKILL_CHAIN) sys_log(0, "CHAIN target not character %s", m_pkChr->GetName());
+			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", m_pkChr->GetName());
 			return;
 		}
 
@@ -1785,14 +1786,14 @@ struct FuncSplashDamage
 		if (DISTANCE_APPROX(m_x - pkChrVictim->GetX(), m_y - pkChrVictim->GetY()) > m_pkSk->iSplashRange)
 		{
 			if(test_server)
-				sys_log(0, "XXX target too far %s", m_pkChr->GetName());
+				LOG_INFO("XXX target too far {}", m_pkChr->GetName());
 			return;
 		}
 
 		if (!battle_is_attackable(m_pkChr, pkChrVictim))
 		{
 			if(test_server)
-				sys_log(0, "XXX target not attackable %s", m_pkChr->GetName());
+				LOG_INFO("XXX target not attackable {}", m_pkChr->GetName());
 			return;
 		}
 
@@ -1802,7 +1803,7 @@ struct FuncSplashDamage
 				if (!m_bDisableCooltime && m_pInfo && !m_pInfo->HitOnce(m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
 				{
 					if(test_server)
-						sys_log(0, "check guild skill %s", m_pkChr->GetName());
+						LOG_INFO("check guild skill {}", m_pkChr->GetName());
 					return;
 				}
 
@@ -1959,7 +1960,7 @@ struct FuncSplashDamage
 		}
 #endif
 		////////////////////////////////////////////////////////////////////////////////
-		//sys_log(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
+		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
 		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
@@ -2126,7 +2127,7 @@ struct FuncSplashDamage
 				break;
 
 			default:
-				sys_err("Unknown skill attr type %u vnum %u", m_pkSk->bSkillAttrType, m_pkSk->dwVnum);
+				LOG_ERROR("Unknown skill attr type {} vnum {}", m_pkSk->bSkillAttrType, m_pkSk->dwVnum);
 				break;
 		}
 
@@ -2164,7 +2165,7 @@ struct FuncSplashDamage
 			pkChrVictim->BeginFight(m_pkChr);
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
-			sys_log(0, "%s CHAIN INDEX %d DAM %d DT %d", m_pkChr->GetName(), m_pkChr->GetChainLightningIndex() - 1, iDam, dt);
+			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", m_pkChr->GetName(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 		{
@@ -2206,13 +2207,13 @@ struct FuncSplashDamage
 				{
 					CSkillProto* pkSk = CSkillManager::instance().Get(HELP_SKILL_ID);
 					if (!pkSk)
-						sys_err("Can't find %d skill in skill_proto.", HELP_SKILL_ID);
+						LOG_ERROR("Can't find {} skill in skill_proto.", HELP_SKILL_ID);
 					else
 					{
 						pkSk->SetPointVar("k", 1.0f * m_pkChr->GetSkillPower(HELP_SKILL_ID) * pkSk->bMaxLevel / 100);
 						
 						double IncreaseAmount = pkSk->kPointPoly.Eval();
-						sys_log(0, "HELP_SKILL: increase amount: %lf, normal damage: %d, increased damage: %d.", IncreaseAmount, iDam, int(iDam * (IncreaseAmount / 100.0)));
+						LOG_INFO("HELP_SKILL: increase amount: {}, normal damage: {}, increased damage: {}.", IncreaseAmount, iDam, int(iDam * (IncreaseAmount / 100.0)));
 						iDam += iDam * (IncreaseAmount / 100.0);
 					}
 				}
@@ -2258,13 +2259,13 @@ struct FuncSplashDamage
 				{
 					CSkillProto* pkSk = CSkillManager::instance().Get(ANTI_SKILL_ID);
 					if (!pkSk)
-						sys_err("Can't find %d skill in skill_proto.", ANTI_SKILL_ID);
+						LOG_ERROR("Can't find {} skill in skill_proto.", ANTI_SKILL_ID);
 					else
 					{
 						pkSk->SetPointVar("k", 1.0f * pkChrVictim->GetSkillPower(ANTI_SKILL_ID) * pkSk->bMaxLevel / 100);
 						
 						double ResistAmount = pkSk->kPointPoly.Eval();
-						sys_log(0, "ANTI_SKILL: resist amount: %lf, normal damage: %d, reduced damage: %d.", ResistAmount, iDam, int(iDam * (ResistAmount/100.0)));
+						LOG_INFO("ANTI_SKILL: resist amount: {}, normal damage: {}, reduced damage: {}.", ResistAmount, iDam, int(iDam * (ResistAmount/100.0)));
 						iDam -= iDam * (ResistAmount / 100.0);
 					}
 				}
@@ -2296,7 +2297,7 @@ struct FuncSplashDamage
 					CSkillProto* pkSk = CSkillManager::instance().Get(AntiSkillID);
 					if (!pkSk)
 					{
-						sys_err ("There is no anti skill(%d) in skill proto", AntiSkillID);
+						LOG_ERROR("There is no anti skill({}) in skill proto", AntiSkillID);
 					}
 					else
 					{
@@ -2304,7 +2305,7 @@ struct FuncSplashDamage
 
 						double ResistAmount = pkSk->kPointPoly.Eval();
 
-						sys_log(0, "ANTI_SKILL: Resist(%lf) Orig(%d) Reduce(%d)", ResistAmount, iDam, int(iDam * (ResistAmount/100.0)));
+						LOG_INFO("ANTI_SKILL: Resist({}) Orig({}) Reduce({})", ResistAmount, iDam, int(iDam * (ResistAmount/100.0)));
 
 						iDam -= iDam * (ResistAmount/100.0);
 					}
@@ -2419,7 +2420,7 @@ struct FuncSplashDamage
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-				sys_log(0, "CRUSH! %s -> %s (%d %d) -> (%d %d)", m_pkChr->GetName(), pkChrVictim->GetName(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
+				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", m_pkChr->GetName(), pkChrVictim->GetName(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
 				int32_t tx = pkChrVictim->GetX()+static_cast<int32_t>(fx);
 				int32_t ty = pkChrVictim->GetY()+static_cast<int32_t>(fy);
 
@@ -2474,7 +2475,7 @@ struct FuncSplashDamage
 			event_create(ChainLightningEvent, info, passes_per_sec / 5);
 		}
 		if(test_server)
-			sys_log(0, "FuncSplashDamage End :%s ", m_pkChr->GetName());
+			LOG_INFO("FuncSplashDamage End :{} ", m_pkChr->GetName());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
 //		if (m_pkChr->IsPC() && pkChrVictim->IsMonster() && pkChrVictim->GetRaceNum() == 136)
@@ -2538,11 +2539,11 @@ struct FuncSplashAffect
 			auto* pkChr = static_cast<LegacyCharHandle>(ent);
 
 			if (test_server)
-				sys_log(0, "FuncSplashAffect step 1 : name:%s vnum:%d iDur:%d", pkChr->GetName(), m_dwVnum, m_iDuration);
+				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", pkChr->GetName(), m_dwVnum, m_iDuration);
 			if (DISTANCE_APPROX(m_x - pkChr->GetX(), m_y - pkChr->GetY()) < m_iDist)
 			{
 				if (test_server)
-					sys_log(0, "FuncSplashAffect step 2 : name:%s vnum:%d iDur:%d", pkChr->GetName(), m_dwVnum, m_iDuration);
+					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", pkChr->GetName(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
 					if (pkChr->CanBeginFight())
 						pkChr->BeginFight(m_pkChrAttacker);
@@ -2590,7 +2591,7 @@ EVENTFUNC(skill_gwihwan_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "skill_gwihwan_event> <Factor> Null pointer" );
+		LOG_ERROR("skill_gwihwan_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -2610,12 +2611,12 @@ EVENTFUNC(skill_gwihwan_event)
 		// Ľş°ř
 		if (ecs::GetRecallPosition(ch->GetMapIndex(), ch->GetEmpire(), pos))
 		{
-			sys_log(1, "Recall: %s %d %d -> %d %d", ch->GetName(), ch->GetX(), ch->GetY(), pos.x, pos.y);
+			LOG_INFO("Recall: {} {} {} -> {} {}", ch->GetName(), ch->GetX(), ch->GetY(), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
 		}
 		else
 		{
-			sys_err("CHARACTER::UseItem : cannot find spawn position (name %s, %d x %d)", ch->GetName(), ch->GetX(), ch->GetY());
+			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ch->GetName(), ch->GetX(), ch->GetY());
 			ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
 		}
 	}
@@ -2645,8 +2646,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (test_server)
 	{
-		sys_log(0, "ComputeSkillAtPosition %s vnum %d x %d y %d level %d",
-				GetName(), dwVnum, posTarget.x, posTarget.y, bSkillLevel);
+		LOG_INFO("ComputeSkillAtPosition {} vnum {} x {} y {} level {}", GetName(), dwVnum, posTarget.x, posTarget.y, bSkillLevel);
 	}
 
 	// łŞżˇ°Ô ľ˛´Â ˝şĹłŔş ł» Ŕ§Äˇ¸¦ ľ´´Ů.
@@ -2764,20 +2764,20 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 			}
 			else
 			{
-				//if (dwVnum == SKILL_CHAIN) sys_log(0, "CHAIN skill call FuncSplashDamage %s", GetName());
+				//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill call FuncSplashDamage %s", GetName());
 				f(this);
 			}
 		}
 		else
 		{
-			//if (dwVnum == SKILL_CHAIN) sys_log(0, "CHAIN skill no damage %d %s", iAmount, GetName());
+			//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill no damage %d %s", iAmount, GetName());
 			int iDur = (int) pkSk->kDurationPoly.Eval();
 
 			if (IsPC())
 				if (!(dwVnum >= GUILD_SKILL_START && dwVnum <= GUILD_SKILL_END)) // ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
 					if (!m_bDisableCooltime && !m_SkillUseInfo[dwVnum].HitOnce(dwVnum) && dwVnum != SKILL_MUYEONG)
 					{
-						//if (dwVnum == SKILL_CHAIN) sys_log(0, "CHAIN skill cannot hit %s", GetName());
+						//if (dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN skill cannot hit %s", GetName());
 						return BATTLE_NONE;
 					}
 
@@ -2804,7 +2804,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iDur = (int) pkSk->kDurationPoly2.Eval();
 
-			sys_log(1, "try second %u %d %d", pkSk->dwVnum, pkSk->bPointOn2, iDur);
+			LOG_INFO("try second {} {} {}", pkSk->dwVnum, pkSk->bPointOn2, iDur);
 
 			if (iDur > 0)
 			{
@@ -2970,7 +2970,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	if (!pkVictim)
 	{
 		if (test_server)
-			sys_log(0, "ComputeGyeongGongSkill: %s Victim == null, skill %d", GetName(), dwVnum);
+			LOG_INFO("ComputeGyeongGongSkill: {} Victim == null, skill {}", GetName(), dwVnum);
 
 		return BATTLE_NONE;
 	}
@@ -2980,7 +2980,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 		if ((bSkillLevel = GetSkillLevel(pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
-				sys_log(0, "ComputeGyeongGongSkill: name:%s vnum:%d  skillLevelBySkill : %d ", GetName(), pkSk->dwVnum, bSkillLevel);
+				LOG_INFO("ComputeGyeongGongSkill: name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
 			return BATTLE_NONE;
 		}
 	}
@@ -3091,7 +3091,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	if (!pkVictim)
 	{
 		if (test_server)
-			sys_log(0, "ComputeSkill: %s Victim == null, skill %d", GetName(), dwVnum);
+			LOG_INFO("ComputeSkill: {} Victim == null, skill {}", GetName(), dwVnum);
 
 		return BATTLE_NONE;
 	}
@@ -3099,12 +3099,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
-			sys_log(0, "ComputeSkill: Victim too far, skill %d : %s to %s (distance %u limit %u)",
-					dwVnum,
-					GetName(),
-					pkVictim->GetName(),
-					(int32_t)DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()),
-					pkSk->dwTargetRange);
+			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), pkVictim->GetName(), (int32_t)DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()), pkSk->dwTargetRange);
 
 		return BATTLE_NONE;
 	}
@@ -3114,7 +3109,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		if ((bSkillLevel = GetSkillLevel(pkSk->dwVnum)) == 0)
 		{
 			if (test_server)
-				sys_log(0, "ComputeSkill : name:%s vnum:%d  skillLevelBySkill : %d ", GetName(), pkSk->dwVnum, bSkillLevel);
+				LOG_INFO("ComputeSkill : name:{} vnum:{}  skillLevelBySkill : {} ", GetName(), pkSk->dwVnum, bSkillLevel);
 			return BATTLE_NONE;
 		}
 	}
@@ -3195,15 +3190,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	int iAmount3 = (int) pkSk->kPointPoly3.Eval();
 
 	if (test_server && IsPC())
-		sys_log(0, "iAmount: %d %d %d , atk:%f skLevel:%f k:%f GetSkillPower(%d) MaxLevel:%d Per:%f",
-				iAmount, iAmount2, iAmount3,
-				pkSk->kPointPoly.GetVar("atk"),
-				pkSk->kPointPoly.GetVar("k"),
-				k,
-				GetSkillPower(pkSk->dwVnum, bSkillLevel),
-				pkSk->bMaxLevel,
-				pkSk->bMaxLevel/100
-				);
+		LOG_INFO("iAmount: {} {} {} , atk:{} skLevel:{} k:{} GetSkillPower({}) MaxLevel:{} Per:{}", iAmount, iAmount2, iAmount3, pkSk->kPointPoly.GetVar("atk"), pkSk->kPointPoly.GetVar("k"), k, GetSkillPower(pkSk->dwVnum, bSkillLevel), pkSk->bMaxLevel, pkSk->bMaxLevel/100);
 
 	// ADD_GRANDMASTER_SKILL
 	if (GetUsedSkillMasterType(pkSk->dwVnum) >= SKILL_GRAND_MASTER)
@@ -3212,7 +3199,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	}
 	// END_OF_ADD_GRANDMASTER_SKILL
 
-	//sys_log(0, "XXX SKILL Calc %d Amount %d", dwVnum, iAmount);
+	//LOG_INFO(0, "XXX SKILL Calc %d Amount %d", dwVnum, iAmount);
 
 	// REMOVE_BAD_AFFECT_BUG_FIX
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_REMOVE_BAD_AFFECT))
@@ -3382,12 +3369,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				if (iDur2 > 0)
 				{
 					if (test_server)
-						sys_log(0, "SKILL_AFFECT: %s %s Dur:%d To:%d Amount:%d",
-								GetName(),
-								pkSk->szName,
-								iDur2,
-								pkSk->bPointOn2,
-								iAmount2);
+						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
 
 					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
@@ -3415,12 +3397,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			else
 			{
 				if (test_server)
-					sys_log(0, "SKILL_AFFECT: %s %s Dur:%d To:%d Amount:%d",
-							GetName(),
-							pkSk->szName,
-							iDur,
-							pkSk->bPointOn,
-							iAmount);
+					LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur, pkSk->bPointOn, iAmount);
 
 				AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum,
 						pkSk->bPointOn,
@@ -3470,7 +3447,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			pkSk->kDurationPoly3.SetVar("k", k/*bSkillLevel*/);
 			int iDur = (int) pkSk->kDurationPoly3.Eval();
 
-			sys_log(0, "try third %u %d %d %d 1894", pkSk->dwVnum, pkSk->bPointOn3, iDur, iAmount3);
+			LOG_INFO("try third {} {} {} {} 1894", pkSk->dwVnum, pkSk->bPointOn3, iDur, iAmount3);
 
 			if (iDur > 0)
 			{
@@ -3592,7 +3569,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		return false;
 
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
-	sys_log(0, "%s: USE_SKILL: %d pkVictim %p", GetName(), dwVnum, get_pointer(pkVictim));
+	LOG_INFO("{}: USE_SKILL: {} pkVictim {}", GetName(), dwVnum, static_cast<const void*>(get_pointer(pkVictim)));
 
 	if (!pkSk)
 		return false;
@@ -3676,7 +3653,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 	if (dwVnum == SKILL_TERROR && m_SkillUseInfo[dwVnum].bUsed && m_SkillUseInfo[dwVnum].dwNextSkillUsableTime > dwCur )
 	{
-		sys_log(0, " SKILL_TERROR's Cooltime is not delta over %u", m_SkillUseInfo[dwVnum].dwNextSkillUsableTime  - dwCur );
+		LOG_INFO(" SKILL_TERROR's Cooltime is not delta over {}", m_SkillUseInfo[dwVnum].dwNextSkillUsableTime  - dwCur);
 		return false;
 	}
 
@@ -3908,7 +3885,7 @@ int CHARACTER::GetSkillMasterType(uint32_t dwVnum) const
 
 	if (dwVnum >= SKILL_MAX_NUM)
 	{
-		sys_err("%s skill vnum overflow %u", GetName(), dwVnum);
+		LOG_ERROR("{} skill vnum overflow {}", GetName(), dwVnum);
 		return 0;
 	}
 
@@ -3940,7 +3917,7 @@ int CHARACTER::GetSkillPower(uint32_t dwVnum, uint8_t bLevel) const
 
 	if (dwVnum >= SKILL_MAX_NUM)
 	{
-		sys_err("%s skill vnum overflow %u", GetName(), dwVnum);
+		LOG_ERROR("{} skill vnum overflow {}", GetName(), dwVnum);
 		return 0;
 	}
 
@@ -3955,7 +3932,7 @@ EVENTFUNC(skill_muyoung_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "skill_muyoung_event> <Factor> Null pointer" );
+		LOG_ERROR("skill_muyoung_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -4010,7 +3987,7 @@ EVENTFUNC(skill_gyeongGong_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "skill_gyeongGong_event> <Factor> Null pointer" );
+		LOG_ERROR("skill_gyeongGong_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -4136,7 +4113,7 @@ EVENTFUNC(mob_skill_hit_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "mob_skill_event_info> <Factor> Null pointer" );
+		LOG_ERROR("mob_skill_event_info> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -4166,7 +4143,7 @@ struct FHealerParty
 		int iHP = (ch->GetMaxHP() >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ch->GetMaxHP());
 		ch->SetHP(iHP);
 		ch->EffectPacket(SE_EFFECT_HEALER);
-		sys_log(0, "FHealerParty: %s (pointer: %p) heal the HP of %s (pointer: %p) with %d (new HP: %d).", m_pkHealer->GetName(), get_pointer(m_pkHealer), ch->GetName(), get_pointer(ch), iRevive, ch->GetHP());
+		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", m_pkHealer->GetName(), static_cast<const void*>(get_pointer(m_pkHealer)), ch->GetName(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
 	}
 	
 	LegacyCharHandle	m_pkHealer;
@@ -4196,7 +4173,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 
 	m_adwMobSkillCooltime[idx] = get_dword_time() + iCooltime;
 
-	sys_log(0, "USE_MOB_SKILL: %s idx %d vnum %u cooltime %d", GetName(), idx, dwVnum, iCooltime);
+	LOG_INFO("USE_MOB_SKILL: {} idx {} vnum {} cooltime {}", GetName(), idx, dwVnum, iCooltime);
 
 #ifdef __VERSION_162__
 	if ((IsMonster()) && (pkSk->dwVnum == HEALING_SKILL_VNUM))
@@ -4213,7 +4190,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 			int iHP = (GetMaxHP() >= GetHP() + iRevive) ? (int)(GetHP() + iRevive) : (int)(GetMaxHP());
 			SetHP(iHP);
 			EffectPacket(SE_EFFECT_HEALER);
-			sys_log(0, "FHealer: %s (pointer: %p) heal their HP with %d (new HP: %d).", GetName(), get_pointer(this), iRevive, GetHP());
+			LOG_INFO("FHealer: {} (pointer: {}) heal their HP with {} (new HP: {}).", GetName(), static_cast<const void*>(get_pointer(this)), iRevive, GetHP());
 		}
 		
 		return true;
@@ -4222,7 +4199,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 
 	if (m_pkMobData->m_mobSkillInfo[idx].vecSplashAttack.empty())
 	{
-		sys_err("No skill hit data for mob %s index %d", GetName(), idx);
+		LOG_ERROR("No skill hit data for mob {} index {}", GetName(), idx);
 		return false;
 	}
 
@@ -4242,7 +4219,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 		if (rInfo.dwTiming)
 		{
 			if (test_server)
-				sys_log(0, "               timing %ums", rInfo.dwTiming);
+				LOG_INFO("               timing {}ms", rInfo.dwTiming);
 
 			mob_skill_event_info* info = AllocEventInfo<mob_skill_event_info>();
 
@@ -4690,7 +4667,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 
 	if (dwMotionIndex >= MOTION_MAX_NUM)
 	{
-		sys_err("OUT_OF_MOTION_VNUM: name=%s, motion=%d/%d", GetName(), dwMotionIndex, MOTION_MAX_NUM);
+		LOG_ERROR("OUT_OF_MOTION_VNUM: name={}, motion={}/{}", GetName(), dwMotionIndex, MOTION_MAX_NUM);
 		return false;
 	}
 
@@ -4699,7 +4676,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 	uint32_t skillCount = *skillVNums++;
 	if (skillCount >= SKILL_LIST_MAX_COUNT)
 	{
-		sys_err("OUT_OF_SKILL_LIST: name=%s, count=%d/%d", GetName(), skillCount, SKILL_LIST_MAX_COUNT);
+		LOG_ERROR("OUT_OF_SKILL_LIST: name={}, count={}/{}", GetName(), skillCount, static_cast<int>(SKILL_LIST_MAX_COUNT));
 		return false;
 	}
 
@@ -4707,7 +4684,7 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 	{
 		if (skillIndex >= SKILL_MAX_NUM)
 		{
-			sys_err("OUT_OF_SKILL_VNUM: name=%s, skill=%d/%d", GetName(), skillIndex, SKILL_MAX_NUM);
+			LOG_ERROR("OUT_OF_SKILL_VNUM: name={}, skill={}/{}", GetName(), skillIndex, static_cast<int>(SKILL_MAX_NUM));
 			return false;
 		}
 
@@ -4758,7 +4735,7 @@ void CHARACTER::ClearSubSkill()
 
 	if (m_pSkillLevels == nullptr)
 	{
-		sys_err("m_pSkillLevels nil (name: %s)", GetName());
+		LOG_ERROR("m_pSkillLevels nil (name: {})", GetName());
 		return;
 	}
 
@@ -4783,13 +4760,13 @@ bool CHARACTER::ResetOneSkill(uint32_t dwVnum)
 {
 	if (nullptr == m_pSkillLevels)
 	{
-		sys_err("m_pSkillLevels nil (name %s, vnum %u)", GetName(), dwVnum);
+		LOG_ERROR("m_pSkillLevels nil (name {}, vnum {})", GetName(), dwVnum);
 		return false;
 	}
 
 	if (dwVnum >= SKILL_MAX_NUM)
 	{
-		sys_err("vnum overflow (name %s, vnum %u)", GetName(), dwVnum);
+		LOG_ERROR("vnum overflow (name {}, vnum {})", GetName(), dwVnum);
 		return false;
 	}
 
