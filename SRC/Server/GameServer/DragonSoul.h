@@ -53,9 +53,9 @@ public:
 
 	bool	IsTimeLeftDragonSoul(entt::entity item) const;
 	int		LeftTime(entt::entity item) const;
-	bool	ActivateDragonSoul(LPITEM pItem);
+	bool	ActivateDragonSoul(entt::entity item);
 	bool	ActivateDragonSoulEcs(entt::entity item);
-	bool	DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveState = false);
+	bool	DeactivateDragonSoul(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT

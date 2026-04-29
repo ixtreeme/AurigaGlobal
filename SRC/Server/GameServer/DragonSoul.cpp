@@ -1553,11 +1553,12 @@ bool DSManager::IsActiveDragonSoul(entt::entity item) const
 }
 
 
-bool DSManager::ActivateDragonSoul(LPITEM pItem)
+bool DSManager::ActivateDragonSoul(entt::entity item)
 {
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
 	if (nullptr == pItem)
 		return false;
-	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
 	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
 	if (nullptr == pOwner)
 		return false;
@@ -1567,16 +1568,16 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 	if (deck_idx < 0)
 		return false;
 
-	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) &&
-			ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem)) < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
+	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= ItemSystem::GetItemCell(item) &&
+			ItemSystem::GetItemCell(item) < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
 	{
-		if (IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)) && !IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
+		if (IsTimeLeftDragonSoul(item) && !IsActiveDragonSoul(item))
 		{
 			char buf[128];
-			sprintf (buf, "LEFT TIME(%d)", LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem)));
+			sprintf (buf, "LEFT TIME(%d)", LeftTime(item));
 			LogManager::instance().ItemLog(pOwner, pItem, "DS_ACTIVATE", buf);
 			pItem->ModifyPoints(true);
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
+			ItemSystem::SetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
 
 			pItem->StartTimerBasedOnWearExpireEvent();
 		}
@@ -1588,35 +1589,32 @@ bool DSManager::ActivateDragonSoul(LPITEM pItem)
 
 bool DSManager::ActivateDragonSoulEcs(entt::entity item)
 {
-	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
-	if (!legacyItem)
-		return false;
-
-	const bool result = ActivateDragonSoul(legacyItem);
+	const bool result = ActivateDragonSoul(item);
 	SyncDragonSoulItemEntity(item);
 	return result;
 }
 
 
-bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveState)
+bool DSManager::DeactivateDragonSoul(entt::entity item, bool bSkipRefreshOwnerActiveState)
 {
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
 	if (nullptr == pItem)
 		return false;
 
-	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
 	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
 	if (nullptr == pOwner)
 		return false;
 
-	if (!IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
+	if (!IsActiveDragonSoul(item))
 		return false;
 
 	char buf[128];
 	pItem->StopTimerBasedOnWearExpireEvent();
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
+	ItemSystem::SetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
 	pItem->ModifyPoints(false);
 
-	sprintf (buf, "LEFT TIME(%d)", LeftTime(EntityFactory::CreateItemEntity(g_registry, pItem)));
+	sprintf (buf, "LEFT TIME(%d)", LeftTime(item));
 	LogManager::instance().ItemLog(pOwner, pItem, "DS_DEACTIVATE", buf);
 
 	if (false == bSkipRefreshOwnerActiveState)
@@ -1627,11 +1625,7 @@ bool DSManager::DeactivateDragonSoul(LPITEM pItem, bool bSkipRefreshOwnerActiveS
 
 bool DSManager::DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState)
 {
-	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
-	if (!legacyItem)
-		return false;
-
-	const bool result = DeactivateDragonSoul(legacyItem, bSkipRefreshOwnerActiveState);
+	const bool result = DeactivateDragonSoul(item, bSkipRefreshOwnerActiveState);
 	SyncDragonSoulItemEntity(item);
 	return result;
 }

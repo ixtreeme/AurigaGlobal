@@ -17480,7 +17480,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 
 		if (pkItem->IsDragonSoul())
 		{
-			DSManager::instance().DeactivateDragonSoul(pkItem);
+			DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, pkItem));
 		}
 		else
 		{

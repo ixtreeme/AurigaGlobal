@@ -122,7 +122,7 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
         if (!item)
             continue;
 
-        DSManager::instance().ActivateDragonSoul(item);
+        DSManager::instance().ActivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, item));
 #ifdef ENABLE_DS_SET
         if (!DSManager::instance().IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, item)))
             expired = true;
@@ -181,7 +181,7 @@ void DeactivateAll(entt::entity owner)
         return;
 
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START; i < DRAGON_SOUL_EQUIP_SLOT_END; ++i)
-        DSManager::instance().DeactivateDragonSoul(ch->GetInventoryItem(i), true);
+        DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
 
     state->activeDeck = -1;
     ch->RemoveAffect(AFFECT_DRAGON_SOUL_DECK_0);
@@ -200,7 +200,7 @@ void CleanUp(entt::entity owner)
         return;
 
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START; i < DRAGON_SOUL_EQUIP_SLOT_END; ++i)
-        DSManager::instance().DeactivateDragonSoul(ch->GetInventoryItem(i), true);
+        DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
 
     MarkDirty(owner);
 }

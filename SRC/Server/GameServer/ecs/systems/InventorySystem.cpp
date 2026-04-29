@@ -1026,7 +1026,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	if (IsDragonSoul())
 	{
-		DSManager::instance().ActivateDragonSoul(this);
+		DSManager::instance().ActivateDragonSoul(ItemEntityOf(this));
 	}
 	else
 	{
@@ -1113,7 +1113,7 @@ bool CItem::Unequip()
 
 	if (IsDragonSoul())
 	{
-		DSManager::instance().DeactivateDragonSoul(this);
+		DSManager::instance().DeactivateDragonSoul(itemEntity);
 	}
 #ifdef ENABLE_RUNE_SYSTEM
 	else if (IsRune()) {
