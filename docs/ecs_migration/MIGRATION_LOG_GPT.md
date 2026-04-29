@@ -8648,6 +8648,72 @@ Commit status:
 - `4700a2c Phase 16-2: Migrate logging format in db.cpp`
 - WinTest not run in this environment.
 
+Batch 3 completed:
+- `input_login.cpp`: 38 legacy log call sites migrated.
+- `dungeon.cpp`: 38 legacy log call sites migrated.
+- `guild.cpp`: 36 legacy log call sites migrated.
+- `char_manager.cpp`: 35 legacy log call sites migrated.
+- `main.cpp`: 34 legacy log call sites migrated.
+- `building.cpp`: 33 legacy log call sites migrated.
+
+Batch 3 gotchas:
+- `input_login.cpp` exposed an old format/argument mismatch in `player_prototype error`; the missing face/shape argument was restored as `pinfo->shape`.
+- `char_manager.cpp` had a legacy `sys_err(0, "...")` form and needed manual normalization to `LOG_ERROR("...")`.
+- Block-comment examples in `dungeon.cpp` / `guild.cpp` were renamed to avoid grep false positives.
+
+Counts after Batch 3:
+```text
+Before Batch 3:
+GameServer sys_log: 631
+GameServer sys_err: 922
+GameServer _sys_err: 0
+Total: 1553
+
+After Batch 3:
+GameServer sys_log: 517
+GameServer sys_err: 822
+GameServer _sys_err: 0
+Total: 1339
+
+Batch 3 reduction: 214
+Phase 16-2 cumulative reduction: 1028
+```
+
+Batch 4 candidates, excluding `questlua_*`:
+```text
+33 questlua.cpp
+32 questpc.cpp
+32 party.cpp
+30 ecs/systems/PlayerRuntimeSystem.cpp
+30 questnpc.cpp
+29 guild_war.cpp
+28 shop_manager.cpp
+26 desc.cpp
+25 war_map.cpp
+25 arena.cpp
+24 input_auth.cpp
+24 ecs/systems/SessionSystem.cpp
+23 battle_pass.cpp
+22 DragonSoul.cpp
+20 ecs/systems/InventorySystem.cpp
+```
+
+Build results:
+- Build passed after every Batch 3 migrated file.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Commit status:
+- `e42aed0 Phase 16-2: Migrate logging format in input_login.cpp`
+- `50913a7 Phase 16-2: Migrate logging format in dungeon.cpp`
+- `6765eba Phase 16-2: Migrate logging format in guild.cpp`
+- `d7ccaf3 Phase 16-2: Migrate logging format in char_manager.cpp`
+- `210a451 Phase 16-2: Migrate logging format in main.cpp`
+- `b722349 Phase 16-2: Migrate logging format in building.cpp`
+- WinTest not run in this environment.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
