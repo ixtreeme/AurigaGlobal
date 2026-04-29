@@ -3262,7 +3262,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 	// player item táblából biztosan kimenjen mentésben
 	ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-	mi->Add(p->wMountPos, item);
+	mi->Add(p->wMountPos, EntityFactory::CreateItemEntity(g_registry, item));
 	ch->SendMountInventory();
 
 	// mount bonus frissítés

@@ -6,6 +6,7 @@
 #include <Base/grid.h>
 #include "constants.h"
 #include "item.h"
+#include <entt/entt.hpp>
 #include <common/tables.h>
 #include <common/CommonDefines.h>
 #include "typedef.h"
@@ -18,10 +19,10 @@ public:
     CMountInventory(LPCHARACTER pkOwner, int iHeight);
     ~CMountInventory();
 
-    bool Add(uint32_t pos, LPITEM item, bool skipSave = false);
+    bool Add(uint32_t pos, entt::entity item, bool skipSave = false);
     LPITEM Get(uint32_t pos) const;
     LPITEM Remove(uint32_t pos, bool skipDbDelete = false);
-    bool RemoveByItem(LPITEM item, bool skipDbDelete = false);
+    bool RemoveByItem(entt::entity item, bool skipDbDelete = false);
     bool MoveItem(uint32_t from, uint32_t to);
 
     bool IsEmpty(uint32_t pos, uint8_t size) const;
@@ -32,9 +33,9 @@ public:
     void CollectItems(std::vector<TMountInventoryItemTable>& out) const;
 
 private:
-    bool DetachSlot(uint32_t pos, LPITEM expectedItem, bool skipDbDelete);
+    bool DetachSlot(uint32_t pos, entt::entity expectedItem, bool skipDbDelete);
     void Destroy();
-    void SaveItem(uint32_t pos, LPITEM item);
+    void SaveItem(uint32_t pos, entt::entity item);
     void DeleteItem(uint32_t pos, uint32_t id);
     uint32_t GetAccountId() const;
 

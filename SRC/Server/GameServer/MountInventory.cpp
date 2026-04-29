@@ -91,15 +91,15 @@ LPITEM CMountInventory::Get(uint32_t pos) const
     return m_items[pos];
 }
 
-bool CMountInventory::Add(uint32_t pos, LPITEM item, bool skipSave)
+bool CMountInventory::Add(uint32_t pos, entt::entity itemEntity, bool skipSave)
 {
+    LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
     if (!item || !IsValidPosition(pos))
         return false;
 
     if (!IsEmpty(pos, item->GetSize()))
         return false;
 
-    const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
     ItemSystem::SetItemSkipSave(itemEntity, true);
     ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY);
     ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkOwner), pos);
@@ -110,14 +110,14 @@ bool CMountInventory::Add(uint32_t pos, LPITEM item, bool skipSave)
     const bool bExpireStateChanged = StartMountExpireIfNeeded(itemEntity);
 
     if (!skipSave || bExpireStateChanged)
-        SaveItem(pos, item);
+        SaveItem(pos, itemEntity);
 
     return true;
 }
 
 
 
-bool CMountInventory::DetachSlot(uint32_t pos, LPITEM expectedItem, bool skipDbDelete)
+bool CMountInventory::DetachSlot(uint32_t pos, entt::entity expectedItem, bool skipDbDelete)
 {
     if (!IsValidPosition(pos))
         return false;
@@ -126,7 +126,7 @@ bool CMountInventory::DetachSlot(uint32_t pos, LPITEM expectedItem, bool skipDbD
     if (!item)
         return false;
 
-    if (expectedItem && item != expectedItem)
+    if (expectedItem != entt::null && EntityFactory::CreateItemEntity(g_registry, item) != expectedItem)
         return false;
 
     if (m_grid)
@@ -140,17 +140,17 @@ bool CMountInventory::DetachSlot(uint32_t pos, LPITEM expectedItem, bool skipDbD
     return true;
 }
 
-bool CMountInventory::RemoveByItem(LPITEM item, bool skipDbDelete)
+bool CMountInventory::RemoveByItem(entt::entity itemEntity, bool skipDbDelete)
 {
-    if (!item)
+    if (itemEntity == entt::null)
         return false;
 
     for (uint32_t pos = 0; pos < m_items.size(); ++pos)
     {
-        if (m_items[pos] != item)
+        if (!m_items[pos] || EntityFactory::CreateItemEntity(g_registry, m_items[pos]) != itemEntity)
             continue;
 
-        return DetachSlot(pos, item, skipDbDelete);
+        return DetachSlot(pos, itemEntity, skipDbDelete);
     }
 
     return false;
@@ -163,7 +163,7 @@ LPITEM CMountInventory::Remove(uint32_t pos, bool skipDbDelete)
     if (!item)
         return nullptr;
 
-    DetachSlot(pos, item, skipDbDelete);
+    DetachSlot(pos, EntityFactory::CreateItemEntity(g_registry, item), skipDbDelete);
     item->RemoveFromCharacter();
     return item;
 }
@@ -193,7 +193,7 @@ bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
     m_items[to] = item;
 
     ItemSystem::SetItemCell(EntityFactory::CreateItemEntity(g_registry, item), AIHelpers::EcsOf(m_pkOwner), to);
-    SaveItem(to, item);
+    SaveItem(to, EntityFactory::CreateItemEntity(g_registry, item));
     DeleteItem(from, 0);
     return true;
 }
@@ -230,8 +230,9 @@ void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) c
     }
 }
 
-void CMountInventory::SaveItem(uint32_t pos, LPITEM item)
+void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
 {
+    LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
     if (!item)
         return;
 

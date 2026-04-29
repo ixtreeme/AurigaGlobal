@@ -369,7 +369,7 @@ LPITEM CItem::RemoveFromCharacter()
 		if (GetWindow() == MOUNT_INVENTORY)
 		{
 			if (CMountInventory* mi = pOwner->GetMountInventory())
-				mi->RemoveByItem(this);
+				mi->RemoveByItem(EntityFactory::CreateItemEntity(g_registry, this));
 
 			m_pOwner = nullptr;
 			m_wCell = 0;

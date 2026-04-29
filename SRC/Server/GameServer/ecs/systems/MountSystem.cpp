@@ -183,7 +183,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
         item->SetSockets(entry.alSockets);
         item->SetAttributes(entry.aAttr);
 
-        if (!m_pkMountInventory->Add(entry.slot, item, true))
+        if (!m_pkMountInventory->Add(entry.slot, EntityFactory::CreateItemEntity(g_registry, item), true))
             ItemSystem::DestroyItemEntityEcs(
                 EntityFactory::CreateItemEntity(g_registry, item),
                 "MOUNT_INVENTORY_LOAD_ADD_FAILED");
@@ -1016,4 +1016,3 @@ void CHARACTER::ComputeMountInventoryBonuses()
 	for (const auto& it : mount_bonus_map)
 		PointChange(it.first, it.second);
 }
-
