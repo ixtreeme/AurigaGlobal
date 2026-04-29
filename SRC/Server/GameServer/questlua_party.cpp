@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <sstream>
@@ -651,7 +652,7 @@ namespace quest
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
 				if (tch && tch->IsPC())
 				{
-					tch->SetQuestFlag("deviltower_zone.can_refine", 1);
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), "deviltower_zone.can_refine", 1);
 				}
 			}
 
@@ -662,7 +663,7 @@ namespace quest
 		}
 		else
 		{
-			ch->SetQuestFlag("deviltower_zone.can_refine", 1);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine", 1);
 		}
 
 		return 0;

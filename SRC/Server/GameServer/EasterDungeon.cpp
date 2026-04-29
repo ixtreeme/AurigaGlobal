@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "EasterDungeon.h"
 
@@ -226,7 +228,7 @@ namespace
             if (!ch || !ch->IsPC())
                 return;
 
-            const int32_t until = ch->GetQuestFlag(qfCooldown);
+            const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
             if (until > now && ok)
             {
                 ok = false;
@@ -436,11 +438,11 @@ public:
                 if (!ch)
                     return;
 
-                ch->SetQuestFlag("easter_dungeon.disconnect", 0);
-                ch->SetQuestFlag("easter_dungeon.idx", 0);
-                ch->SetQuestFlag("easter_dungeon.ch", 0);
-                ch->SetQuestFlag("easter_dungeon.enter_time", 0);
-                ch->SetQuestFlag("easter_dungeon.cooldown", now + kCooldownSeconds);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.disconnect", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.idx", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.ch", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.enter_time", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.cooldown", now + kCooldownSeconds);
             });
 
         // --- Broadcast: solo vs party ---
@@ -632,9 +634,9 @@ void CEasterDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!IsEasterDungeonMap(idx))
         return;
 
-    ch->SetQuestFlag("easter_dungeon.disconnect", get_global_time() + kRejoinSeconds);
-    ch->SetQuestFlag("easter_dungeon.idx", idx);
-    ch->SetQuestFlag("easter_dungeon.ch", (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.disconnect", get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.idx", idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.ch", (int32_t)g_bChannel);
 }
 
 void CEasterDungeon::OnPlayerLogin(CHARACTER* ch)
@@ -777,11 +779,11 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t now = get_global_time();
 
     // Rejoin flow
-    const int32_t rejoinUntil = ch->GetQuestFlag("easter_dungeon.disconnect");
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.disconnect");
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ch->GetQuestFlag("easter_dungeon.idx");
-        const int32_t rejoinCh = ch->GetQuestFlag("easter_dungeon.ch");
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.idx");
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.ch");
 
         if (rejoinIdx >= kPrivateMin && rejoinIdx < kPrivateMax)
         {
@@ -814,7 +816,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     // Cooldown
-    const int32_t cdUntil = ch->GetQuestFlag("easter_dungeon.cooldown");
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "easter_dungeon.cooldown");
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
@@ -928,10 +930,10 @@ if (!it.ok)
             // Consume entry item (already checked above)
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
 
-            m->SetQuestFlag("easter_dungeon.disconnect", 0);
-            m->SetQuestFlag("easter_dungeon.idx", d->GetMapIndex());
-            m->SetQuestFlag("easter_dungeon.ch", (int32_t)g_bChannel);
-            m->SetQuestFlag("easter_dungeon.enter_time", now);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "easter_dungeon.disconnect", 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "easter_dungeon.idx", d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "easter_dungeon.ch", (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "easter_dungeon.enter_time", now);
         };
 
     if (!party)

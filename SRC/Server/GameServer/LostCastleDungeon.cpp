@@ -1,5 +1,7 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "LostCastleDungeon.h"
 
 #include <unordered_map>
@@ -1478,9 +1480,9 @@ void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
         return;
 
     const int32_t now = get_global_time();
-    ch->SetQuestFlag(kQfDisconnect, now + kRejoinSeconds);
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 }
 
 void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
@@ -1494,8 +1496,8 @@ void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
 
     // IMPORTANT: don't set warp location to kOriginalMap here.
     // Lobby is set at entry time (npc click) to where the player came from.
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 }
 
 bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
@@ -1590,9 +1592,9 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
 
             // rejoin flags reset
-            m->SetQuestFlag(kQfDisconnect, 0);
-            m->SetQuestFlag(kQfIdx, d->GetMapIndex());
-            m->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
 
             // exit/lobby
             m->SetWarpLocation(lobbyMap, lobbyX, lobbyY);

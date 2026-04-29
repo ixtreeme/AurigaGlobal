@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "ValentineDungeon.h"
 
@@ -211,7 +213,7 @@ namespace
             if (!ch || !ch->IsPC())
                 return;
 
-            const int32_t until = ch->GetQuestFlag(qfCooldown);
+            const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
             if (until > now && ok)
             {
                 ok = false;
@@ -421,11 +423,11 @@ public:
                 if (!ch)
                     return;
 
-                ch->SetQuestFlag("valentine_dungeon.disconnect", 0);
-                ch->SetQuestFlag("valentine_dungeon.idx", 0);
-                ch->SetQuestFlag("valentine_dungeon.ch", 0);
-                ch->SetQuestFlag("valentine_dungeon.enter_time", 0);
-                ch->SetQuestFlag("valentine_dungeon.cooldown", now + kCooldownSeconds);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.disconnect", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.idx", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.ch", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.enter_time", 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.cooldown", now + kCooldownSeconds);
             });
 
         // --- Broadcast: solo vs party ---
@@ -617,9 +619,9 @@ void CValentineDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!IsValentineDungeonMap(idx))
         return;
 
-    ch->SetQuestFlag("valentine_dungeon.disconnect", get_global_time() + kRejoinSeconds);
-    ch->SetQuestFlag("valentine_dungeon.idx", idx);
-    ch->SetQuestFlag("valentine_dungeon.ch", (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.disconnect", get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.idx", idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.ch", (int32_t)g_bChannel);
 }
 
 void CValentineDungeon::OnPlayerLogin(CHARACTER* ch)
@@ -762,11 +764,11 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t now = get_global_time();
 
     // Rejoin flow
-    const int32_t rejoinUntil = ch->GetQuestFlag("valentine_dungeon.disconnect");
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.disconnect");
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ch->GetQuestFlag("valentine_dungeon.idx");
-        const int32_t rejoinCh = ch->GetQuestFlag("valentine_dungeon.ch");
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.idx");
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.ch");
 
         if (rejoinIdx >= kPrivateMin && rejoinIdx < kPrivateMax)
         {
@@ -799,7 +801,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     // Cooldown
-    const int32_t cdUntil = ch->GetQuestFlag("valentine_dungeon.cooldown");
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "valentine_dungeon.cooldown");
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
@@ -913,10 +915,10 @@ if (!it.ok)
             // Consume entry item (already checked above)
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
 
-            m->SetQuestFlag("valentine_dungeon.disconnect", 0);
-            m->SetQuestFlag("valentine_dungeon.idx", d->GetMapIndex());
-            m->SetQuestFlag("valentine_dungeon.ch", (int32_t)g_bChannel);
-            m->SetQuestFlag("valentine_dungeon.enter_time", now);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "valentine_dungeon.disconnect", 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "valentine_dungeon.idx", d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "valentine_dungeon.ch", (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), "valentine_dungeon.enter_time", now);
         };
 
     if (!party)

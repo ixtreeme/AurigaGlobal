@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "ItemSystem.hpp"
+#include "QuestSystem.hpp"
 #include "PointSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../VIDRegistry.hpp"
@@ -832,7 +833,7 @@ bool CItem::SetCount(int count)
 
 			M2_DESTROY_ITEM(RemoveFromCharacter());
 
-			const uint8_t bType = pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*1 + pOwner->GetQuestFlag("main_quest_flame_lv7.reward")*2;
+			const uint8_t bType = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pOwner), "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pOwner), "main_quest_flame_lv7.reward")*2;
 			if (IsDragonSoul())
 			{
 				if (bType == 0)

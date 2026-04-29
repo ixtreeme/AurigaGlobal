@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -644,25 +645,25 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-	if (ch->GetQuestFlag("costume_option.hide_body") != 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_body") != 0)
 		ch->SetBodyCostumeHidden(true);
 	else
 		ch->SetBodyCostumeHidden(false);
 
-	if (ch->GetQuestFlag("costume_option.hide_hair") != 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_hair") != 0)
 		ch->SetHairCostumeHidden(true);
 	else
 		ch->SetHairCostumeHidden(false);
 
 #ifdef ENABLE_ACCE_SYSTEM
-	if (ch->GetQuestFlag("costume_option.hide_acce") != 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_acce") != 0)
 		ch->SetAcceCostumeHidden(true);
 	else
 		ch->SetAcceCostumeHidden(false);
 #endif
 
 #ifdef __WEAPON_COSTUME_SYSTEM__
-	if (ch->GetQuestFlag("costume_option.hide_weapon") != 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_weapon") != 0)
 		ch->SetWeaponCostumeHidden(true);
 	else
 		ch->SetWeaponCostumeHidden(false);
@@ -717,9 +718,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ch->UpdateItemOnTitleName(true);
 #endif
 #ifdef ENABLE_PVP_ADVANCED // If something is wrong and server is crashed or stopping when you was in duel.
-	int isDuel = ch->GetQuestFlag(CHECK_IS_FIGHT);
+	int isDuel = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), CHECK_IS_FIGHT);
 	if (isDuel)
-		ch->SetQuestFlag(CHECK_IS_FIGHT, 0);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), CHECK_IS_FIGHT, 0);
 #endif
 
 	_send_bonus_info(ch);
@@ -904,9 +905,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	//	ch->LoadStayActiveBattlePass();
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
-	int expret = ch->GetQuestFlag("exp.stat");
+	int expret = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "exp.stat");
 	ch->Block_Exp = expret == 1 ? true : false;
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", ch->GetQuestFlag("exp.stat"));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "exp.stat"));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -918,10 +919,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_RUNE_SYSTEM
 	ch->SetPart(PART_RUNE, ch->GetRuneEffect());
 	ch->UpdatePacket();
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", ch->GetQuestFlag("rune.hide_effect"));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect"));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview %d", ch->GetQuestFlag(BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ch->GetWarMap()) {
@@ -943,31 +944,31 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 #ifdef ENABLE_BIOLOGIST_UI
-	if (ch->GetQuestFlag("biologist.stat") <= 15)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat") <= 15)
 	{
-		int biologisttime = ch->GetQuestFlag("biologist.time");
+		int biologisttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.time");
 		biologisttime = biologisttime > 0 ? biologisttime : 1;
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_time %d", biologisttime);
 	}
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-	ch->SetBodyCostumeHidden(ch->GetQuestFlag("costume_option.hide_body") == 1 ? true : false, true);
-	ch->SetHairCostumeHidden(ch->GetQuestFlag("costume_option.hide_hair") == 1 ? true : false, true);
+	ch->SetBodyCostumeHidden(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_body") == 1 ? true : false, true);
+	ch->SetHairCostumeHidden(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_hair") == 1 ? true : false, true);
 #ifdef ENABLE_ACCE_SYSTEM
-	ch->SetAcceCostumeHidden(ch->GetQuestFlag("costume_option.hide_acce") == 1 ? true : false, true);
+	ch->SetAcceCostumeHidden(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_acce") == 1 ? true : false, true);
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	ch->SetWeaponCostumeHidden(ch->GetQuestFlag("costume_option.hide_weapon") == 1 ? true : false, true);
+	ch->SetWeaponCostumeHidden(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "costume_option.hide_weapon") == 1 ? true : false, true);
 #endif
 #endif
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY1, ch->GetQuestFlag("lock_extra.cat1"));
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY2, ch->GetQuestFlag("lock_extra.cat2"));
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY3, ch->GetQuestFlag("lock_extra.cat3"));
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY4, ch->GetQuestFlag("lock_extra.cat4"));
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY5, ch->GetQuestFlag("lock_extra.cat5"));
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY6, ch->GetQuestFlag("lock_extra.cat6"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY1, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat1"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY2, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat2"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY3, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat3"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY4, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat4"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY5, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat5"));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXTRA_INVENTORY6, ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "lock_extra.cat6"));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #endif
 #ifdef ENABLE_ANTICHEAT

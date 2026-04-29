@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "QuestSystem.hpp"
 #include "PointSystem.hpp"
 
 #include "../../utils.h"
@@ -3533,7 +3534,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			{
 				if (this != pkVictim && this->GetDesc() && pkVictim->GetDesc())
 				{
-					if (pkVictim->GetQuestFlag(BLOCK_BUFF)) 
+					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_BUFF)) 
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 518, "%s", pkVictim->GetName()); 

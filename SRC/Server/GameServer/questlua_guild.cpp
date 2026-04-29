@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "questlua.h"
 #include "questmanager.h"
@@ -348,7 +350,7 @@ namespace quest
                             lua_pushnumber(L, 6);
                         else
                         {
-                            int nBeOtherLeader = pNewMaster->GetQuestFlag("change_guild_master.be_other_leader");
+                            int nBeOtherLeader = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_leader");
                             CQuestManager::instance().GetPC( ((ch)->GetPlayerID()) );
                             if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
                             if ( nBeOtherLeader > get_global_time() )
@@ -361,12 +363,12 @@ namespace quest
                                 else
                                 {
                                     lua_pushnumber(L, 3);
-                                    pNewMaster->SetQuestFlag("change_guild_master.be_other_leader", 0);
-                                    pNewMaster->SetQuestFlag("change_guild_master.be_other_member", 0);
-                                    pNewMaster->SetQuestFlag("change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
-                                    ch->SetQuestFlag("change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
-                                    ch->SetQuestFlag("change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
-                                    ch->SetQuestFlag("change_guild_master.resign_limit", 0);
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_leader", 0);
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_member", 0);
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
+                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.resign_limit", 0);
                                 }
                             }
                         }

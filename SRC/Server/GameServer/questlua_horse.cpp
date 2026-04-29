@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "questlua.h"
 #include "questmanager.h"
@@ -412,7 +414,7 @@ namespace quest
 			{
 				int nHorseNameDuration = test_server == true ? 60*5 : 60*60*24*30;
 
-				ch->SetQuestFlag("horse_name.valid_till", get_global_time() + nHorseNameDuration);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "horse_name.valid_till", get_global_time() + nHorseNameDuration);
 				ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, PASSES_PER_SEC(nHorseNameDuration), 0, true);
 				std::string name = pHorseName;
 				name += " Horse";

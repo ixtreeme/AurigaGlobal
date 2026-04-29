@@ -1,5 +1,7 @@
 
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
@@ -305,13 +307,13 @@ namespace
     inline int32_t CooldownRemain(LPCHARACTER ch)
     {
         const int32_t now = get_global_time();
-        const int32_t until = ch->GetQuestFlag(kQfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
 
     inline void SetCooldown(LPCHARACTER ch)
     {
-        ch->SetQuestFlag(kQfCooldown, get_global_time() + kCooldownSeconds);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, get_global_time() + kCooldownSeconds);
     }
 
     inline bool HasEntryItem(LPCHARACTER ch)
@@ -333,16 +335,16 @@ namespace
 
     inline void SetDisconnectFlags(LPCHARACTER ch, int32_t mapIndex)
     {
-        ch->SetQuestFlag(kQfDisconnect, get_global_time() + kRejoinSeconds);
-        ch->SetQuestFlag(kQfIdx, mapIndex);
-        ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSeconds);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
     }
 
     inline void ClearRejoinFlags(LPCHARACTER ch)
     {
-        ch->SetQuestFlag(kQfDisconnect, 0);
-        ch->SetQuestFlag(kQfIdx, 0);
-        ch->SetQuestFlag(kQfCh, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
     }
 } // anon namespace
 
@@ -374,8 +376,8 @@ void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
         return;
 
     // store for rejoin checks (lua)
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
@@ -484,9 +486,9 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     }
 
     // Rejoin flow (lua: disconnect window + same channel + not completed)
-    const int32_t disconnectUntil = ch->GetQuestFlag(kQfDisconnect);
-    const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-    const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel)
     {
@@ -497,7 +499,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             {
                 ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
                 ch->WarpSet(kRejoinX, kRejoinY, rejoinIdx);
-                ch->SetQuestFlag(kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;
             }
         }

@@ -1,5 +1,7 @@
 
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "horsename_manager.h"
 #include "desc_client.h"
 #include "char_manager.h"
@@ -61,7 +63,7 @@ void CHorseNameManager::Validate(LPCHARACTER pChar)
 
 	if ( pkAff != nullptr)
 	{
-		if ( pChar->GetQuestFlag("horse_name.valid_till") < get_global_time() )
+		if ( ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pChar), "horse_name.valid_till") < get_global_time() )
 		{
 			pChar->HorseSummon(false, true);
 			pChar->RemoveAffect(pkAff);

@@ -1,6 +1,8 @@
 #include "../../stdafx.h"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "QuestSystem.hpp"
+#include "../AIHelpers.hpp"
 #include "ItemSystem.hpp"
 
 #include <algorithm>
@@ -301,7 +303,7 @@ int GetDuelImpl(const CHARACTER* ch, const char* type)
 {
     const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-    int m_nDuelTable[] = { (ch->GetQuestFlag(szTableStaticPvP[0])), (ch->GetQuestFlag(szTableStaticPvP[1])), (ch->GetQuestFlag(szTableStaticPvP[2])), (ch->GetQuestFlag(szTableStaticPvP[3])), (ch->GetQuestFlag(szTableStaticPvP[4])), (ch->GetQuestFlag(szTableStaticPvP[5])), (ch->GetQuestFlag(szTableStaticPvP[6])), (ch->GetQuestFlag(szTableStaticPvP[7])), (ch->GetQuestFlag(szTableStaticPvP[8])), (ch->GetQuestFlag(szTableStaticPvP[9])) };
+    int m_nDuelTable[] = { (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9])) };
 
     if (!strcmp(type, "BlockChangeItem") && m_nDuelTable[0] > 0) {
         return true;
@@ -341,34 +343,34 @@ void SetDuelImpl(CHARACTER* ch, const char* type, int value)
     const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
     if (!strcmp(type, "BlockChangeItem")) {
-        ch->SetQuestFlag(szTableStaticPvP[0], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[0], value);
     }
     if (!strcmp(type, "BlockBuff")) {
-        ch->SetQuestFlag(szTableStaticPvP[1], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[1], value);
     }
     if (!strcmp(type, "BlockPotion")) {
-        ch->SetQuestFlag(szTableStaticPvP[2], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[2], value);
     }
     if (!strcmp(type, "BlockRide")) {
-        ch->SetQuestFlag(szTableStaticPvP[3], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[3], value);
     }
     if (!strcmp(type, "BlockPet")) {
-        ch->SetQuestFlag(szTableStaticPvP[4], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[4], value);
     }
     if (!strcmp(type, "BlockPoly")) {
-        ch->SetQuestFlag(szTableStaticPvP[5], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[5], value);
     }
     if (!strcmp(type, "BlockParty")) {
-        ch->SetQuestFlag(szTableStaticPvP[6], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[6], value);
     }
     if (!strcmp(type, "BlockExchange")) {
-        ch->SetQuestFlag(szTableStaticPvP[7], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[7], value);
     }
     if (!strcmp(type, "BetMoney")) {
-        ch->SetQuestFlag(szTableStaticPvP[8], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8], value);
     }
     if (!strcmp(type, "IsFight")) {
-        ch->SetQuestFlag(szTableStaticPvP[9], value);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9], value);
     }
 }
 #endif

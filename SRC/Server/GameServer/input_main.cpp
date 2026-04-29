@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 
 
 #include "constants.h"
@@ -3736,14 +3737,14 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	}
 #endif
 
-	if (get_global_time() - ch->GetQuestFlag("guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
+	if (get_global_time() - ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
 #endif
 		return;
 	}
 
-	if (get_global_time() - ch->GetQuestFlag("guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
+	if (get_global_time() - ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
@@ -4133,7 +4134,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 						return SubPacketLen;
 					}
 
-					member->SetQuestFlag("guild_manage.new_withdraw_time", get_global_time());
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(member), "guild_manage.new_withdraw_time", get_global_time());
 					pGuild->RequestRemoveMember(member->GetPlayerID());
 
 					if (g_bGuildInviteLimit)
@@ -4592,15 +4593,15 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 #endif
 	else if (p->type == REFINE_TYPE_MONEY_ONLY) {
 		if (item) {
-			if (ch->GetQuestFlag("deviltower_zone.can_refine"))
+			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine"))
 			{
 #ifdef ENABLE_BUG_FIXES
 				if (ItemSystem::DoRefine(owner, itemEntity, true)) {
-					ch->SetQuestFlag("deviltower_zone.can_refine", 0);
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine", 0);
 				}
 #else
 				ItemSystem::DoRefine(owner, itemEntity, true);
-				ch->SetQuestFlag("deviltower_zone.can_refine", 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine", 0);
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT

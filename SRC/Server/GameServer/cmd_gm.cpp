@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "config.h"
@@ -3115,7 +3116,7 @@ ACMD(do_socket_item)
 ACMD(do_block_chat_list)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || (((ch)->GetGMLevel()) < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
+	if (!ch || (((ch)->GetGMLevel()) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
@@ -3183,7 +3184,7 @@ ACMD(do_vote_block_chat)
 ACMD(do_block_chat)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (ch && (ch->GetGMLevel() < GM_HIGH_WIZARD && ch->GetQuestFlag("chat_privilege.block") <= 0))
+	if (ch && (ch->GetGMLevel() < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");

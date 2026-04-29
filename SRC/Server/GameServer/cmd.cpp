@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -343,7 +345,7 @@ ACMD(do_manage_exp)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 78, "");
 	}
 #endif
-	ch->SetQuestFlag("exp.stat", arg == true ? 1 : 0);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "exp.stat", arg == true ? 1 : 0);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", arg == true ? 1 : 0);
 }
 

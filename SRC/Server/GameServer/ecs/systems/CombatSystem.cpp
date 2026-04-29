@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
+#include "QuestSystem.hpp"
 
 #include "CombatSystem.hpp"
 
@@ -1895,7 +1896,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
 			int betMoneyDead = GetQuestFlag(szTableStaticPvP[8]);
-			int betMoneyKiller = pkKiller->GetQuestFlag(szTableStaticPvP[8]);
+			int betMoneyKiller = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkKiller), szTableStaticPvP[8]);
 
 			if (betMoneyDead > 0 && betMoneyKiller > 0)
 			{
@@ -1915,7 +1916,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				SetQuestFlag(szTableStaticPvP[i], 0);
 
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkKiller), CHAT_TYPE_COMMAND, pkKiller_Buf);
-				pkKiller->SetQuestFlag(szTableStaticPvP[i], 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkKiller), szTableStaticPvP[i], 0);
 			}
 		}
 #endif

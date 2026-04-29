@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
@@ -498,7 +499,7 @@ namespace quest
             return 0;
         if ( ch->IsHack() )
             return 0;
-        ch->SetQuestFlag("war.is_war_member", 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "war.is_war_member", 0);
         ch->SaveExitLocation();
         if (auto* warpPos = ECS_TryGet<ecs::WarpPosition>(e))
         {
@@ -2650,7 +2651,7 @@ namespace quest
 		(void)e;
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetQuestFlag("skill_group_clear.clear") == 1) ? 1 : 0);
+		lua_pushboolean(L, (ch && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "skill_group_clear.clear") == 1) ? 1 : 0);
 		return 1;
 	}
 
@@ -5026,7 +5027,7 @@ teleport_area:
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
 				if (biologistMissionInfo[i][11] == 1) {
-					if (ch->GetQuestFlag("biologist.stat") > i) {
+					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat") > i) {
 						for (int j = 0; j < 4; j++) {
 							type = biologistMissionInfo[i][3 + (j * 2)];
 							if (type != APPLY_NONE) {

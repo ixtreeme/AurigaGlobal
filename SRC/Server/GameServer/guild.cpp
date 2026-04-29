@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
@@ -1036,7 +1037,7 @@ void CGuild::Disband()
 		ch->SetGuild(nullptr);
 		SendOnlineRemoveOnePacket(ch->GetPlayerID());
 		// @fixme401
-		ch->SetQuestFlag("guild_manage.new_disband_time", get_global_time());
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "guild_manage.new_disband_time", get_global_time());
 	}
 
 	for (TGuildMemberContainer::iterator it = m_member.begin(); it != m_member.end(); ++it)
@@ -2390,10 +2391,10 @@ CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const LPCHARACTER 
 	// NINCS  kilpsi / feloszlatsi limit
 
 	/*
-	if ( get_global_time() - pchInvitee->GetQuestFlag( "guild_manage.new_withdraw_time" )
+	if ( get_global_time() - ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pchInvitee),  "guild_manage.new_withdraw_time" )
 			< CGuildManager::instance().GetWithdrawDelay() )
 		return GERR_WITHDRAWPENALTY;
-	else if ( get_global_time() - pchInvitee->GetQuestFlag( "guild_manage.new_disband_time" )
+	else if ( get_global_time() - ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pchInvitee),  "guild_manage.new_disband_time" )
 			< CGuildManager::instance().GetDisbandDelay() )
 		return GERR_COMMISSIONPENALTY;
 	*/

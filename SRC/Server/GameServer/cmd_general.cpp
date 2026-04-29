@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
@@ -1580,7 +1581,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	int mytime = pkVictim->GetQuestFlag("pvp.timed");
+	int mytime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed");
 	int itime = mytime <= 0 ? 0 : mytime - get_global_time();
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
@@ -1590,7 +1591,7 @@ ACMD(do_pvp)
 		return;
 	}
 	else {
-		pkVictim->SetQuestFlag("pvp.timed", get_global_time() + 30);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed", get_global_time() + 30);
 	}
 
 	if (ch->GetExchange() || pkVictim->GetExchange())
@@ -1602,8 +1603,8 @@ ACMD(do_pvp)
 	
 	if (*arg2 && !strcmp(arg2, "accept"))
 	{	
-		int64_t chA_nBetMoney = ch->GetQuestFlag(szTableStaticPvP[8]);
-		int64_t  chB_nBetMoney = pkVictim->GetQuestFlag(szTableStaticPvP[8]);
+		int64_t chA_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8]);
+		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[8]);
 		int64_t  limit = 2000000000;
 
 
@@ -1751,7 +1752,7 @@ ACMD(do_pvp_advanced)
 		return;
 	}
 	
-	if (ch->GetQuestFlag(szTableStaticPvP[9]) > 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 882, "");
@@ -1759,7 +1760,7 @@ ACMD(do_pvp_advanced)
 		return;
 	}
 	
-	if (pkVictim->GetQuestFlag(szTableStaticPvP[9]) > 0)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 882, "");
@@ -1767,7 +1768,7 @@ ACMD(do_pvp_advanced)
 		return;
 	}
 	
-	int statusEq = pkVictim->GetQuestFlag(BLOCK_EQUIPMENT_);
+	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_EQUIPMENT_);
 	
 	CGuild * g = pkVictim->GetGuild();
 
@@ -1820,8 +1821,8 @@ ACMD(do_decline_pvp)
 		return;
 
 	CPVPManager::instance().Decline(ch, pkVictim);
-	ch->SetQuestFlag("pvp.timed", 0);
-	pkVictim->SetQuestFlag("pvp.timed", 0);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "pvp.timed", 0);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed", 0);
 }
 ACMD(do_block_equipment)
 {
@@ -1834,7 +1835,7 @@ ACMD(do_block_equipment)
 	if (!((ch)->IsPC()) || nullptr == ch)
 		return;
 	
-	int statusEq = ch->GetQuestFlag(BLOCK_EQUIPMENT_);
+	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_);
 	
 	if (!strcmp(arg1, "BLOCK"))
 	{
@@ -1845,7 +1846,7 @@ ACMD(do_block_equipment)
 #endif
 		}
 		else {
-			ch->SetQuestFlag(BLOCK_EQUIPMENT_, 1);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_, 1);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview 1");
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 12, "");
@@ -1855,7 +1856,7 @@ ACMD(do_block_equipment)
 	else if (!strcmp(arg1, "UNBLOCK"))
 	{
 		if (statusEq != 0) {
-			ch->SetQuestFlag(BLOCK_EQUIPMENT_, 0);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_, 0);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview 0");
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 14, "");
@@ -3960,10 +3961,10 @@ ACMD(do_rune_effect)
 	if ((iArg1 != 0) && (iArg1 != 1))
 		return;
 	
-	if (ch->GetQuestFlag("rune.hide_effect") == iArg1)
+	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect") == iArg1)
 		return;
 	
-	ch->SetQuestFlag("rune.hide_effect", iArg1);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect", iArg1);
 	ch->ComputePoints();
 	ch->UpdatePacket();
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);

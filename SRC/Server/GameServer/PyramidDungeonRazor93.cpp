@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "PyramidDungeonRazor93.h"
 
@@ -248,7 +250,7 @@ namespace
             if (!ok || !m || !m->IsPC())
                 return;
 
-            const int32_t until = m->GetQuestFlag(kQfCooldown);
+            const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m), kQfCooldown);
             if (until > now)
             {
                 ok = false;
@@ -290,16 +292,16 @@ namespace
             if (cnt > 0)
                 m->RemoveSpecifyItem(kRemoveAllItem, cnt > 255 ? 255 : cnt);
 
-            m->SetQuestFlag(kQfCooldown, get_global_time() + kCooldownSeconds);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCooldown, get_global_time() + kCooldownSeconds);
         }
     };
 
     inline void ResetRejoinFlags(LPCHARACTER ch)
     {
         if (!ch) return;
-        ch->SetQuestFlag(kQfDisconnect, 0);
-        ch->SetQuestFlag(kQfIdx, 0);
-        ch->SetQuestFlag(kQfCh, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
     }
 }
 
@@ -324,9 +326,9 @@ void CPyramidDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
         return;
 
     const int32_t now = get_global_time();
-    ch->SetQuestFlag(kQfDisconnect, now + kRejoinSeconds);
-    ch->SetQuestFlag(kQfIdx, mapIdx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIdx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 }
 
 void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
@@ -348,8 +350,8 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
     // Set exit location as in Lua
     ch->SetWarpLocation(kLobbyMap, kLobbyX, kLobbyY);
-    ch->SetQuestFlag(kQfIdx, mapIdx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIdx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 
     // Safety: if dungeon is uninitialized, initialize like Lua login does.
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIdx);
@@ -395,11 +397,11 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     }
 
     // Rejoin flow (Lua: 300 seconds)
-    const int32_t rejoinUntil = ch->GetQuestFlag(kQfDisconnect);
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-        const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
         if (IsPyramidDungeonMap(rejoinIdx))
         {
@@ -469,7 +471,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Cooldown
     if (!party)
     {
-        const int32_t cdUntil = ch->GetQuestFlag(kQfCooldown);
+        const int32_t cdUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
         if (cdUntil > now)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);

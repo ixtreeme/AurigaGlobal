@@ -1,6 +1,7 @@
 
 
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "vector.h"
@@ -426,7 +427,7 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 	
 	char szName[128];
 	snprintf(szName, sizeof(szName), "pet_skills.%d", iType);
-	int iLast = m_pkOwner->GetQuestFlag(szName);
+	int iLast = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m_pkOwner), szName);
 	int iTime = iLast - get_global_time();
 	if (iTime > 0) {
 		if (m_pkOwner->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
@@ -461,7 +462,7 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 	ClearBuff();
 	GiveBuff();
 	
-	m_pkOwner->SetQuestFlag(szName, get_global_time() + (3600 * 3));
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m_pkOwner), szName, get_global_time() + (3600 * 3));
 	
 	return true;
 }

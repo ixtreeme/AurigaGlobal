@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "war_map.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
@@ -359,11 +361,11 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	if (ch->GetGuild())
 		gid = ch->GetGuild()->GetID();
 
-	bool isWarMember = ch->GetQuestFlag("war.is_war_member") > 0 ? true : false;
+	bool isWarMember = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "war.is_war_member") > 0 ? true : false;
 
 	if (isWarMember && gid != m_TeamData[0].dwID && gid != m_TeamData[1].dwID)
 	{
-		ch->SetQuestFlag("war.is_war_member", 0);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "war.is_war_member", 0);
 		isWarMember = false;
 	}
 
@@ -446,7 +448,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 				m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
 
 		CheckWarEnd();
-		ch->SetQuestFlag("war.is_war_member", 0);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "war.is_war_member", 0);
 	}
 	else
 	{

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "RuneDungeon.h"
 
@@ -245,13 +247,13 @@ namespace
                 }
 #endif
 
-                const int32_t enter_time = ch->GetQuestFlag(kQfEnterTime);
+                const int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfEnterTime);
 
-                ch->SetQuestFlag(kQfEnterTime, 0);
-                ch->SetQuestFlag(kQfDisconnect, 0);
-                ch->SetQuestFlag(kQfIdx, 0);
-                ch->SetQuestFlag(kQfCh, 0);
-                ch->SetQuestFlag(kQfCooldown, now + kCooldownSeconds);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfEnterTime, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, now + kCooldownSeconds);
 
                 int32_t elapsed = (enter_time > 0) ? (now - enter_time) : 0;
                 if (elapsed < 0)
@@ -890,7 +892,7 @@ void CRuneDungeon::OnPlayerDisconnect(CHARACTER* ch)
         return;
 
     const int32_t now = get_global_time();
-    ch->SetQuestFlag(kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, now + kRejoinSeconds);
 }
 
 void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
@@ -913,8 +915,8 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     // Set return location
     ch->SetWarpLocation(219, 5369, 14292);
 
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
@@ -1222,9 +1224,9 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         return false;
 
     // Rejoin flow
-    const int32_t disconnectUntil = ch->GetQuestFlag(kQfDisconnect);
-    const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-    const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
     const int32_t now = get_global_time();
 
@@ -1247,7 +1249,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
                 else if (floor == 5)
                     ch->WarpSet(kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
 
-                ch->SetQuestFlag(kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;
             }
         }
@@ -1265,7 +1267,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamDelay);
 
     // Cooldown check
-    const int32_t cooldownUntil = ch->GetQuestFlag(kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
     if (cooldownUntil > now)
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Rune Dungeon is on cooldown.");
@@ -1379,10 +1381,10 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
 
             removeEntranceItems(pc);
 
-            pc->SetQuestFlag(kQfDisconnect, 0);
-            pc->SetQuestFlag(kQfIdx, dungeonMapIdx);
-            pc->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
-            pc->SetQuestFlag(kQfEnterTime, now);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pc), kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pc), kQfIdx, dungeonMapIdx);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pc), kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pc), kQfEnterTime, now);
 
             // Same return location as Lua.
             pc->SetWarpLocation(219, 5369, 14292);
@@ -1480,15 +1482,15 @@ bool CRuneDungeon::OnUseItem89100(CHARACTER* ch)
         return false;
 
     const int32_t now = get_global_time();
-    const int32_t cooldownUntil = ch->GetQuestFlag(kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
 
     if (cooldownUntil <= now)
         return false;
 
-    ch->SetQuestFlag(kQfDisconnect, 0);
-    ch->SetQuestFlag(kQfIdx, 0);
-    ch->SetQuestFlag(kQfCh, 0);
-    ch->SetQuestFlag(kQfCooldown, 0);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, 0);
     ch->RemoveSpecifyItem(kCooldownReset, 1);
 
     return true;

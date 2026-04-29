@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "Halloween2022Dungeon.h"
 
 #include <unordered_map>
@@ -326,32 +328,32 @@ namespace
         if (!ch)
             return 0;
         const int32_t now = get_global_time();
-        const int32_t until = ch->GetQuestFlag(kQfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
 
     void SetCooldown(LPCHARACTER ch)
     {
         if (ch)
-            ch->SetQuestFlag(kQfCooldown, get_global_time() + kEntranceCooldownSec);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
         if (!ch)
             return;
-        ch->SetQuestFlag(kQfDisconnect, get_global_time() + kRejoinSec);
-        ch->SetQuestFlag(kQfIdx, mapIndex);
-        ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)
     {
         if (!ch)
             return;
-        ch->SetQuestFlag(kQfDisconnect, 0);
-        ch->SetQuestFlag(kQfIdx, 0);
-        ch->SetQuestFlag(kQfCh, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
     }
 
     int32_t GetPartyOnlineCountOnMap(LPPARTY party, int32_t mapIndex)
@@ -642,8 +644,8 @@ void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
         }
 
         SetOutsideWarpLocation(ch);
-        ch->SetQuestFlag(kQfIdx, idx);
-        ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
         return;
     }
 
@@ -705,9 +707,9 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     if (!fromCompletedInside)
     {
-        const int32_t disconnectUntil = ch->GetQuestFlag(kQfDisconnect);
-        const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-        const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+        const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
         if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsHalloweenDungeonMap(rejoinIdx))
         {
@@ -719,7 +721,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
                     ch->WarpSet(kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
                 else
                     ch->WarpSet(kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
-                ch->SetQuestFlag(kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;
             }
         }
@@ -854,8 +856,8 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             SetOutsideWarpLocation(m);
 
         ClearRejoinFlags(m);
-        m->SetQuestFlag(kQfIdx, dungeonMapIdx);
-        m->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
         SetCooldown(m);
         m->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
     };

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "constants.h"
 #include "questmanager.h"
 #include "questlua.h"
@@ -1030,7 +1032,7 @@ namespace quest
 						}
 					}
 
-					m_resulttime = tch->GetQuestFlag(m_questname.c_str()) - get_global_time();
+					m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), m_questname.c_str()) - get_global_time();
 					if (m_resulttime > 0)
 					{
 						m_result = 8;
@@ -1054,7 +1056,7 @@ namespace quest
 			}
 
 			int32_t lvl = ((ch)->GetLevel());
-			m_resulttime = ch->GetQuestFlag(m_questname.c_str()) - get_global_time();
+			m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), m_questname.c_str()) - get_global_time();
 			if (lvl < m_minlvl)
 			{
 				m_result = 4;
@@ -1210,8 +1212,8 @@ namespace quest
 						tch->RemoveSpecifyItem(vnum8, count8);
 					}
 
-					tch->SetQuestFlag(m_questname + ".enter_time", get_global_time());
-					tch->SetQuestFlag(m_questname + ".cooldown", get_global_time() + cooldown);
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".enter_time", get_global_time());
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".cooldown", get_global_time() + cooldown);
 				}
 			}
 
@@ -1297,8 +1299,8 @@ namespace quest
 				ch->RemoveSpecifyItem(vnum8, count8);
 			}
 
-			ch->SetQuestFlag(m_questname + ".enter_time", get_global_time());
-			ch->SetQuestFlag(m_questname + ".cooldown", get_global_time() + cooldown);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".enter_time", get_global_time());
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".cooldown", get_global_time() + cooldown);
 		}
 
 		return 0;
@@ -1371,10 +1373,10 @@ namespace quest
 						}
 					}
 #endif
-					int32_t enter_time = tch->GetQuestFlag(questname + ".enter_time");
-					tch->SetQuestFlag(questname + ".enter_time", 0);
-					tch->SetQuestFlag(questname + ".ch", 0);
-					tch->SetQuestFlag(questname + ".cooldown", get_global_time() + cooldown);
+					int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), questname + ".enter_time");
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".enter_time", 0);
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".ch", 0);
+					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".cooldown", get_global_time() + cooldown);
 					int32_t pid = ((tch)->GetPlayerID());
 					int32_t time = get_global_time() - enter_time;
 					int32_t damage = tch->GetQuestDamage(race);
@@ -1430,10 +1432,10 @@ namespace quest
 				}
 			}
 #endif
-			int32_t enter_time = ch->GetQuestFlag(questname + ".enter_time");
-			ch->SetQuestFlag(questname + ".enter_time", 0);
-			ch->SetQuestFlag(questname + ".ch", 0);
-			ch->SetQuestFlag(questname + ".cooldown", get_global_time() + cooldown);
+			int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), questname + ".enter_time");
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".enter_time", 0);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".ch", 0);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".cooldown", get_global_time() + cooldown);
 			int32_t pid = ((ch)->GetPlayerID());
 			int32_t time = get_global_time() - enter_time;
 			int32_t damage = ch->GetQuestDamage(race);
@@ -1609,7 +1611,7 @@ namespace quest
 						break;
 					}
 
-					m_resulttime = tch->GetQuestFlag(m_questname.c_str()) - get_global_time();
+					m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), m_questname.c_str()) - get_global_time();
 					if (m_resulttime > 0)
 					{
 						m_result = 11;
@@ -1704,8 +1706,8 @@ namespace quest
 				}
 			}
 
-			ch->SetQuestFlag(m_questname + ".enter_time", get_global_time());
-			ch->SetQuestFlag(m_questname + ".cooldown", get_global_time() + cooldown);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".enter_time", get_global_time());
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".cooldown", get_global_time() + cooldown);
 		}
 
 		return 0;

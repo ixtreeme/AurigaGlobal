@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "VikingDungeon.h"
@@ -321,23 +322,23 @@ namespace
     void SetCooldown(LPCHARACTER ch)
     {
         if (ch)
-            ch->SetQuestFlag(kQfCooldown, get_global_time() + kEntranceCooldownSec);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
         if (!ch)
             return;
-        ch->SetQuestFlag(kQfIdx, mapIndex);
-        ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
-        ch->SetQuestFlag(kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSec);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)
     {
         if (!ch)
             return;
-        ch->SetQuestFlag(kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
     }
 
     void ClearDungeonNonPlayers(LPDUNGEON d)
@@ -1046,8 +1047,8 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
     }
 
     SetOutsideWarpLocation(ch);
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 
     if (d->GetFlag(kFlagBlockRejoin) != 0)
     {
@@ -1070,9 +1071,9 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
         s_viking.ScheduleStart(idx);
     }
 
-    if (ch->GetQuestFlag(kQfDisconnect) > 0)
+    if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect) > 0)
     {
-        ch->SetQuestFlag(kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "Welcome back.");
 
         const int32_t limit = d->GetFlag(kFlagTimeLimit);
@@ -1105,7 +1106,7 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
         return true;
     }
 
-    const int32_t cooldownUntil = ch->GetQuestFlag(kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
     if (cooldownUntil <= get_global_time())
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can already enter the dungeon.");
@@ -1113,7 +1114,7 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
     }
 
     ch->RemoveSpecifyItem(kResetItemVnum, 1);
-    ch->SetQuestFlag(kQfCooldown, 0);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, 0);
     ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
     return true;
 }
@@ -1158,9 +1159,9 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     if (race != kEntryNpcVnum)
         return false;
 
-    const int32_t disconnectUntil = ch->GetQuestFlag(kQfDisconnect);
-    const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-    const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsVikingDungeonMap(rejoinIdx))
     {
@@ -1168,7 +1169,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         if (d && d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
         {
             ch->WarpSet(kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
-            ch->SetQuestFlag(kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
             return true;
         }
     }
@@ -1269,7 +1270,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
                 return;
             }
 
-            const int32_t cd = m->GetQuestFlag(kQfCooldown);
+            const int32_t cd = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m), kQfCooldown);
             if (cd > now)
             {
                 ok = false;
@@ -1326,8 +1327,8 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
         SetOutsideWarpLocation(m);
         ClearRejoinFlags(m);
-        m->SetQuestFlag(kQfIdx, dungeonMapIdx);
-        m->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
 
         if (!quickRestart)
         {

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/service.h>
@@ -197,7 +198,7 @@ ACMD(do_open_biologist) {
 	if (!ch)
 		return;
 
-	int stat = ch->GetQuestFlag("biologist.stat");
+	int stat = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 867, "");
@@ -212,9 +213,9 @@ ACMD(do_open_biologist) {
 		return;
 	}
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[stat][11], biologistMissionInfo[stat][3], biologistMissionInfo[stat][4], biologistMissionInfo[stat][5], biologistMissionInfo[stat][6], biologistMissionInfo[stat][7], biologistMissionInfo[stat][8], biologistMissionInfo[stat][9], biologistMissionInfo[stat][10]);
-	int time = ch->GetQuestFlag("biologist.time");
+	int time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.time");
 	time = time > 0 ? time : 0;
-	int count = ch->GetQuestFlag("biologist.delivered");
+	int count = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.delivered");
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist %d#%d#%d#%d#%d#%d#%d", stat, biologistMissionInfo[stat][0], biologistMissionInfo[stat][1], count, biologistMissionInfo[stat][2], time, biologistMissionInfo[stat][1]-count > 0 ? 0 : 1);
 }
 
@@ -228,7 +229,7 @@ ACMD(do_delivery_biologist) {
 	if (!*arg1 || !*arg2)
 		return;
 
-	int stat = ch->GetQuestFlag("biologist.stat");
+	int stat = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 867, "");
@@ -243,7 +244,7 @@ ACMD(do_delivery_biologist) {
 		return;
 	}
 
-	int count = ch->GetQuestFlag("biologist.delivered");
+	int count = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.delivered");
 	if (count >= biologistMissionInfo[stat][1]) {
 		return;
 	}
@@ -267,7 +268,7 @@ ACMD(do_delivery_biologist) {
 	bool elisir = iarg1 == 1 ? true : false;
 	bool potion = iarg2 == 1 ? true : false;
 
-	int time = ch->GetQuestFlag("biologist.time") ;
+	int time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.time") ;
 	if (time > 0 && time - get_global_time() > 0 && !elisir && !potion) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 871, "");
@@ -304,7 +305,7 @@ ACMD(do_delivery_biologist) {
 			waittime = get_global_time();
 		}
 
-		ch->SetQuestFlag("biologist.delivered", count + 1);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "biologist.delivered", count + 1);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 865, "");
 #endif
@@ -320,7 +321,7 @@ ACMD(do_delivery_biologist) {
 #endif
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, waittime - get_global_time());
 	}
-	ch->SetQuestFlag("biologist.time", waittime);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "biologist.time", waittime);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_time %d", waittime);
 }
 
@@ -334,14 +335,14 @@ ACMD(do_reward_biologist) {
 	if (!*arg1)
 		return;
 
-	int stat = ch->GetQuestFlag("biologist.stat");
+	int stat = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat");
 	if (stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
-	int count = ch->GetQuestFlag("biologist.delivered");
+	int count = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.delivered");
 	if (biologistMissionInfo[stat][1]-count > 0) {
 		return;
 	}
@@ -357,9 +358,9 @@ ACMD(do_reward_biologist) {
 	}
 
 	int newstat = stat + 1;
-	ch->SetQuestFlag("biologist.stat", newstat);
-	ch->SetQuestFlag("biologist.time", 0);
-	ch->SetQuestFlag("biologist.delivered", 0);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "biologist.stat", newstat);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "biologist.time", 0);
+	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "biologist.delivered", 0);
 	if (newstat == 16) {
 		if (biologistMissionInfo[stat][11] == 0) {
 			int j = 0;
@@ -438,9 +439,9 @@ ACMD(do_reward_biologist) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 870, "");
 #endif
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%d#%d#%d#%d#%d#%d#%d", biologistMissionInfo[newstat][11], biologistMissionInfo[newstat][3], biologistMissionInfo[newstat][4], biologistMissionInfo[newstat][5], biologistMissionInfo[newstat][6], biologistMissionInfo[newstat][7], biologistMissionInfo[newstat][8], biologistMissionInfo[newstat][9], biologistMissionInfo[newstat][10]);
-			int time = ch->GetQuestFlag("biologist.time");
+			int time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.time");
 			time = time > 0 ? time - get_global_time() : 0;
-			int count = ch->GetQuestFlag("biologist.delivered");
+			int count = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.delivered");
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologist_next %d#%d#%d#%d#%d#%d#%d", newstat, biologistMissionInfo[newstat][0], biologistMissionInfo[newstat][1], count, biologistMissionInfo[newstat][2], time, biologistMissionInfo[newstat][1]-count > 0 ? 0 : 1);
 		}
 	}
@@ -473,7 +474,7 @@ ACMD(do_change_biologist) {
 		return;
 	}
 
-	int stat = ch->GetQuestFlag("biologist.stat");
+	int stat = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat");
 	if (stat <= iarg1)
 		return;
 
@@ -789,7 +790,7 @@ ACMD(do_doctrine_choose) {
 		ch->SetHorseLevel(1);
 		CAffect * pkAff = nullptr;
 		if (!(pkAff = ch->FindAffect(AFFECT_HORSE_NAME))) {
-			ch->SetQuestFlag("horse_name.valid_till", get_global_time() + 126144000);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "horse_name.valid_till", get_global_time() + 126144000);
 			ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
 			std::string name = ((ch)->GetName());
 			name += " Horse";

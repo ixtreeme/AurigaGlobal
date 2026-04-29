@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "refine.h"
 
 
@@ -32,7 +34,7 @@ CRefineManager::~CRefineManager()
 	int CRefineManager::Result(LPCHARACTER ch)
 	{
 		int uninitialized = 0;
-		int flag = ch->GetQuestFlag(REFINE_INCREASE);
+		int flag = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE);
 
 		if (flag > 0)
 			return flag;
@@ -91,11 +93,11 @@ CRefineManager::~CRefineManager()
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 			
-			if (ch->GetQuestFlag(buf) > 0)
+			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), buf) > 0)
 			{
 				ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ch->SetQuestFlag(REFINE_INCREASE, 0);
-				ch->SetQuestFlag(buf, 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 0);
 			}
 		}
 	}	
@@ -106,11 +108,11 @@ CRefineManager::~CRefineManager()
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 
-			if (ch->GetQuestFlag(buf) > 0)
+			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), buf) > 0)
 			{
 				//ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ch->SetQuestFlag(REFINE_INCREASE, 0);
-				ch->SetQuestFlag(buf, 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 0);
 			}
 		}
 	}
@@ -127,15 +129,15 @@ CRefineManager::~CRefineManager()
 			{
 				char buf[MAX_HOST_LENGTH + 1];
 				snprintf(buf, sizeof(buf), "refine.mode_%d", it);
-				ch->SetQuestFlag(buf, 1);
+				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 1);
 
 				calcPercentage += ar_ListPercentage[it];		
 			}
 		}
 		
-		if (ch->GetQuestFlag(REFINE_INCREASE) < 1)
+		if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE) < 1)
 		{
-			ch->SetQuestFlag(REFINE_INCREASE, calcPercentage);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, calcPercentage);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {

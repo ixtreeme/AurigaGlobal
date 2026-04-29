@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -85,7 +86,7 @@ EVENTFUNC(pvp_check_disconnect)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 		
-		int betMoney = chB->GetQuestFlag(szTableStaticPvP[8]);
+		int betMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[8]);
 		
 		if (betMoney > 0)
 		{
@@ -100,7 +101,7 @@ EVENTFUNC(pvp_check_disconnect)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(chB), CHAT_TYPE_COMMAND, buf);	
 		
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
-			chB->SetQuestFlag(szTableStaticPvP[i], 0);	
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[i], 0);	
 		}
 		
 #ifdef TEXTS_IMPROVEMENT
@@ -115,7 +116,7 @@ EVENTFUNC(pvp_check_disconnect)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 		
-		int betMoney = chA->GetQuestFlag(szTableStaticPvP[8]);
+		int betMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[8]);
 		
 		if (betMoney > 0)
 		{
@@ -130,7 +131,7 @@ EVENTFUNC(pvp_check_disconnect)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(chA), CHAT_TYPE_COMMAND, buf);	
 		
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
-			chA->SetQuestFlag(szTableStaticPvP[i], 0);	
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[i], 0);	
 		}
 		
 #ifdef TEXTS_IMPROVEMENT
@@ -317,8 +318,8 @@ EVENTFUNC(pvp_duel_counter)
 			uint32_t chA_Race = ((chA)->GetRaceNum());
 			uint32_t chB_Race = ((chB)->GetRaceNum());
 			
-			int chA_[] = {(chA->GetQuestFlag(szTableStaticPvP[0])), (chA->GetQuestFlag(szTableStaticPvP[1])), (chA->GetQuestFlag(szTableStaticPvP[2])), (chA->GetQuestFlag(szTableStaticPvP[3])), (chA->GetQuestFlag(szTableStaticPvP[4])), (chA->GetQuestFlag(szTableStaticPvP[5])), (chA->GetQuestFlag(szTableStaticPvP[6])), (chA->GetQuestFlag(szTableStaticPvP[7])), (chA->GetQuestFlag(szTableStaticPvP[8]))};
-			int chB_[] = {(chB->GetQuestFlag(szTableStaticPvP[0])), (chB->GetQuestFlag(szTableStaticPvP[1])), (chB->GetQuestFlag(szTableStaticPvP[2])), (chB->GetQuestFlag(szTableStaticPvP[3])), (chB->GetQuestFlag(szTableStaticPvP[4])), (chB->GetQuestFlag(szTableStaticPvP[5])), (chB->GetQuestFlag(szTableStaticPvP[6])), (chB->GetQuestFlag(szTableStaticPvP[7])), (chB->GetQuestFlag(szTableStaticPvP[8]))};
+			int chA_[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[8]))};
+			int chB_[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[8]))};
 			
 			char chA_buf[CHAT_MAX_LEN + 1], chB_buf[CHAT_MAX_LEN + 1];
 			
@@ -461,11 +462,11 @@ bool CPVP::Agree(uint32_t dwPID)
 			return false;
 		}
 
-		chA->SetQuestFlag("pvp.timed", 0);
-		chB->SetQuestFlag("pvp.timed", 0);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chA), "pvp.timed", 0);
+		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chB), "pvp.timed", 0);
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 		
-		if (chA->GetQuestFlag(szTableStaticPvP[9]) != 1 && chB->GetQuestFlag(szTableStaticPvP[9]) != 1)
+		if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[9]) != 1 && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[9]) != 1)
 		{
 			chA->SetDuel("IsFight", 1);
 			chB->SetDuel("IsFight", 1);
@@ -564,7 +565,7 @@ void RemoveStateFull(LPCHARACTER pkChr)
 			snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
 					
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkChr), CHAT_TYPE_COMMAND, buf);	
-			pkChr->SetQuestFlag(szTableStaticPvP[i], 0);
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[i], 0);
 		}
 	}
 }
@@ -669,7 +670,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
-		int mTable[] = {(pkChr->GetQuestFlag(szTableStaticPvP[0])), (pkChr->GetQuestFlag(szTableStaticPvP[1])), (pkChr->GetQuestFlag(szTableStaticPvP[2])), (pkChr->GetQuestFlag(szTableStaticPvP[3])), (pkChr->GetQuestFlag(szTableStaticPvP[4])), (pkChr->GetQuestFlag(szTableStaticPvP[5])), (pkChr->GetQuestFlag(szTableStaticPvP[6])), (pkChr->GetQuestFlag(szTableStaticPvP[7])), (pkChr->GetQuestFlag(szTableStaticPvP[8]))};
+		int mTable[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[8]))};
 		
 		CGuild * g = pkChr->GetGuild();
 
@@ -681,7 +682,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
 		int m_MaxHP = pkChr->GetMaxHP();
 		int m_MaxSP = pkChr->GetMaxSP();
-		int PVP_BLOCK_VIEW_EQUIPMENT = pkChr->GetQuestFlag(BLOCK_EQUIPMENT_);
+		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), BLOCK_EQUIPMENT_);
 		
 		uint32_t m_Race = ((pkChr)->GetRaceNum());	
 		

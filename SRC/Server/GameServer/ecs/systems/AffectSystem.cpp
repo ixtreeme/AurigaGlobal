@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 
 #include "AffectSystem.hpp"
+#include "QuestSystem.hpp"
 
 #include "../../affect.h"
 #include "../../arena.h"
@@ -1121,7 +1122,7 @@ int CHARACTER::ProcessAffect()
 	if (pkAff)
 	{
 		// IF HAIR_LIMIT_TIME() < CURRENT_TIME()
-		if ( this->GetQuestFlag("hair.limit_time") < get_global_time())
+		if ( ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(this), "hair.limit_time") < get_global_time())
 		{
 			// SET HAIR NORMAL
 			this->SetPart(PART_HAIR, 0);

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 
 #include "OrcsDungeon.h"
 
@@ -274,7 +276,7 @@ struct FCooldownCheck
         if (!ch || !ch->IsPC())
             return;
 
-        const int32_t until = ch->GetQuestFlag(qfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
         if (until > now && ok)
         {
             ok = false;
@@ -348,9 +350,9 @@ void COrcsDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!IsOrcDungeonMap(idx))
         return;
 
-    ch->SetQuestFlag(kQfDisconnect, get_global_time() + kRejoinSeconds);
-    ch->SetQuestFlag(kQfIdx, idx);
-    ch->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
 }
 
 void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
@@ -416,10 +418,10 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
             }
 #endif
 
-            const int32_t enter_time = ch->GetQuestFlag(kQfEnterTime);
-            ch->SetQuestFlag(kQfEnterTime, 0);
-            ch->SetQuestFlag(kQfCh, 0);
-            ch->SetQuestFlag(kQfCooldown, now + kCooldownSeconds);
+            const int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfEnterTime);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfEnterTime, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, now + kCooldownSeconds);
 
             int32_t elapsed = now - enter_time;
             if (elapsed < 0)
@@ -645,11 +647,11 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t now = get_global_time();
 
     // Rejoin flow
-    const int32_t rejoinUntil = ch->GetQuestFlag(kQfDisconnect);
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ch->GetQuestFlag(kQfIdx);
-        const int32_t rejoinCh = ch->GetQuestFlag(kQfCh);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
 
         if (rejoinIdx >= kPrivateMin && rejoinIdx < kPrivateMax)
         {
@@ -677,7 +679,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     // Cooldown
-    const int32_t cdUntil = ch->GetQuestFlag(kQfCooldown);
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
@@ -781,10 +783,10 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (rmAll > 0)
                 m->RemoveSpecifyItem(kRemoveAllItem, rmAll);
 
-            m->SetQuestFlag(kQfDisconnect, 0);
-            m->SetQuestFlag(kQfIdx, d->GetMapIndex());
-            m->SetQuestFlag(kQfCh, (int32_t)g_bChannel);
-            m->SetQuestFlag(kQfEnterTime, now);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfEnterTime, now);
             // cooldown is set on completion, just like original quest.
         };
 
