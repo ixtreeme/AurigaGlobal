@@ -1845,10 +1845,10 @@ struct FuncSplashDamage
 			m_pkSk->SetPointVar("atk", CalcMeleeDamage(m_pkChr, pkChrVictim, true, bIgnoreTargetRating));
 		else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 		{
-			LPITEM pkBow, pkArrow;
+			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 			if (1 == m_pkChr->GetArrowAndBow(&pkBow, &pkArrow, 1))
-				m_pkSk->SetPointVar("atk", CalcArrowDamage(m_pkChr, pkChrVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
+				m_pkSk->SetPointVar("atk", CalcArrowDamage(m_pkChr, pkChrVictim, pkBow, pkArrow, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
 		}
@@ -2675,10 +2675,10 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
-		LPITEM pkBow, pkArrow;
+		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, this, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, this, pkBow, pkArrow, true));
 		}
 		else
 		{
@@ -2983,10 +2983,10 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	const float k = 1.0 * GetSkillPower(pkSk->dwVnum, bSkillLevel) * pkSk->bMaxLevel / 100;
 	pkSk->SetPointVar("k", k);
 	pkSk->kSplashAroundDamageAdjustPoly.SetVar("k", k);
-	LPITEM pkBow, pkArrow;
+	entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 	if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1)) {
-		pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
+		pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
 	} else {
 		pkSk->SetPointVar("atk", CalcMeleeDamage(this, pkVictim, true, false));
 	}
@@ -3126,10 +3126,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 	if (pkSk->dwType == SKILL_TYPE_HORSE)
 	{
-		LPITEM pkBow, pkArrow;
+		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
 		}
 		else
 		{
@@ -3146,10 +3146,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
-		LPITEM pkBow, pkArrow;
+		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow), true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
 		}
 		else
 		{

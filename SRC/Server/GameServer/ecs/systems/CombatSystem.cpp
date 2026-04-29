@@ -2544,7 +2544,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	return false;
 }
 
-int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/* = 1 */)
+int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount/* = 1 */)
 {
 	LPITEM pkBow;
 
@@ -2574,8 +2574,8 @@ int CHARACTER::GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount/
 
 	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkArrow))));
 
-	*ppkBow = pkBow;
-	*ppkArrow = pkArrow;
+	*ppkBow = EntityFactory::CreateItemEntity(g_registry, pkBow);
+	*ppkArrow = EntityFactory::CreateItemEntity(g_registry, pkArrow);
 
 	return iArrowCount;
 }
@@ -5921,14 +5921,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 #endif
 
-void CHARACTER::UseArrow(LPITEM pkArrow, uint32_t dwArrowCount)
+void CHARACTER::UseArrow(entt::entity pkArrow, uint32_t dwArrowCount)
 {
-	int iCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkArrow));
-	uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkArrow));
+	int iCount = ItemSystem::GetItemCount(pkArrow);
+	uint32_t dwVnum = ItemSystem::GetItemVnum(pkArrow);
 #if !defined(__INFINITE_ARROW__)
 	iCount = iCount - MIN(iCount, dwArrowCount);
 #endif
-	ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, pkArrow), iCount);
+	ItemSystem::SetItemCountEcs(pkArrow, iCount);
 
 	if (iCount == 0)
 	{
@@ -5979,7 +5979,7 @@ public:
 				return;
 		}
 
-		LPITEM pkBow, pkArrow;
+		entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 		switch (m_bType)
 		{
@@ -6004,7 +6004,7 @@ public:
 						m_me->PointChange(POINT_SP, -5);
 					}
 
-				iDam = CalcArrowDamage(m_me, pkVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow));
+				iDam = CalcArrowDamage(m_me, pkVictim, pkBow, pkArrow);
 				m_me->UseArrow(pkArrow, 1);
 
 #ifdef ENABLE_ANTICHEAT
@@ -6725,13 +6725,13 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	if (!pAttacker || !pVictim)
 		return 0;
 
-	LPITEM pkBow = nullptr;
-	LPITEM pkArrow = nullptr;
+	entt::entity pkBow = entt::null;
+	entt::entity pkArrow = entt::null;
 
 	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
 		return 0;
 
-	int64_t dam = CalcArrowDamage(pAttacker, pVictim, EntityFactory::CreateItemEntity(g_registry, pkBow), EntityFactory::CreateItemEntity(g_registry, pkArrow));
+	int64_t dam = CalcArrowDamage(pAttacker, pVictim, pkBow, pkArrow);
 	if (dam <= 0)
 		return 0;
 

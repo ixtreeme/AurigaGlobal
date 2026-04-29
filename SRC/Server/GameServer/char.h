@@ -1714,14 +1714,14 @@ public:
 	void				AttractRanger();
 	void				PullMonster();
 
-	int					GetArrowAndBow(LPITEM* ppkBow, LPITEM* ppkArrow, int iArrowCount = 1);
+	int					GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount = 1);
 #ifdef ENABLE_RANKING
 
 	//void SendLeaderboardData();
 	//void SendLeaderboardNews();
 	//static void LeaderboardLoop();
 #endif
-	void				UseArrow(LPITEM pkArrow, uint32_t dwArrowCount);
+	void				UseArrow(entt::entity pkArrow, uint32_t dwArrowCount);
 #ifdef LEADERBOARD_RAZOR93
 
 	void SendLeaderboardData();
