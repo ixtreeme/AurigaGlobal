@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
@@ -44,7 +45,7 @@ bool DBManager::Connect(const char * host, const int port, const char * user, co
 		m_bIsConnect = true;
 
 	if (!m_sql_direct.Setup(host, user, pwd, db, g_stLocale.c_str(), true, port))
-		sys_err("cannot open direct sql connection to host %s", host);
+		LOG_ERROR("cannot open direct sql connection to host {}", host);
 
 	if (m_bIsConnect && !g_bAuthServer)
 	{
@@ -90,7 +91,7 @@ bool DBManager::IsConnected()
 
 void DBManager::ReturnQuery(int iType, uint32_t dwIdent, void * pvData, const char * c_pszFormat, ...)
 {
-	//sys_log(0, "ReturnQuery %s", c_pszQuery);
+	// LOG_INFO("ReturnQuery {}", c_pszQuery);
 	char szQuery[4096];
 	va_list args;
 
@@ -176,7 +177,7 @@ void DBManager::DeleteLoginData(CLoginData * pkLD)
 	if (it == m_map_pkLoginData.end())
 		return;
 
-	sys_log(0, "DeleteLoginData %s %p", pkLD->GetLogin(), pkLD);
+	LOG_INFO("DeleteLoginData {} {}", pkLD->GetLogin(), static_cast<const void*>(pkLD));
 
 	mapLDBilling.erase(pkLD->GetLogin());
 
@@ -190,7 +191,7 @@ void DBManager::SetBilling(uint32_t dwKey, bool bOn, bool bSkipPush)
 
 	if (it == m_map_pkLoginData.end())
 	{
-		sys_err("cannot find login key %u", dwKey);
+		LOG_ERROR("cannot find login key {}", dwKey);
 		return;
 	}
 
@@ -227,7 +228,7 @@ void DBManager::PushBilling(CLoginData * pkLD)
 	t.dwLoginKey = pkLD->GetKey();
 	t.bBillType = pkLD->GetBillType();
 
-	sys_log(0, "BILLING: PUSH %s %u type %u", pkLD->GetLogin(), t.dwUseSec, t.bBillType);
+	LOG_INFO("BILLING: PUSH {} {} type {}", pkLD->GetLogin(), t.dwUseSec, t.bBillType);
 
 	if (t.bBillType == BILLING_IP_FREE || t.bBillType == BILLING_IP_TIME || t.bBillType == BILLING_IP_DAY)
 		snprintf(t.szLogin, sizeof(t.szLogin), "%u", pkLD->GetBillID());
@@ -348,7 +349,7 @@ void DBManager::FlushBilling(bool bForce)
 		else
 			m_vec_kUseTime.clear();
 
-		sys_log(0, "FLUSH_USE_TIME: count %u", dwCount);
+		LOG_INFO("FLUSH_USE_TIME: count {}", dwCount);
 	}
 
 	if (m_vec_kUseTime.size() < 10240)
@@ -387,8 +388,7 @@ void DBManager::FlushBilling(bool bForce)
 
 						if (dwSecsConnected >= 60) // 60 second cycle
 						{
-							sys_log(0, "BILLING 1 %s remain %d connected secs %u",
-									pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
+							LOG_INFO("BILLING 1 {} remain {} connected secs {}", pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
 							PushBilling(pkLD);
 						}
 					}
@@ -398,8 +398,7 @@ void DBManager::FlushBilling(bool bForce)
 
 						if (dwSecsConnected > (uint32_t) (pkLD->GetRemainSecs() - 600) || dwSecsConnected >= 600)
 						{
-							sys_log(0, "BILLING 2 %s remain %d connected secs %u",
-									pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
+							LOG_INFO("BILLING 2 {} remain {} connected secs {}", pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
 							PushBilling(pkLD);
 						}
 					}
@@ -415,7 +414,7 @@ void DBManager::CheckBilling()
 	std::vector<uint32_t> vec;
 	vec.push_back(0); // ī��Ʈ�� ���� �̸� ����д�.
 
-	//sys_log(0, "CheckBilling: map size %d", m_map_pkLoginData.size());
+	// LOG_INFO("CheckBilling: map size {}", m_map_pkLoginData.size());
 
 	auto it = m_map_pkLoginData.begin();
 
@@ -425,7 +424,7 @@ void DBManager::CheckBilling()
 
 		if (pkLD->IsBilling())
 		{
-			sys_log(0, "BILLING: CHECK %u", pkLD->GetKey());
+			LOG_INFO("BILLING: CHECK {}", pkLD->GetKey());
 			vec.push_back(pkLD->GetKey());
 		}
 	}
@@ -480,7 +479,7 @@ void DBManager::SendAuthLogin(LPDESC d)
 	memcpy(&ptod.adwClientKey, pkLD->GetClientKey(), sizeof(uint32_t) * 4);
 
 	db_clientdesc->DBPacket(HEADER_GD_AUTH_LOGIN, d->GetHandle(), &ptod, sizeof(TPacketGDAuthLogin));
-	sys_log(0, "SendAuthLogin %s key %u", ptod.szLogin, ptod.dwID);
+	LOG_INFO("SendAuthLogin {} key {}", ptod.szLogin, ptod.dwID);
 
 	SendLoginPing(r.login);
 }
@@ -570,7 +569,7 @@ bool GetGameTime(MYSQL_RES * pRes, uint8_t & bBillType, int & seconds)
 		return true;
 
 	MYSQL_ROW row = mysql_fetch_row(pRes);
-	sys_log(1, "GetGameTime %p %p %p", row[0], row[1], row[2]);
+	LOG_INFO("GetGameTime {} {} {}", static_cast<const void*>(row[0]), static_cast<const void*>(row[1]), static_cast<const void*>(row[2]));
 
 	int type = 0;
 	str_to_number(type, row[0]);
@@ -605,7 +604,7 @@ void SendBillingExpire(const char * c_pszLogin, uint8_t bBillType, int iSecs, CL
 	ptod.bBillType = bBillType;
 	ptod.dwRemainSeconds = MAX(0, iSecs);
 	db_clientdesc->DBPacket(HEADER_GD_BILLING_EXPIRE, 0, &ptod, sizeof(TPacketBillingExpire));
-	sys_log(0, "BILLING: EXPIRE %s type %d sec %d ptr %p", c_pszLogin, bBillType, iSecs, pkLD);
+	LOG_INFO("BILLING: EXPIRE {} type {} sec {} ptr {}", c_pszLogin, bBillType, iSecs, static_cast<const void*>(pkLD));
 }
 
 void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
@@ -627,12 +626,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				//��ġ ���� - By SeMinZ
 				d->SetLogin(pinfo->login);
 
-				sys_log(0, "QID_AUTH_LOGIN: START %u %p", qi->dwIdent, get_pointer(d));
+				LOG_INFO("QID_AUTH_LOGIN: START {} {}", qi->dwIdent, static_cast<const void*>(get_pointer(d)));
 
 				if (pMsg->Get()->uiNumRows == 0)
 				{
 					{
-						sys_log(0, "   NOID");
+						LOG_INFO("   NOID");
 						LoginFailure(d, "NOID");
 						M2_DELETE(pinfo);
 					}
@@ -654,7 +653,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!row[col])
 					{
-						sys_err("error column %d", col);
+						LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 					   	break;
 					}
@@ -663,7 +662,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!row[col])
 					{
-					   	sys_err("error column %d", col);
+					   	LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 					   	break;
 				   	}
@@ -672,7 +671,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!row[col])
 				   	{
-						sys_err("error column %d", col);
+						LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 						break;
 				   	}
@@ -681,7 +680,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!row[col])
 				   	{
-					   	sys_err("error column %d", col);
+					   	LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 					   	break;
 				   	}
@@ -690,7 +689,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!row[col])
 					{
-					   	sys_err("error column %d", col);
+					   	LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 						break;
 				   	}
@@ -698,7 +697,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 #ifdef ENABLE_MULTI_LANGUAGE
 					if (!row[col])
 					{
-					   	sys_err("error column %d", col);
+					   	LOG_ERROR("error column {}", col);
 						M2_DELETE(pinfo);
 						break;
 				   	}
@@ -734,8 +733,8 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							tm1 = localtime(&create_time);
 							strftime(szCreateDate, 255, "%Y%m%d", tm1);
 
-							sys_log(0, "Create_Time %d %s", retValue, szCreateDate);
-							sys_log(0, "Block Time %d ", strncmp(szCreateDate, g_stBlockDate.c_str(), 8));
+							LOG_INFO("Create_Time {} {}", retValue, szCreateDate);
+							LOG_INFO("Block Time {} ", strncmp(szCreateDate, g_stBlockDate.c_str(), 8));
 						}
 					}
 
@@ -750,37 +749,37 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					if (nPasswordDiff)
 					{
 						LoginFailure(d, "WRONGPWD");
-						sys_log(0, "   WRONGPWD");
+						LOG_INFO("   WRONGPWD");
 						M2_DELETE(pinfo);
 					}
 					else if (bNotAvail)
 					{
 						LoginFailure(d, "NOTAVAIL");
-						sys_log(0, "   NOTAVAIL");
+						LOG_INFO("   NOTAVAIL");
 						M2_DELETE(pinfo);
 					}
 					else if (DESC_MANAGER::instance().FindByLoginName(pinfo->login))
 					{
 						LoginFailure(d, "ALREADY");
-						sys_log(0, "   ALREADY");
+						LOG_INFO("   ALREADY");
 						M2_DELETE(pinfo);
 					}
 					else if(!CShutdownManager::Instance().CheckCorrectSocialID(szSocialID) && !test_server)
 					{
 						LoginFailure(d, "BADSCLID");
-						sys_log(0, "   BADSCLID");
+						LOG_INFO("   BADSCLID");
 						M2_DELETE(pinfo);
 					}
 					else if(CShutdownManager::Instance().CheckShutdownAge(szSocialID) && CShutdownManager::Instance().CheckShutdownTime())
 					{
 						LoginFailure(d, "AGELIMIT");
-						sys_log(0, "   AGELIMIT");
+						LOG_INFO("   AGELIMIT");
 						M2_DELETE(pinfo);
 					}
 					else if (strcmp(szStatus, "OK"))
 					{
 						LoginFailure(d, szStatus);
-						sys_log(0, "   STATUS: %s", szStatus);
+						LOG_INFO("   STATUS: {}", szStatus);
 						M2_DELETE(pinfo);
 					}
 					else
@@ -788,7 +787,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						if (strncmp(szCreateDate, g_stBlockDate.c_str(), 8) >= 0)
 						{
 							LoginFailure(d, "BLKLOGIN");
-							sys_log(0, "   BLKLOGIN");
+							LOG_INFO("   BLKLOGIN");
 							M2_DELETE(pinfo);
 							break;
 						}
@@ -838,7 +837,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							break;
 						}
 
-						sys_log(0, "QID_AUTH_LOGIN: SUCCESS %s", pinfo->login);
+						LOG_INFO("QID_AUTH_LOGIN: SUCCESS {}", pinfo->login);
 					}
 				}
 			}
@@ -849,7 +848,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				TPacketCGLogin3 * pinfo = (TPacketCGLogin3 *) qi->pvData;
 				LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
 
-				sys_log(0, "QID_BILLING_GET_TIME: START ident %u d %p", qi->dwIdent, get_pointer(d));
+				LOG_INFO("QID_BILLING_GET_TIME: START ident {} d {}", qi->dwIdent, static_cast<const void*>(get_pointer(d)));
 
 				if (d)
 				{
@@ -867,18 +866,18 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (!GetGameTime(pMsg->Get()->pSQLResult, bBillType, seconds))
 						{
-							sys_log(0, "QID_BILLING_GET_TIME: BLOCK");
+							LOG_INFO("QID_BILLING_GET_TIME: BLOCK");
 							LoginFailure(d, "BLOCK");
 						}
 						else if (bBillType == BILLING_NONE)
 						{
 							LoginFailure(d, "NOBILL");
-							sys_log(0, "QID_BILLING_GET_TIME: NO TIME");
+							LOG_INFO("QID_BILLING_GET_TIME: NO TIME");
 						}
 						else
 						{
 							LoginPrepare(bBillType, 0, seconds, d, pinfo->adwClientKey);
-							sys_log(0, "QID_BILLING_GET_TIME: SUCCESS");
+							LOG_INFO("QID_BILLING_GET_TIME: SUCCESS");
 						}
 					}
 				}
@@ -1018,7 +1017,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					if (row[0] && row[1])
 					{
 						m_map_dbstring.insert(make_pair(std::string(row[0]), std::string(row[1])));
-						sys_log(0, "DBSTR '%s' '%s'", row[0], row[1]);
+						LOG_INFO("DBSTR '{}' '{}'", row[0], row[1]);
 					}
 				}
 				if (m_map_dbstring.find("GREET") != m_map_dbstring.end())
@@ -1043,7 +1042,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						sys_log(0, "GIVE LOTTO FAIL TO pid %u", ((ch)->GetPlayerID()));
+						LOG_INFO("GIVE LOTTO FAIL TO pid {}", ((ch)->GetPlayerID()));
 					}
 					else
 					{
@@ -1051,12 +1050,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (pkItem)
 						{
-							sys_log(0, "GIVE LOTTO SUCCESS TO %s (pid %u)", ((ch)->GetName()), qi->dwIdent);
+							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ((ch)->GetName()), qi->dwIdent);
 							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0, pMsg->Get()->uiInsertID);
 							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, pdw[2]);
 						}
 						else
-							sys_log(0, "GIVE LOTTO FAIL2 TO pid %u", ((ch)->GetPlayerID()));
+							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", ((ch)->GetPlayerID()));
 					}
 				}
 
@@ -1137,7 +1136,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						const char* c_szUpdateTime = row[12];
 
 						if (test_server)
-							sys_log(0, "%s:%s", c_szName, c_szUpdateTime);
+							LOG_INFO("{}:{}", c_szName, c_szUpdateTime);
 
 						if (PCBANG_IP_TABLE_NAME == c_szName)
 						{
@@ -1147,12 +1146,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							if (s_stLastTime != c_szUpdateTime)
 							{
 								s_stLastTime = c_szUpdateTime;
-								sys_log(0, "'%s' mysql table is UPDATED(%s)", PCBANG_IP_TABLE_NAME.c_str(), c_szUpdateTime);
+								LOG_INFO("'{}' mysql table is UPDATED({})", PCBANG_IP_TABLE_NAME.c_str(), c_szUpdateTime);
 								ReturnQuery(QID_PCBANG_IP_LIST_SELECT, 0, nullptr, "SELECT pcbang_id, ip FROM %s;", PCBANG_IP_TABLE_NAME.c_str());
 							}
 							else
 							{
-								sys_log(0, "'%s' mysql table is NOT updated(%s)", PCBANG_IP_TABLE_NAME.c_str(), c_szUpdateTime);
+								LOG_INFO("'{}' mysql table is NOT updated({})", PCBANG_IP_TABLE_NAME.c_str(), c_szUpdateTime);
 							}
 							break;
 						}
@@ -1160,12 +1159,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 					if (!isFinded)
 					{
-						sys_err(0, "'%s' mysql table CANNOT FIND", PCBANG_IP_TABLE_NAME.c_str());
+						LOG_ERROR("'{}' mysql table CANNOT FIND", PCBANG_IP_TABLE_NAME.c_str());
 					}
 				}
 				else if (test_server)
 				{
-					sys_err(0, "'%s' mysql table is NOT EXIST", PCBANG_IP_TABLE_NAME.c_str());
+					LOG_ERROR("'{}' mysql table is NOT EXIST", PCBANG_IP_TABLE_NAME.c_str());
 				}
 			}
 			break;
@@ -1183,7 +1182,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				}
 				else if (test_server)
 				{
-					sys_log(0, "PCBANG_IP_LIST is EMPTY");
+					LOG_INFO("PCBANG_IP_LIST is EMPTY");
 				}
 			}
 			break;
@@ -1191,7 +1190,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 			// END_OF_PCBANG_IP_LIST
 		default:
-			sys_err("FATAL ERROR!!! Unhandled return query id %d", qi->iType);
+			LOG_ERROR("FATAL ERROR!!! Unhandled return query id {}", qi->iType);
 			break;
 	}
 
@@ -1248,7 +1247,7 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 
 	ITEM_MANAGER::instance().RemoveItem(item);
 
-	sys_log(0, "VCARD_TAKE: %u %s -> %s", p.dwID, CardOwner->GetName(), CardTaker->GetName());
+	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, CardOwner->GetName(), CardTaker->GetName());
 }
 
 void DBManager::StopAllBilling()
