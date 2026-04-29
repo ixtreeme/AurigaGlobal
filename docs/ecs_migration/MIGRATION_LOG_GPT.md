@@ -8431,6 +8431,70 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-51 — ECS Systems Remaining LPITEM Signature Cleanup
+
+Mode:
+- ECS-system LPITEM parameter signature cleanup.
+- Build gate after each logical subsystem batch.
+- No `ItemSystem_LegacyBridge.cpp` internals rewritten.
+- No core `item.h` / `item_manager` deletion attempted.
+
+Completed batches:
+- PART A Combat arrow/bow signatures:
+  - `CHARACTER::GetArrowAndBow` now returns bow/arrow as `entt::entity` out parameters.
+  - `CHARACTER::UseArrow` now consumes an `entt::entity` arrow.
+  - Skill/combat callers now pass entities into `CalcArrowDamage` and `UseArrow`.
+  - Commit: `06dfeba Phase 15E-51 PART A: CombatSystem arrow bow signatures`
+- PART B Inventory quickslot signature:
+  - `CHARACTER::ChainQuickslotItem` now takes `entt::entity`.
+  - Existing legacy quickslot behavior preserved through internal bridge reads where needed.
+  - `EquipmentSlots` component storage still uses legacy item pointers and is deferred to a storage-specific phase.
+  - Commit: `918f701 Phase 15E-51 PART B: InventorySystem quickslot signature`
+- PART C PlayerRuntime item signatures:
+  - `SetQuestItemPtr`, `CanTakeInventoryItem`, and `CleanAcceAttr` now take `entt::entity`.
+  - Offlineshop, quest manager, and acce call sites updated atomically.
+  - Internal legacy resolution remains for quest current item pointer, DS/extra inventory placement helpers, and legacy item logging.
+  - Commit: `d5d1c46 Phase 15E-51 PART C: PlayerRuntimeSystem item signatures`
+- PART D ECS helper signatures:
+  - `SkillSystem` internal `SetPolyVarForAttack` / `FuncSplashDamage` weapon parameters now use `entt::entity`.
+  - `MountSummon` / `MountUnsummon` now take `entt::entity`.
+  - `CheckMount` now creates a local mount entity before ECS item reads.
+  - Commit: `03e2155 Phase 15E-51 PART D: ECS system helper signatures`
+
+Counts:
+```text
+Scoped LPITEM parameter count before 15E-51: 73
+Scoped LPITEM parameter count after 15E-51:  63
+Reduction: 10
+```
+
+ECS systems residual LPITEM usage:
+- `CombatSystem.cpp`: local `for (LPITEM srcItem : s_vec_item)` loops remain in legacy drop/vector cleanup code.
+- `InventorySystem.cpp`: private bridge helper `ItemEntityOf(LPITEM)` and local `LPITEM item = LegacyItemOf(e)` remain.
+- `ItemSystem.cpp` and `ItemSystem_LegacyBridge.cpp` remain intentional bridge/internal islands.
+- No remaining public ECS-system item signatures were found outside bridge/internal boundaries.
+
+Build results:
+- Build passed after Combat, Inventory, PlayerRuntime, and Skill/Mount helper batches.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Bow normal attack consumes arrows correctly.
+- Arrow skills consume arrows correctly and calculate damage.
+- Quest current item selection still works.
+- Offlineshop item return `CanTakeInventoryItem` path still finds a valid slot.
+- Acce clean attr consumes cleaner item and clears target attributes.
+- Mount summon/unsummon works from costume mount equip/unequip.
+- Skill weapon damage variables still calculate correctly.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- Code batches committed individually.
+- WinTest not run in this environment.
+
 ## Phase 15E-50 — DragonSoul LPITEM Signature Migration
 
 Mode:
