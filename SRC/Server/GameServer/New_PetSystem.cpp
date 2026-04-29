@@ -39,6 +39,9 @@ bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 
 LPITEM LegacyItemFromEntity(entt::entity item)
 {
+	if (item == entt::null)
+		return nullptr;
+
 	const uint32_t id = ItemSystem::GetItemID(item);
 	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
 }
@@ -383,8 +386,9 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetActor::IncreasePetSkillByBook(LPITEM bookItem) 
+bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity) 
 {
+	LPITEM bookItem = LegacyItemFromEntity(bookItemEntity);
 	if (!bookItem)
 		return false;
 	
@@ -531,7 +535,7 @@ bool CNewPetActor::IncreasePetEvolution()
 				LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 				if (pSummonItem != nullptr){
 					Unsummon();
-					Summon("Noname", pSummonItem, false);
+					Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 				}
 			}
 			
@@ -856,7 +860,7 @@ void CNewPetActor::Unsummon()
 			ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 		}
 
-		this->SetSummonItem(nullptr);
+		this->SetSummonItem(entt::null);
 
 		if (nullptr != m_pkOwner)
 			m_pkOwner->ComputePoints();
@@ -886,8 +890,11 @@ void CNewPetActor::Unsummon()
 	}
 }
 
-uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpawnFar)
+uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
 {
+	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
+	if (!pSummonItem)
+		return 0;
 	int32_t x = m_pkOwner->GetX();
 	int32_t y = m_pkOwner->GetY();
 	int32_t z = m_pkOwner->GetZ();
@@ -1048,7 +1055,7 @@ uint32_t CNewPetActor::Summon(const char* petName, LPITEM pSummonItem, bool bSpa
 //#endif
 	
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
-	this->SetSummonItem(pSummonItem);
+	this->SetSummonItem(pSummonItemEntity);
 	
 	//this->SetNextExp(m_pkChar->PetGetNextExp());
 	m_pkOwner->ComputePoints();
@@ -1300,8 +1307,9 @@ bool CNewPetActor::Follow(float fMinDistance)
 	return true;
 }
 
-void CNewPetActor::SetSummonItem (LPITEM pItem)
+void CNewPetActor::SetSummonItem (entt::entity pItemEntity)
 {
+	LPITEM pItem = LegacyItemFromEntity(pItemEntity);
 	if (nullptr == pItem)
 	{
 		m_dwSummonItemVID = 0;
@@ -1520,7 +1528,7 @@ bool CNewPetSystem::IncreasePetSkill(int skill)
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetSystem::IncreasePetSkillByBook(LPITEM bookItem) 
+bool CNewPetSystem::IncreasePetSkillByBook(entt::entity bookItem) 
 {
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
 	{
@@ -1926,7 +1934,7 @@ void CNewPetSystem::DoPetSkill(int skillslot) {
 
 
 
-CNewPetActor* CNewPetSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, const char* petName, bool bSpawnFar, uint32_t options)
+CNewPetActor* CNewPetSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, const char* petName, bool bSpawnFar, uint32_t options)
 {
 	CNewPetActor* petActor = this->GetByVnum(mobVnum);
 
@@ -2023,7 +2031,7 @@ void CNewPetActor::UpdatePetSkin() {
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
-		Summon("Noname", pSummonItem, false);
+		Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 	}
 }
 
@@ -2064,7 +2072,7 @@ void CNewPetActor::ChangeName(const char * name) {
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
-		Summon("Noname", pSummonItem, false);
+		Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 	}
 }
 

@@ -6267,7 +6267,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 
 		if (GetNewPetSystem()->IsActivePet()) {
-			GetNewPetSystem()->IncreasePetSkillByBook(item);
+			GetNewPetSystem()->IncreasePetSkillByBook(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -15652,7 +15652,7 @@ void CHARACTER::AutoRecallProcess()
 					CNewPetSystem* petSystem = GetNewPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CNewPetActor* pPet = petSystem->Summon(pItem->GetValue(0), pItem, "", false);
+							CNewPetActor* pPet = petSystem->Summon(pItem->GetValue(0), EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}

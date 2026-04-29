@@ -11,6 +11,8 @@
 #include "db.h"
 
 #include "New_PetSystem.h"
+#include "ecs/EntityFactory.hpp"
+#include "ecs/Registry.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -67,7 +69,7 @@ namespace quest
 		// 소환하면 멀리서부터 달려오는지 여부
 		bool bFromFar = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
 
-		CNewPetActor* pet = petSystem->Summon(mobVnum, pItem, petName, bFromFar);
+		CNewPetActor* pet = petSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pItem), petName, bFromFar);
 
 		if (pet != nullptr)
 			lua_pushnumber(L, pet->GetVID());

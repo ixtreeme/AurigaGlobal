@@ -1,6 +1,7 @@
 #ifndef	__HEADER_NEWPET_SYSTEM__
 #define	__HEADER_NEWPET_SYSTEM__
 
+#include <entt/entt.hpp>
 
 class CHARACTER;
 
@@ -57,11 +58,11 @@ public:
 	bool			Mount();
 	void			Unmount();
 
-	uint32_t			Summon(const char* petName, LPITEM pSummonItem, bool bSpawnFar = false);
+	uint32_t			Summon(const char* petName, entt::entity pSummonItem, bool bSpawnFar = false);
 	void			Unsummon();
 
 	bool			IsSummoned() const			{ return nullptr != m_pkChar; }
-	void			SetSummonItem (LPITEM pItem);
+	void			SetSummonItem (entt::entity pItem);
 	uint32_t			GetSummonItemVID () { return m_dwSummonItemVID; }
 	uint32_t			GetSummonItemID () { return m_dwSummonItemID; }
 	uint32_t			GetEvolution() { return m_dwevolution; }
@@ -84,7 +85,7 @@ public:
 	int				ResetSkills();
 	int				ResetSkill(int iType);
 	bool			IncreasePetSkill(int iSlot, int iType);
-	bool			IncreasePetSkillByBook(LPITEM bookItem);
+	bool			IncreasePetSkillByBook(entt::entity bookItem);
 #else
 	bool			IncreasePetSkill(int skill);
 #endif
@@ -170,7 +171,7 @@ public:
 public:
 	void		SetUpdatePeriod(uint32_t ms);
 
-	CNewPetActor*	Summon(uint32_t mobVnum, LPITEM pSummonItem, const char* petName, bool bSpawnFar, uint32_t options = CNewPetActor::EPetOption_Followable | CNewPetActor::EPetOption_Summonable);
+	CNewPetActor*	Summon(uint32_t mobVnum, entt::entity pSummonItem, const char* petName, bool bSpawnFar, uint32_t options = CNewPetActor::EPetOption_Followable | CNewPetActor::EPetOption_Summonable);
 
 	void		Unsummon(uint32_t mobVnum, bool bDeleteFromList = false);
 	void		Unsummon(CNewPetActor* petActor, bool bDeleteFromList = false);
@@ -184,7 +185,7 @@ public:
 	int			ResetSkills();
 	int			ResetSkill(int iType);
 	bool		IncreasePetSkill(int iSlot, int iType);
-	bool		IncreasePetSkillByBook(LPITEM bookItem);
+	bool		IncreasePetSkillByBook(entt::entity bookItem);
 #else
 	bool		IncreasePetSkill(int skill);
 #endif
