@@ -29,6 +29,23 @@ struct fmt::formatter<T, Char, std::enable_if_t<std::is_enum_v<T>>>
     }
 };
 
+template <typename T, typename Char>
+struct fmt::formatter<
+    T*,
+    Char,
+    std::enable_if_t<
+        !std::is_void_v<T> &&
+        !std::is_same_v<std::remove_cv_t<T>, char> &&
+        !std::is_same_v<std::remove_cv_t<T>, wchar_t>>>
+    : fmt::formatter<const void*, Char>
+{
+    template <typename FormatContext>
+    auto format(T* value, FormatContext& ctx) const
+    {
+        return fmt::formatter<const void*, Char>::format(static_cast<const void*>(value), ctx);
+    }
+};
+
 #ifdef LOG_TRACE
 #undef LOG_TRACE
 #endif
