@@ -3005,7 +3005,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		if (mountSystem)
 		{
 			uint32_t mountVnum = item->GetValue(1);
-			mountSystem->Mount(mountVnum, item);
+			mountSystem->Mount(mountVnum, EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 #endif

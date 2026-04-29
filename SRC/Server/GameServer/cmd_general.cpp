@@ -3589,7 +3589,7 @@ ACMD(do_ride)
 		{
 			if(mountSystem->CountSummoned() == 1)
 			{
-				mountSystem->Mount(mobVnum, mount);
+				mountSystem->Mount(mobVnum, EntityFactory::CreateItemEntity(g_registry, mount));
 			}
 		}
 		
@@ -4255,4 +4255,3 @@ ACMD(do_gr_levelup)
 }
 
 #endif // ENABLE_GUILD_RENEWAL_BY_RAZOR93
-

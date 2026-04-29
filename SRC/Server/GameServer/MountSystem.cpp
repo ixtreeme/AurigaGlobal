@@ -36,6 +36,9 @@ bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 
 LPITEM LegacyItemFromEntity(entt::entity item)
 {
+	if (item == entt::null)
+		return nullptr;
+
 	const uint32_t id = ItemSystem::GetItemID(item);
 	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
 }
@@ -127,7 +130,7 @@ void CMountActor::SetName()
 #ifdef ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93
 
 
-bool CMountActor::Mount(LPITEM mountItem)
+bool CMountActor::Mount(entt::entity mountItemEntity)
 {
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 	if (!ch->IsNextMountPulse()) {
@@ -139,6 +142,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 	if (nullptr == m_pkOwner)
 		return false;
 
+	LPITEM mountItem = LegacyItemFromEntity(mountItemEntity);
 	if (!mountItem)
 		return false;
 
@@ -224,7 +228,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 #endif
 }
 #else
-bool CMountActor::Mount(LPITEM mountItem)
+bool CMountActor::Mount(entt::entity mountItemEntity)
 {
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
@@ -236,6 +240,7 @@ bool CMountActor::Mount(LPITEM mountItem)
 	if (nullptr == m_pkOwner)
 		return false;
 	
+	LPITEM mountItem = LegacyItemFromEntity(mountItemEntity);
 	if(!mountItem)
 		return false;
 
@@ -340,7 +345,7 @@ void CMountActor::Unsummon()
 {
 	if (true == this->IsSummoned())
 	{
-		this->SetSummonItem(nullptr);
+		this->SetSummonItem(entt::null);
 		
 		if (nullptr != m_pkChar)
 		{
@@ -365,7 +370,7 @@ void CMountActor::Unsummon()
 
 }
 
-uint32_t CMountActor::Summon(LPITEM pSummonItem, bool bSpawnFar)
+uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 {
 	int32_t x = m_pkOwner->GetX();
 	int32_t y = m_pkOwner->GetY();
@@ -525,8 +530,9 @@ bool CMountActor::Follow(float fMinDistance)
 	return true;
 }
 
-void CMountActor::SetSummonItem(LPITEM pItem)
+void CMountActor::SetSummonItem(entt::entity pItemEntity)
 {
+	LPITEM pItem = LegacyItemFromEntity(pItemEntity);
 	if (nullptr == pItem)
 	{
 		m_dwSummonItemVID = 0;
@@ -685,7 +691,7 @@ void CMountSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
 }
 
 
-void CMountSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar)
+void CMountSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, bool bSpawnFar)
 {
 	CMountActor* mountActor = this->GetByVnum(mobVnum);
 
@@ -699,7 +705,7 @@ void CMountSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar)
 	uint32_t mountVID = mountActor->Summon(pSummonItem, bSpawnFar);
 
 	if (!mountVID)
-		sys_err("[CMountSystem::Summon(%d)] Null Pointer (mountVID)", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
+		sys_err("[CMountSystem::Summon(%d)] Null Pointer (mountVID)", ItemSystem::GetItemID(pSummonItem));
 
 	if (nullptr == m_pkMountSystemUpdateEvent)
 	{
@@ -710,14 +716,14 @@ void CMountSystem::Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar)
 		m_pkMountSystemUpdateEvent = event_create(mountsystem_update_event, info, PASSES_PER_SEC(1) / 4);
 	}
 
-	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2) == 1) {
+	if (ItemSystem::GetItemSocket(pSummonItem, 2) == 1) {
 		Mount(mobVnum, pSummonItem);
 	}
 
 	//return mountActor;
 }
 
-void CMountSystem::Mount(uint32_t mobVnum, LPITEM mountItem)
+void CMountSystem::Mount(uint32_t mobVnum, entt::entity mountItem)
 {
 	CMountActor* mountActor = this->GetByVnum(mobVnum);
 
@@ -727,12 +733,12 @@ void CMountSystem::Mount(uint32_t mobVnum, LPITEM mountItem)
 		return;
 	}
 	
-	if(!mountItem)
+	if(mountItem == entt::null)
 		return;
 
 	this->Unsummon(mobVnum, false);
 	mountActor->Mount(mountItem);
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 2, 1);
+	ItemSystem::SetItemSocket(mountItem, 2, 1);
 }
 
 void CMountSystem::Unmount(uint32_t mobVnum)
@@ -750,7 +756,7 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 	if(LPITEM pSummonItem = m_pkOwner->GetWear(WEAR_COSTUME_MOUNT))
 	{
 		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, 0);
-		this->Summon(mobVnum, pSummonItem, false);
+		this->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 	}
 }
 
@@ -814,7 +820,7 @@ void CMountActor::UpdateMountSkin() {
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
-		Summon(pSummonItem, false);
+		Summon(EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 	}
 }
 
@@ -829,5 +835,3 @@ void CMountSystem::UpdateMountSkin() {
 	}
 }
 #endif
-
-

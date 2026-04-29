@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <entt/entt.hpp>
 
 class CHARACTER;
 
@@ -28,12 +29,12 @@ public:
 	uint32_t			GetVID() const							{ return m_dwVID; }
 	uint32_t			GetVnum() const							{ return m_dwVnum; }
 	void			SetName();
-	bool			Mount(LPITEM mountItem);
+	bool			Mount(entt::entity mountItem);
 	void			Unmount();
-	uint32_t			Summon(LPITEM pSummonItem, bool bSpawnFar = false);
+	uint32_t			Summon(entt::entity pSummonItem, bool bSpawnFar = false);
 	void			Unsummon();
 	bool			IsSummoned() const			{ return nullptr != m_pkChar; }
-	void			SetSummonItem (LPITEM pItem);
+	void			SetSummonItem (entt::entity pItem);
 	uint32_t			GetSummonItemVID () { return m_dwSummonItemVID; }
 #ifdef ENABLE_COSTUME_MOUNT
 	void	UpdateMountSkin();
@@ -74,12 +75,12 @@ public:
 public:
 	void		SetUpdatePeriod(uint32_t ms);
 
-	void		Summon(uint32_t mobVnum, LPITEM pSummonItem, bool bSpawnFar);
+	void		Summon(uint32_t mobVnum, entt::entity pSummonItem, bool bSpawnFar);
 
 	void		Unsummon(uint32_t mobVnum, bool bDeleteFromList = false);
 	void		Unsummon(CMountActor* mountActor, bool bDeleteFromList = false);
 	
-	void		Mount(uint32_t mobVnum, LPITEM mountItem);
+	void		Mount(uint32_t mobVnum, entt::entity mountItem);
 	void		Unmount(uint32_t mobVnum);
 
 	void		DeleteMount(uint32_t mobVnum);

@@ -831,7 +831,7 @@ void CHARACTER::MountSummon(LPITEM mountItem)
 	if (GetHorse())
 		HorseSummon(false);
 
-	mountSystem->Summon(mobVnum, mountItem, false);
+	mountSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, mountItem), false);
 }
 
 void CHARACTER::MountUnsummon(LPITEM mountItem)
@@ -893,7 +893,7 @@ void CHARACTER::CheckMount()
 
 	if (mountSystem->CountSummoned() == 0)
 	{
-		mountSystem->Summon(mobVnum, mountItem, false);
+		mountSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, mountItem), false);
 	}
 }
 
@@ -947,7 +947,7 @@ void CHARACTER::UpdateMountSkin() {
 #endif
 
 		m_mountSystem->Unmount(mobVnum);
-		m_mountSystem->Mount(mobVnum, item);
+		m_mountSystem->Mount(mobVnum, EntityFactory::CreateItemEntity(g_registry, item));
 	}
 }
 
