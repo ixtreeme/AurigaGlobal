@@ -8431,6 +8431,83 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-52 - PointSystem::Change Replaces CHARACTER::PointChange
+
+Mode:
+- Entity-first public point mutation routing.
+- Internal `CHARACTER::PointChange` semantics preserved unchanged.
+- No `points[]` storage migration attempted.
+
+Completed batches:
+- Added `ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, ...)`.
+  - Implementation resolves the legacy character through the ECS bridge and delegates to existing `CHARACTER::PointChange`.
+  - Commit: `9997cf3 Phase 15E-52.1: Add PointSystem Change entity API`
+- Migrated quest and command paths.
+  - `questlua_pc.cpp`, `cmd_general.cpp`, and `cmd_gm.cpp`.
+  - Commit: `46b6710 Phase 15E-52: Migrate PointChange in questlua and commands`
+- Migrated combat path.
+  - `CombatSystem.cpp`.
+  - Commit: `5fca36f Phase 15E-52: Migrate PointChange in CombatSystem`
+- Migrated party/guild/arena/offlineshop paths.
+  - `party.cpp`, `guild.cpp`, `arena.cpp`, and `new_offlineshop_manager.cpp`.
+  - Commit: `5efc839 Phase 15E-52: Migrate PointChange in party guild arena shop`
+- Migrated input and command paths.
+  - `input_login.cpp`, `input_main.cpp`, and `cmd_general2.cpp`.
+  - Commit: `7773140 Phase 15E-52: Migrate PointChange in input and command paths`
+- Migrated DragonSoul and mount point mutation paths.
+  - `DragonSoul.cpp` refine fees and `MountSystem.cpp` stat refresh.
+  - Commit: `469936a Phase 15E-52: Migrate PointChange in DragonSoul and mount`
+- Migrated ECS stat/movement/gaya point mutation paths.
+  - `MovementSystem.cpp`, `GayaSystem.cpp`, and `StatSystem.cpp`.
+  - Commit: `37a3c48 Phase 15E-52: Migrate PointChange in ECS stat movement gaya`
+- Migrated remaining small gameplay paths.
+  - `ItemUse.cpp`, `New_PetSystem.cpp`, `VikingDungeon.cpp`, `cuberenewal.cpp`, `exchange.cpp`, `guild_renewal.cpp`, `pvp.cpp`, `questlua_npc.cpp`, `questlua_party.cpp`, `questpc.cpp`, `shop.cpp`, `shopEx.cpp`, `shop_manager.cpp`, and `wheel_of_destiny.cpp`.
+  - Commit: `cbf1043 Phase 15E-52: Migrate PointChange in remaining small gameplay paths`
+- Migrated SkillSystem and item bridge caller-side paths.
+  - `SkillSystem.cpp` skill absorb/victim point effects.
+  - `ItemSystem_LegacyBridge.cpp` party gold distribution and mount stat refresh.
+  - Commit: `c9ad952 Phase 15E-52: Migrate PointChange in skill and item bridge paths`
+
+Counts:
+```text
+Caller-side ->PointChange count at 15E-52 audit: 204
+Caller-side ->PointChange count after 15E-52:    0
+Tree-wide ->PointChange count after 15E-52:      1
+Remaining tree-wide ->PointChange location:      PointSystem.cpp bridge
+```
+
+Declaration status:
+- `CHARACTER::PointChange` declaration was retained.
+- Reason: `PointSystem::Change` intentionally delegates to existing `CHARACTER::PointChange` to preserve POINT_* semantic routing, and many legacy member method bodies still call `PointChange(...)` internally without `->`.
+- Removing or privatizing the declaration needs a dedicated private/friend bridge phase, not a caller-side migration pass.
+
+Rollback note:
+- One broad automated migration attempt was rolled back before commit because include ordering in ECS files caused a high-error build failure.
+- The final implementation used small batches with `stdafx.h` kept first in every ECS `.cpp`.
+
+Build results:
+- Build passed after every committed batch.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Manual WinTest checklist:
+- Login and stat display.
+- Combat HP damage and recovery.
+- EXP gain and level-up.
+- Gold gain/loss through pickup, shop, exchange, offlineshop, guild, cube, and wheel paths.
+- Skill HP/SP absorb and victim point effects.
+- DragonSoul refine fee path.
+- Mount/pet stat refresh.
+- Gaya spend/craft.
+- Logout/login persistence.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- Code batches committed individually.
+- WinTest not run in this environment.
+
 ## Phase 15E-51 — ECS Systems Remaining LPITEM Signature Cleanup
 
 Mode:
