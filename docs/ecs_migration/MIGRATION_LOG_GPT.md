@@ -8245,3 +8245,88 @@ Manual WinTest checklist:
 
 Commit status:
 - Committed in multiple Phase 15E-47 commits; no squash.
+
+## Phase 15E-48 partial signature migration: P1/P2/P3 safe helpers
+
+Date: 2026-04-29
+
+Mode:
+- LPITEM parameter signature migration.
+- Partial safe batch only; no core `char_item.cpp`, `item_manager.cpp`, or `ItemSystem_LegacyBridge.cpp` internals touched.
+
+Scope completed:
+- P1 internal helpers:
+  - `Halloween2022Dungeon.cpp`: `RemoveOneGivenItem(entt::entity, ...)`
+  - `LostCastleDungeon.cpp`: `ConsumeOneGivenItem(entt::entity, ...)`
+  - `MountInventory.cpp`: `StartMountExpireIfNeeded(entt::entity)`
+- P2 ECS helpers:
+  - `InventorySystem.cpp`: `SyncItemLocation(entt::entity)`
+  - `CombatSystem.cpp`: `MakeItemLink(entt::entity, ...)`
+- P3 free functions:
+  - `fishing.cpp/.h`: `UseFish(entt::entity, entt::entity)` and `Grill(entt::entity, entt::entity)`
+  - `battle.cpp`: `Item_GetDamage(entt::entity, ...)`
+  - `battle.cpp/.h`: `CalcArrowDamage(..., entt::entity bow, entt::entity arrow, ...)`
+- Small P4-compatible read-only cleanup:
+  - `DragonSoul.cpp/.h`: removed LPITEM compatibility wrappers for `LeftTime`, `IsTimeLeftDragonSoul`, and `IsActiveDragonSoul`; callers now use existing entity overloads.
+
+Initial LPITEM parameter count for this scoped audit:
+```text
+Excluding ItemSystem internals, EntityFactory, ItemRegistry, item_manager.cpp, char.h:
+179
+```
+
+Final LPITEM parameter count for the same scoped audit:
+```text
+161
+```
+
+Top remaining files after this batch:
+```text
+DragonSoul.cpp: 9
+DragonSoul.h: 8
+MountSystem.cpp: 7
+CombatSystem.cpp: 6
+MountSystem.h: 5
+New_PetSystem.cpp: 5
+PlayerRuntimeSystem.cpp: 5
+new_switchbot.cpp: 5
+New_PetSystem.h: 5
+MountInventory.cpp/h: 4 each
+questmanager.cpp/h: 4 each
+mining.cpp: 4
+InventorySystem.cpp: 4
+```
+
+Remaining blockers / deferred groups:
+- DragonSoul mutation entry points: still class/public API and side-effect heavy; defer to dedicated DS signature phase.
+- Mount/Pet systems: class methods and DB/state semantics; defer to subsystem batch.
+- Quest manager current item APIs: cross-subsystem callers; defer to quest current item signature batch.
+- Mining/fishing rod refine: legacy refine/remove paths remain; requires wrapper-level conversion.
+- Combat reward/drop helpers: still use `AddToCharacter`, `AddToGround`, ownership timers; leave until location/ownership signatures are converted.
+- `item_manager.h`, `item.h`: core CItem/item-manager island; explicitly not touched in 15E-48.
+
+Build results:
+- Build passed after each migrated file/group.
+- One intermediate build failed with one missing DragonSoulSystem caller after removing LPITEM time wrappers; fixed immediately by converting the caller to entity overload.
+- Final validation command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Header validation:
+```powershell
+Select-String -Path 'SRC/Server/GameServer/ecs/systems/ItemSystem.hpp' -Pattern 'LPITEM|LPCHARACTER|CHARACTER\s*\*'
+```
+- Result: no matches.
+
+Manual WinTest checklist for this batch:
+- Halloween dungeon item hand-in consumes correct count.
+- Lost Castle key/tile hand-in consumes correct count.
+- Mount inventory add/relog starts mount realtime expiration correctly.
+- Fishing use/grill still grants/consumes correctly.
+- Bow/arrow combat and arrow skills produce expected damage.
+- DragonSoul active deck stat recompute still respects remaining time.
+- Rare drop notice item links still show sockets/attributes/name correctly.
+
+Commit status:
+- Committed in separate Phase 15E-48 commits; no squash.
