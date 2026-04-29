@@ -3837,7 +3837,8 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		{
 			if (item->IsEquipped())
 			{
-				return DSManager::instance().PullOut(this, DestCell, item);
+				entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+				return DSManager::instance().PullOut(this, DestCell, itemEntity);
 			}
 			else
 			{
@@ -5939,7 +5940,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	{
 		if (!item->IsEquipped())
 			return false;
-		return DSManager::instance().PullOut(this, NPOS, item);
+		entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+		return DSManager::instance().PullOut(this, NPOS, itemEntity);
 		break;
 	}
 	case ITEM_SPECIAL_DS:
@@ -10976,13 +10978,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case EXTRACT_DRAGON_SOUL:
 			if (pDestItem->IsDragonSoul())
 			{
-				return DSManager::instance().PullOut(this, NPOS, pDestItem, item);
+				entt::entity destItemEntity = EntityFactory::CreateItemEntity(g_registry, pDestItem);
+				return DSManager::instance().PullOut(this, NPOS, destItemEntity, EntityFactory::CreateItemEntity(g_registry, item));
 			}
 			return false;
 		case EXTRACT_DRAGON_HEART:
 			if (pDestItem->IsDragonSoul())
 			{
-				return DSManager::instance().ExtractDragonHeart(this, pDestItem, item);
+				return DSManager::instance().ExtractDragonHeart(this, EntityFactory::CreateItemEntity(g_registry, pDestItem), EntityFactory::CreateItemEntity(g_registry, item));
 			}
 			return false;
 		default:

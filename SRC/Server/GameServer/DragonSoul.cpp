@@ -385,11 +385,13 @@ int DSManager::GetDuration(const LPITEM pItem) const
 }
 
 // 용혼석을 받아서 용심을 추출하는 함수
-bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtractor)
+bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::entity extractor)
 {
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
+	LPITEM pExtractor = LegacyDragonSoulItemOf(extractor);
 	if (nullptr == ch || nullptr == pItem)
 		return false;
-	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
+	if (ItemSystem::IsItemEquipped(item))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 623, "");
@@ -397,7 +399,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		return false;
 	}
 
-	uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+	uint32_t dwVnum = ItemSystem::GetItemVnum(item);
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
 	GetDragonSoulInfo(dwVnum, ds_type, grade_idx, step_idx, strength_idx);
 
@@ -405,7 +407,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 
 	if (nullptr != pExtractor)
 	{
-		iBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pExtractor), 0);
+		iBonus = ItemSystem::GetItemValue(extractor, 0);
 	}
 
 	std::vector <float> vec_chargings;
@@ -434,11 +436,11 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 	if (fCharge < FLT_EPSILON)
 	{
 		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pItem), 1);
+			item, 1);
 		if (nullptr != pExtractor)
 		{
 			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
+				extractor, 1);
 		}
 		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_FAIL", "");
 #ifdef TEXTS_IMPROVEMENT
@@ -457,11 +459,11 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 		}
 
 		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pItem), 1);
+			item, 1);
 		if (nullptr != pExtractor)
 		{
 			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
+				extractor, 1);
 		}
 
 		int iCharge = (int)(fCharge + 0.5f);
@@ -481,12 +483,10 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtract
 bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
-	LPITEM legacyExtractor = extractor != entt::null ? LegacyDragonSoulItemOf(extractor) : nullptr;
-	if (!ch || !legacyItem)
+	if (!ch || item == entt::null)
 		return false;
 
-	const bool result = ExtractDragonHeart(ch, legacyItem, legacyExtractor);
+	const bool result = ExtractDragonHeart(ch, item, extractor);
 	SyncDragonSoulItemEntity(item);
 	SyncDragonSoulItemEntity(extractor);
 	return result;
@@ -494,8 +494,10 @@ bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, ent
 
 
 // 특정 용혼석을 장비창에서 제거할 때에 성공 여부를 결정하고, 실패시 부산물을 주는 함수.
-bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM pExtractor)
+bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, entt::entity extractor)
 {
+	LPITEM pItem = LegacyDragonSoulItemOf(item);
+	LPITEM pExtractor = LegacyDragonSoulItemOf(extractor);
 	if (nullptr == ch || nullptr == pItem)
 	{
 		sys_err ("NULL POINTER. ch(%p) or pItem(%p)", ch, pItem);
@@ -503,7 +505,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 	}
 
 	// 목표 위치가 valid한지 검사 후, valid하지 않다면 임의의 빈 공간을 찾는다.
-	if (!IsValidCellForThisItem(pItem, DestCell))
+	if (!IsValidCellForThisItem(item, DestCell))
 	{
 		int iEmptyCell = ch->GetEmptyDragonSoulInventory(pItem);
 		if (iEmptyCell < 0)
@@ -520,7 +522,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		}
 	}
 
-	if (!ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)) || !pItem->RemoveFromCharacter())
+	if (!ItemSystem::IsItemEquipped(item) || !pItem->RemoveFromCharacter())
 		return false;
 
 	bool bSuccess;
@@ -530,10 +532,10 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 	float fDice;
 	// 용혼석 추출 성공 여부 결정.
 	{
-		//uint32_t dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+		//uint32_t dwVnum = ItemSystem::GetItemVnum(item);
 
 		uint8_t ds_type, grade_idx, step_idx, strength_idx;
-		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
+		GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
 
 		// 추출 정보가 없다면 일단 무조건 성공하는 것이라 생각하자.
 		if (!m_pTable->GetDragonSoulExtValues(ds_type, grade_idx, fProb, dwByProduct))
@@ -546,9 +548,9 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		bSuccess = fDice <= (fProb * (100 + iBonus) / 100.f);
 		if (nullptr != pExtractor)
 		{
-			iBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pExtractor), ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
+			iBonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
 			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, pExtractor), 1);
+				extractor, 1);
 			bSuccess = number(1, 100) <= iBonus ? true : false;
 		}
 	}
@@ -561,7 +563,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		{
 			if (pExtractor)
 			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pExtractor)));
+				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(extractor));
 			}
 			else
 			{
@@ -579,7 +581,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 		{
 			if (pExtractor)
 			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pExtractor)), dwByProduct);
+				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(extractor), dwByProduct);
 			}
 			else
 			{
@@ -588,8 +590,9 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 			
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_FAILED", buf);
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, pItem),
+				item,
 				"DRAGON_SOUL_BYPRODUCT");
+			item = entt::null;
 			pItem = nullptr;
 			if (dwByProduct)
 			{
@@ -616,13 +619,10 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, LPITEM& pItem, LPITEM
 bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& item, entt::entity extractor)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	LPITEM legacyItem = LegacyDragonSoulItemOf(item);
-	LPITEM legacyExtractor = extractor != entt::null ? LegacyDragonSoulItemOf(extractor) : nullptr;
-	if (!ch || !legacyItem)
+	if (!ch || item == entt::null)
 		return false;
 
-	const bool result = PullOut(ch, DestCell, legacyItem, legacyExtractor);
-	item = EntityFactory::CreateItemEntity(g_registry, legacyItem);
+	const bool result = PullOut(ch, DestCell, item, extractor);
 	SyncDragonSoulItemEntity(item);
 	SyncDragonSoulItemEntity(extractor);
 	return result;

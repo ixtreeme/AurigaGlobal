@@ -25,7 +25,7 @@ public:
 	int		GetDuration(const LPITEM pItem) const;
 
 	// 용혼석을 받아서 특정 용심을 추출하는 함수
-	bool	ExtractDragonHeart(LPCHARACTER ch, LPITEM pItem, LPITEM pExtractor = nullptr);
+	bool	ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::entity extractor = entt::null);
 	bool	ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor = entt::null);
 
 	// 특정 용혼석(pItem)을 장비창에서 제거할 때에 성공 여부를 결정하고,
@@ -34,7 +34,7 @@ public:
 	// 실패 시, 용혼석(pItem)은 delete됨.
 	// 추출아이템이 있다면 추출 성공 확률이 pExtractor->GetValue(0)%만큼 증가함.
 	// 부산물은 언제나 자동 추가.
-	bool	PullOut(LPCHARACTER ch, TItemPos DestCell, IN OUT LPITEM& pItem, LPITEM pExtractor = nullptr);
+	bool	PullOut(LPCHARACTER ch, TItemPos DestCell, IN OUT entt::entity& item, entt::entity extractor = entt::null);
 	bool	PullOutEcs(entt::entity owner, TItemPos DestCell, IN OUT entt::entity& item, entt::entity extractor = entt::null);
 
 	// 용혼석 업그레이드 함수
