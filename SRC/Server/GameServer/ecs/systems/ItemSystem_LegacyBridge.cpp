@@ -39,6 +39,7 @@
 #include "../../BattleArena.h"
 #include "../../arena.h"
 #include "../../dev_log.h"
+#include <Core/Logging.hpp>
 #include "../../pcbang.h"
 #include "../../../common/VnumHelper.h"
 #include "../../belt_inventory_helper.h"
@@ -792,7 +793,7 @@ bool CItem::SetCount(int count)
 {
 #ifdef ENABLE_MINUS_COUNT_FIX_RAZOR93
 	if (count < 0) {
-		sys_err("SetCount attempted negative value (count=%d) vnum=%u", count, GetVnum());
+		LOG_ERROR("SetCount attempted negative value (count={}) vnum={}", count, GetVnum());
 		count = 0;
 	}
 
@@ -1373,7 +1374,7 @@ void CItem::AddAttribute(uint8_t bApply, short sValue)
 	int i = GetAttributeCount();
 
 	if (i >= MAX_NORM_ATTR_NUM)
-		sys_err("item attribute overflow!");
+		LOG_ERROR("item attribute overflow!");
 	else
 	{
 		if (sValue)
@@ -1389,7 +1390,7 @@ void CItem::AddAttribute2(uint8_t bApply, short sValue)
 	int i = GetAttributeCount();
 
 	if (i >= MAX_NORM_ATTR_NUM+2)
-		sys_err("item attribute overflow!");
+		LOG_ERROR("item attribute overflow!");
 	else
 	{
 		if (sValue)
@@ -1491,7 +1492,7 @@ void CItem::AddAttr(uint8_t bApply, uint8_t bLevel)
 	int i = GetAttributeCount();
 
 	if (i == MAX_NORM_ATTR_NUM)
-		sys_err("item attribute overflow!");
+		LOG_ERROR("item attribute overflow!");
 	else
 	{
 		const TItemAttrTable & r = g_map_itemAttr[bApply];
@@ -1572,7 +1573,7 @@ void CItem::PutAttributeWithLevel(uint8_t bLevel)
 
 	if (!attr_idx)
 	{
-		sys_err("Cannot put item attribute %d %d", iAttributeSet, bLevel);
+		LOG_ERROR("Cannot put item attribute {} {}", iAttributeSet, bLevel);
 		return;
 	}
 
@@ -1736,7 +1737,7 @@ bool CItem::AddRareAttribute()
 
 	if (avail.empty())
 	{
-		sys_err("Couldn't add a rare bonus - item_attr_rare has incorrect values!");
+		LOG_ERROR("Couldn't add a rare bonus - item_attr_rare has incorrect values!");
 		return false;
 	}
 
@@ -1841,7 +1842,7 @@ void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
 
 	if (!attr_idx)
 	{
-		sys_err("Cannot put item rare attribute %d %d", iAttributeSet, bLevel);
+		LOG_ERROR("Cannot put item rare attribute {} {}", iAttributeSet, bLevel);
 		return;
 	}
 
@@ -1865,7 +1866,7 @@ void CItem::AddRareAttr(uint8_t bApply, uint8_t bLevel)
 	int i = ITEM_ATTRIBUTE_RARE_START + GetRareAttrCount();
 
 	if (i == ITEM_ATTRIBUTE_RARE_END)
-		sys_err("item rare attribute overflow!");
+		LOG_ERROR("item rare attribute overflow!");
 	else
 	{
 		const TItemAttrTable & r = g_map_itemRare[bApply];
@@ -2279,7 +2280,7 @@ uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	sys_log(0, "Razor93 LOG:: Called: Char_item.cpp LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const");
+	LOG_INFO("Razor93 LOG:: Called: Char_item.cpp LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const");
 #endif
 	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		return nullptr;
@@ -2314,7 +2315,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 	case INVENTORY:
 		if (wCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			sys_err("CHARACTER::GetInventoryItem: invalid item cell %d", wCell);
+			LOG_ERROR("CHARACTER::GetInventoryItem: invalid item cell {}", wCell);
 			return nullptr;
 		}
 		return GetMainInventoryItem(this, wCell);
@@ -2323,7 +2324,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
 		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			sys_err("CHARACTER::GetInventoryItem: invalid equipment cell %d", wCell);
+			LOG_ERROR("CHARACTER::GetInventoryItem: invalid equipment cell {}", wCell);
 			return nullptr;
 		}
 		return GetMainInventoryItem(this, storageCell);
@@ -2331,7 +2332,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 	case DRAGON_SOUL_INVENTORY:
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			sys_err("CHARACTER::GetInventoryItem: invalid DS item cell %d", wCell);
+			LOG_ERROR("CHARACTER::GetInventoryItem: invalid DS item cell {}", wCell);
 			return nullptr;
 		}
 		return GetDragonSoulItem(wCell);
@@ -2341,9 +2342,9 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 		if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line :315: case switch :if (wCell >= EXTRA_INVENTORY_MAX_NUM)");
+			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :315: case switch :if (wCell >= EXTRA_INVENTORY_MAX_NUM)");
 #endif
-			sys_err("CHARACTER::GetInventoryItem: invalid EXTRA item cell %d", wCell);
+			LOG_ERROR("CHARACTER::GetInventoryItem: invalid EXTRA item cell {}", wCell);
 			return nullptr;
 		}
 		return GetExtraInventoryItem(wCell);
@@ -2353,7 +2354,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 	case SWITCHBOT:
 		if (wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			sys_err("CHARACTER::GetInventoryItem: invalid switchbot item cell %d", wCell);
+			LOG_ERROR("CHARACTER::GetInventoryItem: invalid switchbot item cell {}", wCell);
 			return nullptr;
 		}
 		return GetSwitchbotItem(wCell);
@@ -2632,7 +2633,7 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 
 	// ?1?�A3���! 3a�I�U.
 	if (count)
-		sys_log(0, "CHARACTER::RemoveSpecifyItem cannot remove enough item vnum %u, still remain %d", vnum, count);
+		LOG_INFO("CHARACTER::RemoveSpecifyItem cannot remove enough item vnum {}, still remain {}", vnum, count);
 }
 
 int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
@@ -2662,7 +2663,7 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 	// > WEAR_MAX_NUM : ?�EY1� 11�Ե�.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
-		sys_err("CHARACTER::GetWear: invalid wear cell %d", bCell);
+		LOG_ERROR("CHARACTER::GetWear: invalid wear cell {}", bCell);
 		return nullptr;
 	}
 
@@ -2675,7 +2676,7 @@ void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 	// > WEAR_MAX_NUM : ?�EY1� 11�Ե�.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
-		sys_err("CHARACTER::SetItem: invalid item cell %d", bCell);
+		LOG_ERROR("CHARACTER::SetItem: invalid item cell {}", bCell);
 		return;
 	}
 
@@ -3401,14 +3402,14 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	bool stupid = false;
 	if (bCount < 0)
 	{
-		sys_err("I am a stupid hacker 1: %s %d", GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 1: {} {}", GetName(), bCount);
 		stupid = true;
 	}
 
 	bCount = abs(bCount);
 	if (stupid)
 	{
-		sys_err("I am a stupid hacker 2: %s %d", GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 2: {} {}", GetName(), bCount);
 		return false;
 	}
 
@@ -3473,7 +3474,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (item->IsExtraItem()) {");//INGAME_DEBUG_RAZOR93
 
-		sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) { ");
+		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) {{ ");
 
 #endif
 		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
@@ -3497,7 +3498,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		if (bCount == 0)
 		{
 			if (test_server)
-				sys_log(0, "[DROP_ITEM] drop item count == 0");
+				LOG_INFO("[DROP_ITEM] drop item count == 0");
 			return false;
 		}
 
@@ -3613,14 +3614,14 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	bool stupid = false;
 	if (count < 0)
 	{
-		sys_err("I am a stupid hacker 3: %s %d", GetName(), count);
+		LOG_ERROR("I am a stupid hacker 3: {} {}", GetName(), count);
 		stupid = true;
 	}
 
 	count = abs(count);
 	if (stupid)
 	{
-		sys_err("I am a stupid hacker 4: %s %d", GetName(), count);
+		LOG_ERROR("I am a stupid hacker 4: {} {}", GetName(), count);
 		return false;
 	}
 
@@ -3638,7 +3639,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		(DestCell.window_type == SAFEBOX || DestCell.window_type == MALL))
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You cannot place items from the mount inventory into the storage.");
-		//sys_log(0, "BELT_TO_SAFEBOX_BLOCKED: FROM belt cell=%d TO window=%d, cell=%d", Cell.cell, DestCell.window_type, DestCell.cell);
+		//LOG_INFO("BELT_TO_SAFEBOX_BLOCKED: FROM belt cell={} TO window={}, cell={}", Cell.cell, DestCell.window_type, DestCell.cell);
 		// BELT INVENTORY: csak KIVENNI lehessen, BERAKNI TILOS
 		//if (DestCell.IsBeltInventoryPosition() && !Cell.IsBeltInventoryPosition())
 		//{
@@ -3653,14 +3654,14 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	{
 		if (!IsValidItemPosition(DestCell))
 		{
-			sys_err("BELT_SLOT_INVALID: window=%d, cell=%d", DestCell.window_type, DestCell.cell);
+			LOG_ERROR("BELT_SLOT_INVALID: window={}, cell={}", DestCell.window_type, DestCell.cell);
 			return false;
 		}
 
 		LPITEM targetItem = GetItem(DestCell);
 		if (targetItem)
 		{
-			//sys_log(0, "BELT_SLOT_OCCUPIED: Attempt to move item to occupied slot cell=%d", DestCell.cell);
+			//LOG_INFO("BELT_SLOT_OCCUPIED: Attempt to move item to occupied slot cell={}", DestCell.cell);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "This place is already taken.");
 			return false;
 		}
@@ -3827,7 +3828,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù.");//INGAME_DEBUG_RAZOR93
 
-			sys_log(0, "Razor93 LOG:: Called: Char_item.cpp 	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù. ");
+			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp 	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù. ");
 
 #endif
 			return false;
@@ -3893,8 +3894,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			if (count == 0)
 				count = item->GetCount();
 
-			sys_log(0, "%s: ITEM_STACK %s (window: %d, cell : %d) -> (window:%d, cell %d) count %d", GetName(), item->GetName(), Cell.window_type, Cell.cell,
-				DestCell.window_type, DestCell.cell, count);
+			LOG_INFO("{}: ITEM_STACK {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
 
 			count = std::min(g_bItemCountLimit - item2->GetCount(), count);
 
@@ -4061,14 +4061,13 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 		if (count == 0 || count >= item->GetCount() || !item->IsStackable() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 		{
-			//sys_log(0, "%s: ITEM_MOVE %s (window: %d, cell : %d) -> (window:%d, cell %d) count %d",
-				//GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
+			//LOG_INFO("{}: ITEM_MOVE {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", //GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
 
 			// Ha itemet a belt inventorybol mozditjuk el, es az mount bonuszos, toroljuk az affectet
 			if (Cell.IsBeltInventoryPosition() && mount_bonus_items.count(item->GetVnum()))
 			{
 				RemoveAffect(AFFECT_MOUNT_BONUS);
-				//sys_log(0, "BELT_MOUNT: affect removed (item taken from belt inventory) vnum: %u", item->GetVnum());
+				//LOG_INFO(0, "BELT_MOUNT: affect removed (item taken from belt inventory) vnum: %u", item->GetVnum());
 			}
 
 
@@ -4082,7 +4081,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			//		// Ha az item a belt inventoryba kerult, frissitsuk a pontokat
 			//		if (DestCell.cell >= BELT_INVENTORY_SLOT_START && DestCell.cell < BELT_INVENTORY_SLOT_END)
 			//		{
-			//			//sys_log(0, "DEBUG: ComputePoints hivas belt inventory item mozgatas utan");
+			//			//LOG_INFO(0, "DEBUG: ComputePoints hivas belt inventory item mozgatas utan");
 			//			//ComputePoints();
 			//			//UpdatePacket();
 			//			//GetDisplayedNameWithBeltCount();
@@ -4094,7 +4093,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					// Ha belt inventory-ba mozgattak, vagy onnan el, akkor ujraszamolas
 			if (Cell.IsBeltInventoryPosition() || DestCell.IsBeltInventoryPosition())
 			{
-				//sys_log(0, "DEBUG: Belt inventory valtozas - ComputePoints ujrahivas");
+				//LOG_INFO(0, "DEBUG: Belt inventory valtozas - ComputePoints ujrahivas");
 				ComputePoints();
 				//UpdatePacket();
 #ifdef ENABLE_FAKE_SHOP_HEADER
@@ -4130,7 +4129,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 				//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type)");//INGAME_DEBUG_RAZOR93
 
-				//sys_log(0, "Razor93 LOG:: Called: Char_item.cpp else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type) ");
+				//LOG_INFO(0, "Razor93 LOG:: Called: Char_item.cpp else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type) ");
 
 
 			}
@@ -4139,8 +4138,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		else if (count < item->GetCount())
 		{
 
-			sys_log(0, "%s: ITEM_SPLIT %s (window: %d, cell : %d) -> (window:%d, cell %d) count %d", GetName(), item->GetName(), Cell.window_type, Cell.cell,
-				DestCell.window_type, DestCell.cell, count);
+			LOG_INFO("{}: ITEM_SPLIT {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
 
 			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
 			LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), count);
@@ -4180,7 +4178,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 	if (iAmount <= 0)
 		return;
 
-	sys_log(0, "GIVE_GOLD: %s %lld", GetName(), iAmount);
+	LOG_INFO("GIVE_GOLD: {} {}", GetName(), iAmount);
 	//#ifdef TEXTS_IMPROVEMENT
 	//	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 3, "%lld", iAmount);
 	//#endif
@@ -4309,7 +4307,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:else if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag()..");//INGAME_DEBUG_RAZOR93
 
-					sys_log(0, "Razor93 LOG:: Called: Char_item.cpp if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) ");
+					LOG_INFO("Razor93 LOG:: Called: Char_item.cpp if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) ");
 
 #endif
 #ifdef ENABLE_NEW_STACK_LIMIT
@@ -4499,7 +4497,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp: line 9217  else if (item->IsExtraItem()).");//INGAME_DEBUG_RAZOR93
 
-					sys_log(0, "Razor93 LOG:: Called: Char_item.cpp else if (item->IsExtraItem()) ");
+					LOG_INFO("Razor93 LOG:: Called: Char_item.cpp else if (item->IsExtraItem()) ");
 
 #endif
 					if ((iEmptyCell = GetEmptyExtraInventory(item)) == -1)
@@ -4976,7 +4974,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	}
 #endif
 
-	sys_log(0, "%s: USE_ITEM %s (inven %d, cell: %d)", GetName(), item->GetName(), window_type, wCell);
+	LOG_INFO("{}: USE_ITEM {} (inven {}, cell: {})", GetName(), item->GetName(), window_type, wCell);
 
 	if (item->IsExchanging())
 		return false;
@@ -5234,7 +5232,7 @@ EVENTFUNC(kill_campfire_event)
 
 	if (info == nullptr)
 	{
-		sys_err("kill_campfire_event> <Factor> Null pointer");
+		LOG_ERROR("kill_campfire_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -5343,7 +5341,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 	if (test_server)
 	{
-		sys_log(0, "USE_ITEM %s, Inven %d, Cell %d, ItemType %d, SubType %d", item->GetName(), bDestInven, wDestCell, item->GetType(), item->GetSubType());
+		LOG_INFO("USE_ITEM {}, Inven {}, Cell {}, ItemType {}, SubType {}", item->GetName(), bDestInven, wDestCell, item->GetType(), item->GetSubType());
 	}
 
 	if (CArenaManager::instance().IsLimitedItem(GetMapIndex(), item->GetVnum()) == true)
@@ -5866,7 +5864,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			if (item->GetSubType() == USE_SPECIAL)
 			{
-				sys_log(0, "ITEM_UNIQUE: USE_SPECIAL %u", item->GetVnum());
+				LOG_INFO("ITEM_UNIQUE: USE_SPECIAL {}", item->GetVnum());
 
 				switch (item->GetVnum())
 				{
@@ -6288,7 +6286,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (item->GetVnum() > 50800 && item->GetVnum() <= 50820)
 		{
 			if (test_server)
-				sys_log(0, "ADD addtional effect : vnum(%d) subtype(%d)", item->GetOriginalVnum(), item->GetSubType());
+				LOG_INFO("ADD addtional effect : vnum({}) subtype({})", item->GetOriginalVnum(), item->GetSubType());
 
 			int affect_type = AFFECT_EXP_BONUS_EURO_FREE;
 			int apply_type = aApplyInfo[item->GetValue(0)].bPointType;
@@ -6501,7 +6499,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		if (test_server)
 		{
-			sys_log(0, "USE_ITEM %s Type %d SubType %d vnum %d", item->GetName(), item->GetType(), item->GetSubType(), item->GetOriginalVnum());
+			LOG_INFO("USE_ITEM {} Type {} SubType {} vnum {}", item->GetName(), item->GetType(), item->GetSubType(), item->GetOriginalVnum());
 		}
 
 		switch (item->GetSubType())
@@ -9104,7 +9102,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 					else
 					{
-						sys_err("CHARACTER::UseItem : cannot find spawn position (name %s, %d x %d)", GetName(), GetX(), GetY());
+						LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", GetName(), GetX(), GetY());
 					}
 				}
 				else
@@ -10041,9 +10039,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						(dwTargetVnum == 7339) ||
 						(dwTargetVnum == 7349) ||
 						((dwTargetVnum >= 8500) && (dwTargetVnum <= 8569)) ||
-						((dwTargetVnum >= 8640) && (dwTargetVnum <= 8739))
-
-						)
+						((dwTargetVnum >= 8640) && (dwTargetVnum <= 8739)))
 						? true : false;
 
 
@@ -10467,7 +10463,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 					// wtf ?!
-					sys_err("ADD_ATTRIBUTE2 : Item has wrong AttributeCount(%d)", item2->GetAttributeCount());
+					LOG_ERROR("ADD_ATTRIBUTE2 : Item has wrong AttributeCount({})", item2->GetAttributeCount());
 				}
 				break;
 
@@ -10936,7 +10932,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 	case ITEM_BLEND:
 		// »õ·Î¿î ¾àÃÊµé
-		sys_log(0, "ITEM_BLEND!!");
+		LOG_INFO("ITEM_BLEND!!");
 		if (Blend_Item_find(item->GetVnum()))
 		{
 			int		affect_type = AFFECT_BLEND;
@@ -11059,11 +11055,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 	case ITEM_NONE:
-		sys_err("Item type NONE %s", item->GetName());
+		LOG_ERROR("Item type NONE {}", item->GetName());
 		break;
 
 	default:
-		sys_log(0, "UseItemEx: Unknown type %s %d", item->GetName(), item->GetType());
+		LOG_INFO("UseItemEx: Unknown type {} {}", item->GetName(), item->GetType());
 		return false;
 	}
 
@@ -11113,7 +11109,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
 		{
-			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
 			return false;
 		}
 	}
@@ -11234,22 +11230,22 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
-			sys_log(0, "Refine Success %lld", (long long)cost);
+			LOG_INFO("Refine Success {}", (long long)cost);
 			pkNewItem->AttrLog();
 			//PointChange(POINT_GOLD, -cost);
-			sys_log(0, "PayPee %lld", (long long)cost);
+			LOG_INFO("PayPee {}", (long long)cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 			CRefineManager::instance().Reset(this);
 #endif
 			PayRefineFee(cost);
-			sys_log(0, "PayPee End %lld", cost);
+			LOG_INFO("PayPee End {}", cost);
 		}
 		else
 		{
 			// DETAIL_REFINE_LOG
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			sys_err("cannot create item %u", result_vnum);
+			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
 			// END_OF_DETAIL_REFINE_LOG
 		}
@@ -11393,7 +11389,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
 		{
-			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
 			return false;
 		}
 	}
@@ -11525,7 +11521,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
 		else
 		{
-			sys_err("REFINE : Unknown refine scroll item. Value0: %d", pkItemScroll->GetValue(0));
+			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", pkItemScroll->GetValue(0));
 		}
 
 		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
@@ -11645,8 +11641,8 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				}
 
 				// debug log:
-				//sys_log(0, "ItemLink Debug: %s", itemlink);
-				//sys_log(0, "Socket0=%d Socket1=%d Socket2=%d",
+				//LOG_INFO("ItemLink Debug: {}", itemlink);
+				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
 					//pkNewItem->GetSocket(0),
 					//pkNewItem->GetSocket(1),
 					//pkNewItem->GetSocket(2));
@@ -11701,7 +11697,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			sys_err("cannot create item %u", result_vnum);
+			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(this, item, szRefineType);
 		}
 
@@ -11753,7 +11749,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			sys_err("cannot create item %u", result_fail_vnum);
+			LOG_ERROR("cannot create item {}", result_fail_vnum);
 			NotifyRefineFail(this, item, szRefineType);
 		}
 	}
@@ -11790,7 +11786,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	{
 		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
 		{
-			sys_log(0, "can't refine %d %s", GetPlayerID(), GetName());
+			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
 			return false;
 		}
 	}
@@ -11923,7 +11919,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
 		else
 		{
-			sys_err("REFINE : Unknown refine scroll item. Value0: %d", pkItemScroll->GetValue(0));
+			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", pkItemScroll->GetValue(0));
 		}
 
 		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
@@ -12042,8 +12038,8 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				}
 
 				// debug log:
-				//sys_log(0, "ItemLink Debug: %s", itemlink);
-				//sys_log(0, "Socket0=%d Socket1=%d Socket2=%d",
+				//LOG_INFO(0, "ItemLink Debug: %s", itemlink);
+				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
 					//pkNewItem->GetSocket(0),
 					//pkNewItem->GetSocket(1),
 					//pkNewItem->GetSocket(2));
@@ -12098,7 +12094,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			sys_err("cannot create item %u", result_vnum);
+			LOG_ERROR("cannot create item {}", result_vnum);
 			NotifyRefineFail(this, item, szRefineType);
 		}
 
@@ -12150,7 +12146,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			sys_err("cannot create item %u", result_fail_vnum);
+			LOG_ERROR("cannot create item {}", result_fail_vnum);
 			NotifyRefineFail(this, item, szRefineType);
 		}
 	}
@@ -12212,7 +12208,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 
 	if (!pProto)
 	{
-		sys_err("DoRefineWithScroll NOT GET ITEM PROTO %d", item->GetRefinedVnum());
+		LOG_ERROR("DoRefineWithScroll NOT GET ITEM PROTO {}", item->GetRefinedVnum());
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
 #endif
@@ -12238,7 +12234,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 		}
 		else
 		{
-			sys_err("Cannot create item soul %u", resultVnum);
+			LOG_ERROR("Cannot create item soul {}", resultVnum);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "RefineSoulFailed");
 		}
 	}
@@ -12561,7 +12557,7 @@ void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
 	char szLine[256];
 	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, dwItemPrice);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, szLine);
-	sys_log(0, szLine);
+	LOG_INFO("{}", szLine);
 }
 
 
@@ -12746,16 +12742,16 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip,");//INGAME_DEBUG_RAZOR93
 #endif
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	sys_log(0, "Razor93 LOG:: Called: void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip");
+	LOG_INFO("Razor93 LOG:: Called: void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip");
 #endif
 	if (nullptr == item)
 	{
-		sys_err("NULL point.");
+		LOG_ERROR("NULL point.");
 		return;
 	}
 	if (item->GetOwner())
 	{
-		sys_err("item %d 's owner exists!", item->GetID());
+		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return;
 	}
 
@@ -12916,17 +12912,17 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #ifdef ENABLE_DS_REFINE_ALL
 bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 	if (item == nullptr) {
-		sys_err("NULL point.");
+		LOG_ERROR("NULL point.");
 		return false;
 	}
 
 	if (item->GetOwner()) {
-		sys_err("item %d 's owner exists!", item->GetID());
+		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return false;
 	}
 
 	if (!item->IsDragonSoul()) {
-		sys_err("item %d is not alchemy!", item->GetID());
+		LOG_ERROR("item {} is not alchemy!", item->GetID());
 		return false;
 	}
 
@@ -13096,7 +13092,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 
 	if (!item)
 	{
-		sys_err("cannot create item by vnum %u (name: %s)", dwItemVnum, GetName());
+		LOG_ERROR("cannot create item by vnum {} (name: {})", dwItemVnum, GetName());
 		return nullptr;
 	}
 
@@ -13209,8 +13205,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
 	}
 
-	sys_log(0,
-		"7: %d %d", dwItemVnum, bCount);
+	LOG_INFO("7: {} {}", dwItemVnum, bCount);
 	return item;
 }
 
@@ -13605,7 +13600,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		break;
 
 	default:
-		sys_log(0, "TakeItem %s %d %s", from->GetName(), GetRaceNum(), item->GetName());
+		LOG_INFO("TakeItem {} {} {}", from->GetName(), GetRaceNum(), item->GetName());
 		from->SetQuestNPCID(GetPacketVID());
 		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
 		break;
@@ -13619,7 +13614,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 
 	if (!pGroup)
 	{
-		sys_err("cannot find special item group %d", dwGroupNum);
+		LOG_ERROR("cannot find special item group {}", dwGroupNum);
 		return false;
 	}
 
@@ -13655,7 +13650,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 
 		case CSpecialItemGroup::MOB:
 		{
-			sys_log(0, "CSpecialItemGroup::MOB %d", dwCount);
+			LOG_INFO("CSpecialItemGroup::MOB {}", dwCount);
 			int x = GetX() + number(-500, 500);
 			int y = GetY() + number(-500, 500);
 
@@ -13667,7 +13662,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		break;
 		case CSpecialItemGroup::SLOW:
 		{
-			sys_log(0, "CSpecialItemGroup::SLOW %d", -(int)dwCount);
+			LOG_INFO("CSpecialItemGroup::SLOW {}", -(int)dwCount);
 			AddAffect(AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
 			bSuccess = true;
 		}
@@ -13675,9 +13670,9 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		case CSpecialItemGroup::DRAIN_HP:
 		{
 			int64_t iDropHP = GetMaxHP() * dwCount / 100;
-			sys_log(0, "CSpecialItemGroup::DRAIN_HP %d", -iDropHP);
+			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
 			iDropHP = std::min(iDropHP, GetHP() - 1);
-			sys_log(0, "CSpecialItemGroup::DRAIN_HP %d", -iDropHP);
+			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
 			PointChange(POINT_HP, -iDropHP);
 			bSuccess = true;
 		}
@@ -13956,7 +13951,7 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::CanHandleItem");//INGAME_DEBUG_RAZOR93
-	sys_log(0, "Razor93 LOG:: bool CHARACTER::CanHandleItem");
+	LOG_INFO("Razor93 LOG:: bool CHARACTER::CanHandleItem");
 #endif
 	if (!bSkipObserver)
 		if (m_bIsObserver)
@@ -14004,7 +13999,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	uint8_t window_type = Cell.window_type;
 	if ((unsigned long)((CItem*)pItem) == 0xff || (unsigned long)((CItem*)pItem) == 0xffffffff)
 	{
-		sys_err("!!! FATAL ERROR !!! item == 0xff (char: %s cell: %u)", GetName(), wCell);
+		LOG_ERROR("!!! FATAL ERROR !!! item == 0xff (char: {} cell: {})", GetName(), wCell);
 		core_dump();
 		return;
 	}
@@ -14022,14 +14017,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		const uint16_t storageCell = wCell;
 		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			sys_err("CHARACTER::SetItem: invalid item cell %d", storageCell);
+			LOG_ERROR("CHARACTER::SetItem: invalid item cell {}", storageCell);
 			return;
 		}
 
 		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
 		if (!pMainInventory)
 		{
-			sys_err("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
 			return;
 		}
 
@@ -14082,14 +14077,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
 		if (storageCell >= INVENTORY_AND_EQUIP_SLOT_MAX)
 		{
-			sys_err("CHARACTER::SetItem: invalid equipment item cell %d", wCell);
+			LOG_ERROR("CHARACTER::SetItem: invalid equipment item cell {}", wCell);
 			return;
 		}
 
 		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
 		if (!pMainInventory)
 		{
-			sys_err("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
+			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
 			return;
 		}
 
@@ -14109,14 +14104,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	{
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			sys_err("CHARACTER::SetItem: invalid DS item cell %d", wCell);
+			LOG_ERROR("CHARACTER::SetItem: invalid DS item cell {}", wCell);
 			return;
 		}
 
 		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(this);
 		if (!pDragonSoulInventory)
 		{
-			sys_err("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
+			LOG_ERROR("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
 			return;
 		}
 
@@ -14162,14 +14157,14 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
 #endif
-			sys_err("CHARACTER::SetItem: invalid EXTRA item cell %d", wCell);
+			LOG_ERROR("CHARACTER::SetItem: invalid EXTRA item cell {}", wCell);
 			return;
 		}
 
 		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(this);
 		if (!pExtraInventory)
 		{
-			sys_err("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
+			LOG_ERROR("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
 			return;
 		}
 
@@ -14237,7 +14232,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 
 		if (wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			sys_err("CHARACTER::SetItem: invalid switchbot item cell %d", wCell);
+			LOG_ERROR("CHARACTER::SetItem: invalid switchbot item cell {}", wCell);
 			return;
 		}
 
@@ -14254,7 +14249,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	break;
 #endif
 	default:
-		sys_err("Invalid Inventory type %d", window_type);
+		LOG_ERROR("Invalid Inventory type {}", window_type);
 		return;
 	}
 
@@ -14342,7 +14337,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		case EXTRA_INVENTORY:
 			pItem->SetWindow(EXTRA_INVENTORY);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line :653: case switch :pItem->SetWindow(EXTRA_INVENTORY);");
+			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :653: case switch :pItem->SetWindow(EXTRA_INVENTORY);");
 #endif
 			break;
 #endif
@@ -14395,7 +14390,7 @@ void CHARACTER::ClearItem()
 	for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 	{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line :739: for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)");
+		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :739: for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)");
 #endif
 		if ((item = GetExtraInventoryItem(i)))
 		{
@@ -14549,7 +14544,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 	case EXTRA_INVENTORY:
 	{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line :894 /case switch/ : case EXTRA_INVENTORY:");
+		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :894 /case switch/ : case EXTRA_INVENTORY:");
 #endif
 		uint16_t bCell = Cell.cell;
 
@@ -15023,7 +15018,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 int CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	sys_log(0, "Razor93 LOG:: Called: Char_item.cpp  CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const");
+	LOG_INFO("Razor93 LOG:: Called: Char_item.cpp  CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const");
 #endif
 	uint8_t category = pItem->GetExtraCategory();
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
@@ -15211,7 +15206,7 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 	}
 	else
 	{
-		sys_log(1, "Recall: %s %d %d -> %d %d", GetName(), GetX(), GetY(), item->GetSocket(0), item->GetSocket(1));
+		LOG_INFO("Recall: {} {} {} -> {} {}", GetName(), GetX(), GetY(), item->GetSocket(0), item->GetSocket(1));
 		WarpSet(item->GetSocket(0), item->GetSocket(1));
 		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
 	}
@@ -15260,7 +15255,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 
 	if (item1 == item2)
 	{
-		sys_log(0, "[WARNING][WARNING][HACK USER!] : %s %d %d", m_stName.c_str(), bCell, bDestCell);
+		LOG_INFO("[WARNING][WARNING][HACK USER!] : {} {} {}", m_stName.c_str(), bCell, bDestCell);
 		return false;
 	}
 
@@ -15300,7 +15295,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 			////ComputePoints();
 		}
 		else {
-			sys_err("SwapItem cannot equip %s! item1 %s", item2->GetName(), item1->GetName());
+			LOG_ERROR("SwapItem cannot equip {}! item1 {}", item2->GetName(), item1->GetName());
 		}
 	}
 	else
@@ -15553,7 +15548,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	case 71093:
 	{
 		// µÐ°©±¸ Ã³¸®
-		sys_log(0, "USE_POLYMORPH_BALL PID(%d) vnum(%d)", GetPlayerID(), dwVnum);
+		LOG_INFO("USE_POLYMORPH_BALL PID({}) vnum({})", GetPlayerID(), dwVnum);
 
 		// ·¹º§ Á¦ÇÑ Ã¼�
 // ©
@@ -15588,7 +15583,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 		// ¼ÒÄÏ0                ¼ÒÄÏ1           ¼ÒÄÏ2
 		// µÐ°©ÇÒ ¸ó½º�
 // Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
-		sys_log(0, "USE_POLYMORPH_BOOK: %s(%u) vnum(%u)", GetName(), GetPlayerID(), dwVnum);
+		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", GetName(), GetPlayerID(), dwVnum);
 
 		if (CPolymorphUtils::instance().PolymorphCharacter(this, item, pMob) == true)
 		{
@@ -15601,7 +15596,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	break;
 
 	default:
-		sys_err("POLYMORPH invalid item passed PID(%d) vnum(%d)", GetPlayerID(), item->GetOriginalVnum());
+		LOG_ERROR("POLYMORPH invalid item passed PID({}) vnum({})", GetPlayerID(), item->GetOriginalVnum());
 		return false;
 	}
 
@@ -16166,7 +16161,7 @@ void CItem::StartRealTimeExpireEvent()
 				g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 #endif
 
-			sys_log(0, "REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
+			LOG_INFO("REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
 			return;
 		}
 	}
@@ -16568,7 +16563,7 @@ bool CItem::CreateSocket(uint8_t bSlot, uint8_t bGold)
 
 	if (m_alSockets[bSlot] != 0)
 	{
-		sys_err("Item::CreateSocket : socket already exist %s %d", GetName(), bSlot);
+		LOG_ERROR("Item::CreateSocket : socket already exist {} {}", GetName(), bSlot);
 		return false;
 	}
 
@@ -16587,7 +16582,7 @@ void CItem::AlterToSocketItem(int iSocketCount)
 {
 	if (iSocketCount >= ITEM_SOCKET_MAX_NUM)
 	{
-		sys_log(0, "Invalid Socket Count %d, set to maximum", ITEM_SOCKET_MAX_NUM);
+		LOG_INFO("Invalid Socket Count {}, set to maximum", static_cast<int>(ITEM_SOCKET_MAX_NUM));
 		iSocketCount = ITEM_SOCKET_MAX_NUM;
 	}
 
@@ -16874,7 +16869,7 @@ int CItem::GetRefineLevel()
 		str_to_number(locale_rtn, p + 1);
 		if (locale_rtn != rtn)
 		{
-			sys_err("refine_level_based_on_NAME(%d) is not equal to refine_level_based_on_LOCALE_NAME(%d).", rtn, locale_rtn);
+			LOG_ERROR("refine_level_based_on_NAME({}) is not equal to refine_level_based_on_LOCALE_NAME({}).", rtn, locale_rtn);
 		}
 	}
 
@@ -17360,14 +17355,14 @@ EVENTFUNC(item_destroy_event)
 
 	if (info == nullptr)
 	{
-		sys_err("item_destroy_event> <Factor> Null pointer");
+		LOG_ERROR("item_destroy_event> <Factor> Null pointer");
 		return 0;
 	}
 
 	LPITEM pkItem = info->item;
 
 	if (pkItem->GetOwner())
-		sys_err("item_destroy_event: Owner exist. (item %s owner %s)", pkItem->GetName(), pkItem->GetOwner()->GetName());
+		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), pkItem->GetOwner()->GetName());
 
 	pkItem->SetDestroyEvent(nullptr);
 	ItemSystem::DestroyItemEntityEcs(
@@ -17382,7 +17377,7 @@ EVENTFUNC(ownership_event)
 
 	if (info == nullptr)
 	{
-		sys_err("ownership_event> <Factor> Null pointer");
+		LOG_ERROR("ownership_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -17406,7 +17401,7 @@ EVENTFUNC(unique_expire_event)
 
 	if (info == nullptr)
 	{
-		sys_err("unique_expire_event> <Factor> Null pointer");
+		LOG_ERROR("unique_expire_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -17416,7 +17411,7 @@ EVENTFUNC(unique_expire_event)
 	{
 		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= 1)
 		{
-			sys_log(0, "UNIQUE_ITEM: expire %s %u", pkItem->GetName(), pkItem->GetID());
+			LOG_INFO("UNIQUE_ITEM: expire {} {}", pkItem->GetName(), pkItem->GetID());
 			pkItem->SetUniqueExpireEvent(nullptr);
 			ITEM_MANAGER::instance().RemoveItem(pkItem, "UNIQUE_EXPIRE");
 			return 0;
@@ -17453,7 +17448,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 
 	if (info == nullptr)
 	{
-		sys_err("expire_event <Factor> Null pointer");
+		LOG_ERROR("expire_event <Factor> Null pointer");
 		return 0;
 	}
 
@@ -17481,7 +17476,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 
 	if (remain_time <= 0)
 	{
-		sys_log(0, "ITEM EXPIRED : expired %s %u", pkItem->GetName(), pkItem->GetID());
+		LOG_INFO("ITEM EXPIRED : expired {} {}", pkItem->GetName(), pkItem->GetID());
 		pkItem->SetTimerBasedOnWearExpireEvent(nullptr);
 		pkItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, 0);
 
@@ -17600,7 +17595,7 @@ EVENTFUNC(accessory_socket_expire_event)
 
 	if (info == nullptr)
 	{
-		sys_err("accessory_socket_expire_event> <Factor> Null pointer");
+		LOG_ERROR("accessory_socket_expire_event> <Factor> Null pointer");
 		return 0;
 	}
 
