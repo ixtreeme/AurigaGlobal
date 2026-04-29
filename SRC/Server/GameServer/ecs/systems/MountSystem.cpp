@@ -179,7 +179,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
         if (!item)
             continue;
 
-        item->SetSkipSave(true);
+        ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
         item->SetSockets(entry.alSockets);
         item->SetAttributes(entry.aAttr);
 
