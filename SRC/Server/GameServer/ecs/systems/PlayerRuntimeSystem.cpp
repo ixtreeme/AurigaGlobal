@@ -1465,16 +1465,16 @@ int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSou
 
                 if (iCurrentMinutes < 60)
                 {
-                    soulItem->Lock(false);
-                    soulItem->SetSocket(1, false);
+                    ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, soulItem));
+                    ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 1, false);
                     RemoveAffect(const_cast<CAffect*>(pAffect));
                 }
 
-                soulItem->SetSocket(2, 0);
+                ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2, 0);
                 soulItem->StartSoulItemEvent();
             }
 
-            soulItem->SetSocket(2, (iCurrentMinutes * 10000 + iNextStrikes));
+            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2, (iCurrentMinutes * 10000 + iNextStrikes));
         }
     }
 
@@ -1680,7 +1680,7 @@ void CHARACTER::ClearAcceMaterials()
         if (!pkItemMaterial[i])
             continue;
 
-        pkItemMaterial[i]->Lock(false);
+        ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i]));
         pkItemMaterial[i] = nullptr;
     }
 }
@@ -1973,7 +1973,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
         return;
 
     pkItemMaterial[bPos] = pkItem;
-    pkItemMaterial[bPos]->Lock(true);
+    ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[bPos]));
 
     uint32_t dwItemVnum, dwMinAbs, dwMaxAbs;
     GetAcceCombineResult(dwItemVnum, dwMinAbs, dwMaxAbs);
@@ -2009,7 +2009,7 @@ void CHARACTER::RemoveAcceMaterial(uint8_t bPos)
     {
         if (pkItemMaterial[bPos])
         {
-            pkItemMaterial[bPos]->Lock(false);
+            ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[bPos]));
             pkItemMaterial[bPos] = nullptr;
         }
 
@@ -2212,8 +2212,8 @@ void CHARACTER::RefineAcceMaterials()
 #endif
             LogManager::instance().ItemLog(this, pkItem, "COMBINE SUCCESS", pkItem->GetName());
             uint32_t dwAbs = (dwMinAbs == dwMaxAbs ? dwMinAbs : number(dwMinAbs + 1, dwMaxAbs));
-            pkItem->SetSocket(ACCE_ABSORPTION_SOCKET, dwAbs);
-            pkItem->SetSocket(ACCE_ABSORBED_SOCKET, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET));
+            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORPTION_SOCKET, dwAbs);
+            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORBED_SOCKET, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET));
 
             PointChange(POINT_GOLD, -dwPrice);
             DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])), -dwPrice);
@@ -2275,11 +2275,11 @@ void CHARACTER::RefineAcceMaterials()
     {
         pkItemMaterial[1]->CopyAttributeTo(pkItemMaterial[0]);
         LogManager::instance().ItemLog(this, pkItemMaterial[0], "ABSORB (REFINE SUCCESS)", pkItemMaterial[0]->GetName());
-        pkItemMaterial[0]->SetSocket(ACCE_ABSORBED_SOCKET, pkItemMaterial[1]->GetOriginalVnum());
+        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET, pkItemMaterial[1]->GetOriginalVnum());
         for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
         {
             if (pkItemMaterial[0]->GetAttributeValue(i) < 0)
-                pkItemMaterial[0]->SetForceAttribute(i, pkItemMaterial[0]->GetAttributeType(i), 0);
+                ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), i, pkItemMaterial[0]->GetAttributeType(i), 0);
         }
 
         ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "ABSORBED (REFINE SUCCESS)");
@@ -2322,9 +2322,9 @@ bool CHARACTER::CleanAcceAttr(LPITEM pkItem, LPITEM pkTarget)
     if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkTarget), ACCE_ABSORBED_SOCKET) <= 0)
         return false;
 
-    pkTarget->SetSocket(ACCE_ABSORBED_SOCKET, 0);
+    ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkTarget), ACCE_ABSORBED_SOCKET, 0);
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        pkTarget->SetForceAttribute(i, 0, 0);
+        ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkTarget), i, 0, 0);
 
     ItemSystem::ConsumeItemEcs(
         EntityFactory::CreateItemEntity(g_registry, pkItem));
@@ -3272,7 +3272,7 @@ void CHARACTER::GiveRandomSkillBook()
             dwSkillVnum = GetRandomSkillVnum(GetJob());
         else
             dwSkillVnum = GetRandomSkillVnum();
-        item->SetSocket(0, dwSkillVnum);
+        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, dwSkillVnum);
     }
 }
 
