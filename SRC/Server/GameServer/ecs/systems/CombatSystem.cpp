@@ -3774,7 +3774,7 @@ void CHARACTER::Reward(bool bItemDrop)
 										continue;
 
 									for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-										newItem->SetSocket(i, di.sockets[i]);
+										ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, newItem), i, di.sockets[i]);
 
 									newItem->SetAttributes(di.attrs);
 
