@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 
 #include <sstream>
 
@@ -2336,7 +2337,7 @@ struct FuncSplashDamage
 					if (number(1, 100) <= iAmount2)
 					{
 						pkChrVictim->RemoveGoodAffect();
-						pkChrVictim->AddAffect(m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
+						AffectSystem::AddAffect(AIHelpers::EcsOf(pkChrVictim), m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
 					}
 				}
 			}
@@ -2546,9 +2547,9 @@ struct FuncSplashAffect
 						pkChr->BeginFight(m_pkChrAttacker);
 
 				if (pkChr->IsPC() && m_dwVnum == SKILL_TUSOK)
-					pkChr->AddAffect(m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
 				else
-					pkChr->AddAffect(m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration, m_iSPCost, m_bOverride);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration, m_iSPCost, m_bOverride);
 
 				m_iCount ++;
 			}
@@ -3266,7 +3267,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
 				else
 				{
 					if (pkVictim->GetSectree())
@@ -3289,7 +3290,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				else
 				{
 					if (pkVictim->GetSectree())
@@ -3319,7 +3320,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
 					if (pkVictim->GetSectree())
@@ -3373,7 +3374,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 			if (pkSk->bPointOn2 != POINT_NONE)
 			{
-				pkVictim->RemoveAffect(pkSk->dwVnum);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum);
 
 				int iDur2 = (int) pkSk->kDurationPoly2.Eval();
 
@@ -3388,7 +3389,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 								iAmount2);
 
 					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
-					pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
 				{
@@ -3402,7 +3403,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					affact_flag = AFF_CHEONGEUN_WITH_FALL;
 				// END_OF_ADD_GRANDMASTER_SKILL
 
-				pkVictim->AddAffect(pkSk->dwVnum,
+				AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum,
 						pkSk->bPointOn,
 						iAmount,
 						affact_flag,
@@ -3420,7 +3421,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 							pkSk->bPointOn,
 							iAmount);
 
-				pkVictim->AddAffect(pkSk->dwVnum,
+				AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum,
 						pkSk->bPointOn,
 						iAmount,
 						pkSk->dwAffectFlag,
@@ -3440,7 +3441,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 			if (pkSk->bPointOn2 != POINT_NONE)
 			{
-				pkVictim->RemoveAffect(pkSk->dwVnum);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum);
 
 				int iDur2 = (int) pkSk->kDurationPoly2.Eval();
 
@@ -3449,9 +3450,9 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 					if (pkSk->IsChargeSkill())
-						pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
+						AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
 					else
-						pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
+						AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
 				{
@@ -3475,7 +3476,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					pkVictim->AddAffect(pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
 					if (pkVictim->GetSectree())

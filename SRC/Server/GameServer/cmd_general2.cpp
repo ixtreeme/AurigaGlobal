@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -46,85 +47,85 @@ ACMD(do_remove_affect)
 		case AFF_JEONGWIHON:
 			{
 				if (ch->IsAffectFlag(AFF_JEONGWIHON))
-					ch->RemoveAffect(SKILL_JEONGWI);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JEONGWI);
 			}
 			break;
 		case AFF_GEOMGYEONG:
 			{
 				if (ch->IsAffectFlag(AFF_GEOMGYEONG))
-					ch->RemoveAffect(SKILL_GEOMKYUNG);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GEOMKYUNG);
 			}
 			break;
 		case AFF_CHEONGEUN:
 			{
 				if (ch->IsAffectFlag(AFF_CHEONGEUN))
-					ch->RemoveAffect(SKILL_CHUNKEON);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_CHUNKEON);
 			}
 			break;
 		case AFF_GYEONGGONG:
 			{
 				if (ch->IsAffectFlag(AFF_GYEONGGONG))
-					ch->RemoveAffect(SKILL_GYEONGGONG);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GYEONGGONG);
 			}
 			break;
 		case AFF_GWIGUM:
 			{
 				if (ch->IsAffectFlag(AFF_GWIGUM))
-					ch->RemoveAffect(SKILL_GWIGEOM);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GWIGEOM);
 			}
 			break;
 		case AFF_TERROR:
 			{
 				if (ch->IsAffectFlag(AFF_TERROR))
-					ch->RemoveAffect(SKILL_TERROR);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_TERROR);
 			}
 			break;
 		case AFF_JUMAGAP:
 			{
 				if (ch->IsAffectFlag(AFF_JUMAGAP))
-					ch->RemoveAffect(SKILL_JUMAGAP);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JUMAGAP);
 			}
 			break;
 		case AFF_MUYEONG:
 			{
 				if (ch->IsAffectFlag(AFF_MUYEONG))
-					ch->RemoveAffect(SKILL_MUYEONG);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_MUYEONG);
 			}
 			break;
 		case AFF_MANASHIELD:
 			{
 				if (ch->IsAffectFlag(AFF_MANASHIELD))
-					ch->RemoveAffect(SKILL_MANASHILED);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_MANASHILED);
 			}
 			break;
 		case AFF_HOSIN:
 			{
 				if (ch->IsAffectFlag(AFF_HOSIN))
-					ch->RemoveAffect(SKILL_HOSIN);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_HOSIN);
 			}
 			break;
 		case AFF_BOHO:
 			{
 				if (ch->IsAffectFlag(AFF_BOHO))
-					ch->RemoveAffect(SKILL_REFLECT);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_REFLECT);
 			}
 			break;
 		case AFF_GICHEON:
 			{
 				if (ch->IsAffectFlag(AFF_GICHEON))
-					ch->RemoveAffect(SKILL_GICHEON);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GICHEON);
 			}
 			break;
 		case AFF_KWAESOK:
 			{
 				if (ch->IsAffectFlag(AFF_KWAESOK))
-					ch->RemoveAffect(SKILL_KWAESOK);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_KWAESOK);
 			}
 			break;
 		case AFF_JEUNGRYEOK:
 			{
 				if (ch->IsAffectFlag(AFF_JEUNGRYEOK))
-					ch->RemoveAffect(SKILL_JEUNGRYEOK);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JEUNGRYEOK);
 			}
 			break;
 		default:
@@ -373,7 +374,7 @@ ACMD(do_reward_biologist) {
 				}
 				else {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					ch->AddAffect(biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		} else {
@@ -383,7 +384,7 @@ ACMD(do_reward_biologist) {
 			int32_t lApplyValue = biologistMissionInfo[stat][j + 2];
 			if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 				bApplyOn = aApplyInfo[bApplyOn].bPointType;
-				ch->AddAffect(biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 			}
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -421,7 +422,7 @@ ACMD(do_reward_biologist) {
 					}
 					else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						ch->AddAffect(biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
@@ -431,7 +432,7 @@ ACMD(do_reward_biologist) {
 				int32_t lApplyValue = biologistMissionInfo[stat][j + 2];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					ch->AddAffect(biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[stat][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 
@@ -491,8 +492,8 @@ ACMD(do_change_biologist) {
 		}
 
 		ch->RemoveSpecifyItem(164401, 1);
-		ch->RemoveAffect(idx);
-		ch->AddAffect(idx, type, biologistMissionInfo[iarg1][iarg2 + 1], 0, 315360000, 0, false);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), idx);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), idx, type, biologistMissionInfo[iarg1][iarg2 + 1], 0, 315360000, 0, false);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 873, "");
 #endif
@@ -791,7 +792,7 @@ ACMD(do_doctrine_choose) {
 		CAffect * pkAff = nullptr;
 		if (!(pkAff = ch->FindAffect(AFFECT_HORSE_NAME))) {
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "horse_name.valid_till", get_global_time() + 126144000);
-			ch->AddAffect(AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
 			std::string name = ((ch)->GetName());
 			name += " Horse";
 			CHorseNameManager::instance().UpdateHorseName(((ch)->GetPlayerID()), name.c_str(), true);
@@ -805,18 +806,18 @@ ACMD(do_doctrine_choose) {
 		int job = ch->GetJob();
 		if (job == JOB_ASSASSIN || job == JOB_SHAMAN) {
 			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType))) {
-				ch->AddAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType, 10, 0, 126144000, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType, 10, 0, 126144000, 0, false);
 			}
 
 #ifdef ENABLE_STRONG_METIN
 			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType))) {
-				ch->AddAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType, 10, 0, 126144000, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType, 10, 0, 126144000, 0, false);
 			}
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
 			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType))) {
-				ch->AddAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType, 10, 0, 126144000, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType, 10, 0, 126144000, 0, false);
 			}
 #endif
 		}

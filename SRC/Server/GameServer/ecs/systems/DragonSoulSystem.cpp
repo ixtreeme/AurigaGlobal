@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 
 #include "DragonSoulSystem.hpp"
 
@@ -97,7 +98,7 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
 
     DeactivateAll(owner);
 
-    ch->AddAffect(AFFECT_DRAGON_SOUL_DECK_0 + deckIdx, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+    AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0 + deckIdx, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
     state->activeDeck = deckIdx;
 
 #ifdef ENABLE_DS_SET
@@ -147,25 +148,25 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
             (std::equal(stepList.begin() + 1, stepList.end(), stepList.begin())) &&
             (std::equal(strengthList.begin() + 1, strengthList.end(), strengthList.begin())))
         {
-            ch->AddAffect(AFFECT_DS_SET, POINT_NONE, 1, 0, INFINITE_AFFECT_DURATION, 0, false);
-            ch->AddAffect(AFFECT_DS_BNS1, POINT_ATTBONUS_METIN, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
-            ch->AddAffect(AFFECT_DS_BNS2, POINT_ATTBONUS_MONSTER, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
-            ch->AddAffect(AFFECT_DS_BNS3, POINT_MAX_HP, 1000, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 1, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1, POINT_ATTBONUS_METIN, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2, POINT_ATTBONUS_MONSTER, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3, POINT_MAX_HP, 1000, 0, INFINITE_AFFECT_DURATION, 0, false);
         }
         else
         {
-            ch->AddAffect(AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
-            ch->RemoveAffect(AFFECT_DS_BNS1);
-            ch->RemoveAffect(AFFECT_DS_BNS2);
-            ch->RemoveAffect(AFFECT_DS_BNS3);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
         }
     }
     else
     {
-        ch->AddAffect(AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
-        ch->RemoveAffect(AFFECT_DS_BNS1);
-        ch->RemoveAffect(AFFECT_DS_BNS2);
-        ch->RemoveAffect(AFFECT_DS_BNS3);
+        AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
+        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
+        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
     }
 #endif
 
@@ -184,12 +185,12 @@ void DeactivateAll(entt::entity owner)
         DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
 
     state->activeDeck = -1;
-    ch->RemoveAffect(AFFECT_DRAGON_SOUL_DECK_0);
-    ch->RemoveAffect(AFFECT_DRAGON_SOUL_DECK_1);
-    ch->RemoveAffect(AFFECT_DS_SET);
-    ch->RemoveAffect(AFFECT_DS_BNS1);
-    ch->RemoveAffect(AFFECT_DS_BNS2);
-    ch->RemoveAffect(AFFECT_DS_BNS3);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_1);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
+    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
     MarkDirty(owner);
 }
 

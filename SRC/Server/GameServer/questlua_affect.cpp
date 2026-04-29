@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "config.h"
 #include "questmanager.h"
 #include "sectree_manager.h"
@@ -42,7 +44,7 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		ch->AddAffect(AFFECT_QUEST_START_IDX, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_QUEST_START_IDX, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
 
 		return 0;
 	}
@@ -64,7 +66,8 @@ namespace quest
 		else
 			iType = q.GetCurrentPC()->GetCurrentQuestIndex() + AFFECT_QUEST_START_IDX;
 
-		q.GetCurrentCharacterPtr()->RemoveAffect(iType);
+		LPCHARACTER ch = q.GetCurrentCharacterPtr();
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), iType);
 
 		return 0;
 	}
@@ -115,7 +118,7 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		ch->AddAffect(AFFECT_HAIR, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HAIR, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
 
 		return 0;
 	}
@@ -131,7 +134,7 @@ namespace quest
 		if ( pkAff != nullptr)
 		{
 			lua_pushnumber(L, pkAff->lDuration);
-			ch->RemoveAffect( pkAff );
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch),  pkAff );
 		}
 		else
 		{
@@ -211,7 +214,7 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		ch->AddAffect(AFFECT_COLLECT, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_COLLECT, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
 
 		return 0;
 	}
@@ -240,7 +243,7 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		ch->AddAffect(AFFECT_PET, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PET, aApplyInfo[applyOn].bPointType, value, 0, duration, 0, false);
 
 		return 0;
 	}
@@ -271,7 +274,7 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		ch->AddAffect(AFFECT_COLLECT, point_type, value, 0, duration, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_COLLECT, point_type, value, 0, duration, 0, false);
 
 		return 0;
 	}
@@ -311,7 +314,7 @@ namespace quest
 
 			if ( pAffect != nullptr)
 			{
-				ch->RemoveAffect( const_cast<CAffect*>(pAffect) );
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch),  const_cast<CAffect*>(pAffect) );
 			}
 		}
 
@@ -326,7 +329,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
-			ch->RemoveAffect(AFFECT_COLLECT);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_COLLECT);
 		}
 
 		return 0;
@@ -348,8 +351,8 @@ namespace quest
 		int32_t duration = (int32_t)lua_tonumber(L, 4);
 		if (pointType >= POINT_MAX_NUM)
 			return 0;
-		ch->RemoveAffect(affectType);
-		ch->AddAffect(affectType, pointType, pointValue, AFF_NONE, duration, 0, false, false);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), affectType);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), affectType, pointType, pointValue, AFF_NONE, duration, 0, false, false);
 		return 0;
 	}
 #endif

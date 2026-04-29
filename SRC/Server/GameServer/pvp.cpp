@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -240,26 +241,26 @@ EVENTFUNC(pvp_duel_counter)
 			{
 				if (chA->IsPolymorphed()) {
 					chA->SetPolymorph(0);
-					chA->RemoveAffect(AFFECT_POLYMORPH);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_POLYMORPH);
 				}
 				
 				if (chB->IsPolymorphed()) {
 					chB->SetPolymorph(0);
-					chB->RemoveAffect(AFFECT_POLYMORPH);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_POLYMORPH);
 				}
 			}	
 			
 			if ((chA->GetDuel("BlockRide")) && (chB->GetDuel("BlockRide")))
 			{
 				if (chA->FindAffect(AFFECT_MOUNT)) {
-					chA->RemoveAffect(AFFECT_MOUNT);
-					chA->RemoveAffect(AFFECT_MOUNT_BONUS);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT_BONUS);
 					chA->MountVnum(0);
 				}
 				
 				if (chB->FindAffect(AFFECT_MOUNT)) {
-					chB->RemoveAffect(AFFECT_MOUNT);
-					chB->RemoveAffect(AFFECT_MOUNT_BONUS);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT_BONUS);
 					chB->MountVnum(0);
 				}
 				
@@ -283,10 +284,10 @@ EVENTFUNC(pvp_duel_counter)
 				if ((chA->GetDuel("BlockBuff")) && (chB->GetDuel("BlockBuff")))
 				{
 					if (chA->GetJob() != JOB_SHAMAN)
-						chA->RemoveAffect(m_nTableSkill[i]);
+						AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), m_nTableSkill[i]);
 				  
 					if (chB->GetJob() != JOB_SHAMAN)
-						chB->RemoveAffect(m_nTableSkill[i]);
+						AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), m_nTableSkill[i]);
 				}
 			}
 			

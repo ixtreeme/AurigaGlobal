@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -108,7 +109,7 @@ namespace quest
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		ch->RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_SKILL_NO_BOOK_DELAY);
 		return 0;
 	}
 
@@ -1786,7 +1787,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
         {
-            ch->RemoveAffect(AFFECT_POLYMORPH);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_POLYMORPH);
             ch->SetPolymorph(0);
         }
         return 0;
@@ -1810,7 +1811,7 @@ namespace quest
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
-            ch->AddAffect(AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
         return 0;
     }
 
@@ -1870,8 +1871,8 @@ namespace quest
             return 1;
         }
 #endif
-        ch->RemoveAffect(AFFECT_MOUNT);
-        ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 #ifdef ENABLE_NEWSTUFF
         if (g_NoMountAtGuildWar && ch->GetWarMap())
         {
@@ -1884,7 +1885,7 @@ namespace quest
             ch->HorseSummon(false);
         if (mount_vnum)
         {
-            ch->AddAffect(AFFECT_MOUNT, POINT_MOUNT, mount_vnum, AFF_NONE, length, 0, true);
+            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT, POINT_MOUNT, mount_vnum, AFF_NONE, length, 0, true);
             switch (mount_vnum)
             {
             case 20201:
@@ -1893,7 +1894,7 @@ namespace quest
             case 20204:
             case 20213:
             case 20216:
-                ch->AddAffect(AFFECT_MOUNT, POINT_MOV_SPEED, 30, AFF_NONE, length, 0, true, true);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT, POINT_MOV_SPEED, 30, AFF_NONE, length, 0, true, true);
                 break;
             case 20205:
             case 20206:
@@ -1901,7 +1902,7 @@ namespace quest
             case 20208:
             case 20214:
             case 20217:
-                ch->AddAffect(AFFECT_MOUNT, POINT_MOV_SPEED, 40, AFF_NONE, length, 0, true, true);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT, POINT_MOV_SPEED, 40, AFF_NONE, length, 0, true, true);
                 break;
             case 20209:
             case 20210:
@@ -1909,7 +1910,7 @@ namespace quest
             case 20212:
             case 20215:
             case 20218:
-                ch->AddAffect(AFFECT_MOUNT, POINT_MOV_SPEED, 50, AFF_NONE, length, 0, true, true);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT, POINT_MOV_SPEED, 50, AFF_NONE, length, 0, true, true);
                 break;
             }
         }
@@ -1943,8 +1944,8 @@ namespace quest
 			// @fixme134
 			if (!ch->GetMountVnum())
 				return 0;
-			ch->RemoveAffect(AFFECT_MOUNT_BONUS);
-			ch->AddAffect(AFFECT_MOUNT_BONUS, aApplyInfo[applyOn].bPointType, value, AFF_NONE, duration, 0, false);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS, aApplyInfo[applyOn].bPointType, value, AFF_NONE, duration, 0, false);
 		}
 
 		return 0;
@@ -1969,8 +1970,8 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
         {
-            ch->RemoveAffect(AFFECT_MOUNT);
-            ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
             if (ch->IsHorseRiding())
                 ch->StopRiding();
         }
@@ -4271,9 +4272,9 @@ teleport_area:
         if (ch)
         {
             if(enabled)
-                ch->AddAffect(AFFECT_FIRE, 0, 0, AFF_FIRE, 3 * 5 + 1, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_FIRE, 0, 0, AFF_FIRE, 3 * 5 + 1, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_FIRE);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_FIRE);
         }
         return 0;
     }
@@ -4293,9 +4294,9 @@ teleport_area:
         if (ch)
         {
             if(enabled)
-                ch->AddAffect(AFFECT_INVISIBILITY, 0, 0, AFF_INVISIBILITY, 60*60*24*365*60+1, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY, 0, 0, AFF_INVISIBILITY, 60*60*24*365*60+1, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_INVISIBILITY);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY);
         }
         return 0;
     }
@@ -4315,9 +4316,9 @@ teleport_area:
         if (ch)
         {
             if(enabled)
-                ch->AddAffect(AFFECT_POISON, 0, 0, AFF_POISON, 30+1, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_POISON, 0, 0, AFF_POISON, 30+1, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_POISON);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_POISON);
         }
         return 0;
     }
@@ -4338,9 +4339,9 @@ teleport_area:
         if (ch)
         {
             if(enabled)
-                ch->AddAffect(AFFECT_BLEEDING, 0, 0, AFF_BLEEDING, 30+1, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BLEEDING, 0, 0, AFF_BLEEDING, 30+1, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_BLEEDING);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_BLEEDING);
         }
         return 0;
     }
@@ -4358,9 +4359,9 @@ teleport_area:
         if (ch)
         {
             if(lua_toboolean(L, 1))
-                ch->AddAffect(AFFECT_SLOW, 19, -30, AFF_SLOW, 30, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_SLOW, 19, -30, AFF_SLOW, 30, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_SLOW);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_SLOW);
         }
         return 0;
     }
@@ -4385,9 +4386,9 @@ teleport_area:
         if (ch)
         {
             if(enabled)
-                ch->AddAffect(AFFECT_STUN, 0, 0, AFF_STUN, 30, 0, 1, 0);
+                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_STUN, 0, 0, AFF_STUN, 30, 0, 1, 0);
             else
-                ch->RemoveAffect(AFFECT_STUN);
+                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_STUN);
         }
         return 0;
     }
@@ -5120,19 +5121,19 @@ teleport_area:
                         {
                             case 1:
                             {
-                                ch->AddAffect(AFFECT_VOTEFORBONUS, POINT_ATTBONUS_MONSTER, 10, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_ATTBONUS_MONSTER, 10, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 2;
                             }
                             break;
                             case 2:
                             {
-                                ch->AddAffect(AFFECT_VOTEFORBONUS, POINT_EXP_DOUBLE_BONUS, 20, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_EXP_DOUBLE_BONUS, 20, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 3;
                             }
                             break;
                             case 3:
                             {
-                                ch->AddAffect(AFFECT_VOTEFORBONUS, POINT_DOUBLE_DROP_ITEM, 20, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_DOUBLE_DROP_ITEM, 20, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 4;
                             }
                             break;

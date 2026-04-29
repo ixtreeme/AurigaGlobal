@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
 #include "QuestSystem.hpp"
@@ -5126,8 +5127,8 @@ EVENTFUNC(drop_event)
 #endif
                     }
                     else {
-                        ch->RemoveAffect(AFFECT_DROP_BLOCK);
-                        ch->AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+                        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK);
+                        AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 40, "");
 #endif
@@ -5142,8 +5143,8 @@ EVENTFUNC(drop_event)
 #endif
                 }
                 else {
-                    ch->RemoveAffect(AFFECT_DROP_UNBLOCK);
-                    ch->AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+                    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_UNBLOCK);
+                    AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
                     ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 41, "");
 #endif

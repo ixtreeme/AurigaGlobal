@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
@@ -197,7 +198,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 			if (mountProto->aApplies[i].bType == APPLY_NONE)
 				continue;
 
-			m_pkOwner->AddAffect(
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), 
 				AFFECT_MOUNT_BONUS,
 				aApplyInfo[mountProto->aApplies[i].bType].bPointType,
 				mountProto->aApplies[i].lValue,
@@ -208,7 +209,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 			);
 		}
 
-		m_pkOwner->AddAffect(AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
 	}
 	else
 	{
@@ -218,13 +219,13 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 
 #ifdef ENABLE_COSTUME_MOUNT
 	if (dwMountSkinvnum > 0)
-		m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
 	else
-		m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 
 	return myMountVnum == m_dwVnum;
 #else
-	m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 	return m_pkOwner->GetMountVnum() == m_dwVnum;
 #endif
 }
@@ -289,22 +290,22 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		if (mountProto->aApplies[i].bType == APPLY_NONE)
 			continue;
 
-		m_pkOwner->AddAffect(AFFECT_MOUNT_BONUS, aApplyInfo[mountProto->aApplies[i].bType].bPointType, mountProto->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, aApplyInfo[mountProto->aApplies[i].bType].bPointType, mountProto->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
 	}
 
 
-	m_pkOwner->AddAffect(AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
 
 
 #ifdef ENABLE_COSTUME_MOUNT
 	if (dwMountSkinvnum > 0)
-		m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
 	else
-		m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 
 	return myMountVnum == m_dwVnum;
 #else
-	m_pkOwner->AddAffect(AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 	return m_pkOwner->GetMountVnum() == m_dwVnum;
 #endif
 }
@@ -320,8 +321,8 @@ void CMountActor::Unmount()
 	if (!m_pkOwner->GetMountVnum())
 		return;
 
-	m_pkOwner->RemoveAffect(AFFECT_MOUNT);
-	m_pkOwner->RemoveAffect(AFFECT_MOUNT_BONUS);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS);
 
 
 

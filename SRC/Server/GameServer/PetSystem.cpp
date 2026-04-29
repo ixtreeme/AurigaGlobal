@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
@@ -282,10 +283,10 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL1);
 	if (pAffect) {
-		m_pkOwner->RemoveAffect(const_cast<CAffect*>(pAffect));
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
 	
-	m_pkOwner->AddAffect(AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();

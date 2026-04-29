@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "char_interface.hpp"
@@ -710,7 +711,7 @@ namespace marriage
 						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
 					}
 
-					p1->RemoveAffect(dwAffect);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(p1), dwAffect);
 				}
 			}
 		}
@@ -727,7 +728,7 @@ namespace marriage
 						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
 					}
 
-					p2->RemoveAffect(dwAffect);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(p2), dwAffect);
 				}
 			}
 		}

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 
 #include "questlua.h"
 #include "questmanager.h"
@@ -92,7 +94,7 @@ namespace quest
 #ifdef ENABLE_RECALL
 		const CAffect* pAffect = ch->FindAffect(AFFECT_RECALL1);
 		if (pAffect) {
-			ch->RemoveAffect(const_cast<CAffect*>(pAffect));
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
 		}
 #endif
 		return 1;

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -1333,10 +1334,10 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	}
 
 	if (ch->IsAffectFlag(AFF_REVIVE_INVISIBLE))
-		ch->RemoveAffect(AFFECT_REVIVE_INVISIBLE);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_REVIVE_INVISIBLE);
 
 	if (ch->IsAffectFlag(AFF_EUNHYUNG))
-		ch->RemoveAffect(SKILL_EUNHYUNG);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_EUNHYUNG);
 
 	double k =1.0*m_data.abySkill[dwRealVnum]/pkSk->bMaxLevel;
 	pkSk->kSPCostPoly.SetVar("k", k);
@@ -1415,9 +1416,9 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 			break;
 
 			/*case GUILD_SKILL_ACCEL:
-			  ch->RemoveAffect(dwVnum);
-			  ch->AddAffect(dwVnum, POINT_MOV_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
-			  ch->AddAffect(dwVnum, POINT_ATT_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
+			  AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), dwVnum);
+			  AffectSystem::AddAffect(AIHelpers::EcsOf(ch), dwVnum, POINT_MOV_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
+			  AffectSystem::AddAffect(AIHelpers::EcsOf(ch), dwVnum, POINT_ATT_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
 			  break;*/
 
 		default:
@@ -1440,7 +1441,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 				for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
 					auto* victim = *it;
-					victim->RemoveAffect(dwVnum);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(victim), dwVnum);
 					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
 				}
 			}
@@ -2533,10 +2534,10 @@ static void ApplyGuildAttributes(LPCHARACTER ch, uint8_t level)
 
 		for (CAffect* af = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE, apply); af != nullptr; af = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE, apply))
 		{
-			ch->RemoveAffect(af);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), af);
 		}
 
-		ch->AddAffect(AFFECT_GUILD_ATTRIBUTE, apply, value,AFF_NONE, INFINITE_AFFECT_DURATION, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE, apply, value,AFF_NONE, INFINITE_AFFECT_DURATION, 0, false);
 	}
 }
 

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -2496,8 +2497,8 @@ ACMD(do_unmount)
 
 	if (true == ch->UnEquipSpecialRideUniqueItem())
 	{
-		ch->RemoveAffect(AFFECT_MOUNT);
-		ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 
 		if (ch->IsHorseRiding())
 		{

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -440,7 +441,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 				if (GetTeamIndex(pkAff->lApplyValue, idx))
 					AddFlag(idx, ch->GetX(), ch->GetY());
 
-				ch->RemoveAffect(AFFECT_WAR_FLAG);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 			}
 		}
 
@@ -840,7 +841,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 					if (GetTeamIndex(pkAff->lApplyValue, idx))
 						AddFlag(idx, ch->GetX(), ch->GetY());
 
-					ch->RemoveAffect(AFFECT_WAR_FLAG);
+					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 				}
 			}
 			break;
@@ -957,7 +958,7 @@ struct FRemoveFlagAffect
 	void operator() (LPCHARACTER ch)
 	{
 		if (ch->FindAffect(AFFECT_WAR_FLAG))
-			ch->RemoveAffect(AFFECT_WAR_FLAG);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 	}
 };
 

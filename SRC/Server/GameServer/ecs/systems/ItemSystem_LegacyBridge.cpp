@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 
 #include "ItemSystem.hpp"
 #include "QuestSystem.hpp"
@@ -8313,7 +8314,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (m_pkChrTarget->IsPolymorphed())
 					{
 						m_pkChrTarget->SetPolymorph(0);
-						m_pkChrTarget->RemoveAffect(AFFECT_POLYMORPH);
+						AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkChrTarget), AFFECT_POLYMORPH);
 					}
 				}
 				else
@@ -16129,7 +16130,7 @@ void CItem::StartRealTimeExpireEvent()
 						auto* pkOwner = GetOwner();
 						if (pkOwner) {
 							if (pkOwner->FindAffect(GetValue(0))) {
-								pkOwner->RemoveAffect(GetValue(0));
+								AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), GetValue(0));
 							}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -16341,19 +16342,19 @@ void CItem::ActivateRuneBonus() {
 
 	if (!bCan) {
 		if (m_pOwner->FindAffect(AFFECT_RUNE2))
-			m_pOwner->RemoveAffect(AFFECT_RUNE2);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
 
 		if (!m_pOwner->FindAffect(AFFECT_RUNE1))
-			m_pOwner->AddAffect(AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 
 		return;
 	}
 	else {
 		if (m_pOwner->FindAffect(AFFECT_RUNE1))
-			m_pOwner->RemoveAffect(AFFECT_RUNE1);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1);
 
 		if (!m_pOwner->FindAffect(AFFECT_RUNE2))
-			m_pOwner->AddAffect(AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 	}
 
 	ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem1), 1, 1);
@@ -16376,7 +16377,7 @@ void CItem::DeactivateRuneBonus() {
 		return;
 
 	if (m_pOwner->FindAffect(AFFECT_RUNE2))
-		m_pOwner->RemoveAffect(AFFECT_RUNE2);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
 
 	ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem1), 1, 0);
 	pkItem1->ModifyPoints(false);
@@ -16406,7 +16407,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 		}
 
 		if (bAdd)
-			m_pOwner->AddAffect(AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 	}
 	else {
 		for (int i = 0; i < iMaxSubTypes; i++) {
@@ -16424,7 +16425,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 		}
 
 		if (!bAdd)
-			m_pOwner->RemoveAffect(AFFECT_RUNE1);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1);
 	}
 }
 
@@ -16883,8 +16884,8 @@ void CItem::ClearMountAttributeAndAffect()
 {
 	auto* ch = GetOwner();
 
-	ch->RemoveAffect(AFFECT_MOUNT);
-	ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 
 	ch->MountVnum(0);
 
@@ -17518,7 +17519,7 @@ EVENTFUNC(real_time_expire_event)
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
 					if (pkOwner->FindAffect(item->GetValue(0))) {
-						pkOwner->RemoveAffect(item->GetValue(0));
+						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -17541,7 +17542,7 @@ EVENTFUNC(real_time_expire_event)
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
 					if (pkOwner->FindAffect(item->GetValue(0))) {
-						pkOwner->RemoveAffect(item->GetValue(0));
+						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT

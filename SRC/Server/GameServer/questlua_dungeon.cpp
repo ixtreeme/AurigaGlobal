@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -708,7 +709,7 @@ namespace quest
 		{
 			if (((ch)->GetRaceNum()) == 6118 && ch->FindAffect(AFFECT_STATUE))
 			{
-				ch->RemoveAffect(AFFECT_STATUE);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE);
 			}
 		}
 
@@ -1810,10 +1811,10 @@ namespace quest
 		{
 			if (statue->FindAffect(AFFECT_STATUE))
 			{
-				statue->RemoveAffect(AFFECT_STATUE);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE);
 			}
 
-			statue->AddAffect(AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
 		}
 
 		return 0;

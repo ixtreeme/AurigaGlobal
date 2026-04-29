@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
@@ -706,7 +707,7 @@ struct FuncAttractRanger
 				if (iNewRange < 150)
 					iNewRange = 150;
 
-				ch->AddAffect(AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - ch->GetMobAttackRange(), AFF_NONE, 3 * 60, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - ch->GetMobAttackRange(), AFF_NONE, 3 * 60, 0, false);
 			}
 		}
 	}
@@ -4482,13 +4483,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		if (pAttacker->IsAffectFlag(AFF_GWIGUM) && !pAttacker->GetWear(WEAR_WEAPON))
 		{
-			pAttacker->RemoveAffect(SKILL_GWIGEOM);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GWIGEOM);
 			return false;
 		}
 
 		if (pAttacker->IsAffectFlag(AFF_GEOMGYEONG) && !pAttacker->GetWear(WEAR_WEAPON))
 		{
-			pAttacker->RemoveAffect(SKILL_GEOMKYUNG);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GEOMKYUNG);
 			return false;
 		}
 

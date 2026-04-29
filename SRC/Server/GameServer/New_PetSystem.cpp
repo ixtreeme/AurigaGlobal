@@ -1,6 +1,7 @@
 
 
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
@@ -431,7 +432,7 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 	int iTime = iLast - get_global_time();
 	if (iTime > 0) {
 		if (m_pkOwner->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
-			m_pkOwner->RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_SKILL_NO_BOOK_DELAY);
 		else {
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
@@ -1116,10 +1117,10 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL2);
 	if (pAffect) {
-		m_pkOwner->RemoveAffect(const_cast<CAffect*>(pAffect));
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
 	
-	m_pkOwner->AddAffect(AFFECT_RECALL2, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 	return m_dwVID;
 }
@@ -1353,16 +1354,16 @@ void CNewPetActor::GiveBuff()
 	int val[3][5] = {{POINT_MAX_HP, 500, 1200, 2100, 3000}, {POINT_RESIST_MONSTER, 2, 4, 7, 10}, {POINT_RESIST_MEZZIUOMINI, 2, 4, 7, 10}};
 
 	for (int i = 0; i < 3; ++i) {
-		m_pkOwner->AddAffect(AFFECT_NEW_PET, val[i][0], val[i][idx], 0, 60 * 60 * 24 * 365, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, val[i][0], val[i][idx], 0, 60 * 60 * 24 * 365, 0, false);
 		if (m_dwbonuspet[i][1] > 0) {
-			m_pkOwner->AddAffect(AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float(m_dwbonuspet[i][1]/10), 0, 60 * 60 * 24 * 365, 0, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float(m_dwbonuspet[i][1]/10), 0, 60 * 60 * 24 * 365, 0, false);
 		}
 	}
 
 	for (int i = 0; i < 4; i++) {
 		idx = m_dwskillslot[i];
 		if (idx != -1 && idx != 0) {
-			m_pkOwner->AddAffect(AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[m_dwskillslot[i]-1][1]].bPointType, Pet_Skill_Table[m_dwskillslot[i]-1][1+m_dwskill[i]], 0, 60 * 60 * 24 * 365, 0, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[m_dwskillslot[i]-1][1]].bPointType, Pet_Skill_Table[m_dwskillslot[i]-1][1+m_dwskill[i]], 0, 60 * 60 * 24 * 365, 0, false);
 		}
 	}
 #else
@@ -1370,7 +1371,7 @@ void CNewPetActor::GiveBuff()
 	// 559 Affect NewPet
 	int cbonus[3] = { m_pkOwner->GetMaxHP(),  m_pkOwner->GetPoint(POINT_DEF_GRADE), m_pkOwner->GetMaxSP() };
 	for (int i = 0; i < 3; ++i) {
-		m_pkOwner->AddAffect(AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float((cbonus[i]*m_dwbonuspet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float((cbonus[i]*m_dwbonuspet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
 	}
 	
 	//Inizializzo le skill del pet inattive  No 10-17-18 No 0 no -1
@@ -1401,7 +1402,7 @@ void CNewPetActor::GiveBuff()
 			case 16: //forte contro mostri 63
 			case 17: //forte contro metin 116
 			case 18: //forte contro boss 117
-				m_pkOwner->AddAffect(AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[m_dwskillslot[s] - 1][0]].bPointType, float(Pet_Skill_Table[m_dwskillslot[s] - 1][2 + m_dwskill[s]]/10), 0, 60 * 60 * 24 * 365, 0, false);
+				AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[m_dwskillslot[s] - 1][0]].bPointType, float(Pet_Skill_Table[m_dwskillslot[s] - 1][2 + m_dwskill[s]]/10), 0, 60 * 60 * 24 * 365, 0, false);
 				break;
 			default:
 				return;
@@ -1413,7 +1414,7 @@ void CNewPetActor::GiveBuff()
 
 void CNewPetActor::ClearBuff()
 {
-	m_pkOwner->RemoveAffect(AFFECT_NEW_PET);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET);
 }
 
 void CNewPetActor::DoPetSkill(int skillslot) {
@@ -1738,7 +1739,7 @@ void CNewPetSystem::UnsummonAll(LPCHARACTER ch)
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = ch->FindAffect(AFFECT_RECALL2);
 	if (pAffect) {
-		ch->RemoveAffect(const_cast<CAffect*>(pAffect));
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
 	}
 #endif
 	

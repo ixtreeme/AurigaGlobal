@@ -1,5 +1,7 @@
 
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 
 #include <sstream>
 
@@ -97,7 +99,7 @@ namespace quest
 
 	void FPartyClearReady::operator() (LPCHARACTER ch) const
 	{
-		ch->RemoveAffect(AFFECT_DUNGEON_READY);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY);
 	}
 
 	void FSendPacket::operator() (LPENTITY ent)
@@ -242,14 +244,14 @@ namespace quest
 	ALUA(member_clear_ready)
 	{
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		ch->RemoveAffect(AFFECT_DUNGEON_READY);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY);
 		return 0;
 	}
 
 	ALUA(member_set_ready)
 	{
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		ch->AddAffect(AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
 		return 0;
 	}
 

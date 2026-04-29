@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "utils.h"
 #include "config.h"
@@ -628,12 +630,12 @@ void CGuild::EndWar(uint32_t dwOppGID)
 			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
 				LPCHARACTER ch = *it;
-				ch->RemoveAffect(GUILD_SKILL_BLOOD);
-				ch->RemoveAffect(GUILD_SKILL_BLESS);
-				ch->RemoveAffect(GUILD_SKILL_SEONGHWI);
-				ch->RemoveAffect(GUILD_SKILL_ACCEL);
-				ch->RemoveAffect(GUILD_SKILL_BUNNO);
-				ch->RemoveAffect(GUILD_SKILL_JUMUN);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BLOOD);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BLESS);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_SEONGHWI);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_ACCEL);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BUNNO);
+				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_JUMUN);
 
 				ch->RemoveBadAffect();
 			}
@@ -682,8 +684,8 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 #ifdef ENABLE_NEWSTUFF
 	if (g_NoMountAtGuildWar)
 	{
-		ch->RemoveAffect(AFFECT_MOUNT);
-		ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 		if (ch->IsRiding())
 			ch->StopRiding();
 	}

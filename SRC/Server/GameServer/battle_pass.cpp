@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "battle_pass.h"
 
 #include "p2p.h"
@@ -821,7 +823,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 		return;
 	}
 	
-	pkChar->RemoveAffect(AFFECT_BATTLE_PASS);
+	AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkChar), AFFECT_BATTLE_PASS);
 	
 	std::vector<TBattlePassRewardItem> rewardInfo = itReward->second;	
 	

@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "horsename_manager.h"
@@ -66,7 +67,7 @@ void CHorseNameManager::Validate(LPCHARACTER pChar)
 		if ( ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pChar), "horse_name.valid_till") < get_global_time() )
 		{
 			pChar->HorseSummon(false, true);
-			pChar->RemoveAffect(pkAff);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pChar), pkAff);
 			UpdateHorseName(pChar->GetPlayerID(), "", true);
 			pChar->HorseSummon(true, true);
 		}

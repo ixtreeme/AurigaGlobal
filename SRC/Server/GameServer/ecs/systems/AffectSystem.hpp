@@ -26,6 +26,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube = false);
 bool RemoveAffect(entt::entity e, uint32_t type);
+bool RemoveAffect(entt::entity e, CAffect* affect);
 void ClearAffect(entt::entity e, bool save);
 void RefreshAffect(entt::entity e);
 void UpdateAffect(entt::registry& reg, uint32_t tick);

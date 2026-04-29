@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -2253,11 +2254,11 @@ ACMD(do_invisibility)
 {
 	if (ch->IsAffectFlag(AFF_INVISIBILITY))
 	{
-		ch->RemoveAffect(AFFECT_INVISIBILITY);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY);
 	}
 	else
 	{
-		ch->AddAffect(AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, INFINITE_AFFECT_DURATION, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, INFINITE_AFFECT_DURATION, 0, true);
 	}
 }
 
@@ -3179,7 +3180,7 @@ ACMD(do_vote_block_chat)
 	}
 
 	if (tch && ch != tch)
-		tch->AddAffect(AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(tch), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
 }
 
 ACMD(do_block_chat)
@@ -3246,7 +3247,7 @@ ACMD(do_block_chat)
 	}
 
 	if (tch && ch != tch)
-		tch->AddAffect(AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(tch), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
 }
 // END_OF_BLOCK_CHAT
 
@@ -3717,7 +3718,7 @@ ACMD(do_affect_remove)
 	str_to_number(point, arg2);
 	while ((af = ch->FindAffect(type, point)))
 	{
-		ch->RemoveAffect(af);
+		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), af);
 		removed = true;
 	}
 

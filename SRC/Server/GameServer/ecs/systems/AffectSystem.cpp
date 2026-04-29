@@ -602,6 +602,18 @@ bool RemoveAffect(entt::entity e, uint32_t type)
     return result;
 }
 
+bool RemoveAffect(entt::entity e, CAffect* affect)
+{
+    auto* ch = LegacyCharOf(e);
+    if (!ch || !affect) {
+        return false;
+    }
+
+    const bool result = ch->RemoveAffect(affect);
+    SyncAffectList(e, ch);
+    return result;
+}
+
 void ClearAffect(entt::entity e, bool save)
 {
     auto* ch = LegacyCharOf(e);

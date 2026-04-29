@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "constants.h"
@@ -137,7 +138,7 @@ void CGuildManager::RemoveGuildBuff(LPCHARACTER ch)
 	while (affect != nullptr)
 	{
 		if (affect)
-			ch->RemoveAffect(affect);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), affect);
 		affect = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE);
 	}
 }

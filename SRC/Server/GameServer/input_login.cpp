@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -736,7 +737,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		if (remain <= 0)
 			continue;
 
-		ch->AddAffect(AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
 		sys_log(0, "PREMIUM: %s type %d %dmin", ch->GetName(), i, remain);
 	}
 
@@ -841,8 +842,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			mountSystem->Unmount(mount->GetValue(1));
 		}
 		else {
-			ch->RemoveAffect(AFFECT_MOUNT);
-			ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 		}
 #endif
 		// ox ?T 
@@ -938,8 +939,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			mountSystem->Unmount(mount->GetValue(1));
 		}
 		else {
-			ch->RemoveAffect(AFFECT_MOUNT);
-			ch->RemoveAffect(AFFECT_MOUNT_BONUS);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
+			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 		}
 	}
 #endif

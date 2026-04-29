@@ -1,3 +1,5 @@
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #ifndef __INC_METIN_II_GAME_BATTLE_H__
 #define __INC_METIN_II_GAME_BATTLE_H__
 
@@ -45,7 +47,7 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(att_point) && !pkVictim->IsImmune(immune_flag))
 		{
-			pkVictim->AddAffect(affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			if (test_server)
 			{
@@ -73,7 +75,7 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 	{
 		if (number(1, 1000) <= success_pct && !pkVictim->IsImmune(immune_flag))
 		{
-			pkVictim->AddAffect(affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
 			if (test_server)

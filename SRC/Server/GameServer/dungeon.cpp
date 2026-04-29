@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "dungeon.h"
@@ -434,7 +435,7 @@ void CDungeon::SetUnique(const char* key, uint32_t vid)
 	}
 
 	m_map_UniqueMob.insert(std::make_pair(std::string(key), ch));
-	ch->AddAffect(AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
 }
 
 void CDungeon::KillUnique(const std::string& key)

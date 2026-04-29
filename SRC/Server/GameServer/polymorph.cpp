@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
@@ -87,7 +89,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 		}
 	}
 
-	pChar->AddAffect(AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
 
 	// ���� ���ʽ� = �а� ��ų ���� + �а��� ����
 	dwBonusPercent = bySkillLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2);
@@ -95,15 +97,15 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	switch (GetBonusType(pMob->m_table.dwVnum))
 	{
 		case POLYMORPH_ATK_BONUS:
-			pChar->AddAffect(AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		case POLYMORPH_DEF_BONUS:
-			pChar->AddAffect(AFFECT_POLYMORPH, POINT_DEF_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_DEF_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		case POLYMORPH_SPD_BONUS:
-			pChar->AddAffect(AFFECT_POLYMORPH, POINT_MOV_SPEED, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_MOV_SPEED, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		default:

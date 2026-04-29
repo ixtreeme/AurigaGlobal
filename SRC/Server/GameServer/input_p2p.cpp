@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <common/billing.h>
 #include "config.h"
 #include "desc_client.h"
@@ -393,7 +395,7 @@ void CInputP2P::BlockChat(const char * c_pData)
 	if (ch)
 	{
 		sys_log(0, "BLOCK CHAT apply name %s dur %d", p->szName, p->lBlockDuration);
-		ch->AddAffect(AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
+		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
 	}
 	else
 	{
