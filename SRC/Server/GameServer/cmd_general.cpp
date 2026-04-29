@@ -3907,11 +3907,11 @@ ACMD(do_rune_charge)
 	dif = dif > lBottlePercent ? lBottlePercent : dif;
 	int32_t add = lOnePercent * dif;
 	int32_t lValue = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) + add;
-	pkRune->SetSocket(ITEM_SOCKET_REMAIN_SEC, lValue);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC, lValue);
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 34, "%s#%d", pkRune->GetName(), dif);
 #endif
-	pkBottle->SetSocket(0, lBottlePercent-dif);
+	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0, lBottlePercent-dif);
 	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0) < 1)
 		pkBottle->RemoveFromCharacter();
 	
