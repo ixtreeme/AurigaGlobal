@@ -33,6 +33,7 @@
 #include "OXEvent.h"
 #include "priv_manager.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "log.h"
 #include "horsename_manager.h"
 #include "MarkManager.h"
@@ -142,7 +143,7 @@ void CInputLogin::Login(LPDESC d, const char* data)
 	char login[LOGIN_MAX_LEN + 1];
 	trim_and_lower(pinfo->login, login, sizeof(login));
 
-	sys_log(0, "InputLogin::Login : %s", login);
+	LOG_INFO("InputLogin::Login : {}", login);
 
 	TPacketGCLoginFailure failurePacket;
 
@@ -224,7 +225,7 @@ void CInputLogin::LoginByKey(LPDESC d, const char* data)
 		}
 	}
 
-	sys_log(0, "LOGIN_BY_KEY: %s key %u", login, pinfo->dwLoginKey);
+	LOG_INFO("LOGIN_BY_KEY: {} key {}", login, pinfo->dwLoginKey);
 
 	d->SetLoginKey(pinfo->dwLoginKey);
 #ifndef _IMPROVED_PACKET_ENCRYPTION_
@@ -248,7 +249,7 @@ void CInputLogin::ChangeName(LPDESC d, const char* data)
 
 	if (!c_r.id)
 	{
-		sys_err("no account table");
+		LOG_ERROR("no account table");
 		return;
 	}
 
@@ -276,24 +277,23 @@ void CInputLogin::CharacterSelect(LPDESC d, const char* data)
 	struct command_player_select* pinfo = (struct command_player_select*)data;
 	const TAccountTable& c_r = d->GetAccountTable();
 
-	sys_log(0, "player_select: login: %s index: %d", c_r.login, pinfo->index);
+	LOG_INFO("player_select: login: {} index: {}", c_r.login, pinfo->index);
 
 	if (!c_r.id)
 	{
-		sys_err("no account table");
+		LOG_ERROR("no account table");
 		return;
 	}
 
 	if (pinfo->index >= PLAYER_PER_ACCOUNT)
 	{
-		sys_err("index overflow %d, login: %s", pinfo->index, c_r.login);
+		LOG_ERROR("index overflow {}, login: {}", pinfo->index, c_r.login);
 		return;
 	}
 
 	if (c_r.players[pinfo->index].bChangeName)
 	{
-		sys_err("name must be changed idx %d, login %s, name %s",
-			pinfo->index, c_r.login, c_r.players[pinfo->index].szName);
+		LOG_ERROR("name must be changed idx {}, login {}, name {}", pinfo->index, c_r.login, c_r.players[pinfo->index].szName);
 		return;
 	}
 
@@ -305,7 +305,7 @@ void CInputLogin::CharacterSelect(LPDESC d, const char* data)
 
 	if (player_load_packet.player_id == 0)//--db expolit fix
 	{
-		sys_err("invalid player_id from account %d\n", c_r.id);
+		LOG_ERROR("invalid player_id from account {}\n", c_r.id);
 		d->DelayedDisconnect(0);
 		return;
 	}//--
@@ -426,7 +426,7 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 {
 	if (race >= MAIN_RACE_MAX_NUM)
 	{
-		sys_err("NewPlayerTable2.OUT_OF_RACE_RANGE(%d >= max(%d))\n", race, MAIN_RACE_MAX_NUM);
+		LOG_ERROR("NewPlayerTable2.OUT_OF_RACE_RANGE({} >= max({}))\n", race, MAIN_RACE_MAX_NUM);
 		return false;
 	}
 
@@ -434,11 +434,11 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 
 	if (!RaceToJob(race, &job))
 	{
-		sys_err("NewPlayerTable2.RACE_TO_JOB_ERROR(%d)\n", race);
+		LOG_ERROR("NewPlayerTable2.RACE_TO_JOB_ERROR({})\n", race);
 		return false;
 	}
 
-	sys_log(0, "NewPlayerTable2(name=%s, race=%d, job=%d)", name, race, job);
+	LOG_INFO("NewPlayerTable2(name={}, race={}, job={})", name, race, job);
 
 	memset(table, 0, sizeof(TPlayerTable));
 
@@ -489,11 +489,7 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 	struct command_player_create* pinfo = (struct command_player_create*)data;
 	TPlayerCreatePacket player_create_packet;
 
-	sys_log(0, "PlayerCreate: name %s pos %d job %d shape %d",
-		pinfo->name,
-		pinfo->index,
-		pinfo->job,
-		pinfo->shape);
+	LOG_INFO("PlayerCreate: name {} pos {} job {} shape {}", pinfo->name, pinfo->index, pinfo->job, pinfo->shape);
 
 	TPacketGCLoginFailure packFailure;
 	memset(&packFailure, 0, sizeof(packFailure));
@@ -535,7 +531,7 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 
 	if (!NewPlayerTable2(&player_create_packet.player_table, pinfo->name, pinfo->job, pinfo->shape, d->GetEmpire()))
 	{
-		sys_err("player_prototype error: job %d face %d ", pinfo->job);
+		LOG_ERROR("player_prototype error: job {} face {} ", pinfo->job, pinfo->shape);
 		d->Packet(&packFailure, sizeof(packFailure));
 		return;
 	}
@@ -546,11 +542,7 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 	player_create_packet.account_id = c_rAccountTable.id;
 	player_create_packet.account_index = pinfo->index;
 
-	sys_log(0, "PlayerCreate: name %s account_id %d, TPlayerCreatePacketSize(%d), Packet->Gold %d",
-		pinfo->name,
-		pinfo->index,
-		sizeof(TPlayerCreatePacket),
-		player_create_packet.player_table.gold);
+	LOG_INFO("PlayerCreate: name {} account_id {}, TPlayerCreatePacketSize({}), Packet->Gold {}", pinfo->name, pinfo->index, sizeof(TPlayerCreatePacket), player_create_packet.player_table.gold);
 
 	db_clientdesc->DBPacket(HEADER_GD_PLAYER_CREATE, d->GetHandle(), &player_create_packet, sizeof(TPlayerCreatePacket));
 }
@@ -562,21 +554,21 @@ void CInputLogin::CharacterDelete(LPDESC d, const char* data)
 
 	if (!c_rAccountTable.id)
 	{
-		sys_err("PlayerDelete: no login data");
+		LOG_ERROR("PlayerDelete: no login data");
 		return;
 	}
 
-	sys_log(0, "PlayerDelete: login: %s index: %d, social_id %s", c_rAccountTable.login, pinfo->index, pinfo->private_code);
+	LOG_INFO("PlayerDelete: login: {} index: {}, social_id {}", c_rAccountTable.login, pinfo->index, pinfo->private_code);
 
 	if (pinfo->index >= PLAYER_PER_ACCOUNT)
 	{
-		sys_err("PlayerDelete: index overflow %d, login: %s", pinfo->index, c_rAccountTable.login);
+		LOG_ERROR("PlayerDelete: index overflow {}, login: {}", pinfo->index, c_rAccountTable.login);
 		return;
 	}
 
 	if (!c_rAccountTable.players[pinfo->index].dwID)
 	{
-		sys_err("PlayerDelete: Wrong Social ID index %d, login: %s", pinfo->index, c_rAccountTable.login);
+		LOG_ERROR("PlayerDelete: Wrong Social ID index {}, login: {}", pinfo->index, c_rAccountTable.login);
 		d->Packet(encode_byte(HEADER_GC_CHARACTER_DELETE_WRONG_SOCIAL_ID), 1);
 		return;
 	}
@@ -615,11 +607,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		PIXEL_POSITION pos2;
 		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ch->GetEmpire(), pos2);
 
-		sys_err("!GetMovablePosition (name %s %dx%d map %d changed to %dx%d)",
-			ch->GetName(),
-			pos.x, pos.y,
-			ch->GetMapIndex(),
-			pos2.x, pos2.y);
+		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ch->GetName(), pos.x, pos.y, ch->GetMapIndex(), pos2.x, pos2.y);
 		pos = pos2;
 	}
 
@@ -677,8 +665,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ch->GetItemAward_cmd())																		// ?
 		quest::CQuestManager::instance().ItemInformer(ch->GetPlayerID(), ch->GetItemAward_vnum());	//questmanager ?
 
-	sys_log(0, "ENTERGAME: %s %dx%dx%d %s map_index %d",
-		ch->GetName(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
+	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ch->GetName(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
 
 	if (ch->GetHorseLevel() > 0)
 	{
@@ -739,12 +726,12 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			continue;
 
 		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
-		sys_log(0, "PREMIUM: %s type %d %dmin", ch->GetName(), i, remain);
+		LOG_INFO("PREMIUM: {} type {} {}min", ch->GetName(), i, remain);
 	}
 
 	if (g_bCheckClientVersion)
 	{
-		sys_log(0, "VERSION CHECK %s %s", g_stClientVersion.c_str(), d->GetClientVersion());
+		LOG_INFO("VERSION CHECK {} {}", g_stClientVersion.c_str(), d->GetClientVersion());
 
 		if (!d->GetClientVersion()) {
 			d->DelayedDisconnect(10);
@@ -758,7 +745,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 	else
 	{
-		sys_log(0, "VERSION : NO CHECK");
+		LOG_INFO("VERSION : NO CHECK");
 	}
 
 	if (ch->IsGM() == true)
@@ -783,7 +770,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			ch->SetArenaObserverMode(true);
 			if (CArenaManager::instance().RegisterObserverPtr(ch, ch->GetMapIndex(), ch->GetX() / 100, ch->GetY() / 100))
 			{
-				sys_log(0, "ARENA : Observer add failed");
+				LOG_INFO("ARENA : Observer add failed");
 			}
 
 			if (ch->IsHorseRiding() == true)
@@ -997,7 +984,7 @@ void CInputLogin::Empire(LPDESC d, const char* c_pData)
 		{
 			if (0 != player.dwID)
 			{
-				sys_err("EmpireSelectFailed %d", player.dwID);
+				LOG_ERROR("EmpireSelectFailed {}", player.dwID);
 				return;
 			}
 		}
@@ -1025,7 +1012,7 @@ int CInputLogin::GuildSymbolUpload(LPDESC d, const char* c_pData, uint64_t uiByt
 
 	if (iSymbolSize <= 0 || static_cast<uint32_t>(iSymbolSize) > CGuildMarkManager::MAX_SYMBOL_SIZE)
 	{
-		sys_err("GuildSymbolUpload: invalid symbol size %d for guild %u", iSymbolSize, p->guild_id);
+		LOG_ERROR("GuildSymbolUpload: invalid symbol size {} for guild {}", iSymbolSize, p->guild_id);
 		d->SetPhase(PHASE_CLOSE);
 		return 0;
 	}
@@ -1034,13 +1021,13 @@ int CInputLogin::GuildSymbolUpload(LPDESC d, const char* c_pData, uint64_t uiByt
 	{
 		if (!building::CManager::instance().FindLandByGuild(p->guild_id))
 		{
-			sys_err("GuildSymbolUpload: guild %u does not own land", p->guild_id);
+			LOG_ERROR("GuildSymbolUpload: guild {} does not own land", p->guild_id);
 			d->SetPhase(PHASE_CLOSE);
 			return 0;
 		}
 	}
 
-	sys_log(0, "GuildSymbolUpload: guild=%u size=%d", p->guild_id, iSymbolSize);
+	LOG_INFO("GuildSymbolUpload: guild={} size={}", p->guild_id, iSymbolSize);
 
 	CGuildMarkManager::instance().UploadSymbol(
 		p->guild_id,
@@ -1059,8 +1046,7 @@ void CInputLogin::GuildSymbolCRC(LPDESC d, const char* c_pData)
 {
 	const auto& CGPacket = *reinterpret_cast<const TPacketCGSymbolCRC*>(c_pData);
 
-	sys_log(0, "GuildSymbolCRC: guild=%u client_crc=%u client_size=%u",
-		CGPacket.guild_id, CGPacket.crc, CGPacket.size);
+	LOG_INFO("GuildSymbolCRC: guild={} client_crc={} client_size={}", CGPacket.guild_id, CGPacket.crc, CGPacket.size);
 
 	const CGuildMarkManager::TGuildSymbol* pkGS =
 		CGuildMarkManager::instance().GetGuildSymbol(CGPacket.guild_id);
@@ -1068,7 +1054,7 @@ void CInputLogin::GuildSymbolCRC(LPDESC d, const char* c_pData)
 	if (!pkGS)
 		return;
 
-	sys_log(0, "GuildSymbolCRC: server_crc=%u server_size=%zu", pkGS->crc, pkGS->raw.size());
+	LOG_INFO("GuildSymbolCRC: server_crc={} server_size={}", pkGS->crc, pkGS->raw.size());
 
 	// Only send if client's data differs
 	if (pkGS->raw.size() == CGPacket.size && pkGS->crc == CGPacket.crc)
@@ -1085,8 +1071,7 @@ void CInputLogin::GuildSymbolCRC(LPDESC d, const char* c_pData)
 	d->BufferedPacket(&GCPacket, sizeof(GCPacket));
 	d->Packet(pkGS->raw.data(), pkGS->raw.size());
 
-	sys_log(0, "GuildSymbolCRC: sent symbol data for guild %u (%zu bytes)",
-		CGPacket.guild_id, pkGS->raw.size());
+	LOG_INFO("GuildSymbolCRC: sent symbol data for guild {} ({} bytes)", CGPacket.guild_id, pkGS->raw.size());
 }
 
 // ---------------------------------------------------------------------------
@@ -1099,18 +1084,17 @@ void CInputLogin::GuildMarkUpload(LPDESC d, const char* c_pData)
 	CGuild* pkGuild = CGuildManager::instance().FindGuild(p->gid);
 	if (!pkGuild)
 	{
-		sys_err("MARK_SERVER: GuildMarkUpload: guild not found (gid=%u)", p->gid);
+		LOG_ERROR("MARK_SERVER: GuildMarkUpload: guild not found (gid={})", p->gid);
 		return;
 	}
 
 	if (pkGuild->GetLevel() < guild_mark_min_level)
 	{
-		sys_log(0, "MARK_SERVER: GuildMarkUpload: guild %u level %u < required %u",
-			p->gid, pkGuild->GetLevel(), guild_mark_min_level);
+		LOG_INFO("MARK_SERVER: GuildMarkUpload: guild {} level {} < required {}", p->gid, pkGuild->GetLevel(), guild_mark_min_level);
 		return;
 	}
 
-	sys_log(0, "MARK_SERVER: GuildMarkUpload: gid=%u", p->gid);
+	LOG_INFO("MARK_SERVER: GuildMarkUpload: gid={}", p->gid);
 
 	// Check if mark image is completely empty (all transparent)
 	const auto* pixels = reinterpret_cast<const uint32_t*>(p->image);
@@ -1162,7 +1146,7 @@ void CInputLogin::GuildMarkIDXList(LPDESC d, const char* c_pData)
 		d->Packet(&pkt, sizeof(pkt));
 	}
 
-	sys_log(0, "MARK_SERVER: GuildMarkIDXList: sent %u entries (%u bytes)", markCount, pkt.bufSize);
+	LOG_INFO("MARK_SERVER: GuildMarkIDXList: sent {} entries ({} bytes)", markCount, pkt.bufSize);
 }
 
 // ---------------------------------------------------------------------------
@@ -1186,8 +1170,7 @@ void CInputLogin::GuildMarkCRCList(LPDESC d, const char* c_pData)
 		// Validate compressed data before sending
 		if (rkBlock.m_sizeCompBuf == 0 || rkBlock.m_sizeCompBuf > SGuildMarkBlock::MAX_COMP_SIZE)
 		{
-			sys_err("MARK_SERVER: GuildMarkCRCList: invalid compressed size in block %u: %u bytes",
-				posBlock, rkBlock.m_sizeCompBuf);
+			LOG_ERROR("MARK_SERVER: GuildMarkCRCList: invalid compressed size in block {}: {} bytes", posBlock, rkBlock.m_sizeCompBuf);
 			continue;
 		}
 
@@ -1205,8 +1188,7 @@ void CInputLogin::GuildMarkCRCList(LPDESC d, const char* c_pData)
 	pGC.bufSize = buf.size() + sizeof(TPacketGCMarkBlock);
 	pGC.count = blockCount;
 
-	sys_log(0, "MARK_SERVER: GuildMarkCRCList: imgIdx=%u diff=%zu sending=%u size=%u",
-		pCG->imgIdx, mapDiffBlocks.size(), blockCount, pGC.bufSize);
+	LOG_INFO("MARK_SERVER: GuildMarkCRCList: imgIdx={} diff={} sending={} size={}", pCG->imgIdx, mapDiffBlocks.size(), blockCount, pGC.bufSize);
 
 	if (buf.size() > 0)
 	{
@@ -1315,7 +1297,7 @@ int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
 	case HEADER_CG_TARGET:
 		break;
 	default:
-		sys_err("login phase does not handle this packet! header %d", bHeader);
+		LOG_ERROR("login phase does not handle this packet! header {}", bHeader);
 		//d->SetPhase(PHASE_CLOSE);
 		return (0);
 	}
