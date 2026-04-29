@@ -4,6 +4,7 @@
 
 #include <common/VnumHelper.h>
 
+#include "../CharacterAccessors.hpp"
 #include "../../char.h"
 
 
@@ -78,6 +79,27 @@
 
 #include "../../DragonSoul.h"
 #include <common/CommonDefines.h>
+
+namespace ecs::PointSystem {
+
+void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
+#ifdef __ENABLE_BLOCK_EXP__
+    , bool bForceExp
+#endif
+)
+{
+    auto* ch = ecs::LegacyCharOf(e);
+    if (!ch)
+        return;
+
+    ch->PointChange(type, amount, bAmount, bBroadcast
+#ifdef __ENABLE_BLOCK_EXP__
+        , bForceExp
+#endif
+    );
+}
+
+} // namespace ecs::PointSystem
 
 #include "../../../Poly/Constants.h"
 #ifdef __SEND_TARGET_INFO__
