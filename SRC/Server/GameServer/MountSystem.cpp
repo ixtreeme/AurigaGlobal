@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
 #include "utils.h"
@@ -71,7 +72,7 @@ EVENTFUNC(mountsystem_update_event)
 	mountsystem_event_info* info = dynamic_cast<mountsystem_event_info*>( event->info );
 	if ( info == nullptr)
 	{
-		sys_err( "<mountsystem_update_event> <Factor> Null pointer" );
+		LOG_ERROR("<mountsystem_update_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -409,7 +410,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	if (nullptr == m_pkChar)
 	{
-		sys_err("[CMountActor::Summon] Failed to summon the mount. (vnum: %d)", m_dwVnum);
+		LOG_ERROR("[CMountActor::Summon] Failed to summon the mount. (vnum: {})", m_dwVnum);
 		return 0;
 	}
 
@@ -640,13 +641,13 @@ void CMountSystem::DeleteMount(uint32_t mobVnum)
 
 	if (m_mountActorMap.end() == iter)
 	{
-		sys_err("[CMountSystem::DeleteMount] Can't find mount on my list (VNUM: %u)", mobVnum);
+		LOG_ERROR("[CMountSystem::DeleteMount] Can't find mount on my list (VNUM: {})", mobVnum);
 		return;
 	}
 
 	CMountActor* mountActor = iter->second.get();
 	if (nullptr == mountActor)
-		sys_err("[CMountSystem::DeleteMount] Null Pointer (mountActor)");
+		LOG_ERROR("[CMountSystem::DeleteMount] Null Pointer (mountActor)");
 
 	m_mountActorMap.erase(iter);
 }
@@ -663,7 +664,7 @@ void CMountSystem::DeleteMount(CMountActor* mountActor)
 		}
 	}
 
-	sys_err("[CMountSystem::DeleteMount] Can't find mountActor(0x%x) on my list(size: %u) ", mountActor, m_mountActorMap.size());
+	LOG_ERROR("[CMountSystem::DeleteMount] Can't find mountActor({}) on my list(size: {}) ", static_cast<const void*>(mountActor), m_mountActorMap.size());
 }
 
 void CMountSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
@@ -672,7 +673,7 @@ void CMountSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
 
 	if (nullptr == actor)
 	{
-		sys_err("[CMountSystem::Unsummon(%d)] Null Pointer (actor)", vnum);
+		LOG_ERROR("[CMountSystem::Unsummon({})] Null Pointer (actor)", vnum);
 		return;
 	}
 	actor->Unsummon();
@@ -707,7 +708,7 @@ void CMountSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, bool bSpaw
 	uint32_t mountVID = mountActor->Summon(pSummonItem, bSpawnFar);
 
 	if (!mountVID)
-		sys_err("[CMountSystem::Summon(%d)] Null Pointer (mountVID)", ItemSystem::GetItemID(pSummonItem));
+		LOG_ERROR("[CMountSystem::Summon({})] Null Pointer (mountVID)", ItemSystem::GetItemID(pSummonItem));
 
 	if (nullptr == m_pkMountSystemUpdateEvent)
 	{
@@ -731,7 +732,7 @@ void CMountSystem::Mount(uint32_t mobVnum, entt::entity mountItem)
 
 	if (!mountActor)
 	{
-		sys_err("[CMountSystem::Mount] Null Pointer (mountActor)");
+		LOG_ERROR("[CMountSystem::Mount] Null Pointer (mountActor)");
 		return;
 	}
 	
@@ -749,7 +750,7 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 
 	if (!mountActor)
 	{
-		sys_err("[CMountSystem::Mount] Null Pointer (mountActor)");
+		LOG_ERROR("[CMountSystem::Mount] Null Pointer (mountActor)");
 		return;
 	}
 
@@ -774,7 +775,7 @@ CMountActor* CMountSystem::GetByVID(uint32_t vid) const
 
 		if (nullptr == mountActor)
 		{
-			sys_err("[CMountSystem::GetByVID(%d)] Null Pointer (mountActor)", vid);
+			LOG_ERROR("[CMountSystem::GetByVID({})] Null Pointer (mountActor)", vid);
 			continue;
 		}
 
