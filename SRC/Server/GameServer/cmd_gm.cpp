@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -68,7 +69,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	sys_log(0, arg1);
+	LOG_INFO("{}", arg1);
 
 	if (!*arg1)
 	{
@@ -95,7 +96,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 			break;
 	}
 
-	sys_log(0, "%s %s", arg1, affectName);
+	LOG_INFO("{} {}", arg1, affectName);
 }
 // END_OF_ADD_COMMAND_SLOW_STUN
 
@@ -364,7 +365,7 @@ void CHARACTER_AddGotoInfo(const std::string& c_st_name, uint8_t empire, int map
 	newGotoInfo.y = y;
 	gs_vec_gotoInfo.emplace_back(newGotoInfo);
 
-	sys_log(0, "AddGotoInfo(name=%s, empire=%d, mapIndex=%d, pos=(%d, %d))", c_st_name.c_str(), empire, mapIndex, x, y);
+	LOG_INFO("AddGotoInfo(name={}, empire={}, mapIndex={}, pos=({}, {}))", c_st_name.c_str(), static_cast<int>(empire), mapIndex, x, y);
 }
 
 bool FindInString(const char * c_pszFind, const char * c_pszIn)
@@ -713,7 +714,7 @@ ACMD(do_group)
 	str_to_number(dwVnum, arg1);
 
 	if (test_server)
-		sys_log(0, "COMMAND GROUP SPAWN %u at %u %u %u", dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 
 	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
 }
@@ -1003,7 +1004,7 @@ struct FuncPurge
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		sys_log(0, "PURGE: %s %d", ((pkChr)->GetName()), iDist);
+		LOG_INFO("PURGE: {} {}", ((pkChr)->GetName()), iDist);
 
 #ifdef __NEWPET_SYSTEM__
 		if (((pkChr)->IsNPC()) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
@@ -1031,7 +1032,7 @@ ACMD(do_purge)
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
-		sys_err("PURGE_ERROR.NULL_SECTREE(mapIndex=%d, pos=(%d, %d)", ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 }
 
 #define ENABLE_CMD_IPURGE_EX
@@ -2291,7 +2292,7 @@ ACMD(do_event_flag)
 	//quest::CQuestManager::instance().SetEventFlag(arg1, atoi(arg2));
 	quest::CQuestManager::instance().RequestSetEventFlag(arg1, value);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "RequestSetEventFlag %s %d", arg1, value);
-	sys_log(0, "RequestSetEventFlag %s %d", arg1, value);
+	LOG_INFO("RequestSetEventFlag {} {}", arg1, value);
 }
 
 ACMD(do_get_event_flag)
@@ -2551,7 +2552,7 @@ ACMD(do_reload)
 			case 'a':
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Reloading Admin infomation.");
 				db_clientdesc->DBPacket(HEADER_GD_RELOAD_ADMIN, 0, nullptr, 0);
-				sys_log(0, "Reloading admin infomation.");
+				LOG_INFO("Reloading admin infomation.");
 				break;
 				//END_RELOAD_ADMIN
 			case 'c':	// cube
@@ -2996,8 +2997,7 @@ ACMD(do_priv_empire)
 	// ð  
 	duration = duration * (60*60);
 
-	sys_log(0, "_give_empire_privileage(empire=%d, type=%d, value=%d, duration=%d) by command",
-			empire, type, value, duration);
+	LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, duration={}) by command", empire, type, value, duration);
 	CPrivManager::instance().RequestGiveEmpirePriv(empire, type, value, duration);
 	return;
 
@@ -3147,7 +3147,7 @@ ACMD(do_vote_block_chat)
 
 	const char* name = arg1;
 	int32_t lBlockDuration = 10;
-	sys_log(0, "vote_block_chat %s %d", name, lBlockDuration);
+	LOG_INFO("vote_block_chat {} {}", name, lBlockDuration);
 
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
 
@@ -3213,7 +3213,7 @@ ACMD(do_block_chat)
 		return;
 	}
 
-	sys_log(0, "BLOCK CHAT %s %d", name, lBlockDuration);
+	LOG_INFO("BLOCK CHAT {} {}", name, lBlockDuration);
 
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
 
@@ -3267,7 +3267,7 @@ ACMD(do_build)
 	//       ޼  ʰ  Ѵ.
 	if (!pkLand)
 	{
-		sys_err("%s trying to build on not buildable area.", ((ch)->GetName()));
+		LOG_ERROR("{} trying to build on not buildable area.", ((ch)->GetName()));
 		return;
 	}
 
@@ -3283,14 +3283,14 @@ ACMD(do_build)
 		// ÷̾      Ȯؾ Ѵ.
 		if ((!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() != pkLand->GetOwner()))
 		{
-			sys_err("%s trying to build on not owned land.", ((ch)->GetName()));
+			LOG_ERROR("{} trying to build on not owned land.", ((ch)->GetName()));
 			return;
 		}
 
 		//  渶ΰ?
 		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID() != ((ch)->GetPlayerID()))
 		{
-			sys_err("%s trying to build while not the guild master.", ((ch)->GetName()));
+			LOG_ERROR("{} trying to build while not the guild master.", ((ch)->GetName()));
 			return;
 		}
 	}
@@ -3429,7 +3429,7 @@ ACMD(do_build)
 							if (dwItemVnum == 0)
 								break;
 
-							sys_log(0, "BUILD: material %d %u %u", i, dwItemVnum, dwItemCount);
+							LOG_INFO("BUILD: material {} {} {}", i, dwItemVnum, dwItemCount);
 							ch->RemoveSpecifyItem(dwItemVnum, dwItemCount);
 						}
 					}
@@ -3464,7 +3464,7 @@ ACMD(do_build)
 
 				one_argument(line, arg1, sizeof(arg1));
 
-				sys_log(0, "guild.wall.build map[%d] direction[%s]", mapIndex, arg1);
+				LOG_INFO("guild.wall.build map[{}] direction[{}]", mapIndex, arg1);
 
 				switch (arg1[0])
 				{
@@ -3482,7 +3482,7 @@ ACMD(do_build)
 						break;
 					default:
 						ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "guild.wall.build unknown_direction[%s]", arg1);
-						sys_err("guild.wall.build unknown_direction[%s]", arg1);
+						LOG_ERROR("guild.wall.build unknown_direction[{}]", arg1);
 						break;
 				}
 
@@ -3513,7 +3513,7 @@ ACMD(do_build)
 
 				if (setID != 14105 && setID != 14115 && setID != 14125)
 				{
-					sys_log(0, "BUILD_WALL: wrong wall set id %d", setID);
+					LOG_INFO("BUILD_WALL: wrong wall set id {}", setID);
 					break;
 				}
 				else
