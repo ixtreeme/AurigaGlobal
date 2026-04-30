@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -125,7 +126,7 @@ static bool read_line(FILE *fp, LPREGEN regen)
 					regen->type = REGEN_TYPE_ANYWHERE;
 				else
 				{
-					sys_err("read_line: unknown regen type %c", szTmp[0]);
+					LOG_ERROR("read_line: unknown regen type {}", szTmp[0]);
 					exit(1);
 				}
 
@@ -402,7 +403,7 @@ EVENTFUNC(dungeon_regen_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "dungeon_regen_event> <Factor> Null pointer" );
+		LOG_ERROR("dungeon_regen_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -434,7 +435,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, L
 
 	if (nullptr == fp)
 	{
-		sys_err("SYSTEM: regen_do: %s: file not found", filename);
+		LOG_ERROR("SYSTEM: regen_do: {}: file not found", filename);
 		return false;
 	}
 
@@ -490,7 +491,7 @@ bool regen_do(const char* filename, int32_t lMapIndex, int base_x, int base_y, L
 
 				if (!p)
 				{
-					sys_err("In %s, No mob data by vnum %u", filename, regen->vnum);
+					LOG_ERROR("In {}, No mob data by vnum {}", filename, regen->vnum);
 					if (!bOnce) {
 						M2_DELETE(regen);
 					}
@@ -532,7 +533,7 @@ bool regen_load_in_file(const char* filename, int32_t lMapIndex, int base_x, int
 
 	if (nullptr == fp)
 	{
-		sys_err("SYSTEM: regen_do: %s: file not found", filename);
+		LOG_ERROR("SYSTEM: regen_do: {}: file not found", filename);
 		return false;
 	}
 
@@ -581,7 +582,7 @@ bool regen_load_in_file(const char* filename, int32_t lMapIndex, int base_x, int
 
 				if (!p)
 				{
-					sys_err("In %s, No mob data by vnum %u", filename, regen->vnum);
+					LOG_ERROR("In {}, No mob data by vnum {}", filename, regen->vnum);
 					continue;
 				}
 			}
@@ -601,7 +602,7 @@ EVENTFUNC(regen_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "regen_event> <Factor> Null pointer" );
+		LOG_ERROR("regen_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -628,7 +629,7 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 
 	if (nullptr == fp)
 	{
-		sys_log(0, "SYSTEM: regen_load: %s: file not found", filename);
+		LOG_INFO("SYSTEM: regen_load: {}: file not found", filename);
 		return false;
 	}
 
@@ -682,7 +683,7 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 
 				if (!p)
 				{
-					sys_err("In %s, No mob data by vnum %u", filename, regen->vnum);
+					LOG_ERROR("In {}, No mob data by vnum {}", filename, regen->vnum);
 				}
 				else if (p->m_table.bType == CHAR_TYPE_NPC || p->m_table.bType == CHAR_TYPE_WARP || p->m_table.bType == CHAR_TYPE_GOTO)
 				{
@@ -702,7 +703,7 @@ bool regen_load(const char* filename, int32_t lMapIndex, int base_x, int base_y)
 			if ((bossFile) && (tmp.type == REGEN_TYPE_MOB)) {
 				const CMob * p = CMobManager::instance().Get(regen->vnum);
 				if (!p)
-					sys_err("In %s, No mob data by vnum %u", filename, regen->vnum);
+					LOG_ERROR("In {}, No mob data by vnum {}", filename, regen->vnum);
 				else {
 					SECTREE_MANAGER::instance().InsertBossPosition(lMapIndex, p->m_table.bType, 
 #ifdef ENABLE_MULTI_NAMES
