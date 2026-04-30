@@ -16,6 +16,7 @@
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include <Core/Logging.hpp>
 
 namespace {
 
@@ -277,7 +278,7 @@ void CHARACTER::__StateIdle_Monster()
 void CHARACTER::StateBattle()
 {
     if (IsStone()) {
-        sys_err("Stone must not use battle state (name %s)", GetName());
+        LOG_ERROR("Stone must not use battle state (name {})", GetName());
         return;
     }
 
