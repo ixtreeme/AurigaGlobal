@@ -2,6 +2,7 @@
 #define __INC_METIN_II_GAME_PARTY_H__
 
 #include "char_interface.hpp"
+#include <Core/Logging.hpp>
 
 enum // unit : minute
 {
@@ -49,8 +50,8 @@ class CPartyManager : public singleton<CPartyManager>
 
 		//void		SendPartyToDB();
 
-		void		EnablePCParty() { m_bEnablePCParty = true; sys_log(0,"PARTY Enable"); }
-		void		DisablePCParty() { m_bEnablePCParty = false; sys_log(0,"PARTY Disable"); }
+		void		EnablePCParty() { m_bEnablePCParty = true; LOG_INFO("PARTY Enable"); }
+		void		DisablePCParty() { m_bEnablePCParty = false; LOG_INFO("PARTY Disable"); }
 		bool		IsEnablePCParty() { return m_bEnablePCParty; }
 
 		LPPARTY		CreateParty(LPCHARACTER pkLeader);
