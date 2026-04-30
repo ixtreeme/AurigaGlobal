@@ -64,7 +64,7 @@ bool safe_create(char** pdata, int number)
 {
 	if (!((*pdata) = (char *) calloc (number, sizeof(char)))) 
 	{ 
-		sys_err("calloc failed [%d] %s", errno, strerror(errno)); 
+		LOG_ERROR("calloc failed [{}] {}", errno, strerror(errno)); 
 		return false; 
 	}	
 	else 
@@ -104,7 +104,7 @@ LPBUFFER buffer_new(int size)
 				// 실패하면 최후의 수단으로, 모든 pool을 해제한다.
 				buffer_pool_free();
 			CREATE(buffer->mem_data, char, size);
-			sys_err ("buffer pool free success.");
+			LOG_ERROR("buffer pool free success.");
 		}
 	}
 	assert(buffer != NULL);
@@ -199,10 +199,10 @@ void buffer_read_proceed(LPBUFFER buffer, int length)
 		return;
 
 	if (length < 0)
-		sys_err("buffer_proceed: length argument lower than zero (length: %d)", length);
+		LOG_ERROR("buffer_proceed: length argument lower than zero (length: {})", length);
 	else if (length > buffer->length)
 	{
-		sys_err("buffer_proceed: length argument bigger than buffer (length: %d, buffer: %d)", length, buffer->length);
+		LOG_ERROR("buffer_proceed: length argument bigger than buffer (length: {}, buffer: {})", length, buffer->length);
 		length = buffer->length;
 	}
 
@@ -212,7 +212,7 @@ void buffer_read_proceed(LPBUFFER buffer, int length)
 		// write_point 와 pos 는 그대로 두고 read_point 만 증가 시킨다.
 		if (buffer->read_point + length - buffer->mem_data > buffer->mem_size)
 		{
-			sys_err("buffer_read_proceed: buffer overflow! length %d read_point %d", length, buffer->read_point - buffer->mem_data);
+			LOG_ERROR("buffer_read_proceed: buffer overflow! length {} read_point {}", length, buffer->read_point - buffer->mem_data);
 			abort();
 		}
 
@@ -247,7 +247,7 @@ void buffer_adjust_size(LPBUFFER& buffer, int add_size)
 	if (buffer->mem_size >= buffer->write_point_pos + add_size)
 		return;
 
-	sys_log(0, "buffer_adjust %d current %d/%d", add_size, buffer->length, buffer->mem_size);
+	LOG_INFO("buffer_adjust {} current {}/{}", add_size, buffer->length, buffer->mem_size);
 	buffer_realloc(buffer, buffer->mem_size + add_size);
 }
 
@@ -269,7 +269,7 @@ void buffer_realloc(LPBUFFER& buffer, int length)
 		return;
 
 	temp = buffer_new (length);
-	sys_log(0, "reallocating buffer to %d, current %d", temp->mem_size, buffer->mem_size);
+	LOG_INFO("reallocating buffer to {}, current {}", temp->mem_size, buffer->mem_size);
 	memcpy(temp->mem_data, buffer->mem_data, buffer->mem_size);
 
 	read_point_pos = buffer->read_point - buffer->mem_data;
