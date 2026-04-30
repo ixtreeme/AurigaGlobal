@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "desc_p2p.h"
 #include "protocol.h"
 #include "p2p.h"
@@ -18,7 +19,7 @@ void DESC_P2P::Destroy()
 
 	fdwatch_del_fd(m_lpFdw, m_sock);
 
-	sys_log(0, "SYSTEM: closing p2p socket. DESC #%d", m_sock);
+	LOG_INFO("SYSTEM: closing p2p socket. DESC #{}", m_sock);
 
 	socket_close(m_sock);
 	m_sock = INVALID_SOCKET;
@@ -49,14 +50,14 @@ bool DESC_P2P::Setup(LPFDWATCH fdw, socket_t fd, const char * host, uint16_t wPo
 #ifdef ENABLE_PORT_SECURITY
 	if (strcmp(host, g_szPublicIP)) // refuse if remote host != public ip (only the same machine must be able to connect in here)
 	{
-		sys_log(0, "SYSTEM: new p2p connection from [%s] to [%s] fd: %d BLOCKED", host, g_szPublicIP, m_sock);
+		LOG_INFO("SYSTEM: new p2p connection from [{}] to [{}] fd: {} BLOCKED", host, g_szPublicIP, m_sock);
 		SetPhase(PHASE_CLOSE);
 		return true;
 	}
 #endif
 	SetPhase(PHASE_P2P);
 
-	sys_log(0, "SYSTEM: new p2p connection from [%s] fd: %d", host, m_sock);
+	LOG_INFO("SYSTEM: new p2p connection from [{}] fd: {}", host, m_sock);
 	return true;
 }
 
@@ -67,7 +68,7 @@ void DESC_P2P::SetPhase(int iPhase)
 	switch (iPhase)
 	{
 		case PHASE_P2P:
-			sys_log(1, "PHASE_P2P");
+			LOG_INFO("PHASE_P2P");
 
 			if (m_lpInputBuffer)
 				buffer_reset(m_lpInputBuffer);
@@ -83,7 +84,7 @@ void DESC_P2P::SetPhase(int iPhase)
 			break;
 
 		default:
-			sys_err("DESC_P2P::SetPhase : Unknown phase");
+			LOG_ERROR("DESC_P2P::SetPhase : Unknown phase");
 			break;
 	}
 
