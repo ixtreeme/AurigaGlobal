@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
@@ -34,10 +35,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
-
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 #ifdef ENABLE_NEWSTUFF
 #include "db.h"
@@ -349,11 +349,11 @@ namespace quest
 		// migrated from CHARACTER::raw_script
 		// DUAL-PATH: legacy only during migration window
 		if ( test_server )
-			sys_log ( 0, "_raw_script : %s ", lua_tostring(L,-1));
+			LOG_INFO("_raw_script : {} ", lua_tostring(L,-1));
 		if (lua_isstring(L, -1))
 			CQuestManager::Instance().AddScript(lua_tostring(L,-1));
 		else
-			sys_err("QUEST wrong argument: questname: %s", CQuestManager::instance().GetCurrentQuestName().c_str());
+			sys_err("QUEST wrong argument: questname: {}", CQuestManager::instance().GetCurrentQuestName().c_str());
 
 		return 0;
 	}
@@ -424,7 +424,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		sys_log(0, "QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 2));
+		LOG_INFO("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -446,7 +446,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		sys_err("QUEST: quest: %s player: %s : %s", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 1));
+		sys_err("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 1));
 		return 0;
 	}
 
@@ -549,7 +549,7 @@ namespace quest
 
 		if (MAX_PRIV_NUM <= type)
 		{
-			sys_err("PRIV_MANAGER: _give_char_privilege: wrong empire priv type(%u)", type);
+			sys_err("PRIV_MANAGER: _give_char_privilege: wrong empire priv type({})", type);
 			return 0;
 		}
 
@@ -570,16 +570,14 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (MAX_PRIV_NUM <= type)
 		{
-			sys_err("PRIV_MANAGER: _give_empire_privilege: wrong empire priv type(%u)", type);
+			sys_err("PRIV_MANAGER: _give_empire_privilege: wrong empire priv type({})", type);
 			return 0;
 		}
 
 		if (ch)
-			sys_log(0, "_give_empire_privileage(empire=%d, type=%d, value=%d, time=%d), by quest, %s",
-					empire, type, value, time, ((ch)->GetName()));
+			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, {}", empire, type, value, time, ((ch)->GetName()));
 		else
-			sys_log(0, "_give_empire_privileage(empire=%d, type=%d, value=%d, time=%d), by quest, NULL",
-					empire, type, value, time);
+			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, NULL", empire, type, value, time);
 
 		CPrivManager::instance().RequestGiveEmpirePriv(empire, type, value, time);
 		return 0;
@@ -596,12 +594,11 @@ namespace quest
 
 		if (MAX_PRIV_NUM <= type)
 		{
-			sys_err("PRIV_MANAGER: _give_guild_privilege: wrong empire priv type(%u)", type);
+			sys_err("PRIV_MANAGER: _give_guild_privilege: wrong empire priv type({})", type);
 			return 0;
 		}
 
-		sys_log(0, "_give_guild_privileage(empire=%d, type=%d, value=%d, time=%d)",
-				guild_id, type, value, time);
+		LOG_INFO("_give_guild_privileage(empire={}, type={}, value={}, time={})", guild_id, type, value, time);
 
 		CPrivManager::instance().RequestGiveGuildPriv(guild_id,type,value,time);
 
@@ -690,7 +687,7 @@ namespace quest
 		// migrated from CHARACTER::get_guildid_byname
 		// DUAL-PATH: legacy only during migration window
 		if ( !lua_isstring( L, 1 ) ) {
-			sys_err( "_get_guildid_byname() - invalud argument" );
+			sys_err("_get_guildid_byname() - invalud argument");
 			lua_pushnumber( L, 0 );
 			return 1;
 		}
@@ -870,10 +867,7 @@ namespace quest
 
 		if (test_server)
 		{
-			sys_log(0, "find_pc_cond map=%d, job=%d, level=%d~%d",
-					((ch)->GetMapIndex()),
-					uiJobFlag,
-					iMinLev, iMaxLev);
+			LOG_INFO("find_pc_cond map={}, job={}, level={}~{}", ((ch)->GetMapIndex()), uiJobFlag, iMinLev, iMaxLev);
 		}
 
 		tch = CHARACTER_MANAGER::instance().FindSpecifyPC(uiJobFlag,
@@ -917,7 +911,7 @@ namespace quest
 			}
 		}
 
-		//sys_err("not find(race=%d)", race);
+		//"not find(race=%d)", race);
 
 		lua_pushnumber(L, 0);
 		return 1;
@@ -938,7 +932,7 @@ namespace quest
 		if (L!=pqs->co)
 		{
 			luaL_error(L, "running thread != current thread???");
-			sys_log(0,"running thread != current thread???");
+			LOG_INFO("running thread != current thread???");
 			return -1;
 		}
 		if (pPC)
@@ -948,7 +942,7 @@ namespace quest
 			const string stQuestName(lua_tostring(L, 1));
 			const string stStateName(lua_tostring(L, 2));
 			if ( test_server )
-				sys_log(0,"set_state %s %s ", stQuestName.c_str(), stStateName.c_str() );
+				LOG_INFO("set_state {} {} ", stQuestName.c_str(), stStateName.c_str());
 			if (pPC->GetCurrentQuestName() == stQuestName)
 			{
 				pqs->st = q.GetQuestStateIndex(pPC->GetCurrentQuestName(), lua_tostring(L, -1));
@@ -982,12 +976,12 @@ namespace quest
 			lua_pushnumber(L, nRet );
 
 			if ( test_server )
-				sys_log(0,"Get_quest_state name %s value %d", stQuestName.c_str(), nRet );
+				LOG_INFO("Get_quest_state name {} value {}", stQuestName.c_str(), nRet);
 		}
 		else
 		{
 			if ( test_server )
-				sys_log(0,"PC == 0 ");
+				LOG_INFO("PC == 0 ");
 
 			lua_pushnumber(L, 0);
 		}
@@ -1118,7 +1112,7 @@ namespace quest
 					uint8_t bEmpire =  ch->GetEmpire();
 					if ( bEmpire == 0 )
 					{
-						sys_err( "Unkonwn Empire %s %d ", ((ch)->GetName()), ((ch)->GetPlayerID()) );
+						sys_err("Unkonwn Empire {} {} ", ((ch)->GetName()), ((ch)->GetPlayerID()));
 						return;
 					}
 
@@ -1134,7 +1128,7 @@ namespace quest
 
 		if ( info == nullptr)
 		{
-			sys_err( "warp_all_to_village_event> <Factor> Null pointer" );
+			sys_err("warp_all_to_village_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -1288,7 +1282,7 @@ namespace quest
 
 		if ( COXEventManager::instance().AddQuiz(level, quiz, answer) == false )
 		{
-			sys_log(0, "OXEVENT : Cannot add quiz. %d %s %d", level, quiz, answer);
+			LOG_INFO("OXEVENT : Cannot add quiz. {} {} {}", level, quiz, answer);
 		}
 
 		return 1;
@@ -1300,7 +1294,7 @@ namespace quest
 
 		if ( info == nullptr)
 		{
-			sys_err( "warp_all_to_map_my_empire_event> <Factor> Null pointer" );
+			sys_err("warp_all_to_map_my_empire_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -1432,7 +1426,7 @@ namespace quest
 				}
 			}
 
-			sys_log(0, "QUEST Spawn Monstster: VNUM(%u) COUNT(%u) isAggresive(%b)", dwVnum, SpawnCount, isAggresive);
+			LOG_INFO("QUEST Spawn Monstster: VNUM({}) COUNT({}) isAggresive(%b)", dwVnum, SpawnCount, isAggresive);
 		}
 
 		lua_pushnumber(L, SpawnCount);
@@ -1458,12 +1452,12 @@ namespace quest
 		const int32_t iMapX = static_cast<int32_t>(lua_tonumber(L, 5));
 		const int32_t iMapY = static_cast<int32_t>(lua_tonumber(L, 6));
 		uint32_t SpawnCount = 0;
-		sys_log(0, "QUEST _spawn_mob_in_map: VNUM(%u) COUNT(%u) isAggressive(%b) MapIndex(%d) MapX(%d) MapY(%d)", dwVnum, count, isAggressive, iMapIndex, iMapX, iMapY);
+		LOG_INFO("QUEST _spawn_mob_in_map: VNUM({}) COUNT({}) isAggressive(%b) MapIndex({}) MapX({}) MapY({})", dwVnum, count, isAggressive, iMapIndex, iMapX, iMapY);
 
 		PIXEL_POSITION pos;
 		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(iMapIndex, pos))
 		{
-			sys_err("QUEST _spawn_mob_in_map: cannot find base position in this map %d", iMapIndex);
+			sys_err("QUEST _spawn_mob_in_map: cannot find base position in this map {}", iMapIndex);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -1501,7 +1495,7 @@ namespace quest
 				}
 			}
 
-			sys_log(0, "QUEST Spawn Monster: VNUM(%u) COUNT(%u) isAggressive(%b)", dwVnum, SpawnCount, isAggressive);
+			LOG_INFO("QUEST Spawn Monster: VNUM({}) COUNT({}) isAggressive(%b)", dwVnum, SpawnCount, isAggressive);
 		}
 
 		lua_pushnumber(L, SpawnCount);
@@ -1591,7 +1585,7 @@ namespace quest
 
 		if (0 == mapIndex)
 		{
-			sys_err("_purge_area: cannot get a map index with (%u, %u)", x1, y1);
+			sys_err("_purge_area: cannot get a map index with ({}, {})", x1, y1);
 			return 0;
 		}
 
@@ -1656,7 +1650,7 @@ namespace quest
 
 		if (0 == mapIndex)
 		{
-			sys_err("_warp_all_in_area_to_area: cannot get a map index with (%u, %u)", from_x1, from_y1);
+			sys_err("_warp_all_in_area_to_area: cannot get a map index with ({}, {})", from_x1, from_y1);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -1670,7 +1664,7 @@ namespace quest
 			pSectree->for_each(func);
 
 			lua_pushnumber(L, func.warpCount);
-			sys_log(0, "_warp_all_in_area_to_area: %u character warp", func.warpCount);
+			LOG_INFO("_warp_all_in_area_to_area: {} character warp", func.warpCount);
 			return 1;
 		}
 		else
@@ -1695,7 +1689,7 @@ namespace quest
 
 		if (!pItemGroup)
 		{
-			sys_err("cannot find special item group %d", (uint32_t)lua_tonumber(L, 1));
+			sys_err("cannot find special item group {}", (uint32_t)lua_tonumber(L, 1));
 			return 0;
 		}
 
