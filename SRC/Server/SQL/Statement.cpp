@@ -34,7 +34,7 @@ void CStmt::Destroy()
 
 void CStmt::Error(const char * c_pszMsg)
 {
-	sys_log(0, "SYSERR: %s: [%d] %s", c_pszMsg, mysql_stmt_errno(m_pkStmt), mysql_stmt_error(m_pkStmt));
+	LOG_INFO("SYSERR: {}: [{}] {}", c_pszMsg, mysql_stmt_errno(m_pkStmt), mysql_stmt_error(m_pkStmt));
 }
 
 bool CStmt::Prepare(CAsyncSQL * sql, const char * c_pszQuery)
@@ -78,7 +78,7 @@ bool CStmt::BindParam(enum_field_types type, void * p, int iMaxLen)
 {
 	if (m_uiParamCount >= m_vec_param.size())
 	{
-		sys_err("too many parameter in query: %s", m_stQuery.c_str());
+		LOG_ERROR("too many parameter in query: {}", m_stQuery.c_str());
 		return false;
 	}
 
@@ -105,7 +105,7 @@ bool CStmt::BindResult(enum_field_types type, void * p, int iMaxLen)
 {
 	if (m_uiResultCount >= m_vec_result.size())
 	{
-		sys_err("too many result in query: %s", m_stQuery.c_str());
+		LOG_ERROR("too many result in query: {}", m_stQuery.c_str());
 		return false;
 	}
 
@@ -121,7 +121,7 @@ int CStmt::Execute()
 {
 	if (m_uiParamCount != m_vec_param.size())
 	{
-		sys_log(0, "Parameter not enough %d, expected %d query: %s", m_uiParamCount, m_vec_param.size(), m_stQuery.c_str());
+		LOG_INFO("Parameter not enough {}, expected {} query: {}", m_uiParamCount, m_vec_param.size(), m_stQuery.c_str());
 		return 0;
 	}
 
@@ -132,7 +132,7 @@ int CStmt::Execute()
 		if (bind->buffer_type == MYSQL_TYPE_STRING)
 		{
 			*(m_puiParamLen + i) = strlen((const char *) bind->buffer);
-			sys_log(0, "param %d len %d buf %s", i, *m_puiParamLen, (const char *) bind->buffer);
+			LOG_INFO("param {} len {} buf {}", i, *m_puiParamLen, (const char *) bind->buffer);
 		}
 	}
 
