@@ -421,7 +421,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 				else if (pcci->bChannel == g_bChannel)
 					Member.strName = pcci->szName;
 				else
-					LOG_ERROR("member is not in same channel PID: {} channel {}, this channel {}", dwPID, pcci->bChannel, g_bChannel);
+					LOG_ERROR("member is not in same channel PID: {} channel {}, this channel {}", dwPID, static_cast<int>(pcci->bChannel), static_cast<int>(g_bChannel));
 			}
 		}
 
@@ -607,7 +607,7 @@ void CParty::P2PSetMemberLevel(uint32_t pid, uint8_t level)
 
 	TMemberMap::iterator it;
 
-	LOG_INFO("PARTY P2PSetMemberLevel leader {} pid {} level {}", GetLeaderPID(), pid, level);
+	LOG_INFO("PARTY P2PSetMemberLevel leader {} pid {} level {}", GetLeaderPID(), pid, static_cast<int>(level));
 
 	it = m_memberMap.find(pid);
 	if (it != m_memberMap.end())
@@ -989,7 +989,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		}
 		else
 		{
-			LOG_ERROR("ROLE_COUNT_INC_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
+		LOG_ERROR("ROLE_COUNT_INC_ERROR: INDEX({}) > MAX({})", static_cast<int>(bRole), PARTY_ROLE_MAX_NUM);
 		}
 	}
 	else
@@ -1011,7 +1011,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		}
 		else
 		{
-			LOG_ERROR("ROLE_COUNT_DEC_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
+			LOG_ERROR("ROLE_COUNT_DEC_ERROR: INDEX({}) > MAX({})", static_cast<int>(bRole), PARTY_ROLE_MAX_NUM);
 		}
 	}
 
