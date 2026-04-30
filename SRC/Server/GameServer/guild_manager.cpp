@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -250,11 +251,11 @@ CGuild*	CGuildManager::FindGuildByName(const std::string guild_name)
 
 void CGuildManager::Initialize()
 {
-	sys_log(0, "Initializing Guild");
+	LOG_INFO("Initializing Guild");
 
 	if (g_bAuthServer)
 	{
-		sys_log(0, "	No need for auth server");
+		LOG_INFO("	No need for auth server");
 		return;
 	}
 
@@ -529,7 +530,7 @@ void CGuildManager::GetAroundRankString(uint32_t dwMyGuild, char * buffer, size_
 /////////////////////////////////////////////////////////////////////
 void CGuildManager::RequestCancelWar(uint32_t guild_id1, uint32_t guild_id2)
 {
-	sys_log(0, "RequestCancelWar %d %d", guild_id1, guild_id2);
+	LOG_INFO("RequestCancelWar {} {}", guild_id1, guild_id2);
 
 	TPacketGuildWar p;
 	p.bWar = GUILD_WAR_CANCEL;
@@ -540,7 +541,7 @@ void CGuildManager::RequestCancelWar(uint32_t guild_id1, uint32_t guild_id2)
 
 void CGuildManager::RequestEndWar(uint32_t guild_id1, uint32_t guild_id2)
 {
-	sys_log(0, "RequestEndWar %d %d", guild_id1, guild_id2);
+	LOG_INFO("RequestEndWar {} {}", guild_id1, guild_id2);
 
 	TPacketGuildWar p;
 	p.bWar = GUILD_WAR_END;
@@ -556,7 +557,7 @@ void CGuildManager::RequestWarOver(uint32_t dwGuild1, uint32_t dwGuild2, uint32_
 
 	if (g1->GetGuildWarState(g2->GetID()) != GUILD_WAR_ON_WAR)
 	{
-		sys_log(0, "RequestWarOver : both guild was not in war %u %u", dwGuild1, dwGuild2);
+		LOG_INFO("RequestWarOver : both guild was not in war {} {}", dwGuild1, dwGuild2);
 		RequestEndWar(dwGuild1, dwGuild2);
 		return;
 	}
@@ -581,7 +582,7 @@ void CGuildManager::RequestWarOver(uint32_t dwGuild1, uint32_t dwGuild2, uint32_
 	}
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR, 0, &p, sizeof(p));
-	sys_log(0, "RequestWarOver : winner %u loser %u draw %u betprice %d", p.dwGuildFrom, p.dwGuildTo, p.bType, p.lWarPrice);
+	LOG_INFO("RequestWarOver : winner {} loser {} draw {} betprice {}", p.dwGuildFrom, p.dwGuildTo, static_cast<int>(p.bType), p.lWarPrice);
 }
 
 void CGuildManager::DeclareWar(uint32_t guild_id1, uint32_t guild_id2, uint8_t bType)
@@ -627,7 +628,7 @@ void CGuildManager::WaitStartWar(uint32_t guild_id1, uint32_t guild_id2)
 
 	if (!g1 || !g2)
 	{
-		sys_log(0, "GuildWar: CGuildManager::WaitStartWar(%d,%d) - something wrong in arg. there is no guild like that.", guild_id1, guild_id2);
+		LOG_INFO("GuildWar: CGuildManager::WaitStartWar({},{}) - something wrong in arg. there is no guild like that.", guild_id1, guild_id2);
 		return;
 	}
 
@@ -721,7 +722,7 @@ bool CGuildManager::EndWar(uint32_t guild_id1, uint32_t guild_id2)
 
 	if (m_GuildWar.end() == it)
 	{
-		sys_log(0, "EndWar(%d,%d) - EndWar request but guild is not in list", guild_id1, guild_id2);
+		LOG_INFO("EndWar({},{}) - EndWar request but guild is not in list", guild_id1, guild_id2);
 		return false;
 	}
 
@@ -821,7 +822,7 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 
 void CGuildManager::ReserveWar(uint32_t dwGuild1, uint32_t dwGuild2, uint8_t bType) // from DB
 {
-	sys_log(0, "GuildManager::ReserveWar %u %u", dwGuild1, dwGuild2);
+	LOG_INFO("GuildManager::ReserveWar {} {}", dwGuild1, dwGuild2);
 
 	CGuild * g1 = FindGuild(dwGuild1);
 	CGuild * g2 = FindGuild(dwGuild2);
@@ -881,7 +882,7 @@ void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iB
 	p.lBetScore = iBetScoreDelta;
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_SCORE, 0, &p, sizeof(TPacketGuildWarScore));
-	sys_log(0, "SendGuildWarScore %u %u %d", dwGuild, dwGuildOpp, iDelta);
+	LOG_INFO("SendGuildWarScore {} {} {}", dwGuild, dwGuildOpp, iDelta);
 }
 
 void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
@@ -944,8 +945,7 @@ void CGuildManager::ReserveWarAdd(TGuildWarReserve * p)
 
 	memcpy(&pkReserve->data, p, sizeof(TGuildWarReserve));
 
-	sys_log(0, "ReserveWarAdd %u gid1 %u power %d gid2 %u power %d handicap %d",
-			pkReserve->data.dwID, p->dwGuildFrom, p->lPowerFrom, p->dwGuildTo, p->lPowerTo, p->lHandicap);
+	LOG_INFO("ReserveWarAdd {} gid1 {} power {} gid2 {} power {} handicap {}", pkReserve->data.dwID, p->dwGuildFrom, p->lPowerFrom, p->dwGuildTo, p->lPowerTo, p->lHandicap);
 }
 
 void CGuildManager::ReserveWarBet(TPacketGDGuildWarBet * p)
@@ -970,7 +970,7 @@ bool CGuildManager::IsBet(uint32_t dwID, const char * c_pszLogin)
 
 void CGuildManager::ReserveWarDelete(uint32_t dwID)
 {
-	sys_log(0, "ReserveWarDelete %u", dwID);
+	LOG_INFO("ReserveWarDelete {}", dwID);
 	auto it = m_map_kReserveWar.find(dwID);
 
 	if (it == m_map_kReserveWar.end())
