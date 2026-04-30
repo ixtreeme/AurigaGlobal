@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <Base/attribute.h>
@@ -36,7 +37,7 @@ void SECTREE::Destroy()
 {
 	if (!m_set_entity.empty())
 	{
-		sys_err("Sectree: entity set not empty!!");
+		LOG_ERROR("Sectree: entity set not empty!!");
 
 		ENTITY_SET::iterator it = m_set_entity.begin();
 
@@ -51,8 +52,7 @@ void SECTREE::Destroy()
 			{
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
-				sys_err("Sectree: destroying character: %s is_pc %d",
-					((ch)->GetName()), ((ch)->IsPC()) ? 1 : 0);
+				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ((ch)->GetName()), ((ch)->IsPC()) ? 1 : 0);
 
 				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -63,14 +63,14 @@ void SECTREE::Destroy()
 			{
 				LPITEM item = (LPITEM)ent;
 
-				sys_err("Sectree: destroying item: %s", item->GetName());
+				LOG_ERROR("Sectree: destroying item: {}", item->GetName());
 				ItemSystem::DestroyItemEntityEcs(
 					EntityFactory::CreateItemEntity(g_registry, item),
 					"SECTREE_DESTROY_ITEM");
 			}
 			else
 			{
-				sys_err("Sectree: unknown type: %d", ent->GetType());
+				LOG_ERROR("Sectree: unknown type: {}", ent->GetType());
 			}
 		}
 	}
@@ -112,7 +112,9 @@ void SECTREE::DecreasePC()
 		{
 			if (tree->m_iPCCount < 0)
 			{
-				sys_err("tree pc count lower than zero (value %d coord %d %d)", tree->m_iPCCount, tree->m_id.coord.x, tree->m_id.coord.y);
+				const auto coordX = tree->m_id.coord.x;
+				const auto coordY = tree->m_id.coord.y;
+				LOG_ERROR("tree pc count lower than zero (value {} coord {} {})", tree->m_iPCCount, coordX, coordY);
 				tree->m_iPCCount = 0;
 			}
 
@@ -140,7 +142,7 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 		return false;
 
 	if (m_set_entity.find(pkEnt) != m_set_entity.end()) {
-		sys_err("entity %p already exist in this sectree!", get_pointer(pkEnt));
+		LOG_ERROR("entity {} already exist in this sectree!", static_cast<const void*>(get_pointer(pkEnt)));
 		return false;
 	}
 
