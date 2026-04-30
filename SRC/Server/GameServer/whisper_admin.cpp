@@ -17,6 +17,7 @@
 #include "buffer_manager.h"
 #include "config.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -164,7 +165,7 @@ int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)
 
 	if (p->lSize < 0)
 	{
-		sys_err("invalid packet length %d", p->lSize);
+		LOG_ERROR("invalid packet length {}", p->lSize);
 		d->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
