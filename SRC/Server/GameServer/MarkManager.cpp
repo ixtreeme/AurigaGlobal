@@ -4,6 +4,7 @@
 // Handles: mark allocation, index persistence, symbol storage, block sync
 // ===========================================================================
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "MarkManager.h"
 
 #include "crc32.h"
@@ -89,7 +90,7 @@ bool CGuildMarkManager::SaveMarkIndex()
 	FILE* fp = fopen(buf, "w");
 	if (!fp)
 	{
-		sys_err("MarkManager::SaveMarkIndex: cannot open index file %s", buf);
+		LOG_ERROR("MarkManager::SaveMarkIndex: cannot open index file {}", buf);
 		return false;
 	}
 
@@ -97,7 +98,7 @@ bool CGuildMarkManager::SaveMarkIndex()
 		fprintf(fp, "%u %u\n", guildID, markID);
 
 	fclose(fp);
-	sys_log(0, "MarkManager::SaveMarkIndex: %zu entries saved", m_mapGID_MarkID.size());
+	LOG_INFO("MarkManager::SaveMarkIndex: {} entries saved", m_mapGID_MarkID.size());
 	return true;
 }
 
@@ -128,7 +129,7 @@ void CGuildMarkManager::SaveMarkImage(uint32_t imgIdx)
 	{
 		CGuildMarkImage* pkImage = __GetImage(imgIdx);
 		if (pkImage && !pkImage->Save(path.c_str()))
-			sys_err("MarkManager::SaveMarkImage: %s save failed", path.c_str());
+			LOG_ERROR("MarkManager::SaveMarkImage: {} save failed", path.c_str());
 	}
 }
 
@@ -151,7 +152,7 @@ CGuildMarkImage* CGuildMarkManager::__GetImage(uint32_t imgIdx)
 	{
 		if (!pkImage->Build(imagePath.c_str()) || !pkImage->Load(imagePath.c_str()))
 		{
-			sys_err("MarkManager::__GetImage: failed to create/load image %u (%s)", imgIdx, imagePath.c_str());
+			LOG_ERROR("MarkManager::__GetImage: failed to create/load image {} ({})", imgIdx, imagePath.c_str());
 			return nullptr;
 		}
 	}
@@ -220,7 +221,7 @@ void CGuildMarkManager::CopyMarkIdx(char* pcBuf, size_t bufSize) const
 
 	if (bufSize < requiredSize)
 	{
-		sys_err("MarkManager::CopyMarkIdx: buffer too small (%zu < %zu)", bufSize, requiredSize);
+		LOG_ERROR("MarkManager::CopyMarkIdx: buffer too small ({} < {})", bufSize, requiredSize);
 		return;
 	}
 
@@ -230,7 +231,7 @@ void CGuildMarkManager::CopyMarkIdx(char* pcBuf, size_t bufSize) const
 	{
 		if (guildID > 0xFFFF || markID > 0xFFFF)
 		{
-			sys_err("MarkManager::CopyMarkIdx: value overflow (guildID=%u, markID=%u)", guildID, markID);
+			LOG_ERROR("MarkManager::CopyMarkIdx: value overflow (guildID={}, markID={})", guildID, markID);
 			continue;
 		}
 
@@ -251,14 +252,14 @@ uint32_t CGuildMarkManager::SaveMark(uint32_t guildID, uint8_t* pbMarkImage)
 		idMark = __AllocMarkID(guildID);
 		if (idMark == INVALID_MARK_ID)
 		{
-			sys_err("MarkManager::SaveMark: cannot alloc mark for guild %u", guildID);
+			LOG_ERROR("MarkManager::SaveMark: cannot alloc mark for guild {}", guildID);
 			return INVALID_MARK_ID;
 		}
-		sys_log(0, "MarkManager::SaveMark: allocated mark %u for guild %u", idMark, guildID);
+		LOG_INFO("MarkManager::SaveMark: allocated mark {} for guild {}", idMark, guildID);
 	}
 	else
 	{
-		sys_log(0, "MarkManager::SaveMark: found existing mark %u for guild %u", idMark, guildID);
+		LOG_INFO("MarkManager::SaveMark: found existing mark {} for guild {}", idMark, guildID);
 	}
 
 	const uint32_t imgIdx = idMark / CGuildMarkImage::MARK_TOTAL_COUNT;
@@ -305,7 +306,7 @@ void CGuildMarkManager::GetDiffBlocks(uint32_t imgIdx, const uint32_t* crcList,
 
 	if (m_mapIdx_Image.find(imgIdx) == m_mapIdx_Image.end())
 	{
-		sys_err("MarkManager::GetDiffBlocks: invalid image index %u", imgIdx);
+		LOG_ERROR("MarkManager::GetDiffBlocks: invalid image index {}", imgIdx);
 		return;
 	}
 
@@ -321,7 +322,7 @@ bool CGuildMarkManager::GetBlockCRCList(uint32_t imgIdx, uint32_t* crcList)
 {
 	if (m_mapIdx_Image.find(imgIdx) == m_mapIdx_Image.end())
 	{
-		sys_err("MarkManager::GetBlockCRCList: invalid image index %u", imgIdx);
+		LOG_ERROR("MarkManager::GetBlockCRCList: invalid image index {}", imgIdx);
 		return false;
 	}
 
@@ -352,14 +353,14 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 	uint32_t symbolCount = 0;
 	if (fread(&symbolCount, sizeof(symbolCount), 1, fp) != 1)
 	{
-		sys_err("MarkManager::LoadSymbol: failed to read symbol count from %s", filename);
+		LOG_ERROR("MarkManager::LoadSymbol: failed to read symbol count from {}", filename);
 		fclose(fp);
 		return false;
 	}
 
 	if (symbolCount > 100000)
 	{
-		sys_err("MarkManager::LoadSymbol: suspicious symbol count %u in %s", symbolCount, filename);
+		LOG_ERROR("MarkManager::LoadSymbol: suspicious symbol count {} in {}", symbolCount, filename);
 		fclose(fp);
 		return false;
 	}
@@ -372,14 +373,13 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 		if (fread(&guildID, sizeof(guildID), 1, fp) != 1 ||
 		    fread(&dwSize, sizeof(dwSize), 1, fp) != 1)
 		{
-			sys_err("MarkManager::LoadSymbol: truncated file at entry %u/%u", i, symbolCount);
+			LOG_ERROR("MarkManager::LoadSymbol: truncated file at entry {}/{}", i, symbolCount);
 			break;
 		}
 
 		if (dwSize > MAX_SYMBOL_SIZE)
 		{
-			sys_err("MarkManager::LoadSymbol: symbol %u too large (%u > %u), skipping",
-			        guildID, dwSize, MAX_SYMBOL_SIZE);
+			LOG_ERROR("MarkManager::LoadSymbol: symbol {} too large ({} > {}), skipping", guildID, dwSize, MAX_SYMBOL_SIZE);
 			fseek(fp, dwSize, SEEK_CUR);
 			continue;
 		}
@@ -389,7 +389,7 @@ bool CGuildMarkManager::LoadSymbol(const char* filename)
 
 		if (fread(gs.raw.data(), 1, dwSize, fp) != dwSize)
 		{
-			sys_err("MarkManager::LoadSymbol: incomplete read for guild %u", guildID);
+			LOG_ERROR("MarkManager::LoadSymbol: incomplete read for guild {}", guildID);
 			break;
 		}
 
@@ -406,7 +406,7 @@ void CGuildMarkManager::SaveSymbol(const char* filename)
 	FILE* fp = fopen(filename, "wb");
 	if (!fp)
 	{
-		sys_err("MarkManager::SaveSymbol: cannot open %s for writing", filename);
+		LOG_ERROR("MarkManager::SaveSymbol: cannot open {} for writing", filename);
 		return;
 	}
 
@@ -434,18 +434,17 @@ void CGuildMarkManager::UploadSymbol(uint32_t guildID, int iSize, const uint8_t*
 {
 	if (iSize < 0)
 	{
-		sys_err("MarkManager::UploadSymbol: negative size %d for guild %u", iSize, guildID);
+		LOG_ERROR("MarkManager::UploadSymbol: negative size {} for guild {}", iSize, guildID);
 		return;
 	}
 
 	if (static_cast<uint32_t>(iSize) > MAX_SYMBOL_SIZE)
 	{
-		sys_err("MarkManager::UploadSymbol: size %d exceeds limit %u for guild %u",
-		        iSize, MAX_SYMBOL_SIZE, guildID);
+		LOG_ERROR("MarkManager::UploadSymbol: size {} exceeds limit {} for guild {}", iSize, MAX_SYMBOL_SIZE, guildID);
 		return;
 	}
 
-	sys_log(0, "MarkManager::UploadSymbol: guild=%u size=%d", guildID, iSize);
+	LOG_INFO("MarkManager::UploadSymbol: guild={} size={}", guildID, iSize);
 
 	auto [it, inserted] = m_mapSymbol.try_emplace(guildID, TGuildSymbol{});
 	TGuildSymbol& rSymbol = it->second;
