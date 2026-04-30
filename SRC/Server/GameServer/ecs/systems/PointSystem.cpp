@@ -78,6 +78,7 @@
 #include <boost/algorithm/string/find.hpp>
 
 #include "../../DragonSoul.h"
+#include <Core/Logging.hpp>
 #include <common/CommonDefines.h>
 
 namespace ecs::PointSystem {
@@ -179,7 +180,7 @@ int64_t CHARACTER::GetPoint(uint8_t type) const
 {
 	if (type >= POINT_MAX_NUM)
 	{
-		sys_err("Point type overflow (type %u)", type);
+		LOG_ERROR("Point type overflow (type {})", type);
 		return 0;
 	}
 
@@ -198,7 +199,7 @@ int64_t CHARACTER::GetPoint(uint8_t type) const
 	}
 
 	if (val > max_val)
-		sys_err("POINT_ERROR: %s type %d val %d (max: %d)", GetName(), type, val, max_val);
+		LOG_ERROR("POINT_ERROR: {} type {} val {} (max: {})", GetName(), type, val, max_val);
 
 	return (val);
 }
@@ -207,7 +208,7 @@ int CHARACTER::GetLimitPoint(uint8_t type) const
 {
 	if (type >= POINT_MAX_NUM)
 	{
-		sys_err("Point type overflow (type %u)", type);
+		LOG_ERROR("Point type overflow (type {})", type);
 		return 0;
 	}
 
@@ -246,7 +247,7 @@ int CHARACTER::GetLimitPoint(uint8_t type) const
 	}
 
 	if (val > max_val)
-		sys_err("POINT_ERROR: %s type %d val %d (max: %d)", GetName(), type, val, max_val);
+		LOG_ERROR("POINT_ERROR: {} type {} val {} (max: {})", GetName(), type, val, max_val);
 
 	if (val > limit)
 		val = limit;
@@ -261,7 +262,7 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 {
 	if (type >= POINT_MAX_NUM)
 	{
-		sys_err("Point type overflow (type %u)", type);
+		LOG_ERROR("Point type overflow (type {})", type);
 		return;
 	}
 
@@ -304,7 +305,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	int64_t val = 0;
 
 
-	//sys_log(0, "PointChange %d %d | %d -> %d cHP %d mHP %d", type, amount, GetPoint(type), GetPoint(type)+amount, GetHP(), GetMaxHP());
+	//LOG_TRACE("PointChange {} {} | {} -> {} cHP {} mHP {}", type, amount, GetPoint(type), GetPoint(type)+amount, GetHP(), GetMaxHP());
 
 	switch (type)
 	{
@@ -323,7 +324,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		SetLevel(GetLevel() + amount);
 		val = GetLevel();
 
-		sys_log(0, "LEVELUP: %s %d NEXT EXP %d", GetName(), GetLevel(), GetNextExp());
+		LOG_INFO("LEVELUP: {} {} NEXT EXP {}", GetName(), GetLevel(), GetNextExp());
 #ifdef ENABLE_WOLFMAN_CHARACTER
 		if (GetJob() == JOB_WOLFMAN)
 		{
@@ -405,7 +406,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		// exp°! 0 AIÇI·Î °!Áö 3Eµµ·I ÇN´U
 		if ((amount < 0) && (exp < (uint32_t)(-amount)))
 		{
-			sys_log(1, "%s AMOUNT < 0 %d, CUR EXP: %d", GetName(), -amount, exp);
+			LOG_TRACE("{} AMOUNT < 0 {}, CUR EXP: {}", GetName(), -amount, exp);
 			amount = exp; // -exp
 
 			SetExp(exp + amount);
@@ -465,7 +466,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			// iLevStepAI 4 AI»óAI¸é ·1o§AI ?A¶ú3î3ß ÇI1Ç·Î ?©±â?! ?A 1ö 3o´Â °aAI´U.
 			if (iLevStep >= 4)
 			{
-				sys_err("%s LEVEL_STEP bigger than 4! (%d)", GetName(), iLevStep);
+				LOG_ERROR("{} LEVEL_STEP bigger than 4! ({})", GetName(), iLevStep);
 				iLevStep = 4;
 			}
 
@@ -678,7 +679,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		const int64_t Envantertoplami = static_cast<int64_t>(Inven_Point()) + amount;
 		if (Envantertoplami > 18)
 		{
-			sys_err("[ENVANTER ERROR!]");
+			LOG_ERROR("[ENVANTER ERROR!]");
 			return;
 		}
 		Set_Inventory_Point(Inven_Point() + amount);
@@ -693,7 +694,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		if (GOLD_MAX <= nTotalMoney)
 		{
-			sys_err("[OVERFLOW_GOLD] OriGold %d AddedGold %lld id %u Name %s ", GetGold(), amount, GetPlayerID(), GetName());
+			LOG_ERROR("[OVERFLOW_GOLD] OriGold {} AddedGold {} id {} Name {} ", GetGold(), amount, GetPlayerID(), GetName());
 
 			LogManager::instance().CharLog(this, GetGold() + amount, "OVERFLOW_GOLD", "");
 			return;
@@ -729,13 +730,13 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		if (GAYA_MAX <= nTotalGaya)
 		{
-			sys_err("[OVERFLOW_GAYA] Gaya max seviyede %u Name %s ", GetGaya(), GetName());
+			LOG_ERROR("[OVERFLOW_GAYA] Gaya max seviyede {} Name {} ", GetGaya(), GetName());
 			return;
 		}
 
 		if (nTotalGaya < 0)
 		{
-			sys_err("Gaya eksiye dusecekti. PID::[%d]", GetPlayerID());
+			LOG_ERROR("Gaya eksiye dusecekti. PID::[{}]", GetPlayerID());
 			return;
 		}
 
@@ -948,7 +949,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (GetPoint(type) + amount > 100)
 		{
 			if (type != POINT_MALL_EXPBONUS && type != POINT_MALL_ITEMBONUS) {
-				sys_err("MALL_BONUS exceeded over 100!! point type: %d name: %s amount %d", type, GetName(), amount);
+				LOG_ERROR("MALL_BONUS exceeded over 100!! point type: {} name: {} amount {}", type, GetName(), amount);
 			}
 
 			amount = 100 - GetPoint(type);
@@ -986,7 +987,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (GetPoint(type) + amount > 254)
 		{
 			if (type != POINT_EXP_DOUBLE_BONUS && type != POINT_GOLD_DOUBLE_BONUS) {
-				sys_err("BONUS exceeded over 100!! point type: %d name: %s amount %d", type, GetName(), amount);
+				LOG_ERROR("BONUS exceeded over 100!! point type: {} name: {} amount {}", type, GetName(), amount);
 			}
 
 			amount = 254 - GetPoint(type);
@@ -1073,7 +1074,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_VOICE:
 	case POINT_EMPIRE_POINT:
-		//sys_err("CHARACTER::PointChange: %s: point cannot be changed. use SetPoint instead (type: %d)", GetName(), type);
+		//"CHARACTER::PointChange: %s: point cannot be changed. use SetPoint instead (type: %d)", GetName(), type);
 		val = GetRealPoint(type);
 		break;
 
@@ -1100,7 +1101,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	break;
 
 	default:
-		sys_err("CHARACTER::PointChange: %s: unknown point change type %d", GetName(), type);
+		LOG_ERROR("CHARACTER::PointChange: {}: unknown point change type {}", GetName(), type);
 		return;
 	}
 
@@ -1185,7 +1186,7 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 		int iAdd = iVal & 0x00800000;
 		int iChange = iVal & 0x007fffff;
 
-		sys_log(1, "APPLY_SKILL skill %d add? %d change %d", bSkillVnum, iAdd ? 1 : 0, iChange);
+		LOG_TRACE("APPLY_SKILL skill {} add? {} change {}", static_cast<int>(bSkillVnum), iAdd ? 1 : 0, iChange);
 
 		if (0 == iAdd)
 			iChange = -iChange;
@@ -1384,7 +1385,7 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 		break;
 
 	default:
-		sys_err("Unknown apply type %d name %s", bApplyType, GetName());
+		LOG_ERROR("Unknown apply type {} name {}", bApplyType, GetName());
 		break;
 
 	case APPLY_ATTBONUS_IRR_SPADA:
