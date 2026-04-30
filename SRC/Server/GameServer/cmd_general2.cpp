@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -729,7 +730,7 @@ ACMD(do_save_savepoint) {
 	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
-		sys_err("%s savepoint slot (%d) is not empty. Maybe a hacker?", ((ch)->GetName()), slot);
+		LOG_ERROR("{} savepoint slot ({}) is not empty. Maybe a hacker?", ((ch)->GetName()), slot);
 	} else {
 		int mapIdx = ((ch)->GetMapIndex());
 		if (mapIdx > 10000) {
