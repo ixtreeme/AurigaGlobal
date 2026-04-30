@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include <common/stl.h>
 #include "group_text_parse_tree.h"
 
@@ -75,9 +76,9 @@ bool CGroupTextParseTreeLoader::LoadGroup(CGroupNode * pGroupNode)
 		{
 			if (2 != stTokenVector.size())
 			{
-				sys_err("Invalid group syntax token size: %u != 2 (DO NOT SPACE IN NAME)", stTokenVector.size());
+				LOG_ERROR("Invalid group syntax token size: {} != 2 (DO NOT SPACE IN NAME)", stTokenVector.size());
 				for (unsigned int i = 0; i < stTokenVector.size(); ++i)
-					sys_err("  %u %s", i, stTokenVector[i].c_str());
+					LOG_ERROR("  {} {}", i, stTokenVector[i].c_str());
 				exit(1);
 				continue;
 			}
@@ -108,10 +109,7 @@ bool CGroupTextParseTreeLoader::LoadGroup(CGroupNode * pGroupNode)
 
 			if (1 == stTokenVector.size())
 			{
-				sys_err("CGroupTextParseTreeLoader::LoadGroup : must have a value (filename: %s line: %d key: %s)",
-						m_strFileName.c_str(),
-						m_dwcurLineIndex,
-						key.c_str());
+				LOG_ERROR("CGroupTextParseTreeLoader::LoadGroup : must have a value (filename: {} line: {} key: {})", m_strFileName.c_str(), m_dwcurLineIndex, key.c_str());
 				break;
 			}
 
