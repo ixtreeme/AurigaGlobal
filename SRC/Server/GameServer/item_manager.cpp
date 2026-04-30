@@ -695,16 +695,21 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 	if (item->GetSectree())
 		item->RemoveFromGround();
 
-	if (item->GetOwner())
+	if (LPCHARACTER owner = item->GetOwner())
 	{
-		if (CHARACTER_MANAGER::instance().Find(item->GetOwner()->GetPlayerID()) != nullptr)
+		LPCHARACTER liveOwner = item->GetLastOwnerPID() != 0
+			? CHARACTER_MANAGER::instance().FindByPID(item->GetLastOwnerPID())
+			: nullptr;
+
+		if (liveOwner == owner)
 		{
-			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), item->GetOwner()->GetName());
+			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), owner->GetName());
 			item->RemoveFromCharacter();
 		}
 		else
 		{
-			LOG_ERROR("WTH! Invalid item owner. owner pointer : {}", static_cast<const void*>(item->GetOwner()));
+			LOG_ERROR("WTH! Invalid item owner. owner pointer : {} last_owner_pid {}", static_cast<const void*>(owner), item->GetLastOwnerPID());
+			item->SetCell(nullptr, item->GetCell());
 		}
 	}
 

@@ -8567,6 +8567,44 @@ Follow-up:
 - Re-run WinTest and compare core2/core99 syslog growth specifically.
 - If `heart_idle` persists after this reduction, the next suspect is DBServer/AuthServer legacy logging and/or heavy boot data loading, not GameServer `INFO` logging alone.
 
+## Phase 16-3 Crash Investigation - Active Core Heap Corruption
+
+Operator report:
+- The core crashes consistently on whichever core the character is currently standing in.
+
+Evidence:
+- Windows Application log confirms `GameServer.exe` crashes with:
+  - exception code `0xc0000374`
+  - module `ntdll.dll`
+  - bucket `PCH_C9_FROM_ntdll`
+  - this is heap corruption, not a format-string exception.
+- Crash timestamps aligned with player load / enter-game on the active core.
+- Active-core logs showed repeated item duplicate purge before the crash:
+  - `CInputDB::ItemLoad: purging stale duplicate item id=... owner_pid=6 window=8`
+  - `WTH! Invalid item owner. owner pointer : ...`
+- This indicates `ItemLoad` was destroying stale duplicate legacy items whose `CItem::m_pOwner` pointer could already be dangling.
+
+Hotfix:
+- Hardened duplicate item destruction:
+  - `ecs::ItemSystem::DestroyLoadedDuplicateItem` now checks ECS owner state.
+  - If the legacy owner pointer matches the live owner from `CHARACTER_MANAGER::FindByPID`, it removes the item from the character normally.
+  - If the owner pointer is stale/dangling, it clears the legacy item owner with `SetCell(nullptr, cell)` before destroying the item.
+- Hardened `ITEM_MANAGER::DestroyItem`:
+  - It no longer dereferences `item->GetOwner()->GetPlayerID()` blindly.
+  - It validates owner through `GetLastOwnerPID()` + `FindByPID()`.
+  - If the owner pointer is invalid, it clears the owner pointer instead of dereferencing it.
+
+Expected result:
+- Active-core crash during player item load should stop.
+- `WTH! Invalid item owner` may still appear as diagnostic if stale state exists, but it should no longer dereference/free through an invalid owner pointer.
+
+Follow-up:
+- Re-run WinTest on the same character.
+- Verify:
+  - character enters the same map without GameServer crash,
+  - no `0xc0000374` GameServer APPCRASH in Windows Application log,
+  - duplicate item purge either disappears or completes without heap assertion.
+
 ## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
 
 Mode:

@@ -2225,6 +2225,22 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
         return false;
 
     legacyItem->SetSkipSave(true);
+
+    const auto* ownerState = g_registry.try_get<ecs::ItemOwner>(item);
+    const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;
+    LPCHARACTER legacyOwner = legacyItem->GetOwner();
+    LPCHARACTER liveOwner = ownerPID != 0 ? CHARACTER_MANAGER::instance().FindByPID(ownerPID) : nullptr;
+
+    if (legacyOwner) {
+        if (liveOwner == legacyOwner) {
+            legacyItem->RemoveFromCharacter();
+        } else {
+            legacyItem->SetCell(nullptr, legacyItem->GetCell());
+            g_registry.emplace_or_replace<ecs::ItemOwner>(
+                item, ecs::ItemOwner{0, legacyItem->GetLastOwnerPID(), 0});
+        }
+    }
+
     EntityFactory::DestroyItemEntity(g_registry, legacyItem);
     M2_DESTROY_ITEM(legacyItem);
     return true;
