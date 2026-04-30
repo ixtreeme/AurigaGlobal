@@ -2072,7 +2072,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 //								pkKiller->UpdateAlignment(-20000);
 //							else
 //							{
-//								sys_log(0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
+//								0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
 //
 //								f.m_iStep = 1;
 //								ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller))->ForEachOnlineMember(f);
@@ -2529,7 +2529,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	}
 
 	//if (test_server && IsPC())
-	//	sys_log(0, "%s Attack %s type %u ret %d", GetName(), pkVictim->GetName(), bType, iRet);
+	//	0, "%s Attack %s type %u ret %d", GetName(), pkVictim->GetName(), bType, iRet);
 	if (iRet == BATTLE_DAMAGE || iRet == BATTLE_DEAD)
 	{
 		OnMove(true);
