@@ -17,6 +17,7 @@
 #include "locale_service.h"
 #include "config.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "db.h"
 #include "skill_power.h"
 
@@ -184,7 +185,7 @@ void map_allow_log()
 	std::set<int>::iterator i;
 
 	for (i = s_set_map_allows.begin(); i != s_set_map_allows.end(); ++i)
-		sys_log(0, "MAP_ALLOW: %d", *i);
+		LOG_INFO("MAP_ALLOW: {}", *i);
 }
 
 static void map_allow_add(int32_t index)
@@ -1204,7 +1205,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 
 		TOKEN("quest_dir")
 		{
-			sys_log(0, "QUEST_DIR SETTING : %s", value_string);
+			LOG_INFO("QUEST_DIR SETTING : {}", value_string);
 			g_stQuestDir = value_string;
 		}
 
@@ -1212,7 +1213,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		{
 			//g_stQuestObjectDir = value_string;
 			std::istringstream is(value_string);
-			sys_log(0, "QUEST_OBJECT_DIR SETTING : %s", value_string);
+			LOG_INFO("QUEST_OBJECT_DIR SETTING : {}", value_string);
 			string dir;
 			while (!is.eof())
 			{
@@ -1220,7 +1221,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 				if (is.fail())
 					break;
 				g_setQuestObjectDir.insert(dir);
-				sys_log(0, "QUEST_OBJECT_DIR INSERT : %s", dir .c_str());
+				LOG_INFO("QUEST_OBJECT_DIR INSERT : {}", dir .c_str());
 			}
 		}
 
@@ -1791,7 +1792,7 @@ void LoadMapConfig()
 
 	if (g_vecMapConf.empty())
 	{
-		sys_err("CANNOT LOAD MAP TELEPORTER CONFIG!!!");
+		LOG_ERROR("CANNOT LOAD MAP TELEPORTER CONFIG!!!");
 		fprintf(stderr, "CANNOT LOAD MAP TELEPORTER CONFIG!!!\n");
 	}
 		
