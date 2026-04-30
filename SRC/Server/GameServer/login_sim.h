@@ -2,6 +2,7 @@
 #define __INC_METIN_II_SERVER_LOGINSIM__
 
 #include "desc_client.h"
+#include <Core/Logging.hpp>
 
 class CLoginSim
 {
@@ -19,7 +20,7 @@ class CLoginSim
 		void AddPlayer(uint32_t dwID)
 		{
 			vecID.push_back(dwID);
-			sys_log(0, "AddPlayer %lu", dwID);
+			LOG_INFO("AddPlayer {}", dwID);
 		}
 
 		bool IsCheck()
