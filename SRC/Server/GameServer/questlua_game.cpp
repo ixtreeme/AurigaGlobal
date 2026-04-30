@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -29,9 +30,9 @@
 #endif
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 extern ACMD(do_in_game_mall);
@@ -167,7 +168,7 @@ namespace quest
 
 		if (!item)
 		{
-			sys_err("cannot create item vnum %d count %d", item_vnum, count);
+			sys_err("cannot create item vnum {} count {}", item_vnum, count);
 			return 0;
 		}
 
