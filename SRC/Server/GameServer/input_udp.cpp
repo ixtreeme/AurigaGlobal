@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
 #include "input.h"
@@ -61,12 +62,12 @@ void CInputUDP::Handshake(LPDESC pDesc, const char * c_pData)
 
 	if (pDesc->GetHandshake() == pInfo->dwHandshake)
 	{
-		sys_log(0, "UDP: Grant %s:%d", inet_ntoa(m_SockAddr.sin_addr), m_SockAddr.sin_port);
+		LOG_INFO("UDP: Grant {}:{}", inet_ntoa(m_SockAddr.sin_addr), m_SockAddr.sin_port);
 		pDesc->UDPGrant(m_SockAddr);
 		return;
 	}
 	else
-		sys_log(0, "UDP: Handshake differs %s", pDesc->GetHostName());
+		LOG_INFO("UDP: Handshake differs {}", pDesc->GetHostName());
 }
 
 void CInputUDP::StateChecker(const char * c_pData)
@@ -114,7 +115,7 @@ int CInputUDP::Analyze(LPDESC pDesc, uint8_t bHeader, const char * c_pData)
 		*/
 
 		default:
-			sys_err("unknown UDP header %u", bHeader);
+			LOG_ERROR("unknown UDP header {}", bHeader);
 			break;
 	}
 
@@ -157,13 +158,13 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 
 		//if (!pDesc)
 		//{
-		//sys_err("No desc by handshake %u", dwHandshake);
+		//"No desc by handshake %u", dwHandshake);
 		//return true;
 		//}
 
 		//if (m_SockAddr.sin_addr.s_addr != pDesc->GetAddr().sin_addr.s_addr)
 		//{
-		//sys_err("Hostname Mismatch! %s != %s", inet_ntoa(m_SockAddr.sin_addr), pDesc->GetHostName());
+		//"Hostname Mismatch! %s != %s", inet_ntoa(m_SockAddr.sin_addr), pDesc->GetHostName());
 		//return true;
 		//}
 
