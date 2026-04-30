@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -26,7 +27,7 @@ namespace quest
 
 		if ( info == nullptr)
 		{
-			sys_err( "quest_server_timer_event> <Factor> Null pointer" );
+			LOG_ERROR("quest_server_timer_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -51,7 +52,7 @@ namespace quest
 
 		if ( info == nullptr)
 		{
-			sys_err( "quest_timer_event> <Factor> Null pointer" );
+			LOG_ERROR("quest_timer_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -73,7 +74,7 @@ END_OF_TIMER_EVENT:
 			if (pPC && info->name) // @fixme168
 				pPC->RemoveTimerNotCancel(info->name);
 			else
-				sys_err("quest::PC pointer null. player_id: %u", info->player_id);
+				LOG_ERROR("quest::PC pointer null. player_id: {}", info->player_id);
 
 			M2_DELETE_ARRAY(info->name);
 			info->name = nullptr;
@@ -117,7 +118,7 @@ END_OF_TIMER_EVENT:
 		if (info->name)
 			strlcpy(info->name, name, nameCapacity);
 
-		sys_log(0, "QUEST timer name %s cycle %d pc %u npc %u loop? %d", name ? name : "<noname>", ltime_cycle, player_id, npc_id, loop ? 1 : 0);
+		LOG_INFO("QUEST timer name {} cycle {} pc {} npc {} loop? {}", name ? name : "<noname>", ltime_cycle, player_id, npc_id, loop ? 1 : 0);
 
 		info->time_cycle	= loop ? ltime_cycle : 0;
 		return event_create(quest_timer_event, info, ltime_cycle);
