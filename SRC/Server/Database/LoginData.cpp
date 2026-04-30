@@ -78,11 +78,11 @@ void CLoginData::SetPlay(bool bOn)
 {
 	if (bOn)
 	{
-		sys_log(0, "SetPlay on %lu %s", GetKey(), m_data.login);
+		LOG_INFO("SetPlay on {} {}", GetKey(), m_data.login);
 		SetLogonTime();
 	}
 	else
-		sys_log(0, "SetPlay off %lu %s", GetKey(), m_data.login);
+		LOG_INFO("SetPlay off {} {}", GetKey(), m_data.login);
 
 	m_bPlay = bOn;
 	m_lastplay = CClientManager::instance().GetCurrentTime();
