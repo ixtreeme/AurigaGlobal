@@ -8,6 +8,7 @@
 
 #include <common/singleton.h>
 #include "utils.h"
+#include <Core/Logging.hpp>
 
 class SpamManager : public singleton<SpamManager>
 {
@@ -42,7 +43,7 @@ class SpamManager : public singleton<SpamManager>
 		inline void Insert(const char * str, unsigned int score = 10)
 		{
 			m_vec_word.push_back(std::make_pair(str, score));
-			sys_log(0, "SPAM: %2d %s", score, str);
+			LOG_INFO("SPAM: {:2} {}", score, str);
 		}
 
 	private:
