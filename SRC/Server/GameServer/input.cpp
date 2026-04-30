@@ -18,6 +18,7 @@
 #include "fishing.h"
 #include "priv_manager.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 
 #include <common/CommonDefines.h>
 
@@ -43,7 +44,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 
 	if (!m_pPacketInfo)
 	{
-		sys_err("No packet info has been binded to");
+		LOG_ERROR("No packet info has been binded to");
 		return true;
 	}
 
@@ -67,7 +68,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		else if (!m_pPacketInfo->Get(bHeader, &iPacketLen, &c_pszName))
 		{
 
-			sys_err("UNKNOWN HEADER: %d, LAST HEADER: %d(%d), REMAIN BYTES: %d, fd: %d", bHeader, g_iLastPacket[0], g_iLastPacket[1], m_iBufferLeft, lpDesc->GetSocket());
+			LOG_ERROR("UNKNOWN HEADER: {}, LAST HEADER: {}({}), REMAIN BYTES: {}, fd: {}", static_cast<int>(bHeader), g_iLastPacket[0], g_iLastPacket[1], m_iBufferLeft, lpDesc->GetSocket());
 
 			//printdata((uint8_t *) c_pvOrig, m_iBufferLeft);
 			lpDesc->SetPhase(PHASE_CLOSE);
@@ -83,7 +84,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		if (bHeader)
 		{
 			if (test_server && bHeader != HEADER_CG_MOVE)
-				sys_log(0, "Packet Analyze [Header %d][bufferLeft %d] ", bHeader, m_iBufferLeft);
+				LOG_TRACE("Packet Analyze [Header {}][bufferLeft {}] ", static_cast<int>(bHeader), m_iBufferLeft);
 
 			m_pPacketInfo->Start();
 
@@ -98,7 +99,7 @@ bool CInputProcessor::Process(LPDESC lpDesc, const void * c_pvOrig, int iBytes, 
 		}
 
 		if (bHeader == HEADER_CG_PONG)
-			sys_log(0, "PONG! %u", *(uint8_t*)(c_pData + iPacketLen - sizeof(uint8_t)));
+			LOG_TRACE("PONG! {}", static_cast<int>(*(uint8_t*)(c_pData + iPacketLen - sizeof(uint8_t))));
 
 		c_pData	+= iPacketLen;
 		m_iBufferLeft -= iPacketLen;
@@ -125,7 +126,7 @@ void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
 
 	if (d->GetHandshake() != p->dwHandshake)
 	{
-		sys_err("Invalid Handshake on %d", d->GetSocket());
+		LOG_ERROR("Invalid Handshake on {}", d->GetSocket());
 		d->SetPhase(PHASE_CLOSE);
 	}
 	else
@@ -157,7 +158,7 @@ void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
-	sys_log(0, "VERSION: %s %s %s", ((ch)->GetName()), p->timestamp, p->filename);
+	LOG_INFO("VERSION: {} {} {}", ((ch)->GetName()), p->timestamp, p->filename);
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetClientVersion(p->timestamp);
 }
 
@@ -213,13 +214,13 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		if (!guild_mark_server)
 		{
 			// �������! - ��ũ ������ �ƴѵ� ��ũ�� ��û�Ϸ���?
-			sys_err("Guild Mark login requested but i'm not a mark server!");
+			LOG_ERROR("Guild Mark login requested but i'm not a mark server!");
 			d->SetPhase(PHASE_CLOSE);
 			return 0;
 		}
 
 		// ������ ���� --;
-		sys_log(0, "MARK_SERVER: Login");
+		LOG_INFO("MARK_SERVER: Login");
 		d->SetPhase(PHASE_LOGIN);
 		return 0;
 	}
@@ -247,7 +248,7 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		TPacketKeyAgreement* p = (TPacketKeyAgreement*)c_pData;
 		if (!d->IsCipherPrepared())
 		{
-			sys_err ("Cipher isn't prepared. %s maybe a Hacker.", inet_ntoa(d->GetAddr().sin_addr));
+			LOG_ERROR("Cipher isn't prepared. {} maybe a Hacker.", inet_ntoa(d->GetAddr().sin_addr));
 			d->DelayedDisconnect(5);
 			return 0;
 		}
@@ -259,8 +260,7 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				d->SetPhase(PHASE_LOGIN);
 			}
 		} else {
-			sys_log(0, "[CInputHandshake] Key agreement failed: al=%u dl=%u",
-				p->wAgreedLength, p->wDataLength);
+			LOG_ERROR("[CInputHandshake] Key agreement failed: al={} dl={}", p->wAgreedLength, p->wDataLength);
 			d->SetPhase(PHASE_CLOSE);
 		}
 	}
@@ -268,10 +268,10 @@ int CInputHandshake::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	else {
 //#ifdef ENABLE_AUTH_PERFORMANCE
 		d->SetPhase(PHASE_CLOSE);
-		sys_err("Handshake phase does not handle packet %d (fd %d)", bHeader, d->GetSocket());
+		LOG_ERROR("Handshake phase does not handle packet {} (fd {})", static_cast<int>(bHeader), d->GetSocket());
 		return 0;
 //#else
-//		sys_err("Handshake phase does not handle packet %d (fd %d)", bHeader, d->GetSocket());
+//		LOG_ERROR("Handshake phase does not handle packet {} (fd {})", static_cast<int>(bHeader), d->GetSocket());
 //#endif
 	}
 
