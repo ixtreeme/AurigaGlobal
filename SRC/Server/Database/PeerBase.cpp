@@ -55,7 +55,7 @@ bool CPeerBase::Accept(socket_t fd_accept)
 //	std::string targetIP = inet_ntoa(peer.sin_addr);
 //	if (targetIP.rfind("127.0.0.1", 0) && targetIP.rfind("192.168.", 0) && targetIP.rfind("10.", 0))
 //	{
-//		sys_log(0, "BLOCK CONNECTION FROM %s", inet_ntoa(peer.sin_addr));
+//		LOG_INFO("BLOCK CONNECTION FROM {}", inet_ntoa(peer.sin_addr));
 //		Destroy();
 //		return false;
 //	}
@@ -80,7 +80,7 @@ bool CPeerBase::Accept(socket_t fd_accept)
 	fdwatch_add_fd(m_fdWatcher, m_fd, this, FDW_READ, false);
 
 	OnAccept();
-	sys_log(0, "ACCEPT FROM %s", inet_ntoa(peer.sin_addr));
+	LOG_INFO("ACCEPT FROM {}", inet_ntoa(peer.sin_addr));
 	return true;
 }
 
@@ -115,7 +115,7 @@ void CPeerBase::EncodeBYTE(uint8_t b)
 {
 	if (!m_outBuffer)
 	{
-		sys_err("Not ready to write");
+		LOG_ERROR("Not ready to write");
 		return;
 	}
 
@@ -127,7 +127,7 @@ void CPeerBase::EncodeWORD(uint16_t w)
 {
 	if (!m_outBuffer)
 	{
-		sys_err("Not ready to write");
+		LOG_ERROR("Not ready to write");
 		return;
 	}
 
@@ -139,7 +139,7 @@ void CPeerBase::EncodeDWORD(uint32_t dw)
 {
 	if (!m_outBuffer)
 	{
-		sys_err("Not ready to write");
+		LOG_ERROR("Not ready to write");
 		return;
 	}
 
@@ -151,7 +151,7 @@ void CPeerBase::Encode(const void* data, uint32_t size)
 {
 	if (!m_outBuffer)
 	{
-		sys_err("Not ready to write");
+		LOG_ERROR("Not ready to write");
 		return;
 	}
 
@@ -163,7 +163,7 @@ int CPeerBase::Recv()
 {
 	if (!m_inBuffer)
 	{
-		sys_err("input buffer nil");
+		LOG_ERROR("input buffer nil");
 		return -1;
 	}
 
@@ -173,7 +173,7 @@ int CPeerBase::Recv()
 
 	if (bytes_read < 0)
 	{
-		sys_err("socket_read failed %s", strerror(errno));
+		LOG_ERROR("socket_read failed {}", strerror(errno));
 		return -1;
 	}
 	else if (bytes_read == 0)
