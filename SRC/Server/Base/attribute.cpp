@@ -39,7 +39,7 @@ void CAttribute::Alloc()
 		return;
 	}
 
-	//sys_log(0, "Alloc::dataType %u width %d height %d memSize %d", dataType, width, height, memSize);
+	// LOG_TRACE("Alloc::dataType {} width {} height {} memSize {}", dataType, width, height, memSize);
 	data = malloc(memSize);
 
 	switch (dataType)
