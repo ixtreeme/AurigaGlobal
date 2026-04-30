@@ -2,6 +2,10 @@
 #define __INC_LIBTHECORE_LOG_H__
 
 #ifdef __cplusplus
+#include "Logging.hpp"
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
