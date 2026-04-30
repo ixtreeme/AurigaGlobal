@@ -42,7 +42,7 @@ void CAsyncSQL::Destroy()
 {
 	if (m_hDB.host)
 	{
-		sys_log(0, "AsyncSQL: closing mysql connection.");
+		LOG_INFO("AsyncSQL: closing mysql connection.");
 		mysql_close(&m_hDB);
 		m_hDB.host = nullptr;
 	}
@@ -89,23 +89,23 @@ bool CAsyncSQL::QueryLocaleSet()
 {
 	if (0 == m_stLocale.length())
 	{
-		sys_err("m_stLocale == 0");
+		LOG_ERROR("m_stLocale == 0");
 		return true;
 	}
 
 	else if (m_stLocale == "ascii")
 	{
-		sys_err("m_stLocale == ascii");
+		LOG_ERROR("m_stLocale == ascii");
 		return true;
 	}
 
 	if (mysql_set_character_set(&m_hDB, m_stLocale.c_str()))
 	{
-		sys_err("cannot set locale %s by 'mysql_set_character_set', errno %u %s", m_stLocale.c_str(), mysql_errno(&m_hDB) , mysql_error(&m_hDB));
+		LOG_ERROR("cannot set locale {} by 'mysql_set_character_set', errno {} {}", m_stLocale.c_str(), mysql_errno(&m_hDB), mysql_error(&m_hDB));
 		return false; 
 	}
 
-	sys_log(0, "\t--mysql_set_character_set(%s)", m_stLocale.c_str());
+	LOG_INFO("\t--mysql_set_character_set({})", m_stLocale.c_str());
 
 	return true;
 }
@@ -170,7 +170,7 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 	if (c_pszLocale)
 	{
 		m_stLocale = c_pszLocale;
-		sys_log(0, "AsyncSQL: locale %s", m_stLocale.c_str());
+		LOG_INFO("AsyncSQL: locale {}", m_stLocale.c_str());
 	}
 
 	if (!bNoThread)
@@ -242,7 +242,7 @@ SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 {
 	if (m_ulThreadID != mysql_thread_id(&m_hDB))
 	{
-		sys_log(0, "MySQL connection was reconnected. querying locale set"); // @warme012
+		LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
 		while (!QueryLocaleSet());
 		m_ulThreadID = mysql_thread_id(&m_hDB);
 	}
@@ -261,7 +261,7 @@ SQLMsg * CAsyncSQL::DirectQuery(const char * c_pszQuery)
 				"AsyncSQL::DirectQuery : mysql_query error: %s\nquery: %s",
 				mysql_error(&m_hDB), p->stQuery.c_str());
 
-		sys_err(buf);
+		LOG_ERROR("{}", buf);
 		p->uiSQLErrno = mysql_errno(&m_hDB);
 	}
 
@@ -545,7 +545,7 @@ void CAsyncSQL::ChildLoop()
 
 			if (m_ulThreadID != mysql_thread_id(&m_hDB))
 			{
-				sys_log(0, "MySQL connection was reconnected. querying locale set"); // @warme012
+				LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
 				while (!QueryLocaleSet());
 				m_ulThreadID = mysql_thread_id(&m_hDB);
 			}
@@ -554,8 +554,7 @@ void CAsyncSQL::ChildLoop()
 			{
 				p->uiSQLErrno = mysql_errno(&m_hDB);
 
-				sys_err("AsyncSQL: query failed: %s (query: %s errno: %d)", 
-						mysql_error(&m_hDB), p->stQuery.c_str(), p->uiSQLErrno);
+				LOG_ERROR("AsyncSQL: query failed: {} (query: {} errno: {})", mysql_error(&m_hDB), p->stQuery.c_str(), p->uiSQLErrno);
 
 				switch (p->uiSQLErrno)
 				{
@@ -575,7 +574,7 @@ void CAsyncSQL::ChildLoop()
 					case ER_CANT_CREATE_THREAD:
 					case ER_INVALID_USE_OF_NULL:
 						m_sem.Release();
-						sys_err("AsyncSQL: retrying");
+						LOG_ERROR("AsyncSQL: retrying");
 						continue;
 				}
 			}
@@ -583,8 +582,7 @@ void CAsyncSQL::ChildLoop()
 			profiler.Stop();
 			
 			if (!profiler.IsOk())
-				sys_log(0, "[QUERY : LONG INTERVAL(OverSec %ld.%ld)] : %s", 
-						profiler.GetResultSec(), profiler.GetResultUSec(), p->stQuery.c_str());
+				LOG_INFO("[QUERY : LONG INTERVAL(OverSec {}.{})] : {}", profiler.GetResultSec(), profiler.GetResultUSec(), p->stQuery.c_str());
 
 			PopQueryFromCopyQueue();
 
@@ -606,7 +604,7 @@ void CAsyncSQL::ChildLoop()
 	{
 		if (m_ulThreadID != mysql_thread_id(&m_hDB))
 		{
-			sys_log(0, "MySQL connection was reconnected. querying locale set"); // @warme012
+			LOG_INFO("MySQL connection was reconnected. querying locale set"); // @warme012
 			while (!QueryLocaleSet());
 			m_ulThreadID = mysql_thread_id(&m_hDB);
 		}
@@ -615,8 +613,7 @@ void CAsyncSQL::ChildLoop()
 		{
 			p->uiSQLErrno = mysql_errno(&m_hDB);
 
-			sys_err("AsyncSQL::ChildLoop : mysql_query error: %s:\nquery: %s",
-					mysql_error(&m_hDB), p->stQuery.c_str());
+			LOG_ERROR("AsyncSQL::ChildLoop : mysql_query error: {}:\nquery: {}", mysql_error(&m_hDB), p->stQuery.c_str());
 
 			switch (p->uiSQLErrno)
 			{
@@ -639,7 +636,7 @@ void CAsyncSQL::ChildLoop()
 			}
 		}
 
-		sys_log(0, "QUERY_FLUSH: %s", p->stQuery.c_str());
+		LOG_INFO("QUERY_FLUSH: {}", p->stQuery.c_str());
 
 		PopQuery(p->iID);
 
@@ -687,8 +684,7 @@ uint32_t CAsyncSQL::EscapeString(char* dst, uint64_t dstSize, const char *src, u
 		uint32_t tmpLen = sizeof(tmp) > srcSize ? srcSize : sizeof(tmp);
 		strlcpy(tmp, src, tmpLen);
 
-		sys_err("FATAL ERROR!! not enough buffer size (dstSize %u srcSize %u src%s: %s)",
-				dstSize, srcSize, tmpLen != srcSize ? "(trimmed to 255 characters)" : "", tmp);
+		LOG_ERROR("FATAL ERROR!! not enough buffer size (dstSize {} srcSize {} src{}: {})", dstSize, srcSize, tmpLen != srcSize ? "(trimmed to 255 characters)" : "", tmp);
 
 		dst[0] = '\0';
 		return 0;
