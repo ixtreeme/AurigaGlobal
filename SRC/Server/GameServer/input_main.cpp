@@ -2548,6 +2548,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
 				}
 				// DUAL-PATH: ECS + legacy call
+				ch->OnMove(true);
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;
