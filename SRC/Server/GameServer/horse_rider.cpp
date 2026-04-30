@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "utils.h"
 #include "horse_rider.h"
@@ -229,7 +230,7 @@ EVENTFUNC(horse_stamina_consume_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "horse_stamina_consume_event> <Factor> Null pointer" );
+		LOG_ERROR("horse_stamina_consume_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -259,7 +260,7 @@ EVENTFUNC(horse_stamina_consume_event)
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaConsume { e });
 	}
-	sys_log(0, "HORSE STAMINA - %p", get_pointer(event));
+	LOG_INFO("HORSE STAMINA - {}", static_cast<const void*>(get_pointer(event)));
 	return delta;
 }
 
@@ -269,7 +270,7 @@ EVENTFUNC(horse_stamina_regen_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "horse_stamina_regen_event> <Factor> Null pointer" );
+		LOG_ERROR("horse_stamina_regen_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -296,7 +297,7 @@ EVENTFUNC(horse_stamina_regen_event)
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvHorseStaminaRegen { e });
 	}
-	sys_log(0, "HORSE STAMINA + %p", get_pointer(event));
+	LOG_INFO("HORSE STAMINA + {}", static_cast<const void*>(get_pointer(event)));
 
 
 	return delta;
@@ -310,7 +311,7 @@ void CHorseRider::StartStaminaConsumeEvent()
 	if (GetHorseHealth() <= 0)
 		return;
 
-	sys_log(0,"HORSE STAMINA REGEN EVENT CANCEL %p", get_pointer(m_eventStaminaRegen));
+	LOG_INFO("HORSE STAMINA REGEN EVENT CANCEL {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)));
 	event_cancel(&m_eventStaminaRegen);
 
 	if (m_eventStaminaConsume)
@@ -320,7 +321,7 @@ void CHorseRider::StartStaminaConsumeEvent()
 
 	info->hr = this;
 	m_eventStaminaConsume = event_create(horse_stamina_consume_event, info, PASSES_PER_SEC(HORSE_STAMINA_CONSUME_INTERVAL));
-	sys_log(0,"HORSE STAMINA CONSUME EVENT CREATE %p", get_pointer(m_eventStaminaConsume));
+	LOG_INFO("HORSE STAMINA CONSUME EVENT CREATE {}", static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
 }
 
 void CHorseRider::StartStaminaRegenEvent()
@@ -331,7 +332,7 @@ void CHorseRider::StartStaminaRegenEvent()
 	if (GetHorseHealth() <= 0)
 		return;
 
-	sys_log(0,"HORSE STAMINA CONSUME EVENT CANCEL %p", get_pointer(m_eventStaminaConsume));
+	LOG_INFO("HORSE STAMINA CONSUME EVENT CANCEL {}", static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
 	event_cancel(&m_eventStaminaConsume);
 
 	if (m_eventStaminaRegen)
@@ -341,7 +342,7 @@ void CHorseRider::StartStaminaRegenEvent()
 
 	info->hr = this;
 	m_eventStaminaRegen = event_create(horse_stamina_regen_event, info, PASSES_PER_SEC(HORSE_STAMINA_REGEN_INTERVAL));
-	sys_log(0,"HORSE STAMINA REGEN EVENT CREATE %p", get_pointer(m_eventStaminaRegen));
+	LOG_INFO("HORSE STAMINA REGEN EVENT CREATE {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)));
 }
 
 // Health
@@ -376,7 +377,7 @@ void CHorseRider::UpdateHorseHealth(int iHealth, bool bSend)
 
 void CHorseRider::HorseDie()
 {
-	sys_log(0, "HORSE DIE %p %p", get_pointer(m_eventStaminaRegen), get_pointer(m_eventStaminaConsume));
+	LOG_INFO("HORSE DIE {} {}", static_cast<const void*>(get_pointer(m_eventStaminaRegen)), static_cast<const void*>(get_pointer(m_eventStaminaConsume)));
 	UpdateHorseStamina(-m_Horse.sStamina);
 	event_cancel(&m_eventStaminaRegen);
 	event_cancel(&m_eventStaminaConsume);
