@@ -2,6 +2,7 @@
 #define QUEST_NPC
 
 #include "questpc.h"
+#include <Core/Logging.hpp>
 
 extern int test_server;
 
@@ -111,7 +112,7 @@ namespace quest
 		void NPC::MatchingQuest(PC& pc, TQuestMapType& QuestMap, FuncMatch& fMatch, FuncMiss& fMiss)
 		{
 			if (test_server)
-				sys_log(0, "Click Quest : MatchingQuest");
+				LOG_INFO("Click Quest : MatchingQuest");
 
 			PC::QuestInfoIterator itPCQuest = pc.quest_begin();
 			typename TQuestMapType::iterator itQuestMap = QuestMap.begin();
