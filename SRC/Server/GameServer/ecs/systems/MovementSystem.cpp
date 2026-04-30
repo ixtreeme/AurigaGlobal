@@ -36,6 +36,7 @@
 #include "../components/character_runtime_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
+#include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
 EVENTFUNC(recovery_event);
@@ -217,7 +218,7 @@ void CHARACTER::Standup()
 
 	SetPosition(POS_STANDING);
 
-	sys_log(1, "STANDUP: %s", GetName());
+	LOG_INFO("STANDUP: {}", GetName());
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
 	pack_position.vid = GetPacketVID();
@@ -234,7 +235,7 @@ void CHARACTER::Sitdown(int is_ground)
 		return;
 
 	SetPosition(POS_SITTING);
-	sys_log(1, "SITDOWN: %s", GetName());
+	LOG_INFO("SITDOWN: {}", GetName());
 
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
 	pack_position.vid = GetPacketVID();
@@ -315,12 +316,12 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	{
 		if (GetDesc())
 		{
-			sys_err("cannot find tree at %d %d (name: %s)", x, y, GetName());
+			LOG_ERROR("cannot find tree at {} {} (name: {})", x, y, GetName());
 			GetDesc()->SetPhase(PHASE_CLOSE);
 		}
 		else
 		{
-			sys_err("no tree: %s %d %d %d", GetName(), x, y, GetMapIndex());
+			LOG_ERROR("no tree: {} {} {} {}", GetName(), x, y, GetMapIndex());
 			Dead();
 		}
 
@@ -359,13 +360,11 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 			SECTREEID old_id = GetSectree()->GetID();
 
 			const float fDist = DISTANCE_SQRT(id.coord.x - old_id.coord.x, id.coord.y - old_id.coord.y);
-			sys_log(0, "SECTREE DIFFER: %s %dx%d was %dx%d dist %.1fm",
-				GetName(),
-				id.coord.x,
-				id.coord.y,
-				old_id.coord.x,
-				old_id.coord.y,
-				fDist);
+			const auto newX = id.coord.x;
+			const auto newY = id.coord.y;
+			const auto oldX = old_id.coord.x;
+			const auto oldY = old_id.coord.y;
+			LOG_INFO("SECTREE DIFFER: {} {}x{} was {}x{} dist {:.1f}m", GetName(), newX, newY, oldX, oldY, fDist);
 		}
 
 		new_tree->InsertEntity(this);
@@ -552,7 +551,7 @@ float CHARACTER::GetMoveMotionSpeed() const
 	else
 	{
 		if (test_server) {
-			sys_err("cannot find motion (name %s race %d mode %d)", GetName(), GetRaceNum(), dwMode);
+			LOG_ERROR("cannot find motion (name {} race {} mode {})", GetName(), GetRaceNum(), dwMode);
 		}
 
 		return 300.0f;
@@ -577,9 +576,7 @@ void CHARACTER::CalculateMoveDuration()
 		(int)((fDist / motionSpeed) * 1000.0f));
 
 	if (IsNPC())
-		sys_log(1, "%s: GOTO: distance %f, spd %u, duration %u, motion speed %f pos %d %d -> %d %d",
-			GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), m_dwMoveDuration, motionSpeed,
-			m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
+		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}", GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), m_dwMoveDuration, motionSpeed, m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
 
 	m_dwMoveStartTime = get_dword_time();
 }
@@ -597,7 +594,7 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 
 	if (test_server)
 		if (m_bDetailLog)
-			sys_log(0, "%s position %u %u", GetName(), x, y);
+			LOG_TRACE("{} position {} {}", GetName(), x, y);
 
 	OnMove();
 	return Sync(x, y);
@@ -645,7 +642,7 @@ EVENTFUNC(save_event)
 	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
 	if (info == nullptr)
 	{
-		sys_err("save_event> <Factor> Null pointer");
+		LOG_ERROR("save_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -654,7 +651,7 @@ EVENTFUNC(save_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	sys_log(1, "SAVE_EVENT: %s", ch->GetName());
+	LOG_TRACE("SAVE_EVENT: {}", ch->GetName());
 	const entt::entity saveEntity = AIHelpers::EcsOf(ch);
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
@@ -814,7 +811,7 @@ EVENTFUNC(recovery_event)
 	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
 	if (info == nullptr)
 	{
-		sys_err("recovery_event> <Factor> Null pointer");
+		LOG_ERROR("recovery_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -853,7 +850,7 @@ EVENTFUNC(recovery_event)
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -879,7 +876,7 @@ EVENTFUNC(recovery_event)
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -938,7 +935,7 @@ EVENTFUNC(recovery_event)
 
 		iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 
-		sys_log(1, "RECOVERY_EVENT: %s %d HP_REGEN %d HP +%d", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 
 		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 		if (recoveryEntity != entt::null)
