@@ -65,8 +65,8 @@ void Init(const std::string& logDir)
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::overrun_oldest);
 
-    g_logger->set_level(spdlog::level::trace);
-    g_errorLogger->set_level(spdlog::level::trace);
+    g_logger->set_level(spdlog::level::info);
+    g_errorLogger->set_level(spdlog::level::info);
     g_logger->set_pattern("%Y-%m-%d %H:%M:%S.%e [%l] %v");
     g_errorLogger->set_pattern("%Y-%m-%d %H:%M:%S.%e [%l] [%@] %v");
     g_errorLogger->flush_on(spdlog::level::warn);

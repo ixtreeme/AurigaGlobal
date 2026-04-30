@@ -45,6 +45,7 @@ target_include_directories(SERVER INTERFACE
 target_compile_definitions(SERVER INTERFACE
     FMT_HEADER_ONLY=1
     SPDLOG_FMT_EXTERNAL=1
+    SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 )
 if(TARGET auriga_sanitizers)
     target_link_libraries(SERVER INTERFACE auriga_sanitizers)
