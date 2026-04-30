@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -16,9 +17,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -298,7 +299,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		int pct = MINMAX(0, ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth(), 100);
-		sys_log(1, "horse.get_health_pct %d", pct);
+		LOG_INFO("horse.get_health_pct {}", pct);
 
 		if (ch->GetHorseLevel())
 			lua_pushnumber(L, pct);
@@ -332,7 +333,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		int pct = MINMAX(0, ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina(), 100);
-		sys_log(1, "horse.get_stamina_pct %d", pct);
+		LOG_INFO("horse.get_stamina_pct {}", pct);
 
 		if (ch->GetHorseLevel())
 			lua_pushnumber(L, pct);
