@@ -9831,6 +9831,72 @@ Commit status:
 - `f63e1a9 Phase 16-3: Migrate GameServer log.cpp legacy logging`
 - WinTest not run in this environment; operator WinTest remains mandatory before marking COMPLETE.
 
+## Phase 16-4 - Core / Database / AuthServer Logging Modernization
+
+Mode:
+- Non-GameServer logging modernization.
+- Scope covered Core, Database, SQL, common, and one stale Base reference.
+- AuthServer had no legacy `sys_log/sys_err/_sys_err` call sites in this tree.
+- GameServer questlua `sys_err` macro calls remain intentionally routed through QuestError.
+
+Initial non-GameServer audit:
+```text
+Core:       sys_log=21  sys_err=48  _sys_err=5
+Database:   sys_log=427 sys_err=144 _sys_err=0
+AuthServer: sys_log=0   sys_err=0   _sys_err=0
+common:     sys_log=2   sys_err=0   _sys_err=0
+SQL:        sys_log=11  sys_err=10  _sys_err=0
+```
+
+Other primitive logging audit:
+```text
+fprintf(stderr): 104
+fprintf(stdout): 56
+perror:          13
+fputs:            1
+puts:            17
+bare printf:     38
+```
+
+Notes on primitive logging:
+- These are not part of the `sys_log/sys_err` compatibility bridge.
+- Several are intended console/proto-loader/status output or older utility diagnostics.
+- They are documented for a later primitive-output cleanup pass instead of mixing them into the `sys_log/sys_err` bridge removal.
+
+Implemented:
+- `Core/log.h` now exposes modern `LOG_*` through `Core/Logging.hpp`.
+- Core/Database/SQL/common legacy `sys_log/sys_err` call sites were migrated to `LOG_INFO`, `LOG_ERROR`, or `LOG_TRACE`.
+- High-volume debug-style `sys_log(level != 0, ...)` paths were mapped to `LOG_TRACE`.
+- Pointer `%p` cases were converted to `static_cast<const void*>` where fmt requires explicit pointer formatting.
+- `ClientManagerBoot.cpp` preprocessor-inside-macro cases were rewritten so directives no longer occur inside `LOG_*` macro argument lists.
+- `OFFSHOP_DEBUG` no longer routes through `sys_log`; it uses `LOG_TRACE` and `fmt::sprintf` internally to preserve the existing printf-style debug macro call sites.
+- The printf-style varargs `_sys_err` / `sys_log` bridge implementation was removed from `Core/log.cpp`.
+- `Core/log.h` now keeps `sys_log` / `sys_err` names only as fmt-style template helpers.
+
+Final counts:
+```text
+Core:       sys_log=1 sys_err=1 _sys_err=0  (template definitions only)
+Database:   sys_log=0 sys_err=0 _sys_err=0
+AuthServer: sys_log=0 sys_err=0 _sys_err=0
+common:     sys_log=0 sys_err=0 _sys_err=0
+SQL:        sys_log=0 sys_err=0 _sys_err=0
+Base:       sys_log=0 sys_err=0 _sys_err=0
+GameServer: sys_log=0 sys_err=304 _sys_err=0 (questlua QuestError macro calls only)
+```
+
+Build results:
+- `cmake --build build --config RelWithDebInfo --target Database --parallel 8 -- /nodeReuse:false` passed.
+- `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false` passed.
+- `cmake --build build --config RelWithDebInfo --target ALL_BUILD --parallel 8 -- /nodeReuse:false` failed in unrelated Tools targets:
+  - `SRC/Tools/Mysql2Proto` missing Windows/system link symbols from MariaDB dependencies.
+  - `SRC/Tools/IXAC` missing Windows/socket/system link symbols from curl dependencies.
+  - `Database.exe` and `GameServer.exe` were both produced successfully during that same run.
+
+Commit status:
+- Migration committed file-by-file plus fixup commits.
+- Final bridge removal commit: `0587edb Phase 16-4: Remove printf-style core logging bridge`.
+- Stale Base comment cleanup commit: `969420c Phase 16-4: Clean stale Base legacy logging reference`.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
