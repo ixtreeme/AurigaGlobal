@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "fishing.h"
@@ -234,16 +235,7 @@ void Initialize()
 
 	for (int i = 0; i < MAX_FISH; ++i)
 	{
-		sys_log(0, "FISH: %-24s vnum %5lu prob %4d %4d %4d %4d len %d %d %d",
-				fish_info[i].name,
-				fish_info[i].vnum,
-				fish_info[i].prob[0],
-				fish_info[i].prob[1],
-				fish_info[i].prob[2],
-				fish_info[i].prob[3],
-				fish_info[i].length_range[0],
-				fish_info[i].length_range[1],
-				fish_info[i].length_range[2]);
+		LOG_TRACE("FISH: {:<24} vnum {:5} prob {:4} {:4} {:4} {:4} len {} {} {}", fish_info[i].name, fish_info[i].vnum, fish_info[i].prob[0], fish_info[i].prob[1], fish_info[i].prob[2], fish_info[i].prob[3], fish_info[i].length_range[0], fish_info[i].length_range[1], fish_info[i].length_range[2]);
 	}
 
 	// E®·ü °e»e
@@ -255,7 +247,7 @@ void Initialize()
 			g_prob_accumulate[j][i] = fish_info[i].prob[j] + g_prob_accumulate[j][i - 1];
 
 		g_prob_sum[j] = g_prob_accumulate[j][MAX_FISH - 1];
-		sys_log(0, "FISH: prob table %d %d", j, g_prob_sum[j]);
+		LOG_TRACE("FISH: prob table {} {}", j, g_prob_sum[j]);
 	}
 }
 
@@ -402,7 +394,7 @@ EVENTFUNC(fishing_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "fishing_event> <Factor> Null pointer" );
+		LOG_ERROR("fishing_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -488,7 +480,7 @@ int Compute(uint32_t fish_id, uint32_t ms, uint32_t* item, int level) {
 
 	if (fish_id >= MAX_FISH)
 	{
-		sys_err("Wrong FISH ID : %d", fish_id);
+		LOG_ERROR("Wrong FISH ID : {}", fish_id);
 		return -2;
 	}
 
@@ -798,7 +790,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 
 	if (!RefinableRod(item))
 	{
-		sys_err("REFINE_ROD_HACK pid(%u) item(%s:%d)", ch->GetPlayerID(), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_ERROR("REFINE_ROD_HACK pid({}) item({}:{})", ch->GetPlayerID(), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "ROD_HACK");
 		return 6;
 	}
