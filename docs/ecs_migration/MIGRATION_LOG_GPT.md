@@ -9399,6 +9399,108 @@ Commit status:
 - `caaeb73 Phase 16-2: Migrate logging format in pvp.cpp`
 - WinTest not run for Batch 7 per phase instruction.
 
+Batch 8 bulk closeout completed:
+- Strategy B executed: all remaining non-`questlua` files were migrated with file-by-file build and commit discipline.
+- Initial Batch 8 non-`questlua` scope: 68 files, 245 legacy `sys_log` / `sys_err` call sites.
+- Final non-`questlua` scope: 0 legacy `sys_log` / `sys_err` call sites.
+- `questlua*.cpp` remains deferred to the dedicated QuestError modernization pass.
+- `log.cpp` remains intentionally outside this call-site pass because it is legacy logging infrastructure / compatibility scope.
+
+Batch 8 migrated groups:
+```text
+8a: battle.cpp, gm.cpp, horse_rider.cpp, p2p.cpp, PetSystem.cpp,
+    input_udp.cpp, MarkConvert.cpp, cuberenewal.cpp, desc_manager.cpp,
+    item_manager_idrange.cpp, new_switchbot.cpp, mining.cpp,
+    new_offlineshop_manager.cpp, sectree.cpp, shopEx.cpp.
+
+8b: attr_transfer.cpp, config.cpp, desc_p2p.cpp, exchange.cpp,
+    fishing.cpp, guild_renewal.cpp, hwidmanager.cpp, map_location.cpp,
+    sectree.h, cmd.cpp, GayaSystem.cpp, ecs/systems/MountSystem.cpp,
+    locale_service.cpp, messenger_manager.cpp, questevent.cpp,
+    blend_item.cpp, cmd_emotion.cpp, group_text_parse_tree.cpp,
+    login_data.cpp, LostCastleDungeon.cpp, new_offlineshop.cpp,
+    OXEvent.cpp, refine.cpp, wheel_of_destiny.cpp.
+
+8c tail: CombatSystem.cpp, StatSystem.cpp, event.cpp,
+    horsename_manager.cpp, party.h, profiler.h, utils.cpp, ani.cpp,
+    belt_inventory_helper.h, buff_on_attributes.cpp, cmd_general2.cpp,
+    desc.h, ActivitySystem.cpp, AISystem.cpp, ChatSystem.cpp,
+    DragonSoulSystem.cpp, VitalRegenSystem.cpp, entity_view.cpp,
+    ip_ban.cpp, item_addon.cpp, login_sim.h, new_offlineshop.h,
+    polymorph.cpp, protocol.h, questnpc.h, sectree_manager.h,
+    spam.h, trigger.cpp, whisper_admin.cpp.
+```
+
+Batch 8 gotchas:
+- `battle.cpp`: one legacy `battle_hit` log had more printf placeholders than arguments; the migration corrected the format rather than preserving the bad placeholder.
+- `PetSystem.cpp`: pointer-style `0x%x` output was normalized to pointer-safe fmt output using `static_cast<const void*>`; `entt::entity` output was normalized with `entt::to_integral`.
+- `input_udp.cpp`: disabled block-comment examples still contained legacy names after the first migration; a follow-up commit converted those to `LOG_ERROR` so grep verification is clean.
+- `sectree.cpp`: coordinate fields required local value copies before fmt logging to avoid reference binding issues.
+- `fishing.cpp` and `profiler.h`: printf left-alignment (`%-24s`, `%-10s`) must become fmt left-alignment (`{:<24}`, `{:<10}`), not `{:-24}` / `{:-10}`.
+- `sectree.h`: adding logging macros through a broad header exposed a `dev_log.h` macro collision; `dev_log.h` now guards its `LOG_WARN` / `LOG_INFO` definitions when the modern logging macros already exist.
+
+Counts after Batch 8:
+```text
+Before Batch 8:
+GameServer sys_log: 177
+GameServer sys_err: 425
+GameServer _sys_err: 0
+Total: 602
+Non-questlua remaining: 245
+
+After Batch 8:
+GameServer sys_log: 56
+GameServer sys_err: 301
+GameServer _sys_err: 0
+Total: 357
+Non-questlua remaining: 0
+Questlua deferred group: 353
+Legacy logging infrastructure remaining: log.cpp = 4
+
+Batch 8 reduction: 245
+Phase 16-2 cumulative reduction: 2010
+```
+
+Remaining deferred QuestError group:
+```text
+questlua.cpp: 33
+questlua_affect.cpp: 11
+questlua_arena.cpp: 2
+questlua_building.cpp: 4
+questlua_dragonsoul.cpp: 3
+questlua_dungeon.cpp: 80
+questlua_game.cpp: 4
+questlua_global.cpp: 43
+questlua_guild.cpp: 10
+questlua_horse.cpp: 4
+questlua_item.cpp: 12
+questlua_marriage.cpp: 20
+questlua_npc.cpp: 9
+questlua_party.cpp: 12
+questlua_pc.cpp: 87
+questlua_pet.cpp: 2
+questlua_petnew.cpp: 2
+questlua_quest.cpp: 9
+questlua_target.cpp: 6
+```
+
+Build results:
+- Build passed after each Batch 8 migrated file before commit.
+- Final full rebuild initially exposed the `profiler.h` fmt alignment issue; fixed in `83954b7 Phase 16-2: Fix profiler fmt alignment`.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Existing post-build environment warning remains:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+
+Commit status:
+- Per-file Batch 8 migration commits from `b32c176 Phase 16-2: Migrate logging format in battle.cpp` through `ddac22d Phase 16-2: Migrate logging format in whisper_admin.cpp`.
+- Follow-up fix: `83954b7 Phase 16-2: Fix profiler fmt alignment`.
+- WinTest not run for Batch 8 per phase instruction; operator checkpoint remains pending.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
