@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/service.h>
+#include <Core/Logging.hpp>
 
 inline const char *encode_byte(char ind)
 {
@@ -51,7 +52,7 @@ inline bool __packet_encode(LPBUFFER pbuf, const void * data, int length, const 
 
 	if (buffer_has_space(pbuf) < length)
 	{
-		//sys_err("buffer length exceeded buffer size: %d, encoding %d bytes (%s:%d)", buffer_size(pbuf), length, file, line);
+		//"buffer length exceeded buffer size: %d, encoding %d bytes (%s:%d)", buffer_size(pbuf), length, file, line);
 		return false;
 	}
 
