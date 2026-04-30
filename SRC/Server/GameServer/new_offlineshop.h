@@ -15,6 +15,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include <Core/Logging.hpp>
 
 template <class T>
 void ZeroObject(T& obj){
@@ -250,7 +251,7 @@ namespace offlineshop
 				}
 				break;
 		default:
-			sys_err("unknown chat packet %d",type);
+			LOG_ERROR("unknown chat packet {}", type);
 			break;
 		}
 #endif
