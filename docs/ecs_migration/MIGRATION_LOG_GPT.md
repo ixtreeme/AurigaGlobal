@@ -9231,6 +9231,174 @@ Commit status:
 - `d3d2895 Phase 16-2: Migrate logging format in marriage.cpp`
 - WinTest not run for Batch 6 per phase instruction.
 
+Batch 7 verification:
+- Checked all Batch 7 target files for local `sys_err` redirects before migration.
+- No local `sys_err` override was found in:
+  - `input_p2p.cpp`
+  - `motion.cpp`
+  - `input.cpp`
+  - `guild_manager.cpp`
+  - `priv_manager.cpp`
+  - `New_PetSystem.cpp`
+  - `wedding.cpp`
+  - `desc_client.cpp`
+  - `target.cpp`
+  - `mob_manager.cpp`
+  - `MarkImage.cpp`
+  - `safebox.cpp`
+  - `regen.cpp`
+  - `MountSystem.cpp`
+  - `pvp.cpp`
+- `MountSystem.cpp` was resolved to the root `SRC/Server/GameServer/MountSystem.cpp` because that file held the listed 10 call sites. `ecs/systems/MountSystem.cpp` still has 4 remaining calls and is a Batch 8/tail candidate.
+
+Batch 7 completed:
+- `input_p2p.cpp`: 13 legacy log call sites migrated.
+- `motion.cpp`: 13 legacy log call sites migrated.
+- `input.cpp`: 12 legacy log call sites migrated.
+- `guild_manager.cpp`: 12 legacy log call sites migrated.
+- `priv_manager.cpp`: 12 legacy log call sites migrated.
+- `New_PetSystem.cpp`: 11 legacy log call sites migrated.
+- `wedding.cpp`: 11 legacy log call sites migrated.
+- `desc_client.cpp`: 10 legacy log call sites migrated.
+- `target.cpp`: 10 legacy log call sites migrated.
+- `mob_manager.cpp`: 10 legacy log call sites migrated.
+- `MarkImage.cpp`: 10 legacy log call sites migrated.
+- `safebox.cpp`: 10 legacy log call sites migrated.
+- `regen.cpp`: 10 legacy log call sites migrated.
+- `MountSystem.cpp`: 10 legacy log call sites migrated.
+- `pvp.cpp`: 9 legacy log call sites migrated.
+
+Batch 7 hot-path decisions:
+- `input_p2p.cpp`: relay/analyze packet diagnostics moved to `LOG_TRACE`; P2P setup, messenger, guild, block-chat, and shutdown events remain INFO/ERROR.
+- `motion.cpp`: existing motion duration/detail diagnostics stay `LOG_TRACE`; motion parse/load failures remain `LOG_ERROR`.
+- `input.cpp`: packet analyze and PONG debug logs moved to `LOG_TRACE`; handshake/key agreement failures are `LOG_ERROR`.
+- `target.cpp`: target update/create/replace debug logs moved to `LOG_TRACE`; target event null/error paths remain `LOG_ERROR`.
+- `mob_manager.cpp`: mob proto and group dump logs moved to `LOG_TRACE`; syntax/load errors remain `LOG_ERROR`.
+- `desc_client.cpp`: high-frequency `DB_PACKET` logging moved to `LOG_TRACE`; connection/phase lifecycle remains `LOG_INFO`.
+- `pvp.cpp`: mount-can-attack test-server detail and PVP list send detail moved to `LOG_TRACE`; duel/PVP lifecycle remains INFO/ERROR.
+
+Batch 7 gotchas:
+- `New_PetSystem.cpp` and `MountSystem.cpp`: legacy pointer `%x` logging was normalized to pointer-safe `{}` with `static_cast<const void*>`.
+- `safebox.cpp`: two legacy `sys_err("...%s %d", count)` calls had two printf placeholders but only one argument. The fmt migration fixed them to a single `{}` placeholder for `count`.
+- `mob_manager.cpp`: the mechanical converter initially put an `#ifdef ENABLE_MULTI_NAMES` branch inside a variadic logging macro argument list. This was replaced with a local `const char* mobName` selected before the `LOG_TRACE` call.
+- `mob_manager.cpp`: legacy `%-5d` formatting was normalized to fmt left alignment `{:<5}`.
+- `input.cpp`: byte/header values that used old `%d/%u` semantics are explicitly cast to `int` where needed.
+- `priv_manager.cpp`: `uint8_t` privilege and empire fields are explicitly cast to `int` to preserve numeric output under fmt.
+- `guild_manager.cpp`: the byte-sized guild war result type is explicitly cast to `int`.
+
+Counts after Batch 7:
+```text
+Before Batch 7:
+GameServer sys_log: 245
+GameServer sys_err: 520
+GameServer _sys_err: 0
+Total: 765
+
+After Batch 7:
+GameServer sys_log: 177
+GameServer sys_err: 425
+GameServer _sys_err: 0
+Total: 602
+
+Batch 7 reduction: 163
+Phase 16-2 cumulative reduction: 1765
+```
+
+Batch 8 top non-questlua candidates:
+```text
+9 horse_rider.cpp
+9 gm.cpp
+9 battle.cpp
+9 PetSystem.cpp
+9 p2p.cpp
+8 MarkConvert.cpp
+8 input_udp.cpp
+7 item_manager_idrange.cpp
+7 cuberenewal.cpp
+7 desc_manager.cpp
+7 new_switchbot.cpp
+6 new_offlineshop_manager.cpp
+6 sectree.cpp
+6 mining.cpp
+6 shopEx.cpp
+5 hwidmanager.cpp
+5 desc_p2p.cpp
+5 map_location.cpp
+5 fishing.cpp
+5 exchange.cpp
+5 guild_renewal.cpp
+5 attr_transfer.cpp
+5 config.cpp
+5 sectree.h
+4 ecs/systems/MountSystem.cpp
+4 questevent.cpp
+4 messenger_manager.cpp
+4 locale_service.cpp
+4 cmd.cpp
+4 ecs/systems/GayaSystem.cpp
+```
+
+Batch 8 recommendation:
+- Use strategy B, bulk closeout for all remaining non-questlua files, but still keep the Batch 7 discipline: migrate one file, build, commit, continue.
+- Reason: remaining non-questlua files are now mostly 1-9 calls each, so splitting into several more fixed-size batches adds overhead without reducing per-file risk.
+- Keep `questlua*.cpp` deferred to the dedicated QuestError modernization pass because `questlua.cpp` and related Lua bindings need special handling around quest error routing.
+
+Remaining `questlua*.cpp` group:
+```text
+87 questlua_pc.cpp
+80 questlua_dungeon.cpp
+43 questlua_global.cpp
+33 questlua.cpp
+20 questlua_marriage.cpp
+12 questlua_party.cpp
+12 questlua_item.cpp
+11 questlua_affect.cpp
+10 questlua_guild.cpp
+9 questlua_npc.cpp
+9 questlua_quest.cpp
+6 questlua_target.cpp
+4 questlua_game.cpp
+4 questlua_building.cpp
+4 questlua_horse.cpp
+3 questlua_dragonsoul.cpp
+2 questlua_pet.cpp
+2 questlua_arena.cpp
+2 questlua_petnew.cpp
+0 questlua_oxevent.cpp
+0 questlua_ba.cpp
+0 questlua_danceevent.cpp
+```
+
+Build results:
+- Build passed after every Batch 7 migrated file before commit.
+- `mob_manager.cpp` initially failed because a preprocessor branch was inside a logging macro argument list; local `mobName` selection fixed it, then the build passed.
+- Final successful command used repeatedly:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Existing post-build environment warning remains in incremental builds:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+
+Commit status:
+- `f49d85c Phase 16-2: Migrate logging format in input_p2p.cpp`
+- `6d67065 Phase 16-2: Migrate logging format in motion.cpp`
+- `1007fbf Phase 16-2: Migrate logging format in input.cpp`
+- `dbf5c68 Phase 16-2: Migrate logging format in guild_manager.cpp`
+- `82bf9ff Phase 16-2: Migrate logging format in priv_manager.cpp`
+- `c1835b2 Phase 16-2: Migrate logging format in New_PetSystem.cpp`
+- `2976b37 Phase 16-2: Migrate logging format in wedding.cpp`
+- `36b0da2 Phase 16-2: Migrate logging format in desc_client.cpp`
+- `2f579a4 Phase 16-2: Migrate logging format in target.cpp`
+- `f6dc2e2 Phase 16-2: Migrate logging format in mob_manager.cpp`
+- `a5b42b9 Phase 16-2: Migrate logging format in MarkImage.cpp`
+- `cc4896b Phase 16-2: Migrate logging format in safebox.cpp`
+- `79f8a4c Phase 16-2: Migrate logging format in regen.cpp`
+- `dbadf5f Phase 16-2: Migrate logging format in MountSystem.cpp`
+- `caaeb73 Phase 16-2: Migrate logging format in pvp.cpp`
+- WinTest not run for Batch 7 per phase instruction.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
