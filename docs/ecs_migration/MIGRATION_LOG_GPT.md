@@ -9104,6 +9104,133 @@ Commit status:
 - `386e873 Phase 16-2: Migrate logging format in InventorySystem.cpp`
 - WinTest not run for Batch 5 per phase instruction.
 
+Batch 6 verification:
+- Checked all Batch 6 target files for local `sys_err` redirects before migration.
+- No local `sys_err` override was found in:
+  - `ecs/systems/PointSystem.cpp`
+  - `shop.cpp`
+  - `cmd_gm.cpp`
+  - `skill.cpp`
+  - `text_file_loader.cpp`
+  - `ecs/systems/NetworkSyncSystem.cpp`
+  - `ecs/systems/SocialSystem.cpp`
+  - `cmd_general.cpp`
+  - `ecs/systems/MovementSystem.cpp`
+  - `marriage.cpp`
+
+Batch 6 completed:
+- `ecs/systems/PointSystem.cpp`: 19 legacy log call sites migrated.
+- `shop.cpp`: 18 legacy log call sites migrated.
+- `cmd_gm.cpp`: 18 legacy log call sites migrated.
+- `skill.cpp`: 17 legacy log call sites migrated.
+- `text_file_loader.cpp`: 17 legacy log call sites migrated.
+- `ecs/systems/NetworkSyncSystem.cpp`: 16 legacy log call sites migrated.
+- `ecs/systems/SocialSystem.cpp`: 16 legacy log call sites migrated.
+- `cmd_general.cpp`: 14 legacy log call sites migrated.
+- `ecs/systems/MovementSystem.cpp`: 14 legacy log call sites migrated.
+- `marriage.cpp`: 13 legacy log call sites migrated.
+
+Batch 6 hot-path decisions:
+- `PointSystem.cpp`: EXP negative clamp and skill-apply debug logs moved to `LOG_TRACE`; level-up remains `LOG_INFO`, errors remain `LOG_ERROR`.
+- `skill.cpp`: skill proto dump/detail logs moved to `LOG_TRACE`.
+- `text_file_loader.cpp`: optional token lookup misses moved to `LOG_TRACE`; syntax/value failures remain `LOG_ERROR` or `LOG_INFO`.
+- `NetworkSyncSystem.cpp`: routine entity insert/remove, sync owner, sync release, remove/update packet logs moved to `LOG_TRACE`; BGM lifecycle logs remain `LOG_INFO`.
+- `MovementSystem.cpp`: NPC goto, per-position detail, save event, and recovery event logs moved to `LOG_TRACE`; sectree mismatch and movement errors remain INFO/ERROR.
+- `marriage.cpp`: periodic near-check logging moved to `LOG_TRACE`; marriage/wedding lifecycle and errors remain INFO/ERROR.
+
+Batch 6 gotchas:
+- `skill.cpp`: old `%-3d` printf formatting was normalized to fmt left alignment `{:<3}`.
+- `MovementSystem.cpp`: `SECTREEID` coordinate fields required local value copies before fmt/spdlog formatting to avoid reference binding issues.
+- `marriage.cpp`: a legacy `NearCheck` log had one extra argument not represented by the old format string; the fmt conversion now includes the missing marriage point placeholder.
+- `cmd_general.cpp`: two malformed `LOG_ERROR(0, "...%s")` conversions were normalized to `LOG_ERROR("...{}", ...)`.
+
+Counts after Batch 6:
+```text
+Before Batch 6:
+GameServer sys_log: 332
+GameServer sys_err: 595
+GameServer _sys_err: 0
+Total: 927
+
+After Batch 6:
+GameServer sys_log: 245
+GameServer sys_err: 520
+GameServer _sys_err: 0
+Total: 765
+
+Batch 6 reduction: 162
+Phase 16-2 cumulative reduction: 1602
+```
+
+Batch 7 candidates, excluding `questlua*.cpp`:
+```text
+13 input_p2p.cpp
+13 motion.cpp
+12 input.cpp
+12 guild_manager.cpp
+12 priv_manager.cpp
+11 New_PetSystem.cpp
+11 wedding.cpp
+10 desc_client.cpp
+10 target.cpp
+10 mob_manager.cpp
+10 MarkImage.cpp
+10 safebox.cpp
+10 regen.cpp
+10 MountSystem.cpp
+9 pvp.cpp
+```
+
+Remaining `questlua*.cpp` group:
+```text
+87 questlua_pc.cpp
+80 questlua_dungeon.cpp
+43 questlua_global.cpp
+33 questlua.cpp
+20 questlua_marriage.cpp
+12 questlua_party.cpp
+12 questlua_item.cpp
+11 questlua_affect.cpp
+10 questlua_guild.cpp
+9 questlua_npc.cpp
+9 questlua_quest.cpp
+6 questlua_target.cpp
+4 questlua_game.cpp
+4 questlua_building.cpp
+4 questlua_horse.cpp
+3 questlua_dragonsoul.cpp
+2 questlua_pet.cpp
+2 questlua_arena.cpp
+2 questlua_petnew.cpp
+0 questlua_oxevent.cpp
+0 questlua_ba.cpp
+0 questlua_danceevent.cpp
+```
+
+Build results:
+- Build passed after every Batch 6 migrated file before commit.
+- `MovementSystem.cpp` initially failed on one fmt/spdlog argument binding issue; local coordinate copies fixed it, then the build passed.
+- Final successful command used repeatedly:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Existing unrelated warnings remain:
+  - `MovementSystem.cpp`: `CHARACTER::GetPosition` / `GetRotation` not all paths return a value.
+  - Post-build environment warning: `'pwsh.exe' is not recognized as an internal or external command`.
+
+Commit status:
+- `63e6bed Phase 16-2: Migrate logging format in PointSystem.cpp`
+- `3e093a7 Phase 16-2: Migrate logging format in shop.cpp`
+- `894275a Phase 16-2: Migrate logging format in cmd_gm.cpp`
+- `b896439 Phase 16-2: Migrate logging format in skill.cpp`
+- `ad0a242 Phase 16-2: Migrate logging format in text_file_loader.cpp`
+- `81e64ba Phase 16-2: Migrate logging format in NetworkSyncSystem.cpp`
+- `d8ea3b2 Phase 16-2: Migrate logging format in SocialSystem.cpp`
+- `f4c6f18 Phase 16-2: Migrate logging format in cmd_general.cpp`
+- `a47d775 Phase 16-2: Migrate logging format in MovementSystem.cpp`
+- `d3d2895 Phase 16-2: Migrate logging format in marriage.cpp`
+- WinTest not run for Batch 6 per phase instruction.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
