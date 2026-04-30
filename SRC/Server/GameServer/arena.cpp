@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -72,7 +73,7 @@ bool CArenaManager::AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA
 
 	if (pArenaMap->AddArena(mapIdx, startA_X, startA_Y, startB_X, startB_Y) == false)
 	{
-		sys_log(0, "CArenaManager::AddArena - AddMap Error MapID: %d", mapIdx);
+		LOG_INFO("CArenaManager::AddArena - AddMap Error MapID: {}", mapIdx);
 		return false;
 	}
 
@@ -85,7 +86,7 @@ bool CArenaMap::AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA_Y, 
 	{
 		if ((CArena*)(*iter)->CheckArea(startA_X, startA_Y, startB_X, startB_Y) == nullptr)
 		{
-			sys_log(0, "CArenaMap::AddArena - Same Start Position set. stA(%d, %d) stB(%d, %d)", startA_X, startA_Y, startB_X, startB_Y);
+			LOG_INFO("CArenaMap::AddArena - Same Start Position set. stA({}, {}) stB({}, {})", startA_X, startA_Y, startB_X, startB_Y);
 			return false;
 		}
 	}
@@ -116,7 +117,7 @@ void CArenaMap::Destroy()
 {
 	auto iter = m_listArena.begin();
 
-	sys_log(0, "ARENA: ArenaMap will be destroy. mapIndex(%d)", m_dwMapIndex);
+	LOG_INFO("ARENA: ArenaMap will be destroy. mapIndex({})", m_dwMapIndex);
 
 	for (; iter != m_listArena.end(); ++iter)
 	{
@@ -211,7 +212,7 @@ EVENTFUNC(ready_to_start_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "ready_to_start_event> <Factor> Null pointer" );
+		LOG_ERROR("ready_to_start_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -219,7 +220,7 @@ EVENTFUNC(ready_to_start_event)
 
 	if (pArena == nullptr)
 	{
-		sys_err("ARENA: Arena start event info is null.");
+		LOG_ERROR("ARENA: Arena start event info is null.");
 		return 0;
 	}
 
@@ -228,14 +229,14 @@ EVENTFUNC(ready_to_start_event)
 
 	if (chA == nullptr || chB == nullptr)
 	{
-		sys_err("ARENA: Player err in event func ready_start_event");
+		LOG_ERROR("ARENA: Player err in event func ready_start_event");
 
 		if (chA != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 299, "");
 #endif
-			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
+			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
 
 		if (chB != nullptr)
@@ -243,7 +244,7 @@ EVENTFUNC(ready_to_start_event)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 299, "");
 #endif
-			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
+			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -381,7 +382,7 @@ EVENTFUNC(ready_to_start_event)
 #ifdef TEXTS_IMPROVEMENT
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 707, "");
 #endif
-				sys_log(0, "ARENA: Something wrong in event func. info->state(%d)", info->state);
+				LOG_INFO("ARENA: Something wrong in event func. info->state({})", info->state);
 
 				pArena->EndDuel();
 
@@ -399,7 +400,7 @@ EVENTFUNC(duel_time_out)
 
 	if ( info == nullptr)
 	{
-		sys_err( "duel_time_out> <Factor> Null pointer" );
+		LOG_ERROR("duel_time_out> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -407,7 +408,7 @@ EVENTFUNC(duel_time_out)
 
 	if (pArena == nullptr)
 	{
-		sys_err("ARENA: Time out event error");
+		LOG_ERROR("ARENA: Time out event error");
 		return 0;
 	}
 
@@ -421,7 +422,7 @@ EVENTFUNC(duel_time_out)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 299, "");
 #endif
-			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
+			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
 
 		if (chB != nullptr)
@@ -429,7 +430,7 @@ EVENTFUNC(duel_time_out)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 299, "");
 #endif
-			sys_log(0, "ARENA: Oppernent is disappered. MyPID(%d) OppPID(%d)", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
+			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -458,7 +459,7 @@ EVENTFUNC(duel_time_out)
 
 				info->state++;
 
-				sys_log(0, "ARENA: Because of time over, duel is end. PIDA(%d) vs PIDB(%d)", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
+				LOG_INFO("ARENA: Because of time over, duel is end. PIDA({}) vs PIDB({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 
 				return PASSES_PER_SEC(10);
 				break;
@@ -509,7 +510,7 @@ bool CArena::StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint
 	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharTo), POINT_HP, pCharTo->GetMaxHP() - pCharTo->GetHP());
 	ecs::PointSystem::Change(AIHelpers::EcsOf(pCharTo), POINT_SP, pCharTo->GetMaxSP() - pCharTo->GetSP());
 
-	sys_log(0, "ARENA: Start Duel with PID_A(%d) vs PID_B(%d)", GetPlayerAPID(), GetPlayerBPID());
+	LOG_INFO("ARENA: Start Duel with PID_A({}) vs PID_B({})", GetPlayerAPID(), GetPlayerBPID());
 	return true;
 }
 
@@ -584,7 +585,7 @@ void CArena::EndDuel()
 
 	m_mapObserver.clear();
 
-	sys_log(0, "ARENA: End Duel PID_A(%d) vs PID_B(%d)", GetPlayerAPID(), GetPlayerBPID());
+	LOG_INFO("ARENA: End Duel PID_A({}) vs PID_B({})", GetPlayerAPID(), GetPlayerBPID());
 
 	Clear();
 }
@@ -761,8 +762,7 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharA->GetName());
 #endif
-				sys_log(0, "ARENA: Duel is end. Winner %s(%d) Loser %s(%d)",
-						pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				LOG_INFO("ARENA: Duel is end. Winner {}({}) Loser {}({})", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 			}
 			else
 			{
@@ -775,7 +775,7 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 #endif
-				sys_log(0, "ARENA: %s(%d) won a round vs %s(%d)", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				LOG_INFO("ARENA: {}({}) won a round vs {}({})", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 			}
 		}
 		else if (m_dwPIDB == dwPIDA)
@@ -788,7 +788,7 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharB->GetName());
 #endif
-				sys_log(0, "ARENA: Duel is end. Winner(%d) Loser(%d)", GetPlayerBPID(), GetPlayerAPID());
+				LOG_INFO("ARENA: Duel is end. Winner({}) Loser({})", GetPlayerBPID(), GetPlayerAPID());
 			}
 			else
 			{
@@ -801,13 +801,13 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
 #endif
-				sys_log(0, "ARENA : PID(%d) won a round. Opp(%d)", GetPlayerBPID(), GetPlayerAPID());
+				LOG_INFO("ARENA : PID({}) won a round. Opp({})", GetPlayerBPID(), GetPlayerAPID());
 			}
 		}
 		else
 		{
 			// wtf
-			sys_log(0, "ARENA : OnDead Error (%d, %d) (%d, %d)", m_dwPIDA, m_dwPIDB, dwPIDA, dwPIDB);
+			LOG_INFO("ARENA : OnDead Error ({}, {}) ({}, {})", m_dwPIDA, m_dwPIDB, dwPIDA, dwPIDB);
 		}
 
 		int potion = quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count");
@@ -957,7 +957,7 @@ void CArena::OnDisconnect(uint32_t pid)
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetPlayerB()), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
-		sys_log(0, "ARENA : Duel is end because of Opp(%d) is disconnect. MyPID(%d)", GetPlayerAPID(), GetPlayerBPID());
+		LOG_INFO("ARENA : Duel is end because of Opp({}) is disconnect. MyPID({})", GetPlayerAPID(), GetPlayerBPID());
 		EndDuel();
 	}
 	else if (m_dwPIDB == pid)
@@ -967,7 +967,7 @@ void CArena::OnDisconnect(uint32_t pid)
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetPlayerA()), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
-		sys_log(0, "ARENA : Duel is end because of Opp(%d) is disconnect. MyPID(%d)", GetPlayerBPID(), GetPlayerAPID());
+		LOG_INFO("ARENA : Duel is end because of Opp({}) is disconnect. MyPID({})", GetPlayerBPID(), GetPlayerAPID());
 		EndDuel();
 	}
 }
@@ -1045,7 +1045,7 @@ bool CArenaManager::RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint
 
 	if (iter == m_mapArenaMap.end())
 	{
-		sys_log(0, "ARENA : Cannot find ArenaMap. %d %d %d", mapIdx, ObserverX, ObserverY);
+		LOG_INFO("ARENA : Cannot find ArenaMap. {} {} {}", mapIdx, ObserverX, ObserverY);
 		return false;
 	}
 
@@ -1074,7 +1074,7 @@ bool CArena::RegisterObserverPtr(LPCHARACTER pChar)
 
 	if (const auto iter = m_mapObserver.find(pid); iter == m_mapObserver.end())
 	{
-		sys_log(0, "ARENA : not in ob list");
+		LOG_INFO("ARENA : not in ob list");
 		return false;
 	}
 
