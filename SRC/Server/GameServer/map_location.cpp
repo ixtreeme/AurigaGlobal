@@ -87,5 +87,5 @@ void CMapLocation::Insert(int32_t lIndex, const char * c_pszHost, uint16_t wPort
 	m_vector_address.push_back(t);
 #endif
 
-	LOG_INFO("MapLocation::Insert : {} {} {}", lIndex, c_pszHost, wPort);
+	LOG_TRACE("MapLocation::Insert : {} {} {}", lIndex, c_pszHost, wPort);
 }

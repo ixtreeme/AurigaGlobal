@@ -8486,6 +8486,50 @@ Follow-up:
   - syslog growth rate.
 - Phase 16-4 should address remaining Core/Database/AuthServer legacy logging. The DB root log is still very large and contains high-frequency legacy status/cache messages.
 
+## Phase 16-3 WinTest Crash Follow-up - Debug Heap Assertion
+
+Operator report:
+- WinTest showed a Microsoft Visual C++ Runtime Library debug assertion:
+  - `Expression: _CrtIsValidHeapPointer(block)`
+  - `File: minkernel\crts\ucrt\src\appcrt\heap\debug_heap.cpp`
+  - `Line: 904`
+  - Process: `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`
+
+Log review:
+- The assertion occurred around the disconnect/shutdown window.
+- `chan/ch1/core1/log/syserr.txt` showed:
+  - `2026-04-30 19:43:05.647 heart_idle: losing 30 seconds`
+  - `2026-04-30 19:44:47 socket_read: about to lose connection`
+- `chan/ch1/core2/log/syserr.txt` showed:
+  - `2026-04-30 19:44:07.826 heart_idle: losing 92 seconds`
+  - `2026-04-30 19:44:47.913 about to lose connection`
+- No crash dump was found under the WinTest tree.
+
+Additional hotfix:
+- Removed the console color sink from `logging::Init`.
+  - GameServer is service-like in WinTest; file sinks are the required output.
+  - This reduces shutdown complexity and avoids console sink lifetime/heap ownership as a possible assertion source.
+- Changed `logging::Shutdown()` to explicitly:
+  - flush loggers,
+  - `spdlog::drop_all()`,
+  - reset local logger shared pointers,
+  - then call `spdlog::shutdown()`.
+- Demoted remaining high-volume boot routing logs to TRACE:
+  - `InputDB::MapLocations`
+  - `MapLocation::Insert`
+  - `LoadMapRegion`
+
+Expected result:
+- Lower syslog growth during boot/map routing.
+- Less logging work during the login/select path.
+- Cleaner logger shutdown path without console sink teardown.
+
+Follow-up:
+- Re-run WinTest and specifically verify:
+  - no `_CrtIsValidHeapPointer` popup on disconnect/shutdown,
+  - no `heart_idle` 30s+ stall during boot/login,
+  - syslog no longer floods with `LoadMapRegion` and `MapLocation::Insert` at info level.
+
 ## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
 
 Mode:

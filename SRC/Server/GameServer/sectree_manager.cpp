@@ -317,7 +317,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 	FILE * fp = fopen(c_pszFileName, "r");
 
 	if ( test_server )
-		LOG_INFO("[LoadMapRegion] file({})", c_pszFileName);
+		LOG_TRACE("[LoadMapRegion] file({})", c_pszFileName);
 
 	if (!fp)
 		return false;
@@ -337,11 +337,11 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 	if( iEmpirePositionCount == 6 )
 	{
 		for ( int n = 0; n < 3; ++n )
-			LOG_INFO("LoadMapRegion {} {} ", pos[n].x, pos[n].y);
+			LOG_TRACE("LoadMapRegion {} {} ", pos[n].x, pos[n].y);
 	}
 	else
 	{
-		LOG_INFO("LoadMapRegion no empire specific start point");
+		LOG_TRACE("LoadMapRegion no empire specific start point");
 	}
 
 	TMapRegion region;
@@ -359,7 +359,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 	r_setting.posSpawn = region.posSpawn;
 
-	LOG_INFO("LoadMapRegion {} x {} ~ {} y {} ~ {}, town {} {}", region.index, region.sx, region.ex, region.sy, region.ey, region.posSpawn.x, region.posSpawn.y);
+	LOG_TRACE("LoadMapRegion {} x {} ~ {} y {} ~ {}, town {} {}", region.index, region.sx, region.ex, region.sy, region.ey, region.posSpawn.x, region.posSpawn.y);
 
 	if (iEmpirePositionCount == 6)
 	{
@@ -378,7 +378,7 @@ bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_
 
 	m_vec_mapRegion.emplace_back(region);
 
-	LOG_INFO("LoadMapRegion {} End", region.index);
+	LOG_TRACE("LoadMapRegion {} End", region.index);
 	return true;
 }
 

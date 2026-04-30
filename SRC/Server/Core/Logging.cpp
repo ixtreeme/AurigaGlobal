@@ -7,8 +7,6 @@
 #include <mutex>
 #include <vector>
 
-#include <spdlog/sinks/stdout_color_sinks.h>
-
 namespace logging
 {
 namespace
@@ -43,13 +41,12 @@ void Init(const std::string& logDir)
     if (!spdlog::thread_pool())
         spdlog::init_thread_pool(8192, 1);
 
-    auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto syslogSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
         normalizedLogDir + "/syslog.txt", LOG_ROTATE_SIZE, LOG_ROTATE_FILES);
     auto syserrSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
         normalizedLogDir + "/syserr.txt", LOG_ROTATE_SIZE, LOG_ROTATE_FILES);
 
-    std::vector<spdlog::sink_ptr> syslogSinks{syslogSink, consoleSink};
+    std::vector<spdlog::sink_ptr> syslogSinks{syslogSink};
     g_logger = std::make_shared<spdlog::async_logger>(
         "syslog",
         syslogSinks.begin(),
@@ -57,7 +54,7 @@ void Init(const std::string& logDir)
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::overrun_oldest);
 
-    std::vector<spdlog::sink_ptr> syserrSinks{syserrSink, consoleSink};
+    std::vector<spdlog::sink_ptr> syserrSinks{syserrSink};
     g_errorLogger = std::make_shared<spdlog::async_logger>(
         "syserr",
         syserrSinks.begin(),
@@ -86,8 +83,9 @@ void Shutdown()
     if (g_errorLogger)
         g_errorLogger->flush();
 
-    g_logger.reset();
+    spdlog::drop_all();
     g_errorLogger.reset();
+    g_logger.reset();
     spdlog::shutdown();
 }
 

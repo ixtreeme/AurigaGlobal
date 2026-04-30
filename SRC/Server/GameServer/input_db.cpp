@@ -1464,7 +1464,7 @@ void CInputDB::MapLocations(const char * c_pData)
 {
 	uint8_t bCount = *(uint8_t *) (c_pData++);
 
-	LOG_INFO("InputDB::MapLocations {}", bCount);
+	LOG_TRACE("InputDB::MapLocations {}", bCount);
 
 	TMapLocation * pLoc = (TMapLocation *) c_pData;
 
