@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -93,7 +94,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 {
 	if (GetStatus() == OXEVENT_FINISH)
 	{
-		sys_log(0, "OXEVENT : map finished. but char enter. %s", ((pkChar)->GetName()));
+		LOG_INFO("OXEVENT : map finished. but char enter. {}", ((pkChar)->GetName()));
 		return false;
 	}
 
@@ -109,7 +110,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 	}
 	else
 	{
-		sys_log(0, "OXEVENT : wrong pos enter %d %d", pos.x, pos.y);
+		LOG_INFO("OXEVENT : wrong pos enter {} {}", pos.x, pos.y);
 		return false;
 	}
 
@@ -197,7 +198,7 @@ EVENTFUNC(oxevent_timer)
 
 	if ( info == nullptr)
 	{
-		sys_err( "oxevent_timer> <Factor> Null pointer" );
+		LOG_ERROR("oxevent_timer> <Factor> Null pointer");
 		return 0;
 	}
 
