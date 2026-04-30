@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include <common/length.h>
 
 #include "hwidmanager.h"
@@ -71,7 +72,7 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 
 	std::unique_ptr<SQLMsg> check(DBManager::instance().DirectQuery("SELECT mID FROM common.gmlist WHERE mName='%s' AND mAuthority='IMPLEMENTOR' LIMIT 1", playername));
 	if (check->Get()->uiNumRows > 0) {
-		sys_log(0, "HWID:: %s tried to block %s (IMPLEMENTOR).", whoplayername, playername);
+		LOG_INFO("HWID:: {} tried to block {} (IMPLEMENTOR).", whoplayername, playername);
 		return;
 	}
 
@@ -87,12 +88,12 @@ void CHwidManager::RecvBlockHwid(const char * whoname, const char * targetname)
 			strlcpy(hwid, row[0], sizeof(hwid));
 
 			if (strlen(hwid) == 0) {
-				sys_log(0, "HWID:: Player: %s have invalid hwid, check them manually.", targetname);
+				LOG_INFO("HWID:: Player: {} have invalid hwid, check them manually.", targetname);
 				return;
 			}
 
 			if (IsBlocked(hwid)) {
-				sys_log(0, "HWID:: %s is already blocked.", hwid);
+				LOG_INFO("HWID:: {} is already blocked.", hwid);
 				return;
 			}
 
@@ -161,12 +162,12 @@ void CHwidManager::RecvUnblockHwid(const char * whoname, const char * targetname
 			strlcpy(hwid, row[0], sizeof(hwid));
 
 			if (strlen(hwid) == 0) {
-				sys_log(0, "HWID:: Player: %s have invalid hwid, check them manually.", targetname);
+				LOG_INFO("HWID:: Player: {} have invalid hwid, check them manually.", targetname);
 				return;
 			}
 
 			if (!IsBlocked(hwid)) {
-				sys_log(0, "HWID:: %s is already unblocked.", hwid);
+				LOG_INFO("HWID:: {} is already unblocked.", hwid);
 				return;
 			}
 
