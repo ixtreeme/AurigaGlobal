@@ -71,6 +71,7 @@ LPDESC GetDesc(entt::entity e)
 } // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
+#include <Core/Logging.hpp>
 #ifdef ENABLE_ANTICHEAT
 #include "../../hwidmanager.h"
 #endif
@@ -502,11 +503,11 @@ bool CHARACTER::ChangeSex()
         break;
 #endif
     default:
-        sys_err("CHANGE_SEX: %s unknown race %d", GetName(), src_race);
+        LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(src_race));
         return false;
     }
 
-    sys_log(0, "CHANGE_SEX: %s (%d -> %d)", GetName(), src_race, m_points.job);
+    LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(m_points.job));
     return true;
 }
 
@@ -525,7 +526,7 @@ void CHARACTER::SetRace(uint8_t race)
 {
     if (race >= MAIN_RACE_MAX_NUM)
     {
-        sys_err("CHARACTER::SetRace(name=%s, race=%d).OUT_OF_RACE_RANGE", GetName(), race);
+        LOG_ERROR("CHARACTER::SetRace(name={}, race={}).OUT_OF_RACE_RANGE", GetName(), static_cast<int>(race));
         return;
     }
 
@@ -540,7 +541,7 @@ uint8_t CHARACTER::GetJob() const
     if (RaceToJob(race, &job))
         return job;
 
-    sys_err("CHARACTER::GetJob(name=%s, race=%d).OUT_OF_RACE_RANGE", GetName(), race);
+    LOG_ERROR("CHARACTER::GetJob(name={}, race={}).OUT_OF_RACE_RANGE", GetName(), static_cast<int>(race));
     return JOB_WARRIOR;
 }
 
@@ -922,13 +923,7 @@ uint32_t CHARACTER::GetMobDropItemVnum() const
 {
     if (!m_pkMobData)
     {
-        sys_err("GetMobDropItemVnum: NULL mob data (vid=%u race=%u name=%s map=%ld x=%ld y=%ld)",
-            GetPacketVID(),
-            GetRaceNum(),
-            GetName(),
-            GetMapIndex(),
-            GetX(),
-            GetY());
+        LOG_ERROR("GetMobDropItemVnum: NULL mob data (vid={} race={} name={} map={} x={} y={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY());
         return 0;
     }
 
@@ -975,8 +970,7 @@ uint16_t CHARACTER::GetMobAttackRange() const
 {
     if (!m_pkMobData)
     {
-        sys_err("GetMobAttackRange: m_pkMobData NULL! (VID: %u, Name: %s, Race:%d)",
-            GetPacketVID(), GetName(), GetRaceNum());
+        LOG_ERROR("GetMobAttackRange: m_pkMobData NULL! (VID: {}, Name: {}, Race:{})", GetPacketVID(), GetName(), GetRaceNum());
         return 0;
     }
 
@@ -1552,7 +1546,7 @@ void CHARACTER::SetDungeon(LPDUNGEON pkDungeon)
 {
     if (pkDungeon && m_pkDungeon)
     {
-        sys_err("%s is trying to reassigning dungeon (current %p, new party %p)", GetName(), get_pointer(m_pkDungeon), get_pointer(pkDungeon));
+        LOG_ERROR("{} is trying to reassigning dungeon (current {}, new party {})", GetName(), static_cast<const void*>(get_pointer(m_pkDungeon)), static_cast<const void*>(get_pointer(pkDungeon)));
     }
 
     if (m_pkDungeon)
@@ -2220,7 +2214,7 @@ void CHARACTER::RefineAcceMaterials()
             LPITEM pkItem = ITEM_MANAGER::instance().CreateItem(dwItemVnum, 1, 0, false);
             if (!pkItem)
             {
-                sys_err("%d can't be created.", dwItemVnum);
+                LOG_ERROR("{} can't be created.", dwItemVnum);
                 return;
             }
 
@@ -3531,7 +3525,7 @@ void CHARACTER::StartDestroyWhenIdleEvent()
 void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 {
     if (!GetDesc() || !*GetDesc()->GetHostName())
-        sys_err("cannot get desc or hostname");
+        LOG_ERROR("cannot get desc or hostname");
     else
         SetGMLevel();
 
@@ -3645,12 +3639,12 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_dwLogOffInterval = t->logoff_interval;
 
-    sys_log(0, "PLAYER_LOAD: %s PREMIUM %d %d, LOGGOFF_INTERVAL %u PTR: %p", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, this);
+    LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
 
     if (GetGMLevel() != GM_PLAYER)
     {
         LogManager::instance().CharLog(this, GetGMLevel(), "GM_LOGIN", "");
-        sys_log(0, "GM_LOGIN(gmlevel=%d, name=%s(%d), pos=(%d, %d)", GetGMLevel(), GetName(), GetPlayerID(), GetX(), GetY());
+        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(GetGMLevel()), GetName(), GetPlayerID(), GetX(), GetY());
     }
 
 #ifdef ENABLE_RANKING
@@ -3874,17 +3868,17 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 {
     if (!pkChrCauser)
     {
-        sys_err("OnClick %s by NULL", GetName());
+        LOG_ERROR("OnClick {} by NULL", GetName());
         return;
     }
 
     uint32_t vid = GetPacketVID();
-    sys_log(0, "OnClick %s[vnum: %d vid: %d] by %s", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
+    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
 
     {
         if (pkChrCauser->GetMyShop() && pkChrCauser != this)
         {
-            sys_err("OnClick Fail (%s->%s) - pc has shop", pkChrCauser->GetName(), GetName());
+            LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkChrCauser->GetName(), GetName());
             return;
         }
     }
@@ -3892,7 +3886,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
     {
         if (pkChrCauser->GetExchange())
         {
-            sys_err("OnClick Fail (%s->%s) - pc is exchanging", pkChrCauser->GetName(), GetName());
+            LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", pkChrCauser->GetName(), GetName());
             return;
         }
     }
@@ -3977,7 +3971,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
             }
 
             if (test_server)
-                sys_err("%s.OnClickFailure(%s) - target is PC", pkChrCauser->GetName(), GetName());
+                LOG_ERROR("{}.OnClickFailure({}) - target is PC", pkChrCauser->GetName(), GetName());
 
             return;
         }
@@ -4081,13 +4075,13 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
 
     if (lMapIndex >= 10000)
     {
-        sys_err("Invalid change channel request from dungeon %d!", lMapIndex);
+        LOG_ERROR("Invalid change channel request from dungeon {}!", lMapIndex);
         return false;
     }
 
     if (g_bChannel == 99)
     {
-        sys_err("%s attempted to change channel from CH99, ignoring req.", GetName());
+        LOG_ERROR("{} attempted to change channel from CH99, ignoring req.", GetName());
         return false;
     }
 
@@ -4111,7 +4105,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
     m_posWarp.x = x;
     m_posWarp.y = y;
 
-    sys_log(0, "ChangeChannel %s, %ld %ld map %ld to port %d", GetName(), x, y, GetMapIndex(), wPort);
+    LOG_INFO("ChangeChannel {}, {} {} map {} to port {}", GetName(), x, y, GetMapIndex(), wPort);
 
     TPacketGCWarp p;
 
@@ -4150,14 +4144,14 @@ EVENTFUNC(switch_channel)
     switch_channel_info* info = dynamic_cast<switch_channel_info*>(event->info);
     if (!info)
     {
-        sys_err("No switch channel event info!");
+        LOG_ERROR("No switch channel event info!");
         return 0;
     }
 
     LPCHARACTER ch = info->ch;
     if (!ch)
     {
-        sys_err("No char to work on for the switch.");
+        LOG_ERROR("No char to work on for the switch.");
         return 0;
     }
 
@@ -4200,7 +4194,7 @@ bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
 void CHARACTER::BlockProcessed()
 {
     if (!m_pkDropEvent) {
-        sys_err("<drop_event> process failed, event is null.");
+        LOG_ERROR("<drop_event> process failed, event is null.");
     }
     else {
 #ifdef TEXTS_IMPROVEMENT
@@ -4208,7 +4202,7 @@ void CHARACTER::BlockProcessed()
 #endif
         event_cancel(&m_pkDropEvent);
         m_pkDropEvent = nullptr;
-        sys_log(0, "<drop_event> processed.");
+        LOG_INFO("<drop_event> processed.");
     }
 }
 
@@ -4387,7 +4381,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     {
         if (cont.contains((pTable + i)->pos))
         {
-            sys_err("MYSHOP: duplicate shop item detected! (name: %s)", GetName());
+            LOG_ERROR("MYSHOP: duplicate shop item detected! (name: {})", GetName());
             return;
         }
 
@@ -5013,7 +5007,7 @@ EVENTFUNC(kill_ore_load_event)
     char_event_info* info = dynamic_cast<char_event_info*>(event->info);
     if (info == nullptr)
     {
-        sys_err("kill_ore_load_even> <Factor> Null pointer");
+        LOG_ERROR("kill_ore_load_even> <Factor> Null pointer");
         return 0;
     }
 
@@ -5057,7 +5051,7 @@ EVENTFUNC(destroy_when_idle_event)
     const auto info = dynamic_cast<char_event_info*>(event->info);
     if (info == nullptr)
     {
-        sys_err("destroy_when_idle_event> <Factor> Null pointer");
+        LOG_ERROR("destroy_when_idle_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -5073,7 +5067,7 @@ EVENTFUNC(destroy_when_idle_event)
         return PASSES_PER_SEC(300);
     }
 
-    sys_log(1, "DESTROY_WHEN_IDLE: %s", ch->GetName());
+    LOG_INFO("DESTROY_WHEN_IDLE: {}", ch->GetName());
 
     ch->m_pkDestroyWhenIdleEvent = nullptr;
     M2_DESTROY_CHARACTER(ch);
@@ -5085,19 +5079,19 @@ EVENTFUNC(drop_event)
 {
     drop_event_info* info = dynamic_cast<drop_event_info*>(event->info);
     if (!info) {
-        sys_err("<drop_event> event is null.");
+        LOG_ERROR("<drop_event> event is null.");
         return 0;
     }
 
     LPCHARACTER ch = info->ch;
     if (!ch) {
-        sys_err("<drop_event> ch is null.");
+        LOG_ERROR("<drop_event> ch is null.");
         return 0;
     }
 
     LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d) {
-        sys_err("<drop_event> %s have no desc connector.", ch->GetName());
+        LOG_ERROR("<drop_event> {} have no desc connector.", ch->GetName());
         return 0;
     }
 
