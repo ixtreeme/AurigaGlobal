@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "utils.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -162,7 +163,7 @@ ACMD(do_emotion)
 
 	if (*emotion_types[i].command == '\n')
 	{
-		sys_err("cannot find emotion");
+		LOG_ERROR("cannot find emotion");
 		return;
 	}
 
@@ -296,9 +297,9 @@ ACMD(do_emotion)
 	ch->PacketAround(buf.read_peek(), buf.size());
 
 	if (victim)
-		sys_log(1, "ACTION: %s TO %s", emotion_types[i].command, ((victim)->GetName()));
+		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ((victim)->GetName()));
 	else
-		sys_log(1, "ACTION: %s", emotion_types[i].command);
+		LOG_INFO("ACTION: {}", emotion_types[i].command);
 }
 
 
