@@ -29,6 +29,7 @@
 #include "../components/activity_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include <Core/Logging.hpp>
 
 namespace
 {
@@ -580,7 +581,7 @@ void CHARACTER::mining_cancel()
 {
     if (m_pkMiningEvent)
     {
-        sys_log(0, "XXX MINING CANCEL");
+        LOG_INFO("XXX MINING CANCEL");
         event_cancel(&m_pkMiningEvent);
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 472, "");
