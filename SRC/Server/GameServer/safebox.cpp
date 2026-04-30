@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Base/grid.h>
 #include "constants.h"
@@ -66,7 +67,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 {
 	if (!IsValidPosition(dwPos))
 	{
-		sys_err("SAFEBOX: item on wrong position at %d (size of grid = %d)", dwPos, m_pkGrid->GetSize());
+		LOG_ERROR("SAFEBOX: item on wrong position at {} (size of grid = {})", dwPos, m_pkGrid->GetSize());
 		return false;
 	}
 
@@ -94,7 +95,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
 
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	sys_log(1, "SAFEBOX: ADD %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	LOG_INFO("SAFEBOX: ADD {} {} count {}", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return true;
 }
 
@@ -114,7 +115,7 @@ LPITEM CSafebox::Remove(uint32_t dwPos)
 		return nullptr;
 
 	if (!m_pkGrid)
-		sys_err("Safebox::Remove : nil grid");
+		LOG_ERROR("Safebox::Remove : nil grid");
 	else
 		m_pkGrid->Get(dwPos, 1, pkItem->GetSize());
 
@@ -128,7 +129,7 @@ LPITEM CSafebox::Remove(uint32_t dwPos)
 	pack.pos	= dwPos;
 
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	sys_log(1, "SAFEBOX: REMOVE %s %s count %d", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return pkItem;
 }
 
@@ -142,7 +143,7 @@ void CSafebox::Save()
 	t.dwGold = m_lGold;
 
 	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));
-	sys_log(1, "SAFEBOX: SAVE %s", m_pkChrOwner->GetName());
+	LOG_INFO("SAFEBOX: SAVE {}", m_pkChrOwner->GetName());
 }
 
 bool CSafebox::IsEmpty(uint32_t dwPos, uint8_t bSize)
@@ -177,7 +178,7 @@ LPITEM CSafebox::GetItem(uint32_t bCell)
 {
 	if (bCell >= 16 * m_iSize)
 	{
-		sys_err("CHARACTER::GetItem: invalid item cell %d", bCell);
+		LOG_ERROR("CHARACTER::GetItem: invalid item cell {}", bCell);
 		return nullptr;
 	}
 
@@ -195,7 +196,7 @@ count)
 	bool stupid = false;
 	if (count < 0)
 	{
-		sys_err("I am a stupid hacker 5: %s %d", count);
+		LOG_ERROR("I am a stupid hacker 5: {}", count);
 		stupid = true;
 	}
 
@@ -203,7 +204,7 @@ count)
 
 	if (stupid)
 	{
-		sys_err("I am a stupid hacker 6: %s %d", count);
+		LOG_ERROR("I am a stupid hacker 6: {}", count);
 		return false;
 	}
 
@@ -249,7 +250,7 @@ count)
 				EntityFactory::CreateItemEntity(g_registry, item2),
 				count);
 
-			sys_log(1, "SAFEBOX: STACK %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
+			LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", m_pkChrOwner->GetName(), static_cast<int>(bCell), static_cast<int>(bDestCell), item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
 			return true;
 		}
 
@@ -269,7 +270,7 @@ count)
 			m_pkGrid->Put(bCell, 1, item->GetSize());
 		}
 
-		sys_log(1, "SAFEBOX: MOVE %s %d -> %d %s count %d", m_pkChrOwner->GetName(), bCell, bDestCell, item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", m_pkChrOwner->GetName(), static_cast<int>(bCell), static_cast<int>(bDestCell), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		Remove(bCell);
 		Add(bDestCell, item);
