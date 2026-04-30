@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -42,7 +43,7 @@ EVENTFUNC(war_begin_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "war_begin_event> <Factor> Null pointer" );
+		LOG_ERROR("war_begin_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -58,7 +59,7 @@ EVENTFUNC(war_end_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "war_end_event> <Factor> Null pointer" );
+		LOG_ERROR("war_end_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -85,7 +86,7 @@ EVENTFUNC(war_timeout_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "war_timeout_event> <Factor> Null pointer" );
+		LOG_ERROR("war_timeout_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -151,7 +152,7 @@ CWarMap::~CWarMap()
 	event_cancel(&m_pkTimeoutEvent);
 	event_cancel(&m_pkResetFlagEvent);
 
-	sys_log(0, "WarMap::~WarMap : map index %d", GetMapIndex());
+	LOG_INFO("WarMap::~WarMap : map index {}", GetMapIndex());
 
 	auto it = m_set_pkChr.begin();
 
@@ -161,7 +162,7 @@ CWarMap::~CWarMap()
 
 		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		{
-			sys_log(0, "WarMap::~WarMap : disconnecting %s", ch->GetName());
+			LOG_INFO("WarMap::~WarMap : disconnecting {}", ch->GetName());
 			DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 		}
 	}
@@ -358,7 +359,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	if (!ch->IsPC())
 		return;
 
-	sys_log(0, "WarMap::IncMember");
+	LOG_TRACE("WarMap::IncMember");
 	uint32_t gid = 0;
 
 	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
@@ -387,14 +388,12 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 		event_cancel(&m_pkTimeoutEvent);
 
-		sys_log(0, "WarMap +m %u(cur:%d, acc:%d) vs %u(cur:%d, acc:%d)",
-				m_TeamData[0].dwID, m_TeamData[0].GetCurJointerCount(), m_TeamData[0].GetAccumulatedJoinerCount(),
-				m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
+		LOG_TRACE("WarMap +m {}(cur:{}, acc:{}) vs {}(cur:{}, acc:{})", m_TeamData[0].dwID, m_TeamData[0].GetCurJointerCount(), m_TeamData[0].GetAccumulatedJoinerCount(), m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
 	}
 	else
 	{
 		++m_iObserverCount;
-		sys_log(0, "WarMap +o %d", m_iObserverCount);
+		LOG_TRACE("WarMap +o {}", m_iObserverCount);
 		ch->SetObserverMode(true);
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 255, "");
@@ -418,7 +417,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 	if (!ch->IsPC())
 		return;
 
-	sys_log(0, "WarMap::DecMember");
+	LOG_TRACE("WarMap::DecMember");
 	uint32_t gid = 0;
 
 	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
@@ -446,9 +445,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 			}
 		}
 
-		sys_log(0, "WarMap -m %u(cur:%d, acc:%d) vs %u(cur:%d, acc:%d)",
-				m_TeamData[0].dwID, m_TeamData[0].GetCurJointerCount(), m_TeamData[0].GetAccumulatedJoinerCount(),
-				m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
+		LOG_TRACE("WarMap -m {}(cur:{}, acc:{}) vs {}(cur:{}, acc:{})", m_TeamData[0].dwID, m_TeamData[0].GetCurJointerCount(), m_TeamData[0].GetAccumulatedJoinerCount(), m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
 
 		CheckWarEnd();
 		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "war.is_war_member", 0);
@@ -457,7 +454,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 	{
 		--m_iObserverCount;
 
-		sys_log(0, "WarMap -o %d", m_iObserverCount);
+		LOG_TRACE("WarMap -o {}", m_iObserverCount);
 		ch->SetObserverMode(false);
 	}
 
@@ -568,10 +565,7 @@ void CWarMap::Timeout()
 				dwLoser = m_TeamData[0].dwID;
 			}
 
-			sys_err("WarMap: member count is not zero, guild1 %u %d guild2 %u %d, winner %u",
-					m_TeamData[0].dwID, m_TeamData[0].iMemberCount,
-					m_TeamData[1].dwID, m_TeamData[1].iMemberCount,
-					dwWinner);
+			LOG_ERROR("WarMap: member count is not zero, guild1 {} {} guild2 {} {}, winner {}", m_TeamData[0].dwID, m_TeamData[0].iMemberCount, m_TeamData[1].dwID, m_TeamData[1].iMemberCount, dwWinner);
 		}
 		else
 		{
@@ -582,8 +576,7 @@ void CWarMap::Timeout()
 		}
 	}
 
-	sys_log(0, "WarMap: Timeout %u %u winner %u loser %u reward %d map %d",
-			m_TeamData[0].dwID, m_TeamData[1].dwID, dwWinner, dwLoser, iRewardGold, m_kMapInfo.lMapIndex);
+	LOG_INFO("WarMap: Timeout {} {} winner {} loser {} reward {} map {}", m_TeamData[0].dwID, m_TeamData[1].dwID, dwWinner, dwLoser, iRewardGold, m_kMapInfo.lMapIndex);
 
 	if (dwWinner)
 		CGuildManager::instance().RequestWarOver(dwWinner, dwLoser, dwWinner, iRewardGold);
@@ -748,14 +741,7 @@ bool CWarMap::CheckScore()
 	else if (dwWinner == m_TeamData[1].dwID)
 		iRewardGold = GetRewardGold(1);
 
-	sys_log(0, "WarMap::CheckScore end score %d guild1 %u score guild2 %d %u score %d winner %u reward %d",
-			iEndScore,
-			m_TeamData[0].dwID,
-			m_TeamData[0].iScore,
-			m_TeamData[1].dwID,
-			m_TeamData[1].iScore,
-			dwWinner,
-			iRewardGold);
+	LOG_INFO("WarMap::CheckScore end score {} guild1 {} score guild2 {} {} score {} winner {} reward {}", iEndScore, m_TeamData[0].dwID, m_TeamData[0].iScore, m_TeamData[1].dwID, m_TeamData[1].iScore, dwWinner, iRewardGold);
 
 	CGuildManager::instance().RequestWarOver(dwWinner, dwLoser, dwWinner, iRewardGold);
 	return true;
@@ -763,7 +749,7 @@ bool CWarMap::CheckScore()
 
 bool CWarMap::SetEnded()
 {
-	sys_log(0, "WarMap::SetEnded %d", m_kMapInfo.lMapIndex);
+	LOG_INFO("WarMap::SetEnded {}", m_kMapInfo.lMapIndex);
 
 	if (m_pkEndEvent)
 		return false;
@@ -819,7 +805,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 
 	uint8_t idx;
 
-	sys_log(0, "WarMap::OnKill %u %u", dwKillerGuild, dwDeadGuild);
+	LOG_INFO("WarMap::OnKill {} {}", dwKillerGuild, dwDeadGuild);
 
 	if (!GetTeamIndex(dwKillerGuild, idx))
 		return;
@@ -848,7 +834,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 			break;
 
 		default:
-			sys_err("unknown war map type %u index %d", m_kMapInfo.bType, m_kMapInfo.lMapIndex);
+			LOG_ERROR("unknown war map type {} index {}", static_cast<int>(m_kMapInfo.bType), m_kMapInfo.lMapIndex);
 			break;
 	}
 }
@@ -872,7 +858,7 @@ void CWarMap::AddFlagBase(uint8_t bIdx, uint32_t x, uint32_t y)
 	}
 
 	r.pkChrFlagBase = CHARACTER_MANAGER::instance().SpawnMob(warmap::WAR_FLAG_BASE_VNUM, m_kMapInfo.lMapIndex, x, y, 0);
-	sys_log(0, "WarMap::AddFlagBase %u %p id %u", bIdx, get_pointer(r.pkChrFlagBase), r.dwID);
+	LOG_INFO("WarMap::AddFlagBase {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlagBase)), r.dwID);
 
 	r.pkChrFlagBase->SetPoint(POINT_STAT, r.dwID);
 	r.pkChrFlagBase->SetWarMap(this);
@@ -897,7 +883,7 @@ void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
 	}
 
 	r.pkChrFlag = CHARACTER_MANAGER::instance().SpawnMob(bIdx == 0 ? warmap::WAR_FLAG_VNUM0 : warmap::WAR_FLAG_VNUM1, m_kMapInfo.lMapIndex, x, y, 0);
-	sys_log(0, "WarMap::AddFlag %u %p id %u", bIdx, get_pointer(r.pkChrFlag), r.dwID);
+	LOG_INFO("WarMap::AddFlag {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)), r.dwID);
 
 	r.pkChrFlag->SetPoint(POINT_STAT, r.dwID);
 	r.pkChrFlag->SetWarMap(this);
@@ -912,7 +898,7 @@ void CWarMap::RemoveFlag(uint8_t bIdx)
 	if (!r.pkChrFlag)
 		return;
 
-	sys_log(0, "WarMap::RemoveFlag %u %p", bIdx, get_pointer(r.pkChrFlag));
+	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)));
 
 	r.pkChrFlag->Dead(nullptr, true);
 	r.pkChrFlag = nullptr;
@@ -941,7 +927,7 @@ EVENTFUNC(war_reset_flag_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "war_reset_flag_event> <Factor> Null pointer" );
+		LOG_ERROR("war_reset_flag_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -1049,12 +1035,12 @@ bool CWarMapManager::GetStartPosition(int32_t lMapIndex, uint8_t bIdx, PIXEL_POS
 
 	if (!pi)
 	{
-		sys_log(0, "GetStartPosition FAILED [%d] WarMapInfoSize(%d)", lMapIndex, m_map_kWarMapInfo.size());
+		LOG_INFO("GetStartPosition FAILED [{}] WarMapInfoSize({})", lMapIndex, m_map_kWarMapInfo.size());
 
 		for (auto it = m_map_kWarMapInfo.begin(); it != m_map_kWarMapInfo.end(); ++it)
 		{
 			PIXEL_POSITION& cur=it->second->posStart[bIdx];
-			sys_log(0, "WarMap[%d]=Pos(%d, %d)", it->first, cur.x, cur.y);
+			LOG_INFO("WarMap[{}]=Pos({}, {})", it->first, cur.x, cur.y);
 		}
 		return false;
 	}
@@ -1068,7 +1054,7 @@ int32_t CWarMapManager::CreateWarMap(const TGuildWarInfo& guildWarInfo, uint32_t
 	TWarMapInfo * pkInfo = GetWarMapInfo(guildWarInfo.lMapIndex);
 	if (!pkInfo)
 	{
-		sys_err("GuildWar.CreateWarMap.NOT_FOUND_MAPINFO[%d]", guildWarInfo.lMapIndex);
+		LOG_ERROR("GuildWar.CreateWarMap.NOT_FOUND_MAPINFO[{}]", guildWarInfo.lMapIndex);
 		return 0;
 	}
 
@@ -1099,7 +1085,7 @@ void CWarMapManager::DestroyWarMap(CWarMap* pMap)
 {
 	int32_t mapIdx = pMap->GetMapIndex();
 
-	sys_log(0, "WarMap::DestroyWarMap : %d", mapIdx);
+	LOG_INFO("WarMap::DestroyWarMap : {}", mapIdx);
 
 	m_mapWarMap.erase(pMap->GetMapIndex());
 	M2_DELETE(pMap);
