@@ -295,7 +295,7 @@ int get_Item_SubType_Value(unsigned int type_value, string inputString)
 	// assert ¾È ¸ÔÈ÷´Â µí..
 	if (_countof(arSubType) <= type_value)
 	{
-		sys_err("SubType : Out of range!! (type_value: %d, count of registered subtype: %d", type_value, _countof(arSubType));
+		LOG_ERROR("SubType : Out of range!! (type_value: {}, count of registered subtype: {}", type_value, _countof(arSubType));
 		return -1;
 	}
 
@@ -811,9 +811,9 @@ bool Set_Proto_Mob_Table(TMobTable *mobTable, cCsvTable &csvTable,std::map<int,c
 	str_to_number(mobTable->bRevivePoint, csvTable.AsStringByIndex(col++));
 
 #ifdef ENABLE_MULTI_NAMES
-	sys_log(0, "MOB #%-5d %-24s level: %-3u rank: %u empire: %d", mobTable->dwVnum, mobTable->szLocaleName[0], mobTable->bLevel, mobTable->bRank, mobTable->bEmpire);
+	LOG_INFO("MOB #{:<5} {:<24} level: {:<3} rank: {} empire: {}", mobTable->dwVnum, mobTable->szLocaleName[0], mobTable->bLevel, mobTable->bRank, mobTable->bEmpire);
 #else
-	sys_log(0, "MOB #%-5d %-24s level: %-3u rank: %u empire: %d", mobTable->dwVnum, mobTable->szLocaleName, mobTable->bLevel, mobTable->bRank, mobTable->bEmpire);
+	LOG_INFO("MOB #{:<5} {:<24} level: {:<3} rank: {} empire: {}", mobTable->dwVnum, mobTable->szLocaleName, mobTable->bLevel, mobTable->bRank, mobTable->bEmpire);
 #endif
 
 	return true;
@@ -871,8 +871,8 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 				dataStream << dataArray[j] << ",";
 
 			//fprintf(stderr, "ItemProto Reading Failed : Invalid value.\n");
-			sys_err("ItemProto Reading Failed : Invalid value. (index: %d, col: %d, value: %s)", i, col, csvTable.AsStringByIndex(col));
-			sys_err("\t%d ~ %d Values: %s", 0, i, dataStream.str().c_str());
+			LOG_ERROR("ItemProto Reading Failed : Invalid value. (index: {}, col: {}, value: {})", i, col, csvTable.AsStringByIndex(col));
+			LOG_ERROR("\t{} ~ {} Values: {}", 0, i, dataStream.str().c_str());
 
 			exit(0);
 		}
@@ -899,7 +899,7 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 			int end_vnum = atoi(s_end_vnum.c_str());
 			if (0 == start_vnum || (0 != end_vnum && end_vnum < start_vnum))
 			{
-				sys_err ("INVALID VNUM %s", s.c_str());
+				LOG_ERROR("INVALID VNUM {}", s.c_str());
 				return false;
 			}
 			itemTable->dwVnum = start_vnum;
