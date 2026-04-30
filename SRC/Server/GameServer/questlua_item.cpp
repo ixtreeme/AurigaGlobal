@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "questmanager.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -13,9 +14,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -90,7 +91,7 @@ namespace quest
 			if (q.GetCurrentPCEntity() == ItemSystem::GetItemOwner(item)) {
 				ItemSystem::ConsumeItem(item, ItemSystem::GetItemCount(item));
 			} else {
-				sys_err("Tried to remove invalid item entity %u", static_cast<uint32_t>(item));
+				sys_err("Tried to remove invalid item entity {}", static_cast<uint32_t>(item));
 			}
 			q.ClearCurrentItem();
 		}
@@ -176,7 +177,7 @@ namespace quest
 
 		if (index < 0 || index >= ITEM_VALUES_MAX_NUM)
 		{
-			sys_err("index(%d) is out of range (0..%d)", index, ITEM_VALUES_MAX_NUM);
+			sys_err("index({}) is out of range (0..{})", index, ITEM_VALUES_MAX_NUM);
 			lua_pushnumber(L, 0);
 		}
 		else
@@ -270,7 +271,7 @@ namespace quest
 		}
 		else
 		{
-			sys_err("Cannot find item table of vnum %u", vnum);
+			sys_err("Cannot find item table of vnum {}", vnum);
 			lua_pushnumber(L, 0);
 		}
 		return 1;
