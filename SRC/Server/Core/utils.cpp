@@ -397,7 +397,7 @@ int number_ex(int from, int to, const char* file, int line)
 	{
 		int tmp = from;
 
-		sys_err("number(): first argument is bigger than second argument %d -> %d, %s %d", from, to, file, line);
+		LOG_ERROR("number(): first argument is bigger than second argument {} -> {}, {} {}", from, to, file, line);
 
 		from = to;
 		to = tmp;
@@ -408,7 +408,7 @@ int number_ex(int from, int to, const char* file, int line)
 	if ((to - from + 1) != 0)
 		returnValue = ((thecore_random() % (to - from + 1)) + from);
 	else
-		sys_err("number(): devided by 0");
+		LOG_ERROR("number(): devided by 0");
 
 	return returnValue;
 }
@@ -425,7 +425,7 @@ void thecore_sleep(struct timeval* timeout)
 	{
 		if (errno != EINTR)
 		{
-			sys_err("select sleep %s", strerror(errno));
+			LOG_ERROR("select sleep {}", strerror(errno));
 			return;
 		}
 	}
@@ -441,7 +441,7 @@ void thecore_msleep(uint32_t dwMillisecond)
 
 void core_dump_unix(const char* who, uint16_t line)
 {
-	sys_err("*** Dumping Core %s:%d ***", who, line);
+	LOG_ERROR("*** Dumping Core {}:{} ***", who, line);
 
 	fflush(stdout);
 	fflush(stderr);
