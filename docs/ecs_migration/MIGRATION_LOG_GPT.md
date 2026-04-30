@@ -8605,6 +8605,15 @@ Follow-up:
   - no `0xc0000374` GameServer APPCRASH in Windows Application log,
   - duplicate item purge either disappears or completes without heap assertion.
 
+Validation:
+- Operator re-ran WinTest after `e714afe Phase 16-3 Hotfix: Harden duplicate item purge`.
+- Result: confirmed stable and fast.
+- User confirmation: "most teljesen rendben és gyorsan működik minden ahogy kell lennie".
+- Active-core crash is considered resolved for the tested character/core/map path.
+- Login, character select, and in-game loading latency are back to expected behavior.
+- Gameplay is normal after the previous combat timestamp hotfix and the duplicate item purge hardening.
+- Phase 16-3 logging modernization + crash hotfix status: production-validated on WinTest for this scenario.
+
 ## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
 
 Mode:
