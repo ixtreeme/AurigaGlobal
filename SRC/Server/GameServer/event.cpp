@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 
 #include "event_queue.h"
 
@@ -32,7 +33,7 @@ void event_cancel(LPEVENT * ppevent)
 
 	if (!ppevent)
 	{
-		sys_err("null pointer");
+		LOG_ERROR("null pointer");
 		return;
 	}
 
@@ -107,7 +108,7 @@ int event_process(int pulse)
 		}
 		else
 		{
-			//sys_log(0, "EVENT: %s %d event %p info %p", the_event->file, the_event->line, the_event, the_event->info);
+			//0, "EVENT: %s %d event %p info %p", the_event->file, the_event->line, the_event, the_event->info);
 			new_time = (the_event->func) (get_pointer(the_event), processing_time);
 
 			if (new_time <= 0 || the_event->is_force_to_end)
