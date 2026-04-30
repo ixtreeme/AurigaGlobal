@@ -171,7 +171,7 @@ bool CConfig::GetParam(const char*key, int index, uint32_t *Param)
 
 	str_to_number(*Param, szParam[index]);
 
-	sys_log(0, "GetParam %d", *Param);
+	LOG_INFO("GetParam {}", *Param);
 	return true;
 }
 const char * CConfig::Get(const char* key)
