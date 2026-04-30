@@ -48,7 +48,7 @@ bool CClientManager::DeleteLogonAccount(const char * c_pszLogin, uint32_t dwHand
 
 	if (pkLD->GetConnectedPeerHandle() != dwHandle)
 	{
-		sys_err("%s tried to logout in other peer handle %lu, current handle %lu", szLogin, dwHandle, pkLD->GetConnectedPeerHandle());
+		LOG_ERROR("{} tried to logout in other peer handle {}, current handle {}", szLogin, dwHandle, pkLD->GetConnectedPeerHandle());
 		return false;
 	}
 
@@ -86,7 +86,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 
 	if (!pkLoginData)
 	{
-		sys_log(0, "LOGIN_BY_KEY key not exist %s %lu", szLogin, p->dwLoginKey);
+		LOG_INFO("LOGIN_BY_KEY key not exist {} {}", szLogin, p->dwLoginKey);
 		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
 		return;
 	}
@@ -95,7 +95,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 
 	if (FindLogonAccount(r.login))
 	{
-		sys_log(0, "LOGIN_BY_KEY already login %s %lu", r.login, p->dwLoginKey);
+		LOG_INFO("LOGIN_BY_KEY already login {} {}", r.login, p->dwLoginKey);
 		TPacketDGLoginAlready ptog;
 		strlcpy(ptog.szLogin, szLogin, sizeof(ptog.szLogin));
 		pkPeer->EncodeHeader(HEADER_DG_LOGIN_ALREADY, dwHandle, sizeof(TPacketDGLoginAlready));
@@ -105,7 +105,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 
 	if (r.login == szLogin)
 	{
-		sys_log(0, "LOGIN_BY_KEY login differ %s %lu input %s", r.login, p->dwLoginKey, szLogin);
+		LOG_INFO("LOGIN_BY_KEY login differ {} {} input {}", r.login, p->dwLoginKey, szLogin);
 		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
 		return;
 	}
@@ -114,10 +114,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 	{
 		const uint32_t * pdwClientKey = pkLoginData->GetClientKey();
 
-		sys_log(0, "LOGIN_BY_KEY client key differ %s %lu %lu %lu %lu, %lu %lu %lu %lu",
-				r.login,
-				p->adwClientKey[0], p->adwClientKey[1], p->adwClientKey[2], p->adwClientKey[3],
-				pdwClientKey[0], pdwClientKey[1], pdwClientKey[2], pdwClientKey[3]);
+		LOG_INFO("LOGIN_BY_KEY client key differ {} {} {} {} {}, {} {} {} {}", r.login, p->adwClientKey[0], p->adwClientKey[1], p->adwClientKey[2], p->adwClientKey[3], pdwClientKey[0], pdwClientKey[1], pdwClientKey[2], pdwClientKey[3]);
 
 		pkPeer->EncodeReturn(HEADER_DG_LOGIN_NOT_EXIST, dwHandle);
 		return;
@@ -141,7 +138,7 @@ void CClientManager::QUERY_LOGIN_BY_KEY(CPeer * pkPeer, uint32_t dwHandle, TPack
 	info->pAccountTable = pkTab;
 	strlcpy(info->ip, p->szIP, sizeof(info->ip));
 
-	sys_log(0, "LOGIN_BY_KEY success %s %lu %s", r.login, p->dwLoginKey, info->ip);
+	LOG_INFO("LOGIN_BY_KEY success {} {} {}", r.login, p->dwLoginKey, info->ip);
 	char szQuery[QUERY_MAX_LEN];
 
 	snprintf(szQuery, sizeof(szQuery), "SELECT pid1, pid2, pid3, pid4, pid5, empire FROM player_index%s WHERE id=%u", GetTablePostfix(), r.id);
@@ -172,11 +169,11 @@ void CClientManager::RESULT_LOGIN_BY_KEY(CPeer * peer, SQLMsg * msg)
 
 		std::unique_ptr<SQLMsg> pMsg(CDBManager::instance().DirectQuery(szQuery, SQL_PLAYER));
 
-		sys_log(0, "RESULT_LOGIN_BY_KEY FAIL player_index's NULL : ID:%d", account_id);
+		LOG_INFO("RESULT_LOGIN_BY_KEY FAIL player_index's NULL : ID:{}", account_id);
 
 		if (pMsg->Get()->uiNumRows == 0)
 		{
-			sys_log(0, "RESULT_LOGIN_BY_KEY FAIL player_index's NULL : ID:%d", account_id);
+			LOG_INFO("RESULT_LOGIN_BY_KEY FAIL player_index's NULL : ID:{}", account_id);
 
 			// PLAYER_INDEX_CREATE_BUG_FIX
 			//snprintf(szQuery, sizeof(szQuery), "INSERT IGNORE INTO player_index%s (id) VALUES(%lu)", GetTablePostfix(), info->pAccountTable->id);
@@ -376,18 +373,13 @@ void CreateAccountPlayerDataFromRes(MYSQL_RES * pRes, TAccountTable * pkTab)
 #endif
 				}
 
-				sys_log(0, "%s %lu %lu hair %u",
-						pkTab->players[j].szName, pkTab->players[j].x, pkTab->players[j].y, pkTab->players[j].wHairPart);
+				LOG_INFO("{} {} {} hair {}", pkTab->players[j].szName, pkTab->players[j].x, pkTab->players[j].y, pkTab->players[j].wHairPart);
 				break;
 			}
 		}
 		/*
 		   if (j == PLAYER_PER_ACCOUNT)
-		   sys_err("cannot find player_id on this account (login: %s id %lu account %lu %lu %lu)",
-		   pkTab->login, player_id,
-		   pkTab->players[0].dwID,
-		   pkTab->players[1].dwID,
-		   pkTab->players[2].dwID);
+		   LOG_ERROR("cannot find player_id on this account (login: {} id {} account {} {} {})", pkTab->login, player_id, pkTab->players[0].dwID, pkTab->players[1].dwID, pkTab->players[2].dwID);
 		   */
 	}
 }
@@ -402,7 +394,7 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 		// 계정이 없네?
 		if (msg->Get()->uiNumRows == 0)
 		{
-			sys_log(0, "RESULT_LOGIN: no account");
+			LOG_INFO("RESULT_LOGIN: no account");
 			peer->EncodeHeader(HEADER_DG_LOGIN_NOT_EXIST, info->dwHandle, 0);
 			delete info;
 			return;
@@ -412,7 +404,7 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 
 		if (!info->pAccountTable)
 		{
-			sys_log(0, "RESULT_LOGIN: no account : WRONG_PASSWD");
+			LOG_INFO("RESULT_LOGIN: no account : WRONG_PASSWD");
 			peer->EncodeReturn(HEADER_DG_LOGIN_WRONG_PASSWD, info->dwHandle);
 			delete info;
 		}
@@ -467,7 +459,7 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 		// 다른 컨넥션이 이미 로그인 해버렸다면.. 이미 접속했다고 보내야 한다.
 		if (!InsertLogonAccount(info->pAccountTable->login, peer->GetHandle(), info->ip))
 		{
-			sys_log(0, "RESULT_LOGIN: already logon %s", info->pAccountTable->login);
+			LOG_INFO("RESULT_LOGIN: already logon {}", info->pAccountTable->login);
 
 			TPacketDGLoginAlready p;
 			strlcpy(p.szLogin, info->pAccountTable->login, sizeof(p.szLogin));
@@ -477,7 +469,7 @@ void CClientManager::RESULT_LOGIN(CPeer * peer, SQLMsg * msg)
 		}
 		else
 		{
-			sys_log(0, "RESULT_LOGIN: login success %s rows: %lu", info->pAccountTable->login, msg->Get()->uiNumRows);
+			LOG_INFO("RESULT_LOGIN: login success {} rows: {}", info->pAccountTable->login, msg->Get()->uiNumRows);
 
 			if (msg->Get()->uiNumRows > 0)
 				CreateAccountPlayerDataFromRes(msg->Get()->pSQLResult, info->pAccountTable);
@@ -557,14 +549,14 @@ void CClientManager::QUERY_LOGOUT(CPeer * peer, uint32_t dwHandle,const char * d
 		if (pLoginData->GetAccountRef().players[n].dwID == 0)
 		{
 			if (g_test_server)
-				sys_log(0, "LOGOUT %s %d", packet->login, pLoginData->GetAccountRef().players[n].dwID);
+				LOG_INFO("LOGOUT {} {}", packet->login, pLoginData->GetAccountRef().players[n].dwID);
 			continue;
 		}
 
 		pid[n] = pLoginData->GetAccountRef().players[n].dwID;
 
 		if (g_log)
-			sys_log(0, "LOGOUT InsertLogoutPlayer %s %d", packet->login, pid[n]);
+			LOG_INFO("LOGOUT InsertLogoutPlayer {} {}", packet->login, pid[n]);
 
 		InsertLogoutPlayer(pid[n]);
 	}
@@ -572,7 +564,7 @@ void CClientManager::QUERY_LOGOUT(CPeer * peer, uint32_t dwHandle,const char * d
 	if (DeleteLogonAccount(packet->login, peer->GetHandle()))
 	{
 		if (g_log)
-			sys_log(0, "LOGOUT %s ", packet->login);
+			LOG_INFO("LOGOUT {} ", packet->login);
 	}
 }
 
