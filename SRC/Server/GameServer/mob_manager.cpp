@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "item_manager.h"
@@ -77,14 +78,13 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 			if (pkMob->m_table.Skills[j].dwVnum)
 				++SkillCount;
 
-		sys_log(0, "MOB: #%-5d %-30s LEVEL %u HP %u DEF %u EXP %u DROP_ITEM_VNUM %u SKILL_COUNT %d",
-				t->dwVnum, 
 #ifdef ENABLE_MULTI_NAMES
-				t->szLocaleName[DEFAULT_LANGUAGE],
+		const char* mobName = t->szLocaleName[DEFAULT_LANGUAGE];
 #else
-				t->szLocaleName,
+		const char* mobName = t->szLocaleName;
 #endif
-				t->bLevel, t->dwMaxHP, t->wDef, t->dwExp, t->dwDropItemVnum, SkillCount);
+		LOG_TRACE("MOB: #{:<5} {:<30} LEVEL {} HP {} DEF {} EXP {} DROP_ITEM_VNUM {} SKILL_COUNT {}",
+				t->dwVnum, mobName, t->bLevel, t->dwMaxHP, t->wDef, t->dwExp, t->dwDropItemVnum, SkillCount);
 
 
 		if (t->bType == CHAR_TYPE_NPC || t->bType == CHAR_TYPE_WARP || t->bType == CHAR_TYPE_GOTO)
@@ -106,12 +106,12 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 
 	if (!LoadGroup(szGroupFileName))
 	{
-		sys_err("cannot load %s", szGroupFileName);
+		LOG_ERROR("cannot load {}", szGroupFileName);
 		thecore_shutdown();
 	}
 	if (!LoadGroupGroup(szGroupGroupFileName))
 	{
-		sys_err("cannot load %s", szGroupGroupFileName);
+		LOG_ERROR("cannot load {}", szGroupGroupFileName);
 		thecore_shutdown();
 	}
 	// END_OF_LOCALE_SERVICE
@@ -272,7 +272,7 @@ bool CMobManager::LoadGroupGroup(const char * c_pszFileName)
 
 		if (!loader.GetTokenInteger("vnum", &iVnum))
 		{
-			sys_err("LoadGroupGroup : Syntax error %s : no vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("LoadGroupGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			continue;
 		}
@@ -333,7 +333,7 @@ bool CMobManager::LoadGroup(const char * c_pszFileName)
 
 		if (!loader.GetTokenInteger("vnum", &iVnum))
 		{
-			sys_err("LoadGroup : Syntax error %s : no vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("LoadGroup : Syntax error {} : no vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			continue;
 		}
@@ -342,14 +342,14 @@ bool CMobManager::LoadGroup(const char * c_pszFileName)
 
 		if (!loader.GetTokenVector("leader", &pTok))
 		{
-			sys_err("LoadGroup : Syntax error %s : no leader, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("LoadGroup : Syntax error {} : no leader, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			continue;
 		}
 
 		if (pTok->size() < 2)
 		{
-			sys_err("LoadGroup : Syntax error %s : no leader vnum, node %s", c_pszFileName, stName.c_str());
+			LOG_ERROR("LoadGroup : Syntax error {} : no leader vnum, node {}", c_pszFileName, stName.c_str());
 			loader.SetParentNode();
 			continue;
 		}
@@ -361,8 +361,8 @@ bool CMobManager::LoadGroup(const char * c_pszFileName)
 		str_to_number(vnum, pTok->at(1).c_str());
 		pkGroup->AddMember(vnum);
 
-		sys_log(0, "GROUP: %-5d %s", iVnum, stName.c_str());
-		sys_log(0, "               %s %s", pTok->at(0).c_str(), pTok->at(1).c_str());
+		LOG_TRACE("GROUP: {:<5} {}", iVnum, stName.c_str());
+		LOG_TRACE("               {} {}", pTok->at(0).c_str(), pTok->at(1).c_str());
 
 		for (int k = 1; k < 256; ++k)
 		{
@@ -371,7 +371,7 @@ bool CMobManager::LoadGroup(const char * c_pszFileName)
 
 			if (loader.GetTokenVector(buf, &pTok))
 			{
-				sys_log(0, "               %s %s", pTok->at(0).c_str(), pTok->at(1).c_str());
+				LOG_TRACE("               {} {}", pTok->at(0).c_str(), pTok->at(1).c_str());
 				uint32_t vnum = 0;
 				str_to_number(vnum, pTok->at(1).c_str());
 				pkGroup->AddMember(vnum);
