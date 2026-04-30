@@ -1786,7 +1786,20 @@ namespace quest
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(GetCurrentCharacterPtr()), CHAT_TYPE_PARTY, "LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
 	}
 
-#ifndef _WIN32
+	void CQuestManager::QuestErrorImpl(const char* func, int line, const std::string& msg)
+	{
+		LOG_ERROR("[QUEST {}:{}] {}", func ? func : "", line, msg);
+		if (test_server)
+		{
+			LPCHARACTER ch = GetCurrentCharacterPtr();
+			if (ch)
+			{
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "%s", msg.c_str());
+			}
+		}
+	}
+
 	void CQuestManager::QuestError(const char* func, int line, const char* fmt, ...)
 	{
 		char szMsg[4096];
@@ -1796,39 +1809,8 @@ namespace quest
 		vsnprintf(szMsg, sizeof(szMsg), fmt, args);
 		va_end(args);
 
-		LOG_ERROR("{}", szMsg);
-		if (test_server)
-		{
-			LPCHARACTER ch = GetCurrentCharacterPtr();
-			if (ch)
-			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "%s", szMsg);
-			}
-		}
+		QuestErrorImpl(func, line, szMsg);
 	}
-#else
-	void CQuestManager::QuestError(const char* func, int line, const char* fmt, ...)
-	{
-		char szMsg[4096];
-		va_list args;
-
-		va_start(args, fmt);
-		vsnprintf(szMsg, sizeof(szMsg), fmt, args);
-		va_end(args);
-
-		LOG_ERROR("{}", szMsg);
-		if (test_server)
-		{
-			LPCHARACTER ch = GetCurrentCharacterPtr();
-			if (ch)
-			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "%s", szMsg);
-			}
-		}
-	}
-#endif
 
 	void CQuestManager::AddServerTimer(const std::string& name, uint32_t arg, LPEVENT event)
 	{

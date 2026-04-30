@@ -1,6 +1,11 @@
 #pragma once
 
+#include <Core/Logging.hpp>
+#include <fmt/format.h>
+
+#include <string>
 #include <unordered_map>
+#include <utility>
 
 #include <entt/entt.hpp>
 
@@ -217,12 +222,16 @@ namespace quest
 		void		ClearError() { m_bError = false; }
 		bool		IsError() { return m_bError; }
 		void		WriteRunningStateToSyserr();
-#ifndef _WIN32
+		void		QuestErrorImpl(const char* func, int line, const std::string& msg);
+
+		template <typename... Args>
+		void QuestErrorFmt(const char* func, int line, fmt::format_string<Args...> fmt, Args&&... args)
+		{
+			QuestErrorImpl(func, line, fmt::format(fmt, std::forward<Args>(args)...));
+		}
+
+		// Legacy printf-style bridge kept only until every questlua call site is migrated.
 		void		QuestError(const char* func, int line, const char* fmt, ...);
-#else
-		//void		QuestError(const char* fmt, ...);
-		void		QuestError(const char* func, int line, const char* fmt, ...);
-#endif
 
 		void		RegisterNPCVnum(uint32_t dwVnum);
 
