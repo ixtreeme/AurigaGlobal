@@ -1,8 +1,15 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "config.h"
 #include "questmanager.h"
+#undef sys_err
+#ifndef _WIN32
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
+#else
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
+#endif
 #include "sectree_manager.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -34,7 +41,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
-			sys_err("apply is out of range : %d", applyOn);
+			sys_err("apply is out of range : {}", applyOn);
 			return 0;
 		}
 
@@ -111,7 +118,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
-			sys_err("apply is out of range : %d", applyOn);
+			sys_err("apply is out of range : {}", applyOn);
 			return 0;
 		}
 
@@ -207,7 +214,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
-			sys_err("apply is out of range : %d", applyOn);
+			sys_err("apply is out of range : {}", applyOn);
 			return 0;
 		}
 
@@ -236,7 +243,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (applyOn >= MAX_APPLY_NUM || applyOn < 1)
 		{
-			sys_err("apply is out of range : %d", applyOn);
+			sys_err("apply is out of range : {}", applyOn);
 			return 0;
 		}
 
@@ -267,7 +274,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (point_type >= POINT_MAX_NUM || point_type < 1)
 		{
-			sys_err("point is out of range : %d", point_type);
+			sys_err("point is out of range : {}", point_type);
 			return 0;
 		}
 
