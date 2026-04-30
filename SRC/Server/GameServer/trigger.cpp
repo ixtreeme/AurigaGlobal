@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -80,7 +81,7 @@ void CHARACTER::AssignTriggers(const TMobTable* table)
 {
 	if (table->bOnClickType >= ON_CLICK_MAX_NUM)
 	{
-		sys_err("%s has invalid OnClick value %d", GetName(), table->bOnClickType);
+		LOG_ERROR("{} has invalid OnClick value {}", GetName(), table->bOnClickType);
 		abort();
 	}
 
