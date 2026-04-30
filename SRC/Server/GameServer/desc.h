@@ -7,6 +7,7 @@
 #include "input.h"
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 #include "cipher.h"
+#include <Core/Logging.hpp>
 #endif
 
 #define MAX_ALLOW_USER                  4096
@@ -172,7 +173,7 @@ class DESC
 		uint8_t			GetEmpire();
 
 #ifdef ENABLE_MULTI_LANGUAGE
-		void 			SetLanguage(uint8_t bLanguage) { m_accountTable.bLanguage = bLanguage; sys_log(0, "FINDME : language set to %u", bLanguage);}
+		void 			SetLanguage(uint8_t bLanguage) { m_accountTable.bLanguage = bLanguage; LOG_INFO("FINDME : language set to {}", bLanguage);}
 		uint8_t 			GetLanguage() { return m_accountTable.bLanguage;}
 #endif
 
