@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include <common/stl.h>
 
 #include "constants.h"
@@ -65,21 +66,21 @@ void P2P_MANAGER::FlushOutput()
 
 void P2P_MANAGER::RegisterAcceptor(LPDESC d)
 {
-	sys_log(0, "P2P Acceptor opened (host %s)", d->GetHostName());
+	LOG_INFO("P2P Acceptor opened (host {})", d->GetHostName());
 	m_set_pkPeers.insert(d);
 	Boot(d);
 }
 
 void P2P_MANAGER::UnregisterAcceptor(LPDESC d)
 {
-	sys_log(0, "P2P Acceptor closed (host %s)", d->GetHostName());
+	LOG_INFO("P2P Acceptor closed (host {})", d->GetHostName());
 	EraseUserByDesc(d);
 	m_set_pkPeers.erase(d);
 }
 
 void P2P_MANAGER::RegisterConnector(LPDESC d)
 {
-	sys_log(0, "P2P Connector opened (host %s)", d->GetHostName());
+	LOG_INFO("P2P Connector opened (host {})", d->GetHostName());
 	m_set_pkPeers.insert(d);
 	Boot(d);
 
@@ -96,7 +97,7 @@ void P2P_MANAGER::UnregisterConnector(LPDESC d)
 
 	if (it != m_set_pkPeers.end())
 	{
-		sys_log(0, "P2P Connector closed (host %s)", d->GetHostName());
+		LOG_INFO("P2P Connector closed (host {})", d->GetHostName());
 		EraseUserByDesc(d);
 		m_set_pkPeers.erase(it);
 	}
@@ -155,7 +156,7 @@ void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
 			}
 			else
 			{
-				sys_err("LOGIN_EMPIRE_ERROR: %d >= MAX(%d)", pkCCI->bEmpire, EMPIRE_MAX_NUM);
+				LOG_ERROR("LOGIN_EMPIRE_ERROR: {} >= MAX({})", pkCCI->bEmpire, EMPIRE_MAX_NUM);
 			}
 		}
 
@@ -166,7 +167,7 @@ void P2P_MANAGER::Login(LPDESC d, const TPacketGGLogin * p)
 	pkCCI->lMapIndex = p->lMapIndex;
 	pkCCI->pkDesc = d;
 	pkCCI->bChannel = p->bChannel;
-	sys_log(0, "P2P: Login %s", pkCCI->szName);
+	LOG_INFO("P2P: Login {}", pkCCI->szName);
 
 	CGuildManager::instance().P2PLoginMember(pkCCI->dwPID);
 	CPartyManager::instance().P2PLogin(pkCCI->dwPID, pkCCI->szName);
@@ -187,12 +188,12 @@ void P2P_MANAGER::Logout(CCI * pkCCI)
 			--m_aiEmpireUserCount[pkCCI->bEmpire];
 			if (m_aiEmpireUserCount[pkCCI->bEmpire] < 0)
 			{
-				sys_err("m_aiEmpireUserCount[%d] < 0", pkCCI->bEmpire);
+				LOG_ERROR("m_aiEmpireUserCount[{}] < 0", pkCCI->bEmpire);
 			}
 		}
 		else
 		{
-			sys_err("LOGOUT_EMPIRE_ERROR: %d >= MAX(%d)", pkCCI->bEmpire, EMPIRE_MAX_NUM);
+			LOG_ERROR("LOGOUT_EMPIRE_ERROR: {} >= MAX({})", pkCCI->bEmpire, EMPIRE_MAX_NUM);
 		}
 	}
 
@@ -216,7 +217,7 @@ void P2P_MANAGER::Logout(const char * c_pszName)
 		return;
 
 	Logout(pkCCI);
-	sys_log(0, "P2P: Logout %s", c_pszName);
+	LOG_INFO("P2P: Logout {}", c_pszName);
 }
 
 CCI * P2P_MANAGER::FindByPID(uint32_t pid)
