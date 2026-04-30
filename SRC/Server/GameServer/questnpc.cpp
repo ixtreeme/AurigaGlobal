@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <fstream>
@@ -46,7 +47,7 @@ namespace quest
 				if (is < 0 || is >= (int) sizeof(buf))
 					is = sizeof(buf) - 1;
 
-				//sys_log(0, "XXX %s", buf);
+				//LOG_INFO("XXX {}", buf);
 				int event_index = it->second;
 
 				DIR * pdir = opendir(buf);
@@ -64,7 +65,7 @@ namespace quest
 					if (!strncasecmp(pde->d_name, "CVS", 3))
 						continue;
 
-					sys_log(1, "QUEST reading %s", pde->d_name);
+					LOG_INFO("QUEST reading {}", pde->d_name);
 					strlcpy(buf + is, pde->d_name, sizeof(buf) - is);
 					LoadStateScript(event_index, buf, pde->d_name);
 				}
@@ -119,8 +120,7 @@ namespace quest
 		int state_index = q.GetQuestStateIndex(stQuestName, stStateName);
 		///////////////////////////////////////////////////////////////////////////
 
-		sys_log(0, "QUEST loading %s : %s [STATE] %s",
-				filename, stQuestName.c_str(), stStateName.c_str());
+		LOG_INFO("QUEST loading {} : {} [STATE] {}", filename, stQuestName.c_str(), stStateName.c_str());
 
 		if (i == s.npos)
 		{
@@ -142,7 +142,7 @@ namespace quest
 
 			if (i == s.npos)
 			{
-				sys_err("invalid QUEST STATE index [%s] [%s]",filename, script_name);
+				LOG_ERROR("invalid QUEST STATE index [{}] [{}]", filename, script_name);
 				return;
 			}
 
@@ -154,7 +154,7 @@ namespace quest
 
 			if (i != s.npos)
 			{
-				sys_err("invalid QUEST STATE name [%s] [%s]",filename, script_name);
+				LOG_ERROR("invalid QUEST STATE name [{}] [{}]", filename, script_name);
 				return;
 			}
 
@@ -206,7 +206,7 @@ namespace quest
 
 	bool NPC::OnTarget(PC & pc, uint32_t dwQuestIndex, const char * c_pszTargetName, const char * c_pszVerb, bool & bRet)
 	{
-		sys_log(1, "OnTarget begin %s verb %s qi %u", c_pszTargetName, c_pszVerb, dwQuestIndex);
+		LOG_INFO("OnTarget begin {} verb {} qi {}", c_pszTargetName, c_pszVerb, dwQuestIndex);
 
 		bRet = false;
 
@@ -214,7 +214,7 @@ namespace quest
 
 		if (itPCQuest == pc.quest_end())
 		{
-			sys_log(1, "no quest");
+			LOG_INFO("no quest");
 			return false;
 		}
 
@@ -225,7 +225,7 @@ namespace quest
 
 		if (it == r.end())
 		{
-			sys_log(1, "no target event, state %d", iState);
+			LOG_INFO("no target event, state {}", iState);
 			return false;
 		}
 
@@ -238,7 +238,7 @@ namespace quest
 			AArgScript & argScript = *(it_vec++);
 			const char * c_pszArg = argScript.arg.c_str();
 
-			sys_log(1, "OnTarget compare %s %d", c_pszArg, argScript.arg.length());
+			LOG_INFO("OnTarget compare {} {}", c_pszArg, argScript.arg.length());
 
 			if (strncmp(c_pszArg, c_pszTargetName, iTargetLen))
 				continue;
@@ -252,12 +252,12 @@ namespace quest
 				continue;
 
 			if (argScript.when_condition.size() > 0)
-				sys_log(1, "OnTarget when %s size %d", &argScript.when_condition[0], argScript.when_condition.size());
+				LOG_INFO("OnTarget when {} size {}", &argScript.when_condition[0], argScript.when_condition.size());
 
 			if (argScript.when_condition.size() != 0 && !IsScriptTrue(&argScript.when_condition[0], argScript.when_condition.size()))
 				continue;
 
-			sys_log(1, "OnTarget execute qi %u st %d code %s", dwQuestIndex, iState, (const char *) argScript.script.GetCode());
+			LOG_INFO("OnTarget execute qi {} st {} code {}", dwQuestIndex, iState, (const char *) argScript.script.GetCode());
 			bRet = CQuestManager::ExecuteQuestScript(pc, dwQuestIndex, iState, argScript.script.GetCode(), argScript.script.GetSize());
 			bRet = true;
 			return true;
@@ -396,10 +396,10 @@ namespace quest
 		   ++qmit;
 		   }
 
-		   sys_err("Cannot find any code for %s", c_pszQuestName);
+		   LOG_ERROR("Cannot find any code for {}", c_pszQuestName);
 		   }
 		   else
-		   sys_err("Cannot find quest index by %s", c_pszQuestName);
+		   LOG_ERROR("Cannot find quest index by {}", c_pszQuestName);
 		   }
 		 */
 		bool bRet = HandleReceiveAllNoWaitEvent(pc, QUEST_LOGIN_EVENT);
@@ -488,7 +488,7 @@ namespace quest
 	{
 		if (EventIndex < 0 || EventIndex >= QUEST_EVENT_COUNT)
 		{
-			sys_err("QUEST invalid EventIndex : %d", EventIndex);
+			LOG_ERROR("QUEST invalid EventIndex : {}", EventIndex);
 			return false;
 		}
 
@@ -498,9 +498,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				sys_err("QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
-						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
 
 			return false;
@@ -609,7 +607,7 @@ namespace quest
 	{
 		if (EventIndex < 0 || EventIndex >= QUEST_EVENT_COUNT)
 		{
-			sys_err("QUEST invalid EventIndex : %d", EventIndex);
+			LOG_ERROR("QUEST invalid EventIndex : {}", EventIndex);
 			return false;
 		}
 
@@ -619,9 +617,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				sys_err("QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
-						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
 
 			return false;
@@ -670,8 +666,7 @@ namespace quest
 								it->second.GetCode(),
 								it->second.GetSize()))
 					{
-						sys_err("QUEST NOT END RUNNING on Login/Logout - %s",
-								CQuestManager::instance().GetQuestNameByIndex(itQuestMap->first).c_str());
+						LOG_ERROR("QUEST NOT END RUNNING on Login/Logout - {}", CQuestManager::instance().GetQuestNameByIndex(itQuestMap->first).c_str());
 
 						QuestState& rqs = *pPC->GetRunningQuestState();
 						CQuestManager::instance().CloseState(rqs);
@@ -708,8 +703,7 @@ namespace quest
 							itQuestScript->second.GetCode(),
 							itQuestScript->second.GetSize()))
 				{
-					sys_err("QUEST NOT END RUNNING on Login/Logout - %s",
-							CQuestManager::instance().GetQuestNameByIndex(itQuestMap->first).c_str());
+					LOG_ERROR("QUEST NOT END RUNNING on Login/Logout - {}", CQuestManager::instance().GetQuestNameByIndex(itQuestMap->first).c_str());
 
 					QuestState& rqs = *pPC->GetRunningQuestState();
 					CQuestManager::instance().CloseState(rqs);
@@ -725,7 +719,7 @@ namespace quest
 		//cerr << EventIndex << endl;
 		if (EventIndex<0 || EventIndex>=QUEST_EVENT_COUNT)
 		{
-			sys_err("QUEST invalid EventIndex : %d", EventIndex);
+			LOG_ERROR("QUEST invalid EventIndex : {}", EventIndex);
 			return false;
 		}
 
@@ -736,7 +730,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				sys_err("QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
+				LOG_ERROR("QUEST There\'s suspended quest state, can\'t run new quest state (quest: {} pc: {})",
 						pc.GetCurrentQuestName().c_str(),
 						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
@@ -765,9 +759,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				sys_err("3. QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
-						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
+				LOG_ERROR("3. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
 
 			return false;
@@ -777,7 +769,7 @@ namespace quest
 
 		if (pc.quest_end() == itPCQuest)
 		{
-			sys_err("QUEST no quest by (quest %u)", quest_index);
+			LOG_ERROR("QUEST no quest by (quest {})", quest_index);
 			return false;
 		}
 
@@ -788,7 +780,7 @@ namespace quest
 
 		if (itQuestMap == rmapEventOwnQuest.end())
 		{
-			sys_err("QUEST no info event (quest %s)", questName);
+			LOG_ERROR("QUEST no info event (quest {})", questName);
 			return false;
 		}
 
@@ -796,7 +788,7 @@ namespace quest
 
 		if (itQuestScript == itQuestMap->second.end())
 		{
-			sys_err("QUEST no info script by state %d (quest %s)", itPCQuest->second.st, questName);
+			LOG_ERROR("QUEST no info script by state {} (quest {})", itPCQuest->second.st, questName);
 			return false;
 		}
 
@@ -812,9 +804,7 @@ namespace quest
 		{
 			if (test_server) {
 				CQuestManager & mgr = CQuestManager::instance();
-				sys_err("QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
-						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
 
 			return false;
@@ -909,9 +899,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				sys_err("5. QUEST There's suspended quest state, can't run new quest state (quest: %s pc: %s)",
-						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
+				LOG_ERROR("5. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? mgr.GetCurrentCharacterPtr()->GetName() : "<none>");
 			}
 
 			return false;
@@ -973,7 +961,7 @@ namespace quest
 		auto itQuest = rQuest.find(dwQuestIndex);
 		if (itQuest == rQuest.end())
 		{
-			sys_log(0, "ExecuteEventScript ei %d qi %u is %d - NO QUEST", EventIndex, dwQuestIndex, iState);
+			LOG_INFO("ExecuteEventScript ei {} qi {} is {} - NO QUEST", EventIndex, dwQuestIndex, iState);
 			return false;
 		}
 
@@ -981,11 +969,11 @@ namespace quest
 		auto itState = rScript.find(iState);
 		if (itState == rScript.end())
 		{
-			sys_log(0, "ExecuteEventScript ei %d qi %u is %d - NO STATE", EventIndex, dwQuestIndex, iState);
+			LOG_INFO("ExecuteEventScript ei {} qi {} is {} - NO STATE", EventIndex, dwQuestIndex, iState);
 			return false;
 		}
 
-		sys_log(0, "ExecuteEventScript ei %d qi %u is %d", EventIndex, dwQuestIndex, iState);
+		LOG_INFO("ExecuteEventScript ei {} qi {} is {}", EventIndex, dwQuestIndex, iState);
 		CQuestManager::instance().SetCurrentEventIndex(EventIndex);
 		return CQuestManager::ExecuteQuestScript(pc, dwQuestIndex, iState, itState->second.GetCode(), itState->second.GetSize());
 	}
