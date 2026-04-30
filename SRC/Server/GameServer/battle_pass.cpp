@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -127,7 +128,7 @@ bool CBattlePass::ReadBattlePassFile()
 
 	if (false == loader.Load(szBattlePassFileName))
 	{
-		sys_err("battle_pass.txt load error");
+		LOG_ERROR("battle_pass.txt load error");
 		return false;
 	}
 
@@ -148,14 +149,14 @@ bool CBattlePass::ReadBattlePassGroup()
 
 	if (nullptr == pGroupNode)
 	{
-		sys_err("battle_pass.txt need BattlePass group.");
+		LOG_ERROR("battle_pass.txt need BattlePass group.");
 		return false;
 	}
 
 	int n = pGroupNode->GetRowCount();
 	if (0 == n)
 	{
-		sys_err("Group BattlePass is Empty.");
+		LOG_ERROR("Group BattlePass is Empty.");
 		return false;
 	}
 
@@ -171,19 +172,19 @@ bool CBattlePass::ReadBattlePassGroup()
 		
 		if (!pRow->GetValue("battlepassname", stBattlePassName))
 		{
-			sys_err ("In Group BattlePass, No BattlePassName column.");
+			LOG_ERROR("In Group BattlePass, No BattlePassName column.");
 			return false;
 		}
 		
 		if (!pRow->GetValue("battlepassid", battlePassId))
 		{
-			sys_err ("In Group BattlePass, %s's ID is invalid", stBattlePassName.c_str());
+			LOG_ERROR("In Group BattlePass, {}'s ID is invalid", stBattlePassName.c_str());
 			return false;
 		}
 
 		if (setIDs.contains(battlePassId))
 		{
-			sys_err ("In Group BattlePass, duplicated id exist.");
+			LOG_ERROR("In Group BattlePass, duplicated id exist.");
 			return false;
 		}
 		
@@ -249,14 +250,14 @@ bool CBattlePass::ReadBattlePassMissions()
 	
 		if (nullptr == pGroupNode)
 		{
-			sys_err ("battle_pass.txt need group %s.", battlePassName.c_str());
+			LOG_ERROR("battle_pass.txt need group {}.", battlePassName.c_str());
 			return false;
 		}
 		
 		int n = pGroupNode->GetChildNodeCount();
 		if (n < 2)
 		{
-			sys_err("Group %s need to have at least one grup for Reward and one Mission. Row: %d", battlePassName.c_str(), n);
+			LOG_ERROR("Group {} need to have at least one grup for Reward and one Mission. Row: {}", battlePassName.c_str(), n);
 			return false;
 		}
 		
@@ -264,7 +265,7 @@ bool CBattlePass::ReadBattlePassMissions()
 			CGroupNode* pChild;
 			if (nullptr == (pChild = pGroupNode->GetChildNode("reward")))
 			{
-				sys_err ("In Group %s, Reward group is not defined.", battlePassName.c_str());
+				LOG_ERROR("In Group {}, Reward group is not defined.", battlePassName.c_str());
 				return false;
 			}
 			
@@ -280,7 +281,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				pChild->GetRow(ss.str(), &pRow);
 				if (nullptr == pRow)
 				{
-					sys_err("In Group %s, subgroup Reward, No %d row.", battlePassName.c_str(), j);
+					LOG_ERROR("In Group {}, subgroup Reward, No {} row.", battlePassName.c_str(), j);
 					return false;
 				}
 				
@@ -288,13 +289,13 @@ bool CBattlePass::ReadBattlePassMissions()
 
 				if (!pRow->GetValue("itemvnum", itemReward.dwVnum))
 				{
-					sys_err("In Group %s, subgroup Reward, ItemVnum is empty.", battlePassName.c_str());
+					LOG_ERROR("In Group {}, subgroup Reward, ItemVnum is empty.", battlePassName.c_str());
 					return false;
 				}
 				
 				if (!pRow->GetValue("itemcount", itemReward.bCount))
 				{
-					sys_err("In Group %s, subgroup Reward, ItemCount is empty.", battlePassName.c_str());
+					LOG_ERROR("In Group {}, subgroup Reward, ItemCount is empty.", battlePassName.c_str());
 					return false;
 				}
 				
@@ -317,7 +318,7 @@ bool CBattlePass::ReadBattlePassMissions()
 			CGroupNode* pChild;
 			if (nullptr == (pChild = pGroupNode->GetChildNode(ss.str())))
 			{
-				sys_err("In Group %s, %s subgroup is not defined.", battlePassName.c_str(), ss.str().c_str());
+				LOG_ERROR("In Group {}, {} subgroup is not defined.", battlePassName.c_str(), ss.str().c_str());
 				return false;
 			}
 			
@@ -335,7 +336,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				pChild->GetRow(j, &pRow);
 				if (nullptr == pRow)
 				{
-					sys_err("In Group %s and subgroup %s null row.", battlePassName.c_str(), ss.str().c_str());
+					LOG_ERROR("In Group {} and subgroup {} null row.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
 				
@@ -345,7 +346,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				std::string stInfoDesc;
 				if (!pRow->GetValue("infodesc", stInfoDesc))
 				{
-					sys_err("In Group %s and subgroup %s InfoDesc does not exist.", battlePassName.c_str(), ss.str().c_str());
+					LOG_ERROR("In Group {} and subgroup {} InfoDesc does not exist.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
 				
@@ -354,7 +355,7 @@ bool CBattlePass::ReadBattlePassMissions()
 					std::string stInfoName;
 					if (!pRow->GetValue("infoname", stInfoName))
 					{
-						sys_err("In Group %s and subgroup %s InfoName does not exist.", battlePassName.c_str(), ss.str().c_str());
+						LOG_ERROR("In Group {} and subgroup {} InfoName does not exist.", battlePassName.c_str(), ss.str().c_str());
 						return false;
 					}
 					
@@ -363,7 +364,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				
 				if(missionInfo.bMissionType <= MISSION_TYPE_NONE || missionInfo.bMissionType >= MISSION_TYPE_MAX)
 				{
-					sys_err("In Group %s and subgroup %s Wrong mission type: %d.", battlePassName.c_str(), ss.str().c_str(), missionInfo.bMissionType);
+					LOG_ERROR("In Group {} and subgroup {} Wrong mission type: {}.", battlePassName.c_str(), ss.str().c_str(), static_cast<int>(missionInfo.bMissionType));
 					return false;
 				}
 				
@@ -381,12 +382,11 @@ bool CBattlePass::ReadBattlePassMissions()
 						{
 							if (!pRow->GetValue("infoname", missionInfo.dwMissionInfo[k]))
 							{
-								sys_err("In Group %s and subgroup %s InfoDesc %s InfoName does not exist.", battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str());
+								LOG_ERROR("In Group {} and subgroup {} InfoDesc {} InfoName does not exist.", battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str());
 								return false;
 							}
 							
-							sys_log(0, "BattlePassInfo: Group %s // Subgroup %s // InfoName %s // InfoValue %d", 
-								battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str(), missionInfo.dwMissionInfo[k]);
+							LOG_TRACE("BattlePassInfo: Group {} // Subgroup {} // InfoName {} // InfoValue {}", battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str(), missionInfo.dwMissionInfo[k]);
 							
 							stMissionSearch[k] = "";
 						}
@@ -395,7 +395,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				
 				if(bRewardContor >= MISSION_REWARD_COUNT)
 				{
-					sys_err("In Group %s and subgroup %s More than 3 rewards.", battlePassName.c_str(), ss.str().c_str());
+					LOG_ERROR("In Group {} and subgroup {} More than 3 rewards.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
 				
@@ -406,7 +406,7 @@ bool CBattlePass::ReadBattlePassMissions()
 		
 					if (!pRow->GetValue("infoname", bCount))
 					{
-						sys_err("In Group %s and subgroup %s Wrong ItemCount.", battlePassName.c_str(), ss.str().c_str());
+						LOG_ERROR("In Group {} and subgroup {} Wrong ItemCount.", battlePassName.c_str(), ss.str().c_str());
 						return false;
 					}
 							
@@ -457,8 +457,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				const auto assignedType = assignMultiSlot(missionInfo.bMissionType, slots, useItemSlots);
 				if (!assignedType.has_value())
 				{
-					sys_err("In Group %s and subgroup %s Too many USE_ITEM missions (max 3).",
-						battlePassName.c_str(), ss.str().c_str());
+					LOG_ERROR("In Group {} and subgroup {} Too many USE_ITEM missions (max 3).", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
 				missionInfo.bMissionType = assignedType.value();
@@ -469,8 +468,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				const auto assignedType = assignMultiSlot(missionInfo.bMissionType, slots, collectItemSlots);
 				if (!assignedType.has_value())
 				{
-					sys_err("In Group %s and subgroup %s Too many COLLECT_ITEM missions (max 3).",
-						battlePassName.c_str(), ss.str().c_str());
+					LOG_ERROR("In Group {} and subgroup {} Too many COLLECT_ITEM missions (max 3).", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
 				missionInfo.bMissionType = assignedType.value();
