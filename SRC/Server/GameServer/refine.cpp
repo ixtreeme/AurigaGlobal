@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -154,11 +155,11 @@ bool CRefineManager::Initialize(TRefineTable * table, int size)
 {
 	for (int i = 0; i < size; ++i, ++table)
 	{
-		sys_log(0, "REFINE %d prob %d cost %d", table->id, table->prob, table->cost);
+		LOG_INFO("REFINE {} prob {} cost {}", table->id, table->prob, table->cost);
 		m_map_RefineRecipe.insert(std::make_pair(table->id, *table));
 	}
 
-	sys_log(0, "REFINE: COUNT %d", m_map_RefineRecipe.size());
+	LOG_INFO("REFINE: COUNT {}", m_map_RefineRecipe.size());
 	return true;
 }
 
@@ -168,7 +169,7 @@ const TRefineTable* CRefineManager::GetRefineRecipe(uint32_t vnum)
 		return nullptr;
 
 	auto it = m_map_RefineRecipe.find(vnum);
-	sys_log(0, "REFINE: FIND %u %s", vnum, it == m_map_RefineRecipe.end() ? "FALSE" : "TRUE");
+	LOG_INFO("REFINE: FIND {} {}", vnum, it == m_map_RefineRecipe.end() ? "FALSE" : "TRUE");
 
 	if (it == m_map_RefineRecipe.end())
 	{
