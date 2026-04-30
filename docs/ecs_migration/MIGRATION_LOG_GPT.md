@@ -8527,9 +8527,63 @@ Recommended follow-up:
 - Investigate `Cube_Init failed` / `<Blend_Item_init> fail` as data/config startup cleanup, separate from logging and combat.
 - Profile PTS event/write spikes only after the logging hot paths are quiet.
 
-Commit status:
-- Not committed.
-- Current hotfix changes remain pending review.
+Hotfix commit consolidation:
+- The 7 hotfix files were reviewed and split into 3 logical commits after WinTest confirmation.
+- Pre-commit build passed before staging the hotfix groups.
+- Final build passed after all 3 commits.
+- Final working tree after the hotfix commits: clean.
+
+Hotfix commits:
+- `72e3b24 Phase 16-2 Hotfix: Enable SPDLOG_ACTIVE_LEVEL=TRACE compile-time`
+  - `SRC/Server/CMakeLists.txt`
+  - `SRC/Server/Core/Logging.cpp`
+  - Trace-level logs are compiled in while runtime default level remains `info`.
+- `2d7def9 Phase 16-2 Hotfix: Demote hot-path debug logs to LOG_TRACE`
+  - `SRC/Server/GameServer/input_db.cpp`
+  - `SRC/Server/GameServer/main.cpp`
+  - `SRC/Server/GameServer/motion.cpp`
+  - `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+  - DBCLIENT headers, DB byte reads, combat death/drop debug, and motion loading logs now use `LOG_TRACE`.
+- `cb1e4b9 Phase 16-2 Hotfix: Restore OnMove(true) before Attack`
+  - `SRC/Server/GameServer/input_main.cpp`
+  - Restores `ch->OnMove(true)` immediately before `ch->Attack(...)` in the `HEADER_CG_ATTACK` path.
+  - User-confirmed WinTest result: metin damage and gameplay are normal again.
+
+Post-hotfix build:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Result: passed.
+
+Post-hotfix logging audit:
+```text
+GameServer sys_log: 407
+GameServer sys_err: 723
+GameServer _sys_err: 0
+```
+
+Current next logging candidates after Batch 4:
+```text
+33 questlua.cpp
+25 arena.cpp
+25 war_map.cpp
+24 input_auth.cpp
+24 ecs/systems/SessionSystem.cpp
+23 battle_pass.cpp
+22 DragonSoul.cpp
+20 MarkManager.cpp
+20 ecs/systems/AffectSystem.cpp
+20 ecs/systems/InventorySystem.cpp
+```
+
+Quest-prefix verification:
+- `questlua.cpp` has a local `sys_err` redirect:
+```cpp
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+```
+- `questlua.cpp` must remain deferred to the dedicated QuestError modernization pass.
+- `questpc.cpp` and `questnpc.cpp` had no local `sys_err` override and were already migrated in Batch 4.
 
 ## Phase 16-1 - spdlog + fmt Integration
 
