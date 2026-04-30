@@ -3,6 +3,7 @@
 
 #include <common/service.h>
 #include "sectree.h"
+#include <Core/Logging.hpp>
 
 typedef struct SMapRegion
 {
@@ -125,7 +126,7 @@ class SECTREE_MAP
 		void DumpAllToSysErr() {
 			for (auto i = map_.begin(); i != map_.end(); ++i)
 			{
-				sys_err("SECTREE %x(%u, %u)", i->first, i->first & 0xffff, i->first >> 16);
+				LOG_ERROR("SECTREE {:x}({}, {})", i->first, i->first & 0xffff, i->first >> 16);
 			}
 		}
 
