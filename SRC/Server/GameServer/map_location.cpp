@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "map_location.h"
 #include "sectree_manager.h"
 
@@ -23,7 +24,7 @@ uint8_t channel,
 #endif
 int32_t iIndex, uint32_t& lAddr, uint16_t & wPort) {
 	if (iIndex == 0) {
-		sys_log(0, "CMapLocation::Get - Error MapIndex[%d]", iIndex);
+		LOG_INFO("CMapLocation::Get - Error MapIndex[{}]", iIndex);
 		return false;
 	}
 
@@ -46,15 +47,15 @@ int32_t iIndex, uint32_t& lAddr, uint16_t & wPort) {
 		}
 	}
 
-	sys_err("CMapLocation::Get - Not Found MapIndex[%d]", iIndex);
+	LOG_ERROR("CMapLocation::Get - Not Found MapIndex[{}]", iIndex);
 	return false;
 #else
 	auto it = m_map_address.find(iIndex);
 	if (m_map_address.end() == it) {
-		sys_log(0, "CMapLocation::Get - Error MapIndex[%d]", iIndex);
+		LOG_INFO("CMapLocation::Get - Error MapIndex[{}]", iIndex);
 
 		for (auto i = m_map_address.begin(); i != m_map_address.end(); ++i) {
-			sys_log(0, "Map(%d): Server(%x:%d)", i->first, i->second.addr, i->second.port);
+			LOG_INFO("Map({}): Server({:x}:{})", i->first, i->second.addr, i->second.port);
 		}
 
 		return false;
@@ -86,5 +87,5 @@ void CMapLocation::Insert(int32_t lIndex, const char * c_pszHost, uint16_t wPort
 	m_vector_address.push_back(t);
 #endif
 
-	sys_log(0, "MapLocation::Insert : %d %s %d", lIndex, c_pszHost, wPort);
+	LOG_INFO("MapLocation::Insert : {} {} {}", lIndex, c_pszHost, wPort);
 }
