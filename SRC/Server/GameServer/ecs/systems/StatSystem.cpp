@@ -76,6 +76,7 @@
 
 #ifdef __PET_SYSTEM__
 #include "../../PetSystem.h"
+#include <Core/Logging.hpp>
 #endif
 #ifdef __NEWPET_SYSTEM__
 #include "../../New_PetSystem.h"
@@ -169,7 +170,7 @@ void CHARACTER::ComputeBattlePoints()
 			break;
 #endif
 		default:
-			sys_err("invalid job %d", GetJob());
+			LOG_ERROR("invalid job {}", GetJob());
 			iStatAtk = (2 * GetPoint(POINT_ST));
 			break;
 		}
@@ -634,7 +635,7 @@ void CHARACTER::ComputePoints()
 	{
 		PointChange(pointType, value);
 		//UpdatePacket();
-		//sys_log(0, "DEBUG: VEGLEGES MOUNT BONUS APPLY -> POINT %d = +%d", pointType, value);
+		//0, "DEBUG: VEGLEGES MOUNT BONUS APPLY -> POINT %d = +%d", pointType, value);
 	}
 
 
