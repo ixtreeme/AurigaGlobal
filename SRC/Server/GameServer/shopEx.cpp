@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -129,11 +130,11 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	uint8_t slotPos = pos % SHOP_HOST_ITEM_MAX_NUM;
 	if (tabIdx >= GetTabCount())
 	{
-		sys_log(0, "ShopEx::Buy : invalid position %d : %s", pos, ((ch)->GetName()));
+		LOG_INFO("ShopEx::Buy : invalid position {} : {}", pos, ((ch)->GetName()));
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	sys_log(0, "ShopEx::Buy : name %s pos %d", ((ch)->GetName()), pos);
+	LOG_INFO("ShopEx::Buy : name {} pos {}", ((ch)->GetName()), pos);
 
 	GuestMapType::iterator it = m_map_guest.find(ch);
 
@@ -159,7 +160,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 		if (ch->GetGold() < dwPrice)
 		{
-			sys_log(1, "ShopEx::Buy : Not enough money : %s has %lld, price %lld", ((ch)->GetName()), ch->GetGold(), dwPrice);
+			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ((ch)->GetName()), ch->GetGold(), dwPrice);
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 
@@ -169,7 +170,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 			uint32_t count = ch->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
 			if (count < dwPrice)
 			{
-				sys_log(1, "ShopEx::Buy : Not enough myeongdojun : %s has %d, price %d", ((ch)->GetName()), count, dwPrice);
+				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ((ch)->GetName()), count, dwPrice);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 		}
@@ -201,7 +202,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (iEmptyPos < 0)
 	{
-		sys_log(1, "ShopEx::Buy : Inventory full : %s size %d", ((ch)->GetName()), item->GetSize());
+		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ((ch)->GetName()), item->GetSize());
 		ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, item),
 			"SHOP_EX_TRANSACTION");
@@ -239,7 +240,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), -dwPrice);
 
 	if (item)
-		sys_log(0, "ShopEx: BUY: name %s %s(x %d):%u price %u", ((ch)->GetName()), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), dwPrice);
+		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ((ch)->GetName()), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
