@@ -29,12 +29,12 @@ void CPeer::OnAccept()
 	static uint32_t current_handle = 0;
 	m_dwHandle = ++current_handle;
 
-	sys_log(0, "Connection accepted. (host: %s handle: %u fd: %d)", m_host, m_dwHandle, m_fd);
+	LOG_INFO("Connection accepted. (host: {} handle: {} fd: {})", m_host, m_dwHandle, m_fd);
 }
 
 void CPeer::OnConnect()
 {
-	sys_log(0, "Connection established. (host: %s handle: %u fd: %d)", m_host, m_dwHandle, m_fd);
+	LOG_INFO("Connection established. (host: {} handle: {} fd: {})", m_host, m_dwHandle, m_fd);
 	m_state = STATE_PLAYING;
 }
 
@@ -42,8 +42,8 @@ void CPeer::OnClose()
 {
 	m_state = STATE_CLOSE;
 
-	sys_log(0, "Connection closed. (host: %s)", m_host);
-	sys_log(0, "ItemIDRange: returned. %u ~ %u", m_itemRange.dwMin, m_itemRange.dwMax);
+	LOG_INFO("Connection closed. (host: {})", m_host);
+	LOG_INFO("ItemIDRange: returned. {} ~ {}", m_itemRange.dwMin, m_itemRange.dwMax);
 
 	CItemIDRangeManager::instance().UpdateRange(m_itemRange.dwMin, m_itemRange.dwMax);
 
@@ -83,11 +83,10 @@ bool CPeer::PeekPacket(int & iBytesProceed, uint8_t & header, uint32_t & dwHandl
 	dwLength	= *((uint32_t *) buf);
 	buf		+= sizeof(uint32_t);
 
-	//sys_log(0, "%d header %d handle %u length %u", GetRecvLength(), header, dwHandle, dwLength);
+	//LOG_INFO("{} header {} handle {} length {}", GetRecvLength(), header, dwHandle, dwLength);
 	if (iBytesProceed + dwLength + 9 > (uint32_t) GetRecvLength())
 	{
-		sys_log(0, "PeekPacket: not enough buffer size: len %u, recv %d",
-				9+dwLength, GetRecvLength()-iBytesProceed);
+		LOG_INFO("PeekPacket: not enough buffer size: len {}, recv {}", 9+dwLength, GetRecvLength()-iBytesProceed);
 		return false;
 	}
 
@@ -100,7 +99,7 @@ void CPeer::EncodeHeader(uint8_t header, uint32_t dwHandle, uint32_t dwSize)
 {
 	HEADER h;
 
-	sys_log(1, "EncodeHeader %u handle %u size %u", header, dwHandle, dwSize);
+	LOG_TRACE("EncodeHeader {} handle {} size {}", header, dwHandle, dwSize);
 
 	h.bHeader = header;
 	h.dwHandle = dwHandle;
@@ -145,7 +144,7 @@ void CPeer::SendSpareItemIDRange()
 
 		if (SetSpareItemIDRange(CItemIDRangeManager::instance().GetRange()) == false)
 		{
-			sys_log(0, "ItemIDRange: spare range set error");
+			LOG_INFO("ItemIDRange: spare range set error");
 			m_itemSpareRange.dwMin = m_itemSpareRange.dwMax = m_itemSpareRange.dwUsableItemIDMin = 0;
 		}
 
@@ -159,7 +158,7 @@ bool CPeer::SetItemIDRange(TItemIDRangeTable itemRange)
 	if (itemRange.dwMin == 0 || itemRange.dwMax == 0 || itemRange.dwUsableItemIDMin == 0) return false;
 
 	m_itemRange = itemRange;
-	sys_log(0, "ItemIDRange: SET %s %u ~ %u start: %u", GetPublicIP(), m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
+	LOG_INFO("ItemIDRange: SET {} {} ~ {} start: {}", GetPublicIP(), m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
 
 	return true;
 }
@@ -169,8 +168,7 @@ bool CPeer::SetSpareItemIDRange(TItemIDRangeTable itemRange)
 	if (itemRange.dwMin == 0 || itemRange.dwMax == 0 || itemRange.dwUsableItemIDMin == 0) return false;
 
 	m_itemSpareRange = itemRange;
-	sys_log(0, "ItemIDRange: SPARE SET %s %u ~ %u start: %u", GetPublicIP(), m_itemSpareRange.dwMin, m_itemSpareRange.dwMax,
-			m_itemSpareRange.dwUsableItemIDMin);
+	LOG_INFO("ItemIDRange: SPARE SET {} {} ~ {} start: {}", GetPublicIP(), m_itemSpareRange.dwMin, m_itemSpareRange.dwMax, m_itemSpareRange.dwUsableItemIDMin);
 
 	return true;
 }
@@ -179,15 +177,13 @@ bool CPeer::CheckItemIDRangeCollision(TItemIDRangeTable itemRange)
 {
 	if (m_itemRange.dwMin < itemRange.dwMax && m_itemRange.dwMax > itemRange.dwMin)
 	{
-		sys_err("ItemIDRange: Collision!! this %u ~ %u check %u ~ %u",
-				m_itemRange.dwMin, m_itemRange.dwMax, itemRange.dwMin, itemRange.dwMax);
+		LOG_ERROR("ItemIDRange: Collision!! this {} ~ {} check {} ~ {}", m_itemRange.dwMin, m_itemRange.dwMax, itemRange.dwMin, itemRange.dwMax);
 		return false;
 	}
 
 	if (m_itemSpareRange.dwMin < itemRange.dwMax && m_itemSpareRange.dwMax > itemRange.dwMin)
 	{
-		sys_err("ItemIDRange: Collision with spare range this %u ~ %u check %u ~ %u",
-				m_itemSpareRange.dwMin, m_itemSpareRange.dwMax, itemRange.dwMin, itemRange.dwMax);
+		LOG_ERROR("ItemIDRange: Collision with spare range this {} ~ {} check {} ~ {}", m_itemSpareRange.dwMin, m_itemSpareRange.dwMax, itemRange.dwMin, itemRange.dwMax);
 		return false;
 	}
 
