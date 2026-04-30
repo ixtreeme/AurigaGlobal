@@ -193,7 +193,7 @@ class CProfiler : public singleton<CProfiler>
 			if (!GetProfileStackDataPointer(c_szName, &pProfileStackData))
 				return;
 
-			LOG_INFO("{:-10}: {:3}", pProfileStackData->strName.c_str(), pProfileStackData->iEndTime - pProfileStackData->iStartTime);
+			LOG_INFO("{:<10}: {:3}", pProfileStackData->strName.c_str(), pProfileStackData->iEndTime - pProfileStackData->iStartTime);
 		}
 
 		void PrintOneAccumData(const char * c_szName)
@@ -205,7 +205,7 @@ class CProfiler : public singleton<CProfiler>
 
 			TProfileAccumData & rData = it->second;
 
-			LOG_INFO("{:-10} : [CollapsedTime : {:3}] / [CallingCount : {:3}]", rData.strName.c_str(), rData.iCollapsedTime, rData.iCallingCount);
+			LOG_INFO("{:<10} : [CollapsedTime : {:3}] / [CallingCount : {:3}]", rData.strName.c_str(), rData.iCollapsedTime, rData.iCallingCount);
 		}
 
 	protected:
