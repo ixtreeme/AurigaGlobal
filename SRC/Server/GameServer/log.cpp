@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -49,7 +50,7 @@ void LogManager::Query(const char * c_pszFormat, ...)
 	va_end(args);
 
 	if (test_server)
-		sys_log(0, "LOG: %s", szQuery);
+		LOG_INFO("LOG: {}", szQuery);
 
 #ifdef ENABLE_BUG_FIXES
 	std::string sQuery(szQuery);
@@ -83,7 +84,7 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	if (nullptr == ch || nullptr == item)
 	{
-		sys_err("character or item nil (ch %p item %p text %s)", get_pointer(ch), get_pointer(item), c_pszText);
+		LOG_ERROR("character or item nil (ch {} item {} text {})", static_cast<const void*>(get_pointer(ch)), static_cast<const void*>(get_pointer(item)), c_pszText);
 		return;
 	}
 
@@ -98,7 +99,7 @@ void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	if (nullptr == ch || item == entt::null || !ItemSystem::IsValidItem(item))
 	{
-		sys_err("character or item entity nil (ch %p item %u text %s)", get_pointer(ch), static_cast<uint32_t>(item), c_pszText);
+		LOG_ERROR("character or item entity nil (ch {} item {} text {})", static_cast<const void*>(get_pointer(ch)), static_cast<uint32_t>(item), c_pszText);
 		return;
 	}
 
@@ -143,7 +144,7 @@ void LogManager::MoneyLog(uint8_t type, uint32_t vnum, int64_t gold)
 {
 	if (type == MONEY_LOG_RESERVED || type >= MONEY_LOG_TYPE_MAX_NUM)
 	{
-		sys_err("TYPE ERROR: type %d vnum %u gold %lld", type, vnum, gold);
+		LOG_ERROR("TYPE ERROR: type {} vnum {} gold {}", type, vnum, gold);
 		return;
 	}
 
