@@ -21,6 +21,7 @@
 #include "unique_item.h"
 #include "affect.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "questmanager.h"
 #include "pcbang.h"
@@ -59,12 +60,12 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 
 	if (p->lSize < 0)
 	{
-		sys_err("invalid packet length %d", p->lSize);
+		LOG_ERROR("invalid packet length {}", p->lSize);
 		d->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
-	sys_log(0, "InputP2P::Relay : %s size %d", p->szName, p->lSize);
+	LOG_TRACE("InputP2P::Relay : {} size {}", p->szName, p->lSize);
 
 	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindPC(p->szName);
 
@@ -124,7 +125,7 @@ int CInputP2P::Notice(LPDESC d, const char * c_pData, size_t uiBytes)
 
 	if (p->lSize < 0)
 	{
-		sys_err("invalid packet length %d", p->lSize);
+		LOG_ERROR("invalid packet length {}", p->lSize);
 		d->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
@@ -218,7 +219,7 @@ int CInputP2P::Guild(LPDESC d, const char* c_pData, size_t uiBytes)
 #endif
 
 		default:
-			sys_err ("UNKNOWN GUILD SUB PACKET");
+			LOG_ERROR("UNKNOWN GUILD SUB PACKET");
 			break;
 	}
 	return 0;
@@ -279,21 +280,21 @@ void CInputP2P::Disconnect(const char * c_pData)
 void CInputP2P::Setup(LPDESC d, const char * c_pData)
 {
 	TPacketGGSetup * p = (TPacketGGSetup *) c_pData;
-	sys_log(0, "P2P: Setup %s:%d", d->GetHostName(), p->wPort);
+	LOG_INFO("P2P: Setup {}:{}", d->GetHostName(), p->wPort);
 	d->SetP2P(d->GetHostName(), p->wPort, p->bChannel);
 }
 
 void CInputP2P::MessengerAdd(const char * c_pData)
 {
 	TPacketGGMessenger * p = (TPacketGGMessenger *) c_pData;
-	sys_log(0, "P2P: Messenger Add %s %s", p->szAccount, p->szCompanion);
+	LOG_INFO("P2P: Messenger Add {} {}", p->szAccount, p->szCompanion);
 	MessengerManager::instance().__AddToList(p->szAccount, p->szCompanion);
 }
 
 void CInputP2P::MessengerRemove(const char * c_pData)
 {
 	TPacketGGMessenger * p = (TPacketGGMessenger *) c_pData;
-	sys_log(0, "P2P: Messenger Remove %s %s", p->szAccount, p->szCompanion);
+	LOG_INFO("P2P: Messenger Remove {} {}", p->szAccount, p->szCompanion);
 	MessengerManager::instance().__RemoveFromList(p->szAccount, p->szCompanion);
 }
 
@@ -348,7 +349,7 @@ void CInputP2P::GuildWarZoneMapIndex(const char* c_pData)
 	TPacketGGGuildWarMapIndex * p = (TPacketGGGuildWarMapIndex*) c_pData;
 	CGuildManager & gm = CGuildManager::instance();
 
-	sys_log(0, "P2P: GuildWarZoneMapIndex g1(%u) vs g2(%u), mapIndex(%d)", p->dwGuildID1, p->dwGuildID2, p->lMapIndex);
+	LOG_INFO("P2P: GuildWarZoneMapIndex g1({}) vs g2({}), mapIndex({})", p->dwGuildID1, p->dwGuildID2, p->lMapIndex);
 
 	CGuild * g1 = gm.FindGuild(p->dwGuildID1);
 	CGuild * g2 = gm.FindGuild(p->dwGuildID2);
@@ -395,12 +396,12 @@ void CInputP2P::BlockChat(const char * c_pData)
 
 	if (ch)
 	{
-		sys_log(0, "BLOCK CHAT apply name %s dur %d", p->szName, p->lBlockDuration);
+		LOG_INFO("BLOCK CHAT apply name {} dur {}", p->szName, p->lBlockDuration);
 		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
 	}
 	else
 	{
-		sys_log(0, "BLOCK CHAT fail name %s dur %d", p->szName, p->lBlockDuration);
+		LOG_INFO("BLOCK CHAT fail name {} dur {}", p->szName, p->lBlockDuration);
 	}
 }
 // END_OF_BLOCK_CHAT
@@ -417,13 +418,13 @@ void CInputP2P::IamAwake(LPDESC d, const char * c_pData)
 {
 	std::string hostNames;
 	P2P_MANAGER::instance().GetP2PHostNames(hostNames);
-	sys_log(0, "P2P Awakeness check from %s. My P2P connection number is %d. and details...\n%s", d->GetHostName(), P2P_MANAGER::instance().GetDescCount(), hostNames.c_str());
+	LOG_INFO("P2P Awakeness check from {}. My P2P connection number is {}. and details...\n{}", d->GetHostName(), P2P_MANAGER::instance().GetDescCount(), hostNames.c_str());
 }
 
 int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
 	if (test_server)
-		sys_log(0, "CInputP2P::Anlayze[Header %d]", bHeader);
+		LOG_TRACE("CInputP2P::Anlayze[Header {}]", bHeader);
 
 	int iExtraLen = 0;
 
@@ -457,7 +458,7 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
 
 		case HEADER_GG_SHUTDOWN:
-			sys_err("Accept shutdown p2p command from %s.", d->GetHostName());
+			LOG_ERROR("Accept shutdown p2p command from {}.", d->GetHostName());
 			Shutdown(10);
 			break;
 
