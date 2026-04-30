@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -80,7 +81,7 @@ void MessengerManager::LoadList(SQLMsg * msg)
 
 	std::string account;
 
-	sys_log(1, "Messenger::LoadList");
+	LOG_INFO("Messenger::LoadList");
 
 	for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
 	{
@@ -203,7 +204,7 @@ bool MessengerManager::AuthToAdd(MessengerManager::keyA account, MessengerManage
 
 	if (m_set_requestToAdd.find(dwComplex) == m_set_requestToAdd.end())
 	{
-		sys_log(0, "MessengerManager::AuthToAdd : request not exist %s -> %s", companion.c_str(), account.c_str());
+		LOG_INFO("MessengerManager::AuthToAdd : request not exist {} -> {}", companion.c_str(), account.c_str());
 		return false;
 	}
 
@@ -251,7 +252,7 @@ void MessengerManager::AddToList(MessengerManager::keyA account, MessengerManage
 		return;
 	// @fixme142 END
 
-	sys_log(0, "Messenger Add %s %s", account.c_str(), companion.c_str());
+	LOG_INFO("Messenger Add {} {}", account.c_str(), companion.c_str());
 	DBManager::instance().Query("INSERT INTO messenger_list%s VALUES ('%s', '%s')",
 			get_table_postfix(), __account, __companion);
 
@@ -638,7 +639,7 @@ void MessengerManager::RemoveFromList(MessengerManager::keyA account, MessengerM
 		return;
 	// @fixme142 END
 
-	sys_log(1, "Messenger Remove %s %s", account.c_str(), companion.c_str());
+	LOG_INFO("Messenger Remove {} {}", account.c_str(), companion.c_str());
 	DBManager::instance().Query("DELETE FROM messenger_list%s WHERE account='%s' AND companion = '%s'",
 			get_table_postfix(), __account, __companion);
 
