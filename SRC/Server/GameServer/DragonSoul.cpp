@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "item.h"
@@ -206,7 +207,7 @@ bool DSManager::RefreshItemAttributes(entt::entity item)
 	LPITEM pDS = LegacyDragonSoulItemOf(item);
 	if (!pDS || !pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(item));
+		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
 	}
 
@@ -218,13 +219,13 @@ bool DSManager::RefreshItemAttributes(entt::entity item)
 
 	if (!m_pTable->GetBasicApplys(ds_type, vec_basic_applys))
 	{
-		sys_err ("There is no BasicApply about %d type dragon soul.", ds_type);
+		LOG_ERROR("There is no BasicApply about {} type dragon soul.", static_cast<int>(ds_type));
 		return false;
 	}
 
 	if (!m_pTable->GetAdditionalApplys(ds_type, vec_addtional_applys))
 	{
-		sys_err ("There is no AdditionalApply about %d type dragon soul.", ds_type);
+		LOG_ERROR("There is no AdditionalApply about {} type dragon soul.", static_cast<int>(ds_type));
 		return false;
 	}
 
@@ -232,7 +233,7 @@ bool DSManager::RefreshItemAttributes(entt::entity item)
 	int basic_apply_num, add_min, add_max;
 	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
 	{
-		sys_err ("In ApplyNumSettings, INVALID VALUES Group type(%d), GRADE idx(%d)", ds_type, grade_idx);
+		LOG_ERROR("In ApplyNumSettings, INVALID VALUES Group type({}), GRADE idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
 		return false;
 	}
 
@@ -277,7 +278,7 @@ bool DSManager::PutAttributes(entt::entity item)
 	LPITEM pDS = LegacyDragonSoulItemOf(item);
 	if (!pDS || !pDS->IsDragonSoul())
 	{
-		sys_err ("This item(ID : %d) is not DragonSoul.", ItemSystem::GetItemID(item));
+		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
 	}
 
@@ -289,12 +290,12 @@ bool DSManager::PutAttributes(entt::entity item)
 
 	if (!m_pTable->GetBasicApplys(ds_type, vec_basic_applys))
 	{
-		sys_err ("There is no BasicApply about %d type dragon soul.", ds_type);
+		LOG_ERROR("There is no BasicApply about {} type dragon soul.", static_cast<int>(ds_type));
 		return false;
 	}
 	if (!m_pTable->GetAdditionalApplys(ds_type, vec_addtional_applys))
 	{
-		sys_err ("There is no AdditionalApply about %d type dragon soul.", ds_type);
+		LOG_ERROR("There is no AdditionalApply about {} type dragon soul.", static_cast<int>(ds_type));
 		return false;
 	}
 
@@ -302,7 +303,7 @@ bool DSManager::PutAttributes(entt::entity item)
 	int basic_apply_num, add_min, add_max;
 	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
 	{
-		sys_err ("In ApplyNumSettings, INVALID VALUES Group type(%d), GRADE idx(%d)", ds_type, grade_idx);
+		LOG_ERROR("In ApplyNumSettings, INVALID VALUES Group type({}), GRADE idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
 		return false;
 	}
 
@@ -336,7 +337,7 @@ bool DSManager::PutAttributes(entt::entity item)
 		}
 		if (!MakeDistinctRandomNumberSet(list_probs, random_set))
 		{
-			sys_err ("MakeDistinctRandomNumberSet error.");
+			LOG_ERROR("MakeDistinctRandomNumberSet error.");
 			return false;
 		}
 
@@ -416,7 +417,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::enti
 	//float sum = 0.f;
 	if (-1 == idx)
 	{
-		sys_err ("Gamble is failed. ds_type(%d), grade_idx(%d)", ds_type, grade_idx);
+		LOG_ERROR("Gamble is failed. ds_type({}), grade_idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
 		return false;
 	}
 
@@ -447,7 +448,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::enti
 
 		if (nullptr == pDH)
 		{
-			sys_err ("Cannot create DRAGON_HEART(%d).", DRAGON_HEART_VNUM);
+			LOG_ERROR("Cannot create DRAGON_HEART({}).", DRAGON_HEART_VNUM);
 			return false;
 		}
 
@@ -493,7 +494,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 	LPITEM pExtractor = LegacyDragonSoulItemOf(extractor);
 	if (nullptr == ch || nullptr == pItem)
 	{
-		sys_err ("NULL POINTER. ch(%p) or pItem(%p)", ch, pItem);
+		LOG_ERROR("NULL POINTER. ch({}) or pItem({})", static_cast<const void*>(ch), static_cast<const void*>(pItem));
 		return false;
 	}
 
@@ -717,7 +718,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
 	if (count != need_count)
 	{
-		sys_err ("Possiblity of invalid client. Name %s", ch->GetName());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ch->GetName());
 		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
 		SendRefineResultPacket(ch, bSubHeader, NPOS);
 		return false;
@@ -734,7 +735,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 
 	if (-1 == (result_grade = Gamble(vec_probs)))
 	{
-		sys_err ("Gamble failed. See RefineGardeTables' probabilities");
+		LOG_ERROR("Gamble failed. See RefineGardeTables' probabilities");
 		return false;
 	}
 
@@ -742,7 +743,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 
 	if (nullptr == pResultItem)
 	{
-		sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, (uint8_t)result_grade, 0, 0));
+		LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, (uint8_t)result_grade, 0, 0));
 		return false;
 	}
 
@@ -894,7 +895,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
 	if (count != need_count)
 	{
-		sys_err ("Possiblity of invalid client. Name %s", ch->GetName());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ch->GetName());
 		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
 		SendRefineResultPacket(ch, bSubHeader, NPOS);
 		return false;
@@ -913,7 +914,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 
 	if (-1 == (result_step = Gamble(vec_probs)))
 	{
-		sys_err ("Gamble failed. See RefineStepTables' probabilities");
+		LOG_ERROR("Gamble failed. See RefineStepTables' probabilities");
 		return false;
 	}
 
@@ -921,7 +922,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 
 	if (nullptr == pResultItem)
 	{
-		sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, grade_idx, (uint8_t)result_step, 0));
+		LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, grade_idx, (uint8_t)result_step, 0));
 		return false;
 	}
 
@@ -1129,7 +1130,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		pResult = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(bType, bGrade, bStep, bStrength + 1));
 		if (nullptr == pResult)
 		{
-			sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength + 1));
+			LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength + 1));
 			return false;
 		}
 //		pDragonSoul->RemoveFromCharacter(); ds duplicate fix razor93
@@ -1158,7 +1159,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 			pResult = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(bType, bGrade, bStep, bStrength - 1));
 			if (nullptr == pResult)
 			{
-				sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength - 1));
+				LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength - 1));
 				return false;
 			}
 			pDragonSoul->CopyAttributeTo(pResult);
@@ -1313,7 +1314,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						LPITEM itemres = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
 						if (!itemres) {
-							sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
+							LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
 							continue;
 						}
 
@@ -1429,7 +1430,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 						LPITEM itemres = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
 						if (!itemres) {
-							sys_err ("INVALID DRAGON SOUL(%d)", MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
+							LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
 							continue;
 						}
 
