@@ -9,7 +9,7 @@ LPHEART heart_new(int opt_usec, HEARTFUNC func)
 
 	if (!func)
 	{
-		sys_err("no function defined");
+		LOG_ERROR("no function defined");
 		return nullptr;
 	}
 
@@ -65,13 +65,13 @@ int heart_idle(LPHEART ht)
 
 	if (missed_pulse <= 0)
 	{
-		sys_err("missed_pulse is not positive! (%d)", missed_pulse);
+		LOG_ERROR("missed_pulse is not positive! ({})", missed_pulse);
 		missed_pulse = 1;
 	}
 
 	if (missed_pulse > (30 * ht->passes_per_sec))
 	{
-		sys_err("losing %d seconds. (lag occured)", missed_pulse / ht->passes_per_sec);
+		LOG_ERROR("losing {} seconds. (lag occured)", missed_pulse / ht->passes_per_sec);
 		missed_pulse = 30 * ht->passes_per_sec;
 	}
 
