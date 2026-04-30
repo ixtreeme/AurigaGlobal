@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "utils.h"
 #include "item.h"
@@ -14,7 +15,7 @@ void CItemAddonManager::ApplyAddonTo(int iAddonType, LPITEM pItem)
 {
 	if (!pItem)
 	{
-		sys_err("ITEM pointer null");
+		LOG_ERROR("ITEM pointer null");
 		return;
 	}
 
