@@ -347,7 +347,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 
 		if (!pkLD || pkLD->IsPlay())
 		{
-			sys_log(0, "PLAYER_LOAD_ERROR: LoginData %p IsPlay %d", pkLD, pkLD ? pkLD->IsPlay() : 0);
+			LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", pkLD, pkLD ? pkLD->IsPlay() : 0);
 			peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, dwHandle, 0);
 			return;
 		}
@@ -376,10 +376,10 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 
 		TItemCacheSet * pSet = GetItemCacheSet(pTab->id);
 
-		sys_log(0, "[PLAYER_LOAD] ID %s pid %d gold %lld ", pTab->name, pTab->id, pTab->gold);
+		LOG_INFO("[PLAYER_LOAD] ID {} pid {} gold {} ", pTab->name, pTab->id, pTab->gold);
 
 #ifdef ENABLE_GAYA_SYSTEM
-		sys_log(0, "[PLAYER_LOAD] ID %s pid %d gaya %d ", pTab->name, pTab->id, pTab->gaya);
+		LOG_INFO("[PLAYER_LOAD] ID {} pid {} gaya {} ", pTab->name, pTab->id, pTab->gaya);
 #endif
 
 		if (pSet)
@@ -399,7 +399,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 			}
 
 			if (g_test_server)
-				sys_log(0, "ITEM_CACHE: HIT! %s count: %u", pTab->name, dwCount);
+				LOG_INFO("ITEM_CACHE: HIT! {} count: {}", pTab->name, dwCount);
 
 			peer->EncodeHeader(HEADER_DG_ITEM_LOAD, dwHandle, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
 			peer->EncodeDWORD(dwCount);
@@ -466,7 +466,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 	}
 	else
 	{
-		sys_log(0, "[PLAYER_LOAD] Load from PlayerDB pid[%u]", packet->player_id);
+		LOG_INFO("[PLAYER_LOAD] Load from PlayerDB pid[{}]", packet->player_id);
 
 		char queryStr[QUERY_MAX_LEN];
 
@@ -738,40 +738,40 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 	MYSQL_RES * pSQLResult = pMsg->Get()->pSQLResult;
 	if (!pSQLResult)
 	{
-		sys_err("null MYSQL_RES QID %u", dwQID);
+		LOG_ERROR("null MYSQL_RES QID {}", dwQID);
 		return;
 	}
 
 	switch (dwQID)
 	{
 		case QID_PLAYER:
-			sys_log(0, "QID_PLAYER %u %u", info->dwHandle, info->player_id);
+			LOG_INFO("QID_PLAYER {} {}", info->dwHandle, info->player_id);
 			RESULT_PLAYER_LOAD(peer, pSQLResult, info.get());
 
 			break;
 
 		case QID_ITEM:
-			sys_log(0, "QID_ITEM %u", info->dwHandle);
+			LOG_INFO("QID_ITEM {}", info->dwHandle);
 			RESULT_ITEM_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 			break;
 
 #ifdef ENABLE_BATTLE_PASS
 		case QID_BATTLE_PASS:
-		sys_log(0, "QID_BATTLE_PASS %u", info->dwHandle);
+		LOG_INFO("QID_BATTLE_PASS {}", info->dwHandle);
 		RESULT_BATTLE_PASS_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 		break;
 #endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case QID_SKILL_COLOR:
-			sys_log(0, "QID_SKILL_COLOR %u %u", info->dwHandle, info->player_id);
+			LOG_INFO("QID_SKILL_COLOR {} {}", info->dwHandle, info->player_id);
 			RESULT_SKILL_COLOR_LOAD(peer, pSQLResult, info->dwHandle);
 			break;
 #endif
 
 		case QID_QUEST:
 			{
-				sys_log(0, "QID_QUEST %u", info->dwHandle);
+				LOG_INFO("QID_QUEST {}", info->dwHandle);
 				RESULT_QUEST_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 				//aid얻기
 				ClientHandleInfo*  temp1 = info.get();
@@ -786,43 +786,43 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 				if( pLoginData1->GetAccountRef().login == nullptr)
 					break;
 
-				sys_log(0,"info of pLoginData1 before call ItemAwardfunction %d",pLoginData1);
+				LOG_INFO("info of pLoginData1 before call ItemAwardfunction {}", pLoginData1);
 				ItemAward(peer,pLoginData1->GetAccountRef().login);
 			}
 			break;
 
 		case QID_AFFECT:
-			sys_log(0, "QID_AFFECT %u", info->dwHandle);
+			LOG_INFO("QID_AFFECT {}", info->dwHandle);
 			// @fixme402 RESULT_AFFECT_LOAD+info->player_id
 			RESULT_AFFECT_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 			break;
 			/*
 			   case QID_PLAYER_ITEM_QUEST_AFFECT:
-			   sys_log(0, "QID_PLAYER_ITEM_QUEST_AFFECT %u", info->dwHandle);
+			   LOG_INFO("QID_PLAYER_ITEM_QUEST_AFFECT {}", info->dwHandle);
 			   RESULT_PLAYER_LOAD(peer, pSQLResult, info->dwHandle);
 
 			   if (!pMsg->Next())
 			   {
-			   sys_err("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: ITEM FAILED");
+			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: ITEM FAILED");
 			   return;
 			   }
 
 			   case QID_ITEM_QUEST_AFFECT:
-			   sys_log(0, "QID_ITEM_QUEST_AFFECT %u", info->dwHandle);
+			   LOG_INFO("QID_ITEM_QUEST_AFFECT {}", info->dwHandle);
 			   RESULT_ITEM_LOAD(peer, pSQLResult, info->dwHandle, info->player_id);
 
 			   if (!pMsg->Next())
 			   {
-			   sys_err("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: QUEST FAILED");
+			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: QUEST FAILED");
 			   return;
 			   }
 
 			   case QID_QUEST_AFFECT:
-			   sys_log(0, "QID_QUEST_AFFECT %u", info->dwHandle);
+			   LOG_INFO("QID_QUEST_AFFECT {}", info->dwHandle);
 			   RESULT_QUEST_LOAD(peer, pSQLResult, info->dwHandle);
 
 			   if (!pMsg->Next())
-			   sys_err("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: AFFECT FAILED");
+			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: AFFECT FAILED");
 			   else
 			   RESULT_AFFECT_LOAD(peer, pSQLResult, info->dwHandle);
 
@@ -848,7 +848,7 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 
 	if (!pkLD || pkLD->IsPlay())
 	{
-		sys_log(0, "PLAYER_LOAD_ERROR: LoginData %p IsPlay %d", pkLD, pkLD ? pkLD->IsPlay() : 0);
+		LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", pkLD, pkLD ? pkLD->IsPlay() : 0);
 		peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, pkInfo->dwHandle, 0);
 		return;
 	}
@@ -886,7 +886,7 @@ void CClientManager::RESULT_ITEM_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t d
 	CreateItemCacheSet(dwPID);
 
 	// ITEM_LOAD_LOG_ATTACH_PID
-	sys_log(0, "ITEM_LOAD: count %u pid %u", dwCount, dwPID);
+	LOG_INFO("ITEM_LOAD: count {} pid {}", dwCount, dwPID);
 	// END_OF_ITEM_LOAD_LOG_ATTACH_PID
 
 	if (dwCount)
@@ -905,7 +905,7 @@ void CClientManager::RESULT_SKILL_COLOR_LOAD(CPeer * peer, MYSQL_RES * pRes, uin
 	memset(dwSkillColor, 0, sizeof(dwSkillColor));
 
 	CreateSkillColorTableFromRes(pRes, *dwSkillColor);
-	sys_log(0, "SKILL_COLOR_LOAD %i, %i, %i, %i,", dwSkillColor[0][0], dwSkillColor[1][1], dwSkillColor[2][2], dwSkillColor[3][3]);
+	LOG_INFO("SKILL_COLOR_LOAD {}, {}, {}, {},", dwSkillColor[0][0], dwSkillColor[1][1], dwSkillColor[2][2], dwSkillColor[3][3]);
 	peer->EncodeHeader(HEADER_DG_SKILL_COLOR_LOAD, dwHandle, sizeof(dwSkillColor));
 	peer->Encode(&dwSkillColor, sizeof(dwSkillColor));
 }
@@ -924,7 +924,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 		//static TPacketAffectElement paeTable = {};
 
 		//dwPID = dwRealPID;
-		sys_log(0, "AFFECT_LOAD: count %u  RealPID %u", dwCount,  dwRealPID);
+		LOG_INFO("AFFECT_LOAD: count {}  RealPID {}", dwCount, dwRealPID);
 
 		peer->EncodeHeader(HEADER_DG_AFFECT_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPacketAffectElement) * dwCount);
 		peer->Encode(&dwRealPID, sizeof(uint32_t));
@@ -955,7 +955,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 		str_to_number(r.lSPCost, row[6]);
 	}
 
-	sys_log(0, "AFFECT_LOAD: count %d PID %u", s_elements.size(), dwPID);
+	LOG_INFO("AFFECT_LOAD: count {} PID {}", s_elements.size(), dwPID);
 
 	uint32_t dwCount = (uint32_t)s_elements.size();
 
@@ -992,7 +992,7 @@ void CClientManager::RESULT_QUEST_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t 
 		str_to_number(r.lValue, row[3]);
 	}
 
-	sys_log(0, "QUEST_LOAD: count %d PID %u", s_table.size(), s_table[0].dwPID);
+	LOG_INFO("QUEST_LOAD: count {} PID {}", s_table.size(), s_table[0].dwPID);
 
 	uint32_t dwCount = (uint32_t)s_table.size();
 
@@ -1011,7 +1011,7 @@ void CClientManager::RESULT_BATTLE_PASS_LOAD(CPeer * peer, MYSQL_RES * pRes, uin
 		uint32_t dwCount = 0;
 		TPlayerBattlePassMission pbpTable = {0};
 
-		sys_log(0, "BATTLE_PASS_LOAD: count %u PID %u", dwCount, dwRealPID);
+		LOG_INFO("BATTLE_PASS_LOAD: count {} PID {}", dwCount, dwRealPID);
 
 		peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD, dwHandle, sizeof(uint32_t) + sizeof(uint32_t) + sizeof(TPlayerBattlePassMission) * dwCount);
 		peer->Encode(&dwRealPID, sizeof(uint32_t));
@@ -1038,7 +1038,7 @@ void CClientManager::RESULT_BATTLE_PASS_LOAD(CPeer * peer, MYSQL_RES * pRes, uin
 		r.bIsUpdated = 0;
 	}
 
-	sys_log(0, "BATTLE_PASS_LOAD: count %d PID %u", s_mission.size(), dwRealPID);
+	LOG_INFO("BATTLE_PASS_LOAD: count {} PID {}", s_mission.size(), dwRealPID);
 
 	uint32_t dwCount = s_mission.size();
 
@@ -1051,7 +1051,7 @@ void CClientManager::RESULT_BATTLE_PASS_LOAD(CPeer * peer, MYSQL_RES * pRes, uin
 void CClientManager::QUERY_SAVE_BATTLE_PASS(CPeer * peer, uint32_t dwHandle, TPlayerBattlePassMission* battlePass)
 {
 	if (g_test_server)
-		sys_log(0, "QUERY_SAVE_BATTLE_PASS: %d", battlePass->dwPlayerId);
+		LOG_INFO("QUERY_SAVE_BATTLE_PASS: {}", battlePass->dwPlayerId);
 
 	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery),
@@ -1110,7 +1110,7 @@ void CClientManager::RequestLoadBattlePassRanking(CPeer * peer, uint32_t dwHandl
 		uint32_t dwCount = 0;
 		TBattlePassRanking pbpTable = {0};
 
-		sys_log(0, "RequestLoadBattlePassRanking: count %u PID %d", dwCount, dwPlayerID);
+		LOG_INFO("RequestLoadBattlePassRanking: count {} PID {}", dwCount, dwPlayerID);
 
 		peer->EncodeHeader(HEADER_DG_BATTLE_PASS_LOAD_RANKING, dwHandle, sizeof(uint32_t) + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(TBattlePassRanking) * dwCount);
 		peer->Encode(&dwPlayerID, sizeof(uint32_t));
@@ -1136,7 +1136,7 @@ void CClientManager::RequestLoadBattlePassRanking(CPeer * peer, uint32_t dwHandl
 			r.dwFinishTime = pkRanking->dwFinishTime;
 		}
 
-		sys_log(0, "RequestLoadBattlePassRanking: count %d PID %u", sendVector.size(), dwPlayerID);
+		LOG_INFO("RequestLoadBattlePassRanking: count {} PID {}", sendVector.size(), dwPlayerID);
 
 		uint32_t dwCount = sendVector.size();
 
@@ -1151,7 +1151,7 @@ void CClientManager::RequestLoadBattlePassRanking(CPeer * peer, uint32_t dwHandl
 void CClientManager::QUERY_REGISTER_RANKING(CPeer * peer, uint32_t dwHandle, TBattlePassRegisterRanking* pRanking)
 {
 	if (g_test_server)
-		sys_log(0, "REGISTER_RANKING: %s id %d", pRanking->playerName, pRanking->bBattlePassId);
+		LOG_INFO("REGISTER_RANKING: {} id {}", pRanking->playerName, pRanking->bBattlePassId);
 
 	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery),
@@ -1167,7 +1167,7 @@ void CClientManager::QUERY_REGISTER_RANKING(CPeer * peer, uint32_t dwHandle, TBa
 void CClientManager::QUERY_PLAYER_SAVE(CPeer * peer, uint32_t dwHandle, TPlayerTable * pkTab)
 {
 	if (g_test_server)
-		sys_log(0, "PLAYER_SAVE: %s", pkTab->name);
+		LOG_INFO("PLAYER_SAVE: {}", pkTab->name);
 
 	PutPlayerCache(pkTab);
 }
@@ -1217,7 +1217,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 		if (row[0] && dwPID > 0)
 		{
 			peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_ALREADY, dwHandle, 0);
-			sys_log(0, "ALREADY EXIST AccountChrIdx %d ID %d", packet->account_index, dwPID);
+			LOG_INFO("ALREADY EXIST AccountChrIdx {} ID {}", packet->account_index, dwPID);
 			return;
 		}
 	}
@@ -1244,7 +1244,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 
 		if (*row[0] != '0')
 		{
-			sys_log(0, "ALREADY EXIST name %s, row[0] %s query %s", packet->player_table.name, row[0], queryStr);
+			LOG_INFO("ALREADY EXIST name {}, row[0] {} query {}", packet->player_table.name, row[0], queryStr);
 			peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_ALREADY, dwHandle, 0);
 			return;
 		}
@@ -1302,22 +1302,11 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 #endif
 			);
 
-	sys_log(0, "PlayerCreate accountid %d name %s level %d gold %lld, st %d ht %d job %d",
-
-			packet->account_id,
-			packet->player_table.name,
-			packet->player_table.level,
-			packet->player_table.gold,
-			packet->player_table.st,
-			packet->player_table.ht,
-			packet->player_table.job);
+	LOG_INFO("PlayerCreate accountid {} name {} level {} gold {}, st {} ht {} job {}", packet->account_id, packet->player_table.name, packet->player_table.level, packet->player_table.gold, packet->player_table.st, packet->player_table.ht, packet->player_table.job);
 
 			
 #ifdef ENABLE_GAYA_SYSTEM
-	sys_log(0, "PlayerCreate accountid %d name %s gaya %d",
-		packet->account_id,
-		packet->player_table.name,
-		packet->player_table.gaya);
+	LOG_INFO("PlayerCreate accountid {} name {} gaya {}", packet->account_id, packet->player_table.name, packet->player_table.gaya);
 #endif
 
 	static char text[8192 + 1];
@@ -1325,19 +1314,19 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	CDBManager::instance().EscapeString(text, packet->player_table.skills, sizeof(packet->player_table.skills));
 	queryLen += snprintf(queryStr + queryLen, sizeof(queryStr) - queryLen, "'%s', ", text);
 	if (g_test_server)
-		sys_log(0, "Create_Player queryLen[%d] TEXT[%s]", queryLen, text);
+		LOG_INFO("Create_Player queryLen[{}] TEXT[{}]", queryLen, text);
 
 	CDBManager::instance().EscapeString(text, packet->player_table.quickslot, sizeof(packet->player_table.quickslot));
 	queryLen += snprintf(queryStr + queryLen, sizeof(queryStr) - queryLen, "'%s')", text);
 
 	std::unique_ptr<SQLMsg> pMsg2(CDBManager::instance().DirectQuery(queryStr));
 	if (g_test_server)
-		sys_log(0, "Create_Player queryLen[%d] TEXT[%s]", queryLen, text);
+		LOG_INFO("Create_Player queryLen[{}] TEXT[{}]", queryLen, text);
 
 	if (pMsg2->Get()->uiAffectedRows <= 0)
 	{
 		peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_ALREADY, dwHandle, 0);
-		sys_log(0, "ALREADY EXIST3 query: %s AffectedRows %lu", queryStr, pMsg2->Get()->uiAffectedRows);
+		LOG_INFO("ALREADY EXIST3 query: {} AffectedRows {}", queryStr, pMsg2->Get()->uiAffectedRows);
 		return;
 	}
 
@@ -1349,7 +1338,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 
 	if (pMsg3->Get()->uiAffectedRows <= 0)
 	{
-		sys_err("QUERY_ERROR: %s", queryStr);
+		LOG_ERROR("QUERY_ERROR: {}", queryStr);
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM player%s WHERE id=%u", GetTablePostfix(), player_id);
 		CDBManager::instance().DirectQuery(queryStr);
@@ -1378,7 +1367,7 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_SUCCESS, dwHandle, sizeof(TPacketDGCreateSuccess));
 	peer->Encode(&pack, sizeof(TPacketDGCreateSuccess));
 
-	sys_log(0, "7 name %s job %d", pack.player.szName, pack.player.byJob);
+	LOG_INFO("7 name {} job {}", pack.player.szName, pack.player.byJob);
 
 	s_createTimeByAccountID[packet->account_id] = time(nullptr);
 }
@@ -1407,7 +1396,7 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 	{
 		if (strlen(r.social_id) < 7 || strncmp(packet->private_code, r.social_id + strlen(r.social_id) - 7, 7))
 		{
-			sys_log(0, "PLAYER_DELETE FAILED len(%d)", strlen(r.social_id));
+			LOG_INFO("PLAYER_DELETE FAILED len({})", strlen(r.social_id));
 			peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, dwHandle, 1);
 			peer->EncodeBYTE(packet->account_index);
 			return;
@@ -1420,7 +1409,7 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 
 			// if (pTab->level >= m_iPlayerDeleteLevelLimit)
 			// {
-				// sys_log(0, "PLAYER_DELETE FAILED LEVEL %u >= DELETE LIMIT %d", pTab->level, m_iPlayerDeleteLevelLimit);
+				// LOG_INFO("PLAYER_DELETE FAILED LEVEL {} >= DELETE LIMIT {}", pTab->level, m_iPlayerDeleteLevelLimit);
 				// peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, dwHandle, 1);
 				// peer->EncodeBYTE(packet->account_index);
 				// return;
@@ -1428,7 +1417,7 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 
 			// if (pTab->level < m_iPlayerDeleteLevelLimitLower)
 			// {
-				// sys_log(0, "PLAYER_DELETE FAILED LEVEL %u < DELETE LIMIT %d", pTab->level, m_iPlayerDeleteLevelLimitLower);
+				// LOG_INFO("PLAYER_DELETE FAILED LEVEL {} < DELETE LIMIT {}", pTab->level, m_iPlayerDeleteLevelLimitLower);
 				// peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, dwHandle, 1);
 				// peer->EncodeBYTE(packet->account_index);
 				// return;
@@ -1438,7 +1427,7 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	if (IsUsingOfflineshopSystem(packet->player_id)) {
-		sys_log(0, "PLAYER_DELETE FAILED %u IS USING OFFLINESHOP SYSTEM", packet->player_id);
+		LOG_INFO("PLAYER_DELETE FAILED {} IS USING OFFLINESHOP SYSTEM", packet->player_id);
 		peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, dwHandle, 1);
 		peer->EncodeBYTE(packet->account_index);
 		return;
@@ -1452,7 +1441,7 @@ void CClientManager::__QUERY_PLAYER_DELETE(CPeer* peer, uint32_t dwHandle, TPlay
 	ClientHandleInfo * pi = new ClientHandleInfo(dwHandle, packet->player_id);
 	pi->account_index = packet->account_index;
 
-	sys_log(0, "PLAYER_DELETE TRY: %s %d pid%d", packet->login, packet->player_id, packet->account_index + 1);
+	LOG_INFO("PLAYER_DELETE TRY: {} {} pid{}", packet->login, packet->player_id, packet->account_index + 1);
 	CDBManager::instance().ReturnQuery(szQuery, QID_PLAYER_DELETE, peer->GetHandle(), pi);
 }
 
@@ -1479,7 +1468,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 
 		// if (deletedLevelLimit >= m_iPlayerDeleteLevelLimit)
 		// {
-			// sys_log(0, "PLAYER_DELETE FAILED LEVEL %u >= DELETE LIMIT %d", deletedLevelLimit, m_iPlayerDeleteLevelLimit);
+			// LOG_INFO("PLAYER_DELETE FAILED LEVEL {} >= DELETE LIMIT {}", deletedLevelLimit, m_iPlayerDeleteLevelLimit);
 			// peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 			// peer->EncodeBYTE(pi->account_index);
 			// return;
@@ -1487,7 +1476,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 
 		// if (deletedLevelLimit < m_iPlayerDeleteLevelLimitLower)
 		// {
-			// sys_log(0, "PLAYER_DELETE FAILED LEVEL %u < DELETE LIMIT %d", deletedLevelLimit, m_iPlayerDeleteLevelLimitLower);
+			// LOG_INFO("PLAYER_DELETE FAILED LEVEL {} < DELETE LIMIT {}", deletedLevelLimit, m_iPlayerDeleteLevelLimitLower);
 			// peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 			// peer->EncodeBYTE(pi->account_index);
 			// return;
@@ -1501,7 +1490,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 
 		if (pIns->Get()->uiAffectedRows == 0 || pIns->Get()->uiAffectedRows == (uint32_t)-1)
 		{
-			sys_log(0, "PLAYER_DELETE FAILED %u CANNOT INSERT TO player_deleted%s", dwPID, GetTablePostfix());
+			LOG_INFO("PLAYER_DELETE FAILED {} CANNOT INSERT TO player_deleted{}", dwPID, GetTablePostfix());
 
 			peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 			peer->EncodeBYTE(pi->account_index);
@@ -1509,7 +1498,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		}
 
 		// 삭제 성공
-		sys_log(0, "PLAYER_DELETE SUCCESS %u", dwPID);
+		LOG_INFO("PLAYER_DELETE SUCCESS {}", dwPID);
 
 		char account_index_string[16];
 
@@ -1553,7 +1542,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 
 		if (pMsg->Get()->uiAffectedRows == 0 || std::cmp_equal(pMsg->Get()->uiAffectedRows, -1))
 		{
-			sys_log(0, "PLAYER_DELETE FAIL WHEN UPDATE account table");
+			LOG_INFO("PLAYER_DELETE FAIL WHEN UPDATE account table");
 			peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 			peer->EncodeBYTE(pi->account_index);
 			return;
@@ -1602,7 +1591,7 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 	else
 	{
 		// 삭제 실패
-		sys_log(0, "PLAYER_DELETE FAIL NO ROW");
+		LOG_INFO("PLAYER_DELETE FAIL NO ROW");
 		peer->EncodeHeader(HEADER_DG_PLAYER_DELETE_FAILED, pi->dwHandle, 1);
 		peer->EncodeBYTE(pi->account_index);
 	}
@@ -1661,7 +1650,7 @@ void CClientManager::QUERY_HIGHSCORE_REGISTER(CPeer* peer, TPacketGDHighscore * 
 	char szQuery[128];
 	snprintf(szQuery, sizeof(szQuery), "SELECT value FROM highscore%s WHERE board='%s' AND pid = %u", GetTablePostfix(), data->szBoard, data->dwPID);
 
-	sys_log(0, "HEADER_GD_HIGHSCORE_REGISTER: PID %u", data->dwPID);
+	LOG_INFO("HEADER_GD_HIGHSCORE_REGISTER: PID {}", data->dwPID);
 
 	ClientHandleInfo * pi = new ClientHandleInfo(0);
 	strlcpy(pi->login, data->szBoard, sizeof(pi->login));
@@ -1730,7 +1719,7 @@ void CClientManager::InsertLogoutPlayer(uint32_t pid)
 	if (const auto it = m_map_logout.find(pid); it != m_map_logout.end())
 	{
 		if (g_log)
-			sys_log(0, "LOGOUT: Update player time pid(%d)", pid);
+			LOG_INFO("LOGOUT: Update player time pid({})", pid);
 
 		it->second->time = time(nullptr);
 		return;
@@ -1742,7 +1731,7 @@ void CClientManager::InsertLogoutPlayer(uint32_t pid)
 	m_map_logout.insert(std::make_pair(pid, pLogout));
 
 	if (g_log)
-		sys_log(0, "LOGOUT: Insert player pid(%d)", pid);
+		LOG_INFO("LOGOUT: Insert player pid({})", pid);
 }
 
 void CClientManager::DeleteLogoutPlayer(uint32_t pid)
