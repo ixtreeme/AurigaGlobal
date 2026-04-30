@@ -52,7 +52,7 @@ void CHARACTER::SetParty(LPPARTY pkParty)
     if (pkParty && m_pkParty)
         LOG_ERROR("{} is trying to reassigning party (current {}, new party {})", GetName(), static_cast<const void*>(get_pointer(m_pkParty)), static_cast<const void*>(get_pointer(pkParty)));
 
-    LOG_INFO("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
+    LOG_TRACE("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
 
 #ifdef ENABLE_BUG_FIXES
     if (m_pkDungeon && IsPC() && !pkParty) {

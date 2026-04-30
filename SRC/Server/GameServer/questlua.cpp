@@ -816,7 +816,7 @@ namespace quest
 
 					RegisterQuest(pde->d_name, ++iQuestIdx);
 					int ret = lua_dofile(L, (stQuestObjectDir + "/state/" + pde->d_name).c_str());
-					LOG_INFO("QUEST: loading {}, returns {}", (stQuestObjectDir + "/state/" + pde->d_name).c_str(), ret);
+					LOG_TRACE("QUEST: loading {}, returns {}", (stQuestObjectDir + "/state/" + pde->d_name).c_str(), ret);
 
 					BuildStateIndexToName(pde->d_name);
 				}

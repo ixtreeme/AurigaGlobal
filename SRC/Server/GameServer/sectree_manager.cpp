@@ -112,7 +112,7 @@ void SECTREE_MAP::Build()
 
 		tree->m_neighbor_list.push_back(tree); // �ڽ��� �ִ´�.
 
-		LOG_INFO("{}x{}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
+		LOG_TRACE("{}x{}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
 
 		int x = tree->m_id.coord.x * SECTREE_SIZE;
 		int y = tree->m_id.coord.y * SECTREE_SIZE;
@@ -123,7 +123,7 @@ void SECTREE_MAP::Build()
 
 			if (tree2)
 			{
-				LOG_INFO("   {} {}x{}", i, static_cast<int32_t>(tree2->m_id.coord.x), static_cast<int32_t>(tree2->m_id.coord.y));
+				LOG_TRACE("   {} {}x{}", i, static_cast<int32_t>(tree2->m_id.coord.x), static_cast<int32_t>(tree2->m_id.coord.y));
 				tree->m_neighbor_list.push_back(tree2);
 			}
 		}
@@ -309,7 +309,7 @@ void SECTREE_MANAGER::LoadDungeon(int iIndex, const char * c_pszFileName)
 
 	fclose(fp);
 
-	LOG_INFO("Dungeon Position Load [{:3}]{} count {}", iIndex, c_pszFileName, count);
+	LOG_TRACE("Dungeon Position Load [{:3}]{} count {}", iIndex, c_pszFileName, count);
 }
 
 bool SECTREE_MANAGER::LoadMapRegion(const char * c_pszFileName, TMapSetting & r_setting, const char * c_pszMapName)

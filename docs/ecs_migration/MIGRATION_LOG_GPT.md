@@ -8530,6 +8530,43 @@ Follow-up:
   - no `heart_idle` 30s+ stall during boot/login,
   - syslog no longer floods with `LoadMapRegion` and `MapLocation::Insert` at info level.
 
+## Phase 16-3 WinTest Log Review - Second Pass
+
+Operator request:
+- Re-check logs after the logging shutdown and loading spam hotfixes.
+
+Findings after redeploy:
+- `core1` syslog size dropped significantly after restart, indicating the first TRACE demotion worked for that channel.
+- `LoadMapRegion`, `MapLocation::Insert`, `MOB_SPAWN`, and drop/refine table dumps were no longer the dominant `INFO` spam.
+- New dominant `INFO` source:
+  - `ecs/systems/SocialSystem.cpp`: `PARTY set to ...`
+  - Post-hotfix sample counts:
+    - core2: about 63k lines
+    - core99: about 42k lines
+- Remaining boot/debug dump sources:
+  - sectree neighbor coordinate dumps
+  - building object proto/land/object dumps
+  - shop table item dumps
+  - quest object/state loading dumps
+- Stalls still occurred:
+  - core2: `heart_idle: losing 93 seconds`
+  - core99: `heart_idle: losing 40/42 seconds`
+- No crash dump was found in the WinTest tree.
+
+Second hotfix:
+- Demoted `PARTY set to ...` to `LOG_TRACE`.
+- Demoted remaining boot/debug dumps to `LOG_TRACE` in:
+  - `SRC/Server/GameServer/ecs/systems/SocialSystem.cpp`
+  - `SRC/Server/GameServer/sectree_manager.cpp`
+  - `SRC/Server/GameServer/building.cpp`
+  - `SRC/Server/GameServer/shop.cpp`
+  - `SRC/Server/GameServer/questlua.cpp`
+  - `SRC/Server/GameServer/questnpc.cpp`
+
+Follow-up:
+- Re-run WinTest and compare core2/core99 syslog growth specifically.
+- If `heart_idle` persists after this reduction, the next suspect is DBServer/AuthServer legacy logging and/or heavy boot data loading, not GameServer `INFO` logging alone.
+
 ## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
 
 Mode:

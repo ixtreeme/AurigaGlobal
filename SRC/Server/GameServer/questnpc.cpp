@@ -120,7 +120,7 @@ namespace quest
 		int state_index = q.GetQuestStateIndex(stQuestName, stStateName);
 		///////////////////////////////////////////////////////////////////////////
 
-		LOG_INFO("QUEST loading {} : {} [STATE] {}", filename, stQuestName.c_str(), stStateName.c_str());
+		LOG_TRACE("QUEST loading {} : {} [STATE] {}", filename, stQuestName.c_str(), stStateName.c_str());
 
 		if (i == s.npos)
 		{

@@ -651,7 +651,7 @@ bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
 		TObjectProto & r = m_vec_kObjectProto[i];
 
 		// BUILDING_NPC
-		LOG_INFO("ObjectProto {} price {} upgrade {} upg_limit {} life {} NPC {}", r.dwVnum, r.dwPrice, r.dwUpgradeVnum, r.dwUpgradeLimitTime, r.lLife, r.dwNPCVnum);
+		LOG_TRACE("ObjectProto {} price {} upgrade {} upg_limit {} life {} NPC {}", r.dwVnum, r.dwPrice, r.dwUpgradeVnum, r.dwUpgradeLimitTime, r.lLife, r.dwNPCVnum);
 		// END_OF_BUILDING_NPC
 
 		for (int j = 0; j < OBJECT_MATERIAL_MAX_NUM; ++j)
@@ -665,7 +665,7 @@ bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
 				return false;
 			}
 
-			LOG_INFO("          mat: {} {}", r.kMaterials[j].dwItemVnum, r.kMaterials[j].dwCount);
+			LOG_TRACE("          mat: {} {}", r.kMaterials[j].dwItemVnum, r.kMaterials[j].dwCount);
 		}
 
 		m_map_pkObjectProto.insert(std::make_pair(r.dwVnum, &m_vec_kObjectProto[i]));
@@ -696,7 +696,7 @@ bool CManager::LoadLand(TLand * pTable) // from DB
 	CLand * pkLand = M2_NEW CLand(pTable);
 	m_map_pkLand.insert(std::make_pair(pkLand->GetID(), pkLand));
 
-	LOG_INFO("LAND: {} map {} {}x{} w {} h {}", pTable->dwID, pTable->lMapIndex, pTable->x, pTable->y, pTable->width, pTable->height);
+	LOG_TRACE("LAND: {} map {} {}x{} w {} h {}", pTable->dwID, pTable->lMapIndex, pTable->x, pTable->y, pTable->width, pTable->height);
 
 	return true;
 }
@@ -826,7 +826,7 @@ bool CManager::LoadObject(TObject * pTable, bool isBoot) // from DB
 		return false;
 	}
 
-	LOG_INFO("OBJ: id {} vnum {} map {} pos {}x{}", pTable->dwID, pTable->dwVnum, pTable->lMapIndex, pTable->x, pTable->y);
+	LOG_TRACE("OBJ: id {} vnum {} map {} pos {}x{}", pTable->dwID, pTable->dwVnum, pTable->lMapIndex, pTable->x, pTable->y);
 
 	LPOBJECT pkObj = M2_NEW CObject(pTable, pkProto);
 
@@ -887,7 +887,7 @@ void CManager::FinalizeBoot()
 		const TLand & r = pkLand->GetData();
 
 		// LAND_MASTER_LOG
-		LOG_INFO("LandMaster map_index={} pos=({}, {})", r.lMapIndex, r.x, r.y);
+		LOG_TRACE("LandMaster map_index={} pos=({}, {})", r.lMapIndex, r.x, r.y);
 		// END_OF_LAND_MASTER_LOG
 
 		if (r.dwGuildID != 0)

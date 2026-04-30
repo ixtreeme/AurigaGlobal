@@ -76,7 +76,7 @@ bool CShop::Create(uint32_t dwVnum, uint32_t dwNPCVnum, TShopItemTable * pTable)
 	   return false;
 	   }
 	 */
-	LOG_INFO("SHOP #{} (Shopkeeper {})", dwVnum, dwNPCVnum);
+	LOG_TRACE("SHOP #{} (Shopkeeper {})", dwVnum, dwNPCVnum);
 
 	m_dwVnum = dwVnum;
 	m_dwNPCVnum = dwNPCVnum;
@@ -204,7 +204,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		
 		char name[256];
 		snprintf(name, sizeof(name), "%s (v: %d) (c: %d)", item_table->szName, item.vnum, item.count);
-		LOG_INFO("SHOP_ITEM: ITEM: {} PRICE: {}", name, item.price);
+		LOG_TRACE("SHOP_ITEM: ITEM: {} PRICE: {}", name, item.price);
 		++pTable;
 	}
 }
