@@ -35,6 +35,7 @@
 #include "../components/status_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
+#include <Core/Logging.hpp>
 
 namespace {
 
@@ -69,7 +70,7 @@ EVENTFUNC(poison_event)
 {
     TPoisonEventInfo* info = dynamic_cast<TPoisonEventInfo*>(event->info);
     if (info == nullptr) {
-        sys_err("poison_event> <Factor> Null pointer");
+        LOG_ERROR("poison_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -137,7 +138,7 @@ EVENTFUNC(bleeding_event)
 {
     TBleedingEventInfo* info = dynamic_cast<TBleedingEventInfo*>(event->info);
     if (info == nullptr) {
-        sys_err("bleeding_event> <Factor> Null pointer");
+        LOG_ERROR("bleeding_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -193,7 +194,7 @@ EVENTFUNC(fire_event)
 {
     TFireEventInfo* info = dynamic_cast<TFireEventInfo*>(event->info);
     if (info == nullptr) {
-        sys_err("fire_event> <Factor> Null pointer");
+        LOG_ERROR("fire_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -828,7 +829,7 @@ EVENTFUNC(affect_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "affect_event> <Factor> Null pointer" );
+		LOG_ERROR("affect_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -936,7 +937,7 @@ void CHARACTER::StartAffectEvent()
 	char_event_info* info = AllocEventInfo<char_event_info>();
 	info->ch = this;
 	m_pkAffectEvent = event_create(affect_event, info, passes_per_sec);
-	sys_log(1, "StartAffectEvent %s %p %p", GetName(), this, get_pointer(m_pkAffectEvent));
+	LOG_TRACE("StartAffectEvent {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkAffectEvent)));
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
@@ -1241,7 +1242,7 @@ void CHARACTER::SaveAffect()
 		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
 			continue;
 
-		sys_log(1, "AFFECT_SAVE: %u %u %d %d", pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->lDuration);
+		LOG_TRACE("AFFECT_SAVE: {} {} {} {}", pkAff->dwType, static_cast<int>(pkAff->bApplyOn), pkAff->lApplyValue, pkAff->lDuration);
 
 		p.dwPID			= GetPlayerID();
 		p.elem.dwType		= pkAff->dwType;
@@ -1274,7 +1275,7 @@ EVENTFUNC(load_affect_login_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "load_affect_login_event_info> <Factor> Null pointer" );
+		LOG_ERROR("load_affect_login_event_info> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -1310,14 +1311,14 @@ EVENTFUNC(load_affect_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		sys_log(1, "Affect Load by Event");
+		LOG_INFO("Affect Load by Event");
 		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
 		M2_DELETE_ARRAY(info->data);
 		return 0;
 	}
 	else
 	{
-		sys_err("input_db.cpp:quest_login_event INVALID PHASE pid %d", ch->GetPlayerID());
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ch->GetPlayerID());
 		M2_DELETE_ARRAY(info->data);
 		return 0;
 	}
@@ -1365,7 +1366,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	if (!GetDesc()->IsPhase(PHASE_GAME))
 	{
 		if (test_server)
-			sys_log(0, "LOAD_AFFECT: Creating Event", GetName(), dwCount);
+			LOG_INFO("LOAD_AFFECT: Creating Event", GetName(), dwCount);
 
 		load_affect_login_event_info* info = AllocEventInfo<load_affect_login_event_info>();
 
@@ -1382,7 +1383,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	ClearAffect(true);
 
 	if (test_server)
-		sys_log(0, "LOAD_AFFECT: %s count %d", GetName(), dwCount);
+		LOG_INFO("LOAD_AFFECT: {} count {}", GetName(), dwCount);
 
 	TAffectFlag afOld = m_afAffectFlag;
 
@@ -1471,14 +1472,13 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 		if (pElements->bApplyOn >= POINT_MAX_NUM)
 		{
-			sys_err("invalid affect data %s ApplyOn %u ApplyValue %d",
-					GetName(), pElements->bApplyOn, pElements->lApplyValue);
+			LOG_ERROR("invalid affect data {} ApplyOn {} ApplyValue {}", GetName(), static_cast<int>(pElements->bApplyOn), pElements->lApplyValue);
 			continue;
 		}
 
 		if (test_server)
 		{
-			sys_log(0, "Load Affect : Affect %s %d %d", GetName(), pElements->dwType, pElements->bApplyOn );
+			LOG_INFO("Load Affect : Affect {} {} {}", GetName(), pElements->dwType, static_cast<int>(pElements->bApplyOn));
 		}
 
 		CAffect* pkAff = CAffect::Acquire();
@@ -1559,7 +1559,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 #ifdef ENABLE_BUG_FIXES
 	if (bApplyOn >= POINT_MAX_NUM)
 	{
-		sys_err("Character::AddAffect invalid ApplyOn %u for affect %u on %s", bApplyOn, dwType, GetName());
+		LOG_ERROR("Character::AddAffect invalid ApplyOn {} for affect {} on {}", static_cast<int>(bApplyOn), dwType, GetName());
 		return false;
 	}
 #endif
@@ -1587,7 +1587,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 
 	if (lDuration == 0)
 	{
-		sys_err("Character::AddAffect lDuration == 0 type %d", lDuration, dwType);
+		LOG_ERROR("Character::AddAffect lDuration == 0 duration {} type {}", lDuration, dwType);
 		lDuration = 1;
 	}
 
@@ -1631,8 +1631,8 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 
 	}
 
-	//sys_log(1, "AddAffect %s type %d apply %d %d flag %u duration %d", GetName(), dwType, bApplyOn, lApplyValue, dwFlag, lDuration);
-	//sys_log(0, "AddAffect %s type %d apply %d %d flag %u duration %d", GetName(), dwType, bApplyOn, lApplyValue, dwFlag, lDuration);
+	//LOG_TRACE("AddAffect {} type {} apply {} {} flag {} duration {}", GetName(), dwType, static_cast<int>(bApplyOn), lApplyValue, dwFlag, lDuration);
+	//LOG_TRACE("AddAffect {} type {} apply {} {} flag {} duration {}", GetName(), dwType, static_cast<int>(bApplyOn), lApplyValue, dwFlag, lDuration);
 
 	pkAff->dwType	= dwType;
 	pkAff->bApplyOn	= bApplyOn;
@@ -1759,7 +1759,7 @@ bool CHARACTER::RemoveAffect(CAffect * pkAff)
 	CheckMaximumPoints();
 
 	if (test_server)
-		sys_log(0, "AFFECT_REMOVE: %s (flag %u apply: %u)", GetName(), pkAff->dwFlag, pkAff->bApplyOn);
+		LOG_TRACE("AFFECT_REMOVE: {} (flag {} apply: {})", GetName(), pkAff->dwFlag, static_cast<int>(pkAff->bApplyOn));
 
 	if (IsPC())
 	{
@@ -1864,7 +1864,7 @@ bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
 
 void CHARACTER::RemoveBadAffect()
 {
-	sys_log(0, "RemoveBadAffect %s", GetName());
+	LOG_INFO("RemoveBadAffect {}", GetName());
 	// µ¶
 	RemovePoison();
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -1931,7 +1931,7 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 		return;
 	m_bPolyMaintainStat = bMaintainStat;
 	m_dwPolymorphRace = dwRaceNum;
-	sys_log(0, "POLYMORPH: %s race %u ", GetName(), dwRaceNum);
+	LOG_INFO("POLYMORPH: {} race {} ", GetName(), dwRaceNum);
 	if (dwRaceNum != 0)
 		StopRiding();
 	SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
