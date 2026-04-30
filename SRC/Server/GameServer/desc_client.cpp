@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "config.h"
 #include "utils.h"
 #include "desc_client.h"
@@ -61,7 +62,7 @@ void CLIENT_DESC::Destroy()
 
 	fdwatch_del_fd(m_lpFdw, m_sock);
 
-	sys_log(0, "SYSTEM: closing client socket. DESC #%d", m_sock);
+	LOG_INFO("SYSTEM: closing client socket. DESC #{}", m_sock);
 
 	socket_close(m_sock);
 	m_sock = INVALID_SOCKET;
@@ -88,13 +89,13 @@ bool CLIENT_DESC::Connect(int iPhaseWhenSucceed)
 	if (m_sock != INVALID_SOCKET)
 		return false;
 
-	sys_log(0, "SYSTEM: Trying to connect to %s:%d", m_stHost.c_str(), m_wPort);
+	LOG_INFO("SYSTEM: Trying to connect to {}:{}", m_stHost.c_str(), m_wPort);
 
 	m_sock = socket_connect(m_stHost.c_str(), m_wPort);
 
 	if (m_sock != INVALID_SOCKET)
 	{
-		sys_log(0, "SYSTEM: connected to server (fd %d, ptr %p)", m_sock, this);
+		LOG_INFO("SYSTEM: connected to server (fd {}, ptr {})", m_sock, static_cast<const void*>(this));
 		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_READ, false);
 		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, false);
 		SetPhase(m_iPhaseWhenSucceed);
@@ -124,13 +125,13 @@ void CLIENT_DESC::SetPhase(int iPhase)
 	switch (iPhase)
 	{
 		case PHASE_CLIENT_CONNECTING:
-			sys_log(1, "PHASE_CLIENT_DESC::CONNECTING");
+			LOG_INFO("PHASE_CLIENT_DESC::CONNECTING");
 			m_pInputProcessor = nullptr;
 			break;
 
 		case PHASE_DBCLIENT:
 			{
-				sys_log(1, "PHASE_DBCLIENT");
+				LOG_INFO("PHASE_DBCLIENT");
 
 				if (!g_bAuthServer)
 				{
@@ -207,7 +208,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 						}
 					}
 
-					sys_log(0, "DB_SETUP current user %d size %d", p.dwLoginCount, buf.size());
+					LOG_INFO("DB_SETUP current user {} size {}", p.dwLoginCount, buf.size());
 
 					// 파티를 처리할 수 있게 됨.
 					CPartyManager::instance().EnablePCParty();
@@ -225,7 +226,7 @@ void CLIENT_DESC::SetPhase(int iPhase)
 			break;
 
 		case PHASE_P2P:
-			sys_log(1, "PHASE_P2P");
+			LOG_INFO("PHASE_P2P");
 
 			if (m_lpInputBuffer)
 				buffer_reset(m_lpInputBuffer);
@@ -255,11 +256,10 @@ void CLIENT_DESC::DBPacketHeader(uint8_t bHeader, uint32_t dwHandle, uint32_t dw
 void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pvData, uint32_t dwSize)
 {
 	if (m_sock == INVALID_SOCKET) {
-		sys_log(0, "CLIENT_DESC [%s] trying DBPacket() while not connected",
-			GetKnownClientDescName(this));
+		LOG_INFO("CLIENT_DESC [{}] trying DBPacket() while not connected", GetKnownClientDescName(this));
 		return;
 	}
-	sys_log(1, "DB_PACKET: header %d handle %d size %d buffer_size %d", bHeader, dwHandle, dwSize, buffer_size(m_lpOutputBuffer));
+	LOG_TRACE("DB_PACKET: header {} handle {} size {} buffer_size {}", static_cast<int>(bHeader), dwHandle, dwSize, buffer_size(m_lpOutputBuffer));
 	DBPacketHeader(bHeader, dwHandle, dwSize);
 
 	if (c_pvData)
@@ -272,8 +272,7 @@ void CLIENT_DESC::DBPacket(uint8_t bHeader, uint32_t dwHandle, const void * c_pv
 void CLIENT_DESC::Packet(const void * c_pvData, int iSize)
 {
 	if (m_sock == INVALID_SOCKET) {
-		sys_log(0, "CLIENT_DESC [%s] trying Packet() while not connected",
-			GetKnownClientDescName(this));
+		LOG_INFO("CLIENT_DESC [{}] trying Packet() while not connected", GetKnownClientDescName(this));
 		return;
 	}
 	buffer_write(m_lpOutputBuffer, c_pvData, iSize);
