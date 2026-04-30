@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -17,9 +18,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -201,8 +202,7 @@ namespace quest
         strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
         p.dwGuild = (uint32_t) lua_tonumber(L, 2);
         p.dwGold = (uint32_t) lua_tonumber(L, 3);
-        sys_log(0, "GUILD_WAR_BET: %s login %s war_id %u guild %u gold %u",
-                ((ch)->GetName()), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
+        LOG_INFO("GUILD_WAR_BET: {} login {} war_id {} guild {} gold {}", ((ch)->GetName()), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
         db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
         return 0;
     }
@@ -240,7 +240,7 @@ namespace quest
 		int i = 0;
 		std::vector<CGuildWarReserveForGame *>::iterator it = con.begin();
 
-		sys_log(0, "con.size(): %d", con.size());
+		LOG_INFO("con.size(): {}", con.size());
 
 		// stack : table1
 		lua_newtable(L);
@@ -254,7 +254,7 @@ namespace quest
 
 			lua_newtable(L);
 
-			sys_log(0, "con.size(): %u %u %u handi %d", p->dwID, p->dwGuildFrom, p->dwGuildTo, p->lHandicap);
+			LOG_INFO("con.size(): {} {} {} handi {}", p->dwID, p->dwGuildFrom, p->dwGuildTo, p->lHandicap);
 
 			// stack : table1 table2
 			lua_pushnumber(L, p->dwID);
