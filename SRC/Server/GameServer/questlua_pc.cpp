@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -50,9 +51,9 @@
 #include <cctype>
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 const int ITEM_BROKEN_METIN_VNUM = 28960;
@@ -206,19 +207,19 @@ namespace quest
         const TMapRegion * region = SECTREE_MANAGER::instance().GetMapRegion(lMapIndex);
         if (!region)
         {
-            sys_err("invalid map index %d", lMapIndex);
+            sys_err("invalid map index {}", lMapIndex);
             return 0;
         }
         int32_t x = static_cast<int32_t>(lua_tonumber(L, 2));
         int32_t y = static_cast<int32_t>(lua_tonumber(L, 3));
         if (x > region->ex - region->sx)
         {
-            sys_err("x coordinate overflow max: %d input: %d", region->ex - region->sx, x);
+            sys_err("x coordinate overflow max: {} input: {}", region->ex - region->sx, x);
             return 0;
         }
         if (y > region->ey - region->sy)
         {
-            sys_err("y coordinate overflow max: %d input: %d", region->ey - region->sy, y);
+            sys_err("y coordinate overflow max: {} input: {}", region->ey - region->sy, y);
             return 0;
         }
         entt::entity e = CQuestManager::instance().GetPCEntity(L);
@@ -312,19 +313,19 @@ namespace quest
         const TMapRegion * region = SECTREE_MANAGER::instance().GetMapRegion(lMapIndex);
         if (!region)
         {
-            sys_err("invalid map index %d", lMapIndex);
+            sys_err("invalid map index {}", lMapIndex);
             return 0;
         }
         int x = (int) lua_tonumber(L, 2);
         int y = (int) lua_tonumber(L, 3);
         if (x > region->ex - region->sx)
         {
-            sys_err("x coordinate overflow max: %d input: %d", region->ex - region->sx, x);
+            sys_err("x coordinate overflow max: {} input: {}", region->ex - region->sx, x);
             return 0;
         }
         if (y > region->ey - region->sy)
         {
-            sys_err("y coordinate overflow max: %d input: %d", region->ey - region->sy, y);
+            sys_err("y coordinate overflow max: {} input: {}", region->ey - region->sy, y);
             return 0;
         }
         const int32_t warpX = region->sx + x;
@@ -589,7 +590,7 @@ namespace quest
 			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 2));
 		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 2), dwVnum))
 		{
-			sys_err("QUEST Make item call error : wrong item name : %s", lua_tostring(L,1));
+			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
 			return 0;
 		}
 
@@ -601,7 +602,7 @@ namespace quest
 
 			if (icount <= 0)
 			{
-				sys_err("QUEST Make item call error : wrong item count : %g", lua_tonumber(L, 2));
+				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L, 2));
 				return 0;
 			}
 		}
@@ -633,7 +634,7 @@ namespace quest
 		}
 		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
 		{
-			sys_err("QUEST Make item call error : wrong item name : %s", lua_tostring(L,1));
+			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
 			lua_pushnumber (L, 0);
 
 			return 1;
@@ -645,13 +646,13 @@ namespace quest
 			icount = (int)rint(lua_tonumber(L,2));
 			if (icount<=0)
 			{
-				sys_err("QUEST Make item call error : wrong item count : %g", lua_tonumber(L,2));
+				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
 				lua_pushnumber (L, 0);
 				return 1;
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
@@ -692,7 +693,7 @@ namespace quest
 		}
 		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
 		{
-			sys_err("QUEST Make item call error : wrong item name : %s", lua_tostring(L,1));
+			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
 			lua_pushnumber (L, 0);
 
 			return 1;
@@ -704,7 +705,7 @@ namespace quest
 			icount = static_cast<int>(rint(lua_tonumber(L, 2)));
 			if (icount<=0)
 			{
-				sys_err("QUEST Make item call error : wrong item count : %g", lua_tonumber(L,2));
+				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
 				lua_pushnumber(L, 0);
 				return 1;
 			}
@@ -724,7 +725,7 @@ namespace quest
 			ch->AutoGiveItem(item);
 
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
 
 		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), dwVnum, icount);
 
@@ -753,7 +754,7 @@ namespace quest
 		}
 		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
 		{
-			sys_err("QUEST Make item call error : wrong item name : %s", lua_tostring(L,1));
+			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
 			return 0;
 		}
 
@@ -763,12 +764,12 @@ namespace quest
 			icount = static_cast<int>(rint(lua_tonumber(L, 2)));
 			if (icount<=0)
 			{
-				sys_err("QUEST Make item call error : wrong item count : %g", lua_tonumber(L,2));
+				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
 				return 0;
 			}
 		}
 
-		sys_log(0, "QUEST [REWARD] item %s to %s", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
@@ -891,7 +892,7 @@ namespace quest
 
 			if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
 			{
-				sys_err("QUEST count_item call error : wrong item name : %s", lua_tostring(L,1));
+				sys_err("QUEST count_item call error : wrong item name : {}", lua_tostring(L,1));
 				lua_pushnumber(L, 0);
 			}
 			else
@@ -921,7 +922,7 @@ namespace quest
 			{
 				if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
 				{
-					sys_err("QUEST remove_item call error : wrong item name : %s", lua_tostring(L,1));
+					sys_err("QUEST remove_item call error : wrong item name : {}", lua_tostring(L,1));
 					return 0;
 				}
 			}
@@ -931,7 +932,7 @@ namespace quest
 				return 0;
 			}
 
-			sys_log(0,"QUEST remove a item vnum %d of %s[%d]", item_vnum, CQuestManager::instance().GetCurrentCharacterPtr()->GetName(), CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID());
+			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, CQuestManager::instance().GetCurrentCharacterPtr()->GetName(), CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID());
 			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum);
 		}
 		else if (lua_gettop(L) == 2)
@@ -946,7 +947,7 @@ namespace quest
 			{
 				if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
 				{
-					sys_err("QUEST remove_item call error : wrong item name : %s", lua_tostring(L,1));
+					sys_err("QUEST remove_item call error : wrong item name : {}", lua_tostring(L,1));
 					return 0;
 				}
 			}
@@ -957,11 +958,7 @@ namespace quest
 			}
 
 			int32_t item_count = static_cast<int32_t>(lua_tonumber(L, 2));
-			sys_log(0, "QUEST remove items(vnum %d) count %d of %s[%d]",
-					item_vnum,
-					item_count,
-					CQuestManager::instance().GetCurrentCharacterPtr()->GetName(),
-					CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID());
+			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, CQuestManager::instance().GetCurrentCharacterPtr()->GetName(), CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID());
 
 			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum, item_count);
 		}
@@ -1256,7 +1253,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [LEVEL] %s jumpint to level %d", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
+        LOG_INFO("QUEST [LEVEL] {} jumpint to level {}", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
         LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ((ch)->GetPlayerID()), ((ch)->GetLevel()), newLevel, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - ((ch)->GetLevel()));
@@ -1443,7 +1440,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch && gold + ch->GetGold() < 0)
-			sys_err("QUEST wrong ChangeGold %lld (now %lld)", gold, ch->GetGold());
+			sys_err("QUEST wrong ChangeGold {} (now {})", gold, ch->GetGold());
 		else if (ch)
 		{
 			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
@@ -1525,7 +1522,7 @@ namespace quest
 			PC* pPC = q.GetCurrentPC();
 			lua_pushnumber(L,pPC->GetFlag(pPC->GetCurrentQuestName() + "."+sz));
 			if ( test_server )
-				sys_log( 0 ,"GetQF ( %s . %s )", pPC->GetCurrentQuestName().c_str(), sz );
+				LOG_INFO("GetQF ( {} . {} )", pPC->GetCurrentQuestName().c_str(), sz);
 		}
 		return 1;
 	}
@@ -1599,7 +1596,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!lua_isnumber(L,1) || !ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp2 %d", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
+        LOG_INFO("QUEST [REWARD] {} give exp2 {}", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,1));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1625,7 +1622,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        sys_log(0,"QUEST [REWARD] %s give exp %s %d", ((ch)->GetName()), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
+        LOG_INFO("QUEST [REWARD] {} give exp {} {}", ((ch)->GetName()), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,2));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1651,7 +1648,7 @@ namespace quest
             return 0;
         int lev = (int)rint(lua_tonumber(L,2));
         double proc = (lua_tonumber(L,3));
-        sys_log(0, "QUEST [REWARD] %s give exp %s lev %d percent %g%%", ((ch)->GetName()), lua_tostring(L, 1), lev, proc);
+        LOG_INFO("QUEST [REWARD] {} give exp {} lev {} percent {:g}%", ((ch)->GetName()), lua_tostring(L, 1), lev, proc);
         uint32_t exp = (uint32_t)((exp_table[MINMAX(0, lev, PLAYER_MAX_LEVEL_CONST)] * proc) / 100);
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -2160,7 +2157,7 @@ namespace quest
 		const int cell = static_cast<int>(lua_tonumber(L, 1));
 		if (cell < 0 || cell >= WEAR_MAX_NUM)
 		{
-			sys_err("invalid wear position %d", cell);
+			sys_err("invalid wear position {}", cell);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -2292,7 +2289,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		sys_log(0, "TRY GIVE LOTTO TO pid %u", ((ch)->GetPlayerID()));
+		LOG_INFO("TRY GIVE LOTTO TO pid {}", ((ch)->GetPlayerID()));
 
 		uint32_t * pdw = M2_NEW uint32_t[3];
 
@@ -2626,19 +2623,19 @@ namespace quest
         // migrated from CHARACTER::ResetOneSkill
         // DUAL-PATH: legacy only during migration window
 		int vnum = (int)lua_tonumber(L, 1);
-		sys_log(0, "%d skill clear", vnum);
+		LOG_INFO("{} skill clear", vnum);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch == nullptr)
 		{
-			sys_log(0, "skill clear fail");
+			LOG_INFO("skill clear fail");
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		sys_log(0, "%d skill clear", vnum);
+		LOG_INFO("{} skill clear", vnum);
 
 		ch->ResetOneSkill(vnum);
 
@@ -2890,7 +2887,7 @@ teleport_area:
 				break;
 
 			default:
-				sys_err("wrong premium index %d", premium_type);
+				sys_err("wrong premium index {}", premium_type);
 				return 0;
 		}
 
@@ -3773,7 +3770,7 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
+		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall)select '%s', %d, %d, now(), '%s', 1 from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
@@ -3803,7 +3800,7 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		sys_log(0, "QUEST [award] item %d to login %s", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
+		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2)select '%s', %d, %d, now(), '%s', 1, %s, %s, %s from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
@@ -4843,7 +4840,7 @@ teleport_area:
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch && gaya + ch->GetGaya() < 0)
-			sys_err("QUEST wrong ChangeGaya %d (now %d)", gaya, ch->GetGaya());
+			sys_err("QUEST wrong ChangeGaya {} (now {})", gaya, ch->GetGaya());
 		else if (ch)
 		{
 			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gaya);
