@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "mining.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -139,7 +140,7 @@ namespace mining
 
 		if (iFractionCount == 0)
 		{
-			sys_err("Wrong ore fraction count");
+			LOG_ERROR("Wrong ore fraction count");
 			return;
 		}
 
@@ -147,7 +148,7 @@ namespace mining
 
 		if (!item)
 		{
-			sys_err("cannot create item vnum %d", dwRawOreVnum);
+			LOG_ERROR("cannot create item vnum {}", dwRawOreVnum);
 			return;
 		}
 
@@ -255,7 +256,7 @@ namespace mining
 
 		if (!Pick_Check(*item))
 		{
-			sys_err("REFINE_PICK_HACK pid(%u) item(%s:%d) type(%d)", ((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
+			LOG_ERROR("REFINE_PICK_HACK pid({}) item({}:{}) type({})", ((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
 			rkLogMgr.RefineLog(((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "PICK_HACK");
 			return 2;
 		}
@@ -375,7 +376,7 @@ namespace mining
 
 		if ( info == nullptr)
 		{
-			sys_err( "mining_event_info> <Factor> Null pointer" );
+			LOG_ERROR("mining_event_info> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -446,13 +447,13 @@ namespace mining
 
 		if (ItemSystem::GetItemOwnerEntity(itemEntity) != AIHelpers::EcsOf(ch))
 		{
-			sys_err("wrong owner");
+			LOG_ERROR("wrong owner");
 			return false;
 		}
 
 		if (ItemSystem::GetItemCount(itemEntity) < ORE_COUNT_FOR_REFINE)
 		{
-			sys_err("not enough count");
+			LOG_ERROR("not enough count");
 			return false;
 		}
 
