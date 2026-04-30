@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -20,9 +21,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -157,11 +158,11 @@ namespace quest
 
         void operator()(LPCHARACTER ch)
         {
-            sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
+            LOG_INFO("CINEMASEND_TRY {}", ((ch)->GetName()));
 
             if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
             {
-                sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
+                LOG_INFO("CINEMASEND {}", ((ch)->GetName()));
                 ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(struct packet_script));
                 ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data.c_str(),data.size());
             }
@@ -175,7 +176,7 @@ namespace quest
 		if (!lua_isstring(L, 1))
 			return 0;
 
-		sys_log(0, "RUN_CINEMA %s", lua_tostring(L, 1));
+		LOG_INFO("RUN_CINEMA {}", lua_tostring(L, 1));
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
@@ -208,11 +209,11 @@ namespace quest
 
 		void operator()(LPCHARACTER ch)
 		{
-			sys_log(0, "CINEMASEND_TRY %s", ((ch)->GetName()));
+			LOG_INFO("CINEMASEND_TRY {}", ((ch)->GetName()));
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				sys_log(0, "CINEMASEND %s", ((ch)->GetName()));
+				LOG_INFO("CINEMASEND {}", ((ch)->GetName()));
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet_script, sizeof(struct packet_script));
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(str,len);
 			}
@@ -226,7 +227,7 @@ namespace quest
 		if (!lua_isstring(L, 1))
 			return 0;
 
-		sys_log(0, "CINEMA %s", lua_tostring(L, 1));
+		LOG_INFO("CINEMA {}", lua_tostring(L, 1));
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
@@ -602,7 +603,7 @@ namespace quest
 				{
 					if (gold + tch->GetGold() < 0)
 					{
-						sys_err("QUEST wrong ChangeGold %lld (now %lld)", gold, tch->GetGold());
+						sys_err("QUEST wrong ChangeGold {} (now {})", gold, tch->GetGold());
 					}
 					else
 					{
@@ -621,7 +622,7 @@ namespace quest
 		{
 			if (gold + ch->GetGold() < 0)
 			{
-				sys_err("QUEST wrong ChangeGold %lld (now %lld)", gold, ch->GetGold());
+				sys_err("QUEST wrong ChangeGold {} (now {})", gold, ch->GetGold());
 			}
 			else
 			{
