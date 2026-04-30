@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
 #include "input.h"
@@ -70,7 +71,7 @@ void CInputAuth::Login(LPDESC d, const char * c_pData)
 	TPacketCGLogin3 * pinfo = (TPacketCGLogin3 *) c_pData;
 	if (!g_bAuthServer)
 	{
-		sys_err ("CInputAuth class is not for game server. IP %s might be a hacker.", inet_ntoa(d->GetAddr().sin_addr));
+		LOG_ERROR("CInputAuth class is not for game server. IP {} might be a hacker.", inet_ntoa(d->GetAddr().sin_addr));
 		d->DelayedDisconnect(5);
 		return;
 	}
@@ -81,12 +82,12 @@ void CInputAuth::Login(LPDESC d, const char * c_pData)
 	char passwd[PASSWD_MAX_LEN + 1];
 	strlcpy(passwd, pinfo->passwd, sizeof(passwd));
 
-	sys_log(0, "InputAuth::Login : %s(%d) desc %p", login, strlen(login), get_pointer(d));
+	LOG_INFO("InputAuth::Login : {}({}) desc {}", login, strlen(login), static_cast<const void*>(get_pointer(d)));
 
 	// check login string
 	if (false == FN_IS_VALID_LOGIN_STRING(login))
 	{
-		sys_log(0, "InputAuth::Login : IS_NOT_VALID_LOGIN_STRING(%s) desc %p", login, get_pointer(d));
+		LOG_INFO("InputAuth::Login : IS_NOT_VALID_LOGIN_STRING({}) desc {}", login, static_cast<const void*>(get_pointer(d)));
 		LoginFailure(d, "NOID");
 		return;
 	}
@@ -109,7 +110,7 @@ void CInputAuth::Login(LPDESC d, const char * c_pData)
 	}
 
 	uint32_t dwKey = DESC_MANAGER::instance().CreateLoginKey(d);
-	sys_log(0, "InputAuth::Login: key (%u) login (%s)", dwKey, login);
+	LOG_INFO("InputAuth::Login: key ({}) login ({})", dwKey, login);
 
 	TPacketCGLogin3 * p = M2_NEW TPacketCGLogin3;
 	memcpy(p, pinfo, sizeof(TPacketCGLogin3));
@@ -123,7 +124,7 @@ void CInputAuth::Login(LPDESC d, const char * c_pData)
 	// CHANNEL_SERVICE_LOGIN
 	if (Login_IsInChannelService(szLogin))
 	{
-		sys_log(0, "ChannelServiceLogin [%s]", szLogin);
+		LOG_INFO("ChannelServiceLogin [{}]", szLogin);
 
 		DBManager::instance().ReturnQuery(QID_AUTH_LOGIN, dwKey, p,
 				"SELECT '%s',password,social_id,id,status,availDt - NOW() > 0,"
@@ -189,8 +190,7 @@ void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
 
 	if (!g_bAuthServer)
 	{
-		sys_err ("CInputAuth class is not for game server. IP %s might be a hacker.",
-			inet_ntoa(d->GetAddr().sin_addr));
+		LOG_ERROR("CInputAuth class is not for game server. IP {} might be a hacker.", inet_ntoa(d->GetAddr().sin_addr));
 		d->DelayedDisconnect(5);
 		return;
 	}
@@ -202,14 +202,12 @@ void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
 	char passwd[PASSWD_MAX_LEN + 1];
 	strlcpy(passwd, pinfo->passwd, sizeof(passwd));
 
-	sys_log(0, "InputAuth::Login : %s(%d) desc %p",
-			login, strlen(login), get_pointer(d));
+	LOG_INFO("InputAuth::Login : {}({}) desc {}", login, strlen(login), static_cast<const void*>(get_pointer(d)));
 
 	// check login string
 	if (false == FN_IS_VALID_LOGIN_STRING(login))
 	{
-		sys_log(0, "InputAuth::Login : IS_NOT_VALID_LOGIN_STRING(%s) desc %p",
-				login, get_pointer(d));
+		LOG_INFO("InputAuth::Login : IS_NOT_VALID_LOGIN_STRING({}) desc {}", login, static_cast<const void*>(get_pointer(d)));
 		LoginFailure(d, "NOID");
 		return;
 	}
@@ -232,7 +230,7 @@ void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
 	}
 
 	uint32_t dwKey = DESC_MANAGER::instance().CreateLoginKey(d);
-	sys_log(0, "InputAuth::Login: key (%u) login (%s)", dwKey, login);
+	LOG_INFO("InputAuth::Login: key ({}) login ({})", dwKey, login);
 
 	TPacketCGLogin3 * p = M2_NEW TPacketCGLogin3;
 	memcpy(p, pinfo, sizeof(TPacketCGLogin3));
@@ -246,7 +244,7 @@ void CInputAuth::LoginOpenID(LPDESC d, const char * c_pData)
 	// CHANNEL_SERVICE_LOGIN
 	if (Login_IsInChannelService(szLogin))
 	{
-		sys_log(0, "ChannelServiceLogin [%s]", szLogin);
+		LOG_INFO("ChannelServiceLogin [{}]", szLogin);
 
 		DBManager::instance().ReturnQuery(QID_AUTH_LOGIN, dwKey, p,
 				"SELECT '%s',password,social_id,id,status,availDt - NOW() > 0,"
@@ -302,7 +300,7 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
     socket_t fd = socket_connect(openid_host, port);
     if (fd < 0)
     {
-		sys_err("[auth_OpenID] : could not connect to OpenID server(%s)", openid_host);
+		LOG_ERROR("[auth_OpenID] : could not connect to OpenID server({})", openid_host);
 		return 1;
     }
 
@@ -328,7 +326,7 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 		if (socket_write(fd, request, len) < 0)
 //#endif
 		{
-			sys_err("[auth_OpenID] : could not send auth-request (%s)", authKey);
+			LOG_ERROR("[auth_OpenID] : could not send auth-request ({})", authKey);
 			socket_close(fd);
 			return 2;
 		}
@@ -347,7 +345,7 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 
 	if (len <= 0)
 	{
-	    sys_err("[auth_OpenID] : could not recv auth-reply (%s)", authKey);
+	    LOG_ERROR("[auth_OpenID] : could not recv auth-reply ({})", authKey);
 	    return 3;
 	}
 
@@ -372,7 +370,7 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 
 	if (!*id || !*success)
 	{
-	    sys_err("[auth_OpenID] : OpenID AuthServer Reply Error (%s)", reply);
+	    LOG_ERROR("[auth_OpenID] : OpenID AuthServer Reply Error ({})", reply);
 		return 4;
 	}
 
@@ -383,22 +381,22 @@ int CInputAuth::auth_OpenID(const char *authKey, const char *ipAddr, char *rID)
 		switch (returnNumber)
 		{
 		case 1:
-			sys_err("[auth_OpenID] : AuthKey incorrect");
+			LOG_ERROR("[auth_OpenID] : AuthKey incorrect");
 			break;
 		case 2:
-			sys_err("[auth_OpenID] : ip incorrect");
+			LOG_ERROR("[auth_OpenID] : ip incorrect");
 			break;
 		case 3:
-			sys_err("[auth_OpenID] : used AuthKey");
+			LOG_ERROR("[auth_OpenID] : used AuthKey");
 			break;
 		case 4:
-			sys_err("[auth_OpenID] : AuthKey not delivered");
+			LOG_ERROR("[auth_OpenID] : AuthKey not delivered");
 			break;
 		case 5:
-			sys_err("[auth_OpenID] : ip not delivered");
+			LOG_ERROR("[auth_OpenID] : ip not delivered");
 			break;
 		case 6:
-			sys_err("[auth_OpenID] : AuthKey time over");
+			LOG_ERROR("[auth_OpenID] : AuthKey time over");
 			break;
 		default:
 			break;
@@ -419,8 +417,7 @@ int CInputAuth::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	if (!g_bAuthServer)
 	{
-		sys_err ("CInputAuth class is not for game server. IP %s might be a hacker.",
-			inet_ntoa(d->GetAddr().sin_addr));
+		LOG_ERROR("CInputAuth class is not for game server. IP {} might be a hacker.", inet_ntoa(d->GetAddr().sin_addr));
 		d->DelayedDisconnect(5);
 		return 0;
 	}
@@ -428,7 +425,7 @@ int CInputAuth::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	int iExtraLen = 0;
 
 	if (test_server)
-		sys_log(0, " InputAuth Analyze Header[%d] ", bHeader);
+		LOG_TRACE(" InputAuth Analyze Header[{}] ", static_cast<int>(bHeader));
 
 	switch (bHeader)
 	{
@@ -445,13 +442,13 @@ int CInputAuth::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			if (openid_server)
 				LoginOpenID(d, c_pData);
 			else
-				sys_err("HEADER_CG_LOGIN5_OPENID : wrong client access");
+				LOG_ERROR("HEADER_CG_LOGIN5_OPENID : wrong client access");
 			break;
 		case HEADER_CG_HANDSHAKE:
 			break;
 
 		default:
-			sys_err("This phase does not handle this header %d (0x%x)(phase: AUTH)", bHeader, bHeader);
+			LOG_ERROR("This phase does not handle this header {} (0x{:x})(phase: AUTH)", static_cast<int>(bHeader), static_cast<int>(bHeader));
 			break;
 	}
 
