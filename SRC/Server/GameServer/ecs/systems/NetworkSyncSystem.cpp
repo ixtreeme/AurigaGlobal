@@ -26,6 +26,7 @@
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
+#include <Core/Logging.hpp>
 
 static inline LPCHARACTER LegacyCharOf(entt::entity e)
 {
@@ -56,7 +57,7 @@ bool gs_bgmVolEnable = false;
 void CHARACTER_SetBGMVolumeEnable()
 {
     gs_bgmVolEnable = true;
-    sys_log(0, "bgm_info.set_bgm_volume_enable");
+    LOG_INFO("bgm_info.set_bgm_volume_enable");
 }
 
 void CHARACTER_AddBGMInfo(unsigned mapIndex, const char* name, float vol)
@@ -67,7 +68,7 @@ void CHARACTER_AddBGMInfo(unsigned mapIndex, const char* name, float vol)
 
     gs_bgmInfoMap[mapIndex] = newInfo;
 
-    sys_log(0, "bgm_info.add_info(%d, '%s', %f)", mapIndex, name, vol);
+    LOG_INFO("bgm_info.add_info({}, '{}', {:f})", mapIndex, name, vol);
 }
 
 const BGMInfo& CHARACTER_GetBGMInfo(unsigned mapIndex)
@@ -300,8 +301,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     }
 
     if (entity->IsType(ENTITY_CHARACTER)) {
-        sys_log(3, "EntityInsert %s (RaceNum %d) (%d %d) TO %s",
-            GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ((LPCHARACTER)entity)->GetName());
+        LOG_TRACE("EntityInsert {} (RaceNum {}) ({} {}) TO {}", GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ((LPCHARACTER)entity)->GetName());
     }
 #ifdef ENABLE_FAKE_SHOP_HEADER
     if (IsPC() && entity->IsType(ENTITY_CHARACTER))
@@ -331,7 +331,7 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
     d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
 
     if (entity->IsType(ENTITY_CHARACTER))
-        sys_log(3, "EntityRemove %s(%d) FROM %s", GetName(), GetPacketVID(), ((LPCHARACTER)entity)->GetName());
+        LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ((LPCHARACTER)entity)->GetName());
 }
 
 LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
@@ -371,7 +371,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 
     if (ch == this)
     {
-        sys_err("SetSyncOwner owner == this (%p)", this);
+        LOG_ERROR("SetSyncOwner owner == this ({})", static_cast<const void*>(this));
         return false;
     }
 
@@ -383,7 +383,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         }
 
         if (m_pkChrSyncOwner)
-            sys_log(1, "SyncRelease %s %p from %s", GetName(), this, m_pkChrSyncOwner->GetName());
+            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), m_pkChrSyncOwner->GetName());
 
         m_pkChrSyncOwner = nullptr;
     }
@@ -394,7 +394,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 
         if (DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY()) > 250)
         {
-            sys_log(1, "SetSyncOwner distance over than 250 %s %s", GetName(), ch->GetName());
+            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ch->GetName());
 
             if (m_pkChrSyncOwner == ch)
                 return true;
@@ -406,7 +406,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         {
             if (m_pkChrSyncOwner)
             {
-                sys_log(1, "SyncRelease %s %p from %s", GetName(), this, m_pkChrSyncOwner->GetName());
+                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), m_pkChrSyncOwner->GetName());
                 m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
             }
 
@@ -416,7 +416,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
             static const timeval zero_tv = { 0, 0 };
             SetLastSyncTime(zero_tv);
 
-            sys_log(1, "SetSyncOwner set %s %p to %s", GetName(), this, ch->GetName());
+            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ch->GetName());
         }
 
         m_fSyncTime = get_float_time();
@@ -465,7 +465,7 @@ bool CHARACTER::BuildUpdatePartyPacket(TPacketGCPartyUpdate& out)
         out.percent_hp = MINMAX((int64_t)0, GetHP() * 100 / GetMaxHP(), (int64_t)100);
     out.role = GetParty()->GetRole(GetPlayerID());
 
-    sys_log(1, "PARTY %s role is %d", GetName(), out.role);
+    LOG_INFO("PARTY {} role is {}", GetName(), out.role);
 
     LPCHARACTER l = GetParty()->GetLeaderCharacter();
 
@@ -674,7 +674,7 @@ void CHARACTER::MainCharacterPacket()
     {
         if (CHARACTER_IsBGMVolumeEnable())
         {
-            sys_log(1, "bgm_info.play_bgm_vol(%d, name='%s', vol=%f)", mapIndex, bgmInfo.name.c_str(), bgmInfo.vol);
+            LOG_INFO("bgm_info.play_bgm_vol({}, name='{}', vol={:f})", mapIndex, bgmInfo.name.c_str(), bgmInfo.vol);
             TPacketGCMainCharacter4_BGM_VOL mainChrPacket;
             mainChrPacket.header = HEADER_GC_MAIN_CHARACTER4_BGM_VOL;
             mainChrPacket.dwVID = GetPacketVID();
@@ -692,7 +692,7 @@ void CHARACTER::MainCharacterPacket()
         }
         else
         {
-            sys_log(1, "bgm_info.play(%d, '%s')", mapIndex, bgmInfo.name.c_str());
+            LOG_INFO("bgm_info.play({}, '{}')", mapIndex, bgmInfo.name.c_str());
             TPacketGCMainCharacter3_BGM mainChrPacket;
             mainChrPacket.header = HEADER_GC_MAIN_CHARACTER3_BGM;
             mainChrPacket.dwVID = GetPacketVID();
@@ -709,7 +709,7 @@ void CHARACTER::MainCharacterPacket()
     }
     else
     {
-        sys_log(0, "bgm_info.play(%d, DEFAULT_BGM_NAME)", mapIndex);
+        LOG_INFO("bgm_info.play({}, DEFAULT_BGM_NAME)", mapIndex);
 
         TPacketGCMainCharacter pack;
         pack.header = HEADER_GC_MAIN_CHARACTER;
@@ -947,7 +947,7 @@ void CItem::EncodeInsertPacket(LPENTITY ent)
 
 		if (info == nullptr)
 		{
-			sys_err("CItem::EncodeInsertPacket> <Factor> Null pointer");
+			LOG_ERROR("CItem::EncodeInsertPacket> <Factor> Null pointer");
 			return;
 		}
 
@@ -974,7 +974,7 @@ void CItem::EncodeRemovePacket(LPENTITY ent)
 	pack.dwVID = m_dwVID;
 
 	d->Packet(&pack, sizeof(pack));
-	sys_log(2, "Item::EncodeRemovePacket %s to %s", GetName(), ((LPCHARACTER)ent)->GetName());
+	LOG_TRACE("Item::EncodeRemovePacket {} to {}", GetName(), ((LPCHARACTER)ent)->GetName());
 }
 
 void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)
@@ -1013,7 +1013,7 @@ void CItem::UpdatePacket()
 
 	memcpy(pack.aAttr, GetAttributes(), sizeof(pack.aAttr));
 
-	sys_log(2, "UpdatePacket %s -> %s", GetName(), m_pOwner->GetName());
+	LOG_TRACE("UpdatePacket {} -> {}", GetName(), m_pOwner->GetName());
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner))->Packet(&pack, sizeof(pack));
 }
 
