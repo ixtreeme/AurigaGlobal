@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Semaphore.h"
+#include "Core/Logging.hpp"
 
 #ifndef _WIN32
 
@@ -21,7 +22,7 @@ int CSemaphore::Initialize()
 
 	if (sem_init(m_hSem, 0, 0) == -1)
 	{
-		perror("sem_init");
+		LOG_ERROR("{}: {}", "sem_init", strerror(errno));
 		return false;
 	}
 
@@ -56,7 +57,7 @@ int CSemaphore::Wait()
 		if (errno == EINTR)
 			return Wait();
 
-		perror("sem_wait");
+		LOG_ERROR("{}: {}", "sem_wait", strerror(errno));
 		return false;
 	}
 

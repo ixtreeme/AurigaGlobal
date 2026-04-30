@@ -4,6 +4,7 @@
 #include "config.h"
 #include "desc.h"
 #include "shutdown_manager.h"
+#include "Core/Logging.hpp"
 
 // 싱글턴 생성자 호출하는데가 어딘지 몰라서 여기다 하나 만들어놓음
 CShutdownManager t = CShutdownManager();
@@ -71,7 +72,7 @@ void CShutdownManager::Update()
 		{
 			if((*i) != nullptr)
 			{
-				printf("ShutdownManager::Update() - Shutdown Account : %s\n", (*i)->GetAccountTable().login);
+				LOG_INFO("ShutdownManager::Update() - Shutdown Account : {}", (*i)->GetAccountTable().login);
 				(*i)->SetPhase(PHASE_CLOSE);
 			}
 		}

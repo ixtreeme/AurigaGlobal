@@ -10,6 +10,7 @@
 #include "char_interface.hpp"
 #ifdef ENABLE_MULTI_LANGUAGE
 #include "desc.h"
+#include "Core/Logging.hpp"
 #endif
 // questpc.h: PC::typedef Quest
 // questpc.h: PC::typedef map<unsigned long, QuestState> QuestInfo;
@@ -100,7 +101,7 @@ namespace quest
 
 		if (quest_index == 0)
 		{
-			fprintf(stderr, "cannot find quest index for %s\n", stQuestName.c_str());
+			LOG_ERROR("cannot find quest index for {}", stQuestName.c_str());
 			assert(!"cannot find quest index");
 			return;
 		}

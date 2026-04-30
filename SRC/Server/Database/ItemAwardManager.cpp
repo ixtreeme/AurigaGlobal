@@ -44,6 +44,7 @@ inline float gauss_random(const float fAverage, const float sigma)
 #include "Peer.h"
 
 #include "ClientManager.h"
+#include "Core/Logging.hpp"
 
 
 
@@ -134,7 +135,7 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 
 		m_map_award.insert(std::make_pair(dwID, kData));
 
-		printf("ITEM_AWARD load id %u bMall %d \n", kData->dwID, kData->bMall);
+		LOG_INFO("ITEM_AWARD load id {} bMall {} ", kData->dwID, kData->bMall);
 		LOG_INFO("ITEM_AWARD: load id {} login {} vnum {} count {} socket {}", kData->dwID, kData->szLogin, kData->dwVnum, kData->dwCount, kData->dwSocket0);
 		std::set<TItemAward *> & kSet = m_map_kSetAwardByLogin[kData->szLogin];
 		kSet.insert(kData);

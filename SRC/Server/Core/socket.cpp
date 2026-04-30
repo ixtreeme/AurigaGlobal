@@ -6,6 +6,7 @@
  */
 #define __LIBTHECORE__
 #include "stdafx.h"
+#include "Core/Logging.hpp"
 
 /* Forwards */
 void socket_lingeron(socket_t s);
@@ -270,7 +271,7 @@ socket_t socket_connect(const char* host, uint16_t port)
 
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-	perror("socket");
+	LOG_ERROR("{}: {}", "socket", strerror(errno));
 	return -1;
     }
 
@@ -318,7 +319,7 @@ socket_t socket_connect(const char* host, uint16_t port)
 		    break;
 	    }
 
-	perror("connect");
+	LOG_ERROR("{}: {}", "connect", strerror(errno));
 	return (-1);
     }
 
@@ -540,7 +541,7 @@ void socket_keepalive(socket_t s)
 
     if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (const char*) &opt, sizeof(opt)) < 0)
     {
-	perror("setsockopt: keepalive");
+	LOG_ERROR("{}: {}", "setsockopt: keepalive", strerror(errno));
 	socket_close(s);
 	return;
     }

@@ -34,6 +34,7 @@
 
 #if defined(ENABLE_EXTEND_ITEM_AWARD)
 #include <float.h>
+#include "Core/Logging.hpp"
 inline const double uniform_random(double a, double b)
 {
 	return thecore_random() / (RAND_MAX + 1.f) * (b - a) + a;
@@ -231,7 +232,7 @@ static bool __InitializeDefaultPriv()
 			// send priv
 			if (pid)
 			{
-				printf("DEFAULT_PRIV_PLAYER: set pid(%u), type(%u), value(%d)\n", pid, type, value);
+				LOG_INFO("DEFAULT_PRIV_PLAYER: set pid({}), type({}), value({})", pid, type, value);
 				CPrivManager::instance().AddCharPriv(pid, type, value);
 			}
 		}
@@ -258,13 +259,13 @@ bool CClientManager::Initialize()
 	//BOOT_LOCALIZATION
 	if (!InitializeLocalization())
 	{
-		fprintf(stderr, "Failed Localization Infomation so exit\n");
+		LOG_ERROR("Failed Localization Infomation so exit");
 		return false;
 	}
 #ifdef ENABLE_DEFAULT_PRIV
 	if (!__InitializeDefaultPriv())
 	{
-		fprintf(stderr, "Failed Default Priv Setting so exit\n");
+		LOG_ERROR("Failed Default Priv Setting so exit");
 		// return false;
 	}
 #endif
@@ -273,7 +274,7 @@ bool CClientManager::Initialize()
 
 	if (!InitializeNowItemID())
 	{
-		fprintf(stderr, " Item range Initialize Failed. Exit DBCache Server\n");
+		LOG_ERROR(" Item range Initialize Failed. Exit DBCache Server");
 		return false;
 	}
 	//END_ITEM_UNIQUE_ID
@@ -283,12 +284,12 @@ bool CClientManager::Initialize()
 	if (CConfig::instance().GetValue("PROTO_FROM_DB", &iTemp))
 	{
 		bIsProtoReadFromDB = !!iTemp;
-		fprintf(stdout, "PROTO_FROM_DB: %s\n", bIsProtoReadFromDB?"Enabled":"Disabled");
+		LOG_INFO("PROTO_FROM_DB: {}", bIsProtoReadFromDB?"Enabled":"Disabled");
 	}
 	if (!bIsProtoReadFromDB && CConfig::instance().GetValue("MIRROR2DB", &iTemp))
 	{
 		g_bMirror2DB = !!iTemp;
-		fprintf(stdout, "MIRROR2DB: %s\n", g_bMirror2DB?"Enabled":"Disabled");
+		LOG_INFO("MIRROR2DB: {}", g_bMirror2DB?"Enabled":"Disabled");
 	}
 #endif
 	if (!InitializeTables())
@@ -311,7 +312,7 @@ bool CClientManager::Initialize()
 
 	if (m_fdAccept < 0)
 	{
-		perror("socket");
+		LOG_ERROR("{}: {}", "socket", strerror(errno));
 		return false;
 	}
 

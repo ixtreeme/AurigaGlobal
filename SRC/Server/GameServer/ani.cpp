@@ -18,6 +18,7 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include <common/CommonDefines.h>
+#include "Core/Logging.hpp"
 
 const char* FN_race_name(int race)
 {
@@ -328,12 +329,9 @@ void ANI::print_attack_speed()
 	{
 		for (int weapon = 0; weapon < WEAPON_NUM_TYPES; ++weapon)
 		{
-			printf("[%s][%s] = %u\n",
-					FN_race_string(race),
-					FN_weapon_string(weapon),
-					attack_speed(race, weapon));
+			LOG_INFO("[{}][{}] = {}", FN_race_string(race), FN_weapon_string(weapon), attack_speed(race, weapon));
 		}
-		printf("\n");
+		LOG_INFO("");
 	}
 }
 

@@ -10,6 +10,7 @@
 #include "Marriage.h"
 #include "ItemIDRangeManager.h"
 #include <signal.h>
+#include "Core/Logging.hpp"
 
 #ifdef _WIN64
 #pragma comment(lib, "bcrypt.lib")
@@ -135,26 +136,26 @@ int Start()
 {
 	if (!CConfig::instance().LoadFile("conf.txt"))
 	{
-		fprintf(stderr, "Loading conf.txt failed.\n");
+		LOG_ERROR("Loading conf.txt failed.");
 		return false;
 	}
 
 	if (!CConfig::instance().GetValue("TEST_SERVER", &g_test_server))
 	{
-		fprintf(stderr, "Real Server\n");
+		LOG_ERROR("Real Server");
 	}
 	else
-		fprintf(stderr, "Test Server\n");
+		LOG_ERROR("Test Server");
 
 	if (!CConfig::instance().GetValue("LOG", &g_log))
 	{
-		fprintf(stderr, "Log Off");
+		LOG_ERROR("Log Off");
 		g_log= 0;
 	}
 	else
 	{
 		g_log = 1;
-		fprintf(stderr, "Log On");
+		LOG_ERROR("Log On");
 	}
 
 
@@ -163,7 +164,7 @@ int Start()
 	int heart_beat = 50;
 	if (!CConfig::instance().GetValue("CLIENT_HEART_FPS", &heart_beat))
 	{
-		fprintf(stderr, "Cannot find CLIENT_HEART_FPS configuration.\n");
+		LOG_ERROR("Cannot find CLIENT_HEART_FPS configuration.");
 		return false;
 	}
 
@@ -173,7 +174,7 @@ int Start()
 	{
 		tmpValue = MINMAX(3, tmpValue, 30);
 		log_set_expiration_days(tmpValue);
-		fprintf(stderr, "Setting log keeping days to %d\n", tmpValue);
+		LOG_ERROR("Setting log keeping days to {}", tmpValue);
 	}
 
 	thecore_init(heart_beat, emptybeat);
@@ -232,7 +233,7 @@ int Start()
 
 	if (CConfig::instance().GetValue("NAME_COLUMN", szBuf, 256))
 	{
-		fprintf(stderr, "%s %s", g_stLocaleNameColumn.c_str(), szBuf);
+		LOG_ERROR("{} {}", g_stLocaleNameColumn.c_str(), szBuf);
 		g_stLocaleNameColumn = szBuf;
 	}
 
@@ -264,10 +265,10 @@ int Start()
 			}
 
 			LOG_INFO("   failed, retrying in 5 seconds");
-			fprintf(stderr, "   failed, retrying in 5 seconds");
+			LOG_ERROR("   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
-		fprintf(stderr, "Success PLAYER\n");
+		LOG_ERROR("Success PLAYER");
 		SetPlayerDBName(szDB);
 	}
 	else
@@ -292,10 +293,10 @@ int Start()
 			}
 
 			LOG_INFO("   failed, retrying in 5 seconds");
-			fprintf(stderr, "   failed, retrying in 5 seconds");
+			LOG_ERROR("   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
-		fprintf(stderr, "Success ACCOUNT\n");
+		LOG_ERROR("Success ACCOUNT");
 	}
 	else
 	{
@@ -319,10 +320,10 @@ int Start()
 			}
 
 			LOG_INFO("   failed, retrying in 5 seconds");
-			fprintf(stderr, "   failed, retrying in 5 seconds");
+			LOG_ERROR("   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
-		fprintf(stderr, "Success COMMON\n");
+		LOG_ERROR("Success COMMON");
 	}
 	else
 	{
@@ -346,10 +347,10 @@ int Start()
 			}
 
 			LOG_INFO("   failed, retrying in 5 seconds");
-			fprintf(stderr, "   failed, retrying in 5 seconds");
+			LOG_INFO("   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
-		fprintf(stderr, "Success ITEMSHOP\n");
+		LOG_INFO("Success ITEMSHOP");
 	}
 	else
 	{

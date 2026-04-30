@@ -7,6 +7,7 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
 #include "memory.h"
+#include "Core/Logging.hpp"
 //#ifdef DISABLE_CORE_PULSE_RAZOR93
 #define THECORE_SECS_TO_PASSES(secs) ((secs) * thecore_heart->passes_per_sec)
 //#endif
@@ -35,7 +36,7 @@ static int pid_init(void)
 	}
 	else
 	{
-		printf("pid_init(): could not open file for writing. (filename: ./pid)");
+		LOG_INFO("pid_init(): could not open file for writing. (filename: ./pid)");
 		LOG_ERROR("\nError writing pid file\n");
 		return false;
 	}

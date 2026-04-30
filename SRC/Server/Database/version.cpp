@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "Core/Logging.hpp"
 
 void WriteVersion()
 {
@@ -14,7 +15,7 @@ void WriteVersion()
 	}
 	else
 	{
-		fprintf(stderr, "cannot open VERSION.txt\n");
+		LOG_ERROR("cannot open VERSION.txt");
 		exit(0);
 	}
 #endif

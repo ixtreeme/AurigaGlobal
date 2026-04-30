@@ -9,6 +9,7 @@
 #include "config.h"
 #include "skill_power.h"
 #include <common/CommonDefines.h>
+#include "Core/Logging.hpp"
 
 using namespace std;
 
@@ -1141,7 +1142,7 @@ bool LocaleService_Init(const std::string& c_rstServiceName)
 		__LocaleService_Init_DEFAULT();
 	}
 
-	fprintf(stdout, "Setting Locale \"%s\" (Path: %s)\n", g_stServiceName.c_str(), g_stServiceBasePath.c_str());
+	LOG_INFO("Setting Locale \"{}\" (Path: {})", g_stServiceName.c_str(), g_stServiceBasePath.c_str());
 
 	__CheckPlayerSlot(g_stServiceName);
 

@@ -29,6 +29,7 @@
 #include "shutdown_manager.h"
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
+#include "Core/Logging.hpp"
 #endif
 
 DBManager::DBManager() : m_bIsConnect(false)
@@ -1282,7 +1283,7 @@ bool AccountDB::Connect(const char * host, const int port, const char * user, co
 
 	if (false == m_IsConnect)
 	{
-		fprintf(stderr, "cannot open direct sql connection to host: %s user: %s db: %s\n", host, user, db);
+		LOG_ERROR("cannot open direct sql connection to host: {} user: {} db: {}", host, user, db);
 		return false;
 	}
 

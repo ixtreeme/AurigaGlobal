@@ -19,6 +19,7 @@ typedef unsigned long uint32_t;
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ip_ban.h"
+#include "Core/Logging.hpp"
 
 #endif
 
@@ -96,9 +97,9 @@ class IP
 			in_mask.s_addr = dwMask;
 			in_end.s_addr = dwEnd;
 
-			fprintf(stderr, "\t%s", inet_ntoa(in_ip));
-			fprintf(stderr, "\t%s", inet_ntoa(in_end));
-			fprintf(stderr, "\t%s\tfirst %d\n", inet_ntoa(in_mask), hash());
+			LOG_ERROR("\t{}", inet_ntoa(in_ip));
+			LOG_ERROR("\t{}", inet_ntoa(in_end));
+			LOG_ERROR("\t{}\tfirst {}", inet_ntoa(in_mask), hash());
 		}
 
 	protected:
@@ -123,7 +124,7 @@ class IP
 
 			if (bClass != 3)
 			{
-				fprintf(stderr, "error reading start %s\n", s);
+				LOG_ERROR("error reading start {}", s);
 				return false;
 			}
 
@@ -149,7 +150,7 @@ bool LoadBanIP(const char * filename)
 	char start[256];
 	char end[256];
 
-	fprintf(stderr, "LOADING BANNED IP LIST\n");
+	LOG_ERROR("LOADING BANNED IP LIST");
 
 	while (fgets(buf, 256, fp))
 	{
@@ -342,7 +343,7 @@ int main(int argc, char **argv)
 
 	if (argc != 2)
 	{
-		printf("Syntax: %s <filename>\n", *argv);
+		LOG_INFO("Syntax: {} <filename>", *argv);
 		return 1;
 	}
 
@@ -380,11 +381,11 @@ int main(int argc, char **argv)
 
 	fclose(fp);
 
-	printf("size %d\n", v.size());
+	LOG_INFO("size {}", v.size());
 	UniqueIP(v);
-	printf("result1 %d\n", v.size());
+	LOG_INFO("result1 {}", v.size());
 	FilterIP(v);
-	printf("result2 %d\n", v.size());
+	LOG_INFO("result2 {}", v.size());
 
 	vector<IP>::iterator it = v.begin();
 

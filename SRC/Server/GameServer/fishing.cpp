@@ -33,6 +33,7 @@
 
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
+#include "Core/Logging.hpp"
 #endif
 
 #define ENABLE_FISHINGROD_RENEWAL
@@ -166,7 +167,7 @@ void Initialize()
 
 		if (!tab)
 		{
-			printf("Tab error on line: %s\n", buf);
+			LOG_INFO("Tab error on line: {}", buf);
 			SendLog("error! parsing fishing.txt");
 
 			if (*fish_info_bak[0].name)
@@ -866,24 +867,12 @@ int main(int argc, char **argv)
 
 	for (int i = 0; i < MAX_FISH; ++i)
 	{
-		printf("%s\t%u\t%u\t%u\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
-				fish_info[i].name,
-				fish_info[i].vnum,
-				fish_info[i].dead_vnum,
-				fish_info[i].grill_vnum,
-				fish_info[i].prob[0],
-				fish_info[i].prob[1],
-				fish_info[i].prob[2],
-				fish_info[i].difficulty,
-				fish_info[i].time_type,
-				fish_info[i].length_range[0],
-				fish_info[i].length_range[1],
-				fish_info[i].length_range[2]);
+		LOG_INFO("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", fish_info[i].name, fish_info[i].vnum, fish_info[i].dead_vnum, fish_info[i].grill_vnum, fish_info[i].prob[0], fish_info[i].prob[1], fish_info[i].prob[2], fish_info[i].difficulty, fish_info[i].time_type, fish_info[i].length_range[0], fish_info[i].length_range[1], fish_info[i].length_range[2]);
 
 		for (int j = 0; j < NUM_USE_RESULT_COUNT; ++j)
-			printf("\t%d", fish_info[i].used_table[j]);
+			LOG_INFO("\t{}", fish_info[i].used_table[j]);
 
-		puts("");
+		LOG_INFO("");
 	}
 
 	return 1;

@@ -24,6 +24,7 @@
 #include "start_position.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
+#include "Core/Logging.hpp"
 
 uint16_t SECTREE_MANAGER::current_sectree_version = MAKEWORD(0, 3);
 
@@ -1123,9 +1124,9 @@ void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 		strlcpy(np.name, it->name, sizeof(np.name));
 #endif
 
-		printf("Name ID: %u\n", np.name);
-		printf("X: %d\n", np.x);
-		printf("Y: %d\n", np.y);
+		LOG_INFO("Name ID: {}", np.name);
+		LOG_INFO("X: {}", np.x);
+		LOG_INFO("Y: {}", np.y);
 
 		np.x = it->x;
 		np.y = it->y;

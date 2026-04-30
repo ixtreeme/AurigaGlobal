@@ -20,6 +20,7 @@
 #include "shutdown_manager.h"
 #include "ecs/EventDispatcher.hpp"
 #include "ecs/events.hpp"
+#include "Core/Logging.hpp"
 
 extern int max_bytes_written;
 extern int current_bytes_written;
@@ -618,7 +619,7 @@ void DESC::Log(const char * format, ...)
 	vfprintf(m_pLogFile, format, args);
 	va_end(args);
 
-	fputs("\n", m_pLogFile);
+	LOG_INFO("");
 
 	fflush(m_pLogFile);
 }
@@ -948,7 +949,7 @@ void DESC::SendLoginSuccessPacket()
 //	else rp.state = iTotal > g_iFullUserCount ? 3 : iTotal > g_iBusyUserCount ? 2 : 1;
 //
 //	this->Packet(&rp, sizeof(rp));
-//	//printf("STATE_CHECK PACKET PROCESSED.\n");
+//	// LOG_TRACE("STATE_CHECK PACKET PROCESSED.");
 //}
 
 void DESC::SetLoginKey(uint32_t dwKey)

@@ -367,6 +367,7 @@ void gostmac(word32 const *in, int len, word32 out[2], word32 const key[8])
 /* Designed to cope with 15-bit rand() implementations */
 #define RAND32 ((word32)rand() << 17 ^ (word32)rand() << 9 ^ rand())
 
+// Standalone crypto self-test output intentionally uses direct console primitives.
 int main(void)
 {
     word32 key[8];

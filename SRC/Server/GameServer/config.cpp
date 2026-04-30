@@ -20,6 +20,8 @@
 #include <Core/Logging.hpp>
 #include "db.h"
 #include "skill_power.h"
+#include "Core/Logging.hpp"
+#include <fmt/format.h>
 
 using std::string;
 
@@ -192,11 +194,12 @@ static void map_allow_add(int32_t index)
 {
 	if (map_allow_find(index) == true)
 	{
-		fprintf(stdout, "!!! FATAL ERROR !!! multiple MAP_ALLOW setting!!\n");
+		LOG_ERROR("!!! FATAL ERROR !!! multiple MAP_ALLOW setting!!");
+	fmt::print(stderr, "!!! FATAL ERROR !!! multiple MAP_ALLOW setting!!\n");
 		exit(1);
 	}
 
-	fprintf(stdout, "MAP ALLOW %d\n", index);
+	LOG_INFO("MAP ALLOW {}", index);
 	s_set_map_allows.insert(index);
 }
 
@@ -259,27 +262,27 @@ bool GetIPInfo()
 		{
 			strlcpy(g_szInternalIP, netip, sizeof(g_szInternalIP));
 #ifndef _WIN32
-			fprintf(stderr, "INTERNAL_IP: %s interface %s\n", netip, ifap->ifa_name);
+			LOG_ERROR("INTERNAL_IP: {} interface {}", netip, ifap->ifa_name);
 #else
-			fprintf(stderr, "INTERNAL_IP: %s\n", netip);
+			LOG_ERROR("INTERNAL_IP: {}", netip);
 #endif
 		}
 		else if (!strncmp(netip, "10.", 3))
 		{
 			strlcpy(g_szInternalIP, netip, sizeof(g_szInternalIP));
 #ifndef _WIN32
-			fprintf(stderr, "INTERNAL_IP: %s interface %s\n", netip, ifap->ifa_name);
+			LOG_ERROR("INTERNAL_IP: {} interface {}", netip, ifap->ifa_name);
 #else
-			fprintf(stderr, "INTERNAL_IP: %s\n", netip);
+			LOG_ERROR("INTERNAL_IP: {}", netip);
 #endif
 		}
 		else if (g_szPublicIP[0] == '0')
 		{
 			strlcpy(g_szPublicIP, netip, sizeof(g_szPublicIP));
 #ifndef _WIN32
-			fprintf(stderr, "PUBLIC_IP: %s interface %s\n", netip, ifap->ifa_name);
+			LOG_ERROR("PUBLIC_IP: {} interface {}", netip, ifap->ifa_name);
 #else
-			fprintf(stderr, "PUBLIC_IP: %s\n", netip);
+			LOG_ERROR("PUBLIC_IP: {}", netip);
 #endif
 		}
 	}
@@ -300,7 +303,7 @@ bool GetIPInfo()
 		else
 		{
 			strlcpy(g_szPublicIP, g_szInternalIP, sizeof(g_szPublicIP));
-			fprintf(stderr, "INTERNAL_IP -> PUBLIC_IP: %s\n", g_szPublicIP);
+			LOG_ERROR("INTERNAL_IP -> PUBLIC_IP: {}", g_szPublicIP);
 			return true;
 		}
 #else
@@ -348,7 +351,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	if (!(fpOnlyForDB = fopen(configName, "r")))
 	{
-		fprintf(stderr, "Can not open [%s]\n", configName);
+		LOG_ERROR("Can not open [{}]", configName);
 		exit(1);
 	}
 
@@ -359,7 +362,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 		TOKEN("hostname")
 		{
 			g_stHostname = value_string;
-			fprintf(stdout, "HOSTNAME: %s\n", g_stHostname.c_str());
+			LOG_INFO("HOSTNAME: {}", g_stHostname.c_str());
 			continue;
 		}
 
@@ -383,7 +386,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 			if (!*db_host[0] || !*db_user[0] || !*db_pwd[0] || !*db_db[0])
 			{
-				fprintf(stderr, "PLAYER_SQL syntax: logsql <host user password db>\n");
+				LOG_ERROR("PLAYER_SQL syntax: logsql <host user password db>");
 				exit(1);
 			}
 
@@ -407,7 +410,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 			if (!*db_host[1] || !*db_user[1] || !*db_pwd[1] || !*db_db[1])
 			{
-				fprintf(stderr, "COMMON_SQL syntax: logsql <host user password db>\n");
+				LOG_ERROR("COMMON_SQL syntax: logsql <host user password db>");
 				exit(1);
 			}
 
@@ -431,7 +434,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 			if (!*log_host || !*log_user || !*log_pwd || !*log_db)
 			{
-				fprintf(stderr, "LOG_SQL syntax: logsql <host user password db>\n");
+				LOG_ERROR("LOG_SQL syntax: logsql <host user password db>");
 				exit(1);
 			}
 
@@ -453,7 +456,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 			if (!*log_host || !*log_user || !*log_pwd || !*log_db)
 			{
-				fprintf(stderr, "ITEMSHOP_SQL syntax: logsql <host user password db>\n");
+				LOG_ERROR("ITEMSHOP_SQL syntax: logsql <host user password db>");
 				exit(1);
 			}
 
@@ -469,23 +472,23 @@ static bool __LoadConnectConfigFile(const char* configName)
 	// CONFIG_SQL_INFO_ERROR
 	if (!isCommonSQL)
 	{
-		puts("LOAD_COMMON_SQL_INFO_FAILURE:");
-		puts("");
-		puts("CONFIG:");
-		puts("------------------------------------------------");
-		puts("COMMON_SQL: HOST USER PASSWORD DATABASE");
-		puts("");
+		LOG_INFO("LOAD_COMMON_SQL_INFO_FAILURE:");
+		LOG_INFO("");
+		LOG_INFO("CONFIG:");
+		LOG_INFO("------------------------------------------------");
+		LOG_INFO("COMMON_SQL: HOST USER PASSWORD DATABASE");
+		LOG_INFO("");
 		exit(1);
 	}
 
 	if (!isPlayerSQL)
 	{
-		puts("LOAD_PLAYER_SQL_INFO_FAILURE:");
-		puts("");
-		puts("CONFIG:");
-		puts("------------------------------------------------");
-		puts("PLAYER_SQL: HOST USER PASSWORD DATABASE");
-		puts("");
+		LOG_INFO("LOAD_PLAYER_SQL_INFO_FAILURE:");
+		LOG_INFO("");
+		LOG_INFO("CONFIG:");
+		LOG_INFO("------------------------------------------------");
+		LOG_INFO("PLAYER_SQL: HOST USER PASSWORD DATABASE");
+		LOG_INFO("");
 		exit(1);
 	}
 
@@ -494,11 +497,11 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	if (false == AccountDB::instance().IsConnected())
 	{
-		fprintf(stderr, "cannot start server while no common sql connected\n");
+		LOG_ERROR("cannot start server while no common sql connected");
 		exit(1);
 	}
 
-	fprintf(stdout, "CommonSQL connected\n");
+	LOG_INFO("CommonSQL connected");
 
 	// 로케일 정보를 가져오자
 	// <경고> 쿼리문에 절대 조건문(WHERE) 달지 마세요. (다른 지역에서 문제가 생길수 있습니다)
@@ -510,7 +513,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		if (pMsg->Get()->uiNumRows == 0)
 		{
-			fprintf(stderr, "COMMON_SQL: DirectQuery failed : %s\n", szQuery);
+			LOG_ERROR("COMMON_SQL: DirectQuery failed : {}", szQuery);
 			exit(1);
 		}
 
@@ -523,7 +526,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 			{
 				if (LocaleService_Init(row[1]) == false)
 				{
-					fprintf(stderr, "COMMON_SQL: invalid locale key %s\n", row[1]);
+					LOG_ERROR("COMMON_SQL: invalid locale key {}", row[1]);
 					exit(1);
 				}
 			}
@@ -532,7 +535,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	// 로케일 정보를 COMMON SQL에 세팅해준다.
 	// 참고로 g_stLocale 정보는 LocaleService_Init() 내부에서 세팅된다.
-	fprintf(stdout, "Setting DB to locale %s\n", g_stLocale.c_str());
+	LOG_INFO("Setting DB to locale {}", g_stLocale.c_str());
 
 	AccountDB::instance().SetLocale(g_stLocale);
 
@@ -543,11 +546,11 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 	if (!DBManager::instance().IsConnected())
 	{
-		fprintf(stderr, "PlayerSQL.ConnectError\n");
+		LOG_ERROR("PlayerSQL.ConnectError");
 		exit(1);
 	}
 
-	fprintf(stdout, "PlayerSQL connected\n");
+	LOG_INFO("PlayerSQL connected");
 
 	if (false == g_bAuthServer) // 인증 서버가 아닐 경우
 	{
@@ -556,11 +559,11 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		if (!LogManager::instance().IsConnected())
 		{
-			fprintf(stderr, "LogSQL.ConnectError\n");
+			LOG_ERROR("LogSQL.ConnectError");
 			exit(1);
 		}
 
-		fprintf(stdout, "LogSQL connected\n");
+		LOG_INFO("LogSQL connected");
 
 		LogManager::instance().BootLog(g_stHostname.c_str(), g_bChannel);
 	}
@@ -575,7 +578,7 @@ static bool __LoadConnectConfigFile(const char* configName)
 
 		if (pMsg->Get()->uiNumRows == 0)
 		{
-			fprintf(stderr, "[SKILL_PERCENT] Query failed: %s", szQuery);
+			LOG_ERROR("[SKILL_PERCENT] Query failed: {}", szQuery);
 			exit(1);
 		}
 
@@ -588,22 +591,22 @@ static bool __LoadConnectConfigFile(const char* configName)
 		char num[128];
 		int aiBaseSkillPowerByLevelTable[SKILL_MAX_LEVEL+1];
 
-		fprintf(stdout, "SKILL_POWER_BY_LEVEL %s\n", p);
+		LOG_INFO("SKILL_POWER_BY_LEVEL {}", p);
 		while (*p != '\0' && cnt < (SKILL_MAX_LEVEL + 1))
 		{
 			p = one_argument(p, num, sizeof(num));
 			aiBaseSkillPowerByLevelTable[cnt++] = atoi(num);
 
-			//fprintf(stdout, "%d %d\n", cnt - 1, aiBaseSkillPowerByLevelTable[cnt - 1]);
+			// LOG_INFO("{} {}", cnt - 1, aiBaseSkillPowerByLevelTable[cnt - 1]);
 			if (*p == '\0')
 			{
 				if (cnt != (SKILL_MAX_LEVEL + 1))
 				{
-					fprintf(stderr, "[SKILL_PERCENT] locale table has not enough skill information! (count: %d query: %s)", cnt, szQuery);
+					LOG_ERROR("[SKILL_PERCENT] locale table has not enough skill information! (count: {} query: {})", cnt, szQuery);
 					exit(1);
 				}
 
-				fprintf(stdout, "SKILL_POWER_BY_LEVEL: Done! (count %d)\n", cnt);
+				LOG_INFO("SKILL_POWER_BY_LEVEL: Done! (count {})", cnt);
 				break;
 			}
 		}
@@ -626,22 +629,22 @@ static bool __LoadConnectConfigFile(const char* configName)
 			p = row[0];
 			int aiSkillTable[SKILL_MAX_LEVEL + 1];
 
-			fprintf(stdout, "SKILL_POWER_BY_JOB %d %s\n", job, p);
+			LOG_INFO("SKILL_POWER_BY_JOB {} {}", job, p);
 			while (*p != '\0' && cnt < (SKILL_MAX_LEVEL + 1))
 			{
 				p = one_argument(p, num, sizeof(num));
 				aiSkillTable[cnt++] = atoi(num);
 
-				//fprintf(stdout, "%d %d\n", cnt - 1, aiBaseSkillPowerByLevelTable[cnt - 1]);
+				// LOG_INFO("{} {}", cnt - 1, aiBaseSkillPowerByLevelTable[cnt - 1]);
 				if (*p == '\0')
 				{
 					if (cnt != (SKILL_MAX_LEVEL + 1))
 					{
-						fprintf(stderr, "[SKILL_PERCENT] locale table has not enough skill information! (count: %d query: %s)", cnt, szQuery);
+						LOG_ERROR("[SKILL_PERCENT] locale table has not enough skill information! (count: {} query: {})", cnt, szQuery);
 						exit(1);
 					}
 
-					fprintf(stdout, "SKILL_POWER_BY_JOB: Done! (job: %d count: %d)\n", job, cnt);
+					LOG_INFO("SKILL_POWER_BY_JOB: Done! (job: {} count: {})", job, cnt);
 					break;
 				}
 			}
@@ -724,7 +727,7 @@ static bool __LoadDefaultConfigFile(const char* configName)
 
 			if (!*szIP || (!*szPort && strcasecmp(szIP, "master")))
 			{
-				fprintf(stderr, "AUTH_SERVER: syntax error: <ip|master> <port>\n");
+				LOG_ERROR("AUTH_SERVER: syntax error: <ip|master> <port>");
 				exit(1);
 			}
 
@@ -733,13 +736,13 @@ static bool __LoadDefaultConfigFile(const char* configName)
 			LoadBanIP("BANIP");
 
 			if (!strcasecmp(szIP, "master"))
-				fprintf(stdout, "AUTH_SERVER: I am the master\n");
+				LOG_INFO("AUTH_SERVER: I am the master");
 			else
 		{
 				g_stAuthMasterIP = szIP;
 				str_to_number(g_wAuthMasterPort, szPort);
 
-				fprintf(stdout, "AUTH_SERVER: master %s %u\n", g_stAuthMasterIP.c_str(), g_wAuthMasterPort);
+				LOG_INFO("AUTH_SERVER: master {} {}", g_stAuthMasterIP.c_str(), g_wAuthMasterPort);
 			}
 			continue;
 		}
@@ -771,7 +774,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 
 			if (!*openid_host || !*openid_uri)
 			{
-				fprintf(stderr, "WEB_AUTH syntax error (ex: WEB_AUTH <host(metin2.co.kr) uri(/kyw/gameauth.php)>\n");
+				LOG_ERROR("WEB_AUTH syntax error (ex: WEB_AUTH <host(metin2.co.kr) uri(/kyw/gameauth.php)>");
 				exit(1);
 			}
 
@@ -868,9 +871,9 @@ static bool __LoadGeneralConfigFile(const char* configName)
 
 		TOKEN("test_server")
 		{
-			printf("-----------------------------------------------\n");
-			printf("TEST_SERVER\n");
-			printf("-----------------------------------------------\n");
+			LOG_INFO("-----------------------------------------------");
+			LOG_INFO("TEST_SERVER");
+			LOG_INFO("-----------------------------------------------");
 			str_to_number(test_server, value_string);
 			continue;
 		}
@@ -891,14 +894,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		TOKEN("item_count_limit")
 		{
 			str_to_number(g_bItemCountLimit, value_string);
-			fprintf(stdout, "ITEM_COUNT_LIMIT: %d\n", g_bItemCountLimit);
+			LOG_INFO("ITEM_COUNT_LIMIT: {}", g_bItemCountLimit);
 			continue;
 		}
 
 		TOKEN("disable_shop_price_3x")
 		{
 			g_bEmpireShopPriceTripleDisable = true;
-			fprintf(stdout, "EMPIRE_SHOP_PRICE_3x: DISABLED\n");
+			LOG_INFO("EMPIRE_SHOP_PRICE_3x: DISABLED");
 			continue;
 		}
 
@@ -907,7 +910,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bEmpireShopPriceTripleDisable = !flag;
-			fprintf(stdout, "SHOP_PRICE_3X_TAX: %s\n", (!g_bEmpireShopPriceTripleDisable)?"ENABLED":"DISABLED");
+			LOG_INFO("SHOP_PRICE_3X_TAX: {}", (!g_bEmpireShopPriceTripleDisable)?"ENABLED":"DISABLED");
 			continue;
 		}
 
@@ -928,7 +931,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		TOKEN("disable_change_attr_time")
 		{
 			g_dwItemBonusChangeTime = 0;
-			fprintf(stdout, "CHANGE_ATTR_TIME_LIMIT: DISABLED\n");
+			LOG_INFO("CHANGE_ATTR_TIME_LIMIT: DISABLED");
 			continue;
 		}
 
@@ -937,14 +940,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			uint32_t flag = 0;
 			str_to_number(flag, value_string);
 			g_dwItemBonusChangeTime = flag;
-			fprintf(stdout, "CHANGE_ATTR_TIME_LIMIT: %u\n", g_dwItemBonusChangeTime);
+			LOG_INFO("CHANGE_ATTR_TIME_LIMIT: {}", g_dwItemBonusChangeTime);
 			continue;
 		}
 
 		TOKEN("disable_prism_item")
 		{
 			g_bDisablePrismNeed = true;
-			fprintf(stdout, "PRISM_ITEM_REQUIREMENT: DISABLED\n");
+			LOG_INFO("PRISM_ITEM_REQUIREMENT: DISABLED");
 			continue;
 		}
 
@@ -953,14 +956,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bDisablePrismNeed = !flag;
-			fprintf(stdout, "PRISM_ITEM_REQUIRE: %s\n", (!g_bDisablePrismNeed)?"ENABLED":"DISABLED");
+			LOG_INFO("PRISM_ITEM_REQUIRE: {}", (!g_bDisablePrismNeed)?"ENABLED":"DISABLED");
 			continue;
 		}
 
 		TOKEN("enable_global_shout")
 		{
 			g_bGlobalShoutEnable = true;
-			fprintf(stdout, "GLOBAL_SHOUT: ENABLED\n");
+			LOG_INFO("GLOBAL_SHOUT: ENABLED");
 			continue;
 		}
 
@@ -969,14 +972,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bGlobalShoutEnable = !!flag;
-			fprintf(stdout, "GLOBAL_SHOUT: %s\n", (g_bGlobalShoutEnable)?"ENABLED":"DISABLED");
+			LOG_INFO("GLOBAL_SHOUT: {}", (g_bGlobalShoutEnable)?"ENABLED":"DISABLED");
 			continue;
 		}
 
 		TOKEN("disable_emotion_mask")
 		{
 			g_bDisableEmotionMask = true;
-			fprintf(stdout, "EMOTION_MASK_REQUIREMENT: DISABLED\n");
+			LOG_INFO("EMOTION_MASK_REQUIREMENT: DISABLED");
 			continue;
 		}
 
@@ -985,14 +988,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bDisableEmotionMask = !flag;
-			fprintf(stdout, "EMOTION_MASK_REQUIRE: %s\n", (g_bDisableEmotionMask)?"ENABLED":"DISABLED");
+			LOG_INFO("EMOTION_MASK_REQUIRE: {}", (g_bDisableEmotionMask)?"ENABLED":"DISABLED");
 			continue;
 		}
 
 		TOKEN("enable_bootary_check")
 		{
 			g_bEnableBootaryCheck = true;
-			fprintf(stdout, "ENABLE_BOOTARY_CHECK: ENABLED\n");
+			LOG_INFO("ENABLE_BOOTARY_CHECK: ENABLED");
 			continue;
 		}
 
@@ -1001,7 +1004,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bEnableBootaryCheck = !!flag;
-			fprintf(stdout, "BOOTARY_CHECK: %s\n", (g_bEnableBootaryCheck)?"ENABLED":"DISABLED");
+			LOG_INFO("BOOTARY_CHECK: {}", (g_bEnableBootaryCheck)?"ENABLED":"DISABLED");
 			continue;
 		}
 
@@ -1012,7 +1015,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			if (flag <= 0) continue;
 
 			g_iStatusPointGetLevelLimit = MINMAX(0, flag, PLAYER_MAX_LEVEL_CONST);
-			fprintf(stdout, "STATUS_POINT_GET_LEVEL_LIMIT: %d\n", g_iStatusPointGetLevelLimit);
+			LOG_INFO("STATUS_POINT_GET_LEVEL_LIMIT: {}", g_iStatusPointGetLevelLimit);
 			continue;
 		}
 
@@ -1023,7 +1026,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			if (flag <= 0) continue;
 
 			g_iStatusPointSetMaxValue = flag;
-			fprintf(stdout, "STATUS_POINT_SET_MAX_VALUE: %d\n", g_iStatusPointSetMaxValue);
+			LOG_INFO("STATUS_POINT_SET_MAX_VALUE: {}", g_iStatusPointSetMaxValue);
 			continue;
 		}
 
@@ -1034,7 +1037,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			if (flag <= 0) continue;
 
 			g_iShoutLimitLevel = flag;
-			fprintf(stdout, "SHOUT_LIMIT_LEVEL: %d\n", g_iShoutLimitLevel);
+			LOG_INFO("SHOUT_LIMIT_LEVEL: {}", g_iShoutLimitLevel);
 			continue;
 		}
 
@@ -1044,7 +1047,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_iDbLogLevel = flag;
-			fprintf(stdout, "DB_LOG_LEVEL: %d\n", g_iDbLogLevel);
+			LOG_INFO("DB_LOG_LEVEL: {}", g_iDbLogLevel);
 			continue;
 		}
 
@@ -1054,7 +1057,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_iSysLogLevel = flag;
-			fprintf(stdout, "SYS_LOG_LEVEL: %d\n", g_iSysLogLevel);
+			LOG_INFO("SYS_LOG_LEVEL: {}", g_iSysLogLevel);
 			continue;
 		}
 
@@ -1064,7 +1067,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE] = flag;
-			fprintf(stdout, "ITEM_DESTROY_TIME_AUTOGIVE: %d\n", g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+			LOG_INFO("ITEM_DESTROY_TIME_AUTOGIVE: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
 			continue;
 		}
 
@@ -1074,7 +1077,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD] = flag;
-			fprintf(stdout, "ITEM_DESTROY_TIME_DROPGOLD: %d\n", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
+			LOG_INFO("ITEM_DESTROY_TIME_DROPGOLD: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
 			continue;
 		}
 
@@ -1084,7 +1087,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM] = flag;
-			fprintf(stdout, "ITEM_DESTROY_TIME_DROPITEM: %d\n", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]);
+			LOG_INFO("ITEM_DESTROY_TIME_DROPITEM: {}", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]);
 			continue;
 		}
 
@@ -1095,7 +1098,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			// if (flag <= 0) continue;
 
 			// g_iShoutLimitTime = flag;
-			// fprintf(stdout, "SHOUT_LIMIT_TIME: %d\n", g_iShoutLimitTime);
+			// LOG_INFO("SHOUT_LIMIT_TIME: {}", g_iShoutLimitTime);
 			// continue;
 		// }
 
@@ -1105,14 +1108,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 
 			str_to_number(flag, value_string);
 			g_bCheckClientVersion = !!flag;
-			fprintf(stdout, "CHECK_VERSION_SERVER: %d\n", g_bCheckClientVersion);
+			LOG_INFO("CHECK_VERSION_SERVER: {}", g_bCheckClientVersion);
 			continue;
 		}
 
 		TOKEN("check_version_value")
 		{
 			g_stClientVersion = value_string;
-			fprintf(stdout, "CHECK_VERSION_VALUE: %s\n", g_stClientVersion.c_str());
+			LOG_INFO("CHECK_VERSION_VALUE: {}", g_stClientVersion.c_str());
 			continue;
 		}
 
@@ -1122,7 +1125,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_bGMHostCheck = !!flag;
-			fprintf(stdout, "GM_HOST_CHECK: %d\n", g_bGMHostCheck);
+			LOG_INFO("GM_HOST_CHECK: {}", g_bGMHostCheck);
 			continue;
 		}
 
@@ -1132,7 +1135,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_bGuildInviteLimit = !!flag;
-			fprintf(stdout, "GUILD_INVITE_LIMIT: %d\n", g_bGuildInviteLimit);
+			LOG_INFO("GUILD_INVITE_LIMIT: {}", g_bGuildInviteLimit);
 			continue;
 		}
 
@@ -1142,7 +1145,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			str_to_number(flag, value_string);
 
 			g_bGuildInfiniteMembers = !!flag;
-			fprintf(stdout, "GUILD_INFINITE_MEMBERS: %d\n", g_bGuildInfiniteMembers);
+			LOG_INFO("GUILD_INFINITE_MEMBERS: {}", g_bGuildInfiniteMembers);
 			continue;
 		}
 
@@ -1151,7 +1154,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			int flag = 0;
 			str_to_number(flag, value_string);
 			g_bDisableEmpireLanguageCheck = !flag;
-			fprintf(stdout, "EMPIRE_LANGUAGE_CHECK: %s\n", (g_bDisableEmpireLanguageCheck)?"DISABLED":"ENABLED");
+			LOG_INFO("EMPIRE_LANGUAGE_CHECK: {}", (g_bDisableEmpireLanguageCheck)?"DISABLED":"ENABLED");
 			continue;
 		}
 
@@ -1160,7 +1163,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			uint32_t flag = 0;
 			str_to_number(flag, value_string);
 			g_dwSkillBookNextReadMin = flag;
-			fprintf(stdout, "SKILLBOOK_NEXTREAD_MIN: %u\n", g_dwSkillBookNextReadMin);
+			LOG_INFO("SKILLBOOK_NEXTREAD_MIN: {}", g_dwSkillBookNextReadMin);
 			continue;
 		}
 
@@ -1169,7 +1172,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			uint32_t flag = 0;
 			str_to_number(flag, value_string);
 			g_dwSkillBookNextReadMax = flag;
-			fprintf(stdout, "SKILLBOOK_NEXTREAD_MAX: %u\n", g_dwSkillBookNextReadMax);
+			LOG_INFO("SKILLBOOK_NEXTREAD_MAX: {}", g_dwSkillBookNextReadMax);
 			continue;
 		}
 #endif
@@ -1278,14 +1281,14 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		TOKEN("pk_protect_level")
 		{
 		    str_to_number(PK_PROTECT_LEVEL, value_string);
-		    fprintf(stderr, "PK_PROTECT_LEVEL: %d", PK_PROTECT_LEVEL);
+		    LOG_ERROR("PK_PROTECT_LEVEL: {}", PK_PROTECT_LEVEL);
 		}
 		
 #ifdef __ATTR_TRANSFER_SYSTEM__
 		TOKEN("ATTR_TRANSFER_LIMIT")
 		{
 			str_to_number(gAttrTransferLimit, value_string);
-			fprintf(stderr, "ATTR_TRANSFER_LIMIT: %d\n", gAttrTransferLimit);
+			LOG_ERROR("ATTR_TRANSFER_LIMIT: {}", gAttrTransferLimit);
 			continue;
 		}
 #endif
@@ -1296,7 +1299,7 @@ static bool __LoadGeneralConfigFile(const char* configName)
 
 			gPlayerMaxLevel = MINMAX(1, gPlayerMaxLevel, PLAYER_MAX_LEVEL_CONST);
 
-			fprintf(stderr, "PLAYER_MAX_LEVEL: %d\n", gPlayerMaxLevel);
+			LOG_ERROR("PLAYER_MAX_LEVEL: {}", gPlayerMaxLevel);
 		}
 		
 		TOKEN("stone_chance")
@@ -1305,20 +1308,20 @@ static bool __LoadGeneralConfigFile(const char* configName)
 			
 			stone_chance = MINMAX(1, stone_chance, 100);
 			
-			fprintf(stderr, "STONE_CHANCE: %u/n", stone_chance);
+			LOG_ERROR("STONE_CHANCE: {}/n", stone_chance);
 		}
 		
 		TOKEN("shutdown_age")
 		{
 			str_to_number(gShutdownAge, value_string);
-			fprintf(stderr, "SHUTDOWN_AGE: %d\n", gShutdownAge);
+			LOG_ERROR("SHUTDOWN_AGE: {}", gShutdownAge);
 
 		}
 
 		TOKEN("shutdown_enable")
 		{
 			str_to_number(gShutdownEnable, value_string);
-			fprintf(stderr, "SHUTDOWN_ENABLE: %d\n", gShutdownEnable);
+			LOG_ERROR("SHUTDOWN_ENABLE: {}", gShutdownEnable);
 		}
 
 		TOKEN("block_char_creation")
@@ -1357,9 +1360,9 @@ static bool __LoadDefaultCMDFile(const char* cmdName)
 			if (!*cmd || !*levelname)
 			{
 #ifdef ENABLE_CMD_PLAYER
-				fprintf(stderr, "CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\n");
+				LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #else
-				fprintf(stderr, "CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\n");
+				LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #endif
 				exit(1);
 			}
@@ -1383,15 +1386,15 @@ static bool __LoadDefaultCMDFile(const char* cmdName)
 			else
 			{
 #ifdef ENABLE_CMD_PLAYER
-				fprintf(stderr, "CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\n");
+				LOG_ERROR("CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #else
-				fprintf(stderr, "CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\n");
+				LOG_ERROR("CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>");
 #endif
 				exit(1);
 			}
 
 			if (test_server)
-				fprintf(stdout, "CMD_REWRITE: [%s] [%s:%d]\n", cmd, levelname, level);
+				LOG_INFO("CMD_REWRITE: [{}] [{}:{}]", cmd, levelname, level);
 			interpreter_set_privilege(cmd, level);
 		}
 
@@ -1423,7 +1426,7 @@ static bool __LoadExpTableFromDB(void)
 		if (level > PLAYER_MAX_LEVEL_CONST)
 			continue;
 		new_exp_table[level] = exp;
-		// printf("new_exp_table[%u] = %u;\n", level, exp);
+		// LOG_INFO("new_exp_table[{}] = {};", level, exp);
 	}
 	exp_table = new_exp_table;
 	return true;
@@ -1451,7 +1454,7 @@ void config_init(const string& st_localeServiceName)
 	// 주석처리 함.
 	if (!GetIPInfo())
 	{
-	//	fprintf(stderr, "Can not get public ip address\n");
+	//	LOG_ERROR("Can not get public ip address");
 	//	exit(1);
 	}
 
@@ -1461,7 +1464,7 @@ void config_init(const string& st_localeServiceName)
 		!__LoadGeneralConfigFile(st_configFileName.c_str())
 	)
 	{
-		fprintf(stderr, "Can not open [%s]\n", st_configFileName.c_str());
+		LOG_ERROR("Can not open [{}]", st_configFileName.c_str());
 		exit(1);
 	}
 #ifdef ENABLE_GENERAL_CONFIG
@@ -1470,21 +1473,21 @@ void config_init(const string& st_localeServiceName)
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s", LocaleService_GetBasePath().c_str(), st_configFileName.c_str());
 		if (__LoadGeneralConfigFile(szFileName))
-			fprintf(stderr, "GENERAL CONFIG LOAD OK [%s]\n", szFileName);
+			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
 	}
 	// general config - locale n channel based
 	{
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d", LocaleService_GetBasePath().c_str(), st_configFileName.c_str(), g_bChannel);
 		if (__LoadGeneralConfigFile(szFileName))
-			fprintf(stderr, "GENERAL CONFIG LOAD OK [%s]\n", szFileName);
+			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
 	}
 	// general config - locale n channel n hostname based
 	{
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d_HOSTNAME_%s", LocaleService_GetBasePath().c_str(), st_configFileName.c_str(), g_bChannel, g_stHostname.c_str());
 		if (__LoadGeneralConfigFile(szFileName))
-			fprintf(stderr, "GENERAL CONFIG LOAD OK [%s]\n", szFileName);
+			LOG_ERROR("GENERAL CONFIG LOAD OK [{}]", szFileName);
 	}
 #endif
 
@@ -1493,19 +1496,19 @@ void config_init(const string& st_localeServiceName)
 
 	if (0 == db_port)
 	{
-		fprintf(stderr, "DB_PORT not configured\n");
+		LOG_ERROR("DB_PORT not configured");
 		exit(1);
 	}
 
 	if (0 == g_bChannel)
 	{
-		fprintf(stderr, "CHANNEL not configured\n");
+		LOG_ERROR("CHANNEL not configured");
 		exit(1);
 	}
 
 	if (g_stHostname.empty())
 	{
-		fprintf(stderr, "HOSTNAME must be configured.\n");
+		LOG_ERROR("HOSTNAME must be configured.");
 		exit(1);
 	}
 
@@ -1518,7 +1521,7 @@ void config_init(const string& st_localeServiceName)
 	if (!__LoadExpTableFromDB())
 	{
 		// do as you please to manage this
-		fprintf(stderr, "Failed to Load ExpTable from DB so exit\n");
+		LOG_ERROR("Failed to Load ExpTable from DB so exit");
 		// exit(1);
 	}
 #endif
@@ -1531,21 +1534,21 @@ void config_init(const string& st_localeServiceName)
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str());
 		if (__LoadDefaultCMDFile(szFileName))
-			fprintf(stdout, "GENERAL CMD LOAD OK [%s]\n", szFileName);
+			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
 	}
 	// general cmd - locale n channel based
 	{
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str(), g_bChannel);
 		if (__LoadDefaultCMDFile(szFileName))
-			fprintf(stdout, "GENERAL CMD LOAD OK [%s]\n", szFileName);
+			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
 	}
 	// general cmd - locale n channel n hostname based
 	{
 		char szFileName[256];
 		snprintf(szFileName, sizeof(szFileName), "%s/conf/GENERAL_%s_CHANNEL_%d_HOSTNAME_%s", LocaleService_GetBasePath().c_str(), st_cmdFileName.c_str(), g_bChannel, g_stHostname.c_str());
 		if (__LoadDefaultCMDFile(szFileName))
-			fprintf(stdout, "GENERAL CMD LOAD OK [%s]\n", szFileName);
+			LOG_INFO("GENERAL CMD LOAD OK [{}]", szFileName);
 	}
 #endif
 
@@ -1563,7 +1566,7 @@ void config_init(const string& st_localeServiceName)
 
 	if (g_szPublicIP[0] == '0')
 	{
-		fprintf(stderr, "Can not get public ip address\n");
+		LOG_ERROR("Can not get public ip address");
 		exit(1);
 	}
 }
@@ -1596,7 +1599,7 @@ void LoadValidCRCList()
 			s_set_dwProcessCRC.insert(dwValidClientProcessCRC);
 			s_set_dwFileCRC.insert(dwValidClientFileCRC);
 
-			fprintf(stderr, "CLIENT_CRC: %u %u\n", dwValidClientProcessCRC, dwValidClientFileCRC);
+			LOG_ERROR("CLIENT_CRC: {} {}", dwValidClientProcessCRC, dwValidClientFileCRC);
 		}
 
 		fclose(fp);
@@ -1616,7 +1619,7 @@ bool LoadClientVersion()
 	char * p = strchr(buf, '\n');
 	if (p) *p = '\0';
 
-	fprintf(stderr, "VERSION: \"%s\"\n", buf);
+	LOG_ERROR("VERSION: \"{}\"", buf);
 
 	g_stClientVersion = buf;
 	fclose(fp);
@@ -1793,7 +1796,7 @@ void LoadMapConfig()
 	if (g_vecMapConf.empty())
 	{
 		LOG_ERROR("CANNOT LOAD MAP TELEPORTER CONFIG!!!");
-		fprintf(stderr, "CANNOT LOAD MAP TELEPORTER CONFIG!!!\n");
+		LOG_ERROR("CANNOT LOAD MAP TELEPORTER CONFIG!!!");
 	}
 		
 }

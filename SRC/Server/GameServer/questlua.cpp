@@ -191,7 +191,7 @@ namespace quest
 		for (i = 1; i <= n; ++i)
 		{
 			if (lua_isstring(L,i))
-				//printf("%s\n",lua_tostring(L,i));
+				// LOG_TRACE("{}", lua_tostring(L,i));
 				s << lua_tostring(L, i);
 			else if (lua_isnumber(L, i))
 			{
@@ -851,7 +851,7 @@ namespace quest
 			lua_rawgeti(qs.co,-1,i);
 			if (lua_isstring(qs.co,-1))
 			{
-				//printf("%d\t%s\n",i,lua_tostring(qs.co,-1));
+				// LOG_TRACE("{}\t{}", i, lua_tostring(qs.co,-1));
 				if (i != 1)
 					os << "|";
 				os << i << ";" << lua_tostring(qs.co,-1);

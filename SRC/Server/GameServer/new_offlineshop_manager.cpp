@@ -32,6 +32,7 @@
 #include "ecs/systems/ItemSystem.hpp"
 
 #include <boost/mpl/min_max.hpp>
+#include "Core/Logging.hpp"
 
 //#include <offlineshop/Offlineshop.h>
 
@@ -638,7 +639,7 @@ namespace offlineshop
 #ifdef ENABLE_OFFLINESHOP_DEBUG
 			else
 			{
-				fprintf(stderr, "cant find sectree for entity : name %s , pid %u ",ent.GetShopName(), ent.GetShop()->GetOwnerPID());
+				LOG_ERROR("cant find sectree for entity : name {} , pid {} ", ent.GetShopName(), ent.GetShop()->GetOwnerPID());
 			}
 #endif
 		}

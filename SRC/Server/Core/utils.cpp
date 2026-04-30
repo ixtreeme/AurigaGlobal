@@ -6,6 +6,7 @@
  */
 #define __LIBTHECORE__
 #include "stdafx.h"
+#include <fmt/format.h>
 
 static struct timeval null_time = { 0, 0 };
 
@@ -16,7 +17,7 @@ void printdata(const unsigned char* data, int bytes)
 	int                 i, j, k;
 	const unsigned char* p;
 
-	fprintf(stderr, "------------------------------------------------------------------\n");
+	fmt::print(stderr, "------------------------------------------------------------------\n");
 	j = bytes;
 	while (1)
 	{
@@ -26,27 +27,27 @@ void printdata(const unsigned char* data, int bytes)
 		for (i = 0; i < 16; i++)
 		{
 			if (i >= k)
-				fprintf(stderr, "   ");
+				fmt::print(stderr, "   ");
 			else
-				fprintf(stderr, "%02x ", *p);
+				fmt::print(stderr, "{:02x} ", *p);
 			p++;
 		}
 
-		fprintf(stderr, "| ");
+		fmt::print(stderr, "| ");
 
 		p = data;
 		for (i = 0; i < k; i++)
 		{
 			if (i >= k)
-				fprintf(stderr, " ");
+				fmt::print(stderr, " ");
 			else
 			{
-				fprintf(stderr, "%c", ishprint(*p) && ishprint(*(p + 1)) ? *p : '.');
+				fmt::print(stderr, "{}", ishprint(*p) && ishprint(*(p + 1)) ? *p : '.');
 			}
 			p++;
 		}
 
-		fprintf(stderr, "\n");
+		fmt::print(stderr, "\n");
 
 		j -= 16;
 		data += 16;
@@ -55,7 +56,7 @@ void printdata(const unsigned char* data, int bytes)
 			break;
 	}
 
-	fprintf(stderr, "------------------------------------------------------------------\n");
+	fmt::print(stderr, "------------------------------------------------------------------\n");
 }
 
 

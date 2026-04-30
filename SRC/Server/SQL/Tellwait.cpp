@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include "Core/Logging.hpp"
 
 static volatile sig_atomic_t    sigflag;
 
@@ -19,13 +20,13 @@ void TELL_WAIT()
 {
 	if (signal(SIGUSR1, sig_usr) == SIG_ERR)
 	{
-		fprintf(stderr, "signal(SIGINT) error\n");
+		LOG_ERROR("signal(SIGINT) error");
 		exit(1);
 	}
 
 	if (signal(SIGUSR2, sig_usr) == SIG_ERR)
 	{
-		fprintf(stderr, "signal(SIGQUIT) error\n");
+		LOG_ERROR("signal(SIGQUIT) error");
 		exit(1);
 	}
 
@@ -38,7 +39,7 @@ void TELL_WAIT()
 	/* block SIGUSR1 and SIGUSR2, and save current signal mask */
 	if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
 	{
-		fprintf(stderr, "SIG_BLOCK error\n");
+		LOG_ERROR("SIG_BLOCK error");
 		exit(1);
 	}
 }
@@ -58,7 +59,7 @@ void WAIT_PARENT(void)
 	/* reset signal mask to original value */
 	if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
 	{
-		fprintf(stderr, "SIG_SETMASK error\n");
+		LOG_ERROR("SIG_SETMASK error");
 		exit(1);
 	}
 }
@@ -78,7 +79,7 @@ void WAIT_CHILD(void)
 	/* reset signal mask to original value */
 	if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
 	{
-		fprintf(stderr, "SIG_SETMASK error\n");
+		LOG_ERROR("SIG_SETMASK error");
 		exit(1);
 	}
 }

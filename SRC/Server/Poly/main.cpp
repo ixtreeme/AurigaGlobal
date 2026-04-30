@@ -7,12 +7,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <fmt/format.h>
 
 using namespace std;
 
 int main(int argc, char ** argv)
 {
-	printf( "12345\n" );
+	fmt::print("12345\n");
 
 #ifndef _WIN32
 	srandom(time(0) + getpid());
@@ -35,7 +36,7 @@ int main(int argc, char ** argv)
 	return 0;
     }
 
-    printf("B = %d\n", atoi(argv[2]));
+    fmt::print("B = {}\n", atoi(argv[2]));
 
     p.SetVar("b", atoi(argv[2]));
     p.SetVar("k", 20);

@@ -1,6 +1,7 @@
 #define __LIBTHECORE__
 #include "stdafx.h"
 #include "Logging.hpp"
+#include "Core/Logging.hpp"
 
 #ifndef _WIN32
 #define SYSLOG_FILENAME "syslog"
@@ -213,7 +214,7 @@ void log_file_delete_old(const char *filename)
 		n = scandir(filename, &namelist, 0, alphasort);
 
 		if (n < 0)
-			perror("scandir");
+			LOG_ERROR("{}: {}", "scandir", strerror(errno));
 		else
 		{
 			char name[MAXNAMLEN+1];
@@ -239,7 +240,7 @@ void log_file_delete_old(const char *filename)
 					system(system_cmd);
 
 					LOG_INFO("{}: SYSTEM_CMD: {}", __FUNCTION__, system_cmd);
-					fprintf(stderr, "%s: SYSTEM_CMD: %s %s:%d %s:%d\n", __FUNCTION__, system_cmd, buf, num1, name, num2);
+					LOG_ERROR("{}: SYSTEM_CMD: {} {}:{} {}:{}", __FUNCTION__, system_cmd, buf, num1, name, num2);
 				}
 			}
 		}

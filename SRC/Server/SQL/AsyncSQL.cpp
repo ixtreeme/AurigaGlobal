@@ -5,6 +5,7 @@
 #include <mysql/mysql.h>
 
 #include "AsyncSQL.h"
+#include "Core/Logging.hpp"
 
 // TODO: Consider providing platform-independent mutex class.
 #ifndef _WIN32
@@ -178,7 +179,7 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 		/*
 		if (!mysql_thread_safe())//
 	    {
-			fprintf(stderr, "FATAL ERROR!! mysql client library was not compiled with thread safety\n");
+			LOG_ERROR("FATAL ERROR!! mysql client library was not compiled with thread safety");
 			return false;
 		}
 		*/
@@ -188,13 +189,13 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 
 		if (0 != pthread_mutex_init(m_mtxQuery, NULL))
 		{
-			perror("pthread_mutex_init");
+			LOG_ERROR("{}: {}", "pthread_mutex_init", strerror(errno));
 			exit(0);
 		}
 
 		if (0 != pthread_mutex_init(m_mtxResult, NULL))
 		{
-			perror("pthread_mutex_init");
+			LOG_ERROR("{}: {}", "pthread_mutex_init", strerror(errno));
 			exit(0);
 		}
 
@@ -208,7 +209,7 @@ bool CAsyncSQL::Setup(const char * c_pszHost, const char * c_pszUser, const char
 
 		m_hThread = (HANDLE)::_beginthreadex(nullptr, 0, AsyncSQLThread, this, 0, nullptr);
 		if (m_hThread == INVALID_HANDLE_VALUE) {
-			perror("CAsyncSQL::Setup");
+			LOG_ERROR("{}: {}", "CAsyncSQL::Setup", strerror(errno));
 			return false;
 		}
 #endif

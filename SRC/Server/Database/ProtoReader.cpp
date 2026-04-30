@@ -870,7 +870,7 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 			for (unsigned int j = 0; j < i; ++j)
 				dataStream << dataArray[j] << ",";
 
-			//fprintf(stderr, "ItemProto Reading Failed : Invalid value.\n");
+			// LOG_ERROR("ItemProto Reading Failed : Invalid value.");
 			LOG_ERROR("ItemProto Reading Failed : Invalid value. (index: {}, col: {}, value: {})", i, col, csvTable.AsStringByIndex(col));
 			LOG_ERROR("\t{} ~ {} Values: {}", 0, i, dataStream.str().c_str());
 

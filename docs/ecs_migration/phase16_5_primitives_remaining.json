@@ -1,0 +1,26 @@
+[
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 380,
+    "kind": "bare_printf",
+    "call": "printf(\"GOST 21847-89 test driver.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 390,
+    "kind": "bare_printf",
+    "call": "printf(\"%3d\\r\", i)"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 403,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\nError! i = %d\\n\", i)"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 408,
+    "kind": "bare_printf",
+    "call": "printf(\"All tests passed.\\n\")"
+  }
+]

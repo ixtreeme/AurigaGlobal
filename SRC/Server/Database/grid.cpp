@@ -7,6 +7,7 @@
 #ifdef ENABLE_GIRD_BUG_FIX
 #include <cstddef>
 #include <limits>
+#include <fmt/format.h>
 
 #ifdef min
 #undef min
@@ -223,14 +224,14 @@ bool CGrid::IsEmpty(int iPos, int w, int h)
 
 void CGrid::Print()
 {
-	printf("Grid %p\n", this);
+	fmt::print("Grid {}\n", static_cast<const void*>(this));
 
 	for (int y = 0; y < m_iHeight; ++y)
 	{
 		for (int x = 0; x < m_iWidth; ++x)
-			printf("%d", m_pGrid[y * m_iWidth + x]);
+			fmt::print("{}", m_pGrid[y * m_iWidth + x]);
 
-		printf("\n");
+		fmt::print("\n");
 	}
 }
 

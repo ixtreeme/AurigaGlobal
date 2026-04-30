@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "lzo_manager.h"
+#include "Core/Logging.hpp"
 
 LZOManager::LZOManager()
 {
 	if (lzo_init() != LZO_E_OK)
 	{
-		fprintf(stderr, "lzo_init() failed\n");
+		LOG_ERROR("lzo_init() failed");
 		abort();
 	}
 

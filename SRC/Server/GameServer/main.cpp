@@ -66,6 +66,7 @@
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
 #include "new_offlineshop_manager.h"
+#include "Core/Logging.hpp"
 #endif
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
@@ -371,7 +372,7 @@ int main(int argc, char **argv)
 {
 //#ifdef __ENABLE_NEW_OFFLINESHOP__
 //	if(!Offlineshop_InitializeLibrary("wonder2", "vgbp1q098vgtajp9")){
-//		std::fprintf(stderr, "Cannot initialize correctly offlineshop library!\n");
+//		LOG_ERROR("Cannot initialize correctly offlineshop library!");
 //		return 0;
 //	}
 //#endif
@@ -507,7 +508,7 @@ int main(int argc, char **argv)
 //		}
 //		//else 
 //		//{
-//		//	fprintf(stderr, "[main] Impossibile caricare la tabella exp valore non valido\n");//razor93
+//		//	LOG_ERROR("[main] Impossibile caricare la tabella exp valore non valido");//razor93
 //		//	break;
 //		//}
 //}
@@ -605,16 +606,19 @@ int main(int argc, char **argv)
 
 void usage()
 {
-	printf("Option list\n"
-			"-p <port>    : bind port number (port must be over 1024)\n"
-			"-l <level>   : sets log level\n"
-			"-n <locale>  : sets locale name\n"
+	std::string options =
+			"Option list"
+			"-p <port>    : bind port number (port must be over 1024)"
+			"-l <level>   : sets log level"
+			"-n <locale>  : sets locale name";
 #ifdef ENABLE_NEWSTUFF
-			"-C <on-off>  : checkpointing check on/off\n"
+	options += "-C <on-off>  : checkpointing check on/off";
 #endif
-			"-v           : log to stdout\n"
-			"-r           : do not load regen tables\n"
-			"-t           : traffic profile on\n");
+	options +=
+			"-v           : log to stdout"
+			"-r           : do not load regen tables"
+			"-t           : traffic profile on";
+	LOG_INFO("{}", options);
 }
 
 int start(int argc, char **argv)
@@ -646,7 +650,7 @@ int start(int argc, char **argv)
 			case 'I': // IP
 				strlcpy(g_szPublicIP, argv[optind], sizeof(g_szPublicIP));
 
-				printf("IP %s\n", g_szPublicIP);
+				LOG_INFO("IP {}", g_szPublicIP);
 
 				optind++;
 				optreset = 1;
@@ -661,7 +665,7 @@ int start(int argc, char **argv)
 					return 0;
 				}
 
-				printf("port %d\n", mother_port);
+				LOG_INFO("port {}", mother_port);
 
 				optind++;
 				optreset = 1;
@@ -693,7 +697,7 @@ int start(int argc, char **argv)
 #ifdef ENABLE_NEWSTUFF
 			case 'C': // checkpoint check
 				//bCheckpointCheck = strtol(argv[optind], &ep, 10);;
-				//printf("CHECKPOINT_CHECK %d\n", bCheckpointCheck);
+				// LOG_INFO("CHECKPOINT_CHECK {}", bCheckpointCheck);
 
 				optind++;
 				optreset = 1;
@@ -724,7 +728,7 @@ int start(int argc, char **argv)
 	bool is_thecore_initialized = thecore_init(25, heartbeat);
 	if (!is_thecore_initialized)
 	{
-		fprintf(stderr, "Could not initialize thecore, check owner of pid, syslog\n");
+		LOG_ERROR("Could not initialize thecore, check owner of pid, syslog");
 		exit(0);
 	}
 
@@ -734,7 +738,7 @@ int start(int argc, char **argv)
 
 	if ((tcp_socket = socket_tcp_bind(g_szPublicIP, mother_port)) == INVALID_SOCKET)
 	{
-		perror("socket_tcp_bind: tcp_socket");
+		LOG_ERROR("{}: {}", "socket_tcp_bind: tcp_socket", strerror(errno));
 		return 0;
 	}
 
@@ -742,7 +746,7 @@ int start(int argc, char **argv)
 #ifndef __UDP_BLOCK__
 	if ((udp_socket = socket_udp_bind(g_szPublicIP, mother_port)) == INVALID_SOCKET)
 	{
-		perror("socket_udp_bind: udp_socket");
+		LOG_ERROR("{}: {}", "socket_udp_bind: udp_socket", strerror(errno));
 		return 0;
 	}
 #endif
@@ -751,7 +755,7 @@ int start(int argc, char **argv)
 	//if ((p2p_socket = socket_tcp_bind(*g_szInternalIP ? g_szInternalIP : g_szPublicIP, p2p_port)) == INVALID_SOCKET)
 	if ((p2p_socket = socket_tcp_bind(g_szPublicIP, p2p_port)) == INVALID_SOCKET)
 	{
-		perror("socket_tcp_bind: p2p_socket");
+		LOG_ERROR("{}: {}", "socket_tcp_bind: p2p_socket", strerror(errno));
 		return 0;
 	}
 
@@ -770,7 +774,7 @@ int start(int argc, char **argv)
 	{
 		if (g_stAuthMasterIP.length() != 0)
 		{
-			fprintf(stderr, "SlaveAuth");
+			LOG_ERROR("SlaveAuth");
 			g_pkAuthMasterDesc = DESC_MANAGER::instance().CreateConnectionDesc(main_fdw, g_stAuthMasterIP.c_str(), g_wAuthMasterPort, PHASE_P2P, true);
 			P2P_MANAGER::instance().RegisterConnector(g_pkAuthMasterDesc);
 			g_pkAuthMasterDesc->SetP2P(g_stAuthMasterIP.c_str(), g_wAuthMasterPort, g_bChannel);
@@ -778,7 +782,7 @@ int start(int argc, char **argv)
 		}
 		else
 		{
-			fprintf(stderr, "MasterAuth %d\n", LC_GetLocalType());
+			LOG_ERROR("MasterAuth {}", LC_GetLocalType());
 		}
 	}
 	else

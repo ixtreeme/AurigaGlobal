@@ -6,6 +6,7 @@
 #include "CsvReader.h"
 #include "ProtoReader.h"
 #include <algorithm>
+#include "Core/Logging.hpp"
 
 using namespace std;
 
@@ -230,7 +231,7 @@ bool CClientManager::InitializeMobTable()
 	cCsvTable nameData;
 	if (!nameData.Load("mob_names.txt", '\t'))
 	{
-		fprintf(stderr, "Could not load mob_names.txt\n");
+		LOG_ERROR("Could not load mob_names.txt");
 	}
 	else {
 		nameData.Next();
@@ -243,7 +244,7 @@ bool CClientManager::InitializeMobTable()
 
 	if (!data.Load("mob_proto.txt", '\t'))
 	{
-		fprintf(stderr, "Could not load mob_proto.txt. Wrong file format?\n");
+		LOG_ERROR("Could not load mob_proto.txt. Wrong file format?");
 		return false;
 	}
 	data.Next();
@@ -262,7 +263,7 @@ bool CClientManager::InitializeMobTable()
 
 		if (!Set_Proto_Mob_Table(mob_table, data, localMap))
 		{
-			fprintf(stderr, "Could not process entry.\n");
+			LOG_ERROR("Could not process entry.");
 		}
 
 #ifdef ENABLE_MULTI_NAMES
@@ -443,7 +444,7 @@ bool CClientManager::InitializeItemTable()
 	cCsvTable nameData;
 	if (!nameData.Load("item_names.txt", '\t'))
 	{
-		fprintf(stderr, "Could not load item_names.txt.\n");
+		LOG_ERROR("Could not load item_names.txt.");
 	}
 	else {
 		nameData.Next();
@@ -455,7 +456,7 @@ bool CClientManager::InitializeItemTable()
 	cCsvTable data;
 	if (!data.Load("item_proto.txt", '\t'))
 	{
-		fprintf(stderr, "Could not load item_proto.txt. Wrong file format?\n");
+		LOG_ERROR("Could not load item_proto.txt. Wrong file format?");
 		return false;
 	}
 	data.Next();
@@ -470,7 +471,7 @@ bool CClientManager::InitializeItemTable()
 	data.Destroy();
 	if (!data.Load("item_proto.txt", '\t'))
 	{
-		fprintf(stderr, "Could not load item_proto.txt. Wrong file format?\n");
+		LOG_ERROR("Could not load item_proto.txt. Wrong file format?");
 		return false;
 	}
 	data.Next();
@@ -484,7 +485,7 @@ bool CClientManager::InitializeItemTable()
 	{
 		if (!Set_Proto_Item_Table(item_table, data, localMap))
 		{
-			fprintf(stderr, "Failed to load item_proto table.\n");
+			LOG_ERROR("Failed to load item_proto table.");
 		}
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));
@@ -1421,7 +1422,7 @@ bool CClientManager::InitializeMobTableFromDB()
 	char query[2048];
 #endif
 
-	fprintf(stdout, "Loading mob_proto from MySQL\n");
+	LOG_INFO("Loading mob_proto from MySQL");
 #ifdef ENABLE_MULTI_NAMES
 	int iQueryLen = snprintf(query, sizeof(query), "SELECT vnum, name, ");
 	for (int i = 0; i < LANGUAGE_MAX_NUM - 1; i++) {
@@ -1619,7 +1620,7 @@ bool CClientManager::InitializeMobTableFromDB()
 	}
 	sort(m_vec_mobTable.begin(), m_vec_mobTable.end(), FCompareVnum());
 
-	fprintf(stdout, "Complete! %u Mobs loaded.\n", addNumber);
+	LOG_INFO("Complete! {} Mobs loaded.", addNumber);
 	return true;
 }
 
@@ -1657,7 +1658,7 @@ bool CClientManager::InitializeItemTableFromDB()
 	char query[2048];
 #endif
 
-	fprintf(stdout, "Loading item_proto from MySQL\n");
+	LOG_INFO("Loading item_proto from MySQL");
 #ifdef ENABLE_MULTI_NAMES
 	int iQueryLen = snprintf(query, sizeof(query), "SELECT vnum, type, subtype, name, ");
 	for (int i = 0; i < LANGUAGE_MAX_NUM - 1; i++) {
@@ -1830,7 +1831,7 @@ bool CClientManager::InitializeItemTableFromDB()
 	}
 	sort(m_vec_itemTable.begin(), m_vec_itemTable.end(), FCompareVnum());
 
-	fprintf(stdout, "Complete! %u Items loaded.\n", addNumber);
+	LOG_INFO("Complete! {} Items loaded.", addNumber);
 	return true;
 }
 #endif

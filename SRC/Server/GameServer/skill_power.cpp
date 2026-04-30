@@ -4,6 +4,7 @@
 #include <common/length.h>
 
 #include "skill_power.h"
+#include "Core/Logging.hpp"
 
 bool CTableBySkill::Check() const
 {
@@ -11,7 +12,7 @@ bool CTableBySkill::Check() const
 	{
 		if (!m_aiSkillPowerByLevelFromType[job])
 		{
-			fprintf( stderr, "[NO SETTING SKILL] aiSkillPowerByLevelFromType[%d]", job);
+			LOG_ERROR("[NO SETTING SKILL] aiSkillPowerByLevelFromType[{}]", job);
 			return false;
 		}
 	}
