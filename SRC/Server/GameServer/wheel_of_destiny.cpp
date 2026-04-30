@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "wheel_of_destiny.h"
@@ -42,7 +43,7 @@ CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
 
 CWheelDestiny::~CWheelDestiny() {
 	if (GetGiftVnum())
-		sys_log(0, "<CWheelDestiny> player(%s) didn't get his gift(vnum: %lu(%d.x))!!", ((ch)->GetName()), GetGiftVnum(), GetGiftCount());
+		LOG_INFO("<CWheelDestiny> player({}) didn't get his gift(vnum: {}({}.x))!!", ((ch)->GetName()), GetGiftVnum(), GetGiftCount());
 }
 
 template <typename T> std::string NumberToMoneyString(T val)
@@ -87,7 +88,7 @@ void CWheelDestiny::TurnWheel()
 
 	auto Rand = PickAGift();
 	if (Rand == -1) {
-		sys_err("CWheelDestiny::TurnWheel() Error Pick Gift (%s)", ((ch)->GetName()));
+		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ((ch)->GetName()));
 		return;
 	}
 
@@ -148,7 +149,7 @@ void CWheelDestiny::GiveMyFuckingGift()
 		SetGift(0, 1); // reset
 	}
 	else
-		sys_err("Dude, where is the gift_vnum? <player: %s>", ((ch)->GetName()));
+		LOG_ERROR("Dude, where is the gift_vnum? <player: {}>", ((ch)->GetName()));
 }
 
 uint32_t CWheelDestiny::GetGiftVnum() const
