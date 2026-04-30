@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -562,8 +563,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 LPCHARACTER metin = d->SpawnMob((int32_t)kMetinVnum, x, y);
                 if (!metin)
                 {
-                    sys_err("[LostCastle] metin spawn fail: vnum=%u map=%d x=%d y=%d (i=%d idx=%d)",
-                        (unsigned)kMetinVnum, mapIndex, x, y, i, idx);
+                    LOG_ERROR("[LostCastle] metin spawn fail: vnum={} map={} x={} y={} (i={} idx={})", (unsigned)kMetinVnum, mapIndex, x, y, i, idx);
                     continue;
                 }
 
@@ -572,7 +572,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             if (spawnedVids.empty())
             {
-                sys_err("[LostCastle] failed to spawn any metins (fixed positions). map=%d", mapIndex);
+                LOG_ERROR("[LostCastle] failed to spawn any metins (fixed positions). map={}", mapIndex);
                 return;
             }
 
@@ -619,7 +619,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         //    if (spawnedVids.empty())
         //    {
-        //        sys_err("[LostCastle] failed to spawn any metins map=%d localRect=(%d,%d)-(%d,%d)", mapIndex, minX, minY, maxX, maxY);
+        //        "[LostCastle] failed to spawn any metins map=%d localRect=(%d,%d)-(%d,%d)", mapIndex, minX, minY, maxX, maxY);
         //        return;
         //    }
 
