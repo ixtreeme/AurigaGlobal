@@ -94,7 +94,7 @@ void CInputUDP::StateChecker(const char * c_pData)
 
 	if (sendto(udp_socket, (const char*)&rp, sizeof(rp), 0, (const struct sockaddr *) &m_SockAddr, sizeof(m_SockAddr)) < 0)
 	{
-		sys_err("cannot sendto datagram socket : %s, %d", inet_ntoa(m_SockAddr.sin_addr), inet_ntoa(m_SockAddr.sin_addr));
+		LOG_ERROR("cannot sendto datagram socket : {} {}", inet_ntoa(m_SockAddr.sin_addr), inet_ntoa(m_SockAddr.sin_addr));
 		return;
 	}
 	*/
@@ -115,7 +115,7 @@ int CInputUDP::Analyze(LPDESC pDesc, uint8_t bHeader, const char * c_pData)
 		*/
 
 		default:
-			LOG_ERROR("unknown UDP header {}", bHeader);
+			LOG_ERROR("unknown UDP header {}", static_cast<int>(bHeader));
 			break;
 	}
 
@@ -133,7 +133,7 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 
 	if (!m_pPacketInfo)
 	{
-		sys_err("No packet info has been binded to");
+		LOG_ERROR("No packet info has been binded to");
 		return true;
 	}
 
@@ -147,8 +147,8 @@ bool CInputUDP::Process(LPDESC pDesc, const void * c_pvOrig, int iBytes, int & r
 
 		if (!m_pPacketInfo->Get(bHeader, &iPacketLen, &c_pszName))
 		{
-			sys_err("UNKNOWN HEADER: %d, LAST HEADER: %d(%d), REMAIN BYTES: %d",
-					bHeader, bLastHeader, iLastPacketLen, m_iBufferLeft);
+			LOG_ERROR("UNKNOWN HEADER: {}, LAST HEADER: {}({}), REMAIN BYTES: {}",
+					static_cast<int>(bHeader), static_cast<int>(bLastHeader), iLastPacketLen, m_iBufferLeft);
 			//printdata((uint8_t *) c_pvOrig, iBytes);
 			return true;
 		}
