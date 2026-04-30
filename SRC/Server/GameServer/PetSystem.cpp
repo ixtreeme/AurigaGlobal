@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
 #include "utils.h"
@@ -77,7 +78,7 @@ EVENTFUNC(petsystem_update_event)
 	petsystem_event_info* info = dynamic_cast<petsystem_event_info*>( event->info );
 	if ( info == nullptr)
 	{
-		sys_err( "check_speedhack_event> <Factor> Null pointer" );
+		LOG_ERROR("check_speedhack_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -255,7 +256,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 #endif
 	if (nullptr == m_pkChar)
 	{
-		sys_err("[CPetSystem::Summon] Failed to summon the pet. (vnum: %d)", m_dwVnum);
+		LOG_ERROR("[CPetSystem::Summon] Failed to summon the pet. (vnum: {})", m_dwVnum);
 		return 0;
 	}
 //	#ifdef ENABLE_COSTUME_PET
@@ -336,7 +337,7 @@ bool CPetActor::_UpdateFollowAI()
 {
 	if (nullptr == m_pkChar->GetMobData())
 	{
-		//sys_err("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
+		// LOG_ERROR("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
 		return false;
 	}
 
@@ -619,14 +620,14 @@ void CPetSystem::DeletePet(uint32_t mobVnum)
 
 	if (m_petActorMap.end() == iter)
 	{
-		sys_err("[CPetSystem::DeletePet] Can't find pet on my list (VNUM: %d)", mobVnum);
+		LOG_ERROR("[CPetSystem::DeletePet] Can't find pet on my list (VNUM: {})", mobVnum);
 		return;
 	}
 
 	CPetActor* petActor = iter->second;
 
 	if (nullptr == petActor)
-		sys_err("[CPetSystem::DeletePet] Null Pointer (petActor)");
+		LOG_ERROR("[CPetSystem::DeletePet] Null Pointer (petActor)");
 	else
 		delete petActor;
 
@@ -647,7 +648,7 @@ void CPetSystem::DeletePet(CPetActor* petActor)
 		}
 	}
 
-	sys_err("[CPetSystem::DeletePet] Can't find petActor(0x%x) on my list(size: %d) ", petActor, m_petActorMap.size());
+	LOG_ERROR("[CPetSystem::DeletePet] Can't find petActor({}) on my list(size: {}) ", static_cast<const void*>(petActor), m_petActorMap.size());
 }
 
 void CPetSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
@@ -656,7 +657,7 @@ void CPetSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
 
 	if (nullptr == actor)
 	{
-		sys_err("[CPetSystem::GetByVnum(%d)] Null Pointer (petActor)", vnum);
+		LOG_ERROR("[CPetSystem::GetByVnum({})] Null Pointer (petActor)", vnum);
 		return;
 	}
 	actor->Unsummon();
@@ -710,7 +711,7 @@ CPetActor* CPetSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, const 
 #ifdef ENABLE_NEWSTUFF
 	uint32_t petVID = petActor->Summon(petName, pSummonItem, bSpawnFar);
 	if (!petVID)
-		sys_err("[CPetSystem::Summon(%d)] Null Pointer (petVID)", pSummonItem);
+		LOG_ERROR("[CPetSystem::Summon({})] Null Pointer (petVID)", entt::to_integral(pSummonItem));
 #endif
 
 	if (nullptr == m_pkPetSystemUpdateEvent)
@@ -738,7 +739,7 @@ CPetActor* CPetSystem::GetByVID(uint32_t vid) const
 
 		if (nullptr == petActor)
 		{
-			sys_err("[CPetSystem::GetByVID(%d)] Null Pointer (petActor)", vid);
+			LOG_ERROR("[CPetSystem::GetByVID({})] Null Pointer (petActor)", vid);
 			continue;
 		}
 
