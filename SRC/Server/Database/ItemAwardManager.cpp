@@ -121,7 +121,7 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 			char command[20] = "";
 			// @fixme203 directly GetCommand instead of strcpy
 			CClientManager::instance().GetCommand(cmdStr, command);				// command 얻기
-			//sys_err("%d,  %s",pItemAward->dwID,command);
+			//LOG_ERROR("{},  {}", pItemAward->dwID, command);
 			if( !(strcmp(command,"GIFT") ))	// command 가 GIFT이면
 			{
 				TPacketItemAwardInfromer giftData;
@@ -135,7 +135,7 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 		m_map_award.insert(std::make_pair(dwID, kData));
 
 		printf("ITEM_AWARD load id %u bMall %d \n", kData->dwID, kData->bMall);
-		sys_log(0, "ITEM_AWARD: load id %lu login %s vnum %lu count %u socket %lu", kData->dwID, kData->szLogin, kData->dwVnum, kData->dwCount, kData->dwSocket0);
+		LOG_INFO("ITEM_AWARD: load id {} login {} vnum {} count {} socket {}", kData->dwID, kData->szLogin, kData->dwVnum, kData->dwCount, kData->dwSocket0);
 		std::set<TItemAward *> & kSet = m_map_kSetAwardByLogin[kData->szLogin];
 		kSet.insert(kData);
 
@@ -160,7 +160,7 @@ void ItemAwardManager::Taken(uint32_t dwAwardID, uint32_t dwItemID)
 
 	if (it == m_map_award.end())
 	{
-		sys_log(0, "ITEM_AWARD: Taken ID not exist %lu", dwAwardID);
+		LOG_INFO("ITEM_AWARD: Taken ID not exist {}", dwAwardID);
 		return;
 	}
 
@@ -432,6 +432,6 @@ void ItemAwardManager::CheckItemBlend(TItemAward & rkItemAward, const TItemTable
 	const uint32_t dwApplyDuration = rkItemAward.dwSocket2;
 	
 	if (bApplyType == 0 || bApplyValue == 0 || dwApplyDuration == 0)
-		sys_err("ItemAwardManager: Unknown sockets for ITEM_BLEND.");
+		LOG_ERROR("ItemAwardManager: Unknown sockets for ITEM_BLEND.");
 }
 #endif
