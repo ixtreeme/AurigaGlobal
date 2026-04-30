@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -26,9 +27,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 #ifndef ENABLE_DUNGEON_SHARED_DROP_HWID
 
@@ -37,7 +38,7 @@ template <class Func> Func CDungeon::ForEachMember(Func f)
 {
 	for (auto it = m_set_pkCharacter.begin(); it != m_set_pkCharacter.end(); ++it)
 	{
-		sys_log(0, "Dungeon ForEachMember %s", (*it)->GetName());
+		LOG_INFO("Dungeon ForEachMember {}", (*it)->GetName());
 		f(*it);
 	}
 	return f;
@@ -275,7 +276,7 @@ namespace quest
 		int32_t mapidx = (int32_t)lua_tonumber(L, 1);
 		LPDUNGEON pDungeon = CDungeonManager::instance().Create(mapidx);
 		if (!pDungeon) {
-			sys_err("dungeon %s cannot be started.", mapidx);
+			sys_err("dungeon {} cannot be started.", mapidx);
 			return 0;
 		}
 
@@ -345,7 +346,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -369,7 +370,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -394,7 +395,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushboolean(L, 0);
 			return 1;
 		}
@@ -420,7 +421,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -445,7 +446,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -469,7 +470,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -494,7 +495,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -524,7 +525,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -560,7 +561,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -625,7 +626,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -649,7 +650,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -673,7 +674,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -697,7 +698,7 @@ namespace quest
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 		if (!ch) {
-			sys_err("The vid %d not exist.", vid);
+			sys_err("The vid {} not exist.", vid);
 			lua_pushboolean(L, 0);
 			return 1;
 		}
@@ -751,7 +752,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -776,7 +777,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -801,7 +802,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -825,7 +826,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -849,7 +850,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -896,7 +897,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -920,7 +921,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -1695,7 +1696,7 @@ namespace quest
 
 			// if (!q.GetPC(((ch)->GetPlayerID())))
 			// {
-				// sys_err("cannot return to leader.");
+				// "cannot return to leader.");
 			// }
 		// }
 		// else
@@ -1731,7 +1732,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -1740,28 +1741,28 @@ namespace quest
 		LPCHARACTER statue1 = CHARACTER_MANAGER::instance().Find(statue_vid1);
 		if (!statue1)
 		{
-			sys_err("The vid %d not exist.", statue_vid1);
+			sys_err("The vid {} not exist.", statue_vid1);
 			return 0;
 		}
 
 		LPCHARACTER statue2 = CHARACTER_MANAGER::instance().Find(statue_vid2);
 		if (!statue2)
 		{
-			sys_err("The vid %d not exist.", statue_vid2);
+			sys_err("The vid {} not exist.", statue_vid2);
 			return 0;
 		}
 
 		LPCHARACTER statue3 = CHARACTER_MANAGER::instance().Find(statue_vid3);
 		if (!statue3)
 		{
-			sys_err("The vid %d not exist.", statue_vid3);
+			sys_err("The vid {} not exist.", statue_vid3);
 			return 0;
 		}
 
 		LPCHARACTER statue4 = CHARACTER_MANAGER::instance().Find(statue_vid4);
 		if (!statue4)
 		{
-			sys_err("The vid %d not exist.", statue_vid4);
+			sys_err("The vid {} not exist.", statue_vid4);
 			return 0;
 		}
 
@@ -1795,7 +1796,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -1804,7 +1805,7 @@ namespace quest
 		LPCHARACTER statue = CHARACTER_MANAGER::instance().Find(statue_vid);
 		if (!statue)
 		{
-			sys_err("The vid %d not exist.", statue_vid);
+			sys_err("The vid {} not exist.", statue_vid);
 			return 0;
 		}
 
@@ -1836,7 +1837,7 @@ namespace quest
 		LPDUNGEON dungeon = CDungeonManager::instance().FindByMapIndex(mapidx);
 		if (!dungeon)
 		{
-			sys_err("dungeon %d doesn't exist.", mapidx);
+			sys_err("dungeon {} doesn't exist.", mapidx);
 			return 0;
 		}
 
@@ -1845,7 +1846,7 @@ namespace quest
 		LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossvid);
 		if (!boss)
 		{
-			sys_err("The vid %d not exist.", bossvid);
+			sys_err("The vid {} not exist.", bossvid);
 			return 0;
 		}
 
@@ -1854,28 +1855,28 @@ namespace quest
 		LPCHARACTER statue1 = CHARACTER_MANAGER::instance().Find(statue_vid1);
 		if (!statue1)
 		{
-			sys_err("The vid %d not exist.", statue_vid1);
+			sys_err("The vid {} not exist.", statue_vid1);
 			return 0;
 		}
 
 		LPCHARACTER statue2 = CHARACTER_MANAGER::instance().Find(statue_vid2);
 		if (!statue2)
 		{
-			sys_err("The vid %d not exist.", statue_vid2);
+			sys_err("The vid {} not exist.", statue_vid2);
 			return 0;
 		}
 
 		LPCHARACTER statue3 = CHARACTER_MANAGER::instance().Find(statue_vid3);
 		if (!statue3)
 		{
-			sys_err("The vid %d not exist.", statue_vid3);
+			sys_err("The vid {} not exist.", statue_vid3);
 			return 0;
 		}
 
 		LPCHARACTER statue4 = CHARACTER_MANAGER::instance().Find(statue_vid4);
 		if (!statue4)
 		{
-			sys_err("The vid %d not exist.", statue_vid4);
+			sys_err("The vid {} not exist.", statue_vid4);
 			return 0;
 		}
 
