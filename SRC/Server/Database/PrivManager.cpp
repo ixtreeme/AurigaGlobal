@@ -84,7 +84,7 @@ void CPrivManager::AddCharPriv(uint32_t pid, uint8_t type, int value)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: AddCharPriv: wrong char priv type(%u) recved", type);
+		LOG_ERROR("PRIV_MANAGER: AddCharPriv: wrong char priv type({}) recved", type);
 		return;
 	}
 
@@ -108,7 +108,7 @@ void CPrivManager::AddCharPriv(uint32_t pid, uint8_t type, int value)
 	m_aPrivChar[type].insert(std::make_pair(pid, p));
 
 	// TODO send packet
-	sys_log(0, "AddCharPriv %d %d %d", pid, type, value);
+	LOG_INFO("AddCharPriv {} {} {}", pid, type, value);
 	SendChangeCharPriv(pid, type, value);
 }
 
@@ -119,7 +119,7 @@ void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: AddGuildPriv: wrong guild priv type(%u) recved", type);
+		LOG_ERROR("PRIV_MANAGER: AddGuildPriv: wrong guild priv type({}) recved", type);
 		return;
 	}
 
@@ -141,14 +141,14 @@ void CPrivManager::AddGuildPriv(uint32_t guild_id, uint8_t type, int value, time
 	SendChangeGuildPriv(guild_id, type, value, end);
 	// END_OF_ADD_GUILD_PRIV_TIME
 
-	sys_log(0, "Guild Priv guild(%d) type(%d) value(%d) duration_sec(%d)", guild_id, type, value, duration_sec);
+	LOG_INFO("Guild Priv guild({}) type({}) value({}) duration_sec({})", guild_id, type, value, duration_sec);
 }
 
 void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t duration_sec)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: AddEmpirePriv: wrong empire priv type(%u) recved", type);
+		LOG_ERROR("PRIV_MANAGER: AddEmpirePriv: wrong empire priv type({}) recved", type);
 		return;
 	}
 
@@ -173,7 +173,7 @@ void CPrivManager::AddEmpirePriv(uint8_t empire, uint8_t type, int value, time_t
 	SendChangeEmpirePriv(empire, type, value, end);
 	// END_OF_ADD_EMPIRE_PRIV_TIME
 
-	sys_log(0, "Empire Priv empire(%d) type(%d) value(%d) duration_sec(%d)", empire, type, value, duration_sec);
+	LOG_INFO("Empire Priv empire({}) type({}) value({}) duration_sec({})", empire, type, value, duration_sec);
 }
 
 /**
