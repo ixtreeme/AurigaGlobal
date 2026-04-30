@@ -1,5 +1,12 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "questmanager.h"
+#undef sys_err
+#ifndef _WIN32
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
+#else
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
+#endif
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
@@ -20,7 +27,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
@@ -28,7 +35,7 @@ namespace quest
 
 		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(((ch)->GetMapIndex()), pos))
 		{
-			sys_err("cannot find base position in this map %d", ((ch)->GetMapIndex()));
+			sys_err("cannot find base position in this map {}", ((ch)->GetMapIndex()));
 			return 0;
 		}
 
@@ -58,7 +65,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
@@ -87,7 +94,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: %s, quest_index %d", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
 			return 0;
 		}
 
@@ -120,7 +127,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: %s, quest_index %u", ((ch)->GetName()), dwQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), dwQuestIndex);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -133,7 +140,7 @@ namespace quest
 
 			if ( pInfo == nullptr)
 			{
-				sys_err( "target_id> <Factor> Null pointer" );
+				sys_err("target_id> <Factor> Null pointer");
 				lua_pushnumber(L, 0);
 				return 1;
 			}
