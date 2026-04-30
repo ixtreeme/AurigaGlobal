@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "log.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "item.h"
 #include "blend_item.h"
@@ -39,7 +40,7 @@ bool	Blend_Item_init()
 	char	file_name[256];
 	snprintf (file_name, sizeof(file_name), "%s/blend.txt", LocaleService_GetBasePath().c_str());
 
-	sys_log(0, "Blend_Item_init %s ", file_name);
+	LOG_INFO("Blend_Item_init {} ", file_name);
 
 	DO_ALL_BLEND_INFO(iter)
 	{
@@ -50,7 +51,7 @@ bool	Blend_Item_init()
 
 	if (false==Blend_Item_load(file_name))
 	{
-		sys_err("<Blend_Item_init> fail");
+		LOG_ERROR("<Blend_Item_init> fail");
 		return false;
 	}
 	return true;
@@ -220,7 +221,7 @@ bool	Blend_Item_set_value(LPITEM item)
 				apply_value		= blend_info->apply_value		[FN_random_index()];
 				apply_duration	= blend_info->apply_duration	[FN_random_index()];
 			}
-			sys_log (0, "blend_item : type : %d, value : %d, du : %d", apply_type, apply_value, apply_duration);
+			LOG_INFO("blend_item : type : {}, value : {}, du : {}", apply_type, apply_value, apply_duration);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, apply_type);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1, apply_value);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 2, apply_duration);
