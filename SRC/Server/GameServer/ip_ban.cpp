@@ -17,6 +17,7 @@ typedef unsigned long uint32_t;
 #else
 
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ip_ban.h"
 
 #endif
@@ -201,7 +202,7 @@ bool BanIP(struct in_addr in, const char* c_szIP)
 	FILE* pFile = fopen("BANIP", "a");
 	if (!pFile)
 	{
-		sys_log(0, "cannot open BANIP");
+		LOG_INFO("cannot open BANIP");
 		return false;
 	}
 
