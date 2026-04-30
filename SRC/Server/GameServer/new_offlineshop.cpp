@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include <common/tables.h>
 #include "packet.h"
 #include "item.h"
@@ -101,7 +102,7 @@ namespace offlineshop
 
 		else
 		{
-			sys_err("offlineshop::CShopItem - constructor using item/price/window : item == nullptr! ");
+			LOG_ERROR("offlineshop::CShopItem - constructor using item/price/window : item == nullptr! ");
 		}
 
 		if (dwID != 0)
@@ -180,7 +181,7 @@ namespace offlineshop
 
 		else
 		{
-			sys_err("offlineshop::CShopItem - SetInfo: item == nullptr! ");
+			LOG_ERROR("offlineshop::CShopItem - SetInfo: item == nullptr! ");
 		}
 	}
 
@@ -464,7 +465,7 @@ namespace offlineshop
 	{
 		if (rItem.GetID() != dwItemID)
 		{
-			sys_err( "have you forgot to set item id ? %d - %d don't match ",rItem.GetID(), dwItemID);
+			LOG_ERROR("have you forgot to set item id ? {} - {} don't match ", rItem.GetID(), dwItemID);
 			return false;
 		}
 
