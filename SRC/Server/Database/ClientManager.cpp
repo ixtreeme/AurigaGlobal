@@ -293,7 +293,7 @@ bool CClientManager::Initialize()
 #endif
 	if (!InitializeTables())
 	{
-		sys_err("Table Initialize FAILED");
+		LOG_ERROR("Table Initialize FAILED");
 		return false;
 	}
 
@@ -315,7 +315,7 @@ bool CClientManager::Initialize()
 		return false;
 	}
 
-	sys_log(0, "ACCEPT_HANDLE: %u", m_fdAccept);
+	LOG_INFO("ACCEPT_HANDLE: {}", m_fdAccept);
 	fdwatch_add_fd(m_fdWatcher, m_fdAccept, nullptr, FDW_READ, false);
 
 	if (!CConfig::instance().GetValue("BACKUP_LIMIT_SEC", &tmpValue))
@@ -325,7 +325,7 @@ bool CClientManager::Initialize()
 
 	// if (!CConfig::instance().GetValue("PLAYER_DELETE_LEVEL_LIMIT", &m_iPlayerDeleteLevelLimit))
 	// {
-		// sys_err("conf.txt: Cannot find PLAYER_DELETE_LEVEL_LIMIT, use default level %d", PLAYER_MAX_LEVEL_CONST + 1);
+		// LOG_ERROR("conf.txt: Cannot find PLAYER_DELETE_LEVEL_LIMIT, use default level {}", PLAYER_MAX_LEVEL_CONST + 1);
 		// m_iPlayerDeleteLevelLimit = PLAYER_MAX_LEVEL_CONST + 1;
 	// }
 
@@ -334,8 +334,8 @@ bool CClientManager::Initialize()
 		// m_iPlayerDeleteLevelLimitLower = 0;
 	// }
 
-	// sys_log(0, "PLAYER_DELETE_LEVEL_LIMIT set to %d", m_iPlayerDeleteLevelLimit);
-	// sys_log(0, "PLAYER_DELETE_LEVEL_LIMIT_LOWER set to %d", m_iPlayerDeleteLevelLimitLower);
+	// LOG_INFO("PLAYER_DELETE_LEVEL_LIMIT set to {}", m_iPlayerDeleteLevelLimit);
+	// LOG_INFO("PLAYER_DELETE_LEVEL_LIMIT_LOWER set to {}", m_iPlayerDeleteLevelLimitLower);
 
 	LoadEventFlag();
 
@@ -346,7 +346,7 @@ void CClientManager::MainLoop()
 {
 	SQLMsg * tmp;
 
-	sys_log(0, "ClientManager pointer is %p", this);
+	LOG_INFO("ClientManager pointer is {}", this);
 
 	while (!m_bShutdowned)
 	{
@@ -362,7 +362,7 @@ void CClientManager::MainLoop()
 		log_rotate();
 	}
 
-	sys_log(0, "MainLoop exited, Starting cache flushing");
+	LOG_INFO("MainLoop exited, Starting cache flushing");
 
 	signal_timer_disable();
 
@@ -427,7 +427,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	__GetHostInfo(vHost);
 	__GetAdminInfo(p->szIP, vAdmin);
 
-	sys_log(0, "QUERY_BOOT : AdminInfo (Request ServerIp %s) ", p->szIP);
+	LOG_INFO("QUERY_BOOT : AdminInfo (Request ServerIp {}) ", p->szIP);
 
 	uint32_t dwPacketSize =
 		sizeof(uint32_t) +
@@ -455,22 +455,22 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	peer->Encode(&dwPacketSize, sizeof(uint32_t));
 	peer->Encode(&bPacketVersion, sizeof(uint8_t));
 
-	sys_log(0, "BOOT: PACKET: %d", dwPacketSize);
-	sys_log(0, "BOOT: VERSION: %d", bPacketVersion);
+	LOG_INFO("BOOT: PACKET: {}", dwPacketSize);
+	LOG_INFO("BOOT: VERSION: {}", bPacketVersion);
 
-	sys_log(0, "sizeof(TMobTable) = %d", sizeof(TMobTable));
-	sys_log(0, "sizeof(TItemTable) = %d", sizeof(TItemTable));
-	sys_log(0, "sizeof(TShopTable) = %d", sizeof(TShopTable));
-	sys_log(0, "sizeof(TSkillTable) = %d", sizeof(TSkillTable));
-	sys_log(0, "sizeof(TRefineTable) = %d", sizeof(TRefineTable));
-	sys_log(0, "sizeof(TItemAttrTable) = %d", sizeof(TItemAttrTable));
-	sys_log(0, "sizeof(TItemRareTable) = %d", sizeof(TItemAttrTable));
-	sys_log(0, "sizeof(TBanwordTable) = %d", sizeof(TBanwordTable));
-	sys_log(0, "sizeof(TLand) = %d", sizeof(building::TLand));
-	sys_log(0, "sizeof(TObjectProto) = %d", sizeof(building::TObjectProto));
-	sys_log(0, "sizeof(TObject) = %d", sizeof(building::TObject));
+	LOG_INFO("sizeof(TMobTable) = {}", sizeof(TMobTable));
+	LOG_INFO("sizeof(TItemTable) = {}", sizeof(TItemTable));
+	LOG_INFO("sizeof(TShopTable) = {}", sizeof(TShopTable));
+	LOG_INFO("sizeof(TSkillTable) = {}", sizeof(TSkillTable));
+	LOG_INFO("sizeof(TRefineTable) = {}", sizeof(TRefineTable));
+	LOG_INFO("sizeof(TItemAttrTable) = {}", sizeof(TItemAttrTable));
+	LOG_INFO("sizeof(TItemRareTable) = {}", sizeof(TItemAttrTable));
+	LOG_INFO("sizeof(TBanwordTable) = {}", sizeof(TBanwordTable));
+	LOG_INFO("sizeof(TLand) = {}", sizeof(building::TLand));
+	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
+	LOG_INFO("sizeof(TObject) = {}", sizeof(building::TObject));
 	//ADMIN_MANAGER
-	sys_log(0, "sizeof(tAdminInfo) = %d * %d ", sizeof(tAdminInfo) * vAdmin.size());
+	LOG_INFO("sizeof(tAdminInfo) = {} * {} ", sizeof(tAdminInfo) * vAdmin.size());
 	//END_ADMIN_MANAGER
 
 	peer->EncodeWORD(sizeof(TMobTable));
@@ -543,7 +543,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	for (size_t n = 0; n < vHost.size(); ++n)
 	{
 		peer->Encode(vHost[n].c_str(), 16);
-		sys_log(0, "GMHosts %s", vHost[n].c_str());
+		LOG_INFO("GMHosts {}", vHost[n].c_str());
 	}
 
 	peer->EncodeWORD(sizeof(tAdminInfo));
@@ -552,7 +552,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	for (size_t n = 0; n < vAdmin.size(); ++n)
 	{
 		peer->Encode(&vAdmin[n], sizeof(tAdminInfo));
-		sys_log(0, "Admin name %s ConntactIP %s", vAdmin[n].m_szName, vAdmin[n].m_szContactIP);
+		LOG_INFO("Admin name {} ConntactIP {}", vAdmin[n].m_szName, vAdmin[n].m_szContactIP);
 	}
 	//END_ADMIN_MANAGER
 
@@ -578,13 +578,13 @@ void CClientManager::SendPartyOnSetup(CPeer* pkPeer)
 
 	for (auto it_party = pm.begin(); it_party != pm.end(); ++it_party)
 	{
-		sys_log(0, "PARTY SendPartyOnSetup Party [%u]", it_party->first);
+		LOG_INFO("PARTY SendPartyOnSetup Party [{}]", it_party->first);
 		pkPeer->EncodeHeader(HEADER_DG_PARTY_CREATE, 0, sizeof(TPacketPartyCreate));
 		pkPeer->Encode(&it_party->first, sizeof(uint32_t));
 
 		for (auto it_member = it_party->second.begin(); it_member != it_party->second.end(); ++it_member)
 		{
-			sys_log(0, "PARTY SendPartyOnSetup Party [%u] Member [%u]", it_party->first, it_member->first);
+			LOG_INFO("PARTY SendPartyOnSetup Party [{}] Member [{}]", it_party->first, it_member->first);
 			pkPeer->EncodeHeader(HEADER_DG_PARTY_ADD, 0, sizeof(TPacketPartyAdd));
 			pkPeer->Encode(&it_party->first, sizeof(uint32_t));
 			pkPeer->Encode(&it_member->first, sizeof(uint32_t));
@@ -607,7 +607,7 @@ void CClientManager::QUERY_QUEST_SAVE(CPeer * pkPeer, TQuestTable * pTable, uint
 {
 	if (0 != dwLen % sizeof(TQuestTable))
 	{
-		sys_err("invalid packet size %d, sizeof(TQuestTable) == %d", dwLen, sizeof(TQuestTable));
+		LOG_ERROR("invalid packet size {}, sizeof(TQuestTable) == {}", dwLen, sizeof(TQuestTable));
 		return;
 	}
 
@@ -649,7 +649,7 @@ void CClientManager::QUERY_SAFEBOX_LOAD(CPeer * pkPeer, uint32_t dwHandle, TSafe
 			GetTablePostfix(), packet->dwID);
 
 	if (g_log)
-		sys_log(0, "HEADER_GD_SAFEBOX_LOAD (handle: %d account.id %u is_mall %d)", dwHandle, packet->dwID, bMall ? 1 : 0);
+		LOG_INFO("HEADER_GD_SAFEBOX_LOAD (handle: {} account.id {} is_mall {})", dwHandle, packet->dwID, bMall ? 1 : 0);
 
 	CDBManager::instance().ReturnQuery(szQuery, QID_SAFEBOX_LOAD, pkPeer->GetHandle(), pi);
 }
@@ -720,10 +720,10 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 			if (pi->ip[0] == 1)
 			{
 				pSafebox->bSize = 1;
-				sys_log(0, "MALL id[%d] size[%d]", pSafebox->dwID, pSafebox->bSize);
+				LOG_INFO("MALL id[{}] size[{}]", pSafebox->dwID, pSafebox->bSize);
 			}
 			else
-				sys_log(0, "SAFEBOX id[%d] size[%d]", pSafebox->dwID, pSafebox->bSize);
+				LOG_INFO("SAFEBOX id[{}] size[{}]", pSafebox->dwID, pSafebox->bSize);
 		}
 
 		if (0 == pSafebox->dwID)
@@ -757,7 +757,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 	{
 		if (!pi->pSafebox)
 		{
-			sys_err("null safebox pointer!");
+			LOG_ERROR("null safebox pointer!");
 			delete pi;
 			return;
 		}
@@ -767,7 +767,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 		// 보이기 때문에 창고가 아얘 안열리는게 나음
 		if (!msg->Get()->pSQLResult)
 		{
-			sys_err("null safebox result");
+			LOG_ERROR("null safebox result");
 			delete pi;
 			return;
 		}
@@ -789,7 +789,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 				if (it == m_map_itemTableByVnum.end())
 				{
 					bEscape = true;
-					sys_err("invalid item vnum %u in safebox: login %s", r.vnum, pi->login);
+					LOG_ERROR("invalid item vnum {} in safebox: login {}", r.vnum, pi->login);
 					break;
 				}
 
@@ -822,7 +822,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 					if (it == m_map_itemTableByVnum.end())
 					{
-						sys_err("invalid item vnum %u in item_award: login %s", pItemAward->dwVnum, pi->login);
+						LOG_ERROR("invalid item vnum {} in item_award: login {}", pItemAward->dwVnum, pi->login);
 						continue;
 					}
 
@@ -895,7 +895,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 					if (GetItemID () > m_itemRange.dwMax)
 					{
-						sys_err("UNIQUE ID OVERFLOW!!");
+						LOG_ERROR("UNIQUE ID OVERFLOW!!");
 						break;
 					}
 
@@ -903,13 +903,13 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 						auto it = m_map_itemTableByVnum.find (dwItemVnum);
 						if (it == m_map_itemTableByVnum.end())
 						{
-							sys_err ("Invalid item(vnum : %d). It is not in m_map_itemTableByVnum.", dwItemVnum);
+							LOG_ERROR("Invalid item(vnum : {}). It is not in m_map_itemTableByVnum.", dwItemVnum);
 							continue;
 						}
 						TItemTable* item_table = it->second;
 						if (item_table == nullptr)
 						{
-							sys_err ("Invalid item_table (vnum : %d). It's value is NULL in m_map_itemTableByVnum.", dwItemVnum);
+							LOG_ERROR("Invalid item_table (vnum : {}). It's value is NULL in m_map_itemTableByVnum.", dwItemVnum);
 							continue;
 						}
 						if (0 == pItemAward->dwSocket0)
@@ -977,7 +977,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 					
 					std::unique_ptr<SQLMsg> pmsg(CDBManager::instance().DirectQuery(szQuery));
 					SQLResult * pRes = pmsg->Get();
-					sys_log(0, "SAFEBOX Query : [%s]", szQuery);
+					LOG_INFO("SAFEBOX Query : [{}]", szQuery);
 
 					if (pRes->uiAffectedRows == 0 || pRes->uiInsertID == 0 || pRes->uiAffectedRows == (uint32_t)-1)
 						break;
@@ -1141,7 +1141,7 @@ void CClientManager::RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg)
 	peer->Encode(&header, sizeof(header));
 	peer->Encode(table.aPriceInfo, sizePriceListSize);
 
-	sys_log(0, "Load MyShopPricelist handle[%d] pid[%d] count[%d]", pReqInfo->first, pReqInfo->second, header.byCount);
+	LOG_INFO("Load MyShopPricelist handle[{}] pid[{}] count[{}]", pReqInfo->first, pReqInfo->second, header.byCount);
 
 	delete pReqInfo;
 }
@@ -1194,7 +1194,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 	snprintf(szQuery, sizeof(szQuery), "UPDATE player_index%s SET empire=%u WHERE id=%u", GetTablePostfix(), p->bEmpire, p->dwAccountID);
 	delete CDBManager::instance().DirectQuery(szQuery);
 
-	sys_log(0, "EmpireSelect: %s", szQuery);
+	LOG_INFO("EmpireSelect: {}", szQuery);
 	{
 		snprintf(szQuery, sizeof(szQuery),"SELECT pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE id=%u", GetTablePostfix(), p->dwAccountID);
 
@@ -1204,7 +1204,7 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 
 		if (pRes->uiNumRows)
 		{
-			sys_log(0, "EMPIRE %lu", pRes->uiNumRows);
+			LOG_INFO("EMPIRE {}", pRes->uiNumRows);
 
 			MYSQL_ROW row = mysql_fetch_row(pRes->pSQLResult);
 			int pids[3];
@@ -1228,12 +1228,11 @@ void CClientManager::QUERY_EMPIRE_SELECT(CPeer * pkPeer, uint32_t dwHandle, TEmp
 			for (int i = 0; i < 3; ++i)
 			{
 				str_to_number(pids[i], row[i]);
-				sys_log(0, "EMPIRE PIDS[%d]", pids[i]);
+				LOG_INFO("EMPIRE PIDS[{}]", pids[i]);
 
 				if (pids[i])
 				{
-					sys_log(0, "EMPIRE move to pid[%d] to villiage of %u, map_index %d",
-							pids[i], p->bEmpire, g_start_map[p->bEmpire]);
+					LOG_INFO("EMPIRE move to pid[{}] to villiage of {}, map_index {}", pids[i], p->bEmpire, g_start_map[p->bEmpire]);
 
 					snprintf(szQuery, sizeof(szQuery), "UPDATE player%s SET map_index=%u,x=%u,y=%u WHERE id=%u",
 							GetTablePostfix(),
@@ -1262,7 +1261,7 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 #ifdef ENABLE_AUTH_PERFORMANCE
 		peer->SetChannel(1);
 #endif
-		sys_log(0, "AUTH_PEER ptr %p", peer);
+		LOG_INFO("AUTH_PEER ptr {}", peer);
 
 		m_pkAuthPeer = peer;
 		SendAllLoginToBilling();
@@ -1410,7 +1409,7 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 	//
 	// 셋업 : 접속한 피어에 다른 피어들이 접속하게 만든다. (P2P 컨넥션 생성)
 	//
-	sys_log(0, "SETUP: channel %u listen %u p2p %u count %u", peer->GetChannel(), p->wListenPort, p->wP2PPort, bMapCount);
+	LOG_INFO("SETUP: channel {} listen {} p2p {} count {}", peer->GetChannel(), p->wListenPort, p->wP2PPort, bMapCount);
 
 	TPacketDGP2P p2pSetupPacket;
 	p2pSetupPacket.wPort = peer->GetP2PPort();
@@ -1464,7 +1463,7 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 
 		if (InsertLogonAccount(pck->szLogin, peer->GetHandle(), pck->szHost))
 		{
-			sys_log(0, "SETUP: login %u %s login_key %u host %s", pck->dwID, pck->szLogin, pck->dwLoginKey, pck->szHost);
+			LOG_INFO("SETUP: login {} {} login_key {} host {}", pck->dwID, pck->szLogin, pck->dwLoginKey, pck->szHost);
 			pkLD->SetPlay(true);
 
 			if (m_pkAuthPeer)
@@ -1477,12 +1476,12 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 			}
 		}
 		else
-			sys_log(0, "SETUP: login_fail %u %s login_key %u", pck->dwID, pck->szLogin, pck->dwLoginKey);
+			LOG_INFO("SETUP: login_fail {} {} login_key {}", pck->dwID, pck->szLogin, pck->dwLoginKey);
 	}
 
 	if (m_pkAuthPeer && !vec_repair.empty())
 	{
-		sys_log(0, "REPAIR size %d", vec_repair.size());
+		LOG_INFO("REPAIR size {}", vec_repair.size());
 
 		m_pkAuthPeer->EncodeHeader(HEADER_DG_BILLING_REPAIR, 0, sizeof(uint32_t) + sizeof(TPacketBillingRepair) * vec_repair.size());
 		m_pkAuthPeer->EncodeDWORD(vec_repair.size());
@@ -1508,7 +1507,7 @@ void CClientManager::QUERY_ITEM_FLUSH(CPeer * pkPeer, const char * c_pData)
 	uint32_t dwID = *(uint32_t *) c_pData;
 
 	if (g_log)
-		sys_log(0, "HEADER_GD_ITEM_FLUSH: %u", dwID);
+		LOG_INFO("HEADER_GD_ITEM_FLUSH: {}", dwID);
 
 	CItemCache * c = GetItemCache(dwID);
 
@@ -1532,7 +1531,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			if (const auto it = m_map_pkItemCacheSetPtr.find(c->Get()->owner); it != m_map_pkItemCacheSetPtr.end())
 			{
 				if (g_test_server)
-					sys_log(0, "ITEM_CACHE: safebox owner %u id %u", c->Get()->owner, c->Get()->id);
+					LOG_INFO("ITEM_CACHE: safebox owner {} id {}", c->Get()->owner, c->Get()->id);
 
 				it->second->erase(c);
 			}
@@ -1587,7 +1586,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 	else
 	{
 		if (g_test_server)
-			sys_log(0, "QUERY_ITEM_SAVE => PutItemCache() owner %d id %d vnum %d ", p->owner, p->id, p->vnum);
+			LOG_INFO("QUERY_ITEM_SAVE => PutItemCache() owner {} id {} vnum {} ", p->owner, p->id, p->vnum);
 
 		PutItemCache(p);
 	}
@@ -1612,7 +1611,7 @@ void CClientManager::CreateItemCacheSet(uint32_t pid)
 	m_map_pkItemCacheSetPtr.insert(TItemCacheSetPtrMap::value_type(pid, pSet));
 
 	if (g_log)
-		sys_log(0, "ITEM_CACHE: new cache %u", pid);
+		LOG_INFO("ITEM_CACHE: new cache {}", pid);
 }
 
 void CClientManager::FlushItemCacheSet(uint32_t pid)
@@ -1621,7 +1620,7 @@ void CClientManager::FlushItemCacheSet(uint32_t pid)
 
 	if (it == m_map_pkItemCacheSetPtr.end())
 	{
-		sys_log(0, "FLUSH_ITEMCACHESET : No ItemCacheSet pid(%d)", pid);
+		LOG_INFO("FLUSH_ITEMCACHESET : No ItemCacheSet pid({})", pid);
 		return;
 	}
 
@@ -1643,7 +1642,7 @@ void CClientManager::FlushItemCacheSet(uint32_t pid)
 	m_map_pkItemCacheSetPtr.erase(it);
 
 	if (g_log)
-		sys_log(0, "FLUSH_ITEMCACHESET : Deleted pid(%d)", pid);
+		LOG_INFO("FLUSH_ITEMCACHESET : Deleted pid({})", pid);
 }
 
 CItemCache * CClientManager::GetItemCache(uint32_t id)
@@ -1664,7 +1663,7 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 	if (!c)
 	{
 		if (g_log)
-			sys_log(0, "ITEM_CACHE: PutItemCache ==> New CItemCache id%d vnum%d new owner%d", pNew->id, pNew->vnum, pNew->owner);
+			LOG_INFO("ITEM_CACHE: PutItemCache ==> New CItemCache id{} vnum{} new owner{}", pNew->id, pNew->vnum, pNew->owner);
 
 		c = new CItemCache;
 		m_map_itemCache.insert(TItemCacheMap::value_type(pNew->id, c));
@@ -1673,7 +1672,7 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 	else
 	{
 		if (g_log)
-			sys_log(0, "ITEM_CACHE: PutItemCache ==> Have Cache");
+			LOG_INFO("ITEM_CACHE: PutItemCache ==> Have Cache");
 		// 소유자가 틀리면
 		if (pNew->owner != c->Get()->owner)
 		{
@@ -1683,7 +1682,7 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 			if (it != m_map_pkItemCacheSetPtr.end())
 			{
 				if (g_log)
-				sys_log(0, "ITEM_CACHE: delete owner %u id %u new owner %u", c->Get()->owner, c->Get()->id, pNew->owner);
+				LOG_INFO("ITEM_CACHE: delete owner {} id {} new owner {}", c->Get()->owner, c->Get()->id, pNew->owner);
 				it->second->erase(c);
 			}
 		}
@@ -1695,9 +1694,9 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 	if (const auto it = m_map_pkItemCacheSetPtr.find(c->Get()->owner); it != m_map_pkItemCacheSetPtr.end())
 	{
 		if (g_log)
-			sys_log(0, "ITEM_CACHE: save %u id %u", c->Get()->owner, c->Get()->id);
+			LOG_INFO("ITEM_CACHE: save {} id {}", c->Get()->owner, c->Get()->id);
 		else
-			sys_log(1, "ITEM_CACHE: save %u id %u", c->Get()->owner, c->Get()->id);
+			LOG_TRACE("ITEM_CACHE: save {} id {}", c->Get()->owner, c->Get()->id);
 		it->second->insert(c);
 	}
 	else
@@ -1705,9 +1704,9 @@ void CClientManager::PutItemCache(TPlayerItem * pNew, bool bSkipQuery)
 		// 현재 소유자가 없으므로 바로 저장해야 다음 접속이 올 때 SQL에 쿼리하여
 		// 받을 수 있으므로 바로 저장한다.
 		if (g_log)
-			sys_log(0, "ITEM_CACHE: direct save %u id %u", c->Get()->owner, c->Get()->id);
+			LOG_INFO("ITEM_CACHE: direct save {} id {}", c->Get()->owner, c->Get()->id);
 		else
-			sys_log(1, "ITEM_CACHE: direct save %u id %u", c->Get()->owner, c->Get()->id);
+			LOG_TRACE("ITEM_CACHE: direct save {} id {}", c->Get()->owner, c->Get()->id);
 
 		c->OnFlush();
 	}
@@ -1759,7 +1758,7 @@ void CClientManager::UpdatePlayerCache()
 		if (c->CheckTimeout())
 		{
 			if (g_log)
-				sys_log(0, "UPDATE : UpdatePlayerCache() ==> FlushPlayerCache %d %s ", c->Get(false)->id, c->Get(false)->name);
+				LOG_INFO("UPDATE : UpdatePlayerCache() ==> FlushPlayerCache {} {} ", c->Get(false)->id, c->Get(false)->name);
 
 			c->Flush();
 
@@ -1818,7 +1817,7 @@ void CClientManager::UpdateSkillColorCache()
 void CClientManager::SetCacheFlushCountLimit(int iLimit)
 {
 	m_iCacheFlushCountLimit = MAX(10, iLimit);
-	sys_log(0, "CACHE_FLUSH_LIMIT_PER_SECOND: %d", m_iCacheFlushCountLimit);
+	LOG_INFO("CACHE_FLUSH_LIMIT_PER_SECOND: {}", m_iCacheFlushCountLimit);
 }
 
 void CClientManager::UpdateItemCache()
@@ -1836,7 +1835,7 @@ void CClientManager::UpdateItemCache()
 		if (c->CheckFlushTimeout())
 		{
 			if (g_test_server)
-				sys_log(0, "UpdateItemCache ==> Flush() vnum %d id owner %d", c->Get()->vnum, c->Get()->id, c->Get()->owner);
+				LOG_INFO("UpdateItemCache ==> Flush() vnum {} id owner {}", c->Get()->vnum, c->Get()->id, c->Get()->owner);
 
 			c->Flush();
 
@@ -1877,7 +1876,7 @@ void CClientManager::QUERY_ITEM_DESTROY(CPeer * pkPeer, const char * c_pData)
 		snprintf(szQuery, sizeof(szQuery), "DELETE FROM item%s WHERE id=%u", GetTablePostfix(), dwID);
 
 		if (g_log)
-			sys_log(0, "HEADER_GD_ITEM_DESTROY: PID %u ID %u", dwPID, dwID);
+			LOG_INFO("HEADER_GD_ITEM_DESTROY: PID {} ID {}", dwPID, dwID);
 
 		if (dwPID == 0) // 아무도 가진 사람이 없었다면, 비동기 쿼리
 			CDBManager::instance().AsyncQuery(szQuery);
@@ -1895,7 +1894,7 @@ void CClientManager::QUERY_FLUSH_CACHE(CPeer * pkPeer, const char * c_pData)
 	if (!pkCache)
 		return;
 
-	sys_log(0, "FLUSH_CACHE: %u", dwPID);
+	LOG_INFO("FLUSH_CACHE: {}", dwPID);
 
 	pkCache->Flush();
 	FlushItemCacheSet(dwPID);
@@ -1924,7 +1923,7 @@ void CClientManager::QUERY_RELOAD_PROTO()
 {
 	if (!InitializeTables())
 	{
-		sys_err("QUERY_RELOAD_PROTO: cannot load tables");
+		LOG_ERROR("QUERY_RELOAD_PROTO: cannot load tables");
 		return;
 	}
 
@@ -2047,7 +2046,7 @@ void CClientManager::DeleteLoginData(CLoginData * pkLD)
 void CClientManager::QUERY_AUTH_LOGIN(CPeer * pkPeer, uint32_t dwHandle, TPacketGDAuthLogin * p)
 {
 	if (g_test_server)
-		sys_log(0, "QUERY_AUTH_LOGIN %d %d %s", p->dwID, p->dwLoginKey, p->szLogin);
+		LOG_INFO("QUERY_AUTH_LOGIN {} {} {}", p->dwID, p->dwLoginKey, p->szLogin);
 	CLoginData * pkLD = GetLoginDataByLogin(p->szLogin);
 
 	if (pkLD)
@@ -2059,7 +2058,7 @@ void CClientManager::QUERY_AUTH_LOGIN(CPeer * pkPeer, uint32_t dwHandle, TPacket
 
 	if (GetLoginData(p->dwLoginKey))
 	{
-		sys_err("LoginData already exist key %u login %s", p->dwLoginKey, p->szLogin);
+		LOG_ERROR("LoginData already exist key {} login {}", p->dwLoginKey, p->szLogin);
 		bResult = 0;
 
 		pkPeer->EncodeHeader(HEADER_DG_AUTH_LOGIN, dwHandle, sizeof(uint8_t));
@@ -2088,7 +2087,7 @@ void CClientManager::QUERY_AUTH_LOGIN(CPeer * pkPeer, uint32_t dwHandle, TPacket
 		r.bLanguage = p->bLanguage;
 #endif
 
-		sys_log(0, "AUTH_LOGIN id(%u) login(%s) social_id(%s) login_key(%u), client_key(%u %u %u %u)", p->dwID, p->szLogin, p->szSocialID, p->dwLoginKey, p->adwClientKey[0], p->adwClientKey[1], p->adwClientKey[2], p->adwClientKey[3]);
+		LOG_INFO("AUTH_LOGIN id({}) login({}) social_id({}) login_key({}), client_key({} {} {} {})", p->dwID, p->szLogin, p->szSocialID, p->dwLoginKey, p->adwClientKey[0], p->adwClientKey[1], p->adwClientKey[2], p->adwClientKey[3]);
 		bResult = 1;
 
 		InsertLoginData(pkLD);
@@ -2164,18 +2163,18 @@ void CClientManager::BillingCheck(const char * data)
 
 	std::vector<uint32_t> vec;
 
-	sys_log(0, "BillingCheck: size %u", dwCount);
+	LOG_INFO("BillingCheck: size {}", dwCount);
 
 	for (uint32_t i = 0; i < dwCount; ++i)
 	{
 		uint32_t dwKey = *(uint32_t *) data;
 		data += sizeof(uint32_t);
 
-		sys_log(0, "BillingCheck: %u", dwKey);
+		LOG_INFO("BillingCheck: {}", dwKey);
 
 		if (auto it = m_map_pkLoginData.find(dwKey); it == m_map_pkLoginData.end())
 		{
-			sys_log(0, "BillingCheck: key not exist: %u", dwKey);
+			LOG_INFO("BillingCheck: key not exist: {}", dwKey);
 			vec.push_back(dwKey);
 		}
 		else
@@ -2184,7 +2183,7 @@ void CClientManager::BillingCheck(const char * data)
 
 			if (!pkLD->IsPlay() && curTime - pkLD->Getlastplay() > 180)
 			{
-				sys_log(0, "BillingCheck: not login: %u", dwKey);
+				LOG_INFO("BillingCheck: not login: {}", dwKey);
 				vec.push_back(dwKey);
 			}
 		}
@@ -2234,7 +2233,7 @@ void CClientManager::SendAllLoginToBilling()
 		p.dwLoginKey = pkLD->GetKey();
 		strlcpy(p.szLogin, pkLD->GetAccountRef().login, sizeof(p.szLogin));
 		strlcpy(p.szHost, pkLD->GetIP(), sizeof(p.szHost));
-		sys_log(0, "SendAllLoginToBilling %s %s", pkLD->GetAccountRef().login, pkLD->GetIP());
+		LOG_INFO("SendAllLoginToBilling {} {}", pkLD->GetAccountRef().login, pkLD->GetIP());
 		vec.push_back(p);
 	}
 
@@ -2276,7 +2275,7 @@ void CClientManager::CreateObject(TPacketGDCreateObject * p)
 
 	if (pmsg->Get()->uiInsertID == 0)
 	{
-		sys_err("cannot insert object");
+		LOG_ERROR("cannot insert object");
 		return;
 	}
 
@@ -2310,7 +2309,7 @@ void CClientManager::DeleteObject(uint32_t dwID)
 
 	if (pmsg->Get()->uiAffectedRows == 0 || std::cmp_equal(pmsg->Get()->uiAffectedRows, -1))
 	{
-		sys_err("no object by id %u", dwID);
+		LOG_ERROR("no object by id {}", dwID);
 		return;
 	}
 
@@ -2351,8 +2350,7 @@ void CClientManager::UpdateLand(uint32_t * pdw)
 
 void CClientManager::VCard(TPacketGDVCard * p)
 {
-	sys_log(0, "VCARD: %u %s %s %s %s",
-			p->dwID, p->szSellCharacter, p->szSellAccount, p->szBuyCharacter, p->szBuyAccount);
+	LOG_INFO("VCARD: {} {} {} {} {}", p->dwID, p->szSellCharacter, p->szSellAccount, p->szBuyCharacter, p->szBuyAccount);
 
 	m_queue_vcard.push(*p);
 }
@@ -2407,39 +2405,39 @@ void CClientManager::BlockChat(TPacketBlockChat* p)
 
 void CClientManager::MarriageAdd(TPacketMarriageAdd * p)
 {
-	sys_log(0, "MarriageAdd %u %u %s %s", p->dwPID1, p->dwPID2, p->szName1, p->szName2);
+	LOG_INFO("MarriageAdd {} {} {} {}", p->dwPID1, p->dwPID2, p->szName1, p->szName2);
 	marriage::CManager::instance().Add(p->dwPID1, p->dwPID2, p->szName1, p->szName2);
 }
 
 void CClientManager::MarriageUpdate(TPacketMarriageUpdate * p)
 {
-	sys_log(0, "MarriageUpdate PID:%u %u LP:%d ST:%d", p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
+	LOG_INFO("MarriageUpdate PID:{} {} LP:{} ST:{}", p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
 	marriage::CManager::instance().Update(p->dwPID1, p->dwPID2, p->iLovePoint, p->byMarried);
 }
 
 void CClientManager::MarriageRemove(TPacketMarriageRemove * p)
 {
-	sys_log(0, "MarriageRemove %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("MarriageRemove {} {}", p->dwPID1, p->dwPID2);
 	marriage::CManager::instance().Remove(p->dwPID1, p->dwPID2);
 }
 
 void CClientManager::WeddingRequest(TPacketWeddingRequest * p)
 {
-	sys_log(0, "WeddingRequest %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("WeddingRequest {} {}", p->dwPID1, p->dwPID2);
 	ForwardPacket(HEADER_DG_WEDDING_REQUEST, p, sizeof(TPacketWeddingRequest));
 	//marriage::CManager::instance().RegisterWedding(p->dwPID1, p->szName1, p->dwPID2, p->szName2);
 }
 
 void CClientManager::WeddingReady(TPacketWeddingReady * p)
 {
-	sys_log(0, "WeddingReady %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("WeddingReady {} {}", p->dwPID1, p->dwPID2);
 	ForwardPacket(HEADER_DG_WEDDING_READY, p, sizeof(TPacketWeddingReady));
 	marriage::CManager::instance().ReadyWedding(p->dwMapIndex, p->dwPID1, p->dwPID2);
 }
 
 void CClientManager::WeddingEnd(TPacketWeddingEnd * p)
 {
-	sys_log(0, "WeddingEnd %u %u", p->dwPID1, p->dwPID2);
+	LOG_INFO("WeddingEnd {} {}", p->dwPID1, p->dwPID2);
 	marriage::CManager::instance().EndWedding(p->dwPID1, p->dwPID2);
 }
 
@@ -2451,7 +2449,7 @@ void CClientManager::MyshopPricelistUpdate(const TItemPriceListTable* pPacket) /
 {
 	if (pPacket->byCount > SHOP_PRICELIST_MAX_NUM)
 	{
-		sys_err("count overflow!");
+		LOG_ERROR("count overflow!");
 		return;
 	}
 
@@ -2490,7 +2488,7 @@ void CClientManager::MyshopPricelistRequest(CPeer* peer, uint32_t dwHandle, uint
 {
 	if (CItemPriceListTableCache* pCache = GetItemPriceListCache(dwPlayerID))
 	{
-		sys_log(0, "Cache MyShopPricelist handle[%d] pid[%d]", dwHandle, dwPlayerID);
+		LOG_INFO("Cache MyShopPricelist handle[{}] pid[{}]", dwHandle, dwPlayerID);
 
 		TItemPriceListTable* pTable = pCache->Get(false);
 
@@ -2509,7 +2507,7 @@ void CClientManager::MyshopPricelistRequest(CPeer* peer, uint32_t dwHandle, uint
 	}
 	else
 	{
-		sys_log(0, "Query MyShopPricelist handle[%d] pid[%d]", dwHandle, dwPlayerID);
+		LOG_INFO("Query MyShopPricelist handle[{}] pid[{}]", dwHandle, dwPlayerID);
 
 		char szQuery[QUERY_MAX_LEN];
 		snprintf(szQuery, sizeof(szQuery), "SELECT item_vnum, price FROM myshop_pricelist%s WHERE owner_id=%u", GetTablePostfix(), dwPlayerID);
@@ -2545,19 +2543,19 @@ void CClientManager::ProcessPackets(CPeer * peer)
 	while (peer->PeekPacket(i, header, dwHandle, dwLength, &data))
 	{
 		// DISABLE_DB_HEADER_LOG
-		// sys_log(0, "header %d %p size %d", header, this, dwLength);
+		// LOG_INFO("header {} {} size {}", header, this, dwLength);
 		// END_OF_DISABLE_DB_HEADER_LOG
 		m_bLastHeader = header;
 		++iCount;
 
 #ifdef _TEST
 		if (header != 10)
-			sys_log(0, " ProcessPacket Header [%d] Handle[%d] Length[%d] iCount[%d]", header, dwHandle, dwLength, iCount);
+			LOG_INFO(" ProcessPacket Header [{}] Handle[{}] Length[{}] iCount[{}]", header, dwHandle, dwLength, iCount);
 #endif
 		if (g_test_server)
 		{
 			if (header != 10)
-				sys_log(0, " ProcessPacket Header [%d] Handle[%d] Length[%d] iCount[%d]", header, dwHandle, dwLength, iCount);
+				LOG_INFO(" ProcessPacket Header [{}] Handle[{}] Length[{}] iCount[{}]", header, dwHandle, dwLength, iCount);
 		}
 
 		switch (header)
@@ -2574,12 +2572,12 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_LOGOUT:
-				//sys_log(0, "HEADER_GD_LOGOUT (handle: %d length: %d)", dwHandle, dwLength);
+				//LOG_INFO("HEADER_GD_LOGOUT (handle: {} length: {})", dwHandle, dwLength);
 				QUERY_LOGOUT(peer, dwHandle, data);
 				break;
 
 			case HEADER_GD_PLAYER_LOAD:
-				sys_log(1, "HEADER_GD_PLAYER_LOAD (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_TRACE("HEADER_GD_PLAYER_LOAD (handle: {} length: {})", dwHandle, dwLength);
 				QUERY_PLAYER_LOAD(peer, dwHandle, (TPlayerLoadPacket *) data);
 
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -2589,23 +2587,23 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_PLAYER_SAVE:
-				sys_log(1, "HEADER_GD_PLAYER_SAVE (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_TRACE("HEADER_GD_PLAYER_SAVE (handle: {} length: {})", dwHandle, dwLength);
 				QUERY_PLAYER_SAVE(peer, dwHandle, (TPlayerTable *) data);
 				break;
 #ifdef HEADER_GD_PLAYER_SAVE_SIZE_CHECK
 				if (dwLength != sizeof(TPlayerTable)) {
-					sys_err("PLAYER_SAVE size mismatch got=%u expected=%zu - DROP", dwLength, sizeof(TPlayerTable));
+					LOG_ERROR("PLAYER_SAVE size mismatch got={} expected={} - DROP", dwLength, sizeof(TPlayerTable));
 					break;
 				}
 #endif
 			case HEADER_GD_PLAYER_CREATE:
-				sys_log(0, "HEADER_GD_PLAYER_CREATE (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_INFO("HEADER_GD_PLAYER_CREATE (handle: {} length: {})", dwHandle, dwLength);
 				__QUERY_PLAYER_CREATE(peer, dwHandle, (TPlayerCreatePacket *) data);
-				sys_log(0, "END");
+				LOG_INFO("END");
 				break;
 
 			case HEADER_GD_PLAYER_DELETE:
-				sys_log(1, "HEADER_GD_PLAYER_DELETE (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_TRACE("HEADER_GD_PLAYER_DELETE (handle: {} length: {})", dwHandle, dwLength);
 				__QUERY_PLAYER_DELETE(peer, dwHandle, (TPlayerDeletePacket *) data);
 				break;
 
@@ -2614,7 +2612,7 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_QUEST_SAVE:
-				sys_log(1, "HEADER_GD_QUEST_SAVE (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_TRACE("HEADER_GD_QUEST_SAVE (handle: {} length: {})", dwHandle, dwLength);
 				QUERY_QUEST_SAVE(peer, (TQuestTable *) data, dwLength);
 				break;
 
@@ -2623,7 +2621,7 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_SAFEBOX_SAVE:
-				sys_log(1, "HEADER_GD_SAFEBOX_SAVE (handle: %d length: %d)", dwHandle, dwLength);
+				LOG_TRACE("HEADER_GD_SAFEBOX_SAVE (handle: {} length: {})", dwHandle, dwLength);
 				QUERY_SAFEBOX_SAVE(peer, (TSafeboxTable *) data);
 				break;
 
@@ -2718,12 +2716,12 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				break;
 
 			case HEADER_GD_ADD_AFFECT:
-				sys_log(1, "HEADER_GD_ADD_AFFECT");
+				LOG_TRACE("HEADER_GD_ADD_AFFECT");
 				QUERY_ADD_AFFECT(peer, (TPacketGDAddAffect *) data);
 				break;
 
 			case HEADER_GD_REMOVE_AFFECT:
-				sys_log(1, "HEADER_GD_REMOVE_AFFECT");
+				LOG_TRACE("HEADER_GD_REMOVE_AFFECT");
 				QUERY_REMOVE_AFFECT(peer, (TPacketGDRemoveAffect *) data);
 				break;
 
@@ -2981,7 +2979,7 @@ void CClientManager::ProcessPackets(CPeer * peer)
 			break;
 #endif
 			default:
-				sys_err("Unknown header (header: %d handle: %u length: %u)", header, dwHandle, dwLength);
+				LOG_ERROR("Unknown header (header: {} handle: {} length: {})", header, dwHandle, dwLength);
 				break;
 		}
 	}
@@ -3023,7 +3021,7 @@ void CClientManager::RemovePeer(CPeer * pPeer)
 
 				if (pkLD->IsDeleted())
 				{
-					sys_log(0, "DELETING LoginData");
+					LOG_INFO("DELETING LoginData");
 					delete pkLD;
 				}
 
@@ -3069,7 +3067,7 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 
 #ifdef _TEST
 	if (qi->iType != QID_ITEM_AWARD_LOAD)
-	sys_log(0, "AnalyzeQueryResult %d", qi->iType);
+	LOG_INFO("AnalyzeQueryResult {}", qi->iType);
 #endif
 	switch (qi->iType)
 	{
@@ -3124,7 +3122,7 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 		default: break;
 		}
 #endif
-		//sys_err("CClientManager::AnalyzeQueryResult: peer not exist anymore. (ident: %d)", qi->dwIdent);
+		//LOG_ERROR("CClientManager::AnalyzeQueryResult: peer not exist anymore. (ident: {})", qi->dwIdent);
 		delete qi;
 		return true;
 	}
@@ -3153,27 +3151,27 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 			break;
 
 		case QID_SAFEBOX_LOAD:
-			sys_log(0, "QUERY_RESULT: HEADER_GD_SAFEBOX_LOAD");
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_LOAD");
 			RESULT_SAFEBOX_LOAD(peer, msg);
 			break;
 
 		case QID_SAFEBOX_CHANGE_SIZE:
-			sys_log(0, "QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_SIZE");
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_SIZE");
 			RESULT_SAFEBOX_CHANGE_SIZE(peer, msg);
 			break;
 
 		case QID_SAFEBOX_CHANGE_PASSWORD:
-			sys_log(0, "QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD %p", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", msg);
 			RESULT_SAFEBOX_CHANGE_PASSWORD(peer, msg);
 			break;
 
 		case QID_SAFEBOX_CHANGE_PASSWORD_SECOND:
-			sys_log(0, "QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD %p", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", msg);
 			RESULT_SAFEBOX_CHANGE_PASSWORD_SECOND(peer, msg);
 			break;
 
 		case QID_HIGHSCORE_REGISTER:
-			sys_log(0, "QUERY_RESULT: HEADER_GD_HIGHSCORE_REGISTER %p", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_HIGHSCORE_REGISTER {}", msg);
 			RESULT_HIGHSCORE_REGISTER(peer, msg);
 			break;
 
@@ -3238,7 +3236,7 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 			// END_OF_MYSHOP_PRICE_LIST
 
 		default:
-			sys_log(0, "CClientManager::AnalyzeQueryResult unknown query result type: %d, str: %s", qi->iType, msg->stQuery.c_str());
+			LOG_INFO("CClientManager::AnalyzeQueryResult unknown query result type: {}, str: {}", qi->iType, msg->stQuery.c_str());
 			break;
 	}
 
@@ -3293,7 +3291,7 @@ int CClientManager::Process()
 		{
 			g_iPlayerCacheFlushSeconds = MAX(60, rand() % 180);
 			g_iItemCacheFlushSeconds = MAX(60, rand() % 180);
-			sys_log(0, "[SAVE_TIME]Change saving time item %d player %d", g_iPlayerCacheFlushSeconds, g_iItemCacheFlushSeconds);
+			LOG_INFO("[SAVE_TIME]Change saving time item {} player {}", g_iPlayerCacheFlushSeconds, g_iItemCacheFlushSeconds);
 		}
 		*/
 
@@ -3317,14 +3315,7 @@ int CClientManager::Process()
 							CDBManager::instance().CountAsyncCopiedQuery(SQL_PLAYER));
 
 					if (thecore_heart->pulse % 50 == 0)
-						sys_log(0, "[%9d] return %d/%d/%d async %d/%d/%d",
-								thecore_heart->pulse,
-								CDBManager::instance().CountReturnQuery(SQL_PLAYER),
-								CDBManager::instance().CountReturnResult(SQL_PLAYER),
-								CDBManager::instance().CountReturnQueryFinished(SQL_PLAYER),
-								CDBManager::instance().CountAsyncQuery(SQL_PLAYER),
-								CDBManager::instance().CountAsyncResult(SQL_PLAYER),
-								CDBManager::instance().CountAsyncQueryFinished(SQL_PLAYER));
+						LOG_INFO("[{:9}] return {}/{}/{} async {}/{}/{}", thecore_heart->pulse, CDBManager::instance().CountReturnQuery(SQL_PLAYER), CDBManager::instance().CountReturnResult(SQL_PLAYER), CDBManager::instance().CountReturnQueryFinished(SQL_PLAYER), CDBManager::instance().CountAsyncQuery(SQL_PLAYER), CDBManager::instance().CountAsyncResult(SQL_PLAYER), CDBManager::instance().CountAsyncQueryFinished(SQL_PLAYER));
 				}
 			}
 			else
@@ -3341,14 +3332,7 @@ int CClientManager::Process()
 						CDBManager::instance().CountAsyncCopiedQuery(SQL_PLAYER));
 
 						if (thecore_heart->pulse % 50 == 0)
-						sys_log(0, "[%9d] return %d/%d/%d async %d/%d/%d",
-							thecore_heart->pulse,
-							CDBManager::instance().CountReturnQuery(SQL_PLAYER),
-							CDBManager::instance().CountReturnResult(SQL_PLAYER),
-							CDBManager::instance().CountReturnQueryFinished(SQL_PLAYER),
-							CDBManager::instance().CountAsyncQuery(SQL_PLAYER),
-							CDBManager::instance().CountAsyncResult(SQL_PLAYER),
-							CDBManager::instance().CountAsyncQueryFinished(SQL_PLAYER));
+						LOG_INFO("[{:9}] return {}/{}/{} async {}/{}/{}", thecore_heart->pulse, CDBManager::instance().CountReturnQuery(SQL_PLAYER), CDBManager::instance().CountReturnResult(SQL_PLAYER), CDBManager::instance().CountReturnQueryFinished(SQL_PLAYER), CDBManager::instance().CountAsyncQuery(SQL_PLAYER), CDBManager::instance().CountAsyncResult(SQL_PLAYER), CDBManager::instance().CountAsyncQueryFinished(SQL_PLAYER));
 						}
 
 			CDBManager::instance().ResetCounter();
@@ -3467,7 +3451,7 @@ int CClientManager::Process()
 #ifndef ENABLE_25082021
 			std::string st;
 			CClientManager::instance().GetPeerP2PHostNames(st);
-			sys_log(0, "Current Peer host names...\n%s", st.c_str());
+			LOG_INFO("Current Peer host names...\n{}", st.c_str());
 #endif
 		}
 
@@ -3501,7 +3485,7 @@ int CClientManager::Process()
 			}
 			else
 			{
-				sys_log(0, "FDWATCH: peer null in event: ident %d", fdwatch_get_ident(m_fdWatcher, idx)); // @warme012
+				LOG_INFO("FDWATCH: peer null in event: ident {}", fdwatch_get_ident(m_fdWatcher, idx)); // @warme012
 			}
 
 			continue;
@@ -3512,14 +3496,14 @@ int CClientManager::Process()
 			case FDW_READ:
 				if (peer->Recv() < 0)
 				{
-					sys_err("Recv failed");
+					LOG_ERROR("Recv failed");
 					RemovePeer(peer);
 				}
 				else
 				{
 					if (peer == m_pkAuthPeer)
 						if (g_log)
-							sys_log(0, "AUTH_PEER_READ: size %d", peer->GetRecvLength());
+							LOG_INFO("AUTH_PEER_READ: size {}", peer->GetRecvLength());
 
 					ProcessPackets(peer);
 				}
@@ -3528,11 +3512,11 @@ int CClientManager::Process()
 			case FDW_WRITE:
 				//if (peer == m_pkAuthPeer)
 					//if (g_log)
-					//	sys_log(0, "AUTH_PEER_WRITE: size %d", peer->GetSendLength());
+					//	LOG_INFO("AUTH_PEER_WRITE: size {}", peer->GetSendLength());
 
 				if (peer->Send() < 0)
 				{
-					sys_err("Send failed");
+					LOG_ERROR("Send failed");
 					RemovePeer(peer);
 				}
 
@@ -3543,7 +3527,7 @@ int CClientManager::Process()
 				break;
 
 			default:
-				sys_err("fdwatch_check_fd returned unknown result");
+				LOG_ERROR("fdwatch_check_fd returned unknown result");
 				RemovePeer(peer);
 				break;
 		}
@@ -3631,19 +3615,19 @@ bool CClientManager::InitializeNowItemID()
 	//아이템 ID를 초기화 한다.
 	if (!CConfig::instance().GetTwoValue("ITEM_ID_RANGE", &dwMin, &dwMax))
 	{
-		sys_err("conf.txt: Cannot find ITEM_ID_RANGE [start_item_id] [end_item_id]");
+		LOG_ERROR("conf.txt: Cannot find ITEM_ID_RANGE [start_item_id] [end_item_id]");
 		return false;
 	}
 
-	sys_log(0, "ItemRange From File %u ~ %u ", dwMin, dwMax);
+	LOG_INFO("ItemRange From File {} ~ {} ", dwMin, dwMax);
 
 	if (CItemIDRangeManager::instance().BuildRange(dwMin, dwMax, m_itemRange) == false)
 	{
-		sys_err("Can not build ITEM_ID_RANGE");
+		LOG_ERROR("Can not build ITEM_ID_RANGE");
 		return false;
 	}
 
-	sys_log(0, " Init Success Start %u End %u Now %u\n", m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
+	LOG_INFO(" Init Success Start {} End {} Now {}\n", m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
 
 	return true;
 }
@@ -3668,12 +3652,12 @@ bool CClientManager::InitializeLocalization()
 
 	if (pMsg->Get()->uiNumRows == 0)
 	{
-		sys_err("InitializeLocalization() ==> DirectQuery failed(%s)", szQuery);
+		LOG_ERROR("InitializeLocalization() ==> DirectQuery failed({})", szQuery);
 		delete pMsg;
 		return false;
 	}
 
-	sys_log(0, "InitializeLocalization() - LoadLocaleTable(count:%d)", pMsg->Get()->uiNumRows);
+	LOG_INFO("InitializeLocalization() - LoadLocaleTable(count:{})", pMsg->Get()->uiNumRows);
 
 	m_vec_Locale.clear();
 
@@ -3692,351 +3676,351 @@ bool CClientManager::InitializeLocalization()
 		{
 			if (strcmp(locale.szValue, "cibn") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "gb2312");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "gb2312");
 
 				g_stLocale = "gb2312";
 				g_stLocaleNameColumn = "gb2312name";
 			}
 			else if (strcmp(locale.szValue, "ymir") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "euckr";
 				g_stLocaleNameColumn = "name";
 			}
 			else if (strcmp(locale.szValue, "japan") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "sjis");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "sjis");
 
 				g_stLocale = "sjis";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "english") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "germany") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "france") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "italy") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "spain") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "uk") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "turkey") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin5";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "poland") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin2";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "portugal") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "hongkong") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "big5");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "big5");
 
 				g_stLocale = "big5";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "newcibn") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "gb2312");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "gb2312");
 
 				g_stLocale = "gb2312";
 				g_stLocaleNameColumn = "gb2312name";
 			}
 			else if (strcmp(locale.szValue, "korea") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "euckr";
 				g_stLocaleNameColumn = "name";
 			}
 			else if (strcmp(locale.szValue, "canada") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "gb2312name";
 			}
 			else if (strcmp(locale.szValue, "greek") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "greek";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "russia") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "cp1251";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "denmark") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "bulgaria") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "cp1251";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "croatia") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "cp1251";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "mexico") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "arabia") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "cp1256";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "czech") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin2";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "hungary") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin2";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "romania") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin2";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "netherlands") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "singapore") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "vietnam") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "thailand") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "usa") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "latin1");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "latin1");
 
 				g_stLocale = "latin1";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else if (strcmp(locale.szValue, "we_korea") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "euckr");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "euckr");
 
 				g_stLocale = "euckr";
 				g_stLocaleNameColumn = "name";
 			}
 			else if (strcmp(locale.szValue, "taiwan") == 0)
 			{
-				sys_log(0, "locale[LOCALE] = %s", locale.szValue);
+				LOG_INFO("locale[LOCALE] = {}", locale.szValue);
 
 				if (g_stLocale != locale.szValue)
-					sys_log(0, "Changed g_stLocale %s to %s", g_stLocale.c_str(), "big5");
+					LOG_INFO("Changed g_stLocale {} to {}", g_stLocale.c_str(), "big5");
 				g_stLocale = "big5";
 				g_stLocaleNameColumn = "locale_name";
 			}
 			else
 			{
-				sys_err("locale[LOCALE] = UNKNOWN(%s)", locale.szValue);
+				LOG_ERROR("locale[LOCALE] = UNKNOWN({})", locale.szValue);
 				exit(0);
 			}
 			// @warme007
-			// sys_log(0,"before call SetLocale: %s",g_stLocale.c_str());
+			// LOG_INFO("before call SetLocale: {}", g_stLocale.c_str());
 			// CDBManager::instance().SetLocale(g_stLocale.c_str());
-			// sys_log(0,"Called SetLocale");
+			// LOG_INFO("Called SetLocale");
 		}
 		else if (strcmp(locale.szKey, "DB_NAME_COLUMN") == 0)
 		{
-			sys_log(0, "locale[DB_NAME_COLUMN] = %s", locale.szValue);
+			LOG_INFO("locale[DB_NAME_COLUMN] = {}", locale.szValue);
 			g_stLocaleNameColumn = locale.szValue;
 		}
 		else
 		{
-			sys_log(0, "locale[UNKNOWN_KEY(%s)] = %s", locale.szKey, locale.szValue);
+			LOG_INFO("locale[UNKNOWN_KEY({})] = {}", locale.szKey, locale.szValue);
 		}
 		m_vec_Locale.push_back(locale);
 	}
@@ -4060,7 +4044,7 @@ bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & 
 
 	if (pMsg->Get()->uiNumRows == 0)
 	{
-		// sys_err("__GetAdminInfo() ==> DirectQuery failed(%s)", szQuery); // @warme013
+		// LOG_ERROR("__GetAdminInfo() ==> DirectQuery failed({})", szQuery); // @warme013
 		delete pMsg;
 		return false;
 	}
@@ -4095,8 +4079,7 @@ bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & 
 
 		rAdminVec.push_back(Info);
 
-		sys_log(0, "GM: PID %u Login %s Character %s ContactIP %s ServerIP %s Authority %d[%s]",
-			   	Info.m_ID, Info.m_szAccount, Info.m_szName, Info.m_szContactIP, Info.m_szServerIP, Info.m_Authority, stAuth.c_str());
+		LOG_INFO("GM: PID {} Login {} Character {} ContactIP {} ServerIP {} Authority {}[{}]", Info.m_ID, Info.m_szAccount, Info.m_szName, Info.m_szContactIP, Info.m_szServerIP, Info.m_Authority, stAuth.c_str());
 	}
 
 	delete pMsg;
@@ -4112,7 +4095,7 @@ bool CClientManager::__GetHostInfo(std::vector<std::string> & rIPVec)
 
 	if (pMsg->Get()->uiNumRows == 0)
 	{
-		// sys_err("__GetHostInfo() ==> DirectQuery failed(%s)", szQuery); // @warme013
+		// LOG_ERROR("__GetHostInfo() ==> DirectQuery failed({})", szQuery); // @warme013
 		delete pMsg;
 		return false;
 	}
@@ -4126,7 +4109,7 @@ bool CClientManager::__GetHostInfo(std::vector<std::string> & rIPVec)
 		if (row[0] && *row[0])
 		{
 			rIPVec.emplace_back(row[0]);
-			sys_log(0, "GMHOST: %s", row[0]);
+			LOG_INFO("GMHOST: {}", row[0]);
 		}
 	}
 
@@ -4168,7 +4151,7 @@ void CClientManager::ReloadAdmin(CPeer*, TPacketReloadAdmin* p)
 			peer->Encode(&vAdmin[n], sizeof(tAdminInfo));
 	}
 
-	sys_log(0, "ReloadAdmin End %s", p->szIP);
+	LOG_INFO("ReloadAdmin End {}", p->szIP);
 }
 
 //BREAK_MARRIAGE
@@ -4182,7 +4165,7 @@ void CClientManager::BreakMarriage(CPeer * peer, const char * data)
 	pid2 = *(int *) data;
 	data += sizeof(int);
 
-	sys_log(0, "Breaking off a marriage engagement! pid %d and pid %d", pid1, pid2);
+	LOG_INFO("Breaking off a marriage engagement! pid {} and pid {}", pid1, pid2);
 	marriage::CManager::instance().Remove(pid1, pid2);
 }
 //END_BREAK_MARIIAGE
@@ -4194,7 +4177,7 @@ void CClientManager::UpdateItemCacheSet(uint32_t pid)
 	if (it == m_map_pkItemCacheSetPtr.end())
 	{
 		if (g_test_server)
-			sys_log(0, "UPDATE_ITEMCACHESET : UpdateItemCacheSet ==> No ItemCacheSet pid(%d)", pid);
+			LOG_INFO("UPDATE_ITEMCACHESET : UpdateItemCacheSet ==> No ItemCacheSet pid({})", pid);
 		return;
 	}
 
@@ -4208,7 +4191,7 @@ void CClientManager::UpdateItemCacheSet(uint32_t pid)
 	}
 
 	if (g_log)
-		sys_log(0, "UPDATE_ITEMCACHESET : UpdateItemCachsSet pid(%d)", pid);
+		LOG_INFO("UPDATE_ITEMCACHESET : UpdateItemCachsSet pid({})", pid);
 }
 
 void CClientManager::SendSpareItemIDRange(CPeer* peer)
@@ -4236,17 +4219,17 @@ void CClientManager::DeleteLoginKey(TPacketDC *data)
 // delete gift notify icon
 void CClientManager::DeleteAwardId(TPacketDeleteAwardID *data)
 {
-	//sys_log(0,"data from game server arrived %d",data->dwID);
+	//LOG_INFO("data from game server arrived {}", data->dwID);
 	if (const auto it = ItemAwardManager::Instance().GetMapAward().find(data->dwID); it != ItemAwardManager::Instance().GetMapAward().end() )
 	{
 		std::set<TItemAward *> & kSet = ItemAwardManager::Instance().GetMapkSetAwardByLogin()[it->second->szLogin];
 		if(kSet.erase(it->second))
-			sys_log(0,"erase ItemAward id: %d from cache", data->dwID);
+			LOG_INFO("erase ItemAward id: {} from cache", data->dwID);
 		ItemAwardManager::Instance().GetMapAward().erase(data->dwID);
 	}
 	else
 	{
-		sys_log(0,"DELETE_AWARDID : could not find the id: %d", data->dwID);
+		LOG_INFO("DELETE_AWARDID : could not find the id: {}", data->dwID);
 	}
 
 }
@@ -4286,7 +4269,7 @@ void CClientManager::ChargeCash(const TRequestChargeCash* packet)
 {
 	char szQuery[512];
 	sprintf(szQuery, "update account set coins = coins + %d where id = %d limit 1", packet->amount, packet->aid);
-	sys_log(0, "Request Charge (amount : %d, aid : %d)", packet->amount, packet->aid);
+	LOG_INFO("Request Charge (amount : {}, aid : {})", packet->amount, packet->aid);
 	CDBManager::Instance().AsyncQuery(szQuery, SQL_ACCOUNT);
 }
 
@@ -4343,7 +4326,7 @@ void CClientManager::SendItemExtraProtoTable(CPeer* peer)
 	uint32_t table_size = sizeof(TItemExtraProto);
 
 	if (count == 0) {
-		sys_err("peer boot ERROR, empty item extra proto table.");
+		LOG_ERROR("peer boot ERROR, empty item extra proto table.");
 		return;
 	}
 
@@ -5053,7 +5036,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 //									auto it2 = m_map_itemTableByVnum.find(itemData.itemVnum);
 //									if (it2 == m_map_itemTableByVnum.end())
 //									{
-//										sys_err("ItemShop purchase rejected: unknown item vnum %u for account %u", itemData.itemVnum, accountID);
+//										LOG_ERROR("ItemShop purchase rejected: unknown item vnum {} for account {}", itemData.itemVnum, accountID);
 //										int returnType = 4; // reuse generic failure code
 //										pkPeer->EncodeHeader(HEADER_DG_ITEMSHOP, dwHandle, sizeof(uint8_t) + sizeof(uint8_t));
 //										pkPeer->Encode(&subIndex, sizeof(uint8_t));
@@ -5085,7 +5068,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 //
 //											if (!grid.Put(pos, 1, itemSize))
 //											{
-//												sys_err("ItemShop storage grid collision: account %u pos %d item_vnum %u size %d",accountID, pos, existingItemVnum,itemSize );
+//												LOG_ERROR("ItemShop storage grid collision: account {} pos {} item_vnum {} size {}", accountID, pos, existingItemVnum, itemSize);
 //											}
 //
 //
