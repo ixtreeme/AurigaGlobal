@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "constants.h"
 #include "gm.h"
 #include "locale_service.h"
@@ -16,24 +17,19 @@ void gm_new_clear()
 
 void gm_new_insert( const tAdminInfo &rAdminInfo )
 {
-	sys_log( 0, "InsertGMList(account:%s, player:%s, contact_ip:%s, server_ip:%s, auth:%d)",
-			rAdminInfo.m_szAccount,
-			rAdminInfo.m_szName,
-			rAdminInfo.m_szContactIP,
-			rAdminInfo.m_szServerIP,
-			rAdminInfo.m_Authority);
+	LOG_INFO("InsertGMList(account:{}, player:{}, contact_ip:{}, server_ip:{}, auth:{})", rAdminInfo.m_szAccount, rAdminInfo.m_szName, rAdminInfo.m_szContactIP, rAdminInfo.m_szServerIP, rAdminInfo.m_Authority);
 
 	tGM t;
 
 	if ( strlen( rAdminInfo.m_szContactIP ) == 0 )
 	{
 		t.pset_Host = &g_set_Host;
-		sys_log(0, "GM Use ContactIP" );
+		LOG_INFO("GM Use ContactIP");
 	}
 	else
 	{
 		t.pset_Host = nullptr;
-		sys_log(0, "GM Use Default Host List" );
+		LOG_INFO("GM Use Default Host List");
 	}
 
 	memcpy ( &t.Info, &rAdminInfo, sizeof ( rAdminInfo ) );
@@ -45,7 +41,7 @@ void gm_new_insert( const tAdminInfo &rAdminInfo )
 void gm_new_host_inert( const char * host )
 {
 	g_set_Host.insert( host );
-	sys_log( 0, "InsertGMHost(ip:%s)", host );
+	LOG_INFO("InsertGMHost(ip:{})", host);
 }
 
 uint8_t gm_new_get_level( const char * name, const char * host, const char* account)
@@ -69,11 +65,11 @@ uint8_t gm_new_get_level( const char * name, const char * host, const char* acco
 	    {
 		if ( strcmp ( it->second.Info.m_szAccount, account  ) != 0 )
 		{
-		    sys_log(0, "GM_NEW_GET_LEVEL : BAD ACCOUNT [ACCOUNT:%s/%s", it->second.Info.m_szAccount, account);
+		    LOG_INFO("GM_NEW_GET_LEVEL : BAD ACCOUNT [ACCOUNT:{}/{}", it->second.Info.m_szAccount, account);
 		    return GM_PLAYER;
 		}
 	    }
-	    sys_log(0, "GM_NEW_GET_LEVEL : FIND ACCOUNT");
+	    LOG_INFO("GM_NEW_GET_LEVEL : FIND ACCOUNT");
 	    return it->second.Info.m_Authority;
 	}
 	// END_OF_GERMAN_GM_NOT_CHECK_HOST
@@ -86,7 +82,7 @@ uint8_t gm_new_get_level( const char * name, const char * host, const char* acco
 		{
 		    if ( it->second.pset_Host->end() == it->second.pset_Host->find( host ) )
 		    {
-			sys_log(0, "GM_NEW_GET_LEVEL : BAD HOST IN HOST_LIST");
+			LOG_INFO("GM_NEW_GET_LEVEL : BAD HOST IN HOST_LIST");
 			return GM_PLAYER;
 		    }
 		}
@@ -94,12 +90,12 @@ uint8_t gm_new_get_level( const char * name, const char * host, const char* acco
 		{
 		    if ( strcmp ( it->second.Info.m_szContactIP, host  ) != 0 )
 		    {
-			sys_log(0, "GM_NEW_GET_LEVEL : BAD HOST IN GMLIST");
+			LOG_INFO("GM_NEW_GET_LEVEL : BAD HOST IN GMLIST");
 			return GM_PLAYER;
 		    }
 		}
 	    }
-	    sys_log(0, "GM_NEW_GET_LEVEL : FIND HOST");
+	    LOG_INFO("GM_NEW_GET_LEVEL : FIND HOST");
 
 	    return it->second.Info.m_Authority;
 	}
