@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -369,7 +370,7 @@ void CGuildRenewal::EnsureLevelReqLoaded()
 	std::string p0 = base + "guild_renewal_levelup.txt";
 	if (LoadLevelReqFromFile(p0.c_str()))
 	{
-		sys_log(0, "GUILD_RENEWAL: loaded levelup requirements from %s", p0.c_str());
+		LOG_INFO("GUILD_RENEWAL: loaded levelup requirements from {}", p0.c_str());
 		m_levelReqLoaded = true;
 		return;
 	}
@@ -386,14 +387,13 @@ void CGuildRenewal::EnsureLevelReqLoaded()
 	{
 		if (LoadLevelReqFromFile(p))
 		{
-			sys_log(0, "GUILD_RENEWAL: loaded levelup requirements from %s", p);
+			LOG_INFO("GUILD_RENEWAL: loaded levelup requirements from {}", p);
 			m_levelReqLoaded = true;
 			return;
 		}
 	}
 
-	sys_err("GUILD_RENEWAL: FAILED to load guild_renewal_levelup.txt. Tried: %s, ../conf/, share/conf/, ./",
-		p0.c_str());
+	LOG_ERROR("GUILD_RENEWAL: FAILED to load guild_renewal_levelup.txt. Tried: {}, ../conf/, share/conf/, ./", p0.c_str());
 
 	m_levelReqLoaded = true; // ne prblja minden open-nl jra
 }
@@ -454,7 +454,7 @@ bool CGuildRenewal::LoadLevelReqFromFile(const char* filename)
 
 	if (m_levelReqByTargetLevel.empty())
 	{
-		sys_err("GUILD_RENEWAL: file loaded but NO valid rows parsed: %s", filename);
+		LOG_ERROR("GUILD_RENEWAL: file loaded but NO valid rows parsed: {}", filename);
 		return false;
 	}
 
@@ -697,7 +697,7 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 		}
 		else
 		{
-			sys_log(0, "GUILD_RENEWAL: no req row for target level=%u (guild level=%d)", (unsigned)target, g->GetLevel());
+			LOG_INFO("GUILD_RENEWAL: no req row for target level={} (guild level={})", (unsigned)target, g->GetLevel());
 		}
 
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_req %lld %u %u %u %u %u %u %u %u %u %u",
