@@ -31,12 +31,12 @@ static int pid_init(void)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
-		sys_log(0, "\nStart of pid: %d\n", getpid()); // @warme012
+		LOG_INFO("\nStart of pid: {}\n", getpid()); // @warme012
 	}
 	else
 	{
 		printf("pid_init(): could not open file for writing. (filename: ./pid)");
-		sys_err("\nError writing pid file\n");
+		LOG_ERROR("\nError writing pid file\n");
 		return false;
 	}
 	return true;
@@ -49,7 +49,7 @@ static void pid_deinit(void)
     return;
 #else
     remove("./pid");
-	sys_log(0, "\nEnd of pid\n"); // @warme012
+	LOG_INFO("\nEnd of pid\n"); // @warme012
 #endif
 }
 
