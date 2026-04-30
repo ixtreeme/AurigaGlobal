@@ -1,13 +1,14 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 
 #include "questlua.h"
 #include "questmanager.h"
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -126,7 +127,7 @@ namespace quest
 		{
 			luaL_error(L, "running thread != current thread???");
 			if ( test_server )
-				sys_log(0 ,"running thread != current thread???");
+				LOG_INFO("running thread != current thread???");
 			return 0;
 		}
 
@@ -139,7 +140,7 @@ namespace quest
 			//
 			std::string stCurrentState = lua_tostring(L,-1);
 			if ( test_server )
-				sys_log ( 0 ,"questlua->setstate( %s, %s )", pPC->GetCurrentQuestName().c_str(), stCurrentState.c_str() );
+				LOG_INFO("questlua->setstate( {}, {} )", pPC->GetCurrentQuestName().c_str(), stCurrentState.c_str());
 			pqs->st = q.GetQuestStateIndex(pPC->GetCurrentQuestName(), stCurrentState);
 			pPC->SetCurrentQuestStateName(stCurrentState );
 		}
@@ -162,11 +163,11 @@ namespace quest
 			QuestState* pQS = pPC->GetRunningQuestState();
 			if (nullptr == pQS || nullptr == q.GetQuestStateName(pPC->GetCurrentQuestName(), pQS->st))
 			{
-				sys_err("	... WHO AM I? WHERE AM I? I only know QuestName(%s)...", pPC->GetCurrentQuestName().c_str());
+				sys_err("	... WHO AM I? WHERE AM I? I only know QuestName({})...", pPC->GetCurrentQuestName().c_str());
 			}
 			else
 			{
-				sys_err("	Current Quest(%s). State(%s)", pPC->GetCurrentQuestName().c_str(), q.GetQuestStateName(pPC->GetCurrentQuestName(), pQS->st));
+				sys_err("	Current Quest({}). State({})", pPC->GetCurrentQuestName().c_str(), q.GetQuestStateName(pPC->GetCurrentQuestName(), pQS->st));
 			}
 			return 0;
 		}
