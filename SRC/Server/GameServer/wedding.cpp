@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "desc_client.h"
@@ -33,7 +34,7 @@ namespace marriage
 
 		if ( info == nullptr)
 		{
-			sys_err( "wedding_end_event> <Factor> Null pointer" );
+			LOG_ERROR("wedding_end_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -70,7 +71,7 @@ namespace marriage
 	{
 		if (m_pEndEvent)
 		{
-			sys_err("WeddingMap::SetEnded - ALREADY EndEvent(m_pEndEvent=%x)", get_pointer(m_pEndEvent));
+			LOG_ERROR("WeddingMap::SetEnded - ALREADY EndEvent(m_pEndEvent={:x})", reinterpret_cast<uintptr_t>(get_pointer(m_pEndEvent)));
 			return;
 		}
 
@@ -150,7 +151,7 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			sys_log(0, "WeddingMap::DestroyAll: %s", ch->GetName());
+			LOG_INFO("WeddingMap::DestroyAll: {}", ch->GetName());
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -161,7 +162,7 @@ namespace marriage
 
 	void WeddingMap::DestroyAll()
 	{
-		sys_log(0, "WeddingMap::DestroyAll: m_set_pkChr size %zu", m_set_pkChr.size());
+		LOG_INFO("WeddingMap::DestroyAll: m_set_pkChr size {}", m_set_pkChr.size());
 
 		FDestroyEveryone f;
 
@@ -174,7 +175,7 @@ namespace marriage
 		if (IsMember(ch) == true)
 			return;
 
-		//sys_log(0, "WeddingMap: IncMember %s", ch->GetName());
+		//0, "WeddingMap: IncMember %s", ch->GetName());
 		m_set_pkChr.insert(ch);
 
 		SendLocalEvent(ch);
@@ -190,7 +191,7 @@ namespace marriage
 		if (IsMember(ch) == false)
 			return;
 
-		//sys_log(0, "WeddingMap: DecMember %s", ch->GetName());
+		//0, "WeddingMap: DecMember %s", ch->GetName());
 		m_set_pkChr.erase(ch);
 
 		if (ch->GetLevel() < 10)
@@ -322,7 +323,7 @@ namespace marriage
 
 		if (!dwMapIndex)
 		{
-			sys_err("CreateWeddingMap(pid1=%d, pid2=%d) / CreatePrivateMap(%d) FAILED", dwPID1, dwPID2, WEDDING_MAP_INDEX);
+			LOG_ERROR("CreateWeddingMap(pid1={}, pid2={}) / CreatePrivateMap({}) FAILED", dwPID1, dwPID2, WEDDING_MAP_INDEX);
 			return 0;
 		}
 
@@ -341,11 +342,11 @@ namespace marriage
 
 		if (!regen_do(st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY, nullptr, true))
 		{
-			sys_err("CreateWeddingMap(pid1=%d, pid2=%d) / regen_do(fileName=%s, mapIndex=%d, basePos=(%d, %d)) FAILED", dwPID1, dwPID2, st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY);
+			LOG_ERROR("CreateWeddingMap(pid1={}, pid2={}) / regen_do(fileName={}, mapIndex={}, basePos=({}, {})) FAILED", dwPID1, dwPID2, st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY);
 		}
 		else
 		{
-			sys_log(0, "CreateWeddingMap(pid1=%d, pid2=%d) / regen_do(fileName=%s, mapIndex=%d, basePos=(%d, %d)) ok", dwPID1, dwPID2, st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY);
+			LOG_INFO("CreateWeddingMap(pid1={}, pid2={}) / regen_do(fileName={}, mapIndex={}, basePos=({}, {})) ok", dwPID1, dwPID2, st_weddingMapRegenFileName.c_str(), dwMapIndex, pkSectreeMap->m_setting.iBaseX, pkSectreeMap->m_setting.iBaseY);
 		}
 		// END_OF_LOCALE_SERVICE
 
@@ -354,7 +355,7 @@ namespace marriage
 
 	void WeddingManager::DestroyWeddingMap(WeddingMap* pMap)
 	{
-		sys_log(0, "DestroyWeddingMap(index=%u)", pMap->GetMapIndex());
+		LOG_INFO("DestroyWeddingMap(index={})", pMap->GetMapIndex());
 		pMap->DestroyAll();
 		m_mapWedding.erase(pMap->GetMapIndex());
 		SECTREE_MANAGER::instance().DestroyPrivateMap(pMap->GetMapIndex());
@@ -380,7 +381,7 @@ namespace marriage
 
 			if (!dwMapIndex)
 			{
-				sys_err("cannot create wedding map for %u, %u", dwPID1, dwPID2);
+				LOG_ERROR("cannot create wedding map for {}, {}", dwPID1, dwPID2);
 				return;
 			}
 
