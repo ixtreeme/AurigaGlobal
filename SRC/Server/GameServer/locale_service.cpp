@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "constants.h"
 #include "banword.h"
@@ -75,7 +76,7 @@ int is_twobyte_big5(const char * str)
 	{
 		if (test_server)
 		{
-			sys_log(0, "twobyte_big5 %x %x", b1, b2);
+			LOG_INFO("twobyte_big5 {:x} {:x}", b1, b2);
 		}
 		return 0;
 	}
@@ -211,7 +212,7 @@ int check_name_big5(const char * str )
 			if ((b12 < 0xa440 || b12 > 0xc67e) && (b12 < 0xc940 || b12 > 0xf9d5))
 			{
 				if (test_server)
-					sys_log(0, "check_name_big5[%d][%s] %x %x %x", i - 2, str, b1, b2, b12);
+					LOG_INFO("check_name_big5[{}][{}] {:x} {:x} {:x}", i - 2, str, b1, b2, b12);
 
 				return 0;
 			}
@@ -422,7 +423,7 @@ void LocaleService_LoadEmpireTextConvertTables()
 	for (int iEmpire = 1; iEmpire <= 3; ++iEmpire)
 	{
 		snprintf(szFileName, sizeof(szFileName), "%s/lang%d.cvt", LocaleService_GetBasePath().c_str(), iEmpire);
-		sys_log(0, "Load %s", szFileName);
+		LOG_INFO("Load {}", szFileName);
 
 		LoadEmpireTextConvertTable(iEmpire, szFileName);
 	}
@@ -1001,7 +1002,7 @@ bool LocaleService_Init(const std::string& c_rstServiceName)
 {
 	if (!g_stServiceName.empty())
 	{
-		sys_err("ALREADY exist service");
+		LOG_ERROR("ALREADY exist service");
 		return false;
 	}
 
