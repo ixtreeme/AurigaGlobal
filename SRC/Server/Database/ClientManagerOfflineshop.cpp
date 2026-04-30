@@ -41,7 +41,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->uiSQLErrno != 0)
 		{
-			sys_err("CANNOT LOAD offlineshop_shops TABLE , errorcode %d ",pMsg->uiSQLErrno);
+			LOG_ERROR("CANNOT LOAD offlineshop_shops TABLE , errorcode {} ", pMsg->uiSQLErrno);
 			return false;
 		}
 
@@ -66,7 +66,7 @@ bool CClientManager::InitializeOfflineshopTable()
 				, dwKasmirNpc
 #endif
 				))
-					sys_err("cannot execute putsShop -> double shop id?! %u ", dwOwner );
+					LOG_ERROR("cannot execute putsShop -> double shop id?! {} ", dwOwner);
 			}
 		}
 	}
@@ -84,7 +84,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->uiSQLErrno != 0)
 		{
-			sys_err("CANNOT LOAD offlineshop_shop_items TABLE , errorcode %d ",pMsg->uiSQLErrno);
+			LOG_ERROR("CANNOT LOAD offlineshop_shop_items TABLE , errorcode {} ", pMsg->uiSQLErrno);
 			return false;
 		}
 
@@ -139,7 +139,7 @@ bool CClientManager::InitializeOfflineshopTable()
 				OFFSHOP_DEBUG("owner %u ,itemid %u ",dwOwnerID, dwItemID);
 
 				if(!m_offlineshopShopCache.PutItem(dwOwnerID, dwItemID, item, isSold))
-					sys_err("cannot execute putitem !? owner %d , item %d , didn't deleted items when closed?", dwOwnerID, dwItemID);
+					LOG_ERROR("cannot execute putitem !? owner {} , item {} , didn't deleted items when closed?", dwOwnerID, dwItemID);
 			}
 		}
 	}
@@ -154,7 +154,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->uiSQLErrno != 0)
 		{
-			sys_err("CANNOT LOAD offlineshop_offers TABLE , errorcode %d ",pMsg->uiSQLErrno);
+			LOG_ERROR("CANNOT LOAD offlineshop_offers TABLE , errorcode {} ", pMsg->uiSQLErrno);
 			return false;
 		}
 
@@ -202,7 +202,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->uiSQLErrno != 0)
 		{
-			sys_err("CANNOT LOAD offlineshop_auctions TABLE , errorcode %d ",pMsg->uiSQLErrno);
+			LOG_ERROR("CANNOT LOAD offlineshop_auctions TABLE , errorcode {} ", pMsg->uiSQLErrno);
 			return false;
 		}
 
@@ -259,7 +259,7 @@ bool CClientManager::InitializeOfflineshopTable()
 
 		if (pMsg->uiSQLErrno != 0)
 		{
-			sys_err("CANNOT LOAD offlineshop_auctions TABLE , errorcode %d ",pMsg->uiSQLErrno);
+			LOG_ERROR("CANNOT LOAD offlineshop_auctions TABLE , errorcode {} ", pMsg->uiSQLErrno);
 			return false;
 		}
 
@@ -355,13 +355,13 @@ void CClientManager::RecvOfflineShopPacket(CPeer* peer,const char* data)
 	case offlineshop::SUBHEADER_GD_AUCTION_ADD_OFFER:	bRet=RecvOfflineShopAuctionAddOffer(data);			break;
 	case offlineshop::SUBHEADER_GD_AUCTION_CLOSE:	bRet=RecvOfflineShopAuctionClose(data);			break;
 	default:
-		sys_err("UNKNOW NEW OFFLINESHOP SUBHEADER GD %d",pack->bSubHeader);
+		LOG_ERROR("UNKNOW NEW OFFLINESHOP SUBHEADER GD {}", pack->bSubHeader);
 		break;
 	}
 
 
 	if(!bRet)
-		sys_err("maybe some error during recv offline shop subheader %d ",pack->bSubHeader);
+		LOG_ERROR("maybe some error during recv offline shop subheader {} ", pack->bSubHeader);
 }
 
 
@@ -380,7 +380,7 @@ bool CClientManager::RecvOfflineShopLockBuyItem(CPeer* peer, const char* data)
 		SendOfflineShopBuyLockedItemPacket(peer, dwOwner, dwGuest, dwItem);
 
 	else
-		sys_err("cannot find buy target item %u (owner %u , buyer %u) ",dwItem, dwOwner, dwGuest);
+		LOG_ERROR("cannot find buy target item {} (owner {} , buyer {}) ", dwItem, dwOwner, dwGuest);
 
 	return true;
 }
@@ -397,7 +397,7 @@ bool CClientManager::RecvOfflineShopCannotBuyLockItem(const char* data) //topatc
 	OFFSHOP_DEBUG("lock unrequired : shop %u , item %u ", dwOwner, dwItem);
 
 	if (!m_offlineshopShopCache.UnlockSellItem(dwOwner, dwItem)) {
-		sys_err("cannot find unlock requested item %u (owner %u ) ", dwItem, dwOwner);
+		LOG_ERROR("cannot find unlock requested item {} (owner {} ) ", dwItem, dwOwner);
 		return false;
 	}return true;
 }
@@ -468,7 +468,7 @@ bool CClientManager::RecvOfflineShopBuyItemPacket(const char* data)
 	//offlineshop-updated 04/08/19
 	SendOfflineShopBuyItemPacket(dwOwner, dwGuest, dwItem);
 	if(!m_offlineshopShopCache.SellItem(dwOwner, dwItem))
-		sys_err("some problem with sell : %u %u ",dwOwner, dwItem);
+		LOG_ERROR("some problem with sell : {} {} ", dwOwner, dwItem);
 
 	return true;
 }
@@ -487,7 +487,7 @@ bool CClientManager::RecvOfflineShopEditItemPacket(const char* data)
 	if(m_offlineshopShopCache.EditItem(subpack->dwOwnerID, subpack->dwItemID, subpack->priceInfo))
 		SendOfflineShopEditItemPacket(subpack->dwOwnerID, subpack->dwItemID, subpack->priceInfo);
 	else
-		sys_err("cannot edit item %u , shop %u ",subpack->dwItemID , subpack->dwOwnerID);
+		LOG_ERROR("cannot edit item {} , shop {} ", subpack->dwItemID, subpack->dwOwnerID);
 
 
 	return true;
@@ -552,7 +552,7 @@ bool CClientManager::RecvOfflineShopRemoveItemPacket(const char* data) //patchme
 	}
 
 	else
-		sys_err("cannot remove item %u shop %u item ?!", subpack->dwOwnerID, subpack->dwItemID);
+		LOG_ERROR("cannot remove item {} shop {} item ?!", subpack->dwOwnerID, subpack->dwItemID);
 
 	return true;
 }
@@ -804,11 +804,11 @@ bool CClientManager::RecvOfflineShopOfferAccepted(const char* data)
 		}
 
 		else
-			sys_err("cannot find item in shop %u item %u ",pOffer->dwOwnerID, pOffer->dwItemID);
+			LOG_ERROR("cannot find item in shop {} item {} ", pOffer->dwOwnerID, pOffer->dwItemID);
 	}
 
 	else
-		sys_err("cannot find shop %u , offer %u ",pOffer->dwOwnerID, subpack->dwOfferID);
+		LOG_ERROR("cannot find shop {} , offer {} ", pOffer->dwOwnerID, subpack->dwOfferID);
 
 	//offlineshop-updated 03/08/19
 	offlineshop::TValutesInfo valute;
@@ -826,7 +826,7 @@ bool CClientManager::RecvOfflineShopOfferAccepted(const char* data)
 
 
 	if(!m_offlineshopShopCache.SellItem(pOffer->dwOwnerID,pOffer->dwItemID))
-		sys_err("cannot sell item %u, shop %u ",pOffer->dwItemID, pOffer->dwOwnerID);
+		LOG_ERROR("cannot sell item {}, shop {} ", pOffer->dwItemID, pOffer->dwOwnerID);
 
 	return true;
 }
@@ -867,7 +867,7 @@ bool CClientManager::RecvOfflineshopOfferCancel(const char* data)
 		SendOfflineShopOfferCancel(subpack->dwOwnerID, subpack->dwOfferID, false);
 	
 	else
-		sys_err("some problems with cache cancel offer");
+		LOG_ERROR("some problems with cache cancel offer");
 
 	return true;
 }
@@ -922,7 +922,7 @@ bool CClientManager::RecvOfflineShopAuctionCreate(const char* data)
 
 
 	else
-		sys_err("cannot create auction: %u , %u , %s ",subpack->auction.dwOwnerID , subpack->auction.dwDuration, subpack->auction.szOwnerName);
+		LOG_ERROR("cannot create auction: {} , {} , {} ", subpack->auction.dwOwnerID, subpack->auction.dwDuration, subpack->auction.szOwnerName);
 
 	return true;
 }
@@ -1503,7 +1503,7 @@ void CClientManager::OfflineShopResultCreateShopQuery(CPeer* peer, SQLMsg* msg, 
 	, qi->dwKasmirNpc
 #endif
 	))
-		sys_err("cannot insert new shop , id %d ",qi->dwOwnerID);
+		LOG_ERROR("cannot insert new shop , id {} ", qi->dwOwnerID);
 
 	if (!qi->items.empty())
 	{
@@ -1512,7 +1512,7 @@ void CClientManager::OfflineShopResultCreateShopQuery(CPeer* peer, SQLMsg* msg, 
 		qi->dwItemIndex	= 0;
 		offlineshop::CShopCache::TShopCacheItemInfo & itemInfo = qi->items[qi->dwItemIndex];
 		if(!m_offlineshopShopCache.CreateShopAddItem(qi, itemInfo))
-			sys_err("some problem during shop puts? cannot find the shop in the cache");
+			LOG_ERROR("some problem during shop puts? cannot find the shop in the cache");
 	}
 
 	else
@@ -1669,7 +1669,7 @@ void CClientManager::OfflineShopResultQuery(CPeer* peer, SQLMsg* msg, CQueryInfo
 		break;
 
 	default:
-		sys_err("Unknown offshop query type %d ",pQueryInfo->iType);
+		LOG_ERROR("Unknown offshop query type {} ", pQueryInfo->iType);
 		break;
 
 	}
@@ -1793,7 +1793,7 @@ void CClientManager::OfflineshopLoadShopSafebox(CPeer* peer, uint32_t dwID)
 
 	if (!pSafebox)
 	{
-		sys_err("cannot load shop safebox for pid %d ",dwID);
+		LOG_ERROR("cannot load shop safebox for pid {} ", dwID);
 		return;
 	}
 
