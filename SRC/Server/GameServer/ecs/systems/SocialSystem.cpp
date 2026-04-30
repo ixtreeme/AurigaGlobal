@@ -20,6 +20,7 @@
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
+#include <Core/Logging.hpp>
 
 namespace ecs::SocialSystem {
 
@@ -49,9 +50,9 @@ void CHARACTER::SetParty(LPPARTY pkParty)
         return;
 
     if (pkParty && m_pkParty)
-        sys_err("%s is trying to reassigning party (current %p, new party %p)", GetName(), get_pointer(m_pkParty), get_pointer(pkParty));
+        LOG_ERROR("{} is trying to reassigning party (current {}, new party {})", GetName(), static_cast<const void*>(get_pointer(m_pkParty)), static_cast<const void*>(get_pointer(pkParty)));
 
-    sys_log(1, "PARTY set to %p", get_pointer(pkParty));
+    LOG_INFO("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
 
 #ifdef ENABLE_BUG_FIXES
     if (m_pkDungeon && IsPC() && !pkParty) {
@@ -105,7 +106,7 @@ EVENTFUNC(party_request_event)
 
     if (info == nullptr)
     {
-        sys_err("party_request_event> <Factor> Null pointer");
+        LOG_ERROR("party_request_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -113,7 +114,7 @@ EVENTFUNC(party_request_event)
 
     if (ch)
     {
-        sys_log(0, "PartyRequestEvent %s", ch->GetName());
+        LOG_INFO("PartyRequestEvent {}", ch->GetName());
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "PartyRequestDenied");
         ch->SetPartyRequestEvent(nullptr);
     }
@@ -195,7 +196,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
         return false;
 
     default:
-        sys_err("Do not process party join error(%d)", errcode);
+        LOG_ERROR("Do not process party join error({})", errcode);
         return false;
     }
 
@@ -215,7 +216,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
 void CHARACTER::DenyToParty(LPCHARACTER member)
 {
-    sys_log(1, "DenyToParty %s member %s %p", GetName(), member->GetName(), get_pointer(member->m_pkPartyRequestEvent));
+    LOG_INFO("DenyToParty {} member {} {}", GetName(), member->GetName(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
         return;
@@ -224,7 +225,7 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
 
     if (!info)
     {
-        sys_err("CHARACTER::DenyToParty> <Factor> Null pointer");
+        LOG_ERROR("CHARACTER::DenyToParty> <Factor> Null pointer");
         return;
     }
 
@@ -241,7 +242,7 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
 
 void CHARACTER::AcceptToParty(LPCHARACTER member)
 {
-    sys_log(1, "AcceptToParty %s member %s %p", GetName(), member->GetName(), get_pointer(member->m_pkPartyRequestEvent));
+    LOG_INFO("AcceptToParty {} member {} {}", GetName(), member->GetName(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
         return;
@@ -250,7 +251,7 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
 
     if (!info)
     {
-        sys_err("CHARACTER::AcceptToParty> <Factor> Null pointer");
+        LOG_ERROR("CHARACTER::AcceptToParty> <Factor> Null pointer");
         return;
     }
 
@@ -308,7 +309,7 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
             break;
         }
         default:
-            sys_err("Do not process party join error(%d)", errcode);
+            LOG_ERROR("Do not process party join error({})", errcode);
         }
     }
 
@@ -321,7 +322,7 @@ EVENTFUNC(party_invite_event)
 
     if (pInfo == nullptr)
     {
-        sys_err("party_invite_event> <Factor> Null pointer");
+        LOG_ERROR("party_invite_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -329,7 +330,7 @@ EVENTFUNC(party_invite_event)
 
     if (pchInviter)
     {
-        sys_log(1, "PartyInviteEvent %s", pchInviter->GetName());
+        LOG_INFO("PartyInviteEvent {}", pchInviter->GetName());
         pchInviter->PartyInviteDeny(pInfo->dwGuestPID);
     }
 
@@ -419,7 +420,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 #endif
         return;
     default:
-        sys_err("Do not process party join error(%d)", errcode);
+        LOG_ERROR("Do not process party join error({})", errcode);
         return;
     }
 
@@ -445,7 +446,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
 
     if (itFind == m_PartyInviteEventMap.end())
     {
-        sys_log(1, "PartyInviteAccept from not invited character(%s)", pchInvitee->GetName());
+        LOG_INFO("PartyInviteAccept from not invited character({})", pchInvitee->GetName());
         return;
     }
 
@@ -508,7 +509,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
 #endif
         return;
     default:
-        sys_err("ignore party join error(%d)", errcode);
+        LOG_ERROR("ignore party join error({})", errcode);
         return;
     }
 
@@ -530,7 +531,7 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
 
     if (itFind == m_PartyInviteEventMap.end())
     {
-        sys_log(1, "PartyInviteDeny to not exist event(inviter PID: %d, invitee PID: %d)", GetPlayerID(), dwPID);
+        LOG_INFO("PartyInviteDeny to not exist event(inviter PID: {}, invitee PID: {})", GetPlayerID(), dwPID);
         return;
     }
 
