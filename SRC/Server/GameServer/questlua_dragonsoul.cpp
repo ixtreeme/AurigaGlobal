@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 
 #include "config.h"
 #include "questmanager.h"
@@ -7,9 +8,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -22,7 +23,7 @@ namespace quest
 		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (nullptr == ch)
 		{
-			sys_err ("NULL POINT ERROR");
+			sys_err("NULL POINT ERROR");
 			return 0;
 		}
 
