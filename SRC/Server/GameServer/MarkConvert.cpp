@@ -4,6 +4,7 @@
 // Converts old guild_mark.idx/tga format to new block-based format
 // ===========================================================================
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "MarkManager.h"
 
 #include <unordered_set>
@@ -38,7 +39,7 @@ static std::vector<Pixel> LoadOldGuildMarkImageFile()
 	FILE* fp = fopen(OLD_MARK_DATA_FILENAME, "rb");
 	if (!fp)
 	{
-		sys_err("GuildMarkConvert: cannot open %s", OLD_MARK_DATA_FILENAME);
+		LOG_ERROR("GuildMarkConvert: cannot open {}", OLD_MARK_DATA_FILENAME);
 		return {};
 	}
 
@@ -48,8 +49,7 @@ static std::vector<Pixel> LoadOldGuildMarkImageFile()
 
 	if (fileSize < 0 || static_cast<size_t>(fileSize) < OLD_IMAGE_DATA_SIZE)
 	{
-		sys_err("GuildMarkConvert: %s is too small (%ld bytes, expected %zu)",
-		        OLD_MARK_DATA_FILENAME, fileSize, OLD_IMAGE_DATA_SIZE);
+		LOG_ERROR("GuildMarkConvert: {} is too small ({} bytes, expected {})", OLD_MARK_DATA_FILENAME, fileSize, OLD_IMAGE_DATA_SIZE);
 		fclose(fp);
 		return {};
 	}
@@ -58,7 +58,7 @@ static std::vector<Pixel> LoadOldGuildMarkImageFile()
 
 	if (fread(data.data(), OLD_IMAGE_DATA_SIZE, 1, fp) != 1)
 	{
-		sys_err("GuildMarkConvert: failed to read %s", OLD_MARK_DATA_FILENAME);
+		LOG_ERROR("GuildMarkConvert: failed to read {}", OLD_MARK_DATA_FILENAME);
 		fclose(fp);
 		return {};
 	}
@@ -98,7 +98,7 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 
 	const std::unordered_set<uint32_t> validGuilds(vecGuildID.begin(), vecGuildID.end());
 
-	sys_log(0, "GuildMarkConvert: starting conversion (%zu valid guilds)", validGuilds.size());
+	LOG_INFO("GuildMarkConvert: starting conversion ({} valid guilds)", validGuilds.size());
 
 	char line[256];
 	Pixel mark[SGuildMark::SIZE];
@@ -111,7 +111,7 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 
 		if (validGuilds.find(guild_id) == validGuilds.end())
 		{
-			sys_log(0, "GuildMarkConvert: skipping guild %u (not in valid set)", guild_id);
+			LOG_INFO("GuildMarkConvert: skipping guild {} (not in valid set)", guild_id);
 			continue;
 		}
 
@@ -120,7 +120,7 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 
 		if (row >= OLD_MAX_MARK_ROWS)
 		{
-			sys_err("GuildMarkConvert: invalid mark_id %u (row %u >= %u)", mark_id, row, OLD_MAX_MARK_ROWS);
+			LOG_ERROR("GuildMarkConvert: invalid mark_id {} (row {} >= {})", mark_id, row, OLD_MAX_MARK_ROWS);
 			continue;
 		}
 
@@ -129,7 +129,7 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 
 		if (sx + SGuildMark::WIDTH > OLD_IMAGE_WIDTH || sy + SGuildMark::HEIGHT > OLD_IMAGE_HEIGHT)
 		{
-			sys_err("GuildMarkConvert: mark %u out of bounds (sx=%u, sy=%u)", mark_id, sx, sy);
+			LOG_ERROR("GuildMarkConvert: mark {} out of bounds (sx={}, sy={})", mark_id, sx, sy);
 			continue;
 		}
 
@@ -152,6 +152,6 @@ bool GuildMarkConvert(const std::vector<uint32_t>& vecGuildID)
 	rename(OLD_MARK_INDEX_FILENAME, OLD_MARK_INDEX_FILENAME ".removable");
 	rename(OLD_MARK_DATA_FILENAME, OLD_MARK_DATA_FILENAME ".removable");
 
-	sys_log(0, "GuildMarkConvert: conversion complete");
+	LOG_INFO("GuildMarkConvert: conversion complete");
 	return true;
 }
