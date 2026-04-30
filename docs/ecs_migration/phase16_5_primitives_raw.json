@@ -1,0 +1,1262 @@
+[
+  {
+    "path": "SRC/Server/Base/grid.cpp",
+    "line": 228,
+    "kind": "bare_printf",
+    "call": "printf(\"Grid %p\\n\", this)"
+  },
+  {
+    "path": "SRC/Server/Base/grid.cpp",
+    "line": 233,
+    "kind": "bare_printf",
+    "call": "printf(\"%d\", m_pGrid[y * m_iWidth + x])"
+  },
+  {
+    "path": "SRC/Server/Base/grid.cpp",
+    "line": 235,
+    "kind": "bare_printf",
+    "call": "printf(\"\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 379,
+    "kind": "bare_printf",
+    "call": "printf(\"GOST 21847-89 test driver.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 389,
+    "kind": "bare_printf",
+    "call": "printf(\"%3d\\r\", i)"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 402,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\nError! i = %d\\n\", i)"
+  },
+  {
+    "path": "SRC/Server/Core/gost_old.cpp",
+    "line": 407,
+    "kind": "bare_printf",
+    "call": "printf(\"All tests passed.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/log.cpp",
+    "line": 216,
+    "kind": "perror",
+    "call": "perror(\"scandir\")"
+  },
+  {
+    "path": "SRC/Server/Core/log.cpp",
+    "line": 242,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"%s: SYSTEM_CMD: %s %s:%d %s:%d\\n\", __FUNCTION__, system_cmd, buf, num1, name, num2)"
+  },
+  {
+    "path": "SRC/Server/Core/main.cpp",
+    "line": 38,
+    "kind": "bare_printf",
+    "call": "printf(\"pid_init(): could not open file for writing. (filename: ./pid)\")"
+  },
+  {
+    "path": "SRC/Server/Core/socket.cpp",
+    "line": 273,
+    "kind": "perror",
+    "call": "perror(\"socket\")"
+  },
+  {
+    "path": "SRC/Server/Core/socket.cpp",
+    "line": 321,
+    "kind": "perror",
+    "call": "perror(\"connect\")"
+  },
+  {
+    "path": "SRC/Server/Core/socket.cpp",
+    "line": 543,
+    "kind": "perror",
+    "call": "perror(\"setsockopt: keepalive\")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 19,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"------------------------------------------------------------------\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 29,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" \")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 31,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"%02x \", *p)"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 35,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"| \")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 41,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" \")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 44,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"%c\", ishprint(*p) && ishprint(*(p + 1)) ? *p : '.')"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 49,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\n\")"
+  },
+  {
+    "path": "SRC/Server/Core/utils.cpp",
+    "line": 58,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"------------------------------------------------------------------\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 234,
+    "kind": "bare_printf",
+    "call": "printf(\"DEFAULT_PRIV_PLAYER: set pid(%u), type(%u), value(%d)\\n\", pid, type, value)"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 261,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Failed Localization Infomation so exit\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 267,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Failed Default Priv Setting so exit\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 276,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" Item range Initialize Failed. Exit DBCache Server\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 286,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"PROTO_FROM_DB: %s\\n\", bIsProtoReadFromDB?\"Enabled\":\"Disabled\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 291,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"MIRROR2DB: %s\\n\", g_bMirror2DB?\"Enabled\":\"Disabled\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManager.cpp",
+    "line": 314,
+    "kind": "perror",
+    "call": "perror(\"socket\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 233,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not load mob_names.txt\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 246,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not load mob_proto.txt. Wrong file format?\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 265,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not process entry.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 446,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not load item_names.txt.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 458,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not load item_proto.txt. Wrong file format?\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 473,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not load item_proto.txt. Wrong file format?\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 487,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Failed to load item_proto table.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 1424,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Loading mob_proto from MySQL\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 1622,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Complete! %u Mobs loaded.\\n\", addNumber)"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 1660,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Loading item_proto from MySQL\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ClientManagerBoot.cpp",
+    "line": 1833,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Complete! %u Items loaded.\\n\", addNumber)"
+  },
+  {
+    "path": "SRC/Server/Database/grid.cpp",
+    "line": 226,
+    "kind": "bare_printf",
+    "call": "printf(\"Grid %p\\n\", this)"
+  },
+  {
+    "path": "SRC/Server/Database/grid.cpp",
+    "line": 231,
+    "kind": "bare_printf",
+    "call": "printf(\"%d\", m_pGrid[y * m_iWidth + x])"
+  },
+  {
+    "path": "SRC/Server/Database/grid.cpp",
+    "line": 233,
+    "kind": "bare_printf",
+    "call": "printf(\"\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/ItemAwardManager.cpp",
+    "line": 137,
+    "kind": "bare_printf",
+    "call": "printf(\"ITEM_AWARD load id %u bMall %d \\n\", kData->dwID, kData->bMall)"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 138,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Loading conf.txt failed.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 144,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Real Server\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 147,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Test Server\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 151,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Log Off\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 157,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Log On\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 166,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Cannot find CLIENT_HEART_FPS configuration.\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 176,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Setting log keeping days to %d\\n\", tmpValue)"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 235,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"%s %s\", g_stLocaleNameColumn.c_str(), szBuf)"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 267,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" failed, retrying in 5 seconds\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 270,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Success PLAYER\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 295,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" failed, retrying in 5 seconds\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 298,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Success ACCOUNT\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 322,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \" failed, retrying in 5 seconds\")"
+  },
+  {
+    "path": "SRC/Server/Database/Main.cpp",
+    "line": 325,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Success COMMON\\n\")"
+  },
+  {
+    "path": "SRC/Server/Database/version.cpp",
+    "line": 17,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"cannot open VERSION.txt\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/ani.cpp",
+    "line": 331,
+    "kind": "bare_printf",
+    "call": "printf(\"[%s][%s] = %u\\n\", FN_race_string(race), FN_weapon_string(weapon), attack_speed(race, weapon))"
+  },
+  {
+    "path": "SRC/Server/GameServer/ani.cpp",
+    "line": 336,
+    "kind": "bare_printf",
+    "call": "printf(\"\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 195,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"!!! FATAL ERROR !!! multiple MAP_ALLOW setting!!\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 199,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"MAP ALLOW %d\\n\", index)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 262,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"INTERNAL_IP: %s interface %s\\n\", netip, ifap->ifa_name)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 264,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"INTERNAL_IP: %s\\n\", netip)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 271,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"INTERNAL_IP: %s interface %s\\n\", netip, ifap->ifa_name)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 273,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"INTERNAL_IP: %s\\n\", netip)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 280,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PUBLIC_IP: %s interface %s\\n\", netip, ifap->ifa_name)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 282,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PUBLIC_IP: %s\\n\", netip)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 303,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"INTERNAL_IP -> PUBLIC_IP: %s\\n\", g_szPublicIP)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 351,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Can not open [%s]\\n\", configName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 362,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"HOSTNAME: %s\\n\", g_stHostname.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 386,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PLAYER_SQL syntax: logsql <host user password db>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 410,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"COMMON_SQL syntax: logsql <host user password db>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 434,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"LOG_SQL syntax: logsql <host user password db>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 456,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"ITEMSHOP_SQL syntax: logsql <host user password db>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 472,
+    "kind": "puts_fputs",
+    "call": "puts(\"LOAD_COMMON_SQL_INFO_FAILURE:\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 473,
+    "kind": "puts_fputs",
+    "call": "puts(\"\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 474,
+    "kind": "puts_fputs",
+    "call": "puts(\"CONFIG:\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 475,
+    "kind": "puts_fputs",
+    "call": "puts(\"------------------------------------------------\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 476,
+    "kind": "puts_fputs",
+    "call": "puts(\"COMMON_SQL: HOST USER PASSWORD DATABASE\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 477,
+    "kind": "puts_fputs",
+    "call": "puts(\"\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 483,
+    "kind": "puts_fputs",
+    "call": "puts(\"LOAD_PLAYER_SQL_INFO_FAILURE:\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 484,
+    "kind": "puts_fputs",
+    "call": "puts(\"\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 485,
+    "kind": "puts_fputs",
+    "call": "puts(\"CONFIG:\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 486,
+    "kind": "puts_fputs",
+    "call": "puts(\"------------------------------------------------\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 487,
+    "kind": "puts_fputs",
+    "call": "puts(\"PLAYER_SQL: HOST USER PASSWORD DATABASE\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 488,
+    "kind": "puts_fputs",
+    "call": "puts(\"\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 497,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"cannot start server while no common sql connected\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 501,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CommonSQL connected\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 513,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"COMMON_SQL: DirectQuery failed : %s\\n\", szQuery)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 526,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"COMMON_SQL: invalid locale key %s\\n\", row[1])"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 535,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Setting DB to locale %s\\n\", g_stLocale.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 546,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PlayerSQL.ConnectError\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 550,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"PlayerSQL connected\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 559,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"LogSQL.ConnectError\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 563,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"LogSQL connected\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 578,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"[SKILL_PERCENT] Query failed: %s\", szQuery)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 591,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILL_POWER_BY_LEVEL %s\\n\", p)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 602,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"[SKILL_PERCENT] locale table has not enough skill information! (count: %d query: %s)\", cnt, szQuery)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 606,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILL_POWER_BY_LEVEL: Done! (count %d)\\n\", cnt)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 629,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILL_POWER_BY_JOB %d %s\\n\", job, p)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 640,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"[SKILL_PERCENT] locale table has not enough skill information! (count: %d query: %s)\", cnt, szQuery)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 644,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILL_POWER_BY_JOB: Done! (job: %d count: %d)\\n\", job, cnt)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 727,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"AUTH_SERVER: syntax error: <ip|master> <port>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 736,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"AUTH_SERVER: I am the master\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 742,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"AUTH_SERVER: master %s %u\\n\", g_stAuthMasterIP.c_str(), g_wAuthMasterPort)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 774,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"WEB_AUTH syntax error (ex: WEB_AUTH <host(metin2.co.kr) uri(/kyw/gameauth.php)>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 871,
+    "kind": "bare_printf",
+    "call": "printf(\"-----------------------------------------------\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 872,
+    "kind": "bare_printf",
+    "call": "printf(\"TEST_SERVER\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 873,
+    "kind": "bare_printf",
+    "call": "printf(\"-----------------------------------------------\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 894,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"ITEM_COUNT_LIMIT: %d\\n\", g_bItemCountLimit)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 901,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"EMPIRE_SHOP_PRICE_3x: DISABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 910,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SHOP_PRICE_3X_TAX: %s\\n\", (!g_bEmpireShopPriceTripleDisable)?\"ENABLED\":\"DISABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 931,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CHANGE_ATTR_TIME_LIMIT: DISABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 940,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CHANGE_ATTR_TIME_LIMIT: %u\\n\", g_dwItemBonusChangeTime)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 947,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"PRISM_ITEM_REQUIREMENT: DISABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 956,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"PRISM_ITEM_REQUIRE: %s\\n\", (!g_bDisablePrismNeed)?\"ENABLED\":\"DISABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 963,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GLOBAL_SHOUT: ENABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 972,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GLOBAL_SHOUT: %s\\n\", (g_bGlobalShoutEnable)?\"ENABLED\":\"DISABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 979,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"EMOTION_MASK_REQUIREMENT: DISABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 988,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"EMOTION_MASK_REQUIRE: %s\\n\", (g_bDisableEmotionMask)?\"ENABLED\":\"DISABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 995,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"ENABLE_BOOTARY_CHECK: ENABLED\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1004,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"BOOTARY_CHECK: %s\\n\", (g_bEnableBootaryCheck)?\"ENABLED\":\"DISABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1015,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"STATUS_POINT_GET_LEVEL_LIMIT: %d\\n\", g_iStatusPointGetLevelLimit)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1026,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"STATUS_POINT_SET_MAX_VALUE: %d\\n\", g_iStatusPointSetMaxValue)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1037,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SHOUT_LIMIT_LEVEL: %d\\n\", g_iShoutLimitLevel)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1047,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"DB_LOG_LEVEL: %d\\n\", g_iDbLogLevel)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1057,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SYS_LOG_LEVEL: %d\\n\", g_iSysLogLevel)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1067,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"ITEM_DESTROY_TIME_AUTOGIVE: %d\\n\", g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE])"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1077,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"ITEM_DESTROY_TIME_DROPGOLD: %d\\n\", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD])"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1087,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"ITEM_DESTROY_TIME_DROPITEM: %d\\n\", g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM])"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1108,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CHECK_VERSION_SERVER: %d\\n\", g_bCheckClientVersion)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1115,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CHECK_VERSION_VALUE: %s\\n\", g_stClientVersion.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1125,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GM_HOST_CHECK: %d\\n\", g_bGMHostCheck)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1135,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GUILD_INVITE_LIMIT: %d\\n\", g_bGuildInviteLimit)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1145,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GUILD_INFINITE_MEMBERS: %d\\n\", g_bGuildInfiniteMembers)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1154,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"EMPIRE_LANGUAGE_CHECK: %s\\n\", (g_bDisableEmpireLanguageCheck)?\"DISABLED\":\"ENABLED\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1163,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILLBOOK_NEXTREAD_MIN: %u\\n\", g_dwSkillBookNextReadMin)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1172,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"SKILLBOOK_NEXTREAD_MAX: %u\\n\", g_dwSkillBookNextReadMax)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1281,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PK_PROTECT_LEVEL: %d\", PK_PROTECT_LEVEL)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1288,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"ATTR_TRANSFER_LIMIT: %d\\n\", gAttrTransferLimit)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1299,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"PLAYER_MAX_LEVEL: %d\\n\", gPlayerMaxLevel)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1308,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"STONE_CHANCE: %u/n\", stone_chance)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1314,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SHUTDOWN_AGE: %d\\n\", gShutdownAge)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1321,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SHUTDOWN_ENABLE: %d\\n\", gShutdownEnable)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1360,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1362,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1386,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CMD syntax error: <cmd> <PLAYER | LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1388,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CMD syntax error: <cmd> <LOW_WIZARD | WIZARD | HIGH_WIZARD | GOD | IMPLEMENTOR | DISABLE>\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1394,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"CMD_REWRITE: [%s] [%s:%d]\\n\", cmd, levelname, level)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1464,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Can not open [%s]\\n\", st_configFileName.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1473,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"GENERAL CONFIG LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1480,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"GENERAL CONFIG LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1487,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"GENERAL CONFIG LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1496,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"DB_PORT not configured\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1502,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CHANNEL not configured\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1508,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"HOSTNAME must be configured.\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1521,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Failed to Load ExpTable from DB so exit\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1534,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GENERAL CMD LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1541,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GENERAL CMD LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1548,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"GENERAL CMD LOAD OK [%s]\\n\", szFileName)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1566,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Can not get public ip address\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1599,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CLIENT_CRC: %u %u\\n\", dwValidClientProcessCRC, dwValidClientFileCRC)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1619,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"VERSION: \\\"%s\\\"\\n\", buf)"
+  },
+  {
+    "path": "SRC/Server/GameServer/config.cpp",
+    "line": 1796,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"CANNOT LOAD MAP TELEPORTER CONFIG!!!\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/db.cpp",
+    "line": 1285,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"cannot open direct sql connection to host: %s user: %s db: %s\\n\", host, user, db)"
+  },
+  {
+    "path": "SRC/Server/GameServer/desc.cpp",
+    "line": 621,
+    "kind": "puts_fputs",
+    "call": "fputs(\"\\n\", m_pLogFile)"
+  },
+  {
+    "path": "SRC/Server/GameServer/fishing.cpp",
+    "line": 169,
+    "kind": "bare_printf",
+    "call": "printf(\"Tab error on line: %s\\n\", buf)"
+  },
+  {
+    "path": "SRC/Server/GameServer/fishing.cpp",
+    "line": 869,
+    "kind": "bare_printf",
+    "call": "printf(\"%s\\t%u\\t%u\\t%u\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\", fish_info[i].name, fish_info[i].vnum, fish_info[i].dead_vnum, fish_info[i].grill_vnum, fish_info[i].prob[0], fish_info[i].prob[1], fish_info[i].prob[2], fish_info[i].difficulty, fish_info[i].time_type, fish_info[i].length_range[0], fish_info[i].length_range[1], fish_info[i].length_range[2])"
+  },
+  {
+    "path": "SRC/Server/GameServer/fishing.cpp",
+    "line": 884,
+    "kind": "bare_printf",
+    "call": "printf(\"\\t%d\", fish_info[i].used_table[j])"
+  },
+  {
+    "path": "SRC/Server/GameServer/fishing.cpp",
+    "line": 886,
+    "kind": "puts_fputs",
+    "call": "puts(\"\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 99,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\t%s\", inet_ntoa(in_ip))"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 100,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\t%s\", inet_ntoa(in_end))"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 101,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"\\t%s\\tfirst %d\\n\", inet_ntoa(in_mask), hash())"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 126,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"error reading start %s\\n\", s)"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 152,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"LOADING BANNED IP LIST\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 345,
+    "kind": "bare_printf",
+    "call": "printf(\"Syntax: %s <filename>\\n\", *argv)"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 383,
+    "kind": "bare_printf",
+    "call": "printf(\"size %d\\n\", v.size())"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 385,
+    "kind": "bare_printf",
+    "call": "printf(\"result1 %d\\n\", v.size())"
+  },
+  {
+    "path": "SRC/Server/GameServer/ip_ban.cpp",
+    "line": 387,
+    "kind": "bare_printf",
+    "call": "printf(\"result2 %d\\n\", v.size())"
+  },
+  {
+    "path": "SRC/Server/GameServer/locale_service.cpp",
+    "line": 1144,
+    "kind": "fprintf_stdout",
+    "call": "fprintf(stdout, \"Setting Locale \\\"%s\\\" (Path: %s)\\n\", g_stServiceName.c_str(), g_stServiceBasePath.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/lzo_manager.cpp",
+    "line": 8,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"lzo_init() failed\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 608,
+    "kind": "bare_printf",
+    "call": "printf(\"Option list\\n\" \"-p <port> : bind port number (port must be over 1024)\\n\" \"-l <level> : sets log level\\n\" \"-n <locale> : sets locale name\\n\" #ifdef ENABLE_NEWSTUFF \"-C <on-off> : checkpointing check on/off\\n\" #endif \"-v : log to stdout\\n\" \"-r : do not load regen tables\\n\" \"-t : traffic profile on\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 649,
+    "kind": "bare_printf",
+    "call": "printf(\"IP %s\\n\", g_szPublicIP)"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 664,
+    "kind": "bare_printf",
+    "call": "printf(\"port %d\\n\", mother_port)"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 727,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"Could not initialize thecore, check owner of pid, syslog\\n\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 737,
+    "kind": "perror",
+    "call": "perror(\"socket_tcp_bind: tcp_socket\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 745,
+    "kind": "perror",
+    "call": "perror(\"socket_udp_bind: udp_socket\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 754,
+    "kind": "perror",
+    "call": "perror(\"socket_tcp_bind: p2p_socket\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 773,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SlaveAuth\")"
+  },
+  {
+    "path": "SRC/Server/GameServer/main.cpp",
+    "line": 781,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"MasterAuth %d\\n\", LC_GetLocalType())"
+  },
+  {
+    "path": "SRC/Server/GameServer/new_offlineshop_manager.cpp",
+    "line": 641,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"cant find sectree for entity : name %s , pid %u \",ent.GetShopName(), ent.GetShop()->GetOwnerPID())"
+  },
+  {
+    "path": "SRC/Server/GameServer/questnpc.cpp",
+    "line": 103,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"cannot find quest index for %s\\n\", stQuestName.c_str())"
+  },
+  {
+    "path": "SRC/Server/GameServer/sectree_manager.cpp",
+    "line": 1126,
+    "kind": "bare_printf",
+    "call": "printf(\"Name ID: %u\\n\", np.name)"
+  },
+  {
+    "path": "SRC/Server/GameServer/sectree_manager.cpp",
+    "line": 1127,
+    "kind": "bare_printf",
+    "call": "printf(\"X: %d\\n\", np.x)"
+  },
+  {
+    "path": "SRC/Server/GameServer/sectree_manager.cpp",
+    "line": 1128,
+    "kind": "bare_printf",
+    "call": "printf(\"Y: %d\\n\", np.y)"
+  },
+  {
+    "path": "SRC/Server/GameServer/shutdown_manager.cpp",
+    "line": 74,
+    "kind": "bare_printf",
+    "call": "printf(\"ShutdownManager::Update() - Shutdown Account : %s\\n\", (*i)->GetAccountTable().login)"
+  },
+  {
+    "path": "SRC/Server/GameServer/skill_power.cpp",
+    "line": 14,
+    "kind": "fprintf_stderr",
+    "call": "fprintf( stderr, \"[NO SETTING SKILL] aiSkillPowerByLevelFromType[%d]\", job)"
+  },
+  {
+    "path": "SRC/Server/Poly/main.cpp",
+    "line": 15,
+    "kind": "bare_printf",
+    "call": "printf( \"12345\\n\" )"
+  },
+  {
+    "path": "SRC/Server/Poly/main.cpp",
+    "line": 38,
+    "kind": "bare_printf",
+    "call": "printf(\"B = %d\\n\", atoi(argv[2]))"
+  },
+  {
+    "path": "SRC/Server/SQL/AsyncSQL.cpp",
+    "line": 191,
+    "kind": "perror",
+    "call": "perror(\"pthread_mutex_init\")"
+  },
+  {
+    "path": "SRC/Server/SQL/AsyncSQL.cpp",
+    "line": 197,
+    "kind": "perror",
+    "call": "perror(\"pthread_mutex_init\")"
+  },
+  {
+    "path": "SRC/Server/SQL/AsyncSQL.cpp",
+    "line": 211,
+    "kind": "perror",
+    "call": "perror(\"CAsyncSQL::Setup\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Semaphore.cpp",
+    "line": 24,
+    "kind": "perror",
+    "call": "perror(\"sem_init\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Semaphore.cpp",
+    "line": 59,
+    "kind": "perror",
+    "call": "perror(\"sem_wait\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Tellwait.cpp",
+    "line": 22,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"signal(SIGINT) error\\n\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Tellwait.cpp",
+    "line": 28,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"signal(SIGQUIT) error\\n\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Tellwait.cpp",
+    "line": 41,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SIG_BLOCK error\\n\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Tellwait.cpp",
+    "line": 61,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SIG_SETMASK error\\n\")"
+  },
+  {
+    "path": "SRC/Server/SQL/Tellwait.cpp",
+    "line": 81,
+    "kind": "fprintf_stderr",
+    "call": "fprintf(stderr, \"SIG_SETMASK error\\n\")"
+  }
+]
