@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -71,11 +72,11 @@ bool CShop::Create(uint32_t dwVnum, uint32_t dwNPCVnum, TShopItemTable * pTable)
 	/*
 	   if (NULL == CMobManager::instance().Get(dwNPCVnum))
 	   {
-	   sys_err("No such a npc by vnum %d", dwNPCVnum);
+	   LOG_ERROR("No such a npc by vnum {}", dwNPCVnum);
 	   return false;
 	   }
 	 */
-	sys_log(0, "SHOP #%d (Shopkeeper %d)", dwVnum, dwNPCVnum);
+	LOG_INFO("SHOP #{} (Shopkeeper {})", dwVnum, dwNPCVnum);
 
 	m_dwVnum = dwVnum;
 	m_dwNPCVnum = dwNPCVnum;
@@ -111,7 +112,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 			if (!pkItem)
 			{
-				sys_err("cannot find item on pos (%d, %d) (name: %s)", pTable->pos.window_type, pTable->pos.cell, m_pkPC->GetName());
+				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, m_pkPC->GetName());
 				continue;
 			}
 
@@ -127,7 +128,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 		if (!item_table)
 		{
-			sys_err("Shop: no item table by item vnum #%d", pTable->vnum);
+			LOG_ERROR("Shop: no item table by item vnum #{}", pTable->vnum);
 			continue;
 		}
 
@@ -135,7 +136,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 		if (IsPCShop())
 		{
-			sys_log(0, "MyShop: use position %d", pTable->display_pos);
+			LOG_INFO("MyShop: use position {}", static_cast<int>(pTable->display_pos));
 			iPos = pTable->display_pos;
 		}
 		else
@@ -143,7 +144,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 		if (iPos < 0)
 		{
-			sys_err("not enough shop window");
+			LOG_ERROR("not enough shop window");
 			continue;
 		}
 
@@ -151,11 +152,11 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		{
 			if (IsPCShop())
 			{
-				sys_err("not empty position for pc shop %s[%d]", m_pkPC->GetName(), m_pkPC->GetPlayerID());
+				LOG_ERROR("not empty position for pc shop {}[{}]", m_pkPC->GetName(), m_pkPC->GetPlayerID());
 			}
 			else
 			{
-				sys_err("not empty position for npc shop");
+				LOG_ERROR("not empty position for npc shop");
 			}
 			continue;
 		}
@@ -203,7 +204,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		
 		char name[256];
 		snprintf(name, sizeof(name), "%s (v: %d) (c: %d)", item_table->szName, item.vnum, item.count);
-		sys_log(0, "SHOP_ITEM: ITEM: %s PRICE: %d", name, item.price);
+		LOG_INFO("SHOP_ITEM: ITEM: {} PRICE: {}", name, item.price);
 		++pTable;
 	}
 }
@@ -247,7 +248,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (pos >= m_itemVector.size())
 	{
-		sys_log(0, "Shop::Buy : invalid position %d : %s", pos, ch->GetName());
+		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ch->GetName());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
@@ -262,10 +263,10 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 		if (IsPCShop()) {
 			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
-				sys_log(0, "Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:%d SellerPID:%d", ch->GetPlayerID(), m_pkPC->GetPlayerID());
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ch->GetPlayerID(), m_pkPC->GetPlayerID());
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			} else if (ItemSystem::GetItemOwner(selectedItem) != AIHelpers::EcsOf(m_pkPC)) {
-				sys_log(0, "Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:%d SellerPID:%d", ch->GetPlayerID(), m_pkPC->GetPlayerID());
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ch->GetPlayerID(), m_pkPC->GetPlayerID());
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			}
 		}
@@ -287,7 +288,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			dwPriceCount = r_item.itemprice[i].count;
 			dwHaveCount = ch->CountSpecifyItem(dwPriceVnum);
 			if (dwHaveCount < dwPriceCount) {
-				sys_log(1, "Shop::Buy : Not enough item : %s has %d, price %d.", ch->GetName(), dwHaveCount, dwPriceCount);
+				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ch->GetName(), dwHaveCount, dwPriceCount);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -333,12 +334,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 		if (m_pkPC)
 		{
-			sys_log(1, "Shop::Buy at PC Shop : Inventory full : %s size %d", ch->GetName(), item->GetSize());
+			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ch->GetName(), item->GetSize());
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 		else
 		{
-			sys_log(1, "Shop::Buy : Inventory full : %s size %d", ch->GetName(), item->GetSize());
+			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ch->GetName(), item->GetSize());
 			ItemSystem::DestroyItemEntityEcs(
 				EntityFactory::CreateItemEntity(g_registry, item),
 				"SHOP_TRANSACTION");
@@ -722,7 +723,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (p >= m_itemVector.size()) {
-		sys_log(0, "Shop::MultipleBuy: invalid position %d : %s", p, ch->GetName());
+		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ch->GetName());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
@@ -747,7 +748,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 			price_count = r_item.itemprice[i].count * c;
 			have_count = ch->CountSpecifyItem(price_vnum);
 			if (have_count < price_count) {
-				sys_log(1, "Shop::MultipleBuy: Not enough item : %s has %d, price %d.", ch->GetName(), have_count, price_count);
+				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ch->GetName(), have_count, price_count);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -883,7 +884,7 @@ void CShop::RemoveGuest(LPCHARACTER ch)
 
 void CShop::Broadcast(const void * data, int bytes)
 {
-	sys_log(1, "Shop::Broadcast %p %d", data, bytes);
+	LOG_INFO("Shop::Broadcast {} {}", static_cast<const void*>(data), bytes);
 
 	GuestMapType::iterator it;
 
