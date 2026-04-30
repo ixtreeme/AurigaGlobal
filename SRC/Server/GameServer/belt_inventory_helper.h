@@ -6,6 +6,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include <Core/Logging.hpp>
 
 class CBeltInventoryHelper
 {
@@ -30,7 +31,7 @@ public:
 
 		if (level >= _countof(beltGradeByLevelTable))
 		{
-			sys_err("CBeltInventoryHelper::GetBeltGradeByRefineLevel - Overflow level (%u)", level);
+			LOG_ERROR("CBeltInventoryHelper::GetBeltGradeByRefineLevel - Overflow level ({})", level);
 			return 0;
 		}
 
