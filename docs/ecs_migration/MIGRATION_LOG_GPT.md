@@ -9501,6 +9501,153 @@ Commit status:
 - Follow-up fix: `83954b7 Phase 16-2: Fix profiler fmt alignment`.
 - WinTest not run for Batch 8 per phase instruction; operator checkpoint remains pending.
 
+## Phase 16-3 - QuestError Modernization
+
+Mode:
+- Modernize questlua logging without changing quest behavior.
+- Preserve `__FUNCTION__` / `__LINE__` capture.
+- Keep questlua `sys_err(...)` call-site name as the local QuestError macro, but convert its format strings to fmt-style.
+- `sys_log(...)` call sites in questlua files were migrated to `LOG_INFO(...)`.
+
+Audit:
+- `QuestError` implementation was in `SRC/Server/GameServer/questmanager.cpp`.
+- Old signature:
+```cpp
+void CQuestManager::QuestError(const char* func, int line, const char* fmt, ...);
+```
+- Existing questlua redirect pattern was per-file:
+```cpp
+#undef sys_err
+#ifndef _WIN32
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#else
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#endif
+```
+- Several `questlua_*.cpp` files did not have the redirect before this phase and were still using the Core `_sys_err` bridge. Those files now get the same quest-local redirect.
+
+QuestError changes:
+- Added `QuestErrorImpl(const char* func, int line, const std::string& msg)`.
+- Added type-safe fmt entry point:
+```cpp
+template <typename... Args>
+void QuestErrorFmt(const char* func, int line, fmt::format_string<Args...> fmt, Args&&... args);
+```
+- Kept old varargs `QuestError(...)` as an internal transition bridge.
+- `QuestErrorImpl` now logs with function and line context:
+```text
+[QUEST function:line] message
+```
+- Test-server chat behavior is preserved:
+  - `error occurred on [func:line]`
+  - formatted quest error message
+
+Macro decision:
+- The first attempt used `__VA_OPT__`, but this project is not compiling with MSVC `/Zc:preprocessor`, so MSVC rejected it.
+- Final macro keeps the previous platform-compatible variadic style:
+```cpp
+#undef sys_err
+#ifndef _WIN32
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
+#else
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
+#endif
+```
+
+Migrated files:
+```text
+questlua_pc.cpp
+questlua_dungeon.cpp
+questlua_global.cpp
+questlua.cpp
+questlua_marriage.cpp
+questlua_party.cpp
+questlua_item.cpp
+questlua_affect.cpp
+questlua_guild.cpp
+questlua_npc.cpp
+questlua_quest.cpp
+questlua_target.cpp
+questlua_game.cpp
+questlua_building.cpp
+questlua_horse.cpp
+questlua_dragonsoul.cpp
+questlua_pet.cpp
+questlua_arena.cpp
+questlua_petnew.cpp
+```
+
+Gotchas:
+- `QuestError` template overload plus old varargs overload caused MSVC overload ambiguity. Fixed by naming the type-safe entry point `QuestErrorFmt` and leaving `QuestError` as the explicit legacy bridge.
+- `questlua.cpp` had a dynamic printf format built in a local buffer:
+```cpp
+snprintf(buf, sizeof(buf), "LUA ScriptRunError (code:%%d src:[%%%ds])", size);
+sys_err(buf, errcode, code);
+```
+  This was replaced with a static fmt string and bounded string construction:
+```cpp
+sys_err("LUA ScriptRunError (code:{} src:[{}])", errcode, std::string(code, size));
+```
+- The raw grep count for `sys_err(` remains non-zero by design because the questlua local macro name is intentionally preserved. These are no longer printf-style Core `_sys_err` calls; they route to `QuestErrorFmt`.
+
+Counts after Phase 16-3:
+```text
+GameServer sys_log: 0
+GameServer _sys_err: 0
+GameServer raw sys_err: 304
+
+Meaning of raw sys_err:
+- questlua fmt-style QuestError macro call sites
+- questlua per-file macro definitions
+```
+
+Core bridge removal decision:
+- The Phase 16-3 prompt requested removal of the printf-style `sys_log/sys_err` compatibility bridge after GameServer migration.
+- This is not safe yet across the full source tree because non-GameServer modules still have legacy printf-style calls.
+- Fresh tree-wide audit after questlua migration:
+```text
+SRC/Server sys_log: 462
+SRC/Server sys_err: 506
+SRC/Server _sys_err: 5
+Non-GameServer legacy log references: 667
+```
+- Therefore the Core compatibility bridge remains for now.
+- Recommended next phase before bridge removal:
+  - Phase 16-4: Core + Database logging modernization.
+  - Then remove the varargs bridge once `SRC/Server/Core` and `SRC/Server/Database` are fmt-clean.
+
+Build results:
+- Build passed after `QuestError` internals were modernized.
+- Build passed after every migrated questlua file.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Commit status:
+- `3b0371b Phase 16-3.1: Modernize QuestError internals`
+- `43f1f81 Phase 16-3: Migrate quest format in questlua_pc.cpp`
+- `5e4971c Phase 16-3: Migrate quest format in questlua_dungeon.cpp`
+- `a6a6db7 Phase 16-3: Migrate quest format in questlua_global.cpp`
+- `4066b8a Phase 16-3: Migrate quest format in questlua.cpp`
+- `4bd5a13 Phase 16-3: Migrate quest format in questlua_marriage.cpp`
+- `b18078f Phase 16-3: Migrate quest format in questlua_party.cpp`
+- `0f8096d Phase 16-3: Migrate quest format in questlua_item.cpp`
+- `28b9e5b Phase 16-3: Migrate quest format in questlua_affect.cpp`
+- `1aeb160 Phase 16-3: Migrate quest format in questlua_guild.cpp`
+- `1a899d3 Phase 16-3: Migrate quest format in questlua_npc.cpp`
+- `0912633 Phase 16-3: Migrate quest format in questlua_quest.cpp`
+- `d17f2b5 Phase 16-3: Migrate quest format in questlua_target.cpp`
+- `801878d Phase 16-3: Migrate quest format in questlua_game.cpp`
+- `6ff5f0f Phase 16-3: Migrate quest format in questlua_building.cpp`
+- `f5439c7 Phase 16-3: Migrate quest format in questlua_horse.cpp`
+- `f825f5c Phase 16-3: Migrate quest format in questlua_dragonsoul.cpp`
+- `8cec65d Phase 16-3: Migrate quest format in questlua_pet.cpp`
+- `8a93047 Phase 16-3: Migrate quest format in questlua_arena.cpp`
+- `d57b358 Phase 16-3: Migrate quest format in questlua_petnew.cpp`
+- `f63e1a9 Phase 16-3: Migrate GameServer log.cpp legacy logging`
+- WinTest not run in this environment; operator WinTest remains mandatory before marking COMPLETE.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
