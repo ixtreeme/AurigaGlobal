@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -35,11 +36,11 @@ void CHorseNameManager::UpdateHorseName(uint32_t dwPlayerID, const char* szHorse
 {
 	if ( szHorseName == nullptr)
 	{
-		sys_err("HORSE_NAME: NULL NAME (%u)", dwPlayerID);
+		LOG_ERROR("HORSE_NAME: NULL NAME ({})", dwPlayerID);
 		szHorseName = "";
 	}
 
-	sys_log(0, "HORSENAME: update %u %s", dwPlayerID, szHorseName);
+	LOG_INFO("HORSENAME: update {} {}", dwPlayerID, szHorseName);
 
 	m_mapHorseNames[dwPlayerID] = szHorseName;
 
