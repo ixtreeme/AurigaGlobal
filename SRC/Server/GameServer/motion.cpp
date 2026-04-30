@@ -98,7 +98,7 @@ static const char* GetMotionFileName(TMobTable* mobTable, EPublicMotion motion)
 
 			default:
 				fclose(fp);
-				sys_err("Motion: no process for this motion(%d) vnum(%d)", motion, mobTable->dwVnum);
+				LOG_ERROR("Motion: no process for this motion({}) vnum({})", motion, mobTable->dwVnum);
 				return nullptr;
 		}
 
@@ -126,7 +126,7 @@ static const char* GetMotionFileName(TMobTable* mobTable, EPublicMotion motion)
 		fclose(fp);
 	}
 	else if (test_server) {
-		sys_err("Motion: %s have not motlist.txt vnum(%d) folder(%s)", folder, mobTable->dwVnum, mobTable->szFolder);
+		LOG_ERROR("Motion: {} have not motlist.txt vnum({}) folder({})", folder, mobTable->dwVnum, mobTable->szFolder);
 	}
 
 	return nullptr;
@@ -148,7 +148,7 @@ static void LoadMotion(CMotionSet* pMotionSet, TMobTable* mob_table, EPublicMoti
 		if (test_server) {
 			if (motion == MOTION_RUN)
 				if (0.0f == pMotion->GetAccumVector().y)
-					sys_err("cannot find accumulation data in file '%s'", cpFileName);
+					LOG_ERROR("cannot find accumulation data in file '{}'", cpFileName);
 		}
 
 		pMotionSet->Insert(MAKE_MOTION_KEY(MOTION_MODE_GENERAL, motion), pMotion);
@@ -156,7 +156,7 @@ static void LoadMotion(CMotionSet* pMotionSet, TMobTable* mob_table, EPublicMoti
 	else
 	{
 		M2_DELETE(pMotion);
-		sys_err("Motion: Load failed vnum(%d) motion(%d) file(%s)", mob_table->dwVnum, motion, cpFileName);
+		LOG_ERROR("Motion: Load failed vnum({}) motion({}) file({})", mob_table->dwVnum, motion, cpFileName);
 	}
 }
 
@@ -193,8 +193,7 @@ static void LoadSkillMotion(CMotionSet* pMotionSet, CMob* pMob, EPublicMotion mo
 	{
 		if (mob_table->Skills[idx].dwVnum != 0)
 		{
-			sys_err("Motion: Skill exist but no motion data for index %d mob %u skill %u",
-				   	idx, mob_table->dwVnum, mob_table->Skills[idx].dwVnum);
+			LOG_ERROR("Motion: Skill exist but no motion data for index {} mob {} skill {}", idx, mob_table->dwVnum, mob_table->Skills[idx].dwVnum);
 		}
 		M2_DELETE(pMotion);
 	}
@@ -435,7 +434,7 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 
 	if (!rkTextFileLoader.GetTokenFloat("motionduration", &m_fDuration))
 	{
-		sys_err("Motion: no motion duration %s", c_pszFileName);
+		LOG_ERROR("Motion: no motion duration {}", c_pszFileName);
 		return false;
 	}
 
@@ -461,14 +460,14 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 			{
 				if (!rkTextFileLoader.SetChildNode("event", j))
 				{
-					sys_err("Motion: no event data %d %s", j, c_pszFileName);
+					LOG_ERROR("Motion: no event data {} {}", j, c_pszFileName);
 					return false;
 				}
 
 				int iType;
 				if (!rkTextFileLoader.GetTokenInteger("motioneventtype", &iType))
 				{
-					sys_err("Motion: no motioneventtype data %s", c_pszFileName);
+					LOG_ERROR("Motion: no motioneventtype data {}", c_pszFileName);
 					return false;
 				}
 
@@ -492,7 +491,7 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 						// 구 데이터는 하나 라고 가정
 						if (!rkTextFileLoader.SetChildNode("spheredata", 0))
 						{
-							sys_err("Motion: no sphere data %s", c_pszFileName);
+							LOG_ERROR("Motion: no sphere data {}", c_pszFileName);
 							return false;
 						}
 
@@ -500,7 +499,7 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 						//return false;
 						if (!rkTextFileLoader.GetTokenPosition("position", &v3Position))
 						{
-							sys_err("Motion: no position data %s", c_pszFileName);
+							LOG_ERROR("Motion: no position data {}", c_pszFileName);
 							return false;
 						}
 
@@ -516,7 +515,7 @@ bool CMotion::LoadMobSkillFromFile(const char * c_pszFileName, CMob* pMob, int i
 
 				if (!rkTextFileLoader.GetTokenFloat("startingtime", &fStartingTime))
 				{
-					sys_err("Motion: no startingtime data %s", c_pszFileName);
+					LOG_ERROR("Motion: no startingtime data {}", c_pszFileName);
 					return false;
 				}
 
@@ -540,13 +539,13 @@ bool CMotion::LoadFromFile(const char * c_pszFileName)
 
 	if (!loader.Load(c_pszFileName))
 	{
-		sys_log(0, "Motion: LoadFromFile fail: %s", c_pszFileName);
+		LOG_INFO("Motion: LoadFromFile fail: {}", c_pszFileName);
 		return false;
 	}
 
 	if (!loader.GetTokenFloat("motionduration", &m_fDuration))
 	{
-		sys_err("Motion: %s does not have a duration", c_pszFileName);
+		LOG_ERROR("Motion: {} does not have a duration", c_pszFileName);
 		return false;
 	}
 
