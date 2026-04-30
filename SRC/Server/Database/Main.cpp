@@ -63,9 +63,9 @@ extern void WriteVersion();
 void emergency_sig(int sig)
 {
 	if (sig == SIGSEGV)
-		sys_log(0, "SIGNAL: SIGSEGV");
+		LOG_INFO("SIGNAL: SIGSEGV");
 	else if (sig == SIGUSR1)
-		sys_log(0, "SIGNAL: SIGUSR1");
+		LOG_INFO("SIGNAL: SIGUSR1");
 
 	if (sig == SIGSEGV)
 		abort();
@@ -95,7 +95,7 @@ int main()
 	GuildManager.Initialize();
 	MarriageManager.Initialize();
 	ItemIDRangeManager.Build();
-	sys_log(0, "Metin2DBCacheServer Start\n");
+	LOG_INFO("Metin2DBCacheServer Start\n");
 
 	CClientManager::instance().MainLoop();
 
@@ -115,7 +115,7 @@ int main()
 			break;
 
 		usleep(1000);
-		sys_log(0, "WAITING_QUERY_COUNT %d", iCount);
+		LOG_INFO("WAITING_QUERY_COUNT {}", iCount);
 	}
 
 	return 1;
@@ -184,12 +184,12 @@ int Start()
 	if (CConfig::instance().GetValue("LOCALE", szBuf, 256))
 	{
 		g_stLocale = szBuf;
-		sys_log(0, "LOCALE set to %s", g_stLocale.c_str());
+		LOG_INFO("LOCALE set to {}", g_stLocale.c_str());
 	}
 
 	if (!CConfig::instance().GetValue("TABLE_POSTFIX", szBuf, 256))
 	{
-		sys_log(0, "TABLE_POSTFIX not configured use default"); // @warme012
+		LOG_INFO("TABLE_POSTFIX not configured use default"); // @warme012
 		szBuf[0] = '\0';
 	}
 
@@ -198,20 +198,20 @@ int Start()
 	if (CConfig::instance().GetValue("PLAYER_CACHE_FLUSH_SECONDS", szBuf, 256))
 	{
 		str_to_number(g_iPlayerCacheFlushSeconds, szBuf);
-		sys_log(0, "PLAYER_CACHE_FLUSH_SECONDS: %d", g_iPlayerCacheFlushSeconds);
+		LOG_INFO("PLAYER_CACHE_FLUSH_SECONDS: {}", g_iPlayerCacheFlushSeconds);
 	}
 
 	if (CConfig::instance().GetValue("ITEM_CACHE_FLUSH_SECONDS", szBuf, 256))
 	{
 		str_to_number(g_iItemCacheFlushSeconds, szBuf);
-		sys_log(0, "ITEM_CACHE_FLUSH_SECONDS: %d", g_iItemCacheFlushSeconds);
+		LOG_INFO("ITEM_CACHE_FLUSH_SECONDS: {}", g_iItemCacheFlushSeconds);
 	}
 
 	// MYSHOP_PRICE_LIST
 	if (CConfig::instance().GetValue("ITEM_PRICELIST_CACHE_FLUSH_SECONDS", szBuf, 256))
 	{
 		str_to_number(g_iItemPriceListTableCacheFlushSeconds, szBuf);
-		sys_log(0, "ITEM_PRICELIST_CACHE_FLUSH_SECONDS: %d", g_iItemPriceListTableCacheFlushSeconds);
+		LOG_INFO("ITEM_PRICELIST_CACHE_FLUSH_SECONDS: {}", g_iItemPriceListTableCacheFlushSeconds);
 	}
 	// END_OF_MYSHOP_PRICE_LIST
 	//
@@ -224,7 +224,7 @@ int Start()
 	int iIDStart;
 	if (!CConfig::instance().GetValue("PLAYER_ID_START", &iIDStart))
 	{
-		sys_err("PLAYER_ID_START not configured");
+		LOG_ERROR("PLAYER_ID_START not configured");
 		return false;
 	}
 
@@ -240,7 +240,7 @@ int Start()
 	if (CConfig::instance().GetValue("CURRENT_BATTLE_PASS_ID", szBuf, 256))
 	{
 		str_to_number(g_iCurrentBattlePassId, szBuf);
-		sys_log(0, "CURRENT_BATTLE_PASS_ID: %d", g_iCurrentBattlePassId);
+		LOG_INFO("CURRENT_BATTLE_PASS_ID: {}", g_iCurrentBattlePassId);
 	}
 #endif
 
@@ -251,7 +251,7 @@ int Start()
 	if (CConfig::instance().GetValue("SQL_PLAYER", line, 256))
 	{
 		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		sys_log(0, "connecting to MySQL server (player)");
+		LOG_INFO("connecting to MySQL server (player)");
 
 		int iRetry = 5;
 
@@ -259,11 +259,11 @@ int Start()
 		{
 			if (CDBManager::instance().Connect(SQL_PLAYER, szAddr, iPort, szDB, szUser, szPassword))
 			{
-				sys_log(0, "   OK");
+				LOG_INFO("   OK");
 				break;
 			}
 
-			sys_log(0, "   failed, retrying in 5 seconds");
+			LOG_INFO("   failed, retrying in 5 seconds");
 			fprintf(stderr, "   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
@@ -272,14 +272,14 @@ int Start()
 	}
 	else
 	{
-		sys_err("SQL_PLAYER not configured");
+		LOG_ERROR("SQL_PLAYER not configured");
 		return false;
 	}
 
 	if (CConfig::instance().GetValue("SQL_ACCOUNT", line, 256))
 	{
 		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		sys_log(0, "connecting to MySQL server (account)");
+		LOG_INFO("connecting to MySQL server (account)");
 
 		int iRetry = 5;
 
@@ -287,11 +287,11 @@ int Start()
 		{
 			if (CDBManager::instance().Connect(SQL_ACCOUNT, szAddr, iPort, szDB, szUser, szPassword))
 			{
-				sys_log(0, "   OK");
+				LOG_INFO("   OK");
 				break;
 			}
 
-			sys_log(0, "   failed, retrying in 5 seconds");
+			LOG_INFO("   failed, retrying in 5 seconds");
 			fprintf(stderr, "   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
@@ -299,14 +299,14 @@ int Start()
 	}
 	else
 	{
-		sys_err("SQL_ACCOUNT not configured");
+		LOG_ERROR("SQL_ACCOUNT not configured");
 		return false;
 	}
 
 	if (CConfig::instance().GetValue("SQL_COMMON", line, 256))
 	{
 		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		sys_log(0, "connecting to MySQL server (common)");
+		LOG_INFO("connecting to MySQL server (common)");
 
 		int iRetry = 5;
 
@@ -314,11 +314,11 @@ int Start()
 		{
 			if (CDBManager::instance().Connect(SQL_COMMON, szAddr, iPort, szDB, szUser, szPassword))
 			{
-				sys_log(0, "   OK");
+				LOG_INFO("   OK");
 				break;
 			}
 
-			sys_log(0, "   failed, retrying in 5 seconds");
+			LOG_INFO("   failed, retrying in 5 seconds");
 			fprintf(stderr, "   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
@@ -326,14 +326,14 @@ int Start()
 	}
 	else
 	{
-		sys_err("SQL_COMMON not configured");
+		LOG_ERROR("SQL_COMMON not configured");
 		return false;
 	}
 
 	/*if (CConfig::instance().GetValue("SQL_ITEMSHOP", line, 256))
 	{
 		sscanf(line, " %s %s %s %s %d ", szAddr, szDB, szUser, szPassword, &iPort);
-		sys_log(0, "connecting to MySQL server (common)");
+		LOG_INFO("connecting to MySQL server (common)");
 
 		int iRetry = 5;
 
@@ -341,11 +341,11 @@ int Start()
 		{
 			if (CDBManager::instance().Connect(SQL_ITEMSHOP, szAddr, iPort, szDB, szUser, szPassword))
 			{
-				sys_log(0, "   OK");
+				LOG_INFO("   OK");
 				break;
 			}
 
-			sys_log(0, "   failed, retrying in 5 seconds");
+			LOG_INFO("   failed, retrying in 5 seconds");
 			fprintf(stderr, "   failed, retrying in 5 seconds");
 			sleep(5);
 		} while (iRetry--);
@@ -353,25 +353,25 @@ int Start()
 	}
 	else
 	{
-		sys_err("SQL_ITEMSHOP not configured");
+		LOG_ERROR("SQL_ITEMSHOP not configured");
 		return false;
 	}*/
 
 	if (!CNetPoller::instance().Create())
 	{
-		sys_err("Cannot create network poller");
+		LOG_ERROR("Cannot create network poller");
 		return false;
 	}
 
-	sys_log(0, "ClientManager initialization.. ");
+	LOG_INFO("ClientManager initialization.. ");
 
 	if (!CClientManager::instance().Initialize())
 	{
-		sys_log(0, "   failed");
+		LOG_INFO("   failed");
 		return false;
 	}
 
-	sys_log(0, "   OK");
+	LOG_INFO("   OK");
 
 #ifndef _WIN32
 	signal(SIGUSR1, emergency_sig);
