@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
@@ -163,13 +164,13 @@ EVENTFUNC(switchbot_event)
 
 	if (info == nullptr)
 	{
-		sys_err("switchbot_event> <Factor> Info Null pointer");
+		LOG_ERROR("switchbot_event> <Factor> Info Null pointer");
 		return 0;
 	}
 
 	if (!info->pkSwitchbot)
 	{
-		sys_err("switchbot_event> <Factor> Switchbot Null pointer");
+		LOG_ERROR("switchbot_event> <Factor> Switchbot Null pointer");
 		return 0;
 	}
 
@@ -914,13 +915,13 @@ void CSwitchbotManager::Start(uint32_t player_id, uint8_t slot, std::vector<TSwi
 	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
 	if (!pkSwitchbot)
 	{
-		sys_err("No Switchbot found for player_id %d slot %d", player_id, slot);
+		LOG_ERROR("No Switchbot found for player_id {} slot {}", player_id, slot);
 		return;
 	}
 
 	if (pkSwitchbot->IsActive(slot))
 	{
-		sys_err("Switchbot slot %d already running for player_id %d", slot, player_id);
+		LOG_ERROR("Switchbot slot {} already running for player_id {}", slot, player_id);
 		return;
 	}
 
@@ -947,13 +948,13 @@ void CSwitchbotManager::Stop(uint32_t player_id, uint8_t slot)
 	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
 	if (!pkSwitchbot)
 	{
-		sys_err("No Switchbot found for player_id %d slot %d", player_id, slot);
+		LOG_ERROR("No Switchbot found for player_id {} slot {}", player_id, slot);
 		return;
 	}
 
 	if (!pkSwitchbot->IsActive(slot))
 	{
-		sys_err("Switchbot slot %d is not running for player_id %d", slot, player_id);
+		LOG_ERROR("Switchbot slot {} is not running for player_id {}", slot, player_id);
 		return;
 	}
 
@@ -1023,7 +1024,7 @@ void CSwitchbotManager::P2PSendSwitchbot(uint32_t player_id, uint16_t wTargetPor
 	CSwitchbot* pkSwitchbot = FindSwitchbot(player_id);
 	if (!pkSwitchbot)
 	{
-		//sys_err("No switchbot found to transfer. (pid %d source_port %d target_port %d)", player_id, mother_port, wTargetPort);
+		//"No switchbot found to transfer. (pid %d source_port %d target_port %d)", player_id, mother_port, wTargetPort);
 		return;
 	}
 
