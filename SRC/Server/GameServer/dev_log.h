@@ -42,10 +42,14 @@
 // -----------------------------------------------
 // define log level
 // -----------------------------------------------
+#ifndef LOG_WARN
 #define LOG_WARN        __FILE__,__LINE__,__FUNCTION__,L_WARN
+#endif
 #define LOG_ERR         __FILE__,__LINE__,__FUNCTION__,L_ERR
 #define LOG_CRIT        __FILE__,__LINE__,__FUNCTION__,L_CRIT
+#ifndef LOG_INFO
 #define LOG_INFO        __FILE__,__LINE__,__FUNCTION__,L_INFO
+#endif
 
 #define LOG_MIN         __FILE__,__LINE__,__FUNCTION__,L_MIN
 #define LOG_MAX         __FILE__,__LINE__,__FUNCTION__,L_MAX

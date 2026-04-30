@@ -2,6 +2,7 @@
 #define __INC_SECTREE_H__
 
 #include "entity.h"
+#include <Core/Logging.hpp>
 
 enum ESectree
 {
@@ -39,7 +40,7 @@ struct FCollectEntity {
 			uint32_t vid = character->GetLegacyVID();
 			LPCHARACTER found = CHARACTER_MANGAER::instance().Find(vid);
 			if (found == NULL || vid != found->GetLegacyVID()) {
-				sys_err("<Factor> Invalid character %p", get_pointer(character));
+				LOG_ERROR("<Factor> Invalid character {}", static_cast<const void*>(get_pointer(character)));
 				return;
 			}
 		} else if (entity->IsType(ENTITY_ITEM)) {
@@ -47,7 +48,7 @@ struct FCollectEntity {
 			uint32_t vid = item->GetVID();
 			LPITEM found = ITEM_MANGAER::instance().FindByVID(vid);
 			if (found == NULL || vid != found->GetLegacyVID()) {
-				sys_err("<Factor> Invalid item %p", get_pointer(item));
+				LOG_ERROR("<Factor> Invalid item {}", static_cast<const void*>(get_pointer(item)));
 				return;
 			}
 		} else if (entity->IsType(ENTITY_OBJECT)) {
@@ -55,11 +56,11 @@ struct FCollectEntity {
 			uint32_t vid = object->GetVID();
 			LPOBJECT found = CManager::instance().FindObjectByVID(vid);
 			if (found == NULL || vid != found->GetLegacyVID()) {
-				sys_err("<Factor> Invalid object %p", get_pointer(object));
+				LOG_ERROR("<Factor> Invalid object {}", static_cast<const void*>(get_pointer(object)));
 				return;
 			}
 		} else {
-			sys_err("<Factor> Invalid entity type %p", get_pointer(entity));
+			LOG_ERROR("<Factor> Invalid entity type {}", static_cast<const void*>(get_pointer(entity)));
 			return;
 		}
 		*/
@@ -241,8 +242,7 @@ class SECTREE
 
 				if (entity->GetSectree() != this)
 				{
-					sys_err("<Factor> SECTREE-ENTITY relationship mismatch ent=%p tree=%p enttree=%p",
-						get_pointer(entity), this, entity ? entity->GetSectree() : nullptr);
+					LOG_ERROR("<Factor> SECTREE-ENTITY relationship mismatch ent={} tree={} enttree={}", static_cast<const void*>(get_pointer(entity)), static_cast<const void*>(this), static_cast<const void*>(entity ? entity->GetSectree() : nullptr));
 					it = m_set_entity.erase(it);
 					continue;
 				}
