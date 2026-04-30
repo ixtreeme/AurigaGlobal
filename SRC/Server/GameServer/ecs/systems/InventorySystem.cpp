@@ -22,6 +22,7 @@
 #include "../events.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/inventory_components.hpp"
+#include <Core/Logging.hpp>
 
 namespace
 {
@@ -348,7 +349,7 @@ LPITEM CItem::RemoveFromCharacter()
 {
 	if (!m_pOwner)
 	{
-		sys_err("Item::RemoveFromCharacter owner null");
+		LOG_ERROR("Item::RemoveFromCharacter owner null");
 		return (this);
 	}
 
@@ -390,7 +391,7 @@ LPITEM CItem::RemoveFromCharacter()
 			if (IsDragonSoul())
 			{
 				if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-					sys_err("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
+					LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
 				else
 					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), nullptr);
 			}
@@ -398,7 +399,7 @@ LPITEM CItem::RemoveFromCharacter()
 			else if (IsExtraItem())
 			{
 				if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
-					sys_err("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
+					LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
 				else
 					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), nullptr);
 			}
@@ -408,7 +409,7 @@ LPITEM CItem::RemoveFromCharacter()
 			{
 				if (m_wCell >= SWITCHBOT_SLOT_COUNT)
 				{
-					sys_err("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
+					LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
 				}
 				else
 				{
@@ -421,7 +422,7 @@ LPITEM CItem::RemoveFromCharacter()
 				TItemPos cell(INVENTORY, m_wCell);
 
 				if (false == cell.IsDefaultInventoryPosition() && false == cell.IsBeltInventoryPosition())
-					sys_err("CItem::RemoveFromCharacter: Invalid Item Position");
+					LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
 				else
 					pOwner->SetItem(cell, nullptr);
 			}
@@ -493,7 +494,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 		if (m_wCell >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > m_wCell)
 #endif
 		{
-			sys_err("CItem::AddToCharacter: cell overflow: %s to %s cell %d", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
 			return false;
 		}
 	}
@@ -501,7 +502,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			sys_err("CItem::AddToCharacter: cell overflow: %s to %s cell %d", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
 			return false;
 		}
 	}
@@ -510,7 +511,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
-			sys_err("CItem::AddToCharacter: EXTRA cell overflow: %s to %s cell %d", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
 			return false;
 		}
 	}
@@ -520,7 +521,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			sys_err("CItem::AddToCharacter:switchbot cell overflow: %s to %s cell %d", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
 			return false;
 		}
 	}
@@ -611,19 +612,19 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 {
 	if (0 == lMapIndex)
 	{
-		sys_err("wrong map index argument: %d", lMapIndex);
+		LOG_ERROR("wrong map index argument: {}", lMapIndex);
 		return false;
 	}
 
 	if (GetSectree())
 	{
-		sys_err("sectree already assigned");
+		LOG_ERROR("sectree already assigned");
 		return false;
 	}
 
 	if (!skipOwnerCheck && m_pOwner)
 	{
-		sys_err("owner pointer not null");
+		LOG_ERROR("owner pointer not null");
 		return false;
 	}
 
@@ -631,7 +632,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 
 	if (!tree)
 	{
-		sys_err("cannot find sectree by %dx%d", pos.x, pos.y);
+		LOG_ERROR("cannot find sectree by {}x{}", pos.x, pos.y);
 		return false;
 	}
 
@@ -976,7 +977,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 {
 	if (!ch)
 	{
-		sys_err("EquipTo: nil character");
+		LOG_ERROR("EquipTo: nil character");
 		return false;
 	}
 
@@ -984,7 +985,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	{
 		if (bWearCell < WEAR_MAX_NUM || bWearCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 		{
-			sys_err("EquipTo: invalid dragon soul cell (this: #%d %s wearflag: %d cell: %d)", GetOriginalVnum(), GetName(), GetSubType(), bWearCell - WEAR_MAX_NUM);
+			LOG_ERROR("EquipTo: invalid dragon soul cell (this: #{} {} wearflag: {} cell: {})", GetOriginalVnum(), GetName(), GetSubType(), bWearCell - WEAR_MAX_NUM);
 			return false;
 		}
 	}
@@ -992,14 +993,14 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	{
 		if (bWearCell >= WEAR_MAX_NUM)
 		{
-			sys_err("EquipTo: invalid wear cell (this: #%d %s wearflag: %d cell: %d)", GetOriginalVnum(), GetName(), GetWearFlag(), bWearCell);
+			LOG_ERROR("EquipTo: invalid wear cell (this: #{} {} wearflag: {} cell: {})", GetOriginalVnum(), GetName(), GetWearFlag(), bWearCell);
 			return false;
 		}
 	}
 
 	if (ch->GetWear(bWearCell))
 	{
-		sys_err("EquipTo: item already exist (this: #%d %s cell: %d %s)", GetOriginalVnum(), GetName(), bWearCell, ch->GetWear(bWearCell)->GetName());
+		LOG_ERROR("EquipTo: item already exist (this: #{} {} cell: {} {})", GetOriginalVnum(), GetName(), bWearCell, ch->GetWear(bWearCell)->GetName());
 		return false;
 	}
 
@@ -1089,14 +1090,13 @@ bool CItem::Unequip()
 {
 	if (!m_pOwner || GetCell() < INVENTORY_MAX_NUM)
 	{
-		sys_err("%s %u m_pOwner %p, GetCell %d",
-			GetName(), GetID(), get_pointer(m_pOwner), GetCell());
+		LOG_ERROR("{} {} m_pOwner {}, GetCell {}", GetName(), GetID(), static_cast<const void*>(get_pointer(m_pOwner)), GetCell());
 		return false;
 	}
 
 	if (this != m_pOwner->GetWear(GetCell() - INVENTORY_MAX_NUM))
 	{
-		sys_err("m_pOwner->GetWear() != this");
+		LOG_ERROR("m_pOwner->GetWear() != this");
 		return false;
 	}
 
@@ -1202,7 +1202,7 @@ void CItem::ModifyPoints(bool bAdd)
 
 				if (!p)
 				{
-					sys_err("cannot find table by vnum %u", dwVnum);
+					LOG_ERROR("cannot find table by vnum {}", dwVnum);
 					continue;
 				}
 
