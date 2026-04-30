@@ -61,6 +61,7 @@
 #endif
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
+#include <Core/Logging.hpp>
 #endif
 
 EVENTFUNC(save_event);
@@ -273,7 +274,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
         tab.lExitY = m_posExit.y;
     }
 
-    sys_log(0, "SAVE: %s %dx%d", GetName(), tab.x, tab.y);
+    LOG_TRACE("SAVE: {} {}x{}", GetName(), tab.x, tab.y);
 
     tab.st = GetRealPoint(POINT_ST);
     tab.ht = GetRealPoint(POINT_HT);
@@ -326,7 +327,7 @@ void CHARACTER::SaveReal()
 
     if (!GetDesc())
     {
-        sys_err("Character::Save : no descriptor when saving (name: %s)", GetName());
+        LOG_ERROR("Character::Save : no descriptor when saving (name: {})", GetName());
         return;
     }
 
@@ -338,7 +339,7 @@ void CHARACTER::SaveReal()
     quest::PC* pkQuestPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());
 
     if (!pkQuestPC)
-        sys_err("CHARACTER::Save : null quest::PC pointer! (name %s)", GetName());
+        LOG_ERROR("CHARACTER::Save : null quest::PC pointer! (name {})", GetName());
     else
     {
         pkQuestPC->Save();
@@ -398,7 +399,7 @@ void CHARACTER::SaveExitLocation()
 
 void CHARACTER::ExitToSavedLocation()
 {
-    sys_log(0, "ExitToSavedLocation");
+    LOG_INFO("ExitToSavedLocation");
     WarpSet(m_posWarp.x, m_posWarp.y, m_lWarpMapIndex);
 
     m_posExit.x = m_posExit.y = m_posExit.z = 0;
@@ -458,13 +459,13 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 #ifdef ENABLE_GENERAL_CH
     uint8_t ch = GetDesc() ? GetDesc()->GetAccountTable().bChannel : 0;
     if (!CMapLocation::instance().Get(ch, x, y, lMapIndex, lAddr, wPort)) {
-        sys_err("cannot find map location index %d x %d y %d name %s", lMapIndex, x, y, GetName());
+        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, GetName());
         return false;
     }
 
     if (lPrivateMapIndex >= 10000) {
         if (lPrivateMapIndex / 10000 != lMapIndex) {
-            sys_err("Invalid map index %d, must be child of %d", lPrivateMapIndex, lMapIndex);
+            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
             return false;
         }
 
@@ -473,7 +474,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 #else
     if (!CMapLocation::instance().Get(x, y, lMapIndex, lAddr, wPort))
     {
-        sys_err("cannot find map location index %d x %d y %d name %s", lMapIndex, x, y, GetName());
+        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, GetName());
         return false;
     }
 
@@ -481,7 +482,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
     {
         if (lPrivateMapIndex / 10000 != lMapIndex)
         {
-            sys_err("Invalid map index %d, must be child of %d", lPrivateMapIndex, lMapIndex);
+            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
             return false;
         }
 
@@ -510,7 +511,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
     m_posWarp.x = x;
     m_posWarp.y = y;
 
-    sys_log(0, "WarpSet %s %d %d current map %d target map %d", GetName(), x, y, GetMapIndex(), lMapIndex);
+    LOG_INFO("WarpSet {} {} {} current map {} target map {}", GetName(), x, y, GetMapIndex(), lMapIndex);
 
     TPacketGCWarp p;
 
@@ -541,7 +542,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 void CHARACTER::WarpEnd()
 {
     if (test_server)
-        sys_log(0, "WarpEnd %s", GetName());
+        LOG_INFO("WarpEnd {}", GetName());
 
     if (m_posWarp.x == 0 && m_posWarp.y == 0)
         return;
@@ -553,7 +554,7 @@ void CHARACTER::WarpEnd()
 
     if (!map_allow_find(index))
     {
-        sys_err("location %d %d not allowed to login this server", m_posWarp.x, m_posWarp.y);
+        LOG_ERROR("location {} {} not allowed to login this server", m_posWarp.x, m_posWarp.y);
 #ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
         GoHome();
 #else
@@ -562,7 +563,7 @@ void CHARACTER::WarpEnd()
         return;
     }
 
-    sys_log(0, "WarpEnd %s %d %u %u", GetName(), m_lWarpMapIndex, m_posWarp.x, m_posWarp.y);
+    LOG_INFO("WarpEnd {} {} {} {}", GetName(), m_lWarpMapIndex, m_posWarp.x, m_posWarp.y);
 
     Show(m_lWarpMapIndex, m_posWarp.x, m_posWarp.y, 0);
     Stop();
@@ -604,7 +605,7 @@ namespace {
             if (3 != sscanf(pkWarp->GetName(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
             {
                 if (number(1, 100) < 5)
-                    sys_err("Warp NPC name wrong : vnum(%d) name(%s)", pkWarp->GetRaceNum(), pkWarp->GetName());
+                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", pkWarp->GetRaceNum(), pkWarp->GetName());
 
                 m_bInvalid = true;
 
@@ -681,7 +682,7 @@ EVENTFUNC(warp_npc_event)
     char_event_info* info = dynamic_cast<char_event_info*>(event->info);
     if (info == nullptr)
     {
-        sys_err("warp_npc_event> <Factor> Null pointer");
+        LOG_ERROR("warp_npc_event> <Factor> Null pointer");
         return 0;
     }
 
@@ -824,7 +825,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
             if (startMapIndex && startX && startY)
             {
-                sys_log(0, "HWID MAP1 restriction: %s moved to start map (%u, %u, %u)", GetName(), startMapIndex, startX, startY);
+                LOG_INFO("HWID MAP1 restriction: {} moved to start map ({}, {}, {})", GetName(), startMapIndex, startX, startY);
                 lMapIndex = static_cast<int32_t>(startMapIndex);
                 x = static_cast<int32_t>(startX);
                 y = static_cast<int32_t>(startY);
@@ -836,7 +837,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
     if (!sectree)
     {
-        sys_log(0, "cannot find sectree by %dx%d mapindex %d", x, y, lMapIndex);
+        LOG_INFO("cannot find sectree by {}x{} mapindex {}", x, y, lMapIndex);
         return false;
     }
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -880,7 +881,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 #endif
     if (!IsNPC())
     {
-        sys_log(0, "SHOW: %s %dx%dx%d", GetName(), x, y, z);
+        LOG_TRACE("SHOW: {} {}x{}x{}", GetName(), x, y, z);
         if (GetStamina() < GetMaxStamina())
             StartAffectEvent();
     }
@@ -925,7 +926,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
         ViewReencode();
-        sys_log(0, "      in same sectree");
+        LOG_TRACE("      in same sectree");
     }
 
     REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
@@ -958,7 +959,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 {
     assert(GetDesc() != NULL);
 
-    sys_log(0, "DISCONNECT: %s (%s)", GetName(), c_pszReason ? c_pszReason : "unset");
+    LOG_INFO("DISCONNECT: {} ({})", GetName(), c_pszReason ? c_pszReason : "unset");
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
     COrcsDungeon::instance().OnPlayerDisconnect(this);
     CTritonTempleDungeon::instance().OnPlayerDisconnect(this);
@@ -1147,7 +1148,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
 #endif
     else if (m_bOpeningSafebox)
     {
-        sys_log(0, "Overlapped safebox load request from %s", GetName());
+        LOG_INFO("Overlapped safebox load request from {}", GetName());
         return;
     }
 
@@ -1195,7 +1196,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
 
             if (!item)
             {
-                sys_err("cannot create item vnum %d id %u (name: %s)", pItems->vnum, pItems->id, GetName());
+                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
                 continue;
             }
 
@@ -1234,12 +1235,7 @@ void CHARACTER::CloseSafebox()
 
     if (!IsPC() || !GetDesc())
     {
-        sys_err("CloseSafebox skipped: invalid owner (name=%s vid=%u race=%u ispc=%d desc=%p)",
-            GetName(),
-            GetPacketVID(),
-            GetRaceNum(),
-            IsPC(),
-            GetDesc());
+        LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", GetName(), GetPacketVID(), GetRaceNum(), IsPC(), static_cast<const void*>(GetDesc()));
 
         M2_DELETE(m_pkSafebox);
         m_pkSafebox = nullptr;
@@ -1297,7 +1293,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
 
             if (!item)
             {
-                sys_err("cannot create item vnum %d id %u (name: %s)", pItems->vnum, pItems->id, GetName());
+                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
                 continue;
             }
 
@@ -1343,7 +1339,7 @@ void CHARACTER::QuerySafeboxSize()
 
 void CHARACTER::SetSafeboxSize(int iSize)
 {
-    sys_log(1, "SetSafeboxSize: %s %d", GetName(), iSize);
+    LOG_INFO("SetSafeboxSize: {} {}", GetName(), iSize);
     m_iSafeboxSize = iSize;
     DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u", get_table_postfix(), iSize / SAFEBOX_PAGE_SIZE, GetDesc()->GetAccountTable().id);
 }
