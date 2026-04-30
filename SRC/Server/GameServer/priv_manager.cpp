@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "constants.h"
@@ -31,7 +32,7 @@ void CPrivManager::RequestGiveGuildPriv(uint32_t guild_id, uint8_t type, int val
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RequestGiveGuildPriv: wrong guild priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RequestGiveGuildPriv: wrong guild priv type({})", static_cast<int>(type));
 		return;
 	}
 
@@ -51,7 +52,7 @@ void CPrivManager::RequestGiveEmpirePriv(uint8_t empire, uint8_t type, int value
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RequestGiveEmpirePriv: wrong empire priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RequestGiveEmpirePriv: wrong empire priv type({})", static_cast<int>(type));
 		return;
 	}
 
@@ -71,7 +72,7 @@ void CPrivManager::RequestGiveCharacterPriv(uint32_t pid, uint8_t type, int valu
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RequestGiveCharacterPriv: wrong char priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RequestGiveCharacterPriv: wrong char priv type({})", static_cast<int>(type));
 		return;
 	}
 
@@ -89,11 +90,11 @@ void CPrivManager::GiveGuildPriv(uint32_t guild_id, uint8_t type, int value, uin
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: GiveGuildPriv: wrong guild priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: GiveGuildPriv: wrong guild priv type({})", static_cast<int>(type));
 		return;
 	}
 
-	sys_log(0,"Set Guild Priv: guild_id(%u) type(%d) value(%d) duration_sec(%d)", guild_id, type, value, end_time_sec - get_global_time());
+	LOG_INFO("Set Guild Priv: guild_id({}) type({}) value({}) duration_sec({})", guild_id, static_cast<int>(type), value, end_time_sec - get_global_time());
 
 	value = MINMAX(0, value, 50);
 	end_time_sec = MINMAX(0, end_time_sec, get_global_time()+60*60*24*7);
@@ -122,11 +123,11 @@ void CPrivManager::GiveCharacterPriv(uint32_t pid, uint8_t type, int value, uint
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: GiveCharacterPriv: wrong char priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: GiveCharacterPriv: wrong char priv type({})", static_cast<int>(type));
 		return;
 	}
 
-	sys_log(0,"Set Character Priv %u %d %d", pid, type, value);
+	LOG_INFO("Set Character Priv {} {} {}", pid, static_cast<int>(type), value);
 
 	value = MINMAX(0, value, 100);
 
@@ -140,11 +141,11 @@ void CPrivManager::GiveEmpirePriv(uint8_t empire, uint8_t type, int value, uint8
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: GiveEmpirePriv: wrong empire priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: GiveEmpirePriv: wrong empire priv type({})", static_cast<int>(type));
 		return;
 	}
 
-	sys_log(0, "Set Empire Priv: empire(%d) type(%d) value(%d) duration_sec(%d)", empire, type, value, end_time_sec-get_global_time());
+	LOG_INFO("Set Empire Priv: empire({}) type({}) value({}) duration_sec({})", static_cast<int>(empire), static_cast<int>(type), value, end_time_sec-get_global_time());
 
 	value = MINMAX(0, value, 200);
 	end_time_sec = MINMAX(0, end_time_sec, get_global_time()+60*60*24*7);
@@ -169,7 +170,7 @@ void CPrivManager::RemoveGuildPriv(uint32_t guild_id, uint8_t type)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RemoveGuildPriv: wrong guild priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RemoveGuildPriv: wrong guild priv type({})", static_cast<int>(type));
 		return;
 	}
 
@@ -181,7 +182,7 @@ void CPrivManager::RemoveEmpirePriv(uint8_t empire, uint8_t type)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RemoveEmpirePriv: wrong empire priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RemoveEmpirePriv: wrong empire priv type({})", static_cast<int>(type));
 		return;
 	}
 
@@ -194,7 +195,7 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 {
 	if (MAX_PRIV_NUM <= type)
 	{
-		sys_err("PRIV_MANAGER: RemoveCharacterPriv: wrong char priv type(%u)", type);
+		LOG_ERROR("PRIV_MANAGER: RemoveCharacterPriv: wrong char priv type({})", static_cast<int>(type));
 		return;
 	}
 
