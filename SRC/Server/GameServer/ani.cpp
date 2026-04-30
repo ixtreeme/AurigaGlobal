@@ -16,6 +16,7 @@
 #include "item.h"
 #include "ani.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include <common/CommonDefines.h>
 
 const char* FN_race_name(int race)
@@ -152,7 +153,7 @@ bool ANI::load()
 	{
 		if (false == load_one_race(race, dir_name[race]))
 		{
-			sys_err("ANI directory = %s", dir_name[race]);
+			LOG_ERROR("ANI directory = {}", dir_name[race]);
 			return false;
 		}
 	}
