@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include <common/tables.h>
 #include "item.h"
 #include "char_interface.hpp"
@@ -54,7 +55,7 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 			}
 			else
 			{
-				sys_err ("Buff ERROR(type %d). This item(%d) attr_type(%d) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), attr.bType);
+				LOG_ERROR("Buff ERROR(type {}). This item({}) attr_type({}) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), attr.bType);
 				return;
 			}
 		}
