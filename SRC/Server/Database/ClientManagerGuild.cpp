@@ -10,7 +10,7 @@
 
 void CClientManager::GuildCreate(CPeer * peer, uint32_t dwGuildID)
 {
-	sys_log(0, "GuildCreate %u", dwGuildID);
+	LOG_INFO("GuildCreate {}", dwGuildID);
 	ForwardPacket(HEADER_DG_GUILD_LOAD, &dwGuildID, sizeof(uint32_t));
 
 	CGuildManager::instance().Load(dwGuildID);
@@ -18,14 +18,14 @@ void CClientManager::GuildCreate(CPeer * peer, uint32_t dwGuildID)
 
 void CClientManager::GuildChangeGrade(CPeer* peer, TPacketGuild* p)
 {
-	sys_log(0, "GuildChangeGrade %u %u", p->dwGuild, p->dwInfo);
+	LOG_INFO("GuildChangeGrade {} {}", p->dwGuild, p->dwInfo);
 	ForwardPacket(HEADER_DG_GUILD_CHANGE_GRADE, p, sizeof(TPacketGuild));
 }
 
 void CClientManager::GuildAddMember(CPeer* peer, TPacketGDGuildAddMember * p)
 {
 	CGuildManager::instance().TouchGuild(p->dwGuild);
-	sys_log(0, "GuildAddMember %u %u", p->dwGuild, p->dwPID);
+	LOG_INFO("GuildAddMember {} {}", p->dwGuild, p->dwPID);
 
 	char szQuery[512];
 
@@ -42,7 +42,7 @@ void CClientManager::GuildAddMember(CPeer* peer, TPacketGDGuildAddMember * p)
 
 	if (pmsg->Get()->uiNumRows == 0)
 	{
-		sys_err("Query failed when getting guild member data %s", pmsg->stQuery.c_str());
+		LOG_ERROR("Query failed when getting guild member data {}", pmsg->stQuery.c_str());
 		return;
 	}
 
@@ -67,7 +67,7 @@ void CClientManager::GuildAddMember(CPeer* peer, TPacketGDGuildAddMember * p)
 
 void CClientManager::GuildRemoveMember(CPeer* peer, TPacketGuild* p)
 {
-	sys_log(0, "GuildRemoveMember %u %u", p->dwGuild, p->dwInfo);
+	LOG_INFO("GuildRemoveMember {} {}", p->dwGuild, p->dwInfo);
 
 	char szQuery[512];
 	snprintf(szQuery, sizeof(szQuery), "DELETE FROM guild_member%s WHERE pid=%u and guild_id=%u", GetTablePostfix(), p->dwInfo, p->dwGuild);
@@ -82,25 +82,25 @@ void CClientManager::GuildRemoveMember(CPeer* peer, TPacketGuild* p)
 
 void CClientManager::GuildSkillUpdate(CPeer* peer, TPacketGuildSkillUpdate* p)
 {
-	sys_log(0, "GuildSkillUpdate %d", p->amount);
+	LOG_INFO("GuildSkillUpdate {}", p->amount);
 	ForwardPacket(HEADER_DG_GUILD_SKILL_UPDATE, p, sizeof(TPacketGuildSkillUpdate));
 }
 
 void CClientManager::GuildExpUpdate(CPeer* peer, TPacketGuildExpUpdate* p)
 {
-	sys_log(0, "GuildExpUpdate %d", p->amount);
+	LOG_INFO("GuildExpUpdate {}", p->amount);
 	ForwardPacket(HEADER_DG_GUILD_EXP_UPDATE, p, sizeof(TPacketGuildExpUpdate), 0, peer);
 }
 
 void CClientManager::GuildChangeMemberData(CPeer* peer, TPacketGuildChangeMemberData* p)
 {
-	sys_log(0, "GuildChangeMemberData %u %u %d %d", p->pid, p->offer, p->level, p->grade);
+	LOG_INFO("GuildChangeMemberData {} {} {} {}", p->pid, p->offer, p->level, p->grade);
 	ForwardPacket(HEADER_DG_GUILD_CHANGE_MEMBER_DATA, p, sizeof(TPacketGuildChangeMemberData), 0, peer);
 }
 
 void CClientManager::GuildDisband(CPeer* peer, TPacketGuild* p)
 {
-	sys_log(0, "GuildDisband %u", p->dwGuild);
+	LOG_INFO("GuildDisband {}", p->dwGuild);
 
 	char szQuery[512];
 
@@ -143,12 +143,12 @@ void CClientManager::GuildWar(CPeer* peer, TPacketGuildWar* p)
 	switch (p->bWar)
 	{
 		case GUILD_WAR_SEND_DECLARE:
-			sys_log(0, "GuildWar: GUILD_WAR_SEND_DECLARE type(%s) guild(%d - %d)",  __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_SEND_DECLARE type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().AddDeclare(p->bType, p->dwGuildFrom, p->dwGuildTo);
 			break;
 
 		case GUILD_WAR_REFUSE:
-			sys_log(0, "GuildWar: GUILD_WAR_REFUSE type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_REFUSE type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RemoveDeclare(p->dwGuildFrom, p->dwGuildTo);
 			break;
 			/*
@@ -162,10 +162,10 @@ void CClientManager::GuildWar(CPeer* peer, TPacketGuildWar* p)
 			   */
 
 		case GUILD_WAR_WAIT_START:
-			sys_log(0, "GuildWar: GUILD_WAR_WAIT_START type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_WAIT_START type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 		case GUILD_WAR_RESERVE:	// 길드전 예약
 			if (p->bWar != GUILD_WAR_WAIT_START)
-				sys_log(0, "GuildWar: GUILD_WAR_RESERVE type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+				LOG_INFO("GuildWar: GUILD_WAR_RESERVE type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RemoveDeclare(p->dwGuildFrom, p->dwGuildTo);
 
 			if (!CGuildManager::instance().ReserveWar(p))
@@ -176,23 +176,23 @@ void CClientManager::GuildWar(CPeer* peer, TPacketGuildWar* p)
 			break;
 
 		case GUILD_WAR_ON_WAR:		// 길드전을 시작 시킨다. (필드전은 바로 시작 됨)
-			sys_log(0, "GuildWar: GUILD_WAR_ON_WAR type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_ON_WAR type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RemoveDeclare(p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().StartWar(p->bType, p->dwGuildFrom, p->dwGuildTo);
 			break;
 
 		case GUILD_WAR_OVER:		// 길드전 정상 종료
-			sys_log(0, "GuildWar: GUILD_WAR_OVER type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_OVER type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RecvWarOver(p->dwGuildFrom, p->dwGuildTo, p->bType, p->lWarPrice);
 			break;
 
 		case GUILD_WAR_END:		// 길드전 비정상 종료
-			sys_log(0, "GuildWar: GUILD_WAR_END type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_END type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().RecvWarEnd(p->dwGuildFrom, p->dwGuildTo);
 			return; // NOTE: RecvWarEnd에서 패킷을 보내므로 따로 브로드캐스팅 하지 않는다.
 
 		case GUILD_WAR_CANCEL :
-			sys_log(0, "GuildWar: GUILD_WAR_CANCEL type(%s) guild(%d - %d)", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
+			LOG_INFO("GuildWar: GUILD_WAR_CANCEL type({}) guild({} - {})", __GetWarType(p->bType), p->dwGuildFrom, p->dwGuildTo);
 			CGuildManager::instance().CancelWar(p->dwGuildFrom, p->dwGuildTo);
 			break;
 	}
@@ -214,20 +214,20 @@ void CClientManager::GuildResetInfo()
 
 void CClientManager::GuildChangeLadderPoint(TPacketGuildLadderPoint* p)
 {
-	sys_log(0, "GuildChangeLadderPoint Recv %u %d", p->dwGuild, p->lChange);
+	LOG_INFO("GuildChangeLadderPoint Recv {} {}", p->dwGuild, p->lChange);
 	CGuildManager::instance().ChangeLadderPoint(p->dwGuild, p->lChange);
 }
 
 void CClientManager::GuildUseSkill(TPacketGuildUseSkill* p)
 {
-	sys_log(0, "GuildUseSkill Recv %u %d", p->dwGuild, p->dwSkillVnum);
+	LOG_INFO("GuildUseSkill Recv {} {}", p->dwGuild, p->dwSkillVnum);
 	CGuildManager::instance().UseSkill(p->dwGuild, p->dwSkillVnum, p->dwCooltime);
 	SendGuildSkillUsable(p->dwGuild, p->dwSkillVnum, false);
 }
 
 void CClientManager::SendGuildSkillUsable(uint32_t guild_id, uint32_t dwSkillVnum, bool bUsable)
 {
-	sys_log(0, "SendGuildSkillUsable Send %u %d %s", guild_id, dwSkillVnum, bUsable?"true":"false");
+	LOG_INFO("SendGuildSkillUsable Send {} {} {}", guild_id, dwSkillVnum, bUsable?"true":"false");
 
 	TPacketGuildSkillUsableChange p;
 
