@@ -36,6 +36,7 @@
 #include "item_manager.h"
 #include "mob_manager.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "item.h"
 #include "arena.h"
 #include "buffer_manager.h"
@@ -407,7 +408,7 @@ EVENTFUNC(shutdown_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "shutdown_event> <Factor> Null pointer" );
+		LOG_ERROR("shutdown_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -415,7 +416,7 @@ EVENTFUNC(shutdown_event)
 
 	if (*pSec < 0)
 	{
-		sys_log(0, "shutdown_event sec %d", *pSec);
+		LOG_INFO("shutdown_event sec {}", *pSec);
 
 		if (--*pSec == -10)
 		{
@@ -468,7 +469,7 @@ ACMD(do_shutdown)
 {
 	if (nullptr == ch)
 	{
-		sys_err("Accept shutdown command from %s.", ((ch)->GetName()));
+		LOG_ERROR("Accept shutdown command from {}.", ((ch)->GetName()));
 	}
 	TPacketGGShutdown p;
 	p.bHeader = HEADER_GG_SHUTDOWN;
@@ -580,7 +581,7 @@ EVENTFUNC(timed_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "timed_event> <Factor> Null pointer" );
+		LOG_ERROR("timed_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -760,7 +761,7 @@ ACMD(do_restart)
 			{
 				case SCMD_RESTART_TOWN:
 					{
-						sys_log(0, "do_restart: restart town");
+						LOG_INFO("do_restart: restart town");
 
 						PIXEL_POSITION pos;
 						if (CWarMapManager::instance().GetStartPosition(mapidx, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() < dwGuildOpponent ? 0 : 1, pos))
@@ -783,7 +784,7 @@ ACMD(do_restart)
 
 				case SCMD_RESTART_HERE:
 					{
-						sys_log(0, "do_restart: restart here");
+						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
@@ -798,7 +799,7 @@ ACMD(do_restart)
 					break;
 				default:
 					{
-						sys_err(0, "do_restart: unknown method for %s", ((ch)->GetName()));
+						LOG_ERROR("do_restart: unknown method for {}", ((ch)->GetName()));
 					}
 					break;
 			}
@@ -811,7 +812,7 @@ ACMD(do_restart)
 	{
 		case SCMD_RESTART_TOWN:
 			{
-				sys_log(0, "do_restart: restart town");
+				LOG_INFO("do_restart: restart town");
 
 				bool wasDungeon = false;
 				bool showed = false;
@@ -1385,7 +1386,7 @@ ACMD(do_restart)
 			break;
 		case SCMD_RESTART_HERE:
 			{
-				sys_log(0, "do_restart: restart here");
+				LOG_INFO("do_restart: restart here");
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
@@ -1406,7 +1407,7 @@ ACMD(do_restart)
 			break;
 		default:
 			{
-				sys_err(0, "do_restart: unknown method for %s", ((ch)->GetName()));
+				LOG_ERROR("do_restart: unknown method for {}", ((ch)->GetName()));
 			}
 			break;
 	}
@@ -2278,18 +2279,18 @@ ACMD(do_war)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 159, "");
 #endif
-			sys_log(0, "GuildWar.StartError.NEED_LADDER_POINT");
+			LOG_INFO("GuildWar.StartError.NEED_LADDER_POINT");
 		}
 		else if (g->GetMemberCount() < GUILD_WAR_MIN_MEMBER_COUNT)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 145, "%d", GUILD_WAR_MIN_MEMBER_COUNT);
 #endif
-			sys_log(0, "GuildWar.StartError.NEED_MINIMUM_MEMBER[%d]", GUILD_WAR_MIN_MEMBER_COUNT);
+			LOG_INFO("GuildWar.StartError.NEED_MINIMUM_MEMBER[{}]", GUILD_WAR_MIN_MEMBER_COUNT);
 		}
 		else
 		{
-			sys_log(0, "GuildWar.StartError.UNKNOWN_ERROR");
+			LOG_INFO("GuildWar.StartError.UNKNOWN_ERROR");
 		}
 		return;
 	}
@@ -2673,7 +2674,7 @@ ACMD(do_attr_transfer)
 	if (!ch->CanDoAttrTransfer())
 		return;
 	
-	sys_log(1, "%s has used an Attr Transfer command: %s.", ((ch)->GetName()), argument);
+	LOG_INFO("{} has used an Attr Transfer command: {}.", ((ch)->GetName()), argument);
 	
 	int w_index = 0, i_index = 0;
 	const char *line;
