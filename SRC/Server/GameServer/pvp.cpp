@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -73,7 +74,7 @@ EVENTFUNC(pvp_check_disconnect)
 	
 	if (info == nullptr)
 	{
-		sys_err("disconnect_event> <Factor> Null pointer");
+		LOG_ERROR("disconnect_event> <Factor> Null pointer");
 		return 0;
 	}
 	
@@ -161,7 +162,7 @@ EVENTFUNC(pvp_duel_counter)
 	
 	if (info == nullptr)
 	{
-		sys_err("ready_to_start_event> <Factor> Null pointer");
+		LOG_ERROR("ready_to_start_event> <Factor> Null pointer");
 		return 0;
 	}
 	
@@ -170,13 +171,13 @@ EVENTFUNC(pvp_duel_counter)
 	
 	if (chA == nullptr)
 	{
-		sys_err("Duel: Duel start event info is null.");
+		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
 	}
 	
 	if (chB == nullptr)
 	{
-		sys_err("Duel: Duel start event info is null.");
+		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
 	}
 	
@@ -392,7 +393,7 @@ void CPVP::Packet(bool bDelete)
 	if (!m_players[0].dwVID || !m_players[1].dwVID)
 	{
 		if (bDelete)
-			sys_err("null vid when removing %u %u", m_players[0].dwVID, m_players[0].dwVID);
+			LOG_ERROR("null vid when removing {} {}", m_players[0].dwVID, m_players[0].dwVID);
 
 		return;
 	}
@@ -789,7 +790,7 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 	if (it == m_map_pkPVPSetByID.end())
 		return;
 
-	sys_log(1, "PVPManager::Dead %d", ((pkChr)->GetPlayerID()));
+	LOG_INFO("PVPManager::Dead {}", ((pkChr)->GetPlayerID()));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -834,7 +835,7 @@ bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 
 	bool found = false;
 
-	sys_log(1, "PVPManager::Dead %d", ((pkChr)->GetPlayerID()));
+	LOG_INFO("PVPManager::Dead {}", ((pkChr)->GetPlayerID()));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -909,7 +910,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 			case MOUNT_TYPE_NORMAL:
 			default:
 				if (test_server)
-					sys_log(0, "CanUseSkill: Mount can't attack. vnum(%u) type(%d)", pkChr->GetMountVnum(), static_cast<int>(eIsMount));
+					LOG_TRACE("CanUseSkill: Mount can't attack. vnum({}) type({})", pkChr->GetMountVnum(), static_cast<int>(eIsMount));
 				return false;
 				break;
 		}
@@ -1078,7 +1079,7 @@ void CPVPManager::SendList(LPDESC d)
 		}
 
 		d->Packet(&pack, sizeof(pack));
-		sys_log(1, "PVPManager::SendList %d %d", pack.dwVIDSrc, pack.dwVIDDst);
+		LOG_TRACE("PVPManager::SendList {} {}", pack.dwVIDSrc, pack.dwVIDDst);
 
 		if (pkPVP->m_players[0].dwVID == dwVID)
 		{
