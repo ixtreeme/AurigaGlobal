@@ -347,7 +347,7 @@ void CClientManager::QUERY_PLAYER_LOAD(CPeer * peer, uint32_t dwHandle, TPlayerL
 
 		if (!pkLD || pkLD->IsPlay())
 		{
-			LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", pkLD, pkLD ? pkLD->IsPlay() : 0);
+			LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", static_cast<const void*>(pkLD), pkLD ? pkLD->IsPlay() : 0);
 			peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, dwHandle, 0);
 			return;
 		}
@@ -786,7 +786,7 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 				if( pLoginData1->GetAccountRef().login == nullptr)
 					break;
 
-				LOG_INFO("info of pLoginData1 before call ItemAwardfunction {}", pLoginData1);
+				LOG_INFO("info of pLoginData1 before call ItemAwardfunction {}", static_cast<const void*>(pLoginData1));
 				ItemAward(peer,pLoginData1->GetAccountRef().login);
 			}
 			break;
@@ -848,7 +848,7 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 
 	if (!pkLD || pkLD->IsPlay())
 	{
-		LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", pkLD, pkLD ? pkLD->IsPlay() : 0);
+		LOG_INFO("PLAYER_LOAD_ERROR: LoginData {} IsPlay {}", static_cast<const void*>(pkLD), pkLD ? pkLD->IsPlay() : 0);
 		peer->EncodeHeader(HEADER_DG_PLAYER_LOAD_FAILED, pkInfo->dwHandle, 0);
 		return;
 	}

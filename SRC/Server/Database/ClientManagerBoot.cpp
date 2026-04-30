@@ -503,10 +503,27 @@ bool CClientManager::InitializeItemTable()
 	{
 		TItemTable* item_table = &(*(it++));
 
-		LOG_TRACE("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}", item_table->dwVnum, item_table->szName, #ifdef ENABLE_MULTI_NAMES
-			item_table->szLocaleName[0], #else
-			item_table->szLocaleName, #endif
-			item_table->alValues[0], item_table->alValues[1], item_table->alValues[2], item_table->alValues[3], item_table->alValues[4], item_table->alValues[5], item_table->dwWearFlags, item_table->dwAntiFlags, item_table->dwImmuneFlag, item_table->dwRefinedVnum, item_table->wRefineSet, item_table->bAlterToMagicItemPct);
+#ifdef ENABLE_MULTI_NAMES
+		const auto* itemLocaleName = item_table->szLocaleName[0];
+#else
+		const auto* itemLocaleName = item_table->szLocaleName;
+#endif
+		LOG_TRACE("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}",
+			item_table->dwVnum,
+			item_table->szName,
+			itemLocaleName,
+			item_table->alValues[0],
+			item_table->alValues[1],
+			item_table->alValues[2],
+			item_table->alValues[3],
+			item_table->alValues[4],
+			item_table->alValues[5],
+			item_table->dwWearFlags,
+			item_table->dwAntiFlags,
+			item_table->dwImmuneFlag,
+			item_table->dwRefinedVnum,
+			item_table->wRefineSet,
+			item_table->bAlterToMagicItemPct);
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));
 	}
@@ -712,13 +729,22 @@ bool CClientManager::InitializeItemAttrTable()
 #endif
 #endif
 
-		LOG_INFO("ITEM_ATTR: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {}"
-#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
-			" {}"
-#endif
-			" }}", t.szApply, t.dwProb, t.lValues[0], t.lValues[1], t.lValues[2], t.lValues[3], t.lValues[4], t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS], t.bMaxLevelBySet[ATTRIBUTE_SET_NECK], t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD], t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD], t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN), t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
-#endif);
+		LOG_INFO("ITEM_ATTR: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {} }}",
+			t.szApply,
+			t.dwProb,
+			t.lValues[0],
+			t.lValues[1],
+			t.lValues[2],
+			t.lValues[3],
+			t.lValues[4],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_BODY],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_NECK],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]);
 
 		m_vec_itemAttrTable.push_back(t);
 	}
@@ -798,20 +824,22 @@ bool CClientManager::InitializeItemRareTable()
 #endif
 #endif
 
-		LOG_INFO("ITEM_RARE: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {}"
-#ifdef ENABLE_ITEM_ATTR_COSTUME
-			" {} {}"
-#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
-			" {}"
-#endif
-#endif
-			" }}", t.szApply, t.dwProb, t.lValues[0], t.lValues[1], t.lValues[2], t.lValues[3], t.lValues[4], t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS], t.bMaxLevelBySet[ATTRIBUTE_SET_NECK], t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD], t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD], t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN), t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
-#endif
-#ifdef ENABLE_ITEM_ATTR_COSTUME, t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR]
-#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM), t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON]
-#endif
-#endif);
+		LOG_INFO("ITEM_RARE: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {} }}",
+			t.szApply,
+			t.dwProb,
+			t.lValues[0],
+			t.lValues[1],
+			t.lValues[2],
+			t.lValues[3],
+			t.lValues[4],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_BODY],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_NECK],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD],
+			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]);
 
 		m_vec_itemRareTable.push_back(t);
 	}
@@ -1575,10 +1603,18 @@ bool CClientManager::InitializeMobTableFromDB()
 		VERIFY_IFIELD(MProto::sp_deathblow, mob_table->bDeathBlowPoint)
 		VERIFY_IFIELD(MProto::sp_revive, mob_table->bRevivePoint)
 
-		LOG_INFO("MOB #{:<5} {:<24} {:<24} level: {:<3} rank: {} empire: {}", mob_table->dwVnum, mob_table->szName, #ifdef ENABLE_MULTI_NAMES
-			mob_table->szLocaleName[0], #else
-			mob_table->szLocaleName, #endif
-			mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
+#ifdef ENABLE_MULTI_NAMES
+		const auto* mobLocaleName = mob_table->szLocaleName[0];
+#else
+		const auto* mobLocaleName = mob_table->szLocaleName;
+#endif
+		LOG_INFO("MOB #{:<5} {:<24} {:<24} level: {:<3} rank: {} empire: {}",
+			mob_table->dwVnum,
+			mob_table->szName,
+			mobLocaleName,
+			mob_table->bLevel,
+			mob_table->bRank,
+			mob_table->bEmpire);
 		++mob_table;
 	}
 	sort(m_vec_mobTable.begin(), m_vec_mobTable.end(), FCompareVnum());
@@ -1769,10 +1805,27 @@ bool CClientManager::InitializeItemTableFromDB()
 #endif
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));
-		LOG_INFO("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}", item_table->dwVnum, item_table->szName, #ifdef ENABLE_MULTI_NAMES
-			item_table->szLocaleName[0], #else
-			item_table->szLocaleName, #endif
-			item_table->alValues[0], item_table->alValues[1], item_table->alValues[2], item_table->alValues[3], item_table->alValues[4], item_table->alValues[5], item_table->dwWearFlags, item_table->dwAntiFlags, item_table->dwImmuneFlag, item_table->dwRefinedVnum, item_table->wRefineSet, item_table->bAlterToMagicItemPct);
+#ifdef ENABLE_MULTI_NAMES
+		const auto* itemLocaleName = item_table->szLocaleName[0];
+#else
+		const auto* itemLocaleName = item_table->szLocaleName;
+#endif
+		LOG_INFO("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}",
+			item_table->dwVnum,
+			item_table->szName,
+			itemLocaleName,
+			item_table->alValues[0],
+			item_table->alValues[1],
+			item_table->alValues[2],
+			item_table->alValues[3],
+			item_table->alValues[4],
+			item_table->alValues[5],
+			item_table->dwWearFlags,
+			item_table->dwAntiFlags,
+			item_table->dwImmuneFlag,
+			item_table->dwRefinedVnum,
+			item_table->wRefineSet,
+			item_table->bAlterToMagicItemPct);
 		item_table++;
 	}
 	sort(m_vec_itemTable.begin(), m_vec_itemTable.end(), FCompareVnum());

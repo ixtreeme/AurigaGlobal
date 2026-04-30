@@ -137,7 +137,7 @@ void fdwatch_add_fd(LPFDWATCH fdw, socket_t fd, void* client_data, int rw, int o
 		return;
 
 	fdw->fd_rw[fd] |= rw;
-	LOG_TRACE("FDWATCH_REGISTER fdw {} fd {} rw {} data {}", fdw, fd, rw, client_data);
+	LOG_TRACE("FDWATCH_REGISTER fdw {} fd {} rw {} data {}", static_cast<const void*>(fdw), fd, rw, client_data);
 
 	if (!oneshot)
 		flag = EV_ADD;

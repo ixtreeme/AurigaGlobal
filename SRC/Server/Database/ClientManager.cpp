@@ -346,7 +346,7 @@ void CClientManager::MainLoop()
 {
 	SQLMsg * tmp;
 
-	LOG_INFO("ClientManager pointer is {}", this);
+	LOG_INFO("ClientManager pointer is {}", static_cast<const void*>(this));
 
 	while (!m_bShutdowned)
 	{
@@ -470,7 +470,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
 	LOG_INFO("sizeof(TObject) = {}", sizeof(building::TObject));
 	//ADMIN_MANAGER
-	LOG_INFO("sizeof(tAdminInfo) = {} * {} ", sizeof(tAdminInfo) * vAdmin.size());
+	LOG_INFO("sizeof(tAdminInfo) = {} * {} ", sizeof(tAdminInfo), vAdmin.size());
 	//END_ADMIN_MANAGER
 
 	peer->EncodeWORD(sizeof(TMobTable));
@@ -1261,7 +1261,7 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 #ifdef ENABLE_AUTH_PERFORMANCE
 		peer->SetChannel(1);
 #endif
-		LOG_INFO("AUTH_PEER ptr {}", peer);
+		LOG_INFO("AUTH_PEER ptr {}", static_cast<const void*>(peer));
 
 		m_pkAuthPeer = peer;
 		SendAllLoginToBilling();
@@ -3161,17 +3161,17 @@ int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 			break;
 
 		case QID_SAFEBOX_CHANGE_PASSWORD:
-			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", static_cast<const void*>(msg));
 			RESULT_SAFEBOX_CHANGE_PASSWORD(peer, msg);
 			break;
 
 		case QID_SAFEBOX_CHANGE_PASSWORD_SECOND:
-			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_SAFEBOX_CHANGE_PASSWORD {}", static_cast<const void*>(msg));
 			RESULT_SAFEBOX_CHANGE_PASSWORD_SECOND(peer, msg);
 			break;
 
 		case QID_HIGHSCORE_REGISTER:
-			LOG_INFO("QUERY_RESULT: HEADER_GD_HIGHSCORE_REGISTER {}", msg);
+			LOG_INFO("QUERY_RESULT: HEADER_GD_HIGHSCORE_REGISTER {}", static_cast<const void*>(msg));
 			RESULT_HIGHSCORE_REGISTER(peer, msg);
 			break;
 
