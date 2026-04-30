@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
@@ -38,7 +39,7 @@ pck.lID = iID;
 pck.lX = x;
 pck.lY = y;
 d->Packet(&pck, sizeof(TPacketGCTargetUpdate));
-sys_log(0, "SendTargetUpdatePacket %d %dx%d", iID, x, y);
+LOG_TRACE("SendTargetUpdatePacket {} {}x{}", iID, x, y);
 }
 
 void SendTargetDeletePacket(LPDESC d, int iID)
@@ -63,7 +64,7 @@ EVENTFUNC(target_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "target_event> <Factor> Null pointer" );
+		LOG_ERROR("target_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -115,7 +116,7 @@ EVENTFUNC(target_event)
 
 	if (event->is_force_to_end)
 	{
-		sys_log(0, "target_event: event canceled");
+		LOG_TRACE("target_event: event canceled");
 		return 0;
 	}
 
@@ -144,14 +145,13 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 		const char * c_pszTargetDesc,
 		int iSendFlag)
 {
-	sys_log(0, "CreateTarget : target pid %u quest %u name %s arg %d %d %d",
-			dwPID, dwQuestIndex, c_pszTargetName, iType, iArg1, iArg2);
+	LOG_TRACE("CreateTarget : target pid {} quest {} name {} arg {} {} {}", dwPID, dwQuestIndex, c_pszTargetName, iType, iArg1, iArg2);
 
 	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(dwPID);
 
 	if (!pkChr)
 	{
-		sys_err("Cannot find character ptr by PID %u", dwPID);
+		LOG_ERROR("Cannot find character ptr by PID {}", dwPID);
 		return;
 	}
 
@@ -171,13 +171,13 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 
 			if (nullptr == existInfo)
 			{
-				sys_err("CreateTarget : event already exist, but have no info");
+				LOG_ERROR("CreateTarget : event already exist, but have no info");
 				return;
 			}
 
 			if (existInfo->dwQuestIndex == dwQuestIndex && !strcmp(existInfo->szTargetName, c_pszTargetName))
 			{
-				sys_log(0, "CreateTarget : same target will be replaced");
+				LOG_TRACE("CreateTarget : same target will be replaced");
 
 				if (existInfo->bSendToClient)
 					SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)), existInfo->iID);
@@ -256,7 +256,7 @@ void CTargetManager::DeleteTarget(uint32_t dwPID, uint32_t dwQuestIndex, const c
 
 		if ( info == nullptr)
 		{
-			sys_err( "CTargetManager::DeleteTarget> <Factor> Null pointer" );
+			LOG_ERROR("CTargetManager::DeleteTarget> <Factor> Null pointer");
 			++it2;
 			continue;
 		}
@@ -300,7 +300,7 @@ LPEVENT CTargetManager::GetTargetEvent(uint32_t dwPID, uint32_t dwQuestIndex, co
 
 		if ( info == nullptr)
 		{
-			sys_err( "CTargetManager::GetTargetEvent> <Factor> Null pointer" );
+			LOG_ERROR("CTargetManager::GetTargetEvent> <Factor> Null pointer");
 
 			continue;
 		}
@@ -333,7 +333,7 @@ TargetInfo * CTargetManager::GetTargetInfo(uint32_t dwPID, int iType, int iArg1)
 
 		if ( info == nullptr)
 		{
-			sys_err( "CTargetManager::GetTargetInfo> <Factor> Null pointer" );
+			LOG_ERROR("CTargetManager::GetTargetInfo> <Factor> Null pointer");
 
 			continue;
 		}
