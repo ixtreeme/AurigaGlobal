@@ -656,7 +656,7 @@ namespace offlineshop
 
 			if (pMsg->Get()->uiAffectedRows != 1)
 			{
-				sys_err("multiple safebox rows for id %d ",dwPID);
+				LOG_ERROR("multiple safebox rows for id {} ", dwPID);
 				return nullptr;
 			}
 
@@ -669,7 +669,7 @@ namespace offlineshop
 			
 			else
 			{
-				sys_err("cannot fetch safebox row for id %d ",dwPID);
+				LOG_ERROR("cannot fetch safebox row for id {} ", dwPID);
 				return nullptr;
 			}
 		}
