@@ -24,7 +24,7 @@ CNetPoller::~CNetPoller()
 
 bool CNetPoller::Create()
 {
-	sys_log(1, "NetPoller::Create()");
+	LOG_TRACE("NetPoller::Create()");
 
 	if (m_fdWatcher)
 		return true;
@@ -42,7 +42,7 @@ bool CNetPoller::Create()
 
 void CNetPoller::Destroy()
 {
-	sys_log(1, "NetPoller::Destroy()");
+	LOG_TRACE("NetPoller::Destroy()");
 
 	if (m_fdWatcher)
 	{
