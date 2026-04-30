@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -56,9 +57,9 @@ namespace quest
 	void PC::SetFlag(const string& name, int value, bool bSkipSave)
 	{
 		if ( test_server )
-			sys_log(0, "QUEST Setting flag %s %d", name.c_str(),value);
+			LOG_INFO("QUEST Setting flag {} {}", name.c_str(), value);
 		else
-			sys_log(1, "QUEST Setting flag %s %d", name.c_str(),value);
+			LOG_INFO("QUEST Setting flag {} {}", name.c_str(), value);
 
 		if (value == 0)
 		{
@@ -93,7 +94,7 @@ namespace quest
 	{
 		if (const auto it = m_FlagMap.find(name); it != m_FlagMap.end())
 		{
-			sys_log(1, "QUEST getting flag %s %d", name.c_str(),it->second);
+			LOG_INFO("QUEST getting flag {} {}", name.c_str(), it->second);
 			return it->second;
 		}
 		return 0;
@@ -129,13 +130,13 @@ namespace quest
 	void PC::AddQuestStateChange(const string& quest_name, int prev_state, int next_state)
 	{
 		uint32_t dwQuestIndex = CQuestManager::instance().GetQuestIndexByName(quest_name);
-		sys_log(0, "QUEST reserve Quest State Change quest %s[%u] from %d to %d", quest_name.c_str(), dwQuestIndex, prev_state, next_state);
+		LOG_INFO("QUEST reserve Quest State Change quest {}[{}] from {} to {}", quest_name.c_str(), dwQuestIndex, prev_state, next_state);
 		m_QuestStateChange.emplace_back(dwQuestIndex, prev_state, next_state);
 	}
 
 	void PC::SetQuest(const string& quest_name, QuestState& qs)
 	{
-		//sys_log(0, "PC SetQuest %s", quest_name.c_str());
+		//LOG_INFO("PC SetQuest {}", quest_name.c_str());
 		unsigned int qi = CQuestManager::instance().GetQuestIndexByName(quest_name);
 
 		if (const auto it = m_QuestInfo.find(qi); it == m_QuestInfo.end())
@@ -163,18 +164,18 @@ namespace quest
 	{
 		RemoveTimer(name);
 		m_TimerMap.insert(make_pair(name, pEvent));
-		sys_log(0, "QUEST add timer %p %d", get_pointer(pEvent), m_TimerMap.size());
+		LOG_INFO("QUEST add timer {} {}", static_cast<const void*>(get_pointer(pEvent)), m_TimerMap.size());
 	}
 
 	void PC::RemoveTimerNotCancel(const string & name)
 	{
 		if (const auto it = m_TimerMap.find(name); it != m_TimerMap.end())
 		{
-			sys_log(0, "QUEST remove with no cancel %p", get_pointer(it->second));
+			LOG_INFO("QUEST remove with no cancel {}", static_cast<const void*>(get_pointer(it->second)));
 			m_TimerMap.erase(it);
 		}
 
-		sys_log(1, "QUEST timer map size %d by RemoveTimerNotCancel", m_TimerMap.size());
+		LOG_INFO("QUEST timer map size {} by RemoveTimerNotCancel", m_TimerMap.size());
 	}
 
 	void PC::RemoveTimer(const string & name)
@@ -183,17 +184,17 @@ namespace quest
 
 		if (it != m_TimerMap.end())
 		{
-			sys_log(0, "QUEST remove timer %p", get_pointer(it->second));
+			LOG_INFO("QUEST remove timer {}", static_cast<const void*>(get_pointer(it->second)));
 			CancelTimerEvent(&it->second);
 			m_TimerMap.erase(it);
 		}
 
-		sys_log(1, "QUEST timer map size %d by RemoveTimer", m_TimerMap.size());
+		LOG_INFO("QUEST timer map size {} by RemoveTimer", m_TimerMap.size());
 	}
 
 	void PC::ClearTimer()
 	{
-		sys_log(0, "QUEST clear timer %d", m_TimerMap.size());
+		LOG_INFO("QUEST clear timer {}", m_TimerMap.size());
 		auto it = m_TimerMap.begin();
 
 		while (it != m_TimerMap.end())
@@ -244,7 +245,7 @@ namespace quest
 			buf.write(&temp, 1);
 			qi.size += 1;
 
-			sys_log(1, "QUEST BeginFlag %d", (int)temp);
+			LOG_INFO("QUEST BeginFlag {}", (int)temp);
 		}
 
 		if (m_iSendToClient & QUEST_SEND_TITLE)
@@ -253,7 +254,7 @@ namespace quest
 			buf.write(m_RunningQuestState->_title.c_str(), 30 + 1);
 			qi.size += 30 + 1;
 
-			sys_log(1, "QUEST Title %s", m_RunningQuestState->_title.c_str());
+			LOG_INFO("QUEST Title {}", m_RunningQuestState->_title.c_str());
 		}
 
 		if (m_iSendToClient & QUEST_SEND_CLOCK_NAME)
@@ -262,7 +263,7 @@ namespace quest
 			buf.write(m_RunningQuestState->_clock_name.c_str(), 16 + 1);
 			qi.size += 16 + 1;
 
-			sys_log(1, "QUEST Clock Name %s", m_RunningQuestState->_clock_name.c_str());
+			LOG_INFO("QUEST Clock Name {}", m_RunningQuestState->_clock_name.c_str());
 		}
 
 		if (m_iSendToClient & QUEST_SEND_CLOCK_VALUE)
@@ -270,7 +271,7 @@ namespace quest
 			buf.write(&m_RunningQuestState->_clock_value, sizeof(int));
 			qi.size += 4;
 
-			sys_log(1, "QUEST Clock Value %d", m_RunningQuestState->_clock_value);
+			LOG_INFO("QUEST Clock Value {}", m_RunningQuestState->_clock_value);
 		}
 
 		if (m_iSendToClient & QUEST_SEND_COUNTER_NAME)
@@ -279,7 +280,7 @@ namespace quest
 			buf.write(m_RunningQuestState->_counter_name.c_str(), 16 + 1);
 			qi.size += 16 + 1;
 
-			sys_log(1, "QUEST Counter Name %s", m_RunningQuestState->_counter_name.c_str());
+			LOG_INFO("QUEST Counter Name {}", m_RunningQuestState->_counter_name.c_str());
 		}
 
 		if (m_iSendToClient & QUEST_SEND_COUNTER_VALUE)
@@ -287,7 +288,7 @@ namespace quest
 			buf.write(&m_RunningQuestState->_counter_value, sizeof(int));
 			qi.size += 4;
 
-			sys_log(1, "QUEST Counter Value %d", m_RunningQuestState->_counter_value);
+			LOG_INFO("QUEST Counter Value {}", m_RunningQuestState->_counter_value);
 		}
 
 		if (m_iSendToClient & QUEST_SEND_ICON_FILE)
@@ -296,7 +297,7 @@ namespace quest
 			buf.write(m_RunningQuestState->_icon_file.c_str(), 24 + 1);
 			qi.size += 24 + 1;
 
-			sys_log(1, "QUEST Icon File %s", m_RunningQuestState->_icon_file.c_str());
+			LOG_INFO("QUEST Icon File {}", m_RunningQuestState->_icon_file.c_str());
 		}
 
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->Packet(buf.read_peek(), buf.size());
@@ -363,7 +364,7 @@ namespace quest
 				if (((ch)->GetPlayerID()) == npc->GetQuestNPCID())
 				{
 					npc->SetQuestNPCID(0);
-					sys_log(0, "QUEST NPC lock isn't unlocked : pid %u", ((ch)->GetPlayerID()));
+					LOG_INFO("QUEST NPC lock isn't unlocked : pid {}", ((ch)->GetPlayerID()));
 					CQuestManager::instance().WriteRunningStateToSyserr();
 				}
 			}
@@ -384,12 +385,12 @@ namespace quest
 
 		if (m_iSendToClient)
 		{
-			sys_log(1, "QUEST end running %d", m_iSendToClient);
+			LOG_INFO("QUEST end running {}", m_iSendToClient);
 			SendQuestInfoPakcet();
 		}
 
 		if (m_RunningQuestState == nullptr) {
-			sys_log(0, "Entered PC::EndRunning() with invalid running quest state");
+			LOG_INFO("Entered PC::EndRunning() with invalid running quest state");
 			return;
 		}
 		QuestState * pOldState = m_RunningQuestState;
@@ -444,7 +445,7 @@ namespace quest
 				it = quest_find(dwQuestIdx);
 			}
 
-			sys_log(0, "QUEST change reserved Quest State Change quest %u from %d to %d (%d %d)", dwQuestIdx, rInfo.prev_state, rInfo.next_state, it->second.st, rInfo.prev_state );
+			LOG_INFO("QUEST change reserved Quest State Change quest {} from {} to {} ({} {})", dwQuestIdx, rInfo.prev_state, rInfo.next_state, it->second.st, rInfo.prev_state);
 
 			assert(it->second.st == rInfo.prev_state);
 
@@ -582,7 +583,7 @@ namespace quest
 
 			if (iPos < 0)
 			{
-				sys_err("quest::PC::Save : cannot find . in FlagMap");
+				LOG_ERROR("quest::PC::Save : cannot find . in FlagMap");
 				continue;
 			}
 
@@ -594,21 +595,21 @@ namespace quest
 
 			if (stName.empty() || stState.empty())
 			{
-				sys_err("quest::PC::Save : invalid quest data: %s", stComp.c_str());
+				LOG_ERROR("quest::PC::Save : invalid quest data: {}", stComp.c_str());
 				continue;
 			}
 
-			sys_log(1, "QUEST Save Flag %s, %s %d (%d)", stName.c_str(), stState.c_str(), lValue, i);
+			LOG_INFO("QUEST Save Flag {}, {} {} ({})", stName.c_str(), stState.c_str(), lValue, i);
 
 			if (stName.length() >= QUEST_NAME_MAX_LEN)
 			{
-				sys_err("quest::PC::Save : quest name overflow");
+				LOG_ERROR("quest::PC::Save : quest name overflow");
 				continue;
 			}
 
 			if (stState.length() >= QUEST_STATE_MAX_LEN)
 			{
-				sys_err("quest::PC::Save : quest state overflow");
+				LOG_ERROR("quest::PC::Save : quest state overflow");
 				continue;
 			}
 
@@ -622,7 +623,7 @@ namespace quest
 
 		if (i > 0)
 		{
-			sys_log(1, "QuestPC::Save %d", i);
+			LOG_INFO("QuestPC::Save {}", i);
 			db_clientdesc->DBPacketHeader(HEADER_GD_QUEST_SAVE, 0, sizeof(TQuestTable) * i);
 			db_clientdesc->Packet(&s_table[0], sizeof(TQuestTable) * i);
 		}
@@ -644,7 +645,7 @@ namespace quest
 
 	void PC::GiveItem(const string& label, uint32_t dwVnum, int count)
 	{
-		sys_log(1, "QUEST GiveItem %s %d %d", label.c_str(),dwVnum,count);
+		LOG_INFO("QUEST GiveItem {} {} {}", label.c_str(), dwVnum, count);
 		if (!GetFlag(m_stCurQuest+"."+label))
 		{
 			m_vRewardData.emplace_back(RewardData::REWARD_TYPE_ITEM, dwVnum, count);
@@ -656,7 +657,7 @@ namespace quest
 
 	void PC::GiveExp(const string& label, uint32_t exp)
 	{
-		sys_log(1, "QUEST GiveExp %s %d", label.c_str(),exp);
+		LOG_INFO("QUEST GiveExp {} {}", label.c_str(), exp);
 
 		if (!GetFlag(m_stCurQuest+"."+label))
 		{
@@ -682,7 +683,7 @@ namespace quest
 			switch (it->type)
 			{
 				case RewardData::REWARD_TYPE_EXP:
-					sys_log(0, "EXP cur %d add %d next %d",ch->GetExp(), it->value1, ch->GetNextExp());
+					LOG_INFO("EXP cur {} add {} next {}", ch->GetExp(), it->value1, ch->GetNextExp());
 
 					if (ch->GetExp() + it->value1 > ch->GetNextExp())
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
@@ -697,7 +698,7 @@ namespace quest
 
 				case RewardData::REWARD_TYPE_NONE:
 				default:
-					sys_err("Invalid RewardData type");
+					LOG_ERROR("Invalid RewardData type");
 					break;
 			}
 		}
