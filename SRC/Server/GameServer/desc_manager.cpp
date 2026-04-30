@@ -14,6 +14,7 @@
 #include "p2p.h"
 #include "ip_ban.h"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #ifdef ENABLE_GENERAL_CH
 #include "map_location.h"
 #endif
@@ -305,7 +306,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	{
 		if (IsBanIP(peer.sin_addr))
 		{
-			sys_log(0, "connection from %s was banned.", host);
+			LOG_INFO("connection from {} was banned.", host);
 			socket_close(desc);
 			return nullptr;
 		}
@@ -314,7 +315,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	if (!IsValidIP(admin_ip, host)) // admin_ip 에 등록된 IP 는 최대 사용자 수에 구애받지 않는다.
 	{
 		if (m_iSocketsConnected >= MAX_ALLOW_USER) {
-			sys_err("max connection reached. MAX_ALLOW_USER = %d", MAX_ALLOW_USER);
+			LOG_ERROR("max connection reached. MAX_ALLOW_USER = {}", MAX_ALLOW_USER);
 			socket_close(desc);
 			return nullptr;
 		}
@@ -325,7 +326,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 	if (IsIntruder(host))
 	{
 		if (INTRUSIVE_HANDSHAKE_LOG)
-			sys_log(0, "intrusive connection from %s was blocked temporarily.", host);
+			LOG_INFO("intrusive connection from {} was blocked temporarily.", host);
 		socket_close(desc);
 		return NULL;
 	}
@@ -345,7 +346,7 @@ LPDESC DESC_MANAGER::AcceptDesc(LPFDWATCH fdw, socket_t s)
 
 		// Set intrusive count
 		if (INTRUSIVE_HANDSHAKE_LOG)
-			sys_log(0, "intrusive connection from %s. %d/%d", host, iIntrusiveCount, INTRUSIVE_HANDSHAKE_LIMIT);
+			LOG_INFO("intrusive connection from {}. {}/{}", host, iIntrusiveCount, INTRUSIVE_HANDSHAKE_LIMIT);
 		SetIntrusiveCount(host, false /* reset */);
 	}
 	else
@@ -386,7 +387,7 @@ LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
 
 	if (!pkDesc->Setup(fdw, fd, host, peer.sin_port))
 	{
-		sys_err("DESC_MANAGER::AcceptP2PDesc : Setup failed");
+		LOG_ERROR("DESC_MANAGER::AcceptP2PDesc : Setup failed");
 		socket_close(fd);
 		M2_DELETE(pkDesc);
 		return nullptr;
@@ -395,7 +396,7 @@ LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
 	m_set_pkDesc.insert(pkDesc);
 	++m_iSocketsConnected;
 
-	sys_log(0, "DESC_MANAGER::AcceptP2PDesc  %s:%u", host, peer.sin_port);
+	LOG_INFO("DESC_MANAGER::AcceptP2PDesc  {}:{}", host, peer.sin_port);
 	P2P_MANAGER::instance().RegisterAcceptor(pkDesc);
 	return (pkDesc);
 }
@@ -626,7 +627,7 @@ void DESC_MANAGER::GetUserCount(int& iTotal, int** paiEmpireUserCount, int& iLoc
 	int iCount = P2P_MANAGER::instance().GetCount();
 	if (iCount < 0)
 	{
-		sys_err("P2P_MANAGER::instance().GetCount() == -1");
+		LOG_ERROR("P2P_MANAGER::instance().GetCount() == -1");
 	}
 	iTotal = m_iLocalUserCount + iCount;
 	iLocalCount = m_iLocalUserCount;
