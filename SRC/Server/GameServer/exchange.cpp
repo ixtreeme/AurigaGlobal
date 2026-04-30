@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -238,13 +239,13 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 	// 이미 교환창에 추가된 아이템인가?
 	if (item->IsExchanging())
 	{
-		sys_log(0, "EXCHANGE under exchanging");
+		LOG_INFO("EXCHANGE under exchanging");
 		return false;
 	}
 
 	if (!m_pGrid->IsEmpty(display_pos, 1, item->GetSize()))
 	{
-		sys_log(0, "EXCHANGE not empty item_pos %d %d %d", display_pos, 1, item->GetSize());
+		LOG_INFO("EXCHANGE not empty item_pos {} {} {}", display_pos, 1, item->GetSize());
 		return false;
 	}
 
@@ -279,7 +280,7 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 				ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)),
 				item);
 
-		sys_log(0, "EXCHANGE AddItem success %s pos(%d, %d) %d", item->GetName(), item_pos.window_type, item_pos.cell, display_pos);
+		LOG_INFO("EXCHANGE AddItem success {} pos({}, {}) {}", item->GetName(), item_pos.window_type, item_pos.cell, display_pos);
 
 		return true;
 	}
@@ -1008,8 +1009,7 @@ bool CExchange::Done()
 
 		if (empty_pos < 0)
 		{
-			sys_err("Exchange::Done : Cannot find blank position in inventory %s <-> %s item %s",
-					m_pOwner->GetName(), victim->GetName(), item->GetName());
+			LOG_ERROR("Exchange::Done : Cannot find blank position in inventory {} <-> {} item {}", m_pOwner->GetName(), victim->GetName(), item->GetName());
 			continue;
 		}
 
@@ -1156,7 +1156,7 @@ bool CExchange::Accept(bool bAccept)
 
 		if (db_clientdesc->GetSocket() == INVALID_SOCKET)
 		{
-			sys_err("Cannot use exchange feature while DB cache connection is dead.");
+			LOG_ERROR("Cannot use exchange feature while DB cache connection is dead.");
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 759, "");
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 759, "");
