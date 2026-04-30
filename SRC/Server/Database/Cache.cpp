@@ -71,7 +71,7 @@ void CSKillColorCache::OnFlush()
 	CDBManager::instance().ReturnQuery(query, QID_SKILL_COLOR_SAVE, 0, nullptr);
 
 	if (g_test_server)
-		sys_log(0, "SkillColorCache::Flush :REPLACE %u (%s)", m_data.player_id, query);
+		LOG_INFO("SkillColorCache::Flush :REPLACE {} ({})", m_data.player_id, query);
 
 	m_bNeedQuery = false;
 }
@@ -92,7 +92,7 @@ void CItemCache::Delete()
 		return;
 
 	if (g_test_server)
-		sys_log(0, "ItemCache::Delete : DELETE %u", m_data.id);
+		LOG_INFO("ItemCache::Delete : DELETE {}", m_data.id);
 
 	m_data.vnum = 0;
 	m_bNeedQuery = true;
@@ -112,7 +112,7 @@ void CItemCache::OnFlush()
 		CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_DESTROY, 0, nullptr);
 
 		if (g_test_server)
-			sys_log(0, "ItemCache::Flush : DELETE %u %s", m_data.id, szQuery);
+			LOG_INFO("ItemCache::Flush : DELETE {} {}", m_data.id, szQuery);
 	}
 	else
 	{
@@ -189,7 +189,7 @@ void CItemCache::OnFlush()
 		snprintf(szItemQuery, sizeof(szItemQuery), "REPLACE INTO item%s (%s) VALUES(%s)", GetTablePostfix(), szColumns, szValues);
 
 		if (g_test_server)
-			sys_log(0, "ItemCache::Flush :REPLACE  (%s)", szItemQuery);
+			LOG_INFO("ItemCache::Flush :REPLACE  ({})", szItemQuery);
 
 		CDBManager::instance().ReturnQuery(szItemQuery, QID_ITEM_SAVE, 0, nullptr);
 
@@ -215,7 +215,7 @@ CPlayerTableCache::~CPlayerTableCache()
 void CPlayerTableCache::OnFlush()
 {
 	if (g_test_server)
-		sys_log(0, "PlayerTableCache::Flush : %s", m_data.name);
+		LOG_INFO("PlayerTableCache::Flush : {}", m_data.name);
 
 	char szQuery[QUERY_MAX_LEN];
 	CreatePlayerSaveQuery(szQuery, sizeof(szQuery), &m_data);
@@ -250,7 +250,7 @@ void CItemPriceListTableCache::UpdateList(const TItemPriceListTable* pUpdateList
 
 	if (pUpdateList->byCount > SHOP_PRICELIST_MAX_NUM)
 	{
-		sys_err("Count overflow!");
+		LOG_ERROR("Count overflow!");
 		return;
 	}
 
@@ -278,9 +278,7 @@ void CItemPriceListTableCache::UpdateList(const TItemPriceListTable* pUpdateList
 
 	m_bNeedQuery = true;
 
-	sys_log(0,
-			"ItemPriceListTableCache::UpdateList : OwnerID[%u] Update [%u] Items, Delete [%u] Items, Total [%u] Items",
-			m_data.dwOwnerID, pUpdateList->byCount, nDeletedNum, m_data.byCount);
+	LOG_INFO("ItemPriceListTableCache::UpdateList : OwnerID[{}] Update [{}] Items, Delete [{}] Items, Total [{}] Items", m_data.dwOwnerID, pUpdateList->byCount, nDeletedNum, m_data.byCount);
 }
 
 void CItemPriceListTableCache::OnFlush()
@@ -298,7 +296,7 @@ void CItemPriceListTableCache::OnFlush()
 		CDBManager::instance().ReturnQuery(szQuery, QID_ITEMPRICE_SAVE, 0, nullptr);
 	}
 
-	sys_log(0, "ItemPriceListTableCache::Flush : OwnerID[%u] Update [%u]Items", m_data.dwOwnerID, m_data.byCount);
+	LOG_INFO("ItemPriceListTableCache::Flush : OwnerID[{}] Update [{}]Items", m_data.dwOwnerID, m_data.byCount);
 
 	m_bNeedQuery = false;
 }
