@@ -27,7 +27,7 @@ bool CClientManager::InitializeTables()
 	if (!InitializeMobTable())
 #endif
 	{
-		sys_err("InitializeMobTable FAILED");
+		LOG_ERROR("InitializeMobTable FAILED");
 		return false;
 	}
 #ifdef ENABLE_PROTO_FROM_DB
@@ -36,7 +36,7 @@ bool CClientManager::InitializeTables()
 	if (!InitializeItemTable())
 #endif
 	{
-		sys_err("InitializeItemTable FAILED");
+		LOG_ERROR("InitializeItemTable FAILED");
 		return false;
 	}
 
@@ -46,12 +46,12 @@ bool CClientManager::InitializeTables()
 	{
 		if (!MirrorMobTableIntoDB())
 		{
-			sys_err("MirrorMobTableIntoDB FAILED");
+			LOG_ERROR("MirrorMobTableIntoDB FAILED");
 			return false;
 		}
 		if (!MirrorItemTableIntoDB())
 		{
-			sys_err("MirrorItemTableIntoDB FAILED");
+			LOG_ERROR("MirrorItemTableIntoDB FAILED");
 			return false;
 		}
 	}
@@ -59,61 +59,61 @@ bool CClientManager::InitializeTables()
 
 	if (!InitializeShopTable())
 	{
-		sys_err("InitializeShopTable FAILED");
+		LOG_ERROR("InitializeShopTable FAILED");
 		return false;
 	}
 	if (!InitializeSkillTable())
 	{
-		sys_err("InitializeSkillTable FAILED");
+		LOG_ERROR("InitializeSkillTable FAILED");
 		return false;
 	}
 
 	if (!InitializeRefineTable())
 	{
-		sys_err("InitializeRefineTable FAILED");
+		LOG_ERROR("InitializeRefineTable FAILED");
 		return false;
 	}
 
 	if (!InitializeItemAttrTable())
 	{
-		sys_err("InitializeItemAttrTable FAILED");
+		LOG_ERROR("InitializeItemAttrTable FAILED");
 		return false;
 	}
 
 	if (!InitializeItemRareTable())
 	{
-		sys_err("InitializeItemRareTable FAILED");
+		LOG_ERROR("InitializeItemRareTable FAILED");
 		return false;
 	}
 
 	if (!InitializeBanwordTable())
 	{
-		sys_err("InitializeBanwordTable FAILED");
+		LOG_ERROR("InitializeBanwordTable FAILED");
 		return false;
 	}
 
 	if (!InitializeLandTable())
 	{
-		sys_err("InitializeLandTable FAILED");
+		LOG_ERROR("InitializeLandTable FAILED");
 		return false;
 	}
 
 	if (!InitializeObjectProto())
 	{
-		sys_err("InitializeObjectProto FAILED");
+		LOG_ERROR("InitializeObjectProto FAILED");
 		return false;
 	}
 
 	if (!InitializeObjectTable())
 	{
-		sys_err("InitializeObjectTable FAILED");
+		LOG_ERROR("InitializeObjectTable FAILED");
 		return false;
 	}
 
 #ifdef ENABLE_ITEMSHOP
 	if (!InitializeItemShop())
 	{
-		sys_err("InitializeItemShop FAILED");
+		LOG_ERROR("InitializeItemShop FAILED");
 		return false;
 	}
 #endif
@@ -121,7 +121,7 @@ bool CClientManager::InitializeTables()
 #ifdef ENABLE_EVENT_MANAGER
 	if (!InitializeEventManager())
 	{
-		sys_err("InitializeEventManager FAILED");
+		LOG_ERROR("InitializeEventManager FAILED");
 		return false;
 	}
 #endif
@@ -129,7 +129,7 @@ bool CClientManager::InitializeTables()
 #ifdef ENABLE_BATTLE_PASS
 	if (!LoadBattlePassRanking())
 	{
-		sys_err("LoadBattlePassRanking FAILED");
+		LOG_ERROR("LoadBattlePassRanking FAILED");
 		return false;
 	}
 #endif
@@ -137,7 +137,7 @@ bool CClientManager::InitializeTables()
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	if (!InitializeOfflineshopTable())
 	{
-		sys_err("InitializeOfflineshopTable FAILED");
+		LOG_ERROR("InitializeOfflineshopTable FAILED");
 		return false;
 	}
 #endif
@@ -146,7 +146,7 @@ bool CClientManager::InitializeTables()
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 	if (!InitializeItemExtraProtoTable())
 	{
-		sys_err("Initialize of Item extra proto table FAILED.");
+		LOG_ERROR("Initialize of Item extra proto table FAILED.");
 		return false;
 	}
 #endif
@@ -170,7 +170,7 @@ bool CClientManager::InitializeRefineTable()
 
 	if (m_pRefineTable)
 	{
-		sys_log(0, "RELOAD: refine_proto");
+		LOG_INFO("RELOAD: refine_proto");
 		delete[] m_pRefineTable;
 		m_pRefineTable = nullptr;
 	}
@@ -206,7 +206,7 @@ bool CClientManager::InitializeRefineTable()
 			}
 		}
 
-		sys_log(0, "REFINE: id %ld cost %lld prob %d mat1 %lu cnt1 %d", prt->id, prt->cost, prt->prob, prt->materials[0].vnum, prt->materials[0].count);
+		LOG_INFO("REFINE: id {} cost {} prob {} mat1 {} cnt1 {}", prt->id, prt->cost, prt->prob, prt->materials[0].vnum, prt->materials[0].count);
 
 		prt++;
 	}
@@ -250,7 +250,7 @@ bool CClientManager::InitializeMobTable()
 
 	if (!m_vec_mobTable.empty())
 	{
-		sys_log(0, "RELOAD: mob_proto");
+		LOG_INFO("RELOAD: mob_proto");
 		m_vec_mobTable.clear();
 	}
 	m_vec_mobTable.resize(data.m_File.GetRowCount() - 1);
@@ -266,9 +266,9 @@ bool CClientManager::InitializeMobTable()
 		}
 
 #ifdef ENABLE_MULTI_NAMES
-		sys_log(1, "MOB #%-5d %-24s %-24s level: %-3u rank: %u empire: %d", mob_table->dwVnum, mob_table->szName, mob_table->szLocaleName[0], mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
+		LOG_TRACE("MOB #{:<5} {:<24} {:<24} level: {:<3} rank: {} empire: {}", mob_table->dwVnum, mob_table->szName, mob_table->szLocaleName[0], mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
 #else
-		sys_log(1, "MOB #%-5d %-24s %-24s level: %-3u rank: %u empire: %d", mob_table->dwVnum, mob_table->szName, mob_table->szLocaleName, mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
+		LOG_TRACE("MOB #{:<5} {:<24} {:<24} level: {:<3} rank: {} empire: {}", mob_table->dwVnum, mob_table->szName, mob_table->szLocaleName, mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
 #endif
 		++mob_table;
 
@@ -306,7 +306,7 @@ bool CClientManager::InitializeShopTable()
 
 	if (!pRes2->uiNumRows)
 	{
-		sys_err("InitializeShopTable : Table count is zero.");
+		LOG_ERROR("InitializeShopTable : Table count is zero.");
 		return false;
 	}
 
@@ -367,7 +367,7 @@ bool CClientManager::InitializeShopTable()
 	while (it != map_shop.end())
 	{
 		memcpy((m_pShopTable + i), (it++)->second, sizeof(TShopTable));
-		sys_log(0, "SHOP: #%d items: %d", (m_pShopTable + i)->dwVnum, (m_pShopTable + i)->byItemCount);
+		LOG_INFO("SHOP: #{} items: {}", (m_pShopTable + i)->dwVnum, (m_pShopTable + i)->byItemCount);
 		++i;
 	}
 
@@ -388,7 +388,7 @@ bool CClientManager::InitializeQuestItemTable()
 
 	if (!pRes->uiNumRows)
 	{
-		sys_err("query error or no rows: %s", query);
+		LOG_ERROR("query error or no rows: {}", query);
 		return false;
 	}
 
@@ -421,9 +421,9 @@ bool CClientManager::InitializeQuestItemTable()
 		if (m_map_itemTableByVnum.contains(tbl.dwVnum))
 		{
 #ifdef ENABLE_MULTI_NAMES
-			sys_err("QUEST_ITEM_ERROR! %lu vnum already exist! (name %s)", tbl.dwVnum, tbl.szLocaleName[0]);
+			LOG_ERROR("QUEST_ITEM_ERROR! {} vnum already exist! (name {})", tbl.dwVnum, tbl.szLocaleName[0]);
 #else
-			sys_err("QUEST_ITEM_ERROR! %lu vnum already exist! (name %s)", tbl.dwVnum, tbl.szLocaleName);
+			LOG_ERROR("QUEST_ITEM_ERROR! {} vnum already exist! (name {})", tbl.dwVnum, tbl.szLocaleName);
 #endif
 			continue;
 		}
@@ -462,7 +462,7 @@ bool CClientManager::InitializeItemTable()
 
 	if (!m_vec_itemTable.empty())
 	{
-		sys_log(0, "RELOAD: item_proto");
+		LOG_INFO("RELOAD: item_proto");
 		m_vec_itemTable.clear();
 		m_map_itemTableByVnum.clear();
 	}
@@ -503,26 +503,10 @@ bool CClientManager::InitializeItemTable()
 	{
 		TItemTable* item_table = &(*(it++));
 
-		sys_log(1, "ITEM: #%-5lu %-24s %-24s VAL: %ld %ld %ld %ld %ld %ld WEAR %lu ANTI %lu IMMUNE %lu REFINE %lu REFINE_SET %u MAGIC_PCT %u",
-			item_table->dwVnum,
-			item_table->szName,
-#ifdef ENABLE_MULTI_NAMES
-			item_table->szLocaleName[0],
-#else
-			item_table->szLocaleName,
-#endif
-			item_table->alValues[0],
-			item_table->alValues[1],
-			item_table->alValues[2],
-			item_table->alValues[3],
-			item_table->alValues[4],
-			item_table->alValues[5],
-			item_table->dwWearFlags,
-			item_table->dwAntiFlags,
-			item_table->dwImmuneFlag,
-			item_table->dwRefinedVnum,
-			item_table->wRefineSet,
-			item_table->bAlterToMagicItemPct);
+		LOG_TRACE("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}", item_table->dwVnum, item_table->szName, #ifdef ENABLE_MULTI_NAMES
+			item_table->szLocaleName[0], #else
+			item_table->szLocaleName, #endif
+			item_table->alValues[0], item_table->alValues[1], item_table->alValues[2], item_table->alValues[3], item_table->alValues[4], item_table->alValues[5], item_table->dwWearFlags, item_table->dwAntiFlags, item_table->dwImmuneFlag, item_table->dwRefinedVnum, item_table->wRefineSet, item_table->bAlterToMagicItemPct);
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));
 	}
@@ -549,13 +533,13 @@ bool CClientManager::InitializeSkillTable()
 
 	if (!pRes->uiNumRows)
 	{
-		sys_err("no result from skill_proto");
+		LOG_ERROR("no result from skill_proto");
 		return false;
 	}
 
 	if (!m_vec_skillTable.empty())
 	{
-		sys_log(0, "RELOAD: skill_proto");
+		LOG_INFO("RELOAD: skill_proto");
 		m_vec_skillTable.clear();
 	}
 
@@ -611,7 +595,7 @@ bool CClientManager::InitializeSkillTable()
 		str_to_number(t.bSkillAttrType, data[col++]);
 		str_to_number(t.dwTargetRange, data[col++]);
 
-		sys_log(0, "SKILL: #%d %s flag %u point %s affect %u cooldown %s", t.dwVnum, t.szName, t.dwFlag, t.szPointOn, t.dwAffectFlag, t.szCooldownPoly);
+		LOG_INFO("SKILL: #{} {} flag {} point {} affect {} cooldown {}", t.dwVnum, t.szName, t.dwFlag, t.szPointOn, t.dwAffectFlag, t.szCooldownPoly);
 
 		m_vec_skillTable.push_back(t);
 	}
@@ -643,7 +627,7 @@ bool CClientManager::InitializeBanwordTable()
 		}
 	}
 
-	sys_log(0, "BANWORD: total %d", m_vec_banwordTable.size());
+	LOG_INFO("BANWORD: total {}", m_vec_banwordTable.size());
 	return true;
 }
 
@@ -668,13 +652,13 @@ bool CClientManager::InitializeItemAttrTable()
 
 	if (!pRes->uiNumRows)
 	{
-		sys_err("no result from item_attr");
+		LOG_ERROR("no result from item_attr");
 		return false;
 	}
 
 	if (!m_vec_itemAttrTable.empty())
 	{
-		sys_log(0, "RELOAD: item_attr");
+		LOG_INFO("RELOAD: item_attr");
 		m_vec_itemAttrTable.clear();
 	}
 
@@ -722,36 +706,19 @@ bool CClientManager::InitializeItemAttrTable()
 		str_to_number(t.lValues[8], data[col++]);
 		str_to_number(t.lValues[9], data[col++]);
 #ifdef ENABLE_STOLE_COSTUME
-		sys_log(0, "ITEM_ATTR_COSTUMES: %-20s %4lu { %3d %3d %3d %3d %3d } { %d %d %d %d }", t.szApply, t.dwProb, t.lValues[5], t.lValues[6], t.lValues[7], t.lValues[8], t.lValues[9], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_STOLE]);
+		LOG_INFO("ITEM_ATTR_COSTUMES: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} }}", t.szApply, t.dwProb, t.lValues[5], t.lValues[6], t.lValues[7], t.lValues[8], t.lValues[9], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_STOLE]);
 #else
-		sys_log(0, "ITEM_ATTR_COSTUMES: %-20s %4lu { %3d %3d %3d %3d %3d } { %d %d %d }", t.szApply, t.dwProb, t.lValues[5], t.lValues[6], t.lValues[7], t.lValues[8], t.lValues[9], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON]);
+		LOG_INFO("ITEM_ATTR_COSTUMES: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} }}", t.szApply, t.dwProb, t.lValues[5], t.lValues[6], t.lValues[7], t.lValues[8], t.lValues[9], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON]);
 #endif
 #endif
 
-		sys_log(0, "ITEM_ATTR: %-20s %4lu { %3d %3d %3d %3d %3d } { %d %d %d %d %d %d %d"
+		LOG_INFO("ITEM_ATTR: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {}"
 #if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
-			" %d"
+			" {}"
 #endif
-			" }",
-			t.szApply,
-			t.dwProb,
-			t.lValues[0],
-			t.lValues[1],
-			t.lValues[2],
-			t.lValues[3],
-			t.lValues[4],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_BODY],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_NECK],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
-			, t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
-#endif
-				);
+			" }}", t.szApply, t.dwProb, t.lValues[0], t.lValues[1], t.lValues[2], t.lValues[3], t.lValues[4], t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS], t.bMaxLevelBySet[ATTRIBUTE_SET_NECK], t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD], t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD], t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
+#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN), t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
+#endif);
 
 		m_vec_itemAttrTable.push_back(t);
 	}
@@ -782,13 +749,13 @@ bool CClientManager::InitializeItemRareTable()
 
 	if (!pRes->uiNumRows)
 	{
-		sys_err("no result from item_attr_rare");
+		LOG_ERROR("no result from item_attr_rare");
 		return false;
 	}
 
 	if (!m_vec_itemRareTable.empty())
 	{
-		sys_log(0, "RELOAD: item_attr_rare");
+		LOG_INFO("RELOAD: item_attr_rare");
 		m_vec_itemRareTable.clear();
 	}
 
@@ -831,40 +798,20 @@ bool CClientManager::InitializeItemRareTable()
 #endif
 #endif
 
-		sys_log(0, "ITEM_RARE: %-20s %4lu { %3d %3d %3d %3d %3d } { %d %d %d %d %d %d %d"
+		LOG_INFO("ITEM_RARE: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} {} {} {}"
 #ifdef ENABLE_ITEM_ATTR_COSTUME
-			" %d %d"
+			" {} {}"
 #if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
-			" %d"
+			" {}"
 #endif
 #endif
-			" }",
-			t.szApply,
-			t.dwProb,
-			t.lValues[0],
-			t.lValues[1],
-			t.lValues[2],
-			t.lValues[3],
-			t.lValues[4],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_BODY],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_NECK],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD],
-			t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
-			, t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
+			" }}", t.szApply, t.dwProb, t.lValues[0], t.lValues[1], t.lValues[2], t.lValues[3], t.lValues[4], t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], t.bMaxLevelBySet[ATTRIBUTE_SET_FOOTS], t.bMaxLevelBySet[ATTRIBUTE_SET_NECK], t.bMaxLevelBySet[ATTRIBUTE_SET_HEAD], t.bMaxLevelBySet[ATTRIBUTE_SET_SHIELD], t.bMaxLevelBySet[ATTRIBUTE_SET_EAR]
+#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN), t.bMaxLevelBySet[ATTRIBUTE_SET_PENDANT]
 #endif
-#ifdef ENABLE_ITEM_ATTR_COSTUME
-				, t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY]
-					, t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR]
-#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM)
-						, t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON]
+#ifdef ENABLE_ITEM_ATTR_COSTUME, t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR]
+#if defined(ENABLE_ITEM_ATTR_COSTUME) && defined(ENABLE_WEAPON_COSTUME_SYSTEM), t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON]
 #endif
-#endif
-							);
+#endif);
 
 		m_vec_itemRareTable.push_back(t);
 	}
@@ -888,7 +835,7 @@ bool CClientManager::InitializeLandTable()
 
 	if (!m_vec_kLandTable.empty())
 	{
-		sys_log(0, "RELOAD: land");
+		LOG_INFO("RELOAD: land");
 		m_vec_kLandTable.clear();
 	}
 
@@ -913,7 +860,7 @@ bool CClientManager::InitializeLandTable()
 			str_to_number(t.bGuildLevelLimit, data[col++]);
 			str_to_number(t.dwPrice, data[col++]);
 
-			sys_log(0, "LAND: %lu map %-4ld %7ldx%-7ld w %-4ld h %-4ld", t.dwID, t.lMapIndex, t.x, t.y, t.width, t.height);
+			LOG_INFO("LAND: {} map {:<4} {:7}x{:<7} w {:<4} h {:<4}", t.dwID, t.lMapIndex, t.x, t.y, t.width, t.height);
 
 			m_vec_kLandTable.push_back(t);
 		}
@@ -989,7 +936,7 @@ bool CClientManager::InitializeObjectProto()
 
 	if (!m_vec_kObjectProto.empty())
 	{
-		sys_log(0, "RELOAD: object_proto");
+		LOG_INFO("RELOAD: object_proto");
 		m_vec_kObjectProto.clear();
 	}
 
@@ -1035,8 +982,7 @@ bool CClientManager::InitializeObjectProto()
 			t.lNPCY = MAX(t.lRegion[1], t.lRegion[3]) + 300;
 			// END_OF_ADD_BUILDING_NPC
 
-			sys_log(0, "OBJ_PROTO: vnum %lu price %lu mat %lu %lu",
-				t.dwVnum, t.dwPrice, t.kMaterials[0].dwItemVnum, t.kMaterials[0].dwCount);
+			LOG_INFO("OBJ_PROTO: vnum {} price {} mat {} {}", t.dwVnum, t.dwPrice, t.kMaterials[0].dwItemVnum, t.kMaterials[0].dwCount);
 
 			m_vec_kObjectProto.push_back(t);
 		}
@@ -1056,7 +1002,7 @@ bool CClientManager::InitializeObjectTable()
 
 	if (!m_map_pkObjectTable.empty())
 	{
-		sys_log(0, "RELOAD: object");
+		LOG_INFO("RELOAD: object");
 		m_map_pkObjectTable.clear();
 	}
 
@@ -1082,8 +1028,7 @@ bool CClientManager::InitializeObjectTable()
 			str_to_number(k->zRot, data[col++]);
 			str_to_number(k->lLife, data[col++]);
 
-			sys_log(0, "OBJ: %lu vnum %lu map %-4ld %7ldx%-7ld life %ld",
-				k->dwID, k->dwVnum, k->lMapIndex, k->x, k->y, k->lLife);
+			LOG_INFO("OBJ: {} vnum {} map {:<4} {:7}x{:<7} life {}", k->dwID, k->dwVnum, k->lMapIndex, k->x, k->y, k->lLife);
 
 			m_map_pkObjectTable.insert(std::make_pair(k->dwID, k));
 		}
@@ -1510,7 +1455,7 @@ bool CClientManager::InitializeMobTableFromDB()
 
 	if (!m_vec_mobTable.empty())
 	{
-		sys_log(0, "RELOAD: mob_proto");
+		LOG_INFO("RELOAD: mob_proto");
 		m_vec_mobTable.clear();
 	}
 
@@ -1630,18 +1575,10 @@ bool CClientManager::InitializeMobTableFromDB()
 		VERIFY_IFIELD(MProto::sp_deathblow, mob_table->bDeathBlowPoint)
 		VERIFY_IFIELD(MProto::sp_revive, mob_table->bRevivePoint)
 
-		sys_log(0, "MOB #%-5d %-24s %-24s level: %-3u rank: %u empire: %d",
-			mob_table->dwVnum,
-			mob_table->szName,
-#ifdef ENABLE_MULTI_NAMES
-			mob_table->szLocaleName[0],
-#else
-			mob_table->szLocaleName,
-#endif
-			mob_table->bLevel,
-			mob_table->bRank,
-			mob_table->bEmpire
-		);
+		LOG_INFO("MOB #{:<5} {:<24} {:<24} level: {:<3} rank: {} empire: {}", mob_table->dwVnum, mob_table->szName, #ifdef ENABLE_MULTI_NAMES
+			mob_table->szLocaleName[0], #else
+			mob_table->szLocaleName, #endif
+			mob_table->bLevel, mob_table->bRank, mob_table->bEmpire);
 		++mob_table;
 	}
 	sort(m_vec_mobTable.begin(), m_vec_mobTable.end(), FCompareVnum());
@@ -1733,7 +1670,7 @@ bool CClientManager::InitializeItemTableFromDB()
 
 	if (!m_vec_itemTable.empty())
 	{
-		sys_log(0, "RELOAD: item_proto");
+		LOG_INFO("RELOAD: item_proto");
 		m_vec_itemTable.clear();
 		m_map_itemTableByVnum.clear();
 	}
@@ -1797,7 +1734,7 @@ bool CClientManager::InitializeItemTableFromDB()
 
 		if ((LIMIT_NONE != item_table->aLimits[0].bType) && // just checking the first limit one is enough
 			(item_table->aLimits[0].bType == item_table->aLimits[1].bType))
-			sys_err("vnum(%u): limittype0(%u)==limittype1(%u)", item_table->dwVnum, item_table->aLimits[0].bType, item_table->aLimits[1].bType);
+			LOG_ERROR("vnum({}): limittype0({})==limittype1({})", item_table->dwVnum, item_table->aLimits[0].bType, item_table->aLimits[1].bType);
 
 		// ## APPLY
 		VERIFY_IFIELD(IProto::applytype0, item_table->aApplies[0].bType)
@@ -1832,27 +1769,10 @@ bool CClientManager::InitializeItemTableFromDB()
 #endif
 
 		m_map_itemTableByVnum.insert(std::map<uint32_t, TItemTable*>::value_type(item_table->dwVnum, item_table));
-		sys_log(0, "ITEM: #%-5lu %-24s %-24s VAL: %d %ld %d %d %d %d WEAR %d ANTI %d IMMUNE %d REFINE %lu REFINE_SET %u MAGIC_PCT %u",
-			item_table->dwVnum,
-			item_table->szName,
-#ifdef ENABLE_MULTI_NAMES
-			item_table->szLocaleName[0],
-#else
-			item_table->szLocaleName,
-#endif
-			item_table->alValues[0],
-			item_table->alValues[1],
-			item_table->alValues[2],
-			item_table->alValues[3],
-			item_table->alValues[4],
-			item_table->alValues[5],
-			item_table->dwWearFlags,
-			item_table->dwAntiFlags,
-			item_table->dwImmuneFlag,
-			item_table->dwRefinedVnum,
-			item_table->wRefineSet,
-			item_table->bAlterToMagicItemPct
-		);
+		LOG_INFO("ITEM: #{:<5} {:<24} {:<24} VAL: {} {} {} {} {} {} WEAR {} ANTI {} IMMUNE {} REFINE {} REFINE_SET {} MAGIC_PCT {}", item_table->dwVnum, item_table->szName, #ifdef ENABLE_MULTI_NAMES
+			item_table->szLocaleName[0], #else
+			item_table->szLocaleName, #endif
+			item_table->alValues[0], item_table->alValues[1], item_table->alValues[2], item_table->alValues[3], item_table->alValues[4], item_table->alValues[5], item_table->dwWearFlags, item_table->dwAntiFlags, item_table->dwImmuneFlag, item_table->dwRefinedVnum, item_table->wRefineSet, item_table->bAlterToMagicItemPct);
 		item_table++;
 	}
 	sort(m_vec_itemTable.begin(), m_vec_itemTable.end(), FCompareVnum());
