@@ -1000,7 +1000,7 @@ int io_loop(LPFDWATCH fdw)
 					int size = d->ProcessInput();
 
 					if (size)
-						LOG_INFO("DB_BYTES_READ: {}", size);
+						LOG_TRACE("DB_BYTES_READ: {}", size);
 
 					if (size < 0)
 					{

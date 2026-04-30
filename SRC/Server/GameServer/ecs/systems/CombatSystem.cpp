@@ -1640,7 +1640,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		iExpToDistribute -= iExp;
 	}
 
-	LOG_INFO("{} total exp: {}, damage_info_table.size() == {}, TotalDam {}", GetName(), iExpToDistribute, damage_info_table.size(), iTotalDam);
+	LOG_TRACE("{} total exp: {}, damage_info_table.size() == {}, TotalDam {}", GetName(), iExpToDistribute, damage_info_table.size(), iTotalDam);
 	//LOG_INFO(1, "%s total exp: %d, pq_damage.size() == %d, TotalDam %d",
 	//GetName(), iExpToDistribute, pq_damage.size(), iTotalDam);
 
@@ -2016,7 +2016,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			SetDeadByMonster(true);
 #endif
 
-			LOG_INFO("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
+			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
 						if (auto* flags = RuntimeFlags(this))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 			LogManager::instance().CharLog(this, pkKiller->GetRaceNum(), "DEAD_BY_NPC", pkKiller->GetName());
@@ -2026,7 +2026,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 			SetDeadByMonster(false);
 #endif
-			LOG_INFO("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), pkKiller->GetName(), static_cast<const void*>(get_pointer(pkKiller)));
+			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), pkKiller->GetName(), static_cast<const void*>(get_pointer(pkKiller)));
 						if (auto* flags = RuntimeFlags(this))
 				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
@@ -2169,7 +2169,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 	else
 	{
-		LOG_INFO("DEAD: {} {}", GetName(), static_cast<const void*>(this));
+		LOG_TRACE("DEAD: {} {}", GetName(), static_cast<const void*>(this));
 				if (auto* flags = RuntimeFlags(this))
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 	}
@@ -2269,7 +2269,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	{
 		if (m_pkDeadEvent)
 		{
-			LOG_INFO("DEAD_EVENT_CANCEL: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
+			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
 			event_cancel(&m_pkDeadEvent);
 		}
 
@@ -2307,7 +2307,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
 			}
 
-			LOG_INFO("DEAD_EVENT_CREATE: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
+			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
 		}
 	}
 
@@ -2440,7 +2440,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 #endif
 
 	if (test_server)
-		LOG_INFO("[TEST_SERVER] Attack : {} type {}, MobBattleType {}", GetName(), bType, (!IsPC() && GetMobBattleType()) ? GetMobAttackRange() : 0);
+		LOG_TRACE("[TEST_SERVER] Attack : {} type {}, MobBattleType {}", GetName(), bType, (!IsPC() && GetMobBattleType()) ? GetMobAttackRange() : 0);
 	//PROF_UNIT puAttack("Attack");
 	if (!CanMove())
 		return false;
@@ -2524,7 +2524,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			}
 		}
 
-		LOG_INFO("Attack call ComputeSkill {} {}", bType, pkVictim ? pkVictim->GetName() : "");
+		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? pkVictim->GetName() : "");
 		iRet = ComputeSkill(bType, pkVictim);
 	}
 
@@ -3581,7 +3581,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//
 	//PROF_UNIT pu2("r2");
 	if (test_server)
-		LOG_INFO("Drop money : Attacker {}", pkAttacker->GetName());
+		LOG_TRACE("Drop money : Attacker {}", pkAttacker->GetName());
 	RewardGold(pkAttacker);
 	//pu2.Pop();
 
@@ -4322,8 +4322,8 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 					if (test_server)
 					{
-						LOG_INFO("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker), iGoldMultipler);
-						LOG_INFO("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
+						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker), iGoldMultipler);
+						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
 					}
 
 					// NOTE:  ź  3  ó  
@@ -6169,7 +6169,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} horse_wildattack {}", m_me->GetName(), pkVictim->GetName());
+				LOG_TRACE("{} horse_wildattack {}", m_me->GetName(), pkVictim->GetName());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}

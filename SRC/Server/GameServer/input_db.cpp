@@ -3322,7 +3322,7 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
 		m_dwHandle	= *((uint32_t *) (c_pData + 1));	// 4
 		iSize		= *((uint32_t *) (c_pData + 5));	// 4
 
-		LOG_INFO("DBCLIENT: header {} handle {} size {} bytes {}", bHeader, m_dwHandle, iSize, bytes);
+		LOG_TRACE("DBCLIENT: header {} handle {} size {} bytes {}", bHeader, m_dwHandle, iSize, bytes);
 
 		if (m_iBufferLeft - 9 < iSize)
 			return true;

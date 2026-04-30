@@ -5,6 +5,7 @@
 #include "text_file_loader.h"
 #include "mob_manager.h"
 #include "char_interface.hpp"
+#include "Core/Logging.hpp"
 #include <common/CommonDefines.h>
 #include "config.h"
 
@@ -359,7 +360,7 @@ bool CMotionManager::Build()
 
 			// POLYMORPH_BUG_FIX
 			float normalAttackDuration = MOB_GetNormalAttackDuration(t);
-			sys_log(0, "mob_normal_attack_duration:%d:%s:%.2f", t->dwVnum, t->szFolder, normalAttackDuration);
+			LOG_TRACE("mob_normal_attack_duration:{}:{}:{:.2f}", t->dwVnum, t->szFolder, normalAttackDuration);
 			m_map_normalAttackDuration.insert(std::map<uint32_t, float>::value_type(t->dwVnum, normalAttackDuration));
 			// END_OF_POLYMORPH_BUG_FIX
 		}
@@ -552,7 +553,7 @@ bool CMotion::LoadFromFile(const char * c_pszFileName)
 	if (loader.GetTokenPosition("accumulation", &m_vec3Accumulation))
 		m_isAccumulation = true;
 
-	sys_log(1, "%-48s %.3f %f", strchr(c_pszFileName, '/') + 1, GetDuration(), GetAccumVector().y);
+	LOG_TRACE("{:<48} {:.3f} {}", strchr(c_pszFileName, '/') + 1, GetDuration(), GetAccumVector().y);
 
 	m_isEmpty = false;
 	return true;
