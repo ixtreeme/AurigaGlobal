@@ -10,6 +10,7 @@
 #include "log.h"
 #include "char_interface.hpp"
 #include "dev_log.h"
+#include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
@@ -152,7 +153,7 @@ void Cube_init()
 	char file_name[256+1];
 	snprintf(file_name, sizeof(file_name), "%s/cube.txt", LocaleService_GetBasePath().c_str());
 
-	sys_log(0, "Cube_Init %s", file_name);
+	LOG_INFO("Cube_Init {}", file_name);
 
 	for (iter = s_cube_proto.begin(); iter!=s_cube_proto.end(); iter++)
 	{
@@ -163,7 +164,7 @@ void Cube_init()
 	s_cube_proto.clear();
 
 	if (false == Cube_load(file_name))
-		sys_err("Cube_Init failed");
+		LOG_ERROR("Cube_Init failed");
 }
 
 bool Cube_load (const char *file)
@@ -310,14 +311,14 @@ bool Cube_InformationInitialize()
 
 		if (1 != rewards.size())
 		{
-			sys_err("[CubeInfo] WARNING! Does not support multiple rewards (count: %d)", rewards.size());			
+			LOG_ERROR("[CubeInfo] WARNING! Does not support multiple rewards (count: {})", rewards.size());
 			continue;
 		}
 
 		const CUBE_RENEWAL_VALUE& reward = rewards.at(0);
 		if (cubeData->npc_vnum.empty())
 		{
-			sys_err("[CubeInfo] WARNING! Cube entry without npc_vnum (reward vnum %u)", reward.vnum);
+			LOG_ERROR("[CubeInfo] WARNING! Cube entry without npc_vnum (reward vnum {})", reward.vnum);
 			continue;
 		}
 		const uint16_t& npcVNUM = cubeData->npc_vnum.front();
@@ -394,7 +395,7 @@ void Cube_open (LPCHARACTER ch)
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{
-		sys_log(1, "CUBE: TOO_FAR: %s distance %d", ch->GetName(), distance);
+		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ch->GetName(), distance);
 		return;
 	}
 
@@ -851,7 +852,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 			if (nullptr == d)
 			{
-				sys_err ("User SendDateCubeRenewalPackets (%s)'s DESC is NULL POINT.", ch->GetName());
+				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ch->GetName());
 				return ;
 			}
 
@@ -864,7 +865,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 		if (nullptr == d)
 		{
-			sys_err ("User SendDateCubeRenewalPackets (%s)'s DESC is NULL POINT.", ch->GetName());
+			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ch->GetName());
 			return ;
 		}
 
