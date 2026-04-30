@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -85,7 +86,7 @@ void CPartyManager::P2PJoinParty(uint32_t leader, uint32_t pid, uint8_t role)
 	}
 	else
 	{
-		sys_err("No such party with leader [%d]", leader);
+		LOG_ERROR("No such party with leader [{}]", leader);
 	}
 }
 
@@ -99,7 +100,7 @@ void CPartyManager::P2PQuitParty(uint32_t pid)
 	}
 	else
 	{
-		sys_err("No such party with member [%d]", pid);
+		LOG_ERROR("No such party with member [{}]", pid);
 	}
 }
 
@@ -130,7 +131,7 @@ void CPartyManager::P2PDeleteParty(uint32_t pid)
 		M2_DELETE(it->second);
 	}
 	else
-		sys_err("PARTY P2PDeleteParty Cannot find party [%u]", pid);
+		LOG_ERROR("PARTY P2PDeleteParty Cannot find party [{}]", pid);
 }
 
 LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
@@ -152,7 +153,7 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 
 		db_clientdesc->DBPacket(HEADER_GD_PARTY_CREATE, 0, &p, sizeof(TPacketPartyCreate));
 
-		sys_log(0, "PARTY: Create %s pid %u", ((pLeader)->GetName()), ((pLeader)->GetPlayerID()));
+		LOG_INFO("PARTY: Create {} pid {}", ((pLeader)->GetName()), ((pLeader)->GetPlayerID()));
 		pParty->SetPCParty(true);
 		pParty->Join(((pLeader)->GetPlayerID()));
 
@@ -229,7 +230,7 @@ EVENTFUNC(party_update_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "party_update_event> <Factor> Null pointer" );
+		LOG_ERROR("party_update_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -259,7 +260,7 @@ CParty::~CParty()
 
 void CParty::Initialize()
 {
-	sys_log(2, "Party::Initialize");
+	LOG_INFO("Party::Initialize");
 
 	m_iExpDistributionMode = PARTY_EXP_DISTRIBUTION_NON_PARITY;
 	m_pkChrExpCentralize = nullptr;
@@ -298,7 +299,7 @@ void CParty::Initialize()
 
 void CParty::Destroy()
 {
-	sys_log(2, "Party::Destroy");
+	LOG_INFO("Party::Destroy");
 
 	// PC�� ���� ��Ƽ�� ��Ƽ�Ŵ����� �ʿ��� PID�� �����ؾ� �Ѵ�.
 	if (m_bPCParty)
@@ -406,7 +407,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 
 			if (ch)
 			{
-				sys_log(0, "PARTY: Join %s pid %u leader %u", ((ch)->GetName()), dwPID, m_dwLeaderPID);
+				LOG_INFO("PARTY: Join {} pid {} leader {}", ((ch)->GetName()), dwPID, m_dwLeaderPID);
 				Member.strName = ((ch)->GetName());
 
 				if (Member.bRole == PARTY_ROLE_LEADER)
@@ -420,11 +421,11 @@ void CParty::P2PJoin(uint32_t dwPID)
 				else if (pcci->bChannel == g_bChannel)
 					Member.strName = pcci->szName;
 				else
-					sys_err("member is not in same channel PID: %u channel %d, this channel %d", dwPID, pcci->bChannel, g_bChannel);
+					LOG_ERROR("member is not in same channel PID: {} channel {}, this channel {}", dwPID, pcci->bChannel, g_bChannel);
 			}
 		}
 
-		sys_log(2, "PARTY[%d] MemberCountChange %d -> %d", GetLeaderPID(), GetMemberCount(), GetMemberCount()+1);
+		LOG_INFO("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount()+1);
 
 		m_memberMap.insert(TMemberMap::value_type(dwPID, Member));
 
@@ -484,7 +485,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 
 	m_memberMap.erase(it);
 
-	sys_log(2, "PARTY[%d] MemberCountChange %d -> %d", GetLeaderPID(), GetMemberCount(), GetMemberCount() - 1);
+	LOG_INFO("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount() - 1);
 
 	if (bRole < PARTY_ROLE_MAX_NUM)
 	{
@@ -492,7 +493,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 	}
 	else
 	{
-		sys_err("ROLE_COUNT_QUIT_ERROR: INDEX(%d) > MAX(%d)", bRole, PARTY_ROLE_MAX_NUM);
+		LOG_ERROR("ROLE_COUNT_QUIT_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
 	}
 
 	if (ch)
@@ -542,7 +543,7 @@ void CParty::Link(LPCHARACTER pkChr)
 
 	if (it == m_memberMap.end())
 	{
-		sys_err("%s is not member of this party", pkChr->GetName());
+		LOG_ERROR("{} is not member of this party", pkChr->GetName());
 		return;
 	}
 
@@ -557,7 +558,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	if (it->second.bRole == PARTY_ROLE_LEADER)
 		m_pkChrLeader = pkChr;
 
-	sys_log(2, "PARTY[%d] %s linked to party", GetLeaderPID(), pkChr->GetName());
+	LOG_INFO("PARTY[{}] {} linked to party", GetLeaderPID(), pkChr->GetName());
 
 	it->second.pCharacter = pkChr;
 	pkChr->SetParty(this);
@@ -579,7 +580,7 @@ void CParty::Link(LPCHARACTER pkChr)
 
 		SendParameter(pkChr);
 
-		//sys_log(0, "PARTY-DUNGEON connect %p %p", this, GetDungeon());
+		//LOG_INFO("PARTY-DUNGEON connect {} {}", static_cast<const void*>(this), static_cast<const void*>(GetDungeon()));
 		if (GetDungeon() && GetDungeon()->GetMapIndex() == pkChr->GetMapIndex())
 		{
 			pkChr->SetDungeon(GetDungeon());
@@ -606,7 +607,7 @@ void CParty::P2PSetMemberLevel(uint32_t pid, uint8_t level)
 
 	TMemberMap::iterator it;
 
-	sys_log(0, "PARTY P2PSetMemberLevel leader %d pid %d level %d", GetLeaderPID(), pid, level);
+	LOG_INFO("PARTY P2PSetMemberLevel leader {} pid {} level {}", GetLeaderPID(), pid, level);
 
 	it = m_memberMap.find(pid);
 	if (it != m_memberMap.end())
@@ -637,7 +638,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 
 	if (it == m_memberMap.end())
 	{
-		sys_err("%s is not member of this party", pkChr->GetName());
+		LOG_ERROR("{} is not member of this party", pkChr->GetName());
 		return;
 	}
 
@@ -805,7 +806,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			//sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			//LOG_INFO("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -826,7 +827,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			sys_log(2, "PARTY send info %s[%d] to %s[%d]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			LOG_INFO("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -853,7 +854,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		sys_log(2, "PARTY send info %s[%d] to %s[%d]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
+		LOG_INFO("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }
@@ -862,7 +863,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 {
 	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) != this)
 	{
-		sys_err("%s is not member of this party %p", ch->GetName(), this);
+		LOG_ERROR("{} is not member of this party {}", ch->GetName(), static_cast<const void*>(this));
 		return;
 	}
 
@@ -893,7 +894,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 						if (pkChr->Goto(x, y))
 						{
 							auto* victim = pkChr->GetVictim();
-							sys_log(0, "%s %p RETURN victim %p", pkChr->GetName(), get_pointer(pkChr), get_pointer(victim));
+							LOG_INFO("{} {} RETURN victim {}", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
 							pkChr->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
@@ -988,7 +989,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		}
 		else
 		{
-			sys_err("ROLE_COUNT_INC_ERROR: INDEX(%d) > MAX(%d)", bRole, PARTY_ROLE_MAX_NUM);
+			LOG_ERROR("ROLE_COUNT_INC_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
 		}
 	}
 	else
@@ -1010,7 +1011,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		}
 		else
 		{
-			sys_err("ROLE_COUNT_DEC_ERROR: INDEX(%d) > MAX(%d)", bRole, PARTY_ROLE_MAX_NUM);
+			LOG_ERROR("ROLE_COUNT_DEC_ERROR: INDEX({}) > MAX({})", bRole, PARTY_ROLE_MAX_NUM);
 		}
 	}
 
@@ -1232,7 +1233,7 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 	float k = (float) ch->GetSkillPowerByLevel( MIN(SKILL_MAX_LEVEL, m_iLeadership ) )/ 100.0f;
 	//float k = (float) aiSkillPowerByLevel[MIN(SKILL_MAX_LEVEL, m_iLeadership)] / 100.0f;
 	//
-	//sys_log(0,"ComputeRolePoint %fi %d, %d ", k, SKILL_MAX_LEVEL, m_iLeadership );
+	//LOG_INFO("ComputeRolePoint {}i {}, {}", k, SKILL_MAX_LEVEL, m_iLeadership);
 	//END_SKILL_POWER_BY_LEVEL
 
 	switch (bRole)
@@ -1309,7 +1310,7 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 
 void CParty::Update()
 {
-	sys_log(1, "PARTY::Update");
+	LOG_INFO("PARTY::Update");
 
 	auto* l = GetLeaderCharacter();
 
@@ -1338,7 +1339,7 @@ void CParty::Update()
 		if (it->second.bNear)
 		{
 			++iNearMember;
-			//sys_log(0,"NEAR %s", ch->GetName());
+			//LOG_INFO("NEAR {}", ch->GetName());
 		}
 	}
 
@@ -1482,11 +1483,11 @@ int CParty::GetFlag(const std::string& name)
 
 	if (it != m_map_iFlag.end())
 	{
-		//sys_log(0,"PARTY GetFlag %s %d", name.c_str(), it->second);
+		//LOG_INFO("PARTY GetFlag {} {}", name.c_str(), it->second);
 		return it->second;
 	}
 
-	//sys_log(0,"PARTY GetFlag %s 0", name.c_str());
+	//LOG_INFO("PARTY GetFlag {} 0", name.c_str());
 	return 0;
 }
 
@@ -1494,7 +1495,7 @@ void CParty::SetFlag(const std::string& name, int value)
 {
 	TFlagMap::iterator it = m_map_iFlag.find(name);
 
-	//sys_log(0,"PARTY SetFlag %s %d", name.c_str(), value);
+	//LOG_INFO("PARTY SetFlag {} {}", name.c_str(), value);
 	if (it == m_map_iFlag.end())
 	{
 		m_map_iFlag.insert(make_pair(name, value));
@@ -1613,7 +1614,7 @@ void CParty::SetParameter(int iMode)
 {
 	if (iMode >= PARTY_EXP_DISTRIBUTION_MAX_NUM)
 	{
-		sys_err("Invalid exp distribution mode %d", iMode);
+		LOG_ERROR("Invalid exp distribution mode {}", iMode);
 		return;
 	}
 
@@ -1730,7 +1731,7 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 
 		if(nullptr == d)
 		{
-			sys_log(0,"not in dungeon");
+			LOG_INFO("not in dungeon");
 			continue;
 		}
 
