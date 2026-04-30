@@ -15,6 +15,7 @@
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include <Core/Logging.hpp>
 
 namespace
 {
@@ -44,7 +45,7 @@ EVENTFUNC(check_time_market_event)
 	char_event_info* info = dynamic_cast<char_event_info*>( event->info );
 	if (info == nullptr)
 	{
-		sys_err( "check_time_market_event> <Factor> Null pointer" );
+		LOG_ERROR("check_time_market_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -94,7 +95,7 @@ void Load(entt::entity pc)
 	fp = fopen(file_name, "r");
 	if (fp == nullptr)
 	{
-		sys_err("Gaya: Error, it's not possible load %s !", file_name);
+		LOG_ERROR("Gaya: Error, it's not possible load {} !", file_name);
 		return;
 	}
 
@@ -533,7 +534,7 @@ int GetState(entt::entity pc, const std::string& state)
 
 	if (!pPC)
 	{
-		sys_err("Nullpointer in CHARACTER::GetQuestFlag %lu", ch->GetPlayerID());
+		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ch->GetPlayerID());
 		return 0;
 	}
 
@@ -551,7 +552,7 @@ void SetState(entt::entity pc, const std::string& state, int value)
 
 	if (!pPC)
 	{
-		sys_err("Nullpointer in CHARACTER::GetQuestFlag %lu", ch->GetPlayerID());
+		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ch->GetPlayerID());
 		return;
 	}
 
