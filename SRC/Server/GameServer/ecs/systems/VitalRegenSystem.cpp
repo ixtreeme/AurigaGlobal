@@ -15,6 +15,7 @@
 #include "../../char_interface.hpp"
 #include "../../char_manager.h"
 #include "../../utils.h"
+#include <Core/Logging.hpp>
 
 #if defined(DEBUG_STATS_DRIFT)
 namespace {
@@ -50,11 +51,7 @@ void DebugStatsDriftCheck(entt::registry& reg)
             }
 
             if (stats.points[point] != ch->GetPoint(static_cast<uint8_t>(point))) {
-                sys_err("STATS_DRIFT pt=%u ecs=%lld legacy=%lld name=%s",
-                    point,
-                    static_cast<long long>(stats.points[point]),
-                    static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))),
-                    ch->GetName());
+                LOG_ERROR("STATS_DRIFT pt={} ecs={} legacy={} name={}", point, static_cast<long long>(stats.points[point]), static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))), ch->GetName());
             }
         }
     }
