@@ -25,7 +25,7 @@ RETSIGTYPE checkpointing(int sig)
 {
     if (!tics)
     {
-        sys_err("CHECKPOINT shutdown: tics did not updated.");
+        LOG_ERROR("CHECKPOINT shutdown: tics did not updated.");
         if (bCheckpointCheck)
             abort();
     }
@@ -37,7 +37,7 @@ RETSIGTYPE checkpointing(int sig)
 RETSIGTYPE hupsig(int sig)
 {
     shutdowned = true;
-    sys_log(0, "SIGHUP, SIGINT, SIGTERM signal has been received. shutting down."); // @warme012
+    LOG_INFO("SIGHUP, SIGINT, SIGTERM signal has been received. shutting down."); // @warme012
 }
 
 RETSIGTYPE usrsig(int sig)
