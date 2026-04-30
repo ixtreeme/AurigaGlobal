@@ -21,7 +21,7 @@ void CClientManager::LoadEventFlag()
 			TPacketSetEventFlag p;
 			strlcpy(p.szFlagName, row[0], sizeof(p.szFlagName));
 			str_to_number(p.lValue, row[1]);
-			sys_log(0, "EventFlag Load %s %d", p.szFlagName, p.lValue);
+			LOG_INFO("EventFlag Load {} {}", p.szFlagName, p.lValue);
 			m_map_lEventFlag.insert(std::make_pair(std::string(p.szFlagName), p.lValue));
 			ForwardPacket(HEADER_DG_SET_EVENT_FLAG, &p, sizeof(TPacketSetEventFlag));
 		}
@@ -55,10 +55,10 @@ void CClientManager::SetEventFlag(TPacketSetEventFlag* p)
 
 		//CDBManager::instance().ReturnQuery(szQuery, QID_QUEST_SAVE, 0, NULL);
 		CDBManager::instance().AsyncQuery(szQuery);
-		sys_log(0, "HEADER_GD_SET_EVENT_FLAG : Changed CClientmanager::SetEventFlag(%s %d) ", p->szFlagName, p->lValue);
+		LOG_INFO("HEADER_GD_SET_EVENT_FLAG : Changed CClientmanager::SetEventFlag({} {}) ", p->szFlagName, p->lValue);
 		return;
 	}
-	sys_log(0, "HEADER_GD_SET_EVENT_FLAG : No Changed CClientmanager::SetEventFlag(%s %d) ", p->szFlagName, p->lValue);
+	LOG_INFO("HEADER_GD_SET_EVENT_FLAG : No Changed CClientmanager::SetEventFlag({} {}) ", p->szFlagName, p->lValue);
 }
 
 void CClientManager::SendEventFlagsOnSetup(CPeer* peer)
