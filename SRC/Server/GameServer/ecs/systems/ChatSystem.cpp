@@ -10,6 +10,7 @@
 #include "../../desc.h"
 #include "../../packet.h"
 #include "../CharacterAccessors.hpp"
+#include <Core/Logging.hpp>
 
 namespace {
 
@@ -77,7 +78,7 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
     d->Packet(buf.read_peek(), buf.size());
 
     if (type == CHAT_TYPE_COMMAND && test_server) {
-        sys_log(0, "SEND_COMMAND %s %s", ch->GetName(), chatbuf);
+        LOG_INFO("SEND_COMMAND {} {}", ch->GetName(), chatbuf);
     }
 }
 
