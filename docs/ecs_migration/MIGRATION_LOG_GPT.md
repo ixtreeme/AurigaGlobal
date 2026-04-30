@@ -8431,6 +8431,51 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 16-5 - Primitive Logging Cleanup
+
+Mode:
+- Primitive logging cleanup after tree-wide `sys_log`/`sys_err` modernization.
+- Scope: `fprintf`, `perror`, `puts`, `fputs`, and bare `printf` under `SRC/Server`.
+- Classification-first pass: server diagnostics to `LOG_*`, intended console output to `fmt::print`, fatal/assertion paths to log plus console where appropriate, demo/test output left documented.
+
+Audit:
+- Initial rough Phase 16-4 estimate: 229 primitive calls.
+- Parser-based true-call audit for 16-5: 210 primitive calls.
+- Category A server diagnostic: 186.
+- Category B intended console output: 18.
+- Category C fatal/assertion: 2.
+- Category E intentionally left: 4.
+- Audit files:
+  - `docs/ecs_migration/phase16_5_primitive_audit.txt`
+  - `docs/ecs_migration/phase16_5_primitives_raw.json`
+  - `docs/ecs_migration/phase16_5_primitives_remaining.json`
+
+Migration result:
+- Migrated 206 true primitive calls.
+- Remaining 4 true primitive calls are intentionally left in `SRC/Server/Core/gost_old.cpp`.
+- `gost_old.cpp` is a standalone crypto self-test/demo path; direct console primitives are documented there to avoid pulling runtime logging into the self-test output.
+- Stale commented primitive examples were converted to commented `LOG_*` examples to keep future grep audits clean.
+
+Build results:
+- `Database` target passed:
+```powershell
+cmake --build build --config RelWithDebInfo --target Database --parallel 8 -- /nodeReuse:false
+```
+- `GameServer` target passed:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+- `--target all` is not valid for this Visual Studio generator because it resolves to missing `all.vcxproj`.
+- `ALL_BUILD` still fails in unrelated Tools link targets (`IXAC`, `Mysql2Proto`) due missing Windows/curl/MariaDB system libraries. `Database.exe` and `GameServer.exe` are still produced successfully during that run.
+
+Commits:
+- `2d88fbc Phase 16-5.1: Primitive logging audit classification`
+- `9801a31 Phase 16-5: Migrate primitive logging output`
+
+WinTest:
+- Not run in this environment.
+- Operator WinTest still required for full Phase 16-5 closure if primitive output paths need runtime validation.
+
 ## Phase 16-3 WinTest Log Review - Loading Latency Hotfix
 
 Operator report:
