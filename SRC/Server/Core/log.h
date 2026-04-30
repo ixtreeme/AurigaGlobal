@@ -19,22 +19,25 @@ extern "C"
 	extern void log_set_expiration_days(unsigned int days);
 	extern int log_get_expiration_days(void);
 
-#ifndef _WIN32
-    extern void _sys_err(const char *func, int line, const char *format, ...);
-#else
-	extern void _sys_err(const char *func, int line, const char *format, ...);
-#endif
     extern void sys_log_header(const char *header);
-    extern void sys_log(unsigned int lv, const char *format, ...);
     extern void pt_log(const char *format, ...);
 
-#ifndef _WIN32
-#define sys_err(fmt, args...) _sys_err(__FUNCTION__, __LINE__, fmt, ##args)
-#else 
-#define sys_err(fmt, ...) _sys_err(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
-#endif
-
 #ifdef __cplusplus
+}
+
+template <typename... Args>
+inline void sys_log(unsigned int level, fmt::format_string<Args...> fmt, Args&&... args)
+{
+	if (level == 0)
+		LOG_INFO(fmt, std::forward<Args>(args)...);
+	else
+		LOG_TRACE(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline void sys_err(fmt::format_string<Args...> fmt, Args&&... args)
+{
+	LOG_ERROR(fmt, std::forward<Args>(args)...);
 }
 #endif
 

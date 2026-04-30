@@ -3,7 +3,9 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <utility>
 
+#include <fmt/printf.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>

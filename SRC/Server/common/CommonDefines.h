@@ -117,9 +117,9 @@ enum eCommonDefines {
 //#define ENABLE_OFFLINESHOP_DEBUG
 #ifdef ENABLE_OFFLINESHOP_DEBUG
 #	ifdef _WIN32
-#		define OFFSHOP_DEBUG(fmt , ...) sys_log(0,"%s:%d >> " fmt , __FUNCTION__ , __LINE__, __VA_ARGS__)
+#		define OFFSHOP_DEBUG(fmt , ...) LOG_TRACE("{}:{} >> {}", __FUNCTION__ , __LINE__, fmt::sprintf(fmt, __VA_ARGS__))
 #	else
-#		define OFFSHOP_DEBUG(fmt , args...) sys_log(0,"%s:%d >> " fmt , __FUNCTION__ , __LINE__, ##args)
+#		define OFFSHOP_DEBUG(fmt , args...) LOG_TRACE("{}:{} >> {}", __FUNCTION__ , __LINE__, fmt::sprintf(fmt, ##args))
 #	endif
 #else
 #	define OFFSHOP_DEBUG(...)   

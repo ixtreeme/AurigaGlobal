@@ -40,22 +40,6 @@ static unsigned int log_level_bits = 0;
 
 namespace
 {
-constexpr std::size_t LOG_FORMAT_BUFFER_SIZE = 4096;
-
-void FormatLegacyLogMessage(char* buffer, std::size_t bufferSize, const char* format, va_list args)
-{
-	if (!buffer || bufferSize == 0)
-		return;
-
-	if (!format)
-	{
-		buffer[0] = '\0';
-		return;
-	}
-
-	vsnprintf(buffer, bufferSize, format, args);
-	buffer[bufferSize - 1] = '\0';
-}
 }
 
 void log_set_level(unsigned int bit)
@@ -117,50 +101,11 @@ void log_rotate(void)
 	log_file_rotate(log_file_pt);
 }
 
-void _sys_err(const char *func, int line, const char *format, ...)
-{
-	va_list args;
-	char buf[LOG_FORMAT_BUFFER_SIZE];
-
-	va_start(args, format);
-	FormatLegacyLogMessage(buf, sizeof(buf), format, args);
-	va_end(args);
-
-	if (auto errorLogger = logging::GetErrorLogger())
-	{
-		errorLogger->log(
-			spdlog::source_loc{"", line, func ? func : ""},
-			spdlog::level::err,
-			"{}",
-			buf);
-		errorLogger->flush();
-	}
-
-	if (auto logger = logging::GetLogger())
-		logger->error("SYSERR: {}: {}", func ? func : "", buf);
-}
-
 static char sys_log_header_string[33] = { 0, };
 
 void sys_log_header(const char *header)
 {
 	strncpy(sys_log_header_string, header, 32);
-}
-
-void sys_log(unsigned int bit, const char *format, ...)
-{
-	va_list	args;
-	char buf[LOG_FORMAT_BUFFER_SIZE];
-
-	if (bit != 0 && !(log_level_bits & bit))
-		return;
-
-	va_start(args, format);
-	FormatLegacyLogMessage(buf, sizeof(buf), format, args);
-	va_end(args);
-
-	if (auto logger = logging::GetLogger())
-		logger->info("{}{}", sys_log_header_string, buf);
 }
 
 void pt_log(const char *format, ...)
@@ -293,7 +238,7 @@ void log_file_delete_old(const char *filename)
 					sprintf(system_cmd, "rm -rf %s/%s", filename, name);
 					system(system_cmd);
 
-					sys_log(0, "%s: SYSTEM_CMD: %s", __FUNCTION__, system_cmd);
+					LOG_INFO("{}: SYSTEM_CMD: {}", __FUNCTION__, system_cmd);
 					fprintf(stderr, "%s: SYSTEM_CMD: %s %s:%d %s:%d\n", __FUNCTION__, system_cmd, buf, num1, name, num2);
 				}
 			}
@@ -319,7 +264,7 @@ void log_file_delete_old(const char *filename)
 					sprintf(system_cmd, "del %s\\%s", filename, fdata.cFileName);
 					system(system_cmd);
 
-					sys_log(0, "SYSTEM_CMD: %s", system_cmd);
+					LOG_INFO("SYSTEM_CMD: {}", system_cmd);
 				}
 			}
 			while (FindNextFile(hFind, &fdata));
@@ -353,7 +298,7 @@ void log_file_rotate(LPLOGFILE logfile)
 #endif
 	system(system_cmd);
 
-	sys_log(0, "SYSTEM_CMD: %s", system_cmd);
+	LOG_INFO("SYSTEM_CMD: {}", system_cmd);
 
 	logfile->last_day = curr_tm.tm_mday;
     }
@@ -372,8 +317,7 @@ void log_file_rotate(LPLOGFILE logfile)
 #endif
 		}
 
-		sys_log(0, "SYSTEM: LOG ROTATE (%04d-%02d-%02d %d)", 
-				curr_tm.tm_year + 1900, curr_tm.tm_mon + 1, curr_tm.tm_mday, logfile->last_hour);
+		LOG_INFO("SYSTEM: LOG ROTATE ({:04}-{:02}-{:02} {})", curr_tm.tm_year + 1900, curr_tm.tm_mon + 1, curr_tm.tm_mday, logfile->last_hour);
 
 		fclose(logfile->fp);
 
