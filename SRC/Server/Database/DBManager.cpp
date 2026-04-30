@@ -98,7 +98,7 @@ int CDBManager::Connect(int iSlot, const char * db_address, const int db_port, c
 	if (iSlot < 0 || iSlot >= SQL_MAX_NUM)
 		return false;
 
-	sys_log(0, "CREATING DIRECT_SQL");
+	LOG_INFO("CREATING DIRECT_SQL");
 	m_directSQL[iSlot] = new CAsyncSQL2;
 	if (!m_directSQL[iSlot]->Setup(db_address, user, pwd, db_name, g_stLocale.c_str(), true, db_port))
 	{
@@ -107,7 +107,7 @@ int CDBManager::Connect(int iSlot, const char * db_address, const int db_port, c
 	}
 
 
-	sys_log(0, "CREATING MAIN_SQL");
+	LOG_INFO("CREATING MAIN_SQL");
 	m_mainSQL[iSlot] = new CAsyncSQL2;
 	if (!m_mainSQL[iSlot]->Setup(db_address, user, pwd, db_name, g_stLocale.c_str(), false, db_port))
 	{
@@ -115,7 +115,7 @@ int CDBManager::Connect(int iSlot, const char * db_address, const int db_port, c
 		return false;
 	}
 
-	sys_log(0, "CREATING ASYNC_SQL");
+	LOG_INFO("CREATING ASYNC_SQL");
 	m_asyncSQL[iSlot] = new CAsyncSQL2;
 	if (!m_asyncSQL[iSlot]->Setup(db_address, user, pwd, db_name, g_stLocale.c_str(), false, db_port))
 	{
@@ -153,7 +153,7 @@ extern int g_query_count[2];
 void CDBManager::ReturnQuery(const char * c_pszQuery, int iType, IDENT dwIdent, void * udata, int iSlot)
 {
 	assert(iSlot < SQL_MAX_NUM);
-	//sys_log(0, "ReturnQuery %s", c_pszQuery);
+	//LOG_INFO("ReturnQuery {}", c_pszQuery);
 	CQueryInfo * p = new CQueryInfo;
 
 	p->iType = iType;
@@ -182,14 +182,14 @@ unsigned long CDBManager::EscapeString(void *to, const void *from, unsigned long
 void CDBManager::SetLocale(const char * szLocale)
 {
 	const std::string stLocale(szLocale);
-	sys_log(0, "SetLocale start %s", szLocale);
+	LOG_INFO("SetLocale start {}", szLocale);
 	for (int n = 0; n < SQL_MAX_NUM; ++n)
 	{
 		m_mainSQL[n]->SetLocale(stLocale);
 		m_directSQL[n]->SetLocale(stLocale);
 		m_asyncSQL[n]->SetLocale(stLocale);
 	}
-	sys_log(0, "SetLocale end %s", szLocale);
+	LOG_INFO("SetLocale end {}", szLocale);
 }
 
 void CDBManager::QueryLocaleSet()
