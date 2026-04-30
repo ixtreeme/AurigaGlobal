@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -856,7 +857,7 @@ void interpreter_set_privilege(const char *cmd, int lvl)
 		if (!str_cmp(cmd, cmd_info[i].command))
 		{
 			cmd_info[i].gm_level = lvl;
-			sys_log(0, "Setting command privilege: %s -> %d", cmd, lvl);
+			LOG_INFO("Setting command privilege: {} -> {}", cmd, lvl);
 			break;
 		}
 	}
@@ -913,7 +914,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 #endif
 	if (nullptr == ch)
 	{
-		sys_err ("NULL CHRACTER");
+		LOG_ERROR("NULL CHRACTER");
 		return ;
 	}
 
@@ -963,7 +964,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 				   break;
 				 */
 			default:
-				sys_err("unknown position %d", ch->GetPosition());
+				LOG_ERROR("unknown position {}", ch->GetPosition());
 				break;
 		}
 
@@ -987,7 +988,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	}
 
 	if (strncmp("phase", cmd_info[icmd].command, 5) != 0) //  ɾ ó
-		sys_log(0, "COMMAND: %s: %s", ((ch)->GetName()), cmd_info[icmd].command);
+		LOG_INFO("COMMAND: {}: {}", ((ch)->GetName()), cmd_info[icmd].command);
 
 	((*cmd_info[icmd].command_pointer) (ch, line, icmd, cmd_info[icmd].subcmd));
 
