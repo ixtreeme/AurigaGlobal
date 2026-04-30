@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 
 #include "utils.h"
 #include "char_interface.hpp"
@@ -121,7 +122,7 @@ void CEntity::UpdateSectree()
 		if (IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER tch = (LPCHARACTER)this;
-			sys_err("null sectree name: %s %d %d", ((tch)->GetName()), GetX(), GetY());
+			LOG_ERROR("null sectree name: {} {} {}", ((tch)->GetName()), GetX(), GetY());
 		}
 
 		return;
