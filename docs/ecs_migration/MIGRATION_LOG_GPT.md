@@ -8976,6 +8976,134 @@ Commit status:
 - `f29a441 Phase 16-2: Migrate logging format in desc.cpp`
 - WinTest not run for Batch 4 per phase instruction.
 
+Batch 5 verification:
+- Checked all Batch 5 target files for local `sys_err` redirects before migration.
+- No local `sys_err` override was found in:
+  - `arena.cpp`
+  - `war_map.cpp`
+  - `input_auth.cpp`
+  - `ecs/systems/SessionSystem.cpp`
+  - `battle_pass.cpp`
+  - `DragonSoul.cpp`
+  - `MarkManager.cpp`
+  - `ecs/systems/AffectSystem.cpp`
+  - `ecs/systems/InventorySystem.cpp`
+- `questlua.cpp` remains skipped because it routes `sys_err` to `QuestError`.
+
+Batch 5 completed:
+- `arena.cpp`: 25 legacy log call sites migrated.
+- `war_map.cpp`: 25 legacy log call sites migrated.
+- `input_auth.cpp`: 24 legacy log call sites migrated.
+- `ecs/systems/SessionSystem.cpp`: 24 legacy log call sites migrated.
+- `battle_pass.cpp`: 23 legacy log call sites migrated.
+- `DragonSoul.cpp`: 22 legacy log call sites migrated.
+- `MarkManager.cpp`: 20 legacy log call sites migrated.
+- `ecs/systems/AffectSystem.cpp`: 20 legacy log call sites migrated.
+- `ecs/systems/InventorySystem.cpp`: 20 legacy log call sites migrated.
+
+Batch 5 hot-path decisions:
+- `war_map.cpp`: routine member/observer count debug logs moved to `LOG_TRACE`; war lifecycle and errors remain INFO/ERROR.
+- `input_auth.cpp`: per-packet auth header trace moved to `LOG_TRACE`; auth lifecycle and invalid access errors remain INFO/ERROR.
+- `SessionSystem.cpp`: routine `SAVE`, `SHOW`, and same-sectree debug logs moved to `LOG_TRACE`; warp/disconnect/safebox events remain INFO/ERROR.
+- `battle_pass.cpp`: `BattlePassInfo` config detail logs moved to `LOG_TRACE`; config load failures remain ERROR.
+- `AffectSystem.cpp`: affect event/save/remove routine debug logs moved to `LOG_TRACE`; invalid affect/load errors remain ERROR.
+- `InventorySystem.cpp`: migrated hots were error paths only, so they remain `LOG_ERROR`.
+
+Batch 5 gotchas:
+- Several legacy files still contain non-UTF-8 bytes; byte-preserving edits were used where `apply_patch` could not read the file.
+- Byte-sized fields were explicitly cast to `int` where old `%d` semantics would otherwise render as characters under fmt.
+- `desc.cpp`-style extra-argument issues were also found in this batch:
+  - `AffectSystem.cpp` had `Character::AddAffect lDuration == 0 type {}` with an extra argument after conversion; it was normalized to include both duration and type.
+- `arena.cpp` build emitted existing pointer-cast warnings around arena info chat; unrelated to logging migration.
+
+Counts after Batch 5:
+```text
+Before Batch 5:
+GameServer sys_log: 407
+GameServer sys_err: 723
+GameServer _sys_err: 0
+Total: 1130
+
+After Batch 5:
+GameServer sys_log: 332
+GameServer sys_err: 595
+GameServer _sys_err: 0
+Total: 927
+
+Batch 5 reduction: 203
+Phase 16-2 cumulative reduction: 1440
+```
+
+Batch 6 candidates, excluding `questlua*.cpp`:
+```text
+19 ecs/systems/PointSystem.cpp
+18 shop.cpp
+18 cmd_gm.cpp
+17 skill.cpp
+17 text_file_loader.cpp
+16 ecs/systems/NetworkSyncSystem.cpp
+16 ecs/systems/SocialSystem.cpp
+14 cmd_general.cpp
+14 ecs/systems/MovementSystem.cpp
+13 marriage.cpp
+13 input_p2p.cpp
+13 motion.cpp
+12 priv_manager.cpp
+12 input.cpp
+12 guild_manager.cpp
+11 New_PetSystem.cpp
+11 wedding.cpp
+10 desc_client.cpp
+10 mob_manager.cpp
+10 MarkImage.cpp
+```
+
+Questlua group remaining:
+```text
+87 questlua_pc.cpp
+80 questlua_dungeon.cpp
+43 questlua_global.cpp
+33 questlua.cpp
+20 questlua_marriage.cpp
+12 questlua_party.cpp
+12 questlua_item.cpp
+11 questlua_affect.cpp
+10 questlua_guild.cpp
+9 questlua_npc.cpp
+9 questlua_quest.cpp
+6 questlua_target.cpp
+4 questlua_game.cpp
+4 questlua_building.cpp
+4 questlua_horse.cpp
+3 questlua_dragonsoul.cpp
+2 questlua_pet.cpp
+2 questlua_arena.cpp
+2 questlua_petnew.cpp
+```
+
+Build results:
+- Build passed after every Batch 5 migrated file.
+- Final successful command used repeatedly:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- The existing post-build warning remains:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+
+Commit status:
+- `901cc13 Phase 16-2: Migrate logging format in arena.cpp`
+- `c633398 Phase 16-2: Migrate logging format in war_map.cpp`
+- `e524771 Phase 16-2: Migrate logging format in input_auth.cpp`
+- `0aa8b65 Phase 16-2: Migrate logging format in SessionSystem.cpp`
+- `7896da6 Phase 16-2: Migrate logging format in battle_pass.cpp`
+- `06f46a4 Phase 16-2: Migrate logging format in DragonSoul.cpp`
+- `6927fb6 Phase 16-2: Migrate logging format in MarkManager.cpp`
+- `86129b2 Phase 16-2: Migrate logging format in AffectSystem.cpp`
+- `386e873 Phase 16-2: Migrate logging format in InventorySystem.cpp`
+- WinTest not run for Batch 5 per phase instruction.
+
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
 Mode:
