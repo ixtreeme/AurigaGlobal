@@ -1,5 +1,6 @@
 #define _attr_transfer_cpp_
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "config.h"
 #include "constants.h"
 #include "utils.h"
@@ -24,7 +25,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	const LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		sys_log(0, "%s has try to open the Attr Transfer window without talk to the NPC.", ((ch)->GetName()));
+		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ((ch)->GetName()));
 		return;
 	}
 	
@@ -47,7 +48,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY()));
 	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
 	{
-		sys_log(1, "%s is too far for can open the Attr Transfer Window. (character distance: %d, distance allowed: %d)", ((ch)->GetName()), distance, ATTR_TRANSFER_MAX_DISTANCE);
+		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ((ch)->GetName()), distance, ATTR_TRANSFER_MAX_DISTANCE);
 		return;
 	}
 	
@@ -56,7 +57,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
-		sys_log(1, "%s has open the Attr Transfer window.", ((ch)->GetName()));
+		LOG_INFO("{} has open the Attr Transfer window.", ((ch)->GetName()));
 	}
 }
 
@@ -68,7 +69,7 @@ void AttrTransfer_close(LPCHARACTER ch)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{
-		sys_log(1, "%s has close the Attr Transfer window.", ((ch)->GetName()));
+		LOG_INFO("{} has close the Attr Transfer window.", ((ch)->GetName()));
 	}
 }
 
@@ -103,7 +104,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		sys_log(0, "%s has try to open the transfer the bonuses between costumes without talk to the NPC.", ((ch)->GetName()));
+		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ((ch)->GetName()));
 		return false;
 	}
 	
