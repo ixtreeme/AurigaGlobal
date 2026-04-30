@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -164,7 +165,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 #endif
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!victim || ch == victim)
 	{
@@ -172,7 +173,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!battle_is_attackable(ch, victim))
 	{
@@ -180,7 +181,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ch->IsPC())
-		sys_log(0, "battle_melee_attack : [%s] attack to [%s]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	// �A�� A1A�
 	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
@@ -211,7 +212,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		if (distance > max)
 		{
 			if (test_server)
-				sys_log(0, "VICTIM_FAR: %s distance: %d max: %d", ((ch)->GetName()), distance, max);
+				LOG_TRACE("VICTIM_FAR: {} distance: {} max: {}", ((ch)->GetName()), distance, max);
 
 			return BATTLE_NONE;
 		}
@@ -516,7 +517,7 @@ void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 	}
 
 	if (ItemSystem::GetItemType(item) != ITEM_WEAPON)
-		sys_err("Item_GetDamage - !ITEM_WEAPON vnum=%d, type=%d", ItemSystem::GetItemOriginalVnum(item), ItemSystem::GetItemType(item));
+		LOG_ERROR("Item_GetDamage - !ITEM_WEAPON vnum={}, type={}", ItemSystem::GetItemOriginalVnum(item), static_cast<int>(ItemSystem::GetItemType(item)));
 
 	*pdamMin = ItemSystem::GetItemValue(item, 3);
 	*pdamMax = ItemSystem::GetItemValue(item, 4);
@@ -546,7 +547,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				break;
 
 			case WEAPON_BOW:
-				sys_err("CalcMeleeDamage should not handle bows (name: %s)", ((pkAttacker)->GetName()));
+				LOG_ERROR("CalcMeleeDamage should not handle bows (name: {})", ((pkAttacker)->GetName()));
 				return 0;
 
 			default:
@@ -805,7 +806,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	//PROF_UNIT puHit("Hit");
 	if (test_server)
-		sys_log(0, "battle_hit : [%s] attack to [%s] : dam :%d type :%d", ((pkAttacker)->GetName()), ((pkVictim)->GetName()), iRetDam);
+		LOG_TRACE("battle_hit : [{}] attack to [{}] : dam :{}", ((pkAttacker)->GetName()), ((pkVictim)->GetName()), iRetDam);
 
 	int iDam = CalcMeleeDamage(pkAttacker, pkVictim);
 
@@ -963,7 +964,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //		
 //
 //
-//		sys_log(0, "DEBUG MAP1_SKILL_MOB: attacker=%s (id=%u) victimVnum=%d dmg=%d skillhit=%d",
+//		LOG_TRACE("DEBUG MAP1_SKILL_MOB: attacker={} (id={}) victimVnum={} dmg={} skillhit={}",
 //			((pkAttacker)->GetName()),
 //			pkAttacker->GetPlayerID(),
 //			pkVictim->GetRaceNum(),
@@ -1015,11 +1016,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	
 				if (test_server)
 				{
-					sys_log(0, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							((ch)->GetName()),
-							current_time - ch->GetAttackLogRef().dwTime,
-							GET_ATTACK_SPEED(ch),
-							ch->GetSpeedHackCount());
+					LOG_TRACE("{} attack hack! time (delta, limit)=({}, {}) hack_count {}", ((ch)->GetName()), current_time - ch->GetAttackLogRef().dwTime, GET_ATTACK_SPEED(ch), ch->GetSpeedHackCount());
 	
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
 							((ch)->GetName()),
