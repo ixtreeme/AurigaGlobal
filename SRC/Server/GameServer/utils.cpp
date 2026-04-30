@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 
 
 #include <boost/algorithm/string/classification.hpp> // Include boost::for is_any_of
@@ -26,7 +27,7 @@ void set_global_time(time_t t)
 	//char time_str_buf[32];
 	//snprintf(time_str_buf, sizeof(time_str_buf), "%s", time_str(get_global_time()));
 
-	//sys_log(0, "GLOBAL_TIME: %s time_gap %d", time_str_buf, global_time_gap);
+	//0, "GLOBAL_TIME: %s time_gap %d", time_str_buf, global_time_gap);
 }
 
 #include <mysql/mysql.h>
@@ -98,7 +99,7 @@ const char *one_argument(const char *argument, char *first_arg, size_t first_siz
 
 	if (!argument || 0 == first_size)
 	{
-		sys_err("one_argument received a NULL pointer!");
+		LOG_ERROR("one_argument received a NULL pointer!");
 		*first_arg = '\0';
 		return nullptr;
 	}
