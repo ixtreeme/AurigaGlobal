@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "char_interface.hpp"
@@ -146,8 +147,7 @@ bool CPolymorphUtils::GiveBook(LPCHARACTER pChar, uint32_t dwMobVnum, uint32_t d
 
 	if (CMobManager::instance().Get(dwMobVnum) == nullptr)
 	{
-		sys_err("Wrong Polymorph vnum passed: CPolymorphUtils::GiveBook(PID(%d), %d %d %d %d)",
-				((pChar)->GetPlayerID()), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
+		LOG_ERROR("Wrong Polymorph vnum passed: CPolymorphUtils::GiveBook(PID({}), {} {} {} {})", ((pChar)->GetPlayerID()), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
 		return false;
 	}
 
