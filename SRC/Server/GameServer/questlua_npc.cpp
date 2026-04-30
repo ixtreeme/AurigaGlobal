@@ -1,10 +1,17 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "questmanager.h"
+#undef sys_err
+#ifndef _WIN32
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
+#else
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
+#endif
 #include "char_interface.hpp"
 #include "party.h"
 #include "char_manager.h"
@@ -329,7 +336,7 @@ namespace quest
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 		if (!ch) {
-			sys_err("The vid %d not exist.", vid);
+			sys_err("The vid {} not exist.", vid);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -352,7 +359,7 @@ namespace quest
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 		if (!ch) {
-			sys_err("The vid %d not exist.", vid);
+			sys_err("The vid {} not exist.", vid);
 			return 0;
 		}
 
@@ -375,7 +382,7 @@ namespace quest
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 		if (!ch) {
-			sys_err("The vid %d not exist.", vid);
+			sys_err("The vid {} not exist.", vid);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
@@ -398,7 +405,7 @@ namespace quest
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
 		if (!ch) {
-			sys_err("The vid %d not exist.", vid);
+			sys_err("The vid {} not exist.", vid);
 			return 0;
 		}
 
