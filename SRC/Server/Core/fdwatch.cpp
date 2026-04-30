@@ -12,7 +12,7 @@ LPFDWATCH fdwatch_new(int nfiles)
 
 	if (kq == -1)
 	{
-		sys_err("%s", strerror(errno));
+		LOG_ERROR("{}", strerror(errno));
 		return NULL;
 	}
 
@@ -47,7 +47,7 @@ int fdwatch(LPFDWATCH fdw, struct timeval* timeout)
 	struct timespec ts;
 
 	if (fdw->nkqevents)
-		sys_log(2, "fdwatch: nkqevents %d", fdw->nkqevents);
+		LOG_TRACE("fdwatch: nkqevents {}", fdw->nkqevents);
 
 	if (!timeout)
 	{
@@ -76,7 +76,7 @@ int fdwatch(LPFDWATCH fdw, struct timeval* timeout)
 		int fd = fdw->kqrevents[i].ident;
 
 		if (fd >= fdw->nfiles)
-			sys_err("ident overflow %d nfiles: %d", fdw->kqrevents[i].ident, fdw->nfiles);
+			LOG_ERROR("ident overflow {} nfiles: {}", fdw->kqrevents[i].ident, fdw->nfiles);
 		else
 		{
 			if (fdw->kqrevents[i].filter == EVFILT_WRITE)
@@ -129,7 +129,7 @@ void fdwatch_add_fd(LPFDWATCH fdw, socket_t fd, void* client_data, int rw, int o
 
 	if (fd >= fdw->nfiles)
 	{
-		sys_err("fd overflow %d", fd);
+		LOG_ERROR("fd overflow {}", fd);
 		return;
 	}
 
@@ -137,13 +137,13 @@ void fdwatch_add_fd(LPFDWATCH fdw, socket_t fd, void* client_data, int rw, int o
 		return;
 
 	fdw->fd_rw[fd] |= rw;
-	sys_log(2, "FDWATCH_REGISTER fdw %p fd %d rw %d data %p", fdw, fd, rw, client_data);
+	LOG_TRACE("FDWATCH_REGISTER fdw {} fd {} rw {} data {}", fdw, fd, rw, client_data);
 
 	if (!oneshot)
 		flag = EV_ADD;
 	else
 	{
-		sys_log(2, "ADD ONESHOT fd_rw %d", fdw->fd_rw[fd]);
+		LOG_TRACE("ADD ONESHOT fd_rw {}", fdw->fd_rw[fd]);
 		flag = EV_ADD | EV_ONESHOT;
 		fdw->fd_rw[fd] |= FDW_WRITE_ONESHOT;
 	}
@@ -197,7 +197,7 @@ int fdwatch_check_event(LPFDWATCH fdw, socket_t fd, unsigned int event_idx)
 		}
 	}
 	else
-		sys_err("fdwatch_check_event: Unknown filter %d (descriptor %d)", fdw->kqrevents[event_idx].filter, fd);
+		LOG_ERROR("fdwatch_check_event: Unknown filter {} (descriptor {})", fdw->kqrevents[event_idx].filter, fd);
 
 	return 0;
 }
