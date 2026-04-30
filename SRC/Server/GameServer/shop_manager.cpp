@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -136,7 +137,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	if (distance >= SHOP_MAX_DISTANCE)
 	{
-		sys_log(1, "SHOP: TOO_FAR: %s distance %d", pkChr->GetName(), distance);
+		LOG_INFO("SHOP: TOO_FAR: {} distance {}", pkChr->GetName(), distance);
 		return false;
 	}
 
@@ -149,7 +150,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	if (!pkShop)
 	{
-		sys_log(1, "SHOP: NO SHOP");
+		LOG_INFO("SHOP: NO SHOP");
 		return false;
 	}
 
@@ -160,7 +161,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	pkShop->AddGuest(pkChr, pkChrShopKeeper->GetPacketVID(), bOtherEmpire);
 	pkChr->SetShopOwner(pkChrShopKeeper);
-	sys_log(0, "SHOP: START: %s", pkChr->GetName());
+	LOG_INFO("SHOP: START: {}", pkChr->GetName());
 	return true;
 }
 
@@ -215,7 +216,7 @@ void CShopManager::StopShopping(LPCHARACTER ch)
 	//END_PREVENT_ITEM_COPY
 
 	shop->RemoveGuest(ch);
-	sys_log(0, "SHOP: END: %s", ch->GetName());
+	LOG_INFO("SHOP: END: {}", ch->GetName());
 }
 
 // 아이템 구입
@@ -332,14 +333,14 @@ uint8_t bCount
 	bool stupid = false;
 	if (bCount < 0)
 	{
-		sys_err("I am a stupid hacker 7: %s %d", ch->GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 7: {} {}", ch->GetName(), static_cast<int>(bCount));
 		stupid = true;
 	}
 
 	bCount = abs(bCount);
 	if (stupid)
 	{
-		sys_err("I am a stupid hacker 8: %s %d", ch->GetName(), bCount);
+		LOG_ERROR("I am a stupid hacker 8: {} {}", ch->GetName(), static_cast<int>(bCount));
 		return;
 	}
 
@@ -433,13 +434,13 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		sys_log(0, "Sell Item price id %d %s itemid %d", ch->GetPlayerID(), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("Sell Item price id {} {} itemid {}", ch->GetPlayerID(), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 	const int64_t nTotalMoney = ch->GetGold() + dwPrice;
 
 	if (GOLD_MAX <= nTotalMoney)
 	{
-		sys_err("[OVERFLOW_GOLD] id %u name %s gold %lld", ch->GetPlayerID(), ch->GetName(), ch->GetGold());
+		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ch->GetPlayerID(), ch->GetName(), ch->GetGold());
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226, 
 		"%lld"
@@ -488,19 +489,19 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 {
 	if (!pNode->GetValue("vnum", 0, shopTable.dwVnum))
 	{
-		sys_err("Group %s does not have vnum.", pNode->GetNodeName().c_str());
+		LOG_ERROR("Group {} does not have vnum.", pNode->GetNodeName().c_str());
 		return false;
 	}
 
 	if (!pNode->GetValue("name", 0, shopTable.name))
 	{
-		sys_err("Group %s does not have name.", pNode->GetNodeName().c_str());
+		LOG_ERROR("Group {} does not have name.", pNode->GetNodeName().c_str());
 		return false;
 	}
 
 	if (shopTable.name.length() >= SHOP_TAB_NAME_MAX)
 	{
-		sys_err("Shop name length must be less than %d. Error in Group %s, name %s", SHOP_TAB_NAME_MAX, pNode->GetNodeName().c_str(), shopTable.name.c_str());
+		LOG_ERROR("Shop name length must be less than {}. Error in Group {}, name {}", SHOP_TAB_NAME_MAX, pNode->GetNodeName().c_str(), shopTable.name.c_str());
 		return false;
 	}
 
@@ -520,14 +521,14 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 	}
 	else
 	{
-		sys_err("Group %s has undefine cointype(%s).", pNode->GetNodeName().c_str(), stCoinType.c_str());
+		LOG_ERROR("Group {} has undefine cointype({}).", pNode->GetNodeName().c_str(), stCoinType.c_str());
 		return false;
 	}
 
 	CGroupNode* pItemGroup = pNode->GetChildNode("items");
 	if (!pItemGroup)
 	{
-		sys_err("Group %s does not have 'group items'.", pNode->GetNodeName().c_str());
+		LOG_ERROR("Group {} does not have 'group items'.", pNode->GetNodeName().c_str());
 		return false;
 	}
 
@@ -535,7 +536,7 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 	std::vector <TShopItemTable> shopItems(itemGroupSize);
 	if (itemGroupSize >= SHOP_HOST_ITEM_MAX_NUM)
 	{
-		sys_err("count(%d) of rows of group items of group %s must be smaller than %d", itemGroupSize, pNode->GetNodeName().c_str(), SHOP_HOST_ITEM_MAX_NUM);
+		LOG_ERROR("count({}) of rows of group items of group {} must be smaller than {}", itemGroupSize, pNode->GetNodeName().c_str(), SHOP_HOST_ITEM_MAX_NUM);
 		return false;
 	}
 
@@ -543,18 +544,18 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 	{
 		if (!pItemGroup->GetValue(i, "vnum", shopItems[i].vnum))
 		{
-			sys_err("row(%d) of group items of group %s does not have vnum column", i, pNode->GetNodeName().c_str());
+			LOG_ERROR("row({}) of group items of group {} does not have vnum column", i, pNode->GetNodeName().c_str());
 			return false;
 		}
 
 		if (!pItemGroup->GetValue(i, "count", shopItems[i].count))
 		{
-			sys_err("row(%d) of group items of group %s does not have count column", i, pNode->GetNodeName().c_str());
+			LOG_ERROR("row({}) of group items of group {} does not have count column", i, pNode->GetNodeName().c_str());
 			return false;
 		}
 		if (!pItemGroup->GetValue(i, "price", shopItems[i].price))
 		{
-			sys_err("row(%d) of group items of group %s does not have price column", i, pNode->GetNodeName().c_str());
+			LOG_ERROR("row({}) of group items of group {} does not have price column", i, pNode->GetNodeName().c_str());
 			return false;
 		}
 	}
@@ -586,7 +587,7 @@ bool ConvertToShopItemTable(IN CGroupNode* pNode, OUT TShopTableEx& shopTable)
 		TItemTable * item_table = ITEM_MANAGER::instance().GetTable(shopItems[i].vnum);
 		if (!item_table)
 		{
-			sys_err("vnum(%d) of group items of group %s does not exist", shopItems[i].vnum, pNode->GetNodeName().c_str());
+			LOG_ERROR("vnum({}) of group items of group {} does not exist", shopItems[i].vnum, pNode->GetNodeName().c_str());
 			return false;
 		}
 
@@ -612,14 +613,14 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 	CGroupTextParseTreeLoader loader;
 	if (!loader.Load(stFileName))
 	{
-		sys_err("%s Load fail.", stFileName);
+		LOG_ERROR("{} Load fail.", stFileName);
 		return false;
 	}
 
 	CGroupNode* pShopNPCGroup = loader.GetGroup("shopnpc");
 	if (nullptr == pShopNPCGroup)
 	{
-		sys_err("Group ShopNPC is not exist.");
+		LOG_ERROR("Group ShopNPC is not exist.");
 		return false;
 	}
 
@@ -631,25 +632,25 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 		std::string shopName;
 		if (!pShopNPCGroup->GetValue(i, "npc", npcVnum) || !pShopNPCGroup->GetValue(i, "group", shopName))
 		{
-			sys_err("Invalid row(%d). Group ShopNPC rows must have 'npc', 'group' columns", i);
+			LOG_ERROR("Invalid row({}). Group ShopNPC rows must have 'npc', 'group' columns", i);
 			return false;
 		}
 		std::transform(shopName.begin(), shopName.end(), shopName.begin(), (int(*)(int))std::tolower);
 		CGroupNode* pShopGroup = loader.GetGroup(shopName.c_str());
 		if (!pShopGroup)
 		{
-			sys_err("Group %s is not exist.", shopName.c_str());
+			LOG_ERROR("Group {} is not exist.", shopName.c_str());
 			return false;
 		}
 		TShopTableEx table;
 		if (!ConvertToShopItemTable(pShopGroup, table))
 		{
-			sys_err("Cannot read Group %s.", shopName.c_str());
+			LOG_ERROR("Cannot read Group {}.", shopName.c_str());
 			return false;
 		}
 		if (m_map_pkShopByNPCVnum.find(npcVnum) != m_map_pkShopByNPCVnum.end())
 		{
-			sys_err("%d cannot have both original shop and extended shop", npcVnum);
+			LOG_ERROR("{} cannot have both original shop and extended shop", npcVnum);
 			return false;
 		}
 
@@ -662,7 +663,7 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 		TShopTableEx& table = it->second;
 		if (m_map_pkShop.find(table.dwVnum) != m_map_pkShop.end())
 		{
-			sys_err("Shop vnum(%d) already exists", table.dwVnum);
+			LOG_ERROR("Shop vnum({}) already exists", table.dwVnum);
 			return false;
 		}
 		TShopMap::iterator shop_it = m_map_pkShopByNPCVnum.find(npcVnum);
@@ -679,20 +680,20 @@ bool CShopManager::ReadShopTableEx(const char* stFileName)
 			pkShopEx = dynamic_cast <CShopEx*> (shop_it->second);
 			if (nullptr == pkShopEx)
 			{
-				sys_err("WTF!!! It can't be happend. NPC(%d) Shop is not extended version.", shop_it->first);
+				LOG_ERROR("WTF!!! It can't be happend. NPC({}) Shop is not extended version.", shop_it->first);
 				return false;
 			}
 		}
 
 		if (pkShopEx->GetTabCount() >= SHOP_TAB_COUNT_MAX)
 		{
-			sys_err("ShopEx cannot have tab more than %d", SHOP_TAB_COUNT_MAX);
+			LOG_ERROR("ShopEx cannot have tab more than {}", SHOP_TAB_COUNT_MAX);
 			return false;
 		}
 
 		if (pkShopEx->GetVnum() != 0 && m_map_pkShop.find(pkShopEx->GetVnum()) != m_map_pkShop.end())
 		{
-			sys_err("Shop vnum(%d) already exist.", pkShopEx->GetVnum());
+			LOG_ERROR("Shop vnum({}) already exist.", pkShopEx->GetVnum());
 			return false;
 		}
 		m_map_pkShop.insert(TShopMap::value_type (pkShopEx->GetVnum(), pkShopEx));
