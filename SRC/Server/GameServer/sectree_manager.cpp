@@ -244,7 +244,7 @@ LPSECTREE_MAP SECTREE_MANAGER::BuildSectreeFromSetting(TMapSetting & r_setting)
 			tree->m_id.coord.x = x / SECTREE_SIZE;
 			tree->m_id.coord.y = y / SECTREE_SIZE;
 			pkMapSectree->Add(tree->m_id.package, tree);
-			LOG_INFO("new sectree {} x {}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
+			LOG_TRACE("new sectree {} x {}", static_cast<int32_t>(tree->m_id.coord.x), static_cast<int32_t>(tree->m_id.coord.y));
 		}
 	}
 

@@ -260,7 +260,7 @@ CParty::~CParty()
 
 void CParty::Initialize()
 {
-	LOG_INFO("Party::Initialize");
+	LOG_TRACE("Party::Initialize");
 
 	m_iExpDistributionMode = PARTY_EXP_DISTRIBUTION_NON_PARITY;
 	m_pkChrExpCentralize = nullptr;
@@ -299,7 +299,7 @@ void CParty::Initialize()
 
 void CParty::Destroy()
 {
-	LOG_INFO("Party::Destroy");
+	LOG_TRACE("Party::Destroy");
 
 	// PC�� ���� ��Ƽ�� ��Ƽ�Ŵ����� �ʿ��� PID�� �����ؾ� �Ѵ�.
 	if (m_bPCParty)
@@ -425,7 +425,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 			}
 		}
 
-		LOG_INFO("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount()+1);
+		LOG_TRACE("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount()+1);
 
 		m_memberMap.insert(TMemberMap::value_type(dwPID, Member));
 
@@ -485,7 +485,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 
 	m_memberMap.erase(it);
 
-	LOG_INFO("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount() - 1);
+	LOG_TRACE("PARTY[{}] MemberCountChange {} -> {}", GetLeaderPID(), GetMemberCount(), GetMemberCount() - 1);
 
 	if (bRole < PARTY_ROLE_MAX_NUM)
 	{
@@ -558,7 +558,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	if (it->second.bRole == PARTY_ROLE_LEADER)
 		m_pkChrLeader = pkChr;
 
-	LOG_INFO("PARTY[{}] {} linked to party", GetLeaderPID(), pkChr->GetName());
+	LOG_TRACE("PARTY[{}] {} linked to party", GetLeaderPID(), pkChr->GetName());
 
 	it->second.pCharacter = pkChr;
 	pkChr->SetParty(this);
@@ -607,7 +607,7 @@ void CParty::P2PSetMemberLevel(uint32_t pid, uint8_t level)
 
 	TMemberMap::iterator it;
 
-	LOG_INFO("PARTY P2PSetMemberLevel leader {} pid {} level {}", GetLeaderPID(), pid, static_cast<int>(level));
+	LOG_TRACE("PARTY P2PSetMemberLevel leader {} pid {} level {}", GetLeaderPID(), pid, static_cast<int>(level));
 
 	it = m_memberMap.find(pid);
 	if (it != m_memberMap.end())
@@ -806,7 +806,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			//LOG_INFO("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -827,7 +827,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			LOG_INFO("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -854,7 +854,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		LOG_INFO("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
+		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }
@@ -894,7 +894,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 						if (pkChr->Goto(x, y))
 						{
 							auto* victim = pkChr->GetVictim();
-							LOG_INFO("{} {} RETURN victim {}", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
+							LOG_TRACE("{} {} RETURN victim {}", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
 							pkChr->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
@@ -1310,7 +1310,7 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 
 void CParty::Update()
 {
-	LOG_INFO("PARTY::Update");
+	LOG_TRACE("PARTY::Update");
 
 	auto* l = GetLeaderCharacter();
 
@@ -1731,7 +1731,7 @@ bool CParty::IsPartyInDungeon(int mapIndex)
 
 		if(nullptr == d)
 		{
-			LOG_INFO("not in dungeon");
+			LOG_TRACE("not in dungeon");
 			continue;
 		}
 

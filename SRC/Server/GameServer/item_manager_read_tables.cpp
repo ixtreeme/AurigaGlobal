@@ -102,7 +102,7 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char *c_pszFileName)
 				if (lvlStart == 0)
 					continue;
 
-				LOG_INFO("CommonDropItem ADD: Rank {}  LvlStart {}  LvlEnd {}   dwPct {}   Vnum {}", rank, lvlStart, lvlEnd, dwPct, vnum);
+				LOG_TRACE("CommonDropItem ADD: Rank {}  LvlStart {}  LvlEnd {}   dwPct {}   Vnum {}", rank, lvlStart, lvlEnd, dwPct, vnum);
 
 				g_vec_pkCommonDropItem[rank].push_back(CItemDropInfo(lvlStart, lvlEnd, dwPct, vnum));
 			}
@@ -197,12 +197,12 @@ bool ITEM_MANAGER::ReadCommonDropItemFile(const char * c_pszFileName)
 
 		std::vector<CItemDropInfo>::iterator it = v.begin();
 
-		LOG_INFO("CommonItemDrop rank {}", i);
+		LOG_TRACE("CommonItemDrop rank {}", i);
 
 		while (it != v.end())
 		{
 			const CItemDropInfo & c = *(it++);
-			LOG_INFO("CommonItemDrop {} {} {} {}", c.m_iLevelStart, c.m_iLevelEnd, c.m_iPercent, c.m_dwVnum);
+			LOG_TRACE("CommonItemDrop {} {} {} {}", c.m_iLevelStart, c.m_iLevelEnd, c.m_iPercent, c.m_dwVnum);
 		}
 	}
 
@@ -235,7 +235,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 			return false;
 		}
 
-		LOG_INFO("DROP_ITEM_GROUP {} {}", stName.c_str(), iVnum);
+		LOG_TRACE("DROP_ITEM_GROUP {} {}", stName.c_str(), iVnum);
 
 		TTokenVector * pTok;
 
@@ -372,7 +372,7 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						str_to_number(iRarePct, pTok->at(3).c_str());
 					}
 
-					LOG_INFO("        name {} count {} prob {} rare {}", name.c_str(), iCount, iProb, iRarePct);
+					LOG_TRACE("        name {} count {} prob {} rare {}", name.c_str(), iCount, iProb, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iProb, iRarePct);
 
 #ifdef __INGAME_WIKI__
@@ -634,7 +634,7 @@ bool ITEM_MANAGER::ReadEtcDropItemFile(const char * c_pszFileName)
 		}
 
 		m_map_dwEtcItemDropProb[dwItemVnum] = (uint32_t) (fProb * 10000.0f);
-		LOG_INFO("ETC_DROP_ITEM: {} prob {:f}", szItemName, fProb);
+		LOG_TRACE("ETC_DROP_ITEM: {} prob {:f}", szItemName, fProb);
 	}
 
 	fclose(fp);
@@ -707,7 +707,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 			iLevelLimit = 0;
 		}
 
-		LOG_INFO("MOB_ITEM_GROUP {} [{}] {} {}", stName.c_str(), strType.c_str(), iMobVnum, iKillDrop);
+		LOG_TRACE("MOB_ITEM_GROUP {} [{}] {} {}", stName.c_str(), strType.c_str(), iMobVnum, iKillDrop);
 
 		if (iKillDrop == 0)
 		{
@@ -764,7 +764,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 					str_to_number(iRarePct, pTok->at(3).c_str());
 					iRarePct = MINMAX(0, iRarePct, 100);
 
-					LOG_INFO("        {} count {} rare {}", name.c_str(), iCount, iRarePct);
+					LOG_TRACE("        {} count {} rare {}", name.c_str(), iCount, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iPartPct, iRarePct);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -845,7 +845,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
 
-					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkGroup->AddItem(dwVnum, dwPct, iCount);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -913,7 +913,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 					float fPct = atof(pTok->at(2).c_str());
 					uint32_t dwPct = (uint32_t)(10000.0f * fPct);
 
-					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkLevelItemGroup->AddItem(dwItemVnum, dwPct, iCount);
 #ifdef __INGAME_WIKI__
 					CommonWikiData::TWikiInfoTable* tbl;
@@ -983,7 +983,7 @@ bool ITEM_MANAGER::ReadMonsterDropItemGroup(const char * c_pszFileName)
 
 					uint32_t dwPct = (uint32_t)(10000.0f * fPercent);
 
-					LOG_INFO("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
+					LOG_TRACE("        name {} pct {} count {}", name.c_str(), dwPct, iCount);
 					pkGroup->AddItem(dwVnum, dwPct, iCount);
 
 					continue;
@@ -1039,7 +1039,7 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 			return false;
 		}
 
-		LOG_INFO("DROP_ITEM_GROUP {} {}", stName.c_str(), iMobVnum);
+		LOG_TRACE("DROP_ITEM_GROUP {} {}", stName.c_str(), iMobVnum);
 
 		TTokenVector * pTok;
 
@@ -1094,7 +1094,7 @@ bool ITEM_MANAGER::ReadDropItemGroup(const char * c_pszFileName)
 					return false;
 				}
 
-				LOG_INFO("        {} {} {}", name.c_str(), dwPct, iCount);
+				LOG_TRACE("        {} {} {}", name.c_str(), dwPct, iCount);
 				pkGroup->AddItem(dwVnum, dwPct, iCount);
 				continue;
 			}

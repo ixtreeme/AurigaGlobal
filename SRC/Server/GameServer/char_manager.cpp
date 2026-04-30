@@ -868,7 +868,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			LOG_INFO("MOB_SPAWN: {}({}) {}x{}", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;

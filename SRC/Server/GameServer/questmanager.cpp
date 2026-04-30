@@ -112,7 +112,7 @@ namespace quest
 			if (!inf.is_open())
 				LOG_ERROR("QUEST Cannot open 'questnpc.txt'");
 			else
-				LOG_INFO("QUEST can open 'questnpc.txt' ({})", g_stQuestDir.c_str());
+				LOG_TRACE("QUEST can open 'questnpc.txt' ({})", g_stQuestDir.c_str());
 
 			while (1)
 			{
@@ -146,7 +146,7 @@ namespace quest
 
 				//cout << '-' << s << '-' << endl;
 				if ( test_server )
-					LOG_INFO("QUEST reading script of {}({})", s.c_str(), vnum);
+					LOG_TRACE("QUEST reading script of {}({})", s.c_str(), vnum);
 				m_mapNPC[vnum].Set(vnum, s);
 				m_mapNPCNameID[s] = vnum;
 			}
@@ -269,7 +269,7 @@ namespace quest
 			unsigned int quest_index = CQuestManager::instance().GetQuestIndexByName(quest_name);
 
 			if (test_server)
-				LOG_INFO("QUEST_CATEGORY_LINE: {} => {}, {}", lineFromFile.c_str(), data[0].c_str(), quest_name.c_str());
+				LOG_TRACE("QUEST_CATEGORY_LINE: {} => {}, {}", lineFromFile.c_str(), data[0].c_str(), quest_name.c_str());
 
 			if (quest_index != 0)
 				QuestCategoryIndexMap[quest_index] = category_num;
@@ -289,7 +289,7 @@ namespace quest
 		if (!inf.is_open())
 			LOG_ERROR("QUEST Cannot open 'questcategory.txt'");
 		else
-			LOG_INFO("QUEST can open 'questcategory.txt' ({})", g_stQuestDir.c_str());
+			LOG_TRACE("QUEST can open 'questcategory.txt' ({})", g_stQuestDir.c_str());
 
 		while (1)
 		{
@@ -336,7 +336,7 @@ namespace quest
 
 			//cout << '-' << s << '-' << endl;
 			if ( test_server )
-				LOG_INFO("QUEST reading script of {}({})", s.c_str(), category_num);
+				LOG_TRACE("QUEST reading script of {}({})", s.c_str(), category_num);
 
 			if (qn == s)
 			{
@@ -824,7 +824,7 @@ namespace quest
 	bool CQuestManager::UseItem(unsigned int pc, entt::entity item, bool bReceiveAll)
 	{
 		if (test_server)
-			LOG_INFO("questmanager::UseItem Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
+			LOG_TRACE("questmanager::UseItem Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
 		PC* pPC;
 		if ((pPC = GetPC(pc)))
 		{
@@ -869,7 +869,7 @@ namespace quest
 	bool CQuestManager::SIGUse(unsigned int pc, uint32_t sig_vnum, entt::entity item, bool bReceiveAll)
 	{
 		if (test_server)
-			LOG_INFO("questmanager::SIGUse Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
+			LOG_TRACE("questmanager::SIGUse Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
 		PC* pPC;
 		if ((pPC = GetPC(pc)))
 		{
@@ -1039,7 +1039,7 @@ namespace quest
 
 			if (inf.is_open())
 			{
-				LOG_INFO("QUEST loading begin condition for {}", quest_name.c_str());
+				LOG_TRACE("QUEST loading begin condition for {}", quest_name.c_str());
 
 				istreambuf_iterator<char> ib(inf), ie;
 				copy(ib, ie, back_inserter(m_hmQuestStartScript[idx]));
@@ -1338,7 +1338,7 @@ namespace quest
 		LoadStartQuest(stQuestName, idx);
 		m_mapQuestNameByIndex.insert(std::make_pair(idx, stQuestName));
 
-		LOG_INFO("QUEST: Register {} {}", idx, stQuestName.c_str());
+		LOG_TRACE("QUEST: Register {} {}", idx, stQuestName.c_str());
 	}
 
 	unsigned int CQuestManager::GetQuestIndexByName(const std::string& name)
@@ -1396,7 +1396,7 @@ namespace quest
 
 		int prev_value = m_mapEventFlag[name];
 
-		LOG_INFO("QUEST eventflag {} {} prev_value {}", name.c_str(), value, m_mapEventFlag[name]);
+		LOG_TRACE("QUEST eventflag {} {} prev_value {}", name.c_str(), value, m_mapEventFlag[name]);
 		m_mapEventFlag[name] = value;
 
 		if (name == "mob_item")

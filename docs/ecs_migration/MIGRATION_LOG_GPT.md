@@ -8431,6 +8431,61 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 16-3 WinTest Log Review - Loading Latency Hotfix
+
+Operator report:
+- Login, character select, and in-game loading felt too slow during WinTest.
+- Gameplay was otherwise playable after the previous combat timestamp hotfix.
+
+Log review:
+- Reviewed `C:\AurigaGlobal-WinTest\srv1` channel and DB logs.
+- `chan/ch1/core1/log/syslog.txt`: about 42.9 MB / 708k lines.
+- `chan/ch1/core2/log/syslog.txt`: about 27.6 MB / 431k lines.
+- `chan/ch99/core99/log/syslog.txt`: about 5.1 MB / 83k lines.
+- `db/syslog.txt`: about 186.7 MB / 1.52M legacy DB lines.
+- Auth and character-list DB timings were not the primary bottleneck in the sampled window: auth/result login responses were fast.
+- GameServer did report scheduler stalls:
+  - `heart_idle: losing 31 seconds. (lag occured)` at `2026-04-30 19:26:41`.
+  - `heart_idle: losing 31 seconds. (lag occured)` at `2026-04-30 19:28:03`.
+- The dominant GameServer INFO spam during boot/load/spawn came from routine debug logs:
+  - `MOB_SPAWN`
+  - `Party::Initialize`
+  - `PARTY MemberCountChange`
+  - `PARTY linked to party`
+  - `new sectree`
+  - drop-table dumps from `item_manager_read_tables.cpp`
+  - refine-table dumps
+  - quest flag/timer/debug dumps
+
+Hotfix:
+- Demoted high-volume routine/debug logs from `LOG_INFO` to `LOG_TRACE` in:
+  - `SRC/Server/GameServer/char_manager.cpp`
+  - `SRC/Server/GameServer/party.cpp`
+  - `SRC/Server/GameServer/item_manager_read_tables.cpp`
+  - `SRC/Server/GameServer/sectree_manager.cpp`
+  - `SRC/Server/GameServer/refine.cpp`
+  - `SRC/Server/GameServer/questmanager.cpp`
+  - `SRC/Server/GameServer/questpc.cpp`
+- Runtime log level remains `info`, so these TRACE messages are compiled in for diagnostics but suppressed during normal WinTest.
+- No gameplay logic was changed.
+
+Build result:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- Existing warnings remain in `sectree_manager.cpp` and `questmanager.cpp`.
+- MSBuild post-step still prints `'pwsh.exe' is not recognized`, but the build target returned success and produced `GameServer.exe`.
+
+Follow-up:
+- Run a fresh WinTest with the new binary and compare:
+  - startup time,
+  - character-select delay,
+  - in-game map loading delay,
+  - `heart_idle` stall recurrence,
+  - syslog growth rate.
+- Phase 16-4 should address remaining Core/Database/AuthServer legacy logging. The DB root log is still very large and contains high-frequency legacy status/cache messages.
+
 ## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
 
 Mode:
