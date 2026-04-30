@@ -8431,6 +8431,106 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 16-2 Hotfix - Trace Logging Split and Combat Attack Timestamp
+
+Mode:
+- Post Batch 3 WinTest regression follow-up.
+- No broad logging call-site migration in this hotfix.
+- Goal was to reduce newly migrated hot-path `LOG_INFO` noise and fix the metin/combat delayed-damage regression observed on WinTest.
+
+Problem observed:
+- WinTest initially felt like the character was on a "zombie core"; chat input disconnected the client.
+- After the first logging cleanup, gameplay became playable, but metin stones received damage only after the player stopped attacking, then collapsed 1-2 seconds later.
+- After the attack timestamp fix, the user confirmed gameplay was working normally again.
+
+Trace logging split:
+- `SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE` was added to the server compile definitions so `LOG_TRACE` call sites are compiled in.
+- Runtime logger level was changed back to `info`, so trace calls are available for diagnostics but suppressed by default.
+- Hot-path debug logs moved from `LOG_INFO` to `LOG_TRACE`:
+  - `DBCLIENT: header ...` in `input_db.cpp`
+  - `DB_BYTES_READ` in `main.cpp`
+  - combat/death/drop debug logs in `ecs/systems/CombatSystem.cpp`
+  - motion loading / normal attack duration debug logs in `motion.cpp`
+- This removed the visible INFO-level spam introduced by the mechanical `sys_log(1)` to `LOG_INFO` conversion.
+
+Combat regression root cause:
+- The `HEADER_CG_ATTACK` path called `ch->Attack(...)` without refreshing the legacy last-attack timestamp.
+- `battle_melee_attack()` / `battle_hit()` use the `ENABLE_CHECK_BATTLE` guard:
+```cpp
+const bool bAttacking =
+    (get_dword_time() - ch->GetLastAttackTime()) <
+    (ch->IsRiding() ? 800 : 750);
+```
+- Because `m_dwLastAttackTime` was stale, damage application was rejected while attacking and later appeared delayed.
+
+Combat fix:
+- `input_main.cpp` now calls `ch->OnMove(true);` immediately before `ch->Attack(victim, packMelee->bType);` in the attack packet path.
+- This restores the same attack-timestamp side effect expected by the battle guard without changing damage formulas, packets, or death scheduling.
+
+Files changed:
+- `SRC/Server/CMakeLists.txt`
+- `SRC/Server/Core/Logging.cpp`
+- `SRC/Server/GameServer/input_db.cpp`
+- `SRC/Server/GameServer/main.cpp`
+- `SRC/Server/GameServer/motion.cpp`
+- `SRC/Server/GameServer/input_main.cpp`
+- `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+
+Build/deploy:
+- Build passed:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- MSBuild emitted a post-build warning that `pwsh.exe` was not recognized, but the build completed successfully and produced `GameServer.exe`.
+- Built binary was deployed to:
+```text
+C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe
+```
+- A backup was created before deployment:
+```text
+C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe.pre_attack_time_fix_20260430_114710
+```
+- Deployed binary hash matched the built binary:
+```text
+515B98EBC864D2B8A6CC2A41CC36118B1E21A50CB758F1B9FBEC2F534C5DFF1E
+```
+
+WinTest result:
+- User confirmed the game is playable after the fixes.
+- User confirmed the metin delayed-damage problem is resolved.
+
+Log review after fix:
+- No fresh critical combat/ECS errors were found.
+- No `VID_DRIFT` was found.
+- No fmt formatting exceptions were found.
+- No new ECS orphan/ghost/duplicate item indicators were found.
+- No new `DBCLIENT: header` or `DB_BYTES_READ` INFO spam was found after the trace split.
+- No new `DEAD` / `DEAD_EVENT_CREATE` INFO spam was found after moving combat debug logs to `LOG_TRACE`.
+
+Remaining oddities found in WinTest logs:
+- `ch99/core99/log/syserr.txt` contains repeated quest-state warnings:
+```text
+QUEST __status invalid: pid=6 quest=sash val=668443392 -> start=0
+```
+- `auth/log/syserr.txt` still reports startup data/config issues:
+```text
+Cube_Init failed
+<Blend_Item_init> fail
+```
+- Disconnect/restart noise remains in `ch1/core*/syserr.txt` and `db/syserr.txt`, including socket read / peer receive failures. These looked like connection lifecycle noise, not new crash evidence.
+- PTS logs still show event/write spikes on `ch99/core99` and `ch1/core*`; because gameplay now works, these are not the metin damage blocker but should be profiled later.
+- Syslog remains noisy from non-critical INFO paths such as `MOB_SPAWN`, quest kill/drop logs, `BattlePassInfo`, and `ITEM_SAVE`.
+
+Recommended follow-up:
+- Move remaining high-frequency debug-only logs (`MOB_SPAWN`, quest kill/drop traces, `BattlePassInfo`, selected `ITEM_SAVE`) to `LOG_TRACE` or `LOG_DEBUG`.
+- Investigate the saved `sash` quest state separately if it persists after relog or affects quest behavior.
+- Investigate `Cube_Init failed` / `<Blend_Item_init> fail` as data/config startup cleanup, separate from logging and combat.
+- Profile PTS event/write spikes only after the logging hot paths are quiet.
+
+Commit status:
+- Not committed.
+- Current hotfix changes remain pending review.
+
 ## Phase 16-1 - spdlog + fmt Integration
 
 Mode:
@@ -8713,6 +8813,114 @@ Commit status:
 - `210a451 Phase 16-2: Migrate logging format in main.cpp`
 - `b722349 Phase 16-2: Migrate logging format in building.cpp`
 - WinTest not run in this environment.
+
+Batch 4 verification:
+- `questlua.cpp` was checked first because of the quest-prefix naming.
+- `questlua.cpp` locally redefines `sys_err` to `quest::CQuestManager::QuestError(...)`, so it was skipped and deferred to the dedicated QuestError modernization pass.
+- `questpc.cpp` and `questnpc.cpp` had no local `sys_err` override and were migrated normally.
+
+Batch 4 completed:
+- `questpc.cpp`: 32 legacy log call sites migrated.
+- `party.cpp`: 32 legacy log call sites migrated.
+- `ecs/systems/PlayerRuntimeSystem.cpp`: 30 legacy log call sites migrated.
+- `questnpc.cpp`: 30 legacy log call sites migrated.
+- `guild_war.cpp`: 29 legacy log call sites migrated.
+- `shop_manager.cpp`: 28 legacy log call sites migrated.
+- `desc.cpp`: 26 legacy log call sites migrated.
+- `questlua.cpp`: 33 call sites skipped because of the local `QuestError` redirect.
+
+Batch 4 gotchas:
+- `questpc.cpp`, `party.cpp`, `questnpc.cpp`, and `desc.cpp` contained commented legacy examples; these were normalized to `LOG_INFO` / `LOG_ERROR` examples so grep-based verification stays clean.
+- `questnpc.cpp`, `shop_manager.cpp`, and `desc.cpp` contain non-UTF-8 legacy bytes, so small comment/cast fixes had to be applied with byte-preserving edits.
+- `party.cpp`, `guild_war.cpp`, `shop_manager.cpp`, and `PlayerRuntimeSystem.cpp` needed explicit `static_cast<int>(...)` for byte-sized fields to preserve old `%d` numeric rendering under fmt.
+- `desc.cpp` had two legacy calls with extra arguments that were ignored by `sys_log`; the extra arguments were removed rather than carried into fmt-style calls.
+- `PlayerRuntimeSystem.cpp` emitted an existing non-logging MSVC warning around `EditMyInven` (`uint16_t` to `uint8_t` map insert), but the build passed.
+
+Counts after Batch 4:
+```text
+Before Batch 4:
+GameServer sys_log: 517
+GameServer sys_err: 822
+GameServer _sys_err: 0
+Total: 1339
+
+After Batch 4:
+GameServer sys_log: 407
+GameServer sys_err: 723
+GameServer _sys_err: 0
+Total: 1130
+
+Batch 4 reduction: 209
+Phase 16-2 cumulative reduction: 1237
+```
+
+Batch 5 candidates, excluding `questlua_*`:
+```text
+33 questlua.cpp
+25 arena.cpp
+25 war_map.cpp
+24 input_auth.cpp
+24 ecs/systems/SessionSystem.cpp
+23 battle_pass.cpp
+22 DragonSoul.cpp
+20 MarkManager.cpp
+20 ecs/systems/AffectSystem.cpp
+20 ecs/systems/InventorySystem.cpp
+19 ecs/systems/PointSystem.cpp
+18 shop.cpp
+18 cmd_gm.cpp
+17 text_file_loader.cpp
+17 skill.cpp
+16 ecs/systems/NetworkSyncSystem.cpp
+16 ecs/systems/SocialSystem.cpp
+14 cmd_general.cpp
+14 ecs/systems/MovementSystem.cpp
+13 input_p2p.cpp
+```
+
+Questlua group remaining:
+```text
+87 questlua_pc.cpp
+80 questlua_dungeon.cpp
+43 questlua_global.cpp
+20 questlua_marriage.cpp
+12 questlua_item.cpp
+12 questlua_party.cpp
+11 questlua_affect.cpp
+10 questlua_guild.cpp
+9 questlua_npc.cpp
+9 questlua_quest.cpp
+6 questlua_target.cpp
+4 questlua_building.cpp
+4 questlua_horse.cpp
+4 questlua_game.cpp
+3 questlua_dragonsoul.cpp
+2 questlua_pet.cpp
+2 questlua_petnew.cpp
+2 questlua_arena.cpp
+```
+
+Build results:
+- Build passed after every Batch 4 migrated file.
+- Final successful command used repeatedly:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- The existing post-build warning remains:
+```text
+'pwsh.exe' is not recognized as an internal or external command
+```
+
+Commit status:
+- `3505337 Phase 16-2: Migrate logging format in questpc.cpp`
+- `83018d5 Phase 16-2: Migrate logging format in party.cpp`
+- `597223c Phase 16-2: Normalize party logging numeric casts`
+- `57b9fc0 Phase 16-2: Migrate logging format in PlayerRuntimeSystem.cpp`
+- `f91536d Phase 16-2: Migrate logging format in questnpc.cpp`
+- `a7676e3 Phase 16-2: Migrate logging format in guild_war.cpp`
+- `77eb640 Phase 16-2: Migrate logging format in shop_manager.cpp`
+- `f29a441 Phase 16-2: Migrate logging format in desc.cpp`
+- WinTest not run for Batch 4 per phase instruction.
 
 ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
 
