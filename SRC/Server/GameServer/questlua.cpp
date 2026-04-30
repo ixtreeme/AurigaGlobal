@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -24,9 +25,9 @@
 
 #undef sys_err
 #ifndef _WIN32
-#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, ##args)
+#define sys_err(fmt, args...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), ##args)
 #else
-#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestError(__FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
 namespace quest
@@ -47,7 +48,7 @@ namespace quest
 		}
 		else
 		{
-			sys_err("LUA ScriptRunError (code:%d src:[%s])", errcode, str.c_str());
+			sys_err("LUA ScriptRunError (code:{} src:[{}])", errcode, str.c_str());
 		}
 		lua_settop(L,x);
 		return retstr;
@@ -174,9 +175,7 @@ namespace quest
 		int bStart = lua_toboolean(L, -1);
 		if (errcode)
 		{
-			char buf[100];
-			snprintf(buf, sizeof(buf), "LUA ScriptRunError (code:%%d src:[%%%ds])", size);
-			sys_err(buf, errcode, code);
+			sys_err("LUA ScriptRunError (code:{} src:[{}])", errcode, std::string(code, size));
 		}
 		lua_settop(L,x);
 		return bStart != 0;
@@ -440,7 +439,7 @@ namespace quest
 			lua_getglobal(L, c_pszName);
 			if (!lua_istable(L, -1))
 			{
-				sys_err("%s global index not found for %s", c_pszName, c_pszSubName);
+				sys_err("{} global index not found for {}", c_pszName, c_pszSubName);
 				lua_settop(L, x);
 				return;
 			}
@@ -469,7 +468,7 @@ namespace quest
 			lua_getglobal(L, c_pszName);
 			if (!lua_istable(L, -1))
 			{
-				sys_err("%s global index not found (force=%d)", c_pszName, bForceCreation);
+				sys_err("{} global index not found (force={})", c_pszName, bForceCreation);
 				lua_settop(L, x);
 				if (bForceCreation)
 					AddLuaFunctionTable(c_pszName, preg);
@@ -498,7 +497,7 @@ namespace quest
 			{
 				if (!bOverwrite)
 				{
-					sys_err("%s global index already defined", c_pszName);
+					sys_err("{} global index already defined", c_pszName);
 					lua_settop(L, x);
 					return;
 				}
@@ -518,7 +517,7 @@ namespace quest
 			{
 				if (!bForceCreation)
 				{
-					sys_err("%s global index for %s already defined", c_pszName, c_pszSubName);
+					sys_err("{} global index for {} already defined", c_pszName, c_pszSubName);
 					lua_settop(L, x);
 					return;
 				}
@@ -543,7 +542,7 @@ namespace quest
 			{
 				if (!bForceCreation)
 				{
-					sys_err("%s global index for %s already defined", c_pszName, c_pszSubName);
+					sys_err("{} global index for {} already defined", c_pszName, c_pszSubName);
 					lua_settop(L, x);
 					return;
 				}
@@ -567,7 +566,7 @@ namespace quest
 			lua_getglobal(L, c_pszName);
 			if (!lua_istable(L, -1))
 			{
-				sys_err("%s global index not found for %s", c_pszName, c_pszSubName);
+				sys_err("{} global index not found for {}", c_pszName, c_pszSubName);
 				lua_settop(L, x);
 				return;
 			}
@@ -610,7 +609,7 @@ namespace quest
 
 		if (lua_isnil(L,-1))
 		{
-			sys_err("QUEST wrong quest state file for quest %s",questName);
+			sys_err("QUEST wrong quest state file for quest {}", questName);
 			lua_settop(L,x);
 			return;
 		}
@@ -720,18 +719,18 @@ namespace quest
 			snprintf(settingsFileName, sizeof(settingsFileName), "%s/settings.lua", LocaleService_GetBasePath().c_str());
 
 			int settingsLoadingResult = luaL_loadfile(L, settingsFileName);
-			sys_log(0, "LoadSettings(%s), returns %d", settingsFileName, settingsLoadingResult);
+			LOG_INFO("LoadSettings({}), returns {}", settingsFileName, settingsLoadingResult);
 			if (settingsLoadingResult != 0)
 			{
-				sys_err("LOAD_SETTINGS_FAILURE(%s)", settingsFileName);
+				sys_err("LOAD_SETTINGS_FAILURE({})", settingsFileName);
 				return false;
 			}
 
 			int settingsExecutionResult = lua_pcall(L, 0, 0, 0);
-			sys_log(0, "ExecuteSettings(%s), returns %d", settingsFileName, settingsExecutionResult);
+			LOG_INFO("ExecuteSettings({}), returns {}", settingsFileName, settingsExecutionResult);
 			if (settingsExecutionResult != 0)
 			{
-				sys_err("EXECUTE_SETTINGS_FAILURE(%s)", settingsFileName);
+				sys_err("EXECUTE_SETTINGS_FAILURE({})", settingsFileName);
 				return false;
 			}
 		}
@@ -741,10 +740,10 @@ namespace quest
 			snprintf(questlibFileName, sizeof(questlibFileName), "%s/questlib.lua", LocaleService_GetQuestPath().c_str());
 
 			int questlibLoadingResult = lua_dofile(L, questlibFileName);
-			sys_log(0, "LoadQuestlib(%s), returns %d", questlibFileName, questlibLoadingResult);
+			LOG_INFO("LoadQuestlib({}), returns {}", questlibFileName, questlibLoadingResult);
 			if (questlibLoadingResult != 0)
 			{
-				sys_err("LOAD_QUESTLIB_FAILURE(%s)", questlibFileName);
+				sys_err("LOAD_QUESTLIB_FAILURE({})", questlibFileName);
 				return false;
 			}
 		}
@@ -756,10 +755,10 @@ namespace quest
 			snprintf(translateFileName, sizeof(translateFileName), "%s/translate.lua", LocaleService_GetBasePath().c_str());
 
 			int translateLoadingResult = lua_dofile(L, translateFileName);
-			sys_log(0, "LoadTranslate(%s), returns %d", translateFileName, translateLoadingResult);
+			LOG_INFO("LoadTranslate({}), returns {}", translateFileName, translateLoadingResult);
 			if (translateLoadingResult != 0)
 			{
-				sys_err("LOAD_TRANSLATE_ERROR(%s)", translateFileName);
+				sys_err("LOAD_TRANSLATE_ERROR({})", translateFileName);
 				return false;
 			}
 		}
@@ -775,7 +774,7 @@ namespace quest
 				snprintf(translateFileNameNew, sizeof(translateFileNameNew), "%s/translate/%s/translate.lua", LocaleService_GetBasePath().c_str(), eMultiLanguages[i].c_str());
 				if (lua_dofile(L, translateFileNameNew) != 0)
 				{
-					sys_err("LOAD_TRANSLATE_ERROR(%s)", translateFileNameNew);
+					sys_err("LOAD_TRANSLATE_ERROR({})", translateFileNameNew);
 					return false;
 				}
 			}
@@ -787,10 +786,10 @@ namespace quest
 			snprintf(questLocaleFileName, sizeof(questLocaleFileName), "%s/locale.lua", g_stQuestDir.c_str());
 
 			int questLocaleLoadingResult = lua_dofile(L, questLocaleFileName);
-			sys_log(0, "LoadQuestLocale(%s), returns %d", questLocaleFileName, questLocaleLoadingResult);
+			LOG_INFO("LoadQuestLocale({}), returns {}", questLocaleFileName, questLocaleLoadingResult);
 			if (questLocaleLoadingResult != 0)
 			{
-				sys_err("LoadQuestLocale(%s) FAILURE", questLocaleFileName);
+				sys_err("LoadQuestLocale({}) FAILURE", questLocaleFileName);
 				return false;
 			}
 		}
@@ -817,7 +816,7 @@ namespace quest
 
 					RegisterQuest(pde->d_name, ++iQuestIdx);
 					int ret = lua_dofile(L, (stQuestObjectDir + "/state/" + pde->d_name).c_str());
-					sys_log(0, "QUEST: loading %s, returns %d", (stQuestObjectDir + "/state/" + pde->d_name).c_str(), ret);
+					LOG_INFO("QUEST: loading {}, returns {}", (stQuestObjectDir + "/state/" + pde->d_name).c_str(), ret);
 
 					BuildStateIndexToName(pde->d_name);
 				}
@@ -859,7 +858,7 @@ namespace quest
 			}
 			else
 			{
-				sys_err("SELECT wrong data %s", lua_typename(qs.co, -1));
+				sys_err("SELECT wrong data {}", lua_typename(qs.co, -1));
 				sys_err("here");
 			}
 			lua_pop(qs.co,1);
@@ -870,7 +869,7 @@ namespace quest
 		AddScript(os.str());
 		qs.suspend_state = SUSPEND_STATE_SELECT;
 		if ( test_server )
-			sys_log( 0, "%s", m_strScript.c_str() );
+			LOG_INFO("{}", m_strScript.c_str());
 		SendScript();
 	}
 
@@ -892,7 +891,7 @@ namespace quest
 
 		if ( info == nullptr)
 		{
-			sys_err( "confirm_timeout_event> <Factor> Null pointer" );
+			sys_err("confirm_timeout_event> <Factor> Null pointer");
 			return 0;
 		}
 
@@ -919,7 +918,7 @@ namespace quest
 		const char* szMsg = lua_tostring(qs.co, -2);
 		int iTimeout = static_cast<int>(lua_tonumber(qs.co, -1));
 
-		sys_log(0, "GotoConfirmState vid %u msg '%s', timeout %d", dwVID, szMsg, iTimeout);
+		LOG_INFO("GotoConfirmState vid {} msg '{}', timeout {}", dwVID, szMsg, iTimeout);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
 		if (ch && ((ch)->IsPC()))
@@ -1029,7 +1028,7 @@ namespace quest
 		}
 		else
 		{
-			sys_err("LUA_ERROR: %s", lua_tostring(qs.co, 1));
+			sys_err("LUA_ERROR: {}", lua_tostring(qs.co, 1));
 		}
 
 		WriteRunningStateToSyserr();
