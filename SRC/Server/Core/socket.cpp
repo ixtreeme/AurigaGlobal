@@ -61,10 +61,10 @@ int socket_read(socket_t desc, char* read_point, uint64_t space_left)
 	if (wsa_error == WSAEWOULDBLOCK) {
 		return 0;
 	}
-	sys_log(0, "socket_read: WSAGetLastError returned %d", wsa_error);
+	LOG_INFO("socket_read: WSAGetLastError returned {}", wsa_error);
 #endif
 
-    sys_err("about to lose connection");
+    LOG_ERROR("about to lose connection");
     return -1;
 }
 
@@ -100,7 +100,7 @@ int socket_write_tcp(socket_t desc, const char *txt, int length)
 	if (wsa_error == WSAEWOULDBLOCK) {
 		return 0;
 	}
-	sys_log(0, "socket_write_tcp: WSAGetLastError returned %d", wsa_error);
+	LOG_INFO("socket_write_tcp: WSAGetLastError returned {}", wsa_error);
 #endif
 
     /* Looks like the error was fatal.  Too bad. */
@@ -124,9 +124,9 @@ int socket_write(socket_t desc, const char *data, uint64_t length)
 		errno = EAGAIN;
 #endif
 	    if (errno == EAGAIN)
-		sys_err("socket write would block, about to close!");
+		LOG_ERROR("socket write would block, about to close!");
 	    else
-		sys_err("write to desc error");   // '보통' 상대편으로 부터 접속이 끊긴 것이다.
+		LOG_ERROR("write to desc error");   // '보통' 상대편으로 부터 접속이 끊긴 것이다.
 
 	    return -1;
 	}
@@ -152,7 +152,7 @@ int socket_bind(const char * ip, int port, int protocol)
 
     if ((s = socket(AF_INET, protocol, 0)) < 0) 
     {
-	sys_err("socket: %s", strerror(errno));
+	LOG_ERROR("socket: {}", strerror(errno));
 	return -1;
     }
 
@@ -180,7 +180,7 @@ int socket_bind(const char * ip, int port, int protocol)
 
     if (bind(s, (struct sockaddr *) &sa, sizeof(sa)) < 0)
     {
-	sys_err("bind: %s", strerror(errno));
+	LOG_ERROR("bind: {}", strerror(errno));
 	return -1;
     }
 
@@ -188,11 +188,11 @@ int socket_bind(const char * ip, int port, int protocol)
 
     if (protocol == SOCK_STREAM)
     {
-	sys_log(0, "SYSTEM: BINDING TCP PORT ON [%d] (fd %d)", port, s);
+	LOG_INFO("SYSTEM: BINDING TCP PORT ON [{}] (fd {})", port, s);
 	listen(s, SOMAXCONN);
     }
     else
-	sys_log(0, "SYSTEM: BINDING UDP PORT ON [%d] (fd %d)", port, s);
+	LOG_INFO("SYSTEM: BINDING UDP PORT ON [{}] (fd {})", port, s);
 
     return s;
 }
@@ -225,13 +225,13 @@ socket_t socket_accept(socket_t s, sockaddr_in *peer)
 
     if ((desc = accept(s, (struct sockaddr *) peer, &i)) == -1)
     {
-	sys_err("accept: %s (fd %d)", strerror(errno), s);
+	LOG_ERROR("accept: {} (fd {})", strerror(errno), s);
 	return -1;
     }
 
     if (desc >= 65500)
     {
-	sys_err("SOCKET FD 65500 LIMIT! %d", desc);
+	LOG_ERROR("SOCKET FD 65500 LIMIT! {}", desc);
 	socket_close(s);
 	return -1;
     }
@@ -258,7 +258,7 @@ socket_t socket_connect(const char* host, uint16_t port)
 
 	if ((hp = gethostbyname(host)) == nullptr)
 	{
-	    sys_err("socket_connect(): can not connect to %s:%d", host, port);
+	    LOG_ERROR("socket_connect(): can not connect to {}:{}", host, port);
 	    return -1;
 	}
 
@@ -296,25 +296,25 @@ socket_t socket_connect(const char* host, uint16_t port)
 #else
 		case EINTR:
 #endif
-		    sys_err("HOST %s:%d connection timeout.", host, port);
+		    LOG_ERROR("HOST {}:{} connection timeout.", host, port);
 		    break;
 #ifdef _WIN32
 		case WSAECONNREFUSED:
 #else
 		case ECONNREFUSED:
 #endif
-		    sys_err("HOST %s:%d port is not opened. connection refused.", host, port);
+		    LOG_ERROR("HOST {}:{} port is not opened. connection refused.", host, port);
 		    break;
 #ifdef _WIN32
 		case WSAENETUNREACH:
 #else
 		case ENETUNREACH:
 #endif
-		    sys_err("HOST %s:%d is not reachable from this host.", host, port);
+		    LOG_ERROR("HOST {}:{} is not reachable from this host.", host, port);
 		    break;
 
 		default:
-		    sys_err("HOST %s:%d, could not connect.", host, port);
+		    LOG_ERROR("HOST {}:{}, could not connect.", host, port);
 		    break;
 	    }
 
@@ -340,7 +340,7 @@ void socket_nonblock(socket_t s)
 
     if (fcntl(s, F_SETFL, flags) < 0) 
     {
-	sys_err("fcntl: nonblock: %s", strerror(errno));
+	LOG_ERROR("fcntl: nonblock: {}", strerror(errno));
 	return;
     }
 }
@@ -354,7 +354,7 @@ void socket_block(socket_t s)
 
     if (fcntl(s, F_SETFL, flags) < 0)
     {
-	sys_err("fcntl: nonblock: %s", strerror(errno));
+	LOG_ERROR("fcntl: nonblock: {}", strerror(errno));
 	return;
     }
 }
@@ -378,7 +378,7 @@ void socket_dontroute(socket_t s)
 
     if (setsockopt(s, SOL_SOCKET, SO_DONTROUTE, (const char *) &set, sizeof(int)) < 0)
     {
-	sys_err("setsockopt: dontroute: %s", strerror(errno));
+	LOG_ERROR("setsockopt: dontroute: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
@@ -397,7 +397,7 @@ void socket_lingeroff(socket_t s)
 #endif
     if (setsockopt(s, SOL_SOCKET, SO_LINGER, (const char*) &linger, sizeof(linger)) < 0)
     {
-	sys_err("setsockopt: linger: %s", strerror(errno));
+	LOG_ERROR("setsockopt: linger: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
@@ -416,7 +416,7 @@ void socket_lingeron(socket_t s)
 #endif
     if (setsockopt(s, SOL_SOCKET, SO_LINGER, (const char*) &linger, sizeof(linger)) < 0)
     {
-	sys_err("setsockopt: linger: %s", strerror(errno));
+	LOG_ERROR("setsockopt: linger: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
@@ -430,7 +430,7 @@ void socket_rcvbuf(socket_t s, unsigned int opt)
 
     if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, (const char*) &opt, optlen) < 0)
     {
-	sys_err("setsockopt: rcvbuf: %s", strerror(errno));
+	LOG_ERROR("setsockopt: rcvbuf: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
@@ -440,12 +440,12 @@ void socket_rcvbuf(socket_t s, unsigned int opt)
 
     if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char*) &opt, &optlen) < 0)
     {
-	sys_err("getsockopt: rcvbuf: %s", strerror(errno));
+	LOG_ERROR("getsockopt: rcvbuf: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
 
-    sys_log(1, "SYSTEM: %d: receive buffer changed to %d", s, opt);
+    LOG_TRACE("SYSTEM: {}: receive buffer changed to {}", s, opt);
 }
 
 void socket_sndbuf(socket_t s, unsigned int opt)
@@ -456,7 +456,7 @@ void socket_sndbuf(socket_t s, unsigned int opt)
 
     if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, (const char*) &opt, optlen) < 0)
     {
-	sys_err("setsockopt: sndbuf: %s", strerror(errno));
+	LOG_ERROR("setsockopt: sndbuf: {}", strerror(errno));
 	return;
     }
 
@@ -465,11 +465,11 @@ void socket_sndbuf(socket_t s, unsigned int opt)
 
     if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char*) &opt, &optlen) < 0)
     {
-	sys_err("getsockopt: sndbuf: %s", strerror(errno));
+	LOG_ERROR("getsockopt: sndbuf: {}", strerror(errno));
 	return;
     }
 
-    sys_log(1, "SYSTEM: %d: send buffer changed to %d", s, opt);
+    LOG_TRACE("SYSTEM: {}: send buffer changed to {}", s, opt);
 }
 
 // sec : seconds, usec : microseconds
@@ -489,14 +489,14 @@ void socket_timeout(socket_t s, int32_t sec, int32_t usec)
 #endif
     if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*) &rcvopt, optlen) < 0)
     {
-	sys_err("setsockopt: timeout: %s", strerror(errno));
+	LOG_ERROR("setsockopt: timeout: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
 
     if (getsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*) &rcvopt, &optlen) < 0)
     {
-	sys_err("getsockopt: timeout: %s", strerror(errno));
+	LOG_ERROR("getsockopt: timeout: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
@@ -505,20 +505,20 @@ void socket_timeout(socket_t s, int32_t sec, int32_t usec)
 
     if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char*) &sndopt, optlen) < 0)
     {
-	sys_err("setsockopt: timeout: %s", strerror(errno));
+	LOG_ERROR("setsockopt: timeout: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
 
     if (getsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*) &sndopt, &optlen) < 0)
     {
-	sys_err("getsockopt: timeout: %s", strerror(errno));
+	LOG_ERROR("getsockopt: timeout: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
 
 #ifndef _WIN32
-    sys_log(1, "SYSTEM: %d: TIMEOUT RCV: %d.%d, SND: %d.%d", s, rcvopt.tv_sec, rcvopt.tv_usec, sndopt.tv_sec, sndopt.tv_usec);
+    LOG_TRACE("SYSTEM: {}: TIMEOUT RCV: {}.{}, SND: {}.{}", s, rcvopt.tv_sec, rcvopt.tv_usec, sndopt.tv_sec, sndopt.tv_usec);
 #endif
 }
 
@@ -528,7 +528,7 @@ void socket_reuse(socket_t s)
 
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*) &opt, sizeof(opt)) < 0)
     {
-	sys_err("setsockopt: reuse: %s", strerror(errno));
+	LOG_ERROR("setsockopt: reuse: {}", strerror(errno));
 	socket_close(s);
 	return;
     }
