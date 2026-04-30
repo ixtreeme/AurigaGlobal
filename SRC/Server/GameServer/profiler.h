@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <Core/Logging.hpp>
 
 class CProfiler : public singleton<CProfiler>
 {
@@ -192,7 +193,7 @@ class CProfiler : public singleton<CProfiler>
 			if (!GetProfileStackDataPointer(c_szName, &pProfileStackData))
 				return;
 
-			sys_log(0, "%-10s: %3d", pProfileStackData->strName.c_str(), pProfileStackData->iEndTime - pProfileStackData->iStartTime);
+			LOG_INFO("{:-10}: {:3}", pProfileStackData->strName.c_str(), pProfileStackData->iEndTime - pProfileStackData->iStartTime);
 		}
 
 		void PrintOneAccumData(const char * c_szName)
@@ -204,10 +205,7 @@ class CProfiler : public singleton<CProfiler>
 
 			TProfileAccumData & rData = it->second;
 
-			sys_log(0, "%-10s : [CollapsedTime : %3d] / [CallingCount : %3d]",
-					rData.strName.c_str(),
-					rData.iCollapsedTime,
-					rData.iCallingCount);
+			LOG_INFO("{:-10} : [CollapsedTime : {:3}] / [CallingCount : {:3}]", rData.strName.c_str(), rData.iCollapsedTime, rData.iCallingCount);
 		}
 
 	protected:
