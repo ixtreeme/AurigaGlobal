@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "config.h"
 #include "utils.h"
 #include "desc.h"
@@ -149,7 +150,7 @@ void DESC::Destroy()
 
 	if (m_sock != INVALID_SOCKET)
 	{
-		sys_log(0, "SYSTEM: closing socket. DESC #%d", m_sock);
+		LOG_INFO("SYSTEM: closing socket. DESC #{}", m_sock);
 		Log("SYSTEM: closing socket. DESC #%d", m_sock);
 		fdwatch_del_fd(m_lpFdw, m_sock);
 
@@ -170,7 +171,7 @@ EVENTFUNC(ping_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "ping_event> <Factor> Null pointer" );
+		LOG_ERROR("ping_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -184,7 +185,7 @@ EVENTFUNC(ping_event)
 
 	if (!desc->IsPong())
 	{
-		sys_log(0, "PING_EVENT: no pong %s", desc->GetHostName());
+		LOG_INFO("PING_EVENT: no pong {}", desc->GetHostName());
 
 		desc->SetPhase(PHASE_CLOSE);
 		g_dispatcher.trigger(ecs::EvDescPing { desc->GetHandle() });
@@ -258,8 +259,7 @@ bool DESC::Setup(LPFDWATCH _fdw, socket_t _fd, const sockaddr_in & c_rSockAddr, 
 		thecore_pulse() + PASSES_PER_SEC(INTRUSIVE_HANDSHAKE_PULSE));
 #endif
 
-	sys_log(0, "SYSTEM: new connection from [%s] fd: %d handshake %u output input_len %d, ptr %p",
-			m_stHost.c_str(), m_sock, m_dwHandshake, buffer_size(m_lpInputBuffer), this);
+	LOG_INFO("SYSTEM: new connection from [{}] fd: {} handshake {} output input_len {}, ptr {}", m_stHost.c_str(), m_sock, m_dwHandshake, buffer_size(m_lpInputBuffer), static_cast<const void*>(this));
 
 	Log("SYSTEM: new connection from [%s] fd: %d handshake %u ptr %p", m_stHost.c_str(), m_sock, m_dwHandshake, this);
 	return true;
@@ -271,7 +271,7 @@ int DESC::ProcessInput()
 
 	if (!m_lpInputBuffer)
 	{
-		sys_err("DESC::ProcessInput : nil input buffer");
+		LOG_ERROR("DESC::ProcessInput : nil input buffer");
 		return -1;
 	}
 
@@ -286,7 +286,7 @@ int DESC::ProcessInput()
 	buffer_write_proceed(m_lpInputBuffer, bytes_read);
 
 	if (!m_pInputProcessor)
-		sys_err("no input processor");
+		LOG_ERROR("no input processor");
 #ifdef _IMPROVED_PACKET_ENCRYPTION_
 	else
 	{
@@ -388,7 +388,7 @@ int DESC::ProcessOutput()
 
 	if (result == 0)
 	{
-		//sys_log(0, "%d bytes written to %s first %u", bytes_to_write, GetHostName(), *(uint8_t *) buffer_read_peek(m_lpOutputBuffer));
+		//LOG_INFO("{} bytes written to {} first {}", bytes_to_write, GetHostName(), *(uint8_t *) buffer_read_peek(m_lpOutputBuffer));
 		//Log("%d bytes written", bytes_to_write);
 		max_bytes_written = MAX(bytes_to_write, max_bytes_written);
 
@@ -484,12 +484,11 @@ void DESC::Packet(const void * c_pvData, int iSize)
 #ifndef _IMPROVED_PACKET_ENCRYPTION_
 				buffer_adjust_size(m_lpOutputBuffer, iSize);
 				if (buffer_has_space(m_lpOutputBuffer) < iSize + 8) {
-				sys_err("desc buffer mem_size overflow. memsize(%u) write_pos(%u) iSize(%d)", m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
+				LOG_ERROR("desc buffer mem_size overflow. memsize({}) write_pos({}) iSize({})", m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
 				m_iPhase = PHASE_CLOSE;
 				}
 #else
-				sys_err("desc buffer mem_size overflow. memsize(%u) write_pos(%u) iSize(%d)",
-						m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
+				LOG_ERROR("desc buffer mem_size overflow. memsize({}) write_pos({}) iSize({})", m_lpOutputBuffer->mem_size, m_lpOutputBuffer->write_point_pos, iSize);
 
 				m_iPhase = PHASE_CLOSE;
 #endif
@@ -514,7 +513,7 @@ void DESC::Packet(const void * c_pvData, int iSize)
 		SAFE_BUFFER_DELETE(m_lpBufferedOutputBuffer);
 	}
 
-	//sys_log(0, "%d bytes written (first byte %d)", iSize, *(uint8_t *) c_pvData);
+	//LOG_INFO("{} bytes written (first byte {})", iSize, *(uint8_t *) c_pvData);
 	if (m_iPhase != PHASE_CLOSE)
 		fdwatch_add_fd(m_lpFdw, m_sock, this, FDW_WRITE, true);
 }
@@ -522,7 +521,7 @@ void DESC::Packet(const void * c_pvData, int iSize)
 void DESC::LargePacket(const void * c_pvData, int iSize)
 {
 	buffer_adjust_size(m_lpOutputBuffer, iSize);
-	sys_log(0, "LargePacket Size %d", iSize, buffer_size(m_lpOutputBuffer));
+	LOG_INFO("LargePacket Size {}", iSize);
 
 	Packet(c_pvData, iSize);
 }
@@ -572,7 +571,7 @@ void DESC::SetPhase(int _phase)
 			m_bEncrypted = true;
 #endif
 			m_pInputProcessor = &m_inputAuth;
-			sys_log(0, "AUTH_PHASE %p", this);
+			LOG_INFO("AUTH_PHASE {}", static_cast<const void*>(this));
 			break;
 	}
 }
@@ -655,7 +654,7 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 
 	if (lDelta < 0)
 	{
-		sys_err("Desc::HandshakeProcess : value error (lDelta %d, ip %s)", lDelta, m_stHost.c_str());
+		LOG_ERROR("Desc::HandshakeProcess : value error (lDelta {}, ip {})", lDelta, m_stHost.c_str());
 		return false;
 	}
 
@@ -670,9 +669,9 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 		}
 
 		if (GetCharacter())
-			sys_log(0, "Handshake: client_time %u server_time %u name: %s", m_dwClientTime, dwCurTime, GetCharacter()->GetName());
+			LOG_INFO("Handshake: client_time {} server_time {} name: {}", m_dwClientTime, dwCurTime, GetCharacter()->GetName());
 		else
-			sys_log(0, "Handshake: client_time %u server_time %u", m_dwClientTime, dwCurTime, lDelta);
+			LOG_INFO("Handshake: client_time {} server_time {}", m_dwClientTime, dwCurTime);
 
 		m_dwClientTime = dwCurTime;
 		m_bHandshaking = false;
@@ -683,15 +682,15 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 
 	if (lNewDelta < 0)
 	{
-		sys_log(0, "Handshake: lower than zero %d", lNewDelta);
+		LOG_INFO("Handshake: lower than zero {}", lNewDelta);
 		lNewDelta = (dwCurTime - m_dwHandshakeSentTime) / 2;
 	}
 
-	sys_log(1, "Handshake: ServerTime %u dwTime %u lDelta %d SentTime %u lNewDelta %d", dwCurTime, dwTime, lDelta, m_dwHandshakeSentTime, lNewDelta);
+	LOG_INFO("Handshake: ServerTime {} dwTime {} lDelta {} SentTime {} lNewDelta {}", dwCurTime, dwTime, lDelta, m_dwHandshakeSentTime, lNewDelta);
 
 	if (!bInfiniteRetry)
 		if (++m_iHandshakeRetry > HANDSHAKE_RETRY_LIMIT) {
-			sys_err("handshake retry limit reached! (limit %d character %s)", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? GetCharacter()->GetName() : "!NO CHARACTER!");
+			LOG_ERROR("handshake retry limit reached! (limit {} character {})", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? GetCharacter()->GetName() : "!NO CHARACTER!");
 			SetPhase(PHASE_CLOSE);
 			return false;
 		}
@@ -776,7 +775,7 @@ void DESC::FlushOutput()
 	gettimeofday(&start_tv, nullptr);
 
 	socket_block(m_sock);
-	sys_log(0, "FLUSH START %d", buffer_size(m_lpOutputBuffer));
+	LOG_INFO("FLUSH START {}", buffer_size(m_lpOutputBuffer));
 
 	while (buffer_size(m_lpOutputBuffer) > 0)
 	{
@@ -800,7 +799,7 @@ void DESC::FlushOutput()
 
 		if (num_events < 0)
 		{
-			sys_err("num_events < 0 : %d", num_events);
+			LOG_ERROR("num_events < 0 : {}", num_events);
 			break;
 		}
 
@@ -820,7 +819,7 @@ void DESC::FlushOutput()
 
 					if (ProcessOutput() < 0)
 					{
-						sys_err("Cannot flush output buffer");
+						LOG_ERROR("Cannot flush output buffer");
 						SetPhase(PHASE_CLOSE);
 					}
 					break;
@@ -836,9 +835,9 @@ void DESC::FlushOutput()
 	}
 
 	if (buffer_size(m_lpOutputBuffer) == 0)
-		sys_log(0, "FLUSH SUCCESS");
+		LOG_INFO("FLUSH SUCCESS");
 	else
-		sys_log(0, "FLUSH FAIL");
+		LOG_INFO("FLUSH FAIL");
 
 	usleep(250000);
 }
@@ -849,7 +848,7 @@ EVENTFUNC(disconnect_event)
 
 	if ( info == nullptr)
 	{
-		sys_err( "disconnect_event> <Factor> Null pointer" );
+		LOG_ERROR("disconnect_event> <Factor> Null pointer");
 		return 0;
 	}
 
@@ -960,7 +959,7 @@ void DESC::SetLoginKey(uint32_t dwKey)
 void DESC::SetLoginKey(CLoginKey * pkKey)
 {
 	m_pkLoginKey = pkKey;
-	sys_log(0, "SetLoginKey %u", m_pkLoginKey->m_dwKey);
+	LOG_INFO("SetLoginKey {}", m_pkLoginKey->m_dwKey);
 }
 
 uint32_t DESC::GetLoginKey()
@@ -1003,9 +1002,7 @@ void DESC::SetSecurityKey(const uint32_t * c_pdwKey)
 	memcpy(&m_adwDecryptionKey, c_pdwKey, 16);
 	TEA_Encrypt(&m_adwEncryptionKey[0], &m_adwDecryptionKey[0], (const uint32_t *) c_pszKey, 16);
 
-	sys_log(0, "SetSecurityKey decrypt %u %u %u %u encrypt %u %u %u %u",
-			m_adwDecryptionKey[0], m_adwDecryptionKey[1], m_adwDecryptionKey[2], m_adwDecryptionKey[3],
-			m_adwEncryptionKey[0], m_adwEncryptionKey[1], m_adwEncryptionKey[2], m_adwEncryptionKey[3]);
+	LOG_INFO("SetSecurityKey decrypt {} {} {} {} encrypt {} {} {} {}", m_adwDecryptionKey[0], m_adwDecryptionKey[1], m_adwDecryptionKey[2], m_adwDecryptionKey[3], m_adwEncryptionKey[0], m_adwEncryptionKey[1], m_adwEncryptionKey[2], m_adwEncryptionKey[3]);
 }
 #endif // _IMPROVED_PACKET_ENCRYPTION_
 
