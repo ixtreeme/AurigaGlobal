@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -716,7 +717,7 @@ namespace offlineshop
 
 			if (iter == city.entitiesByPID.end())
 			{
-				sys_err("CANNOT FOUND NEW SHOP ENTITY : %u ",rShop.GetOwnerPID());
+				LOG_ERROR("CANNOT FOUND NEW SHOP ENTITY : {} ", rShop.GetOwnerPID());
 				continue;
 			}
 
@@ -877,7 +878,7 @@ namespace offlineshop
 			LPITEM pkItem = pItem->CreateItem();
 			if (!pkItem)
 			{
-				sys_err("cannot create item ( dwItemID %u , dwVnum %u, dwShopOwner %u, dwBuyer %u ) ",dwItemID, pItem->GetInfo()->dwVnum, dwOwnerID, dwBuyerID );
+				LOG_ERROR("cannot create item ( dwItemID {} , dwVnum {}, dwShopOwner {}, dwBuyer {} ) ", dwItemID, pItem->GetInfo()->dwVnum, dwOwnerID, dwBuyerID);
 				return false;
 			}
 
@@ -2355,7 +2356,7 @@ namespace offlineshop
 			return true;
 		}
 
-		sys_err("cannot found clicked entity , %s vid %u ",((ch)->GetName()), dwShopEntityVID);
+		LOG_ERROR("cannot found clicked entity , {} vid {} ", ((ch)->GetName()), dwShopEntityVID);
 		return false;
 	}
 #endif
@@ -2761,7 +2762,7 @@ namespace offlineshop
 				TItemTable* pTable = ITEM_MANAGER::instance().GetTable(rItemInfo.dwVnum);
 				if (!pTable)
 				{
-					sys_err("CANNOT FIND ITEM TABLE [%d]");
+					LOG_ERROR("CANNOT FIND ITEM TABLE [{}]");
 					continue;
 				}
 
@@ -3094,14 +3095,14 @@ namespace offlineshop
 			CShop* pkShop = GetShopByOwnerID(offer.dwOwnerID);
 			if (!pkShop)
 			{
-				sys_err("cannot find item's shop %u , offer id %u ",offer.dwOwnerID, offer.dwOfferID);
+				LOG_ERROR("cannot find item's shop {} , offer id {} ", offer.dwOwnerID, offer.dwOfferID);
 				return false;
 			}
 
 			CShopItem* pkItem=nullptr;
 			if(!pkShop->GetItem(offer.dwItemID, &pkItem) && !pkShop->GetItemSold(offer.dwItemID, &pkItem))
 			{
-				sys_err("cannot find item info %u , offer id %u ",offer.dwItemID, offer.dwOfferID);
+				LOG_ERROR("cannot find item info {} , offer id {} ", offer.dwItemID, offer.dwOfferID);
 				return false;
 			}
 
