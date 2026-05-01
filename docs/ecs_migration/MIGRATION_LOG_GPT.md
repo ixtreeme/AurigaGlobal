@@ -8431,6 +8431,84 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-58a - Scalar Identity Getters ECS Migration
+
+Mode:
+- Scalar identity getter migration only.
+- Entity-first API added under `ecs::PlayerRuntime`.
+- No `LPCHARACTER` overloads were introduced.
+- Return types stayed scalar (`uint32_t` / `uint8_t`).
+- No string lifetime or storage changes in this phase.
+
+Completed API:
+- `ecs::PlayerRuntime::GetPlayerID(entt::entity)`
+- `ecs::PlayerRuntime::GetEmpire(entt::entity)`
+- `ecs::PlayerRuntime::GetGMLevel(entt::entity)`
+- `ecs::PlayerRuntime::GetPacketVID(entt::entity)`
+
+Implementation notes:
+- Direct component reads are used where available:
+  - `ecs::PlayerID`
+  - `ecs::EmpireComponent`
+  - `ecs::GMLevel`
+  - `ecs::CharacterRuntimeFlagsComponent`
+  - `ecs::VIDComponent`
+- Missing component cases fall back through `ecs::LegacyCharOf(e)` as a transitional bridge.
+- This matches the prior GetDesc/PointChange/QuestFlag entity-first migration pattern.
+
+Commits:
+- `041cff8 Phase 15E-58a.1: Add PlayerRuntime scalar identity API`
+- `aa74509 Phase 15E-58a.2a: Migrate GetPacketVID`
+- `b1324a9 Phase 15E-58a.2b: Migrate GetGMLevel`
+- `312a561 Phase 15E-58a.2c: Migrate GetEmpire`
+- `d9428fd Phase 15E-58a.2d: Migrate GetPlayerID bulk`
+- `b47fe4a Phase 15E-58a.2d: Migrate remaining GetPlayerID`
+
+Rollback note:
+- One micro-step produced more than 20 compile errors because a text rewrite touched legacy non-UTF-8 source bytes incorrectly.
+- That micro-step was rolled back before commit, per phase rule.
+- The affected replacements were then redone with byte-level exact ASCII token replacement.
+- No corrupted source change was committed.
+
+Final residual audit:
+```text
+GetPlayerID:   12 textual hits
+GetGMLevel:     1 textual hit
+GetPacketVID:   1 textual hit
+GetEmpire:     20 textual hits
+```
+
+Residual classification:
+- `GetPlayerID` active calls remain only inside `PlayerRuntimeSystem.cpp` bridge/internal CHARACTER-owned code.
+- `questlua_quest.cpp` has 8 `GetPlayerID` textual hits, all inside commented-out legacy code.
+- `GetGMLevel` and `GetPacketVID` remain only in `PlayerRuntimeSystem.cpp` bridge fallback.
+- `GetEmpire` residuals are DESC/service-object accesses such as `d->GetEmpire()` / `GetDesc()->GetEmpire()`, plus bridge/internal cases; these are not CHARACTER scalar caller migrations.
+
+Build results:
+- Build passed after each committed substep.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Warnings observed:
+- Existing C4311/C4805/C4834/LNK4075 style warnings remained.
+- No new blocking compile errors after the rollback-safe cleanup.
+
+Manual WinTest checklist:
+- Login and character spawn identity correctness.
+- Empire-restricted behavior.
+- GM command access checks.
+- Packet VID broadcast/targeting.
+- Player ID logging/auth/quest paths.
+- Multiple characters retain distinct identity.
+- `VID_DRIFT` remains zero.
+
+Commit status:
+- Phase 15E-58a code batches committed individually.
+- Working tree clean after completion.
+- WinTest not run in this environment.
+
 ## Phase 17a Batch 3 - string_view migration
 
 Mode:
