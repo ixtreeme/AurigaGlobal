@@ -368,8 +368,8 @@ private:
 LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance)
 {
 	FuncFindMobVictim f(pkChr, iMaxDistance);
-	if (pkChr->GetSectree() != nullptr) {
-		pkChr->GetSectree()->ForEachAround(f);
+	if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChr)) != nullptr) {
+		ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChr))->ForEachAround(f);
 	}
 	return f.GetVictim();
 }

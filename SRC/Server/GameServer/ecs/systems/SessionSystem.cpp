@@ -706,7 +706,7 @@ EVENTFUNC(warp_npc_event)
         });
     }
 
-    if (!ch->GetSectree())
+    if (!ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch)))
     {
         ch->m_pkWarpNPCEvent = nullptr;
         return 0;
@@ -714,7 +714,7 @@ EVENTFUNC(warp_npc_event)
 
     FuncCheckWarp f(ch);
     if (f.Valid())
-        ch->GetSectree()->ForEachAround(f);
+        ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch))->ForEachAround(f);
 
     return passes_per_sec / 2;
 }

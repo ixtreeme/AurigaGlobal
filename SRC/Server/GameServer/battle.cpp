@@ -93,13 +93,13 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	{
 		SECTREE* sectree = nullptr;
 
-		sectree = ch->GetSectree();
+		sectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch));
 		if (sectree && sectree->IsAttr(ch->GetX(), ch->GetY(), ATTR_BANPK))
 		{
 			return false;
 		}
 
-		sectree = victim->GetSectree();
+		sectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(victim));
 		if (sectree && sectree->IsAttr(victim->GetX(), victim->GetY(), ATTR_BANPK))
 		{
 			return false;

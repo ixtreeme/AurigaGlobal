@@ -2446,7 +2446,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 		return false;
 #ifdef ENABLE_ANTICHEAT
 	SECTREE* sectree = GetSectree();
-	SECTREE* vsectree = pkVictim->GetSectree();
+	SECTREE* vsectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim));
 
 	if (sectree && vsectree) {
 		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(pkVictim->GetX(), pkVictim->GetY(), ATTR_BANPK)) {

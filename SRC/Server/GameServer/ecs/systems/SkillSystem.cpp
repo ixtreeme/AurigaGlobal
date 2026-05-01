@@ -1708,9 +1708,9 @@ EVENTFUNC(ChainLightningEvent)
 		// 1. Find Next victim
 		FFindNearVictim f(pkChrVictim, pkChr, pkChr->GetChainLightingExcept());
 
-		if (pkChrVictim->GetSectree())
+		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim)))
 		{
-			pkChrVictim->GetSectree()->ForEachAround(f);
+			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim))->ForEachAround(f);
 			// 2. If exist, compute it again
 			pkTarget = f.GetVictim();
 		}
@@ -2425,7 +2425,7 @@ struct FuncSplashDamage
 				int32_t ty = pkChrVictim->GetY()+static_cast<int32_t>(fy);
 
 #ifdef ENABLE_BUG_FIXES
-				while (pkChrVictim->GetSectree()->GetAttribute(tx, ty) & (ATTR_BLOCK | ATTR_OBJECT) && fCrushSlidingLength > 0) {
+				while (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim))->GetAttribute(tx, ty) & (ATTR_BLOCK | ATTR_OBJECT) && fCrushSlidingLength > 0) {
 					if (fCrushSlidingLength >= 10) {
 						fCrushSlidingLength -= 10;
 					} else {
@@ -3021,8 +3021,8 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
 		FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
-		if (pkVictim->GetSectree())
-			pkVictim->GetSectree()->ForEachAround(f);
+		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 		else
 		{
 			f(pkVictim);
@@ -3226,8 +3226,8 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
-				if (pkVictim->GetSectree())
-					pkVictim->GetSectree()->ForEachAround(f);
+				if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+					ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 			}
 			else
 			{
@@ -3258,10 +3258,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
 				else
 				{
-					if (pkVictim->GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
 						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
-						pkVictim->GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
 				bAdded = true;
@@ -3281,10 +3281,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				else
 				{
-					if (pkVictim->GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
 						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
-						pkVictim->GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
 
@@ -3311,10 +3311,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
-					if (pkVictim->GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
 						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
-						pkVictim->GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
 
@@ -3457,10 +3457,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
-					if (pkVictim->GetSectree())
+					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
 						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
-						pkVictim->GetSectree()->ForEachAround(f);
+						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
 
@@ -3476,8 +3476,8 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
 			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
-			if (pkVictim->GetSectree())
-				pkVictim->GetSectree()->ForEachAround(f);
+			if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+				ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 
 			else
 			{
@@ -3950,9 +3950,9 @@ EVENTFUNC(skill_muyoung_event)
 
 	// 1. Find Victim
 	FFindNearVictim f(ch, ch);
-	if (ch->GetSectree())
+	if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch)))
 	{
-		ch->GetSectree()->ForEachAround(f);
+		ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch))->ForEachAround(f);
 		// 2. Shoot!
 		if (f.GetVictim())
 		{

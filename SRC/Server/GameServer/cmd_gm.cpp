@@ -1029,7 +1029,7 @@ ACMD(do_purge)
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
 
-	LPSECTREE sectree = ch->GetSectree();
+	LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch));
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
@@ -2703,7 +2703,7 @@ ACMD(do_weaken)
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
 
-	ch->GetSectree()->ForEachAround(func);
+	ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch))->ForEachAround(func);
 }
 
 ACMD(do_getqf)
