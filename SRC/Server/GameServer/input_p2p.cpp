@@ -238,10 +238,10 @@ struct FuncShout
 	void operator () (LPDESC d)
 	{
 #ifdef ENABLE_NEWSTUFF
-		if (!d->GetCharacter() || (!g_bGlobalShoutEnable && d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!d->GetCharacter() || (!g_bGlobalShoutEnable && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #else
-		if (!d->GetCharacter() || (d->GetCharacter()->GetGMLevel() == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!d->GetCharacter() || (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #endif
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_SHOUT, "%s", m_str);

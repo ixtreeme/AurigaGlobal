@@ -633,7 +633,7 @@ void CHARACTER::UpdatePacket()
                         {
                             LPCHARACTER pChar = (LPCHARACTER)pEntity;
 
-                            if (GetEmpire() == pChar->GetEmpire() || pChar->GetGMLevel() > GM_PLAYER)
+                            if (GetEmpire() == pChar->GetEmpire() || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pChar)) > GM_PLAYER)
                             {
                                 pEntity->GetDesc()->Packet(&pack, sizeof(pack));
                             }

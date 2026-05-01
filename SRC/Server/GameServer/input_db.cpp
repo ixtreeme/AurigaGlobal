@@ -631,7 +631,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	ch->PointsPacket();
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ch->GetX(), ch->GetY(), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ch->GetGMLevel());
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ch->GetX(), ch->GetY(), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();

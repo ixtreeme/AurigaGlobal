@@ -39,7 +39,7 @@
 #define __ENABLE_OFFLINESHOP_GM_PROTECTION__
 #ifdef __ENABLE_OFFLINESHOP_GM_PROTECTION__
 #define MIN_USE_OFFLINESHOP_GMLEVEL GM_IMPLEMENTOR
-#define _IS_VALID_GM_LEVEL(ch) (((ch)->GetGMLevel()) == GM_PLAYER || ((ch)->GetGMLevel()) >= MIN_USE_OFFLINESHOP_GMLEVEL)
+#define _IS_VALID_GM_LEVEL(ch) ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch))) == GM_PLAYER || (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch))) >= MIN_USE_OFFLINESHOP_GMLEVEL)
 #else
 #define _IS_VALID_GM_LEVEL(ch) (true)
 #endif

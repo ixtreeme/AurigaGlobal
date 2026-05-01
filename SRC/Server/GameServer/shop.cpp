@@ -224,7 +224,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (!ismultiple) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 			return SHOP_SUBHEADER_GC_OK;
 		}
 #endif
@@ -706,7 +706,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return SHOP_SUBHEADER_GC_OK;
 	}
 #endif

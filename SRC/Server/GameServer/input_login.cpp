@@ -808,7 +808,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		}
 		else if (memberFlag == MEMBER_NO)
 		{
-			if (ch->GetGMLevel() == GM_PLAYER)
+			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
 				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
 		}
 		else
@@ -838,7 +838,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		if (COXEventManager::instance().Enter(ch) == false)
 		{
 			// ox   ?  . ÷?  
-			if (ch->GetGMLevel() == GM_PLAYER)
+			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
 				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
 		}
 	}

@@ -1510,7 +1510,7 @@ struct log_packet_func
 		if (!d->GetCharacter())
 			return;
 
-		if (d->GetCharacter()->GetGMLevel() > GM_PLAYER)
+		if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) > GM_PLAYER)
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_NOTICE, "%s", m_str);
 	}
 };
@@ -3120,7 +3120,7 @@ ACMD(do_socket_item)
 ACMD(do_block_chat_list)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || (((ch)->GetGMLevel()) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
+	if (!ch || ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch))) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
@@ -3188,7 +3188,7 @@ ACMD(do_vote_block_chat)
 ACMD(do_block_chat)
 {
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (ch && (ch->GetGMLevel() < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
+	if (ch && (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
@@ -3260,7 +3260,7 @@ ACMD(do_build)
 
 	char arg1[256], arg2[256], arg3[256], arg4[256];
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
-	uint8_t GMLevel = ((ch)->GetGMLevel());
+	uint8_t GMLevel = (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
 	CLand * pkLand = CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 

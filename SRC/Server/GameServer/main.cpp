@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
@@ -228,7 +230,7 @@ namespace
 		{
 			if (d->GetCharacter())
 			{
-				if (d->GetCharacter()->GetGMLevel() == GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER)
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 			}
 		}

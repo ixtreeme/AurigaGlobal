@@ -139,7 +139,7 @@ namespace quest
 			char szQuery[1024] = {0};
 			snprintf(szQuery, sizeof(szQuery), "SELECT d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ch->GetGMLevel() > GM_PLAYER ? ((ch)->GetPlayerID()) : 0, szRankType.c_str());
+				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ? ((ch)->GetPlayerID()) : 0, szRankType.c_str());
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
 			if (pMsg->Get()->uiNumRows > 0) {
@@ -171,7 +171,7 @@ namespace quest
 
 		{
 			char szQuery[1024] = {0};
-			if (ch->GetGMLevel() > GM_PLAYER) {
+			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER) {
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "

@@ -2457,7 +2457,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetGMLevel() >= GM_HIGH_WIZARD) ? 1 : 0);
+		lua_pushboolean(L, (ch && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) >= GM_HIGH_WIZARD) ? 1 : 0);
 		return 1;
 	}
 
@@ -2472,7 +2472,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetGMLevel() : 0);
+		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -4157,9 +4157,9 @@ teleport_area:
             return 0;
         ch->SetGMLevel();
         if (auto* gm = ECS_TryGet<ecs::GMLevel>(e))
-            gm->level = ch->GetGMLevel();
+            gm->level = ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch));
         if (auto* status = ECS_TryGet<ecs::StatusFlags>(e))
-            status->isGM = (ch->GetGMLevel() > 0);
+            status->isGM = (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > 0);
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         return 0;

@@ -761,7 +761,7 @@ void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManage
 	if (!d->GetCharacter())
 		return;
 
-	if (ch->GetGMLevel() == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
 		return;
 
 	uint8_t bLen = companion.size();

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "desc.h"
 #include "utils.h"
 #include "config.h"
@@ -190,7 +192,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (!ch)
 		return;
 	
-	if (ch->GetGMLevel() != GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) != GM_IMPLEMENTOR)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 774, "");

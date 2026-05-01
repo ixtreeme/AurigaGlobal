@@ -112,7 +112,7 @@ LPSHOP CShopManager::GetByNPCVnum(uint32_t dwVnum)
 bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper, int iShopVnum)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (pkChr->GetGMLevel() > GM_PLAYER && pkChr->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pkChr)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pkChr)) < GM_IMPLEMENTOR) {
 		return false;
 	}
 #endif
@@ -223,7 +223,7 @@ void CShopManager::StopShopping(LPCHARACTER ch)
 void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -277,7 +277,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -345,7 +345,7 @@ uint8_t bCount
 	}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif

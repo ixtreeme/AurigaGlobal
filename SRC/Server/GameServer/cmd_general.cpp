@@ -2542,7 +2542,7 @@ ACMD(do_observer_exit)
 
 ACMD(do_view_equip)
 {
-	if (((ch)->GetGMLevel()) <= GM_PLAYER)
+	if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch))) <= GM_PLAYER)
 		return;
 
 	char arg1[256];

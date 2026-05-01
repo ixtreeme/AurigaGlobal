@@ -979,7 +979,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 		return;
 	}
 
-	if (cmd_info[icmd].gm_level && (cmd_info[icmd].gm_level > ch->GetGMLevel() || cmd_info[icmd].gm_level == GM_DISABLE))
+	if (cmd_info[icmd].gm_level && (cmd_info[icmd].gm_level > ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) || cmd_info[icmd].gm_level == GM_DISABLE))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 266, "");
@@ -992,7 +992,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 
 	((*cmd_info[icmd].command_pointer) (ch, line, icmd, cmd_info[icmd].subcmd));
 
-	if (ch->GetGMLevel() >= GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) >= GM_IMPLEMENTOR)
 	{
 		if (cmd_info[icmd].gm_level >= GM_IMPLEMENTOR)
 		{

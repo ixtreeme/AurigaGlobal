@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "config.h"
 #include "constants.h"
 #include "BattleArena.h"
@@ -47,7 +49,7 @@ struct FWarpToHome
 			{
 				if ( !test_server )
 				{
-					if ( lpChar->GetGMLevel() != GM_PLAYER ) return;
+					if ( ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(lpChar)) != GM_PLAYER ) return;
 				}
 
 				int nEmpire = lpChar->GetEmpire();

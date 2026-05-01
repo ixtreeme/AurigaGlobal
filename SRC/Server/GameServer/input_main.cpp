@@ -613,7 +613,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				if (!ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!(pkChr && pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)))
 						if (bOpponentEmpire != ch->GetEmpire() && ch->GetEmpire() && bOpponentEmpire // 서로 제국이 다르면서
-								&& ch->GetGMLevel() == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // 둘다 일반 플레이어이면
+								&& ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // 둘다 일반 플레이어이면
 							// 이름 밖에 모르니 gm_get_level 함수를 사용
 						{
 							if (!pkChr)
@@ -741,7 +741,7 @@ struct FEmpireChatPacket
 
 		if (d->GetEmpire() == bEmpire ||
 			bEmpire == 0 ||
-			d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+			ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) > GM_PLAYER ||
 			d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
 		{
 			d->Packet(orig_msg, orig_len);
@@ -806,7 +806,7 @@ struct FYmirChatPacket
 
 		if (m_ring ||
 			d->GetEmpire() == m_bEmpire ||
-			d->GetCharacter()->GetGMLevel() > GM_PLAYER ||
+			ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) > GM_PLAYER ||
 			d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
 		{
 			packet.size = m_len_orig_msg + sizeof(TPacketGCChat);
@@ -1093,7 +1093,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 
 
-/* 	if (ch->GetGMLevel() == GM_PLAYER && ch->GetMapIndex() == 113)//OX mapon chat letiltva//
+/* 	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && ch->GetMapIndex() == 113)//OX mapon chat letiltva//
 	{
 		return iExtraLen;
 	} */
@@ -1436,7 +1436,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 							FEmpireChatPacket(pack_chat,
 								chatbuf,
 								len,
-								(ch->GetGMLevel() > GM_PLAYER ||
+								(ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ||
 								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ch->GetEmpire(),
 								ch->GetMapIndex(), strlen(ch->GetName())));
 #ifdef ENABLE_CHAT_LOGGING
@@ -1546,7 +1546,7 @@ void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -1571,7 +1571,7 @@ void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -1621,7 +1621,7 @@ void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 	struct command_item_pickup * pinfo = (struct command_item_pickup*) data;
 	if (ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 			return;
 		}
 #endif
@@ -1751,7 +1751,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (!d)
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ch->GetGMLevel() == GM_PLAYER && ch_companion->GetGMLevel() != GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch_companion)) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 184, "");
@@ -1775,7 +1775,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				char name[CHARACTER_NAME_MAX_LEN + 1];
 				strlcpy(name, c_pData, sizeof(name));
 
-				if (ch->GetGMLevel() == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 184, "");
@@ -2128,7 +2128,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					}
 #endif
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-					if ((ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) || (to_ch->GetGMLevel() > GM_PLAYER && to_ch->GetGMLevel() < GM_IMPLEMENTOR)) {
+					if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(to_ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(to_ch)) < GM_IMPLEMENTOR)) {
 						return;
 					}
 #endif
@@ -2884,7 +2884,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -3002,7 +3002,7 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -3149,7 +3149,7 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -3175,7 +3175,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)
 		return;
 #endif
 
@@ -3292,7 +3292,7 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)
 		return;
 #endif
 
@@ -3358,7 +3358,7 @@ void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)
 		return;
 #endif
 
@@ -4407,7 +4407,7 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 
 	if (to_ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if ((to_ch->GetGMLevel() > GM_PLAYER && to_ch->GetGMLevel() < GM_IMPLEMENTOR) || (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR)) {
+		if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(to_ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(to_ch)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)) {
 			return;
 		}
 #endif
@@ -4505,7 +4505,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 #endif
 	const TPacketCGRefine* p = reinterpret_cast<const TPacketCGRefine*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 		ch->ClearRefineMode();
 		return;
 	}
@@ -5222,7 +5222,7 @@ void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
 	struct command_item_destroy * pinfo = (struct command_item_destroy *) data;
 	if (ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ch->GetGMLevel() > GM_PLAYER && ch->GetGMLevel() < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
 			return;
 		}
 #endif
