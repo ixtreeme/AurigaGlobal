@@ -8431,6 +8431,43 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 15E-58 - Identity ECS Migration Production Validation
+
+Mode:
+- WinTest result documentation for Phase 15E-58a/b/c.
+- No code changes in this entry.
+
+Scope validated:
+- Scalar identity getters: `GetPlayerID`, `GetEmpire`, `GetGMLevel`, `GetPacketVID`.
+- Type predicates: `IsPC`, `IsNPC`, `IsStone`, `IsMonster`.
+- Race/name accessors: `GetRaceNum`, `GetName`.
+- `GetName` is the first production-tested `std::string_view` ECS accessor returning stable character name storage.
+
+Final 15E-58c commits:
+- `a14d797 Phase 15E-58c.1: Add PlayerRuntime race and name API`
+- `c284c51 Phase 15E-58c.2: Migrate GetRaceNum`
+- `d700135 Phase 15E-58c.3a: Migrate GetName primary character receivers`
+- `0f1a89e Phase 15E-58c.3b: Migrate GetName tail character receivers`
+- `5a726bc Phase 15E-58: Add identity migration close-out report`
+
+Final counts:
+- `GetRaceNum` caller-side remaining: 0.
+- `GetName` true CHARACTER caller-side remaining: 0.
+- Remaining raw `GetName` hits are non-CHARACTER object names or bridge/internal code.
+
+Build status:
+- Final GameServer build passed:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+WinTest status:
+- Operator confirmed: WinTest completed perfectly.
+- Phase 15E-58 is production-verified.
+
+Next recommended phase:
+- Phase 15E-59: Position accessors (`GetMapIndex`, `GetX`, `GetY`, related position reads).
+
 ## Phase 15E-58a - Scalar Identity Getters ECS Migration
 
 Mode:

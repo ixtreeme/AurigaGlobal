@@ -73,9 +73,11 @@ Warnings observed were pre-existing warning categories and not blockers for this
 
 5. WinTest Status
 
-WinTest is still required before marking Phase 15E-58 production-verified.
+WinTest result: passed.
+Operator report: "win teszt tokeletesen lefutott".
+Phase 15E-58 is production-verified.
 
-Required verification:
+Verified coverage:
 - Login and character name display.
 - Chat, whisper, party, guild names.
 - GM commands that display actor/target names.
@@ -94,6 +96,5 @@ Phase 15E-58b hotfix:
 
 7. Recommended Next Phase
 
-Proceed to Phase 15E-59 after WinTest:
+Proceed to Phase 15E-59:
 - Position accessors: GetMapIndex, GetX, GetY, and related position reads.
-
