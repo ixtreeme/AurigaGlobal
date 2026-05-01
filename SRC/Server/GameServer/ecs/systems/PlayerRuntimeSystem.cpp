@@ -88,8 +88,7 @@ uint8_t GetEmpire(entt::entity e)
 			return empire->value;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetEmpire() : 0;
+	return 0;
 }
 
 uint8_t GetGMLevel(entt::entity e)
