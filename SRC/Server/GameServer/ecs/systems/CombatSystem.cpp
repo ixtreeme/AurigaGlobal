@@ -2584,7 +2584,7 @@ int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int 
 
 void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 {
-	if (pkKiller->GetSP() >= pkKiller->GetMaxSP())
+	if (pkKiller->GetSP() >= ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)))
 		return;
 
 	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
@@ -2642,16 +2642,16 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			int iAmount;
 
 			if (bAttacking)
-				iAmount = 2 + pkKiller->GetMaxSP() / 200;
+				iAmount = 2 + ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 200;
 			else if (bMoving)
-				iAmount = 2 + pkKiller->GetMaxSP() / 100;
+				iAmount = 2 + ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100;
 			else
 			{
 				//
 				if (pkKiller->GetHP() < pkKiller->GetMaxHP())
-					iAmount = 2 + (pkKiller->GetMaxSP() / 100); //   á
+					iAmount = 2 + (ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100); //   á
 				else
-					iAmount = 9 + (pkKiller->GetMaxSP() / 100); // ⺻
+					iAmount = 9 + (ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100); // ⺻
 			}
 
 			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
@@ -3554,7 +3554,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 			if (pkAttacker->GetPoint(POINT_KILL_SP_RECOVER))
 			{
-				int iSP = pkAttacker->GetMaxSP() * pkAttacker->GetPoint(POINT_KILL_SP_RECOVER) / 100;
+				int iSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkAttacker)) * pkAttacker->GetPoint(POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_SP, iSP);
 				CreateFly(FLY_SP_SMALL, pkAttacker);
 			}
@@ -4858,7 +4858,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * pAttacker->GetPoint(POINT_STEAL_SP) / 100;
 
 
-						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < pAttacker->GetMaxSP()) && (GetSP() > 0) && (iSP > 0))
+						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pAttacker))) && (GetSP() > 0) && (iSP > 0))
 						{
 							CreateFly(FLY_SP_MEDIUM, pAttacker);
 							ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSP);
@@ -4963,7 +4963,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
 					int64_t iSPAbso = std::min(dam, GetSP()) * pAttacker->GetPoint(POINT_HIT_SP_RECOVERY) / 100;
-					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < pAttacker->GetMaxSP()) && (GetSP() > 0) && (iSPAbso > 0)) {
+					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pAttacker))) && (GetSP() > 0) && (iSPAbso > 0)) {
 						CreateFly(FLY_SP_SMALL, pAttacker);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSPAbso);
 					}
@@ -6687,7 +6687,7 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 	else if (iPercent <= 99) wantStep = 1;
 	else return;
 
-	for (int step = ch->GetMaxSP() + 1; step <= wantStep; ++step)
+	for (int step = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) + 1; step <= wantStep; ++step)
 	{
 		ch->SetMaxSP(step);
 		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), 0);

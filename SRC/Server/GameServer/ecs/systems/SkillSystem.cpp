@@ -1863,7 +1863,7 @@ struct FuncSplashDamage
 			m_pkSk->kPointPoly.SetVar("maxv", pkChrVictim->GetLimitPoint(POINT_MOV_SPEED));
 
 		m_pkSk->SetPointVar("maxhp", pkChrVictim->GetMaxHP());
-		m_pkSk->SetPointVar("maxsp", pkChrVictim->GetMaxSP());
+		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChrVictim)));
 
 		m_pkSk->SetPointVar("chain", m_pkChr->GetChainLightningIndex());
 		m_pkChr->IncChainLightningIndex();
@@ -2702,7 +2702,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
 	pkSk->SetPointVar("maxhp", this->GetMaxHP());
-	pkSk->SetPointVar("maxsp", this->GetMaxSP());
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(this)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, this));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
@@ -3002,7 +3002,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
 	pkSk->SetPointVar("maxhp", pkVictim->GetMaxHP());
-	pkSk->SetPointVar("maxsp", pkVictim->GetMaxSP());
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
@@ -3168,7 +3168,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
 	pkSk->SetPointVar("maxhp", pkVictim->GetMaxHP());
-	pkSk->SetPointVar("maxsp", pkVictim->GetMaxSP());
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));

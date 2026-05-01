@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
 
@@ -91,7 +92,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
         health.current = ch->GetHP();
         health.max = ch->GetMaxHP();
         mana.current = ch->GetSP();
-        mana.max = ch->GetMaxSP();
+        mana.max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
 
         if (auto* stamina = reg.try_get<ecs::Stamina>(entity)) {
             stamina->current = ch->GetStamina();

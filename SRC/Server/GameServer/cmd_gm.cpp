@@ -1250,7 +1250,7 @@ ACMD(do_state)
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "LEV %d", ((tch)->GetLevel()));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), tch->GetMaxHP());
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), tch->GetMaxSP());
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(tch)));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
 			tch->GetPoint(POINT_ATT_GRADE),
 			tch->GetPoint(POINT_MAGIC_ATT_GRADE),
@@ -2074,7 +2074,7 @@ ACMD(do_set)
 ACMD(do_reset)
 {
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 	ch->Save();
 }
 

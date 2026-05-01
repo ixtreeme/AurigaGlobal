@@ -1371,7 +1371,7 @@ void CNewPetActor::GiveBuff()
 #else
 	//Inizializzo i bonus del NewPetSystem //hp sp e def
 	// 559 Affect NewPet
-	int cbonus[3] = { m_pkOwner->GetMaxHP(),  m_pkOwner->GetPoint(POINT_DEF_GRADE), m_pkOwner->GetMaxSP() };
+	int cbonus[3] = { m_pkOwner->GetMaxHP(),  m_pkOwner->GetPoint(POINT_DEF_GRADE), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(m_pkOwner)) };
 	for (int i = 0; i < 3; ++i) {
 		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float((cbonus[i]*m_dwbonuspet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
 	}

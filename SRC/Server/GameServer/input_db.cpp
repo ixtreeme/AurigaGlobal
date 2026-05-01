@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
 #include "config.h"
@@ -561,7 +562,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
             auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
             m.current = ch->GetSP();
-            m.max     = ch->GetMaxSP();
+            m.max     = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
 
             auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
             lv.value = ch->GetLevel();

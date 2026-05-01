@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -790,9 +791,9 @@ void ClearClonesOnMap(int32_t mapIndex)
             // 10x erosites (HP/SP/DMG/STAT)
             clone->SetLevel((uint8_t)source->GetLevel());
             clone->SetMaxHP((int64_t)source->GetMaxHP() * STR_MULTIPLE);
-            clone->SetMaxSP((int64_t)source->GetMaxSP() * STR_MULTIPLE);
+            clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
             clone->SetHP((int64_t)source->GetMaxHP() * STR_MULTIPLE);
-            clone->SetSP((int64_t)source->GetMaxSP() * STR_MULTIPLE);
+            clone->SetSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
 
             MulPoint10(clone, POINT_ST);
             MulPoint10(clone, POINT_HT);
@@ -1337,9 +1338,9 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         }
         clone->SetLevel((uint8_t)source->GetLevel());
         clone->SetMaxHP(source->GetMaxHP()* STR_MULTIPLE);
-        clone->SetMaxSP(source->GetMaxSP() * STR_MULTIPLE);
+        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
         clone->SetHP(source->GetMaxHP() * STR_MULTIPLE);
-        clone->SetSP(source->GetMaxSP() * STR_MULTIPLE);
+        clone->SetSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
         clone->SetKillerMode(true);
 
         // Skills (AI uses only ATTACK skills)

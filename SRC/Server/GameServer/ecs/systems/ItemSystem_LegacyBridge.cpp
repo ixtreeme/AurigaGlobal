@@ -5289,7 +5289,7 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 	static const int NEED_WARP_SP_PERCENT = 30;
 
 	const int curSP = lpChar->GetSP();
-	const int needSP = lpChar->GetMaxSP() * NEED_WARP_SP_PERCENT / 100;
+	const int needSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(lpChar)) * NEED_WARP_SP_PERCENT / 100;
 
 	if (curSP < needSP)
 	{

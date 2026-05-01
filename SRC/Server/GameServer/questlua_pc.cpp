@@ -1129,7 +1129,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetMaxSP() : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -1263,7 +1263,7 @@ namespace quest
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
         ch->ComputePoints();
         ch->PointsPacket();
         ch->SkillLevelPacket();
@@ -1277,7 +1277,7 @@ namespace quest
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {
             mana->current = ch->GetSP();
-            mana->max = ch->GetMaxSP();
+            mana->max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
@@ -3096,7 +3096,7 @@ teleport_area:
 				}
 				else if ( point == POINT_IQ )
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 				}
 
 				switch ( idx )
@@ -4138,7 +4138,7 @@ teleport_area:
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {
             mana->current = ch->GetSP();
-            mana->max = ch->GetMaxSP();
+            mana->max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         if (e != entt::null && g_registry.valid(e))
@@ -4451,7 +4451,7 @@ teleport_area:
         if (!ch)
             return 0;
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -4460,7 +4460,7 @@ teleport_area:
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {
             mana->current = ch->GetSP();
-            mana->max = ch->GetMaxSP();
+            mana->max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
         }
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);

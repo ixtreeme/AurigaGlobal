@@ -1091,7 +1091,7 @@ void CParty::HealParty()
 		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) < PARTY_DEFAULT_RANGE)
 		{
 			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP()-ch->GetHP());
-			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP()-ch->GetSP());
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch))-ch->GetSP());
 		}
 	}
 

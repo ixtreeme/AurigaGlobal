@@ -775,7 +775,7 @@ ACMD(do_restart)
 						}
 
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -788,7 +788,7 @@ ACMD(do_restart)
 						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -1372,7 +1372,7 @@ ACMD(do_restart)
 				}
 
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 				ch->DeathPenalty(1);
 				if (showed)
 				{
@@ -1395,7 +1395,7 @@ ACMD(do_restart)
 #else
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, 50 - ch->GetHP());
 #endif
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP() - ch->GetSP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 				ch->DeathPenalty(0);
 				ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1784,7 +1784,7 @@ ACMD(do_pvp_advanced)
 	int m_Level = pkVictim->GetLevel();
 	int m_PlayTime = pkVictim->GetRealPoint(POINT_PLAYTIME);
 	int m_MaxHP = pkVictim->GetMaxHP();
-	int m_MaxSP = pkVictim->GetMaxSP();
+	int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim));
 
 	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim));
 
