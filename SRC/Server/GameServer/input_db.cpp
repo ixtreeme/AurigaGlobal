@@ -1681,6 +1681,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 	std::vector<LPITEM> v;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
+	uint32_t duplicatePurgeCount = 0;
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++p)
 	{
@@ -1700,8 +1701,12 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 			if (samePlayer || extraInventoryWindow)
 			{
-				LOG_ERROR("CInputDB::ItemLoad: purging stale duplicate item id={} owner_pid={} window={}", p->id, ((ch)->GetPlayerID()), p->window);
-				ItemSystem::DestroyLoadedDuplicateItem(staleItem);
+				++duplicatePurgeCount;
+				LOG_ERROR("DUP_ITEM_PURGE_BEGIN index={} id={} owner_pid={} window={} entity={}",
+					i, p->id, ((ch)->GetPlayerID()), p->window, static_cast<uint32_t>(staleItem));
+				const bool destroyed = ItemSystem::DestroyLoadedDuplicateItem(staleItem);
+				LOG_ERROR("DUP_ITEM_PURGE_END index={} id={} owner_pid={} window={} destroyed={}",
+					i, p->id, ((ch)->GetPlayerID()), p->window, destroyed);
 			}
 		}
 
@@ -1779,6 +1784,12 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
+	}
+
+	if (duplicatePurgeCount > 0)
+	{
+		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
+			((ch)->GetPlayerID()), ch->GetName(), duplicatePurgeCount, dwCount);
 	}
 
 	auto it = v.begin();

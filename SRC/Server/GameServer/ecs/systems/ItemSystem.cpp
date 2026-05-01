@@ -2221,8 +2221,20 @@ bool SyncItemStateFromLegacy(entt::entity item)
 bool DestroyLoadedDuplicateItem(entt::entity item)
 {
     LPITEM legacyItem = ResolveLegacyItemForDestruction(item);
-    if (!legacyItem)
+    if (!legacyItem) {
+        LOG_ERROR("DUP_ITEM_DESTROY_RESOLVE_FAIL entity={}", static_cast<uint32_t>(item));
         return false;
+    }
+
+    const uint32_t itemID = legacyItem->GetID();
+    const uint32_t itemVID = legacyItem->GetVID();
+    const uint32_t itemVnum = legacyItem->GetVnum();
+    const uint32_t lastOwnerPID = legacyItem->GetLastOwnerPID();
+    const uint8_t itemWindow = legacyItem->GetWindow();
+    const uint16_t itemCell = legacyItem->GetCell();
+    LOG_ERROR("DUP_ITEM_DESTROY_BEGIN entity={} item={} id={} vid={} vnum={} last_owner_pid={} window={} cell={}",
+        static_cast<uint32_t>(item), static_cast<const void*>(legacyItem), itemID, itemVID, itemVnum,
+        lastOwnerPID, static_cast<int>(itemWindow), itemCell);
 
     legacyItem->SetSkipSave(true);
 
@@ -2230,19 +2242,21 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
     const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;
     LPCHARACTER legacyOwner = legacyItem->GetOwner();
     LPCHARACTER liveOwner = ownerPID != 0 ? CHARACTER_MANAGER::instance().FindByPID(ownerPID) : nullptr;
+    LOG_ERROR("DUP_ITEM_DESTROY_OWNER entity={} id={} owner_pid={} legacy_owner={} live_owner={}",
+        static_cast<uint32_t>(item), itemID, ownerPID, static_cast<const void*>(legacyOwner),
+        static_cast<const void*>(liveOwner));
 
     if (legacyOwner) {
-        if (liveOwner == legacyOwner) {
-            legacyItem->RemoveFromCharacter();
-        } else {
-            legacyItem->SetCell(nullptr, legacyItem->GetCell());
-            g_registry.emplace_or_replace<ecs::ItemOwner>(
-                item, ecs::ItemOwner{0, legacyItem->GetLastOwnerPID(), 0});
-        }
+        LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_BEGIN entity={} id={} stale_owner={}",
+            static_cast<uint32_t>(item), itemID, liveOwner != legacyOwner);
+        legacyItem->RemoveFromCharacter();
+        LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_END entity={} id={} owner_after={}",
+            static_cast<uint32_t>(item), itemID, static_cast<const void*>(legacyItem->GetOwner()));
     }
 
-    EntityFactory::DestroyItemEntity(g_registry, legacyItem);
+    LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_BEGIN item={} id={}", static_cast<const void*>(legacyItem), itemID);
     M2_DESTROY_ITEM(legacyItem);
+    LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_END item={} id={}", static_cast<const void*>(legacyItem), itemID);
     return true;
 }
 
