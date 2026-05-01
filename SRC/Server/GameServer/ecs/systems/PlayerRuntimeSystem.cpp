@@ -113,8 +113,7 @@ uint32_t GetPacketVID(entt::entity e)
 			return vid->value;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetPacketVID() : 0;
+	return 0;
 }
 
 uint32_t GetRaceNum(entt::entity e)
