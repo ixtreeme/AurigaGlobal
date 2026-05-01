@@ -115,6 +115,42 @@ uint32_t GetPacketVID(entt::entity e)
 	return ch ? ch->GetPacketVID() : 0;
 }
 
+bool IsPC(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		return g_registry.all_of<ecs::TagPC>(e);
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->IsPC() : false;
+}
+
+bool IsNPC(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		return g_registry.all_of<ecs::TagNPC>(e);
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->IsNPC() : false;
+}
+
+bool IsStone(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		return g_registry.all_of<ecs::TagStone>(e);
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->IsStone() : false;
+}
+
+bool IsMonster(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e))
+		return g_registry.all_of<ecs::TagMonster>(e);
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->IsMonster() : false;
+}
+
 } // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
