@@ -1,7 +1,9 @@
 #ifndef __LOCALE_SERVCICE__
 #define __LOCALE_SERVCICE__
 
-bool LocaleService_Init(const std::string& c_rstServiceName);
+#include <string_view>
+
+bool LocaleService_Init(std::string_view c_rstServiceName);
 void LocaleService_LoadEmpireTextConvertTables();
 void LocaleService_TransferDefaultSetting();
 const std::string& LocaleService_GetBasePath();

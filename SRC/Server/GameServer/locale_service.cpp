@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <string_view>
 #include <Core/Logging.hpp>
 #include "locale_service.h"
 #include "constants.h"
@@ -30,7 +31,7 @@ eLocalization 	g_eLocalType = LC_NOSET;
 
 int (*check_name) (const char * str) = nullptr;
 int (*is_twobyte) (const char * str) = nullptr;
-bool LC_InitLocalization( const std::string& szLocal );
+bool LC_InitLocalization( std::string_view szLocal );
 
 int is_twobyte_euckr(const char * str)
 {
@@ -994,12 +995,12 @@ static void __LocaleService_Init_Taiwan()
 	PK_PROTECT_LEVEL = 15;
 }
 
-static void __CheckPlayerSlot(const std::string& service_name)
+static void __CheckPlayerSlot(std::string_view service_name)
 {
 
 }
 
-bool LocaleService_Init(const std::string& c_rstServiceName)
+bool LocaleService_Init(std::string_view c_rstServiceName)
 {
 	if (!g_stServiceName.empty())
 	{
@@ -1007,7 +1008,7 @@ bool LocaleService_Init(const std::string& c_rstServiceName)
 		return false;
 	}
 
-	g_stServiceName = c_rstServiceName;
+	g_stServiceName.assign(c_rstServiceName.data(), c_rstServiceName.size());
 
 	if ( "japan" == g_stServiceName)
 	{
@@ -1196,9 +1197,9 @@ const std::string& LocaleService_GetQuestPath()
 	return g_stQuestDir;
 }
 
-bool LC_InitLocalization( const std::string& szLocal )
+bool LC_InitLocalization( std::string_view szLocal )
 {
-	g_stLocal = szLocal;
+	g_stLocal.assign(szLocal.data(), szLocal.size());
 
 	if ( !g_stLocal.compare("ymir") )
 		g_eLocalType = LC_YMIR;
