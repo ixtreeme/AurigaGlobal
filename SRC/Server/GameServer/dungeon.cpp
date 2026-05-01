@@ -316,7 +316,7 @@ struct FWarpToPosition
 			return;
 		}
 		LPCHARACTER ch = (LPCHARACTER)ent;
-		if (!ch->IsPC()) {
+		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 			return;
 		}
 		if (ch->GetMapIndex() == lMapIndex)
@@ -470,7 +470,7 @@ int32_t CDungeon::GetUniqueVid(std::string_view key)
 
 void CDungeon::DeadCharacter(LPCHARACTER ch)
 {
-	if (!ch->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		if (ch->FindAffect(AFFECT_DUNGEON_UNIQUE)) {
 			auto it = m_map_UniqueMob.begin();
@@ -578,7 +578,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ch->IsPC() && !ch->IsPet() && !ch->IsMount()
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsMount()
 #ifdef __NEWPET_SYSTEM__
 				 && !ch->IsNewPet()
 #endif
@@ -597,7 +597,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ch->IsPC() && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
 				{
 					ch->Dead();
 				}
@@ -613,7 +613,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ch->IsPC() && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
 				{
 					int32_t racevnum = ch->GetRaceNum();
 					if (racevnum != 3963 && racevnum != 3964)
@@ -635,9 +635,9 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
 #ifdef __NEWPET_SYSTEM__
-				if (!ch->IsPC() && !ch->IsPet() && !ch->IsNewPet()
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsNewPet()
 #else
-				if (!ch->IsPC() && !ch->IsPet()
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet()
 #endif
 				)
 				{
@@ -719,7 +719,7 @@ struct FExitDungeonLobby
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 			{
 				if (lobby == 1)
 				{
@@ -767,7 +767,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (ch->IsPC())
+				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				{
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "%s", m_psz);
 				}
@@ -810,7 +810,7 @@ namespace
 		void operator() (LPENTITY ent) {
 			if (ent->IsType(ENTITY_CHARACTER)) {
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (ch->IsPC()) {
+				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 #ifdef TEXTS_IMPROVEMENT
 					if (m_big == true)
 					{
@@ -927,7 +927,7 @@ struct SUpdateMastHp
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 			{
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
 			}

@@ -261,7 +261,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
     if (!IsPC())
         return;
 
-    if (!viewer || !viewer->IsPC())
+    if (!viewer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)))
         return;
 
     if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
@@ -291,7 +291,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
         if (!viewer || viewer == this)
             continue;
 
-        if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+        if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif

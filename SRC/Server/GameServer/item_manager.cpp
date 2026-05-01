@@ -1047,7 +1047,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		}
 	}
 #endif
-	if (!pkChr || pkChr->IsPolymorphed() || pkChr->IsPC())
+	if (!pkChr || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 	{
 		return false;
 	}

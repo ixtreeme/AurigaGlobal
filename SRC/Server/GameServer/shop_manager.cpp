@@ -120,7 +120,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 		return false;
 	// this method is only for NPC
 	
-	if (pkChrShopKeeper->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChrShopKeeper)))
 		return false;
 
 	//PREVENT_TRADE_WINDOW

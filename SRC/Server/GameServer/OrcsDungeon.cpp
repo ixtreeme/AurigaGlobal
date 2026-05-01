@@ -88,7 +88,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ch->IsPC())
+            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 fn(ch);
         }
     };
@@ -112,7 +112,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ch->IsPC())
+            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 return;
 
             // must have required item
@@ -275,7 +275,7 @@ struct FCooldownCheck
 
     void operator()(LPCHARACTER ch)
     {
-        if (!ch || !ch->IsPC())
+        if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
             return;
 
         const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
@@ -345,7 +345,7 @@ bool COrcsDungeon::IsOrcDungeonMap(int32_t mapIndex) const
 
 void COrcsDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -359,7 +359,7 @@ void COrcsDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -473,7 +473,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
     if (!killer || !victim)
         return;
-    if (!killer->IsPC())
+    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
     // 8009 is often CHAR_TYPE_STONE, not monster.
     if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
@@ -624,7 +624,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 // NPC click entry/exit.
 bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     if (!ch->CanWarp())
@@ -701,7 +701,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     {
         FCooldownCheck f(now, kQfCooldown);
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
         });
@@ -729,7 +729,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         bool missingItem = false;
 
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!ok || !m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
             if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
@@ -777,7 +777,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     // Consume items + set per-player flags
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             m->RemoveSpecifyItem(kRequiredItem, 1);
@@ -800,7 +800,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     else
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             applyMember(m);
         });

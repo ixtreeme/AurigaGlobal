@@ -50,7 +50,7 @@ namespace quest
 		if (npcE == entt::null || !g_registry.valid(npcE)) {
 			const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
 			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushboolean(L, (npc && ((npc)->IsPC())) ? 1 : 0);
+			lua_pushboolean(L, (npc && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc)))) ? 1 : 0);
 			return 1;
 		}
 		lua_pushboolean(L, g_registry.all_of<ecs::TagPC>(npcE) ? 1 : 0);
@@ -243,7 +243,7 @@ namespace quest
 		auto* npc = ecs::LegacyCharOf(npcEntity);
 		if ( npc != nullptr)
 		{
-			if (((npc)->IsPC()))
+			if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
 				return 0;
 
 			if (npc->GetQuestNPCID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
@@ -263,7 +263,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (!npc || ((npc)->IsPC()))
+		if (!npc || (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
 		{
 			lua_pushboolean(L, true);
 			return 1;

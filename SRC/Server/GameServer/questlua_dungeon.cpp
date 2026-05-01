@@ -939,7 +939,7 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ((ch)->IsPC()))
+			if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			{
 				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			}
@@ -999,7 +999,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ((tch)->IsPC()))
+				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
 					if (!tch->CanWarp())
 					{
@@ -1139,7 +1139,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ((tch)->IsPC()))
+				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
 					bool ticket = false;
 					if (vnum2 > 0 && count2 > 0)
@@ -1346,7 +1346,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ((tch)->IsPC()))
+				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
 
 					if (currentDungeon)
@@ -1487,7 +1487,7 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && ((ch)->IsPC()))
+			if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			{
 				if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 				{
@@ -1593,7 +1593,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ((tch)->IsPC()))
+				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
 					if (!tch->CanWarp())
 					{
@@ -1678,7 +1678,7 @@ namespace quest
 			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			// {
 				// LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				// if (tch && ((tch)->IsPC()))
+				// if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				// {
 					// if (vnum > 0)
 					// {

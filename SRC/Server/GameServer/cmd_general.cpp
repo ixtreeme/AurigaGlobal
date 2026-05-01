@@ -56,7 +56,7 @@
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 {
-	if (!ch || !((ch)->IsPC()) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return std::string();
 
 	DESC* d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
@@ -83,7 +83,7 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 
 static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 {
-	if (!ch || !((ch)->IsPC()) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -726,7 +726,7 @@ ACMD(do_console)
 
 ACMD(do_restart)
 {
-	if (!((ch)->IsPC()) || ch->GetPosition() != POS_DEAD)
+	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || ch->GetPosition() != POS_DEAD)
 	{
 		return;
 	}
@@ -1837,7 +1837,7 @@ ACMD(do_block_equipment)
 	char arg1[256];
 	one_argument (argument, arg1, sizeof(arg1));
 	
-	if (!((ch)->IsPC()) || nullptr == ch)
+	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || nullptr == ch)
 		return;
 	
 	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_);
@@ -2557,7 +2557,7 @@ ACMD(do_view_equip)
 		if (!tch)
 			return;
 
-		if (!tch->IsPC())
+		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 			return;
 
 		tch->SendEquipment(ch);

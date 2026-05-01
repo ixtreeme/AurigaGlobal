@@ -359,7 +359,7 @@ namespace quest
 			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
 			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-			if (npc && !((npc)->IsPC()))
+			if (npc && !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
 			{
 				if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == npc->GetQuestNPCID())
 				{

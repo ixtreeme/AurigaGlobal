@@ -4017,7 +4017,7 @@ struct FCountInMap
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ch && ((ch)->IsPC()))
+			if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 				++m_Count[(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))];
 		}
 	}

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PlayerRuntimeSystem.hpp"
 
 #include "AISystem.hpp"
 
@@ -41,7 +42,7 @@ LPCHARACTER LegacyCharOf(entt::registry& reg, entt::entity entity)
 
 uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
-    if (!ch || ch->IsPC()) {
+    if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         return AI_STATE_IDLE;
     }
 
@@ -426,7 +427,7 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
 
     for (auto entity : view) {
         LPCHARACTER ch = LegacyCharOf(reg, entity);
-        if (!ch || ch->IsPC()) {
+        if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
             continue;
         }
 

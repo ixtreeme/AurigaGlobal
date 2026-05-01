@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 
 #include "utils.h"
@@ -109,7 +111,7 @@ public:
 			LPCHARACTER chMe = (LPCHARACTER)m_me;
 			LPCHARACTER chEnt = (LPCHARACTER)ent;
 
-			if (chMe->IsPC() && !chEnt->IsPC() && !chEnt->IsWarp() && !chEnt->IsGoto())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(chMe)) && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(chEnt)) && !chEnt->IsWarp() && !chEnt->IsGoto())
 				chEnt->StartStateMachine();
 		}
 	}

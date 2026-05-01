@@ -104,7 +104,7 @@ int OnClickShop(TRIGGERPARAM)
 
 int OnClickOrcsDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	// NPC vnum 9239
@@ -117,7 +117,7 @@ int OnClickOrcsDungeon(TRIGGERPARAM)
 
 int OnClickTritonTempleDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	// NPC vnum 20094
@@ -130,7 +130,7 @@ int OnClickTritonTempleDungeon(TRIGGERPARAM)
 
 int OnClickValentineDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	// NPC vnum 20012
@@ -143,7 +143,7 @@ int OnClickValentineDungeon(TRIGGERPARAM)
 
 int OnClickEasterDungeon(TRIGGERPARAM)
 {
-    if (!causer || !causer->IsPC())
+    if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
         return 0;
 
     // NPC vnum 21
@@ -156,7 +156,7 @@ int OnClickEasterDungeon(TRIGGERPARAM)
 
 int OnClickRuneDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	// NPC vnum 20506
@@ -169,7 +169,7 @@ int OnClickRuneDungeon(TRIGGERPARAM)
 
 int OnClickPyramidDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	// NPC vnum 9331
@@ -182,7 +182,7 @@ int OnClickPyramidDungeon(TRIGGERPARAM)
 
 int OnClickNightmareDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	if (!ch || ((ch)->GetRaceNum()) != 20088)
@@ -193,7 +193,7 @@ int OnClickNightmareDungeon(TRIGGERPARAM)
 }
 int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	if (!ch)
@@ -208,7 +208,7 @@ int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 
 int OnClickVikingDungeon(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	if (!ch)
@@ -225,7 +225,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 int OnClickStoneCraft(TRIGGERPARAM)
 {
-	if (!causer || !causer->IsPC())
+	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
 	if (!ch || ((ch)->GetRaceNum()) != 9005)
@@ -241,7 +241,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 #endif
 //int OnClickLostCastleDungeon(TRIGGERPARAM)
 //{
-//	if (!causer || !causer->IsPC())
+//	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 //		return 0;
 //
 //	if (!ch || ((ch)->GetRaceNum()) != 20021)

@@ -2095,7 +2095,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 						return;
 					}
 
-					if (to_ch->IsPC())
+					if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(to_ch)))
 					{
 						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), to_ch))
 						{
@@ -2287,7 +2287,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 #endif
 #ifdef ENABLE_CHECK_GHOSTMODE
-		if (ch->IsPC() && ch->IsDead())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && ch->IsDead())
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ch->GetName());
 
@@ -4088,7 +4088,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				}
 
 				// @fixme145 BEGIN (+newmember ispc check)
-				if (!ch->IsPC() || !newmember->IsPC())
+				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(newmember)))
 					return SubPacketLen;
 				// @fixme145 END
 

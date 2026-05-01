@@ -79,7 +79,7 @@ inline int32_t NormalizeMapIndex(int32_t mapIndex)
 
 bool CheckAndHandleSameHwid(LPCHARACTER ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     DESC* desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
@@ -103,7 +103,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
             if (duplicateFound || !other || other == ch)
                 return;
 
-            if (!other->IsPC())
+            if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(other)))
                 return;
 
             DESC* otherDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(other));
@@ -641,7 +641,7 @@ namespace {
 
             LPCHARACTER pkChr = (LPCHARACTER)ent;
 
-            if (!pkChr->IsPC())
+            if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
                 return;
 
             int iDist = DISTANCE_APPROX(pkChr->GetX() - m_lX, pkChr->GetY() - m_lY);
@@ -946,7 +946,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             if (viewer == this)
                 continue;
 
-            if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+            if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
                 UpdateMountInventoryCountOverhead(viewer);
         }
     }

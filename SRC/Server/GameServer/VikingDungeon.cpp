@@ -225,7 +225,7 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ch->IsPC())
+                if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                     m_f(ch);
             }
         } each(fn);
@@ -1009,7 +1009,7 @@ bool CVikingDungeon::IsVikingDungeonMap(int32_t mapIndex) const
 
 void CVikingDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1027,7 +1027,7 @@ void CVikingDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1123,7 +1123,7 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
 
 bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 {
-    if (!ch || !npc || !ch->IsPC())
+    if (!ch || !npc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     const uint32_t race = npc->GetRaceNum();
@@ -1242,7 +1242,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto checkMember = [&](LPCHARACTER m)
     {
-        if (!m || !m->IsPC() || !ok)
+        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || !ok)
             return;
 
         if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
@@ -1324,7 +1324,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto prepareMember = [&](LPCHARACTER m)
     {
-        if (!m || !m->IsPC())
+        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
             return;
 
         SetOutsideWarpLocation(m);
@@ -1357,7 +1357,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
 bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 {
-    if (!from || !npc || !item || !from->IsPC())
+    if (!from || !npc || !item || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)))
         return false;
 
     const int32_t idx = from->GetMapIndex();
@@ -1453,7 +1453,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 
 void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
-    if (!killer || !victim || !killer->IsPC())
+    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
     const int32_t idx = killer->GetMapIndex();

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -123,7 +125,7 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 
 void CMobManager::RebindMobProto(LPCHARACTER ch)
 {
-	if (ch->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		return;
 
 	const CMob * pMob = Get(ch->GetRaceNum());

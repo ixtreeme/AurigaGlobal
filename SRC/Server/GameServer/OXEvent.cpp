@@ -440,7 +440,7 @@ count)
 	for (; iter != m_map_attender.end(); ++iter)
 	{
 		LPCHARACTER pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-		if (pkChar && pkChar->IsPC())
+		if (pkChar && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChar)))
 		{
 #ifdef ENABLE_BLOCK_MULTIFARM
 			if (pkChar->FindAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE)) {

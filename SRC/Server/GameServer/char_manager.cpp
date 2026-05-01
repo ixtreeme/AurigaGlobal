@@ -438,12 +438,12 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		m_set_pkChrForDelayedSave.erase(it2);
 	}
 
-	//if (ch->IsPC())											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
+	//if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 	//	ITEM_MANAGER::instance().FlushDelayedSaveByOwner(ch);  // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 
 	m_map_pkChrByVID.erase(it);
 
-	if (true == ch->IsPC())
+	if (true == ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 
@@ -465,7 +465,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		}
 	}
 
-	if (ch->IsPC()) {
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 		auto it = m_set_pkChrForDelayedSave.find(ch);
 		if (m_set_pkChrForDelayedSave.end() != it)
 		{
@@ -1835,7 +1835,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		 
 		const uint32_t dwBossVnum = eventPtr->value[0];  
 
-		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && pkKiller->IsPC())
+		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 		{
 			const int32_t mapIndex = pkChr->GetMapIndex();
 			const int32_t baseX = pkChr->GetX();
@@ -1877,7 +1877,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			const uint32_t dwBossVnum = eventPtr->value[0];
 
-			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && pkKiller->IsPC())
+			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 			{
 				const int32_t mapIndex = pkChr->GetMapIndex();
 				const int32_t baseX = pkChr->GetX();

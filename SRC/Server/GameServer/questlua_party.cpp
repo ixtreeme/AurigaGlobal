@@ -599,7 +599,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 				{
 					if (gold + tch->GetGold() < 0)
 					{
@@ -655,7 +655,7 @@ namespace quest
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 			{
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && tch->IsPC())
+				if (tch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 				{
 					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), "deviltower_zone.can_refine", 1);
 				}

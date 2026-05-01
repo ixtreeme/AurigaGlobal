@@ -93,7 +93,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ch->IsPC())
+            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 fn(ch);
         }
     };
@@ -116,7 +116,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ch->IsPC())
+            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 return;
             if (ch->CountSpecifyItem(vnumReq) < 1)
                 ok = false;
@@ -135,7 +135,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ch->IsPC())
+            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 return;
 
             const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
@@ -428,7 +428,7 @@ bool CTritonTempleDungeon::IsTritonTempleMap(int32_t mapIndex) const
 
 void CTritonTempleDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -442,7 +442,7 @@ void CTritonTempleDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CTritonTempleDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -470,7 +470,7 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
     if (!killer || !victim)
         return;
-    if (!killer->IsPC())
+    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
     // 8054 may be STONE on some cores
@@ -608,7 +608,7 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 }
 bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     if (!ch->CanWarp())
@@ -685,7 +685,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     {
         FCooldownCheck f(now, kQfCooldown);
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
         });
@@ -713,7 +713,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         bool missingItem = false;
 
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!ok || !m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
             if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
@@ -760,7 +760,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
 
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             m->RemoveSpecifyItem(kRequiredItem, 1);
@@ -784,7 +784,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     else
     {
         auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m){ if(m && m->IsPC() && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m))==party) fn(m); });
+        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m){ if(m && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m))==party) fn(m); });
 d->JoinParty_Coords(party, kEnterX, kEnterY, ch->GetMapIndex());
     }
 

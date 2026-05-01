@@ -138,7 +138,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
     if (m_pkPartyRequestEvent)
         return false;
 
-    if (!IsPC() || !leader->IsPC())
+    if (!IsPC() || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(leader)))
         return false;
 
     if (leader->IsBlockMode(BLOCK_PARTY_REQUEST))

@@ -131,7 +131,7 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 			{
 				// ExitToSavedLocation은 WarpSet을 부르는데 이 함수에서
 				// Sectree가 NULL이 된다. 추 후 SectreeManager로 부터는

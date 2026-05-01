@@ -1,5 +1,7 @@
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "questmanager.h"
 #include "sectree_manager.h"
 #include "char_interface.hpp"
@@ -15,7 +17,7 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
-				if ( ((ch)->IsPC()) == true && ch->IsGM() != true )
+				if ( (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) == true && ch->IsGM() != true )
 				{
 					if ( ((((ch)->GetX()) >= 764503 && ((ch)->GetX()) <= 772362) && (((ch)->GetY()) >= 22807 && ((ch)->GetY()) <= 26499)) == false )
 					{

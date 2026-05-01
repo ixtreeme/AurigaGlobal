@@ -186,7 +186,7 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ch->IsPC())
+                if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                     m_f(ch);
             }
         } each(fn);
@@ -615,7 +615,7 @@ bool CHalloween2022Dungeon::IsHalloweenDungeonMap(int32_t mapIndex) const
 
 void CHalloween2022Dungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -631,7 +631,7 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -657,7 +657,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
 
 bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 {
-    if (!ch || !ch->IsPC() || !npc)
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) || !npc)
         return false;
 
     const uint32_t race = npc->GetRaceNum();
@@ -771,7 +771,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto checkMember = [&](LPCHARACTER m)
     {
-        if (!ok || !m || !m->IsPC())
+        if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
             return;
 
         const int32_t lv = m->GetLevel();
@@ -851,7 +851,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto prepareMember = [&](LPCHARACTER m)
     {
-        if (!m || !m->IsPC())
+        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
             return;
 
         if (!fromCompletedInside)
@@ -883,7 +883,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
 void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
-    if (!killer || !victim || !killer->IsPC())
+    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
     const int32_t idx = killer->GetMapIndex();
@@ -967,7 +967,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     }
 
     // Floor 1 - monster waves
-    if (floor == 1 && d->GetFlag(kFlagFloor1Monsters) == 1 && !victim->IsPC())
+    if (floor == 1 && d->GetFlag(kFlagFloor1Monsters) == 1 && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)))
     {
         const int32_t killed = d->GetFlag(kFlagFloor1Killed) + 1;
         d->SetFlag(kFlagFloor1Killed, killed);
@@ -1037,7 +1037,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     }
 
     // Floor 2 - monster room
-    if (floor == 2 && d->GetFlag(kFlagSecondFloorMonsters) == 1 && !victim->IsPC())
+    if (floor == 2 && d->GetFlag(kFlagSecondFloorMonsters) == 1 && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)))
     {
         const int32_t killed = d->GetFlag(kFlagSecondFloorKilled) + 1;
         d->SetFlag(kFlagSecondFloorKilled, killed);
@@ -1083,7 +1083,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 {
-    if (!from || !from->IsPC() || !npc || !item)
+    if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
     const int32_t idx = from->GetMapIndex();

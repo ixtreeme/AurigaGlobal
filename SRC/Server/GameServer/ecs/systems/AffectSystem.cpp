@@ -47,7 +47,7 @@ const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
 
 int GetPoisonDamageRate(LegacyCharHandle ch)
 {
-    int iRate = ch->IsPC() ? 50 : poison_damage_rate[ch->GetMobRank()];
+    int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : poison_damage_rate[ch->GetMobRank()];
     iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
     return iRate;
 }
@@ -112,7 +112,7 @@ const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
 
 int GetBleedingDamageRate(LegacyCharHandle ch)
 {
-    int iRate = ch->IsPC() ? 50 : bleeding_damage_rate[ch->GetMobRank()];
+    int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : bleeding_damage_rate[ch->GetMobRank()];
     iRate = MAX(0, iRate - ch->GetPoint(POINT_BLEEDING_REDUCE));
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_ITEM_BLEEDING_AS_POISON)
     iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
@@ -364,7 +364,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
         return;
     }
 
-    if (ch->m_bHasPoisoned && !ch->IsPC()) {
+    if (ch->m_bHasPoisoned && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         return;
     }
 
@@ -373,7 +373,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
         return;
     }
 
-    if (ch->m_bHasBled && !ch->IsPC()) {
+    if (ch->m_bHasBled && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         return;
     }
 #endif
@@ -429,7 +429,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
         return;
     }
 
-    if (ch->m_bHasBled && !ch->IsPC()) {
+    if (ch->m_bHasBled && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         return;
     }
 
@@ -437,7 +437,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
         return;
     }
 
-    if (ch->m_bHasPoisoned && !ch->IsPC()) {
+    if (ch->m_bHasPoisoned && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         return;
     }
 
@@ -509,21 +509,21 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
         if (true)
 #endif
         {
-            if (test_server && ch->IsPC()) {
+            if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
                 ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ch->GetName());
             }
 
             return true;
         }
 
-        if (test_server && ch->IsPC()) {
+        if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ch->GetName());
         }
 
         return false;
     }
 
-    if (test_server && ch->IsPC()) {
+    if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ch->GetName());
     }
 

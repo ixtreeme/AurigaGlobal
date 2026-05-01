@@ -894,7 +894,7 @@ namespace offlineshop
 	void ShopEntity::EncodeInsertPacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !((ch)->IsPC()))
+		if(!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			return;
 
 		GetManager().EncodeInsertShopEntity(*this, ch);
@@ -904,7 +904,7 @@ namespace offlineshop
 	void ShopEntity::EncodeRemovePacket(LPENTITY entity)
 	{
 		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !((ch)->IsPC()))
+		if(!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			return;
 
 		GetManager().EncodeRemoveShopEntity(*this, ch);

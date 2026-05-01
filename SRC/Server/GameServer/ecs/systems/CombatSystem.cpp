@@ -620,7 +620,7 @@ struct FuncForgetMyAttacker
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* ch = static_cast<LegacyCharHandle>(ent);
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				return;
 			if (ch->m_eVictim == AIHelpers::EcsOf(m_ch))
 				ch->SetVictim(nullptr);
@@ -640,7 +640,7 @@ struct FuncAggregateMonster
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* ch = static_cast<LegacyCharHandle>(ent);
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				return;
 			if (!ch->IsMonster())
 				return;
@@ -667,7 +667,7 @@ struct FuncAggregateMonsterPlus
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* ch = static_cast<LegacyCharHandle>(ent);
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				return;
 			if (!ch->IsMonster())
 				return;
@@ -697,7 +697,7 @@ struct FuncAttractRanger
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* ch = static_cast<LegacyCharHandle>(ent);
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				return;
 			if (!ch->IsMonster())
 				return;
@@ -730,7 +730,7 @@ struct FuncPullMonster
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* ch = static_cast<LegacyCharHandle>(ent);
-			if (ch->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 				return;
 			if (!ch->IsMonster())
 				return;
@@ -1763,7 +1763,7 @@ EVENTFUNC(dead_event)
 			g_dispatcher.trigger(ecs::EvCharDead { entt::null, victimEntity });
 	}
 
-	if (!ch->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		if (ch->IsMonster() == true)
 		{
@@ -1818,7 +1818,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	//	ClearSync();
 	//	event_cancel(&m_pkStunEvent);
 
-	//	if (pkKiller && pkKiller->IsPC())
+	//	if (pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 	//		CLostCastleDungeon::instance().OnMobKilled(pkKiller, this);
 
 	//	TPacketGCDead pack;
@@ -1883,7 +1883,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	bool isUnderGuildWar = false;
 	bool isDuel = false;
 
-	if (pkKiller && pkKiller->IsPC())
+	if (pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 	{
 		if (pkKiller->m_pkChrTarget == this)
 			pkKiller->SetTarget(nullptr);
@@ -1966,7 +1966,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 
 	if (pkKiller) {
-		if (pkKiller->IsPC()) {
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller))) {
 			if (IsStone()) {
 				if (pkKiller)
 					pkKiller->SetRankPoints(5, pkKiller->GetRankPoints(5) + 1);
@@ -1998,7 +1998,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 	if (IsPC()) {
 #ifdef ENABLE_01092021
-		if (pkKiller && !pkKiller->IsPC()) {
+		if (pkKiller && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller))) {
 			pkKiller->SetTarget(nullptr);
 		}
 #endif
@@ -2010,7 +2010,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 	if (pkKiller && IsPC())
 	{
-		if (!pkKiller->IsPC())
+		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 			SetDeadByMonster(true);
@@ -2115,7 +2115,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #endif
 				}
 			}
-			if (pkKiller && pkKiller->IsPC() && IsPC())
+			if (pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)) && IsPC())
 			{
 				const char* szMapName;
 				switch (GetMapIndex())
@@ -2182,7 +2182,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	if (IsPC())
 	{
 		m_dwLastDeadTime = get_dword_time();
-		//SetKillerMode(pkKiller && pkKiller->IsPC());
+		//SetKillerMode(pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)));
 		SetKillerMode(false);
 		GetDesc()->SetPhase(PHASE_DEAD);
 	}
@@ -2191,7 +2191,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		// 忡 ݹ ʹ   Ѵ.
 		if (!(RuntimeFlags(this) && IS_SET(RuntimeFlags(this)->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
-			if (!(pkKiller && pkKiller->IsPC() && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller)) && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller))->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
+			if (!(pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)) && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller)) && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkKiller))->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
 				// Ȱϴ ʹ   ʴ´.
 				if (GetMobTable().dwResurrectionVnum)
@@ -2229,7 +2229,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 
 	// BOSS_KILL_LOG
-	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && pkKiller->IsPC())
+	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 	{
 		char buf[51];
 		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, pkKiller->GetMapIndex());
@@ -3499,7 +3499,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		return;
 	}
 	//PROF_UNIT pu1("r1");
-	if (pkAttacker->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 	{
 		if ((GetLevel() - pkAttacker->GetLevel()) >= -10)
 		{
@@ -3620,7 +3620,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (GetDungeon() && pkAttacker && pkAttacker->IsPC() && !s_vec_item.empty())
+		if (GetDungeon() && pkAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) && !s_vec_item.empty())
 		{
 			const long lMapIndex = GetMapIndex(); // a megolt mob mapindexe
 
@@ -3657,7 +3657,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
 						auto MakeHwidHostKey = [&](LegacyCharHandle ch) -> std::string
 							{
-								if (!ch || !ch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+								if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 									return std::string();
 
 								DESC* d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
@@ -3683,7 +3683,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						pDungeon->ForEachMember([&](LegacyCharHandle mch)
 							{
-								if (!mch || !mch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(mch)))
+								if (!mch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(mch)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(mch)))
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
@@ -3763,7 +3763,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							for (const auto& kv : mapWinnerByKey)
 							{
 								auto* rch = kv.second;
-								if (!rch || !rch->IsPC() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rch)))
+								if (!rch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(rch)) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rch)))
 									continue;
 
 								PIXEL_POSITION mpos = pos;
@@ -4154,7 +4154,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
-	if (!pkAttacker || !pkAttacker->IsPC())
+	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 		return;
 
 	if (!m_pkMobData)
@@ -4162,7 +4162,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? pkAttacker->GetName() : "<null>");
 		return;
 	}
-	if (pkAttacker && pkAttacker->IsPC()) {
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker))) {
 		if (IsStone()) {
 #ifdef ENABLE_ANTICHEAT
 			if (pkAttacker->GetMapIndex() < 1000) {
@@ -4226,11 +4226,11 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			//
 			int iGoldPercent = MobRankStats[GetMobRank()].iGoldPercent;
 
-			if (pkAttacker->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 
 #ifdef ENABLE_EVENT_MANAGER
-			if (pkAttacker->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 			{
 				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkAttacker)));
 				if (event != nullptr)
@@ -4239,7 +4239,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 			}
 #else
-			if (pkAttacker->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 #endif
 
@@ -4451,7 +4451,7 @@ static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCh
 bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // returns true if dead
 {
 #ifdef DISABLE_PC_ATTACK_PC_ON_MAPIDEX1
-	if (pAttacker && pAttacker->IsPC() && IsPC() && GetMapIndex() == 1)
+	if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && IsPC() && GetMapIndex() == 1)
 		return false;
 #endif
 	if (GetInvincible())
@@ -4478,11 +4478,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	}
 
-	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (pAttacker->IsPC() && pAttacker->IsAffectFlag(AFF_REVIVE_INVISIBLE))))
+	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && pAttacker->IsAffectFlag(AFF_REVIVE_INVISIBLE))))
 		return false;
 
 #ifdef ENABLE_NEWSTUFF
-	if (pAttacker && IsStone() && pAttacker->IsPC())
+	if (pAttacker && IsStone() && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 	{
 		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pAttacker)))
 		{
@@ -4509,7 +4509,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 	}
 #ifdef ENABLE_MAX_100K_DMG_ON_EVENT_MAP_RAZOR93
-	if (pAttacker && pAttacker->IsPC() && GetMapIndex() == 1 && (IsMonster() || IsStone()))
+	if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
 	{
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
@@ -4733,7 +4733,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (resist > 100) resist = 100;
 
 			// PvP: csak fele hasson
-			if (pAttacker && pAttacker->IsPC() && IsPC())
+			if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
 			if (pAttacker && pAttacker->IsMonster() && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
@@ -4853,7 +4853,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			if (int64_t iStealSP_ptr = pAttacker->GetPoint(POINT_STEAL_SP)) {
-				if (IsPC() && pAttacker->IsPC()) {
+				if (IsPC() && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker))) {
 					if (number(1, 100) <= iStealSP_ptr) {
 						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * pAttacker->GetPoint(POINT_STEAL_SP) / 100;
 
@@ -5040,13 +5040,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		int64_t def = GetPoint(POINT_SKILL_DEFEND_BONUS);
 		def = std::clamp<int64_t>(def, 0, 100);
 
-		if (pAttacker && pAttacker->IsPC() && IsPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && IsPC())
 			def = (def * 75 + 50) / 100;
 
 		dam = dam * (100 - def) / 100;
 
 		
-		if (pAttacker && pAttacker->IsPC() && IsNPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && IsNPC())
 		{
 			const int64_t normalRef = CalcReferenceBasicHitDamage(pAttacker, this);
 			if (normalRef > 0)
@@ -5108,7 +5108,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			dam += add_dam;
 		}
 
-		if (pAttacker->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 		{
 			int iEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pAttacker));
 			int32_t lMapIndex = pAttacker->GetMapIndex();
@@ -5184,7 +5184,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	// ------------------------
 	//  ̾ 
 	// -----------------------
-	if (pAttacker && pAttacker->IsPC())
+	if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 	{
 		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(pAttacker);
 		dam = dam * iDmgPct / 100;
@@ -5282,7 +5282,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
-		if (!IsPC() && pAttacker && pAttacker->IsPC())
+		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 		{
 			int32_t racevnum = GetRaceNum();
 			LPDUNGEON dungeon = GetDungeon();
@@ -5565,7 +5565,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			SendDamagePacket(pAttacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pAttacker && pAttacker->IsPC() && pAttacker->IsSkillHit() && IsPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && pAttacker->IsSkillHit() && IsPC())
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), GetName(), strnlen(GetName(), CHARACTER_NAME_MAX_LEN));
@@ -5624,7 +5624,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 
 #ifdef ENABLE_RANKING
-		if (pAttacker->IsPC()) {
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker))) {
 			if (IsPC()) {
 				switch (type) {
 				case DAMAGE_TYPE_NORMAL:
@@ -5703,7 +5703,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	if (!cannot_dead)
 	{
 #ifdef __DUNGEON_INFO_SYSTEM__
-		if (!IsPC() && pAttacker && pAttacker->IsPC())
+		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 		{
 			pAttacker->SetQuestDamage(GetRaceNum(), dam);
 			pAttacker->SetQuestNPCID(GetPacketVID());
@@ -5974,7 +5974,7 @@ public:
 		{
 			int iDam = 0;
 
-			if (m_me->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_me)))
 			{
 				if (m_me->GetJob() != JOB_ASSASSIN)
 					return;
@@ -6043,7 +6043,7 @@ public:
 		{
 			int iDam;
 
-			if (m_me->IsPC())
+			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_me)))
 				return;
 
 			iDam = CalcMagicDamage(m_me, pkVictim);
@@ -6299,7 +6299,7 @@ public:
 				pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL);
 
 
-				if (pkVictim->IsPC())
+				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 				{
 					m_me->OnMove(true);
 					pkVictim->OnMove();
@@ -6559,7 +6559,7 @@ struct FuncSetLastAttacked
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
 {
-	if (!pkAttacker || !pkAttacker->IsPC())
+	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 		return;
 
 	if (iDamage <= 0)
@@ -6593,7 +6593,7 @@ void CHARACTER::SetLastAttacked(uint32_t dwTime)
 
 void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag)
 {
-	if (IsPC() == true || (pAttacker->IsPC() == true && pAttacker->GetTarget() == this))
+	if (IsPC() == true || (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) == true && pAttacker->GetTarget() == this))
 	{
 		TPacketGCDamageInfo damageInfo;
 		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
@@ -7286,7 +7286,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 			p.iMaxHP = 0;
 #endif
 		}
-		else if (m_pkChrTarget->IsPC() && !m_pkChrTarget->IsPolymorphed())
+		else if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget)) && !m_pkChrTarget->IsPolymorphed())
 		{
 			p.bHPPercent = MINMAX(0, m_pkChrTarget->GetHPPct(), 100);
 #ifdef __VIEW_TARGET_DECIMAL_HP__
@@ -7295,7 +7295,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 #endif
 		}
 #else
-		if ((m_pkChrTarget->IsPC() && !m_pkChrTarget->IsPolymorphed()) || (m_pkChrTarget->GetMaxHP() <= 0))
+		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget)) && !m_pkChrTarget->IsPolymorphed()) || (m_pkChrTarget->GetMaxHP() <= 0))
 			p.bHPPercent = 0;
 #endif
 		else
@@ -7389,7 +7389,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 #ifdef ELEMENT_TARGET
 	p.bElement = 0;
 	if (m_pkChrTarget) {
-		if (m_pkChrTarget->IsPC()) {
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget))) {
 			LPITEM item = m_pkChrTarget->GetWear(WEAR_PENDANT);
 			if (item) {
 				uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
@@ -7665,7 +7665,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 
 	if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
 	{
-		if (pkChr->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 		{
 			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 			{
@@ -7683,7 +7683,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 	int32_t x = pkChr->GetX();
 	int32_t y = pkChr->GetY();
 
-	if (pkChr->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 	{
 		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 		{

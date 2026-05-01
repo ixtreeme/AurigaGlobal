@@ -52,7 +52,7 @@ void SECTREE::Destroy()
 			{
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
-				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ((ch)->GetName()), ((ch)->IsPC()) ? 1 : 0);
+				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ((ch)->GetName()), (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) ? 1 : 0);
 
 				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -158,7 +158,7 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	{
 		LPCHARACTER pkChr = (LPCHARACTER) pkEnt;
 
-		if (((pkChr)->IsPC()))
+		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr))))
 		{
 			IncreasePC();
 
@@ -187,7 +187,7 @@ void SECTREE::RemoveEntity(LPENTITY pkEnt)
 
 	if (pkEnt->IsType(ENTITY_CHARACTER))
 	{
-		if (((LPCHARACTER) pkEnt)->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf((LPCHARACTER) pkEnt)))
 			DecreasePC();
 	}
 }

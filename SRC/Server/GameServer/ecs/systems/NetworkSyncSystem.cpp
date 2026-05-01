@@ -307,7 +307,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     if (IsPC() && entity->IsType(ENTITY_CHARACTER))
     {
         LPCHARACTER viewer = (LPCHARACTER)entity;
-        if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+        if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif

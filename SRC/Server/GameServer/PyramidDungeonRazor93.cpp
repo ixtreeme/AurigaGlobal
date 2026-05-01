@@ -122,7 +122,7 @@ namespace
                 continue;
 
             LPCHARACTER c = (LPCHARACTER)ent;
-            if (!c || !c->IsPC())
+            if (!c || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(c)))
                 continue;
 
             fn(c);
@@ -225,7 +225,7 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !m->IsPC())
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             const int32_t lv = m->GetLevel();
@@ -249,7 +249,7 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !m->IsPC())
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m), kQfCooldown);
@@ -269,7 +269,7 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !m->IsPC())
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             if (m->CountSpecifyItem(kEntryItemVnum) < 1)
@@ -284,7 +284,7 @@ namespace
     {
         void operator()(LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
@@ -320,7 +320,7 @@ bool CPyramidDungeonRazor93::IsPyramidDungeonMap(int32_t mapIndex) const
 
 void CPyramidDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t mapIdx = ch->GetMapIndex();
@@ -335,7 +335,7 @@ void CPyramidDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
 
 void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t mapIdx = ch->GetMapIndex();
@@ -375,7 +375,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
 bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     if (!ch->CanWarp())

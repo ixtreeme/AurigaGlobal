@@ -1265,7 +1265,7 @@ class FRemoveIfAttr
 			{
 				LPCHARACTER ch = (LPCHARACTER) entity;
 
-				if (((ch)->IsPC()))
+				if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 				{
 					PIXEL_POSITION pos;
 

@@ -891,7 +891,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		return false;
 	// Non-PC combat stays allowed during the migration window.
 	// The mount restriction below only gates PC-vs-PC combat.
-	if (!((pkVictim)->IsPC()) || !((pkChr)->IsPC()))
+	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim))) || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr))))
 		return true;
 	if( true == pkChr->IsHorseRiding() )
 	{

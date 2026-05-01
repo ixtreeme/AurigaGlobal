@@ -130,7 +130,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ch->IsPC())
+            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 fn(ch);
         }
     };
@@ -1053,7 +1053,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             LPCHARACTER target = CHARACTER_MANAGER::instance().Find(tgtIt->second);
-            if (!target || !target->IsPC() || target->IsDead())
+            if (!target || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)) || target->IsDead())
             {
                 s_lc.m_clonePending.erase(cloneVid);
                 continue;
@@ -1260,7 +1260,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
 {
     if (!source || !target)
         return false;
-    if (!source->IsPC() || !target->IsPC())
+    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(source)) || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)))
         return false;
 
     if (count <= 0) count = 1;
@@ -1455,7 +1455,7 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
 
 bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1474,7 +1474,7 @@ bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
 
 void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1489,7 +1489,7 @@ void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1504,7 +1504,7 @@ void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
 
 bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
@@ -1527,7 +1527,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
         auto check = [&](LPCHARACTER m)
             {
-                if (!m || !m->IsPC())
+                if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                     return;
 
                 if (m->GetMapIndex() != leaderMap)
@@ -1588,7 +1588,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
@@ -1658,7 +1658,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 4)
     {
-        if (killer && killer->IsPC() && victim->IsMonster())
+        if (killer && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)) && victim->IsMonster())
         {
             const uint16_t vnum = victim->GetRaceNum();
             if (vnum != kTotemVnum && vnum != kStatueVnum)
@@ -1673,7 +1673,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
 {
-    if (!from || !from->IsPC() || !npc || !item)
+    if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
     const int32_t idx = from->GetMapIndex();
@@ -1773,7 +1773,7 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     // Player/NPC -> Clone
     //if (!attackerIsClone && victimIsClone)
     //{
-    //    if (!(attacker->IsPC() || attacker->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(attacker)) || attacker->IsFakePlayer()))
     //        return false;
 
     //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(attacker)));
@@ -1782,7 +1782,7 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     //// Clone -> Player/NPC
     //if (attackerIsClone && !victimIsClone)
     //{
-    //    if (!(victim->IsPC() || victim->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)) || victim->IsFakePlayer()))
     //        return false;
 
     //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)));

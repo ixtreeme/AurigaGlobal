@@ -166,7 +166,7 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 
 void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 {
-	if (!((ch)->IsPC()) || !target->IsPC())
+	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)))
 		return;
 
 	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))->IsRunning() == true)

@@ -45,7 +45,7 @@ struct FWarpToHome
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
-			if ( lpChar->IsPC() == true )
+			if ( ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(lpChar)) == true )
 			{
 				if ( !test_server )
 				{

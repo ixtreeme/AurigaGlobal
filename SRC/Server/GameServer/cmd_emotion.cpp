@@ -206,7 +206,7 @@ ACMD(do_emotion)
 
 	if (victim)
 	{
-		if (!((victim)->IsPC()) || victim == ch)
+		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim))) || victim == ch)
 			return;
 
 		if (victim->IsRiding())

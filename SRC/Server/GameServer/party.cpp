@@ -141,7 +141,7 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 
 	LPPARTY pParty = M2_NEW CParty;
 
-	if (pLeader->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pLeader)))
 	{
 		//TPacketGGParty p;
 		//p.header	= HEADER_GG_PARTY;
@@ -536,7 +536,7 @@ void CParty::Link(LPCHARACTER pkChr)
 {
 	TMemberMap::iterator it;
 
-	if (pkChr->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr)));
 	else
 		it = m_memberMap.find(pkChr->GetLegacyVID());
@@ -563,7 +563,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	it->second.pCharacter = pkChr;
 	pkChr->SetParty(this);
 
-	if (pkChr->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 	{
 		if (it->second.strName.empty())
 		{
@@ -631,7 +631,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 {
 	TMemberMap::iterator it;
 
-	if (pkChr->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr)));
 	else
 		it = m_memberMap.find(pkChr->GetLegacyVID());
@@ -642,7 +642,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 		return;
 	}
 
-	if (pkChr->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 	{
 		SendPartyUnlinkOneToAll(pkChr);
 		//SendPartyUnlinkAllToOne(pkChr); // ����� ���̹Ƿ� ���� Unlink ��Ŷ�� ���� �ʿ� ����.
@@ -1575,7 +1575,7 @@ uint8_t CParty::CountMemberByVnum(uint32_t dwVnum)
 		if (!(tch = it->second.pCharacter))
 			continue;
 
-		if (tch->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 			continue;
 
 		if (tch->GetMobTable().dwVnum == dwVnum)

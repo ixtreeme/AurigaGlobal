@@ -173,7 +173,7 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ch->IsPC())
+                if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                     m_f(ch);
             }
         } each(fn);
@@ -886,7 +886,7 @@ bool CRuneDungeon::IsRuneDungeonMap(int32_t mapIndex) const
 
 void CRuneDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -899,7 +899,7 @@ void CRuneDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1159,7 +1159,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
 {
-    if (!from || !from->IsPC() || !npc || !item)
+    if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
     const int32_t idx = from->GetMapIndex();
@@ -1222,7 +1222,7 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
 
 bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     // Rejoin flow
@@ -1317,7 +1317,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
 
         // Check only players that will be pulled by JoinParty_Coords (same map as leader)
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
-            if (!ok || !pc || !pc->IsPC())
+            if (!ok || !pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)))
                 return;
             if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
@@ -1378,7 +1378,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
 
     auto setupMember = [&](LPCHARACTER pc)
         {
-            if (!pc || !pc->IsPC())
+            if (!pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)))
                 return;
 
             removeEntranceItems(pc);
@@ -1396,7 +1396,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
-            if (!pc || !pc->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
+            if (!pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
             setupMember(pc);
             });
@@ -1414,7 +1414,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
 
 bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1446,7 +1446,7 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
 
 bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     const int32_t idx = ch->GetMapIndex();
@@ -1480,7 +1480,7 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
 
 bool CRuneDungeon::OnUseItem89100(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     const int32_t now = get_global_time();

@@ -118,7 +118,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ch->IsPC())
+            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 fn(ch);
         }
     };
@@ -227,7 +227,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ch->IsPC())
+            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 return;
 
             const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
@@ -250,7 +250,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ch->IsPC())
+            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 return;
 
             if (ch->CountSpecifyItem(vnum) < 1 && ok)
@@ -456,7 +456,7 @@ public:
             {
                 if (leaderName)
                     return;
-                if (!pc || !pc->IsPC())
+                if (!pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)))
                     return;
 
                 if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pc)) == leaderPid)
@@ -629,7 +629,7 @@ bool CEasterDungeon::IsEasterDungeonMap(int32_t mapIndex) const
 
 void CEasterDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -643,7 +643,7 @@ void CEasterDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CEasterDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -691,7 +691,7 @@ void CEasterDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
     if (!killer || !victim)
         return;
-    if (!killer->IsPC())
+    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
     if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
@@ -758,7 +758,7 @@ void CEasterDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     if (!ch->CanWarp())
@@ -841,7 +841,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
         int32_t badLevel = 0;
 
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!ok || !m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
             if ((kMinLevel > 0 && m->GetLevel() < kMinLevel) || (kMaxLevel > 0 && m->GetLevel() > kMaxLevel))
@@ -865,7 +865,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     {
         FCooldownCheck f(now, "easter_dungeon.cooldown");
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
         });
@@ -893,7 +893,7 @@ if (!f.ok)
     {
         FEntryItemCheck it(kEntryItemVnum);
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             it(m);
         });
@@ -926,7 +926,7 @@ if (!it.ok)
     // Set per-player rejoin flags + consume entry item
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             // Consume entry item (already checked above)
@@ -946,7 +946,7 @@ if (!it.ok)
     else
     {
         ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
-            if (!m || !m->IsPC() || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             applyMember(m);
         });

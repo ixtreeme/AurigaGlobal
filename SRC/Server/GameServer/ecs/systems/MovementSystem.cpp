@@ -129,7 +129,7 @@ namespace
     inline void TransitionAfterMovementStop(const ecs::VIDComponent& vid)
     {
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
-        if (!ch || ch->IsPC())
+        if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
             return;
         if (ch->GetVictim() && !ch->IsCoward())
             ch->SetPosition(POS_FIGHTING);
@@ -855,7 +855,7 @@ EVENTFUNC(recovery_event)
 	}
 
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
-	if (!ch->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		if (ch->IsAffectFlag(AFF_POISON))
 			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));

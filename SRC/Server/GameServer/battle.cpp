@@ -112,7 +112,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 		return false;
 	}
 
-	if (ch->IsPC() && victim->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)))
 	{
 		CGuild* g1 = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 		CGuild* g2 = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(victim));
@@ -139,7 +139,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	{
 	case 1:
 	{
-		if (victim->IsPC() && ch->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 			bIsFarmMap = true;
 	}
 	break;
@@ -151,7 +151,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 {
 #if defined(ENABLE_CHECK_BATTLE)
-	if (ch->IsPC() && victim) {
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && victim) {
 		const bool bAttacking = (get_dword_time() - ch->GetLastAttackTime()) < (ch->IsRiding() ? 800 : 750);
 		if (!bAttacking) {
 			return BATTLE_NONE;
@@ -164,7 +164,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 #endif
 
-	if (test_server && ch->IsPC())
+	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!victim || ch == victim)
@@ -172,7 +172,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		return BATTLE_NONE;
 	}
 
-	if (test_server && ch->IsPC())
+	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	if (!battle_is_attackable(ch, victim))
@@ -180,7 +180,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		return BATTLE_NONE;
 	}
 
-	if (test_server && ch->IsPC())
+	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
 
 	// �A�� A1A�
@@ -190,7 +190,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	{
 		int max = 300;
 
-		if (false == ch->IsPC())
+		if (false == ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		{
 			// ��1oA�A� �a?i ��1oA� �o�� �A���� ��?�
 			max = (int)(ch->GetMobAttackRange() * 1.15f);
@@ -198,12 +198,12 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		else
 		{
 			// PCAI �a?i ���! melee ��AI �a?i ��A� �o�� �A���! Aִ� �o�� �A��
-			if (false == victim->IsPC() && BATTLE_TYPE_MELEE == victim->GetMobBattleType())
+			if (false == ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)) && BATTLE_TYPE_MELEE == victim->GetMobBattleType())
 				max = MAX(300, (int)(victim->GetMobAttackRange() * 1.15f));
 		}
 
 #ifdef __DEFENSE_WAVE__
-		if (ch->IsPC() && (victim->GetRaceNum() == 3960 || victim->GetRaceNum() == 3961 || victim->GetRaceNum() == 3962))
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (victim->GetRaceNum() == 3960 || victim->GetRaceNum() == 3961 || victim->GetRaceNum() == 3962))
 		{
 			max += 400;
 		}
@@ -311,17 +311,17 @@ float CalcAttackRating(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnor
 int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 {
 	// PvP???? ????????????
-	if (!pkVictim->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 		iAtk += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS);
 
 	// PvP???? ????????????
-	if (!pkAttacker->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 	{
 		int iReduceDamagePct = pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
 		iAtk = iAtk * (100 + iReduceDamagePct) / 100;
 	}
 
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && pkVictim->IsPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 	{
 		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(pkAttacker)) / 100;
 	}
@@ -392,7 +392,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 
 #endif
 	}
-	else if (pkVictim->IsPC())
+	else if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		{
@@ -441,7 +441,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 		}
 	}
 
-	if (pkAttacker->IsPC() == true)
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) == true)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * pkVictim->GetPoint(POINT_DEF_TALISMAN)) / 100;
@@ -475,7 +475,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	//[ mob -> PC ] ???? ??? ??? ????
 	//2013/01/17
 	//???? ??????? ???????? 30%?? ?????? ??g???? ?????? ?????.
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && pkVictim->IsPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_DEF_TALISMAN))		/ 10000;
@@ -625,7 +625,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	{
 		iDef = (pkVictim->GetPoint(POINT_DEF_GRADE) * (100 + pkVictim->GetPoint(POINT_DEF_BONUS)) / 100);
 
-		if (!pkAttacker->IsPC())
+		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 			iDef += pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
 	}
 
@@ -781,7 +781,7 @@ void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 	}
 #endif
 	int iStunDuration = 2;
-	if (pkAttacker->IsPC() && !pkVictim->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 		iStunDuration = 4;
 
 	AttackAffect(pkAttacker, pkVictim, POINT_STUN_PCT, IMMUNE_STUN,  AFFECT_STUN, POINT_NONE,        0, AFF_STUN, iStunDuration, "STUN");
@@ -791,7 +791,7 @@ void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 {
 #if defined(ENABLE_CHECK_BATTLE)
-	if (pkAttacker->IsPC() && pkVictim) {
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) && pkVictim) {
 		const bool bAttacking = (get_dword_time() - pkAttacker->GetLastAttackTime()) < (pkAttacker->IsRiding() ? 800 : 750);
 		if (!bAttacking) {
 			return BATTLE_NONE;
@@ -860,7 +860,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 #endif
 
 				  
-				//if (pkAttacker->IsPC() && pkVictim->IsPC())
+				//if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 				//	lValue += 15;
 
 				// clamp 0..100
@@ -949,7 +949,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 	if (pkVictim->Damage(pkAttacker, iDam, DAMAGE_TYPE_NORMAL))
 		return (BATTLE_DEAD);
 //#ifdef ENABLE_MAP1_SKILL_MOB
-//	if (pkAttacker->IsPC() /*&& pkAttacker->IsSkillHit()*/
+//	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) /*&& pkAttacker->IsSkillHit()*/
 //		&& pkVictim->GetRaceNum() == 136)
 //	{
 //		std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
@@ -993,21 +993,21 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 }
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	if (victim && ch && ch->IsPC()) {
+	if (victim && ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 		ch->GetAttackLogRef().dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
 		ch->GetAttackLogRef().dwTime = current_time;
 	}
 }
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	if (victim && ch && ch->IsPC()) {
+	if (victim && ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 		victim->GetAttackedLogRef().dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		victim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}
 }
 
 bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
-	if (victim && ch && ch->IsPC()) {
+	if (victim && ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 		if (ch->GetAttackLogRef().dwVID == ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)))
 		{
 			if (current_time - ch->GetAttackLogRef().dwTime < GET_ATTACK_SPEED(ch))

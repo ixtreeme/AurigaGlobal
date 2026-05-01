@@ -56,7 +56,7 @@ namespace quest
 
 	void FSetWarpLocation::operator() (LPCHARACTER ch) const
 	{
-		if (((ch)->IsPC()))
+		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 		{
 			ch->SetWarpLocation (map_index, x, y);
 		}
@@ -64,7 +64,7 @@ namespace quest
 
 	void FSetQuestFlag::operator() (LPCHARACTER ch) const
 	{
-		if (!((ch)->IsPC()))
+		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			return;
 
 		if (PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
@@ -73,7 +73,7 @@ namespace quest
 
 	bool FPartyCheckFlagLt::operator() (LPCHARACTER ch) const
 	{
-		if (!((ch)->IsPC()))
+		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 			return false;
 
 		PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
@@ -131,7 +131,7 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ((ch)->IsPC()) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == m_bEmpire)
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == m_bEmpire)
 			{
 				ch->WarpSet(m_x, m_y, m_lMapIndexTo);
 			}
@@ -921,12 +921,12 @@ namespace quest
 		LOG_INFO("GotoConfirmState vid {} msg '{}', timeout {}", dwVID, szMsg, iTimeout);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
-		if (ch && ((ch)->IsPC()))
+		if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 		{
 			ch->ConfirmWithMsg(szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
 		}
 
-		GetCurrentPC()->SetConfirmWait((ch && ((ch)->IsPC()))?(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))):0);
+		GetCurrentPC()->SetConfirmWait((ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))?(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))):0);
 		ostringstream os;
 		os << "[CONFIRM_WAIT timeout;" << iTimeout << "]";
 		AddScript(os.str());
@@ -935,7 +935,7 @@ namespace quest
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
 		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr()));
-		info->dwReplyPID = (ch && ((ch)->IsPC())) ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0;
+		info->dwReplyPID = (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))) ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
 	}

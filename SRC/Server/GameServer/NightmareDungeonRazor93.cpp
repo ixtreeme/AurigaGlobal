@@ -103,7 +103,7 @@ namespace
                 return;
 
             LPCHARACTER ch = (LPCHARACTER)ent;
-            if (ch && ch->IsPC())
+            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
                 fn(ch);
         }
     };
@@ -358,7 +358,7 @@ CNightmareDungeonRazor93& CNightmareDungeonRazor93::instance()
 
 void CNightmareDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -370,7 +370,7 @@ void CNightmareDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
 
 void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
     const int32_t idx = ch->GetMapIndex();
@@ -397,7 +397,7 @@ void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
 void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
-    if (!killer || !victim || !killer->IsPC())
+    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
     const int32_t idx = killer->GetMapIndex();
@@ -455,7 +455,7 @@ void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ch->IsPC())
+    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
     if (!ch->CanWarp())
@@ -534,7 +534,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
 
     auto checkMember = [&](LPCHARACTER m)
         {
-            if (!ok || !m || !m->IsPC())
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             if (!CheckLevel(m))
@@ -608,7 +608,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Consume items + set cooldown + save return location BEFORE join
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !m->IsPC())
+            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
             RemoveEntryItem(m);

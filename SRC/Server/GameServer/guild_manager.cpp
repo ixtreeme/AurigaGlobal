@@ -887,10 +887,10 @@ void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iB
 
 void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 {
-	if (!killer->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
 		return;
 
-	if (!((victim)->IsPC()))
+	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim))))
 		return;
 
 	if (killer->GetWarMap())

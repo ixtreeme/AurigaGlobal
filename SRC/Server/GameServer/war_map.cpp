@@ -356,7 +356,7 @@ void CWarMap::UpdateUserCount()
 
 void CWarMap::IncMember(LPCHARACTER ch)
 {
-	if (!ch->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		return;
 
 	LOG_TRACE("WarMap::IncMember");
@@ -414,7 +414,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 void CWarMap::DecMember(LPCHARACTER ch)
 {
-	if (!ch->IsPC())
+	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		return;
 
 	LOG_TRACE("WarMap::DecMember");
@@ -467,7 +467,7 @@ struct FExitGuildWar
 {
 	void operator() (LPCHARACTER ch)
 	{
-		if (ch->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		{
 			ch->ExitToSavedLocation();
 		}

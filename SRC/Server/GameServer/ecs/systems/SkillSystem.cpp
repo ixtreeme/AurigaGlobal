@@ -1735,7 +1735,7 @@ EVENTFUNC(ChainLightningEvent)
 
 void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, entt::entity pkWeapon)
 {
-	if (ch->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		if (ItemSystem::IsValidItem(pkWeapon) && ItemSystem::GetItemType(pkWeapon) == ITEM_WEAPON)
 		{
@@ -1797,7 +1797,7 @@ struct FuncSplashDamage
 			return;
 		}
 
-		if (m_pkChr->IsPC())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)))
 			// ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
 			if (!(m_pkSk->dwVnum >= GUILD_SKILL_START && m_pkSk->dwVnum <= GUILD_SKILL_END))
 				if (!m_bDisableCooltime && m_pInfo && !m_pInfo->HitOnce(m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
@@ -1962,7 +1962,7 @@ struct FuncSplashDamage
 		////////////////////////////////////////////////////////////////////////////////
 		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
-		if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
 			// µĄąĚÁö °¨ĽŇ
 			iDam = (int) (iDam * m_pkSk->kSplashAroundDamageAdjustPoly.Eval());
@@ -2442,7 +2442,7 @@ struct FuncSplashDamage
 				pkChrVictim->Goto(tx, ty);
 				pkChrVictim->CalculateMoveDuration();
 
-				if (m_pkChr->IsPC() && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == AIHelpers::EcsOf(pkChrVictim))
+				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == AIHelpers::EcsOf(pkChrVictim))
 				{
 					SkillAttackAffect(pkChrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
@@ -2478,7 +2478,7 @@ struct FuncSplashDamage
 			LOG_INFO("FuncSplashDamage End :{} ", m_pkChr->GetName());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
-//		if (m_pkChr->IsPC() && pkChrVictim->IsMonster() && pkChrVictim->GetRaceNum() == 136)
+//		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && pkChrVictim->IsMonster() && pkChrVictim->GetRaceNum() == 136)
 //		{
 //			
 //			DBManager::instance().DirectQuery(
@@ -2548,7 +2548,7 @@ struct FuncSplashAffect
 					if (pkChr->CanBeginFight())
 						pkChr->BeginFight(m_pkChrAttacker);
 
-				if (pkChr->IsPC() && m_dwVnum == SKILL_TUSOK)
+				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)) && m_dwVnum == SKILL_TUSOK)
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
 				else
 					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration, m_iSPCost, m_bOverride);

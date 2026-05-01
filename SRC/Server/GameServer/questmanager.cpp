@@ -898,7 +898,7 @@ namespace quest
 
 	bool CQuestManager::GiveItemToPC(unsigned int pc, LPCHARACTER pkChr)
 	{
-		if (!pkChr->IsPC())
+		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 			return false;
 
 		PC * pPC = GetPC(pc);

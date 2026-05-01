@@ -874,7 +874,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-	if (ch->IsPC())
+	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
 		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (pkShop)

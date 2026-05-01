@@ -1107,7 +1107,7 @@ namespace quest
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (((ch)->IsPC()))
+				if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 				{
 					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 					if ( bEmpire == 0 )
@@ -1215,9 +1215,9 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 #ifdef __NEWPET_SYSTEM__
-				if (!((ch)->IsPC()) && !ch->IsPet() && !ch->IsNewPet())
+				if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && !ch->IsPet() && !ch->IsNewPet())
 #else
-				if (!((ch)->IsPC()) && !ch->IsPet())
+				if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && !ch->IsPet())
 #endif
 					ch->Dead();
 			}
@@ -1619,7 +1619,7 @@ namespace quest
 			{
 				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
 
-				if (true == ((pChar)->IsPC()))
+				if (true == (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pChar))))
 				{
 					if (from_x1 <= ((pChar)->GetX()) && ((pChar)->GetX()) <= from_x2 && from_y1 <= ((pChar)->GetY()) && ((pChar)->GetY()) <= from_y2)
 					{
