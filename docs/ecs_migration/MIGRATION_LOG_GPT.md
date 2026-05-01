@@ -10906,3 +10906,24 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 ```
 - Build passed.
 - Required WinTest: mounted melee and skills against metin stones, dismount/remount, map transfer, normal movement, VID_DRIFT.
+
+
+## Phase 15E-59 WinTest - Pure ECS Position Sync Verified
+
+Result:
+- Operator confirmed WinTest passed after the pure ECS position-sync hotfix.
+
+Validated scenario:
+- Mounted character runs to metin stone and deals melee damage correctly.
+- Mounted skill damage works correctly.
+- Dismount/remount no longer causes no-damage range rejection.
+- Moving to another stone and returning on mount keeps position/combat behavior correct.
+
+Accepted fix:
+- Commit 797813f: Phase 15E-59 Hotfix v2: Sync legacy movement into ECS position.
+- PlayerRuntime position accessors remain ECS-backed only.
+- Legacy movement paths now synchronize ECS Position/MapIndex instead of using LPCHARACTER fallback in accessors.
+
+Status:
+- Phase 15E-59 position layer is WinTest verified.
+- Next planned phase: Phase 15E-60 stat accessors.
