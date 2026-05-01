@@ -163,7 +163,7 @@ void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* forma
     packet.header = HEADER_GC_CHAT;
     packet.size = sizeof(TPacketGCChat) + len;
     packet.type = type;
-    packet.id = ch->GetPacketVID();
+    packet.id = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     packet.bEmpire = 0;
 
     TEMP_BUFFER buf;

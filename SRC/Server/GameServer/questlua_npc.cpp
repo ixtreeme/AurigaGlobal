@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -291,13 +292,13 @@ namespace quest
 #ifdef ENABLE_BUG_FIXES
 		LPPARTY party = npc ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc)) : nullptr;
 		LPCHARACTER leader = party ? party->GetLeader() : nullptr;
-		lua_pushnumber(L, leader ? leader->GetPacketVID() : 0);
+		lua_pushnumber(L, leader ? ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(leader)) : 0);
 #else
 		PPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc));
 		LPCHARACTER leader = party->GetLeader();
 
 		if (leader)
-			lua_pushnumber(L, leader->GetPacketVID());
+			lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(leader)));
 		else
 			lua_pushnumber(L, 0);
 #endif

@@ -994,7 +994,7 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	if (victim && ch && ch->IsPC()) {
-		ch->GetAttackLogRef().dwVID = victim->GetPacketVID();
+		ch->GetAttackLogRef().dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
 		ch->GetAttackLogRef().dwTime = current_time;
 	}
 }
@@ -1008,7 +1008,7 @@ void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time)
 
 bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	if (victim && ch && ch->IsPC()) {
-		if (ch->GetAttackLogRef().dwVID == victim->GetPacketVID())
+		if (ch->GetAttackLogRef().dwVID == ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)))
 		{
 			if (current_time - ch->GetAttackLogRef().dwTime < GET_ATTACK_SPEED(ch))
 			{

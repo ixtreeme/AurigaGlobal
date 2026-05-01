@@ -253,7 +253,7 @@ namespace
         TPacketGCCharacterAdditionalInfo p;
         memset(&p, 0, sizeof(p));
         p.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-			p.dwVID = target->GetPacketVID();
+			p.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
         strlcpy(p.name, name ? name : target->GetName(), sizeof(p.name));
         for (int i = 0; i < CHR_EQUIPPART_NUM; ++i)
             p.awPart[i] = parts ? parts[i] : 0;
@@ -567,7 +567,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     continue;
                 }
 
-		spawnedVids.push_back(metin->GetPacketVID());
+		spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(metin)));
             }
 
             if (spawnedVids.empty())
@@ -651,7 +651,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             LPCHARACTER statue = d->SpawnMob((int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
             if (statue)
-	d->SetFlag(kFlagStatueVid, (int32_t)statue->GetPacketVID());
+	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(statue)));
 
             d->SpawnRegen(kFloor2Regen, true);
 
@@ -839,14 +839,14 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             // register
-	m_cloneAllowedPid[clone->GetPacketVID()] = owner->GetPlayerID();
-	m_cloneMap[clone->GetPacketVID()] = mapIndex;
-	m_cloneTargetVid[clone->GetPacketVID()] = owner->GetPacketVID();
-	m_cloneSkills[clone->GetPacketVID()] = std::move(skillList);
+	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = owner->GetPlayerID();
+	m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
+	m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(owner));
+	m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
 
-	m_clonePending.erase(clone->GetPacketVID());
-	m_cloneNextAction[clone->GetPacketVID()] = get_dword_time() + 800;
-	m_cloneOffset[clone->GetPacketVID()] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
+	m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone)));
+	m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = get_dword_time() + 800;
+	m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
 
             ++remain;
         }
@@ -886,7 +886,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             LPCHARACTER totem = d->SpawnMob((int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
             if (totem)
-	d->SetFlag(kFlagTotemVid, (int32_t)totem->GetPacketVID());
+	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(totem)));
 
             SendCommandMap(mapIndex, "lostcastle_tile 0");
             BigNoticeMap(mapIndex, "Elveszett Kastely: Mobokbol eshet %u (3%%). Huzd a totemre, hogy csempet tegyel le!", kTileItemVnum);
@@ -1205,7 +1205,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 LostCastleCloneBroadcastSkill(clone, target, chosenSkill, now);
 
                 SClonePending p;
-	p.targetVid = target->GetPacketVID();
+	p.targetVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
                 p.attackType = chosenSkill;
                 p.motionArg = chosenSkill;
                 p.isSkill = true;
@@ -1221,7 +1221,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             LostCastleCloneBroadcastMelee(clone, target, motion, now);
 
             SClonePending p;
-	p.targetVid = target->GetPacketVID();
+	p.targetVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
             p.attackType = 0;
             p.motionArg = motion;
             p.isSkill = false;
@@ -1375,14 +1375,14 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         }
 
         // Register: only the target can fight this clone, and the clone targets the target
-	s_lc.m_cloneAllowedPid[clone->GetPacketVID()] = target->GetPlayerID();
-	s_lc.m_cloneMap[clone->GetPacketVID()] = mapIndex;
-	s_lc.m_cloneTargetVid[clone->GetPacketVID()] = target->GetPacketVID();
-	s_lc.m_cloneSkills[clone->GetPacketVID()] = std::move(skillList);
+	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = target->GetPlayerID();
+	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
+	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
+	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
 
-	s_lc.m_clonePending.erase(clone->GetPacketVID());
-	s_lc.m_cloneNextAction[clone->GetPacketVID()] = get_dword_time() + 800;
-	s_lc.m_cloneOffset[clone->GetPacketVID()] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
+	s_lc.m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone)));
+	s_lc.m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = get_dword_time() + 800;
+	s_lc.m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
 
         ++spawned;
     }
@@ -1640,7 +1640,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (floor == 1 && victim->GetRaceNum() == kMetinVnum)
     {
         const uint32_t correctVid = (uint32_t)d->GetFlag(kFlagCorrectMetin);
-	if (correctVid && victim->GetPacketVID() == correctVid)
+	if (correctVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)) == correctVid)
         {
             BigNoticeMap(idx, "Elveszett Kastely: Megtalaltatok a megfelelõ metinkõvet! Floor2 kovetkezik.");
             s_lc.StartFloor2(idx);
@@ -1650,7 +1650,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 3)
     {
-	const uint32_t vvid = victim->GetPacketVID();
+	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
         if (s_lc.IsClone(vvid))
             s_lc.OnCloneKilled(idx, vvid);
         return;
@@ -1689,7 +1689,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 2)
     {
         const uint32_t statueVid = (uint32_t)d->GetFlag(kFlagStatueVid);
-	if (statueVid && npc->GetPacketVID() != statueVid)
+	if (statueVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) != statueVid)
             return false;
 
         const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
@@ -1738,7 +1738,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 4)
     {
         const uint32_t totemVid = (uint32_t)d->GetFlag(kFlagTotemVid);
-	if (totemVid && npc->GetPacketVID() != totemVid)
+	if (totemVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) != totemVid)
             return false;
 
         if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kTileItemVnum)
@@ -1760,8 +1760,8 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     if (!attacker || !victim)
         return true;
 
-	const uint32_t aVid = attacker->GetPacketVID();
-	const uint32_t vVid = victim->GetPacketVID();
+	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(attacker));
+	const uint32_t vVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
 
     const bool attackerIsClone = s_lc.IsClone(aVid);
     const bool victimIsClone = s_lc.IsClone(vVid);

@@ -304,7 +304,7 @@ EVENTFUNC(ready_to_start_event)
 
 				uint32_t dwOppList[8]; // �ִ� ��Ƽ�� 8�� �̹Ƿ�..
 
-				dwOppList[0] = chB->GetPacketVID();
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chB));
 				TEMP_BUFFER buf;
 
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
@@ -312,7 +312,7 @@ EVENTFUNC(ready_to_start_event)
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(buf.read_peek(), buf.size());
 
 
-				dwOppList[0] = chA->GetPacketVID();
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chA));
 				TEMP_BUFFER buf2;
 
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
@@ -356,12 +356,12 @@ EVENTFUNC(ready_to_start_event)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
 
-				dwOppList[0] = chB->GetPacketVID();
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chB));
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->Packet(buf.read_peek(), buf.size());
 
-				dwOppList[0] = chA->GetPacketVID();
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chA));
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chB))->Packet(buf2.read_peek(), buf2.size());

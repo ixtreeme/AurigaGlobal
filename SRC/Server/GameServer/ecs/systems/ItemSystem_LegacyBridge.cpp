@@ -114,7 +114,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[pChar->GetPacketVID()] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
 			}
 		}
 	}
@@ -11084,7 +11084,7 @@ void CHARACTER::SetRefineNPC(LPCHARACTER ch)
 #endif
 	if (ch != nullptr)
 	{
-		m_dwRefineNPCVID = ch->GetPacketVID();
+		m_dwRefineNPCVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
 	}
 	else
 	{
@@ -13833,7 +13833,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[pChar->GetPacketVID()] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
 			}
 		}
 	}

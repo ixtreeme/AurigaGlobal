@@ -728,7 +728,7 @@ void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_UNLINK;
 	p.pid = ((ch)->GetPlayerID());
-	p.vid = ch->GetPacketVID();
+	p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
@@ -748,7 +748,7 @@ void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_LINK;
-	p.vid = ch->GetPacketVID();
+	p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
 	p.pid = ((ch)->GetPlayerID());
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
@@ -774,7 +774,7 @@ void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 	{
 		if (it->second.pCharacter)
 		{
-			p.vid = it->second.pCharacter->GetPacketVID();
+			p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter));
 			p.pid = ((it->second.pCharacter)->GetPlayerID());
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 		}
@@ -806,7 +806,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -827,7 +827,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ch->GetPacketVID(), it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID());
+			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -854,7 +854,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), it->second.pCharacter->GetPacketVID(), ch->GetName(), ch->GetPacketVID());
+		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }

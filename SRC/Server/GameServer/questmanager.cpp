@@ -908,7 +908,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return false;
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChr->GetPacketVID());
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr)));
 
 			if (pInfo)
 			{
@@ -939,7 +939,7 @@ namespace quest
 				return false;
 			}
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, pkChrTarget->GetPacketVID());
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChrTarget)));
 			if (test_server)
 			{
 				LOG_INFO("CQuestManager::Click(pid={}, npc_name={}) - target_info({:x})", pc, pkChrTarget->GetName(), reinterpret_cast<uintptr_t>(pInfo));

@@ -110,7 +110,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[pChar->GetPacketVID()] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
 			}
 		}
 	}

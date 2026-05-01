@@ -1780,7 +1780,7 @@ ACMD(do_pvp_advanced)
 	const char* m_Name = pkVictim->GetName();	
 	const char* m_GuildName = "-";
 		
-	int m_Vid = pkVictim->GetPacketVID();	
+	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));	
 	int m_Level = pkVictim->GetLevel();
 	int m_PlayTime = pkVictim->GetRealPoint(POINT_PLAYTIME);
 	int m_MaxHP = pkVictim->GetMaxHP();

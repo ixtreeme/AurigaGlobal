@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -412,7 +413,7 @@ namespace
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-		d->SetUnique(key, stone->GetPacketVID());
+		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stone)));
             }
         }
 
@@ -441,7 +442,7 @@ namespace
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-		if (npc->GetPacketVID() == (uint32_t)d->GetUniqueVid(key))
+		if (ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) == (uint32_t)d->GetUniqueVid(key))
             {
                 d->SpawnMob(kCalyxFullNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
                 d->KillUnique(key);
@@ -559,7 +560,7 @@ namespace
             d->SetFlag(kFlagFinalBossActive, 1);
             LPCHARACTER boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
             if (boss)
-		d->SetUnique("hw22_final_boss", boss->GetPacketVID());
+		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));
 
             BigNoticeMap(idx, "<Bloody cathedral> The final boss has appeared!");
             return 0;
@@ -907,14 +908,14 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-	if (victim->GetPacketVID() == (uint32_t)d->GetUniqueVid(key))
+	if (ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)) == (uint32_t)d->GetUniqueVid(key))
             {
                 LPCHARACTER stoneNpc = d->SpawnMob(kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
                 if (stoneNpc)
                 {
                     char u[32];
                     snprintf(u, sizeof(u), "hw22_spellstone_%d", i + 1);
-		d->SetUnique(u, stoneNpc->GetPacketVID());
+		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stoneNpc)));
                 }
                 break;
             }
@@ -1169,7 +1170,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-	d->SetUnique(key, calyx->GetPacketVID());
+	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(calyx)));
             }
         }
 

@@ -314,7 +314,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, mob->GetPacketVID());
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(mob)));
 				}
 			}
 		}
@@ -383,7 +383,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, mob->GetPacketVID());
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(mob)));
 				}
 			}
 		}

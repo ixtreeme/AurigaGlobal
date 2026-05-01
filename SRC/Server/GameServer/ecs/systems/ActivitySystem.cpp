@@ -224,7 +224,7 @@ void StartFishing(entt::entity fisher, uint32_t)
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_START;
-    p.vid = ch->GetPacketVID();
+    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     p.dir = static_cast<uint8_t>(ch->GetRotation() / 5);
     p.need = FISHING_NEED_CATCH;
     p.count = 0;
@@ -254,7 +254,7 @@ void StopFishing(entt::entity fisher)
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_STOP;
-    p.vid = ch->GetPacketVID();
+    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     p.dir = 0;
     p.need = 0;
     p.count = 0;
@@ -279,7 +279,7 @@ void CatchFishing(entt::entity fisher, uint32_t)
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_CATCH;
-    p.vid = ch->GetPacketVID();
+    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     p.dir = 0;
     p.need = 0;
     p.count = state->catchCount;
@@ -300,7 +300,7 @@ void CatchFishingFailed(entt::entity fisher)
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_CATCH_FAILED;
-    p.vid = ch->GetPacketVID();
+    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     p.dir = 0;
     p.need = 0;
     p.count = 0;
@@ -513,7 +513,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
         }
     }
 
-    p.vid = ch->GetPacketVID();
+    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
     p.dir = 0;
     p.need = 0;
     p.count = 0;
@@ -621,7 +621,7 @@ void CHARACTER::mining(LPCHARACTER chLoad)
     TPacketGCDigMotion p;
     p.header = HEADER_GC_DIG_MOTION;
     p.vid = GetPacketVID();
-    p.target_vid = chLoad->GetPacketVID();
+    p.target_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chLoad));
     p.count = count;
 
     PacketAround(&p, sizeof(p));

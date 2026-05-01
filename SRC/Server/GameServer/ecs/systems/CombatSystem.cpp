@@ -1043,7 +1043,7 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, pAttacker->GetPacketVID());
+		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pAttacker)));
 	}
 
 	ChangeVictimByAggro(info.iAggro, pAttacker);
@@ -1947,7 +1947,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	if (IsPC())
 	{
 		if (pkKiller) {
-			SetQuestNPCID(pkKiller->GetPacketVID());
+			SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkKiller)));
 		}
 
 		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? pkKiller->GetRaceNum() : quest::QUEST_NO_NPC);
@@ -2427,7 +2427,7 @@ void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
 	packFly.bHeader = HEADER_GC_CREATE_FLY;
 	packFly.bType = bType;
 	packFly.dwStartVID = GetPacketVID();
-	packFly.dwEndVID = pkVictim->GetPacketVID();
+	packFly.dwEndVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 
 	PacketAround(&packFly, sizeof(TPacketGCCreateFly));
 }
@@ -2500,11 +2500,11 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			iRet = battle_melee_attack(this, pkVictim);
 			break;
 		case BATTLE_TYPE_RANGE:
-			FlyTarget(pkVictim->GetPacketVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(0) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		case BATTLE_TYPE_MAGIC:
-			FlyTarget(pkVictim->GetPacketVID(), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(1) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		default:
@@ -6231,8 +6231,8 @@ public:
 
 		  uint32_t * pdw;
 		  uint32_t dwEI = AllocEventInfo(sizeof(uint32_t) * 2, &pdw);
-		  pdw[0] = m_me->GetPacketVID();
-		  pdw[1] = pkVictim->GetPacketVID();
+		  pdw[0] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_me));
+		  pdw[1] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 
 		  event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
 		  }
@@ -6359,7 +6359,7 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 
 	if (pkVictim)
 	{
-		pack.dwTargetVID = pkVictim->GetPacketVID();
+		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 		pack.x = pkVictim->GetX();
 		pack.y = pkVictim->GetY();
 
@@ -7275,7 +7275,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 	if (m_pkChrTarget)
 	{
 		m_pkChrTarget->m_set_pkChrTargetedBy.insert(this);
-	p.dwVID = m_pkChrTarget->GetPacketVID();
+	p.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
 
 #ifdef __VIEW_TARGET_PLAYER_HP__
 		if ((m_pkChrTarget->GetMaxHP() <= 0))

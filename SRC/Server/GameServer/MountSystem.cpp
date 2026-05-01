@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
@@ -393,7 +394,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 	if (nullptr != m_pkChar)
 	{
 		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
-		m_dwVID = m_pkChar->GetPacketVID();
+		m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 
 		return m_dwVID;
 	}
@@ -418,7 +419,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
 
-	m_dwVID = m_pkChar->GetPacketVID();
+	m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 
 	this->SetName();
 

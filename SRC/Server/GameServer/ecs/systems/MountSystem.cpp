@@ -575,7 +575,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		{
 			TPacketGCDead pack;
 			pack.header	= HEADER_GC_DEAD;
-			pack.vid    = m_chHorse->GetPacketVID();
+			pack.vid    = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_chHorse));
 			PacketAround(&pack, sizeof(pack));
 		}
 

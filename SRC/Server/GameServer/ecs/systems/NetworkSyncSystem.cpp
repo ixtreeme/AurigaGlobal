@@ -281,7 +281,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         LPCHARACTER ch = (LPCHARACTER)entity;
         if (ch->IsWalking()) {
             TPacketGCWalkMode p;
-            p.vid = ch->GetPacketVID();
+            p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
             p.header = HEADER_GC_WALK_MODE;
             p.mode = ch->m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
             GetDesc()->Packet(&p, sizeof(p));
@@ -425,7 +425,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     TPacketGCOwnership pack;
 
     pack.bHeader = HEADER_GC_OWNERSHIP;
-    pack.dwOwnerVID = ch ? ch->GetPacketVID() : 0;
+    pack.dwOwnerVID = ch ? ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)) : 0;
     pack.dwVictimVID = GetPacketVID();
 
     PacketAround(&pack, sizeof(TPacketGCOwnership));
@@ -983,8 +983,8 @@ void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use*
 		return;
 
 	packet->header = HEADER_GC_ITEM_USE;
-	packet->ch_vid = ch->GetPacketVID();
-	packet->victim_vid = victim->GetPacketVID();
+	packet->ch_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+	packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
 	packet->Cell = TItemPos(GetWindow(), m_wCell);
 	packet->vnum = GetVnum();
 }

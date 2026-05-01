@@ -1,41 +1,74 @@
 #include "../../stdafx.h"
 
+#include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
 
+#include "PlayerRuntimeSystem.hpp"
 #include <cmath>
 #include <algorithm>
 
 #include "../../char.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../char_manager.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../desc_client.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../dungeon.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../packet.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../motion.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../vector.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../sectree_manager.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../regen.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../start_position.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../config.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../unique_item.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../utils.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../questmanager.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../mount_inventory_helper.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../party.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../CharacterAccessors.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../EntityFactory.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../Registry.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "ItemSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../SpatialHelpers.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/dirty_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/identity_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/movement_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/transform_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/combat_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/character_runtime_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../events.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../EventDispatcher.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
@@ -625,7 +658,7 @@ void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct pa
 	packet->motion = motion;
 
 	if (victim)
-		packet->victim_vid = victim->GetPacketVID();
+		packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
 	else
 		packet->victim_vid = 0;
 }

@@ -1421,7 +1421,7 @@ namespace quest
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
 						pSpawnMonster->GetMapIndex(),
-						pSpawnMonster->GetPacketVID());
+						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
 				}
 			}
@@ -1490,7 +1490,7 @@ namespace quest
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
 						pSpawnMonster->GetMapIndex(),
-						pSpawnMonster->GetPacketVID());
+						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
 				}
 			}

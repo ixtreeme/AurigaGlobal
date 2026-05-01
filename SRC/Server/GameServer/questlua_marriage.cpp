@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "char_interface.hpp"
 #include "char_manager.h"
@@ -76,7 +78,7 @@ namespace quest
 		{
 			LPCHARACTER you = CHARACTER_MANAGER::instance().FindByPID(pMarriage->GetOther(((ch)->GetPlayerID())));
 			if (you)
-				vid = you->GetPacketVID();
+				vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(you));
 		}
 
 		lua_pushnumber(L, vid);
