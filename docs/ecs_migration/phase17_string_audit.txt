@@ -1,0 +1,333 @@
+Phase 17 Audit - std::string_view modernization scope analysis
+Date: 2026-05-01
+
+Scope
+-----
+Audit-only pass over SRC/Server for string modernization planning.
+No source code changes were made.
+
+Scanned file set:
+- 542 files under SRC/Server
+- Extensions: .cpp, .h, .hpp
+- Build directories excluded
+
+1. Tooling
+----------
+C++ standard:
+- Root CMakeLists.txt sets CMAKE_CXX_STANDARD 23.
+- C++17 minimum requirement for std::string_view is satisfied.
+
+Existing string_view usage:
+- std::string_view / string_view matches in SRC/Server: 0
+
+Conclusion:
+- Phase 17 can introduce std::string_view without changing the C++ standard.
+- There is no existing string_view convention in this codebase; Phase 17 should define one.
+
+2. Tier 1 - Function Parameter Candidates
+-----------------------------------------
+const std::string& parameters:
+- Total matches: 265
+- Risk: low to medium
+- Best Phase 17a target.
+
+Top files:
+- SRC/Server/GameServer/group_text_parse_tree.h: 26
+- SRC/Server/GameServer/questmanager.h: 26
+- SRC/Server/GameServer/questpc.cpp: 24
+- SRC/Server/GameServer/questpc.h: 24
+- SRC/Server/GameServer/questmanager.cpp: 22
+- SRC/Server/GameServer/text_file_loader.cpp: 18
+- SRC/Server/GameServer/text_file_loader.h: 18
+- SRC/Server/GameServer/char.h: 8
+- SRC/Server/GameServer/group_text_parse_tree.cpp: 6
+- SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp: 5
+
+Recommended first files for Phase 17a:
+- group_text_parse_tree.cpp/.h
+- text_file_loader.cpp/.h
+- questmanager.cpp/.h and questpc.cpp/.h only after Lua/quest lifetime review
+- small ECS system helpers after text loader patterns are proven
+
+const char* parameters:
+- Total matches: 1515
+- Risk: mixed
+- Many are packet handlers, DB APIs, Lua C APIs, socket APIs, SQL APIs, and null-terminated C boundary calls.
+- Do not bulk-convert all const char* to string_view.
+
+Top files:
+- SRC/Server/GameServer/input.h: 179
+- SRC/Server/GameServer/input_main.cpp: 99
+- SRC/Server/GameServer/input_db.cpp: 89
+- SRC/Server/GameServer/log.cpp: 55
+- SRC/Server/GameServer/log.h: 55
+- SRC/Server/Database/ClientManager.h: 45
+- SRC/Server/GameServer/db.h: 26
+- SRC/Server/GameServer/input_p2p.cpp: 24
+- SRC/Server/GameServer/questmanager.h: 24
+- SRC/Server/GameServer/db.cpp: 23
+
+const char* migration rule:
+- Safe: pure read-only internal helper where length is not assumed to be null-terminated downstream.
+- Caution: code that immediately calls strlen/strcmp can be migrated only if comparison is rewritten to string_view operations.
+- Skip: Windows/POSIX/socket/file/Lua/C SQL APIs that require null-terminated char*.
+- Skip: packet decode boundaries and DB row fields until an adapter layer exists.
+
+3. Tier 2 - Local String Allocations
+------------------------------------
+Local std::string declarations:
+- Total matches: 299
+- Risk: medium
+- Many are owned buffers, SQL query builders, parser tokens, or values returned/stored beyond local expression lifetime.
+
+Top files:
+- SRC/Server/Database/ProtoReader.cpp: 29
+- SRC/Server/Database/OfflineshopCache.cpp: 25
+- SRC/Server/GameServer/dragon_soul_table.cpp: 18
+- SRC/Server/GameServer/questlua_dungeon.cpp: 12
+- SRC/Server/GameServer/config.cpp: 11
+- SRC/Server/GameServer/cmd_general.cpp: 10
+- SRC/Server/GameServer/battle_pass.cpp: 9
+- SRC/Server/GameServer/char.h: 8
+- SRC/Server/GameServer/questmanager.cpp: 8
+- SRC/Server/GameServer/item_manager_read_tables.cpp: 7
+
+.substr() calls:
+- Total matches: 30
+- Risk: medium
+- Good Phase 17b target where substr only creates a temporary read-only slice.
+- Do not migrate substr sites that return/store an owning string.
+
+Top files:
+- SRC/Server/Database/ProtoReader.cpp: 7
+- SRC/Server/GameServer/questnpc.cpp: 5
+- SRC/Server/Database/CsvReader.cpp: 2
+- SRC/Server/Database/DBManager.cpp: 2
+- SRC/Server/GameServer/config.cpp: 2
+- SRC/Server/GameServer/cuberenewal.cpp: 2
+- SRC/Server/GameServer/new_offlineshop_manager.cpp: 2
+- SRC/Server/GameServer/questmanager.cpp: 2
+- SRC/Server/GameServer/questpc.cpp: 2
+
+.c_str() calls:
+- Total matches: 949
+- Risk: mixed
+- This is the largest allocation/boundary signal.
+- Most .c_str() uses are C API or fixed-buffer boundaries, not direct string_view candidates.
+
+Top files:
+- SRC/Server/GameServer/dragon_soul_table.cpp: 101
+- SRC/Server/GameServer/item_manager_read_tables.cpp: 99
+- SRC/Server/GameServer/text_file_loader.cpp: 51
+- SRC/Server/Database/ClientManager.cpp: 44
+- SRC/Server/GameServer/messenger_manager.cpp: 43
+- SRC/Server/GameServer/questmanager.cpp: 43
+- SRC/Server/GameServer/battle_pass.cpp: 42
+- SRC/Server/GameServer/config.cpp: 37
+- SRC/Server/Database/OfflineshopCache.cpp: 31
+- SRC/Server/GameServer/questpc.cpp: 26
+
+Recommended Tier 2 approach:
+- Start with parser/text-loader files, not runtime packet handlers.
+- Replace temporary `std::string x = s.substr(...)` with `std::string_view` only if `x` never mutates and never outlives the original string.
+- Leave SQL query builders and DB escape buffers as std::string/char[] until a query builder phase.
+
+4. Tier 3 - char[] / char* Members
+----------------------------------
+char[] member arrays:
+- Direct m_ member pattern matches: 15
+- Risk: high unless clearly runtime-only.
+
+Top files:
+- SRC/Server/common/tables.h: 4
+- SRC/Server/GameServer/tables.h: 4
+- SRC/Server/GameServer/input_main.cpp: 2
+- SRC/Server/Database/LoginData.h: 1
+- SRC/Server/Database/PeerBase.h: 1
+- SRC/Server/GameServer/char.h: 1
+- SRC/Server/GameServer/login_data.h: 1
+- SRC/Server/GameServer/new_offlineshop.h: 1
+
+char* member pointers:
+- Total matches: 3
+- Files:
+  - SRC/Server/Base/grid.h
+  - SRC/Server/Base/targa.h
+  - SRC/Server/Database/grid.h
+
+Assessment:
+- `tables.h` fields are protocol/DB serialization structures. Do not migrate in Phase 17.
+- `LoginData` and `PeerBase` IP/host fields are boundary storage. Defer unless class-local semantics are fully reviewed.
+- `new_offlineshop.h` shop name member is a possible runtime storage candidate, but it likely serializes to client/DB; defer.
+- `grid.h` char* members are storage internals and should be handled in a dedicated ownership cleanup, not string_view.
+
+5. Tier 4 - Primitive C String Operations
+-----------------------------------------
+Counts:
+- strcpy: 13
+- strncpy: 40
+- strcat: 2
+- strncat: 0
+- strdup: 1
+- strlen: 114
+- strcmp: 132
+- strncmp: 21
+- Total primitive C string calls: 323
+
+Top strcpy/strncpy/strcat family files:
+- SRC/Server/GameServer/new_offlineshop_manager.cpp: 11
+- SRC/Server/Database/ClientManagerOfflineshop.cpp: 8
+- SRC/Server/GameServer/messenger_manager.cpp: 8
+- SRC/Server/Database/OfflineshopCache.cpp: 5
+- SRC/Server/Database/ClientManagerPlayer.cpp: 4
+- SRC/Server/GameServer/input_auth.cpp: 4
+- SRC/Server/Core/log.cpp: 3
+- SRC/Server/Database/ItemAwardManager.cpp: 3
+- SRC/Server/Core/xdirent.cpp: 2
+- SRC/Server/GameServer/input_main.cpp: 2
+
+Assessment:
+- strcpy/strncpy/strcat cleanup is suitable for Phase 17c after parameter migration.
+- strcmp/strncmp cleanup should be paired with string_view parameter conversion where safe.
+- strlen cleanup should be conservative; many calls feed C APIs or fixed packet buffers.
+
+6. Hot-Path Files
+-----------------
+ECS systems:
+- SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp: 41
+- SRC/Server/GameServer/ecs/systems/CombatSystem.cpp: 23
+- SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp: 21
+- SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp: 16
+- SRC/Server/GameServer/ecs/systems/GayaSystem.cpp: 13
+- SRC/Server/GameServer/ecs/systems/SessionSystem.cpp: 10
+- SRC/Server/GameServer/ecs/systems/ChatSystem.cpp: 7
+- SRC/Server/GameServer/ecs/systems/ChatSystem.hpp: 6
+
+Quest engine:
+- SRC/Server/GameServer/questmanager.cpp: 83
+- SRC/Server/GameServer/questmanager.h: 55
+- SRC/Server/GameServer/questpc.cpp: 53
+- SRC/Server/GameServer/questlua_global.cpp: 44
+- SRC/Server/GameServer/questlua.cpp: 38
+- SRC/Server/GameServer/questnpc.cpp: 30
+- SRC/Server/GameServer/questlua_pc.cpp: 28
+- SRC/Server/GameServer/questpc.h: 27
+- SRC/Server/GameServer/questlua_dungeon.cpp: 21
+
+Item/proto loading:
+- SRC/Server/GameServer/item_manager_read_tables.cpp: 107
+- SRC/Server/GameServer/item_manager.cpp: 14
+- SRC/Server/GameServer/item_manager.h: 13
+
+Network input:
+- SRC/Server/GameServer/input_main.cpp: 135
+- SRC/Server/GameServer/input_db.cpp: 106
+- SRC/Server/GameServer/input_p2p.cpp: 26
+- SRC/Server/GameServer/input_login.cpp: 18
+- SRC/Server/GameServer/input_auth.cpp: 15
+- SRC/Server/GameServer/input_udp.cpp: 5
+
+Desc/chat:
+- SRC/Server/GameServer/desc_manager.cpp: 24
+- SRC/Server/GameServer/desc.h: 16
+- SRC/Server/GameServer/desc_manager.h: 13
+- SRC/Server/GameServer/desc.cpp: 9
+- SRC/Server/GameServer/ecs/systems/ChatSystem.cpp: 7
+- SRC/Server/GameServer/ecs/systems/ChatSystem.hpp: 6
+
+Hot-path recommendation:
+- Do not start Phase 17 with input_* or questlua_*.
+- Start with low-risk parser/config/text files.
+- Move to ECS hot paths only after helper conventions and adapter rules are proven.
+
+7. Capnproto / DB Boundary Cases
+--------------------------------
+Fixed-size char[] fields with *_LEN / *_MAX / *_SIZE constants:
+- Total matches: 397
+- Risk: very high
+- These are mostly packet fields, DB serialization fields, or fixed SQL buffers.
+
+Top files:
+- SRC/Server/common/tables.h: 87
+- SRC/Server/GameServer/tables.h: 87
+- SRC/Server/common/Headers/GC_Packet.h: 21
+- SRC/Server/Database/ClientManager.cpp: 18
+- SRC/Server/common/Headers/CG_Packet.h: 15
+- SRC/Server/GameServer/input_main.cpp: 14
+- SRC/Server/common/Headers/GG_Packet.h: 13
+- SRC/Server/Database/ClientManagerPlayer.cpp: 11
+- SRC/Server/Database/ClientManagerLogin.cpp: 10
+- SRC/Server/GameServer/input_auth.cpp: 9
+
+Boundary policy:
+- Do not migrate packet structs or table structs to string_view in Phase 17.
+- Do not migrate fixed DB record fields in Phase 17.
+- Do not migrate fixed query buffers in Phase 17 unless replacing the entire query construction path.
+- Defer these to Phase 19 capnproto / protocol serialization work or a DB adapter phase.
+
+8. Recommended Phase Plan
+-------------------------
+Phase 17a - Tier 1 safe function parameters
+- Target: selected `const std::string&` parameters.
+- Estimated initial scope: 80-120 of 265, not all 265.
+- Risk: low if limited to parser/config/internal helper functions.
+- Suggested first batch:
+  - group_text_parse_tree.cpp/.h
+  - text_file_loader.cpp/.h
+  - small pure helper functions in config/cuberenewal/cmd_gm
+- Defer:
+  - questmanager/questpc until Lua lifetime review.
+  - char.h public API until CHARACTER migration impact is assessed.
+  - DB APIs that pass to C SQL/file boundaries.
+
+Phase 17b - Tier 2 local string allocation and substr cleanup
+- Target: 30 substr calls plus selected local read-only std::string temporaries.
+- Estimated scope: 50-100 edits.
+- Risk: medium due lifetime issues.
+- Start with ProtoReader/CsvReader/config parser paths.
+
+Phase 17c - Tier 4 primitive C string operation cleanup
+- Target: strcpy/strncpy/strcat first, then selected strcmp/strncmp.
+- Estimated scope: 55 write-family calls first, then selected compare calls.
+- Risk: low to medium.
+- Must preserve fixed-size packet/DB buffer semantics.
+
+Phase 17d - Limited runtime char[] member cleanup
+- Target: only runtime storage, not packet/DB structs.
+- Estimated scope: very small in Phase 17.
+- Risk: high.
+- Defer most char[] fields to Phase 19 capnproto/protocol work.
+
+9. Risk Assessment
+------------------
+Low risk:
+- Pure read-only internal helper parameters currently taking `const std::string&`.
+- Parser utilities where caller lifetime is local and obvious.
+- Replacing simple strcmp with string_view equality inside already owned strings.
+
+Medium risk:
+- Local std::string to string_view conversions.
+- substr conversions.
+- Quest engine helpers due Lua string lifetime and quest context lifetime.
+- DB row parsing helpers due null-termination and SQL escaping assumptions.
+
+High risk:
+- Packet structs and common/Headers fields.
+- tables.h DB serialization fields.
+- input_* packet handlers.
+- char[] members with protocol-visible layout.
+- Any function passing data to fopen, socket APIs, Lua C API, MySQL/MariaDB, or legacy varargs.
+
+Final recommendation:
+- Phase 17 should only target Tier 1 safe function parameters.
+- Do not attempt tree-wide `const char* -> string_view` conversion.
+- Define a convention first:
+  - Accept `std::string_view` for internal read-only text.
+  - Convert to `std::string` only at C API boundaries that require null termination.
+  - Never store string_view in long-lived objects unless the owner lifetime is explicit.
+  - Never put string_view in packet/DB structs.
+
+Build:
+- Not required for source correctness because this audit created documentation only.
+- Recommended gate after commit remains:
+  `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
