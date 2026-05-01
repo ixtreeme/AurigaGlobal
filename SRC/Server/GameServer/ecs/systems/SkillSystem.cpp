@@ -252,7 +252,7 @@ bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target)
 int ComputeCooltime(entt::entity e, int time)
 {
     auto* ch = LegacyCharOf(e);
-    return ch ? CalculateDuration(ch->GetPoint(POINT_CASTING_SPEED), time) : time;
+    return ch ? CalculateDuration(ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_CASTING_SPEED), time) : time;
 }
 
 void DisableCooltime(entt::entity e)
@@ -1816,12 +1816,12 @@ struct FuncSplashDamage
 		//m_pkSk->kPointPoly2.SetVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)));
-		m_pkSk->SetPointVar("iq", m_pkChr->GetPoint(POINT_IQ));
-		m_pkSk->SetPointVar("str", m_pkChr->GetPoint(POINT_ST));
-		m_pkSk->SetPointVar("dex", m_pkChr->GetPoint(POINT_DX));
-		m_pkSk->SetPointVar("con", m_pkChr->GetPoint(POINT_HT));
-		m_pkSk->SetPointVar("def", m_pkChr->GetPoint(POINT_DEF_GRADE));
-		m_pkSk->SetPointVar("odef", m_pkChr->GetPoint(POINT_DEF_GRADE) - m_pkChr->GetPoint(POINT_DEF_GRADE_BONUS));
+		m_pkSk->SetPointVar("iq", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IQ));
+		m_pkSk->SetPointVar("str", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ST));
+		m_pkSk->SetPointVar("dex", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DX));
+		m_pkSk->SetPointVar("con", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_HT));
+		m_pkSk->SetPointVar("def", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE));
+		m_pkSk->SetPointVar("odef", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE) - ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE_BONUS));
 		m_pkSk->SetPointVar("horse_level", m_pkChr->GetHorseLevel());
 
 		//int iPenetratePct = (int)(1 + k*4);
@@ -1992,12 +1992,12 @@ struct FuncSplashDamage
 						{
 							case WEAPON_SWORD:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_SWORD);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_SPADA);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2005,12 +2005,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_TWO_HANDED:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_TWOHAND);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_SPADONE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2018,12 +2018,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_DAGGER:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_DAGGER);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2031,12 +2031,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BELL:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_BELL);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_CAMPANA);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2044,12 +2044,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_FAN:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_FAN);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_VENTAGLIO);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2057,12 +2057,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BOW:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_BOW);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2071,12 +2071,12 @@ struct FuncSplashDamage
 #ifdef ENABLE_WOLFMAN_CHARACTER
 							case WEAPON_CLAW:
 							{
-								int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_DAGGER);
+								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2089,19 +2089,19 @@ struct FuncSplashDamage
 					}
 
 					if (!bIgnoreDefense) {
-						iDam -= pkChrVictim->GetPoint(POINT_DEF_GRADE);
+						iDam -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_DEF_GRADE);
 					}
 
 					break;
 				}
 			case SKILL_ATTR_TYPE_RANGE: {
 				dt = DAMAGE_TYPE_RANGE;
-				int32_t lValue = pkChrVictim->GetPoint(POINT_RESIST_BOW);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= m_pkChr->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= m_pkChr->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 : lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -2113,16 +2113,16 @@ struct FuncSplashDamage
 				iDam = CalcAttBonus(m_pkChr, pkChrVictim, iDam);
 				// Ŕ¸ľĆľĆľĆľÇ
 				// żąŔüżˇ ŔűżëľČÇß´ř ąö±×°ˇ ŔÖľîĽ­ ąćľî·Â °č»ęŔ» ´Ů˝ĂÇĎ¸é ŔŻŔú°ˇ ł­¸®ł˛
-				//iDam -= pkChrVictim->GetPoint(POINT_MAGIC_DEF_GRADE);
+				//iDam -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_MAGIC_DEF_GRADE);
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //				{
-//					const int resist_magic = MINMAX(0, pkChrVictim->GetPoint(POINT_RESIST_MAGIC), 100);
-//					const int resist_magic_reduction = MINMAX(0, (m_pkChr->GetJob()==JOB_SURA) ? m_pkChr->GetPoint(POINT_RESIST_MAGIC_REDUCTION)/2 : m_pkChr->GetPoint(POINT_RESIST_MAGIC_REDUCTION), 50);
+//					const int resist_magic = MINMAX(0, ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_MAGIC), 100);
+//					const int resist_magic_reduction = MINMAX(0, (m_pkChr->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_RESIST_MAGIC_REDUCTION), 50);
 //					const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //					iDam = iDam * (100 - total_res_magic) / 100;
 //				}
 //#else
-				iDam = iDam * (100 - (int)(pkChrVictim->GetPoint(POINT_RESIST_MAGIC) / 2)) / 100;
+				iDam = iDam * (100 - (int)(ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_MAGIC) / 2)) / 100;
 //#endif
 				break;
 
@@ -2144,17 +2144,17 @@ struct FuncSplashDamage
 		{
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_WIND))
 			{
-				iDam = iDam * (100 - pkChrVictim->GetPoint(POINT_RESIST_WIND)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_WIND)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_ELEC))
 			{
-				iDam = iDam * (100 - pkChrVictim->GetPoint(POINT_RESIST_ELEC)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_ELEC)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE))
 			{
-				iDam = iDam * (100 - pkChrVictim->GetPoint(POINT_RESIST_FIRE)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_FIRE)) / 100;
 			}
 		}
 
@@ -2334,7 +2334,7 @@ struct FuncSplashDamage
 				{
 					int iAmount2 = (int) m_pkSk->kPointPoly2.Eval();
 					int iDur2 = (int) m_pkSk->kDurationPoly2.Eval();
-					iDur2 += m_pkChr->GetPoint(POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
 
 					if (number(1, 100) <= iAmount2)
 					{
@@ -2352,7 +2352,7 @@ struct FuncSplashDamage
 				int iPct = (int) m_pkSk->kPointPoly2.Eval();
 				int iDur = (int) m_pkSk->kDurationPoly2.Eval();
 
-				iDur += m_pkChr->GetPoint(POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_STUN))
 				{
@@ -2365,10 +2365,10 @@ struct FuncSplashDamage
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE_CONT))
 				{
 					m_pkSk->SetDurationVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
-					m_pkSk->SetDurationVar("iq", m_pkChr->GetPoint(POINT_IQ));
+					m_pkSk->SetDurationVar("iq", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IQ));
 
 					iDur = (int)m_pkSk->kDurationPoly2.Eval();
-					int bonus = m_pkChr->GetPoint(POINT_PARTY_BUFFER_BONUS);
+					int bonus = ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
 
 					if (bonus != 0)
 					{

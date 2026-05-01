@@ -283,7 +283,7 @@ namespace
     {
         if (!ch)
             return;
-        const int64_t v = ch->GetPoint(pt);
+        const int64_t v = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), pt);
         const int64_t nv = ClampMul10(v * STR_MULTIPLE);
         ch->SetRealPoint(pt, nv);
         ch->SetPoint(pt, nv);

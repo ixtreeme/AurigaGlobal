@@ -1252,30 +1252,30 @@ ACMD(do_state)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(tch)));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(tch)));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
-			tch->GetPoint(POINT_ATT_GRADE),
-			tch->GetPoint(POINT_MAGIC_ATT_GRADE),
-			tch->GetPoint(POINT_ATT_SPEED),
-			tch->GetPoint(POINT_CRITICAL_PCT),
-			tch->GetPoint(POINT_PENETRATE_PCT),
-			tch->GetPoint(POINT_ATT_BONUS));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATT_GRADE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MAGIC_ATT_GRADE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATT_SPEED),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_CRITICAL_PCT),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_PENETRATE_PCT),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATT_BONUS));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "DEF %d MAGIC_DEF %d BLOCK %d%% DODGE %d%% DEF_BONUS %d%%",
-			tch->GetPoint(POINT_DEF_GRADE),
-			tch->GetPoint(POINT_MAGIC_DEF_GRADE),
-			tch->GetPoint(POINT_BLOCK),
-			tch->GetPoint(POINT_DODGE),
-			tch->GetPoint(POINT_DEF_BONUS));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_DEF_GRADE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MAGIC_DEF_GRADE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_BLOCK),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_DODGE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_DEF_BONUS));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "RESISTANCES:");
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			" WOLF:%3d%%"
 #endif
 			,
-			tch->GetPoint(POINT_RESIST_WARRIOR),
-			tch->GetPoint(POINT_RESIST_ASSASSIN),
-			tch->GetPoint(POINT_RESIST_SURA),
-			tch->GetPoint(POINT_RESIST_SHAMAN)
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_WARRIOR),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_ASSASSIN),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_SURA),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_SHAMAN)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,tch->GetPoint(POINT_RESIST_WOLFMAN)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_WOLFMAN)
 #endif
 	);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
@@ -1283,76 +1283,76 @@ ACMD(do_state)
 			" CLAW:%3d%%"
 #endif
 			,
-			tch->GetPoint(POINT_RESIST_SWORD),
-			tch->GetPoint(POINT_RESIST_TWOHAND),
-			tch->GetPoint(POINT_RESIST_DAGGER),
-			tch->GetPoint(POINT_RESIST_BELL),
-			tch->GetPoint(POINT_RESIST_FAN),
-			tch->GetPoint(POINT_RESIST_BOW)
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_SWORD),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_TWOHAND),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_DAGGER),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_BELL),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_FAN),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_BOW)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,tch->GetPoint(POINT_RESIST_CLAW)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_CLAW)
 #endif
 	);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
-			tch->GetPoint(POINT_RESIST_FIRE),
-			tch->GetPoint(POINT_RESIST_ELEC),
-			tch->GetPoint(POINT_RESIST_MAGIC),
-			tch->GetPoint(POINT_RESIST_WIND),
-			tch->GetPoint(POINT_RESIST_CRITICAL),
-			tch->GetPoint(POINT_RESIST_PENETRATE));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_FIRE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_ELEC),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_MAGIC),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_WIND),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_CRITICAL),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_PENETRATE));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   ICE:%3d%% EARTH:%3d%% DARK:%3d%%",
-			tch->GetPoint(POINT_RESIST_ICE),
-			tch->GetPoint(POINT_RESIST_EARTH),
-			tch->GetPoint(POINT_RESIST_DARK));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_ICE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_EARTH),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_DARK));
 
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "IRR_SPA:%3d%% IRR_SPAD:%3d%% IRR_PUG:%3d%% IRR_FRE:%3d%% IRR_VEN:%3d%% IRR_CAMP:%3d%%"
 									"RES_MEZ:%3d%% DEF_TAL:%3d%% FORT_DES:%3d%% FORT_INS:%3d%% FORT_ZOD:%3d%% ",
-			tch->GetPoint(POINT_ATTBONUS_IRR_SPADA),
-			tch->GetPoint(POINT_ATTBONUS_IRR_SPADONE),
-			tch->GetPoint(POINT_ATTBONUS_IRR_PUGNALE),
-			tch->GetPoint(POINT_ATTBONUS_IRR_FRECCIA),
-			tch->GetPoint(POINT_ATTBONUS_IRR_VENTAGLIO),
-			tch->GetPoint(POINT_ATTBONUS_IRR_CAMPANA),
-			tch->GetPoint(POINT_RESIST_MEZZIUOMINI),
-			tch->GetPoint(POINT_DEF_TALISMAN),
-			tch->GetPoint(POINT_ATTBONUS_FORT_ZODIAC));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_SPADA),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_SPADONE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_PUGNALE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_FRECCIA),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_VENTAGLIO),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_IRR_CAMPANA),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_MEZZIUOMINI),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_DEF_TALISMAN),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_FORT_ZODIAC));
 #endif
 
 
 #ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", tch->GetPoint(POINT_RESIST_MAGIC_REDUCTION));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_MAGIC_REDUCTION));
 #endif
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "MALL:");
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   ATT:%3d%% DEF:%3d%% EXP:%3d%% ITEMx%d GOLDx%d",
-			tch->GetPoint(POINT_MALL_ATTBONUS),
-			tch->GetPoint(POINT_MALL_DEFBONUS),
-			tch->GetPoint(POINT_MALL_EXPBONUS),
-			tch->GetPoint(POINT_MALL_ITEMBONUS) / 10,
-			tch->GetPoint(POINT_MALL_GOLDBONUS) / 10);
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MALL_ATTBONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MALL_DEFBONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MALL_EXPBONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MALL_ITEMBONUS) / 10,
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_MALL_GOLDBONUS) / 10);
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "BONUS:");
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   SKILL:%3d%% NORMAL:%3d%% SKILL_DEF:%3d%% NORMAL_DEF:%3d%%",
-			tch->GetPoint(POINT_SKILL_DAMAGE_BONUS),
-			tch->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS),
-			tch->GetPoint(POINT_SKILL_DEFEND_BONUS),
-			tch->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_SKILL_DAMAGE_BONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_NORMAL_HIT_DAMAGE_BONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_SKILL_DEFEND_BONUS),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_NORMAL_HIT_DEFEND_BONUS));
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   HUMAN:%3d%% ANIMAL:%3d%% ORC:%3d%% MILGYO:%3d%% UNDEAD:%3d%%",
-			tch->GetPoint(POINT_ATTBONUS_HUMAN),
-			tch->GetPoint(POINT_ATTBONUS_ANIMAL),
-			tch->GetPoint(POINT_ATTBONUS_ORC),
-			tch->GetPoint(POINT_ATTBONUS_MILGYO),
-			tch->GetPoint(POINT_ATTBONUS_UNDEAD));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_HUMAN),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_ANIMAL),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_ORC),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_MILGYO),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_UNDEAD));
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   DEVIL:%3d%% INSECT:%3d%% FIRE:%3d%% ICE:%3d%% DESERT:%3d%%",
-			tch->GetPoint(POINT_ATTBONUS_DEVIL),
-			tch->GetPoint(POINT_ATTBONUS_INSECT),
-			tch->GetPoint(POINT_ATTBONUS_FIRE),
-			tch->GetPoint(POINT_ATTBONUS_ICE),
-			tch->GetPoint(POINT_ATTBONUS_DESERT));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_DEVIL),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_INSECT),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_FIRE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_ICE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_DESERT));
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   TREE:%3d%% MONSTER:%3d%%"
 #ifdef ENABLE_STRONG_METIN
@@ -1372,20 +1372,20 @@ ACMD(do_state)
 			"MONSTER_RES:%3d%%"
 #endif
 			,
-			tch->GetPoint(POINT_ATTBONUS_TREE),
-			tch->GetPoint(POINT_ATTBONUS_MONSTER)
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_TREE),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_MONSTER)
 #ifdef ENABLE_STRONG_METIN
-			,tch->GetPoint(POINT_ATTBONUS_METIN)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_METIN)
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
-			,tch->GetPoint(POINT_ATTBONUS_BOSS)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_BOSS)
 #endif
 #ifdef ENABLE_MEDI_PVM
-			,tch->GetPoint(POINT_ATTBONUS_MEDI_PVM)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_MEDI_PVM)
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-			,tch->GetPoint(POINT_RESIST_MONSTER)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_RESIST_MONSTER)
 #endif
 			);
 
@@ -1394,19 +1394,19 @@ ACMD(do_state)
 			" WOLF:%3d%%"
 #endif
 			,
-			tch->GetPoint(POINT_ATTBONUS_WARRIOR),
-			tch->GetPoint(POINT_ATTBONUS_ASSASSIN),
-			tch->GetPoint(POINT_ATTBONUS_SURA),
-			tch->GetPoint(POINT_ATTBONUS_SHAMAN)
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_WARRIOR),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_ASSASSIN),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_SURA),
+			ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_SHAMAN)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,tch->GetPoint(POINT_ATTBONUS_WOLFMAN)
+			,ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_ATTBONUS_WOLFMAN)
 #endif
 	);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "IMMUNE:");
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
-		tch->GetPoint(POINT_IMMUNE_STUN),
-		tch->GetPoint(POINT_IMMUNE_SLOW),
-		tch->GetPoint(POINT_IMMUNE_FALL));
+		ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_IMMUNE_STUN),
+		ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_IMMUNE_SLOW),
+		ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_IMMUNE_FALL));
 
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
 		if (CPrivManager::instance().GetPriv(tch, i))
@@ -3897,7 +3897,7 @@ ACMD(do_stat_plus_amount)
 		return;
 	}
 
-	int nRemainPoint = ch->GetPoint(POINT_STAT);
+	int nRemainPoint = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT);
 
 	if (nRemainPoint <= 0)
 	{
@@ -3930,30 +3930,30 @@ ACMD(do_stat_plus_amount)
 	switch (subcmd)
 	{
 		case POINT_HT : // ü
-			if (nPoint + ch->GetPoint(POINT_HT) > 90)
+			if (nPoint + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HT) > 90)
 			{
-				nPoint = 90 - ch->GetPoint(POINT_HT);
+				nPoint = 90 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HT);
 			}
 			break;
 
 		case POINT_IQ : //
-			if (nPoint + ch->GetPoint(POINT_IQ) > 90)
+			if (nPoint + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_IQ) > 90)
 			{
-				nPoint = 90 - ch->GetPoint(POINT_IQ);
+				nPoint = 90 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_IQ);
 			}
 			break;
 
 		case POINT_ST : // ٷ
-			if (nPoint + ch->GetPoint(POINT_ST) > 90)
+			if (nPoint + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ST) > 90)
 			{
-				nPoint = 90 - ch->GetPoint(POINT_ST);
+				nPoint = 90 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ST);
 			}
 			break;
 
 		case POINT_DX : // ø
-			if (nPoint + ch->GetPoint(POINT_DX) > 90)
+			if (nPoint + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DX) > 90)
 			{
-				nPoint = 90 - ch->GetPoint(POINT_DX);
+				nPoint = 90 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DX);
 			}
 			break;
 
@@ -3969,7 +3969,7 @@ ACMD(do_stat_plus_amount)
 	if (nPoint != 0)
 	{
 		ch->SetRealPoint(subcmd, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), subcmd) + nPoint);
-		ch->SetPoint(subcmd, ch->GetPoint(subcmd) + nPoint);
+		ch->SetPoint(subcmd, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), subcmd) + nPoint);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), subcmd, 0);
 
@@ -4176,7 +4176,7 @@ ACMD(do_set_stat)
 #endif
 			return;
 		}
-		int nRemainPoint = tch->GetPoint(POINT_STAT);
+		int nRemainPoint = ecs::PointSystem::Get(AIHelpers::EcsOf(tch), POINT_STAT);
 		int nCurPoint = ecs::PointSystem::GetReal(AIHelpers::EcsOf(tch), subcmd);
 		int nChangeAmount = 0;
 		str_to_number(nChangeAmount, szChangeAmount);
@@ -4230,7 +4230,7 @@ ACMD(do_set_stat)
 		}
 
 		tch->SetRealPoint(subcmd, nPoint);
-		tch->SetPoint(subcmd, tch->GetPoint(subcmd) + nChangeAmount);
+		tch->SetPoint(subcmd, ecs::PointSystem::Get(AIHelpers::EcsOf(tch), subcmd) + nChangeAmount);
 		tch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(tch), subcmd, 0);
 

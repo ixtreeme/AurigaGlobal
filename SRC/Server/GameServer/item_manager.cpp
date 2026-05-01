@@ -985,7 +985,7 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	LOG_INFO("CreateDropItem for level: {} rank: {} pct: {}", iLevel, bRank, iDeltaPercent);
 	iDeltaPercent = iDeltaPercent * CHARACTER_MANAGER::instance().GetMobItemRate(pkKiller) / 100;
 
-	int iDropBonus = pkKiller->GetPoint(POINT_ITEM_DROP_BONUS);
+	int iDropBonus = ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_ITEM_DROP_BONUS);
 
 	if (iDropBonus > 0)
 	{
@@ -1000,7 +1000,7 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 
 
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	if (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0) {
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0) {
 		iDeltaPercent *= 2;
 	}
 #endif
@@ -1012,10 +1012,10 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	// END_OF_ADD_PREMIUM
 
 	// PC_BANG_ITEM_ADD
-	if (pkKiller->GetPoint(POINT_PC_BANG_DROP_BONUS) > 0)
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_PC_BANG_DROP_BONUS) > 0)
 	{
 		if (pkKiller->IsPCBang() == true)
-			iDeltaPercent += iDeltaPercent * pkKiller->GetPoint(POINT_PC_BANG_DROP_BONUS) / 100;
+			iDeltaPercent += iDeltaPercent * ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_PC_BANG_DROP_BONUS) / 100;
 	}
 	// END_PC_BANG_ITEM_ADD
 
@@ -1164,7 +1164,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 	{
 		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
+			|| (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
 			))
 		{
@@ -1377,7 +1377,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	{
 		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
+			|| (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
 			))
 		{

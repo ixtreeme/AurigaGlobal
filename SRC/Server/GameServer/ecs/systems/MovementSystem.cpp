@@ -886,8 +886,8 @@ EVENTFUNC(recovery_event)
 						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 					}
 
-					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -912,8 +912,8 @@ EVENTFUNC(recovery_event)
 						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 					}
 
-					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -970,9 +970,9 @@ EVENTFUNC(recovery_event)
 			iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 		}
 
-		iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
+		iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
 
-		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
 
 		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 		if (recoveryEntity != entt::null)

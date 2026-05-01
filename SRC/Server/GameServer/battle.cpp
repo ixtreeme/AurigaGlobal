@@ -278,7 +278,7 @@ int CalcMagicDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 		iDam = CalcMeleeDamage(pkAttacker, pkVictim, false, false);
 	}
 
-	iDam += pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
+	iDam += ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_PARTY_ATTACKER_BONUS);
 
 	return CalcMagicDamageWithValue(iDam, pkAttacker, pkVictim);
 }
@@ -332,64 +332,64 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	{
 #ifdef ENABLE_DS_RUNE
 		if (pkVictim->IsRaceFlag(RACE_FLAG_RUNE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_RUNE_MONSTERS)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_RUNE_MONSTERS)) / 100;
 #endif
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ANIMAL))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ANIMAL)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ANIMAL)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_UNDEAD))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_UNDEAD)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_UNDEAD)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_DEVIL))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_DEVIL)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_DEVIL)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_HUMAN))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_HUMAN)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_HUMAN)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ORC))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ORC)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ORC)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_MILGYO))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_MILGYO)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_MILGYO)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_INSECT))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_INSECT)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_INSECT)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_FIRE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_FIRE)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_FIRE)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ICE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ICE)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ICE)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_DESERT))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_DESERT)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_DESERT)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_TREE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_TREE)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_TREE)) / 100;
 #ifdef ELEMENT_NEW_BONUSES
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_ELEC))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ELEC)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ELEC)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_FIRE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_FIRE)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_FIRE)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_ICE))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ICE)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ICE)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_WIND))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_WIND)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_WIND)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_EARTH))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_EARTH)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_EARTH)) / 100;
 		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_DARK))
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_DARK)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_DARK)) / 100;
 #endif
 		if (pkVictim->GetCharType() == CHAR_TYPE_STONE) {
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_METIN)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_METIN)) / 100;
 		}
 		else {
 			if (pkVictim->GetMobRank() >= MOB_RANK_BOSS)
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_BOSS)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_BOSS)) / 100;
 		}
 
 #ifdef ENABLE_NO_ATTBONUS_MONSTER_FOR_STONES
 		if (pkVictim->GetCharType() != CHAR_TYPE_STONE) {
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_MONSTER)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_MONSTER)) / 100;
 		}
 #else
 #ifdef ENABLE_MAP1_SKILL_MOB__disable
 		if (!(pkVictim && pkVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 136 && pkAttacker->IsSkillHit()))
 		{
-			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_MONSTER)) / 100;
+			iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_MONSTER)) / 100;
 		}
 #else
-		iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_MONSTER)) / 100;
+		iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_MONSTER)) / 100;
 #endif
 
 #endif
@@ -398,8 +398,8 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		{
-			const int A = pkAttacker->GetPoint(POINT_ATTBONUS_HUMAN);            // tamado bonusz (%)
-			const int R = pkVictim->GetPoint(POINT_RESIST_MEZZIUOMINI);          // vedekezo resist (%)
+			const int A = ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_HUMAN);            // tamado bonusz (%)
+			const int R = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_MEZZIUOMINI);          // vedekezo resist (%)
 
 			// 100 -> 20, 200 -> 40
 			int effR = (R + 2) / 10;
@@ -415,29 +415,29 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 		}
 #else
 
-	iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_HUMAN)) / 100;
+	iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_HUMAN)) / 100;
 #endif
 
 		switch (pkVictim->GetJob())
 		{
 			case JOB_WARRIOR:
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_WARRIOR)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_WARRIOR)) / 100;
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_ASSASSIN)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_ASSASSIN)) / 100;
 				break;
 
 			case JOB_SURA:
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_SURA)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_SURA)) / 100;
 				break;
 
 			case JOB_SHAMAN:
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_SHAMAN)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			case JOB_WOLFMAN: // TODO: ?????? ATTBONUS �??
-				iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_WOLFMAN)) / 100;
+				iAtk += (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_WOLFMAN)) / 100;
 				break;
 #endif
 		}
@@ -446,28 +446,28 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) == true)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk -= (iAtk * pkVictim->GetPoint(POINT_DEF_TALISMAN)) / 100;
+		iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_DEF_TALISMAN)) / 100;
 #endif
 		switch (pkAttacker->GetJob())
 		{
 			case JOB_WARRIOR:
-				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_WARRIOR)) / 100;
+				iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_WARRIOR)) / 100;
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_ASSASSIN)) / 100;
+				iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_ASSASSIN)) / 100;
 				break;
 
 			case JOB_SURA:
-				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_SURA)) / 100;
+				iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_SURA)) / 100;
 				break;
 
 			case JOB_SHAMAN:
-				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_SHAMAN)) / 100;
+				iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_SHAMAN)) / 100;
 				break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			case JOB_WOLFMAN: // TODO: ?????? ???? �??
-				iAtk -= (iAtk * pkVictim->GetPoint(POINT_RESIST_WOLFMAN)) / 100;
+				iAtk -= (iAtk * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_WOLFMAN)) / 100;
 				break;
 #endif
 		}
@@ -480,23 +480,23 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_DEF_TALISMAN))		/ 10000;
+		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_DEF_TALISMAN))		/ 10000;
 #endif
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_ELEC))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_ELEC))		/ 10000;
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_ELEC))		/ 10000;
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_FIRE))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_FIRE))		/ 10000;
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_FIRE))		/ 10000;
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_ICE))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_ICE))		/ 10000;
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_ICE))		/ 10000;
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_WIND))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_WIND))		/ 10000;
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_WIND))		/ 10000;
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_EARTH))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_EARTH))	/ 10000;
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_EARTH))	/ 10000;
 		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_DARK))
-			iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_DARK))		/ 10000;//difesa
+			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_DARK))		/ 10000;//difesa
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-		iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_RESIST_MONSTER))		/ 10000;//resistenza mostri
+		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_MONSTER))		/ 10000;//resistenza mostri
 #endif
 	}
 
@@ -603,7 +603,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	int iAtk = 0;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
+	iAtk = ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
 	iAtk = (int) (iAtk * fAR);
 	iAtk += ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2; // and add again
 
@@ -616,8 +616,8 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 		///////////////////////////////////////////////
 	}
 
-	iAtk += pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
-	iAtk = (int) (iAtk * (100 + (pkAttacker->GetPoint(POINT_ATT_BONUS) + pkAttacker->GetPoint(POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk += ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
+	iAtk = (int) (iAtk * (100 + (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATT_BONUS) + ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
 	iAtk = CalcAttBonus(pkAttacker, pkVictim, iAtk);
 
@@ -625,7 +625,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 	if (!bIgnoreDefense)
 	{
-		iDef = (pkVictim->GetPoint(POINT_DEF_GRADE) * (100 + pkVictim->GetPoint(POINT_DEF_BONUS)) / 100);
+		iDef = (ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_DEF_BONUS)) / 100);
 
 		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 			iDef += pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
@@ -639,8 +639,8 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	if (test_server)
 	{
 		int DEBUG_iLV = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker))*2;
-		int DEBUG_iST = int((pkAttacker->GetPoint(POINT_ATT_GRADE) - DEBUG_iLV) * fAR);
-		int DEBUG_iPT = pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
+		int DEBUG_iST = int((ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATT_GRADE) - DEBUG_iLV) * fAR);
+		int DEBUG_iPT = ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_PARTY_ATTACKER_BONUS);
 		int DEBUG_iWP = 0;
 		int DEBUG_iPureAtk = 0;
 		int DEBUG_iPureDam = 0;
@@ -711,8 +711,8 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 
 	// Y??g ????
 	int iDist = (int) (DISTANCE_SQRT(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkAttacker)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkAttacker)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))));
-	//int iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
-	int iGap = (iDist / 100) - 5 - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
+	//int iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) - ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_BOW_DISTANCE);
+	int iGap = (iDist / 100) - 5 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_BOW_DISTANCE);
 	int iPercent = 100 - (iGap * 5);
 
 	if (iPercent <= 0)
@@ -727,22 +727,22 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 	int iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
+	iAtk = ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
 	iAtk = (int) (iAtk * fAR);
 	iAtk += ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2; // and add again
 
 	// Refine Grade
 	iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
 
-	iAtk += pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
-	iAtk = (int) (iAtk * (100 + (pkAttacker->GetPoint(POINT_ATT_BONUS) + pkAttacker->GetPoint(POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk += ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_PARTY_ATTACKER_BONUS);
+	iAtk = (int) (iAtk * (100 + (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATT_BONUS) + ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
 	iAtk = CalcAttBonus(pkAttacker, pkVictim, iAtk);
 
 	int iDef = 0;
 
 	if (!bIgnoreDefense)
-		iDef = (pkVictim->GetPoint(POINT_DEF_GRADE) * (100 + pkAttacker->GetPoint(POINT_DEF_BONUS)) / 100);
+		iDef = (ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_DEF_BONUS)) / 100);
 
 	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 		iAtk = (int) (iAtk * pkAttacker->GetMobDamageMultiply());
@@ -770,15 +770,15 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
 	// ?? ?????? U?????? U?? �??
-	if (pkAttacker->GetPoint(POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_POISON))
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_POISON))
 	{
-		if (number(1, 100) <= pkAttacker->GetPoint(POINT_POISON_PCT))
+		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_POISON_PCT))
 			pkVictim->AttackedByPoison(pkAttacker);
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
-	if (pkAttacker->GetPoint(POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_BLEEDING))
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_BLEEDING))
 	{
-		if (number(1, 100) <= pkAttacker->GetPoint(POINT_BLEEDING_PCT))
+		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_BLEEDING_PCT))
 			pkVictim->AttackedByBleeding(pkAttacker);
 	}
 #endif
@@ -818,7 +818,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 	NormalAttackAffect(pkAttacker, pkVictim);
 
 	// ?????? ???
-	//iDam = iDam * (100 - pkVictim->GetPoint(POINT_RESIST)) / 100;
+	//iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST)) / 100;
 	LPITEM pkWeapon = pkAttacker->GetWear(WEAR_WEAPON);
 
 	if (pkWeapon)
@@ -826,12 +826,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 		{
 			case WEAPON_SWORD:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_SWORD);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADA);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -839,12 +839,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 			}
 			case WEAPON_TWO_HANDED:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_TWOHAND);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADONE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -852,13 +852,13 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 			}
 			case WEAPON_DAGGER:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_DAGGER);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_DAGGER);
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 
@@ -876,12 +876,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 			case WEAPON_BELL:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_BELL);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_CAMPANA);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 				lValue = lValue < 0 ? 0 :  lValue;
@@ -890,12 +890,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 			}
 			case WEAPON_FAN:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_FAN);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_VENTAGLIO);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -904,12 +904,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 			case WEAPON_BOW:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_BOW);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -919,12 +919,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			case WEAPON_CLAW:
 			{
-				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_DAGGER);
+				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= pkAttacker->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -988,7 +988,7 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 	int32_t default_bonus = 100;
 	int32_t riding_bonus = ch->IsRiding() ? 50 : 0;
 	int32_t ani_speed = ani_attack_speed(ch);
-	int32_t real_speed = (ani_speed * 100) / (default_bonus + ch->GetPoint(POINT_ATT_SPEED) + riding_bonus);
+	int32_t real_speed = (ani_speed * 100) / (default_bonus + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED) + riding_bonus);
 
 	LPITEM item = ch->GetWear(WEAR_WEAPON);
 	return item && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == WEAPON_DAGGER ? real_speed / 2 : real_speed;

@@ -1170,7 +1170,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 
 
-	int expDoubleBonus = to->GetPoint(POINT_EXP_DOUBLE_BONUS);
+	int expDoubleBonus = ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_EXP_DOUBLE_BONUS);
 
 	if (expDoubleBonus > 0)
 	{
@@ -1187,8 +1187,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 
 #else
-	if (to->GetPoint(POINT_EXP_DOUBLE_BONUS))
-		if (number(1, 100) <= to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_EXP_DOUBLE_BONUS))
+		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
 	if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
@@ -1222,14 +1222,14 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		rateFactor += 50;
 	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
-	if (to->GetPoint(POINT_PC_BANG_EXP_BONUS) > 0)
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_PC_BANG_EXP_BONUS) > 0)
 	{
 		if (to->IsPCBang())
-			rateFactor += to->GetPoint(POINT_PC_BANG_EXP_BONUS);
+			rateFactor += ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_PC_BANG_EXP_BONUS);
 	}
 	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
-	rateFactor += to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP);
-	rateFactor += to->GetPoint(POINT_MALL_EXPBONUS);
+	rateFactor += ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_RAMADAN_CANDY_BONUS_EXP);
+	rateFactor += ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
 	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(to)) / 100.0L;
 	// apply calculated rate bonus
@@ -1317,8 +1317,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			iExp += iExp * 20 / 100; // 1.2 (20%)
 
 		//  ġ ι Ӽ
-		if (to->GetPoint(POINT_EXP_DOUBLE_BONUS))
-			if (number(1, 100) <= to->GetPoint(POINT_EXP_DOUBLE_BONUS))
+		if (ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_EXP_DOUBLE_BONUS))
+			if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_EXP_DOUBLE_BONUS))
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
 		//   (2ð¥)
@@ -1365,22 +1365,22 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		}
 
 		// PC  ġ ʽ
-		if (to->GetPoint(POINT_PC_BANG_EXP_BONUS) > 0)
+		if (ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_PC_BANG_EXP_BONUS) > 0)
 		{
 			if (to->IsPCBang() == true)
-				iExp += (iExp * to->GetPoint(POINT_PC_BANG_EXP_BONUS) / 100);
+				iExp += (iExp * ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_PC_BANG_EXP_BONUS) / 100);
 		}
 
 		// ȥ ʽ
 		iExp += iExp * to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
-	iExp += (iExp * to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
-	iExp += (iExp * to->GetPoint(POINT_MALL_EXPBONUS) / 100);
+	iExp += (iExp * ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
+	iExp += (iExp * ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_MALL_EXPBONUS) / 100);
 
 	if (test_server)
 	{
-		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", to->GetPoint(POINT_RAMADAN_CANDY_BONUS_EXP), to->GetPoint(POINT_MALL_EXPBONUS));
+		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::Get(AIHelpers::EcsOf(to), POINT_MALL_EXPBONUS));
 	}
 
 	// ȹ  2005.04.21  85%
@@ -2032,7 +2032,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 			if (GetEmpire() != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)))
 			{
-				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), pkKiller->GetPoint(POINT_EMPIRE_POINT));
+				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_EMPIRE_POINT));
 
 				PointChange(POINT_EMPIRE_POINT, -(iEP / 10));
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_EMPIRE_POINT, iEP / 5);
@@ -2608,7 +2608,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 
 			if (iAmount != 0)
 			{
-				iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+				iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_SP_REGEN)) / 100;
 
 				if (iAmount >= 11)
 					CreateFly(FLY_SP_BIG, pkKiller);
@@ -2634,7 +2634,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			else
 				iAmount = 10 + GetMaxSP() * 3 / 100; //
 
-			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+			iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_SP_REGEN)) / 100;
 			ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
 		}
 		else
@@ -2654,7 +2654,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 					iAmount = 9 + (ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100); // ⺻
 			}
 
-			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
+			iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_SP_REGEN)) / 100;
 			ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
 		}
 	}
@@ -3545,16 +3545,16 @@ void CHARACTER::Reward(bool bItemDrop)
 
 		if (!number(0, 9))
 		{
-			if (pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_KILL_HP_RECOVERY))
 			{
-				int iHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkAttacker)) * pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY) / 100;
+				int iHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkAttacker)) * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_HP, iHP);
 				CreateFly(FLY_HP_SMALL, pkAttacker);
 			}
 
-			if (pkAttacker->GetPoint(POINT_KILL_SP_RECOVER))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_KILL_SP_RECOVER))
 			{
-				int iSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkAttacker)) * pkAttacker->GetPoint(POINT_KILL_SP_RECOVER) / 100;
+				int iSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkAttacker)) * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_SP, iSP);
 				CreateFly(FLY_SP_SMALL, pkAttacker);
 			}
@@ -4193,8 +4193,8 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					return;
 				}
 
-				if (pkAttacker->GetPoint(POINT_MALL_GOLDBONUS)) {
-					gold += (gold * pkAttacker->GetPoint(POINT_MALL_GOLDBONUS) / 100);
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_MALL_GOLDBONUS)) {
+					gold += (gold * ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_MALL_GOLDBONUS) / 100);
 				}
 
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_GOLD, gold, true);
@@ -4273,8 +4273,8 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				iGoldMultipler *= 5;
 
 			//
-			if (pkAttacker->GetPoint(POINT_GOLD_DOUBLE_BONUS))
-				if (number(1, 100) <= pkAttacker->GetPoint(POINT_GOLD_DOUBLE_BONUS))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_GOLD_DOUBLE_BONUS))
+				if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), POINT_GOLD_DOUBLE_BONUS))
 					iGoldMultipler *= 2;
 
 			//
@@ -4494,7 +4494,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (DAMAGE_TYPE_MAGIC == type)
 	{
-		dam = (int)((float)dam * (100 + (pAttacker->GetPoint(POINT_MAGIC_ATT_BONUS_PER) + pAttacker->GetPoint(POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
+		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
 	}
 
 	// Ÿ ƴ   ó
@@ -4593,11 +4593,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (pAttacker)
 		{
 			// ũƼ
-			int iCriticalPct = pAttacker->GetPoint(POINT_CRITICAL_PCT);
+			int iCriticalPct = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
 				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += pAttacker->GetPoint(POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
@@ -4624,7 +4624,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			//
-			int iPenetratePct = pAttacker->GetPoint(POINT_PENETRATE_PCT);
+			int iPenetratePct = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_PENETRATE_PCT);
 
 			if (!IsPC())
 				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -4691,7 +4691,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), pAttacker->GetPoint(POINT_BLOCK));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_BLOCK));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
@@ -4706,7 +4706,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), pAttacker->GetPoint(POINT_DODGE));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_DODGE));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_DODGE);
@@ -4761,11 +4761,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			// ũƼ
-			int iCriticalPct = pAttacker->GetPoint(POINT_CRITICAL_PCT);
+			int iCriticalPct = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
 				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += pAttacker->GetPoint(POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
@@ -4782,7 +4782,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			//
-			int iPenetratePct = pAttacker->GetPoint(POINT_PENETRATE_PCT);
+			int iPenetratePct = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_PENETRATE_PCT);
 
 			if (!IsPC())
 				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -4816,9 +4816,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			if (int64_t iStealHP_ptr = pAttacker->GetPoint(POINT_STEAL_HP)) {
+			if (int64_t iStealHP_ptr = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_HP)) {
 				if (number(1, 100) <= iStealHP_ptr) {
-					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * pAttacker->GetPoint(POINT_STEAL_HP) / 100;
+					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_HP) / 100;
 
 
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pAttacker))) && (GetHP() > 0) && (iHP > 0)) {
@@ -4852,10 +4852,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				}
 			}
 
-			if (int64_t iStealSP_ptr = pAttacker->GetPoint(POINT_STEAL_SP)) {
+			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_SP)) {
 				if (IsPC() && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker))) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * pAttacker->GetPoint(POINT_STEAL_SP) / 100;
+						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_SP) / 100;
 
 
 						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pAttacker))) && (GetSP() > 0) && (iSP > 0))
@@ -4869,13 +4869,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 #else
 			// HP ƿ
-			if (pAttacker->GetPoint(POINT_STEAL_HP))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_HP))
 			{
 				int pct = 1;
 
 				if (number(1, 10) <= pct)
 				{
-					int iHP = MIN(dam, MAX(0, iCurHP)) * pAttacker->GetPoint(POINT_STEAL_HP) / 100;
+					int iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_HP) / 100;
 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
@@ -4909,7 +4909,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			// SP ƿ
-			if (pAttacker->GetPoint(POINT_STEAL_SP))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_SP))
 			{
 				int pct = 1;
 
@@ -4922,7 +4922,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					else
 						iCur = iCurHP;
 
-					int iSP = MIN(dam, MAX(0, iCur)) * pAttacker->GetPoint(POINT_STEAL_SP) / 100;
+					int iSP = MIN(dam, MAX(0, iCur)) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_SP) / 100;
 
 					if (iSP > 0 && iCur >= iSP)
 					{
@@ -4937,9 +4937,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 			//  ƿ
-			if (pAttacker->GetPoint(POINT_STEAL_GOLD))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_GOLD))
 			{
-				if (number(1, 100) <= pAttacker->GetPoint(POINT_STEAL_GOLD))
+				if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_STEAL_GOLD))
 				{
 					int iAmount = number(1, GetLevel());
 					ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_GOLD, iAmount);
@@ -4948,10 +4948,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			int iAbsoHP_ptr = pAttacker->GetPoint(POINT_HIT_HP_RECOVERY);
+			int iAbsoHP_ptr = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_HP_RECOVERY);
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
-					int iHPAbso = std::min(dam, GetHP()) * pAttacker->GetPoint(POINT_HIT_HP_RECOVERY) / 100;
+					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_HP_RECOVERY) / 100;
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pAttacker))) && (GetHP() > 0) && (iHPAbso > 0)) {
 						CreateFly(FLY_HP_SMALL, pAttacker);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHPAbso);
@@ -4959,10 +4959,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				}
 			}
 
-			int64_t iAbsoSP_ptr = pAttacker->GetPoint(POINT_HIT_SP_RECOVERY);
+			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min(dam, GetSP()) * pAttacker->GetPoint(POINT_HIT_SP_RECOVERY) / 100;
+					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_SP_RECOVERY) / 100;
 					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pAttacker))) && (GetSP() > 0) && (iSPAbso > 0)) {
 						CreateFly(FLY_SP_SMALL, pAttacker);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_SP, iSPAbso);
@@ -4971,9 +4971,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 #else
 			// ĥ  HPȸ
-			if (pAttacker->GetPoint(POINT_HIT_HP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_HP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * pAttacker->GetPoint(POINT_HIT_HP_RECOVERY) / 100; //@fixme107
+				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_HP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
@@ -4983,9 +4983,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			// ĥ  SPȸ
-			if (pAttacker->GetPoint(POINT_HIT_SP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_SP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * pAttacker->GetPoint(POINT_HIT_SP_RECOVERY) / 100; //@fixme107
+				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_HIT_SP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
@@ -4996,9 +4996,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 			//   ش.
-			if (pAttacker->GetPoint(POINT_MANA_BURN_PCT))
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_MANA_BURN_PCT))
 			{
-				if (number(1, 100) <= pAttacker->GetPoint(POINT_MANA_BURN_PCT))
+				if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_MANA_BURN_PCT))
 					PointChange(POINT_SP, -50);
 			}
 		}
@@ -5013,11 +5013,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_NORMAL_RANGE:
 	{
 		if (pAttacker) {
-			if (pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS))
-				dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+			if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS))
+				dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 #ifdef ENABLE_MEDI_PVM
 			if (IsNPC())
-				dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
+				dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 		}
 
@@ -5032,7 +5032,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_MAGIC:
 	{
 		if (pAttacker) {
-			const int64_t skillBonus = pAttacker->GetPoint(POINT_SKILL_DAMAGE_BONUS);
+			const int64_t skillBonus = ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_SKILL_DAMAGE_BONUS);
 			if (skillBonus)
 				dam = dam * (100 + skillBonus) / 100;
 		}
@@ -5053,7 +5053,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 				int64_t minSkillDam = normalRef * 10;
 
-				//const int64_t skillBonus = std::max<int64_t>(0, pAttacker->GetPoint(POINT_SKILL_DAMAGE_BONUS));
+				//const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_SKILL_DAMAGE_BONUS));
 				//minSkillDam = minSkillDam * (100 + skillBonus) / 100;
 
 				if (dam < minSkillDam)
@@ -5102,7 +5102,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		//
 		// ü ݷ  ( )
 		//
-		if (pAttacker->GetPoint(POINT_MALL_ATTBONUS) > 0)
+		if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_MALL_ATTBONUS) > 0)
 		{
 			int64_t add_dam = std::min((int64_t)300, dam * pAttacker->GetLimitPoint(POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
@@ -6006,12 +6006,12 @@ public:
 			NormalAttackAffect(m_me, pkVictim);
 
 			//   (nyl vdelem)
-			int32_t lValue = pkVictim->GetPoint(POINT_RESIST_BOW);
+			int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= m_me->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_me), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= m_me->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_me), POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 			if (lValue < 0)   lValue = 0;
@@ -6052,12 +6052,12 @@ public:
 
 			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-//						const int resist_magic = MINMAX(0, pkVictim->GetPoint(POINT_RESIST_MAGIC), 100);
-//						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? m_me->GetPoint(POINT_RESIST_MAGIC_REDUCTION)/2 : m_me->GetPoint(POINT_RESIST_MAGIC_REDUCTION), 50);
+//						const int resist_magic = MINMAX(0, ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_MAGIC), 100);
+//						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(AIHelpers::EcsOf(m_me), POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(AIHelpers::EcsOf(m_me), POINT_RESIST_MAGIC_REDUCTION), 50);
 //						const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
-			iDam = iDam * (100 - (int)(pkVictim->GetPoint(POINT_RESIST_MAGIC) / 2)) / 100;
+			iDam = iDam * (100 - (int)(ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST_MAGIC) / 2)) / 100;
 			//#endif
 
 									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), iDam);
@@ -6722,12 +6722,12 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	if (dam <= 0)
 		return 0;
 
-	int32_t lValue = pVictim->GetPoint(POINT_RESIST_BOW);
+	int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-	lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+	lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+	lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 	if (lValue < 0)
@@ -6741,15 +6741,15 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
 #endif
 
-	if (pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
 	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pVictim)))
-		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
+		dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, pVictim->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }
@@ -6770,7 +6770,7 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 	if (dam <= 0)
 		return 0;
 
-	const int64_t skillBonus = std::max<int64_t>(0, pAttacker->GetPoint(POINT_SKILL_DAMAGE_BONUS));
+	const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_SKILL_DAMAGE_BONUS));
 	if (skillBonus)
 		dam = dam * (100 + skillBonus) / 100;
 
@@ -6793,22 +6793,22 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
 		{
 		case WEAPON_SWORD:
-			lValue = pVictim->GetPoint(POINT_RESIST_SWORD);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADA);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_TWO_HANDED:
-			lValue = pVictim->GetPoint(POINT_RESIST_TWOHAND);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_SPADONE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
@@ -6816,42 +6816,42 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 #ifdef ENABLE_WOLFMAN_CHARACTER
 		case WEAPON_CLAW:
 #endif
-			lValue = pVictim->GetPoint(POINT_RESIST_DAGGER);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_PUGNALE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BELL:
-			lValue = pVictim->GetPoint(POINT_RESIST_BELL);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_CAMPANA);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_FAN:
-			lValue = pVictim->GetPoint(POINT_RESIST_FAN);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_VENTAGLIO);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BOW:
-			lValue = pVictim->GetPoint(POINT_RESIST_BOW);
+			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= pAttacker->GetPoint(POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= pAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
@@ -6874,15 +6874,15 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
 #endif
 
-	if (pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
 	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pVictim)))
-		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
+		dam = dam * (100 + ecs::PointSystem::Get(AIHelpers::EcsOf(pAttacker), POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, pVictim->GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }

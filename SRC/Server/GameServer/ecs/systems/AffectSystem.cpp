@@ -49,7 +49,7 @@ const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
 int GetPoisonDamageRate(LegacyCharHandle ch)
 {
     int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : poison_damage_rate[ch->GetMobRank()];
-    iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_POISON_REDUCE));
     return iRate;
 }
 
@@ -114,9 +114,9 @@ const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
 int GetBleedingDamageRate(LegacyCharHandle ch)
 {
     int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : bleeding_damage_rate[ch->GetMobRank()];
-    iRate = MAX(0, iRate - ch->GetPoint(POINT_BLEEDING_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_BLEEDING_REDUCE));
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_ITEM_BLEEDING_AS_POISON)
-    iRate = MAX(0, iRate - ch->GetPoint(POINT_POISON_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_POISON_REDUCE));
 #endif
     return iRate;
 }

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
 #include "ActivitySystem.hpp"
@@ -205,7 +206,7 @@ void StartFishing(entt::entity fisher, uint32_t)
     info->pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
     info->vnum = fishingnew::GetFishCatchedVnum(
         100,
-        15 + ch->GetPoint(POINT_FISHING_RARE) + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2),
+        15 + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_FISHING_RARE) + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2),
         second);
     info->chance = 100;
     info->sec = 1;
@@ -448,7 +449,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
             break;
     }
 
-    if (ch->GetPoint(POINT_FISHING_RARE) > 0 && chance == 5)
+    if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_FISHING_RARE) > 0 && chance == 5)
         chance += 20;
 
     const uint32_t rodVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, rod));

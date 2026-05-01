@@ -1418,7 +1418,7 @@ ACMD(do_restart)
 
 ACMD(do_stat_reset)
 {
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, 12 - ch->GetPoint(POINT_STAT_RESET_COUNT));
+	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, 12 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT));
 }
 
 ACMD(do_stat_minus)
@@ -1437,7 +1437,7 @@ ACMD(do_stat_minus)
 		return;
 	}
 
-	if (ch->GetPoint(POINT_STAT_RESET_COUNT) <= 0)
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT) <= 0)
 		return;
 
 	if (!strcmp(arg1, "st"))
@@ -1446,7 +1446,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) - 1);
-		ch->SetPoint(POINT_ST, ch->GetPoint(POINT_ST) - 1);
+		ch->SetPoint(POINT_ST, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ST) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
 	}
@@ -1456,7 +1456,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) - 1);
-		ch->SetPoint(POINT_DX, ch->GetPoint(POINT_DX) - 1);
+		ch->SetPoint(POINT_DX, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DX) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
 	}
@@ -1466,7 +1466,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) - 1);
-		ch->SetPoint(POINT_HT, ch->GetPoint(POINT_HT) - 1);
+		ch->SetPoint(POINT_HT, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HT) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
@@ -1477,7 +1477,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) - 1);
-		ch->SetPoint(POINT_IQ, ch->GetPoint(POINT_IQ) - 1);
+		ch->SetPoint(POINT_IQ, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_IQ) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
@@ -1506,7 +1506,7 @@ ACMD(do_stat)
 		return;
 	}
 
-	if (ch->GetPoint(POINT_STAT) <= 0)
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT) <= 0)
 		return;
 
 	uint8_t idx = 0;
@@ -1526,7 +1526,7 @@ ACMD(do_stat)
 		return;
 
 	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + 1);
-	ch->SetPoint(idx, ch->GetPoint(idx) + 1);
+	ch->SetPoint(idx, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), idx) + 1);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
 

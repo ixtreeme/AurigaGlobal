@@ -1,3 +1,4 @@
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -44,20 +45,20 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 		int time,
 		const char* name)
 {
-	if (pkAttacker->GetPoint(att_point) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
 	{
-		if (number(1, 100) <= pkAttacker->GetPoint(att_point) && !pkVictim->IsImmune(immune_flag))
+		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !pkVictim->IsImmune(immune_flag))
 		{
 			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, pkAttacker->GetPoint(att_point));
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, pkAttacker->GetPoint(att_point));
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point));
 		}
 	}
 }

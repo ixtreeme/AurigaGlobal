@@ -153,7 +153,7 @@ ACMD(do_stat2)
 	int64_t limit = 10;
 
 
-	if (ch->GetPoint(POINT_STAT) < limit) {
+	if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 851,
 
@@ -181,7 +181,7 @@ ACMD(do_stat2)
 
 	limit = ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) : limit;
 	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + limit);
-	ch->SetPoint(idx, ch->GetPoint(idx) + limit);
+	ch->SetPoint(idx, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), idx) + limit);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
 

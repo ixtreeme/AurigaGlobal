@@ -1258,7 +1258,7 @@ namespace quest
         LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), newLevel, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), 9));
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))) * 3) + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_LEVEL_STEP));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_LEVEL, newLevel - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
@@ -1281,9 +1281,9 @@ namespace quest
         }
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
-            points->base.points[POINT_SKILL] = ch->GetPoint(POINT_SKILL);
-            points->base.points[POINT_SUB_SKILL] = ch->GetPoint(POINT_SUB_SKILL);
-            points->base.points[POINT_STAT] = ch->GetPoint(POINT_STAT);
+            points->base.points[POINT_SKILL] = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_SKILL);
+            points->base.points[POINT_SUB_SKILL] = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_SUB_SKILL);
+            points->base.points[POINT_STAT] = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT);
         }
         if (e != entt::null && g_registry.valid(e))
         {
@@ -3615,7 +3615,7 @@ teleport_area:
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? pChar->GetPoint(POINT_SKILL) : 0);
+		lua_pushnumber(L, pChar ? ecs::PointSystem::Get(AIHelpers::EcsOf(pChar), POINT_SKILL) : 0);
 		return 1;
 	}
 

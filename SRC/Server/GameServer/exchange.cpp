@@ -438,7 +438,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat1_3;
 	CGrid * s_gridExtraCat1_4;
 
-	int gridextra_size_cat1 = victim->GetPoint(POINT_EXTRA_INVENTORY1) + 4;
+	int gridextra_size_cat1 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY1) + 4;
 	if (gridextra_size_cat1 >= 9) {
 		gridextra_size_cat1 -= 9;
 		s_gridExtraCat1_3 = new CGrid(5, 9);
@@ -492,7 +492,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat2_3;
 	CGrid * s_gridExtraCat2_4;
 
-	int gridextra_size_cat2 = victim->GetPoint(POINT_EXTRA_INVENTORY2) + 4;
+	int gridextra_size_cat2 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY2) + 4;
 	if (gridextra_size_cat2 >= 9) {
 		gridextra_size_cat2 -= 9;
 		s_gridExtraCat2_3 = new CGrid(5, 9);
@@ -546,7 +546,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat3_3;
 	CGrid * s_gridExtraCat3_4;
 
-	int gridextra_size_cat3 = victim->GetPoint(POINT_EXTRA_INVENTORY3) + 4;
+	int gridextra_size_cat3 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY3) + 4;
 	if (gridextra_size_cat3 >= 9) {
 		gridextra_size_cat3 -= 9;
 		s_gridExtraCat3_3 = new CGrid(5, 9);
@@ -600,7 +600,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat4_3;
 	CGrid * s_gridExtraCat4_4;
 
-	int gridextra_size_cat4 = victim->GetPoint(POINT_EXTRA_INVENTORY4) + 4;
+	int gridextra_size_cat4 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY4) + 4;
 	if (gridextra_size_cat4 >= 9) {
 		gridextra_size_cat4 -= 9;
 		s_gridExtraCat4_3 = new CGrid(5, 9);
@@ -692,7 +692,7 @@ bool CExchange::CheckSpace()
 	CGrid* s_gridExtraCat6_3;
 	CGrid* s_gridExtraCat6_4;
 
-	int gridextra_size_cat6 = victim->GetPoint(POINT_EXTRA_INVENTORY6) + 4;
+	int gridextra_size_cat6 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY6) + 4;
 	if (gridextra_size_cat6 >= 9) {
 		gridextra_size_cat6 -= 9;
 		s_gridExtraCat6_3 = new CGrid(5, 9);

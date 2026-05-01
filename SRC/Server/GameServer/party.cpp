@@ -1219,12 +1219,12 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 {
 	if (!bAdd)
 	{
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS, -ch->GetPoint(POINT_PARTY_ATTACKER_BONUS));
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS, -ch->GetPoint(POINT_PARTY_TANKER_BONUS));
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS, -ch->GetPoint(POINT_PARTY_BUFFER_BONUS));
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS, -ch->GetPoint(POINT_PARTY_SKILL_MASTER_BONUS));
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS, -ch->GetPoint(POINT_PARTY_DEFENDER_BONUS));
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS, -ch->GetPoint(POINT_PARTY_HASTE_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS));
+		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS, -ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS));
 		ch->ComputeBattlePoints();
 		return;
 	}
@@ -1243,9 +1243,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 				//int iBonus = (int) (10 + 90 * k);
 				int iBonus = (int) (10 + 60 * k);
 
-				if (ch->GetPoint(POINT_PARTY_ATTACKER_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS, iBonus - ch->GetPoint(POINT_PARTY_ATTACKER_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_ATTACKER_BONUS));
 					ch->ComputePoints();
 				}
 			}
@@ -1255,9 +1255,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 			{
 				int iBonus = (int) (50 + 1450 * k);
 
-				if (ch->GetPoint(POINT_PARTY_TANKER_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS, iBonus - ch->GetPoint(POINT_PARTY_TANKER_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_TANKER_BONUS));
 					ch->ComputePoints();
 				}
 			}
@@ -1267,9 +1267,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 			{
 				int iBonus = (int) (5 + 45 * k);
 
-				if (ch->GetPoint(POINT_PARTY_BUFFER_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS, iBonus - ch->GetPoint(POINT_PARTY_BUFFER_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_BUFFER_BONUS));
 				}
 			}
 			break;
@@ -1278,9 +1278,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 			{
 				int iBonus = (int) (25 + 600 * k);
 
-				if (ch->GetPoint(POINT_PARTY_SKILL_MASTER_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS, iBonus - ch->GetPoint(POINT_PARTY_SKILL_MASTER_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_SKILL_MASTER_BONUS));
 					ch->ComputePoints();
 				}
 			}
@@ -1288,9 +1288,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 		case PARTY_ROLE_HASTE:
 			{
 				int iBonus = (int) (1+5*k);
-				if (ch->GetPoint(POINT_PARTY_HASTE_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS, iBonus - ch->GetPoint(POINT_PARTY_HASTE_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_HASTE_BONUS));
 					ch->ComputePoints();
 				}
 			}
@@ -1298,9 +1298,9 @@ void CParty::ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd)
 		case PARTY_ROLE_DEFENDER:
 			{
 				int iBonus = (int) (5+30*k);
-				if (ch->GetPoint(POINT_PARTY_DEFENDER_BONUS) != iBonus)
+				if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS) != iBonus)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS, iBonus - ch->GetPoint(POINT_PARTY_DEFENDER_BONUS));
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS, iBonus - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_PARTY_DEFENDER_BONUS));
 					ch->ComputePoints();
 				}
 			}
@@ -1708,8 +1708,8 @@ int CParty::ComputePartyBonusExpPercent()
 	}
 
 #ifdef ENABLE_NEW_USE_POTION
-	if (leader && leader->GetPoint(POINT_PARTY_DROPEXP) > 0) {
-		iBonusPartyExpFromItem += leader->GetPoint(POINT_PARTY_DROPEXP);
+	if (leader && ecs::PointSystem::Get(AIHelpers::EcsOf(leader), POINT_PARTY_DROPEXP) > 0) {
+		iBonusPartyExpFromItem += ecs::PointSystem::Get(AIHelpers::EcsOf(leader), POINT_PARTY_DROPEXP);
 	}
 #endif
 

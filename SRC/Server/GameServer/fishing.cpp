@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -292,7 +293,7 @@ int DetermineFish(LPCHARACTER ch) {
 		return 0;
 
 	// ADD_PREMIUM
-	if (ch->GetPremiumRemainSeconds(PREMIUM_FISH_MIND) > 0 || ch->IsEquipUniqueGroup(UNIQUE_GROUP_FISH_MIND) || ch->GetPoint(POINT_FISHING_RARE) > 0)
+	if (ch->GetPremiumRemainSeconds(PREMIUM_FISH_MIND) > 0 || ch->IsEquipUniqueGroup(UNIQUE_GROUP_FISH_MIND) || ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_FISHING_RARE) > 0)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("manwoo") != 0)
 			prob_idx = 3;
