@@ -49,10 +49,10 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 | PlayerRuntime::GetX | PURE ECS | PlayerRuntimeSystem.cpp:155 | Reads Position.x only. |
 | PlayerRuntime::GetY | PURE ECS | PlayerRuntimeSystem.cpp:165 | Reads Position.y only. |
 | PlayerRuntime::GetSectree | LEGACY-ONLY | PlayerRuntimeSystem.cpp:175 | LPSECTREE remains a legacy spatial service pointer. |
-| PlayerRuntime::IsPC | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:181 | TagPC check, then ch->IsPC(). |
-| PlayerRuntime::IsNPC | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:190 | TagNPC check, then ch->IsNPC(). |
-| PlayerRuntime::IsStone | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:199 | TagStone check, then ch->IsStone(). |
-| PlayerRuntime::IsMonster | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:208 | TagMonster check, then ch->IsMonster(). |
+| PlayerRuntime::IsPC | PURE ECS | PlayerRuntimeSystem.cpp:181 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagPC only. |
+| PlayerRuntime::IsNPC | PURE ECS | PlayerRuntimeSystem.cpp:186 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagNPC only. |
+| PlayerRuntime::IsStone | PURE ECS | PlayerRuntimeSystem.cpp:191 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagStone only. |
+| PlayerRuntime::IsMonster | PURE ECS | PlayerRuntimeSystem.cpp:196 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagMonster only. |
 | PointSystem::Get | LEGACY-FIRST | SRC/Server/GameServer/ecs/systems/PointSystem.cpp:88 | Delegates to ch->GetPoint(type) to preserve POINT_* semantic split. |
 | PointSystem::GetReal | LEGACY-FIRST | PointSystem.cpp:96 | Delegates to ch->GetRealPoint(type). |
 | PointSystem::GetGold | PURE ECS | PointSystem.cpp:104 | Reads GoldAmount component. |
@@ -77,17 +77,27 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 
 ### Cause A - tag/component not trusted on all entity paths
 
-Affected:
+Resolved in Phase 15E-60.6:
 
 - PlayerRuntime::IsPC
 - PlayerRuntime::IsNPC
 - PlayerRuntime::IsStone
 - PlayerRuntime::IsMonster
+
+Remaining affected:
+
 - PlayerRuntime::GetPlayerID
 - PlayerRuntime::GetEmpire
 - PlayerRuntime::GetGMLevel
 - PlayerRuntime::GetPacketVID
 - PlayerRuntime::GetName
+
+Phase 15E-60.6 implementation notes:
+
+- EntityInvariants.hpp added HasAnyTypeTag, DescribeTypeTag and ValidateCharacterTags.
+- Predicate read accessors now fail closed on missing tags.
+- Invariant LOG_WARN checks were added to factory creation, combat attack, and CHARACTER::Show.
+- WinTest must watch for "[ECS_INVARIANT]" warnings; any warning is a root-cause hydration bug, not a reason to reintroduce fallback.
 
 Observed factory coverage:
 
