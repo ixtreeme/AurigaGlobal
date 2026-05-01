@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include <unordered_map>
 #include <Core/Logging.hpp>
 
@@ -33,9 +34,9 @@ class CProfiler : public singleton<CProfiler>
 
 		struct stringhash
 		{
-			size_t operator () (const std::string& str) const
+			size_t operator () (std::string_view str) const
 			{
-				const unsigned char * s = (const unsigned char *) str.c_str();
+				const unsigned char * s = (const unsigned char *) str.data();
 				const unsigned char * end = s + str.size();
 				size_t h = 0;
 
