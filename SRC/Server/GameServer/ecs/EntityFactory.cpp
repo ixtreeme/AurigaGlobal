@@ -3,6 +3,7 @@
 #include "AIHelpers.hpp"
 
 #include "EntityFactory.hpp"
+#include "EntityInvariants.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -321,6 +322,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
         reg.emplace_or_replace<ecs::StoneAITag>(entity);
     }
 
+    ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.mob_entity");
     return entity;
 }
 
@@ -585,6 +587,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
         desc->SetEntity(entity);
     }
 
+    ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.pc");
     return entity;
 }
 

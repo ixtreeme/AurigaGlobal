@@ -29,6 +29,7 @@
 #include "../../pvp.h"
 #include "../EventDispatcher.hpp"
 #include "../EntityFactory.hpp"
+#include "../EntityInvariants.hpp"
 #include "../PositionSync.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
@@ -815,6 +816,8 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
 
 bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion/* = false */)
 {
+    ecs::Invariants::ValidateCharacterTags(g_registry, GetEntityHandle(), "show.enter");
+
     if (IsPC())
     {
         const int32_t normalizedTargetMapIndex = NormalizeMapIndex(lMapIndex);
@@ -902,6 +905,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
     SetXYZ(x, y, z);
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), lMapIndex, x, y, z);
+    ecs::Invariants::ValidateCharacterTags(g_registry, GetEntityHandle(), "show.after_position_sync");
 
     m_posDest.x = x;
     m_posDest.y = y;
