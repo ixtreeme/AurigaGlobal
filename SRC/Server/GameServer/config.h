@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 enum
 {
 	ADDRESS_MAX_LEN = 15
@@ -7,7 +9,7 @@ enum
 
 enum ItemDestroyTime {ITEM_DESTROY_TIME_AUTOGIVE, ITEM_DESTROY_TIME_DROPGOLD, ITEM_DESTROY_TIME_DROPITEM, ITEM_DESTROY_TIME_MAX};
 
-void config_init(const std::string& st_localeServiceName); // default "" is CONFIG
+void config_init(std::string_view st_localeServiceName); // default "" is CONFIG
 
 extern char sql_addr[256];
 

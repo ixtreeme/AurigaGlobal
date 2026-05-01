@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <sstream>
+#include <string_view>
 #ifndef _WIN32
 #include <ifaddrs.h>
 #endif
@@ -1435,7 +1436,7 @@ static bool __LoadExpTableFromDB(void)
 
 // #define ENABLE_GENERAL_CMD
 // #define ENABLE_GENERAL_CONFIG
-void config_init(const string& st_localeServiceName)
+void config_init(std::string_view st_localeServiceName)
 {
 	// LOCALE_SERVICE
 	string	st_configFileName;
@@ -1446,7 +1447,7 @@ void config_init(const string& st_localeServiceName)
 	if (!st_localeServiceName.empty())
 	{
 		st_configFileName += ".";
-		st_configFileName += st_localeServiceName;
+		st_configFileName.append(st_localeServiceName);
 	}
 	// END_OF_LOCALE_SERVICE
 
