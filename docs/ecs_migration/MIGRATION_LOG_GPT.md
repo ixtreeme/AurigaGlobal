@@ -8548,6 +8548,80 @@ Commit consolidation update:
   - Result: passed.
 - Working tree after consolidation: clean.
 
+## Phase 17a Batch 2 - ECS Systems + Safe Helpers string_view Migration
+
+Mode:
+- Targeted `std::string_view` migration after Batch 1 parser/loader work.
+- Scope prioritized ECS system APIs and safe helper/local string use.
+- Explicitly avoided `questmanager`, `questpc`, `char.h`, and unsafe C API/lifetime boundaries.
+
+Pre-state:
+- Working tree was clean.
+- Phase 17a Batch 1 was committed.
+- Crash hotfixes were already consolidated and build-validated.
+- Baseline before Batch 2:
+  - `const std::string&`: 157
+  - `std::string_view`: 62
+
+Migrated commits:
+- `870f9f9` Phase 17a Batch 2: QuestSystem string_view
+  - `ecs::QuestSystem::GetFlag/SetFlag` now take `std::string_view`.
+  - Legacy `CHARACTER::GetQuestFlag/SetQuestFlag` boundary keeps explicit `std::string` conversion.
+- `19a1dee` Phase 17a Batch 2: GayaSystem string_view
+  - `GayaSystem::GetState/SetState` now take `std::string_view`.
+  - Legacy quest flag boundary keeps explicit `std::string` conversion.
+- `839083b` Phase 17a Batch 2: cmd_gm string_view helper
+  - `GetNewShopName` now takes `std::string_view`.
+  - Return remains owning `std::string`.
+- `26d8ddb` Phase 17a Batch 2: cmd_general string_view locals
+  - Replaced temporary `const std::string& = std::string(arg1)` command dispatch locals with `std::string_view`.
+- `17b9bd8` Phase 17a Batch 2: config_init string_view
+  - `config_init` now takes `std::string_view`.
+  - `config.cpp` was edited with byte-preserving tooling because the file is not UTF-8 clean.
+- `595ca3f` Phase 17a Batch 2: cuberenewal string_view helper
+  - `SplitItemNameAndLevelFromName` now takes `std::string_view`.
+  - Stores results into owning `std::string` fields explicitly.
+
+Skipped intentionally:
+- `PlayerRuntimeSystem.cpp` 5 hits are `CHARACTER::` method definitions and require `char.h`, which is out of scope for Batch 2.
+- `GayaSystem` `CHARACTER::GetGayaState/SetGayaState` wrappers also require `char.h`, left unchanged.
+- `DropEvent_RefineBox_SetValue` crosses `questmanager/item_manager` boundaries.
+- `CHARACTER_AddGotoInfo` stores into global goto info, so it is not a pure read-only parameter.
+
+Post-state:
+- Tree-wide counts after Batch 2:
+  - `const std::string&`: 142
+  - `std::string_view`: 87
+- Net reduction this batch:
+  - `const std::string&`: -15
+  - `std::string_view`: +25 occurrences
+
+Build gate:
+- `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false`
+- Result: passed.
+- Notes:
+  - Only existing unrelated warnings/noise observed.
+  - The post-build `'pwsh.exe' is not recognized` message remained non-fatal.
+
+Batch 3 candidate list:
+- `locale_service.cpp/.h`
+- `SRC/Server/Poly/Poly.h`
+- `dungeon.cpp/.h`
+- `skill.cpp/.h`
+- `desc_manager.cpp/.h`
+- `item_manager.cpp/.h`
+- `guild.cpp/.h`
+- `party.h`
+
+WinTest:
+- Not run in this environment.
+- Lightweight operator checkpoint still recommended before broad Batch 3 work:
+  - boot/login/character select
+  - quest flag reads/writes
+  - Gaya market/state paths
+  - cube renewal parsing
+  - config startup path
+
 ## Phase 16-5 - Primitive Logging Cleanup
 
 Mode:
