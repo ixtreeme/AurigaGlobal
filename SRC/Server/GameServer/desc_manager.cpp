@@ -401,10 +401,11 @@ LPDESC DESC_MANAGER::AcceptP2PDesc(LPFDWATCH fdw, socket_t bind_fd)
 	return (pkDesc);
 }
 
-void DESC_MANAGER::ConnectAccount(const std::string& login, LPDESC d)
+void DESC_MANAGER::ConnectAccount(std::string_view login, LPDESC d)
 {
-	dev_log(LOG_DEB0, "BBBB ConnectAccount(%s)", login.c_str());
-	m_map_loginName.insert(DESC_LOGINNAME_MAP::value_type(login, d));
+	const std::string loginString(login);
+	dev_log(LOG_DEB0, "BBBB ConnectAccount(%s)", loginString.c_str());
+	m_map_loginName.insert(DESC_LOGINNAME_MAP::value_type(loginString, d));
 #ifdef ENABLE_BLOCK_MULTIFARM
 	int iStatus = 1, c = 0;
 	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE hwid='%s'", d->GetHwid()));
@@ -420,16 +421,17 @@ void DESC_MANAGER::ConnectAccount(const std::string& login, LPDESC d)
 		}
 	}
 
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("INSERT INTO account.antifarm SET hwid='%s', login='%s', status=%d", d->GetHwid(), login.c_str(), iStatus));
+	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("INSERT INTO account.antifarm SET hwid='%s', login='%s', status=%d", d->GetHwid(), loginString.c_str(), iStatus));
 #endif
 }
 
-void DESC_MANAGER::DisconnectAccount(const std::string& login)
+void DESC_MANAGER::DisconnectAccount(std::string_view login)
 {
-	dev_log(LOG_DEB0, "BBBB DisConnectAccount(%s)", login.c_str());
-	m_map_loginName.erase(login);
+	const std::string loginString(login);
+	dev_log(LOG_DEB0, "BBBB DisConnectAccount(%s)", loginString.c_str());
+	m_map_loginName.erase(loginString);
 #ifdef ENABLE_BLOCK_MULTIFARM
-	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.antifarm WHERE login='%s'", login.c_str()));
+	std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery("DELETE FROM account.antifarm WHERE login='%s'", loginString.c_str()));
 #endif
 }
 
@@ -482,9 +484,10 @@ void DESC_MANAGER::DestroyClosed()
 	}
 }
 
-LPDESC DESC_MANAGER::FindByLoginName(const std::string& login)
+LPDESC DESC_MANAGER::FindByLoginName(std::string_view login)
 {
-	const auto it = m_map_loginName.find(login);
+	const std::string loginString(login);
+	const auto it = m_map_loginName.find(loginString);
 
 	if (m_map_loginName.end() == it)
 		return nullptr;

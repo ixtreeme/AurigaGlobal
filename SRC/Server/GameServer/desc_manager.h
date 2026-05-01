@@ -4,6 +4,7 @@
 
 #include <common/stl.h>
 #include <common/length.h>
+#include <string_view>
 //#include "IFileMonitor.h"
 
 class CLoginKey;
@@ -58,9 +59,9 @@ class DESC_MANAGER : public singleton<DESC_MANAGER>
 		LPDESC			FindByHandshake(uint32_t dwHandshake);
 
 		LPDESC			FindByCharacterName(const char* name);
-		LPDESC			FindByLoginName(const std::string& login);
-		void			ConnectAccount(const std::string& login, LPDESC d);
-		void			DisconnectAccount(const std::string& login);
+		LPDESC			FindByLoginName(std::string_view login);
+		void			ConnectAccount(std::string_view login, LPDESC d);
+		void			DisconnectAccount(std::string_view login);
 
 		void			DestroyClosed();
 
