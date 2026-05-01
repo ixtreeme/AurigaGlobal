@@ -190,11 +190,7 @@ bool IsNPC(entt::entity e)
 
 bool IsStone(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagStone>(e))
-		return true;
-
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->IsStone() : false;
+	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagStone>(e);
 }
 
 bool IsMonster(entt::entity e)
