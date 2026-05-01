@@ -39,12 +39,12 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 | Namespace::Function | Status | File:Line | Why |
 |---------------------|--------|-----------|-----|
 | PlayerRuntime::GetDesc | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:67 | LPDESC is still stored on CHARACTER/NetworkSession boundary is not fully used here. |
-| PlayerRuntime::GetPlayerID | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:73 | Reads PlayerID, then falls back to ch->GetPlayerID(). |
-| PlayerRuntime::GetEmpire | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:84 | Reads EmpireComponent, then falls back to ch->GetEmpire(). |
-| PlayerRuntime::GetGMLevel | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:95 | Reads GMLevel/runtime flags, then falls back to ch->GetGMLevel(). |
-| PlayerRuntime::GetPacketVID | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:109 | Reads VIDComponent, then falls back to ch->GetPacketVID(). |
+| PlayerRuntime::GetPlayerID | PURE ECS | PlayerRuntimeSystem.cpp:73 | Phase 15E-60.7 removed LegacyCharOf fallback; reads PlayerID only. |
+| PlayerRuntime::GetEmpire | PURE ECS | PlayerRuntimeSystem.cpp:83 | Phase 15E-60.7 removed LegacyCharOf fallback; reads EmpireComponent only. |
+| PlayerRuntime::GetGMLevel | PURE ECS | PlayerRuntimeSystem.cpp:93 | Phase 15E-60.7 removed LegacyCharOf fallback; reads GMLevel/runtime flags only. |
+| PlayerRuntime::GetPacketVID | PURE ECS | PlayerRuntimeSystem.cpp:106 | Phase 15E-60.7 removed LegacyCharOf fallback; reads VIDComponent only. |
 | PlayerRuntime::GetRaceNum | LEGACY-FIRST | PlayerRuntimeSystem.cpp:120 | Uses ch->GetRaceNum() first to preserve polymorph/mob data semantics. |
-| PlayerRuntime::GetName | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:134 | Reads PlayerName, then falls back to ch->GetName(). |
+| PlayerRuntime::GetName | PURE ECS | PlayerRuntimeSystem.cpp:130 | Phase 15E-60.7 removed LegacyCharOf fallback; reads PlayerName only. |
 | PlayerRuntime::GetMapIndex | PURE ECS | PlayerRuntimeSystem.cpp:145 | Reads MapIndex component only. |
 | PlayerRuntime::GetX | PURE ECS | PlayerRuntimeSystem.cpp:155 | Reads Position.x only. |
 | PlayerRuntime::GetY | PURE ECS | PlayerRuntimeSystem.cpp:165 | Reads Position.y only. |
@@ -84,7 +84,7 @@ Resolved in Phase 15E-60.6:
 - PlayerRuntime::IsStone
 - PlayerRuntime::IsMonster
 
-Remaining affected:
+Resolved in Phase 15E-60.7:
 
 - PlayerRuntime::GetPlayerID
 - PlayerRuntime::GetEmpire
@@ -92,12 +92,26 @@ Remaining affected:
 - PlayerRuntime::GetPacketVID
 - PlayerRuntime::GetName
 
+Remaining affected in PlayerRuntime:
+
+- PlayerRuntime::GetRaceNum
+- PlayerRuntime::GetDesc
+- PlayerRuntime::GetSectree
+
 Phase 15E-60.6 implementation notes:
 
 - EntityInvariants.hpp added HasAnyTypeTag, DescribeTypeTag and ValidateCharacterTags.
 - Predicate read accessors now fail closed on missing tags.
 - Invariant LOG_WARN checks were added to factory creation, combat attack, and CHARACTER::Show.
 - WinTest must watch for "[ECS_INVARIANT]" warnings; any warning is a root-cause hydration bug, not a reason to reintroduce fallback.
+
+Phase 15E-60.7 implementation notes:
+
+- ValidatePCIdentity and ValidateCommonIdentity were added to EntityInvariants.hpp.
+- PlayerName is now populated for mob/NPC/stone entities in CreateMobEntity from the mob proto locale name.
+- GetPlayerID/GetEmpire/GetGMLevel/GetPacketVID/GetName now fail closed with 0 or empty view when the component is missing.
+- Scalar identity invariant checks were added to factory, Show, combat attack and chat send/broadcast hot paths.
+- WinTest must watch for missing PlayerName/VID/PlayerID/Empire/GMLevel warnings; these indicate hydration bugs to fix at source.
 
 Observed factory coverage:
 
