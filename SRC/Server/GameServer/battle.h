@@ -44,7 +44,7 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 		int time,
 		const char* name)
 {
-	if (pkAttacker->GetPoint(att_point) && !pkVictim->IsAffectFlag(affect_flag))
+	if (pkAttacker->GetPoint(att_point) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(att_point) && !pkVictim->IsImmune(immune_flag))
 		{
@@ -72,7 +72,7 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 		int time,
 		const char* name)
 {
-	if (success_pct && !pkVictim->IsAffectFlag(affect_flag))
+	if (success_pct && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
 	{
 		if (number(1, 1000) <= success_pct && !pkVictim->IsImmune(immune_flag))
 		{

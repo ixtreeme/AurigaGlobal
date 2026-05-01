@@ -3563,7 +3563,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//pu1.Pop();
 
 #ifdef ENABLE_BLOCK_MULTIFARM
-	if (pkAttacker->FindAffect(AFFECT_DROP_BLOCK, APPLY_NONE)) {
+	if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkAttacker), AFFECT_DROP_BLOCK, APPLY_NONE)) {
 		return;
 	}
 #endif
@@ -4175,7 +4175,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			}
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (pkAttacker->FindAffect(AFFECT_DROP_BLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkAttacker), AFFECT_DROP_BLOCK, APPLY_NONE)) {
 				return;
 			}
 #endif
@@ -4202,7 +4202,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 		}
 		else {
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (pkAttacker->FindAffect(AFFECT_DROP_BLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkAttacker), AFFECT_DROP_BLOCK, APPLY_NONE)) {
 				return;
 			}
 #endif
@@ -4464,13 +4464,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (pAttacker)
 	{
-		if (pAttacker->IsAffectFlag(AFF_GWIGUM) && !pAttacker->GetWear(WEAR_WEAPON))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_GWIGUM) && !pAttacker->GetWear(WEAR_WEAPON))
 		{
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GWIGEOM);
 			return false;
 		}
 
-		if (pAttacker->IsAffectFlag(AFF_GEOMGYEONG) && !pAttacker->GetWear(WEAR_WEAPON))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_GEOMGYEONG) && !pAttacker->GetWear(WEAR_WEAPON))
 		{
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GEOMKYUNG);
 			return false;
@@ -4478,7 +4478,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	}
 
-	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && pAttacker->IsAffectFlag(AFF_REVIVE_INVISIBLE))))
+	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_REVIVE_INVISIBLE))))
 		return false;
 
 #ifdef ENABLE_NEWSTUFF
@@ -6400,9 +6400,9 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 		if (!pAttacker)
 			continue;
 
-		if (pAttacker->IsAffectFlag(AFF_EUNHYUNG) ||
-			pAttacker->IsAffectFlag(AFF_INVISIBILITY) ||
-			pAttacker->IsAffectFlag(AFF_REVIVE_INVISIBLE))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_EUNHYUNG) ||
+			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_INVISIBILITY) ||
+			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_REVIVE_INVISIBLE))
 			continue;
 
 		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pAttacker)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pAttacker)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));

@@ -193,7 +193,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		return false;
 
 	//  Duplikacio elleni vedelem
-	if (!m_pkOwner->FindAffect(AFFECT_MOUNT_BONUS))
+	if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS))
 	{
 		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 		{

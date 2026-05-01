@@ -1328,16 +1328,16 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if ((pkSk->dwFlag & SKILL_FLAG_SELFONLY))
 	{
 		// ̹ ɷ Ƿ  .
-		if (ch->FindAffect(pkSk->dwVnum))
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), pkSk->dwVnum))
 			return;
 
 		victim = ch;
 	}
 
-	if (ch->IsAffectFlag(AFF_REVIVE_INVISIBLE))
+	if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_REVIVE_INVISIBLE))
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_REVIVE_INVISIBLE);
 
-	if (ch->IsAffectFlag(AFF_EUNHYUNG))
+	if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_EUNHYUNG))
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_EUNHYUNG);
 
 	double k =1.0*m_data.abySkill[dwRealVnum]/pkSk->bMaxLevel;
@@ -2532,7 +2532,7 @@ static void ApplyGuildAttributes(LPCHARACTER ch, uint8_t level)
 		const auto apply = e.apply;
 		const auto value = e.value;
 
-		for (CAffect* af = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE, apply); af != nullptr; af = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE, apply))
+		for (CAffect* af = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE, apply); af != nullptr; af = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE, apply))
 		{
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), af);
 		}

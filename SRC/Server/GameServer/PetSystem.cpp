@@ -283,7 +283,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
 	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL
-	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL1);
+	const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL1);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}

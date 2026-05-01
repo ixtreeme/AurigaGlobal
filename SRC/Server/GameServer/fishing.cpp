@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "constants.h"
@@ -380,7 +381,7 @@ bool PredictFish(LPCHARACTER ch)
 {
 	// ADD_PREMIUM
 	// 3î1ÉE—
-	if (ch->FindAffect(AFFECT_FISH_MIND_PILL) ||
+	if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_FISH_MIND_PILL) ||
 			ch->GetPremiumRemainSeconds(PREMIUM_FISH_MIND) > 0 ||
 			ch->IsEquipUniqueGroup(UNIQUE_GROUP_FISH_MIND))
 		return true;

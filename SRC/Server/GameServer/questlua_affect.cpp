@@ -45,7 +45,7 @@ namespace quest
 			return 0;
 		}
 
-		if (ch->FindAffect(AFFECT_QUEST_START_IDX, applyOn)) // 퀘스트로 인해 같은 곳에 효과가 걸려있으면 스킵
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_QUEST_START_IDX, applyOn)) // 퀘스트로 인해 같은 곳에 효과가 걸려있으면 스킵
 			return 0;
 
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
@@ -136,7 +136,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		CAffect* pkAff = ch->FindAffect( AFFECT_HAIR );
+		CAffect* pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_HAIR);
 
 		if ( pkAff != nullptr)
 		{
@@ -174,7 +174,7 @@ namespace quest
 				lua_pushnumber(L, 0);
 				return 1;
 			}
-			CAffect* pkAff = ch->FindAffect(affectType);
+			CAffect* pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), affectType);
 			if (pkAff != nullptr)
 				lua_pushnumber(L, pkAff->bApplyOn);
 			else

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -443,7 +444,7 @@ count)
 		if (pkChar && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChar)))
 		{
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (pkChar->FindAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkChar), AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
 				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
 			}

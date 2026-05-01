@@ -62,7 +62,7 @@ void CHorseNameManager::BroadcastHorseName(uint32_t dwPlayerID, const char* szHo
 
 void CHorseNameManager::Validate(LPCHARACTER pChar)
 {
-	CAffect *pkAff = pChar->FindAffect(AFFECT_HORSE_NAME);
+	CAffect *pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(pChar), AFFECT_HORSE_NAME);
 
 	if ( pkAff != nullptr)
 	{

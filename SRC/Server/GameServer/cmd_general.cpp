@@ -3924,7 +3924,7 @@ ACMD(do_rune_charge)
 		pkBottle->RemoveFromCharacter();
 
 	pkRune->ChangeRuneAttr(lValue);
-	if ((!ch->FindAffect(AFFECT_RUNE2)) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), 1) == 1)) {
+	if ((!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RUNE2)) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), 1) == 1)) {
 		if (int32_t(lValue / (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0) / 100)) >= 50) {
 			pkRune->ActivateRuneBonus();
 		}

@@ -433,7 +433,7 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 	int iLast = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m_pkOwner), szName);
 	int iTime = iLast - get_global_time();
 	if (iTime > 0) {
-		if (m_pkOwner->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_SKILL_NO_BOOK_DELAY))
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_SKILL_NO_BOOK_DELAY);
 		else {
 			int iHours = iTime / 3600;
@@ -1117,7 +1117,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, true);
 	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL
-	const CAffect* pAffect = m_pkOwner->FindAffect(AFFECT_RECALL2);
+	const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
@@ -1739,7 +1739,7 @@ void CNewPetSystem::UnsummonAll(LPCHARACTER ch)
 		return;
 
 #ifdef ENABLE_RECALL
-	const CAffect* pAffect = ch->FindAffect(AFFECT_RECALL2);
+	const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RECALL2);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
 	}

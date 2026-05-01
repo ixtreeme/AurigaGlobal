@@ -2255,7 +2255,7 @@ ACMD(do_fishing_simul)
 
 ACMD(do_invisibility)
 {
-	if (ch->IsAffectFlag(AFF_INVISIBILITY))
+	if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_INVISIBILITY))
 	{
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY);
 	}
@@ -3718,7 +3718,7 @@ ACMD(do_affect_remove)
 	str_to_number(type, arg1);
 	uint8_t	point = 0;
 	str_to_number(point, arg2);
-	while ((af = ch->FindAffect(type, point)))
+	while ((af = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), type, point)))
 	{
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), af);
 		removed = true;

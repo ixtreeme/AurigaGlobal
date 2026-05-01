@@ -709,7 +709,7 @@ namespace quest
 		bool what = lua_toboolean(L, 2);
 		if (what == false && !lastmeley)
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && ch->FindAffect(AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE))
 			{
 				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE);
 			}
@@ -721,7 +721,7 @@ namespace quest
 		}
 		else
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && !ch->FindAffect(AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && !AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE))
 			{
 				lua_pushboolean(L, ch->SetInvincible(what));
 			}
@@ -1811,7 +1811,7 @@ namespace quest
 
 		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(statue)) == 6118)
 		{
-			if (statue->FindAffect(AFFECT_STATUE))
+			if (AffectSystem::FindAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE))
 			{
 				AffectSystem::RemoveAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE);
 			}

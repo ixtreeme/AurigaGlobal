@@ -432,7 +432,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 
 		if (m_kMapInfo.bType == WAR_MAP_TYPE_FLAG)
 		{
-			CAffect * pkAff = ch->FindAffect(AFFECT_WAR_FLAG);
+			CAffect * pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 
 			if (pkAff)
 			{
@@ -821,7 +821,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 
 		case WAR_MAP_TYPE_FLAG:
 			{
-				CAffect * pkAff = ch->FindAffect(AFFECT_WAR_FLAG);
+				CAffect * pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 
 				if (pkAff)
 				{
@@ -944,7 +944,7 @@ struct FRemoveFlagAffect
 {
 	void operator() (LPCHARACTER ch)
 	{
-		if (ch->FindAffect(AFFECT_WAR_FLAG))
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG))
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 	}
 };

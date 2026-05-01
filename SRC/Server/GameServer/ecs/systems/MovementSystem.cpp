@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "AffectSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
@@ -860,11 +861,11 @@ EVENTFUNC(recovery_event)
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
 	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
-		if (ch->IsAffectFlag(AFF_POISON))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON))
 			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		if (ch->IsAffectFlag(AFF_BLEEDING))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING))
 			return PASSES_PER_SEC(MAX(1, ch->GetMobTable().bRegenCycle));
 #endif
 
@@ -946,12 +947,12 @@ EVENTFUNC(recovery_event)
 		ch->CheckTarget();
 		ch->UpdateKillerMode();
 
-		if (ch->IsAffectFlag(AFF_POISON) == true)
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON) == true)
 		{
 			return 3;
 		}
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		if (ch->IsAffectFlag(AFF_BLEEDING))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING))
 			return 3;
 #endif
 		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;

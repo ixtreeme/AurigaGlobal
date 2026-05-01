@@ -48,85 +48,85 @@ ACMD(do_remove_affect)
 	{
 		case AFF_JEONGWIHON:
 			{
-				if (ch->IsAffectFlag(AFF_JEONGWIHON))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_JEONGWIHON))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JEONGWI);
 			}
 			break;
 		case AFF_GEOMGYEONG:
 			{
-				if (ch->IsAffectFlag(AFF_GEOMGYEONG))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GEOMGYEONG))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GEOMKYUNG);
 			}
 			break;
 		case AFF_CHEONGEUN:
 			{
-				if (ch->IsAffectFlag(AFF_CHEONGEUN))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_CHEONGEUN))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_CHUNKEON);
 			}
 			break;
 		case AFF_GYEONGGONG:
 			{
-				if (ch->IsAffectFlag(AFF_GYEONGGONG))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GYEONGGONG))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GYEONGGONG);
 			}
 			break;
 		case AFF_GWIGUM:
 			{
-				if (ch->IsAffectFlag(AFF_GWIGUM))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GWIGUM))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GWIGEOM);
 			}
 			break;
 		case AFF_TERROR:
 			{
-				if (ch->IsAffectFlag(AFF_TERROR))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_TERROR))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_TERROR);
 			}
 			break;
 		case AFF_JUMAGAP:
 			{
-				if (ch->IsAffectFlag(AFF_JUMAGAP))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_JUMAGAP))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JUMAGAP);
 			}
 			break;
 		case AFF_MUYEONG:
 			{
-				if (ch->IsAffectFlag(AFF_MUYEONG))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_MUYEONG))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_MUYEONG);
 			}
 			break;
 		case AFF_MANASHIELD:
 			{
-				if (ch->IsAffectFlag(AFF_MANASHIELD))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_MANASHIELD))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_MANASHILED);
 			}
 			break;
 		case AFF_HOSIN:
 			{
-				if (ch->IsAffectFlag(AFF_HOSIN))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_HOSIN))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_HOSIN);
 			}
 			break;
 		case AFF_BOHO:
 			{
-				if (ch->IsAffectFlag(AFF_BOHO))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BOHO))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_REFLECT);
 			}
 			break;
 		case AFF_GICHEON:
 			{
-				if (ch->IsAffectFlag(AFF_GICHEON))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GICHEON))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_GICHEON);
 			}
 			break;
 		case AFF_KWAESOK:
 			{
-				if (ch->IsAffectFlag(AFF_KWAESOK))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_KWAESOK))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_KWAESOK);
 			}
 			break;
 		case AFF_JEUNGRYEOK:
 			{
-				if (ch->IsAffectFlag(AFF_JEUNGRYEOK))
+				if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_JEUNGRYEOK))
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), SKILL_JEUNGRYEOK);
 			}
 			break;
@@ -484,7 +484,7 @@ ACMD(do_change_biologist) {
 	iarg2 = 3 + (iarg2 * 2);
 	int type =  aApplyInfo[biologistMissionInfo[iarg1][iarg2]].bPointType;
 	int idx = biologistMissionInfo[iarg1][14];
-	CAffect * pkAff = ch->FindAffect(idx, type);
+	CAffect * pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), idx, type);
 	if (pkAff) {
 		return;
 	}
@@ -792,7 +792,7 @@ ACMD(do_doctrine_choose) {
 
 		ch->SetHorseLevel(1);
 		CAffect * pkAff = nullptr;
-		if (!(pkAff = ch->FindAffect(AFFECT_HORSE_NAME))) {
+		if (!(pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME))) {
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "horse_name.valid_till", get_global_time() + 126144000);
 			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
 			std::string name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
@@ -807,18 +807,18 @@ ACMD(do_doctrine_choose) {
 
 		int job = ch->GetJob();
 		if (job == JOB_ASSASSIN || job == JOB_SHAMAN) {
-			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType))) {
+			if (!(pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType))) {
 				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType, 10, 0, 126144000, 0, false);
 			}
 
 #ifdef ENABLE_STRONG_METIN
-			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType))) {
+			if (!(pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType))) {
 				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_METIN].bPointType, 10, 0, 126144000, 0, false);
 			}
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
-			if (!(pkAff = ch->FindAffect(AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType))) {
+			if (!(pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType))) {
 				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_BOSS].bPointType, 10, 0, 126144000, 0, false);
 			}
 #endif

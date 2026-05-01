@@ -66,9 +66,9 @@ void Initialize(entt::entity owner)
     }
 
     state->activeDeck = -1;
-    if (ch->FindAffect(AFFECT_DRAGON_SOUL_DECK_0))
+    if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0))
         ActivateDeck(owner, DRAGON_SOUL_DECK_0);
-    else if (ch->FindAffect(AFFECT_DRAGON_SOUL_DECK_1))
+    else if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_1))
         ActivateDeck(owner, DRAGON_SOUL_DECK_1);
     else
         MarkDirty(owner);

@@ -3114,7 +3114,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		}
 	}
 
-	if (pkVictim->IsAffectFlag(AFF_PABEOP) && pkVictim->IsGoodAffect(dwVnum))
+	if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_PABEOP) && pkVictim->IsGoodAffect(dwVnum))
 	{
 		return BATTLE_NONE;
 	}
@@ -3942,7 +3942,7 @@ EVENTFUNC(skill_muyoung_event)
 		return 0;
 	}
 
-	if (!ch->IsAffectFlag(AFF_MUYEONG))
+	if (!AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_MUYEONG))
 	{
 		ch->StopMuyeongEvent();
 		return 0;
@@ -3997,7 +3997,7 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	if (!ch->IsAffectFlag(AFF_GYEONGGONG))
+	if (!AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GYEONGGONG))
 	{
 		ch->StopGyeongGongEvent();
 		return 0;

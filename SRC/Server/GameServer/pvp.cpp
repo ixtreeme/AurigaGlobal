@@ -254,13 +254,13 @@ EVENTFUNC(pvp_duel_counter)
 
 			if ((chA->GetDuel("BlockRide")) && (chB->GetDuel("BlockRide")))
 			{
-				if (chA->FindAffect(AFFECT_MOUNT)) {
+				if (AffectSystem::FindAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT_BONUS);
 					chA->MountVnum(0);
 				}
 
-				if (chB->FindAffect(AFFECT_MOUNT)) {
+				if (AffectSystem::FindAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT_BONUS);
 					chB->MountVnum(0);

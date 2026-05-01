@@ -16337,19 +16337,19 @@ void CItem::ActivateRuneBonus() {
 	}
 
 	if (!bCan) {
-		if (m_pOwner->FindAffect(AFFECT_RUNE2))
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
 
-		if (!m_pOwner->FindAffect(AFFECT_RUNE1))
+		if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1))
 			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 
 		return;
 	}
 	else {
-		if (m_pOwner->FindAffect(AFFECT_RUNE1))
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1))
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1);
 
-		if (!m_pOwner->FindAffect(AFFECT_RUNE2))
+		if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
 			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 	}
 
@@ -16372,7 +16372,7 @@ void CItem::DeactivateRuneBonus() {
 	if (pkItem1->GetSocket(1) != 1)
 		return;
 
-	if (m_pOwner->FindAffect(AFFECT_RUNE2))
+	if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
 
 	ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem1), 1, 0);
@@ -16387,7 +16387,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 	int iMaxSubTypes = RUNE_SUBTYPES - 1;
 	bool bAdd = false;
 	LPITEM pkItem2 = nullptr;
-	if (!m_pOwner->FindAffect(AFFECT_RUNE1)) {
+	if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1)) {
 		for (int i = 0; i < iMaxSubTypes; i++) {
 			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
 			if (pkItem2) {

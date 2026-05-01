@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
@@ -286,9 +287,9 @@ public:
 		LPCHARACTER pkChr = (LPCHARACTER)ent;
 
 		if (pkChr->IsBuilding() &&
-			(pkChr->IsAffectFlag(AFF_BUILDING_CONSTRUCTION_SMALL) ||
-				pkChr->IsAffectFlag(AFF_BUILDING_CONSTRUCTION_LARGE) ||
-				pkChr->IsAffectFlag(AFF_BUILDING_UPGRADE)))
+			(AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_CONSTRUCTION_SMALL) ||
+				AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_CONSTRUCTION_LARGE) ||
+				AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_UPGRADE)))
 		{
 			m_pkChrBuilding = pkChr;
 		}
@@ -304,12 +305,12 @@ public:
 		if (pkChr->IsDead())
 			return false;
 
-		if (pkChr->IsAffectFlag(AFF_EUNHYUNG) ||
-			pkChr->IsAffectFlag(AFF_INVISIBILITY) ||
-			pkChr->IsAffectFlag(AFF_REVIVE_INVISIBLE))
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_EUNHYUNG) ||
+			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_INVISIBILITY) ||
+			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_REVIVE_INVISIBLE))
 			return false;
 
-		if (pkChr->IsAffectFlag(AFF_TERROR) && m_pkChr->IsImmune(IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
+		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_TERROR) && m_pkChr->IsImmune(IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
 		{
 			if (((pkChr)->GetLevel()) >= m_pkChr->GetLevel())
 				return false;

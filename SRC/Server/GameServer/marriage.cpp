@@ -207,7 +207,7 @@ namespace marriage
 			int count = 0;
 			if (nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && ch1->FindAffect(affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch1), affetIdx) != nullptr
 #else
 			ch1->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -215,7 +215,7 @@ namespace marriage
 				count ++;
 			if (nullptr != ch2 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && ch2->FindAffect(affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch2), affetIdx) != nullptr
 #else
 			ch2->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -234,7 +234,7 @@ namespace marriage
 			int count = 0;
 			if (me != ch1 && nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && ch1->FindAffect(affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch1), affetIdx) != nullptr
 #else
 			ch1->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -242,7 +242,7 @@ namespace marriage
 				count ++;
 			if (me != ch2 && nullptr != ch2 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && ch2->FindAffect(affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch2), affetIdx) != nullptr
 #else
 			ch2->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -705,7 +705,7 @@ namespace marriage
 		if (p1) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = p1->FindAffect(dwAffect);
+				pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(p1), dwAffect);
 				if (pAffect != nullptr) {
 					pkItem = p1->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {
@@ -722,7 +722,7 @@ namespace marriage
 		if (p2) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = p2->FindAffect(dwAffect);
+				pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(p2), dwAffect);
 				if (pAffect != nullptr) {
 					pkItem = p2->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {

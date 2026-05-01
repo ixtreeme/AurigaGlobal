@@ -136,12 +136,12 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 void CGuildManager::RemoveGuildBuff(LPCHARACTER ch)
 {
-	CAffect* affect = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE);
+	CAffect* affect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE);
 	while (affect != nullptr)
 	{
 		if (affect)
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), affect);
-		affect = ch->FindAffect(AFFECT_GUILD_ATTRIBUTE);
+		affect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE);
 	}
 }
 #endif

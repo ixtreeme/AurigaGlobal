@@ -472,7 +472,7 @@ void CDungeon::DeadCharacter(LPCHARACTER ch)
 {
 	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 	{
-		if (ch->FindAffect(AFFECT_DUNGEON_UNIQUE)) {
+		if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_UNIQUE)) {
 			auto it = m_map_UniqueMob.begin();
 			for ( ; it != m_map_UniqueMob.end(); ) {
 				if (it->second == ch)

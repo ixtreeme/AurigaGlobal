@@ -93,7 +93,7 @@ namespace quest
 
 		petSystem->Unsummon(mobVnum);
 #ifdef ENABLE_RECALL
-		const CAffect* pAffect = ch->FindAffect(AFFECT_RECALL1);
+		const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RECALL1);
 		if (pAffect) {
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
 		}

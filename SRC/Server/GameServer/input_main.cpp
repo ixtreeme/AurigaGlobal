@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -427,7 +428,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 		return -1;
 	}
 
-	if (ch->FindAffect(AFFECT_BLOCK_CHAT))
+	if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_BLOCK_CHAT))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 639, "");
@@ -1099,7 +1100,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	} */
 
 	// 채팅 금지 Affect 처리
-	const CAffect* pAffect = ch->FindAffect(AFFECT_BLOCK_CHAT);
+	const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_BLOCK_CHAT);
 
 	if (pAffect != nullptr)
 	{

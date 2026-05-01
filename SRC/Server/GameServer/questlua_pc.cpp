@@ -135,7 +135,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch && ch->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
+		lua_pushboolean(L, ch && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
 		return 1;
 	}
 
@@ -4177,7 +4177,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_FIRE) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_FIRE) ? 1 : 0) : 0);
 		return 1;
 	}
 
@@ -4192,7 +4192,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_INVISIBILITY) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_INVISIBILITY) ? 1 : 0) : 0);
 		return 1;
 	}
 	ALUA(pc_if_poison)
@@ -4206,7 +4206,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_POISON) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON) ? 1 : 0) : 0);
 		return 1;
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -4221,7 +4221,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_BLEEDING) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING) ? 1 : 0) : 0);
 		return 1;
 	}
 #endif
@@ -4233,7 +4233,7 @@ teleport_area:
 		(void)e;
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_SLOW) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_SLOW) ? 1 : 0) : 0);
 		return 1;
 	}
 	ALUA(pc_if_stun)
@@ -4248,7 +4248,7 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsAffectFlag(AFF_STUN) ? 1 : 0) : 0);
+		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_STUN) ? 1 : 0) : 0);
 		return 1;
 	}
     ALUA(pc_sf_fire)
@@ -5008,7 +5008,7 @@ teleport_area:
 		bool ret = true;
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch && ch->FindAffect(AFFECT_DROP_BLOCK, APPLY_NONE))
+		if (ch && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK, APPLY_NONE))
 			ret = false;
 		lua_pushboolean(L, ret ? 1 : 0);
 		return 1;
@@ -5031,7 +5031,7 @@ teleport_area:
 						for (int j = 0; j < 4; j++) {
 							type = biologistMissionInfo[i][3 + (j * 2)];
 							if (type != APPLY_NONE) {
-								CAffect * pkAff = ch->FindAffect(biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
+								CAffect * pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
 								if (pkAff) {
 									continue;
 								}
@@ -5070,7 +5070,7 @@ teleport_area:
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ch) {
-			if (!ch->FindAffect(AFFECT_VOTEFORBONUS)) {
+			if (!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS)) {
 				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 				if (d) {
 					std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(vote_time)-UNIX_TIMESTAMP(NOW()) FROM account.account WHERE id=%u", d->GetAccountTable().id));
@@ -5113,7 +5113,7 @@ teleport_area:
                 const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
                 auto* ch = ecs::LegacyCharOf(chEntity);
                 if (ch) {
-                    if (!ch->FindAffect(AFFECT_VOTEFORBONUS))
+                    if (!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS))
                     {
                         switch (type)
                         {

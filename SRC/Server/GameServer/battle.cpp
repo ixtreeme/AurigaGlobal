@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -768,13 +769,13 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 void NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
 	// ?? ?????? U?????? U?? �??
-	if (pkAttacker->GetPoint(POINT_POISON_PCT) && !pkVictim->IsAffectFlag(AFF_POISON))
+	if (pkAttacker->GetPoint(POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_POISON))
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(POINT_POISON_PCT))
 			pkVictim->AttackedByPoison(pkAttacker);
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
-	if (pkAttacker->GetPoint(POINT_BLEEDING_PCT) && !pkVictim->IsAffectFlag(AFF_BLEEDING))
+	if (pkAttacker->GetPoint(POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_BLEEDING))
 	{
 		if (number(1, 100) <= pkAttacker->GetPoint(POINT_BLEEDING_PCT))
 			pkVictim->AttackedByBleeding(pkAttacker);
