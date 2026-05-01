@@ -439,12 +439,13 @@ void CDungeon::SetUnique(const char* key, uint32_t vid)
 	AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
 }
 
-void CDungeon::KillUnique(const std::string& key)
+void CDungeon::KillUnique(std::string_view key)
 {
-	auto it = m_map_UniqueMob.find(key);
+	const std::string keyString(key);
+	auto it = m_map_UniqueMob.find(keyString);
 	if (it == m_map_UniqueMob.end())
 	{
-		LOG_ERROR("Unknown get unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown get unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
 		return;
 	}
 
@@ -453,12 +454,13 @@ void CDungeon::KillUnique(const std::string& key)
 	ch->Dead();
 }
 
-int32_t CDungeon::GetUniqueVid(const std::string& key)
+int32_t CDungeon::GetUniqueVid(std::string_view key)
 {
-	auto it = m_map_UniqueMob.find(key);
+	const std::string keyString(key);
+	auto it = m_map_UniqueMob.find(keyString);
 	if (it == m_map_UniqueMob.end())
 	{
-		LOG_ERROR("Unknown get unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown get unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
 		return false;
 	}
 
@@ -486,12 +488,13 @@ void CDungeon::DeadCharacter(LPCHARACTER ch)
 	}
 }
 
-bool CDungeon::IsUniqueDead(const std::string& key)
+bool CDungeon::IsUniqueDead(std::string_view key)
 {
-	auto it = m_map_UniqueMob.find(key);
+	const std::string keyString(key);
+	auto it = m_map_UniqueMob.find(keyString);
 	if (it == m_map_UniqueMob.end())
 	{
-		LOG_ERROR("Unknown unique: {} for dungeon {}.", key.c_str(), m_lMapIndex);
+		LOG_ERROR("Unknown unique: {} for dungeon {}.", keyString.c_str(), m_lMapIndex);
 		return false;
 	}
 

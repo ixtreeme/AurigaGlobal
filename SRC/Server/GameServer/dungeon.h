@@ -69,9 +69,9 @@ class CDungeon
 	bool	IsValidRegen(LPREGEN regen, size_t regen_id);
 
 	void	SetUnique(const char* key, uint32_t vid);
-	void KillUnique(const std::string& key);
-	bool	IsUniqueDead(const std::string& key);
-	int32_t GetUniqueVid(const std::string& key);
+	void KillUnique(std::string_view key);
+	bool	IsUniqueDead(std::string_view key);
+	int32_t GetUniqueVid(std::string_view key);
 
 	void	DeadCharacter(LPCHARACTER ch);
 
