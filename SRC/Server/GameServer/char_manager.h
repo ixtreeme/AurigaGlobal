@@ -11,6 +11,7 @@
 
 #include <common/stl.h>
 #include <common/length.h>
+#include <string_view>
 
 
 class CDungeon;
@@ -116,7 +117,7 @@ protected:
 		int			GetMobExpRate(LPCHARACTER ch);
 
 		int			GetUserDamageRate(LPCHARACTER ch);
-		void		SendScriptToMap(int32_t lMapIndex, const std::string & s);
+		void		SendScriptToMap(int32_t lMapIndex, std::string_view s);
 
 		bool			BeginPendingDestroy();
 		void			FlushPendingDestroy();

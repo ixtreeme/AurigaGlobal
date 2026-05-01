@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <random>
+#include <string_view>
 
 #include <unordered_set>
 #include "safebox.h"
@@ -1518,7 +1519,7 @@ int	CHARACTER_MANAGER::GetUserDamageRate(LPCHARACTER ch)
 	return m_iUserDamageRate;
 }
 
-void CHARACTER_MANAGER::SendScriptToMap(int32_t lMapIndex, const std::string& s)
+void CHARACTER_MANAGER::SendScriptToMap(int32_t lMapIndex, std::string_view s)
 {
 	LPSECTREE_MAP pSecMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
 
