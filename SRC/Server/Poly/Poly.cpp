@@ -45,9 +45,9 @@ CPoly::~CPoly()
     Clear();
 }
 
-void CPoly::SetStr(const string & str)
+void CPoly::SetStr(std::string_view str)
 {
-    strData = str;
+    strData.assign(str.data(), str.size());
 }
 
 double CPoly::Eval()
@@ -511,8 +511,9 @@ void CPoly::emit(int t, int tval)
     }
 }
 
-int CPoly::find(const string & s)
+int CPoly::find(std::string_view s)
 {
+	const std::string key(s);
 	int l, m, r;
 
 	l = 0;
@@ -522,9 +523,9 @@ int CPoly::find(const string & s)
 	{
 		m = (l + r) >> 1;
 
-		if (lSymbol[SymbolIndex[m]]->strlex == s)
+		if (lSymbol[SymbolIndex[m]]->strlex == key)
 			return SymbolIndex[m];
-		else if (lSymbol[SymbolIndex[m]]->strlex < s)
+		else if (lSymbol[SymbolIndex[m]]->strlex < key)
 			l = m + 1;
 		else
 			r = m - 1;
@@ -532,17 +533,18 @@ int CPoly::find(const string & s)
 	return -1;
 }
 
-int CPoly::insert(const string & s, int tok)
+int CPoly::insert(std::string_view s, int tok)
 {
+	const std::string key(s);
 	int i;
 	bool bAdded=false;
 	//s.MakeLower();
 	//transform(s.begin(),s.end(),s.begin(),std::tolower);
 	//lSymbol.SetAtGrow(STSize,new CSymTable(tok,s));
-	lSymbol.push_back(new CSymTable(tok,s));
+	lSymbol.push_back(new CSymTable(tok,key));
 	for (i=0;i<STSize;i++)
 	{
-		if (s<lSymbol[SymbolIndex[i]]->strlex)
+		if (key<lSymbol[SymbolIndex[i]]->strlex)
 		{
 			SymbolIndex.insert(SymbolIndex.begin()+i,STSize);
 			bAdded=true;
@@ -558,7 +560,7 @@ int CPoly::insert(const string & s, int tok)
 	return STSize-1;
 }
 
-int CPoly::SetVar(const string & strName, double dVar)
+int CPoly::SetVar(std::string_view strName, double dVar)
 {
     //transform(strName.begin(),strName.end(),s.begin(),std::tolower);
     if (ErrorOccur) return false;
@@ -569,7 +571,7 @@ int CPoly::SetVar(const string & strName, double dVar)
     return true;
 }
 
-double CPoly::GetVar(const std::string & strName)
+double CPoly::GetVar(std::string_view strName)
 {
     if (ErrorOccur) return false;
     int index = find(strName);

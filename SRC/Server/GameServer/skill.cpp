@@ -6,7 +6,7 @@
 #include "skill.h"
 #include "char_interface.hpp"
 
-void CSkillProto::SetPointVar(const std::string& strName, double dVar)
+void CSkillProto::SetPointVar(std::string_view strName, double dVar)
 {
 	kPointPoly.SetVar(strName, dVar);
 	kPointPoly2.SetVar(strName, dVar);
@@ -14,14 +14,14 @@ void CSkillProto::SetPointVar(const std::string& strName, double dVar)
 	kMasterBonusPoly.SetVar(strName, dVar);
 }
 
-void CSkillProto::SetDurationVar(const std::string& strName, double dVar)
+void CSkillProto::SetDurationVar(std::string_view strName, double dVar)
 {
 	kDurationPoly.SetVar(strName, dVar);
 	kDurationPoly2.SetVar(strName, dVar);
 	kDurationPoly3.SetVar(strName, dVar);
 }
 
-void CSkillProto::SetSPCostVar(const std::string& strName, double dVar)
+void CSkillProto::SetSPCostVar(std::string_view strName, double dVar)
 {
 	kSPCostPoly.SetVar(strName, dVar);
 	kGrandMasterAddSPCostPoly.SetVar(strName, dVar);

@@ -4,6 +4,7 @@
 #include "SymTable.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <list>
 
@@ -15,9 +16,9 @@ class CPoly
 
 		int	Analyze(const char * pszStr = nullptr);
 		double	Eval();
-		void	SetStr(const std::string & str);
-		int	SetVar(const std::string & strName, double dVar);
-		double GetVar(const std::string & strName);
+		void	SetStr(std::string_view str);
+		int	SetVar(std::string_view strName, double dVar);
+		double GetVar(std::string_view strName);
 		void	Clear();
 
 	protected:
@@ -25,8 +26,8 @@ class CPoly
 		double		my_frandom(double start, double end);
 
 		void		init();
-		int		insert(const std::string & s, int tok);
-		int		find(const std::string & s);
+		int		insert(std::string_view s, int tok);
+		int		find(std::string_view s);
 		void		emit(int t,int tval);
 		void		match(int t); 
 		void		expo(); 

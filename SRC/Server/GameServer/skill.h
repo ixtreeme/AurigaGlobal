@@ -2,6 +2,7 @@
 
 #include <Poly/Poly.h>
 #include <common/CommonDefines.h>
+#include <string_view>
 
 enum ESkillFlags
 {
@@ -264,9 +265,9 @@ class CSkillProto
 
 		CPoly kGrandMasterAddSPCostPoly;
 
-		void SetPointVar(const std::string& strName, double dVar);
-		void SetDurationVar(const std::string& strName, double dVar);
-		void SetSPCostVar(const std::string& strName, double dVar);
+		void SetPointVar(std::string_view strName, double dVar);
+		void SetDurationVar(std::string_view strName, double dVar);
+		void SetSPCostVar(std::string_view strName, double dVar);
 };
 
 class CSkillManager : public singleton<CSkillManager>
