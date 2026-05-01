@@ -416,9 +416,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	}
 
 #ifdef __NEWPET_SYSTEM__
-	if (ch->IsNPC() && !ch->IsPet() && !ch->IsNewPet() && ch->GetRider() == nullptr)
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsNewPet() && ch->GetRider() == nullptr)
 #else
-	if (ch->IsNPC() && !ch->IsPet() && ch->GetRider() == NULL)
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && ch->GetRider() == NULL)
 #endif
 	{
 		if (ch->GetDungeon())

@@ -1621,9 +1621,9 @@ struct FPurgeNPCs
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
 #ifdef __NEWPET_SYSTEM__
-			if (lpChar->IsNPC() == true && !lpChar->IsPet() && !lpChar->IsNewPet())
+			if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(lpChar)) == true && !lpChar->IsPet() && !lpChar->IsNewPet())
 #else
-			if ( lpChar->IsNPC() == true && !lpChar->IsPet())
+			if ( ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(lpChar)) == true && !lpChar->IsPet())
 #endif
 			{
 				M2_DESTROY_CHARACTER(lpChar);

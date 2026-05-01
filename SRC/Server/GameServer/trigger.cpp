@@ -292,7 +292,7 @@ public:
 			m_pkChrBuilding = pkChr;
 		}
 
-		if (((pkChr)->IsNPC()))
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)))
 		{
 			const entt::entity ownerEntity = AIHelpers::EcsOf(m_pkChr);
 			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))

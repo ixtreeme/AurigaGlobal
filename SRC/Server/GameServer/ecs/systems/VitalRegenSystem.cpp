@@ -79,7 +79,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
             return;
         }
 
-        if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && !ch->IsNPC()) {
+        if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && !ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch))) {
             return;
         }
 

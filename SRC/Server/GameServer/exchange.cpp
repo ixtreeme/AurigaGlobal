@@ -82,7 +82,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 		return false;
 	}
 
-	if (victim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(victim)))
 		return false;
 
 #ifdef ENABLE_PVP_ADVANCED

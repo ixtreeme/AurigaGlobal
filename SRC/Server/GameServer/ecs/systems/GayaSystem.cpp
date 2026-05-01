@@ -67,7 +67,7 @@ EVENTFUNC(check_time_market_event)
 	}
 
 	auto* ch = info->ch.Get();
-	if (nullptr == ch || ch->IsNPC())
+	if (nullptr == ch || ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch)))
 		return 0;
 
 	const entt::entity e = AIHelpers::EcsOf(ch);

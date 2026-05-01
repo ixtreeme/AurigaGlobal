@@ -345,7 +345,7 @@ LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOn
 
         LPCHARACTER tch = (LPCHARACTER)it->first;
 
-        if (bFindPCOnly && tch->IsNPC())
+        if (bFindPCOnly && ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(tch)))
             continue;
 
         if (!strcasecmp(tch->GetName(), c_pszName))

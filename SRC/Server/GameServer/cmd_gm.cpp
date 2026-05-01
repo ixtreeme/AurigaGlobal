@@ -1008,9 +1008,9 @@ struct FuncPurge
 		LOG_INFO("PURGE: {} {}", ((pkChr)->GetName()), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (((pkChr)->IsNPC()) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
 #else
-		if (((pkChr)->IsNPC()) && !pkChr->IsPet() && pkChr->GetRider() == NULL
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)) && !pkChr->IsPet() && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -2688,7 +2688,7 @@ struct FuncWeaken
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		if (pkChr->IsNPC())
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)))
 			ecs::PointSystem::Change(AIHelpers::EcsOf(pkChr), POINT_HP, (10 - pkChr->GetHP()));
 	}
 };

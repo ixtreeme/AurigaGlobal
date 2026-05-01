@@ -2140,7 +2140,7 @@ struct FuncSplashDamage
 		// ´Ŕł˘Áö ¸řÇĎ±â Ŕ§ÇŘ mob_protoŔÇ RESIST_MAGICŔ» RESIST_WIND, RESIST_ELEC, RESIST_FIRE·Î
 		// şą»çÇĎż´´Ů.
 		//
-		if (pkChrVictim->IsNPC())
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChrVictim)))
 		{
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_WIND))
 			{
@@ -2399,7 +2399,7 @@ struct FuncSplashDamage
 			{
 				float fCrushSlidingLength = 200;
 
-				if (m_pkChr->IsNPC())
+				if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(m_pkChr)))
 					fCrushSlidingLength = 400;
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_CRUSH_LONG))

@@ -954,7 +954,7 @@ namespace quest
 
 			uint32_t dwCurrentNPCRace = pkChrTarget->GetRaceNum();
 
-			if (pkChrTarget->IsNPC())
+			if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChrTarget)))
 			{
 				const auto it = m_mapNPC.find(dwCurrentNPCRace);
 

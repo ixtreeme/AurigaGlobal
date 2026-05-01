@@ -1579,7 +1579,7 @@ ACMD(do_pvp)
 	if (!pkVictim)
 		return;
 
-	if (pkVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
 		return;
 
 	if (pkVictim->GetArena() != nullptr) {
@@ -1750,7 +1750,7 @@ ACMD(do_pvp_advanced)
 	if (!pkVictim)
 		return;
 	
-	if (pkVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
 		return;
 	
 	if (pkVictim->GetArena() != nullptr) {
@@ -1822,7 +1822,7 @@ ACMD(do_decline_pvp)
 	if (!pkVictim)
 		return;
 
-	if (pkVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
 		return;
 
 	CPVPManager::instance().Decline(ch, pkVictim);

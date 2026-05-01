@@ -271,7 +271,7 @@ int CalcMagicDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
 	int iDam = 0;
 
-	if (pkAttacker->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 	{
 		iDam = CalcMeleeDamage(pkAttacker, pkVictim, false, false);
 	}
@@ -321,12 +321,12 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 		iAtk = iAtk * (100 + iReduceDamagePct) / 100;
 	}
 
-	if (pkAttacker->IsNPC() && pkVictim->IsPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && pkVictim->IsPC())
 	{
 		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(pkAttacker)) / 100;
 	}
 
-	if (pkVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
 	{
 #ifdef ENABLE_DS_RUNE
 		if (pkVictim->IsRaceFlag(RACE_FLAG_RUNE))
@@ -475,7 +475,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 	//[ mob -> PC ] ???? ??? ??? ????
 	//2013/01/17
 	//???? ??????? ???????? 30%?? ?????? ??g???? ?????? ?????.
-	if (pkAttacker->IsNPC() && pkVictim->IsPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)) && pkVictim->IsPC())
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * 30 * pkVictim->GetPoint(POINT_DEF_TALISMAN))		/ 10000;
@@ -586,7 +586,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 		Item_GetDamage(EntityFactory::CreateItemEntity(g_registry, pWeapon), &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 	}
-	else if (pkAttacker->IsNPC())
+	else if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 	{
 		iDamMin = pkAttacker->GetMobDamageMin();
 		iDamMax = pkAttacker->GetMobDamageMax();
@@ -629,7 +629,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 			iDef += pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
 	}
 
-	if (pkAttacker->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 		iAtk = (int) (iAtk * pkAttacker->GetMobDamageMultiply());
 
 	iDam = MAX(0, iAtk - iDef);
@@ -649,7 +649,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 		DEBUG_iPureAtk = DEBUG_iLV + DEBUG_iST + DEBUG_iWP+DEBUG_iDamBonus;
 		DEBUG_iPureDam = iAtk - iDef;
 
-		if (pkAttacker->IsNPC())
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 		{
 			snprintf(szGradeAtkBonus, sizeof(szGradeAtkBonus), "=%d*%.1f", DEBUG_iPureAtk, pkAttacker->GetMobDamageMultiply());
 			DEBUG_iPureAtk = int(DEBUG_iPureAtk * pkAttacker->GetMobDamageMultiply());
@@ -742,7 +742,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 	if (!bIgnoreDefense)
 		iDef = (pkVictim->GetPoint(POINT_DEF_GRADE) * (100 + pkAttacker->GetPoint(POINT_DEF_BONUS)) / 100);
 
-	if (pkAttacker->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
 		iAtk = (int) (iAtk * pkAttacker->GetMobDamageMultiply());
 
 	iDam = MAX(0, iAtk - iDef);

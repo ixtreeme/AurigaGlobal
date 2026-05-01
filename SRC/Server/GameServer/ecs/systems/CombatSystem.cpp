@@ -1580,7 +1580,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
-		if (!pAttacker || pAttacker->IsNPC() || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
+		if (!pAttacker || ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pAttacker)) || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -5768,7 +5768,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 	if (GetHP() <= 0)
 	{
-		if (pAttacker && !pAttacker->IsNPC())
+		if (pAttacker && !ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pAttacker)))
 			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker));
 		else
 			m_dwKillerPID = 0;
@@ -5789,7 +5789,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		Stun();
 
-		if (pAttacker && !pAttacker->IsNPC())
+		if (pAttacker && !ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pAttacker)))
 			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker));
 		else
 			m_dwKillerPID = 0;
@@ -5960,7 +5960,7 @@ public:
 		if (!battle_is_attackable(m_me, pkVictim))
 			return;
 
-		if (m_me->IsNPC())
+		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(m_me)))
 		{
 			if (DISTANCE_APPROX(m_me->GetX() - pkVictim->GetX(), m_me->GetY() - pkVictim->GetY()) > 5000)
 				return;
@@ -5983,7 +5983,7 @@ public:
 					return;
 
 				if (m_me->GetSkillGroup() != 0)
-					if (!m_me->IsNPC() && m_me->GetSkillGroup() != 2)
+					if (!ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(m_me)) && m_me->GetSkillGroup() != 2)
 					{
 						if (m_me->GetSP() < 5)
 							return;
@@ -6745,7 +6745,7 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
-	if (pVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pVictim)))
 		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
@@ -6878,7 +6878,7 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 		dam = dam * (100 + pAttacker->GetPoint(POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
-	if (pVictim->IsNPC())
+	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pVictim)))
 		dam = dam * (100 + pAttacker->GetPoint(POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
