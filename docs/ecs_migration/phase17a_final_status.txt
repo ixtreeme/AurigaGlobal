@@ -1,0 +1,120 @@
+Phase 17a final status - string_view parameter pass
+Date: 2026-05-01
+
+Scope
+-----
+Phase 17a introduced and applied the project convention for read-only string
+parameters:
+- Prefer std::string_view for read-only parameters.
+- Keep std::string for owning storage and member-stored constructor inputs.
+- Convert to std::string only at C APIs requiring null termination.
+- Defer CHARACTER, questmanager/questpc, DB/SQL, and protocol boundaries.
+
+Batch summary
+-------------
+Batch 1:
+- group_text_parse_tree.cpp/.h
+- text_file_loader.cpp/.h
+
+Batch 2:
+- ecs/systems/QuestSystem.cpp/.hpp
+- ecs/systems/GayaSystem.cpp/.hpp
+- cmd_gm.cpp helper
+- cmd_general.cpp locals/helper
+- config.cpp/.h
+- cuberenewal.cpp helper
+
+Batch 3:
+- desc_manager.cpp/.h
+- party.cpp/.h
+- guild.cpp/.h
+- dungeon.cpp/.h
+- Poly.cpp/.h
+- skill.cpp/.h
+- locale_service.cpp/.h
+
+Batch 4:
+- char_manager.cpp/.h
+- cmd.h + cmd_gm.cpp
+- profiler.h
+
+Batch 4 commits
+---------------
+- e8f8b79 Phase 17a Batch 4: char_manager script string_view
+- 50ac2a2 Phase 17a Batch 4: goto info string_view
+- 2687929 Phase 17a Batch 4: profiler hash string_view
+
+Counts
+------
+Baseline from Phase 17 audit:
+- const std::string&: 265
+- std::string_view: 0
+
+After Batch 3:
+- const std::string&: 105
+- std::string_view: 135
+
+After Batch 4:
+- const std::string&: 100
+- std::string_view: 144
+
+Batch 4 reduction:
+- 5 const std::string& occurrences migrated.
+
+Phase 17a total reduction:
+- 165 const std::string& occurrences removed from the audited grep surface.
+
+Remaining const std::string& breakdown
+--------------------------------------
+Deferred quest scope:
+- questmanager.cpp/.h: large remaining group; Lua and quest context review needed.
+- questpc.cpp and questlua_npc.cpp: quest/Lua boundary; defer with questmanager.
+
+Deferred CHARACTER/API scope:
+- char.h: CHARACTER method declarations, should be handled with Phase 15E-58 identity migration.
+- PlayerRuntimeSystem.cpp and GayaSystem.cpp remaining matches are legacy CHARACTER member bodies.
+- These should not be migrated in isolation.
+
+Owning storage / Pattern C:
+- item_manager.h constructors store names into std::string members; keep as std::string.
+- messenger_manager.h keyA alias is broad service API and SQL-adjacent; defer to a dedicated messenger pass.
+
+Return/local references, not parameter targets:
+- locale_service.cpp/.h remaining matches are const std::string& return types.
+- file_loader.cpp/.h remaining matches are stable return/local references.
+- banword.cpp remaining matches are local map key references.
+
+DB/SQL/Core/infrastructure boundaries:
+- db.cpp/.h, SQL/AsyncSQL, Database/CsvReader.cpp, Database/ClientManager.cpp, Core/Logging.*.
+- Defer to DB/SQL/infrastructure-specific review because null-termination and external API contracts matter.
+
+Other isolated tails:
+- desc.h, new_offlineshop_manager.cpp, item_manager_read_tables.cpp, cmd_gm.cpp, common/stl.h.
+- These should be reviewed only if a later targeted phase needs them; they are low-value tail items.
+
+Build status
+------------
+Build passed after each Batch 4 commit.
+
+Final successful command:
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+
+Note:
+- One intermediate build hit MSVC PDB lock C1041 after a previous build timeout.
+- Stale MSBuild/link processes from that timeout were stopped.
+- Rebuild passed; no source rollback was needed.
+
+Recommendation
+--------------
+Proceed to Phase 15E-58 (Identity ECS migration), not Phase 17b.
+
+Rationale:
+- The remaining high-value string parameters are tied to CHARACTER identity and quest APIs.
+- Phase 15E-58 will naturally address char.h/CHARACTER identity surfaces with entity-first APIs.
+- Continuing Phase 17b locals/substr work has lower architectural value than the next ECS migration.
+- DB/SQL/Core and questmanager string_view work should remain separate reviewed phases.
+
+WinTest
+-------
+No WinTest was run in this environment for Batch 4.
+Operator WinTest is optional for this tail cleanup because the changed functions are narrow helpers.
