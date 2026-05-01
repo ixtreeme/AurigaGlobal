@@ -131,11 +131,11 @@ int32_t GetMaxSP(entt::entity e)
 	return 0;
 }
 
-int8_t GetLevel(entt::entity e)
+int32_t GetLevel(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* level = g_registry.try_get<ecs::LevelComponent>(e))
-			return static_cast<int8_t>(level->value);
+			return level->value;
 	}
 
 	return 0;
