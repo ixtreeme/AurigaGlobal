@@ -1,0 +1,99 @@
+Phase 15E-58 Close-Out — Identity ECS Migration
+Date: 2026-05-01
+
+1. Total Caller Migrations
+
+Phase 15E-58 migrated the Tier 1 identity surface to entity-first PlayerRuntime APIs.
+
+Methods covered:
+- Scalar getters: GetPlayerID, GetEmpire, GetGMLevel, GetPacketVID
+- Type predicates: IsPC, IsNPC, IsStone, IsMonster
+- Identity/race: GetRaceNum, GetName
+
+15E-58c code commits:
+- a14d797 Phase 15E-58c.1: Add PlayerRuntime race and name API
+- c284c51 Phase 15E-58c.2: Migrate GetRaceNum
+- d700135 Phase 15E-58c.3a: Migrate GetName primary character receivers
+- 0f1a89e Phase 15E-58c.3b: Migrate GetName tail character receivers
+
+Final 15E-58c counts:
+- GetRaceNum caller-side remaining: 0
+- GetName true CHARACTER caller-side remaining: 0
+- GetName raw remaining excluding bridge/internal: 118
+- Raw GetName remaining is non-CHARACTER usage: item, guild, shop, bridge, or other object GetName methods.
+
+2. PlayerRuntime API Surface
+
+PlayerRuntime now exposes entity-first identity accessors:
+- GetPlayerID(entt::entity)
+- GetEmpire(entt::entity)
+- GetGMLevel(entt::entity)
+- GetPacketVID(entt::entity)
+- IsPC(entt::entity)
+- IsNPC(entt::entity)
+- IsStone(entt::entity)
+- IsMonster(entt::entity)
+- GetRaceNum(entt::entity)
+- GetName(entt::entity) -> std::string_view
+
+No LPCHARACTER overloads were added.
+
+3. Migration Patterns Established
+
+Scalar getters:
+- Caller-side ch->GetX() became ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)).
+
+Type predicates:
+- Tag check is attempted first.
+- Legacy fallback is used when ECS tags are missing, preserving combat and skill behavior.
+- This fallback was production-critical after the 15E-58b no-damage regression.
+
+GetRaceNum:
+- PlayerRuntime uses legacy CHARACTER::GetRaceNum first to preserve polymorph semantics.
+- Component fallback remains available for non-legacy entities.
+
+GetName:
+- PlayerRuntime::GetName returns std::string_view.
+- The view is backed by stable storage: PlayerName component storage or legacy CHARACTER name storage.
+- Caller-side migration uses .data() where legacy APIs expect null-terminated const char*.
+- This preserves ChatSystem::Send, snprintf, strlcpy, Lua, packet, and log call behavior.
+
+4. Validation
+
+Build gate passed after each 15E-58c migration segment:
+- GetRaceNum migration build: passed.
+- GetName primary receiver migration build: passed.
+- GetName tail receiver migration build: passed.
+
+Latest build gate:
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+Result: passed.
+
+Warnings observed were pre-existing warning categories and not blockers for this phase.
+
+5. WinTest Status
+
+WinTest is still required before marking Phase 15E-58 production-verified.
+
+Required verification:
+- Login and character name display.
+- Chat, whisper, party, guild names.
+- GM commands that display actor/target names.
+- Quest text using player names.
+- Packet name fields are not corrupted or truncated.
+- Polymorph race changes and restores correctly.
+- Mob race/drop logic remains correct.
+- VID_DRIFT remains zero.
+
+6. Hotfixes Applied
+
+Phase 15E-58b hotfix:
+- 2462263 Phase 15E-58b Hotfix: Fall back for missing predicate tags
+- Restored melee and skill damage when entities lacked expected ECS tags.
+- Pattern retained for predicate accessors.
+
+7. Recommended Next Phase
+
+Proceed to Phase 15E-59 after WinTest:
+- Position accessors: GetMapIndex, GetX, GetY, and related position reads.
+
