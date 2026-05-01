@@ -399,7 +399,7 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
     uint32_t ownerPID = 0;
 
     if (const auto* owner = item->GetOwner()) {
-        ownerPID = owner->GetPlayerID();
+        ownerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
     }
 
     return ecs::ItemOwner {

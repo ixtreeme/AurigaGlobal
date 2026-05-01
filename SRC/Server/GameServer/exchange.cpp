@@ -1046,16 +1046,16 @@ bool CExchange::Done()
 		{
 			char exchange_buf[51];
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), GetOwner()->GetPlayerID(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 			LogManager::instance().ItemLog(victim, item, "EXCHANGE_TAKE", exchange_buf);
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), victim->GetPlayerID(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 			LogManager::instance().ItemLog(GetOwner(), item, "EXCHANGE_GIVE", exchange_buf);
 
 			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 			{
-				LogManager::instance().GoldBarLog(victim->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_TAKE, "");
-				LogManager::instance().GoldBarLog(GetOwner()->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_GIVE, "");
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_TAKE, "");
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), EXCHANGE_GIVE, "");
 			}
 		}
 
@@ -1070,10 +1070,10 @@ bool CExchange::Done()
 		if (m_lGold > 1000)
 		{
 			char exchange_buf[51];
-			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", GetOwner()->GetPlayerID(), GetOwner()->GetName());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), GetOwner()->GetName());
 			LogManager::instance().CharLog(victim, m_lGold, "EXCHANGE_GOLD_TAKE", exchange_buf);
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", victim->GetPlayerID(), victim->GetName());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), victim->GetName());
 			LogManager::instance().CharLog(GetOwner(), m_lGold, "EXCHANGE_GOLD_GIVE", exchange_buf);
 		}
 	}
@@ -1103,7 +1103,7 @@ bool CExchange::Accept(bool bAccept)
 		//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
 		// @fixme150 BEGIN
-		if (quest::CQuestManager::instance().GetPCForce(GetOwner()->GetPlayerID())->IsRunning() == true || quest::CQuestManager::instance().GetPCForce(victim->GetPlayerID())->IsRunning() == true)
+		if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())))->IsRunning() == true || quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)))->IsRunning() == true)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 631, "");

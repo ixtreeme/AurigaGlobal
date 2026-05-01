@@ -616,7 +616,7 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	}
 	t.count = (uint32_t)item->GetCount();
 	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(item->GetOwner()))->GetAccountTable().id : item->GetOwner()->GetPlayerID();
+	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(item->GetOwner()))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(item->GetOwner()));
 	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
 	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
 
@@ -1477,9 +1477,9 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		pdw[2] = quest::CQuestManager::instance().GetEventFlag("lotto_round");
 
 		// 행운의 서는 소켓을 설정한다
-		DBManager::instance().ReturnQuery(QID_LOTTO, pkKiller->GetPlayerID(), pdw,
+		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), pdw,
 			"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-			get_table_postfix(), pkKiller->GetPlayerID());
+			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)));
 	}
 
 	//

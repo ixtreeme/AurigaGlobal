@@ -370,7 +370,7 @@ struct SendDisconnectFunc
 	{
 		if (d->GetCharacter())
 		{
-			if (((d->GetCharacter())->GetGMLevel()) == GM_PLAYER)
+			if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter()))) == GM_PLAYER)
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}

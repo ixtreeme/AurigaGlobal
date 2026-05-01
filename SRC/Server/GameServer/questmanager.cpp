@@ -503,7 +503,7 @@ namespace quest
 
 	void CQuestManager::LogoutPC(LPCHARACTER ch)
 	{
-		PC * pPC = GetPC(ch->GetPlayerID());
+		PC * pPC = GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		if (pPC && pPC->IsRunning())
 		{
@@ -512,7 +512,7 @@ namespace quest
 		}
 
 		// 지우기 전에 로그아웃 한다.
-		Logout(ch->GetPlayerID());
+		Logout(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		if (ch == m_pCurrentCharacter)
 		{
@@ -589,9 +589,9 @@ namespace quest
 			{
 				m_pCurrentPartyMember = ch;
 				if (npc >= MAIN_RACE_MAX_NUM) //@fixme109
-					m_mapNPC[npc].OnPartyKill(*GetPC(leader->GetPlayerID())); //@warme004
+					m_mapNPC[npc].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(leader)))); //@warme004
 				
-				m_mapNPC[QUEST_NO_NPC].OnPartyKill(*GetPC(leader->GetPlayerID()));
+				m_mapNPC[QUEST_NO_NPC].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(leader))));
 				pPC = GetPC(pc);
 			}
 #endif
@@ -1073,7 +1073,7 @@ namespace quest
 
 	void CQuestManager::DisconnectPC(LPCHARACTER ch)
 	{
-		m_mapPC.erase(ch->GetPlayerID());
+		m_mapPC.erase(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	}
 
 	PC * CQuestManager::GetPCForce(unsigned int pc)
@@ -1924,7 +1924,7 @@ namespace quest
 		{
 			m_pOtherPCBlockRootPC = GetCurrentPC();
 		}
-		m_vecPCStack.push_back(GetCurrentCharacterPtr()->GetPlayerID());
+		m_vecPCStack.push_back(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
 		GetPC(pid);
 	}
 

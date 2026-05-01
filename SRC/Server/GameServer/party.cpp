@@ -42,7 +42,7 @@ void CPartyManager::DeleteAllParty()
 
 bool CPartyManager::SetParty(LPCHARACTER ch)	// PC�� ����ؾ� �Ѵ�!!
 {
-	TPartyMap::iterator it = m_map_pkParty.find(((ch)->GetPlayerID()));
+	TPartyMap::iterator it = m_map_pkParty.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 	if (it == m_map_pkParty.end())
 		return false;
@@ -146,16 +146,16 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 		//TPacketGGParty p;
 		//p.header	= HEADER_GG_PARTY;
 		//p.subheader	= PARTY_SUBHEADER_GG_CREATE;
-		//p.pid		= pLeader->GetPlayerID();
+		//p.pid		= ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader));
 		//P2P_MANAGER::instance().Send(&p, sizeof(p));
 		TPacketPartyCreate p;
-		p.dwLeaderPID = ((pLeader)->GetPlayerID());
+		p.dwLeaderPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader)));
 
 		db_clientdesc->DBPacket(HEADER_GD_PARTY_CREATE, 0, &p, sizeof(TPacketPartyCreate));
 
-		LOG_INFO("PARTY: Create {} pid {}", ((pLeader)->GetName()), ((pLeader)->GetPlayerID()));
+		LOG_INFO("PARTY: Create {} pid {}", ((pLeader)->GetName()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader))));
 		pParty->SetPCParty(true);
-		pParty->Join(((pLeader)->GetPlayerID()));
+		pParty->Join((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader))));
 
 		m_set_pkPCParty.insert(pParty);
 	}
@@ -327,7 +327,7 @@ void CParty::Destroy()
 			{
 				TPacketGCPartyRemove p;
 				p.header = HEADER_GC_PARTY_REMOVE;
-				p.pid = rMember.pCharacter->GetPlayerID();
+				p.pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(rMember.pCharacter));
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(rMember.pCharacter))->Packet(&p, sizeof(p));
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(rMember.pCharacter), CHAT_TYPE_INFO, 213, "");
@@ -537,7 +537,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	TMemberMap::iterator it;
 
 	if (pkChr->IsPC())
-		it = m_memberMap.find(pkChr->GetPlayerID());
+		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr)));
 	else
 		it = m_memberMap.find(pkChr->GetLegacyVID());
 
@@ -570,7 +570,7 @@ void CParty::Link(LPCHARACTER pkChr)
 			it->second.strName = pkChr->GetName();
 		}
 
-		SendPartyJoinOneToAll(((pkChr)->GetPlayerID()));
+		SendPartyJoinOneToAll((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 
 		SendPartyJoinAllToOne(pkChr);
 		SendPartyLinkOneToAll(pkChr);
@@ -586,7 +586,7 @@ void CParty::Link(LPCHARACTER pkChr)
 			pkChr->SetDungeon(GetDungeon());
 		}
 
-		RequestSetMemberLevel(((pkChr)->GetPlayerID()), ((pkChr)->GetLevel()));
+		RequestSetMemberLevel((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), ((pkChr)->GetLevel()));
 
 	}
 }
@@ -632,7 +632,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 	TMemberMap::iterator it;
 
 	if (pkChr->IsPC())
-		it = m_memberMap.find(pkChr->GetPlayerID());
+		it = m_memberMap.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr)));
 	else
 		it = m_memberMap.find(pkChr->GetLegacyVID());
 
@@ -727,7 +727,7 @@ void CParty::SendPartyUnlinkOneToAll(LPCHARACTER ch)
 
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_UNLINK;
-	p.pid = ((ch)->GetPlayerID());
+	p.pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
@@ -749,7 +749,7 @@ void CParty::SendPartyLinkOneToAll(LPCHARACTER ch)
 	TPacketGCPartyLink p;
 	p.header = HEADER_GC_PARTY_LINK;
 	p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
-	p.pid = ((ch)->GetPlayerID());
+	p.pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
@@ -775,7 +775,7 @@ void CParty::SendPartyLinkAllToOne(LPCHARACTER ch)
 		if (it->second.pCharacter)
 		{
 			p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter));
-			p.pid = ((it->second.pCharacter)->GetPlayerID());
+			p.pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 		}
 	}
