@@ -1,0 +1,177 @@
+Phase 17a Status Audit - string_view migration
+Date: 2026-05-01
+
+1. Phase 17 commits found in git history
+
+Phase 17-related commits:
+  f4ebb3a Phase 17a: Extend string_view convention with literals and ECS returns
+  cf35b7a Phase 17a: Migrate text_file_loader to string_view
+  0994665 Phase 17a: Migrate group_text_parse_tree to string_view
+  3b443aa Phase 17a: Add string_view usage convention document
+  1e65f27 Phase 17 audit: String modernization scope analysis
+
+Recent commits within the last 3 days include the Phase 17 audit and Batch 1
+commits above, preceded by Phase 16-4/16-5 logging modernization commits.
+
+2. Tree-wide string_view count
+
+Baseline from Phase 17 audit:
+  std::string_view/string_view usage: 0
+
+Current tree-wide count:
+  std::string_view/string_view usage: 62
+
+Top files:
+  SRC/Server/GameServer/group_text_parse_tree.h: 20
+  SRC/Server/GameServer/text_file_loader.h: 19
+  SRC/Server/GameServer/text_file_loader.cpp: 18
+  SRC/Server/GameServer/group_text_parse_tree.cpp: 5
+
+Conclusion:
+  Batch 1 introduced string_view only in the intended parser/loader files.
+
+3. Tree-wide const std::string& count
+
+Baseline from Phase 17 audit:
+  const std::string& parameters/usages: 265
+
+Current tree-wide count:
+  const std::string& parameters/usages: 157
+
+Reduction:
+  108 fewer occurrences than baseline.
+
+Top remaining files:
+  SRC/Server/GameServer/questmanager.cpp: 25
+  SRC/Server/GameServer/questmanager.h: 23
+  SRC/Server/GameServer/char.h: 8
+  SRC/Server/GameServer/locale_service.cpp: 7
+  SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp: 5
+  SRC/Server/Poly/Poly.h: 5
+  SRC/Server/GameServer/cmd_general.cpp: 4
+  SRC/Server/GameServer/locale_service.h: 4
+  SRC/Server/GameServer/ecs/systems/GayaSystem.cpp: 4
+  SRC/Server/GameServer/desc_manager.h: 3
+  SRC/Server/GameServer/cmd_gm.cpp: 3
+  SRC/Server/GameServer/dungeon.cpp: 3
+  SRC/Server/GameServer/dungeon.h: 3
+  SRC/Server/GameServer/desc_manager.cpp: 3
+  SRC/Server/GameServer/item_manager.h: 3
+  SRC/Server/GameServer/skill.cpp: 3
+  SRC/Server/GameServer/skill.h: 3
+  SRC/Server/GameServer/file_loader.cpp: 2
+  SRC/Server/GameServer/ecs/systems/GayaSystem.hpp: 2
+  SRC/Server/Core/Logging.cpp: 2
+
+4. Batch 1 file-level status
+
+SRC/Server/GameServer/group_text_parse_tree.cpp
+  const std::string&: 0
+  std::string_view: 6
+  #include <string_view>: 0
+  Status: migrated. Include is not needed locally because the header provides
+  the declarations and includes string_view.
+
+SRC/Server/GameServer/group_text_parse_tree.h
+  const std::string&: 0
+  std::string_view: 28
+  #include <string_view>: 1
+  Status: migrated and complete.
+
+SRC/Server/GameServer/text_file_loader.cpp
+  const std::string&: 0
+  std::string_view: 18
+  #include <string_view>: 0
+  Status: migrated. Include is not needed locally because the header provides
+  the declarations and includes string_view.
+
+SRC/Server/GameServer/text_file_loader.h
+  const std::string&: 0
+  std::string_view: 18
+  #include <string_view>: 1
+  Status: migrated and complete.
+
+Batch 1 conclusion:
+  Complete. No remaining const std::string& in the four target files.
+
+5. Convention document status
+
+File:
+  docs/ecs_migration/string_view_convention.md
+
+Status:
+  Exists.
+
+Related commits:
+  f4ebb3a Phase 17a: Extend string_view convention with literals and ECS returns
+  3b443aa Phase 17a: Add string_view usage convention document
+
+Conclusion:
+  Convention is committed and was extended with C++ string_view literal and
+  ECS stable-storage return guidance.
+
+6. Recommended Batch 2 file list with counts
+
+Safer non-deferred candidates from the requested list:
+  SRC/Server/GameServer/cmd_gm.cpp: 4
+  SRC/Server/GameServer/cmd_general.cpp: 4
+  SRC/Server/GameServer/config.h: 1
+  SRC/Server/GameServer/cuberenewal.cpp: 1
+
+ECS system candidates:
+  SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp: 5
+  SRC/Server/GameServer/ecs/systems/GayaSystem.cpp: 4
+  SRC/Server/GameServer/ecs/systems/QuestSystem.cpp: 2
+  SRC/Server/GameServer/ecs/systems/GayaSystem.hpp: 2
+  SRC/Server/GameServer/ecs/systems/QuestSystem.hpp: 2
+  SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp: 1
+
+Recommended Batch 2:
+  1. cmd_gm.cpp and cmd_general.cpp, if the affected helpers are pure
+     read-only command parsing helpers and do not pass to C APIs requiring
+     null termination.
+  2. config.h/config.cpp only after verifying the parameter is not a path
+     passed to fopen or another null-terminated C API.
+  3. cuberenewal.cpp if the single parameter is internal/read-only.
+  4. GayaSystem.cpp/.hpp and PlayerRuntimeSystem.cpp after checking whether
+     parameters cross Lua, DB, SQL, or C API boundaries.
+
+Defer:
+  questmanager.cpp/.h and questpc-related paths still need Lua lifetime review.
+  char.h is high-impact CHARACTER API surface.
+  DB/C API boundary functions should remain out of Batch 2.
+  ItemSystem_LegacyBridge.cpp should remain a bridge unless manually reviewed.
+
+7. Build status
+
+Command:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+
+Result:
+  Success.
+
+Output summary:
+  GameServer.vcxproj -> build/SRC/Server/GameServer/RelWithDebInfo/GameServer.exe
+
+String_view-related warnings:
+  None observed.
+
+8. Recommendation
+
+Continue to Batch 2.
+
+Reasoning:
+  Batch 1 is complete and builds cleanly. The convention document is committed.
+  The next safest work is small, isolated helper/command/config candidates, not
+  questmanager, char.h, or DB/C API boundaries.
+
+Working tree note:
+  At audit time, unrelated WinTest/hotfix source files were already modified:
+    SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+    SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+    SRC/Server/GameServer/input_db.cpp
+    SRC/Server/GameServer/questlua_global.cpp
+    docs/ecs_migration/MIGRATION_LOG_GPT.md
+
+  This audit report should be committed independently and should not stage
+  those unrelated changes.
