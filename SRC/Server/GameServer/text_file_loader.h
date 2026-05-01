@@ -4,7 +4,7 @@
 #include <common/pool.h>
 #include "file_loader.h"
 
-typedef std::map<std::string, TTokenVector> TTokenVectorMap;
+typedef std::map<std::string, TTokenVector, std::less<>> TTokenVectorMap;
 
 class CTextFileLoader
 {

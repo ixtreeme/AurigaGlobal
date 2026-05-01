@@ -4,8 +4,9 @@
 #include <common/pool.h>
 #include "file_loader.h"
 #include <sstream>
-typedef std::map<std::string, TTokenVector>	TTokenVectorMap;
-typedef std::map<std::string, int> TMapNameToIndex;
+#include <string_view>
+typedef std::map<std::string, TTokenVector, std::less<>>	TTokenVectorMap;
+typedef std::map<std::string, int, std::less<>> TMapNameToIndex;
 
 class CGroupNode
 {
@@ -17,7 +18,7 @@ public:
 		virtual ~CGroupNodeRow();
 
 		template <typename T>
-		bool GetValue(const std::string & stColKey, OUT T& value) const;
+		bool GetValue(std::string_view stColKey, OUT T& value) const;
 		template <typename T>
 		bool GetValue(int idx, OUT T& value) const;
 
@@ -36,36 +37,36 @@ public:
 
 	uint32_t GetChildNodeCount();
 	bool SetChildNode(const char * c_szKey, CGroupNode* pChildNode);
-	CGroupNode* GetChildNode(const std::string & c_rstrKey) const;
+	CGroupNode* GetChildNode(std::string_view c_rstrKey) const;
 	std::string GetNodeName() const;
 
-	bool IsToken(const std::string & c_rstrKey) const;
+	bool IsToken(std::string_view c_rstrKey) const;
 
 	int GetRowCount();
 
 	template <typename T>
-	bool GetValue(size_t i, const std::string & c_rstrColKey, T& tValue) const;	// n번째(map에 들어있는 순서일 뿐, txt의 순서와는 관계 없음) row의 특정 컬럼의 값을 반환하는 함수.
+	bool GetValue(size_t i, std::string_view c_rstrColKey, T& tValue) const;	// n번째(map에 들어있는 순서일 뿐, txt의 순서와는 관계 없음) row의 특정 컬럼의 값을 반환하는 함수.
 																				// 이질적이긴 하지만, 편의를 위한 함수.
 	template <typename T>
-	bool GetValue(const std::string & c_rstrRowKey, const std::string & c_rstrColKey, T& tValue) const;
+	bool GetValue(std::string_view c_rstrRowKey, std::string_view c_rstrColKey, T& tValue) const;
 	template <typename T>
-	bool GetValue(const std::string & c_rstrRowKey, int index, T& tValue) const;
+	bool GetValue(std::string_view c_rstrRowKey, int index, T& tValue) const;
 
-	bool GetRow(const std::string & c_rstrKey, OUT const CGroupNodeRow ** ppRow) const;
+	bool GetRow(std::string_view c_rstrKey, OUT const CGroupNodeRow ** ppRow) const;
 	// 참고로, idx랑 txt에 쓰여진 순서랑 관계 없음.
 	bool GetRow(int idx, OUT const CGroupNodeRow ** ppRow) const;
-	bool GetGroupRow(const std::string& stGroupName, const std::string& stRow, OUT const CGroupNode::CGroupNodeRow ** ppRow) const;
+	bool GetGroupRow(std::string_view stGroupName, std::string_view stRow, OUT const CGroupNode::CGroupNodeRow ** ppRow) const;
 
 	template <typename T>
-	bool GetGroupValue(const std::string& stGroupName, const std::string& stRow, int iCol, OUT T& tValue) const;
+	bool GetGroupValue(std::string_view stGroupName, std::string_view stRow, int iCol, OUT T& tValue) const;
 	template <typename T>
-	bool GetGroupValue(const std::string& stGroupName, const std::string& stRow, const std::string& stCol, OUT T& tValue) const;
+	bool GetGroupValue(std::string_view stGroupName, std::string_view stRow, std::string_view stCol, OUT T& tValue) const;
 
-	int	GetColumnIndexFromName(const std::string& stName) const;
+	int	GetColumnIndexFromName(std::string_view stName) const;
 
 private:
-	typedef std::map <std::string, CGroupNode*> TMapGroup;
-	typedef std::map <std::string, CGroupNode::CGroupNodeRow> TMapRow;
+	typedef std::map <std::string, CGroupNode*, std::less<>> TMapGroup;
+	typedef std::map <std::string, CGroupNode::CGroupNodeRow, std::less<>> TMapRow;
 	TMapGroup				m_mapChildNodes;
 	std::string strGroupName;
 
@@ -95,16 +96,16 @@ private:
 };
 
 template <typename T>
-bool from_string(OUT T& t, IN const std::string& s)
+bool from_string(OUT T& t, IN std::string_view s)
 {
-	std::istringstream iss(s);
+	std::istringstream iss(std::string{s});
 	return !(iss >> t).fail();
 }
 
 template <>
-inline bool from_string <uint8_t>(OUT uint8_t& t, IN const std::string& s)
+inline bool from_string <uint8_t>(OUT uint8_t& t, IN std::string_view s)
 {
-	std::istringstream iss(s);
+	std::istringstream iss(std::string{s});
 	int temp;
 	bool b = !(iss >> temp).fail();
 	t = (uint8_t)temp;
@@ -112,7 +113,7 @@ inline bool from_string <uint8_t>(OUT uint8_t& t, IN const std::string& s)
 }
 
 template <typename T>
-bool CGroupNode::GetValue(size_t i, const std::string & c_rstrColKey, T& tValue) const
+bool CGroupNode::GetValue(size_t i, std::string_view c_rstrColKey, T& tValue) const
 {
 	if (i > m_map_rows.size())
 		return false;
@@ -136,7 +137,7 @@ bool CGroupNode::GetValue(size_t i, const std::string & c_rstrColKey, T& tValue)
 }
 
 template <typename T>
-bool CGroupNode::GetValue(const std::string & c_rstrRowKey, const std::string & c_rstrColKey, T& tValue) const
+bool CGroupNode::GetValue(std::string_view c_rstrRowKey, std::string_view c_rstrColKey, T& tValue) const
 {
 	TMapRow::const_iterator row_it = m_map_rows.find(c_rstrRowKey);
 	if (m_map_rows.end() == row_it)
@@ -159,7 +160,7 @@ bool CGroupNode::GetValue(const std::string & c_rstrRowKey, const std::string & 
 }
 
 template <typename T>
-bool CGroupNode::GetValue(const std::string & c_rstrRowKey, int index, T& tValue) const
+bool CGroupNode::GetValue(std::string_view c_rstrRowKey, int index, T& tValue) const
 {
 	TMapRow::const_iterator row_it = m_map_rows.find(c_rstrRowKey);
 	if (m_map_rows.end() == row_it)
@@ -175,7 +176,7 @@ bool CGroupNode::GetValue(const std::string & c_rstrRowKey, int index, T& tValue
 }
 
 template <typename T>
-bool CGroupNode::GetGroupValue(const std::string& stGroupName, const std::string& stRow, int iCol, OUT T& tValue) const
+bool CGroupNode::GetGroupValue(std::string_view stGroupName, std::string_view stRow, int iCol, OUT T& tValue) const
 {
 	CGroupNode* pChildGroup = GetChildNode(stGroupName);
 	if (nullptr != pChildGroup)
@@ -194,7 +195,7 @@ bool CGroupNode::GetGroupValue(const std::string& stGroupName, const std::string
 }
 
 template <typename T>
-bool CGroupNode::GetGroupValue(const std::string& stGroupName, const std::string& stRow, const std::string& stCol, OUT T& tValue) const
+bool CGroupNode::GetGroupValue(std::string_view stGroupName, std::string_view stRow, std::string_view stCol, OUT T& tValue) const
 {
 	CGroupNode* pChildGroup = GetChildNode(stGroupName);
 	if (nullptr != pChildGroup)
@@ -213,7 +214,7 @@ bool CGroupNode::GetGroupValue(const std::string& stGroupName, const std::string
 }
 
 template <typename T>
-bool CGroupNode::CGroupNodeRow::GetValue(const std::string & stColKey, OUT T& value) const
+bool CGroupNode::CGroupNodeRow::GetValue(std::string_view stColKey, OUT T& value) const
 {
 	int idx = m_pOwnerGroupNode->GetColumnIndexFromName(stColKey);
 	if (idx < 0 || (TTokenVectorMap::size_type)idx >= m_vec_values.size())

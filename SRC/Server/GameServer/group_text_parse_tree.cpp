@@ -161,7 +161,7 @@ bool CGroupNode::SetChildNode(const char * c_szKey, CGroupNode* pChildGroup)
 	return true;
 }
 
-CGroupNode* CGroupNode::GetChildNode(const std::string & c_rstrKey) const
+CGroupNode* CGroupNode::GetChildNode(std::string_view c_rstrKey) const
 {
 	TMapGroup::const_iterator it = m_mapChildNodes.find(c_rstrKey);
 	if (it != m_mapChildNodes.end())
@@ -175,7 +175,7 @@ std::string CGroupNode::GetNodeName() const
 	return strGroupName;
 }
 
-bool CGroupNode::IsToken(const std::string & c_rstrKey) const
+bool CGroupNode::IsToken(std::string_view c_rstrKey) const
 {
 	return m_map_rows.end() != m_map_rows.find(c_rstrKey);
 }
@@ -185,7 +185,7 @@ int CGroupNode::GetRowCount()
 	return m_map_rows.size();
 }
 
-bool CGroupNode::GetRow(const std::string & c_rstrRowKey, OUT const CGroupNode::CGroupNodeRow ** ppRow) const
+bool CGroupNode::GetRow(std::string_view c_rstrRowKey, OUT const CGroupNode::CGroupNodeRow ** ppRow) const
 {
 	TMapRow::const_iterator row_it = m_map_rows.find(c_rstrRowKey);
 	if (m_map_rows.end() == row_it)
@@ -213,7 +213,7 @@ bool CGroupNode::GetRow(int idx, OUT const CGroupNode::CGroupNodeRow ** ppRow) c
 	return true;
 }
 
-bool CGroupNode::GetGroupRow(const std::string& stGroupName, const std::string& stRow, OUT const CGroupNode::CGroupNodeRow ** ppRow) const
+bool CGroupNode::GetGroupRow(std::string_view stGroupName, std::string_view stRow, OUT const CGroupNode::CGroupNodeRow ** ppRow) const
 {
 	CGroupNode* pChildGroup = GetChildNode(stGroupName);
 	if (nullptr != pChildGroup)
@@ -231,7 +231,7 @@ bool CGroupNode::GetGroupRow(const std::string& stGroupName, const std::string& 
 	return false;
 }
 
-int	CGroupNode::GetColumnIndexFromName(const std::string& stName) const
+int	CGroupNode::GetColumnIndexFromName(std::string_view stName) const
 {
 	TMapNameToIndex::const_iterator it = m_map_columnNameToIndex.find(stName);
 	if (m_map_columnNameToIndex.end() == it)
