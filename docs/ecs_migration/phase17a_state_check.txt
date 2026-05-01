@@ -1,0 +1,184 @@
+Phase 17a State Check
+Date: 2026-05-01
+
+Scope:
+  Audit only. No source code changes.
+
+1. Recent git commits (last 30)
+
+  9d4dad2 Phase 16-X Hotfix: Document crash fix commit consolidation
+  f23e8d2 Phase 17a status audit log update
+  dcee4a4 Phase 17a pre-cleanup: Add quest timer compatibility aliases
+  0f6306a Phase 17a pre-cleanup: Stabilize duplicate item purge
+  d8c1488 Phase 17a pre-cleanup: Fix affect mirror lifetime ownership
+  ad4e9f0 Phase 17a status audit
+  f4ebb3a Phase 17a: Extend string_view convention with literals and ECS returns
+  cf35b7a Phase 17a: Migrate text_file_loader to string_view
+  0994665 Phase 17a: Migrate group_text_parse_tree to string_view
+  3b443aa Phase 17a: Add string_view usage convention document
+  1e65f27 Phase 17 audit: String modernization scope analysis
+  09a8f51 Phase 16-5: Document primitive logging cleanup
+  9801a31 Phase 16-5: Migrate primitive logging output
+  2d88fbc Phase 16-5.1: Primitive logging audit classification
+  c49d5aa Phase 16-4: Document non-GameServer logging modernization
+  969420c Phase 16-4: Clean stale Base legacy logging reference
+  0587edb Phase 16-4: Remove printf-style core logging bridge
+  64a67e9 Phase 16-4: Fix Database fmt migration build issues
+  fc189eb Phase 16-4: Migrate logging in Config.cpp
+  5d5b1b4 Phase 16-4: Migrate logging in OfflineshopCache.cpp
+  733ab89 Phase 16-4: Migrate logging in NetBase.cpp
+  50660db Phase 16-4: Migrate logging in signal.cpp
+  28eb6bb Phase 16-4: Migrate logging in LoginData.cpp
+  806d72f Phase 16-4: Migrate logging in utils.h
+  6db614c Phase 16-4: Migrate logging in ClientManagerEventFlag.cpp
+  6a357d3 Phase 16-4: Migrate logging in main.cpp
+  fc650bd Phase 16-4: Migrate logging in heart.cpp
+  f1a41bf Phase 16-4: Migrate logging in utils.cpp
+  32d63c2 Phase 16-4: Migrate logging in ItemAwardManager.cpp
+  bc0998c Phase 16-4: Migrate logging in ItemIDRangeManager.cpp
+
+Commits since "2 days ago":
+  Count: 271
+  The range starts at the Phase 16-X / Phase 17a commits above and extends
+  back through Phase 16, Phase 15E-51, Phase 15E-50, and Phase 15E-49 work.
+
+2. Working tree status
+
+Branch:
+  ECS_+_BGFX
+
+Remote status:
+  Ahead of origin/ECS_+_BGFX by 460 commits.
+
+Working tree:
+  Clean.
+
+Uncommitted changes:
+  None.
+
+Untracked files:
+  None.
+
+3. Phase 16-X hotfix commits
+
+  9d4dad2 Phase 16-X Hotfix: Document crash fix commit consolidation
+    Files changed:
+      docs/ecs_migration/MIGRATION_LOG_GPT.md
+    Description:
+      Documents the consolidation of the login/core crash hotfix commits and
+      records the source commit hashes plus build gate result.
+
+  d8c1488 Phase 17a pre-cleanup: Fix affect mirror lifetime ownership
+    Files changed:
+      SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+    Description:
+      Fixes login/tick heap corruption by making the ECS affect list a mirror
+      only. Legacy CHARACTER::ProcessAffect remains the sole owner of CAffect*
+      lifetime; ECS no longer releases legacy-owned affect pointers.
+
+  0f6306a Phase 17a pre-cleanup: Stabilize duplicate item purge
+    Files changed:
+      SRC/Server/GameServer/ecs/systems/ItemSystem.cpp
+      SRC/Server/GameServer/input_db.cpp
+    Description:
+      Adds duplicate item purge diagnostics and stabilizes stale duplicate item
+      destruction. Stale owner items are detached through RemoveFromCharacter()
+      before legacy destruction, and duplicate purge summary logging records the
+      affected login load.
+
+  dcee4a4 Phase 17a pre-cleanup: Add quest timer compatibility aliases
+    Files changed:
+      SRC/Server/GameServer/questlua_global.cpp
+    Description:
+      Adds quest Lua timer aliases used by scripts:
+        set_timer -> timer
+        set_named_timer -> named timer setter
+        set_named_loop_timer -> named loop timer setter
+
+  f23e8d2 Phase 17a status audit log update
+    Files changed:
+      docs/ecs_migration/MIGRATION_LOG_GPT.md
+    Description:
+      Adds the detailed WinTest crash investigation narrative, root cause,
+      deployed fix summary, validation result, and follow-up notes.
+
+4. Phase 17a Batch 1 commits
+
+Expected Phase 17 commits:
+  Present: 1e65f27 Phase 17 audit: String modernization scope analysis
+  Present: 3b443aa Phase 17a: Add string_view usage convention document
+  Present: 0994665 Phase 17a: Migrate group_text_parse_tree to string_view
+  Present: cf35b7a Phase 17a: Migrate text_file_loader to string_view
+  Present: f4ebb3a Phase 17a: Extend string_view convention with literals and ECS returns
+
+Additional Phase 17a status commits:
+  ad4e9f0 Phase 17a status audit
+  f23e8d2 Phase 17a status audit log update
+
+Conclusion:
+  Phase 17 audit and Batch 1 are present in git history.
+
+5. Migration log file state
+
+Related files:
+  docs/ecs_migration/MIGRATION_LOG_ECS_SUMMARY.md
+    Size: 18,677 bytes
+    LastWriteTime: 2026-04-26 13:46:13
+
+  docs/ecs_migration/MIGRATION_LOG_GPT.md
+    Size: 428,030 bytes
+    LastWriteTime: 2026-05-01 14:49:41
+
+Last 10 phase headings found in MIGRATION_LOG_GPT.md:
+  8991: ## Phase 16-2 - sys_log/sys_err Call Site Format Modernization
+  9849: ## Phase 16-3 - QuestError Modernization
+  9996: ## Phase 16-4 - Core / Database / AuthServer Logging Modernization
+  10062: ## Phase 15E-55 - AffectSystem::Add / Remove Replaces CHARACTER Affect Calls
+  10119: ## Phase 15E-56 - GetDesc Accessor Migration
+  10180: ## Phase 15E-54 - Party/Guild Accessor Migration
+  10240: ## Phase 15E-53 - QuestSystem::GetFlag / SetFlag Replaces CHARACTER Quest Calls
+  10293: ## Phase 15E-52 - PointSystem::Change Replaces CHARACTER::PointChange
+  10370: ## Phase 15E-51 - ECS Systems Remaining LPITEM Signature Cleanup
+  10434: ## Phase 15E-50 - DragonSoul LPITEM Signature Migration
+
+Observation:
+  MIGRATION_LOG_GPT.md exists and was recently updated, but its heading order is
+  not chronological near the tail. Git history is the authoritative source for
+  recent work.
+
+6. Build state
+
+Command:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+
+Result:
+  Success.
+
+Last output lines:
+  MSBuild version 18.5.4+cb4e32d21 for .NET Framework
+  Checking File Globs
+  LUA.vcxproj -> build/SRC/3rd/LUA/RelWithDebInfo/lua.lib
+  S_Base.vcxproj -> build/SRC/Server/Base/RelWithDebInfo/S_Base.lib
+  S_SQL.vcxproj -> build/SRC/Server/SQL/RelWithDebInfo/S_SQL.lib
+  S_Poly.vcxproj -> build/SRC/Server/Poly/RelWithDebInfo/S_Poly.lib
+  S_Core.vcxproj -> build/SRC/Server/Core/RelWithDebInfo/S_Core.lib
+  GameServer.vcxproj -> build/SRC/Server/GameServer/RelWithDebInfo/GameServer.exe
+
+Warnings:
+  No warnings were present in the captured tail output.
+
+7. Recommendation
+
+Ready to proceed with Phase 17a Batch 2.
+
+Reasons:
+  - Working tree is clean.
+  - Crash hotfix source changes and documentation are committed.
+  - Phase 17 audit and Batch 1 commits exist.
+  - GameServer build gate passes.
+
+Guardrails for Batch 2:
+  - Start from this clean tree.
+  - Keep Phase 17a string_view migration commits separate from crash hotfixes.
+  - Continue to avoid questmanager/questpc/char.h and C API boundary functions
+    until their lifetime/null-termination risks are reviewed.
