@@ -32,6 +32,7 @@
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/transform_components.hpp"
 #include "../../ecs/components/vital_components.hpp"
 #include "../../exchange.h"
 #include "../../gm.h"
@@ -138,6 +139,45 @@ std::string_view GetName(entt::entity e)
 
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? std::string_view(ch->GetName()) : std::string_view {};
+}
+
+int32_t GetMapIndex(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* map = g_registry.try_get<ecs::MapIndex>(e))
+			return map->value;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetMapIndex() : 0;
+}
+
+int32_t GetX(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
+			return pos->x;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetX() : 0;
+}
+
+int32_t GetY(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
+			return pos->y;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetY() : 0;
+}
+
+LPSECTREE GetSectree(entt::entity e)
+{
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetSectree() : nullptr;
 }
 
 bool IsPC(entt::entity e)
