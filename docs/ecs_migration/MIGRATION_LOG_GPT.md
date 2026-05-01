@@ -8431,6 +8431,109 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## 2026-05-01 WinTest Crash Investigation - core99 heap corruption
+
+Context:
+- Operator reported repeated WinTest crashes on the core where the character was located, especially `core99` shortly after login or map transfer.
+- Windows Application Event Log showed `GameServer.exe` crashing in `ntdll.dll` with exception `0xc0000374` (`heap corruption`).
+- Latest failing process path was `C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe`.
+
+Observed crash timeline:
+- `13:21:38` and `13:58:25` were the relevant `GameServer.exe` heap corruption crashes before the final fix.
+- `core99` logs showed character `[DEV]Ixtreeme`, PID `6`, entering game and completing login-time affect loading.
+- Early suspicion was `load_affect_login_event` buffer cleanup because the crash followed `AFFECT_EVENT_DATA_DELETE_END`.
+- Added temporary diagnostics around:
+  - `CInputDB::ItemLoad` duplicate purge.
+  - `ItemSystem::DestroyLoadedDuplicateItem`.
+  - `load_affect_login_event`.
+  - `CHARACTER::LoadAffect`.
+
+Duplicate item findings:
+- The character had a large stale duplicate purge during login.
+- Example summaries:
+```text
+DUP_ITEM_PURGE_SUMMARY owner_pid=6 name=[DEV]Ixtreeme count=121 loaded_count=121
+DUP_ITEM_PURGE_SUMMARY owner_pid=6 name=[DEV]Ixtreeme count=130 loaded_count=130
+```
+- Stale duplicate items commonly had `legacy_owner != live_owner`.
+- `DestroyLoadedDuplicateItem` was adjusted to detach stale owner items through `RemoveFromCharacter()` before legacy destruction.
+- Explicit ECS item entity destruction was removed from this path because `M2_DESTROY_ITEM()` already routes through legacy item manager teardown and ECS unregister/destruction.
+
+Quest Lua finding:
+- Worldboss quest scripts called `set_timer(...)`, but only `timer(...)` was registered.
+- Compatibility aliases added in `questlua_global.cpp`:
+  - `set_timer -> _timer`
+  - `set_named_timer -> _set_named_timer`
+  - `set_named_loop_timer -> _set_named_loop_timer`
+
+Affect buffer cleanup finding:
+- Added nulling after each `M2_DELETE_ARRAY(info->data)` in `load_affect_login_event`.
+- Verified in WinTest logs:
+```text
+AFFECT_EVENT_DATA_DELETE_END pid=6 data=0x0
+```
+- This ruled out a dangling `load_affect_login_event_info::data` pointer as the remaining crash cause.
+
+Root cause identified:
+- `AffectSystem_Update()` had an ECS-side loop over `ecs::AffectList`.
+- `ecs::AffectList` mirrors legacy-owned `CAffect*` pointers.
+- The ECS loop decremented durations and called `CAffect::Release(affect)`.
+- Legacy `CHARACTER::UpdateAffect()` / `CHARACTER::ProcessAffect()` also owns and releases the same `CAffect*` pointers.
+- This created a double-free / use-after-free race on login/tick boundaries, matching `0xc0000374` heap corruption.
+
+Fix applied:
+- `AffectSystem_Update()` now returns after `AffectSystem::UpdateAffect(reg, tick)`.
+- The legacy `CHARACTER::ProcessAffect()` path remains the sole owner of `CAffect*` lifetime.
+- ECS affect list remains a mirror/sync view and must not release legacy-owned affect pointers.
+
+Relevant code comment added:
+```cpp
+// Legacy CHARACTER::ProcessAffect owns CAffect* lifetime. The ECS
+// component is a mirror only; releasing those pointers here races the
+// legacy affect event and corrupts the heap on login/tick boundaries.
+```
+
+Build/deploy:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+Copy-Item build/SRC/Server/GameServer/RelWithDebInfo/GameServer.exe C:\AurigaGlobal-WinTest\srv1\share\bin\GameServer.exe -Force
+```
+- Build passed.
+- Final deployed WinTest binary timestamp: `2026-05-01 14:00:02`.
+
+Operator validation:
+- After the `AffectSystem_Update` ownership fix, operator confirmed gameplay was normal:
+```text
+most jó lett minden
+```
+- Follow-up log scan found no new `GameServer.exe` crash after `14:00:02`.
+- Last Windows `APPCRASH / 0xc0000374` remained the pre-fix crash at `13:58:25`.
+
+Post-fix log review:
+- No new heap corruption, crash, `VID_DRIFT`, or fmt/format errors found after the deployed fix.
+- `LOAD_AFFECT_END` and `AFFECT_EVENT_DATA_DELETE_END ... data=0x0` completed after login without crash.
+- Remaining notable log noise:
+  - Large duplicate item purge still occurs on PID `6`.
+  - Repeated `CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent`.
+  - Occasional `CHARACTER::SetItem: missing MainInventoryRuntimeComponent`.
+  - Remaining `ITEM_ID_DUP` entries for some item IDs after purge.
+  - `QUEST __status invalid: pid=6 quest=sash val=668443392 -> start=0`.
+  - DB/Auth legacy environment noise: `Failed Default Priv Setting so exit`, `Cube_Init failed`, `<Blend_Item_init> fail`.
+
+Follow-up recommendations:
+- Convert temporary `LOAD_AFFECT_*`, `AFFECT_EVENT_*`, and `DUP_ITEM_*` diagnostics from `LOG_ERROR` to `LOG_TRACE` or remove once the fix is committed and stable.
+- Investigate why stale duplicate item purge is still large for PID `6`.
+- Fix or suppress `missing ExtraInventoryRuntimeComponent` / `missing MainInventoryRuntimeComponent` during stale duplicate detach.
+- Clean the DB duplicate item IDs that still produce `ITEM_ID_DUP`.
+- Validate and repair invalid quest flag `sash.__status`.
+
+Commit status:
+- At the time of this log entry, code changes were still uncommitted:
+  - `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+  - `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+  - `SRC/Server/GameServer/input_db.cpp`
+  - `SRC/Server/GameServer/questlua_global.cpp`
+
 ## Phase 16-5 - Primitive Logging Cleanup
 
 Mode:
