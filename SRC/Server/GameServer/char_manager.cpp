@@ -647,11 +647,11 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	// on startup is deferred until the login path is stable again.
 	if (ch)
 	{
-		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
+		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
-		else if (ch->IsMonster())
+		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
 		{
 			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
@@ -755,7 +755,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	ch->SetProto(pkMob);
 #ifdef ENABLE_EVENT_MANAGER
-	if (g_bDungeonTicketExtraMetinSpawn && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
+	if (g_bDungeonTicketExtraMetinSpawn && pkMob->m_table.bType == CHAR_TYPE_STONE)
 		ch->SetDungeonTicketExtraMetin(true);
 #endif
 
@@ -779,7 +779,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	}
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT: minden metin kapjon +value1 extra metint (dungeon mapok kivve)
-	if (!g_bDungeonTicketExtraMetinSpawn && ch && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) && !ch->IsDungeonTicketExtraMetin())
+	if (!g_bDungeonTicketExtraMetinSpawn && ch && pkMob->m_table.bType == CHAR_TYPE_STONE && !ch->IsDungeonTicketExtraMetin())
 	{
 		const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
 		if (ev)
@@ -819,11 +819,11 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	// on startup is deferred until the login path is stable again.
 	if (ch)
 	{
-		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
+		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
-		else if (ch->IsMonster())
+		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
 		{
 			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
