@@ -203,6 +203,15 @@ ecs::GMLevel MakeGMLevel(const TPlayerTable& data, LPDESC desc)
     };
 }
 
+std::string MakeMobPlayerName(const TMobTable& data)
+{
+#ifdef ENABLE_MULTI_NAMES
+    return data.szLocaleName[DEFAULT_LANGUAGE];
+#else
+    return data.szLocaleName;
+#endif
+}
+
 void RegisterEntityVID(entt::registry& reg, entt::entity entity, uint32_t vid)
 {
     reg.emplace_or_replace<ecs::VIDComponent>(entity, vid);
@@ -275,6 +284,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     }
 
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { static_cast<uint16_t>(data.dwVnum) });
+    reg.emplace_or_replace<ecs::PlayerName>(entity, MakeMobPlayerName(data));
     reg.emplace_or_replace<Tag>(entity);
     reg.emplace_or_replace<ecs::Position>(entity, x, y, 0);
     reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
@@ -323,6 +333,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     }
 
     ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.mob_entity");
+    ecs::Invariants::ValidateCommonIdentity(reg, entity, "factory.mob_entity");
     return entity;
 }
 
@@ -588,6 +599,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     }
 
     ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.pc");
+    ecs::Invariants::ValidatePCIdentity(reg, entity, "factory.pc");
     return entity;
 }
 

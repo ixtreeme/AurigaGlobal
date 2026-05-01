@@ -42,4 +42,37 @@ inline void ValidateCharacterTags(entt::registry& reg, entt::entity e, const cha
     }
 }
 
+inline void ValidateCommonIdentity(entt::registry& reg, entt::entity e, const char* context)
+{
+    if (e == entt::null || !reg.valid(e))
+        return;
+
+    const char* ctx = context ? context : "unknown";
+
+    if (!reg.all_of<ecs::VIDComponent>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::PlayerName>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerName", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::RaceComponent>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceComponent", static_cast<uint32_t>(e), ctx);
+}
+
+inline void ValidatePCIdentity(entt::registry& reg, entt::entity e, const char* context)
+{
+    if (e == entt::null || !reg.valid(e))
+        return;
+
+    const char* ctx = context ? context : "unknown";
+    ValidateCommonIdentity(reg, e, ctx);
+
+    if (!reg.all_of<ecs::PlayerID>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerID", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::AccountID>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing AccountID", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::EmpireComponent>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing EmpireComponent", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::GMLevel>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing GMLevel", static_cast<uint32_t>(e), ctx);
+}
+
 } // namespace ecs::Invariants
