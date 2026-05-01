@@ -774,7 +774,7 @@ ACMD(do_restart)
 							ch->ExitToSavedLocation();
 						}
 
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -787,7 +787,7 @@ ACMD(do_restart)
 					{
 						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1371,7 +1371,7 @@ ACMD(do_restart)
 					}
 				}
 
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
 				ch->DeathPenalty(1);
 				if (showed)
@@ -1391,7 +1391,7 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetDeadByMonster() ? (ch->GetMaxHP() - ch->GetHP()) / 2 : 50 - ch->GetHP());
+				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetDeadByMonster() ? (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP()) / 2 : 50 - ch->GetHP());
 #else
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, 50 - ch->GetHP());
 #endif
@@ -1783,7 +1783,7 @@ ACMD(do_pvp_advanced)
 	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 	int m_Level = pkVictim->GetLevel();
 	int m_PlayTime = pkVictim->GetRealPoint(POINT_PLAYTIME);
-	int m_MaxHP = pkVictim->GetMaxHP();
+	int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim));
 	int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim));
 
 	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim));

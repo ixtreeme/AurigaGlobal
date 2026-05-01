@@ -558,7 +558,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
         if (g_registry.valid(ecs_e)) {
             auto& h = g_registry.get_or_emplace<ecs::Health>(ecs_e);
             h.current = ch->GetHP();
-            h.max     = ch->GetMaxHP();
+            h.max     = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
 
             auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
             m.current = ch->GetSP();

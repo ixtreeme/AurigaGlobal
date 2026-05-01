@@ -790,9 +790,9 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             // 10x erosites (HP/SP/DMG/STAT)
             clone->SetLevel((uint8_t)source->GetLevel());
-            clone->SetMaxHP((int64_t)source->GetMaxHP() * STR_MULTIPLE);
+            clone->SetMaxHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
             clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-            clone->SetHP((int64_t)source->GetMaxHP() * STR_MULTIPLE);
+            clone->SetHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
             clone->SetSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
 
             MulPoint10(clone, POINT_ST);
@@ -1337,9 +1337,9 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
             clone->SetPoint((uint8_t)p, source->GetPoint((uint8_t)p));
         }
         clone->SetLevel((uint8_t)source->GetLevel());
-        clone->SetMaxHP(source->GetMaxHP()* STR_MULTIPLE);
+        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source))* STR_MULTIPLE);
         clone->SetMaxSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-        clone->SetHP(source->GetMaxHP() * STR_MULTIPLE);
+        clone->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
         clone->SetSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
         clone->SetKillerMode(true);
 

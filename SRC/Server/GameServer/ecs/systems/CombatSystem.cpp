@@ -1770,7 +1770,7 @@ EVENTFUNC(dead_event)
 			if (ch->IsRevive() == false && ch->HasReviverInParty() == true)
 			{
 				ch->SetPosition(POS_STANDING);
-				ch->SetHP(ch->GetMaxHP());
+				ch->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)));
 
 				ch->ViewReencode();
 
@@ -2648,7 +2648,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			else
 			{
 				//
-				if (pkKiller->GetHP() < pkKiller->GetMaxHP())
+				if (pkKiller->GetHP() < ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkKiller)))
 					iAmount = 2 + (ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100); //   á
 				else
 					iAmount = 9 + (ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkKiller)) / 100); // ⺻
@@ -3547,7 +3547,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		{
 			if (pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY))
 			{
-				int iHP = pkAttacker->GetMaxHP() * pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY) / 100;
+				int iHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkAttacker)) * pkAttacker->GetPoint(POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(AIHelpers::EcsOf(pkAttacker), POINT_HP, iHP);
 				CreateFly(FLY_HP_SMALL, pkAttacker);
 			}
@@ -4821,7 +4821,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * pAttacker->GetPoint(POINT_STEAL_HP) / 100;
 
 
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < pAttacker->GetMaxHP()) && (GetHP() > 0) && (iHP > 0)) {
+					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pAttacker))) && (GetHP() > 0) && (iHP > 0)) {
 						CreateFly(FLY_HP_MEDIUM, pAttacker);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
@@ -4952,7 +4952,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
 					int iHPAbso = std::min(dam, GetHP()) * pAttacker->GetPoint(POINT_HIT_HP_RECOVERY) / 100;
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < pAttacker->GetMaxHP()) && (GetHP() > 0) && (iHPAbso > 0)) {
+					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pAttacker))) && (GetHP() > 0) && (iHPAbso > 0)) {
 						CreateFly(FLY_HP_SMALL, pAttacker);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(pAttacker), POINT_HP, iHPAbso);
 					}
@@ -6666,10 +6666,10 @@ static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCh
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 {
-	if (!ch || !ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) || ch->GetMaxHP() <= 0)
+	if (!ch || !ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) || ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= 0)
 		return;
 
-	const int iPercent = (ch->GetHP() * 100) / ch->GetMaxHP();
+	const int iPercent = (ch->GetHP() * 100) / ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
 	const uint32_t dwVnum = number(
 		MIN(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed),
 		MAX(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed));
@@ -7278,7 +7278,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 	p.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
 
 #ifdef __VIEW_TARGET_PLAYER_HP__
-		if ((m_pkChrTarget->GetMaxHP() <= 0))
+		if ((ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)) <= 0))
 		{
 			p.bHPPercent = 0;
 #ifdef __VIEW_TARGET_DECIMAL_HP__
@@ -7291,11 +7291,11 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 			p.bHPPercent = MINMAX(0, m_pkChrTarget->GetHPPct(), 100);
 #ifdef __VIEW_TARGET_DECIMAL_HP__
 			p.iMinHP = m_pkChrTarget->GetHP();
-			p.iMaxHP = m_pkChrTarget->GetMaxHP();
+			p.iMaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget));
 #endif
 		}
 #else
-		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget)) && !m_pkChrTarget->IsPolymorphed()) || (m_pkChrTarget->GetMaxHP() <= 0))
+		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget)) && !m_pkChrTarget->IsPolymorphed()) || (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)) <= 0))
 			p.bHPPercent = 0;
 #endif
 		else
@@ -7339,7 +7339,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 			}
 			else
 			{
-				if (m_pkChrTarget->GetMaxHP() <= 0)
+				if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)) <= 0)
 				{
 					p.bHPPercent = 0;
 					p.iMinHP = 0;
@@ -7347,9 +7347,9 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 				}
 				else
 				{
-					p.bHPPercent = std::min((m_pkChrTarget->GetHP() * 100) / m_pkChrTarget->GetMaxHP(), (int64_t)100);
+					p.bHPPercent = std::min((m_pkChrTarget->GetHP() * 100) / ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)), (int64_t)100);
 					p.iMinHP = m_pkChrTarget->GetHP();
-					p.iMaxHP = m_pkChrTarget->GetMaxHP();
+					p.iMaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget));
 				}
 			}
 		}
@@ -7373,10 +7373,10 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 			}
 			else
 			{
-				if (m_pkChrTarget->GetMaxHP() <= 0)
+				if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)) <= 0)
 					p.bHPPercent = 0;
 				else
-					p.bHPPercent = MINMAX(0, (m_pkChrTarget->GetHP() * 100) / m_pkChrTarget->GetMaxHP(), 100);
+					p.bHPPercent = MINMAX(0, (m_pkChrTarget->GetHP() * 100) / ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChrTarget)), 100);
 			}
 		}
 	}

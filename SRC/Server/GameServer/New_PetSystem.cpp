@@ -1371,7 +1371,7 @@ void CNewPetActor::GiveBuff()
 #else
 	//Inizializzo i bonus del NewPetSystem //hp sp e def
 	// 559 Affect NewPet
-	int cbonus[3] = { m_pkOwner->GetMaxHP(),  m_pkOwner->GetPoint(POINT_DEF_GRADE), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(m_pkOwner)) };
+	int cbonus[3] = { ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkOwner)),  m_pkOwner->GetPoint(POINT_DEF_GRADE), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(m_pkOwner)) };
 	for (int i = 0; i < 3; ++i) {
 		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float((cbonus[i]*m_dwbonuspet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
 	}
@@ -1442,7 +1442,7 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 			return;
 		}
 		m_pkOwner->SetNewPetSkillCD(0, get_global_time());
-		int riphp = MIN(m_pkOwner->GetHP() + (int)Pet_Skill_Table[9][2 + m_dwskill[skillslot]], m_pkOwner->GetMaxHP());
+		int riphp = MIN(m_pkOwner->GetHP() + (int)Pet_Skill_Table[9][2 + m_dwskill[skillslot]], ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkOwner)));
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 751, "");
 #endif

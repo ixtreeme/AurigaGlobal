@@ -1204,7 +1204,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetMaxHP() : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -1262,7 +1262,7 @@ namespace quest
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_LEVEL, newLevel - ((ch)->GetLevel()));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
         ch->ComputePoints();
         ch->PointsPacket();
@@ -1272,7 +1272,7 @@ namespace quest
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
-            health->max = ch->GetMaxHP();
+            health->max = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
         }
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {
@@ -3092,7 +3092,7 @@ teleport_area:
 
 				if ( point == POINT_HT )
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
 				}
 				else if ( point == POINT_IQ )
 				{
@@ -4133,7 +4133,7 @@ teleport_area:
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
-            health->max = ch->GetMaxHP();
+            health->max = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
         }
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {
@@ -4450,12 +4450,12 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP() - ch->GetHP());
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
-            health->max = ch->GetMaxHP();
+            health->max = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
         }
         if (auto* mana = ECS_TryGet<ecs::Mana>(e))
         {

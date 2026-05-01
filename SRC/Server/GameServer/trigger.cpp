@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
@@ -345,7 +346,7 @@ public:
 	LPCHARACTER GetVictim()
 	{
 		// \xb1\xd9�\xbf\xa1 \xb0?\xb0\xc0\xcc \xc0?\xed \xc7j\xa1 \xb8\xb9\xc0\xcc \xc0??\xe9 \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd\xc7?\xd9. \xb0?\xb0\xb8\xb8 \xc0?? \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd
-		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > m_pkChr->GetMaxHP())) || !m_pkChrVictim)
+		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChr)))) || !m_pkChrVictim)
 		{
 			return m_pkChrBuilding;
 		}

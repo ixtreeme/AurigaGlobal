@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
 #include "AffectSystem.hpp"
@@ -81,7 +82,7 @@ EVENTFUNC(poison_event)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkPoisonEvent
     auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
-    int dam = ch->GetMaxHP() * GetPoisonDamageRate(ch) / 1000;
+    int dam = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * GetPoisonDamageRate(ch) / 1000;
     if (test_server) {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
     }
@@ -149,7 +150,7 @@ EVENTFUNC(bleeding_event)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkBleedingEvent
     auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
-    int dam = ch->GetMaxHP() * GetBleedingDamageRate(ch) / 1000;
+    int dam = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * GetBleedingDamageRate(ch) / 1000;
     if (test_server) {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
     }

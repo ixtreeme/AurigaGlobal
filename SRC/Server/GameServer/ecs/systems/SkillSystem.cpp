@@ -1862,7 +1862,7 @@ struct FuncSplashDamage
 		if (m_pkSk->bPointOn == POINT_MOV_SPEED)
 			m_pkSk->kPointPoly.SetVar("maxv", pkChrVictim->GetLimitPoint(POINT_MOV_SPEED));
 
-		m_pkSk->SetPointVar("maxhp", pkChrVictim->GetMaxHP());
+		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkChrVictim)));
 		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChrVictim)));
 
 		m_pkSk->SetPointVar("chain", m_pkChr->GetChainLightningIndex());
@@ -2701,7 +2701,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", this->GetMaxHP());
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(this)));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(this)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, this));
@@ -3001,7 +3001,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", pkVictim->GetMaxHP());
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
@@ -3167,7 +3167,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", pkVictim->GetMaxHP());
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
@@ -4139,8 +4139,8 @@ struct FHealerParty
 
 	void operator () (LegacyCharHandle ch)
 	{
-		int iRevive = (int)(m_pkHealer->GetMaxHP() / 100 * 15);
-		int iHP = (ch->GetMaxHP() >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ch->GetMaxHP());
+		int iRevive = (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkHealer)) / 100 * 15);
+		int iHP = (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)));
 		ch->SetHP(iHP);
 		ch->EffectPacket(SE_EFFECT_HEALER);
 		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkHealer)).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());

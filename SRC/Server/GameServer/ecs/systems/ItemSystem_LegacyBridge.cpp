@@ -5257,7 +5257,7 @@ int CalculateConsume(LegacyCharHandle ch)
 		// CheckNeedLifeForWarp
 		const int curLife = ch->GetHP();
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
-		const int needLife = ch->GetMaxHP() * needPercent / 100;
+		const int needLife = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * needPercent / 100;
 		if (curLife < needLife)
 		{
 #ifdef TEXTS_IMPROVEMENT
@@ -5273,7 +5273,7 @@ int CalculateConsume(LegacyCharHandle ch)
 
 		// CheckMinLifeForWarp: µ¶¿¡ ÀÇÇØ¼­ Á×À¸¸é ¾ÈµÇ¹Ç·Î »ý¸í·Â ÃÖ¼Ò·®´Â ³²°ÜÁØ´Ù
 		const int minPercent = WARP_MIN_LIFE_PERCENT;
-		const int minLife = ch->GetMaxHP() * minPercent / 100;
+		const int minLife = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * minPercent / 100;
 		if (curLife - needLife < minLife)
 			consumeLife = curLife - minLife;
 

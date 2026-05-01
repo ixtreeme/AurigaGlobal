@@ -90,7 +90,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
         const int32_t oldManaMax = mana.max;
 
         health.current = ch->GetHP();
-        health.max = ch->GetMaxHP();
+        health.max = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
         mana.current = ch->GetSP();
         mana.max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
 

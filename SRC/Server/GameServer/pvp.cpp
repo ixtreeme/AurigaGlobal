@@ -333,8 +333,8 @@ EVENTFUNC(pvp_duel_counter)
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(chA), CHAT_TYPE_COMMAND, chA_buf);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(chB), CHAT_TYPE_COMMAND, chB_buf);
 
-			chA->SetHP(chA->GetMaxHP());
-			chB->SetHP(chB->GetMaxHP());
+			chA->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(chA)));
+			chB->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(chB)));
 
 			info->pvp->Packet();
 			return 0;
@@ -684,7 +684,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));
 		int m_Level = ((pkChr)->GetLevel());
 		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
-		int m_MaxHP = pkChr->GetMaxHP();
+		int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkChr));
 		int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChr));
 		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), BLOCK_EQUIPMENT_);
 

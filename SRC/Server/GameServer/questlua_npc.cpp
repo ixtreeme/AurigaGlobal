@@ -480,7 +480,7 @@ namespace quest
 		LPCHARACTER npc = CHARACTER_MANAGER::instance().Find(vid);
 		if (npc && percent > 0 && percent <= 100)
 		{
-			int damage = npc->GetMaxHP() * percent / 100;
+			int damage = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(npc)) * percent / 100;
 			ecs::PointSystem::Change(AIHelpers::EcsOf(npc), POINT_HP, -damage);  // HP-t csökkentjük
 			lua_pushboolean(L, 1);
 		}

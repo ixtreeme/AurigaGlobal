@@ -874,7 +874,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					ch->DistributeSP(ch);
-					if (ch->GetMaxHP() <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -882,7 +882,7 @@ EVENTFUNC(recovery_event)
 
 					{
 						iPercent = 2;
-						iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
@@ -900,7 +900,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					ch->DistributeSP(ch);
-					if (ch->GetMaxHP() <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -908,7 +908,7 @@ EVENTFUNC(recovery_event)
 
 					{
 						iPercent = 2;
-						iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
@@ -925,7 +925,7 @@ EVENTFUNC(recovery_event)
 
 		if (!ch->IsDoor())
 		{
-			const int64_t hpGain = std::max((int64_t)1, (ch->GetMaxHP() * ch->GetMobTable().bRegenPercent) / 100);
+			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch))) * ch->GetMobTable().bRegenPercent) / 100);
 			ch->MonsterLog("HP_REGEN +%d", hpGain);
 			const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 			if (recoveryEntity != entt::null)
@@ -933,7 +933,7 @@ EVENTFUNC(recovery_event)
 			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, hpGain);
 		}
 
-		if (ch->GetHP() >= ch->GetMaxHP())
+		if (ch->GetHP() >= ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)))
 		{
 			ch->m_pkRecoveryEvent = nullptr;
 			return 0;
@@ -958,7 +958,7 @@ EVENTFUNC(recovery_event)
 
 		ch->DistributeSP(ch);
 
-		if (ch->GetMaxHP() <= ch->GetHP())
+		if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
 			return PASSES_PER_SEC(3);
 
 		int iPercent = 0;
@@ -966,7 +966,7 @@ EVENTFUNC(recovery_event)
 
 		{
 			iPercent = aiRecoveryPercents[std::min(9, iSec)];
-			iAmount = 15 + (ch->GetMaxHP() * iPercent) / 100;
+			iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
 		}
 
 		iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
