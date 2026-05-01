@@ -361,7 +361,7 @@ void CNightmareDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsNightmareDungeonMap(idx))
         return;
 
@@ -373,7 +373,7 @@ void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsNightmareDungeonMap(idx))
         return;
 
@@ -400,7 +400,7 @@ void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
-    const int32_t idx = killer->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
     if (!IsNightmareDungeonMap(idx))
         return;
 
@@ -462,7 +462,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
         return true;
 
     const int32_t now = get_global_time();
-    const int32_t mapIdx = ch->GetMapIndex();
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     // We normally warp members from the leader's current map. If the NPC is clicked
     // inside a completed instance, we restart by warping everyone from that instance.
@@ -617,7 +617,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             // Save current position as return point for ExitAllLobby.
             // When restarting from inside a completed instance, keep the original return point.
             if (!fromCompletedInside)
-                m->SetWarpLocation(m->GetMapIndex(), (int32_t)(m->GetX() / 100), (int32_t)(m->GetY() / 100));
+                m->SetWarpLocation(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m)), (int32_t)(m->GetX() / 100), (int32_t)(m->GetY() / 100));
         };
 
     if (!party)

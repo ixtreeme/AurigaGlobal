@@ -279,7 +279,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 		if (pMap == nullptr) {
 			return 0;
 		}
@@ -298,7 +298,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + (int32_t)(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + (int32_t)(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ((ch)->GetMapIndex()), x, y, 0);
+				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, 0);
 
 				if (mob)
 					break;
@@ -350,7 +350,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 		if (pMap == nullptr) {
 			lua_pushnumber(L, 0);
 			return 1;
@@ -370,7 +370,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + static_cast<int32_t>(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + static_cast<int32_t>(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ((ch)->GetMapIndex()), x, y, x, y, nullptr, bAggressive);
+				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, x, y, nullptr, bAggressive);
 
 				if (mob)
 					break;
@@ -767,7 +767,7 @@ namespace quest
 			{
 				"en", "de", "it", "tr", "ro", "pl", "pt", "hu", "es"
 			};
-			
+
 			for (int i = 0; i < _countof(eMultiLanguages); i++)
 			{
 				char translateFileNameNew[256];

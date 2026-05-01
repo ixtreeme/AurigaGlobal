@@ -135,7 +135,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 #endif
 
 	bool bIsFarmMap = false;//razor93 2024.12.30
-	switch (ch->GetMapIndex())
+	switch (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 	{
 	case 1:
 	{

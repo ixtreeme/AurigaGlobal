@@ -309,7 +309,7 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 #else
-	if (ch && ((ch)->GetMapIndex()) < 10000)
+	if (ch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) < 10000)
 #endif
 	{
 		TPacketGGWarpCharacter pw;
@@ -318,7 +318,7 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 		pw.x = ((ch)->GetX());
 		pw.y = ((ch)->GetY());
 #ifdef __CMD_WARP_IN_DUNGEON__
-		pw.mapIndex = (((ch)->GetMapIndex()) < 10000) ? 0 : ((ch)->GetMapIndex());
+		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 #endif
 		d->Packet(&pw, sizeof(pw));
 	}
@@ -538,7 +538,7 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			if ((iExtraLen = NoticeNew(d, c_pData, m_iBufferLeft)) < 0) {
 				return -1;
 			}
-			
+
 			break;
 #endif
 	}

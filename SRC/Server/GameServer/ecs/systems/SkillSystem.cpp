@@ -2609,7 +2609,7 @@ EVENTFUNC(skill_gwihwan_event)
 		PIXEL_POSITION pos;
 
 		// Ľş°ř
-		if (ecs::GetRecallPosition(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
+		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 		{
 			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);

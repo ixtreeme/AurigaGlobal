@@ -284,7 +284,7 @@ int GetProbIndexByMapIndex(int index)
 
 #ifndef __FISHING_MAIN__
 int DetermineFish(LPCHARACTER ch) {
-	int map_idx = ch->GetMapIndex();
+	int map_idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 	int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 	if (prob_idx < 0)
@@ -516,7 +516,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 			case -3: // 3­AIµµ ¶§1®?! 1ÇA?
 			case -1: // 1A°L E®·ü ¶§1®?! 1ÇA?
 				{
-					int map_idx = ch->GetMapIndex();
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
@@ -586,7 +586,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 						}
 					}
 
-					int map_idx = ch->GetMapIndex();
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
@@ -601,7 +601,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 				}
 				else
 				{
-					int map_idx = ch->GetMapIndex();
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
@@ -617,7 +617,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 	}
 	else if (info->step > 1)
 	{
-		int map_idx = ch->GetMapIndex();
+		int map_idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 		int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 		LogManager::instance().FishLog(
@@ -728,7 +728,7 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 		return;
 
 	int count = ItemSystem::GetItemCount(itemEntity);
-	
+
 #ifdef ENABLE_BATTLE_PASS
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
 	if (!ch)
@@ -822,7 +822,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 4), 1);
 		if (!pkNewItem)
 			return 3;
-		
+
 		uint8_t bCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, rod));
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
 		pkNewItem->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
@@ -896,9 +896,9 @@ namespace fishingnew
 									27818, //Lótuszhal
 									71136,	//Hatalmas nyalóka (1h)
 									39065,//Utalvány (1 SÉ)
-									2870,	//Birodalom Rúna  
-									2871,	//Ork Rúna  
-									2873,	//Jég Birodalom Rúna  
+									2870,	//Birodalom Rúna
+									2871,	//Ork Rúna
+									2873,	//Jég Birodalom Rúna
 									99998,	// Boss Pont
 									39066,	// Gaya
 									39068,	// Auriga Coin (10m Yang)
@@ -914,7 +914,7 @@ namespace fishingnew
 
 
 
-	};								
+	};
 
 
 

@@ -632,7 +632,7 @@ void CEasterDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsEasterDungeonMap(idx))
         return;
 
@@ -646,7 +646,7 @@ void CEasterDungeon::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsEasterDungeonMap(idx))
         return;
 
@@ -697,7 +697,7 @@ void CEasterDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
         return;
 
-    const int32_t idx = victim->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
     if (!IsEasterDungeonMap(idx))
         return;
 
@@ -764,7 +764,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     if (!ch->CanWarp())
         return true;
 
-    const int32_t mapIdx = ch->GetMapIndex();
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     // If clicked inside the dungeon while run is active -> exit to saved location.
     if (IsEasterDungeonMap(mapIdx))
@@ -840,7 +840,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
         const char* badName = nullptr;
         int32_t badLevel = 0;
 
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
             if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
@@ -864,7 +864,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         FCooldownCheck f(now, "easter_dungeon.cooldown");
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
             if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             f(m);
@@ -892,7 +892,7 @@ if (!f.ok)
     else
     {
         FEntryItemCheck it(kEntryItemVnum);
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
             if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             it(m);
@@ -945,12 +945,12 @@ if (!it.ok)
     }
     else
     {
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
             if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
             applyMember(m);
         });
-        d->JoinParty_Coords(party, kEnterX, kEnterY, ch->GetMapIndex());
+        d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
 
     // Small hint right after enter

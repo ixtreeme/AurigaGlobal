@@ -78,7 +78,7 @@ EVENTFUNC(target_event)
 	int x = 0, y = 0;
 	int iDist = 5000;
 
-	if (info->iMapIndex != ((pkChr)->GetMapIndex()))
+	if (info->iMapIndex != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)))
 		return MINMAX(passes_per_sec / 2, iDist / (1500 / passes_per_sec), passes_per_sec * 5);
 
 	switch (info->iType)
@@ -93,7 +93,7 @@ EVENTFUNC(target_event)
 			{
 				tch = CHARACTER_MANAGER::instance().Find(info->iArg1);
 
-				if (tch && ((tch)->GetMapIndex()) == ((pkChr)->GetMapIndex()))
+				if (tch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)))
 				{
 					x = ((tch)->GetX());
 					y = ((tch)->GetY());
@@ -155,7 +155,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 		return;
 	}
 
-	if (((pkChr)->GetMapIndex()) != iMapIndex)
+	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)) != iMapIndex)
 		return;
 
 	auto it = m_map_kListEvent.find(dwPID);

@@ -57,7 +57,7 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 		return true;
 	}
 
-	return follower->Show(owner->GetMapIndex(), x, y, z);
+	return follower->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
 }
 }
 
@@ -245,13 +245,13 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 #ifdef ENABLE_COSTUME_PET
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
 		vnumToSpawn,
-		m_pkOwner->GetMapIndex(),
+		ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)),
 		x, y, z,
 		false, (int)(m_pkOwner->GetRotation() + 180), false);
 #else
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
 				m_dwVnum,
-				m_pkOwner->GetMapIndex(),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)),
 				x, y, z,
 				false, (int)(m_pkOwner->GetRotation()+180), false);
 #endif
@@ -279,7 +279,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
 	this->SetSummonItem(pSummonItemEntity);
 	m_pkOwner->ComputePoints();
-	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
+	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
 	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL
@@ -309,8 +309,8 @@ bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 	//GetDeltaByDegree(m_pkChar->GetRotation(), fDist, &fx, &fy);
 
 	// 느슨한 못감 속성 체크; 최종 위치와 중간 위치가 갈수없다면 가지 않는다.
-	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
-	//			&& SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
+	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
+	//			&& SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
 	//	return true;
 
 	m_pkChar->SetNowWalking(true);

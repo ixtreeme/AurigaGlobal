@@ -311,7 +311,7 @@ namespace
         pos.y = victim->GetY() + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(victim->GetMapIndex(), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -322,7 +322,7 @@ namespace
     {
         if (!ch)
             return false;
-        return ch->GetMapIndex() == 219;
+        return ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 219;
     }
 
     int32_t CooldownRemain(LPCHARACTER ch)
@@ -618,7 +618,7 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsHalloweenDungeonMap(idx))
         return;
 
@@ -634,7 +634,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     if (IsHalloweenDungeonMap(idx))
     {
@@ -662,7 +662,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const int32_t now = get_global_time();
-    const int32_t currentIdx = ch->GetMapIndex();
+    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     bool fromCompletedInside = false;
     int32_t originMapForWarp = currentIdx;
@@ -684,7 +684,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     if (race == kRewardChestVnum)
     {
-        const int32_t idx = ch->GetMapIndex();
+        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
         if (!IsHalloweenDungeonMap(idx))
             return false;
 
@@ -886,7 +886,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
-    const int32_t idx = killer->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
     if (!IsHalloweenDungeonMap(idx))
         return;
 
@@ -1086,7 +1086,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
-    const int32_t idx = from->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
     if (!IsHalloweenDungeonMap(idx))
         return false;
 

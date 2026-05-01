@@ -332,8 +332,8 @@ EVENTFUNC(ready_to_start_event)
 
 		case 3:
 			{
-				chA->Show(chA->GetMapIndex(), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
-				chB->Show(chB->GetMapIndex(), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
+				chA->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chA)), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
+				chB->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chB)), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();
@@ -651,8 +651,8 @@ bool CArenaManager::CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim
 
 	if (pCharAttacker == pCharVictim) return false;
 
-	int32_t mapIndex = pCharAttacker->GetMapIndex();
-	if (mapIndex != pCharVictim->GetMapIndex()) return false;
+	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pCharAttacker));
+	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pCharVictim))) return false;
 
 	auto iter = m_mapArenaMap.find(mapIndex);
 
@@ -693,8 +693,8 @@ bool CArenaManager::OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim)
 {
 	if (pCharKiller == nullptr || pCharVictim == nullptr) return false;
 
-	int32_t mapIndex = pCharKiller->GetMapIndex();
-	if (mapIndex != pCharVictim->GetMapIndex()) return false;
+	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pCharKiller));
+	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pCharVictim))) return false;
 
 	const auto iter = m_mapArenaMap.find(mapIndex);
 	if (iter == m_mapArenaMap.end()) return false;

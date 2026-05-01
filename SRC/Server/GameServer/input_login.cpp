@@ -121,7 +121,7 @@ static void _send_bonus_info(LPCHARACTER ch)
 
 static bool FN_is_battle_zone(LPCHARACTER ch)
 {
-	switch (ch->GetMapIndex())
+	switch (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 	{
 	case 1:         // ¿ 1
 	case 2:         // ¿ 2
@@ -602,19 +602,19 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	PIXEL_POSITION pos = ch->GetXYZ();
 
-	if (!SECTREE_MANAGER::instance().GetMovablePosition(ch->GetMapIndex(), pos.x, pos.y, pos))
+	if (!SECTREE_MANAGER::instance().GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos.x, pos.y, pos))
 	{
 		PIXEL_POSITION pos2;
-		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos2);
+		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos2);
 
-		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pos.x, pos.y, ch->GetMapIndex(), pos2.x, pos2.y);
+		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pos.x, pos.y, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos2.x, pos2.y);
 		pos = pos2;
 	}
 
 	CGuildManager::instance().LoginMember(ch);
 
 	// ?? ? ?
-	ch->Show(ch->GetMapIndex(), pos.x, pos.y, pos.z);
+	ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos.x, pos.y, pos.z);
 	ch->ReviveInvisible(5);
 	d->SetPhase(PHASE_GAME);
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);
@@ -665,7 +665,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ch->GetItemAward_cmd())																		// ?
 		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetItemAward_vnum());	//questmanager ?
 
-	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
+	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	if (ch->GetHorseLevel() > 0)
 	{
@@ -687,7 +687,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	CPartyManager::instance().SetParty(ch);
 	CGuildManager::instance().SendGuildWar(ch);
 
-	building::CManager::instance().SendLandList(d, ch->GetMapIndex());
+	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	marriage::CManager::instance().Login(ch);
 #ifdef ENABLE_EVENT_MANAGER
@@ -751,24 +751,24 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ch->IsGM() == true)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ConsoleEnable");
 
-	if (ch->GetMapIndex() >= 10000)
+	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000)
 	{
-		if (CWarMapManager::instance().IsWarMap(ch->GetMapIndex()))
-			ch->SetWarMap(CWarMapManager::instance().Find(ch->GetMapIndex()));
-		else if (marriage::WeddingManager::instance().IsWeddingMap(ch->GetMapIndex()))
-			ch->SetWeddingMap(marriage::WeddingManager::instance().Find(ch->GetMapIndex()));
+		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
+			ch->SetWarMap(CWarMapManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))));
+		else if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
+			ch->SetWeddingMap(marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))));
 		else {
-			ch->SetDungeon(CDungeonManager::instance().FindByMapIndex(ch->GetMapIndex()));
+			ch->SetDungeon(CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))));
 		}
 	}
-	else if (CArenaManager::instance().IsArenaMap(ch->GetMapIndex()) == true)
+	else if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
 	{
-		int memberFlag = CArenaManager::instance().IsMember(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		int memberFlag = CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (memberFlag == MEMBER_OBSERVER)
 		{
 			ch->SetObserverMode(true);
 			ch->SetArenaObserverMode(true);
-			if (CArenaManager::instance().RegisterObserverPtr(ch, ch->GetMapIndex(), ch->GetX() / 100, ch->GetY() / 100))
+			if (CArenaManager::instance().RegisterObserverPtr(ch, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() / 100, ch->GetY() / 100))
 			{
 				LOG_INFO("ARENA : Observer add failed");
 			}
@@ -816,7 +816,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			// wtf
 		}
 	}
-	else if (ch->GetMapIndex() == 113)
+	else if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
 	{
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsHorseRiding()) {
@@ -844,8 +844,8 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 	else
 	{
-		if (CWarMapManager::instance().IsWarMap(ch->GetMapIndex()) ||
-			marriage::WeddingManager::instance().IsWeddingMap(ch->GetMapIndex()))
+		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) ||
+			marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
 		{
 			if (!test_server)
 				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));

@@ -381,7 +381,7 @@ namespace quest
 			f.flagname = pPC->GetCurrentQuestName() + "."+sz;
 			f.value = (int) rint(lua_tonumber(L, 2));
 
-			bool returnBool = pParty->ForEachOnMapMemberBool(f, ((ch)->GetMapIndex()));
+			bool returnBool = pParty->ForEachOnMapMemberBool(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 			lua_pushboolean(L, returnBool);
 		}
 
@@ -503,7 +503,7 @@ namespace quest
 
 		FGiveBuff f (dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
 		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 		else
 			f(ch);
 
@@ -536,7 +536,7 @@ namespace quest
 			return 0;
 		}
 		FPartyPIDCollector f;
-		pParty->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+		pParty->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 		for (std::vector <uint32_t>::iterator it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 		{
@@ -594,7 +594,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -650,7 +650,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 			{

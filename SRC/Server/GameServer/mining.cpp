@@ -158,7 +158,7 @@ namespace mining
 		pos.x = ((ch)->GetX()) + number(-200, 200);
 		pos.y = ((ch)->GetY()) + number(-200, 200);
 
-		item->AddToGround(((ch)->GetMapIndex()), pos);
+		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();
 		item->SetOwnership(ch, 15);
 

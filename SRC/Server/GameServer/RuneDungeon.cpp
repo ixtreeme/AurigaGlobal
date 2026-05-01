@@ -216,7 +216,7 @@ namespace
         pos.y = victim->GetY() + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(victim->GetMapIndex(), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -889,7 +889,7 @@ void CRuneDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsRuneDungeonMap(idx))
         return;
 
@@ -902,7 +902,7 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     // If someone logs in on the base map, kick them to default location.
     if (idx == kRuneOriginalMap)
@@ -948,7 +948,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer || !victim)
         return;
 
-    const int32_t idx = victim->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
     if (!IsRuneDungeonMap(idx))
         return;
 
@@ -1162,7 +1162,7 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
     if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
-    const int32_t idx = from->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
     if (!IsRuneDungeonMap(idx))
         return false;
 
@@ -1316,7 +1316,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         bool missingItem = false;
 
         // Check only players that will be pulled by JoinParty_Coords (same map as leader)
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER pc) {
             if (!ok || !pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)))
                 return;
             if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
@@ -1395,18 +1395,18 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     // Consume entry items + clear leftovers BEFORE warping, and set rejoin/ranking timers
     if (party)
     {
-        ForEachPcOnMap(ch->GetMapIndex(), [&](LPCHARACTER pc) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER pc) {
             if (!pc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pc)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
             setupMember(pc);
             });
 
-        d->JoinParty_Coords(party, kEnterFloor1X, kEnterFloor1Y, ch->GetMapIndex());
+        d->JoinParty_Coords(party, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
     else
     {
         setupMember(ch);
-        d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ch->GetMapIndex());
+        d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
 
     return true;
@@ -1417,7 +1417,7 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsRuneDungeonMap(idx))
         return false;
 
@@ -1449,7 +1449,7 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsRuneDungeonMap(idx))
         return false;
 

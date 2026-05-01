@@ -95,7 +95,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
     if (!selfHost || !*selfHost)
         return false;
 
-    int32_t normalizedMapIndex = NormalizeMapIndex(ch->GetMapIndex());
+    int32_t normalizedMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     bool duplicateFound = false;
 
     CHARACTER_MANAGER::instance().for_each_pc([&](LPCHARACTER other)
@@ -110,7 +110,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
             if (!otherDesc)
                 return;
 
-            int32_t otherMapIndex = NormalizeMapIndex(other->GetMapIndex());
+            int32_t otherMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(other)));
             if (otherMapIndex != normalizedMapIndex)
                 return;
 
@@ -619,7 +619,7 @@ namespace {
 
             if (pkWarp->IsGoto())
             {
-                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(pkWarp->GetMapIndex());
+                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkWarp)));
                 m_lTargetX += pkSectreeMap->m_setting.iBaseX;
                 m_lTargetY += pkSectreeMap->m_setting.iBaseY;
                 m_bUseWarp = false;
@@ -662,7 +662,7 @@ namespace {
                 pkChr->WarpSet(m_lTargetX, m_lTargetY);
             else
             {
-                pkChr->Show(pkChr->GetMapIndex(), m_lTargetX, m_lTargetY);
+                pkChr->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)), m_lTargetX, m_lTargetY);
                 pkChr->Stop();
             }
         }
@@ -700,7 +700,7 @@ EVENTFUNC(warp_npc_event)
         const PIXEL_POSITION& warpPos = ch->GetWarpPosition();
         g_dispatcher.trigger(ecs::EvWarpBegin {
             e,
-            static_cast<uint32_t>(ch->GetMapIndex()),
+            static_cast<uint32_t>(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))),
             warpPos.x,
             warpPos.y
         });
@@ -739,7 +739,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
     LPCHARACTER victim;
     if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
     {
-        int mapIdx = victim->GetMapIndex();
+        int mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
         if (IS_SUMMONABLE_ZONE(mapIdx))
         {
             if (CAN_ENTER_ZONE(this, mapIdx))

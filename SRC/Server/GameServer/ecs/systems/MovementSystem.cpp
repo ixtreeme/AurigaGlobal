@@ -150,7 +150,7 @@ namespace
         ch->SetXYZ(position.x, position.y, ch->GetZ());
         ch->UpdateSectree();
 
-        ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
+        ecs::SyncSectorPlacement(reg, entity, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY());
     }
 }
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)

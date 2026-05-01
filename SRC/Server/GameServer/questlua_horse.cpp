@@ -72,7 +72,7 @@ namespace quest
 		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-#ifdef ENABLE_PVP_ADVANCED	
+#ifdef ENABLE_PVP_ADVANCED
 	if ((ch->GetDuel("BlockRide")))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -85,8 +85,8 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (((ch)->GetMapIndex()) == 113 || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
-			return 0;		
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113 || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
+			return 0;
 #endif
 
 		if (ms && sf)
@@ -130,7 +130,7 @@ namespace quest
 		auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-#ifdef ENABLE_PVP_ADVANCED	
+#ifdef ENABLE_PVP_ADVANCED
 	if ((ch->GetDuel("BlockRide")))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -143,8 +143,8 @@ namespace quest
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (ch->IsRidingMount())
 			return 0;
-		if (((ch)->GetMapIndex()) == 113 || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
-			return 0;		
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113 || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
+			return 0;
 #endif
 
 		bool bFromFar = lua_isboolean(L, 1) ? lua_toboolean(L, 1) : false;

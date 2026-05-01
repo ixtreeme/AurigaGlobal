@@ -176,7 +176,7 @@ namespace quest
 		pos.x = x + number(-200, 200);
 		pos.y = y + number(-200, 200);
 
-		item->AddToGround(((ch)->GetMapIndex()), pos);
+		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -226,7 +226,7 @@ namespace quest
 		pos.x = ((ch)->GetX()) + number(-200, 200);
 		pos.y = ((ch)->GetY()) + number(-200, 200);
 
-		item->AddToGround(((ch)->GetMapIndex()), pos);
+		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -284,7 +284,7 @@ namespace quest
 		pos.x = ((ch)->GetX()) + number(-200, 200);
 		pos.y = ((ch)->GetY()) + number(-200, 200);
 
-		item->AddToGround(((ch)->GetMapIndex()), pos);
+		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();
 
 		return 0;
@@ -303,8 +303,8 @@ namespace quest
 		}
 		return 0;
 	}
-	
-	
+
+
 #ifdef ENABLE_GAYA_SYSTEM
 	ALUA(game_open_gaya_c)
 	{
@@ -361,8 +361,8 @@ namespace quest
 	ALUA(game_give_guild_reward)
 	{
 		// migrated from CHARACTER::GetGuild()->GiveReward
-		// DUAL-PATH: legacy only during migration window	
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2)) 
+		// DUAL-PATH: legacy only during migration window
+		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("Wrong Input");
 			return 0;
@@ -373,7 +373,7 @@ namespace quest
 		g->GiveReward(item_reward);
 		return 1;
 	}
-	
+
 	ALUA(game_reset_guild_war_stats)
 	{
 		// migrated from CHARACTER::DBPacket
@@ -384,7 +384,7 @@ namespace quest
 		db_clientdesc->DBPacket(HEADER_GD_GUILD_RESET, 0, &p, sizeof(p));
 		return 1;
 	}
-	
+
 	ALUA(game_mysql_query)
 	{
 		// migrated from CHARACTER::DirectQuery
@@ -397,7 +397,7 @@ namespace quest
 			return 0;
 		}
 		MYSQL_ROW row;
-		lua_newtable(L);			
+		lua_newtable(L);
 		int rowcount = 1;
 		while((row = mysql_fetch_row(res))){
 			lua_newtable(L);
@@ -414,7 +414,7 @@ namespace quest
 			rowcount++;
 		}
 		return 1;
-	}	
+	}
 #endif
 #ifdef ENABLE_EVENT_MANAGER
 	int game_check_event(lua_State* L)

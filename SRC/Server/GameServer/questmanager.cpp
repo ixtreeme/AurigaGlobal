@@ -1557,7 +1557,7 @@ namespace quest
 					{
 						LPCHARACTER ch = *it++;
 
-						switch (ch->GetMapIndex())
+						switch (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 						{
 							case 3:
 							case 23:

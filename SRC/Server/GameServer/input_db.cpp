@@ -592,7 +592,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ch->GetMapIndex(), ch->GetAlignment());
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetAlignment());
 		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
@@ -1806,7 +1806,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			coord.x = ch->GetX();
 			coord.y = ch->GetY();
 
-			item->AddToGround(ch->GetMapIndex(), coord);
+			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), coord);
 			item->SetOwnership(ch, 180);
 			item->StartDestroyEvent();
 		}

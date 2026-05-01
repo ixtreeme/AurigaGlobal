@@ -1252,7 +1252,7 @@ static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
         return item;
     }
 
-    legacyItem->AddToGround(ch->GetMapIndex(), ch->GetXYZ());
+    legacyItem->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetXYZ());
 #ifdef ENABLE_NEWSTUFF
     legacyItem->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
 #else

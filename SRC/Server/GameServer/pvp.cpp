@@ -920,7 +920,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		return false;
 
 	{
-		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(((pkChr)->GetMapIndex()));
+		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)));
 
 		if ( ((pkChr->GetPKMode() == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr))) == bMapEmpire)) ||
 				((pkVictim->GetPKMode() == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkVictim))) == bMapEmpire)) )

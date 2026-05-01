@@ -867,11 +867,11 @@ namespace quest
 
 		if (test_server)
 		{
-			LOG_INFO("find_pc_cond map={}, job={}, level={}~{}", ((ch)->GetMapIndex()), uiJobFlag, iMinLev, iMaxLev);
+			LOG_INFO("find_pc_cond map={}, job={}, level={}~{}", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), uiJobFlag, iMinLev, iMaxLev);
 		}
 
 		tch = CHARACTER_MANAGER::instance().FindSpecifyPC(uiJobFlag,
-				((ch)->GetMapIndex()),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 				ch,
 				iMinLev,
 				iMaxLev);
@@ -903,7 +903,7 @@ namespace quest
 			{
 				LPCHARACTER tch = *(it++);
 
-				if (((tch)->GetMapIndex()) == CQuestManager::instance().GetCurrentCharacterPtr()->GetMapIndex())
+				if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())))
 				{
 					lua_pushnumber(L, ((tch)->GetLegacyVID()));
 					return 1;
@@ -1016,7 +1016,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (pChar != nullptr) {
-			SendNoticeMap(lua_tostring(L,1), ((pChar)->GetMapIndex()), true);
+			SendNoticeMap(lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), true);
 		}
 
 		return 0;
@@ -1401,7 +1401,7 @@ namespace quest
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
-						((pChar)->GetMapIndex()),
+						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)),
 						((pChar)->GetX()) - number(200, 750),
 						((pChar)->GetY()) - number(200, 750),
 						((pChar)->GetX()) + number(200, 750),
@@ -1420,7 +1420,7 @@ namespace quest
 						pSpawnMonster->GetMobTable(),
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
-						pSpawnMonster->GetMapIndex(),
+						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
 				}
@@ -1489,7 +1489,7 @@ namespace quest
 						pSpawnMonster->GetMobTable(),
 						pSpawnMonster->GetX(),
 						pSpawnMonster->GetY(),
-						pSpawnMonster->GetMapIndex(),
+						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
 				}
@@ -1521,9 +1521,9 @@ namespace quest
 				return 0;
 			}
 
-			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ((pChar)->GetMapIndex()), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
+			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
 #else
-			SendNoticeMap( lua_tostring(L,1), ((pChar)->GetMapIndex()), lua_toboolean(L,2) );
+			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), lua_toboolean(L,2) );
 #endif
 		}
 

@@ -285,7 +285,7 @@ namespace quest
         {
             warpPos->x = static_cast<int32_t>(lua_tonumber(L, 1));
             warpPos->y = static_cast<int32_t>(lua_tonumber(L, 2));
-            warpPos->mapIndex = map_index ? map_index : ((ch)->GetMapIndex());
+            warpPos->mapIndex = map_index ? map_index : ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         if ( test_server )
@@ -800,7 +800,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetMapIndex()) : 0);
+		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -852,7 +852,7 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 		lua_pushnumber(L, pMap ? ((((ch)->GetX()) - pMap->m_setting.iBaseX) / 100) : (((ch)->GetX()) / 100));
 		return 1;
 	}
@@ -875,7 +875,7 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 		lua_pushnumber(L, pMap ? ((((ch)->GetY()) - pMap->m_setting.iBaseY) / 100) : (((ch)->GetY()) / 100));
 		return 1;
 	}
@@ -2679,7 +2679,7 @@ namespace quest
             if (const auto* mapIndex = ECS_TryGet<ecs::MapIndex>(e))
                 exitPos->mapIndex = mapIndex->value;
             else
-                exitPos->mapIndex = ((ch)->GetMapIndex());
+                exitPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SaveExitLocation();
@@ -2795,7 +2795,7 @@ teleport_area:
 		{
 			warpPos->x = x;
 			warpPos->y = y;
-			warpPos->mapIndex = ((ch)->GetMapIndex());
+			warpPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 		ch->WarpSet(x,y);
@@ -3998,7 +3998,7 @@ teleport_area:
 					pos.x = ((ch)->GetX()) + number(-200, 200);
 					pos.y = ((ch)->GetY()) + number(-200, 200);
 
-					pkNewItem->AddToGround(((ch)->GetMapIndex()), pos);
+					pkNewItem->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 					pkNewItem->StartDestroyEvent();
 					break;
 				default:

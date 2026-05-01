@@ -186,7 +186,7 @@ namespace
         pos.y = victim->GetY() + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(victim->GetMapIndex(), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -1266,7 +1266,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
     if (count <= 0) count = 1;
     if (count > 20) count = 20;
 
-    const int32_t mapIndex = target->GetMapIndex();
+    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(target));
 
     // Spawn near target (global coords)
     int32_t spawned = 0;
@@ -1458,7 +1458,7 @@ bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     // Block inside LostCastle instance maps to avoid skipping dungeon mechanics
     if (IsInRange(idx, kPrivateMin, kPrivateMax))
@@ -1477,7 +1477,7 @@ void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
@@ -1492,7 +1492,7 @@ void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
@@ -1508,7 +1508,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
         return false;
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
-    const int32_t lobbyMap = ch->GetMapIndex();
+    const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     const int32_t lobbyX = ch->GetX() / 100;
     const int32_t lobbyY = ch->GetY() / 100;
 
@@ -1523,14 +1523,14 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
         }
 
         bool ok = true;
-        const int32_t leaderMap = ch->GetMapIndex();
+        const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
         auto check = [&](LPCHARACTER m)
             {
                 if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                     return;
 
-                if (m->GetMapIndex() != leaderMap)
+                if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m)) != leaderMap)
                 {
                     ok = false;
                     return;
@@ -1607,15 +1607,15 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
         applyMember(ch);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ch->GetMapIndex());
+        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
     else
     {
         auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        party->ForEachOnMapMember(fn, ch->GetMapIndex());
+        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ch->GetMapIndex());
+        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
 
     s_lc.StartFloor1(d->GetMapIndex());
@@ -1627,7 +1627,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!victim)
         return;
 
-    const int32_t idx = victim->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
@@ -1676,7 +1676,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
         return false;
 
-    const int32_t idx = from->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return false;
 

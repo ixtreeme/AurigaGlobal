@@ -525,7 +525,7 @@ ACMD(do_gotoxy)
 		return;
 	}
 
-	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ((ch)->GetMapIndex()) >= 10000) {
+	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif
@@ -549,7 +549,7 @@ ACMD(do_gotoxy)
 		y += p.y / 100;
 		x *= 100;
 		y *= 100;
-		ch->Show(((ch)->GetMapIndex()), x, y, z);
+		ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
 		ch->Stop();
 		ch->SetGoToXYTime();
 	}
@@ -649,7 +649,7 @@ ACMD(do_go_savepoint) {
 		return;
 	}
 
-	if (((ch)->GetMapIndex()) > 10000) {
+	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) > 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1288, "");
 #endif
@@ -665,7 +665,7 @@ ACMD(do_go_savepoint) {
 			int c = 0;
 			int x = atoi(data[c++]), y = atoi(data[c++]), mapIdx = atoi(data[c++]);
 
-			if (mapIdx == ((ch)->GetMapIndex())) {
+			if (mapIdx == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) {
 				int x2 = x - ((ch)->GetX());
 				int y2 = y - ((ch)->GetY());
 				double nDist = 0;
@@ -733,7 +733,7 @@ ACMD(do_save_savepoint) {
 	if (res->Get()->uiNumRows > 0) {
 		LOG_ERROR("{} savepoint slot ({}) is not empty. Maybe a hacker?", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), slot);
 	} else {
-		int mapIdx = ((ch)->GetMapIndex());
+		int mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 		if (mapIdx > 10000) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 531, "");

@@ -292,7 +292,7 @@ namespace
 
     bool IsEntryMapForEmpire(LPCHARACTER ch)
     {
-        return ch && ch->GetMapIndex() == 219;
+        return ch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 219;
     }
 
     void SetOutsideWarpLocation(LPCHARACTER ch)
@@ -1012,7 +1012,7 @@ void CVikingDungeon::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsVikingDungeonMap(idx))
         return;
 
@@ -1030,7 +1030,7 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t idx = ch->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     if (idx == kOriginalMap)
     {
@@ -1102,7 +1102,7 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
     if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kResetItemVnum)
         return false;
 
-    if (IsVikingDungeonMap(ch->GetMapIndex()))
+    if (IsVikingDungeonMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
         return true;
@@ -1129,14 +1129,14 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const int32_t now = get_global_time();
 
-    const int32_t currentIdx = ch->GetMapIndex();
+    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     const bool isInsideViking = IsVikingDungeonMap(currentIdx);
     LPDUNGEON currentDungeon = isInsideViking ? CDungeonManager::instance().FindByMapIndex(currentIdx) : nullptr;
     const bool quickRestart = (race == kEntryNpcVnum && currentDungeon && currentDungeon->GetFlag(kFlagCompleted) != 0);
 
     if (race == kRewardChestVnum)
     {
-        const int32_t idx = ch->GetMapIndex();
+        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
         if (!IsVikingDungeonMap(idx))
             return false;
 
@@ -1285,7 +1285,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     };
 
     if (party)
-        party->ForEachOnMapMember(checkMember, ch->GetMapIndex());
+        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     else
         checkMember(ch);
 
@@ -1340,16 +1340,16 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     };
 
     if (party)
-        party->ForEachOnMapMember(prepareMember, ch->GetMapIndex());
+        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     else
         prepareMember(ch);
 
     SetDungeonReady(d);
 
     if (party)
-        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ch->GetMapIndex());
+        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     else
-        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, ch->GetMapIndex());
+        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
     return true;
@@ -1360,7 +1360,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
     if (!from || !npc || !item || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)))
         return false;
 
-    const int32_t idx = from->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
     if (!IsVikingDungeonMap(idx))
         return false;
 
@@ -1456,7 +1456,7 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
         return;
 
-    const int32_t idx = killer->GetMapIndex();
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
     if (!IsVikingDungeonMap(idx))
         return;
 

@@ -556,7 +556,7 @@ ACMD(do_change_channel)
 
 	TPacketChangeChannel p;
 	p.channel = channel;
-	p.lMapIndex = ((ch)->GetMapIndex());
+	p.lMapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
 }
@@ -750,7 +750,7 @@ ACMD(do_restart)
 	ch->StartRecoveryEvent();
 
 
-	int32_t mapidx = ((ch)->GetMapIndex());
+	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 	if (ch->GetWarMap() && !ch->IsObserverMode())
 	{
@@ -1555,7 +1555,7 @@ ACMD(do_pvp)
 	if (!ch)
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
@@ -1727,7 +1727,7 @@ ACMD(do_pvp_advanced)
 	if (!ch)
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
@@ -3550,7 +3550,7 @@ ACMD(do_ride)
     if (ch->IsDead() || ch->IsStun())
 		return;
 
-	if (((ch)->GetMapIndex()) == 113)
+	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
 		return;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM

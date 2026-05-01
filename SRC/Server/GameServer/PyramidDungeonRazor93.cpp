@@ -323,7 +323,7 @@ void CPyramidDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t mapIdx = ch->GetMapIndex();
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
@@ -338,7 +338,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return;
 
-    const int32_t mapIdx = ch->GetMapIndex();
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
     // If someone ends up on the original dungeon map, move them out (Lua: idx == 357 -> pc.warp(535400, 1428400))
     if (mapIdx == kOriginalMap)
@@ -386,7 +386,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // If clicked inside dungeon:
     // - while active: exit to lobby
     // - after completion: allow starting a fresh run
-    const int32_t curMap = ch->GetMapIndex();
+    const int32_t curMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
     if (IsPyramidDungeonMap(curMap))
     {
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(curMap);
@@ -461,7 +461,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     else
     {
         FLevelCheck f;
-        party->ForEachOnMapMember(f, ch->GetMapIndex());
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
@@ -483,7 +483,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     else
     {
         FCooldownCheck f(now);
-        party->ForEachOnMapMember(f, ch->GetMapIndex());
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
@@ -504,7 +504,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     else
     {
         FEntryItemCheck f;
-        party->ForEachOnMapMember(f, ch->GetMapIndex());
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
         if (!f.ok)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
@@ -516,7 +516,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         FConsumeEntryItems f;
-        party->ForEachOnMapMember(f, ch->GetMapIndex());
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
     else
     {
@@ -527,7 +527,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Reset rejoin flags for new run
     if (party)
     {
-        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ch->GetMapIndex());
+        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
     else
         ResetRejoinFlags(ch);
@@ -548,11 +548,11 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Join party/solo at cords
     if (party)
     {
-        d->JoinParty_Coords(party, kJoinX, kJoinY, ch->GetMapIndex());
+        d->JoinParty_Coords(party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
     else
     {
-        d->Join_Coords(ch, kJoinX, kJoinY, ch->GetMapIndex());
+        d->Join_Coords(ch, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
     }
 
     // Prepare after 1 second (spawn metins etc.)
@@ -566,7 +566,7 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer || !victim)
         return;
 
-    const int32_t mapIdx = killer->GetMapIndex();
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 

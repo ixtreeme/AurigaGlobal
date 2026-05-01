@@ -681,7 +681,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
-					LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+					LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 				}
 #endif
 			}
@@ -734,7 +734,7 @@ struct FEmpireChatPacket
 		if (!d->GetCharacter())
 			return;
 
-		if (d->GetCharacter()->GetMapIndex() != iMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) != iMapIndex)
 			return;
 
 		d->BufferedPacket(&p, sizeof(packet_chat));
@@ -801,7 +801,7 @@ struct FYmirChatPacket
 		if (!d->GetCharacter())
 			return;
 
-		if (d->GetCharacter()->GetMapIndex() != m_iMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) != m_iMapIndex)
 			return;
 
 		if (m_ring ||
@@ -1093,7 +1093,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 
 
-/* 	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && ch->GetMapIndex() == 113)//OX mapon chat letiltva//
+/* 	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)//OX mapon chat letiltva//
 	{
 		return iExtraLen;
 	} */
@@ -1426,7 +1426,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 								strlen(buf),
 								ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 								strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()),
-								ch->GetMapIndex(),
+								ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 								ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 								ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)));
 				}
@@ -1438,12 +1438,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 								len,
 								(ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ||
 								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
-								ch->GetMapIndex(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())));
+								ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1469,7 +1469,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1489,7 +1489,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -2272,11 +2272,11 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
 			fDist = std::min(fDistFromCurrent, fDistFromDest);
 		}
-		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ch->GetMapIndex())
+		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 		{
 			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
-			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
+			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
 			return;
 		}
@@ -2291,7 +2291,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
-			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
+			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
 			return;
 		}
@@ -5347,7 +5347,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 	break;
 	case TURN:
 	{
-		if (ch->GetDungeon() != nullptr || ch->GetMapIndex() >= 10000)
+		if (ch->GetDungeon() != nullptr || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000)
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;

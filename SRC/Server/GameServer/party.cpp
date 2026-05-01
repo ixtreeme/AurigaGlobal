@@ -581,7 +581,7 @@ void CParty::Link(LPCHARACTER pkChr)
 		SendParameter(pkChr);
 
 		//LOG_INFO("PARTY-DUNGEON connect {} {}", static_cast<const void*>(this), static_cast<const void*>(GetDungeon()));
-		if (GetDungeon() && GetDungeon()->GetMapIndex() == pkChr->GetMapIndex())
+		if (GetDungeon() && GetDungeon()->GetMapIndex() == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)))
 		{
 			pkChr->SetDungeon(GetDungeon());
 		}
@@ -1153,7 +1153,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	{
 		PIXEL_POSITION p;
 
-		if (s.GetMovablePosition(l->GetMapIndex(), l->GetX() + xy [i][0], l->GetY() + xy[i][1], p))
+		if (s.GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(l)), l->GetX() + xy [i][0], l->GetY() + xy[i][1], p))
 		{
 			x[n] = p.x;
 			y[n] = p.y;
@@ -1163,7 +1163,7 @@ void CParty::SummonToLeader(uint32_t pid)
 
 	if (n != 0) {
 		int i = number(0, n - 1);
-		ch->Show(l->GetMapIndex(), x[i], y[i]);
+		ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(l)), x[i], y[i]);
 		ch->Stop();
 	}
 #ifdef TEXTS_IMPROVEMENT

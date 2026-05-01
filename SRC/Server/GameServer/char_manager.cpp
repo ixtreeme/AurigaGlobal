@@ -144,7 +144,7 @@ namespace
 				continue;
 			}
 
-			if (ch->IsDead() || ch->GetMapIndex() != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
+			if (ch->IsDead() || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
 			{
 				toErase.push_back(vid);
 				continue;
@@ -648,15 +648,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 	}
 
@@ -820,15 +820,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 	}
 
@@ -1111,7 +1111,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))) continue;
 				if (ch->IsDungeonTicketExtraMetin()) continue;
 
-				const int32_t mapIndex = ch->GetMapIndex();
+				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 				const bool isDungeonMap =
 					(mapIndex >= 10000) ||
@@ -1424,7 +1424,7 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 		if (((ch)->GetLevel()) > iMaxLevel)
 			continue;
 
-		if (ch->GetMapIndex() != lMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != lMapIndex)
 			continue;
 
 		if (uiJobFlag)
@@ -1837,7 +1837,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 		{
-			const int32_t mapIndex = pkChr->GetMapIndex();
+			const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
 			const int32_t baseX = pkChr->GetX();
 			const int32_t baseY = pkChr->GetY();
 			const int32_t baseZ = pkChr->GetZ();
@@ -1879,7 +1879,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 			{
-				const int32_t mapIndex = pkChr->GetMapIndex();
+				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
 				const int32_t baseX = pkChr->GetX();
 				const int32_t baseY = pkChr->GetY();
 				const int32_t baseZ = pkChr->GetZ();

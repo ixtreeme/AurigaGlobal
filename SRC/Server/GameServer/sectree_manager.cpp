@@ -1100,7 +1100,7 @@ void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ((ch)->GetMapIndex());
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 	if (m_mapNPCPosition[lMapIndex].empty())
 		return;
@@ -1163,7 +1163,7 @@ void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ((ch)->GetMapIndex());
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
@@ -1269,7 +1269,7 @@ class FRemoveIfAttr
 				{
 					PIXEL_POSITION pos;
 
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(((ch)->GetMapIndex()), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 						ch->WarpSet(pos.x, pos.y);
 					else
 						ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));

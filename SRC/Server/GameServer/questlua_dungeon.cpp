@@ -289,7 +289,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		int32_t index = ch ? ((ch)->GetMapIndex()) : -1;
+		int32_t index = ch ? ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) : -1;
 		if (index != -1) {
 			LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 			if (!party)
@@ -994,7 +994,7 @@ namespace quest
 			}
 
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -1134,7 +1134,7 @@ namespace quest
 		if (party)
 		{
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -1341,7 +1341,7 @@ namespace quest
 			LPDUNGEON currentDungeon = ch->GetDungeon();
 			FPartyPIDCollectorDungeon f;
 			party->ForEachOnlineMember(f);
-			//party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			//party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
@@ -1352,12 +1352,12 @@ namespace quest
 					if (currentDungeon)
 					{
 						LPDUNGEON memberDungeon = tch->GetDungeon();
-						if (memberDungeon && memberDungeon != currentDungeon && ((tch)->GetMapIndex()) != ((ch)->GetMapIndex()))
+						if (memberDungeon && memberDungeon != currentDungeon && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 						{
 							continue;
 						}
 					}
-					else if (((tch)->GetMapIndex()) != ((ch)->GetMapIndex()))
+					else if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
 					{
 						continue;
 					}
@@ -1572,7 +1572,7 @@ namespace quest
 			FPartyPIDCollectorDungeonGuild f;
 			f.guildid = guild->GetID();
 			f.name = "";
-			party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			if (f.vecPIDs.size() < m_partycount)
 			{
@@ -1673,7 +1673,7 @@ namespace quest
 		// if (party)
 		// {
 			// FPartyPIDCollectorDungeon f;
-			// party->ForEachOnMapMember(f, ((ch)->GetMapIndex()));
+			// party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			// {

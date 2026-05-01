@@ -347,7 +347,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (pMarriage->pWeddingInfo)
 		{
-			lua_pushboolean(L, (uint32_t)((ch)->GetMapIndex()) == pMarriage->pWeddingInfo->dwMapIndex);
+			lua_pushboolean(L, (uint32_t)ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == pMarriage->pWeddingInfo->dwMapIndex);
 		}
 		else
 		{

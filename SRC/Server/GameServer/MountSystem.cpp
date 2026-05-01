@@ -59,7 +59,7 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 		return true;
 	}
 
-	return follower->Show(owner->GetMapIndex(), x, y, z);
+	return follower->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
 }
 }
 
@@ -402,11 +402,11 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
 	if (dwMountSkinvnum > 0)
-		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(dwMountSkinvnum, m_pkOwner->GetMapIndex(), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(dwMountSkinvnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 	else
-		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, m_pkOwner->GetMapIndex(), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 #else
-	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, m_pkOwner->GetMapIndex(), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 #endif
 
 	if (nullptr == m_pkChar)
@@ -427,7 +427,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	//m_pkOwner->ComputePoints();
 
-	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
+	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 	return m_dwVID;
 }
 

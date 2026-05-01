@@ -304,7 +304,7 @@ template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapInd
 		LPCHARACTER ch = it->second.pCharacter;
 		if (ch)
 		{
-			if (ch->GetMapIndex () == lMapIndex)
+			if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
 				f(ch);
 		}
 	}
@@ -319,7 +319,7 @@ template <class Func> bool CParty::ForEachOnMapMemberBool(Func & f, int32_t lMap
 		LPCHARACTER ch = it->second.pCharacter;
 		if (ch)
 		{
-			if (ch->GetMapIndex () == lMapIndex)
+			if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
 			{
 				if(f(ch) == false)
 				{

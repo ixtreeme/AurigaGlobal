@@ -161,7 +161,7 @@ void StartFishing(entt::entity fisher, uint32_t)
 
     const int x = ch->GetX();
     const int y = ch->GetY();
-    LPSECTREE tree = ecs::SectorAt(ch->GetMapIndex(), x, y);
+    LPSECTREE tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y);
     if (!tree)
         return;
 
@@ -600,7 +600,7 @@ void CHARACTER::mining(LPCHARACTER chLoad)
     if (!chLoad)
         return;
 
-    if (GetMapIndex() != chLoad->GetMapIndex() || DISTANCE_APPROX(GetX() - chLoad->GetX(), GetY() - chLoad->GetY()) > 1000)
+    if (GetMapIndex() != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chLoad)) || DISTANCE_APPROX(GetX() - chLoad->GetX(), GetY() - chLoad->GetY()) > 1000)
         return;
 
     if (mining::GetRawOreFromLoad(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chLoad))) == 0)

@@ -917,7 +917,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 
 	if (nullptr != m_pkChar)
 	{
-		m_pkChar->Show (m_pkOwner->GetMapIndex(), x, y);
+		m_pkChar->Show (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y);
 		m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 
 		return m_dwVID;
@@ -998,7 +998,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
 				m_dwVnum,
-				m_pkOwner->GetMapIndex(),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)),
 				x, y, z,
 				false, (int)(m_pkOwner->GetRotation()+180), false);
 
@@ -1064,7 +1064,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 
 	//this->SetNextExp(m_pkChar->PetGetNextExp());
 	m_pkOwner->ComputePoints();
-	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
+	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetIcon %d", m_dwSummonItemVnum);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
@@ -1139,8 +1139,8 @@ bool CNewPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 	//GetDeltaByDegree(m_pkChar->GetRotation(), fDist, &fx, &fy);
 
 	// 느슨한 못감 속성 체크; 최종 위치와 중간 위치가 갈수없다면 가지 않는다.
-	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
-	//			&& SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
+	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
+	//			&& SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
 	//	return true;
 
 	m_pkChar->SetNowWalking(true);
@@ -1201,7 +1201,7 @@ bool CNewPetActor::_UpdateFollowAI()
 		float fOwnerRot = m_pkOwner->GetRotation() * 3.141592f / 180.f;
 		float fx = -APPROACH * cos(fOwnerRot);
 		float fy = -APPROACH * sin(fOwnerRot);
-		if (m_pkChar->Show(m_pkOwner->GetMapIndex(), ownerX + fx, ownerY + fy))
+		if (m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), ownerX + fx, ownerY + fy))
 		{
 			return true;
 		}

@@ -35,9 +35,9 @@ namespace quest
 
 		PIXEL_POSITION pos;
 
-		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(((ch)->GetMapIndex()), pos))
+		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos))
 		{
-			sys_err("cannot find base position in this map {}", ((ch)->GetMapIndex()));
+			sys_err("cannot find base position in this map {}", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 			return 0;
 		}
 
@@ -78,7 +78,7 @@ namespace quest
 				TARGET_TYPE_VID,
 				(int) lua_tonumber(L, 2),
 				0,
-				((ch)->GetMapIndex()),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 				lua_isstring(L, 3) ? lua_tostring(L, 3) : nullptr,
 				lua_isnumber(L, 4) ? (int)lua_tonumber(L, 4): 1);
 

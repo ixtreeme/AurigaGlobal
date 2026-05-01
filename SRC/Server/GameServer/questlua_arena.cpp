@@ -38,8 +38,8 @@ namespace quest
 			ch2->HorseSummon(false);
 		}
 
-		if ( CArenaManager::instance().IsMember(((ch)->GetMapIndex()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) != MEMBER_NO ||
-				CArenaManager::instance().IsMember(ch2->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch2))) != MEMBER_NO	)
+		if ( CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) != MEMBER_NO ||
+				CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch2)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch2))) != MEMBER_NO	)
 		{
 			lua_pushnumber(L, 2);
 			return 1;
@@ -117,7 +117,7 @@ namespace quest
 		{
 			if ( ch->GetArena() == nullptr || ch->GetArenaObserverMode() == true )
 			{
-				if ( CArenaManager::instance().IsMember(((ch)->GetMapIndex()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) == MEMBER_DUELIST )
+				if ( CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) == MEMBER_DUELIST )
 					lua_pushnumber(L, 1);
 				else
 					lua_pushnumber(L, 0);

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include "constants.h"
 #include "sectree_manager.h"
@@ -364,7 +366,7 @@ void CLand::PutData(const TLand * data)
 				{
 					LPCHARACTER ch = *(it++);
 
-					if (((ch)->GetMapIndex()) != m_data.lMapIndex)
+					if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != m_data.lMapIndex)
 						continue;
 
 					int x = ((ch)->GetX()) - r->sx;
@@ -738,7 +740,7 @@ void CManager::UpdateLand(TLand * pTable)
 	{
 		LPDESC d = *(it++);
 
-		if (d->GetCharacter() && d->GetCharacter()->GetMapIndex() == pTable->lMapIndex)
+		if (d->GetCharacter() && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) == pTable->lMapIndex)
 		{
 			// we must send the guild name first
 			d->GetCharacter()->SendGuildName(guild);

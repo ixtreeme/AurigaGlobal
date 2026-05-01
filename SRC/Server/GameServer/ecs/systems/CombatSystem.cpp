@@ -1164,7 +1164,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	rateFactor += CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT);
 	if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
 		rateFactor += 20;
-	if (to->GetMapIndex() >= 660000 && to->GetMapIndex() < 670000)
+	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(to)) >= 660000 && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(to)) < 670000)
 		rateFactor += 20;
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 
@@ -1313,7 +1313,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			iExp += iExp * 20 / 100;
 
 		// Ÿ ġ ʽ
-		if (to->GetMapIndex() >= 660000 && to->GetMapIndex() < 670000)
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(to)) >= 660000 && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(to)) < 670000)
 			iExp += iExp * 20 / 100; // 1.2 (20%)
 
 		//  ġ ι Ӽ
@@ -2232,7 +2232,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 	{
 		char buf[51];
-		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, pkKiller->GetMapIndex());
+		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkKiller)));
 		if (IsStone())
 			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "STONE_KILL", buf);
 		else
@@ -3232,9 +3232,9 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 	if (bTrackBattlePass && dwGivenCount > 0)
 		__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
 
-	item->AddToGround(pkVictim->GetMapIndex(), pos);
+	item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkVictim)), pos);
 
-	if (ch && CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == false)
 		item->SetOwnership(ch, 60);
 
 	item->StartDestroyEvent();
@@ -3691,7 +3691,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									return;
 
 								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
-								if (mch->GetMapIndex() != lMapIndex)
+								if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(mch)) != lMapIndex)
 									return;
 
 								// ugyanabban a partyban legyen
@@ -3792,7 +3792,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									{
 										newItem->AddToGround(lMapIndex, mpos);
 
-										if (CBattleArena::instance().IsBattleArenaMap(rch->GetMapIndex()) == false)
+										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(rch))) == false)
 											newItem->SetOwnership(rch);
 
 										newItem->StartDestroyEvent();
@@ -3800,7 +3800,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #else
 									newItem->AddToGround(lMapIndex, mpos);
 
-									if (CBattleArena::instance().IsBattleArenaMap(rch->GetMapIndex()) == false)
+									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(rch))) == false)
 										newItem->SetOwnership(rch);
 
 									newItem->StartDestroyEvent();
@@ -3850,7 +3850,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				{
 					item->AddToGround(GetMapIndex(), pos);
 
-					if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 					{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
@@ -3920,7 +3920,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						item->AddToGround(GetMapIndex(), pos);
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 							item->SetOwnership(pkAttacker);
 
 						item->StartDestroyEvent();
@@ -3971,7 +3971,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						{
 							item->AddToGround(GetMapIndex(), pos);
 
-							if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == false)
 							{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 								if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
@@ -4007,7 +4007,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				item = s_vec_item[0];
 				item->AddToGround(GetMapIndex(), pos);
 
-				if (CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 				{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 					if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
@@ -4076,7 +4076,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						item->AddToGround(GetMapIndex(), pos);
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(pkAttacker->GetMapIndex()) == false)
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 							item->SetOwnership(pkAttacker);
 
 						item->StartDestroyEvent();
@@ -4115,7 +4115,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						if (it == v.end())
 							it = v.begin();
 
-						if (CBattleArena::instance().IsBattleArenaMap(ch->GetMapIndex()) == false)
+						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == false)
 						{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 							if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
@@ -4165,7 +4165,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 	if (pkAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker))) {
 		if (IsStone()) {
 #ifdef ENABLE_ANTICHEAT
-			if (pkAttacker->GetMapIndex() < 1000) {
+			if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker)) < 1000) {
 				pkAttacker->ProcessCheatCheck(get_global_time());
 			}
 #endif
@@ -5111,7 +5111,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 		{
 			int iEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pAttacker));
-			int32_t lMapIndex = pAttacker->GetMapIndex();
+			int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pAttacker));
 			int iMapEmpire = ecs::GetEmpireFromMap(lMapIndex);
 
 			// ٸ     10%
@@ -6695,11 +6695,11 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 		CHARACTER_MANAGER::instance().SelectStone(ch);
 
 		if (step == 10 || step == 9)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1500, ch->GetY() - 1500, ch->GetX() + 1500, ch->GetY() + 1500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 1500, ch->GetY() - 1500, ch->GetX() + 1500, ch->GetY() + 1500);
 		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 1000, ch->GetY() - 1000, ch->GetX() + 1000, ch->GetY() + 1000);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 1000, ch->GetY() - 1000, ch->GetX() + 1000, ch->GetY() + 1000);
 		else if (step == 5 || step == 4 || step == 2)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ch->GetMapIndex(), ch->GetX() - 500, ch->GetY() - 500, ch->GetX() + 500, ch->GetY() + 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 500, ch->GetY() - 500, ch->GetX() + 500, ch->GetY() + 500);
 
 		CHARACTER_MANAGER::instance().SelectStone(nullptr);
 	}

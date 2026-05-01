@@ -183,7 +183,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //    char a1[256];
 //    one_argument(argument, a1, sizeof(a1));
 //
-//    const int32_t mapIndex = ((ch)->GetMapIndex());
+//    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 //
 //    if (!*a1)
 //    {
@@ -313,8 +313,8 @@ ACMD(do_transfer)
 		return;
 	}
 
-	//tch->Show(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()), ch->GetZ());
-	tch->WarpSet(((ch)->GetX()), ((ch)->GetY()), ((ch)->GetMapIndex()));
+	//tch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()), ch->GetZ());
+	tch->WarpSet(((ch)->GetX()), ((ch)->GetY()), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -489,7 +489,7 @@ ACMD(do_goto)
 	x *= 100;
 	y *= 100;
 
-	ch->Show(((ch)->GetMapIndex()), x, y, z);
+	ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
 	ch->Stop();
 }
 
@@ -547,7 +547,7 @@ ACMD(do_warp)
 			x = ((tch)->GetX()) / 100;
 			y = ((tch)->GetY()) / 100;
 #ifdef __CMD_WARP_IN_DUNGEON__
-			mapIndex = ((tch)->GetMapIndex());
+			mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch));
 #endif
 		}
 	}
@@ -697,7 +697,7 @@ ACMD(do_group_random)
 
 	uint32_t dwVnum = 0;
 	str_to_number(dwVnum, arg1);
-	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
 }
 
 ACMD(do_group)
@@ -715,9 +715,9 @@ ACMD(do_group)
 	str_to_number(dwVnum, arg1);
 
 	if (test_server)
-		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
 
-	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ((ch)->GetMapIndex()), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
 }
 
 ACMD(do_mob_coward)
@@ -769,7 +769,7 @@ ACMD(do_mob_coward)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				((ch)->GetMapIndex()),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 				((ch)->GetX()) - number(200, 750),
 				((ch)->GetY()) - number(200, 750),
 				((ch)->GetX()) + number(200, 750),
@@ -794,7 +794,7 @@ ACMD(do_mob_map)
 
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ((ch)->GetMapIndex()));
+	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	if (tch)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), ((tch)->GetX()), ((tch)->GetY()));
@@ -851,7 +851,7 @@ ACMD(do_mob_aggresive)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				((ch)->GetMapIndex()),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 				((ch)->GetX()) - number(200, 750),
 				((ch)->GetY()) - number(200, 750),
 				((ch)->GetX()) + number(200, 750),
@@ -918,7 +918,7 @@ ACMD(do_mob)
 	while (iCount--)
 	{
 		CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				((ch)->GetMapIndex()),
+				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 				((ch)->GetX()) - number(200, 750),
 				((ch)->GetY()) - number(200, 750),
 				((ch)->GetX()) + number(200, 750),
@@ -976,7 +976,7 @@ ACMD(do_mob_ld)
 
 
 	CHARACTER_MANAGER::instance().SpawnMob(vnum,
-		((ch)->GetMapIndex()),
+		ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 		x*100,
 		y*100,
 		ch->GetZ(),
@@ -1033,7 +1033,7 @@ ACMD(do_purge)
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
-		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
 }
 
 #define ENABLE_CMD_IPURGE_EX
@@ -1237,13 +1237,13 @@ ACMD(do_state)
 	if (len < 0 || len >= (int) sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(((tch)->GetMapIndex()), ((tch)->GetX()), ((tch)->GetY()));
+	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), ((tch)->GetX()), ((tch)->GetY()));
 
 	if (pSec)
 	{
-		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(((tch)->GetMapIndex()))->m_setting;
+		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)))->m_setting;
 		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
-			((tch)->GetMapIndex()), pSec->GetAttribute(((tch)->GetX()), ((tch)->GetY())), (((tch)->GetX()) - map_setting.iBaseX)/100, (((tch)->GetY()) - map_setting.iBaseY)/100);
+			ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), pSec->GetAttribute(((tch)->GetX()), ((tch)->GetY())), (((tch)->GetX()) - map_setting.iBaseX)/100, (((tch)->GetY()) - map_setting.iBaseY)/100);
 	}
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
@@ -1485,7 +1485,7 @@ struct notice_map_packet_func
 	void operator() (LPDESC d)
 	{
 		if (d->GetCharacter() == nullptr) return;
-		if (d->GetCharacter()->GetMapIndex() != m_mapIndex) return;
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) != m_mapIndex) return;
 
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), m_bBigFont == true ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", m_str);
 	}
@@ -1565,14 +1565,14 @@ struct noticenew_packet_func {
 		if (m_empire == 0) {
 			if (m_mapidx == 0) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
-			} else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+			} else if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) == m_mapidx) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
 			}
 		}
 		else if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(d->GetCharacter())) == m_empire) {
 			if (m_mapidx == 0) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
-			} else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
+			} else if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) == m_mapidx) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
 			}
 		}
@@ -1623,7 +1623,7 @@ ACMD(do_notice)
 
 ACMD(do_map_notice)
 {
-	SendNoticeMap(argument, ((ch)->GetMapIndex()), false);
+	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), false);
 }
 
 ACMD(do_big_notice)
@@ -1638,7 +1638,7 @@ ACMD(do_big_notice)
 #ifdef ENABLE_FULL_NOTICE
 ACMD(do_map_big_notice)
 {
-	SendNoticeMap(argument, ((ch)->GetMapIndex()), true);
+	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), true);
 }
 
 ACMD(do_notice_test)
@@ -3262,7 +3262,7 @@ ACMD(do_build)
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
 	uint8_t GMLevel = (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
-	CLand * pkLand = CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
 
 	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ
 	//       ޼  ʰ  Ѵ.
@@ -3406,7 +3406,7 @@ ACMD(do_build)
 				str_to_number(map_y, arg3);
 
 				bool isSuccess = pkLand->RequestCreateObject(dwVnum,
-						((ch)->GetMapIndex()),
+						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
 						map_x,
 						map_y,
 						x_rot,
@@ -3461,7 +3461,7 @@ ACMD(do_build)
 		case 'w' :
 			if (GMLevel > GM_PLAYER)
 			{
-				int mapIndex = ((ch)->GetMapIndex());
+				int mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
 				one_argument(line, arg1, sizeof(arg1));
 
@@ -3527,7 +3527,7 @@ ACMD(do_build)
 					str_to_number(door_south, arg5);
 					bool door_north = false;
 					str_to_number(door_north, arg6);
-					pkLand->RequestCreateWallBlocks(setID, ((ch)->GetMapIndex()), wallSize, door_east, door_west, door_south, door_north);
+					pkLand->RequestCreateWallBlocks(setID, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), wallSize, door_east, door_west, door_south, door_north);
 				}
 			}
 			break;
@@ -4097,7 +4097,7 @@ struct FMobCounter
 
 ACMD(do_get_mob_count)
 {
-	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(((ch)->GetMapIndex()));
+	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	if (pSectree == nullptr)
 		return;
@@ -4107,12 +4107,12 @@ ACMD(do_get_mob_count)
 
 	pSectree->for_each(f);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ((ch)->GetMapIndex()), f.nCount);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), f.nCount);
 }
 
 ACMD(do_clear_land)
 {
-	const building::CLand* pLand = building::CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
+	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
 
 	if(nullptr == pLand )
 	{

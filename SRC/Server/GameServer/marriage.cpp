@@ -135,7 +135,7 @@ namespace marriage
 		if (!IsOnline())
 			return false;
 
-		return ch1->GetMapIndex() == ch2->GetMapIndex();
+		return ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch1)) == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch2));
 
 		// ��Ƽ üũ�� �������
 		/*if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch1)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch1)) != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch2)))
@@ -205,7 +205,7 @@ namespace marriage
 		{
 			// �θ��� ���ʽ��� ���Ѵ�.
 			int count = 0;
-			if (nullptr != ch1 && 
+			if (nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && ch1->FindAffect(affetIdx) != nullptr
 #else
@@ -213,7 +213,7 @@ namespace marriage
 #endif
 			)
 				count ++;
-			if (nullptr != ch2 && 
+			if (nullptr != ch2 &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && ch2->FindAffect(affetIdx) != nullptr
 #else

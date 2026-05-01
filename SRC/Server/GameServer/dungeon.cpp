@@ -82,7 +82,7 @@ struct FWarpToDungeonCoords
 
 void CDungeon::Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index)
 {
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) 
+	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
 	{
 		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
@@ -97,7 +97,7 @@ void CDungeon::JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t in
 	pParty->SetDungeon(this);
 	m_map_pkParty.insert(std::make_pair(pParty,0));
 
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) 
+	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
 	{
 		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
 		return;
@@ -319,7 +319,7 @@ struct FWarpToPosition
 		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
 			return;
 		}
-		if (ch->GetMapIndex() == lMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
 		{
 			ch->Show(lMapIndex, x, y, 0);
 			ch->Stop();
@@ -799,7 +799,7 @@ namespace
 #ifdef TEXTS_IMPROVEMENT
 		uint32_t idx, bool big,
 #endif
-		const char * psz): 
+		const char * psz):
 #ifdef TEXTS_IMPROVEMENT
 		m_idx(idx), m_big(big),
 #endif
