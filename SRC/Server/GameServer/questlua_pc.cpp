@@ -1367,7 +1367,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetGold() : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -1439,8 +1439,8 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch && gold + ch->GetGold() < 0)
-			sys_err("QUEST wrong ChangeGold {} (now {})", gold, ch->GetGold());
+		if (ch && gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 0)
+			sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
 		else if (ch)
 		{
 			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), gold);

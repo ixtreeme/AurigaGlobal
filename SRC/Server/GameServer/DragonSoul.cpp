@@ -724,7 +724,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		return false;
 	}
 
-	if (ch->GetGold() < fee)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
@@ -901,7 +901,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		return false;
 	}
 
-	if (ch->GetGold() < fee)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
@@ -1112,7 +1112,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		return false;
 	}
 
-	if (ch->GetGold() < fee)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
@@ -1300,7 +1300,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						if (ch->GetGold() < fee) {
+						if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee) {
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif
@@ -1416,7 +1416,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 							continue;
 						}
 
-						if (ch->GetGold() < fee) {
+						if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee) {
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif

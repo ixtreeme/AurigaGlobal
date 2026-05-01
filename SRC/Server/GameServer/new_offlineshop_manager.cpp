@@ -2916,7 +2916,7 @@ namespace offlineshop
 			return false;
 #endif
 
-		if(ch->GetGold() < offer.price.illYang)
+		if(ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < offer.price.illYang)
 			return false;
 
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -3203,7 +3203,7 @@ namespace offlineshop
 #endif
 
 #if !defined(ENABLE_FULL_YANG) && !defined(FULL_YANG)
-		if(ch->GetGold() + valutes.illYang > GOLD_MAX)
+		if(ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) + valutes.illYang > GOLD_MAX)
 			return false;
 #endif
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -3458,7 +3458,7 @@ namespace offlineshop
 			return false;
 
 		//check about enough money
-		if(ch->GetGold() < price.illYang)
+		if(ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < price.illYang)
 			return false;
 
 #ifdef __ENABLE_CHEQUE_SYSTEM__

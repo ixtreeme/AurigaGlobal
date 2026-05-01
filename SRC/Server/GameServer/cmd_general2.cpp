@@ -538,7 +538,7 @@ ACMD(do_gotoxy)
 	if (!SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), p))
 		return;
 
-	if (ch->GetGold() < 1000000) {
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 1000000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif

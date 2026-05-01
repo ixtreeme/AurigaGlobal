@@ -1677,7 +1677,7 @@ namespace
 			}
 #endif
 
-			if (ch->GetGold() + iRewardR < 0)
+			if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) + iRewardR < 0)
 				ch->SetGold(0);
 			else
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iRewardR);
@@ -1991,7 +1991,7 @@ bool CGuild::ChargeSP(LPCHARACTER ch, int iSP)
 {
 	int gold = iSP * 100;
 
-	if (gold < iSP || ch->GetGold() < gold)
+	if (gold < iSP || ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < gold)
 		return false;
 
 	int iRemainSP = m_data.max_power - m_data.power;
@@ -2081,7 +2081,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 		return;
 	}
 
-	if (ch->GetGold() < iGold)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < iGold)
 		return;
 
 

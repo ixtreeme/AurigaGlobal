@@ -275,7 +275,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	int64_t dwPrice = r_item.price;
 
-	if (ch->GetGold() < dwPrice)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < dwPrice)
 	{
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
@@ -736,7 +736,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 
 	int64_t price = r_item.price * c;
 
-	if (ch->GetGold() < price) {
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < price) {
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
 

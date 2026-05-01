@@ -461,7 +461,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 			}
 
 			if (materialInfo.gold != 0){
-				if (ch->GetGold() < (materialInfo.gold*count_item)) {
+				if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < (materialInfo.gold*count_item)) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
 #endif

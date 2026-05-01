@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -653,7 +654,7 @@ void CSwitchbot::SwitchItems()
 			}
 			else if (SWITCHBOT_PRICE_TYPE == 2)
 			{
-				if (pkOwner->GetGold() >= SWITCHBOT_PRICE_AMOUNT)
+				if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkOwner)) >= SWITCHBOT_PRICE_AMOUNT)
 				{
 					stop = false;
 				}

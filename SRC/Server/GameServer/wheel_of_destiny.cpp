@@ -82,7 +82,7 @@ void CWheelDestiny::TurnWheel()
 
 	const auto WheelFreeCount = ch->GetWheelFreeCount();
 
-	if (WheelFreeCount < 1 && ch->GetGold() < WheelPrice) {
+	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < WheelPrice) {
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
 		return;
 	}

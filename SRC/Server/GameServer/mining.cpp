@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
@@ -470,7 +471,7 @@ namespace mining
 			ORE_COUNT_FOR_REFINE);
 		int64_t iCost = ch->ComputeRefineFee(cost, 1);
 
-		if (ch->GetGold() < iCost)
+		if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < iCost)
 			return false;
 
 		ch->PayRefineFee(iCost);

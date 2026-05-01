@@ -1911,9 +1911,9 @@ ACMD(do_set)
 				int64_t gold = 0;
 				str_to_number(gold, arg3);
 				DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 3, gold);
-				int64_t before_gold = tch->GetGold();
+				int64_t before_gold = ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch));
 				ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GOLD, gold, true);
-				int64_t after_gold = tch->GetGold();
+				int64_t after_gold = ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch));
 				if (after_gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
@@ -3367,7 +3367,7 @@ ACMD(do_build)
 						return;
 					}
 
-					if (ch->GetGold() < (int64_t)t->dwPrice)
+					if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < (int64_t)t->dwPrice)
 
 					{
 #ifdef TEXTS_IMPROVEMENT

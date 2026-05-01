@@ -1613,7 +1613,7 @@ ACMD(do_pvp)
 		int64_t  limit = 2000000000;
 
 
-		if ((ch->GetGold() < chA_nBetMoney) || (pkVictim->GetGold() < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
+		if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < chA_nBetMoney) || (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 722, "");
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 722, "");
@@ -1672,7 +1672,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if (ch->GetGold() < m_BetMoney)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 877, "");
@@ -1680,7 +1680,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if ((ch->GetGold() + m_BetMoney) > GOLD_MAX)
+	if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 878, "");
@@ -1688,7 +1688,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if ((pkVictim->GetGold() + m_BetMoney) > GOLD_MAX)
+	if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 878, "");
@@ -1696,7 +1696,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if (pkVictim->GetGold() < m_BetMoney)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 879, "");
@@ -4149,7 +4149,7 @@ ACMD(do_gr_deposit_money)
 	const int64_t amount = atoll(argument);
 	if (amount <= 0)
 		return;
-	if ((int64_t)ch->GetGold() < amount)
+	if ((int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < amount)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough yang.");
 		return;

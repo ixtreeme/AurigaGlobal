@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
@@ -227,7 +228,7 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if(m_priceInfo.illYang > ch->GetGold())
+		if(m_priceInfo.illYang > ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)))
 			return false;
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 		if(m_priceInfo.iCheque > ch->GetCheque())

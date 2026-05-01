@@ -319,7 +319,7 @@ bool CExchange::AddGold(int64_t gold)
 	if (gold <= 0)
 		return false;
 
-	if (GetOwner()->GetGold() < gold)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(GetOwner())) < gold)
 	{
 		// 가지고 있는 돈이 부족.
 		exchange_packet(GetOwner(), EXCHANGE_SUBHEADER_GC_LESS_GOLD, 0, 0, NPOS, 0);
@@ -342,7 +342,7 @@ bool CExchange::AddGold(int64_t gold)
 // 돈이 충분히 있는지, 교환하려는 아이템이 실제로 있는지 확인 한다.
 bool CExchange::Check(int * piItemCount)
 {
-	if (GetOwner()->GetGold() < m_lGold)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(GetOwner())) < m_lGold)
 		return false;
 
 	int item_count = 0;

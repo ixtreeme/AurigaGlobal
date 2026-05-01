@@ -158,9 +158,9 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 		if (it->second)	// if other empire, price is triple
 			dwPrice *= 3;
 
-		if (ch->GetGold() < dwPrice)
+		if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < dwPrice)
 		{
-			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetGold(), dwPrice);
+			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)), dwPrice);
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 

@@ -151,7 +151,7 @@ namespace item_change
 				const int64_t kYangPerItem = 10000000LL;
 				const int64_t maxGold = (int64_t)GOLD_MAX;
 
-				const int64_t beforeGold = (int64_t)ch->GetGold();
+				const int64_t beforeGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
 				const int64_t freeSpace = maxGold - beforeGold;
 
 				if (freeSpace <= 0)
@@ -177,7 +177,7 @@ namespace item_change
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, wantAdd, true);
 
 				 
-				const int64_t afterGold = (int64_t)ch->GetGold();
+				const int64_t afterGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
 				int64_t realAdded = afterGold - beforeGold;
 
 				if (realAdded <= 0)

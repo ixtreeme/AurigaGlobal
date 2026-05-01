@@ -915,7 +915,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 		return false;
 	}
 
-	const int64_t playerGold = (int64_t)ch->GetGold();
+	const int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
 	if (playerGold <= 0)
 		return false;
 
@@ -1028,7 +1028,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		int64_t remaining = (int64_t)req.yang - (int64_t)c.money;
 		if (remaining > 0)
 		{
-			int64_t playerGold = (int64_t)ch->GetGold();
+			int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
 			int64_t allowed = yang;
 			if (allowed > remaining) allowed = remaining;
 			if (allowed > playerGold) allowed = playerGold;

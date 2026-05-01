@@ -572,7 +572,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             exp.next    = ch->GetNextExp();
 
             auto& gold = g_registry.get_or_emplace<ecs::GoldAmount>(ecs_e);
-            gold.amount = ch->GetGold();
+            gold.amount = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
         }
     }
 
@@ -593,7 +593,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ch->GetGold(), g_bChannel, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetAlignment());
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)), g_bChannel, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetAlignment());
 		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006

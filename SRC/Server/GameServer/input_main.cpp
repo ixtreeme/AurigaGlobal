@@ -837,7 +837,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 
 	TPacketCGRequestPetName* p = (TPacketCGRequestPetName*)c_pData;
 
-	if (ch->GetGold() < 100000)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 100000)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 768, "%d", 100000);
@@ -2085,7 +2085,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 						return;
 					}
 
-					if (ch->GetGold() >= GOLD_MAX) {
+					if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) >= GOLD_MAX) {
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 406,
 
@@ -2158,7 +2158,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 			if (ch->GetExchange())
 			{
 
-				const int64_t nTotalGold = ch->GetExchange()->GetCompany()->GetOwner()->GetGold() + pinfo->arg1;
+				const int64_t nTotalGold = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch->GetExchange()->GetCompany()->GetOwner())) + pinfo->arg1;
 
 				if (GOLD_MAX <= nTotalGold)
 				{
@@ -3443,7 +3443,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		return;
 	}
 
-	if(ch->GetGold() < rConf.price)
+	if(ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < rConf.price)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 773, "%d", rConf.price);
@@ -3727,7 +3727,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 #endif
 	TPacketCGAnswerMakeGuild* p = (TPacketCGAnswerMakeGuild*) c_pData;
 
-	if (ch->GetGold() < 200000) {
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 200000) {
 		return;
 	}
 #ifdef ENABLE_BUG_FIXES
@@ -4044,7 +4044,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					return SubPacketLen;
 				}
 
-				if (ch->GetGold() < gold)
+				if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 126, "");
@@ -4242,7 +4242,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				const int offer = *reinterpret_cast<const int*>(c_pData);
 				const int gold = offer * 100;
 
-				if (offer < 0 || gold < offer || gold < 0 || ch->GetGold() < gold)
+				if (offer < 0 || gold < offer || gold < 0 || ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 151, "");
@@ -4455,7 +4455,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (uiBytes < sizeof(TPacketCGMyShop) + iExtraLen)
 		return -1;
 
-	if (ch->GetGold() >= GOLD_MAX)
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226,

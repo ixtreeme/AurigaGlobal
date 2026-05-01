@@ -601,9 +601,9 @@ namespace quest
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
 				if (tch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 				{
-					if (gold + tch->GetGold() < 0)
+					if (gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch)) < 0)
 					{
-						sys_err("QUEST wrong ChangeGold {} (now {})", gold, tch->GetGold());
+						sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch)));
 					}
 					else
 					{
@@ -620,9 +620,9 @@ namespace quest
 		}
 		else
 		{
-			if (gold + ch->GetGold() < 0)
+			if (gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 0)
 			{
-				sys_err("QUEST wrong ChangeGold {} (now {})", gold, ch->GetGold());
+				sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
 			}
 			else
 			{

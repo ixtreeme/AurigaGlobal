@@ -437,7 +437,7 @@ void CraftItems(entt::entity pc, int slot)
 		return;
 	}
 
-	if (ch->GetGold() < Cost_Gaya_Yang) {
+	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < Cost_Gaya_Yang) {
 		ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, item_glimmerstone),
 			"GAYA_MISSING_GOLD");
