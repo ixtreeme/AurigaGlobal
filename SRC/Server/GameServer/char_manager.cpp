@@ -447,7 +447,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	{
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 
-		str_lower(ch->GetName(), szName, sizeof(szName));
+		str_lower(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szName, sizeof(szName));
 
 		auto it = m_map_pkPCChr.find(szName);
 
@@ -869,7 +869,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ((ch)->GetName()), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -1353,7 +1353,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
 	{
-		LOG_INFO("RegisterRaceNumMap {} {}", ch->GetName(), dwVnum);
+		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwVnum);
 		m_map_pkChrByRaceNum[dwVnum].insert(ch);
 	}
 }
@@ -2501,7 +2501,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 			}
 			else
 			{
-				LOG_ERROR("ItemShop purchase failed to create item vnum {} for {}", itemVnum, ch->GetName());
+				LOG_ERROR("ItemShop purchase failed to create item vnum {} for {}", itemVnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			}
 		}
 		else
@@ -2573,7 +2573,7 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 								uint32_t accountID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
 								uint8_t subIndex = ITEMSHOP_BUY;
 								char playerName[CHARACTER_NAME_MAX_LEN + 1];
-								strlcpy(playerName, ch->GetName(), sizeof(playerName));
+								strlcpy(playerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(playerName));
 
 								char ipAdress[16];
 								strlcpy(ipAdress, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), sizeof(ipAdress));

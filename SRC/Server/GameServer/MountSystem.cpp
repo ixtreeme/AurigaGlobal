@@ -120,12 +120,12 @@ CMountActor::~CMountActor()
 
 void CMountActor::SetName()
 {
-	std::string petName = m_pkOwner->GetName();
+	std::string petName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkOwner)).data();
 
 	if (true == IsSummoned())
 	{
 		petName += "'s Mount";
-		
+
 		m_pkChar->SetName(petName);
 	}
 
@@ -200,7 +200,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 			if (mountProto->aApplies[i].bType == APPLY_NONE)
 				continue;
 
-			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), 
+			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner),
 				AFFECT_MOUNT_BONUS,
 				aApplyInfo[mountProto->aApplies[i].bType].bPointType,
 				mountProto->aApplies[i].lValue,
@@ -216,7 +216,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	else
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, "MountActor::Mount - Mount bonus already active, skipping duplicate apply.");
-		
+
 	}
 
 #ifdef ENABLE_COSTUME_MOUNT
@@ -243,7 +243,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 #endif
 	if (nullptr == m_pkOwner)
 		return false;
-	
+
 	LPITEM mountItem = LegacyItemFromEntity(mountItemEntity);
 	if(!mountItem)
 		return false;
@@ -260,7 +260,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();
-	
+
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
@@ -319,7 +319,7 @@ void CMountActor::Unmount()
 {
 	if (nullptr == m_pkOwner)
 		return;
-	
+
 	if (!m_pkOwner->GetMountVnum())
 		return;
 
@@ -329,10 +329,10 @@ void CMountActor::Unmount()
 
 
 	m_pkOwner->MountVnum(0);
-	
+
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();
-	
+
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
@@ -350,7 +350,7 @@ void CMountActor::Unsummon()
 	if (true == this->IsSummoned())
 	{
 		this->SetSummonItem(entt::null);
-		
+
 		if (nullptr != m_pkChar)
 		{
 			const entt::entity mountEntity = AIHelpers::EcsOf(m_pkChar);
@@ -390,7 +390,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 		x += number(-100, 100);
 		y += number(-100, 100);
 	}
-	
+
 	if (nullptr != m_pkChar)
 	{
 		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
@@ -398,7 +398,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 		return m_dwVID;
 	}
-	
+
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
 	if (dwMountSkinvnum > 0)
@@ -424,9 +424,9 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 	this->SetName();
 
 	this->SetSummonItem(pSummonItem);
-	
+
 	//m_pkOwner->ComputePoints();
-	
+
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
 	return m_dwVID;
 }
@@ -530,7 +530,7 @@ bool CMountActor::Follow(float fMinDistance)
 		return false;
 
 	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
-	
+
 	return true;
 }
 
@@ -736,7 +736,7 @@ void CMountSystem::Mount(uint32_t mobVnum, entt::entity mountItem)
 		LOG_ERROR("[CMountSystem::Mount] Null Pointer (mountActor)");
 		return;
 	}
-	
+
 	if(mountItem == entt::null)
 		return;
 

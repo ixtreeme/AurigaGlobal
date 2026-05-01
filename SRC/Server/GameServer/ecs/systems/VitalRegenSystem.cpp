@@ -51,7 +51,7 @@ void DebugStatsDriftCheck(entt::registry& reg)
             }
 
             if (stats.points[point] != ch->GetPoint(static_cast<uint8_t>(point))) {
-                LOG_ERROR("STATS_DRIFT pt={} ecs={} legacy={} name={}", point, static_cast<long long>(stats.points[point]), static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))), ch->GetName());
+                LOG_ERROR("STATS_DRIFT pt={} ecs={} legacy={} name={}", point, static_cast<long long>(stats.points[point]), static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
             }
         }
     }

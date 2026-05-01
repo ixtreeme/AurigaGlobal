@@ -130,7 +130,7 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 	m_Relation.erase(account);
 #ifdef ENABLE_MESSENGER_TEAM
 	std::set<MessengerManager::keyT>::iterator it5;
-	
+
 	for (it5 = m_InverseTeamRelation[account].begin(); it5 != m_InverseTeamRelation[account].end(); ++it5)
 	{
 		SendTeamLogout(*it5, account);
@@ -180,8 +180,8 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target)))->IsRunning() == true)
 		return;
 
-	uint32_t dw1 = GetCRC32(((ch)->GetName()), strlen(((ch)->GetName())));
-	uint32_t dw2 = GetCRC32(target->GetName(), strlen(target->GetName()));
+	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()));
+	uint32_t dw2 = GetCRC32(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data()));
 
 	char buf[64];
 	snprintf(buf, sizeof(buf), "%u:%u", dw1, dw2);
@@ -189,7 +189,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ((ch)->GetName()));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 }
 
 // @fixme130 void -> bool
@@ -271,7 +271,7 @@ void MessengerManager::LoadTeamList(SQLMsg * msg)
 {
 	if (nullptr == msg || nullptr == msg->Get() ||msg->Get()->uiNumRows == 0)
 		return;
-	
+
 	std::string account;
 
 	for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
@@ -340,10 +340,10 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 					bAuto = true;
 				}
 			}
-			
+
 			if (!bAuto)
 				strncpy(pack_online.language, "en", sizeof(pack_online.language));
-			
+
 			iSize += sizeof(pack_online.language);
 #endif
 			pack_online.length = iSize;
@@ -368,10 +368,10 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 					bAuto = true;
 				}
 			}
-			
+
 			if (!bAuto)
 				strncpy(pack_offline.language, "en", sizeof(pack_offline.language));
-			
+
 			iSize += sizeof(pack_offline.language);
 #endif
 			pack_offline.length = iSize;

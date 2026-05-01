@@ -537,7 +537,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 			pItem->AddToCharacter(ch, DestCell);
 			return true;
 		}
-		
+
 		fDice = fnumber(0.f, 100.f);
 		bSuccess = fDice <= (fProb * (100 + iBonus) / 100.f);
 		if (nullptr != pExtractor)
@@ -563,7 +563,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 			{
 				sprintf(buf, "dice(%d) prob(%d)", (int)fDice, (int)fProb);
 			}
-			
+
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_SUCCESS", buf);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
@@ -581,7 +581,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 			{
 				sprintf(buf, "dice(%d) prob(%d) ByProd(VNUM:%d)", (int)fDice, (int)fProb, dwByProduct);
 			}
-			
+
 			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_FAILED", buf);
 			ItemSystem::DestroyItemEntityEcs(
 				item,
@@ -718,7 +718,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
 	if (count != need_count)
 	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ch->GetName());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
 		SendRefineResultPacket(ch, bSubHeader, NPOS);
 		return false;
@@ -895,7 +895,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
 	if (count != need_count)
 	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ch->GetName());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
 		SendRefineResultPacket(ch, bSubHeader, NPOS);
 		return false;
@@ -1232,7 +1232,7 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 			int32_t grade = DRAGON_SOUL_GRADE_NORMAL;
 			bool done = false;
 			while (!done) {
-				if (grade > 
+				if (grade >
 #ifdef ENABLE_DS_GRADE_MYTH
 				DRAGON_SOUL_GRADE_LEGENDARY
 #else

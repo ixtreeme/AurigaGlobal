@@ -123,13 +123,13 @@ static bool FN_is_battle_zone(LPCHARACTER ch)
 {
 	switch (ch->GetMapIndex())
 	{
-	case 1:         // ¿ 1 
-	case 2:         // ¿ 2 
-	case 21:        // o 1 
-	case 23:        // o 2 
-	case 41:        //  1 
-	case 43:        //  2 
-	case 113:       // OX 
+	case 1:         // ¿ 1
+	case 2:         // ¿ 2
+	case 21:        // o 1
+	case 23:        // o 2
+	case 41:        //  1
+	case 43:        //  2
+	case 113:       // OX
 		return false;
 	}
 
@@ -421,7 +421,7 @@ bool RaceToJob(unsigned race, unsigned* ret_job)
 	return true;
 }
 
-// û ? 
+// û ?
 bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_t shape, uint8_t bEmpire)
 {
 	if (race >= MAIN_RACE_MAX_NUM)
@@ -508,7 +508,7 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 	}
 #endif
 
-	//    ??u, ? ?  
+	//    ??u, ? ?
 	if (!check_name(pinfo->name) || pinfo->shape > 1)
 	{
 		d->Packet(&packFailure, sizeof(packFailure));
@@ -607,7 +607,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		PIXEL_POSITION pos2;
 		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos2);
 
-		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ch->GetName(), pos.x, pos.y, ch->GetMapIndex(), pos2.x, pos2.y);
+		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pos.x, pos.y, ch->GetMapIndex(), pos2.x, pos2.y);
 		pos = pos2;
 	}
 
@@ -665,14 +665,14 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ch->GetItemAward_cmd())																		// ?
 		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetItemAward_vnum());	//questmanager ?
 
-	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ch->GetName(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
+	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
 
 	if (ch->GetHorseLevel() > 0)
 	{
 		ch->EnterHorse();
 	}
 
-	// ÷?? ? 
+	// ÷?? ?
 	ch->ResetPlayTime();
 
 	// ?  ?T ?
@@ -682,7 +682,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	CPVPManager::instance().Connect(ch);
 	CPVPManager::instance().SendList(d);
 
-	MessengerManager::instance().Login(ch->GetName());
+	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 	CPartyManager::instance().SetParty(ch);
 	CGuildManager::instance().SendGuildWar(ch);
@@ -726,7 +726,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			continue;
 
 		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_PREMIUM_START + i, POINT_NONE, 0, 0, remain, 0, true);
-		LOG_INFO("PREMIUM: {} type {} {}min", ch->GetName(), i, remain);
+		LOG_INFO("PREMIUM: {} type {} {}min", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), i, remain);
 	}
 
 	if (g_bCheckClientVersion)
@@ -834,10 +834,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 		}
 #endif
-		// ox ?T 
+		// ox ?T
 		if (COXEventManager::instance().Enter(ch) == false)
 		{
-			// ox   ?  . ÷?  
+			// ox   ?  . ÷?
 			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
 				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}

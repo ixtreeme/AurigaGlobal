@@ -158,7 +158,7 @@ void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
-	LOG_INFO("VERSION: {} {} {}", ((ch)->GetName()), p->timestamp, p->filename);
+	LOG_INFO("VERSION: {} {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->timestamp, p->filename);
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetClientVersion(p->timestamp);
 }
 

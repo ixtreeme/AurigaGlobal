@@ -362,7 +362,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
-			((ch)->GetName()),
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
 			ch->GetPoint(POINT_ATT_SPEED));

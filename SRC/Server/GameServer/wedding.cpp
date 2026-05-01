@@ -121,7 +121,7 @@ namespace marriage
 		va_start(args, format);
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
-		
+
 		FNotice f(type, idx, chatbuf);
 		std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
 	}
@@ -151,7 +151,7 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			LOG_INFO("WeddingMap::DestroyAll: {}", ch->GetName());
+			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -175,7 +175,7 @@ namespace marriage
 		if (IsMember(ch) == true)
 			return;
 
-		//0, "WeddingMap: IncMember %s", ch->GetName());
+		//0, "WeddingMap: IncMember %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		m_set_pkChr.insert(ch);
 
 		SendLocalEvent(ch);
@@ -191,7 +191,7 @@ namespace marriage
 		if (IsMember(ch) == false)
 			return;
 
-		//0, "WeddingMap: DecMember %s", ch->GetName());
+		//0, "WeddingMap: DecMember %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		m_set_pkChr.erase(ch);
 
 		if (ch->GetLevel() < 10)

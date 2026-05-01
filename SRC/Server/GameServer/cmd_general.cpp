@@ -180,7 +180,7 @@ ACMD(do_daily_reward_reload){
 		}
 	} else {
 		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
-		
+
 		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 		if (msg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row;
@@ -211,7 +211,7 @@ ACMD(do_daily_reward_get_reward){
 	std::string items = "";
 	bool reward = false;
 	std::string rewards = "";
-	// and (NOW() - interval 30 minute > time) 
+	// and (NOW() - interval 30 minute > time)
 
 	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 	if (msg->Get()->uiNumRows > 0) {
@@ -222,7 +222,7 @@ ACMD(do_daily_reward_get_reward){
 
 		reward = true;
 	}
-	
+
 	if (reward) {
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 		// HWID limit: 1 gep / nap
@@ -245,7 +245,7 @@ ACMD(do_daily_reward_get_reward){
 
 		uint32_t item = 0;
 		uint32_t count = 0;
-		
+
 		str_to_number(item, items.c_str());
 		str_to_number(count, counts.c_str());
 		ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), item, count);
@@ -261,7 +261,7 @@ ACMD(do_user_horse_back)
 {
 	if (!ch)
 		return;
-	
+
 	CMountSystem* mountSystem = ch->GetMountSystem();
 	if (mountSystem) {
 		if ((mountSystem->CountSummoned() > 0) || (ch->GetMountVnum())) {
@@ -273,7 +273,7 @@ ACMD(do_user_horse_back)
 			}
 		}
 	}
-	
+
 	if (ch->GetHorse() != nullptr)
 	{
 		ch->HorseSummon(false);
@@ -322,7 +322,7 @@ ACMD(do_user_horse_feed)
 		ch->RemoveSpecifyItem(dwFood, 1);
 		ch->FeedHorse();
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 112, "%s", 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 112, "%s",
 #ifdef ENABLE_MULTI_NAMES
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
@@ -334,7 +334,7 @@ ACMD(do_user_horse_feed)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 111, "%s", 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 111, "%s",
 #ifdef ENABLE_MULTI_NAMES
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
@@ -470,7 +470,7 @@ ACMD(do_shutdown)
 {
 	if (nullptr == ch)
 	{
-		LOG_ERROR("Accept shutdown command from {}.", ((ch)->GetName()));
+		LOG_ERROR("Accept shutdown command from {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	}
 	TPacketGGShutdown p;
 	p.bHeader = HEADER_GG_SHUTDOWN;
@@ -800,7 +800,7 @@ ACMD(do_restart)
 					break;
 				default:
 					{
-						LOG_ERROR("do_restart: unknown method for {}", ((ch)->GetName()));
+						LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 					}
 					break;
 			}
@@ -1408,7 +1408,7 @@ ACMD(do_restart)
 			break;
 		default:
 			{
-				LOG_ERROR("do_restart: unknown method for {}", ((ch)->GetName()));
+				LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			}
 			break;
 	}
@@ -1554,7 +1554,7 @@ ACMD(do_pvp)
 
 	if (!ch)
 		return;
-	
+
 	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(((ch)->GetMapIndex())) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1564,11 +1564,11 @@ ACMD(do_pvp)
 	}
 
 	char arg1[256], arg2[256], arg3[256], arg4[256], arg5[256], arg6[256], arg7[256], arg8[256], arg9[256], arg10[256];
-	
-	pvp_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2), arg3, sizeof(arg3), arg4, sizeof(arg4), arg5, sizeof(arg5), arg6, sizeof(arg6), arg7, sizeof(arg7), arg8, sizeof(arg8), arg9, sizeof(arg9), arg10, sizeof(arg10));	
-	
+
+	pvp_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2), arg3, sizeof(arg3), arg4, sizeof(arg4), arg5, sizeof(arg5), arg6, sizeof(arg6), arg7, sizeof(arg7), arg8, sizeof(arg8), arg9, sizeof(arg9), arg10, sizeof(arg10));
+
 	uint32_t vid = 0;
-	str_to_number(vid, arg1);	
+	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
 	//// Fake PC / non-real target => ignore
 	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
@@ -1591,7 +1591,7 @@ ACMD(do_pvp)
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 888, "%d", itime);
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_DIALOG, 889, "%s", ((ch)->GetName()));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_DIALOG, 889, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 #endif
 		return;
 	}
@@ -1605,9 +1605,9 @@ ACMD(do_pvp)
 		CPVPManager::instance().Decline(pkVictim, ch);
 		return;
 	}
-	
+
 	if (*arg2 && !strcmp(arg2, "accept"))
-	{	
+	{
 		int64_t chA_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8]);
 		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[8]);
 		int64_t  limit = 2000000000;
@@ -1625,19 +1625,19 @@ ACMD(do_pvp)
 
 		ch->SetDuel("IsFight", 1);
 		pkVictim->SetDuel("IsFight", 1);
-		
+
 		if (chA_nBetMoney > 0 && chA_nBetMoney > 0)
 		{
-			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, - chA_nBetMoney, true);	
-			ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), POINT_GOLD, - chB_nBetMoney, true);	
+			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, - chA_nBetMoney, true);
+			ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), POINT_GOLD, - chB_nBetMoney, true);
 		}
-		
+
 		CPVPManager::instance().Insert(ch, pkVictim);
 		return;
 	}
-	
+
 	int m_BlockChangeItem = 0, m_BlockBuff = 0, m_BlockPotion = 0, m_BlockRide = 0, m_BlockPet = 0, m_BlockPoly = 0, m_BlockParty = 0, m_BlockExchange = 0, m_BetMoney = 0;
-	
+
 	str_to_number(m_BlockChangeItem, arg2);
 	str_to_number(m_BlockBuff, arg3);
 	str_to_number(m_BlockPotion, arg4);
@@ -1647,7 +1647,7 @@ ACMD(do_pvp)
 	str_to_number(m_BlockParty, arg8);
 	str_to_number(m_BlockExchange, arg9);
 	str_to_number(m_BetMoney, arg10);
-	
+
 	if (!isdigit(*arg2) && !isdigit(*arg3) && !isdigit(*arg4) && !isdigit(*arg5) && !isdigit(*arg6) && !isdigit(*arg7) && !isdigit(*arg8) && !isdigit(*arg9) && !isdigit(*arg10))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1662,8 +1662,8 @@ ACMD(do_pvp)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 875, "");
 #endif
 		return;
-	}	
-	
+	}
+
 	if (m_BetMoney >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1671,7 +1671,7 @@ ACMD(do_pvp)
 #endif
 		return;
 	}
-	
+
 	if (ch->GetGold() < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1679,7 +1679,7 @@ ACMD(do_pvp)
 #endif
 		return;
 	}
-	
+
 	if ((ch->GetGold() + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1687,7 +1687,7 @@ ACMD(do_pvp)
 #endif
 		return;
 	}
-	
+
 	if ((pkVictim->GetGold() + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1695,7 +1695,7 @@ ACMD(do_pvp)
 #endif
 		return;
 	}
-	
+
 	if (pkVictim->GetGold() < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1703,27 +1703,27 @@ ACMD(do_pvp)
 #endif
 		return;
 	}
-	
+
 	if (*arg1 && *arg2 && *arg3 && *arg4 && *arg5 && *arg6 && *arg7 && *arg8 && *arg9 && *arg10)
 	{
 		ch->SetDuel("BlockChangeItem", m_BlockChangeItem);			ch->SetDuel("BlockBuff", m_BlockBuff);
 		ch->SetDuel("BlockPotion", m_BlockPotion);					ch->SetDuel("BlockRide", m_BlockRide);
-		ch->SetDuel("BlockPet", m_BlockPet);						ch->SetDuel("BlockPoly", m_BlockPoly);	
+		ch->SetDuel("BlockPet", m_BlockPet);						ch->SetDuel("BlockPoly", m_BlockPoly);
 		ch->SetDuel("BlockParty", m_BlockParty);					ch->SetDuel("BlockExchange", m_BlockExchange);
 		ch->SetDuel("BetMoney", m_BetMoney);
 
 		pkVictim->SetDuel("BlockChangeItem", m_BlockChangeItem);	pkVictim->SetDuel("BlockBuff", m_BlockBuff);
 		pkVictim->SetDuel("BlockPotion", m_BlockPotion);			pkVictim->SetDuel("BlockRide", m_BlockRide);
-		pkVictim->SetDuel("BlockPet", m_BlockPet);					pkVictim->SetDuel("BlockPoly", m_BlockPoly);	
+		pkVictim->SetDuel("BlockPet", m_BlockPet);					pkVictim->SetDuel("BlockPoly", m_BlockPoly);
 		pkVictim->SetDuel("BlockParty", m_BlockParty);				pkVictim->SetDuel("BlockExchange", m_BlockExchange);
 		pkVictim->SetDuel("BetMoney", m_BetMoney);
-			
-		CPVPManager::instance().Insert(ch, pkVictim); 
+
+		CPVPManager::instance().Insert(ch, pkVictim);
 	}
 }
 
 ACMD(do_pvp_advanced)
-{   
+{
 	if (!ch)
 		return;
 
@@ -1734,7 +1734,7 @@ ACMD(do_pvp_advanced)
 #endif
 		return;
 	}
-	
+
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1749,14 +1749,14 @@ ACMD(do_pvp_advanced)
 	//}
 	if (!pkVictim)
 		return;
-	
+
 	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
 		return;
-	
+
 	if (pkVictim->GetArena() != nullptr) {
 		return;
 	}
-	
+
 	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1764,7 +1764,7 @@ ACMD(do_pvp_advanced)
 #endif
 		return;
 	}
-	
+
 	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1772,32 +1772,32 @@ ACMD(do_pvp_advanced)
 #endif
 		return;
 	}
-	
+
 	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_EQUIPMENT_);
-	
+
 	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim));
 
-	const char* m_Name = pkVictim->GetName();	
+	const char* m_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data();
 	const char* m_GuildName = "-";
-		
-	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));	
+
+	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 	int m_Level = pkVictim->GetLevel();
 	int m_PlayTime = pkVictim->GetRealPoint(POINT_PLAYTIME);
 	int m_MaxHP = pkVictim->GetMaxHP();
 	int m_MaxSP = pkVictim->GetMaxSP();
-	
+
 	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim));
-	
+
 	if (g)
-	{ 
+	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
-		
+
 		if (statusEq < 1)
 			pkVictim->SendEquipment(ch);
 	}
-	else { 
+	else {
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
-		
+
 		if (statusEq < 1)
 			pkVictim->SendEquipment(ch);
 	}
@@ -1836,12 +1836,12 @@ ACMD(do_block_equipment)
 
 	char arg1[256];
 	one_argument (argument, arg1, sizeof(arg1));
-	
+
 	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || nullptr == ch)
 		return;
-	
+
 	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_);
-	
+
 	if (!strcmp(arg1, "BLOCK"))
 	{
 		if (statusEq > 0)
@@ -2048,7 +2048,7 @@ ACMD(do_mall_password)
 		return;
 	}
 
-	if (iPulse - ch->GetMallLoadTime() < passes_per_sec * 10) // 10ʿ ѹ û 
+	if (iPulse - ch->GetMallLoadTime() < passes_per_sec * 10) // 10ʿ ѹ û
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 190, "");
@@ -2138,7 +2138,7 @@ ACMD(do_set_run_mode)
 
 ACMD(do_war)
 {
-	//   
+	//
 	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
 
 	if (!g)
@@ -2153,7 +2153,7 @@ ACMD(do_war)
 		return;
 	}
 
-	//Ķ͸ ι 
+	//Ķ͸ ι
 	char arg1[256], arg2[256];
 	uint32_t type = GUILD_WAR_TYPE_FIELD; //fixme102 base int modded uint
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -2186,7 +2186,7 @@ ACMD(do_war)
 		return;
 	}
 
-	// 带 
+	// 带
 	CGuild * opp_g = CGuildManager::instance().FindGuildByName(arg1);
 
 	if (!opp_g)
@@ -2379,7 +2379,7 @@ ACMD(do_nowar)
 #endif
 		return;
 	}
-	
+
 	g->RequestRefuseWar(opp_g->GetID());
 }
 
@@ -2432,13 +2432,13 @@ ACMD(do_messenger_auth)
 	char answer = LOWER(*arg1);
 	// @fixme130 AuthToAdd void -> bool
 	bool bIsDenied = answer != 'y';
-	bool bIsAdded = MessengerManager::instance().AuthToAdd(((ch)->GetName()), arg2, bIsDenied); // DENY
+	bool bIsAdded = MessengerManager::instance().AuthToAdd(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), arg2, bIsDenied); // DENY
 	if (bIsAdded && bIsDenied)
 	{
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg2);
 #ifdef TEXTS_IMPROVEMENT
 		if (tch) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(tch), CHAT_TYPE_INFO, 107, "%s", ((ch)->GetName()));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(tch), CHAT_TYPE_INFO, 107, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		}
 #endif
 	}
@@ -2466,15 +2466,15 @@ ACMD(do_unmount)
 		CMountSystem* mountSystem = ch->GetMountSystem();
 		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
-		
+
 		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
 			return;
-		
-#ifdef __CHANGELOOK_SYSTEM__	
+
+#ifdef __CHANGELOOK_SYSTEM__
 		if(mount->GetTransmutation())
 		{
 			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mount->GetTransmutation());
-			
+
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
@@ -2674,9 +2674,9 @@ ACMD(do_attr_transfer)
 {
 	if (!ch->CanDoAttrTransfer())
 		return;
-	
-	LOG_INFO("{} has used an Attr Transfer command: {}.", ((ch)->GetName()), argument);
-	
+
+	LOG_INFO("{} has used an Attr Transfer command: {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), argument);
+
 	int w_index = 0, i_index = 0;
 	const char *line;
 	char arg1[256], arg2[256], arg3[256];
@@ -2685,7 +2685,7 @@ ACMD(do_attr_transfer)
 	if (0 == arg1[0]) {
 		return;
 	}
-	
+
 	std::string_view strArg1(arg1);
 	if (strArg1 == "open")
 	{
@@ -2706,7 +2706,7 @@ ACMD(do_attr_transfer)
 	{
 		if (0 == arg2[0] || !isdigit(*arg2) || 0 == arg3[0] || !isdigit(*arg3))
 			return;
-		
+
 		str_to_number(w_index, arg2);
 		str_to_number(i_index, arg3);
 		AttrTransfer_add_item(ch, w_index, i_index);
@@ -2716,12 +2716,12 @@ ACMD(do_attr_transfer)
 	{
 		if (0 == arg2[0] || !isdigit(*arg2))
 			return;
-		
+
 		str_to_number(w_index, arg2);
 		AttrTransfer_delete_item(ch, w_index);
 		return;
 	}
-	
+
 	switch (LOWER(arg1[0]))
 	{
 		case 'o':
@@ -2737,7 +2737,7 @@ ACMD(do_attr_transfer)
 			{
 				if (0 == arg2[0] || !isdigit(*arg2) || 0 == arg3[0] || !isdigit(*arg3))
 					return;
-				
+
 				str_to_number(w_index, arg2);
 				str_to_number(i_index, arg3);
 				AttrTransfer_add_item(ch, w_index, i_index);
@@ -2747,7 +2747,7 @@ ACMD(do_attr_transfer)
 			{
 				if (0 == arg2[0] || !isdigit(*arg2))
 					return;
-				
+
 				str_to_number(w_index, arg2);
 				AttrTransfer_delete_item(ch, w_index);
 			}
@@ -2859,7 +2859,7 @@ ACMD(do_PetSkill) {
 	if (skillslot > 3 || skillslot < 0)
 		return;
 
-	if (ch->GetNewPetSystem()->IsActivePet()) { 
+	if (ch->GetNewPetSystem()->IsActivePet()) {
 		ch->GetNewPetSystem()->DoPetSkill(skillslot);
 	}
 #ifdef TEXTS_IMPROVEMENT
@@ -2873,14 +2873,14 @@ ACMD(do_PetSkill) {
 ACMD(do_PetIncreaseSkill) {
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-	
+
 	if ((!*arg1) || (!*arg2))
 		return;
-	
+
 	int iSlot = atoi(arg1), iType = atoi(arg2);
 	if (!ch->GetNewPetSystem())
 		return;
-	
+
 	if (ch->GetNewPetSystem()->IsActivePet())
 		ch->GetNewPetSystem()->IncreasePetSkill(iSlot, iType);
 }
@@ -2923,12 +2923,12 @@ ACMD(do_PetEvo) {
 				return;
 			}
 #endif
-			
+
 			bool bRet = false;
 			uint32_t dwItemVnum1 = 55003 + tmpevo;
 			if (ch->CountSpecifyItem(dwItemVnum1) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10, 
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
@@ -2938,11 +2938,11 @@ ACMD(do_PetEvo) {
 #endif
 				bRet = true;
 			}
-			
+
 			uint32_t dwItemVnum2 = 27992 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum2) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10, 
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
@@ -2952,11 +2952,11 @@ ACMD(do_PetEvo) {
 #endif
 				bRet = true;
 			}
-			
+
 			uint32_t dwItemVnum3 = 86056 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum3) < 3) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 3, 
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 3,
 #ifdef ENABLE_MULTI_NAMES
 				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
 #else
@@ -2966,10 +2966,10 @@ ACMD(do_PetEvo) {
 #endif
 				bRet = true;
 			}
-			
+
 			if (bRet)
 				return;
-			
+
 			ch->RemoveSpecifyItem(dwItemVnum1, 10);
 			ch->RemoveSpecifyItem(dwItemVnum2, 10);
 			ch->RemoveSpecifyItem(dwItemVnum3, 3);
@@ -3239,7 +3239,7 @@ ACMD(do_cube)
 	if (!ch->CanDoCube())
 		return;
 
-	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ((ch)->GetName()), argument);
+	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), argument);
 	int cube_index = 0, inven_index = 0;
 #ifdef ENABLE_EXTRA_INVENTORY
 	uint8_t window_type = 0;
@@ -3361,10 +3361,10 @@ ACMD(do_in_game_mall)
 	char sas[33];
 	MD5_CTX ctx;
 	const char sas_key[] = "raLgNC5jCu7LrA";
-	
+
 	char language[3];
 	strcpy(language, "en");//If you have multilanguage, update this
-	
+
 	snprintf(buf, sizeof(buf), "%u%u%s", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ch->GetAID(), sas_key);
 
 	MD5Init(&ctx);
@@ -3408,7 +3408,7 @@ ACMD(do_in_game_mall)
 //		sas[i+i] = hex[digest[i] >> 4];
 //		sas[i+i+1] = hex[digest[i] & 0x0f];
 //	}
-//	
+//
 //	sas[i+i] = '\0';
 //#endif
 //
@@ -3496,9 +3496,9 @@ ACMD(do_dice)
 #else
 		CHAT_TYPE_INFO
 #endif
-		, 544, "%s#%d#%d#%d", ((ch)->GetName()), n, start, end);
+		, 544, "%s#%d#%d#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), n, start, end);
 	} else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else
@@ -3525,7 +3525,7 @@ ACMD(do_click_safebox)
 }
 ACMD(do_force_logout)
 {
-	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(((ch)->GetName()));
+	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	if (!pDesc)
 		return;
 	pDesc->DelayedDisconnect(0);
@@ -3565,15 +3565,15 @@ ACMD(do_ride)
 		CMountSystem* mountSystem = ch->GetMountSystem();
 		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
-		
+
 		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
 			return;
-		
-#ifdef __CHANGELOOK_SYSTEM__	
+
+#ifdef __CHANGELOOK_SYSTEM__
 		if(mount->GetTransmutation())
 		{
 			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mount->GetTransmutation());
-			
+
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
@@ -3600,7 +3600,7 @@ ACMD(do_ride)
 				mountSystem->Mount(mobVnum, EntityFactory::CreateItemEntity(g_registry, mount));
 			}
 		}
-		
+
 		return;
 	}
 #endif
@@ -3698,17 +3698,17 @@ ACMD(do_extend_range_npc)
 {
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	
+
 	if (!*arg1)
 		return;
-	
-	
+
+
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
-	
+
 	if (ch->IsDead())
 		return;
-	
+
 	if (ch->IsDead() || ch->GetExchange() || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3716,15 +3716,15 @@ ACMD(do_extend_range_npc)
 #endif
 		return;
 	}
-	
+
 	LPSHOP shop = CShopManager::instance().Get(vnum);
-	
+
 	if(!shop)
 		return;
-	
+
 	ch->SetShopOwner(ch);
 	shop->AddGuest(ch, 0, false);
-	
+
 }
 #endif
 
@@ -3785,7 +3785,7 @@ ACMD(do_rune)
 {
 	if (!ch)
 		return;
-	
+
 	char arg1[512];
 	const char* rest = one_argument(argument, arg1, sizeof(arg1));
 	switch (arg1[0])
@@ -3796,10 +3796,10 @@ ACMD(do_rune)
 				int slot;
 				if (str_to_number(slot, arg1) == false)
 					return;
-				
+
 				if (slot == WEAR_RUNE7)
 					return;
-				
+
 				LPITEM pkItem = ch->GetWear(slot);
 				if (pkItem)
 					pkItem->ActivateRune();
@@ -3811,10 +3811,10 @@ ACMD(do_rune)
 				int slot;
 				if (str_to_number(slot, arg1) == false)
 					return;
-				
+
 				if (slot == WEAR_RUNE7)
 					return;
-				
+
 				LPITEM pkItem = ch->GetWear(slot);
 				if (pkItem)
 					pkItem->DeactivateRune();
@@ -3826,7 +3826,7 @@ ACMD(do_rune)
 				int w;
 				if (str_to_number(w, arg1) == false)
 					return;
-				
+
 				int iMaxSubTypes = RUNE_SUBTYPES - 1;
 				LPITEM pkItem = nullptr;
 				for (int i = 0; i < iMaxSubTypes; i++) {
@@ -3847,37 +3847,37 @@ ACMD(do_rune_charge)
 {
 	if (!ch)
 		return;
-	
+
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-	
+
 	if ((!*arg1) || (!*arg2))
 		return;
-	
+
 	int iArg1 = 0;
 	if (str_to_number(iArg1, arg1) == false)
 		return;
-	
+
 	int iArg2 = 0;
 	if (str_to_number(iArg2, arg2) == false)
 		return;
-	
+
 	LPITEM pkRune = ch->GetWear(iArg1);
 	if (!pkRune)
 		return;
-	
+
 	if (!pkRune->IsRune())
 		return;
 	else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkRune)) == RUNE_SLOT7)
 		return;
-	
+
 	LPITEM pkBottle = ch->GetInventoryItem(iArg2);
 	if (!pkBottle)
 		return;
-	
+
 	if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != ITEM_USE) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != USE_RUNE_PERC_CHARGE))
 		return;
-	
+
 	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkBottle)) > 1) {
 		int pos = ch->GetEmptyInventory(pkBottle->GetSize());
 		if (pos == -1) {
@@ -3886,21 +3886,21 @@ ACMD(do_rune_charge)
 #endif
 			return;
 		}
-		
+
 		ItemSystem::ConsumeItemEcs(
 			EntityFactory::CreateItemEntity(g_registry, pkBottle), 1);
 		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkBottle)), 1);
 		if (!item2)
 			return;
-		
+
 		item2->AddToCharacter(ch, TItemPos(INVENTORY, pos), false);
 		pkBottle = item2;
 	}
-	
+
 	int32_t lBottlePercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0);
 	if (lBottlePercent < 1)
 		return;
-	
+
 	int32_t lMaxTime = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0);
 	int32_t lOnePercent = lMaxTime / 100;
 	int32_t lRemainPercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
@@ -3910,7 +3910,7 @@ ACMD(do_rune_charge)
 #endif
 		return;
 	}
-	
+
 	int32_t dif = 100 - lRemainPercent;
 	dif = dif > lBottlePercent ? lBottlePercent : dif;
 	int32_t add = lOnePercent * dif;
@@ -3922,7 +3922,7 @@ ACMD(do_rune_charge)
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0, lBottlePercent-dif);
 	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0) < 1)
 		pkBottle->RemoveFromCharacter();
-	
+
 	pkRune->ChangeRuneAttr(lValue);
 	if ((!ch->FindAffect(AFFECT_RUNE2)) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), 1) == 1)) {
 		if (int32_t(lValue / (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0) / 100)) >= 50) {
@@ -3935,7 +3935,7 @@ ACMD(do_rune_shop)
 {
 	if (!ch)
 		return;
-	
+
 	if (ch->IsOpenSafebox() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3943,7 +3943,7 @@ ACMD(do_rune_shop)
 #endif
 		return;
 	}
-	
+
 	LPSHOP pkShop = CShopManager::instance().Get(RUNE_SHOP);
 	if (pkShop) {
 		pkShop->AddGuest(ch, 0, false);
@@ -3955,20 +3955,20 @@ ACMD(do_rune_effect)
 {
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	
+
 	if (!*arg1)
 		return;
-	
+
 	int iArg1 = 0;
 	if (str_to_number(iArg1, arg1) == false)
 		return;
-	
+
 	if ((iArg1 != 0) && (iArg1 != 1))
 		return;
-	
+
 	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect") == iArg1)
 		return;
-	
+
 	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect", iArg1);
 	ch->ComputePoints();
 	ch->UpdatePacket();
@@ -3990,10 +3990,10 @@ ACMD(do_event_manager)
 		if (!ch->IsGM())
 			return;
 
-		if (vecArgs.size() < 3) { 
-			
+		if (vecArgs.size() < 3) {
+
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "put the event index!!");
-			return; 
+			return;
 		}
 
 		uint8_t removeIndex;

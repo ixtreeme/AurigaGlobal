@@ -130,7 +130,7 @@ CPetActor::~CPetActor()
 
 void CPetActor::SetName(const char* name)
 {
-	std::string petName = m_pkOwner->GetName();
+	std::string petName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkOwner)).data();
 	petName += "'s Pet";
 
 	if (true == IsSummoned())
@@ -190,7 +190,7 @@ void CPetActor::Unsummon()
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, false);
 			ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 		}
-		
+
 		// 버프 삭제
 		this->ClearBuff();
 		this->SetSummonItem(entt::null);
@@ -287,7 +287,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
-	
+
 	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 #ifdef ENABLE_COSTUME_PET
@@ -691,7 +691,7 @@ void CPetSystem::UnsummonAll()
 			}
 		}
 	}
-	
+
 	if (m_pkPetSystemUpdateEvent) {
 		event_cancel(&m_pkPetSystemUpdateEvent);
 		m_pkPetSystemUpdateEvent = nullptr;

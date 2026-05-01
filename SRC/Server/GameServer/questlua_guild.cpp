@@ -202,7 +202,7 @@ namespace quest
         strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
         p.dwGuild = (uint32_t) lua_tonumber(L, 2);
         p.dwGold = (uint32_t) lua_tonumber(L, 3);
-        LOG_INFO("GUILD_WAR_BET: {} login {} war_id {} guild {} gold {}", ((ch)->GetName()), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
+        LOG_INFO("GUILD_WAR_BET: {} login {} war_id {} guild {} gold {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
         db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
         return 0;
     }

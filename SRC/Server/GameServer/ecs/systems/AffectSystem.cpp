@@ -401,7 +401,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
 
     if (test_server && pkAttacker) {
         char buf[256];
-        snprintf(buf, sizeof(buf), "POISON %s -> %s", pkAttacker->GetName(), ch->GetName());
+        snprintf(buf, sizeof(buf), "POISON %s -> %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "%s", buf);
     }
 }
@@ -464,7 +464,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
 
     if (test_server && pkAttacker) {
         char buf[256];
-        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", pkAttacker->GetName(), ch->GetName());
+        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "%s", buf);
     }
 }
@@ -510,21 +510,21 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
 #endif
         {
             if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ch->GetName());
+                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
             }
 
             return true;
         }
 
         if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ch->GetName());
+            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         }
 
         return false;
     }
 
     if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ch->GetName());
+        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
     }
 
     return false;
@@ -903,7 +903,7 @@ bool CHARACTER::UpdateAffect()
 	{
 		PointChange(POINT_SP, GetPoint(POINT_SP_RECOVER_CONTINUE));
 	}
-	
+
 	AutoRecoveryItemProcess(AFFECT_AUTO_HP_RECOVERY);
 	AutoRecoveryItemProcess(AFFECT_AUTO_SP_RECOVERY);
 #ifdef ENABLE_NEW_USE_POTION
@@ -913,7 +913,7 @@ bool CHARACTER::UpdateAffect()
 #ifdef ENABLE_RECALL
 	AutoRecallProcess();
 #endif
-	
+
 	// 스테미나 회복
 	if (GetMaxStamina() > GetStamina())
 	{
@@ -950,7 +950,7 @@ void CHARACTER::ClearAffectSkills() {
 	size_t j = m_list_pkAffectSkills.size();
 	if (j < 1)
 		return;
-	
+
 	m_list_pkAffectSkills.erase(m_list_pkAffectSkills.begin(), m_list_pkAffectSkills.end());
 	m_list_pkAffectSkills.shrink_to_fit();
 }
@@ -964,7 +964,7 @@ void CHARACTER::SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApp
 	t.lDuration = lDuration;
 	t.lSPCost = lSPCost;
 	t.dwTime = get_global_time();
-	
+
 	m_list_pkAffectSkills.push_back(t);
 }
 
@@ -972,14 +972,14 @@ void CHARACTER::LoadAffectSkills() {
 	size_t j = m_list_pkAffectSkills.size();
 	if (j < 1)
 		return;
-	
+
 	int32_t lDuration = 0;
 	for (size_t i = 0; i < j; ++i) {
 		lDuration = m_list_pkAffectSkills[i].lDuration - (get_global_time() - m_list_pkAffectSkills[i].dwTime);
 		if (lDuration > 0)
 			AddAffect(m_list_pkAffectSkills[i].dwType, m_list_pkAffectSkills[i].bApplyOn, m_list_pkAffectSkills[i].lApplyValue, m_list_pkAffectSkills[i].dwFlag, lDuration, m_list_pkAffectSkills[i].lSPCost, false);
 	}
-	
+
 	ClearAffectSkills();
 }
 #endif
@@ -1005,7 +1005,7 @@ void CHARACTER::ClearAffect(bool bSave)
 				continue;
 			}
 #endif
-			
+
 			if ( IS_NO_CLEAR_ON_DEATH_AFFECT(pkAff->dwType) || IS_NO_SAVE_AFFECT(pkAff->dwType) )
 			{
 				++it;
@@ -1124,7 +1124,7 @@ int CHARACTER::ProcessAffect()
 	if (pkAff)
 	{
 		int remain = GetBattlePassEndTime();
-		
+
 		if (remain < 0)
 		{
 			RemoveAffect(AFFECT_BATTLE_PASS);
@@ -1189,7 +1189,7 @@ int CHARACTER::ProcessAffect()
 			else
 				PointChange(POINT_SP, -pkAff->lSPCost);
 		}
-		
+
 		// AFFECT_DURATION_BUG_FIX
 		// 무한 효과 아이템도 시간을 줄인다.
 		// 시간을 매우 크게 잡기 때문에 상관 없을 것이라 생각됨.
@@ -1321,10 +1321,10 @@ EVENTFUNC(load_affect_login_event)
 	{
 		LOG_INFO("Affect Load by Event");
 		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
-			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
+			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
 		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
 		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
-			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), info->count, static_cast<const void*>(info->data));
+			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), info->count, static_cast<const void*>(info->data));
 		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), static_cast<const void*>(info->data));
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
@@ -1423,7 +1423,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			LPITEM item = FindItemByID( pElements->dwFlag );
 			if (nullptr == item)
 				continue;
-			
+
 			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 #ifdef ENABLE_NEW_USE_POTION
@@ -1432,7 +1432,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			LPITEM item = FindItemByID( pElements->dwFlag );
 			if (nullptr == item)
 				continue;
-			
+
 			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
@@ -1480,7 +1480,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		}
 #endif
 #endif
-		
+
 #ifdef ENABLE_SOUL_SYSTEM
 		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
 		{

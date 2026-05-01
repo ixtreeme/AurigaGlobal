@@ -158,11 +158,11 @@ namespace quest
 
         void operator()(LPCHARACTER ch)
         {
-            LOG_INFO("CINEMASEND_TRY {}", ((ch)->GetName()));
+            LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
             if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
             {
-                LOG_INFO("CINEMASEND {}", ((ch)->GetName()));
+                LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
                 ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(struct packet_script));
                 ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data.c_str(),data.size());
             }
@@ -209,11 +209,11 @@ namespace quest
 
 		void operator()(LPCHARACTER ch)
 		{
-			LOG_INFO("CINEMASEND_TRY {}", ((ch)->GetName()));
+			LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				LOG_INFO("CINEMASEND {}", ((ch)->GetName()));
+				LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet_script, sizeof(struct packet_script));
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(str,len);
 			}
@@ -565,11 +565,11 @@ namespace quest
 		{
 			int32_t pid = party->GetLeaderPID();
 			LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(pid);
-			name = leader != nullptr ? leader->GetName() : ((ch)->GetName());
+			name = leader != nullptr ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data() : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 		}
 		else
 		{
-			name = ((ch)->GetName());
+			name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 		}
 
 		lua_pushstring(L, name.c_str());

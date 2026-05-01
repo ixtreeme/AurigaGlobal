@@ -553,7 +553,7 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 //	if (oldGrade != newGrade)
 //		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
 //	else
-//		UpdatePacket();   
+//		UpdatePacket();
 //}
 
 
@@ -914,7 +914,7 @@ void CHARACTER::SendLeaderboardDataGuild()
 		int win = row[2] ? atoi(row[2]) : 0;
 		int draw = row[3] ? atoi(row[3]) : 0;
 		int loss = row[4] ? atoi(row[4]) : 0;
- 
+
 		char line[256];
 		snprintf(line, sizeof(line), "%s;%s;%d;%d;%d\n", guildName, masterName, win, draw, loss);
 		result += line;
@@ -1030,7 +1030,7 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 	if (info.iAggro < 0)
 		info.iAggro = 0;
 
-	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", GetName(), pAttacker->GetName(), dam, total);
+	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), dam, total);
 	if (GetParty() && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
 	{
 		LPPARTY pParty = GetParty();
@@ -1082,7 +1082,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 			return;
 		}
 
-		// Aggro  
+		// Aggro
 		TDamageMap::iterator it;
 		TDamageMap::iterator itFind = m_map_kDamage.end();
 
@@ -1178,11 +1178,11 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 		if (expDoubleBonus > 100)
 		{
-			
+
 			extraBonus = 30 + ((expDoubleBonus - 100) / 10) * 10;
 		}
 
-		 
+
 		rateFactor += extraBonus;
 	}
 
@@ -1290,12 +1290,12 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #else
 static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
-	//  ġ 
+	//  ġ
 	iExp = CALCULATE_VALUE_LVDELTA(to->GetLevel(), from->GetLevel(), iExp);
 
 	int iBaseExp = iExp;
 
-	// , ȸ ġ ̺Ʈ 
+	// , ȸ ġ ̺Ʈ
 #ifdef ENABLE_EVENT_MANAGER
 	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(to)));
 	if (event != 0)
@@ -1353,7 +1353,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 	//   Ǹ ġ ʽ
 	{
-		//  : ġ 
+		//  : ġ
 		if (to->GetPremiumRemainSeconds(PREMIUM_EXP) > 0)
 		{
 			iExp += (iExp * 50 / 100);
@@ -1386,7 +1386,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	// ȹ  2005.04.21  85%
 	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(to) / 100;
 
-	// ġ ѹ ȹ淮 
+	// ġ ѹ ȹ淮
 	iExp = MIN(to->GetNextExp() / 10, iExp);
 
 	if (test_server)
@@ -1418,7 +1418,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 	{
 		auto* you = to->GetMarryPartner();
-		// κΰ  Ƽ̸ ݽ 
+		// κΰ  Ƽ̸ ݽ
 		if (you)
 		{
 			// 1 100%
@@ -1614,7 +1614,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 			di.pAttacker = pAttacker;
 			di.pParty = nullptr;
 
-			//LOG_INFO(0, "__ pq_damage %s %d", pAttacker->GetName(), iDam);
+			//LOG_INFO(0, "__ pq_damage %s %d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), iDam);
 			//pq_damage.push(di);
 			damage_info_table.push_back(di);
 		}
@@ -1629,7 +1629,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 	SetExp(0);
 	//m_map_kDamage.clear();
 
-	if (iTotalDam == 0)	//  ذ 0̸ 
+	if (iTotalDam == 0)	//  ذ 0̸
 		return nullptr;
 
 	if (m_pkChrStone)	//    ġ   ѱ.
@@ -1670,7 +1670,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 
 		if (fPercent > 1.0f)
 		{
-			LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, di->pAttacker->GetName());
+			LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(di->pAttacker)).data());
 			fPercent = 1.0f;
 		}
 
@@ -1691,7 +1691,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		if (race == 8010 || race == 8020 || race == 8738 || race == 8739 || race == 8740 || race == 4811 || race == 4812 || race == 4813 || race == 4814 || race == 4815
 			|| race == 8821 || race == 8822 || race == 8823 || race == 8824
 			)
-			return pkChrMostAttacked; // seggbe 
+			return pkChrMostAttacked; // seggbe
 		di->Distribute(this, iExp);
 #endif
 		// 100%  Ծ Ѵ.
@@ -1713,7 +1713,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 
 			if (fPercent > 1.0f)
 			{
-				LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, di.pAttacker->GetName());
+				LOG_ERROR("DistributeExp percent over 1.0 (fPercent {} name {})", fPercent, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(di.pAttacker)).data());
 				fPercent = 1.0f;
 			}
 
@@ -1725,7 +1725,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 	return pkChrMostAttacked;
 }
 
-// ȭ   
+// ȭ
 
 // char_battle.cpp slice BC5 moved into CombatSystem.cpp
 
@@ -2019,14 +2019,14 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
 						if (auto* flags = RuntimeFlags(this))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
-			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_NPC", pkKiller->GetName());
+			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data());
 		}
 		else
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 			SetDeadByMonster(false);
 #endif
-			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), pkKiller->GetName(), static_cast<const void*>(get_pointer(pkKiller)));
+			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data(), static_cast<const void*>(get_pointer(pkKiller)));
 						if (auto* flags = RuntimeFlags(this))
 				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
@@ -2042,7 +2042,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data());
 
 				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_PC", buf);
 			}
@@ -2087,7 +2087,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data());
 
 				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_PC", buf);
 			}
@@ -2151,13 +2151,13 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 					int iRankPoints = pkKiller->GetRankPoints(0); // PvP rangpont
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: DUEL (Winned duels: %d)",
-						pkKiller->GetName(), GetName(), szMapName, iRankPoints);
+						ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data(), GetName(), szMapName, iRankPoints);
 				}
 				else
 				{
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: FREE!",
-						pkKiller->GetName(), GetName(), szMapName);
+						ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data(), GetName(), szMapName);
 				}
 
 				BroadcastNotice(szMsg);
@@ -2488,7 +2488,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	if (bType == 0)
 	{
 		//
-		// Ϲ 
+		// Ϲ
 		//
 		switch (GetMobBattleType())
 		{
@@ -2524,12 +2524,12 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			}
 		}
 
-		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? pkVictim->GetName() : "");
+		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data() : "");
 		iRet = ComputeSkill(bType, pkVictim);
 	}
 
 	//if (test_server && IsPC())
-	//	0, "%s Attack %s type %u ret %d", GetName(), pkVictim->GetName(), bType, iRet);
+	//	0, "%s Attack %s type %u ret %d", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), bType, iRet);
 	if (iRet == BATTLE_DAMAGE || iRet == BATTLE_DEAD)
 	{
 		OnMove(true);
@@ -2632,7 +2632,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			else if (bMoving)
 				iAmount = 3 + GetMaxSP() * 2 / 100;
 			else
-				iAmount = 10 + GetMaxSP() * 3 / 100; // 
+				iAmount = 10 + GetMaxSP() * 3 / 100; //
 
 			iAmount += (iAmount * pkKiller->GetPoint(POINT_SP_REGEN)) / 100;
 			ecs::PointSystem::Change(AIHelpers::EcsOf(pkKiller), POINT_SP, iAmount);
@@ -2647,7 +2647,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 				iAmount = 2 + pkKiller->GetMaxSP() / 100;
 			else
 			{
-				// 
+				//
 				if (pkKiller->GetHP() < pkKiller->GetMaxHP())
 					iAmount = 2 + (pkKiller->GetMaxSP() / 100); //   á
 				else
@@ -2788,14 +2788,14 @@ struct TItemDropPenalty
 
 TItemDropPenalty aItemDropPenalty_kor[9] =
 {
-	{   0,   0,  0,  0 },	// 
-	{   0,   0,  0,  0 },	// 
-	{   0,   0,  0,  0 },	// 
-	{   0,   0,  0,  0 },	// 
-	{   0,   0,  0,  0 },	// 
-	{  25,   1,  5,  1 },	// 
-	{  50,   2, 10,  1 },	// 
-	{  75,   4, 15,  1 },	// 
+	{   0,   0,  0,  0 },	//
+	{   0,   0,  0,  0 },	//
+	{   0,   0,  0,  0 },	//
+	{   0,   0,  0,  0 },	//
+	{   0,   0,  0,  0 },	//
+	{  25,   1,  5,  1 },	//
+	{  50,   2, 10,  1 },	//
+	{  75,   4, 15,  1 },	//
 	{ 100,   8, 20,  1 },	// п
 };
 
@@ -3078,7 +3078,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 #ifdef TEXTS_IMPROVEMENT
 				if (dwGivenCount > 0)
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
 #ifdef ENABLE_NEW_CHAT
 						CHAT_TYPE_INFO_ITEM
 #else
@@ -3145,7 +3145,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 #ifdef TEXTS_IMPROVEMENT
 				if (dwGivenCount > 0)
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
 #ifdef ENABLE_NEW_CHAT
 						CHAT_TYPE_INFO_ITEM
 #else
@@ -3197,7 +3197,7 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 #ifdef TEXTS_IMPROVEMENT
 	if (dwGivenCount > 0)
 	{
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
 #ifdef ENABLE_NEW_CHAT
 			CHAT_TYPE_INFO_ITEM
 #else
@@ -3239,7 +3239,7 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 
 	item->StartDestroyEvent();
 
-	LOG_INFO("DROP_ITEM: {} {} {} from {}", item->GetName(), pos.x, pos.y, pkVictim->GetName());
+	LOG_INFO("DROP_ITEM: {} {} {} from {}", item->GetName(), pos.x, pos.y, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 }
 #endif
 
@@ -3308,8 +3308,8 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? pkKiller->GetName() : "Player",
-		pkMob ? pkMob->GetName() : "Mob",
+		pkKiller ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data() : "Player",
+		pkMob ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkMob)).data() : "Mob",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -3349,7 +3349,7 @@ static std::set<uint32_t> verjema_szadba_ixtreeme =
 		86052//	Talizmnersto,
 		,18140, 18141, 18142, 18143, 18144, 18145, 18146, 18147, 18148, 18149,
 		18150, 18151, 18152, 18153, 18154, 18155, 18156, 18157, 18158, 18159
-	// uj mountok 
+	// uj mountok
 ,611500, 611501, 611502, 611503, 611504, 611505, 611506, 611507, 611508,
 611510, 611511, 611512, 611513, 611514, 611515, 611516, 611517, 611518,
 611520, 611521, 611522, 611523, 611524, 611525, 611526, 611527, 611528,
@@ -3494,7 +3494,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 	if (!IsPC() && !m_pkMobData)
 	{
-		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? pkAttacker->GetName() : "<null>");
+		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data() : "<null>");
 		m_map_kDamage.clear();
 		return;
 	}
@@ -3577,16 +3577,16 @@ void CHARACTER::Reward(bool bItemDrop)
 		return;
 
 	//
-	//  
+	//
 	//
 	//PROF_UNIT pu2("r2");
 	if (test_server)
-		LOG_TRACE("Drop money : Attacker {}", pkAttacker->GetName());
+		LOG_TRACE("Drop money : Attacker {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data());
 	RewardGold(pkAttacker);
 	//pu2.Pop();
 
 	//
-	//  
+	//
 	//
 	//PROF_UNIT pu3("r3");
 	LPITEM item;
@@ -3615,7 +3615,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 #ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
 		// Dungeon party shared drop (ground + ownership) + HWID|HOST szures:
-		// - csak mapindex 
+		// - csak mapindex
 		// - csak ha a killer partyban van
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
@@ -4159,7 +4159,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 	if (!m_pkMobData)
 	{
-		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? pkAttacker->GetName() : "<null>");
+		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data() : "<null>");
 		return;
 	}
 	if (pkAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker))) {
@@ -4211,7 +4211,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			bool isAutoLoot =
 				(pkAttacker->GetPremiumRemainSeconds(PREMIUM_AUTOLOOT) > 0 ||
 					pkAttacker->IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT))
-				? true : false; // 3 
+				? true : false; // 3
 			// END_OF_ADD_PREMIUM
 
 			PIXEL_POSITION pos;
@@ -4272,7 +4272,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			else if (1 == number(1, 10000)) // 1/10000 Ȯ  5
 				iGoldMultipler *= 5;
 
-			//  
+			//
 			if (pkAttacker->GetPoint(POINT_GOLD_DOUBLE_BONUS))
 				if (number(1, 100) <= pkAttacker->GetPoint(POINT_GOLD_DOUBLE_BONUS))
 					iGoldMultipler *= 2;
@@ -4326,7 +4326,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
 					}
 
-					// NOTE:  ź  3  ó  
+					// NOTE:  ź  3  ó
 					if ((item = ITEM_MANAGER::instance().CreateItem(1, iGold)))
 					{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
@@ -4349,7 +4349,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			else if (1 == number(1, iGold10DropPct))
 			{
 				//
-				//  ź 
+				//  ź
 				//
 				for (int i = 0; i < 10; ++i)
 				{
@@ -4362,7 +4362,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 						continue;
 					}
 
-					// NOTE:  ź  3  ó  
+					// NOTE:  ź  3  ó
 					if ((item = ITEM_MANAGER::instance().CreateItem(1, iGold)))
 					{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
@@ -4385,7 +4385,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			else
 			{
 				//
-				// Ϲ   
+				// Ϲ
 				//
 				int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
 				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker) / 100;
@@ -4519,9 +4519,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		const TItemTable* weaponProto = pkWeap ? ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkWeap)) : nullptr;
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
-			 
+
 			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
-			return false;  
+			return false;
 		}
 #endif // !DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 		const int64_t fixed_dam = 100000;
@@ -4581,7 +4581,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	//
 	//  ̾߱Ⱑ Ƽ и ų ߰
 	//
-	// 20091109 : 簡  û   г,     70% 
+	// 20091109 : 簡  û   г,     70%
 	//
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
@@ -4623,7 +4623,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				}
 			}
 
-			// 
+			//
 			int iPenetratePct = pAttacker->GetPoint(POINT_PENETRATE_PCT);
 
 			if (!IsPC())
@@ -4685,13 +4685,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		if (type == DAMAGE_TYPE_NORMAL)
 		{
-			//  Ÿ    
+			//  Ÿ
 			if (GetPoint(POINT_BLOCK) && number(1, 100) <= GetPoint(POINT_BLOCK))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 95, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_BLOCK));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), pAttacker->GetPoint(POINT_BLOCK));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
@@ -4700,13 +4700,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 		else if (type == DAMAGE_TYPE_NORMAL_RANGE)
 		{
-			// Ÿ Ÿ    
+			// Ÿ Ÿ
 			if (GetPoint(POINT_DODGE) && number(1, 100) <= GetPoint(POINT_DODGE))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pAttacker), CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 96, "%s#%d", pAttacker->GetName(), pAttacker->GetPoint(POINT_DODGE));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data(), pAttacker->GetPoint(POINT_DODGE));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_DODGE);
@@ -4740,7 +4740,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			dam = dam * (100 - resist) / 100;
 		}
 		//
-		//  Ӽ 
+		//  Ӽ
 		//
 		if (pAttacker)
 		{
@@ -4751,7 +4751,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				{
 					int reflectDamage = dam * GetPoint(POINT_REFLECT_MELEE) / 100;
 
-					// NOTE: ڰ IMMUNE_REFLECT Ӽ ִٸ ݻ縦  ϴ 
+					// NOTE: ڰ IMMUNE_REFLECT Ӽ ִٸ ݻ縦  ϴ
 					// ƴ϶ 1/3  ؼ  ȹ û.
 					if (pAttacker->IsImmune(IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
@@ -4781,7 +4781,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				}
 			}
 
-			// 
+			//
 			int iPenetratePct = pAttacker->GetPoint(POINT_PENETRATE_PCT);
 
 			if (!IsPC())
@@ -5005,7 +5005,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	}
 
 	//
-	// Ÿ Ǵ ų  ʽ / 
+	// Ÿ Ǵ ų  ʽ /
 	//
 	switch (type)
 	{
@@ -5045,7 +5045,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 		dam = dam * (100 - def) / 100;
 
-		
+
 		if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)) && IsNPC())
 		{
 			const int64_t normalRef = CalcReferenceBasicHitDamage(pAttacker, this);
@@ -5069,12 +5069,12 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	//
 	if (IsAffectFlag(AFF_MANASHIELD))
 	{
-		// POINT_MANASHIELD  ۾ 
+		// POINT_MANASHIELD  ۾
 		int iDamageSPPart = dam / 3;
 		int iDamageToSP = iDamageSPPart * GetPoint(POINT_MANASHIELD) / 100;
 		int iSP = GetSP();
 
-		// SP     
+		// SP
 		if (iDamageToSP <= iSP)
 		{
 			PointChange(POINT_SP, -iDamageToSP);
@@ -5114,7 +5114,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			int32_t lMapIndex = pAttacker->GetMapIndex();
 			int iMapEmpire = ecs::GetEmpireFromMap(lMapIndex);
 
-			// ٸ     10% 
+			// ٸ     10%
 			if (iEmpire && iMapEmpire && iEmpire != iMapEmpire)
 			{
 				dam = dam * 9 / 10;
@@ -5182,7 +5182,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	}
 #endif
 	// ------------------------
-	//  ̾ 
+	//  ̾
 	// -----------------------
 	if (pAttacker && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pAttacker)))
 	{
@@ -5190,7 +5190,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		dam = dam * iDmgPct / 100;
 	}
 
-	// STONE SKIN :   
+	// STONE SKIN :
 	if (IsMonster() && IsStoneSkinner())
 	{
 		if (GetHPPct() < GetMobTable().bStoneSkinPoint)
@@ -5234,7 +5234,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			damageFlag |= DAMAGE_PENETRATE;
 
 
-		//  
+		//
 		float damMul = this->GetDamMul();
 		float tempDam = dam;
 		dam = tempDam * damMul + 0.5f;
@@ -5614,7 +5614,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
-				pAttacker ? pAttacker->GetName() : nullptr,
+				pAttacker ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pAttacker)).data() : nullptr,
 				dam,
 				GetHP(),
 				iTmpPercent,
@@ -5779,7 +5779,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			return true;
 		}
 
-		 
+
 		Stun();
 	}
 
@@ -5829,7 +5829,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 //	// SQL lekrdezs top 10 jtkosra
 //	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
 //		"SELECT name, level, r5, r8 FROM player.player ORDER BY r5 DESC LIMIT 10"));
-//	
+//
 //
 //	//if (!pMsg || !pMsg->Get()->uiNumRows)
 //	//{
@@ -5870,7 +5870,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 //
 //	// SQL lekrdezs top 10 jtkosra
 //	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-//	
+//
 //
 //	"SELECT id, title, content,author FROM player.news ORDER BY id DESC LIMIT 5"));
 //
@@ -6024,7 +6024,7 @@ public:
 			iDam += m_me->GetSoulItemDamage(pkVictim, iDam, RED_SOUL);
 #endif
 
-			//LOG_INFO(0, "%s arrow %s dam %d", m_me->GetName(), pkVictim->GetName(), iDam);
+			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), iDam);
 
 			m_me->OnMove(true);
 			pkVictim->OnMove();
@@ -6033,13 +6033,13 @@ public:
 				pkVictim->BeginFight(m_me);
 
 			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
-			// Ÿġ  
+			// Ÿġ
 		}
 		break;
 
 
 
-		case 1: // Ϲ 
+		case 1: // Ϲ
 		{
 			int iDam;
 
@@ -6050,7 +6050,7 @@ public:
 
 			NormalAttackAffect(m_me, pkVictim);
 
-			//  
+			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //						const int resist_magic = MINMAX(0, pkVictim->GetPoint(POINT_RESIST_MAGIC), 100);
 //						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? m_me->GetPoint(POINT_RESIST_MAGIC_REDUCTION)/2 : m_me->GetPoint(POINT_RESIST_MAGIC_REDUCTION), 50);
@@ -6060,7 +6060,7 @@ public:
 			iDam = iDam * (100 - (int)(pkVictim->GetPoint(POINT_RESIST_MAGIC) / 2)) / 100;
 			//#endif
 
-									//LOG_INFO(0, "%s arrow %s dam %d", m_me->GetName(), pkVictim->GetName(), iDam);
+									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), iDam);
 
 			m_me->OnMove(true);
 			pkVictim->OnMove();
@@ -6069,11 +6069,11 @@ public:
 				pkVictim->BeginFight(m_me);
 
 			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_MAGIC);
-			// Ÿġ  
+			// Ÿġ
 		}
 		break;
 
-		case SKILL_YEONSA:	// 
+		case SKILL_YEONSA:	//
 		{
 			//int iUseArrow = 2 + (m_me->GetSkillPower(SKILL_YEONSA) *6/100);
 			int iUseArrow = 1;
@@ -6114,7 +6114,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} kwankeyok {}", m_me->GetName(), pkVictim->GetName());
+				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6132,7 +6132,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} gigung {}", m_me->GetName(), pkVictim->GetName());
+				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6150,7 +6150,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} hwajo {}", m_me->GetName(), pkVictim->GetName());
+				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6169,7 +6169,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_TRACE("{} horse_wildattack {}", m_me->GetName(), pkVictim->GetName());
+				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6198,7 +6198,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight(m_me);
 
-			LOG_INFO("{} - Skill {} -> {}", m_me->GetName(), m_bType, pkVictim->GetName());
+			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), m_bType, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
 		}
 		break;
@@ -6211,7 +6211,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight(m_me);
 
-			LOG_INFO("{} - Skill {} -> {}", m_me->GetName(), m_bType, pkVictim->GetName());
+			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), m_bType, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
 
 			// TODO     ϱ
@@ -6292,7 +6292,7 @@ public:
 							multiplier = 80	;
 						}
 						iDam *= multiplier;
-						
+
 					}
 				}
 
@@ -6307,7 +6307,7 @@ public:
 					if (pkVictim->CanBeginFight())
 						pkVictim->BeginFight(m_me);
 
-					LOG_INFO("{} - Skill {} -> {}", m_me->GetName(), m_bType, pkVictim->GetName());
+					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_me)).data(), m_bType, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 					m_me->ComputeSkill(m_bType, pkVictim);
 				}
 
@@ -6431,7 +6431,7 @@ void CHARACTER::SetVictim(LPCHARACTER pkVictim)
 	{
 		const entt::entity eVictim = AIHelpers::EcsOf(pkVictim);
 		if (m_eVictim != eVictim)
-			MonsterLog("  : %s", pkVictim->GetName());
+			MonsterLog("  : %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 
 		m_eVictim = eVictim;
 		m_dwLastVictimSetTime = get_dword_time();
@@ -6449,7 +6449,7 @@ LPCHARACTER CHARACTER::GetVictim() const
 	return nullptr;
 }
 
-LPCHARACTER CHARACTER::GetProtege() const // ȣؾ   
+LPCHARACTER CHARACTER::GetProtege() const // ȣؾ
 {
 	if (m_pkChrStone)
 		return m_pkChrStone;
@@ -6627,8 +6627,8 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 // CHARACTER::Damage ޼ҵ this  ԰ Ѵ.
 //
 // Arguments
-//    pAttacker		: 
-//    dam		: 
+//    pAttacker		:
+//    dam		:
 //    EDamageType	:   ΰ?
 //
 // Return value
@@ -7249,7 +7249,7 @@ void CHARACTER::ClearTarget()
 
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)))
 		{
-			LOG_ERROR("{} {} does not have desc", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)));
+			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), static_cast<const void*>(get_pointer(pkChr)));
 			abort();
 		}
 
@@ -7478,7 +7478,7 @@ void CHARACTER::BroadcastTargetPacket()
 
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr)))
 		{
-			LOG_ERROR("{} {} does not have desc", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)));
+			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), static_cast<const void*>(get_pointer(pkChr)));
 			abort();
 		}
 

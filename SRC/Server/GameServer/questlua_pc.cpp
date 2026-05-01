@@ -652,7 +652,7 @@ namespace quest
 			}
 		}
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
@@ -725,7 +725,7 @@ namespace quest
 			ch->AutoGiveItem(item);
 
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), dwVnum, icount);
 
@@ -769,7 +769,7 @@ namespace quest
 			}
 		}
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ((ch)->GetName()));
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
@@ -1027,7 +1027,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, ch ? ((ch)->GetName()) : "");
+		lua_pushstring(L, ch ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data() : "");
 		return 1;
 	}
 	ALUA(pc_get_next_exp)
@@ -1253,7 +1253,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        LOG_INFO("QUEST [LEVEL] {} jumpint to level {}", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
+        LOG_INFO("QUEST [LEVEL] {} jumpint to level {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
         LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), newLevel, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - ((ch)->GetLevel()));
@@ -1596,7 +1596,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!lua_isnumber(L,1) || !ch)
             return 0;
-        LOG_INFO("QUEST [REWARD] {} give exp2 {}", ((ch)->GetName()), (int)rint(lua_tonumber(L,1)));
+        LOG_INFO("QUEST [REWARD] {} give exp2 {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (int)rint(lua_tonumber(L,1)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,1));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1622,7 +1622,7 @@ namespace quest
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 0;
-        LOG_INFO("QUEST [REWARD] {} give exp {} {}", ((ch)->GetName()), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
+        LOG_INFO("QUEST [REWARD] {} give exp {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,2));
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -1648,7 +1648,7 @@ namespace quest
             return 0;
         int lev = (int)rint(lua_tonumber(L,2));
         double proc = (lua_tonumber(L,3));
-        LOG_INFO("QUEST [REWARD] {} give exp {} lev {} percent {:g}%", ((ch)->GetName()), lua_tostring(L, 1), lev, proc);
+        LOG_INFO("QUEST [REWARD] {} give exp {} lev {} percent {:g}%", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 1), lev, proc);
         uint32_t exp = (uint32_t)((exp_table[MINMAX(0, lev, PLAYER_MAX_LEVEL_CONST)] * proc) / 100);
         entt::entity e = q.GetPCEntity(L);
         if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
@@ -3015,8 +3015,8 @@ teleport_area:
         uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
         db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
         db_clientdesc->Packet(&pid, sizeof(uint32_t));
-        MessengerManager::instance().RemoveAllList(((ch)->GetName()));
-        LogManager::instance().ChangeNameLog(pid, ((ch)->GetName()), szName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
+        MessengerManager::instance().RemoveAllList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+        LogManager::instance().ChangeNameLog(pid, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
         snprintf(szQuery, sizeof(szQuery), "UPDATE player%s SET name='%s' WHERE id=%u", get_table_postfix(), szName, pid);
         SQLMsg * msg = DBManager::instance().DirectQuery(szQuery);
         M2_DELETE(msg);
@@ -3935,7 +3935,7 @@ teleport_area:
 			m_idx++;
 			lua_pop(L, 1);
 		}
-		
+
 		int m_socket[ITEM_SOCKET_MAX_NUM] = {0};
 		m_idx = 0;
 		lua_pushnil(L);
@@ -3946,7 +3946,7 @@ teleport_area:
 			m_socket[m_idx++] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 		}
-		
+
 		int m_attr[ITEM_ATTRIBUTE_MAX_NUM*2] = {0};
 		m_idx = 0;
 		lua_pushnil(L);
@@ -4780,7 +4780,7 @@ teleport_area:
 		ch->Block_Exp = true;
 		return 0;
 	}
-	
+
 	ALUA(_Unblock_Exp)
 	{
 		// migrated from CHARACTER::Block_Exp
@@ -4906,7 +4906,7 @@ teleport_area:
 			sys_err("arg1 must be number");
 			return 0;
 		}
-		
+
 		uint8_t bDungeonType = (int) lua_tonumber(L, 1);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
@@ -4926,7 +4926,7 @@ teleport_area:
 
 		return 0;
 	}
-	
+
 	int pc_open_battle_pass_ranking(lua_State * L)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -4935,7 +4935,7 @@ teleport_area:
 		{
 			uint32_t dwPlayerId = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 			uint8_t bIsGlobal = 1;
-			
+
 			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
 			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
 			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
@@ -4974,7 +4974,7 @@ teleport_area:
 		lua_pushnumber(L, CQuestManager::instance().GetCurrentCharacterPtr()->GetRankPoints(16));
 		return 1;
 	}
-	
+
 	ALUA(pc_set_rank_dungeon)
 	{
 		// migrated from CHARACTER::SetRankPoints
@@ -5016,7 +5016,7 @@ teleport_area:
 #endif
 
 #ifdef ENABLE_BIOLOGIST_UI
-	ALUA(pc_open_biologist_change)  
+	ALUA(pc_open_biologist_change)
 	{
         // migrated from CHARACTER::ChatPacket
         // DUAL-PATH: legacy only during migration window
@@ -5055,7 +5055,7 @@ teleport_area:
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologistch_open");
 			}
 		}
-		
+
 		return 0;
 	}
 #endif

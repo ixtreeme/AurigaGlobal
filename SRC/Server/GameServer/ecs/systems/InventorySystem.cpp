@@ -494,7 +494,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 		if (m_wCell >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > m_wCell)
 #endif
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
 			return false;
 		}
 	}
@@ -502,7 +502,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
 			return false;
 		}
 	}
@@ -511,7 +511,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
 			return false;
 		}
 	}
@@ -521,7 +521,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ch->GetName(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
 			return false;
 		}
 	}
@@ -711,7 +711,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	m_dwOwnershipPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	strlcpy(info->szOwnerName, ch->GetName(), sizeof(info->szOwnerName));
+	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(info->szOwnerName));
 	info->item = this;
 
 	SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
@@ -720,7 +720,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
 	p.dwVID = m_dwVID;
-	strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
+	strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
 
 	PacketAround(&p, sizeof(p));
 

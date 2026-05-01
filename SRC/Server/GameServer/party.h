@@ -1,3 +1,5 @@
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #ifndef __INC_METIN_II_GAME_PARTY_H__
 #define __INC_METIN_II_GAME_PARTY_H__
 
@@ -433,7 +435,7 @@ struct FPartyDropDiceRoll
 			{
 			}
 #ifdef TEXTS_IMPROVEMENT
-			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d", ch->GetName(), pickedNumber);
+			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pickedNumber);
 #endif
 			break;
 		}

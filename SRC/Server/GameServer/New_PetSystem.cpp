@@ -27,7 +27,7 @@
 #include "ecs/components/pet_mount_components.hpp"
 
 //#define DISABLE_TRADE_UNSUMMON // this disable the unsummon of pet when a excange/trade/shop/myshop/safebox windows is open, MAKE SURE to have set the items with vnum 55401/55402/55403/55404 with antiflag ANTI_SAFEBOX | ANTI_PKDROP | ANTI_DROP | ANTI_SELL | ANTI_GIVE | ANTI_STACK | ANTI_MYSHOP
-//USE AT OWN YOUR RISK								
+//USE AT OWN YOUR RISK
 
 namespace
 {
@@ -85,7 +85,7 @@ EVENTFUNC(newpetsystem_update_event)
 	if (nullptr == pPetSystem)
 		return 0;
 
-	
+
 	pPetSystem->Update(0);
 	// 0.25초마다 갱신.
 	return PASSES_PER_SEC(1) / 4;
@@ -137,7 +137,7 @@ CNewPetActor::CNewPetActor(LPCHARACTER owner, uint32_t vnum, uint32_t options)
 	m_pkOwner = owner;
 
 	m_originalMoveSpeed = 0;
-	
+
 	m_dwSummonItemVID = 0;
 	m_dwSummonItemID = 0;
 	m_dwSummonItemVnum = 0;
@@ -159,11 +159,11 @@ CNewPetActor::CNewPetActor(LPCHARACTER owner, uint32_t vnum, uint32_t options)
 	m_dwskill[2] = 0;
 	m_dwskill[3] = 0;
 
-	for (int s = 0; s < 9; ++s) 
+	for (int s = 0; s < 9; ++s)
 	{
 		m_dwpetslotitem[s] = -1;
 	}
-	
+
 
 	//Riferimento allo slot -1 se non disp 0 disp non set > 0 setted
 	m_dwskillslot[0] = -1;
@@ -188,12 +188,12 @@ CNewPetActor::~CNewPetActor()
 
 void CNewPetActor::SetName(const char* name)
 {
-	//std::string petName = m_pkOwner->GetName();
+	//std::string petName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkOwner)).data();
 	std::string petName = "";
 
-	if (nullptr != m_pkOwner && 
-		nullptr == name && 
-		nullptr != m_pkOwner->GetName())
+	if (nullptr != m_pkOwner &&
+		nullptr == name &&
+		nullptr != ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkOwner)).data())
 	{
 		petName += "'s Pet";
 	}
@@ -206,7 +206,7 @@ void CNewPetActor::SetName(const char* name)
 	m_name = petName;
 }
 
-void CNewPetActor::SetItemCube(int pos, int invpos) 
+void CNewPetActor::SetItemCube(int pos, int invpos)
 {
 	if (m_dwpetslotitem[pos] != -1) //Controllo se l'item e' gia settato
 		return;
@@ -218,9 +218,9 @@ void CNewPetActor::SetItemCube(int pos, int invpos)
 
 void CNewPetActor::ItemCubeFeed(int type)
 {
-	for (int i = 0; i < 9; ++i) 
+	for (int i = 0; i < 9; ++i)
 	{
-		if (m_dwpetslotitem[i] != -1) 
+		if (m_dwpetslotitem[i] != -1)
 		{
 			LPITEM itemxp = m_pkOwner->GetInventoryItem(m_dwpetslotitem[i]);
 			if (!itemxp)
@@ -269,30 +269,30 @@ void CNewPetActor::ItemCubeFeed(int type)
 			}
 		}
 	}
-	for (int s = 0; s < 9; ++s) 
+	for (int s = 0; s < 9; ++s)
 	{
 		m_dwpetslotitem[s] = -1;
 	}
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetActor::IncreasePetSkill(int iSlot, int iType) 
+bool CNewPetActor::IncreasePetSkill(int iSlot, int iType)
 #else
-bool CNewPetActor::IncreasePetSkill(int skill) 
+bool CNewPetActor::IncreasePetSkill(int skill)
 #endif
 {
 #ifdef ENABLE_NEW_PET_EDITS
 	int idx = m_dwskillslot[iSlot];
 	if (idx == -1)
 		return false;
-	
+
 	if (m_dwskill[iSlot] >= 10) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 58, "");
 #endif
 		return false;
 	}
-	
+
 	TItemPos Cell;
 	Cell.cell = iType;
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -303,11 +303,11 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	LPITEM bookItem = m_pkOwner->GetItem(Cell);
 	if (!bookItem)
 		return false;
-	
+
 	iType = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, bookItem), 0);
 	if ((iType > 12) || (iType < 1) || ((idx != 0) && (idx != iType)) || (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, bookItem)) != ITEM_TYPE_PET))
 		return false;
-	
+
 	for (int i = 0; i < 4; i++) {
 		if ((iType == m_dwskillslot[i]) && (iSlot != i)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -316,13 +316,13 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 			return false;
 		}
 	}
-	
+
 	ItemSystem::ConsumeItemEcs(
 		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
-	
+
 	if (idx == 0)
 		m_dwskillslot[iSlot] = iType;
-	
+
 	m_dwskill[iSlot] += 1;
 
 #ifdef TEXTS_IMPROVEMENT
@@ -334,19 +334,19 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	}
 #endif
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", iSlot, m_dwskillslot[iSlot], m_dwskill[iSlot]);
-	
+
 	ClearBuff();
 	GiveBuff();
-	
+
 	return true;
 #else
 	if (GetLevel() < 80 && m_dwevolution < 3)
 		return false;
-	for (int i = 0; i < 4; ++i) 
+	for (int i = 0; i < 4; ++i)
 	{ //Itero gli slot per cercare la skill
-		if (m_dwskillslot[i] == skill) 
+		if (m_dwskillslot[i] == skill)
 		{  //Se trova la skill o la aumenta oppure e' gi?max
-			if (m_dwskill[i] < 20) 
+			if (m_dwskill[i] < 20)
 			{
 				m_dwskill[i] += 1;
 #ifdef TEXTS_IMPROVEMENT
@@ -355,7 +355,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
 				return true;
 			}
-			else 
+			else
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 744, "");
@@ -365,10 +365,10 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 		}
 	}
 
-	for (int i = 0; i < 4; ++i) 
+	for (int i = 0; i < 4; ++i)
 	{
-		if (m_dwskillslot[i] == 0) 
-		{ //Controllo se trovo uno slot vuoto abilitato 
+		if (m_dwskillslot[i] == 0)
+		{ //Controllo se trovo uno slot vuoto abilitato
 			m_dwskillslot[i] = skill;
 			m_dwskill[i] = 1;
 #ifdef TEXTS_IMPROVEMENT
@@ -381,7 +381,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 
 	/* Qualora il pet non soddisfi le condizioni precedenti
 	   Allora tutti gli slot sono pieni e quind non pu?
-	   imparare nuove skill 
+	   imparare nuove skill
 	*/
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 745, "");
@@ -391,19 +391,19 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity) 
+bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 {
 	LPITEM bookItem = LegacyItemFromEntity(bookItemEntity);
 	if (!bookItem)
 		return false;
-	
+
 	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, bookItem)) != ITEM_TYPE_PET)
 		return false;
-	
+
 	int iType = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, bookItem), 0);
 	if ((iType > 12) || (iType < 1))
 		return false;
-	
+
 	int ret = 0;
 	bool bContinue = false;
 	for (int i = 0; i < 4; i++) {
@@ -413,21 +413,21 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 			break;
 		}
 	}
-	
+
 	if (!bContinue) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 54, "");
 #endif
 		return false;
 	}
-	
+
 	if (m_dwskill[ret] >= 10) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 58, "");
 #endif
 		return false;
 	}
-	
+
 	char szName[128];
 	snprintf(szName, sizeof(szName), "pet_skills.%d", iType);
 	int iLast = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m_pkOwner), szName);
@@ -444,33 +444,33 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 			return false;
 		}
 	}
-	
+
 	ItemSystem::ConsumeItemEcs(
 		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
-	
+
 	if (number(1, 100) < 30) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 52, "");
 #endif
 		return false;
 	}
-	
+
 	m_dwskill[ret] += 1;
-	
+
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 56, "%d", m_dwskill[ret]);
 #endif
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
-	
+
 	ClearBuff();
 	GiveBuff();
-	
+
 	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m_pkOwner), szName, get_global_time() + (3600 * 3));
-	
+
 	return true;
 }
 
-int CNewPetActor::ResetSkills() 
+int CNewPetActor::ResetSkills()
 {
 	bool bContinue = false;
 	for (int i = 0; i < 4; i++) {
@@ -479,25 +479,25 @@ int CNewPetActor::ResetSkills()
 			break;
 		}
 	}
-	
+
 	if (!bContinue)
 		return 3;
-	
+
 	for (int i = 0; i < 4; i++) {
 		if (m_dwskillslot[i] > 0)
 			m_dwskillslot[i] = 0;
-		
+
 		m_dwskill[i] = 0;
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", i, m_dwskillslot[i], m_dwskill[i]);
 	}
-	
+
 	ClearBuff();
 	GiveBuff();
-	
+
 	return 1;
 }
 
-int CNewPetActor::ResetSkill(int iType) 
+int CNewPetActor::ResetSkill(int iType)
 {
 	int ret = 0;
 	bool bContinue = false;
@@ -508,24 +508,24 @@ int CNewPetActor::ResetSkill(int iType)
 			break;
 		}
 	}
-	
+
 	if (!bContinue)
 		return 3;
-	
+
 	m_dwskillslot[ret] = 0;
 	m_dwskill[ret] = 0;
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", ret, m_dwskillslot[ret], m_dwskill[ret]);
-	
+
 	ClearBuff();
 	GiveBuff();
-	
+
 	return 1;
 }
 #endif
 
-bool CNewPetActor::IncreasePetEvolution() 
+bool CNewPetActor::IncreasePetEvolution()
 {
-	if (m_dwevolution < 3) 
+	if (m_dwevolution < 3)
 	{
 		if ((GetLevel() >= 40 && m_dwevolution < 1 )||( GetLevel() >= 60 && m_dwevolution < 2 )||( GetLevel() >= 80 && m_dwevolution < 3) )
 		{
@@ -535,7 +535,7 @@ bool CNewPetActor::IncreasePetEvolution()
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 747, "%d", m_dwevolution);
 #endif
-			if (m_dwevolution == 3) 
+			if (m_dwevolution == 3)
 			{
 				LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 				if (pSummonItem != nullptr){
@@ -543,7 +543,7 @@ bool CNewPetActor::IncreasePetEvolution()
 					Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 				}
 			}
-			
+
 #ifdef ENABLE_NEW_PET_EDITS
 			SetLevel(GetLevel() + 1);
 			m_pkChar->SendPetLevelUpEffect(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar)), 1, GetLevel(), 1);
@@ -564,7 +564,7 @@ bool CNewPetActor::IncreasePetEvolution()
 		else
 			return false;
 	}
-	else 
+	else
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 748, "");
@@ -574,7 +574,7 @@ bool CNewPetActor::IncreasePetEvolution()
 	return true;
 }
 
-void CNewPetActor:: IncreasePetBonus() 
+void CNewPetActor:: IncreasePetBonus()
 {
 	int tmplevel = GetLevel();
 	if (tmplevel % 5 == 0) {
@@ -593,12 +593,12 @@ void CNewPetActor:: IncreasePetBonus()
 		for (int b = 0; b < 3; b++){
 			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 		}
-		
+
 	}
 }
 
 void CNewPetActor::SetNextExp(int nextExp)
-{	
+{
 	m_dwExpFromMob = (nextExp/10)* 9;
 	//m_dwExpFromMob = nextExp;
 	//m_dwExpFromItem = 0;
@@ -609,7 +609,7 @@ void CNewPetActor::SetLevel(uint32_t level)
 {
 	m_pkChar->SetLevel(static_cast<char>(level));
 	m_dwlevel = level;
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);	
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);
 	SetNextExp(m_pkChar->PetGetNextExp());
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem) {
@@ -621,7 +621,7 @@ void CNewPetActor::SetLevel(uint32_t level)
 	}
 }
 
-void CNewPetActor::SetEvolution(int lv) 
+void CNewPetActor::SetEvolution(int lv)
 {
 	if (lv == 40)
 		m_dwevolution = 1;
@@ -629,7 +629,7 @@ void CNewPetActor::SetEvolution(int lv)
 		m_dwevolution = 2;
 	else if (lv == 80)
 		m_dwevolution = 3;
-}	
+}
 
 void CNewPetActor::SetExp(uint32_t exp, int mode) {
 	if (exp < 0)
@@ -718,7 +718,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 			}
 #endif
 		}
-		
+
 		m_dwexp += exp;
 		m_pkChar->SetExp(m_dwexp);
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
@@ -737,7 +737,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 		}
 	} else if (mode == 1)  {
 		if (GetExpI() + exp >= (uint32_t) GetNextExpFromItem()) {
-			if (GetExp() >= (uint32_t) GetNextExpFromMob()) 
+			if (GetExp() >= (uint32_t) GetNextExpFromMob())
 			{
 				m_dwexpitem = GetExpI() + exp - GetNextExpFromItem();
 				m_dwexp = 0;
@@ -759,7 +759,7 @@ void CNewPetActor::SetExp(uint32_t exp, int mode) {
 		m_dwexpitem += exp;
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 	}
-	
+
 }
 
 bool CNewPetActor::Mount()
@@ -785,20 +785,20 @@ void CNewPetActor::UpdateTime(bool now)
 				m_dwskillslot[3] = 0;
 				ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 			}
-			
+
 			int idx = m_idx;
 			if (m_idx != 1 && lMinAge >= 86400) {
 				m_idx = 1;
 			}
-			
+
 			if (m_idx != 2 && lMinAge >= 950400) {
 				m_idx = 2;
 			}
-			
+
 			if (m_idx != 3 && lMinAge >= 2246400) {
 				m_idx = 3;
 			}
-			
+
 			if (m_idx != 4 && lMinAge >= 4147200) {
 				m_idx = 4;
 			}
@@ -808,10 +808,10 @@ void CNewPetActor::UpdateTime(bool now)
 				GiveBuff();
 			}
 		}
-		
+
 		if (m_dwtduration > 525600)
 			return;
-		
+
 		m_dwduration -= 1;
 		m_dwTimePet = 0;
 		if (pSummonItem != nullptr){
@@ -851,7 +851,7 @@ void CNewPetActor::Unsummon()
 			{
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 			}
-			
+
 #ifdef ENABLE_NEW_PET_EDITS
 			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
 			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
@@ -929,7 +929,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	snprintf(szQuery2, sizeof(szQuery2), "SELECT evolution,evocation FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
 	std::unique_ptr<SQLMsg> pmsg3(DBManager::instance().DirectQuery(szQuery2));
 	if (pmsg3->Get()->uiNumRows > 0) {
-		MYSQL_ROW row1 = mysql_fetch_row(pmsg3->Get()->pSQLResult);	
+		MYSQL_ROW row1 = mysql_fetch_row(pmsg3->Get()->pSQLResult);
 		evolution = atoi(row1[0]);
 		evocation = atoi(row1[1]);
 	}
@@ -985,20 +985,20 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 		default:
 			break;
 	}
-	
+
 	if (m_dwVnum == 0) {
 		LOG_ERROR("[CPetSystem::Summon] Invalid seal: {}.", ivnum);
 		return 0;
 	}
-	
+
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
 	m_dwVnum = dwPetSkinvnum != 0 ? dwPetSkinvnum : m_dwVnum;
 #endif
-	
+
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
-				m_dwVnum, 
-				m_pkOwner->GetMapIndex(), 
+				m_dwVnum,
+				m_pkOwner->GetMapIndex(),
 				x, y, z,
 				false, (int)(m_pkOwner->GetRotation()+180), false);
 
@@ -1009,7 +1009,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	}
 
 	m_pkChar->SetNewPet();
-	
+
 //	m_pkOwner->DetailLog();
 //	m_pkChar->DetailLog();
 
@@ -1025,7 +1025,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 #endif
 	"FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
 	std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
-	if (pmsg2->Get()->uiNumRows > 0) 
+	if (pmsg2->Get()->uiNumRows > 0)
 	{
 		MYSQL_ROW row = mysql_fetch_row(pmsg2->Get()->pSQLResult);
 		this->SetName(row[0]);
@@ -1051,21 +1051,21 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 #endif
 	}else
 		this->SetName(petName);
-	
+
 //#ifdef ENABLE_NEW_PET_EDITS
 	//if ((evocation == 0) && (this->m_dwduration < 1))
 	//if (m_dwduration < 1) {
 	//	return 0;
 	//}
 //#endif
-	
+
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
 	this->SetSummonItem(pSummonItemEntity);
-	
+
 	//this->SetNextExp(m_pkChar->PetGetNextExp());
 	m_pkOwner->ComputePoints();
 	m_pkChar->Show(m_pkOwner->GetMapIndex(), x, y, z);
-	
+
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetIcon %d", m_dwSummonItemVnum);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetName %s", m_name.c_str());
@@ -1080,7 +1080,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 	}
-	else 
+	else
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 0, -1, m_dwskill[0]);
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 1, -1, m_dwskill[1]);
@@ -1094,17 +1094,17 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 2, m_dwskillslot[2], m_dwskill[2]);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetSkill %d %d %d", 3, m_dwskillslot[3], m_dwskill[3]);
 #endif
-	
+
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetExp %d %d %d", m_dwexp, m_dwexpitem, m_pkChar->PetGetNextExp());
 	lMinAge = get_global_time() - dwMinAge;
 	m_idx = 0;
-	
+
 	UpdateTime(true);
 
 	for (int b = 0; b < 3; b++){
 		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
 	}
-	
+
 #ifdef ENABLE_NEW_PET_EDITS
 	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
@@ -1121,7 +1121,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
-	
+
 	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 	return m_dwVID;
@@ -1139,7 +1139,7 @@ bool CNewPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 	//GetDeltaByDegree(m_pkChar->GetRotation(), fDist, &fx, &fy);
 
 	// 느슨한 못감 속성 체크; 최종 위치와 중간 위치가 갈수없다면 가지 않는다.
-	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy) 
+	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
 	//			&& SECTREE_MANAGER::instance().IsMovablePosition(m_pkChar->GetMapIndex(), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
 	//	return true;
 
@@ -1171,7 +1171,7 @@ bool CNewPetActor::_UpdateFollowAI()
 		// LOG_ERROR("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
 		return false;
 	}
-	
+
 	// NOTE: 캐릭터(펫)의 원래 이동 속도를 알아야 하는데, 해당 값(m_pkChar->m_pkMobData->m_table.sMovingSpeed)을 직접적으로 접근해서 알아낼 수도 있지만
 	// m_pkChar->m_pkMobData 값이 invalid한 경우가 자주 발생함. 현재 시간관계상 원인은 다음에 파악하고 일단은 m_pkChar->m_pkMobData 값을 아예 사용하지 않도록 함.
 	// 여기서 매번 검사하는 이유는 최초 초기화 할 때 정상 값을 제대로 못얻어오는 경우도 있음.. -_-;; ㅠㅠㅠㅠㅠㅠㅠㅠㅠ
@@ -1206,8 +1206,8 @@ bool CNewPetActor::_UpdateFollowAI()
 			return true;
 		}
 	}
-	
-	
+
+
 	if (fDist >= START_FOLLOW_DISTANCE)
 	{
 		if( fDist >= START_RUN_DISTANCE)
@@ -1216,7 +1216,7 @@ bool CNewPetActor::_UpdateFollowAI()
 		}
 
 		m_pkChar->SetNowWalking(!bRun);		// NOTE: 함수 이름보고 멈추는건줄 알았는데 SetNowWalking(false) 하면 뛰는거임.. -_-;
-		
+
 		Follow(APPROACH);
 
 		m_pkChar->SetLastAttacked(currentTime);
@@ -1232,7 +1232,7 @@ bool CNewPetActor::_UpdateFollowAI()
 	//	}
 	//}
 	// Follow 중이지만 주인과 일정 거리 이내로 가까워졌다면 멈춤
-	else 
+	else
 		m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	//else if (currentTime - m_dwLastActionTime > number(5000, 12000))
 	//{
@@ -1256,7 +1256,7 @@ bool CNewPetActor::Update(uint32_t deltaTime)
 		}
 	}
 #endif
-	
+
 #ifdef DISABLE_TRADE_UNSUMMON
 	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
 	if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
@@ -1284,7 +1284,7 @@ bool CNewPetActor::Update(uint32_t deltaTime)
 bool CNewPetActor::Follow(float fMinDistance)
 {
 	// 가려는 위치를 바라봐야 한다.
-	if( !m_pkOwner || !m_pkChar) 
+	if( !m_pkOwner || !m_pkChar)
 		return false;
 
 	float fOwnerX = m_pkOwner->GetX();
@@ -1303,7 +1303,7 @@ bool CNewPetActor::Follow(float fMinDistance)
 
 	float fDistToGo = fDist - fMinDistance;
 	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
-	
+
 	if (!m_pkChar->Goto((int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
 		return false;
 
@@ -1375,23 +1375,23 @@ void CNewPetActor::GiveBuff()
 	for (int i = 0; i < 3; ++i) {
 		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_NEW_PET, aApplyInfo[m_dwbonuspet[i][0]].bPointType, float((cbonus[i]*m_dwbonuspet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
 	}
-	
+
 	//Inizializzo le skill del pet inattive  No 10-17-18 No 0 no -1
 	//Condizione lv > 81 evo 3 Solo Skill Passive
-	if (GetLevel() >= 80 && m_dwevolution == 3) 
+	if (GetLevel() >= 80 && m_dwevolution == 3)
 	{
-		for (int s = 0; s < 3; s++) 
+		for (int s = 0; s < 3; s++)
 		{
-			switch (m_dwskillslot[s]) 
+			switch (m_dwskillslot[s])
 			{
 
 			/*
 				Pet_Skill_Table[m_dwskillslot[s] - 1][0]; //Mi ritorna il type della skill
-				Pet_Skill_Table[m_dwskillslot[s] - 1][1]; // Mi ritorna attiva/passiva della skill 
+				Pet_Skill_Table[m_dwskillslot[s] - 1][1]; // Mi ritorna attiva/passiva della skill
 				Pet_Skill_Table[m_dwskillslot[s] - 1][2]; // Mi ritorna il cd della skill
 				Pet_Skill_Table[m_dwskillslot[s] - 1][2 + m_dwskill[s]]; //Mi ritorna l'apply della skill
 			*/
-			case 1: //Resistenza Guerriero 78 Punti				
+			case 1: //Resistenza Guerriero 78 Punti
 			case 2: //Resistenza Sura 80
 			case 3: //Resistenza Ninja 79
 			case 4: //Resistenza Shamani 81
@@ -1425,7 +1425,7 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 #else
 	if (GetLevel() < 80 || m_dwevolution < 3)
 		return;
-	switch (m_dwskillslot[skillslot]) 
+	switch (m_dwskillslot[skillslot])
 	{
 	case 10:
 	{
@@ -1483,7 +1483,7 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 		m_pkOwner->RemoveBadAffect();
 	}
 	break;
-	
+
 	default:
 		return;
 	}
@@ -1510,9 +1510,9 @@ CNewPetSystem::~CNewPetSystem()
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetSystem::IncreasePetSkill(int iSlot, int iType) 
+bool CNewPetSystem::IncreasePetSkill(int iSlot, int iType)
 #else
-bool CNewPetSystem::IncreasePetSkill(int skill) 
+bool CNewPetSystem::IncreasePetSkill(int skill)
 #endif
 {
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
@@ -1533,7 +1533,7 @@ bool CNewPetSystem::IncreasePetSkill(int skill)
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
-bool CNewPetSystem::IncreasePetSkillByBook(entt::entity bookItem) 
+bool CNewPetSystem::IncreasePetSkillByBook(entt::entity bookItem)
 {
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
 	{
@@ -1548,7 +1548,7 @@ bool CNewPetSystem::IncreasePetSkillByBook(entt::entity bookItem)
 	return false;
 }
 
-int CNewPetSystem::ResetSkills() 
+int CNewPetSystem::ResetSkills()
 {
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
 	{
@@ -1560,11 +1560,11 @@ int CNewPetSystem::ResetSkills()
 			}
 		}
 	}
-	
+
 	return 2;
 }
 
-int CNewPetSystem::ResetSkill(int iType) 
+int CNewPetSystem::ResetSkill(int iType)
 {
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
 	{
@@ -1576,7 +1576,7 @@ int CNewPetSystem::ResetSkill(int iType)
 			}
 		}
 	}
-	
+
 	return 2;
 }
 #endif
@@ -1633,11 +1633,11 @@ bool CNewPetSystem::Update(uint32_t deltaTime)
 	uint32_t currentTime = get_dword_time();
 
 	// CHARACTER_MANAGER에서 캐릭터류 Update할 때 매개변수로 주는 (Pulse라고 되어있는)값이 이전 프레임과의 시간차이인줄 알았는데
-	// 전혀 다른 값이라서-_-; 여기에 입력으로 들어오는 deltaTime은 의미가 없음ㅠㅠ	
-	
+	// 전혀 다른 값이라서-_-; 여기에 입력으로 들어오는 deltaTime은 의미가 없음ㅠㅠ
+
 	if (m_dwUpdatePeriod > currentTime - m_dwLastUpdateTime)
 		return true;
-	
+
 	std::vector <CNewPetActor*> v_garbageActor;
 
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
@@ -1647,7 +1647,7 @@ bool CNewPetSystem::Update(uint32_t deltaTime)
 		if (nullptr != petActor && petActor->IsSummoned())
 		{
 			LPCHARACTER pPet = petActor->GetCharacter();
-			
+
 			const entt::entity petEntity = AIHelpers::EcsOf(pPet);
 			if (petEntity == entt::null || !g_registry.valid(petEntity))
 			{
@@ -1685,7 +1685,7 @@ void CNewPetSystem::DeletePet(uint32_t mobVnum)
 	else
 		delete petActor;
 
-	m_petActorMap.erase(iter);	
+	m_petActorMap.erase(iter);
 }
 
 /// 관리 목록에서 펫을 지움
@@ -1737,14 +1737,14 @@ void CNewPetSystem::UnsummonAll(LPCHARACTER ch)
 {
 	if (!ch)
 		return;
-	
+
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = ch->FindAffect(AFFECT_RECALL2);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
 	}
 #endif
-	
+
 	for (TNewPetActorMap::iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
 	{
 		CNewPetActor* petActor = iter->second;
@@ -1756,12 +1756,12 @@ void CNewPetSystem::UnsummonAll(LPCHARACTER ch)
 			}
 		}
 	}
-	
+
 	if (m_pkNewPetSystemUpdateEvent) {
 		event_cancel(&m_pkNewPetSystemUpdateEvent);
 		m_pkNewPetSystemUpdateEvent = nullptr;
 	}
-	
+
 	if (m_pkNewPetSystemExpireEvent) {
 		event_cancel(&m_pkNewPetSystemExpireEvent);
 		m_pkNewPetSystemExpireEvent = nullptr;
@@ -1779,7 +1779,7 @@ uint32_t CNewPetSystem::GetNewPetITemID()
 			if (petActor->IsSummoned()) {
 				itemid = petActor->GetSummonItemID();
 				break;
-			}			
+			}
 		}
 	}
 	return itemid;
@@ -1797,7 +1797,7 @@ bool CNewPetSystem::IsActivePet()
 			if (petActor->IsSummoned()) {
 				state = true;
 				break;
-			}			
+			}
 		}
 	}
 	return state;
@@ -1959,7 +1959,7 @@ CNewPetActor* CNewPetSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, 
 
 		info->pPetSystem = this;
 
-		m_pkNewPetSystemUpdateEvent = event_create(newpetsystem_update_event, info, PASSES_PER_SEC(1) / 4);	// 0.25초	
+		m_pkNewPetSystemUpdateEvent = event_create(newpetsystem_update_event, info, PASSES_PER_SEC(1) / 4);	// 0.25초
 	}
 
 	if (nullptr == m_pkNewPetSystemExpireEvent)

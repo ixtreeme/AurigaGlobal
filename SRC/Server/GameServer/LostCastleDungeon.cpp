@@ -33,7 +33,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "mob_manager.h"
 #include "pvp.h"
-#include "battle.h" 
+#include "battle.h"
 #include "skill.h"
 #include "motion.h"
 namespace
@@ -254,7 +254,7 @@ namespace
         memset(&p, 0, sizeof(p));
         p.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
 			p.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
-        strlcpy(p.name, name ? name : target->GetName(), sizeof(p.name));
+        strlcpy(p.name, name ? name : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), sizeof(p.name));
         for (int i = 0; i < CHR_EQUIPPART_NUM; ++i)
             p.awPart[i] = parts ? parts[i] : 0;
 
@@ -463,7 +463,7 @@ namespace
             m_evTimer.erase(it);
         }
 
-        
+
         void CancelCloneAI(int32_t mapIndex)
         {
             auto it = m_evCloneAI.find(mapIndex);
@@ -741,7 +741,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             const int32_t gy = map->m_setting.iBaseY + sy * 100;
 
             char evilName[CHARACTER_NAME_MAX_LEN + 1];
-            snprintf(evilName, sizeof(evilName), "Gonosz%s", source->GetName());
+            snprintf(evilName, sizeof(evilName), "Gonosz%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(source)).data());
 
             // FAKE PC (nem mob!) - PID=0, hogy ne keruljon bele PC name/PID map-ekbe
             LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(evilName, 0);
@@ -1292,7 +1292,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
 
         char cloneName[CHARACTER_NAME_MAX_LEN + 1];
         // unique name to avoid collisions
-        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", source->GetName());
+        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(source)).data());
 
         LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(cloneName, 0);
         if (!clone)
@@ -1713,7 +1713,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         mask |= bit;
         d->SetFlag(kFlagKeyMask, mask);
 
-        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", from->GetName());
+        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(from)).data());
 
         if (mask == ((1 << 5) - 1))
         {

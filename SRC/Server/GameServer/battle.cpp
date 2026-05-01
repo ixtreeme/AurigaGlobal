@@ -165,7 +165,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 #endif
 
 	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
-		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 
 	if (!victim || ch == victim)
 	{
@@ -173,7 +173,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
-		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 
 	if (!battle_is_attackable(ch, victim))
 	{
@@ -181,7 +181,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
-		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ((ch)->GetName()), ((victim)->GetName()));
+		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 
 	// �A�� A1A�
 	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
@@ -212,7 +212,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		if (distance > max)
 		{
 			if (test_server)
-				LOG_TRACE("VICTIM_FAR: {} distance: {} max: {}", ((ch)->GetName()), distance, max);
+				LOG_TRACE("VICTIM_FAR: {} distance: {} max: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance, max);
 
 			return BATTLE_NONE;
 		}
@@ -400,13 +400,13 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 			const int R = pkVictim->GetPoint(POINT_RESIST_MEZZIUOMINI);          // vedekezo resist (%)
 
 			// 100 -> 20, 200 -> 40
-			int effR = (R + 2) / 10;  
+			int effR = (R + 2) / 10;
 
 			if (effR < 0) effR = 0;
 			//if (effR > 100) effR = 100; // cap 100%
 
 			int net = A - effR;
-			if (net < 0) net = 0; 
+			if (net < 0) net = 0;
 
 			if (net > 0)
 				iAtk += (iAtk * net) / 100;
@@ -547,7 +547,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 				break;
 
 			case WEAPON_BOW:
-				LOG_ERROR("CalcMeleeDamage should not handle bows (name: {})", ((pkAttacker)->GetName()));
+				LOG_ERROR("CalcMeleeDamage should not handle bows (name: {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data());
 				return 0;
 
 			default:
@@ -677,9 +677,9 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 		snprintf(szMeleeAttack, sizeof(szMeleeAttack),
 				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%d)+WP(%d)%s%s%s, AR=%.3g%s",
-				((pkAttacker)->GetName()),
+				ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(),
 				iAtk,
-				((pkVictim)->GetName()),
+				ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(),
 				iDef,
 				iDam,
 				szUnknownDam,
@@ -754,8 +754,8 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 	if (test_server)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
-				((pkAttacker)->GetName()),
-				((pkVictim)->GetName()),
+				ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(),
+				ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(),
 				iPureDam,
 				iDist, iGap, iPercent);
 	}
@@ -806,7 +806,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	//PROF_UNIT puHit("Hit");
 	if (test_server)
-		LOG_TRACE("battle_hit : [{}] attack to [{}] : dam :{}", ((pkAttacker)->GetName()), ((pkVictim)->GetName()), iRetDam);
+		LOG_TRACE("battle_hit : [{}] attack to [{}] : dam :{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), iRetDam);
 
 	int iDam = CalcMeleeDamage(pkAttacker, pkVictim);
 
@@ -859,7 +859,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 				lValue -= pkAttacker->GetPoint(POINT_IRR_WEAPON_DEFENSE);
 #endif
 
-				  
+
 				//if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkVictim)))
 				//	lValue += 15;
 
@@ -899,7 +899,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 				iDam = iDam * (100 - lValue) / 100;
 				break;
 			}
-			
+
 			case WEAPON_BOW:
 			{
 				int32_t lValue = pkVictim->GetPoint(POINT_RESIST_BOW);
@@ -913,7 +913,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 				iDam = iDam * (100 - lValue) / 100;
 				break;
 			}
-			
+
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			case WEAPON_CLAW:
 			{
@@ -960,12 +960,12 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //
 //		///*pkAttacker->*/viChatPacket(CHAT_TYPE_TALKING, "You hit a Skill Mob for %d damage!", iRetDam);
 //		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
-//		
-//		
+//
+//
 //
 //
 //		LOG_TRACE("DEBUG MAP1_SKILL_MOB: attacker={} (id={}) victimVnum={} dmg={} skillhit={}",
-//			((pkAttacker)->GetName()),
+//			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(),
 //			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)),
 //			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)),
 //			iRetDam,
@@ -1013,44 +1013,44 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 			if (current_time - ch->GetAttackLogRef().dwTime < GET_ATTACK_SPEED(ch))
 			{
 				INCREASE_SPEED_HACK_COUNT(ch);
-	
+
 				if (test_server)
 				{
-					LOG_TRACE("{} attack hack! time (delta, limit)=({}, {}) hack_count {}", ((ch)->GetName()), current_time - ch->GetAttackLogRef().dwTime, GET_ATTACK_SPEED(ch), ch->GetSpeedHackCount());
-	
+					LOG_TRACE("{} attack hack! time (delta, limit)=({}, {}) hack_count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), current_time - ch->GetAttackLogRef().dwTime, GET_ATTACK_SPEED(ch), ch->GetSpeedHackCount());
+
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							((ch)->GetName()),
+							ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 							current_time - ch->GetAttackLogRef().dwTime,
 							GET_ATTACK_SPEED(ch),
 							ch->GetSpeedHackCount());
 				}
-	
+
 				SET_ATTACK_TIME(ch, victim, current_time);
 				SET_ATTACKED_TIME(ch, victim, current_time);
 				return true;
 			}
 		}
-	
+
 		SET_ATTACK_TIME(ch, victim, current_time);
-	
+
 		if (victim->GetAttackedLogRef().dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ((ch)->GetName()));
+					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id));
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				}
-	
+
 				SET_ATTACKED_TIME(ch, victim, current_time);
 				return true;
 			}
 		}
-	
+
 		SET_ATTACKED_TIME(ch, victim, current_time);
 		return false;
 	}
-	
+
 	return false;
 }
 #endif

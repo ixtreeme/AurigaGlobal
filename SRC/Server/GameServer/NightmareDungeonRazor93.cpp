@@ -540,7 +540,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             if (!CheckLevel(m))
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badType = BAD_LEVEL;
                 badVal = m->GetLevel();
                 return;
@@ -550,7 +550,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             if (rem > 0)
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badType = BAD_COOLDOWN;
                 badVal = rem;
                 return;
@@ -559,7 +559,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             if (!HasEntryItem(m))
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badType = BAD_ITEM;
                 return;
             }

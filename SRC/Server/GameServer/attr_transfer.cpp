@@ -27,10 +27,10 @@ void AttrTransfer_open(LPCHARACTER ch)
 	const LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ((ch)->GetName()));
+		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return;
 	}
-	
+
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -38,7 +38,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 #endif
 		return;
 	}
-	
+
 	if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->IsAcceOpen() || ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -46,20 +46,20 @@ void AttrTransfer_open(LPCHARACTER ch)
 #endif
 		return;
 	}
-	
+
 	int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY()));
 	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
 	{
-		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ((ch)->GetName()), distance, ATTR_TRANSFER_MAX_DISTANCE);
+		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance, ATTR_TRANSFER_MAX_DISTANCE);
 		return;
 	}
-	
+
 	AttrTransfer_clean_item(ch);
 	ch->SetAttrTransferNpc(npc);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
-		LOG_INFO("{} has open the Attr Transfer window.", ((ch)->GetName()));
+		LOG_INFO("{} has open the Attr Transfer window.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	}
 }
 
@@ -71,7 +71,7 @@ void AttrTransfer_close(LPCHARACTER ch)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{
-		LOG_INFO("{} has close the Attr Transfer window.", ((ch)->GetName()));
+		LOG_INFO("{} has close the Attr Transfer window.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	}
 }
 
@@ -82,7 +82,7 @@ void AttrTransfer_clean_item(LPCHARACTER ch)
 	{
 		if (attr_transfer_item[i] == nullptr)
 			continue;
-		
+
 		attr_transfer_item[i] = nullptr;
 	}
 
@@ -91,10 +91,10 @@ void AttrTransfer_clean_item(LPCHARACTER ch)
 bool AttrTransfer_make(LPCHARACTER ch)
 {
 	int	has_attr = 0;
-	
+
 	if (ch == nullptr)
 		return false;
-	
+
 	if (!(ch)->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -102,14 +102,14 @@ bool AttrTransfer_make(LPCHARACTER ch)
 #endif
 		return false;
 	}
-	
+
 	LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ((ch)->GetName()));
+		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return false;
 	}
-	
+
 	LPITEM* items = ch->GetAttrTransferItem();
 	if (items[0] == nullptr || items[1] == nullptr || items[2] == nullptr)
 	{
@@ -118,7 +118,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 #endif
 		return false;
 	}
-	
+
 	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[0])) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[1])) != ITEM_COSTUME || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[2])) != ITEM_COSTUME)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -126,7 +126,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 #endif
 		return false;
 	}
-	
+
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
 		if (has_attr != 1 && items[2]->GetAttributeType(i) > 0 && items[2]->GetAttributeValue(i) > 0)
@@ -134,7 +134,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 			has_attr = 1;
 		}
 	}
-	
+
 	if (has_attr != 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -142,7 +142,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 #endif
 		return false;
 	}
-	
+
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
 #ifdef ENABLE_ATTR_COSTUMES
 		if ((i == 5) || (i == 6)) {
@@ -154,7 +154,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
 #endif
 	}
-	
+
 	ItemSystem::ConsumeItemEcs(
 		EntityFactory::CreateItemEntity(g_registry, items[0]), 1);
 	items[0] = nullptr;
@@ -162,7 +162,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 		EntityFactory::CreateItemEntity(g_registry, items[2]), 1);
 	items[2] = nullptr;
 
-	
+
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
 	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
 #ifdef TEXTS_IMPROVEMENT
@@ -174,17 +174,17 @@ bool AttrTransfer_make(LPCHARACTER ch)
 void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 {
 	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
-	
+
 	if (i_index < 0 || INVENTORY_MAX_NUM <= i_index || w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
-	
+
 	LPITEM item = ch->GetInventoryItem(i_index);
 	if (item == nullptr)
 		return;
-	
+
 	if (w_index == 0 && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_TRANSFER_SCROLL)
 		return;
-	
+
 	if (((w_index == 1) || (w_index == 2)) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_COSTUME))
 		return;
 
@@ -295,7 +295,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 #endif
 	)
 		return;
-	
+
 	LPITEM* attr_transfer_item = ch->GetAttrTransferItem();
 	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
 	{
@@ -305,7 +305,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 			break;
 		}
 	}
-	
+
 	if (w_index != 0 && attr_transfer_item[0] == nullptr)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -324,12 +324,12 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 		else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, attr_transfer_item[2])))
 			return;
 	}
-	
+
 	if (w_index == 1)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransferMessage");
 	}
-	
+
 	attr_transfer_item[w_index] = item;
 	return;
 }
@@ -338,14 +338,14 @@ void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
 {
 	//LPITEM	item;
 	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
-	
+
 	if (w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
-	
+
 	LPITEM* attr_transfer_item = ch->GetAttrTransferItem();
 	if (attr_transfer_item[w_index] == nullptr)
 		return;
-	
+
 	//attr_transfer_item[w_index];
 	attr_transfer_item[w_index] = nullptr;
 	return;

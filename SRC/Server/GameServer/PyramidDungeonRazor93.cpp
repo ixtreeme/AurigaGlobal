@@ -232,7 +232,7 @@ namespace
             if (lv < kMinLevel || lv > kMaxLevel)
             {
                 ok = false;
-                name = m->GetName();
+                name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 level = lv;
             }
         }
@@ -256,7 +256,7 @@ namespace
             if (until > now)
             {
                 ok = false;
-                name = m->GetName();
+                name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 remain = until - now;
             }
         }
@@ -275,7 +275,7 @@ namespace
             if (m->CountSpecifyItem(kEntryItemVnum) < 1)
             {
                 ok = false;
-                name = m->GetName();
+                name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             }
         }
     };
@@ -646,11 +646,11 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             {
                 LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
-                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? leader->GetName() : killer->GetName())); SendNotice(buf); }
+                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data() : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data())); SendNotice(buf); }
             }
             else
             {
-                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", killer->GetName()); SendNotice(buf); }
+                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data()); SendNotice(buf); }
             }
 
             d->KillAll();

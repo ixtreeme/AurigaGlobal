@@ -391,7 +391,7 @@ namespace
         d->SetFlag(kFlagBlockRejoin, 0);
         d->SetFlag(kFlagCompleted, 0);
         d->SetFlag(kFlagFloor, 0);
-        d->SetFlag(kFlagStartTime, 0); 
+        d->SetFlag(kFlagStartTime, 0);
         d->SetFlag(kFlagTimeLimit, 0);
         d->SetFlag(kFlagCompassState, 0);
         d->SetFlag(kFlagMainBossStage, 0);
@@ -1249,7 +1249,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             badVal = m->GetLevel();
             return;
         }
@@ -1258,7 +1258,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_WARP;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             return;
         }
 
@@ -1268,7 +1268,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             {
                 ok = false;
                 bad = BAD_ITEM;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 return;
             }
 
@@ -1277,7 +1277,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             {
                 ok = false;
                 bad = BAD_COOLDOWN;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badVal = cd - now;
                 return;
             }
@@ -1470,7 +1470,7 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (floor == 1 && vnum == kFloor1LowBossVnum)
     {
         killer->AutoGiveItem(kFloor1ItemVnum, 1);
-        NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", killer->GetName());
+        NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
         return;
     }
 
@@ -1521,27 +1521,27 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SetFlag(kFlagCanKillFloor3Boss, 0);
             d->SetFlag(kFlagCanUseRune, 1);
             killer->AutoGiveItem(kFloor3ItemVnum, 1);
-            NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", killer->GetName());
+            NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
         }
         return;
     }
 
     if (floor == 5 && vnum == kFinalBossVnum && d->GetFlag(kFlagCompleted) == 0)
     {
-        const char* leaderName = killer->GetName();
+        const char* leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data();
 
         if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
         {
             LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
             if (leader)
-                leaderName = leader->GetName();
+                leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data();
         }
 
         char notice[256];
         if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Fagyos dungeont!", leaderName);
         else
-            std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", killer->GetName());
+            std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
 
         BroadcastNotice(notice);
 

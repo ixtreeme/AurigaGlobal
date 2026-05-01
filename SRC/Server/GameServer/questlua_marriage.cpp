@@ -29,7 +29,7 @@ namespace quest
 		LPCHARACTER ch_you = CHARACTER_MANAGER::instance().Find(vid);
 		if (ch_you)
 		{
-			marriage::CManager::instance().RequestAdd((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_you)), ((ch)->GetName()), ch_you->GetName());
+			marriage::CManager::instance().RequestAdd((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_you)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch_you->GetName());
 		}
 		return 0;
 	}
@@ -43,7 +43,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		marriage::CManager::instance().RequestRemove((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), pMarriage->GetOther((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
@@ -59,7 +59,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		pMarriage->SetMarried();
@@ -140,7 +140,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(pid1);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->GetOther(pid1) != pid2)
@@ -166,7 +166,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 
@@ -189,7 +189,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -215,7 +215,7 @@ namespace quest
 
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -243,7 +243,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -264,7 +264,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -300,7 +300,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -327,7 +327,7 @@ namespace quest
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()));
+			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)

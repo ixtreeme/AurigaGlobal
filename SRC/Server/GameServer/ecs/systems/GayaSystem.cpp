@@ -167,7 +167,7 @@ bool CheckItemsFull(entt::entity pc)
 
 	FILE* fp;
 	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ch->GetName());
+	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	return (fp = fopen(file_name, "r")) != nullptr ? (fclose(fp), true) : false;
 }
 
@@ -250,7 +250,7 @@ void RefreshItemsMarket(entt::entity pc)
 	FILE* fileID;
 	char file_name[256 + 1];
 
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ch->GetName());
+	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	fileID = fopen(file_name, "w");
 
 	if (nullptr == fileID)
@@ -279,7 +279,7 @@ void UpdateSlot(entt::entity pc, int slot)
 
 	FILE* fileID;
 	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ch->GetName());
+	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	fileID = fopen(file_name, "w");
 
 	for (int i = 0; i < 9; ++i)
@@ -315,7 +315,7 @@ void UpdateItems0(entt::entity pc)
 	CHARACTER::Gaya_Shop_Values market_gaya_values_0 = { 0,0,0 };
 	CHARACTER::Gaya_Shop_Values market_gaya_values_1 = { 0,0,0,0,0,0 };
 
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ch->GetName());
+	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	fp = fopen(file_name, "r");
 	if (!fp)
 		return;
@@ -369,7 +369,7 @@ void UpdateItems(entt::entity pc)
 
 	FILE* fileID;
 	char file_name[256 + 1];
-	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ch->GetName());
+	snprintf(file_name, sizeof(file_name), "%s/gaya/%s_gaya_system.txt", LocaleService_GetBasePath().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	fileID = fopen(file_name, "a");
 	if (!fileID)
 		return;

@@ -33,7 +33,7 @@ CWhisperAdmin::~CWhisperAdmin()
 
 
 bool CWhisperAdmin::file_is_empty(std::ifstream& file)
-{	
+{
 	if(file.peek() == file.eof() ||!file||!file.is_open())
 		return true;
 	return false;
@@ -51,7 +51,7 @@ std::string CWhisperAdmin::GetLang()
 	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
 
 	std::ifstream file(szFileName);
-		
+
 	if(CWhisperAdmin::instance().file_is_empty(file))
 		return "";
 
@@ -70,7 +70,7 @@ int CWhisperAdmin::GetColor()
 	snprintf(szFileName, sizeof(szFileName), "%s/whisper.txt", LocaleService_GetBasePath().c_str());
 
 	std::ifstream file(szFileName);
-		
+
 	if(CWhisperAdmin::instance().file_is_empty(file))
 		return false;
 
@@ -96,15 +96,15 @@ void CWhisperAdmin::SaveConfig(const char* c_pszLang, int color)
 	std::ifstream fFile(szFileName);
 	if (!fFile.is_open())
 		return;
-		
+
 	FILE *f = 0;
 	f = fopen(szFileName, "w");
-	
+
 	fprintf(f, "");
 	fclose(f);
 
 	fprintf(fp, "%s\n", c_pszLang);
-	fprintf(fp, "%d", color);	
+	fprintf(fp, "%d", color);
 
 	fclose(fp);
 	fFile.close();
@@ -138,12 +138,12 @@ struct whisper_packet_func
 	void operator () (LPDESC d)
 	{
 		if (!d->GetCharacter())
-			return;	
+			return;
 
 		if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
-		}			
+		}
 	}
 };
 
@@ -175,23 +175,23 @@ int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)
 	char szBuf[CHAT_MAX_LEN + 1];
 	strlcpy(szBuf, c_pData + sizeof(TPacketGGWhisperSystem), MIN(p->lSize + 1, sizeof(szBuf)));
 	CWhisperAdmin::instance().SendWhisper(szBuf);
-	return (p->lSize);	
+	return (p->lSize);
 }
 
 void CWhisperAdmin::SaveLog(LPCHARACTER ch, const char* c_pszText, const char* c_pszLang, int color)
 {
 	char szQuery[QUERY_MAX_LEN + 1];
-	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES('%s', NOW(), '%s', '%s', '%d')", ((ch)->GetName()), c_pszText, c_pszLang, color);
+	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES('%s', NOW(), '%s', '%s', '%d')", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), c_pszText, c_pszLang, color);
 	std::unique_ptr<SQLMsg> msg(DBManager::Instance().DirectQuery(szQuery));
 }
 
 void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 {
 	TPacketCGWhisperAdmin * f = (TPacketCGWhisperAdmin *)c_pData;
-	
+
 	if (!ch)
 		return;
-	
+
 	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) != GM_IMPLEMENTOR)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -199,7 +199,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 #endif
 		return;
 	}
-	
+
 	if (strlen(f->szText) <= 0 || strlen(f->szLang) <= 0 || f->color < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -207,15 +207,15 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 #endif
 		return;
 	}
-	
+
 	char szEscaped[CHAT_MAX_LEN * 2 + 1];
 	DBManager::instance().EscapeString(szEscaped, sizeof(szEscaped), f->szText, strlen(f->szText));
-	
+
 	std::string textLine = szEscaped;
 	boost::algorithm::replace_all(textLine, "#", " ");
-	
+
 	CWhisperAdmin::instance().SaveConfig(f->szLang, f->color);
-	CWhisperAdmin::instance().SaveLog(ch, textLine.c_str(), f->szLang, f->color);	
+	CWhisperAdmin::instance().SaveLog(ch, textLine.c_str(), f->szLang, f->color);
 
 	TPacketGGWhisperSystem p;
 	p.bHeader = HEADER_GG_WHISPER_SYSTEM;

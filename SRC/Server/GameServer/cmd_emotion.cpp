@@ -259,7 +259,7 @@ ACMD(do_emotion)
 					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim))))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ((victim)->GetName()));
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 #endif
 						return;
 					}
@@ -267,7 +267,7 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ((victim)->GetName()));
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 #endif
 					return;
 				}
@@ -299,7 +299,7 @@ ACMD(do_emotion)
 	ch->PacketAround(buf.read_peek(), buf.size());
 
 	if (victim)
-		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ((victim)->GetName()));
+		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 	else
 		LOG_INFO("ACTION: {}", emotion_types[i].command);
 }

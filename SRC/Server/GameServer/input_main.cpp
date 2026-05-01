@@ -88,13 +88,13 @@
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 static inline std::string MakeNameWithPrefix(LPCHARACTER ch)
 {
-	const char* name = ch ? ch->GetName() : "";
+	const char* name = ch ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data() : "";
 
 	std::string out;
 	if (ch)
 		out = ch->GetItemOnTitlePrefix(); // std::string
 
-	 
+
 	if (!out.empty() && out.back() != ' ')
 		out.push_back(' ');
 
@@ -276,7 +276,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 		it->second.first += score;
 
 		if (word)
-			LOG_INFO("SPAM_SCORE: {} text: {} score: {} total: {} word: {}", ch->GetName(), buf, score, it->second.first, word);
+			LOG_INFO("SPAM_SCORE: {} text: {} score: {} total: {} word: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), buf, score, it->second.first, word);
 
 		if (it->second.first >= g_uiSpamBlockScore)
 		{
@@ -447,9 +447,9 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (test_server)
 	{
 		if (!pkChr)
-			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ch->GetName());
+			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		else
-			LOG_INFO("Whisper to {}({}) from {}", pkChr->GetName(), pinfo->szNameTo, ch->GetName());
+			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	}
 
 	if (ch->IsBlockMode(BLOCK_WHISPER))
@@ -463,7 +463,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
 		}
-		
+
 		return iExtraLen;
 	}
 
@@ -478,7 +478,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			bOpponentEmpire = pkCCI->bEmpire;
 
 			if (test_server)
-				LOG_INFO("Whisper to {} from {} (Channel {} Mapindex {})", "Null", ch->GetName(), pkCCI->bChannel, pkCCI->lMapIndex);
+				LOG_INFO("Whisper to {} from {} (Channel {} Mapindex {})", "Null", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pkCCI->bChannel, pkCCI->lMapIndex);
 		}
 	}
 	else
@@ -501,7 +501,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				const uint64_t buflen = strlen(buf);
 				CBanwordManager::instance().ConvertString(buf, buflen);
 				int processReturn = ProcessTextTag(ch, buf, buflen);
-				
+
 				if (0 != processReturn)
 				{
 					TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
@@ -519,11 +519,11 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 						);
 #endif
 					}
-					
+
 					return (iExtraLen);
 				}
-				
-				if (buflen > 0) 
+
+				if (buflen > 0)
 				{
 					ch->SendOfflineMessage(pinfo->szNameTo, buf);
 					snprintf(msg, sizeof(msg), "An offline message has been sent.");
@@ -535,14 +535,14 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			{
 				snprintf(msg, sizeof(msg), "You have to wait %d seconds for send offline message.", bDelay);
 			}
-			
+
 			TPacketGCWhisper pack;
 			int len = MIN(CHAT_MAX_LEN, strlen(msg) + 1);
 			pack.bHeader = HEADER_GC_WHISPER;
 			pack.wSize = static_cast<uint16_t>(sizeof(TPacketGCWhisper) + len);
 			pack.bType = WHISPER_TYPE_OFFLINE;
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-			
+
 			TEMP_BUFFER buf;
 			buf.write(&pack, sizeof(TPacketGCWhisper));
 			buf.write(msg, len);
@@ -664,7 +664,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.wSize = sizeof(TPacketGCWhisper) + buflen;
 				pack.bType = bType;
-				strlcpy(pack.szNameFrom, ch->GetName(), sizeof(pack.szNameFrom));
+				strlcpy(pack.szNameFrom, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(pack.szNameFrom));
 				// desc->BufferedPacketÀ» ÇÏÁö ¾Ê°í ¹öÆÛ¿¡ ½á¾ßÇÏ´Â ÀÌÀ¯´Â
 				// P2P relayµÇ¾î ÆÐÅ¶ÀÌ Ä¸½¶È­ µÉ ¼ö ÀÖ±â ¶§¹®ÀÌ´Ù.
 				TEMP_BUFFER tmpbuf;
@@ -675,13 +675,13 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				pkDesc->Packet(tmpbuf.read_peek(), tmpbuf.size());
 
 				// @warme006
-				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ch->GetName(), pinfo->szNameTo, buf);
+				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pinfo->szNameTo, buf);
 #ifdef ENABLE_CHAT_LOGGING
 				if (ch->IsGM())
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
-					LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+					LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 				}
 #endif
 			}
@@ -836,7 +836,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 
 	TPacketCGRequestPetName* p = (TPacketCGRequestPetName*)c_pData;
 
-	if (ch->GetGold() < 100000) 
+	if (ch->GetGold() < 100000)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 768, "%d", 100000);
@@ -858,7 +858,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 			}
 		}
 #endif
-		
+
 		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), -100000);
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -100000, true);
 		ch->RemoveSpecifyItem(vid, 1);
@@ -963,7 +963,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 				ch->SetLastShoutPulse(thecore_heart->pulse);
 
-				
+
 				const char* pExtra = pCmd;
 				if (!strncasecmp(pCmd, "shplink", 6))
 					pExtra = pCmd + 6;
@@ -983,7 +983,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						extra[i] = ' ';
 				}
 
-				
+
 				char shopName[256];
 				strlcpy(shopName, pkShop->GetName(), sizeof(shopName));
 				for (size_t i = 0; shopName[i]; ++i)
@@ -992,7 +992,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						shopName[i] = ' ';
 				}
 
-				
+
 				uint32_t linkVnum = 50300; // fallback
 				if (pkShop->GetItems() && !pkShop->GetItems()->empty())
 				{
@@ -1017,7 +1017,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						LIGHT_GREEN,
 						(unsigned)linkVnum,
 						0u,
-						(unsigned)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)),   // socket0 = OWNER_ID 
+						(unsigned)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)),   // socket0 = OWNER_ID
 						(unsigned)0x0BADF00D,          // socket1 = SENTINEL
 						0u,
 						0u,
@@ -1053,10 +1053,10 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 #else
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
-					langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ch->GetName(), body);
+					langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), body);
 #endif
 #else
-				snprintf(shoutbuf, sizeof(shoutbuf), "%s : %s", ch->GetName(), body);
+				snprintf(shoutbuf, sizeof(shoutbuf), "%s : %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), body);
 #endif
 
 				TPacketGGShout p;
@@ -1129,7 +1129,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				lang = desc != nullptr ? desc->GetLanguage() : 0;
 			}
 #endif
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 642, "%s", 
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 642, "%s",
 #ifdef ENABLE_MULTI_NAMES
 			pTable->szLocaleName[lang]
 #else
@@ -1216,18 +1216,18 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			//	if (!d || !(rc = d->GetCharacter())) continue;
 			//ecs::ChatSystem::SendNew(AIHelpers::EcsOf(rc), CHAT_TYPE_INFO, 2181,
 			//	"%s#%d#",
-			//	ch->GetName(),            // %s (winner)
+			//	ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),            // %s (winner)
 			//	answer                   // %d (correct answer)
 			//	//(itemName ? itemName : "item"), // %s
 			//	//count                     // %d
 			//);
-			//	// 
-			//	
+			//	//
+			//
 			//}
 
 			BroadcastNoticeNew(CHAT_TYPE_INFO, 0,0,2181,
 				"%s#%d#",
-				ch->GetName(),            // %s (winner)
+				ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),            // %s (winner)
 				answer                   // %d (correct answer)
 				//(itemName ? itemName : "item"), // %s
 				//count                     // %d
@@ -1243,7 +1243,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			snprintf(msg, sizeof(msg),
 				"%s[Quiz]%s %s%s%s won! %sCorrect answer:%s %s%d%s. %sReward sent:%s %s%s%s x %s%d%s",
 				C_BLUE, C_RST,
-				C_RED, ch->GetName(), C_RST,
+				C_RED, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), C_RST,
 				C_GOLD, C_RST, C_GRN, answer, C_RST,
 				C_GOLD, C_RST, C_BLUE, (itemName ? itemName : "item"), C_RST, C_GRN, count, C_RST);
 
@@ -1269,11 +1269,11 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		} while (0);
 #endif // ENABLE_EVENT_QUIZ_RAZOR93
 #ifdef ENABLE_FAKE_SHOP_HEADER
-		const char* mountColor = "";  
+		const char* mountColor = "";
 		char mountTitleWithCount[64];
 		int count = ch->GetMountCount();
 
-		// 80 fölött arany  
+		// 80 fölött arany
 		if (count >= 80)
 		{
 			mountColor = "|cFFFFFF00";  // arany
@@ -1281,7 +1281,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		}
 		else
 		{
-			 
+
 			mountColor = "";
 
 			if (count >= 70)
@@ -1306,16 +1306,16 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				snprintf(mountTitleWithCount, sizeof(mountTitleWithCount), "[New Rider (%d)]", count);
 		}
 
-		 
-		const std::string prefix = ch->GetItemOnTitlePrefix();  
-		const char* name = ch->GetName();                       
+
+		const std::string prefix = ch->GetItemOnTitlePrefix();
+		const char* name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 
 		len = snprintf(chatbuf, sizeof(chatbuf),
 			"|L%s|l|E%d|e |Hmsg:%s|h%s%s |h|r %s%s: %s",
 			langName.c_str(),
 			ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 			name,               // whisper target
-			prefix.c_str(),      
+			prefix.c_str(),
 			name,
 			mountColor ? mountColor : "",
 			mountTitleWithCount ? mountTitleWithCount : "",
@@ -1328,8 +1328,8 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			"|L%s|l|E%d|e |Hmsg:%s|h%s [PM]|h|r : %s",
 			langName.c_str(),
 			ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
-			ch->GetName(),
-			ch->GetName(),
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 			buf);
 #endif
 
@@ -1342,12 +1342,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), nameWithPrefix.c_str(), buf);
 
 // else
-//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ch->GetName(), buf);
-		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ch->GetName(), buf);
+//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), buf);
+		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), buf);
 //#endif
 	}
 #else
-	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ch->GetName(),buf);
+	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),buf);
 #endif
 
 	if (CHAT_TYPE_SHOUT == pinfo->type)
@@ -1388,18 +1388,18 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 #ifdef ENABLE_BATTLE_PASS
 		uint8_t bBattlePassId = ch->GetBattlePassId();
 		if(bBattlePassId)
-		{	
+		{
 			uint32_t dwCount, dwNotUsed;
 			if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
 			{
 				if (!ch->IsCompletedMission(COUNTER_CHAT))
-				{								
+				{
 					if(ch->GetMissionProgress(COUNTER_CHAT, bBattlePassId) < dwCount)
 						ch->UpdateMissionProgress(COUNTER_CHAT, bBattlePassId, 1, dwCount);
 				}
 			}
 		}
-		
+
 #endif
 
 		return (iExtraLen);
@@ -1424,8 +1424,8 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 							FYmirChatPacket(pack_chat,
 								buf,
 								strlen(buf),
-								ch->GetName(),
-								strlen(ch->GetName()),
+								ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
+								strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()),
 								ch->GetMapIndex(),
 								ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 								ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)));
@@ -1438,12 +1438,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 								len,
 								(ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ||
 								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
-								ch->GetMapIndex(), strlen(ch->GetName())));
+								ch->GetMapIndex(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1469,7 +1469,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1489,7 +1489,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1605,7 +1605,7 @@ void CInputMain::InventoryExpansion(LPCHARACTER ch, const char * data)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch) 
+	if (ch)
 		ch->Update_Inven();
 }
 #endif
@@ -1763,7 +1763,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				MessengerManager::instance().RequestToAdd(ch, ch_companion);
-				//MessengerManager::instance().AddToList(ch->GetName(), ch_companion->GetName());
+				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch_companion->GetName());
 			}
 			return sizeof(TPacketCGMessengerAddByVID);
 
@@ -1792,14 +1792,14 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					if (tch->IsBlockMode(BLOCK_MESSENGER_INVITE) == true)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", tch->GetName());
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data());
 #endif
 					}
 					else
 					{
 						// ¸Þ½ÅÀú°¡ Ä³¸¯ÅÍ´ÜÀ§°¡ µÇ¸é¼­ º¯°æ
 						MessengerManager::instance().RequestToAdd(ch, tch);
-						//MessengerManager::instance().AddToList(ch->GetName(), tch->GetName());
+						//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data());
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
@@ -1817,15 +1817,15 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 
 				char char_name[CHARACTER_NAME_MAX_LEN + 1];
 				strlcpy(char_name, c_pData, sizeof(char_name));
-				MessengerManager::instance().RemoveFromList(ch->GetName(), char_name);
+				MessengerManager::instance().RemoveFromList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), char_name);
 #ifdef ENABLE_BUG_FIXES
-				MessengerManager::instance().RemoveFromList(char_name, ch->GetName());
+				MessengerManager::instance().RemoveFromList(char_name, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 #endif
 			}
 			return CHARACTER_NAME_MAX_LEN;
 
 		default:
-			LOG_ERROR("CInputMain::Messenger : Unknown subheader {} : {}", p->subheader, ch->GetName());
+			LOG_ERROR("CInputMain::Messenger : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			break;
 	}
 
@@ -1854,26 +1854,26 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 		case 1:
 			CBattlePass::instance().BattlePassRequestOpen(ch);
 			break;
-			
+
 		case 2:
 			CBattlePass::instance().BattlePassRequestReward(ch);
 			break;
-			
+
 		case 3:
 		{
 			uint32_t dwPlayerId = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 			uint8_t bIsGlobal = 0;
-			
+
 			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
 			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
 			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
 		}
 		break;
-			
+
 		default:
 			break;
 	}
-	
+
 	return 0;
 }
 #endif
@@ -1900,7 +1900,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 	switch (p->subheader)
 	{
 		case SHOP_SUBHEADER_CG_END:
-			LOG_INFO("INPUT: {} SHOP: END", ch->GetName());
+			LOG_INFO("INPUT: {} SHOP: END", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			CShopManager::instance().StopShopping(ch);
 			return 0;
 
@@ -1910,7 +1910,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 					return -1;
 
 				uint8_t bPos = *(c_pData + 1);
-				LOG_INFO("INPUT: {} SHOP: BUY {}", ch->GetName(), bPos);
+				LOG_INFO("INPUT: {} SHOP: BUY {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), bPos);
 				CShopManager::instance().Buy(ch, bPos);
 				return (sizeof(uint8_t) + sizeof(uint8_t));
 			}
@@ -1922,7 +1922,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t pos = *c_pData;
 
-				LOG_INFO("INPUT: {} SHOP: SELL", ch->GetName());
+				LOG_INFO("INPUT: {} SHOP: SELL", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 				CShopManager::instance().Sell(ch, pos);
 				return sizeof(uint8_t);
 			}
@@ -1931,18 +1931,18 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 			{
 				if (uiBytes < sizeof(uint8_t)
 #ifdef ENABLE_EXTRA_INVENTORY
-				+ sizeof(uint16_t) 
+				+ sizeof(uint16_t)
 #else
-				+ sizeof(uint8_t) 
+				+ sizeof(uint8_t)
 #endif
 #ifdef ENABLE_NEW_STACK_LIMIT
-				+ sizeof(uint16_t) 
+				+ sizeof(uint16_t)
 #else
-				+ sizeof(uint8_t) 
+				+ sizeof(uint8_t)
 #endif
 				)
 					return -1;
-				
+
 #ifdef ENABLE_EXTRA_INVENTORY
 				uint8_t window = *(c_pData);
 				uint16_t cell = *(uint16_t*)(c_pData + 1);
@@ -1955,24 +1955,24 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 				uint8_t count = *(c_pData);
 #endif
 
-				LOG_INFO("INPUT: {} SHOP: SELL2", ch->GetName());
+				LOG_INFO("INPUT: {} SHOP: SELL2", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 				CShopManager::instance().Sell(ch,
 #ifdef ENABLE_EXTRA_INVENTORY
-				TItemPos(window, cell), 
+				TItemPos(window, cell),
 #else
-				pos, 
+				pos,
 #endif
 				count);
-				return sizeof(uint8_t) 
+				return sizeof(uint8_t)
 #ifdef ENABLE_EXTRA_INVENTORY
-				+ sizeof(uint16_t) 
+				+ sizeof(uint16_t)
 #else
-				+ sizeof(uint8_t) 
+				+ sizeof(uint8_t)
 #endif
 #ifdef ENABLE_NEW_STACK_LIMIT
-				+ sizeof(uint16_t) 
+				+ sizeof(uint16_t)
 #else
-				+ sizeof(uint8_t) 
+				+ sizeof(uint8_t)
 #endif
 				;
 			}
@@ -1986,13 +1986,13 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t p = *(c_pData++);
 				uint8_t c = *(c_pData);
-				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ch->GetName(), p, c);
+				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p, c);
 				CShopManager::instance().MultipleBuy(ch, p, c);
 				return size;
 			}
 #endif
 		default:
-			LOG_ERROR("CInputMain::Shop : Unknown subheader {} : {}", p->subheader, ch->GetName());
+			LOG_ERROR("CInputMain::Shop : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			break;
 	}
 
@@ -2014,7 +2014,7 @@ void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 		victim->OnClick(ch);
 	else if (test_server)
 	{
-		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ch->GetName(), pinfo->vid);
+		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pinfo->vid);
 	}
 }
 
@@ -2099,14 +2099,14 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					{
 						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), to_ch))
 						{
-							LOG_INFO("Exchange canceled by quest {} {}", ch->GetName(), to_ch->GetName());
+							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), to_ch->GetName());
 							return;
 						}
 					}
 
 
 					if (ch->GetMyShop() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen()
-						
+
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 						|| ch->GetWheelDestiny()
 #endif
@@ -2117,7 +2117,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 #endif
 						return;
 					}
-					
+
 #ifdef __ATTR_TRANSFER_SYSTEM__
 					if (ch->IsAttrTransferOpen())
 					{
@@ -2239,7 +2239,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
 	{
-		LOG_ERROR("invalid move type: {}", ch->GetName());
+		LOG_ERROR("invalid move type: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return;
 	}
 
@@ -2274,7 +2274,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ch->GetMapIndex())
 		{
-			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ch->GetName(), fDist, fDistFromCurrent, ch->IsRiding());
+			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
 			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
@@ -2289,7 +2289,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 #ifdef ENABLE_CHECK_GHOSTMODE
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && ch->IsDead())
 		{
-			LOG_INFO("MOVE: {} trying to move as dead", ch->GetName());
+			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 			ch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());
 			ch->Stop();
@@ -2305,10 +2305,10 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 				int iDelta = (int)(dwCurTime - pinfo->dwTime);
 				int iServerDelta = (int)(dwCurTime - ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientTime());
 				if (iDelta >= 30000) {
-					LOG_INFO("SPEEDHACK: slow timer name {} delta {}", ch->GetName(), iDelta);
+					LOG_INFO("SPEEDHACK: slow timer name {} delta {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iDelta);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				} else if (iDelta < -(iServerDelta / 50)) {
-					LOG_INFO("SPEEDHACK: DETECTED! {} (delta {} {})", ch->GetName(), iDelta, iServerDelta);
+					LOG_INFO("SPEEDHACK: DETECTED! {} (delta {} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iDelta, iServerDelta);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(3);
 				}
 			}
@@ -2394,7 +2394,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	/*
 	LOG_INFO(
 			"MOVE: {} Func:{} Arg:{} Pos:{}x{} Time:{} Dist:{:.1f}",
-			ch->GetName(),
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 			pinfo->bFunc,
 			pinfo->bArg,
 			pinfo->lX / 100,
@@ -2415,11 +2415,11 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 #endif
 	if (!ch)
 		return;
-	
+
 	TPacketCGSkillColor * p = (TPacketCGSkillColor*)pcData;
 	if (p->skill >= ESkillColorLength::MAX_SKILL_COUNT)
 		return;
-	
+
 	if ((p->col1 != 0) || (p->col2 != 0) || (p->col3 != 0) || (p->col4 != 0) || (p->col5 != 0)) {
 		if (ch->CountSpecifyItem(164406) < 1) {
 #ifdef TEXTS_IMPROVEMENT
@@ -2430,7 +2430,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 			ch->RemoveSpecifyItem(164406, 1);
 		}
 	}
-	
+
 	uint32_t data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
 	memcpy(data, ch->GetSkillColor(), sizeof(data));
 
@@ -2587,7 +2587,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 	if (0 != (iExtraLen % sizeof(TPacketCGSyncPositionElement)))
 	{
-		LOG_ERROR("invalid packet length {} (name: {})", pinfo->wSize, ch->GetName());
+		LOG_ERROR("invalid packet length {} (name: {})", pinfo->wSize, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return iExtraLen;
 	}
 
@@ -2601,7 +2601,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	if( iCount > nCountLimit )
 	{
 		//LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
-		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ch->GetName());
+		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		//ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 		//return -1;
 		iCount = nCountLimit;
@@ -2648,7 +2648,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2674,7 +2674,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			{
 				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
 
-				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, victim->GetName(), ch->GetName(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2685,7 +2685,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, victim->GetName(), ch->GetName(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
 
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2825,7 +2825,7 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
 	if (p->answer)
 		p->answer = quest::CONFIRM_YES;
-	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ch->GetName(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
 	if (ch_wait)
 	{
 		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_wait)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
@@ -2892,7 +2892,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	{
 
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot place items from the Belt inventory into the safebox.");
-		//LOG_INFO(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ch->GetName());
+		//LOG_INFO(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return;
 	}
 
@@ -3399,7 +3399,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 #endif
 		return;
 	}
-	
+
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	if (ch->IsAttrTransferOpen())
 	{
@@ -3409,8 +3409,8 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		return;
 	}
 #endif
-	
-	//Check DungeonMap Genezis 
+
+	//Check DungeonMap Genezis
 	//Check if current map is a dungeon!
 //	if (ch->GetDungeon())
 //	{
@@ -3425,7 +3425,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		return;
 
 	TMapConfig& rConf = g_vecMapConf[iMapCode];
-	
+
 	if(ch->GetLevel() < rConf.iLevel)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3433,7 +3433,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 #endif
 		return;
 	}
-	
+
 	if(rConf.iLevelMax != 0 && ch->GetLevel() > rConf.iLevelMax)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3441,7 +3441,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 #endif
 		return;
 	}
-		
+
 	if(ch->GetGold() < rConf.price)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -3471,10 +3471,10 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 
 	int32_t coord_x = 0;
 	int32_t coord_y = 0;
-	
+
 	coord_x = rConf.coord_x;
 	coord_y = rConf.coord_y;
-	
+
 	ch->WarpSet(coord_x, coord_y);
 
 }
@@ -3604,7 +3604,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 			}
 			break;
 		default:
-			LOG_ERROR("wrong byRole in PartySetState Packet name {} state {}", ch->GetName(), p->byRole);
+			LOG_ERROR("wrong byRole in PartySetState Packet name {} state {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->byRole);
 			break;
 	}
 }
@@ -3781,7 +3781,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), -GuildCreateFee);
 
 		char Log[128];
-		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ch->GetName());
+		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		LogManager::instance().CharLog(ch, 0, "MAKE_GUILD", Log);
 
 		ch->RemoveSpecifyItem(GUILD_CREATE_ITEM_VNUM, 1);
@@ -3857,28 +3857,28 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 #endif
 	if (!ch || (ch && !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))))
 		return;
-	
+
 	if (!c_pData)
 		return;
-	
+
 	InGameWiki::TCGWikiPacket * p = nullptr;
 	if (!(p = (InGameWiki::TCGWikiPacket *) c_pData))
 		return;
-	
+
 	InGameWiki::TGCWikiPacket pack;
 	pack.set_data_type(!p->is_mob ? InGameWiki::LOAD_WIKI_ITEM : InGameWiki::LOAD_WIKI_MOB);
 	pack.increment_data_size(uint16_t(sizeof(InGameWiki::TGCWikiPacket)));
-	
+
 	if (pack.is_data_type(InGameWiki::LOAD_WIKI_ITEM))
 	{
 		const std::vector<CommonWikiData::TWikiItemOriginInfo>& originVec = ITEM_MANAGER::Instance().GetItemOrigin(p->vnum);
 		const std::vector<CSpecialItemGroup::CSpecialItemInfo> _gV = ITEM_MANAGER::instance().GetWikiChestInfo(p->vnum);
 		const std::vector<CommonWikiData::TWikiRefineInfo> _rV = ITEM_MANAGER::instance().GetWikiRefineInfo(p->vnum);
 		const CommonWikiData::TWikiInfoTable* _wif = ITEM_MANAGER::instance().GetItemWikiInfo(p->vnum);
-		
+
 		if (!_wif)
 			return;
-		
+
 		const size_t origin_size = originVec.size();
 		const size_t chest_info_count = _wif->chest_info_count;
 		const size_t refine_infos_count = _wif->refine_infos_count;
@@ -3886,71 +3886,71 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 								(origin_size * sizeof(CommonWikiData::TWikiItemOriginInfo)) +
 								(chest_info_count * sizeof(CommonWikiData::TWikiChestInfo)) +
 								(refine_infos_count * sizeof(CommonWikiData::TWikiRefineInfo));
-		
+
 		if (chest_info_count != _gV.size()) {
 			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 1", p->vnum);
 			return;
 		}
-		
+
 		if (refine_infos_count != _rV.size()) {
 			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 2", p->vnum);
 			return;
 		}
-		
+
 		pack.increment_data_size(uint16_t(buf_data_dize));
-		
+
 		TEMP_BUFFER buf;
 		buf.write(&pack, sizeof(InGameWiki::TGCWikiPacket));
-		
+
 		InGameWiki::TGCItemWikiPacket data_packet;
 		data_packet.mutable_wiki_info(*_wif);
 		data_packet.set_origin_infos_count(origin_size);
 		data_packet.set_vnum(p->vnum);
 		data_packet.set_ret_id(p->ret_id);
 		buf.write(&data_packet, sizeof(data_packet));
-		
+
 		{
 			if (origin_size)
 				for (int idx = 0; idx < (int)origin_size; ++idx)
 					buf.write(&(originVec[idx]), sizeof(CommonWikiData::TWikiItemOriginInfo));
-			
+
 			if (chest_info_count > 0) {
 				for (int idx = 0; idx < (int)chest_info_count; ++idx) {
 					CommonWikiData::TWikiChestInfo write_struct(_gV[idx].vnum, _gV[idx].count);
 					buf.write(&write_struct, sizeof(CommonWikiData::TWikiChestInfo));
 				}
 			}
-			
+
 			if (refine_infos_count > 0)
 				for (int idx = 0; idx < (int)refine_infos_count; ++idx)
 					buf.write(&(_rV[idx]), sizeof(CommonWikiData::TWikiRefineInfo));
 		}
-		
+
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 	}
 	else
 	{
 		CMobManager::TMobWikiInfoVector& mobVec = CMobManager::instance().GetMobWikiInfo(p->vnum);
 		const size_t _mobVec_size = mobVec.size();
-		
+
 		if (!_mobVec_size) {
 			if (test_server)
 				LOG_INFO("Mob Vnum: {} : || LOG TYPE -> 1", p->vnum);
 			return;
 		}
-		
+
 		const size_t buf_data_dize = (sizeof(InGameWiki::TGCMobWikiPacket) + (_mobVec_size * sizeof(CommonWikiData::TWikiMobDropInfo)));
 		pack.increment_data_size(uint16_t(buf_data_dize));
-		
+
 		TEMP_BUFFER buf;
 		buf.write(&pack, sizeof(InGameWiki::TGCWikiPacket));
-		
+
 		InGameWiki::TGCMobWikiPacket data_packet;
 		data_packet.set_drop_info_count(_mobVec_size);
 		data_packet.set_vnum(p->vnum);
 		data_packet.set_ret_id(p->ret_id);
 		buf.write(&data_packet, sizeof(InGameWiki::TGCMobWikiPacket));
-		
+
 		{
 			if (_mobVec_size) {
 				for (int idx = 0; idx < (int)_mobVec_size; ++idx) {
@@ -3959,7 +3959,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 				}
 			}
 		}
-		
+
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 	}
 }
@@ -4149,7 +4149,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 #endif
 						return SubPacketLen;
 					}
-					
+
 #ifdef TEXTS_IMPROVEMENT
 					if (pGuild->RequestRemoveMember(pid)) {
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 129, "");
@@ -4264,7 +4264,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (length > GUILD_COMMENT_MAX_LEN)
 				{
 					// Àß¸øµÈ ±æÀÌ.. ²÷¾îÁÖÀÚ.
-					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ch->GetName(), length);
+					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), length);
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 					return -1;
 				}
@@ -4411,7 +4411,7 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 			return;
 		}
 #endif
-		
+
 		ch->GiveItem(to_ch, p->ItemPos);
 	}
 #ifdef TEXTS_IMPROVEMENT
@@ -4434,7 +4434,7 @@ void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
 	char buf[sizeof(p->szBuf)];
 	strlcpy(buf, p->szBuf, sizeof(buf));
 
-	LOG_ERROR("HACK_DETECT: {} {}", ch->GetName(), buf);
+	LOG_ERROR("HACK_DETECT: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), buf);
 
 	// ÇöÀç Å¬¶óÀÌ¾ðÆ®¿¡¼­ ÀÌ ÆÐÅ¶À» º¸³»´Â °æ¿ì°¡ ¾øÀ¸¹Ç·Î ¹«Á¶°Ç ²÷µµ·Ï ÇÑ´Ù
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
@@ -4457,7 +4457,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->GetGold() >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226, 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226,
 		"%lld"
 
 		, GOLD_MAX);
@@ -4475,7 +4475,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 #endif
 		return (iExtraLen);
 	}
-	
+
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	if (ch->IsAttrTransferOpen())
 	{
@@ -4485,7 +4485,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 		return (iExtraLen);
 	}
 #endif
-	
+
 	LOG_INFO("MyShop count {}", p->bCount);
 	ch->OpenMyShop(p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
 #ifdef KASMIR_PAKET_SYSTEM
@@ -4530,7 +4530,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 #endif
-	
+
 	if (p->type == 255)
 	{
 		// DoRefine Cancel
@@ -4752,7 +4752,7 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefreshOfflineShop");
 		}
 	}
-	
+
 	return iExtra;
 }
 
@@ -4850,7 +4850,7 @@ int OfflineshopPacketAddItem(LPCHARACTER ch, const char* data, int iBufferLeft)
 
 	int iExtra=0;
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
-	
+
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	if(!rManager.RecvShopAddItemClientPacket(ch, pack->pos, pack->price))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_ADD_ITEM);
@@ -5140,7 +5140,7 @@ int OfflineshopPacketClickEntity(LPCHARACTER ch, const char* data, int iBufferLe
 	int iExtra=0;
 	data = Decode(pack, data, &iExtra, &iBufferLeft);
 
-	
+
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
 	rManager.RecvShopClickEntity(ch, pack->dwShopVID);
 	return iExtra;
@@ -5160,25 +5160,25 @@ int OfflineshopPacket(const char* data , LPCHARACTER ch, int32_t iBufferLeft)
 	iBufferLeft -= sizeof(TPacketCGNewOfflineShop);
 	data = Decode(pPack, data);
 
-	
+
 
 	switch (pPack->bSubHeader)
 	{
-	
+
 	case offlineshop::SUBHEADER_CG_SHOP_CREATE_NEW:				return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketCreateNewShop(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_CHANGE_NAME:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketChangeShopName(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_FORCE_CLOSE:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketForceCloseShop(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_REQUEST_SHOPLIST:		return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketRequestShopList(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_OPEN:					return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketOpenShop(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_OPEN_OWNER:				return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketOpenShowOwner(ch,data,iBufferLeft);
-	
+
 	case offlineshop::SUBHEADER_CG_SHOP_BUY_ITEM:				return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketBuyItem(ch, data , iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_ADD_ITEM:				return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketAddItem(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_REMOVE_ITEM:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketRemoveItem(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_EDIT_ITEM:				return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketEditItem(ch,data,iBufferLeft);
-	
+
 	case offlineshop::SUBHEADER_CG_SHOP_FILTER_REQUEST:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketFilterRequest(ch,data,iBufferLeft);
-	
+
 	case offlineshop::SUBHEADER_CG_SHOP_OFFER_CREATE:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketCreateOffer(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_OFFER_ACCEPT:			return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketAcceptOffer(ch,data,iBufferLeft);
 	case offlineshop::SUBHEADER_CG_SHOP_REQUEST_OFFER_LIST:		return /*sizeof(TPacketCGNewOfflineShop) +*/ OfflineshopPacketOfferListRequest(ch);
@@ -5380,7 +5380,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 	break;
 	default:
 	{
-		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ch->GetName());
+		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	}
 	break;
 	}
@@ -5692,7 +5692,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_HACK:
 			Hack(ch, c_pData);
 			break;
-			
+
 #ifdef __NEWPET_SYSTEM__
 		case HEADER_CG_PetSetName:
 			BraveRequestPetName(ch, c_pData);
@@ -5924,15 +5924,15 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 #endif
 	if (!ch)
 		return;
-	
+
 	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		return;
 
 	uint8_t bCurrentLanguage = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage();
-	
+
 	if(bCurrentLanguage == bLanguage)
 		return;
-	
+
 	if(bLanguage > LANGUAGE_DEFAULT && bLanguage < LANGUAGE_MAX_NUM)
 	{
 		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ch->GetAID()));
@@ -5950,25 +5950,25 @@ void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
 #endif
 	if (!ch)
 		return;
-	
+
 	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
-	
+
 	int id = 0;
 	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE name='%s'", targetName));
 	if (pMsg->Get()->uiNumRows != 0) {
 		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
 		id = atoi(row[0]);
 	}
-	
+
 	if (id == 0)
 		return;
-	
+
 	std::unique_ptr<SQLMsg> pMsg2(DBManager::instance().DirectQuery("SELECT language FROM account.account WHERE id=%d", id));
 	if (pMsg2->Get()->uiNumRows != 0) {
 		MYSQL_ROW row = mysql_fetch_row(pMsg2->Get()->pSQLResult);
-		
+
 		TPacketRecvLang p;
 		p.bHeader = HEADER_GC_RECV_LANGUAGE;
 		strncpy(p.targetName, targetName, sizeof(p.targetName));

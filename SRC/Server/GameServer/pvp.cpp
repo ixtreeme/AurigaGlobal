@@ -313,8 +313,8 @@ EVENTFUNC(pvp_duel_counter)
 		{
 			const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
-			const char* chA_Name = ((chA)->GetName());
-			const char* chB_Name = ((chB)->GetName());
+			const char* chA_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chA)).data();
+			const char* chB_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chB)).data();
 
 			int chA_Level = ((chA)->GetLevel());
 			int chB_Level = ((chB)->GetLevel());
@@ -621,7 +621,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 			RemoveStateFull(pkChr);
 			RemoveStateFull(pkVictim);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 512, "%s", ((pkChr)->GetName()));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 512, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 #endif
 		}
 	}
@@ -643,8 +643,8 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pkPVP->Agree((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 115, "%s", ((pkChr)->GetName()));
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 115, "%s", ((pkVictim)->GetName()));
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 115, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 115, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 		}
 #endif
 		return;
@@ -663,8 +663,8 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	pkPVP->Packet();
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 17, "%s", ((pkChr)->GetName()));
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 118, "%s", ((pkVictim)->GetName()));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 17, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 118, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 #endif
 
 	// NOTIFY_PVP_MESSAGE
@@ -678,7 +678,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr));
 
-		const char* m_Name = ((pkChr)->GetName());
+		const char* m_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data();
 		const char* m_GuildName = "-";
 
 		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));
@@ -707,7 +707,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 #else
 #ifdef TEXTS_IMPROVEMENT
 	if (pkVictimDesc) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictimDesc), CHAT_TYPE_INFO, 824, "%s", ((pkChr)->GetName()));
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictimDesc), CHAT_TYPE_INFO, 824, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 	}
 #endif
 #endif

@@ -53,9 +53,9 @@ struct MapInfo {
 	int32_t x,y,radius;
 };
 
-struct Range { 
-	size_t min_count,max_count; 
-	int32_t min_radius,max_radius; 
+struct Range {
+	size_t min_count,max_count;
+	int32_t min_radius,max_radius;
 };
 
 
@@ -179,7 +179,7 @@ void Offlineshop_GetNewPos(int index, size_t ent_count, int32_t* out_x, int32_t*
 
 	int32_t random_distance	= number(min_, max_);
 	int32_t random_degree		= number(0, 360);
-	
+
 	int32_t centerx = mapInfo.x;
 	int32_t centery = mapInfo.y;
 
@@ -286,7 +286,7 @@ std::string StringToLower(const char* name, size_t len)
 bool IsGoodSalePrice(const offlineshop::TPriceInfo price) {
 	if (price.illYang >= GOLD_MAX) {
 		return false;
-	} 
+	}
 
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 	else if (price.iCheque >= CHEQUE_MAX){
@@ -316,7 +316,7 @@ bool MatchItemName(std::string stName, const char* table , const size_t tablelen
 	refineGrade = stName.find('+');
 	if(refineGrade != std::string::npos && refineGrade > stName.length() - 4)
 		stName = stName.substr(0, refineGrade);
-	
+
 
 	return strncasecmp(stName.c_str() , stTable.c_str() , stName.length()) == 0;
 	*/
@@ -400,8 +400,8 @@ bool CheckNewAuctionOfferPrice(const offlineshop::TPriceInfo& price, const offli
 		const float percentage = (float)OFFLINESHOP_AUCTION_RAISE_PERCENTAGE/100.0;
 		totalValueBest	+=(int64_t)(((long double)(totalValueBest))*percentage);
 	}
-	
-	
+
+
 	return totalValueIn >= totalValueBest;
 }
 
@@ -488,7 +488,7 @@ namespace offlineshop
 
 
 
-	offlineshop::CShop* CShopManager::GetShopByOwnerID(uint32_t dwPID) 
+	offlineshop::CShop* CShopManager::GetShopByOwnerID(uint32_t dwPID)
 	{
 		SHOPMAP::iterator it=m_mapShops.find(dwPID);
 		if(it == m_mapShops.end())
@@ -558,13 +558,13 @@ namespace offlineshop
 			event_cancel(&m_eventShopDuration);
 
 		m_eventShopDuration = nullptr;
-		
+
 		//clearing containers
 		m_mapOffer.clear();
 		m_mapSafeboxs.clear();
 		m_mapShops.clear();
 
-		
+
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
 		//deleting entities
 		for (auto itCities = m_vecCities.begin(); itCities != m_vecCities.end(); ++itCities)
@@ -603,7 +603,7 @@ namespace offlineshop
 	bool CShopManager::__CheckEntitySpawnPos(const int32_t x, const int32_t y, const TCityShopInfo& city)
 	{
 		const SHOPENTITIES_MAP& entitiesMap = city.entitiesByPID;
-		
+
 
 		for (auto it = entitiesMap.begin(); it != entitiesMap.end(); ++it)
 		{
@@ -632,7 +632,7 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 			ent.SetShopRace(rShop.GetRace());
 #endif
-			
+
 			if (ent.GetSectree())
 				ent.ViewReencode();
 
@@ -673,7 +673,7 @@ namespace offlineshop
 			} while(!__CheckEntitySpawnPos(shop_pos_x, shop_pos_y, city) &&  iCheckCount++ < 10);
 
 
-			
+
 
 			LPSECTREE sectree = SECTREE_MANAGER::Instance().Get(map_index, shop_pos_x, shop_pos_y);
 
@@ -685,7 +685,7 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 				pEntity->SetShopRace(rShop.GetRace());
 #endif
-				pEntity->SetShopType(0);//TODO: add differents shop skins 
+				pEntity->SetShopType(0);//TODO: add differents shop skins
 				pEntity->SetMapIndex(map_index);
 				pEntity->SetXYZ(shop_pos_x, shop_pos_y, 0);
 				pEntity->SetShop(&rShop);
@@ -748,7 +748,7 @@ namespace offlineshop
 	{
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
-		
+
 		TPacketGCNewOfflineshop pack;
 		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
 		pack.bSubHeader	= SUBHEADER_GC_INSERT_SHOP_ENTITY;
@@ -759,7 +759,7 @@ namespace offlineshop
 		TSubPacketGCInsertShopEntity subpack;
 		subpack.dwVID = shop.GetVID();
 		subpack.iType = shop.GetShopType();
-		
+
 		subpack.x = pos.x;
 		subpack.y = pos.y;
 		subpack.z = pos.z;
@@ -780,7 +780,7 @@ namespace offlineshop
 	{
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
-		
+
 		TPacketGCNewOfflineshop pack;
 		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
 		pack.bSubHeader	= SUBHEADER_GC_REMOVE_SHOP_ENTITY;
@@ -825,7 +825,7 @@ namespace offlineshop
 					return false;
 			}
 		}
-		
+
 
 		it->second.push_back(*pInfo);
 		return true;
@@ -874,7 +874,7 @@ namespace offlineshop
 
 		if (ch)
 		{
-			OFFSHOP_DEBUG("buyer is online , name %s , item id %u ",((ch)->GetName()), dwItemID);
+			OFFSHOP_DEBUG("buyer is online , name %s , item id %u ",ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwItemID);
 
 			LPITEM pkItem = pItem->CreateItem();
 			if (!pkItem)
@@ -884,7 +884,7 @@ namespace offlineshop
 			}
 
 			TItemPos pos;
-			if (!ch->CanTakeInventoryItem(EntityFactory::CreateItemEntity(g_registry, pkItem), &pos)) 
+			if (!ch->CanTakeInventoryItem(EntityFactory::CreateItemEntity(g_registry, pkItem), &pos))
 			{
 				ItemSystem::DestroyItemEntityEcs(
 			EntityFactory::CreateItemEntity(g_registry, pkItem),
@@ -893,7 +893,7 @@ namespace offlineshop
 				CShopSafebox* pSafebox = ch->GetShopSafebox()? ch->GetShopSafebox() : GetShopSafeboxByOwnerID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 				if (!pSafebox)
 					return false;
-				
+
 				/*
 				if(!pSafebox->AddItem(pItem))
 					return false;
@@ -907,7 +907,7 @@ namespace offlineshop
 			{
 				pkItem->AddToCharacter(ch, pos);
 			}
-			
+
 			uint32_t dwItemID = pItem->GetID();
 			pkShop->BuyItem(dwItemID);
 		}
@@ -964,7 +964,7 @@ namespace offlineshop
 		if (!_IS_VALID_GM_LEVEL(ch))
 			return false;
 
-		//updated 25 - 01 - 2020 
+		//updated 25 - 01 - 2020
 #if !defined(__ENABLE_FULL_YANG__) && !defined(ENABLE_FULL_YANG) && !defined(REMOVE_YANG_LIMIT)
 		if (!IsGoodSalePrice(price))
 			return false;
@@ -978,7 +978,7 @@ namespace offlineshop
 
 		TPriceInfo* pPrice = pItem->GetPrice();
 
-		//updated 25 - 01 - 2020 
+		//updated 25 - 01 - 2020
 #ifndef __ENABLE_CHEQUE_SYSTEM__
 		if(price.illYang == pPrice->illYang)
 			return true;
@@ -1037,7 +1037,7 @@ namespace offlineshop
 		TSubPacketGDAddItem subpack;
 		subpack.dwOwnerID	= dwOwnerID;
 		CopyObject(subpack.itemInfo, rItemInfo);
-		
+
 		TEMP_BUFFER buff;
 		buff.write(&pack, sizeof(pack));
 		buff.write(&subpack, sizeof(subpack));
@@ -1064,7 +1064,7 @@ namespace offlineshop
 
 
 
-	//SHOPS 
+	//SHOPS
 	void CShopManager::SendShopForceCloseDBPacket(uint32_t dwPID)
 	{
 		TPacketGDNewOfflineShop pack;
@@ -1089,13 +1089,13 @@ namespace offlineshop
 			return false;
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
-		
+
 		if (ch)
 			ch->SetOfflineShop(nullptr);
-		
+
 
 		CShop::LISTGUEST* guests = pkShop->GetGuests();
-		
+
 		for (CShop::LISTGUEST::iterator it = guests->begin(); it != guests->end(); it++)
 		{
 
@@ -1193,7 +1193,7 @@ namespace offlineshop
 		CShopItem* pkItem = nullptr;
 		if(!pkShop->GetItem(dwItemID, &pkItem))
 			return false;
-		
+
 		OFFSHOP_DEBUG("found item %u",dwItemID);
 
 		if(!pkItem->CanBuy(ch))
@@ -1206,7 +1206,7 @@ namespace offlineshop
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_CHEQUE, -pPrice->iCheque);
 #endif
-		
+
 		SendShopBuyDBPacket(dwBuyerID, dwOwnerID, dwItemID);
 		return true;
 	}
@@ -1311,7 +1311,7 @@ namespace offlineshop
 		return true;
 	}
 
- 
+
 
 	void CShopManager::SendShopCreateNewDBPacket(const TShopInfo& shop, std::vector<TItemInfo>& vec
 	)
@@ -1347,7 +1347,7 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 		newShop.SetRace(shop.dwKasmirNpc);
 #endif
-		
+
 		std::vector<CShopItem> items;
 		items.reserve(vec.size());
 
@@ -1375,7 +1375,7 @@ namespace offlineshop
 		CreateNewShopEntities(it->second);
 #endif
 
-		
+
 
 		LPCHARACTER chOwner = it->second.FindOwnerCharacter();
 		if (chOwner)
@@ -1536,7 +1536,7 @@ namespace offlineshop
 		if(it==m_mapOffer.end())
 			return false;
 
-		
+
 		OFFSHOP_DEBUG("found buyer successful");
 
 		//searching offer in vector
@@ -1582,7 +1582,7 @@ namespace offlineshop
 
 	void CShopManager::SendShopOfferCancelDBPacket(const TOfferInfo& offer)
 	{
-		
+
 		TPacketGDNewOfflineShop pack;
 		pack.bSubHeader	= SUBHEADER_GD_OFFER_CANCEL;
 
@@ -1668,7 +1668,7 @@ namespace offlineshop
 		LPCHARACTER chBuyer = CHARACTER_MANAGER::Instance().FindByPID(dwBuyerID);
 		if (chBuyer && chBuyer->IsLookingOfflineshopOfferList())
 			RecvOfferListRequestPacket(chBuyer);
-		
+
 
 		//end
 
@@ -1754,7 +1754,7 @@ namespace offlineshop
 		CShopItem shopItem(dwItemID);
 		shopItem.SetInfo(item);
 		shopItem.SetOwnerID(dwOwnerID);
-		
+
 		pkSafebox->AddItem(&shopItem);
 		if(ch && ch->GetShopSafebox())
 			pkSafebox->RefreshToOwner(ch);
@@ -1794,7 +1794,7 @@ namespace offlineshop
 		if(!pkSafebox)
 			return false;
 
-		
+
 		pkSafebox->AddValute(valute);
 		if(ch && ch->GetShopSafebox())
 			pkSafebox->RefreshToOwner(ch);
@@ -1854,7 +1854,7 @@ namespace offlineshop
 			CShopItem item(ids[i]);
 			item.SetInfo(items[i]);
 			item.SetOwnerID(dwOwnerID);
-			
+
 			vec.push_back(item);
 		}
 
@@ -1991,10 +1991,10 @@ namespace offlineshop
 				OFFSHOP_DEBUG("removing guest from auction %s ", ((chGuest)->GetName()));
 				tempGuestList.push_back(AS_GUESTID(chGuest));
 			}
-			
+
 			m_mapAuctions.erase(it);
 		}
-		
+
 		uint32_t dwOwnerID = 0;
 		LPCHARACTER owner = CHARACTER_MANAGER::instance().FindByPID(dwID);
 		if(owner) {
@@ -2002,7 +2002,7 @@ namespace offlineshop
 			RecvAuctionListRequestClientPacket(owner, true);
 			owner->SetAuction(nullptr);
 		}
-		
+
 		//updated 30/08/19
 		for (auto itGuests = tempGuestList.begin(); itGuests != tempGuestList.end(); itGuests++)
 		{
@@ -2010,11 +2010,11 @@ namespace offlineshop
 			if (!chGuest) {
 				continue;
 			}
-			
+
 			if ((dwOwnerID != 0) && dwOwnerID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chGuest)))) {
 				continue;
 			}
-			
+
 			RecvAuctionListRequestClientPacket(chGuest);
 		}
 
@@ -2055,11 +2055,11 @@ namespace offlineshop
 			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
-		
+
 #ifdef KASMIR_PAKET_SYSTEM
 		if ((rShopInfo.dwKasmirNpc < 30000) || (rShopInfo.dwKasmirNpc > 30007))
 			return false;
-		
+
 		if ((rShopInfo.dwKasmirNpc != 30000) && (ch->CountSpecifyItem(88902) < 1)) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 45, "");
@@ -2068,7 +2068,7 @@ namespace offlineshop
 		}
 #endif
 
-		OFFSHOP_DEBUG("ch name %s , item count %u , duration %u ", ((ch)->GetName()), rShopInfo.dwCount, rShopInfo.dwDuration);
+		OFFSHOP_DEBUG("ch name %s , item count %u , duration %u ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), rShopInfo.dwCount, rShopInfo.dwDuration);
 
 		static char szNameChecked[OFFLINE_SHOP_NAME_MAX_LEN];
 
@@ -2080,19 +2080,19 @@ namespace offlineshop
 		ch->SetOfflineShopUseTime();
 
 		//making full name
-		snprintf(rShopInfo.szName, sizeof(rShopInfo.szName), "%s@%s" , ((ch)->GetName()), szNameChecked );
-		
+		snprintf(rShopInfo.szName, sizeof(rShopInfo.szName), "%s@%s" , ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szNameChecked );
+
 		std::vector<TItemInfo> vecItem;
 		vecItem.reserve(vec.size());
 
 		rShopInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		TItemInfo itemInfo;
-		
+
 #ifdef KASMIR_PAKET_SYSTEM
 		uint32_t dwCountStyle1 = ch->CountSpecifyItem(88902);
 		uint32_t dwCountStyle2 = 0;
 #endif
-		
+
 		for (uint32_t i = 0; i < vec.size(); i++)
 		{
 			TShopItemInfo& rShopItem = vec[i];
@@ -2100,32 +2100,32 @@ namespace offlineshop
 			LPITEM item = ch->GetItem(rShopItem.pos);
 			if(!item)
 				return false;
-			
+
 			if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_GIVE))
 				return false;
-			
+
 			if(IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_MYSHOP))
 				return false;
-			
+
 			if (item->isLocked() || ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) || item->IsExchanging())
 			{
 				SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
-			
+
 #ifdef ENABLE_SOULBIND_SYSTEM
 			if (item->IsSealed()){
 				SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
 #endif
-			
+
 #ifdef KASMIR_PAKET_SYSTEM
 			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 88902) {
 				dwCountStyle2 += 1;
 			}
 #endif
-			
+
 			//checking about double insert same item
 			for (uint32_t j = 0; j < vec.size(); j++)
 			{
@@ -2136,9 +2136,9 @@ namespace offlineshop
 				if(rShopItemCheck.pos == rShopItem.pos)
 					return false;
 			}
-			
+
 			ZeroObject(itemInfo);
-			
+
 			itemInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 			memcpy(itemInfo.item.aAttr ,	item->GetAttributes(),	sizeof(itemInfo.item.aAttr));
 			memcpy(itemInfo.item.alSockets,	item->GetSockets(),		sizeof(itemInfo.item.alSockets));
@@ -2160,7 +2160,7 @@ namespace offlineshop
 			CopyObject(itemInfo.price, rShopItem.price);
 			vecItem.push_back(itemInfo);
 		}
-		
+
 #ifdef KASMIR_PAKET_SYSTEM
 		if ((rShopInfo.dwKasmirNpc != 30000) && (dwCountStyle1 <= dwCountStyle2)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -2169,7 +2169,7 @@ namespace offlineshop
 			return false;
 		}
 #endif
-		
+
 		for (uint32_t i = 0; i < vec.size(); i++)
 		{
 			TShopItemInfo& rShopItem = vec[i];
@@ -2180,21 +2180,21 @@ namespace offlineshop
 			"OFFLINESHOP_SELL");
 		}
 
-		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ((ch)->GetName()));
+		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
-		
+
 
 		rShopInfo.dwDuration = MIN(rShopInfo.dwDuration , OFFLINESHOP_DURATION_MAX_MINUTES);
 		SendShopCreateNewDBPacket(rShopInfo, vecItem);
-		
+
 #ifdef KASMIR_PAKET_SYSTEM
 		if (rShopInfo.dwKasmirNpc != 30000)
 			ch->RemoveSpecifyItem(88902, 1);
 #endif
-		
+
 		return true;
 	}
-	
+
 	bool CShopManager::RecvShopChangeNameClientPacket(LPCHARACTER ch, const char* szName)
 	{
 		if(!ch || !ch->GetOfflineShop())
@@ -2209,7 +2209,7 @@ namespace offlineshop
 			return false;
 
 		//making full name
-		snprintf(szFullName, sizeof(szFullName), "%s@%s" , ((ch)->GetName()), szNameChecked );
+		snprintf(szFullName, sizeof(szFullName), "%s@%s" , ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szNameChecked );
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
 		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), 0, "changing shop name : %s -> %s ", ch->GetOfflineShop()->GetName(), szFullName);
 #endif
@@ -2290,7 +2290,7 @@ namespace offlineshop
 			ch->GetOfflineShop()->AddGuest(ch);
 			ch->SetOfflineShopGuest(ch->GetOfflineShop());
 		}
-		
+
 
 		return true;
 	}
@@ -2328,7 +2328,7 @@ namespace offlineshop
 		ch->SetOfflineShopUseTime();
 
 		OFFSHOP_DEBUG("sending packet to db (buyer %u , owner %u , item %u )",(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) , dwOwnerID, dwItemID);
-		
+
 		if(isSearch)
 			SendShopBuyItemFromSearchClientPacket(ch, dwOwnerID, dwItemID);
 
@@ -2348,16 +2348,16 @@ namespace offlineshop
 			auto iterMap = it->entitiesByVID.find(dwShopEntityVID);
 			if(it->entitiesByVID.end() == iterMap)
 				continue;
-			
+
 
 			uint32_t dwPID = iterMap->second->GetShop()->GetOwnerPID();
-			
-			
+
+
 			RecvShopOpenClientPacket(ch, dwPID);
 			return true;
 		}
 
-		LOG_ERROR("cannot found clicked entity , {} vid {} ", ((ch)->GetName()), dwShopEntityVID);
+		LOG_ERROR("cannot found clicked entity , {} vid {} ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwShopEntityVID);
 		return false;
 	}
 #endif
@@ -2400,7 +2400,7 @@ namespace offlineshop
 
 			buff.write(&shopInfo, sizeof(shopInfo));
 		}
-		
+
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek() , buff.size());
 	}
 
@@ -2419,7 +2419,7 @@ namespace offlineshop
 
 		buff.write(&pack, sizeof(pack));
 
-		
+
 
 		TSubPacketGCShopOpen subPack;
 		subPack.shop.dwCount	= pVec->size();
@@ -2443,7 +2443,7 @@ namespace offlineshop
 
 			buff.write(&itemInfo, sizeof(itemInfo));
 		}
-		
+
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
@@ -2466,7 +2466,7 @@ namespace offlineshop
 	{
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
-		
+
 		TPacketGCNewOfflineshop pack;
 		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
 		pack.bSubHeader	= SUBHEADER_GC_SHOP_BUY_ITEM_FROM_SEARCH;
@@ -2504,10 +2504,10 @@ namespace offlineshop
 		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
 		pack.bSubHeader	= SUBHEADER_GC_SHOP_OPEN_OWNER;
 		pack.wSize		= sizeof(pack) + sizeof(TSubPacketGCShopOpenOwner) + sizeof(TItemInfo)*pVec->size() + sizeof(TItemInfo)* pVecSold->size() + sizeof(TOfferInfo)*pVecOffer->size();
-		
+
 		buff.write(&pack, sizeof(pack));
 
-		
+
 
 		TSubPacketGCShopOpenOwner subPack;
 		subPack.shop.dwCount	= pVec->size();
@@ -2517,11 +2517,11 @@ namespace offlineshop
 		subPack.dwOfferCount	= pVecOffer->size();
 
 		strncpy(subPack.shop.szName, pkShop->GetName(), sizeof(subPack.shop.szName));
-		
-		
+
+
 		OFFSHOP_DEBUG("owner %u , item count %u , duration %u offer count %u ",subPack.shop.dwOwnerID, subPack.shop.dwCount , subPack.shop.dwDuration, subPack.dwOfferCount);
-		
-		
+
+
 		buff.write(&subPack, sizeof(subPack));
 
 		TItemInfo itemInfo;
@@ -2616,7 +2616,7 @@ namespace offlineshop
 			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
-		
+
 #ifdef ENABLE_SOULBIND_SYSTEM
 		if (pkItem->IsSealed()) {
 			SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
@@ -2727,7 +2727,7 @@ namespace offlineshop
 
 		//offlineshop-updated 03/08/2019
 		std::vector<TItemInfo> vec;
-		
+
 		if (!CheckSearchTime((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 		{
 			SendShopFilterResultClientPacket(ch, vec);
@@ -2773,7 +2773,7 @@ namespace offlineshop
 				if(filter.bType != ITEM_NONE && filter.bSubType != SUBTYPE_NOSET && filter.bSubType != pTable->bSubType)
 					continue;
 
-#ifdef ENABLE_RARITY_SYSTEM				
+#ifdef ENABLE_RARITY_SYSTEM
 				if (filter.iRarity != -1)
 				{
 					TItemExtraProto* ExtraProto = ITEM_MANAGER::instance().GetExtraProto(rItemInfo.dwVnum);
@@ -2940,7 +2940,7 @@ namespace offlineshop
 		offer.dwOffererID	= (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		//offlineshop-updated 03/08/19
-		strncpy(offer.szBuyerName, ((ch)->GetName()), sizeof(offer.szBuyerName));
+		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(offer.szBuyerName));
 
 		SendShopOfferNewDBPacket(offer);
 		return true;
@@ -3065,7 +3065,7 @@ namespace offlineshop
 
 		TEMP_BUFFER buff;
 
-		
+
 
 		OFFERSMAP::iterator it = m_mapOffer.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (it == m_mapOffer.end() || it->second.empty())
@@ -3184,7 +3184,7 @@ namespace offlineshop
 			pkSafebox->RefreshToOwner();
 			pkItem->AddToCharacter(ch, itemPos);
 		}
-		
+
 		SendShopSafeboxGetItemDBPacket((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwItemID);
 		return true;
 	}
@@ -3235,7 +3235,7 @@ namespace offlineshop
 	{
 		if(!ch || !ch->GetShopSafebox())
 			return false;
-		
+
 		ch->SetShopSafebox(nullptr);
 		return true;
 	}
@@ -3264,17 +3264,17 @@ namespace offlineshop
 		CopyObject(subpack.valute , valute);
 
 		TEMP_BUFFER buff;
-		buff.write(&pack,		sizeof(pack));	
+		buff.write(&pack,		sizeof(pack));
 		buff.write(&subpack,	sizeof(subpack));
 
-		
+
 		TItemInfoEx item;
 		uint32_t dwItemID=0;
 
 		for (auto it = vec.begin(); it != vec.end(); it++)
 		{
 			const CShopItem& shopitem = *it;
-			
+
 			dwItemID = shopitem.GetID();
 			CopyObject(item, *shopitem.GetInfo());
 
@@ -3340,13 +3340,13 @@ namespace offlineshop
 
 			if (it == m_mapAuctions.end())
 				SendAuctionOpenMyAuctionNoAuctionClientPacket(ch);
-				
+
 			else
 			{
 				it->second.AddGuest(ch);
 				//SendAuctionOpenAuctionClientPacket(ch, it->second.GetInfo(), it->second.GetOffers());
 			}
-			
+
 		}
 
 		else
@@ -3412,20 +3412,20 @@ namespace offlineshop
 		TAuctionInfo auction;
 		auction.dwDuration = dwDuration;
 		auction.dwOwnerID  = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
-		strncpy(auction.szOwnerName, ((ch)->GetName()), sizeof(auction.szOwnerName));
+		strncpy(auction.szOwnerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(auction.szOwnerName));
 		CopyObject(auction.init_price, init_price);
 
 
 		TItemInfoEx& itemInfo = auction.item;
 		itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 		itemInfo.dwVnum		= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
-		
+
 		//patch 08-03-2020
 		itemInfo.expiration = GetItemExpiration(item);
 
 		memcpy(itemInfo.aAttr ,		item->GetAttributes(),	sizeof(itemInfo.aAttr));
 		memcpy(itemInfo.alSockets,	item->GetSockets(),		sizeof(itemInfo.alSockets));
-		
+
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
 		itemInfo.dwTransmutation = item->GetTransmutation();
 #endif
@@ -3482,7 +3482,7 @@ namespace offlineshop
 		CAuction* pAuction = ch->GetAuctionGuest();
 		if(pAuction->GetBestBuyer() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			return false;
-		
+
 		OFFSHOP_DEBUG("pAuction->GetBestBuyer() = %u ",pAuction->GetBestBuyer());
 
 		if (pAuction->GetOffers().empty())
@@ -3516,7 +3516,7 @@ namespace offlineshop
 		offer.price.iCheque=0;
 #endif
 
-		strncpy(offer.szBuyerName, ((ch)->GetName()), sizeof(offer.szBuyerName));
+		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(offer.szBuyerName));
 
 
 		SendAuctionAddOfferDBPacket(offer);
@@ -3560,7 +3560,7 @@ namespace offlineshop
 
 		if(!auctionVec.empty())
 			buff.write(&auctionVec[0], sizeof(auctionVec[0]) * auctionVec.size());
-		
+
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buff.read_peek(), buff.size());
 	}
 
@@ -3593,7 +3593,7 @@ namespace offlineshop
 	}
 
 
-	
+
 	void CShopManager::SendAuctionOpenMyAuctionNoAuctionClientPacket(LPCHARACTER ch)
 	{
 		if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
@@ -3646,7 +3646,7 @@ namespace offlineshop
 	{
 		if(!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			return;
-		
+
 		if (ch->GetAuction())
 		{
 			TPacketGDNewOfflineShop pack;
@@ -3654,7 +3654,7 @@ namespace offlineshop
 
 			TSubPacketGDAuctionClose subpack;
 			CopyObject(subpack.dwOwnerID , (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
-			
+
 			TEMP_BUFFER buff;
 			buff.write(&pack, sizeof(pack));
 			buff.write(&subpack, sizeof(subpack));
@@ -3717,7 +3717,7 @@ namespace offlineshop
 	}
 
 
-	bool CShopManager::CheckSearchTime(uint32_t dwPID) 
+	bool CShopManager::CheckSearchTime(uint32_t dwPID)
 	{
 		auto it = m_searchTimeMap.find(dwPID);
 		if (it == m_searchTimeMap.end())
@@ -3734,7 +3734,7 @@ namespace offlineshop
 	}
 
 	//*new check about auction offers
-	bool CShopManager::CheckLastOfferTime(uint32_t dwPID) 
+	bool CShopManager::CheckLastOfferTime(uint32_t dwPID)
 	{
 		auto it = m_offerTimeMap.find(dwPID);
 		if (it == m_offerTimeMap.end())
@@ -3750,13 +3750,13 @@ namespace offlineshop
 		return true;
 	}
 
-	void CShopManager::ClearOfferTimeMap() 
+	void CShopManager::ClearOfferTimeMap()
 	{
 		m_offerTimeMap.clear();
 	}
 
 	//topatch 29-10
-	void CShopManager::CheckOfferOnItem(uint32_t dwOwnerID, uint32_t dwItemID) 
+	void CShopManager::CheckOfferOnItem(uint32_t dwOwnerID, uint32_t dwItemID)
 	{
 		//for (itertype(m_mapOffer) it; it != m_mapOffer.end();) {
 		for (auto it = m_mapOffer.begin(); it != m_mapOffer.end();) {

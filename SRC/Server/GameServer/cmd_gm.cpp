@@ -172,7 +172,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //        return;
 //    }
 //
-//    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klon spawn kesz: masolat=%s, target=%s, db=%d", source->GetName(), target->GetName(), count);
+//    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klon spawn kesz: masolat=%s, target=%s, db=%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(source)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), count);
 //}
 //
 //ACMD(do_p_clon)
@@ -207,7 +207,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //    }
 //
 //    CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target)), mapIndex);
-//    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve (target: %s, map: %d)", target->GetName(), mapIndex);
+//    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve (target: %s, map: %d)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), mapIndex);
 //}
 
 
@@ -554,7 +554,7 @@ ACMD(do_warp)
 
 	x *= 100;
 	y *= 100;
-	
+
 #ifdef __CMD_WARP_IN_DUNGEON__
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 805, "%d#%d#%d", mapIndex, x, y);
@@ -797,7 +797,7 @@ ACMD(do_mob_map)
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ((ch)->GetMapIndex()));
 
 	if (tch)
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ((tch)->GetName()), ((tch)->GetX()), ((tch)->GetY()));
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), ((tch)->GetX()), ((tch)->GetY()));
 	else
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -1005,7 +1005,7 @@ struct FuncPurge
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		LOG_INFO("PURGE: {} {}", ((pkChr)->GetName()), iDist);
+		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), iDist);
 
 #ifdef __NEWPET_SYSTEM__
 		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
@@ -1213,7 +1213,7 @@ ACMD(do_state)
 
 	char buf[256];
 
-	snprintf(buf, sizeof(buf), "%s's State: ", ((tch)->GetName()));
+	snprintf(buf, sizeof(buf), "%s's State: ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data());
 
 	if (tch->IsPosition(POS_FIGHTING))
 		strlcat(buf, "Battle", sizeof(buf));
@@ -1585,7 +1585,7 @@ void SendNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, c
 	va_start(args, format);
 	vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 	va_end(args);
-	
+
 	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
 	std::for_each(c_ref_set.begin(), c_ref_set.end(), noticenew_packet_func(type, empire, mapidx, idx, chatbuf));
 }
@@ -2043,7 +2043,7 @@ ACMD(do_set)
 				tch->UpdateAlignment(amount - ch->GetRealAlignment());
 			}
 			break;
-			
+
 #ifdef ENABLE_GAYA_SYSTEM
 		case DoSetTypes::GAYA: //gaya
 		{
@@ -2059,14 +2059,14 @@ ACMD(do_set)
 		}
 		break;
 #endif
-			
+
 	}
 
 	if (set_fields[i].type == NUMBER)
 	{
 		int64_t	amount = 0;
 		str_to_number(amount, arg3);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s's %s set to [%lld]", tch->GetName(), set_fields[i].cmd, amount);
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), set_fields[i].cmd, amount);
 
 	}
 }
@@ -2995,7 +2995,7 @@ ACMD(do_priv_empire)
 	if (duration < 0)
 		goto USAGE;
 
-	// ð  
+	// ð
 	duration = duration * (60*60);
 
 	LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, duration={}) by command", empire, type, value, duration);
@@ -3012,7 +3012,7 @@ USAGE:
 
 /**
  * @version 05/06/08	Bang2ni -  ʽ Ʈ  ȵǴ  .(ũƮ ۼȵ.)
- * 			          quest/priv_guild.quest   ũƮ о 
+ * 			          quest/priv_guild.quest   ũƮ о
  */
 ACMD(do_priv_guild)
 {
@@ -3264,11 +3264,11 @@ ACMD(do_build)
 
 	CLand * pkLand = CManager::instance().FindLand(((ch)->GetMapIndex()), ((ch)->GetX()), ((ch)->GetY()));
 
-	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ    
+	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ
 	//       ޼  ʰ  Ѵ.
 	if (!pkLand)
 	{
-		LOG_ERROR("{} trying to build on not buildable area.", ((ch)->GetName()));
+		LOG_ERROR("{} trying to build on not buildable area.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return;
 	}
 
@@ -3284,14 +3284,14 @@ ACMD(do_build)
 		// ÷̾      Ȯؾ Ѵ.
 		if ((!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() != pkLand->GetOwner()))
 		{
-			LOG_ERROR("{} trying to build on not owned land.", ((ch)->GetName()));
+			LOG_ERROR("{} trying to build on not owned land.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return;
 		}
 
 		//  渶ΰ?
 		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 		{
-			LOG_ERROR("{} trying to build while not the guild master.", ((ch)->GetName()));
+			LOG_ERROR("{} trying to build while not the guild master.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return;
 		}
 	}
@@ -3498,7 +3498,7 @@ ACMD(do_build)
 			break;
 
 		case 'W' :
-			//  
+			//
 			// build (w)all ȣ ũ 빮 빮 빮 빮
 
 			if (GMLevel >  GM_PLAYER)
@@ -3533,7 +3533,7 @@ ACMD(do_build)
 			break;
 
 		case 'E' :
-			//  
+			//
 			// build (e)rase ID
 			if (GMLevel > GM_PLAYER)
 			{
@@ -3600,7 +3600,7 @@ ACMD(do_horse_level)
 	str_to_number(level, arg2);
 	level = MINMAX(0, level, HORSE_MAX_LEVEL);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "horse level set (%s: %d)", ((victim)->GetName()), level);
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), level);
 
 	victim->SetHorseLevel(level);
 	victim->ComputePoints();
@@ -3693,7 +3693,7 @@ ACMD(do_affect_remove)
 			if (!(tch = CHARACTER_MANAGER::instance().FindPC(arg1)))
 				tch = ch;
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", tch->GetName());
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data());
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
 
 		const std::list<CAffect *> & cont = tch->GetAffectContainer();
@@ -3936,7 +3936,7 @@ ACMD(do_stat_plus_amount)
 			}
 			break;
 
-		case POINT_IQ : // 
+		case POINT_IQ : //
 			if (nPoint + ch->GetPoint(POINT_IQ) > 90)
 			{
 				nPoint = 90 - ch->GetPoint(POINT_IQ);
@@ -4042,7 +4042,7 @@ ACMD(do_reset_subskill)
 		return;
 
 	tch->ClearSubSkill();
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Subskill of [%s] was reset", tch->GetName());
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data());
 }
 
 ACMD(do_flush)
@@ -4688,7 +4688,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_WEAPON);
 			if (item != nullptr)
 			{
@@ -4702,7 +4702,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_SHIELD);
 			if (item != nullptr)
 			{
@@ -4716,7 +4716,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_BODY);
 			if (item != nullptr)
 			{
@@ -4730,7 +4730,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_FOOTS);
 			if (item != nullptr)
 			{
@@ -4744,7 +4744,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_WRIST);
 			if (item != nullptr)
 			{
@@ -4758,7 +4758,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_NECK);
 			if (item != nullptr)
 			{
@@ -4772,7 +4772,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			
+
 			item = ch->GetWear(WEAR_EAR);
 			if (item != nullptr)
 			{

@@ -684,7 +684,7 @@ EVENTFUNC(save_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	LOG_TRACE("SAVE_EVENT: {}", ch->GetName());
+	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	const entt::entity saveEntity = AIHelpers::EcsOf(ch);
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
@@ -883,7 +883,7 @@ EVENTFUNC(recovery_event)
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -909,7 +909,7 @@ EVENTFUNC(recovery_event)
 					}
 
 					iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 					if (recoveryEntity != entt::null)
 						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
@@ -968,7 +968,7 @@ EVENTFUNC(recovery_event)
 
 		iAmount += (iAmount * ch->GetPoint(POINT_HP_REGEN)) / 100;
 
-		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ch->GetName(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
+		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ch->GetPoint(POINT_HP_REGEN), iAmount);
 
 		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
 		if (recoveryEntity != entt::null)

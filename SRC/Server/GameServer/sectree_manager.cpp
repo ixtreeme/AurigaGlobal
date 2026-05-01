@@ -1026,7 +1026,7 @@ struct FDestroyPrivateMapEntity
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			//0, "PRIVAE_MAP: removing character %s", ((ch)->GetName()));
+			//0, "PRIVAE_MAP: removing character %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
@@ -1162,14 +1162,14 @@ void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 	if (!d)
 		return;
-	
+
 	int32_t lMapIndex = ((ch)->GetMapIndex());
-	
+
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
 	p.bHeader = HEADER_GC_BOSS_POSITION;
 	p.wCount = m_mapBossPosition[lMapIndex].size();
-	
+
 	TBossPosition bp;
 
 	for (auto it = m_mapBossPosition[lMapIndex].begin(); it != m_mapBossPosition[lMapIndex].end(); ++it)
@@ -1185,9 +1185,9 @@ void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 		bp.lTime = it->lTime;
 		buf.write(&bp, sizeof(bp));
 	}
-	
+
 	p.wSize = sizeof(p) + buf.size();
-	
+
 	if (buf.size())
 	{
 		d->BufferedPacket(&p, sizeof(TPacketGCBossPosition));
@@ -1687,7 +1687,7 @@ void SECTREE_MANAGER::GetRestartCityPos(int iMapIndex, int iEmpire, int &iTarget
 			}
 		}
 	}
-	
+
 	return;
 }
 
@@ -1697,7 +1697,7 @@ void SECTREE_MANAGER::AddRestartCityPos(int iMapIndex, int iEmpire, int iX, int 
 	SECTREE_MANAGER::instance().GetRestartCityPos(iMapIndex, iEmpire, iTargetX, iTargetY, iTargetZ);
 	if ((iTargetX != 0) && (iTargetY != 0))
 		return;
-	
+
 	m_restart_city_pos.insert(std::make_pair(iMapIndex, SRestartCityPos(iEmpire, iX, iY, iZ)));
 }
 #endif

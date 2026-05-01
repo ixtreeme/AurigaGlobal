@@ -84,7 +84,7 @@ bool GetServerLocation(TAccountTable & rTab, uint8_t bEmpire)
 
 		if (!CMapLocation::instance().Get(
 #ifdef ENABLE_GENERAL_CH
-rTab.bChannel, 
+rTab.bChannel,
 #endif
 player.x,
 player.y,
@@ -101,7 +101,7 @@ player.wPort))
 
 			if (!CMapLocation::instance().Get(
 #ifdef ENABLE_GENERAL_CH
-rTab.bChannel, 
+rTab.bChannel,
 #endif
 player.x, player.y, lIndex, player.lAddr, player.wPort))
 			{
@@ -221,7 +221,7 @@ void CInputDB::PlayerCreateSuccess(LPDESC d, const char * data)
 
 	if (!CMapLocation::instance().Get(
 #ifdef ENABLE_GENERAL_CH
-d->GetAccountTable().bChannel, 
+d->GetAccountTable().bChannel,
 #endif
 				pPacketDB->player.x,
 				pPacketDB->player.y,
@@ -257,7 +257,7 @@ d->GetAccountTable().bChannel,
 		TPlayerItemAttribute	aAttr[5];
 	};
 
-	
+
 	static SInitialItem initialItems[MAIN_RACE_MAX_NUM][13] =
 	{
 		/* MAIN_RACE_WARRIOR_M */
@@ -580,7 +580,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		TPacketGGLogin p;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
+		strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
 		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
@@ -1242,7 +1242,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 #ifdef ENABLE_QUEST_SYSTEM_BUGFIXES
 			int val = pQuestTable[i].lValue;
 			bool skipSave = true; // load-n�l ne spameld a DB-t
-			
+
 
 				               // __status: ha a DB-ben r�gi state CRC maradt, de a Lua-ban m�r nincs,
 				               // akkor reset start-ra, k�l�nben "meghal" a quest (NPC nem reag�l, stb.)
@@ -1257,7 +1257,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 					skipSave = false; // ezt ments�k is vissza, hogy a DB kijavuljon
 					}
 				 }
-			
+
 				pkPC->SetFlag(st, val, skipSave);
 #else
 			pkPC->SetFlag(st, pQuestTable[i].lValue, false);
@@ -1311,7 +1311,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
 	}
-	
+
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	if (ch->IsAttrTransferOpen())
 	{
@@ -1677,7 +1677,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	LOG_INFO("ITEM_LOAD: COUNT {} {}", ch->GetName(), dwCount);
+	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwCount);
 
 	std::vector<LPITEM> v;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
@@ -1714,7 +1714,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 		if (!item)
 		{
-			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ch->GetName(), p->id);
+			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->id);
 			continue;
 		}
 
@@ -1735,7 +1735,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if ((p->window == INVENTORY && ch->GetInventoryItem(p->pos)) ||
 				(p->window == EQUIPMENT && ch->GetWear(p->pos)))
 		{
-			LOG_INFO("ITEM_RESTORE: {} {}", ch->GetName(), item->GetName());
+			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetName());
 			v.push_back(item);
 		}
 		else
@@ -1789,7 +1789,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	if (duplicatePurgeCount > 0)
 	{
 		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
-			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ch->GetName(), duplicatePurgeCount, dwCount);
+			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), duplicatePurgeCount, dwCount);
 	}
 
 	auto it = v.begin();
@@ -1860,7 +1860,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 
 	uint32_t dwPID = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
-	
+
 	uint8_t bIsGlobal = decode_byte(c_pData);
 	c_pData += sizeof(uint8_t);
 
@@ -1868,27 +1868,27 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 	c_pData += sizeof(uint32_t);
 
 	//LOG_ERROR("BattlePassLoadRanking count {} playerid {}", dwCount, dwPID);
-	
+
 	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
 		return;
-	
+
 	if(dwCount)
 	{
 		std::vector<TBattlePassRanking> sendVector;
 		sendVector.resize(dwCount);
-		
+
 		TBattlePassRanking* p = (TBattlePassRanking*) c_pData;
-		
+
 		for (unsigned int i = 0; i < dwCount; ++i, ++p)
 		{
 			TBattlePassRanking newRanking;
 			newRanking.bPos = p->bPos;
 			strlcpy(newRanking.playerName, p->playerName, sizeof(newRanking.playerName));
 			newRanking.dwFinishTime = p->dwFinishTime;
-			
+
 			sendVector.push_back(newRanking);
 		}
-		
+
 		if(!sendVector.empty())
 		{
 			TPacketGCBattlePassRanking packet;
@@ -2379,7 +2379,7 @@ void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* 
 	if (!d || !(ch = d->GetCharacter()) )
 		return;
 
-	LOG_INFO("RecvMyshopPricelistRes name[{}]", ((ch)->GetName()));
+	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 	ch->UseSilkBotaryReal(p );
 
 }
@@ -2434,7 +2434,7 @@ void OfflineShopLoadTables(const char* data)
 	offlineshop::TSubPacketDGLoadTables* pSubPack = nullptr;
 	data = Decode(pSubPack, data);
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	
+
 	OFFSHOP_DEBUG("shop count %u , offer count %u , auction count %u, auction offers %u ",pSubPack->dwShopCount , pSubPack->dwOfferCount, pSubPack->dwAuctionCount , pSubPack->dwAuctionOfferCount);
 
 	for (uint32_t i = 0; i < pSubPack->dwShopCount; i++)
@@ -2451,12 +2451,12 @@ void OfflineShopLoadTables(const char* data)
 
 		offlineshop::CShop* pkShop = rManager.PutsNewShop(pShop);
 
-		
+
 		for (uint32_t j = 0; j < pShop->dwCount; j++)
 		{
 			data = Decode(pItem, data);
 			offlineshop::CShopItem kItem(pItem->dwItemID);
-			
+
 			kItem.SetOwnerID(pItem->dwOwnerID);
 			kItem.SetInfo(pItem->item);
 			kItem.SetPrice(pItem->price);
@@ -2838,12 +2838,12 @@ void OfflineshopPacket(const char* data)
 	case offlineshop::SUBHEADER_DG_OFFER_ACCEPT:
 		OfflineShopOfferAcceptPacket(data);
 		return;
-	
+
 	case offlineshop::SUBHEADER_DG_OFFER_CANCEL:
 		OfflineShopOfferCancelPacket(data);
 		return;
 
-	
+
 
 	case offlineshop::SUBHEADER_DG_SAFEBOX_ADD_ITEM:
 		OfflineShopSafeboxAddItemPacket(data);
@@ -2978,7 +2978,7 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	case HEADER_DG_BATTLE_PASS_LOAD:
 		BattlePassLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
 		break;
-		
+
 	case HEADER_DG_BATTLE_PASS_LOAD_RANKING:
 		BattlePassLoadRanking(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
 		break;
@@ -3446,7 +3446,7 @@ void CInputDB::ReadOfflineMessages(LPDESC desc, const char* pcData)
 
 	if (desc->GetCharacter()->IsBlockMode(BLOCK_WHISPER))
 		return;
-	
+
 	auto p = reinterpret_cast<const TPacketDGReadOfflineMessage*>(pcData);
 
 	TPacketGCWhisper pack;

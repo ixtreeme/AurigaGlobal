@@ -501,7 +501,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
                 char buf[256];
                 snprintf(buf, sizeof(buf),
                     "%s kifogta a Legendas vizi szornyet: %s",
-                    ch->GetName(), szName);
+                    ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szName);
                 BroadcastNotice(buf);
             }
 

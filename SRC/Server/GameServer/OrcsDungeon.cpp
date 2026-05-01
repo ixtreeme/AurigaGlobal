@@ -282,7 +282,7 @@ struct FCooldownCheck
         if (until > now && ok)
         {
             ok = false;
-            name = ch->GetName();
+            name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
             remain = until - now;
         }
     }
@@ -503,11 +503,11 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
             {
                 LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? leader->GetName() : killer->GetName());
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data() : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
             }
             else
             {
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1273, "%s", killer->GetName());
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1273, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
             }
 #else
             SendNotice("Orc Dungeon completed!");
@@ -735,7 +735,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badLevel = m->GetLevel();
                 missingItem = false;
                 return;
@@ -744,7 +744,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (m->CountSpecifyItem(kRequiredItem) < 1)
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badLevel = m->GetLevel();
                 missingItem = true;
                 return;

@@ -424,7 +424,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		LOG_INFO("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 2));
+		LOG_INFO("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -446,7 +446,7 @@ namespace quest
 		if (!ch)
 			return 0;
 
-		sys_err("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ((ch)->GetName()), lua_tostring(L, 1));
+		sys_err("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 1));
 		return 0;
 	}
 
@@ -575,7 +575,7 @@ namespace quest
 		}
 
 		if (ch)
-			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, {}", empire, type, value, time, ((ch)->GetName()));
+			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, {}", empire, type, value, time, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		else
 			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, NULL", empire, type, value, time);
 
@@ -1112,7 +1112,7 @@ namespace quest
 					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 					if ( bEmpire == 0 )
 					{
-						sys_err("Unkonwn Empire {} {} ", ((ch)->GetName()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 						return;
 					}
 
@@ -1559,7 +1559,7 @@ namespace quest
 					return;
 #ifdef __NEWPET_SYSTEM__
 				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
-#else				
+#else
 				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
 #endif
 				{

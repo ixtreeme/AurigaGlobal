@@ -78,7 +78,7 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
     d->Packet(buf.read_peek(), buf.size());
 
     if (type == CHAT_TYPE_COMMAND && test_server) {
-        LOG_INFO("SEND_COMMAND {} {}", ch->GetName(), chatbuf);
+        LOG_INFO("SEND_COMMAND {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), chatbuf);
     }
 }
 

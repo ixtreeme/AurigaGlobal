@@ -1004,26 +1004,26 @@ namespace quest
 					if (!tch->CanWarp())
 					{
 						m_result = 3;
-						m_resultname = ((tch)->GetName());
+						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 					}
 
 					int32_t lvl = ((tch)->GetLevel());
 					if (lvl < m_minlvl)
 					{
 						m_result = 4;
-						m_resultname = ((tch)->GetName());
+						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 5;
-						m_resultname = ((tch)->GetName());
+						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 					else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 					{
 						m_result = 6;
-						m_resultname = ((tch)->GetName());
+						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 					else if (m_itemvnum2 > 0)
@@ -1031,7 +1031,7 @@ namespace quest
 						if (tch->CountSpecifyItem(m_itemvnum2) < m_itemcount && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 						{
 							m_result = 7;
-							m_resultname = ((tch)->GetName());
+							m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 							break;
 						}
 					}
@@ -1040,7 +1040,7 @@ namespace quest
 					if (m_resulttime > 0)
 					{
 						m_result = 8;
-						m_resultname = ((tch)->GetName());
+						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 				}
@@ -1056,7 +1056,7 @@ namespace quest
 			if (!ch->CanWarp())
 			{
 				m_result = 3;
-				m_resultname = ((ch)->GetName());
+				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 
 			int32_t lvl = ((ch)->GetLevel());
@@ -1064,31 +1064,31 @@ namespace quest
 			if (lvl < m_minlvl)
 			{
 				m_result = 4;
-				m_resultname = ((ch)->GetName());
+				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 			else if (lvl > m_maxlvl)
 			{
 				m_result = 5;
-				m_resultname = ((ch)->GetName());
+				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 			else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 			{
 				m_result = 6;
-				m_resultname = ((ch)->GetName());
+				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 			else if (m_itemvnum2 > 0)
 			{
 				if (ch->CountSpecifyItem(m_itemvnum2) < m_itemcount && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
 				{
 					m_result = 7;
-					m_resultname = ((ch)->GetName());
+					m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 				}
 			}
 
 			if (m_result == 1 && m_resulttime > 0)
 			{
 				m_result = 8;
-				m_resultname = ((ch)->GetName());
+				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 		}
 
@@ -1162,7 +1162,7 @@ namespace quest
 						{
 							count3 = tch->CountSpecifyItem(vnum3);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum3, count3);
 					}
 
@@ -1172,7 +1172,7 @@ namespace quest
 						{
 							count4 = tch->CountSpecifyItem(vnum4);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum4, count4);
 					}
 
@@ -1182,7 +1182,7 @@ namespace quest
 						{
 							count5 = tch->CountSpecifyItem(vnum5);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum5, count5);
 					}
 
@@ -1192,7 +1192,7 @@ namespace quest
 						{
 							count6 = tch->CountSpecifyItem(vnum6);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum6, count6);
 					}
 
@@ -1202,7 +1202,7 @@ namespace quest
 						{
 							count7 = tch->CountSpecifyItem(vnum7);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum7, count7);
 					}
 
@@ -1212,7 +1212,7 @@ namespace quest
 						{
 							count8 = tch->CountSpecifyItem(vnum8);
 						}
-						
+
 						tch->RemoveSpecifyItem(vnum8, count8);
 					}
 
@@ -1249,7 +1249,7 @@ namespace quest
 				{
 					count3 = ch->CountSpecifyItem(vnum3);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum3, count3);
 			}
 
@@ -1259,7 +1259,7 @@ namespace quest
 				{
 					count4 = ch->CountSpecifyItem(vnum4);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum4, count4);
 			}
 
@@ -1269,7 +1269,7 @@ namespace quest
 				{
 					count5 = ch->CountSpecifyItem(vnum5);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum5, count5);
 			}
 
@@ -1279,7 +1279,7 @@ namespace quest
 				{
 					count6 = ch->CountSpecifyItem(vnum6);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum6, count6);
 			}
 
@@ -1289,7 +1289,7 @@ namespace quest
 				{
 					count7 = ch->CountSpecifyItem(vnum7);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum7, count7);
 			}
 
@@ -1299,7 +1299,7 @@ namespace quest
 				{
 					count8 = ch->CountSpecifyItem(vnum8);
 				}
-				
+
 				ch->RemoveSpecifyItem(vnum8, count8);
 			}
 
@@ -1497,12 +1497,12 @@ namespace quest
 					}
 					else
 					{
-						name = ((ch)->GetName());
+						name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 					}
 				}
 				else
 				{
-					name = ((ch)->GetName());
+					name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 				}
 			}
 		}
@@ -1598,20 +1598,20 @@ namespace quest
 					if (!tch->CanWarp())
 					{
 						m_result = 8;
-						r = ((tch)->GetName());
+						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 					}
 
 					int32_t lvl = ((tch)->GetLevel());
 					if (lvl < m_minlvl)
 					{
 						m_result = 9;
-						r = ((tch)->GetName());
+						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 10;
-						r = ((tch)->GetName());
+						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 
@@ -1619,7 +1619,7 @@ namespace quest
 					if (m_resulttime > 0)
 					{
 						m_result = 11;
-						r = ((tch)->GetName());
+						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 						break;
 					}
 				}

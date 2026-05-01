@@ -1143,14 +1143,14 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         // Global broadcast
         if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
         {
-            const char* leaderName = killer->GetName();
+            const char* leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data();
             if (LPCHARACTER leader = party->GetLeaderCharacter())
-                leaderName = leader->GetName();
+                leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data();
             BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1283, "%s", leaderName);
         }
         else
         {
-            BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1239, "%s", killer->GetName());
+            BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1239, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
         }
 
         return;

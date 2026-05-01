@@ -228,7 +228,7 @@ ACMD(do_attr_transfer);
 #endif
 ACMD(do_inventory);
 ACMD(do_cube);
-// 
+//
 
 ACMD(do_reset_subskill );
 ACMD(do_flush);
@@ -248,18 +248,18 @@ ACMD(do_ride);
 ACMD(do_get_item_id_list);
 ACMD(do_set_socket);
 
-// ڽ º  
+// ڽ º
 ACMD(do_set_stat);
 
-// 
+//
 ACMD (do_can_dead);
 
 ACMD (do_full_set);
-//    ְ 
+//    ְ
 ACMD (do_item_full_set);
-//   ְ ɼ Ӽ 
+//   ְ ɼ Ӽ
 ACMD (do_attr_full_set);
-//  ų 
+//  ų
 ACMD (do_all_skill_master);
 //  . icon  Ŭ󿡼 Ȯ       .
 ACMD (do_use_item);
@@ -331,7 +331,7 @@ ACMD(do_ranking_subcategory)
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
-	
+
 	ch->RankingSubcategory(atoi(arg1));
 }
 #endif
@@ -358,7 +358,7 @@ ACMD(do_unlock_extra)
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
-	
+
 	ch->UnlockExtraInventory(atoi(arg1));
 }
 #endif
@@ -382,16 +382,16 @@ ACMD(do_petenchant)
 {
 	if ((ch->IsObserverMode()) || (ch->IsDead()) || (ch->IsStun()))
 		return;
-	
+
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
-	
+
 	int iArg = atoi(arg1);
 	if ((iArg < 0) || (iArg > 2))
 		return;
-	
+
 	ch->SetPetEnchant(iArg);
 }
 #endif
@@ -489,7 +489,7 @@ struct command_info cmd_info[] =
 
 	{ "shutdow",	do_inputall,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "shutdown",	do_shutdown,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	
+
 	{ "stat",		do_stat,		0,			POS_DEAD,	GM_PLAYER	},
 	{ "stat-",		do_stat_minus,		0,			POS_DEAD,	GM_PLAYER	},
 	{ "stat_reset",	do_stat_reset,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -532,7 +532,7 @@ struct command_info cmd_info[] =
 
 
 #ifdef ENABLE_PVP_ADVANCED
-	{ "pvp_advanced",	do_pvp_advanced,	0,	POS_DEAD,	GM_PLAYER	},	
+	{ "pvp_advanced",	do_pvp_advanced,	0,	POS_DEAD,	GM_PLAYER	},
 	{ "decline_pvp",	do_decline_pvp,		0,	POS_DEAD,	GM_PLAYER	},
 	{ "pvp_block_equipment",	do_block_equipment,		0,	POS_DEAD,	GM_PLAYER	},
 #endif
@@ -586,7 +586,7 @@ struct command_info cmd_info[] =
 #ifdef ENABLE_SORT_INVEN
 	{ "item_check",		do_item_check,		0,			POS_DEAD,	GM_PLAYER	},
 	{ "sort_extra_inventory",		do_sort_extra_inventory,		0,	POS_DEAD,	GM_PLAYER },
-#endif	
+#endif
 
 	{ "getqf",		do_getqf,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "setqf",		do_setqf,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -918,7 +918,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 		return ;
 	}
 
-	char cmd[128 + 1];  // buffer overflow   ʵ Ϻη ̸ ª 
+	char cmd[128 + 1];  // buffer overflow   ʵ Ϻη ̸ ª
 	char new_line[256 + 1];
 	const char * line;
 	int icmd;
@@ -988,7 +988,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	}
 
 	if (strncmp("phase", cmd_info[icmd].command, 5) != 0) //  ɾ ó
-		LOG_INFO("COMMAND: {}: {}", ((ch)->GetName()), cmd_info[icmd].command);
+		LOG_INFO("COMMAND: {}: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), cmd_info[icmd].command);
 
 	((*cmd_info[icmd].command_pointer) (ch, line, icmd, cmd_info[icmd].subcmd));
 
@@ -999,7 +999,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 			char buf[1024];
 			snprintf( buf, sizeof(buf), "%s", argument );
 
-			LogManager::instance().GMCommandLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), g_bChannel, buf);
+			LogManager::instance().GMCommandLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), g_bChannel, buf);
 		}
 	}
 }

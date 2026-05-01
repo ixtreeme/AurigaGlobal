@@ -112,7 +112,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 			if (!pkItem)
 			{
-				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, m_pkPC->GetName());
+				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkPC)).data());
 				continue;
 			}
 
@@ -152,7 +152,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		{
 			if (IsPCShop())
 			{
-				LOG_ERROR("not empty position for pc shop {}[{}]", m_pkPC->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
+				LOG_ERROR("not empty position for pc shop {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkPC)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
 			}
 			else
 			{
@@ -193,7 +193,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 				item.price = item_table->dwGold * item.count;
 #endif
 		}
-		
+
 #ifdef ENABLE_BUY_WITH_ITEM
 		item.price = pTable->price;
 		for (int i = 0; i < MAX_SHOP_PRICES; i++) {
@@ -201,7 +201,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 			item.itemprice[i].count = pTable->itemprice[i].count;
 		}
 #endif
-		
+
 		char name[256];
 		snprintf(name, sizeof(name), "%s (v: %d) (c: %d)", item_table->szName, item.vnum, item.count);
 		LOG_TRACE("SHOP_ITEM: ITEM: {} PRICE: {}", name, item.price);
@@ -248,7 +248,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (pos >= m_itemVector.size())
 	{
-		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ch->GetName());
+		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
@@ -288,7 +288,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			dwPriceCount = r_item.itemprice[i].count;
 			dwHaveCount = ch->CountSpecifyItem(dwPriceVnum);
 			if (dwHaveCount < dwPriceCount) {
-				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ch->GetName(), dwHaveCount, dwPriceCount);
+				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwHaveCount, dwPriceCount);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -334,12 +334,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 		if (m_pkPC)
 		{
-			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ch->GetName(), item->GetSize());
+			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetSize());
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 		else
 		{
-			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ch->GetName(), item->GetSize());
+			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetSize());
 			ItemSystem::DestroyItemEntityEcs(
 				EntityFactory::CreateItemEntity(g_registry, item),
 				"SHOP_TRANSACTION");
@@ -416,7 +416,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			}
 
 			item->RemoveFromCharacter();
-			
+
 			if (item->IsDragonSoul()) {
 				item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 			}
@@ -425,9 +425,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_25082021
 				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-					int 
+					int
 #else
-					uint8_t 
+					uint8_t
 #endif
 					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
@@ -445,9 +445,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 								continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-							int 
+							int
 #else
-							uint8_t 
+							uint8_t
 #endif
 							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 							bCount -= bCount2;
@@ -483,9 +483,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_25082021
 				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-					int 
+					int
 #else
-					uint8_t 
+					uint8_t
 #endif
 					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
@@ -503,9 +503,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 								continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-							int 
+							int
 #else
-							uint8_t 
+							uint8_t
 #endif
 							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 							bCount -= bCount2;
@@ -557,9 +557,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_25082021
 			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-				int 
+				int
 #else
-				uint8_t 
+				uint8_t
 #endif
 				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
@@ -577,9 +577,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-						int 
+						int
 #else
-						uint8_t 
+						uint8_t
 #endif
 						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 						bCount -= bCount2;
@@ -615,9 +615,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_25082021
 			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-				int 
+				int
 #else
-				uint8_t 
+				uint8_t
 #endif
 				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
@@ -635,9 +635,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-						int 
+						int
 #else
-						uint8_t 
+						uint8_t
 #endif
 						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 						bCount -= bCount2;
@@ -723,7 +723,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (p >= m_itemVector.size()) {
-		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ch->GetName());
+		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
@@ -748,7 +748,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 			price_count = r_item.itemprice[i].count * c;
 			have_count = ch->CountSpecifyItem(price_vnum);
 			if (have_count < price_count) {
-				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ch->GetName(), have_count, price_count);
+				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), have_count, price_count);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -760,11 +760,11 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 
 	while (c > 0) {
 		r = Buy(ch, p, true);
-		if (r == SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY || 
+		if (r == SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY ||
 #ifdef ENABLE_BUY_WITH_ITEM
-			r == SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM || 
+			r == SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM ||
 #endif
-			r == SHOP_SUBHEADER_GC_INVENTORY_FULL || 
+			r == SHOP_SUBHEADER_GC_INVENTORY_FULL ||
 			r == SHOP_SUBHEADER_GC_END) {
 			break;
 		} else {
@@ -837,7 +837,7 @@ bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 		}
 		else
 			pack2.items[i].price = item.price;
-		
+
 #ifdef ENABLE_BUY_WITH_ITEM
 		for (int j = 0; j < MAX_SHOP_PRICES; j++) {
 			pack2.items[i].itemprice[j].vnum = item.itemprice[j].vnum;
@@ -939,7 +939,7 @@ void CShop::BroadcastUpdateItem(uint8_t pos)
 		pack2.item.itemprice[i].count = m_itemVector[pos].itemprice[i].count;
 	}
 #endif
-	
+
 	buf.write(&pack, sizeof(pack));
 	buf.write(&pack2, sizeof(pack2));
 	Broadcast(buf.read_peek(), buf.size());

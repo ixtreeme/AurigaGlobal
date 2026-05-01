@@ -472,7 +472,7 @@ void DBManager::SendAuthLogin(LPDESC d)
 	ptod.dwLoginKey = d->GetLoginKey();
 #ifdef ENABLE_MULTI_LANGUAGE
 	ptod.bLanguage = r.bLanguage;
-#endif	
+#endif
 	ptod.bBillType = pkLD->GetBillType();
 	ptod.dwBillID = pkLD->GetBillID();
 
@@ -702,9 +702,9 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						M2_DELETE(pinfo);
 						break;
 				   	}
-					
-					str_to_number(bLanguage, row[col++]);			
-#endif	
+
+					str_to_number(bLanguage, row[col++]);
+#endif
 
 					strlcpy(szStatus, row[col++], sizeof(szStatus));
 
@@ -1051,7 +1051,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (pkItem)
 						{
-							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ((ch)->GetName()), qi->dwIdent);
+							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), qi->dwIdent);
 							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0, pMsg->Get()->uiInsertID);
 							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, pdw[2]);
 						}
@@ -1233,9 +1233,9 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 	TPacketGDVCard p;
 
 	p.dwID = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
-	strlcpy(p.szSellCharacter, CardOwner->GetName(), sizeof(p.szSellCharacter));
+	strlcpy(p.szSellCharacter, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), sizeof(p.szSellCharacter));
 	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetAccountTable().login, sizeof(p.szSellAccount));
-	strlcpy(p.szBuyCharacter, CardTaker->GetName(), sizeof(p.szBuyCharacter));
+	strlcpy(p.szBuyCharacter, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data(), sizeof(p.szBuyCharacter));
 	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetAccountTable().login, sizeof(p.szBuyAccount));
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
@@ -1243,12 +1243,12 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) / 60, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0));
 #endif
 	LogManager::instance().VCardLog(p.dwID, CardTaker->GetX(), CardTaker->GetY(), g_stHostname.c_str(),
-			CardOwner->GetName(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetHostName(),
-			CardTaker->GetName(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetHostName());
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetHostName(),
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetHostName());
 
 	ITEM_MANAGER::instance().RemoveItem(item);
 
-	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, CardOwner->GetName(), CardTaker->GetName());
+	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data());
 }
 
 void DBManager::StopAllBilling()

@@ -779,7 +779,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             badVal = lv;
             return;
         }
@@ -788,7 +788,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_WARP;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             return;
         }
 
@@ -797,7 +797,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_COOLDOWN;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             badVal = rem;
             return;
         }
@@ -806,7 +806,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_ITEM;
-            badName = m->GetName();
+            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
             return;
         }
     };

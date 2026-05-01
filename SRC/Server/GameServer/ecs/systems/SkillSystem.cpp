@@ -1694,7 +1694,7 @@ EVENTFUNC(ChainLightningEvent)
 		return 0;
 	}
 
-	LOG_INFO("chainlighting event {}", pkChr->GetName());
+	LOG_INFO("chainlighting event {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 
 	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))) // ĆÄĆĽ ¸ŐŔú
 	{
@@ -1727,7 +1727,7 @@ EVENTFUNC(ChainLightningEvent)
 	}
 	else
 	{
-		LOG_INFO("{} use chainlighting, but find victim failed near {}", pkChr->GetName(), pkChrVictim->GetName());
+		LOG_INFO("{} use chainlighting, but find victim failed near {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), pkChrVictim->GetName());
 	}
 
 	return 0;
@@ -1777,7 +1777,7 @@ struct FuncSplashDamage
 	{
 		if (!ent->IsType(ENTITY_CHARACTER))
 		{
-			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", m_pkChr->GetName());
+			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
 			return;
 		}
 
@@ -1786,14 +1786,14 @@ struct FuncSplashDamage
 		if (DISTANCE_APPROX(m_x - pkChrVictim->GetX(), m_y - pkChrVictim->GetY()) > m_pkSk->iSplashRange)
 		{
 			if(test_server)
-				LOG_INFO("XXX target too far {}", m_pkChr->GetName());
+				LOG_INFO("XXX target too far {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
 			return;
 		}
 
 		if (!battle_is_attackable(m_pkChr, pkChrVictim))
 		{
 			if(test_server)
-				LOG_INFO("XXX target not attackable {}", m_pkChr->GetName());
+				LOG_INFO("XXX target not attackable {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
 			return;
 		}
 
@@ -1803,7 +1803,7 @@ struct FuncSplashDamage
 				if (!m_bDisableCooltime && m_pInfo && !m_pInfo->HitOnce(m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
 				{
 					if(test_server)
-						LOG_INFO("check guild skill {}", m_pkChr->GetName());
+						LOG_INFO("check guild skill {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
 					return;
 				}
 
@@ -1878,7 +1878,7 @@ struct FuncSplashDamage
 
 		if (m_pkChr->GetUsedSkillMasterType(m_pkSk->dwVnum) >= SKILL_GRAND_MASTER)
 		{
-			iAmount = 
+			iAmount =
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 			m_pkSk->dwVnum == SKILL_GYEONGGONG ? (int) m_pkSk->kPointPoly2.Eval() : (int) m_pkSk->kMasterBonusPoly.Eval();
 #else
@@ -1888,7 +1888,7 @@ struct FuncSplashDamage
 		}
 		else
 		{
-			iAmount = 
+			iAmount =
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		m_pkSk->dwVnum == SKILL_GYEONGGONG ? (int) m_pkSk->kPointPoly2.Eval() : (int) m_pkSk->kPointPoly.Eval()
 #else
@@ -1897,7 +1897,7 @@ struct FuncSplashDamage
 			;
 		}
 		////////////////////////////////////////////////////////////////////////////////
-		iAmount = 
+		iAmount =
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		m_pkSk->dwVnum == SKILL_GYEONGGONG ? iAmount : -iAmount
 #else
@@ -1960,7 +1960,7 @@ struct FuncSplashDamage
 		}
 #endif
 		////////////////////////////////////////////////////////////////////////////////
-		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", m_pkChr->GetName(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
+		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
@@ -2165,7 +2165,7 @@ struct FuncSplashDamage
 			pkChrVictim->BeginFight(m_pkChr);
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
-			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", m_pkChr->GetName(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
+			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 		{
@@ -2199,7 +2199,7 @@ struct FuncSplashDamage
 				default:
 					break;
 			}
-			
+
 			if (HELP_SKILL_ID != 0)
 			{
 				uint8_t HELP_SKILL_LV = m_pkChr->GetSkillLevel(HELP_SKILL_ID);
@@ -2211,7 +2211,7 @@ struct FuncSplashDamage
 					else
 					{
 						pkSk->SetPointVar("k", 1.0f * m_pkChr->GetSkillPower(HELP_SKILL_ID) * pkSk->bMaxLevel / 100);
-						
+
 						double IncreaseAmount = pkSk->kPointPoly.Eval();
 						LOG_INFO("HELP_SKILL: increase amount: {}, normal damage: {}, increased damage: {}.", IncreaseAmount, iDam, int(iDam * (IncreaseAmount / 100.0)));
 						iDam += iDam * (IncreaseAmount / 100.0);
@@ -2219,7 +2219,7 @@ struct FuncSplashDamage
 				}
 			}
 		}
-		
+
 		{
 			uint8_t ANTI_SKILL_ID = 0;
 			switch (m_pkSk->dwVnum)
@@ -2251,7 +2251,7 @@ struct FuncSplashDamage
 				default:
 					break;
 			}
-			
+
 			if (ANTI_SKILL_ID != 0)
 			{
 				uint8_t ANTI_SKILL_LV = pkChrVictim->GetSkillLevel(ANTI_SKILL_ID);
@@ -2263,7 +2263,7 @@ struct FuncSplashDamage
 					else
 					{
 						pkSk->SetPointVar("k", 1.0f * pkChrVictim->GetSkillPower(ANTI_SKILL_ID) * pkSk->bMaxLevel / 100);
-						
+
 						double ResistAmount = pkSk->kPointPoly.Eval();
 						LOG_INFO("ANTI_SKILL: resist amount: {}, normal damage: {}, reduced damage: {}.", ResistAmount, iDam, int(iDam * (ResistAmount/100.0)));
 						iDam -= iDam * (ResistAmount / 100.0);
@@ -2420,7 +2420,7 @@ struct FuncSplashDamage
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", m_pkChr->GetName(), pkChrVictim->GetName(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
+				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), pkChrVictim->GetName(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
 				int32_t tx = pkChrVictim->GetX()+static_cast<int32_t>(fx);
 				int32_t ty = pkChrVictim->GetY()+static_cast<int32_t>(fy);
 
@@ -2475,12 +2475,12 @@ struct FuncSplashDamage
 			event_create(ChainLightningEvent, info, passes_per_sec / 5);
 		}
 		if(test_server)
-			LOG_INFO("FuncSplashDamage End :{} ", m_pkChr->GetName());
+			LOG_INFO("FuncSplashDamage End :{} ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
 //		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && pkChrVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrVictim)) == 136)
 //		{
-//			
+//
 //			DBManager::instance().DirectQuery(
 //				"UPDATE player.player "
 //				"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
@@ -2539,11 +2539,11 @@ struct FuncSplashAffect
 			auto* pkChr = static_cast<LegacyCharHandle>(ent);
 
 			if (test_server)
-				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", pkChr->GetName(), m_dwVnum, m_iDuration);
+				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
 			if (DISTANCE_APPROX(m_x - pkChr->GetX(), m_y - pkChr->GetY()) < m_iDist)
 			{
 				if (test_server)
-					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", pkChr->GetName(), m_dwVnum, m_iDuration);
+					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
 					if (pkChr->CanBeginFight())
 						pkChr->BeginFight(m_pkChrAttacker);
@@ -2611,12 +2611,12 @@ EVENTFUNC(skill_gwihwan_event)
 		// Ľş°ř
 		if (ecs::GetRecallPosition(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 		{
-			LOG_INFO("Recall: {} {} {} -> {} {}", ch->GetName(), ch->GetX(), ch->GetY(), pos.x, pos.y);
+			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
 		}
 		else
 		{
-			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ch->GetName(), ch->GetX(), ch->GetY());
+			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY());
 			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
@@ -3011,7 +3011,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
-	
+
 	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
 
 	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
@@ -3099,7 +3099,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
-			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), pkVictim->GetName(), (int32_t)DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()), pkSk->dwTargetRange);
+			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), (int32_t)DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()), pkSk->dwTargetRange);
 
 		return BATTLE_NONE;
 	}
@@ -3478,7 +3478,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (pkVictim->GetSectree())
 				pkVictim->GetSectree()->ForEachAround(f);
-			
+
 			else
 			{
 				f(pkVictim);
@@ -3514,14 +3514,14 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			{
 				if (this != pkVictim && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(this)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
 				{
-					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_BUFF)) 
+					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_BUFF))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 518, "%s", pkVictim->GetName()); 
+						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 518, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 #endif
 						return false;
 					}
-				}	
+				}
 			}
 		}
 		break;
@@ -3560,7 +3560,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 	{
 		if (GetSkillLevel(dwVnum) == 0)
 			return false;
-		
+
 		return true;
 	}
 
@@ -4004,7 +4004,7 @@ EVENTFUNC(skill_gyeongGong_event)
 	}
 
 	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, ch);
-	
+
 	return PASSES_PER_SEC(2);
 }
 
@@ -4136,16 +4136,16 @@ EVENTFUNC(mob_skill_hit_event)
 struct FHealerParty
 {
 	FHealerParty(LegacyCharHandle pkHealer) : m_pkHealer(pkHealer) {}
-	
+
 	void operator () (LegacyCharHandle ch)
 	{
 		int iRevive = (int)(m_pkHealer->GetMaxHP() / 100 * 15);
 		int iHP = (ch->GetMaxHP() >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ch->GetMaxHP());
 		ch->SetHP(iHP);
 		ch->EffectPacket(SE_EFFECT_HEALER);
-		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", m_pkHealer->GetName(), static_cast<const void*>(get_pointer(m_pkHealer)), ch->GetName(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
+		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkHealer)).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
 	}
-	
+
 	LegacyCharHandle	m_pkHealer;
 };
 #endif
@@ -4192,7 +4192,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 			EffectPacket(SE_EFFECT_HEALER);
 			LOG_INFO("FHealer: {} (pointer: {}) heal their HP with {} (new HP: {}).", GetName(), static_cast<const void*>(get_pointer(this)), iRevive, GetHP());
 		}
-		
+
 		return true;
 	}
 #endif

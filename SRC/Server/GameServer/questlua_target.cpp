@@ -29,7 +29,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
 			return 0;
 		}
 
@@ -67,7 +67,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
 			return 0;
 		}
 
@@ -96,7 +96,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
 			return 0;
 		}
 
@@ -129,7 +129,7 @@ namespace quest
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ((ch)->GetName()), dwQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwQuestIndex);
 			lua_pushnumber(L, 0);
 			return 1;
 		}

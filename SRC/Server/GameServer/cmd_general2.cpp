@@ -34,16 +34,16 @@ ACMD(do_remove_affect)
 {
 	if (!ch)
 		return;
-	
+
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	
+
 	if (!*arg1)
 		return;
-	
+
 	uint32_t dwAffect = 0;
 	str_to_number(dwAffect, arg1);
-	
+
 	switch (dwAffect)
 	{
 		case AFF_JEONGWIHON:
@@ -141,18 +141,18 @@ ACMD(do_stat2)
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
-	
+
 	if (ch->IsPolymorphed()) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 314, "");
 #endif
 		return;
 	}
-	
+
 
 	int64_t limit = 10;
 
-	
+
 	if (ch->GetPoint(POINT_STAT) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 851,
@@ -163,7 +163,7 @@ ACMD(do_stat2)
 #endif
 		return;
 	}
-	
+
 	uint8_t idx = 0;
 	if (!strcmp(arg1, "st"))
 		idx = POINT_ST;
@@ -175,23 +175,23 @@ ACMD(do_stat2)
 		idx = POINT_IQ;
 	else
 		return;
-	
+
 	if (ch->GetRealPoint(idx) >= MAX_STATUS_ALTERNATIVE)
 		return;
-	
+
 	limit = ch->GetRealPoint(idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ch->GetRealPoint(idx) : limit;
 	ch->SetRealPoint(idx, ch->GetRealPoint(idx) + limit);
 	ch->SetPoint(idx, ch->GetPoint(idx) + limit);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
-	
+
 	if (idx == POINT_IQ) {
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
 	}
 	else if (idx == POINT_HT) {
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
 	}
-	
+
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -limit);
 	ch->ComputePoints();
 }
@@ -460,13 +460,13 @@ ACMD(do_change_biologist) {
 	if (!*arg1 || !*arg2)
 		return;
 
-	
+
 	int iarg1 = 0;
 	str_to_number(iarg1, arg1);
 	if (iarg1 < 0 || iarg1 > 15) {
 		return;
 	}
-	
+
 	if (biologistMissionInfo[iarg1][11] != 1) {
 		return;
 	}
@@ -646,14 +646,14 @@ ACMD(do_go_savepoint) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif
-		return; 
+		return;
 	}
 
 	if (((ch)->GetMapIndex()) > 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1288, "");
 #endif
-		return; 
+		return;
 	}
 
 	char query[512] = {0};
@@ -678,7 +678,7 @@ ACMD(do_go_savepoint) {
 					return;
 				}
 			}
-			
+
 			ch->WarpSet(x, y);
 		}
 	}
@@ -731,7 +731,7 @@ ACMD(do_save_savepoint) {
 	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
-		LOG_ERROR("{} savepoint slot ({}) is not empty. Maybe a hacker?", ((ch)->GetName()), slot);
+		LOG_ERROR("{} savepoint slot ({}) is not empty. Maybe a hacker?", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), slot);
 	} else {
 		int mapIdx = ((ch)->GetMapIndex());
 		if (mapIdx > 10000) {
@@ -795,7 +795,7 @@ ACMD(do_doctrine_choose) {
 		if (!(pkAff = ch->FindAffect(AFFECT_HORSE_NAME))) {
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "horse_name.valid_till", get_global_time() + 126144000);
 			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
-			std::string name = ((ch)->GetName());
+			std::string name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			name += " Horse";
 			CHorseNameManager::instance().UpdateHorseName((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), name.c_str(), true);
 

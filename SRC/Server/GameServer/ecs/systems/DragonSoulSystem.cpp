@@ -225,7 +225,7 @@ bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
     LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
     if (!d)
     {
-        LOG_ERROR("User({})'s DESC is NULL POINT.", ch->GetName());
+        LOG_ERROR("User({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         return false;
     }
 

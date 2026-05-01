@@ -348,7 +348,7 @@ LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOn
         if (bFindPCOnly && ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(tch)))
             continue;
 
-        if (!strcasecmp(tch->GetName(), c_pszName))
+        if (!strcasecmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), c_pszName))
             return tch;
     }
 
@@ -394,7 +394,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 
         if (DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY()) > 250)
         {
-            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ch->GetName());
+            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
             if (m_pkChrSyncOwner == ch)
                 return true;
@@ -416,7 +416,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
             static const timeval zero_tv = { 0, 0 };
             SetLastSyncTime(zero_tv);
 
-            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ch->GetName());
+            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         }
 
         m_fSyncTime = get_float_time();
@@ -1013,7 +1013,7 @@ void CItem::UpdatePacket()
 
 	memcpy(pack.aAttr, GetAttributes(), sizeof(pack.aAttr));
 
-	LOG_TRACE("UpdatePacket {} -> {}", GetName(), m_pOwner->GetName());
+	LOG_TRACE("UpdatePacket {} -> {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pOwner)).data());
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner))->Packet(&pack, sizeof(pack));
 }
 

@@ -1,3 +1,4 @@
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifndef __INC_METIN_II_GAME_BATTLE_H__
@@ -51,12 +52,12 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
+				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, pkAttacker->GetPoint(att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", pkAttacker->GetName(), name, pkAttacker->GetPoint(att_point));
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, pkAttacker->GetPoint(att_point));
 		}
 	}
 }

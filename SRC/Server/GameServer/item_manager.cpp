@@ -703,7 +703,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 
 		if (liveOwner == owner)
 		{
-			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), owner->GetName());
+			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(owner)).data());
 			item->RemoveFromCharacter();
 		}
 		else
@@ -1042,7 +1042,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 	{
 		if (!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr))))
 		{
-			LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben   CreateDropItemVector megszakitva.", pkChr->GetName(), ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+			LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben   CreateDropItemVector megszakitva.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 			return false;
 		}
 	}
@@ -1786,7 +1786,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 	if (!pkKiller)
 		return;
 
-	LOG_INFO("CreateQuestDropItem victim({}), killer({})", pkChr->GetName(), pkKiller->GetName());
+	LOG_INFO("CreateQuestDropItem victim({}), killer({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data());
 
 	// DROPEVENT_CHARSTONE
 	__DropEvent_CharStone_DropItem(*pkKiller, *pkChr, *this, vec_item);

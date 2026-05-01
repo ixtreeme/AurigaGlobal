@@ -95,7 +95,7 @@ bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
 	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
 
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: ADD {} {} count {}", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	LOG_INFO("SAFEBOX: ADD {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return true;
 }
 
@@ -129,7 +129,7 @@ LPITEM CSafebox::Remove(uint32_t dwPos)
 	pack.pos	= dwPos;
 
 	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", m_pkChrOwner->GetName(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
 	return pkItem;
 }
 
@@ -143,7 +143,7 @@ void CSafebox::Save()
 	t.dwGold = m_lGold;
 
 	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));
-	LOG_INFO("SAFEBOX: SAVE {}", m_pkChrOwner->GetName());
+	LOG_INFO("SAFEBOX: SAVE {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data());
 }
 
 bool CSafebox::IsEmpty(uint32_t dwPos, uint8_t bSize)
@@ -189,7 +189,7 @@ bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell,
 #ifdef ENABLE_NEW_STACK_LIMIT
 	uint32_t
 #else
-uint32_t 
+uint32_t
 #endif
 count)
 {
@@ -250,7 +250,7 @@ count)
 				EntityFactory::CreateItemEntity(g_registry, item2),
 				count);
 
-			LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", m_pkChrOwner->GetName(), static_cast<int>(bCell), static_cast<int>(bDestCell), item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
+			LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
 			return true;
 		}
 
@@ -270,7 +270,7 @@ count)
 			m_pkGrid->Put(bCell, 1, item->GetSize());
 		}
 
-		LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", m_pkChrOwner->GetName(), static_cast<int>(bCell), static_cast<int>(bDestCell), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
 
 		Remove(bCell);
 		Add(bDestCell, item);

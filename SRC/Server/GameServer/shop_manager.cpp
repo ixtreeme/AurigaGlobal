@@ -119,7 +119,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (pkChr->GetShopOwner() == pkChrShopKeeper)
 		return false;
 	// this method is only for NPC
-	
+
 	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChrShopKeeper)))
 		return false;
 
@@ -137,7 +137,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	if (distance >= SHOP_MAX_DISTANCE)
 	{
-		LOG_INFO("SHOP: TOO_FAR: {} distance {}", pkChr->GetName(), distance);
+		LOG_INFO("SHOP: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), distance);
 		return false;
 	}
 
@@ -161,7 +161,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChrShopKeeper)), bOtherEmpire);
 	pkChr->SetShopOwner(pkChrShopKeeper);
-	LOG_INFO("SHOP: START: {}", pkChr->GetName());
+	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 	return true;
 }
 
@@ -216,7 +216,7 @@ void CShopManager::StopShopping(LPCHARACTER ch)
 	//END_PREVENT_ITEM_COPY
 
 	shop->RemoveGuest(ch);
-	LOG_INFO("SHOP: END: {}", ch->GetName());
+	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 }
 
 // 아이템 구입
@@ -333,14 +333,14 @@ uint8_t bCount
 	bool stupid = false;
 	if (bCount < 0)
 	{
-		LOG_ERROR("I am a stupid hacker 7: {} {}", ch->GetName(), static_cast<int>(bCount));
+		LOG_ERROR("I am a stupid hacker 7: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<int>(bCount));
 		stupid = true;
 	}
 
 	bCount = abs(bCount);
 	if (stupid)
 	{
-		LOG_ERROR("I am a stupid hacker 8: {} {}", ch->GetName(), static_cast<int>(bCount));
+		LOG_ERROR("I am a stupid hacker 8: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<int>(bCount));
 		return;
 	}
 
@@ -434,15 +434,15 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 	const int64_t nTotalMoney = ch->GetGold() + dwPrice;
 
 	if (GOLD_MAX <= nTotalMoney)
 	{
-		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ch->GetGold());
+		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetGold());
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226, 
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226,
 		"%lld"
 
 		, GOLD_MAX);

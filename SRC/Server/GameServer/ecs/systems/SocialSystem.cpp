@@ -114,7 +114,7 @@ EVENTFUNC(party_request_event)
 
     if (ch)
     {
-        LOG_INFO("PartyRequestEvent {}", ch->GetName());
+        LOG_INFO("PartyRequestEvent {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "PartyRequestDenied");
         ch->SetPartyRequestEvent(nullptr);
     }
@@ -209,14 +209,14 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 
     ecs::ChatSystem::Send(AIHelpers::EcsOf(leader), CHAT_TYPE_COMMAND, "PartyRequest %u", GetPacketVID());
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 106, "%s", leader->GetName());
+    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 106, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data());
 #endif
     return true;
 }
 
 void CHARACTER::DenyToParty(LPCHARACTER member)
 {
-    LOG_INFO("DenyToParty {} member {} {}", GetName(), member->GetName(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
+    LOG_INFO("DenyToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(member)).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
         return;
@@ -242,7 +242,7 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
 
 void CHARACTER::AcceptToParty(LPCHARACTER member)
 {
-    LOG_INFO("AcceptToParty {} member {} {}", GetName(), member->GetName(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
+    LOG_INFO("AcceptToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(member)).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
         return;
@@ -330,7 +330,7 @@ EVENTFUNC(party_invite_event)
 
     if (pchInviter)
     {
-        LOG_INFO("PartyInviteEvent {}", pchInviter->GetName());
+        LOG_INFO("PartyInviteEvent {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInviter)).data());
         pchInviter->PartyInviteDeny(pInfo->dwGuestPID);
     }
 
@@ -349,7 +349,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     else if (pchInvitee->IsBlockMode(BLOCK_PARTY_INVITE))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
 #endif
         return;
     }
@@ -366,7 +366,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     else if ((pchInvitee->GetDuel("BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 517, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
 #endif
         return;
     }
@@ -411,7 +411,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
         return;
     case PERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 210, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 210, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
 #endif
         return;
     case PERR_PARTYISFULL:
@@ -446,7 +446,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
 
     if (itFind == m_PartyInviteEventMap.end())
     {
-        LOG_INFO("PartyInviteAccept from not invited character({})", pchInvitee->GetName());
+        LOG_INFO("PartyInviteAccept from not invited character({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
         return;
     }
 
@@ -540,7 +540,7 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
 #ifdef TEXTS_IMPROVEMENT
     LPCHARACTER pchInvitee = CHARACTER_MANAGER::instance().FindByPID(dwPID);
     if (pchInvitee) {
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", pchInvitee->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
     }
 #endif
 }
@@ -550,7 +550,7 @@ void CHARACTER::PartyJoin(LPCHARACTER pLeader)
     if (pLeader && pLeader->GetParty()) {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pLeader), CHAT_TYPE_INFO, 1249, "%s", GetName());
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 193, "%s", pLeader->GetName());
+        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pLeader)).data());
 #endif
         pLeader->GetParty()->Join(GetPlayerID());
         pLeader->GetParty()->Link(this);

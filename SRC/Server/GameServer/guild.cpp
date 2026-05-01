@@ -28,7 +28,7 @@
 #include "ecs/CharacterAccessors.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
-: pid(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ch->GetName())
+: pid(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())
 {}
 	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
 : pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)
@@ -161,7 +161,7 @@ void CGuild::RequestAddMember(LPCHARACTER ch, int grade)
 
 	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) != m_member.end())
 	{
-		LOG_ERROR("Already a member in guild {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("Already a member in guild {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
@@ -284,7 +284,7 @@ void CGuild::LoginMember(LPCHARACTER ch)
 {
 	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
@@ -329,7 +329,7 @@ void CGuild::LogoutMember(LPCHARACTER ch)
 {
 	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))==m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
@@ -588,7 +588,7 @@ void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
 void CGuild::LoadGuildGradeData(SQLMsg* pmsg)
 {
 	/*
-    // 15 ƴ ɼ 
+    // 15 ƴ ɼ
 	if (pmsg->Get()->iNumRows != 15)
 	{
 		LOG_ERROR("Query failed: getting guild grade data. GuildID({})", GetID());
@@ -946,7 +946,7 @@ void CGuild::SendGuildInfoPacket(LPCHARACTER ch)
 	pack_sub.win	= m_data.win;
 	pack_sub.loss	= m_data.loss;
 	pack_sub.draw	= m_data.draw;
-#endif	
+#endif
 
 	LOG_INFO("GMC guild_name {}", m_data.name);
 	LOG_INFO("GMC master {}", m_data.master_pid);
@@ -978,7 +978,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 
 	if (ch->GetExp() - (uint32_t) amount > ch->GetExp())
 	{
-		LOG_ERROR("Wrong guild offer amount {} by {}[{}]", amount, ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("Wrong guild offer amount {} by {}[{}]", amount, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return false;
 	}
 
@@ -1079,7 +1079,7 @@ void CGuild::AddComment(LPCHARACTER ch, std::string_view str)
 
 	DBManager::instance().FuncAfterQuery(std::bind(&CGuild::RefreshCommentForce,this,ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
 			"INSERT INTO guild_comment%s(guild_id, name, notice, content, time) VALUES(%u, '%s', %d, '%s', NOW())",
-			get_table_postfix(), m_data.guild_id, ch->GetName(), (!str.empty() && str.front() == '!') ? 1 : 0, text);
+			get_table_postfix(), m_data.guild_id, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (!str.empty() && str.front() == '!') ? 1 : 0, text);
 }
 
 void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
@@ -1089,7 +1089,7 @@ void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
 	if (GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->grade == GUILD_LEADER_GRADE)
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u",get_table_postfix(), comment_id, m_data.guild_id);
 	else
-		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ch->GetName());
+		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 	if (pmsg->Get()->uiAffectedRows == 0 || pmsg->Get()->uiAffectedRows == (uint32_t)-1) {
 #ifdef TEXTS_IMPROVEMENT
@@ -1148,7 +1148,7 @@ void CGuild::RefreshCommentForce(uint32_t player_id)
 		d->BufferedPacket(szName, sizeof(szName));
 
 		if (i == pmsg->Get()->uiNumRows - 1)
-			d->Packet(szContent, sizeof(szContent)); //  ̸ 
+			d->Packet(szContent, sizeof(szContent)); //  ̸
 		else
 			d->BufferedPacket(szContent, sizeof(szContent));
 	}
@@ -1304,7 +1304,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (!GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) || !HasGradeAuth(GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->grade, GUILD_AUTH_USE_SKILL))
 		return;
 
-	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ch->GetName() : "", dwVnum);
+	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data() : "", dwVnum);
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
@@ -1376,13 +1376,13 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 	//PointChange(POINT_SP, -iNeededSP);
 	//GuildPointChange(POINT_SP, -iNeededSP);
-	
+
 #ifdef TEXTS_IMPROVEMENT
 	if (test_server) {
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 120, "%d#%d#%d#%u", dwVnum, GetSP(), iNeededSP, pid);
 	}
 #endif
-	
+
 	switch (dwVnum)
 	{
 		case GUILD_SKILL_TELEPORT:
@@ -1572,14 +1572,14 @@ void CGuild::GiveReward(int reward)
 		MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
 		int iAccountID = 0;
 		str_to_number( iAccountID, row[0] );
-		
+
 		std::unique_ptr<SQLMsg> pMsg2( DBManager::instance().DirectQuery("SELECT login FROM account.account WHERE id=%d", iAccountID) );
 		if (pMsg2->Get()->uiNumRows == 0)
 			return;
 		MYSQL_ROW nrow = mysql_fetch_row(pMsg2->Get()->pSQLResult);
-		
+
 		/*for (int i = 39; i >= 0; i--)
-		{	
+		{
 			if (isEmpty(iAccountID, i))
 			{
 				iPos = i;
@@ -1588,8 +1588,8 @@ void CGuild::GiveReward(int reward)
 		}
 		if (iPos == -1)
 			return;*/
-		
-		//INSERT INTO player.item_award(`login`, `vnum`, `count`, `mall`) VALUES ('account', 189, 1, 1); 
+
+		//INSERT INTO player.item_award(`login`, `vnum`, `count`, `mall`) VALUES ('account', 189, 1, 1);
 		//Sostituire la query di sotto con questa di sopra una volta aggiungo il system award di VegaS
 		//DBManager::instance().DirectQuery("INSERT INTO item (owner_id, window, pos, count, vnum) VALUES ('%d', 'MALL', '%d', '1', '%d');", iAccountID, iPos, reward);
 		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("INSERT INTO item_award (login, vnum, count, why, mall) VALUES ('%s', '%d', '1', 'GUILD_REWARD', '1');", nrow[0], reward));
@@ -1628,7 +1628,7 @@ void CGuild::ChangeTrophies(bool bWinner, bool bDraw)
 		else if (bDraw)
 			iTrph = 1;
 	}
-	
+
 	if (m_data.trophies >= 0)
 	{
 		if (m_data.trophies + iTrph > 0)
@@ -1688,7 +1688,7 @@ namespace
 void CGuild::WarReward(bool bWinner, bool bDraw)
 {
 	int iReward = 0;
-	
+
 	int actTrph = GetTrophies();
 	if (actTrph >= 30 && actTrph < 50)
 	{
@@ -1710,7 +1710,7 @@ void CGuild::WarReward(bool bWinner, bool bDraw)
 	}
 	else
 		return;
-	
+
 	LOG_INFO("CGuild::WarReward(guild={}, reward={})", GetName(), iReward);
 	std::for_each(m_memberOnline.begin(), m_memberOnline.end(), FGuildReward(iReward));
 }
@@ -2097,7 +2097,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 	LogManager::instance().CharLog(ch, iGold, "GUILD_DEPOSIT", buf);
 
 	ch->UpdateDepositPulse();
-	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iGold);
+	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iGold);
 }
 
 void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
@@ -2159,7 +2159,7 @@ void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 	if (ch)
 	{
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iChangeGold);
-		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iChangeGold);
+		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iChangeGold);
 	}
 
 	TPacketGDGuildMoneyWithdrawGiveReply p;
@@ -2175,7 +2175,7 @@ bool CGuild::HasLand()
 }
 
 // GUILD_JOIN_BUG_FIX
-///  ʴ event 
+///  ʴ event
 EVENTINFO(TInviteGuildEventInfo)
 {
 	uint32_t	dwInviteePID;		///< ʴ character  PID
@@ -2219,7 +2219,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInviter)))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 632, "%s", pchInvitee->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 632, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
 #endif
 		return;
 	}
@@ -2294,7 +2294,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 		return;
 
 	//
-	// ̺Ʈ 
+	// ̺Ʈ
 	//
 	TInviteGuildEventInfo* pInfo = AllocEventInfo<TInviteGuildEventInfo>();
 	pInfo->dwInviteePID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee));
@@ -2303,7 +2303,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	m_GuildInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
 
 	//
-	// ʴ ޴ character  ʴ Ŷ 
+	// ʴ ޴ character  ʴ Ŷ
 	//
 
 	uint32_t gid = GetID();
@@ -2326,7 +2326,7 @@ void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 	EventMap::iterator itFind = m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)) );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
-		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), pchInvitee->GetName());
+		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pchInvitee)).data());
 		return;
 	}
 
@@ -2589,7 +2589,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	CHARACTER_MANAGER::instance().for_each_pc(FGuildNameSender(GetID(), GetName(), GetLevel()));
 
 
-	 
+
 	TPacketGCGuild pack;
 	pack.header = HEADER_GC_GUILD;
 	pack.size = sizeof(pack) + 5;
@@ -2608,7 +2608,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	}
 
 #ifdef ENABLE_GUILD_ATTRIBUTE
-	 
+
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		RemoveGuildBuff(*it);
@@ -2616,7 +2616,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	}
 #endif
 
- 
+
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
 		auto* ch = *it;
@@ -2627,7 +2627,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 		ch->PointsPacket();
 	}
 
-	 
+
 	if (m_data.level >= 40)
 	{
 		for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)

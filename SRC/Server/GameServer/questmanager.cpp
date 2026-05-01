@@ -157,13 +157,13 @@ namespace quest
 
 		SetEventFlag("guild_withdraw_delay", 1);
 		SetEventFlag("guild_disband_delay", 1);
-		
-		
+
+
 #ifdef __QUEST_RENEWAL__
 		ReadQuestCategoryToDict();
 #endif
-		
-		
+
+
 		return true;
 	}
 
@@ -590,7 +590,7 @@ namespace quest
 				m_pCurrentPartyMember = ch;
 				if (npc >= MAIN_RACE_MAX_NUM) //@fixme109
 					m_mapNPC[npc].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(leader)))); //@warme004
-				
+
 				m_mapNPC[QUEST_NO_NPC].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(leader))));
 				pPC = GetPC(pc);
 			}
@@ -628,7 +628,7 @@ namespace quest
 		{
 			if (!CheckQuestLoaded(pPC))
 				return;
-			
+
 			m_mapNPC[npc].OnQuestDamage(*pPC);
 			if (npc != QUEST_NO_NPC)
 				m_mapNPC[QUEST_NO_NPC].OnQuestDamage(*pPC);
@@ -942,7 +942,7 @@ namespace quest
 			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChrTarget)));
 			if (test_server)
 			{
-				LOG_INFO("CQuestManager::Click(pid={}, npc_name={}) - target_info({:x})", pc, pkChrTarget->GetName(), reinterpret_cast<uintptr_t>(pInfo));
+				LOG_INFO("CQuestManager::Click(pid={}, npc_name={}) - target_info({:x})", pc, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrTarget)).data(), reinterpret_cast<uintptr_t>(pInfo));
 			}
 
 			if (pInfo)
@@ -960,7 +960,7 @@ namespace quest
 
 				if (it == m_mapNPC.end())
 				{
-					LOG_INFO("CQuestManager::Click(pid={}, target_npc_name={}) - NOT EXIST NPC RACE VNUM[{}]", pc, pkChrTarget->GetName(), dwCurrentNPCRace); // @warme012
+					LOG_INFO("CQuestManager::Click(pid={}, target_npc_name={}) - NOT EXIST NPC RACE VNUM[{}]", pc, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrTarget)).data(), dwCurrentNPCRace); // @warme012
 					return false;
 				}
 
@@ -1330,7 +1330,7 @@ namespace quest
 	{
 		assert(idx > 0);
 
-	
+
 
 		if (auto it = m_hmQuestName.find(stQuestName); it != m_hmQuestName.end())
 			return;

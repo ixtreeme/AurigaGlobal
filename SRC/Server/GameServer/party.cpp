@@ -153,7 +153,7 @@ LPPARTY CPartyManager::CreateParty(LPCHARACTER pLeader)
 
 		db_clientdesc->DBPacket(HEADER_GD_PARTY_CREATE, 0, &p, sizeof(TPacketPartyCreate));
 
-		LOG_INFO("PARTY: Create {} pid {}", ((pLeader)->GetName()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader))));
+		LOG_INFO("PARTY: Create {} pid {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pLeader)).data(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader))));
 		pParty->SetPCParty(true);
 		pParty->Join((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pLeader))));
 
@@ -407,8 +407,8 @@ void CParty::P2PJoin(uint32_t dwPID)
 
 			if (ch)
 			{
-				LOG_INFO("PARTY: Join {} pid {} leader {}", ((ch)->GetName()), dwPID, m_dwLeaderPID);
-				Member.strName = ((ch)->GetName());
+				LOG_INFO("PARTY: Join {} pid {} leader {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwPID, m_dwLeaderPID);
+				Member.strName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 
 				if (Member.bRole == PARTY_ROLE_LEADER)
 					m_iLeadership = ch->GetLeadershipSkillLevel();
@@ -543,7 +543,7 @@ void CParty::Link(LPCHARACTER pkChr)
 
 	if (it == m_memberMap.end())
 	{
-		LOG_ERROR("{} is not member of this party", pkChr->GetName());
+		LOG_ERROR("{} is not member of this party", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 		return;
 	}
 
@@ -558,7 +558,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	if (it->second.bRole == PARTY_ROLE_LEADER)
 		m_pkChrLeader = pkChr;
 
-	LOG_TRACE("PARTY[{}] {} linked to party", GetLeaderPID(), pkChr->GetName());
+	LOG_TRACE("PARTY[{}] {} linked to party", GetLeaderPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 
 	it->second.pCharacter = pkChr;
 	pkChr->SetParty(this);
@@ -567,7 +567,7 @@ void CParty::Link(LPCHARACTER pkChr)
 	{
 		if (it->second.strName.empty())
 		{
-			it->second.strName = pkChr->GetName();
+			it->second.strName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data();
 		}
 
 		SendPartyJoinOneToAll((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
@@ -638,7 +638,7 @@ void CParty::Unlink(LPCHARACTER pkChr)
 
 	if (it == m_memberMap.end())
 	{
-		LOG_ERROR("{} is not member of this party", pkChr->GetName());
+		LOG_ERROR("{} is not member of this party", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
 		return;
 	}
 
@@ -806,7 +806,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
+			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -827,7 +827,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
+			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -854,7 +854,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ch->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
+		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }
@@ -863,7 +863,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 {
 	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) != this)
 	{
-		LOG_ERROR("{} is not member of this party {}", ch->GetName(), static_cast<const void*>(this));
+		LOG_ERROR("{} is not member of this party {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<const void*>(this));
 		return;
 	}
 
@@ -894,7 +894,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 						if (pkChr->Goto(x, y))
 						{
 							auto* victim = pkChr->GetVictim();
-							LOG_TRACE("{} {} RETURN victim {}", pkChr->GetName(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
+							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
 							pkChr->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
@@ -1339,7 +1339,7 @@ void CParty::Update()
 		if (it->second.bNear)
 		{
 			++iNearMember;
-			//LOG_INFO("NEAR {}", ch->GetName());
+			//LOG_INFO("NEAR {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		}
 	}
 

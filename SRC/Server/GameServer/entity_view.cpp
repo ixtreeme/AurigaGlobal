@@ -124,7 +124,7 @@ void CEntity::UpdateSectree()
 		if (IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER tch = (LPCHARACTER)this;
-			LOG_ERROR("null sectree name: {} {} {}", ((tch)->GetName()), GetX(), GetY());
+			LOG_ERROR("null sectree name: {} {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), GetX(), GetY());
 		}
 
 		return;

@@ -132,7 +132,7 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
         char notice[256];
         snprintf(notice, sizeof(notice),
             "[EVENTMAP]%s 2 karakterrel probalt belepni event mapra!",
-            ch->GetName());
+            ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
         BroadcastNotice(notice);
         ch->WarpSet(983500, 265200, 41);

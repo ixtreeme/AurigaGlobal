@@ -269,7 +269,7 @@ static const char* GetHighAvgDmgFmtByLang(int lang)
 	}
 }
 
-// --- 
+// ---
 std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 {
 	char itemlink[512];
@@ -301,7 +301,7 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? pkKiller->GetName() : "Player",
+		pkKiller ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data() : "Player",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -429,53 +429,53 @@ void CSwitchbot::SwitchItems()
 				uint32_t dwTargetVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
 				bool bZodiacItem = (
 #ifdef DISABLE_ZODIAC_ATT
-	
+
 				(dwTargetVnum == 12314141)
 					) ? true : false;
 #else
-									((dwTargetVnum >= 19290) && (dwTargetVnum <= 19312)) || 
-									((dwTargetVnum >= 19490) && (dwTargetVnum <= 19512)) || 
-									((dwTargetVnum >= 19690) && (dwTargetVnum <= 19712)) || 
-									((dwTargetVnum >= 19890) && (dwTargetVnum <= 19912)) || 
-									((dwTargetVnum >= 300) && (dwTargetVnum <= 319)) || 
-									(dwTargetVnum == 329) || 
-									(dwTargetVnum == 339) || 
-									(dwTargetVnum == 349) || 
-									(dwTargetVnum == 359) || 
-									(dwTargetVnum == 369) || 
-									(dwTargetVnum == 379) || 
-									(dwTargetVnum == 389) || 
-									(dwTargetVnum == 399) || 
-									((dwTargetVnum >= 1180) && (dwTargetVnum <= 1189)) || 
-									(dwTargetVnum == 1199) || 
-									(dwTargetVnum == 1209) || 
-									(dwTargetVnum == 1219) || 
-									(dwTargetVnum == 1229) || 
-									((dwTargetVnum >= 2200) && (dwTargetVnum <= 2209)) || 
-									(dwTargetVnum == 2219) || 
-									(dwTargetVnum == 2229) || 
-									(dwTargetVnum == 2239) || 
-									(dwTargetVnum == 2249) || 
-									((dwTargetVnum >= 3220) && (dwTargetVnum <= 3229)) || 
-									(dwTargetVnum == 3239) || 
-									(dwTargetVnum == 3249) || 
-									(dwTargetVnum == 3259) || 
-									(dwTargetVnum == 3269) || 
-									((dwTargetVnum >= 5160) && (dwTargetVnum <= 5169)) || 
-									(dwTargetVnum == 5179) || 
-									(dwTargetVnum == 5189) || 
-									(dwTargetVnum == 5199) || 
-									(dwTargetVnum == 5209) || 
-									((dwTargetVnum >= 7300) && (dwTargetVnum <= 7309)) || 
-									(dwTargetVnum == 7319) || 
-									(dwTargetVnum == 7329) || 
-									(dwTargetVnum == 7339) || 
+									((dwTargetVnum >= 19290) && (dwTargetVnum <= 19312)) ||
+									((dwTargetVnum >= 19490) && (dwTargetVnum <= 19512)) ||
+									((dwTargetVnum >= 19690) && (dwTargetVnum <= 19712)) ||
+									((dwTargetVnum >= 19890) && (dwTargetVnum <= 19912)) ||
+									((dwTargetVnum >= 300) && (dwTargetVnum <= 319)) ||
+									(dwTargetVnum == 329) ||
+									(dwTargetVnum == 339) ||
+									(dwTargetVnum == 349) ||
+									(dwTargetVnum == 359) ||
+									(dwTargetVnum == 369) ||
+									(dwTargetVnum == 379) ||
+									(dwTargetVnum == 389) ||
+									(dwTargetVnum == 399) ||
+									((dwTargetVnum >= 1180) && (dwTargetVnum <= 1189)) ||
+									(dwTargetVnum == 1199) ||
+									(dwTargetVnum == 1209) ||
+									(dwTargetVnum == 1219) ||
+									(dwTargetVnum == 1229) ||
+									((dwTargetVnum >= 2200) && (dwTargetVnum <= 2209)) ||
+									(dwTargetVnum == 2219) ||
+									(dwTargetVnum == 2229) ||
+									(dwTargetVnum == 2239) ||
+									(dwTargetVnum == 2249) ||
+									((dwTargetVnum >= 3220) && (dwTargetVnum <= 3229)) ||
+									(dwTargetVnum == 3239) ||
+									(dwTargetVnum == 3249) ||
+									(dwTargetVnum == 3259) ||
+									(dwTargetVnum == 3269) ||
+									((dwTargetVnum >= 5160) && (dwTargetVnum <= 5169)) ||
+									(dwTargetVnum == 5179) ||
+									(dwTargetVnum == 5189) ||
+									(dwTargetVnum == 5199) ||
+									(dwTargetVnum == 5209) ||
+									((dwTargetVnum >= 7300) && (dwTargetVnum <= 7309)) ||
+									(dwTargetVnum == 7319) ||
+									(dwTargetVnum == 7329) ||
+									(dwTargetVnum == 7339) ||
 									(dwTargetVnum == 7349) ||
 									((dwTargetVnum >= 8500) && (dwTargetVnum <= 8569)) ||
 									((dwTargetVnum >= 8640) && (dwTargetVnum <= 8739))
 									)? true : false;
 #endif
-				
+
 				if (bZodiacItem) {
 					if (pkOwner->CountSpecifyItem(86060) >= SWITCHBOT_PRICE_AMOUNT) {
 						stop = false;
@@ -556,7 +556,7 @@ void CSwitchbot::SwitchItems()
 									{
 										stop = false;
 									}
-									
+
 									LPITEM tpkItem = pkOwner->FindSpecifyItem(itemVnum, true);
 									if (tpkItem && !stop)
 									{
@@ -604,7 +604,7 @@ void CSwitchbot::SwitchItems()
 							}
 						}
 						//CHECK_LIMITED_ITEM END
-						
+
 						if (pkOwner->CountSpecifyItem(itemVnum) >= SWITCHBOT_PRICE_AMOUNT)
 						{
 							stop = false;
@@ -716,7 +716,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 				//kiras
 				static std::map<uint32_t, time_t> lastNoticedTime;
 				const time_t now = time(nullptr);
-				
+
 				if (curAttr.bType == APPLY_NORMAL_HIT_DAMAGE_BONUS && curAttr.sValue > BONUSZ)
 				{
 					uint32_t itemID = ItemSystem::GetItemID(item); // vagy más egyedi azonosító
@@ -734,7 +734,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 					}
 				}
 
-				
+
 				++correctAttrCount;
 				break;
 			}
@@ -808,7 +808,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 			return true;
 		}
 	}
-	
+
 
 	if (!checked)
 	{
@@ -1138,7 +1138,7 @@ void CSwitchbotManager::EnterGame(LPCHARACTER ch)
 	SendItemAttributeInformations(ch);
 	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), false);
 	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
-	
+
 	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
 	{

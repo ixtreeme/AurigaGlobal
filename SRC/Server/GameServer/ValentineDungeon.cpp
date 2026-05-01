@@ -219,7 +219,7 @@ namespace
             if (until > now && ok)
             {
                 ok = false;
-                name = ch->GetName();
+                name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
                 remain = until - now;
             }
         }
@@ -241,7 +241,7 @@ namespace
             if (ch->CountSpecifyItem(vnum) < 1 && ok)
             {
                 ok = false;
-                name = ch->GetName();
+                name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
             }
         }
     };
@@ -832,7 +832,7 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
             if ((kMinLevel > 0 && m->GetLevel() < kMinLevel) || (kMaxLevel > 0 && m->GetLevel() > kMaxLevel))
             {
                 ok = false;
-                badName = m->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badLevel = m->GetLevel();
                 return;
             }

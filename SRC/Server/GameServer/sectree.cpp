@@ -52,7 +52,7 @@ void SECTREE::Destroy()
 			{
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
-				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ((ch)->GetName()), (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) ? 1 : 0);
+				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) ? 1 : 0);
 
 				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));

@@ -162,7 +162,7 @@ CWarMap::~CWarMap()
 
 		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 		{
-			LOG_INFO("WarMap::~WarMap : disconnecting {}", ch->GetName());
+			LOG_INFO("WarMap::~WarMap : disconnecting {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
 		}
 	}
@@ -626,7 +626,7 @@ void CWarMap::Notice(uint8_t type, uint32_t idx, const char * format, ...)
 	va_start(args, format);
 	vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 	va_end(args);
-	
+
 	FNotice f(type, idx, chatbuf);
 	std::for_each(m_set_pkChr.begin(), m_set_pkChr.end(), f);
 }
@@ -999,7 +999,7 @@ bool CWarMapManager::LoadWarMapInfo(const char * c_pszFileName)
 
 	k->lMapIndex = 110;//Razor93
 	k->posStart[0].x = 48 * 733 + 0;//368 00---------------35193 22380
-	k->posStart[0].y = 52 * 430 + 0;//5200-----------36800x5200 1.pozicio 
+	k->posStart[0].y = 52 * 430 + 0;//5200-----------36800x5200 1.pozicio
 	k->posStart[1].x = 183 * 288 + 0;//503 00------52818 5071
 	k->posStart[1].y = 206 * 25 + 0;//206 00----------50300x20600 2. pozicio
 	k->posStart[2].x = 141 * 100 + 32000;//461 00-----

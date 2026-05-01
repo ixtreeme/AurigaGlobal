@@ -58,7 +58,7 @@ struct SCubeMaterialInfo
 	uint32_t 				allowCopy;
 #endif
 
-	std::string			infoText;		
+	std::string			infoText;
 	bool				bHaveComplicateMaterial;		//
 };
 
@@ -287,7 +287,7 @@ SItemNameAndLevel SplitItemNameAndLevelFromName(std::string_view name)
 	info.name.assign(name.data(), name.size());
 
 	size_t pos = name.find("+");
-	
+
 	if (std::string_view::npos != pos)
 	{
 		const std::string levelStr(name.substr(pos + 1, name.size() - pos - 1));
@@ -324,7 +324,7 @@ bool Cube_InformationInitialize()
 		}
 		const uint16_t& npcVNUM = cubeData->npc_vnum.front();
 		// bool bComplicate = false;
-		
+
 		TCubeMapByNPC& cubeMap = cube_info_map;
 		TCubeResultList& resultList = cubeMap[npcVNUM];
 		SCubeMaterialInfo materialInfo;
@@ -353,7 +353,7 @@ void Cube_open (LPCHARACTER ch)
 	LPCHARACTER	npc;
 	npc = ch->GetQuestNPC();
 
-	
+
 
 	if (nullptr ==npc)
 	{
@@ -396,7 +396,7 @@ void Cube_open (LPCHARACTER ch)
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{
-		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ch->GetName(), distance);
+		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance);
 		return;
 	}
 
@@ -489,11 +489,11 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 			}
 
 			if (material_check){
-				
+
 				int percent_number;
 				int total_items_give = 0;
 
-				
+
 				int porcent_item_improve = 0;
 
 				if (index_item_improve != -1)
@@ -548,7 +548,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 							copyAttr[a][0] = pItem->GetAttributeType(a);
 							copyAttr[a][1] = pItem->GetAttributeValue(a);
 						}
-							
+
 						for (int a = 0; a < ITEM_SOCKET_MAX_NUM; a++)
 						{
 							copySocket[a] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), a);
@@ -589,10 +589,10 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 				if (materialInfo.gold != 0){
 					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -materialInfo.gold*count_item, false);
-						
+
 				}
 #ifdef ENABLE_GAYA_SYSTEM
-				if (materialInfo.gaya != 0) 
+				if (materialInfo.gaya != 0)
 				{
 					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, -static_cast<int64_t>(materialInfo.gaya*count_item), false);
 				}
@@ -604,7 +604,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #endif
 					return;
 				}
-				
+
 				int totalCount = materialInfo.reward.count * total_items_give;
 				pItem = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum, totalCount);
 #ifdef ENABLE_BATTLE_PASS
@@ -618,7 +618,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 							ch->UpdateMissionProgress(CRAFT_ITEM, bBattlePassId, totalCount, dwCount);
 					}
 				}
-#endif				
+#endif
 				//toshow ChatPacket success item
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 818, "");
@@ -678,9 +678,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 					iEmptyPos = ch->GetEmptyExtraInventory(pItem);
 					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-						int 
+						int
 #else
-						uint8_t 
+						uint8_t
 #endif
 						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 						for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
@@ -698,9 +698,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 									continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-								int 
+								int
 #else
-								uint8_t 
+								uint8_t
 #endif
 								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 								bCount -= bCount2;
@@ -733,9 +733,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 					iEmptyPos = ch->GetEmptyInventory(pItem->GetSize());
 					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
-						int 
+						int
 #else
-						uint8_t 
+						uint8_t
 #endif
 						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 						for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
@@ -753,9 +753,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 									continue;
 
 #ifdef ENABLE_NEW_STACK_LIMIT
-								int 
+								int
 #else
-								uint8_t 
+								uint8_t
 #endif
 								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
 								bCount -= bCount2;
@@ -798,7 +798,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcVNUM)
 {
-	
+
 	TPacketGCCubeRenewalReceive pack;
 	pack.subheader = subheader;
 
@@ -846,14 +846,14 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
 			pack.date_cube_renewal.allowCopy = materialInfo.allowCopy;
 #endif
-			
+
 			memcpy (pack.date_cube_renewal.category, 	materialInfo.category.c_str(), 		sizeof(pack.date_cube_renewal.category));
 
 			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
 
 			if (nullptr == d)
 			{
-				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ch->GetName());
+				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 				return ;
 			}
 
@@ -866,7 +866,7 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 		if (nullptr == d)
 		{
-			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ch->GetName());
+			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 			return ;
 		}
 

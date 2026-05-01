@@ -161,7 +161,7 @@ void LogManager::HackLog(const char * c_pszHackName, LPCHARACTER ch)
 {
 	if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 	{
-		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, ((ch)->GetName()), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
+		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
 	}
 }
 

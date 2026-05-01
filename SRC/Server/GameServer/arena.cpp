@@ -279,7 +279,7 @@ EVENTFUNC(ready_to_start_event)
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 349, "%d", count);
 #endif
 				}
-				
+
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 222, "");
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 222, "");
@@ -622,10 +622,10 @@ int CArenaMap::GetDuelList(lua_State* L, int index)
 			{
 				lua_newtable(L);
 
-				lua_pushstring(L, chA->GetName());
+				lua_pushstring(L, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chA)).data());
 				lua_rawseti(L, -2, 1);
 
-				lua_pushstring(L, chB->GetName());
+				lua_pushstring(L, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chB)).data());
 				lua_rawseti(L, -2, 2);
 
 				lua_pushnumber(L, m_dwMapIndex);
@@ -758,24 +758,24 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfA >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharA->GetName());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharA->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
 #endif
-				LOG_INFO("ARENA: Duel is end. Winner {}({}) Loser {}({})", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				LOG_INFO("ARENA: Duel is end. Winner {}({}) Loser {}({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
 			}
 			else
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", pCharA->GetName());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", pCharA->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
 #endif
-				LOG_INFO("ARENA: {}({}) won a round vs {}({})", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				LOG_INFO("ARENA: {}({}) won a round vs {}({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
 			}
 		}
 		else if (m_dwPIDB == dwPIDA)
@@ -784,9 +784,9 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfB >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", pCharB->GetName());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", pCharB->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
 #endif
 				LOG_INFO("ARENA: Duel is end. Winner({}) Loser({})", GetPlayerBPID(), GetPlayerAPID());
 			}
@@ -794,12 +794,12 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", pCharB->GetName());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", pCharB->GetName());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", pCharA->GetName(), GetPlayerAPID(), pCharB->GetName(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharA)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pCharB)).data(), GetPlayerBPID());
 #endif
 				LOG_INFO("ARENA : PID({}) won a round. Opp({})", GetPlayerBPID(), GetPlayerAPID());
 			}
@@ -828,7 +828,7 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 		if (pCharB != nullptr) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 223, "");
 		}
-		
+
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 223, "");
 #endif
 		if (m_pEvent != nullptr) {
@@ -848,11 +848,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 		if (pCharA != nullptr) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharA), CHAT_TYPE_INFO, 221, "");
 		}
-		
+
 		if (pCharB != nullptr) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pCharB), CHAT_TYPE_INFO, 221, "");
 		}
-		
+
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 221, "");
 #endif
 		if (m_pEvent != nullptr) {
