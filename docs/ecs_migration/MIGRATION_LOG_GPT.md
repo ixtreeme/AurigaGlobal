@@ -8509,6 +8509,87 @@ Commit status:
 - Working tree clean after completion.
 - WinTest not run in this environment.
 
+## Phase 15E-58b - Type Predicate ECS Migration
+
+Mode:
+- CHARACTER type predicates migrated to entity-first `ecs::PlayerRuntime` API.
+- Predicate return types stay `bool`.
+- No `LPCHARACTER` overloads were introduced.
+- `ItemSystem_LegacyBridge.cpp` internals were intentionally left untouched.
+
+Completed API:
+- `ecs::PlayerRuntime::IsPC(entt::entity)`
+- `ecs::PlayerRuntime::IsNPC(entt::entity)`
+- `ecs::PlayerRuntime::IsStone(entt::entity)`
+- `ecs::PlayerRuntime::IsMonster(entt::entity)`
+
+Initial implementation:
+- Added tag-based checks using:
+  - `ecs::TagPC`
+  - `ecs::TagNPC`
+  - `ecs::TagStone`
+  - `ecs::TagMonster`
+- The first implementation returned `registry.all_of<TagX>(e)` directly for valid entities.
+- Legacy fallback was only used when the entity was invalid/null.
+
+Migration commits:
+- `22b89c6 Phase 15E-58b.1: Add PlayerRuntime type predicate API`
+- `1b9b085 Phase 15E-58b.2a: Migrate IsNPC`
+- `a11d115 Phase 15E-58b.2b: Migrate IsStone`
+- `55d5d6c Phase 15E-58b.2c: Migrate IsPC`
+- `3d21e51 Phase 15E-58b: COMPLETE - Type predicates on ECS`
+
+Final post-migration residuals before hotfix:
+```text
+IsPC:    5 textual hits
+IsNPC:   2 textual hits
+IsStone: 3 textual hits
+```
+
+Residual classification:
+- `PlayerRuntimeSystem.cpp` bridge/internal CHARACTER-owned code.
+- `ItemSystem_LegacyBridge.cpp` intentional legacy bridge internals.
+
+Build results:
+- Build passed after each substep.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Regression found in WinTest:
+- Symptom: damage did not work with either melee or skills.
+- Scope: combat damage path, including normal attacks and skill damage.
+- Operator confirmed this was the active problem after 15E-58b.
+
+Root cause:
+- The first tag-based predicate implementation treated valid entity + missing tag as definitive `false`.
+- Some legacy character entities do not yet have `TagPC` / `TagNPC` / `TagStone` / `TagMonster` populated consistently at all combat/skill call sites.
+- Combat and skill gates then misclassified attackers/victims and blocked damage paths.
+
+Hotfix:
+- Commit: `2462263 Phase 15E-58b Hotfix: Fall back for missing predicate tags`
+- Predicate behavior changed to:
+  - return `true` immediately if the ECS tag exists,
+  - otherwise fall back to `LegacyCharOf(e)->IsXxx()`.
+- Tag presence remains the fast ECS path.
+- Tag absence is no longer interpreted as false during the transitional phase.
+
+Hotfix build:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Hotfix WinTest:
+- Operator confirmed melee damage works again.
+- Operator confirmed skill damage works again.
+- The tag-missing fallback was confirmed as the correct fix.
+
+Follow-up:
+- Before removing legacy predicate fallback, audit entity creation/tag population for all character classes.
+- Required future check: all PC/NPC/monster/stone entities must always receive the correct tag before any combat, skill, AI, drop, quest, or network logic can query them.
+- Until that audit is complete, `PlayerRuntime::IsXxx` must keep the legacy fallback.
+
 ## Phase 17a Batch 3 - string_view migration
 
 Mode:
