@@ -108,7 +108,7 @@ struct FFindStone
 		{
 			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
 
-			if (pChar->IsStone() == true)
+			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar)) == true)
 			{
 				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
 			}

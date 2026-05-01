@@ -134,14 +134,14 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 	if (!ch || !m_pkChrTarget)
 		return;
 
-	// if (m_pkChrTarget && (m_pkChrTarget->IsMonster() || m_pkChrTarget->IsStone()))
+	// if (m_pkChrTarget && (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(m_pkChrTarget))))
 	// {
 		// if (thecore_heart->pulse - (int) ch->GetLastTargetInfoPulse() < passes_per_sec * 3)
 			// return;
 
 		// ch->SetLastTargetInfoPulse(thecore_heart->pulse);
 
-	if (ITEM_MANAGER::instance().CreateDropItemVector(m_pkChrTarget, ch, s_vec_item) && (m_pkChrTarget->IsMonster() || m_pkChrTarget->IsStone()))
+	if (ITEM_MANAGER::instance().CreateDropItemVector(m_pkChrTarget, ch, s_vec_item) && (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(m_pkChrTarget))))
 	{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  instance().CreateDropItemVector(");//INGAME_DEBUG_RAZOR93

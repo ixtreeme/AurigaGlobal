@@ -181,7 +181,7 @@ namespace
             if (!ch)
                 return;
 
-            if (!(ch->IsMonster() || ch->IsStone()))
+            if (!(ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
                 return;
 
             if (ch->GetRaceNum() == vnum)
@@ -679,7 +679,7 @@ void CValentineDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer->IsPC())
         return;
 
-    if (!(victim->IsMonster() || victim->IsStone()))
+    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
         return;
 
     const int32_t idx = victim->GetMapIndex();

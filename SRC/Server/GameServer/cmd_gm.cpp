@@ -4087,7 +4087,7 @@ struct FMobCounter
 		{
 			LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
 
-			if (pChar->IsMonster() == true || pChar->IsStone())
+			if (pChar->IsMonster() == true || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar)))
 			{
 				nCount++;
 			}

@@ -1592,7 +1592,7 @@ struct FPurgeStones
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
-			if ( lpChar->IsStone() == true )
+			if ( ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(lpChar)) == true )
 			{
 				M2_DESTROY_CHARACTER(lpChar);
 			}
@@ -1732,7 +1732,7 @@ struct FCountSpecifiedMonster
 		if (true == ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
-			if (true == pChar->IsStone())
+			if (true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar)))
 			{
 				if (pChar->GetMobTable().dwVnum == SpecifiedVnum)
 					cnt++;
@@ -1754,6 +1754,5 @@ size_t SECTREE_MANAGER::GetMonsterCountInMap(int32_t lMapIndex, uint32_t dwVnum)
 
 	return 0;
 }
-
 
 

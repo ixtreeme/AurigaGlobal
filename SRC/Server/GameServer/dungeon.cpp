@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "dungeon.h"
 #include "char_interface.hpp"
@@ -596,7 +597,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ch->IsPC() && (ch->IsMonster() || ch->IsStone()))
+				if (!ch->IsPC() && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
 				{
 					ch->Dead();
 				}
@@ -612,7 +613,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ch->IsPC() && (ch->IsMonster() || ch->IsStone()))
+				if (!ch->IsPC() && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
 				{
 					int32_t racevnum = ch->GetRaceNum();
 					if (racevnum != 3963 && racevnum != 3964)

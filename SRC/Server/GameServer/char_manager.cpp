@@ -646,7 +646,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	// on startup is deferred until the login path is stable again.
 	if (ch)
 	{
-		if (ch->IsStone())
+		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
 		}
@@ -754,7 +754,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	ch->SetProto(pkMob);
 #ifdef ENABLE_EVENT_MANAGER
-	if (g_bDungeonTicketExtraMetinSpawn && ch->IsStone())
+	if (g_bDungeonTicketExtraMetinSpawn && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		ch->SetDungeonTicketExtraMetin(true);
 #endif
 
@@ -778,7 +778,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	}
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT: minden metin kapjon +value1 extra metint (dungeon mapok kivve)
-	if (!g_bDungeonTicketExtraMetinSpawn && ch && ch->IsStone() && !ch->IsDungeonTicketExtraMetin())
+	if (!g_bDungeonTicketExtraMetinSpawn && ch && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) && !ch->IsDungeonTicketExtraMetin())
 	{
 		const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
 		if (ev)
@@ -818,7 +818,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	// on startup is deferred until the login path is stable again.
 	if (ch)
 	{
-		if (ch->IsStone())
+		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
 			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ch->GetMapIndex(), ch->GetLegacyVID());
 		}
@@ -836,7 +836,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	if (bShow && ch)
 	{
 		const bool isNpcLike = (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO);
-		if (ch->IsStone() || isNpcLike)
+		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) || isNpcLike)
 		{
 		}
 	}
@@ -1091,7 +1091,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		for (LPCHARACTER ch : all)
 		{
 			if (!ch) continue;
-			if (ch->IsStone() && ch->IsDungeonTicketExtraMetin())
+			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) && ch->IsDungeonTicketExtraMetin())
 				DestroyCharacter(ch);
 		}
 
@@ -1108,7 +1108,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			for (LPCHARACTER ch : all)
 			{
 				if (!ch) continue;
-				if (!ch->IsStone()) continue;
+				if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))) continue;
 				if (ch->IsDungeonTicketExtraMetin()) continue;
 
 				const int32_t mapIndex = ch->GetMapIndex();
@@ -1637,7 +1637,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 	const TEventManagerData* eventPtr = nullptr;
 	LPITEM rewardItem = nullptr;
 
-	if (pkChr->IsStone())
+	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
 		eventPtr = CheckEventIsActive(DOUBLE_METIN_LOOT_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
@@ -1835,7 +1835,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		 
 		const uint32_t dwBossVnum = eventPtr->value[0];  
 
-		if (dwBossVnum && pkChr && pkChr->IsStone() && pkKiller && pkKiller->IsPC())
+		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && pkKiller->IsPC())
 		{
 			const int32_t mapIndex = pkChr->GetMapIndex();
 			const int32_t baseX = pkChr->GetX();
@@ -1877,7 +1877,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			const uint32_t dwBossVnum = eventPtr->value[0];
 
-			if (dwBossVnum && pkChr && pkChr->IsStone() && pkKiller && pkKiller->IsPC())
+			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && pkKiller->IsPC())
 			{
 				const int32_t mapIndex = pkChr->GetMapIndex();
 				const int32_t baseX = pkChr->GetX();
@@ -1991,7 +1991,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 				vec_item.emplace_back(item);
 		}
 	}
-	if (pkChr->IsStone())
+	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
 		eventPtr = CheckEventIsActive(DUPLA_SZILI_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))

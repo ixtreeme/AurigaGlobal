@@ -476,7 +476,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!killer->IsPC())
         return;
     // 8009 is often CHAR_TYPE_STONE, not monster.
-    if (!(victim->IsMonster() || victim->IsStone()))
+    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
         return;
 
     const int32_t idx = victim->GetMapIndex();

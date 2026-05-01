@@ -6244,12 +6244,12 @@ public:
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 		case SKILL_SANGONG:
 		{
-			if (pkVictim->IsStone() || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum())
+			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum())
 			{
 				int iDam = CalcMeleeDamage(m_me, pkVictim);
 
 				if (m_me->GetJob() == JOB_ASSASSIN &&
-					(pkVictim->IsStone() || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum() == 136))
+					(ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum() == 136))
 				{
 					int multiplier = 36; // alap multiplier
 
@@ -6666,7 +6666,7 @@ static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCh
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 {
-	if (!ch || !ch->IsStone() || ch->GetMaxHP() <= 0)
+	if (!ch || !ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) || ch->GetMaxHP() <= 0)
 		return;
 
 	const int iPercent = (ch->GetHP() * 100) / ch->GetMaxHP();
@@ -7413,7 +7413,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 				}
 			}
 		}
-		else if (m_pkChrTarget->IsMonster() || m_pkChrTarget->IsStone()) {
+		else if (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(m_pkChrTarget))) {
 			if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ELEC)) {
 				p.bElement = 1;
 			}

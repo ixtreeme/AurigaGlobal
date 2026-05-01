@@ -1558,9 +1558,9 @@ namespace quest
 				if (pChar == ExceptChar)
 					return;
 #ifdef __NEWPET_SYSTEM__
-				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == pChar->IsStone()))
+				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
 #else				
-				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == pChar->IsStone()))
+				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
 #endif
 				{
 					if (x1 <= ((pChar)->GetX()) && ((pChar)->GetX()) <= x2 && y1 <= ((pChar)->GetY()) && ((pChar)->GetY()) <= y2)

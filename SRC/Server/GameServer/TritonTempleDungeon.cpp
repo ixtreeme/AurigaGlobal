@@ -474,7 +474,7 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         return;
 
     // 8054 may be STONE on some cores
-    if (!(victim->IsMonster() || victim->IsStone()))
+    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
         return;
 
     const int32_t idx = victim->GetMapIndex();

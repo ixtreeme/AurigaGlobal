@@ -969,7 +969,7 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	int iLevel = pkKiller->GetLevel();
 	iDeltaPercent = 100;
 
-	if (!pkChr->IsStone() && pkChr->GetMobRank() >= MOB_RANK_BOSS)
+	if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkChr->GetMobRank() >= MOB_RANK_BOSS)
 		iDeltaPercent = PERCENT_LVDELTA_BOSS(pkKiller->GetLevel(), pkChr->GetLevel());
 	else
 		iDeltaPercent = PERCENT_LVDELTA(pkKiller->GetLevel(), pkChr->GetLevel());
@@ -1038,7 +1038,7 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (pkChr && pkChr->IsStone())
+	if (pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
 		if (!IsRegisteredDropMob(pkChr->GetRaceNum()))
 		{
@@ -1059,7 +1059,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (!pkChr->IsStone() && it != g_vec_pkCommonDropItem[bRank].end())
+	while (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1094,7 +1094,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
 
-		if (!pkChr->IsStone() && it != m_map_pkDropItemGroup.end())
+		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
 		{
 			auto v = it->second->GetVector();
 
@@ -1145,7 +1145,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
-			if (!pkChr->IsStone() && it->second->GetLevelLimit() <= (uint32_t)iLevel)
+			if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
 				auto v = it->second->GetVector();
 
@@ -1161,7 +1161,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	// BuyerTheitGloves Item Group
 	{
-		if (!pkChr->IsStone() && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
@@ -1195,7 +1195,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		}
 	}
 
-	if (pkChr->IsStone())
+	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
 		if (pkChr->GetDropMetinStoneVnum())
 		{
@@ -1246,7 +1246,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	// Common Drop Items
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (!pkChr->IsStone() && it != g_vec_pkCommonDropItem[bRank].end())
+	while (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1291,7 +1291,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		}
 		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
 
-		if (!pkChr->IsStone() && it != m_map_pkDropItemGroup.end())
+		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
 		{
 			auto v = it->second->GetVector();
 
@@ -1356,7 +1356,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
-			if (!pkChr->IsStone() && it->second->GetLevelLimit() <= (uint32_t)iLevel)
+			if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
 				auto v = it->second->GetVector();
 
@@ -1374,7 +1374,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	{
-		if (!pkChr->IsStone() && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (pkKiller->GetPoint(APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
@@ -1418,7 +1418,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		}
 	}
 
-	if (pkChr->IsStone())
+	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
 		if (pkChr->GetDropMetinStoneVnum())
 		{
