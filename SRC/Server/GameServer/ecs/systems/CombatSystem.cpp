@@ -161,6 +161,8 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 {
     ecs::Invariants::ValidateCharacterTags(g_registry, attacker, "combat.attack.attacker");
     ecs::Invariants::ValidateCharacterTags(g_registry, victim, "combat.attack.victim");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, attacker, "combat.attack.attacker");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, victim, "combat.attack.victim");
 
     if (auto* ch = LegacyCharOf(attacker)) {
         return ch->Attack(LegacyCharOf(victim), attackType);

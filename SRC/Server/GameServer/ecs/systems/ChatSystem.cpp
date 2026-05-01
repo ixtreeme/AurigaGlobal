@@ -1,8 +1,10 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
+#include "../EntityInvariants.hpp"
 
 #include "ChatSystem.hpp"
+#include "../Registry.hpp"
 
 #include "../../buffer_manager.h"
 #include "../../char.h"
@@ -46,6 +48,8 @@ void ChatSystem::Send(entt::entity e, uint8_t type, const char* format, ...)
 
 void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list args)
 {
+    ecs::Invariants::ValidateCommonIdentity(g_registry, e, "chat.send");
+
     auto* ch = LegacyCharOf(e);
     if (!ch || !format) {
         return;
@@ -92,6 +96,8 @@ void ChatSystem::SendNew(entt::entity e, uint8_t type, uint32_t idx, const char*
 
 void ChatSystem::SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char* format, va_list args)
 {
+    ecs::Invariants::ValidateCommonIdentity(g_registry, e, "chat.send_new");
+
     auto* ch = LegacyCharOf(e);
     if (!ch || !format) {
         return;
@@ -148,6 +154,8 @@ void ChatSystem::Broadcast(entt::entity source, uint8_t type, const char* format
 
 void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* format, va_list args)
 {
+    ecs::Invariants::ValidateCommonIdentity(g_registry, source, "chat.broadcast");
+
     auto* ch = LegacyCharOf(source);
     if (!ch || !format) {
         return;

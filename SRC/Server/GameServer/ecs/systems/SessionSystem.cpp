@@ -816,7 +816,11 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
 
 bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion/* = false */)
 {
-    ecs::Invariants::ValidateCharacterTags(g_registry, GetEntityHandle(), "show.enter");
+    const entt::entity self = GetEntityHandle();
+    ecs::Invariants::ValidateCharacterTags(g_registry, self, "show.enter");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, self, "show.enter");
+    if (self != entt::null && g_registry.valid(self) && g_registry.all_of<ecs::TagPC>(self))
+        ecs::Invariants::ValidatePCIdentity(g_registry, self, "show.enter");
 
     if (IsPC())
     {
@@ -905,7 +909,10 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
     SetXYZ(x, y, z);
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), lMapIndex, x, y, z);
-    ecs::Invariants::ValidateCharacterTags(g_registry, GetEntityHandle(), "show.after_position_sync");
+    ecs::Invariants::ValidateCharacterTags(g_registry, self, "show.after_position_sync");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, self, "show.after_position_sync");
+    if (self != entt::null && g_registry.valid(self) && g_registry.all_of<ecs::TagPC>(self))
+        ecs::Invariants::ValidatePCIdentity(g_registry, self, "show.after_position_sync");
 
     m_posDest.x = x;
     m_posDest.y = y;
