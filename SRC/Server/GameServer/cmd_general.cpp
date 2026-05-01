@@ -45,6 +45,7 @@
 #include <common/VnumHelper.h>
 #include "shop.h"
 #include "shop_manager.h"
+#include <string_view>
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #endif
@@ -2685,7 +2686,7 @@ ACMD(do_attr_transfer)
 		return;
 	}
 	
-	const std::string& strArg1 = std::string(arg1);
+	std::string_view strArg1(arg1);
 	if (strArg1 == "open")
 	{
 		AttrTransfer_open(ch);
@@ -2821,7 +2822,7 @@ ACMD(do_CubePetAdd) {
 
 	if (0 == arg1[0])
 		return;
-	const std::string& strArg1 = std::string(arg1);
+	std::string_view strArg1(arg1);
 	switch (LOWER(arg1[0]))
 	{
 	case 'a':	// add cue_index inven_index
@@ -3258,7 +3259,7 @@ ACMD(do_cube)
 		return;
 	}
 
-	const std::string& strArg1 = std::string(arg1);
+	std::string_view strArg1(arg1);
 
 	// r_info (request information)
 	// /cube r_info     ==> (Client -> Server)  NPC   ִ  û
@@ -3668,7 +3669,7 @@ ACMD(do_gaya_system)
 	if (0 == arg1[0])
 		return;
 
-	const std::string& strArg1 = std::string(arg1);
+	std::string_view strArg1(arg1);
 	if (strArg1 == "craft")
 	{
 		if (0 == arg2[0])
