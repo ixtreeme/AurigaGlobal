@@ -195,11 +195,7 @@ bool IsStone(entt::entity e)
 
 bool IsMonster(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e))
-		return true;
-
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->IsMonster() : false;
+	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e);
 }
 
 } // namespace ecs::PlayerRuntime
