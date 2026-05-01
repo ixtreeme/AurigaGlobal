@@ -1442,30 +1442,30 @@ ACMD(do_stat_minus)
 
 	if (!strcmp(arg1, "st"))
 	{
-		if (ch->GetRealPoint(POINT_ST) <= JobInitialPoints[ch->GetJob()].st)
+		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) <= JobInitialPoints[ch->GetJob()].st)
 			return;
 
-		ch->SetRealPoint(POINT_ST, ch->GetRealPoint(POINT_ST) - 1);
+		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) - 1);
 		ch->SetPoint(POINT_ST, ch->GetPoint(POINT_ST) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
 	}
 	else if (!strcmp(arg1, "dx"))
 	{
-		if (ch->GetRealPoint(POINT_DX) <= JobInitialPoints[ch->GetJob()].dx)
+		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) <= JobInitialPoints[ch->GetJob()].dx)
 			return;
 
-		ch->SetRealPoint(POINT_DX, ch->GetRealPoint(POINT_DX) - 1);
+		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) - 1);
 		ch->SetPoint(POINT_DX, ch->GetPoint(POINT_DX) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
 	}
 	else if (!strcmp(arg1, "ht"))
 	{
-		if (ch->GetRealPoint(POINT_HT) <= JobInitialPoints[ch->GetJob()].ht)
+		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) <= JobInitialPoints[ch->GetJob()].ht)
 			return;
 
-		ch->SetRealPoint(POINT_HT, ch->GetRealPoint(POINT_HT) - 1);
+		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) - 1);
 		ch->SetPoint(POINT_HT, ch->GetPoint(POINT_HT) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
@@ -1473,10 +1473,10 @@ ACMD(do_stat_minus)
 	}
 	else if (!strcmp(arg1, "iq"))
 	{
-		if (ch->GetRealPoint(POINT_IQ) <= JobInitialPoints[ch->GetJob()].iq)
+		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) <= JobInitialPoints[ch->GetJob()].iq)
 			return;
 
-		ch->SetRealPoint(POINT_IQ, ch->GetRealPoint(POINT_IQ) - 1);
+		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) - 1);
 		ch->SetPoint(POINT_IQ, ch->GetPoint(POINT_IQ) - 1);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
@@ -1522,10 +1522,10 @@ ACMD(do_stat)
 	else
 		return;
 
-	if (ch->GetRealPoint(idx) >= MAX_STAT)
+	if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) >= MAX_STAT)
 		return;
 
-	ch->SetRealPoint(idx, ch->GetRealPoint(idx) + 1);
+	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + 1);
 	ch->SetPoint(idx, ch->GetPoint(idx) + 1);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
@@ -1782,7 +1782,7 @@ ACMD(do_pvp_advanced)
 
 	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
 	int m_Level = pkVictim->GetLevel();
-	int m_PlayTime = pkVictim->GetRealPoint(POINT_PLAYTIME);
+	int m_PlayTime = ecs::PointSystem::GetReal(AIHelpers::EcsOf(pkVictim), POINT_PLAYTIME);
 	int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim));
 	int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim));
 

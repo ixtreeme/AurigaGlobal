@@ -2486,7 +2486,7 @@ ACMD(do_set_skill_point)
 		str_to_number(skill_point, arg1);
 
 	ch->SetRealPoint(POINT_SKILL, skill_point);
-	ch->SetPoint(POINT_SKILL, ch->GetRealPoint(POINT_SKILL));
+	ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_SKILL));
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, 0);
 }
 
@@ -3968,7 +3968,7 @@ ACMD(do_stat_plus_amount)
 
 	if (nPoint != 0)
 	{
-		ch->SetRealPoint(subcmd, ch->GetRealPoint(subcmd) + nPoint);
+		ch->SetRealPoint(subcmd, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), subcmd) + nPoint);
 		ch->SetPoint(subcmd, ch->GetPoint(subcmd) + nPoint);
 		ch->ComputePoints();
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), subcmd, 0);
@@ -4177,7 +4177,7 @@ ACMD(do_set_stat)
 			return;
 		}
 		int nRemainPoint = tch->GetPoint(POINT_STAT);
-		int nCurPoint = tch->GetRealPoint(subcmd);
+		int nCurPoint = ecs::PointSystem::GetReal(AIHelpers::EcsOf(tch), subcmd);
 		int nChangeAmount = 0;
 		str_to_number(nChangeAmount, szChangeAmount);
 		int nPoint = nCurPoint + nChangeAmount;

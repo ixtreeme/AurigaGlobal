@@ -683,7 +683,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));
 		int m_Level = ((pkChr)->GetLevel());
-		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
+		int m_PlayTime = ecs::PointSystem::GetReal(AIHelpers::EcsOf(pkChr), POINT_PLAYTIME);
 		int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkChr));
 		int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChr));
 		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), BLOCK_EQUIPMENT_);

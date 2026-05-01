@@ -176,11 +176,11 @@ ACMD(do_stat2)
 	else
 		return;
 
-	if (ch->GetRealPoint(idx) >= MAX_STATUS_ALTERNATIVE)
+	if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) >= MAX_STATUS_ALTERNATIVE)
 		return;
 
-	limit = ch->GetRealPoint(idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ch->GetRealPoint(idx) : limit;
-	ch->SetRealPoint(idx, ch->GetRealPoint(idx) + limit);
+	limit = ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) : limit;
+	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + limit);
 	ch->SetPoint(idx, ch->GetPoint(idx) + limit);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);

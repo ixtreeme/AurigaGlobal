@@ -997,7 +997,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealPoint(POINT_PLAYTIME) : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME) : 0);
 		return 1;
 	}
 
@@ -2610,7 +2610,7 @@ namespace quest
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         ch->SetRealPoint(POINT_SKILL, newPoint);
-        ch->SetPoint(POINT_SKILL, ch->GetRealPoint(POINT_SKILL));
+        ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_SKILL));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, 0);
         ch->ComputePoints();
         ch->PointsPacket();
@@ -3068,11 +3068,11 @@ teleport_area:
 					default : lua_pushboolean(L, false); return 1;
 				}
 
-				int64_t old_val = ch->GetRealPoint(point);
-				int64_t old_stat = ch->GetRealPoint(POINT_STAT);
+				int64_t old_val = ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), point);
+				int64_t old_stat = ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_STAT);
 
 				ch->SetRealPoint(point, 1);
-				ch->SetPoint(point, ch->GetRealPoint(point));
+				ch->SetPoint(point, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), point));
 
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, old_val-1);
 
@@ -3102,16 +3102,16 @@ teleport_area:
 				switch ( idx )
 				{
 					case 0 :
-						snprintf(buf, sizeof(buf), "reset ht(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ch->GetRealPoint(POINT_STAT));
+						snprintf(buf, sizeof(buf), "reset ht(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_STAT));
 						break;
 					case 1 :
-						snprintf(buf, sizeof(buf), "reset iq(%lld)->1 stat_point(%lldd)->(%lld)", old_val, old_stat, ch->GetRealPoint(POINT_STAT));
+						snprintf(buf, sizeof(buf), "reset iq(%lld)->1 stat_point(%lldd)->(%lld)", old_val, old_stat, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_STAT));
 						break;
 					case 2 :
-						snprintf(buf, sizeof(buf), "reset st(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ch->GetRealPoint(POINT_STAT));
+						snprintf(buf, sizeof(buf), "reset st(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_STAT));
 						break;
 					case 3 :
-						snprintf(buf, sizeof(buf), "reset dx(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ch->GetRealPoint(POINT_STAT));
+						snprintf(buf, sizeof(buf), "reset dx(%lld)->1 stat_point(%lld)->(%lld)", old_val, old_stat, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_STAT));
 						break;
 				}
 
@@ -3138,7 +3138,7 @@ teleport_area:
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealPoint(POINT_HT) : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) : 0);
 		return 1;
 	}
 
@@ -3154,7 +3154,7 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 1;
-        int64_t usedPoint = newPoint - ch->GetRealPoint(POINT_HT);
+        int64_t usedPoint = newPoint - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT);
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
             points->base.points[POINT_HT] = newPoint;
@@ -3181,7 +3181,7 @@ teleport_area:
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealPoint(POINT_IQ) : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) : 0);
 		return 1;
 	}
 
@@ -3197,7 +3197,7 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 1;
-        int64_t usedPoint = newPoint - ch->GetRealPoint(POINT_IQ);
+        int64_t usedPoint = newPoint - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ);
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
             points->base.points[POINT_IQ] = newPoint;
@@ -3224,7 +3224,7 @@ teleport_area:
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealPoint(POINT_ST) : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) : 0);
 		return 1;
 	}
 
@@ -3240,7 +3240,7 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 1;
-        int64_t usedPoint = newPoint - ch->GetRealPoint(POINT_ST);
+        int64_t usedPoint = newPoint - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST);
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
             points->base.points[POINT_ST] = newPoint;
@@ -3267,7 +3267,7 @@ teleport_area:
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealPoint(POINT_DX) : 0);
+		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) : 0);
 		return 1;
 	}
 
@@ -3283,7 +3283,7 @@ teleport_area:
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (!ch)
             return 1;
-        int64_t usedPoint = newPoint - ch->GetRealPoint(POINT_DX);
+        int64_t usedPoint = newPoint - ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX);
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
         {
             points->base.points[POINT_DX] = newPoint;

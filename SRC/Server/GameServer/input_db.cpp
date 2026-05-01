@@ -599,7 +599,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), ch->GetJob(), ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME));
 
 			if (0)
 				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName()));
