@@ -11005,3 +11005,50 @@ Validated scenario:
 Status:
 - Phase 15E-60 stat accessor layer is WinTest verified after hotfix.
 - Next planned phase: Phase 15E-61 misc accessors, unless additional stat regressions appear.
+
+
+## Phase 15E-60.6 Hotfix - Metin Stone Tag Hydration
+
+Symptom:
+- After Phase 15E-60.6 predicate fallback removal, metin stones could no longer be damaged.
+- This reproduced after removing the LegacyCharOf fallback from IsStone/IsMonster.
+
+Root cause:
+- CHARACTER_MANAGER::SpawnMob and SpawnMobRandomPosition used ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) before calling EntityFactory::CreateStone.
+- After 15E-60.6, IsStone became a pure ECS tag read.
+- The TagStone component is created by EntityFactory::CreateStone, so the spawn code was asking for TagStone before hydration had happened.
+- Result: stones were not hydrated as TagStone, and later pure ECS predicate checks treated them incorrectly.
+
+Fix:
+- Kept predicate accessors pure ECS; no LegacyCharOf fallback was restored.
+- Changed spawn-time hydration decisions to use the authoritative mob proto type:
+  - pkMob->m_table.bType == CHAR_TYPE_STONE -> EntityFactory::CreateStone
+  - pkMob->m_table.bType == CHAR_TYPE_MONSTER -> EntityFactory::CreateMonster
+- Also updated dungeon-ticket extra metin checks in the same spawn path to use proto type before ECS tag hydration.
+
+Commits:
+- 650d8d3 Phase 15E-60.6.1: Add ECS entity invariant validation helper
+- 8802a88 Phase 15E-60.6.2a: Remove fallback from IsPC
+- 613eae3 Phase 15E-60.6.2b: Remove fallback from IsNPC
+- 27414cb Phase 15E-60.6.2c: Remove fallback from IsStone
+- 9b5e3e9 Phase 15E-60.6.2d: Remove fallback from IsMonster
+- 9754324 Phase 15E-60.6.3: Add invariant validation at hot paths
+- 4e3420e Phase 15E-60.6: Update fallback audit after predicate removal
+- 33ebe57 Phase 15E-60.6 Hotfix: Hydrate metin stone tags from proto type
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after the hotfix.
+- Operator confirmed WinTest successful after the fix.
+
+Validated scenario:
+- Metin stone damage works again.
+- Fix preserves the architectural rule: ECS predicate read APIs do not call LegacyCharOf.
+- Missing tag bugs now surface via ECS_INVARIANT diagnostics instead of being hidden by fallback.
+
+Status:
+- Phase 15E-60.6 predicate fallback removal remains active.
+- Metin stone hydration regression is fixed without reintroducing fallback.
+- Next planned phase: Phase 15E-60.7 scalar identity fallback removal.
