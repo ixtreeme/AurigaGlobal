@@ -74,11 +74,44 @@ if (sv == "constant") { ... }
 if (sv == otherSv) { ... }
 ```
 
+String view literals:
+
+```cpp
+using namespace std::string_view_literals;
+
+if (name == "admin"sv) { ... }
+constexpr auto path = "config/server.conf"sv;
+```
+
+The `sv` suffix creates a `std::string_view` directly. Prefer it in new code when comparing a `std::string_view` against a literal, because it avoids treating the literal as a null-terminated `const char*`.
+
 Substring:
 
 ```cpp
 std::string_view ext = sv.substr(sv.rfind('.') + 1); // zero-copy
 ```
+
+## ECS Component Accessors
+
+Returning `std::string_view` is allowed when the returned view points at stable, owning storage.
+
+Primary safe case:
+
+```cpp
+namespace ecs::PlayerRuntime {
+    std::string_view GetName(entt::entity e) {
+        return registry.get<PlayerName>(e).name;
+    }
+}
+```
+
+Rules:
+
+- The component or class must own the backing `std::string`.
+- The backing storage must live at least as long as the returned view is used.
+- Entity-bound component storage is acceptable while the entity exists and the component is not removed.
+- Never return `std::string_view` from a stack-local `std::string`.
+- Never return `std::string_view` from a temporary constructed inside the function.
 
 ## Phase 17 Guardrails
 
