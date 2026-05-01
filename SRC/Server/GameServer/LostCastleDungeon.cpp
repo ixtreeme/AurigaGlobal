@@ -784,8 +784,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             // erő: pontok másolása
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
-                clone->SetRealPoint((uint8_t)p, source->GetPoint((uint8_t)p));
-                clone->SetPoint((uint8_t)p, source->GetPoint((uint8_t)p));
+                clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
+                clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
@@ -1333,8 +1333,8 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
         {
-            clone->SetRealPoint((uint8_t)p, source->GetPoint((uint8_t)p));
-            clone->SetPoint((uint8_t)p, source->GetPoint((uint8_t)p));
+            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
+            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
         }
         clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(AIHelpers::EcsOf(source)));
         clone->SetMaxHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source))* STR_MULTIPLE);

@@ -16125,7 +16125,7 @@ void CItem::StartRealTimeExpireEvent()
 					if (GetSocket(1) == 1) {
 						auto* pkOwner = GetOwner();
 						if (pkOwner) {
-							if (pkOwner->FindAffect(GetValue(0))) {
+							if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), GetValue(0))) {
 								AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), GetValue(0));
 							}
 
@@ -17514,7 +17514,7 @@ EVENTFUNC(real_time_expire_event)
 			if (item->GetSocket(1) == 1) {
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
-					if (pkOwner->FindAffect(item->GetValue(0))) {
+					if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0))) {
 						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
 					}
 
@@ -17537,7 +17537,7 @@ EVENTFUNC(real_time_expire_event)
 			if (nextSec <= 0) {
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
-					if (pkOwner->FindAffect(item->GetValue(0))) {
+					if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0))) {
 						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
 					}
 
