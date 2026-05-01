@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -1322,11 +1323,11 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) != party)
                 return;
 
-            if (pc->GetLevel() < kMinLevel || pc->GetLevel() > kMaxLevel)
+            if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pc)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pc)) > kMaxLevel)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pc)).data();
-                badLevel = pc->GetLevel();
+                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pc));
                 missingItem = false;
                 return;
             }
@@ -1335,7 +1336,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pc)).data();
-                badLevel = pc->GetLevel();
+                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pc));
                 missingItem = true;
                 return;
             }
@@ -1353,7 +1354,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     else
     {
         // Solo checks
-        if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Invalid level for Rune Dungeon.");
             return false;

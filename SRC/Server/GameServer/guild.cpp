@@ -28,7 +28,7 @@
 #include "ecs/CharacterAccessors.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
-: pid(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())
+: pid(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), grade(grade), is_general(0), job(ch->GetJob()), level(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data())
 {}
 	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
 : pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)
@@ -1019,7 +1019,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 	gd_guild.guild_id = GetID();
 	gd_guild.pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	gd_guild.offer = cit->second.offer_exp;
-	gd_guild.level = ch->GetLevel();
+	gd_guild.level = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch));
 	gd_guild.grade = cit->second.grade;
 
 	db_clientdesc->DBPacket(HEADER_GD_GUILD_CHANGE_MEMBER_DATA, 0, &gd_guild, sizeof(gd_guild));

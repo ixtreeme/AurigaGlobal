@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
@@ -71,7 +72,7 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	// dwDuration *= 60;
 
 	// ���� Ȯ�� = ĳ���� ���� - �� ���� + �а��� ���� + 29 + �а� ��ų ����
-	iPolyPercent = pChar->GetLevel() - pMob->m_table.bLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) + (29 + bySkillLevel);
+	iPolyPercent = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pChar)) - pMob->m_table.bLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) + (29 + bySkillLevel);
 
 	if (iPolyPercent <= 0)
 	{

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -1418,10 +1419,10 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 		if (ch == except)
 			continue;
 
-		if (((ch)->GetLevel()) < iMinLevel)
+		if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < iMinLevel)
 			continue;
 
-		if (((ch)->GetLevel()) > iMaxLevel)
+		if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) > iMaxLevel)
 			continue;
 
 		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != lMapIndex)

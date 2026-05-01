@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -816,7 +817,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 	switch (m_kMapInfo.bType)
 	{
 		case WAR_MAP_TYPE_NORMAL:
-			SendGuildWarScore(dwKillerGuild, dwDeadGuild, 1, ch->GetLevel());
+			SendGuildWarScore(dwKillerGuild, dwDeadGuild, 1, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
 			break;
 
 		case WAR_MAP_TYPE_FLAG:

@@ -316,8 +316,8 @@ EVENTFUNC(pvp_duel_counter)
 			const char* chA_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chA)).data();
 			const char* chB_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chB)).data();
 
-			int chA_Level = ((chA)->GetLevel());
-			int chB_Level = ((chB)->GetLevel());
+			int chA_Level = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(chA)));
+			int chB_Level = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(chB)));
 
 			uint32_t chA_Race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chA)));
 			uint32_t chB_Race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chB)));
@@ -682,7 +682,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		const char* m_GuildName = "-";
 
 		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));
-		int m_Level = ((pkChr)->GetLevel());
+		int m_Level = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)));
 		int m_PlayTime = ecs::PointSystem::GetReal(AIHelpers::EcsOf(pkChr), POINT_PLAYTIME);
 		int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkChr));
 		int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChr));

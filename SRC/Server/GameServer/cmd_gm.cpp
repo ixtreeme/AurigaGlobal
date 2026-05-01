@@ -1248,7 +1248,7 @@ ACMD(do_state)
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "LEV %d", ((tch)->GetLevel()));
+	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(tch))));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(tch)));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(tch)));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",

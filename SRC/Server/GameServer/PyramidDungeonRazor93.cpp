@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -228,7 +229,7 @@ namespace
             if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
                 return;
 
-            const int32_t lv = m->GetLevel();
+            const int32_t lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
             if (lv < kMinLevel || lv > kMaxLevel)
             {
                 ok = false;
@@ -451,7 +452,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Level check
     if (!party)
     {
-        const int32_t lv = ch->GetLevel();
+        const int32_t lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch));
         if (lv < kMinLevel || lv > kMaxLevel)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Pyramid Dungeon requires level %d-%d.", kMinLevel, kMaxLevel);

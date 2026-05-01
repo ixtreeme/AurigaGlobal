@@ -312,7 +312,7 @@ public:
 
 		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_TERROR) && m_pkChr->IsImmune(IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
 		{
-			if (((pkChr)->GetLevel()) >= m_pkChr->GetLevel())
+			if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) >= ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)))
 				return false;
 		}
 

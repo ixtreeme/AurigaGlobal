@@ -565,7 +565,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             m.max     = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
 
             auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
-            lv.value = ch->GetLevel();
+            lv.value = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch));
 
             auto& exp = g_registry.get_or_emplace<ecs::Experience>(ecs_e);
             exp.current = ch->GetExp();
@@ -599,7 +599,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), ch->GetJob(), ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), ch->GetJob(), ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME));
 
 			if (0)
 				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName()));
@@ -632,7 +632,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	ch->PointsPacket();
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();
@@ -1766,7 +1766,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 					break;
 #endif
 				case EQUIPMENT:
-					if (item->CheckItemUseLevel(((ch)->GetLevel())) == true )
+					if (item->CheckItemUseLevel((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))) == true )
 					{
 						if (item->EquipTo(ch, p->pos) == false )
 						{

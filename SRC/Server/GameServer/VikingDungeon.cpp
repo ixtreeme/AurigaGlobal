@@ -1245,12 +1245,12 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || !ok)
             return;
 
-        if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
         {
             ok = false;
             bad = BAD_LEVEL;
             badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-            badVal = m->GetLevel();
+            badVal = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
             return;
         }
 

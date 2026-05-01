@@ -586,7 +586,7 @@ void CParty::Link(LPCHARACTER pkChr)
 			pkChr->SetDungeon(GetDungeon());
 		}
 
-		RequestSetMemberLevel((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), ((pkChr)->GetLevel()));
+		RequestSetMemberLevel((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))));
 
 	}
 }

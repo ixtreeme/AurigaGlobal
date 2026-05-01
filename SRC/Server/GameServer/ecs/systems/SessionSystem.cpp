@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
 
@@ -185,7 +186,7 @@ bool CAN_ENTER_ZONE(const LPCHARACTER& ch, int map_index)
     case 302:
     case 303:
     case 304:
-        if (ch->GetLevel() < 90)
+        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 90)
             return false;
     }
     return true;

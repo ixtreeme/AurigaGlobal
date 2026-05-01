@@ -1155,7 +1155,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		return;
 	}
 	// decrease/increase exp based on player<>mob level
-	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(to->GetLevel(), from->GetLevel())) / 100.0L;
+	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(from)))) / 100.0L;
 	iExp *= lvFactor;
 	// start calculating rate exp bonus
 	int iBaseExp = iExp;
@@ -1272,7 +1272,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (you)
 		{
 			// sometimes, this overflows
-			uint32_t dwUpdatePoint = (2000.0L / to->GetLevel() / to->GetLevel() / 3) * iExp;
+			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)) / ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)) / 3) * iExp;
 
 			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
@@ -1291,7 +1291,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
 	//  ġ
-	iExp = CALCULATE_VALUE_LVDELTA(to->GetLevel(), from->GetLevel(), iExp);
+	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(from)), iExp);
 
 	int iBaseExp = iExp;
 
@@ -1422,7 +1422,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (you)
 		{
 			// 1 100%
-			uint32_t dwUpdatePoint = 2000 * iExp / to->GetLevel() / to->GetLevel() / 3;
+			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)) / ecs::PointSystem::GetLevel(AIHelpers::EcsOf(to)) / 3;
 
 			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
@@ -1456,7 +1456,7 @@ namespace NPartyExpDistribute
 		{
 			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - y) <= PARTY_DEFAULT_RANGE)
 			{
-				total += __GetPartyExpNP(ch->GetLevel());
+				total += __GetPartyExpNP(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
 
 				++member_count;
 			}
@@ -1488,7 +1488,7 @@ namespace NPartyExpDistribute
 				switch (m_iMode)
 				{
 				case PARTY_EXP_DISTRIBUTION_NON_PARITY:
-					iExp2 = (uint32_t)(_iExp * (float)__GetPartyExpNP(ch->GetLevel()) / total);
+					iExp2 = (uint32_t)(_iExp * (float)__GetPartyExpNP(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) / total);
 					break;
 
 				case PARTY_EXP_DISTRIBUTION_PARITY:
@@ -2596,7 +2596,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 
 		if (!num)
 		{
-			int iLvDelta = GetLevel() - pkKiller->GetLevel();
+			int iLvDelta = GetLevel() - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
 			int iAmount = 0;
 
 			if (iLvDelta >= 5)
@@ -2674,12 +2674,12 @@ static uint32_t __GetPartyExpNP(const uint32_t level)
 
 static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp)
 {
-	if (PLAYER_MAX_LEVEL_CONST < ch->GetLevel())
+	if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))
 	{
 		double ret = 0.95;
 		double factor = 0.1;
 
-		for (int64_t i = 0; i < ch->GetLevel() - 100; ++i)
+		for (int64_t i = 0; i < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) - 100; ++i)
 		{
 			if ((i % 10) == 0)
 				factor /= 2.0;
@@ -3501,7 +3501,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//PROF_UNIT pu1("r1");
 	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)))
 	{
-		if ((GetLevel() - pkAttacker->GetLevel()) >= -10)
+		if ((GetLevel() - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker))) >= -10)
 		{
 			/*if (pkAttacker->GetRealAlignment() < 0) // trsra: minden gyilkols 2 pontot ad
 			{
@@ -4181,7 +4181,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 #endif
 
 			bool drop = true;
-			int mylvl = pkAttacker->GetLevel(), targetlvl = GetLevel();
+			int mylvl = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), targetlvl = GetLevel();
 			if (mylvl > targetlvl) {
 				drop = mylvl - targetlvl <= 15 ? true : false;
 			}
@@ -4257,10 +4257,10 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			int iPercent;
 
 			if (GetMobRank() >= MOB_RANK_BOSS)
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(pkAttacker->GetLevel(), GetLevel())) / 100);
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), GetLevel())) / 100);
 			else
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA(pkAttacker->GetLevel(), GetLevel())) / 100);
-			//int iPercent = CALCULATE_VALUE_LVDELTA(pkAttacker->GetLevel(), GetLevel(), iGoldPercent);
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), GetLevel())) / 100);
+			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), GetLevel(), iGoldPercent);
 
 			if (number(1, 100) > iPercent)
 				return;

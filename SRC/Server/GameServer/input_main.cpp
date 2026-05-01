@@ -255,7 +255,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->GetLevel() < g_iSpamBlockMaxLevel)
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < g_iSpamBlockMaxLevel)
 	{
 		auto it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
 
@@ -950,7 +950,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 				}
 
 				// shout rules
-				if (ch->GetLevel() < g_iShoutLimitLevel)
+				if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < g_iShoutLimitLevel)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
@@ -1363,7 +1363,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	{
 		// const int SHOUT_LIMIT_LEVEL = 15;
 
-		if (ch->GetLevel() < g_iShoutLimitLevel) {
+		if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < g_iShoutLimitLevel) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
 #endif
@@ -3427,7 +3427,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 
 	TMapConfig& rConf = g_vecMapConf[iMapCode];
 
-	if(ch->GetLevel() < rConf.iLevel)
+	if(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < rConf.iLevel)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
@@ -3435,7 +3435,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 		return;
 	}
 
-	if(rConf.iLevelMax != 0 && ch->GetLevel() > rConf.iLevelMax)
+	if(rConf.iLevelMax != 0 && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > rConf.iLevelMax)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
@@ -3731,7 +3731,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 #ifdef ENABLE_BUG_FIXES
-	else if (ch->GetLevel() < 40) {
+	else if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 40) {
 		return;
 	}
 #endif

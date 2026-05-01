@@ -422,7 +422,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ((npc)->GetLevel()));
+		lua_pushnumber(L, (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(npc))));
 		return 1;
 	}
 

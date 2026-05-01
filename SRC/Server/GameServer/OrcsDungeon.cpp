@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -674,7 +675,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     // Fresh entrance
-    if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
+    if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: level requirement is %d-%d.", kMinLevel, kMaxLevel);
         return true;
@@ -732,11 +733,11 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
-            if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
+            if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-                badLevel = m->GetLevel();
+                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
                 missingItem = false;
                 return;
             }
@@ -745,7 +746,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-                badLevel = m->GetLevel();
+                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
                 missingItem = true;
                 return;
             }

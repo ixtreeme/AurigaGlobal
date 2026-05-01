@@ -609,7 +609,7 @@ namespace quest
 
 		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
 		return 0;
 	}
 
@@ -656,7 +656,7 @@ namespace quest
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
 
 		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
 		const uint32_t itemId = ItemSystem::GetItemID(item);
@@ -727,7 +727,7 @@ namespace quest
 
 		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
 
 		lua_pushnumber(L, (item) ? ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
@@ -773,7 +773,7 @@ namespace quest
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
 
 		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
 		const uint32_t itemId = ItemSystem::GetItemID(item);
@@ -1234,7 +1234,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetLevel()) : 0);
+		lua_pushnumber(L, ch ? (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) : 0);
 		return 1;
 	}
 
@@ -1255,11 +1255,11 @@ namespace quest
             return 0;
         LOG_INFO("QUEST [LEVEL] {} jumpint to level {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (int)rint(lua_tonumber(L,1)));
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), newLevel, 0);
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - ((ch)->GetLevel()));
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(((ch)->GetLevel()), 9));
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - ((ch)->GetLevel())) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_LEVEL, newLevel - ((ch)->GetLevel()));
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), newLevel, 0);
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, newLevel - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), 9));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, ((MINMAX(1, newLevel, gPlayerMaxLevel) - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))) * 3) + ch->GetPoint(POINT_LEVEL_STEP));
+        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_LEVEL, newLevel - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))));
         ch->SetRandomHP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].hp_per_lv_begin, JobInitialPoints[ch->GetJob()].hp_per_lv_end));
         ch->SetRandomSP((newLevel - 1) * number(JobInitialPoints[ch->GetJob()].sp_per_lv_begin, JobInitialPoints[ch->GetJob()].sp_per_lv_end));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
@@ -1268,7 +1268,7 @@ namespace quest
         ch->PointsPacket();
         ch->SkillLevelPacket();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ((ch)->GetLevel());
+            lv->value = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();
@@ -1288,7 +1288,7 @@ namespace quest
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvLevelUp{e, ((ch)->GetLevel())});
+            g_dispatcher.trigger(ecs::EvLevelUp{e, (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))});
         }
         return 0;
     }
@@ -1606,7 +1606,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, exp);
         return 0;
     }
@@ -1632,7 +1632,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
         pPC->GiveExp(lua_tostring(L,1), exp);
         return 0;
     }
@@ -1658,7 +1658,7 @@ namespace quest
             g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
         }
         PC * pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), exp, 0);
+        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
         pPC->GiveExp(lua_tostring(L, 1), exp);
         return 0;
     }
@@ -3079,12 +3079,12 @@ teleport_area:
 				if ( point == POINT_HT )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomHP((((ch)->GetLevel())-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+					ch->SetRandomHP(((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))-1) * number(JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
 				}
 				else if ( point == POINT_IQ )
 				{
 					uint8_t job = ch->GetJob();
-					ch->SetRandomSP((((ch)->GetLevel())-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+					ch->SetRandomSP(((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))-1) * number(JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
 				}
 
 				ch->ComputePoints();
@@ -3673,7 +3673,7 @@ teleport_area:
 
 		const PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
 
 		lua_pushboolean(L, true);
 
@@ -4129,7 +4129,7 @@ teleport_area:
         ch->ClearSkill();
         ch->ClearSubSkill();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
-            lv->value = ((ch)->GetLevel());
+            lv->value = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
         if (auto* health = ECS_TryGet<ecs::Health>(e))
         {
             health->current = ch->GetHP();

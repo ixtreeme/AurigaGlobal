@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -265,7 +266,7 @@ int CalcBattleDamage(int iDam, int iAttackerLev, int iVictimLev)
 
 int CalcMagicDamageWithValue(int iDam, LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
 {
-	return CalcBattleDamage(iDam, pkAttacker->GetLevel(), pkVictim->GetLevel());
+	return CalcBattleDamage(iDam, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkVictim)));
 }
 
 int CalcMagicDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim)
@@ -289,10 +290,10 @@ float CalcAttackRating(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnor
 
 	{
 		int attacker_dx = pkAttacker->GetPolymorphPoint(POINT_DX);
-		int attacker_lv = pkAttacker->GetLevel();
+		int attacker_lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
 
 		int victim_dx = pkVictim->GetPolymorphPoint(POINT_DX);
-		int victim_lv = pkAttacker->GetLevel();
+		int victim_lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
 
 		iARSrc = MIN(90, (attacker_dx * 4	+ attacker_lv * 2) / 6);
 		iERSrc = MIN(90, (victim_dx	  * 4	+ victim_lv   * 2) / 6);
@@ -602,9 +603,9 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	int iAtk = 0;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (pkAttacker->GetLevel() * 2);
+	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
 	iAtk = (int) (iAtk * fAR);
-	iAtk += pkAttacker->GetLevel() * 2; // and add again
+	iAtk += ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2; // and add again
 
 	if (pWeapon)
 	{
@@ -637,7 +638,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 
 	if (test_server)
 	{
-		int DEBUG_iLV = pkAttacker->GetLevel()*2;
+		int DEBUG_iLV = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker))*2;
 		int DEBUG_iST = int((pkAttacker->GetPoint(POINT_ATT_GRADE) - DEBUG_iLV) * fAR);
 		int DEBUG_iPT = pkAttacker->GetPoint(POINT_PARTY_ATTACKER_BONUS);
 		int DEBUG_iWP = 0;
@@ -697,7 +698,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_TALKING, "%s", szMeleeAttack);
 	}
 
-	return CalcBattleDamage(iDam, pkAttacker->GetLevel(), pkVictim->GetLevel());
+	return CalcBattleDamage(iDam, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkVictim)));
 }
 
 int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
@@ -726,9 +727,9 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 	int iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (pkAttacker->GetLevel() * 2);
+	iAtk = pkAttacker->GetPoint(POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2);
 	iAtk = (int) (iAtk * fAR);
-	iAtk += pkAttacker->GetLevel() * 2; // and add again
+	iAtk += ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2; // and add again
 
 	// Refine Grade
 	iAtk += ItemSystem::GetItemValue(bow, 5) * 2;

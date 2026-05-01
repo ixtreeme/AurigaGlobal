@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -1007,7 +1008,7 @@ namespace quest
 						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 					}
 
-					int32_t lvl = ((tch)->GetLevel());
+					int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(tch)));
 					if (lvl < m_minlvl)
 					{
 						m_result = 4;
@@ -1059,7 +1060,7 @@ namespace quest
 				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 			}
 
-			int32_t lvl = ((ch)->GetLevel());
+			int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
 			m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), m_questname.c_str()) - get_global_time();
 			if (lvl < m_minlvl)
 			{
@@ -1601,7 +1602,7 @@ namespace quest
 						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
 					}
 
-					int32_t lvl = ((tch)->GetLevel());
+					int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(tch)));
 					if (lvl < m_minlvl)
 					{
 						m_result = 9;

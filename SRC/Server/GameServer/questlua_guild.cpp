@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -348,7 +349,7 @@ namespace quest
                     LPCHARACTER pNewMaster = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
                     if ( pNewMaster != nullptr)
                     {
-                        if ( pNewMaster->GetLevel() < lua_tonumber(L, 2) )
+                        if ( ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pNewMaster)) < lua_tonumber(L, 2) )
                             lua_pushnumber(L, 6);
                         else
                         {

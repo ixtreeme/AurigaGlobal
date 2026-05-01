@@ -209,7 +209,7 @@ ACMD(do_open_biologist) {
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
-	if (((ch)->GetLevel()) < min) {
+	if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 861, "%d", min);
 #endif
@@ -240,7 +240,7 @@ ACMD(do_delivery_biologist) {
 		return;
 	}
 	int min = biologistMissionInfo[stat][12];
-	if (((ch)->GetLevel()) < min) {
+	if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 861, "%d", min);
 #endif
@@ -406,7 +406,7 @@ ACMD(do_reward_biologist) {
 		return;
 	} else {
 		int min = biologistMissionInfo[newstat][12];
-		if (((ch)->GetLevel()) < min) {
+		if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < min) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 869, "%d", min);
 #endif
@@ -774,7 +774,7 @@ ACMD(do_doctrine_choose) {
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
-	if (!*arg1 || ((ch)->GetLevel()) < 5 || ch->GetSkillGroup() != 0) {
+	if (!*arg1 || (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < 5 || ch->GetSkillGroup() != 0) {
 		return;
 	}
 

@@ -789,7 +789,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
-            clone->SetLevel((uint8_t)source->GetLevel());
+            clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(AIHelpers::EcsOf(source)));
             clone->SetMaxHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
             clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
             clone->SetHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
@@ -1336,7 +1336,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
             clone->SetRealPoint((uint8_t)p, source->GetPoint((uint8_t)p));
             clone->SetPoint((uint8_t)p, source->GetPoint((uint8_t)p));
         }
-        clone->SetLevel((uint8_t)source->GetLevel());
+        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(AIHelpers::EcsOf(source)));
         clone->SetMaxHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source))* STR_MULTIPLE);
         clone->SetMaxSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
         clone->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
@@ -1536,7 +1536,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
                     ok = false;
                     return;
                 }
-                if (m->GetLevel() < kMinLevel || m->GetLevel() > kMaxLevel)
+                if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
                 {
                     ok = false;
                     return;
@@ -1558,7 +1558,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     }
     else
     {
-        if (ch->GetLevel() < kMinLevel || ch->GetLevel() > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;

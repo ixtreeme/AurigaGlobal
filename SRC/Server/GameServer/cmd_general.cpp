@@ -1781,7 +1781,7 @@ ACMD(do_pvp_advanced)
 	const char* m_GuildName = "-";
 
 	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
-	int m_Level = pkVictim->GetLevel();
+	int m_Level = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkVictim));
 	int m_PlayTime = ecs::PointSystem::GetReal(AIHelpers::EcsOf(pkVictim), POINT_PLAYTIME);
 	int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim));
 	int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim));
@@ -2407,7 +2407,7 @@ ACMD(do_pkmode)
 	if (mode == PK_MODE_PROTECT)
 		return;
 
-	if (((ch)->GetLevel()) < PK_PROTECT_LEVEL && mode != 0)
+	if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < PK_PROTECT_LEVEL && mode != 0)
 		return;
 
 	ch->SetPKMode(mode);

@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -302,7 +303,7 @@ namespace
     {
         if (!ch)
             return false;
-        const int32_t lv = ch->GetLevel();
+        const int32_t lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch));
         return (lv >= kMinLevel && lv <= kMaxLevel);
     }
 
@@ -542,7 +543,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
                 badType = BAD_LEVEL;
-                badVal = m->GetLevel();
+                badVal = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
                 return;
             }
 

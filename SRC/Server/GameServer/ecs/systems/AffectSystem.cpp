@@ -381,8 +381,8 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
 #endif
 
     auto* pkAttacker = LegacyCharOf(attacker);
-    if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
-        int delta = ch->GetLevel() - pkAttacker->GetLevel();
+    if (pkAttacker && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) {
+        int delta = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
         if (delta > 8) {
             delta = 8;
         }
@@ -444,8 +444,8 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
     }
 
     auto* pkAttacker = LegacyCharOf(attacker);
-    if (pkAttacker && pkAttacker->GetLevel() < ch->GetLevel()) {
-        int delta = ch->GetLevel() - pkAttacker->GetLevel();
+    if (pkAttacker && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) {
+        int delta = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
         if (delta > 8) {
             delta = 8;
         }

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -911,7 +912,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!gAttack->UnderWar(gDefend->GetID()))
 		return;
 
-	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), ((victim)->GetLevel()));
+	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(victim))));
 }
 
 void CGuildManager::StopAllGuildWar()

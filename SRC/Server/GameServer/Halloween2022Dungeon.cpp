@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -774,7 +775,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
             return;
 
-        const int32_t lv = m->GetLevel();
+        const int32_t lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
         if (lv < kMinLevel || lv > kMaxLevel)
         {
             ok = false;

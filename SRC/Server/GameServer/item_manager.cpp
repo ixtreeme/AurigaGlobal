@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
@@ -966,13 +967,13 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	if (nullptr == pkChr || nullptr == pkKiller)
 		return false;
 
-	int iLevel = pkKiller->GetLevel();
+	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
 	iDeltaPercent = 100;
 
 	if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkChr->GetMobRank() >= MOB_RANK_BOSS)
-		iDeltaPercent = PERCENT_LVDELTA_BOSS(pkKiller->GetLevel(), pkChr->GetLevel());
+		iDeltaPercent = PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)));
 	else
-		iDeltaPercent = PERCENT_LVDELTA(pkKiller->GetLevel(), pkChr->GetLevel());
+		iDeltaPercent = PERCENT_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)));
 
 	uint8_t bRank = pkChr->GetMobRank();
 
@@ -1052,7 +1053,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		return false;
 	}
 
-	int iLevel = pkKiller->GetLevel();
+	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
 
 	uint8_t bRank = pkChr->GetMobRank();
 	LPITEM item = nullptr;
@@ -1234,7 +1235,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 
 #endif
-	int iLevel = pkKiller->GetLevel();
+	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
 
 	int iDeltaPercent, iRandRange;
 	if (!GetDropPct(pkChr, pkKiller, iDeltaPercent, iRandRange))
@@ -1287,7 +1288,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	{
 		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815)
 		{
-			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? pkKiller->GetLevel() : 0, pkChr->GetLevel(), iDeltaPercent, iRandRange);
+			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) : 0, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)), iDeltaPercent, iRandRange);
 		}
 		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
@@ -1422,7 +1423,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	{
 		if (pkChr->GetDropMetinStoneVnum())
 		{
-			//if (pkKiller->GetLevel() - pkChr->GetLevel() >= 30)
+			//if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30)
 			//{
 			//	return false;
 			//}
@@ -1488,7 +1489,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	//CreateQuestDropItem(pkChr, pkKiller, vec_item, iDeltaPercent, iRandRange);
 #ifdef ENABLE_EVENT_MANAGER
 
-	if (pkKiller->GetLevel() - pkChr->GetLevel() >= 30)
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30)
 	{
 		//eridj no
 	}
@@ -1820,7 +1821,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		}
 	}
 
-	if (pkKiller->GetLevel() >= 15 && abs(pkKiller->GetLevel() - pkChr->GetLevel()) <= 5)
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 15 && abs(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) <= 5)
 	{
 		int pct = quest::CQuestManager::instance().GetEventFlag("hc_drop");
 
@@ -1902,7 +1903,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			vec_item.push_back(item);
 	}
 
-	//if (pkChr->GetLevel() >= 30 && (GetDropPerKillPct(50, 100, iDeltaPercent, "ds_drop") >= number(1, iRandRange)))
+	//if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30 && (GetDropPerKillPct(50, 100, iDeltaPercent, "ds_drop") >= number(1, iRandRange)))
 	//{
 	//	const static uint32_t dragon_soul_gemstone = 30270;
 	//	if ((item = CreateItem(dragon_soul_gemstone, 1, 0, true)))
@@ -1955,7 +1956,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 	}
 
 	// 어린이날 수수께끼 상자 이벤트
-	if (pkKiller->GetLevel() >= 50)
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 50)
 	{
 		if (GetDropPerKillPct(100, 1000, iDeltaPercent, "kids_day_drop_high") >= number(1, iRandRange))
 		{
@@ -1977,7 +1978,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 	}
 
 	// 올림픽 드롭 이벤트
-	if (pkChr->GetLevel() >= 30 && GetDropPerKillPct(50, 100, iDeltaPercent, "medal_part_drop") >= number(1, iRandRange))
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30 && GetDropPerKillPct(50, 100, iDeltaPercent, "medal_part_drop") >= number(1, iRandRange))
 	{
 		const static uint32_t drop_items[] = { 30265, 30266, 30267, 30268, 30269 };
 		int i = number(0, 4);
@@ -1988,7 +1989,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 
 	// ADD_GRANDMASTER_SKILL
 	// 혼석 아이템 드롭
-	if (pkChr->GetLevel() >= 40 && pkChr->GetMobRank() >= MOB_RANK_BOSS && GetDropPerKillPct(/* minimum */ 1, /* default */ 1000, iDeltaPercent, "three_skill_item") / GetThreeSkillLevelAdjust(pkChr->GetLevel()) >= number(1, iRandRange))
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 40 && pkChr->GetMobRank() >= MOB_RANK_BOSS && GetDropPerKillPct(/* minimum */ 1, /* default */ 1000, iDeltaPercent, "three_skill_item") / GetThreeSkillLevelAdjust(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) >= number(1, iRandRange))
 	{
 		const uint32_t ITEM_VNUM = 50513;
 
@@ -2009,7 +2010,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 	}
 
 	// 무신의 축복서용 만년한철 drop
-	if (pkKiller->GetLevel() >= 15 && quest::CQuestManager::instance().GetEventFlag("mars_drop"))
+	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 15 && quest::CQuestManager::instance().GetEventFlag("mars_drop"))
 	{
 		const uint32_t ITEM_HANIRON = 70035;
 		int iDropMultiply[MOB_RANK_MAX_NUM] =

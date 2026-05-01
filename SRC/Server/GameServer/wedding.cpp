@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -91,7 +92,7 @@ namespace marriage
 			if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID2)
 				continue;
 
-			if (ch->GetLevel() < 10) // 10 레벨이하는 주지않는다.
+			if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10) // 10 레벨이하는 주지않는다.
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
@@ -180,7 +181,7 @@ namespace marriage
 
 		SendLocalEvent(ch);
 
-		if (ch->GetLevel() < 10)
+		if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10)
 		{
 			ch->SetObserverMode(true);
 		}
@@ -194,7 +195,7 @@ namespace marriage
 		//0, "WeddingMap: DecMember %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 		m_set_pkChr.erase(ch);
 
-		if (ch->GetLevel() < 10)
+		if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10)
 		{
 			ch->SetObserverMode(false);
 		}

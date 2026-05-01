@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
 
@@ -565,7 +566,7 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableCondition(const LPCHARACTE
 static bool __party_can_join_by_level(LPCHARACTER leader, LPCHARACTER quest)
 {
     int level_limit = 50;
-    return (abs(leader->GetLevel() - quest->GetLevel()) <= level_limit);
+    return (abs(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(leader)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(quest))) <= level_limit);
 }
 
 CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest)

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -791,12 +792,12 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     // Level check
-    if (kMinLevel > 0 && ch->GetLevel() < kMinLevel)
+    if (kMinLevel > 0 && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel)
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Valentine: minimum level is %d.", kMinLevel);
         return true;
     }
-    if (kMaxLevel > 0 && ch->GetLevel() > kMaxLevel)
+    if (kMaxLevel > 0 && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Valentine: maximum level is %d.", kMaxLevel);
         return true;
@@ -829,11 +830,11 @@ bool CValentineDungeon::OnClickNpc(CHARACTER* ch)
             if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
                 return;
 
-            if ((kMinLevel > 0 && m->GetLevel() < kMinLevel) || (kMaxLevel > 0 && m->GetLevel() > kMaxLevel))
+            if ((kMinLevel > 0 && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel) || (kMaxLevel > 0 && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel))
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-                badLevel = m->GetLevel();
+                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
                 return;
             }
         });

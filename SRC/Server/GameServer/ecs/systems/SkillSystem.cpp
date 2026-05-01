@@ -90,7 +90,7 @@ void MarkDirty(entt::entity e)
 
 bool ShouldCheckSkillBookExp(LegacyCharHandle ch)
 {
-    return ch && ch->GetLevel() < gPlayerMaxLevel;
+    return ch && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < gPlayerMaxLevel;
 }
 
 static const uint32_t s_adwSubSkillVnums[] =
@@ -1815,7 +1815,7 @@ struct FuncSplashDamage
 		//float k = 1.0f * m_pkChr->GetSkillPower(m_pkSk->dwVnum) * m_pkSk->bMaxLevel / 100;
 		//m_pkSk->kPointPoly2.SetVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
-		m_pkSk->SetPointVar("lv", m_pkChr->GetLevel());
+		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)));
 		m_pkSk->SetPointVar("iq", m_pkChr->GetPoint(POINT_IQ));
 		m_pkSk->SetPointVar("str", m_pkChr->GetPoint(POINT_ST));
 		m_pkSk->SetPointVar("dex", m_pkChr->GetPoint(POINT_DX));
@@ -1961,7 +1961,7 @@ struct FuncSplashDamage
 #endif
 		////////////////////////////////////////////////////////////////////////////////
 		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkSk->szName, iAmount, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data());
-		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
+		iDam = CalcBattleDamage(iAmount, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChrVictim)));
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
 			// µĄąĚÁö °¨ĽŇ
@@ -2325,8 +2325,8 @@ struct FuncSplashDamage
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_REMOVE_GOOD_AFFECT))
 			{
 #ifdef ENABLE_NULLIFYAFFECT_LIMIT
-				int iLevel = m_pkChr->GetLevel();
-				int yLevel = pkChrVictim->GetLevel();
+				int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr));
+				int yLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChrVictim));
 				// const float k = 1.0 * m_pkChr->GetSkillPower(m_pkSk->dwVnum, bSkillLevel) * m_pkSk->bMaxLevel / 100;
 				int iDifLev = 9;
 				if ((iLevel-iDifLev <= yLevel) && (iLevel+iDifLev >= yLevel))
