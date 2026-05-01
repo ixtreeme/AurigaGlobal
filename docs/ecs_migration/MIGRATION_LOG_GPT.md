@@ -10831,3 +10831,29 @@ Manual WinTest checklist:
 Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
+
+
+## Phase 15E-59 - Position Accessors ECS Migration
+
+Scope:
+- Migrated CHARACTER position read-side calls to entity-first PlayerRuntime accessors.
+- Accessors added: GetMapIndex, GetX, GetY, GetSectree.
+- LPSECTREE remains a service pointer; no DESC/sectree/entity ownership changes.
+
+Commits:
+- 4ca14a6 Phase 15E-59.1: Add position accessor API
+- 1985b11 Phase 15E-59.2a: Migrate GetSectree
+- 721de66 Phase 15E-59.2b: Migrate GetMapIndex
+- 7644dc9 Phase 15E-59.2c: Migrate GetX and GetY
+
+Verification:
+- Build passed after each substep with:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Remaining filtered GetMapIndex/GetX/GetY/GetSectree hits are non-CHARACTER false positives or intentional bridge/internal object calls.
+- WinTest still required for gameplay-critical position validation.
+
+Notes:
+- During GetX/GetY migration, one scripted replacement bug produced partial receiver substitutions such as `tecs::` and `m_ecs::`; these were fixed before the green build.
+- Generic LPENTITY and building/object position reads were intentionally left on their native methods.
