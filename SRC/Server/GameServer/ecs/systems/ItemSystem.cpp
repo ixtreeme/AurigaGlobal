@@ -2179,7 +2179,7 @@ bool SyncItemOwnerFromLegacy(entt::entity item)
 
     uint32_t ownerPID = 0;
     if (const auto* owner = legacyItem->GetOwner())
-        ownerPID = owner->GetPlayerID();
+        ownerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
 
     g_registry.emplace_or_replace<ecs::ItemOwner>(
         item, ecs::ItemOwner{ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
@@ -2286,7 +2286,7 @@ static uint32_t EntityPlayerID(entt::entity e)
         return playerID->pid;
 
     if (const auto* ch = LegacyCharOf(e))
-        return ch->GetPlayerID();
+        return ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
     return 0;
 }

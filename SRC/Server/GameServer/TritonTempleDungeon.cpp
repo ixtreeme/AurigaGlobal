@@ -193,7 +193,7 @@ namespace
 #endif
 
                 // dungeon_ranking update (same logic as our OrcsDungeon C++ version)
-                const int32_t pid = ch->GetPlayerID();
+                const int32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
                 std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
                     "SELECT time, damage FROM dungeon_ranking WHERE pid=%u AND dungeon_index=%d",
@@ -674,7 +674,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
         return true;

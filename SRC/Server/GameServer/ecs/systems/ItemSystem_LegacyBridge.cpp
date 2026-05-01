@@ -12675,7 +12675,7 @@ void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefineSuceeded");
 
-		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
 	}
 }
 
@@ -12688,7 +12688,7 @@ void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success)
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefineFailed");
 
-		LogManager::instance().RefineLog(ch->GetPlayerID(), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
 	}
 }
 
@@ -13456,7 +13456,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 			// TAKE_ITEM_BUG_FIX
 			from->SetQuestNPCID(GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
-			quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
+			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(from)), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
 		}
 		break;
 
@@ -13602,7 +13602,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 	default:
 		LOG_INFO("TakeItem {} {} {}", from->GetName(), GetRaceNum(), item->GetName());
 		from->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().TakeItem(from->GetPlayerID(), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
+		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(from)), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
 		break;
 	}
 }

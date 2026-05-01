@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "mining.h"
 #include "char_interface.hpp"
@@ -256,8 +258,8 @@ namespace mining
 
 		if (!Pick_Check(*item))
 		{
-			LOG_ERROR("REFINE_PICK_HACK pid({}) item({}:{}) type({})", ((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
-			rkLogMgr.RefineLog(((ch)->GetPlayerID()), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "PICK_HACK");
+			LOG_ERROR("REFINE_PICK_HACK pid({}) item({}:{}) type({})", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
+			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "PICK_HACK");
 			return 2;
 		}
 
@@ -273,7 +275,7 @@ namespace mining
 
 		if (Pick_IsRefineSuccess(rkOldPick))
 		{
-			rkLogMgr.RefineLog(((ch)->GetPlayerID()), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 1, "PICK");
+			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 1, "PICK");
 
 			LPITEM pkNewPick = ITEM_MANAGER::instance().CreateItem(rkOldPick.GetRefinedVnum(), 1);
 			if (pkNewPick)
@@ -289,7 +291,7 @@ namespace mining
 		}
 		else
 		{
-			rkLogMgr.RefineLog(((ch)->GetPlayerID()), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 0, "PICK");
+			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 0, "PICK");
 
 #ifdef ENABLE_PICKAXE_RENEWAL
 			{
@@ -430,7 +432,7 @@ namespace mining
 	LPEVENT CreateMiningEvent(LPCHARACTER ch, LPCHARACTER load, int count)
 	{
 		mining_event_info* info = AllocEventInfo<mining_event_info>();
-		info->pid = ((ch)->GetPlayerID());
+		info->pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		info->vid_load = load->GetLegacyVID();
 
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));

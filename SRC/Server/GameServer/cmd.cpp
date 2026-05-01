@@ -999,7 +999,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 			char buf[1024];
 			snprintf( buf, sizeof(buf), "%s", argument );
 
-			LogManager::instance().GMCommandLog(((ch)->GetPlayerID()), ((ch)->GetName()), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), g_bChannel, buf);
+			LogManager::instance().GMCommandLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetName()), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), g_bChannel, buf);
 		}
 	}
 }

@@ -437,7 +437,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 #endif
 
             // dungeon_ranking update (same logic as questlua)
-            const int32_t pid = ch->GetPlayerID();
+            const int32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
             const int32_t dungeon_index = kOrcOriginalMap;
 
             std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
@@ -690,7 +690,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
         return true;

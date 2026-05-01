@@ -119,7 +119,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 {
-	uint32_t pid = ((pkChar)->GetPlayerID());
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 	m_map_attender.insert(std::make_pair(pid, pid));
@@ -129,7 +129,7 @@ bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAudience(LPCHARACTER pkChar)
 {
-	uint32_t pid = ((pkChar)->GetPlayerID());
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 
@@ -316,7 +316,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 				const auto iter_tmp = iter;
 				iter++;
 				m_map_attender.erase(iter_tmp);
-				m_map_miss.insert(std::make_pair(((pkChar)->GetPlayerID()), ((pkChar)->GetPlayerID())));
+				m_map_miss.insert(std::make_pair((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)))));
 			}
 			else
 			{
@@ -445,11 +445,11 @@ count)
 #ifdef ENABLE_BLOCK_MULTIFARM
 			if (pkChar->FindAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
-				LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
+				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
 			}
 #else
 			pkChar->AutoGiveItem(dwItemVnum, count);
-			LogManager::instance().ItemLog(((pkChar)->GetPlayerID()), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
+			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
 #endif
 		}
 	}

@@ -28,7 +28,7 @@
 #include "ecs/CharacterAccessors.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
-: pid(ch->GetPlayerID()), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ch->GetName())
+: pid(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), grade(grade), is_general(0), job(ch->GetJob()), level(ch->GetLevel()), offer_exp(offer_exp), name(ch->GetName())
 {}
 	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
 : pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)
@@ -80,7 +80,7 @@ CGuild::CGuild(TGuildCreateParameter & cp)
 	m_iMemberCountBonus = 0;
 
 	strlcpy(m_data.name, cp.name, sizeof(m_data.name));
-	m_data.master_pid = cp.master->GetPlayerID();
+	m_data.master_pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(cp.master));
 	strlcpy(m_data.grade_array[0].grade_name, "Leader", sizeof(m_data.grade_array[0].grade_name));
 	m_data.grade_array[0].auth_flag = GUILD_AUTH_ADD_MEMBER | GUILD_AUTH_REMOVE_MEMBER | GUILD_AUTH_NOTICE | GUILD_AUTH_USE_SKILL;
 
@@ -130,7 +130,7 @@ CGuild::CGuild(TGuildCreateParameter & cp)
 	/*
 	   TPacketDGGuildMember p;
 	   memset(&p, 0, sizeof(p));
-	   p.dwPID = cp.master->GetPlayerID();
+	   p.dwPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(cp.master));
 	   p.bGrade = 15;
 	   AddMember(&p);
 	 */
@@ -159,13 +159,13 @@ void CGuild::RequestAddMember(LPCHARACTER ch, int grade)
 
 	TPacketGDGuildAddMember gd;
 
-	if (m_member.find(ch->GetPlayerID()) != m_member.end())
+	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) != m_member.end())
 	{
-		LOG_ERROR("Already a member in guild {}[{}]", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("Already a member in guild {}[{}]", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
-	gd.dwPID = ch->GetPlayerID();
+	gd.dwPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	gd.dwGuild = GetID();
 	gd.bGrade = grade;
 
@@ -282,9 +282,9 @@ void CGuild::P2PLoginMember(uint32_t pid)
 
 void CGuild::LoginMember(LPCHARACTER ch)
 {
-	if (m_member.find(ch->GetPlayerID()) == m_member.end())
+	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
@@ -327,9 +327,9 @@ void CGuild::P2PLogoutMember(uint32_t pid)
 
 void CGuild::LogoutMember(LPCHARACTER ch)
 {
-	if (m_member.find(ch->GetPlayerID())==m_member.end())
+	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))==m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 
@@ -397,7 +397,7 @@ void CGuild::SendAllGradePacket(LPCHARACTER ch)
 
 void CGuild::SendListOneToAll(LPCHARACTER ch)
 {
-	SendListOneToAll(ch->GetPlayerID());
+	SendListOneToAll(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 }
 
 void CGuild::SendListOneToAll(uint32_t pid)
@@ -497,7 +497,7 @@ void CGuild::SendListPacket(LPCHARACTER ch)
 
 void CGuild::SendLoginPacket(LPCHARACTER ch, LPCHARACTER chLogin)
 {
-	SendLoginPacket(ch, chLogin->GetPlayerID());
+	SendLoginPacket(ch, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chLogin)));
 }
 
 void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
@@ -526,7 +526,7 @@ void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
 
 void CGuild::SendLogoutPacket(LPCHARACTER ch, LPCHARACTER chLogout)
 {
-	SendLogoutPacket(ch, chLogout->GetPlayerID());
+	SendLogoutPacket(ch, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chLogout)));
 }
 
 void CGuild::SendLogoutPacket(LPCHARACTER ch, uint32_t pid)
@@ -957,7 +957,7 @@ void CGuild::SendGuildInfoPacket(LPCHARACTER ch)
 
 bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 {
-	TGuildMemberContainer::iterator cit = m_member.find(ch->GetPlayerID());
+	TGuildMemberContainer::iterator cit = m_member.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 	if (cit == m_member.end())
 		return false;
@@ -978,7 +978,7 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 
 	if (ch->GetExp() - (uint32_t) amount > ch->GetExp())
 	{
-		LOG_ERROR("Wrong guild offer amount {} by {}[{}]", amount, ch->GetName(), ch->GetPlayerID());
+		LOG_ERROR("Wrong guild offer amount {} by {}[{}]", amount, ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return false;
 	}
 
@@ -1012,12 +1012,12 @@ bool CGuild::OfferExp(LPCHARACTER ch, int amount)
 		}
 	}
 
-	SaveMember(ch->GetPlayerID());
+	SaveMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 	TPacketGuildChangeMemberData gd_guild;
 
 	gd_guild.guild_id = GetID();
-	gd_guild.pid = ch->GetPlayerID();
+	gd_guild.pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	gd_guild.offer = cit->second.offer_exp;
 	gd_guild.level = ch->GetLevel();
 	gd_guild.grade = cit->second.grade;
@@ -1038,7 +1038,7 @@ void CGuild::Disband()
 	{
 		auto* ch = *it;
 		ch->SetGuild(nullptr);
-		SendOnlineRemoveOnePacket(ch->GetPlayerID());
+		SendOnlineRemoveOnePacket(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		// @fixme401
 		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "guild_manage.new_disband_time", get_global_time());
 	}
@@ -1077,7 +1077,7 @@ void CGuild::AddComment(LPCHARACTER ch, std::string_view str)
 	char text[GUILD_COMMENT_MAX_LEN * 2 + 1];
 	DBManager::instance().EscapeString(text, sizeof(text), str.data(), str.size());
 
-	DBManager::instance().FuncAfterQuery(std::bind(&CGuild::RefreshCommentForce,this,ch->GetPlayerID()),
+	DBManager::instance().FuncAfterQuery(std::bind(&CGuild::RefreshCommentForce,this,ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
 			"INSERT INTO guild_comment%s(guild_id, name, notice, content, time) VALUES(%u, '%s', %d, '%s', NOW())",
 			get_table_postfix(), m_data.guild_id, ch->GetName(), (!str.empty() && str.front() == '!') ? 1 : 0, text);
 }
@@ -1086,7 +1086,7 @@ void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
 {
 	SQLMsg * pmsg;
 
-	if (GetMember(ch->GetPlayerID())->grade == GUILD_LEADER_GRADE)
+	if (GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->grade == GUILD_LEADER_GRADE)
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u",get_table_postfix(), comment_id, m_data.guild_id);
 	else
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ch->GetName());
@@ -1096,7 +1096,7 @@ void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 154, "");
 #endif
 	} else {
-		RefreshCommentForce(ch->GetPlayerID());
+		RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	}
 
 	M2_DELETE(pmsg);
@@ -1104,7 +1104,7 @@ void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
 
 void CGuild::RefreshComment(LPCHARACTER ch)
 {
-	RefreshCommentForce(ch->GetPlayerID());
+	RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 }
 
 void CGuild::RefreshCommentForce(uint32_t player_id)
@@ -1301,7 +1301,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 {
 	auto* victim = static_cast<LPCHARACTER>(nullptr);
 
-	if (!GetMember(ch->GetPlayerID()) || !HasGradeAuth(GetMember(ch->GetPlayerID())->grade, GUILD_AUTH_USE_SKILL))
+	if (!GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) || !HasGradeAuth(GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->grade, GUILD_AUTH_USE_SKILL))
 		return;
 
 	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ch->GetName() : "", dwVnum);
@@ -1398,7 +1398,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 					if (pcci->bChannel != g_bChannel) {
 						TPacketGGFindPosition p;
 						p.header = HEADER_GG_FIND_POSITION;
-						p.dwFromPID = ch->GetPlayerID();
+						p.dwFromPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 						p.dwTargetPID = pid;
 						pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
 					}
@@ -1424,7 +1424,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 		default:
 			{
-				/*if (ch->GetPlayerID() != GetMasterPID())
+				/*if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != GetMasterPID())
 				  {
 				  return;
 				  }*/
@@ -2097,7 +2097,7 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 	LogManager::instance().CharLog(ch, iGold, "GUILD_DEPOSIT", buf);
 
 	ch->UpdateDepositPulse();
-	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iGold);
+	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iGold);
 }
 
 void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
@@ -2110,7 +2110,7 @@ void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
 		return;
 	}
 
-	if (ch->GetPlayerID() != GetMasterPID())
+	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != GetMasterPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 131, "");
@@ -2159,7 +2159,7 @@ void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 	if (ch)
 	{
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iChangeGold);
-		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ch->GetPlayerID(), iChangeGold);
+		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ch->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), iChangeGold);
 	}
 
 	TPacketGDGuildMoneyWithdrawGiveReply p;
@@ -2216,7 +2216,7 @@ EVENTFUNC( GuildInviteEvent )
 
 void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 {
-	if (quest::CQuestManager::instance().GetPCForce(pchInviter->GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInviter)))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 632, "%s", pchInvitee->GetName());
@@ -2225,7 +2225,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	}
 
 
-	if (quest::CQuestManager::instance().GetPCForce(pchInvitee->GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)))->IsRunning() == true)
 		return;
 
 	if ( pchInvitee->IsBlockMode( BLOCK_GUILD_INVITE ) )
@@ -2235,7 +2235,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 #endif
 		return;
 	}
-	else if ( !HasGradeAuth( GetMember( pchInviter->GetPlayerID() )->grade, GUILD_AUTH_ADD_MEMBER ) )
+	else if ( !HasGradeAuth( GetMember( ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInviter)) )->grade, GUILD_AUTH_ADD_MEMBER ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 140, "");
@@ -2290,17 +2290,17 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 			return;
 	}
 
-	if ( m_GuildInviteEventMap.end() != m_GuildInviteEventMap.find( pchInvitee->GetPlayerID() ) )
+	if ( m_GuildInviteEventMap.end() != m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)) ) )
 		return;
 
 	//
 	// ̺Ʈ 
 	//
 	TInviteGuildEventInfo* pInfo = AllocEventInfo<TInviteGuildEventInfo>();
-	pInfo->dwInviteePID = pchInvitee->GetPlayerID();
+	pInfo->dwInviteePID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee));
 	pInfo->dwGuildID = GetID();
 
-	m_GuildInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
+	m_GuildInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
 
 	//
 	// ʴ ޴ character  ʴ Ŷ 
@@ -2323,7 +2323,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 
 void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 {
-	EventMap::iterator itFind = m_GuildInviteEventMap.find( pchInvitee->GetPlayerID() );
+	EventMap::iterator itFind = m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)) );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
 		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), pchInvitee->GetName());

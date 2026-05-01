@@ -687,7 +687,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 			ch->StopRiding();
 	}
 #endif
-	quest::PC * pPC = quest::CQuestManager::instance().GetPC(((ch)->GetPlayerID()));
+	quest::PC * pPC = quest::CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	pPC->SetFlag("war.is_war_member", 1);
 
 	ch->SaveExitLocation();
@@ -731,12 +731,12 @@ void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
 		unsigned int questIndex=CQuestManager::instance().GetQuestIndexByName("guild_war_join");
 		if (questIndex)
 		{
-			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", ((ch)->GetPlayerID()), questIndex);
-			CQuestManager::instance().Letter(((ch)->GetPlayerID()), questIndex, 0);
+			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex);
+			CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex, 0);
 		}
 		else
 		{
-			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", ((ch)->GetPlayerID()), questIndex);
+			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex);
 			break;
 		}
 	}

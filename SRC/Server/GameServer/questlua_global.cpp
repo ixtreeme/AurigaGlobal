@@ -245,7 +245,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, q.GetCurrentCharacterPtr()->GetPlayerID(), t, timernpc, true));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t, timernpc, true));
 		}
 
 		return 0;
@@ -270,7 +270,7 @@ namespace quest
 			double t = lua_tonumber(L, -1);
 
 			CQuestManager& q = CQuestManager::instance();
-			quest_create_timer_event("", q.GetCurrentCharacterPtr()->GetPlayerID(), t);
+			quest_create_timer_event("", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t);
 		}
 
 		return 0;
@@ -293,7 +293,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, q.GetCurrentCharacterPtr()->GetPlayerID(), t, timernpc));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t, timernpc));
 		}
 
 		return 0;
@@ -543,7 +543,7 @@ namespace quest
 	{
 		// migrated from CHARACTER::give_char_privilege
 		// DUAL-PATH: legacy only during migration window
-		int pid = CQuestManager::instance().GetCurrentCharacterPtr()->GetPlayerID();
+		int pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()));
 		int type = (int)lua_tonumber(L, 1);
 		int value = (int)lua_tonumber(L, 2);
 
@@ -1112,7 +1112,7 @@ namespace quest
 					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 					if ( bEmpire == 0 )
 					{
-						sys_err("Unkonwn Empire {} {} ", ((ch)->GetName()), ((ch)->GetPlayerID()));
+						sys_err("Unkonwn Empire {} {} ", ((ch)->GetName()), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 						return;
 					}
 

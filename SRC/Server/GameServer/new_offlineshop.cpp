@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include <common/tables.h>
 #include "packet.h"
@@ -78,7 +80,7 @@ namespace offlineshop
 			{
 				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? owner->GetPlayerID() : 0;
+				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner)) : 0;
 			}
 			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 			//patch 08-03-2020
@@ -160,7 +162,7 @@ namespace offlineshop
 			{
 				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? owner->GetPlayerID() : 0;
+				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner)) : 0;
 			}
 			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
 
@@ -610,7 +612,7 @@ namespace offlineshop
 				if (!ch)
 					continue;
 
-				if (((ch)->GetPlayerID()) == m_dwPID)
+				if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_dwPID)
 					GetManager().SendShopOpenMyShopClientPacket(ch);
 
 				else
@@ -621,7 +623,7 @@ namespace offlineshop
 
 		else
 		{
-			if(((ch)->GetPlayerID()) == m_dwPID)
+			if((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_dwPID)
 				GetManager().SendShopOpenMyShopClientPacket(ch);
 
 			else

@@ -67,7 +67,7 @@ namespace quest
 			return 0;
 		}
 
-		uint32_t pid = ((ch)->GetPlayerID());
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		int map_index = int(lua_tonumber(L, 1));
 		int time = int(lua_tonumber(L, 2));
@@ -139,7 +139,7 @@ namespace quest
 			char szQuery[1024] = {0};
 			snprintf(szQuery, sizeof(szQuery), "SELECT d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ? ((ch)->GetPlayerID()) : 0, szRankType.c_str());
+				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0, szRankType.c_str());
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
 			if (pMsg->Get()->uiNumRows > 0) {
@@ -175,12 +175,12 @@ namespace quest
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), ((ch)->GetPlayerID()));
+				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			} else {
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), ((ch)->GetPlayerID()));
+				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			}
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
@@ -227,7 +227,7 @@ namespace quest
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		uint32_t pid = ((ch)->GetPlayerID());
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		int map_index = int(lua_tonumber(L, 1));
 		uint8_t rank_type = int(lua_tonumber(L, 2));
@@ -296,7 +296,7 @@ namespace quest
 			{
 				pDungeon->Join_Coords(ch, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
-			else if (party->GetLeaderPID() == ((ch)->GetPlayerID()))
+			else if (party->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			{
 				pDungeon->JoinParty_Coords(party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
@@ -941,7 +941,7 @@ namespace quest
 		{
 			if (ch && ((ch)->IsPC()))
 			{
-				vecPIDs.push_back(((ch)->GetPlayerID()));
+				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			}
 		}
 	};
@@ -985,7 +985,7 @@ namespace quest
 		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
-			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
+			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			{
 				lua_pushnumber(L, 2);
 				lua_pushnumber(L, 0);
@@ -1046,7 +1046,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1221,7 +1221,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1381,7 +1381,7 @@ namespace quest
 					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".enter_time", 0);
 					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".ch", 0);
 					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".cooldown", get_global_time() + cooldown);
-					int32_t pid = ((tch)->GetPlayerID());
+					int32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
 					int32_t time = get_global_time() - enter_time;
 					int32_t damage = tch->GetQuestDamage(race);
 
@@ -1414,7 +1414,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -1440,7 +1440,7 @@ namespace quest
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".enter_time", 0);
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".ch", 0);
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".cooldown", get_global_time() + cooldown);
-			int32_t pid = ((ch)->GetPlayerID());
+			int32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 			int32_t time = get_global_time() - enter_time;
 			int32_t damage = ch->GetQuestDamage(race);
 
@@ -1493,7 +1493,7 @@ namespace quest
 				{
 					if (guildid == ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID())
 					{
-						vecPIDs.push_back(((ch)->GetPlayerID()));
+						vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 					}
 					else
 					{
@@ -1561,7 +1561,7 @@ namespace quest
 		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 		if (party)
 		{
-			if (party->GetLeaderPID() != ((ch)->GetPlayerID()))
+			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			{
 				lua_pushnumber(L, 6);
 				lua_pushnumber(L, 0);
@@ -1625,7 +1625,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1694,7 +1694,7 @@ namespace quest
 				// }
 			// }
 
-			// if (!q.GetPC(((ch)->GetPlayerID())))
+			// if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			// {
 				// "cannot return to leader.");
 			// }

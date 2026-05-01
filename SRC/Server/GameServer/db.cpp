@@ -1043,7 +1043,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						LOG_INFO("GIVE LOTTO FAIL TO pid {}", ((ch)->GetPlayerID()));
+						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 					}
 					else
 					{
@@ -1056,7 +1056,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, pdw[2]);
 						}
 						else
-							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", ((ch)->GetPlayerID()));
+							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 					}
 				}
 

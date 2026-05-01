@@ -106,12 +106,12 @@ EVENTFUNC(target_event)
 	bool bRet = true;
 
 	if (iDist <= 500)
-		bRet = quest::CQuestManager::instance().Target(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName, "arrive");
+		bRet = quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), info->dwQuestIndex, info->szTargetName, "arrive");
 
 	if (!tch && info->iType == TARGET_TYPE_VID)
 	{
-		quest::CQuestManager::instance().Target(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName, "die");
-		CTargetManager::instance().DeleteTarget(((pkChr)->GetPlayerID()), info->dwQuestIndex, info->szTargetName);
+		quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), info->dwQuestIndex, info->szTargetName, "die");
+		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), info->dwQuestIndex, info->szTargetName);
 	}
 
 	if (event->is_force_to_end)

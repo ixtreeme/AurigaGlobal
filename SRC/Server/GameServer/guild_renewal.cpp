@@ -670,7 +670,7 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 	// per-player paid flag (Ad: O/X a kliensben)
 	{
 		uint8_t paidFlag = 0;
-		auto itPaid = c.contrib.find(ch->GetPlayerID());
+		auto itPaid = c.contrib.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (itPaid != c.contrib.end())
 			paidFlag = itPaid->second.paidFlag;
 
@@ -840,7 +840,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 
 	// Befizets nyilvntarts (sszestve + rszletes bonts memriban)
 	auto& c = GetCache(guildId);
-	const uint32_t pid = ch->GetPlayerID();
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
 	Contrib& cc = c.contrib[pid];
 	cc.paidItemTotal += (int64_t)allowed;
@@ -935,7 +935,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 	DB_SaveMoney(guildId);
 
 	// Befizets nyilvntarts
-	const uint32_t pid = ch->GetPlayerID();
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	Contrib& cc = c.contrib[pid];
 	cc.paidMoney += allowed;
 	cc.paidFlag = 1;
@@ -1019,7 +1019,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 	const LevelReq& req = itReq->second;
 
 	auto& c = GetCache(guildId);	
-	const uint32_t pid = ch->GetPlayerID();
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	bool any = false;
 
 	// 1) Yang befizetes (clamp a hianyzo osszegre)

@@ -152,7 +152,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		{
 			if (IsPCShop())
 			{
-				LOG_ERROR("not empty position for pc shop {}[{}]", m_pkPC->GetName(), m_pkPC->GetPlayerID());
+				LOG_ERROR("not empty position for pc shop {}[{}]", m_pkPC->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
 			}
 			else
 			{
@@ -263,10 +263,10 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 		if (IsPCShop()) {
 			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ch->GetPlayerID(), m_pkPC->GetPlayerID());
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			} else if (ItemSystem::GetItemOwner(selectedItem) != AIHelpers::EcsOf(m_pkPC)) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ch->GetPlayerID(), m_pkPC->GetPlayerID());
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			}
 		}
@@ -410,9 +410,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 			{
-				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ch->GetPlayerID(), m_pkPC->GetPlayerID(), dwPrice);
-				LogManager::instance().GoldBarLog(ch->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_BUY, buf);
-				LogManager::instance().GoldBarLog(m_pkPC->GetPlayerID(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_SELL, buf);
+				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), dwPrice);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_BUY, buf);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_SELL, buf);
 			}
 
 			item->RemoveFromCharacter();

@@ -686,7 +686,7 @@ void ClearClonesOnMap(int32_t mapIndex)
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) { if (pc) members.push_back(pc); });
 
         std::sort(members.begin(), members.end(), [](LPCHARACTER a, LPCHARACTER b) {
-            return a->GetPlayerID() < b->GetPlayerID();
+            return ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(a)) < ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(b));
         });
 
         if (members.empty())
@@ -839,7 +839,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             // register
-	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = owner->GetPlayerID();
+	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
 	m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
 	m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(owner));
 	m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
@@ -1375,7 +1375,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         }
 
         // Register: only the target can fight this clone, and the clone targets the target
-	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = target->GetPlayerID();
+	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target));
 	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
 	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
 	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
@@ -1467,7 +1467,7 @@ bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
         return false;
     }
 
-    PurgeTestClonesForTargetPID(ch->GetPlayerID(), idx);
+    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), idx);
     ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
     return true;
 }
@@ -1516,7 +1516,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
     if (party)
     {
-        if (party->GetLeaderPID() != ch->GetPlayerID())
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak a party leader indithatja!");
             return true;
@@ -1776,7 +1776,7 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     //    if (!(attacker->IsPC() || attacker->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(vVid, attacker->GetPlayerID());
+    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(attacker)));
     //}
 
     //// Clone -> Player/NPC
@@ -1785,7 +1785,7 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     //    if (!(victim->IsPC() || victim->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(aVid, victim->GetPlayerID());
+    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)));
     //}
 
     // Clone -> Clone tiltás

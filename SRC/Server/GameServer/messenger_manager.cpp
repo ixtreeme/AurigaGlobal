@@ -169,7 +169,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 	if (!((ch)->IsPC()) || !target->IsPC())
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 607, "");
@@ -177,7 +177,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 		return;
 	}
 
-	if (quest::CQuestManager::instance().GetPCForce(target->GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target)))->IsRunning() == true)
 		return;
 
 	uint32_t dw1 = GetCRC32(((ch)->GetName()), strlen(((ch)->GetName())));

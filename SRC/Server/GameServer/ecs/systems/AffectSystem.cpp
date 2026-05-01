@@ -334,7 +334,7 @@ void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count
     info->amount = amount;
 
     if (auto* pkAttacker = LegacyCharOf(attacker)) {
-        info->attacker_pid = pkAttacker->GetPlayerID();
+        info->attacker_pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker));
     } else {
         info->attacker_pid = 0;
     }
@@ -396,7 +396,7 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
     TPoisonEventInfo* info = AllocEventInfo<TPoisonEventInfo>();
     info->ch = ch;
     info->count = 10;
-    info->attacker_pid = pkAttacker ? pkAttacker->GetPlayerID() : 0;
+    info->attacker_pid = pkAttacker ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)) : 0;
     ch->m_pkPoisonEvent = event_create(poison_event, info, 1);
 
     if (test_server && pkAttacker) {
@@ -459,7 +459,7 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
     TBleedingEventInfo* info = AllocEventInfo<TBleedingEventInfo>();
     info->ch = ch;
     info->count = 10;
-    info->attacker_pid = pkAttacker ? pkAttacker->GetPlayerID() : 0;
+    info->attacker_pid = pkAttacker ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)) : 0;
     ch->m_pkBleedingEvent = event_create(bleeding_event, info, 1);
 
     if (test_server && pkAttacker) {
@@ -1321,19 +1321,19 @@ EVENTFUNC(load_affect_login_event)
 	{
 		LOG_INFO("Affect Load by Event");
 		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
-			ch->GetPlayerID(), ch->GetName(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
+			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
 		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
 		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
-			ch->GetPlayerID(), ch->GetName(), info->count, static_cast<const void*>(info->data));
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ch->GetPlayerID(), static_cast<const void*>(info->data));
+			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), info->count, static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), static_cast<const void*>(info->data));
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ch->GetPlayerID(), static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), static_cast<const void*>(info->data));
 		return 0;
 	}
 	else
 	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ch->GetPlayerID());
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
 		return 0;

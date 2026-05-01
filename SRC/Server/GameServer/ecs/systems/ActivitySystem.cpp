@@ -202,7 +202,7 @@ void StartFishing(entt::entity fisher, uint32_t)
     const bool second = !(rodVnum >= 27400 && rodVnum <= 27490);
 
     fishingnew_event_info* info = AllocEventInfo<fishingnew_event_info>();
-    info->pid = ch->GetPlayerID();
+    info->pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
     info->vnum = fishingnew::GetFishCatchedVnum(
         100,
         15 + ch->GetPoint(POINT_FISHING_RARE) + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2),

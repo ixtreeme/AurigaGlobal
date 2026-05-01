@@ -313,7 +313,7 @@ int CWarMap::STeamData::GetCurJointerCount()
 
 void CWarMap::STeamData::AppendMember(LPCHARACTER ch)
 {
-	set_pidJoiner.insert(ch->GetPlayerID());
+	set_pidJoiner.insert(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	++iMemberCount;
 }
 

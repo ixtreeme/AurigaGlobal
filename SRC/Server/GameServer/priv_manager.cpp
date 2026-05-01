@@ -209,7 +209,7 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 {
 	// ĳ������ ���� ��ġ�� -��� ������ -�� ����ǰ�
-	int val_ch = GetPrivByCharacter(((ch)->GetPlayerID()), type);
+	int val_ch = GetPrivByCharacter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), type);
 
 	if (val_ch < 0 && !ch->IsEquipUniqueItem(UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
 		return val_ch;

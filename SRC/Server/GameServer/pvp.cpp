@@ -207,10 +207,10 @@ EVENTFUNC(pvp_duel_counter)
 				LPPARTY victimParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB));
 				
 				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chA)))
-					chParty->Quit(((chA)->GetPlayerID()));
+					chParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chA))));
 				
 				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB)))
-					victimParty->Quit(((chB)->GetPlayerID()));
+					victimParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chB))));
 			}
 			
 			if ((chA->GetDuel("BlockPet")) && (chB->GetDuel("BlockPet")))
@@ -585,7 +585,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		RemoveStateFull(pkVictim);
 	}
 
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 	
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -598,12 +598,12 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		CPVP * pkPVP = *it2++;
 		uint32_t dwCompanionPID;
 		
-		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
+		if (pkPVP->m_players[0].dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
 		
-		if (dwCompanionPID == ((pkVictim)->GetPlayerID()))
+		if (dwCompanionPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))))
 		{
 			if (pkPVP->IsFight())
 			{
@@ -635,14 +635,14 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	if (pkChr->IsDead() || pkVictim->IsDead())
 		return;
 
-	CPVP kPVP(((pkChr)->GetPlayerID()), ((pkVictim)->GetPlayerID()));
+	CPVP kPVP((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))));
 
 	CPVP * pkPVP;
 
 	if ((pkPVP = Find(kPVP.m_dwCRC)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (pkPVP->Agree(((pkChr)->GetPlayerID()))) {
+		if (pkPVP->Agree((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 115, "%s", ((pkChr)->GetName()));
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 115, "%s", ((pkVictim)->GetName()));
 		}
@@ -652,13 +652,13 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 
 	pkPVP = M2_NEW CPVP(kPVP);
 
-	pkPVP->SetVID(((pkChr)->GetPlayerID()), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr)));
-	pkPVP->SetVID(((pkVictim)->GetPlayerID()), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)));
+	pkPVP->SetVID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr)));
+	pkPVP->SetVID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)));
 
 	m_map_pkPVP.insert(map<uint32_t, CPVP *>::value_type(pkPVP->m_dwCRC, pkPVP));
 
-	m_map_pkPVPSetByID[((pkChr)->GetPlayerID())].insert(pkPVP);
-	m_map_pkPVPSetByID[((pkVictim)->GetPlayerID())].insert(pkPVP);
+	m_map_pkPVPSetByID[(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr)))].insert(pkPVP);
+	m_map_pkPVPSetByID[(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim)))].insert(pkPVP);
 
 	pkPVP->Packet();
 
@@ -719,7 +719,7 @@ bool CPVPManager::IsFighting(LPCHARACTER pkChr)
 	if (!pkChr)
 		return false;
 
-	return IsFighting(((pkChr)->GetPlayerID()));
+	return IsFighting((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 }
 
 bool CPVPManager::IsFighting(uint32_t dwPID)
@@ -744,7 +744,7 @@ bool CPVPManager::IsFighting(uint32_t dwPID)
 
 void CPVPManager::ConnectEx(LPCHARACTER pkChr, bool bDisconnect)
 {
-	const auto it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
+	const auto it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -756,7 +756,7 @@ void CPVPManager::ConnectEx(LPCHARACTER pkChr, bool bDisconnect)
 	while (it2 != it->second.end())
 	{
 		CPVP * pkPVP = *it2++;
-		pkPVP->SetVID(((pkChr)->GetPlayerID()), dwVID);
+		pkPVP->SetVID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), dwVID);
 	}
 }
 
@@ -768,7 +768,7 @@ void CPVPManager::Connect(LPCHARACTER pkChr)
 void CPVPManager::Disconnect(LPCHARACTER pkChr)
 {
 #ifdef ENABLE_PVP_ADVANCED
-	const auto it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
+	const auto it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 	
 	if (it == m_map_pkPVPSetByID.end())
 		return;
@@ -785,12 +785,12 @@ void CPVPManager::Disconnect(LPCHARACTER pkChr)
 
 void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method is calling from no where yet.
 {
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return;
 
-	LOG_INFO("PVPManager::Dead {}", ((pkChr)->GetPlayerID()));
+	LOG_INFO("PVPManager::Dead {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -799,7 +799,7 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 
 		uint32_t dwCompanionPID;
 
-		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
+		if (pkPVP->m_players[0].dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
@@ -807,7 +807,7 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 		if (dwCompanionPID != dwKillerPID)
 			continue;
 
-		pkPVP->SetVID(((pkChr)->GetPlayerID()), 0);
+		pkPVP->SetVID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), 0);
 
 		m_map_pkPVPSetByID.erase(dwCompanionPID);
 
@@ -828,14 +828,14 @@ void CPVPManager::GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID) // This method
 // PVP�� �����ϸ� ����ġ�� �������� ������ PK�� ������ �ʴ´�.
 bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 {
-	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find(((pkChr)->GetPlayerID()));
+	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 
 	if (it == m_map_pkPVPSetByID.end())
 		return false;
 
 	bool found = false;
 
-	LOG_INFO("PVPManager::Dead {}", ((pkChr)->GetPlayerID()));
+	LOG_INFO("PVPManager::Dead {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
 
 	while (it2 != it->second.end())
@@ -844,7 +844,7 @@ bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 
 		uint32_t dwCompanionPID;
 
-		if (pkPVP->m_players[0].dwPID == ((pkChr)->GetPlayerID()))
+		if (pkPVP->m_players[0].dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
@@ -999,7 +999,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		}
 	}
 
-	CPVP kPVP(((pkChr)->GetPlayerID()), ((pkVictim)->GetPlayerID()));
+	CPVP kPVP((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))));
 	CPVP * pkPVP = Find(kPVP.m_dwCRC);
 
 	if (!pkPVP || !pkPVP->IsFight())

@@ -190,7 +190,7 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 
 void CGuildManager::LoginMember(LPCHARACTER ch)
 {
-	TGuildMap::iterator it = m_map_pkGuildByPID.find(((ch)->GetPlayerID()));
+	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 	if (it != m_map_pkGuildByPID.end())
 	{

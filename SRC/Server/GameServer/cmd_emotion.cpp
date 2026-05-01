@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
 #include "char_interface.hpp"
@@ -248,13 +250,13 @@ ACMD(do_emotion)
 		{
 			if (s_emotion_set.find(std::make_pair(((victim)->GetLegacyVID()), ((ch)->GetLegacyVID()))) == s_emotion_set.end())
 			{
-				if (true == marriage::CManager::instance().IsMarried( ((ch)->GetPlayerID()) ))
+				if (true == marriage::CManager::instance().IsMarried( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) ))
 				{
-					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( ((ch)->GetPlayerID()) );
+					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
 
-					const uint32_t other = marriageInfo->GetOther( ((ch)->GetPlayerID()) );
+					const uint32_t other = marriageInfo->GetOther( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
 
-					if (0 == other || other != ((victim)->GetPlayerID()))
+					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim))))
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ((victim)->GetName()));

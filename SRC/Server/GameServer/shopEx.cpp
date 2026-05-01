@@ -234,7 +234,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
 	{
-		LogManager::instance().GoldBarLog(((ch)->GetPlayerID()), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), PERSONAL_SHOP_BUY, "");
 	}
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), -dwPrice);
@@ -246,7 +246,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	{
 		ch->SaveReal();
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
-		uint32_t pid = ((ch)->GetPlayerID());
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));
 	}
 #else

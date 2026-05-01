@@ -88,7 +88,7 @@ namespace marriage
 		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
 		{
 			LPCHARACTER ch = *it;
-			if (ch->GetPlayerID() == dwPID1 || ch->GetPlayerID() == dwPID2)
+			if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID2)
 				continue;
 
 			if (ch->GetLevel() < 10) // 10 레벨이하는 주지않는다.

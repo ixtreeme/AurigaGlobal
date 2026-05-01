@@ -114,7 +114,7 @@ namespace quest
 			if (pParty->GetMemberCount() == 2)
 				CPartyManager::instance().DeleteParty(pParty);
 			else
-				pParty->Quit(((ch)->GetPlayerID()));
+				pParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		}
 
 		lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))== nullptr);
@@ -127,10 +127,10 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		// if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == ((ch)->GetPlayerID()))
+		// if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			// return 0;
 
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == ((ch)->GetPlayerID()))
+		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			CPartyManager::instance().DeleteParty(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
 
 		lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))== nullptr);
@@ -292,7 +292,7 @@ namespace quest
 				return 1;
 			}
 
-			lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == ((ch)->GetPlayerID()) ? 1 : 0);
+			lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) ? 1 : 0);
 			return 1;
 		}
 
@@ -519,7 +519,7 @@ namespace quest
 		}
 		void operator () (LPCHARACTER ch)
 		{
-			vecPIDs.push_back(((ch)->GetPlayerID()));
+			vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		}
 	};
 
@@ -607,13 +607,13 @@ namespace quest
 					}
 					else
 					{
-						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((tch)->GetPlayerID()), gold);
+						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch))), gold);
 						ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GOLD, gold, true);
 					}
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to main.");
 			}
@@ -626,7 +626,7 @@ namespace quest
 			}
 			else
 			{
-				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ((ch)->GetPlayerID()), gold);
+				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), gold);
 				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, gold, true);
 			}
 		}
@@ -661,7 +661,7 @@ namespace quest
 				}
 			}
 
-			if (!q.GetPC(((ch)->GetPlayerID())))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			{
 				sys_err("cannot return to main.");
 			}

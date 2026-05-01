@@ -246,7 +246,7 @@ namespace quest
 			if (((npc)->IsPC()))
 				return 0;
 
-			if (npc->GetQuestNPCID() == ((ch)->GetPlayerID()))
+			if (npc->GetQuestNPCID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 			{
 				npc->SetQuestNPCID(0);
 			}
@@ -269,9 +269,9 @@ namespace quest
 			return 1;
 		}
 
-		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == ((ch)->GetPlayerID()))
+		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 		{
-			npc->SetQuestNPCID(((ch)->GetPlayerID()));
+			npc->SetQuestNPCID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			lua_pushboolean(L, true);
 		}
 		else
@@ -444,7 +444,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ((npc)->GetPlayerID()));
+		lua_pushnumber(L, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(npc))));
 		return 1;
 	}
 

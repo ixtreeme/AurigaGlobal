@@ -471,7 +471,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 			else {
 				this->EquipTo(ch, iFindCell);
 				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-					m_dwLastOwnerPID = ch->GetPlayerID();
+					m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
 				event_cancel(&m_pkDestroyEvent);
 
@@ -480,7 +480,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				Save();
 
 				const entt::entity itemEntity = ItemEntityOf(this);
-				SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
+				SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
 				SyncItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
@@ -527,7 +527,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	}
 #endif
 	if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-		m_dwLastOwnerPID = ch->GetPlayerID();
+		m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -575,7 +575,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	Save();
 
 	const entt::entity itemEntity = ItemEntityOf(this);
-	SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
 	SyncItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
@@ -671,7 +671,7 @@ bool CItem::IsOwnership(LPCHARACTER ch)
 	if (!m_pkOwnershipEvent)
 		return true;
 
-	return m_dwOwnershipPID == ch->GetPlayerID() ? true : false;
+	return m_dwOwnershipPID == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) ? true : false;
 }
 
 void CItem::SetOwnershipEvent(LPEVENT pkEvent)
@@ -708,7 +708,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	if (iSec <= 10)
 		iSec = 30;
 
-	m_dwOwnershipPID = ch->GetPlayerID();
+	m_dwOwnershipPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
 	strlcpy(info->szOwnerName, ch->GetName(), sizeof(info->szOwnerName));
@@ -725,7 +725,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	PacketAround(&p, sizeof(p));
 
 	const entt::entity itemEntity = ItemEntityOf(this);
-	SyncItemOwner(itemEntity, m_pOwner ? m_pOwner->GetPlayerID() : 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, m_pOwner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pOwner)) : 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 }
 
 bool CItem::CanUsedBy(LPCHARACTER ch)
@@ -1078,7 +1078,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	const entt::entity itemEntity = ItemEntityOf(this);
 	SyncItemEquipped(itemEntity, true);
 	SyncItemLocation(itemEntity);
-	SyncItemOwner(itemEntity, ch->GetPlayerID(), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
 	SyncCharacterEquipmentSlot(ch, bWearCell, itemEntity);
 	g_dispatcher.trigger(ecs::EvItemEquipped { AIHelpers::EcsOf(ch), itemEntity });
 

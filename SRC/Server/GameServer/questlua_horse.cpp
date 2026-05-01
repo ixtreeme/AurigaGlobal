@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -420,7 +421,7 @@ namespace quest
 				AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME, 0, 0, 0, PASSES_PER_SEC(nHorseNameDuration), 0, true);
 				std::string name = pHorseName;
 				name += " Horse";
-				CHorseNameManager::instance().UpdateHorseName(((ch)->GetPlayerID()), name.c_str(), true);
+				CHorseNameManager::instance().UpdateHorseName((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), name.c_str(), true);
 
 				if (ch->GetHorse() != nullptr) {
 					ch->HorseSummon(false, true);
@@ -446,7 +447,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if ( ch != nullptr)
 		{
-			const char* pHorseName = CHorseNameManager::instance().GetHorseName(((ch)->GetPlayerID()));
+			const char* pHorseName = CHorseNameManager::instance().GetHorseName((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 			if ( pHorseName != nullptr)
 			{

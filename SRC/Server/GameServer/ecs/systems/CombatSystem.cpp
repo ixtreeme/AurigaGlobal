@@ -1278,7 +1278,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(to->GetPlayerID());
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(to)));
 
 			// DIVORCE_NULL_BUG_FIX
 			if (pMarriage && pMarriage->IsNear())
@@ -1428,7 +1428,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(to->GetPlayerID());
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(to)));
 
 			// DIVORCE_NULL_BUG_FIX
 			if (pMarriage && pMarriage->IsNear())
@@ -1888,7 +1888,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		if (pkKiller->m_pkChrTarget == this)
 			pkKiller->SetTarget(nullptr);
 
-		isAgreedPVP = CPVPManager::instance().Dead(this, pkKiller->GetPlayerID());
+		isAgreedPVP = CPVPManager::instance().Dead(this, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)));
 		isDuel = CArenaManager::instance().OnDead(pkKiller, this);
 #ifdef ENABLE_PVP_ADVANCED
 		if (isAgreedPVP || isDuel)
@@ -1931,7 +1931,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 					isUnderGuildWar = true;
 
 			pkKiller->SetQuestNPCID(GetPacketVID());
-			quest::CQuestManager::instance().Kill(pkKiller->GetPlayerID(), quest::QUEST_NO_NPC);
+			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), quest::QUEST_NO_NPC);
 			CGuildManager::instance().Kill(pkKiller, this);
 		}
 	}
@@ -2044,7 +2044,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
 					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
 
-				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_PC", buf);
 			}
 			else
 			{
@@ -2089,7 +2089,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
 					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
 
-				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_PC", buf);
 			}
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2101,12 +2101,12 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
 				{
 #ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(pkKiller->GetPlayerID(), GetPlayerID()))
+					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), GetPlayerID()))
 					{
 						if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
 						{
 							pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
-							CBattlePass::instance().RegisterPlayerKill(pkKiller->GetPlayerID(), GetPlayerID());
+							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), GetPlayerID());
 						}
 					}
 #else
@@ -3515,7 +3515,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		}
 
 		pkAttacker->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().Kill(pkAttacker->GetPlayerID(), GetRaceNum());
+		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)), GetRaceNum());
 		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 		COrcsDungeon::instance().OnMobKilled(pkAttacker, this);
@@ -5367,7 +5367,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 						LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pAttacker));
 						if (party)
 						{
-							if (party->GetLeaderPID() == pAttacker->GetPlayerID())
+							if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker)))
 							{
 								int32_t per = (GetMaxHP() / 100) * 70;
 								if (GetHP() - dam <= per)
@@ -5579,7 +5579,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				dam,
 				szVictimEsc,
 				dam,
-				pAttacker->GetPlayerID()
+				ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker))
 			);
 			CheckLeaderboardSkillMobChanges();
 			if (GetMapIndex() == 41) {
@@ -5707,7 +5707,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		{
 			pAttacker->SetQuestDamage(GetRaceNum(), dam);
 			pAttacker->SetQuestNPCID(GetPacketVID());
-			quest::CQuestManager::instance().QuestDamage(pAttacker->GetPlayerID(), GetRaceNum());
+			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker)), GetRaceNum());
 		}
 #endif
 
@@ -5769,7 +5769,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	if (GetHP() <= 0)
 	{
 		if (pAttacker && !pAttacker->IsNPC())
-			m_dwKillerPID = pAttacker->GetPlayerID();
+			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker));
 		else
 			m_dwKillerPID = 0;
 
@@ -5790,7 +5790,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		Stun();
 
 		if (pAttacker && !pAttacker->IsNPC())
-			m_dwKillerPID = pAttacker->GetPlayerID();
+			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pAttacker));
 		else
 			m_dwKillerPID = 0;
 	}
@@ -6576,7 +6576,7 @@ void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
 		it->second.iTotalDamage += iDamage;
 
 	// hogy Dead() vissza tudja keresni a killert, ha kell
-	m_dwKillerPID = pkAttacker->GetPlayerID();
+	m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker));
 }
 
 

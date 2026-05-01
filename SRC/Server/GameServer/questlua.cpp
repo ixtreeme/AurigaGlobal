@@ -67,7 +67,7 @@ namespace quest
 		if (!((ch)->IsPC()))
 			return;
 
-		if (PC * pPC = CQuestManager::instance().GetPCForce(((ch)->GetPlayerID())))
+		if (PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 			pPC->SetFlag(flagname, value);
 	}
 
@@ -76,7 +76,7 @@ namespace quest
 		if (!((ch)->IsPC()))
 			return false;
 
-		PC * pPC = CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+		PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		bool returnBool = false;
 		if (pPC)
 		{
@@ -205,7 +205,7 @@ namespace quest
 	{
 		CQuestManager & q = CQuestManager::instance();
 		const char * pszBoardName = lua_tostring(L, 1);
-		uint32_t mypid = q.GetCurrentCharacterPtr()->GetPlayerID();
+		uint32_t mypid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
 		bool bOrder = (int) lua_tonumber(L, 2) != 0 ? true : false;
 
 		DBManager::instance().ReturnQuery(QID_HIGHSCORE_SHOW, mypid, nullptr,
@@ -221,7 +221,7 @@ namespace quest
 		THighscoreRegisterQueryInfo * qi = M2_NEW THighscoreRegisterQueryInfo;
 
 		strlcpy(qi->szBoard, lua_tostring(L, 1), sizeof(qi->szBoard));
-		qi->dwPID = q.GetCurrentCharacterPtr()->GetPlayerID();
+		qi->dwPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
 		qi->iValue = (int) lua_tonumber(L, 2);
 		qi->bOrder = (int) lua_tonumber(L, 3);
 
@@ -923,10 +923,10 @@ namespace quest
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
 		if (ch && ((ch)->IsPC()))
 		{
-			ch->ConfirmWithMsg(szMsg, iTimeout, GetCurrentCharacterPtr()->GetPlayerID());
+			ch->ConfirmWithMsg(szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
 		}
 
-		GetCurrentPC()->SetConfirmWait((ch && ((ch)->IsPC()))?((ch)->GetPlayerID()):0);
+		GetCurrentPC()->SetConfirmWait((ch && ((ch)->IsPC()))?(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))):0);
 		ostringstream os;
 		os << "[CONFIRM_WAIT timeout;" << iTimeout << "]";
 		AddScript(os.str());
@@ -934,8 +934,8 @@ namespace quest
 
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
-		info->dwWaitPID = GetCurrentCharacterPtr()->GetPlayerID();
-		info->dwReplyPID = (ch && ((ch)->IsPC())) ? ((ch)->GetPlayerID()) : 0;
+		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr()));
+		info->dwReplyPID = (ch && ((ch)->IsPC())) ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
 	}

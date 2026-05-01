@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -561,7 +562,7 @@ ACMD(do_open_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT slot, name, map, x, y FROM player.savepoint WHERE id = %u", ((ch)->GetPlayerID()));
+	snprintf(query, sizeof(query), "SELECT slot, name, map, x, y FROM player.savepoint WHERE id = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		std::vector<int> stat;
@@ -615,7 +616,7 @@ ACMD(do_empty_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
+	snprintf(query, sizeof(query), "DELETE FROM player.savepoint WHERE id = %u AND slot = %d", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, "-", 0, 0, 0);
 }
@@ -656,7 +657,7 @@ ACMD(do_go_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT g_x, g_y, map FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
+	snprintf(query, sizeof(query), "SELECT g_x, g_y, map FROM player.savepoint WHERE id = %u AND slot = %d", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		MYSQL_ROW data;
@@ -727,7 +728,7 @@ ACMD(do_save_savepoint) {
 	}
 
 	char query[512] = {0};
-	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", ((ch)->GetPlayerID()), slot);
+	snprintf(query, sizeof(query), "SELECT * FROM player.savepoint WHERE id = %u AND slot = %d", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), slot);
 	std::unique_ptr<SQLMsg> res(DBManager::instance().DirectQuery(query));
 	if (res->Get()->uiNumRows > 0) {
 		LOG_ERROR("{} savepoint slot ({}) is not empty. Maybe a hacker?", ((ch)->GetName()), slot);
@@ -760,7 +761,7 @@ ACMD(do_save_savepoint) {
 		PIXEL_POSITION pos = ch->GetXYZ();
 
 		char query2[512] = {0};
-		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", ((ch)->GetPlayerID()), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
+		snprintf(query2, sizeof(query2), "INSERT INTO player.savepoint (id, slot, name, map, x, y, g_x, g_y) VALUES(%u, %d, '%s', %d, %d, %d, %d, %d)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), slot, name.c_str(), mapIdx, x, y, pos.x, pos.y);
 		std::unique_ptr<SQLMsg> res2(DBManager::instance().DirectQuery(query2));
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "update_savepoint %d %s %d %d %d", slot, name.c_str(), mapIdx, x, y);
 		ch->SetSavePointTime();
@@ -796,7 +797,7 @@ ACMD(do_doctrine_choose) {
 			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_HORSE_NAME, 0, 0, 0, 126144000, 0, true);
 			std::string name = ((ch)->GetName());
 			name += " Horse";
-			CHorseNameManager::instance().UpdateHorseName(((ch)->GetPlayerID()), name.c_str(), true);
+			CHorseNameManager::instance().UpdateHorseName((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), name.c_str(), true);
 
 			if (ch->GetHorse()) {
 				ch->HorseSummon(false, true);

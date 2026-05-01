@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -362,7 +363,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     if (d->GetFlag(kFlagFloor) == 0)
     {
         LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-        if (!party || party->GetLeaderPID() == ch->GetPlayerID())
+        if (!party || party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
         {
             d->SetFlag(kFlagFloor, 2);
             d->SetFlag(kFlagWasCompleted, 0);
@@ -441,7 +442,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
 
     // Leader-only if party
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
         return true;

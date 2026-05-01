@@ -693,7 +693,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             return false;
 
         char rewardFlag[64];
-        snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ch->GetPlayerID());
+        snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
         if (d->GetFlag(rewardFlag) != 0)
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already took your reward.");
@@ -758,7 +758,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can enter.");
         return true;

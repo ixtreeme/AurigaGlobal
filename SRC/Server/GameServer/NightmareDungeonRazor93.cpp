@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -519,7 +520,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
 
     // Party rules
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
         return true;

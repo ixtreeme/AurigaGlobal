@@ -203,7 +203,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
     TPartyJoinEventInfo* info = AllocEventInfo<TPartyJoinEventInfo>();
 
     info->dwGuestPID = GetPlayerID();
-    info->dwLeaderPID = leader->GetPlayerID();
+    info->dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(leader));
 
     SetPartyRequestEvent(event_create(party_request_event, info, PASSES_PER_SEC(10)));
 
@@ -229,7 +229,7 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
         return;
     }
 
-    if (info->dwGuestPID != member->GetPlayerID())
+    if (info->dwGuestPID != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(member)))
         return;
 
     if (info->dwLeaderPID != GetPlayerID())
@@ -255,7 +255,7 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
         return;
     }
 
-    if (info->dwGuestPID != member->GetPlayerID())
+    if (info->dwGuestPID != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(member)))
         return;
 
     if (info->dwLeaderPID != GetPlayerID())
@@ -424,15 +424,15 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
         return;
     }
 
-    if (m_PartyInviteEventMap.contains(pchInvitee->GetPlayerID()))
+    if (m_PartyInviteEventMap.contains(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee))))
         return;
 
     TPartyJoinEventInfo* info = AllocEventInfo<TPartyJoinEventInfo>();
 
-    info->dwGuestPID = pchInvitee->GetPlayerID();
+    info->dwGuestPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee));
     info->dwLeaderPID = GetPlayerID();
 
-    m_PartyInviteEventMap.insert(EventMap::value_type(pchInvitee->GetPlayerID(), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
+    m_PartyInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)), event_create(party_invite_event, info, PASSES_PER_SEC(10))));
 
     TPacketGCPartyInvite p;
     p.header = HEADER_GC_PARTY_INVITE;
@@ -442,7 +442,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 
 void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
 {
-    const auto itFind = m_PartyInviteEventMap.find(pchInvitee->GetPlayerID());
+    const auto itFind = m_PartyInviteEventMap.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)));
 
     if (itFind == m_PartyInviteEventMap.end())
     {
@@ -519,7 +519,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
     {
         LPPARTY pParty = CPartyManager::instance().CreateParty(this);
 
-        pParty->Join(pchInvitee->GetPlayerID());
+        pParty->Join(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pchInvitee)));
         pParty->Link(pchInvitee);
         pParty->SendPartyInfoAllToOne(this);
     }

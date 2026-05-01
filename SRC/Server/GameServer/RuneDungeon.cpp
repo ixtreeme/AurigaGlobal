@@ -268,7 +268,7 @@ namespace
                     damage = 0;
 #endif
 
-                const int32_t pid = ch->GetPlayerID();
+                const int32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
                 const int32_t dungeon_index = kRuneOriginalMap;
 
                 std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
@@ -930,7 +930,7 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
         bool isLeader = true;
         if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
         {
-            if (party->GetLeaderPID() != ch->GetPlayerID())
+            if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
                 isLeader = false;
         }
 
@@ -1038,7 +1038,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             }
             else
             {
-                if (party->GetLeaderPID() == killer->GetPlayerID())
+                if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(killer)))
                 {
                     if (killer->CountSpecifyItem(kKeyFragment) < 10 && killer->CountSpecifyItem(kFloorKey) < 1)
                         killer->AutoGiveItem(kKeyFragment, 1);
@@ -1304,7 +1304,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         // Only leader can start
-        if (party->GetLeaderPID() != ch->GetPlayerID())
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
         {
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can enter.");
             return false;
@@ -1435,7 +1435,7 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
     // Only leader (or solo) can progress
     if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
     {
-        if (party->GetLeaderPID() != ch->GetPlayerID())
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
             return false;
     }
 
@@ -1469,7 +1469,7 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
 
     if (LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
     {
-        if (party->GetLeaderPID() != ch->GetPlayerID())
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
             return false;
     }
 

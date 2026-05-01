@@ -1,5 +1,7 @@
 #define _attr_transfer_cpp_
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "config.h"
 #include "constants.h"
@@ -162,7 +164,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 
 	
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog(((ch)->GetPlayerID()), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
+	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 84, "");
 #endif

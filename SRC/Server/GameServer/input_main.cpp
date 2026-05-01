@@ -681,7 +681,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
-					LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+					LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 				}
 #endif
 			}
@@ -859,7 +859,7 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 		}
 #endif
 		
-		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ch->GetPlayerID(), -100000);
+		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), -100000);
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -100000, true);
 		ch->RemoveSpecifyItem(vid, 1);
 		LPITEM item = ch->AutoGiveItem(vid + 300, 1);
@@ -941,7 +941,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 			if (IsCmd("shplink") || IsCmd("shoplink"))
 			{
-				offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ch->GetPlayerID());
+				offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 				if (!pkShop)
 				{
 					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs nyitott offline boltod./ You don't have open shop.");
@@ -1017,7 +1017,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						LIGHT_GREEN,
 						(unsigned)linkVnum,
 						0u,
-						(unsigned)ch->GetPlayerID(),   // socket0 = OWNER_ID 
+						(unsigned)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)),   // socket0 = OWNER_ID 
 						(unsigned)0x0BADF00D,          // socket1 = SENTINEL
 						0u,
 						0u,
@@ -1033,7 +1033,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						LIGHT_GREEN,
 						(unsigned)linkVnum,
 						0u,
-						(unsigned)ch->GetPlayerID(),
+						(unsigned)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)),
 						(unsigned)0x0BADF00D,
 						0u,
 						0u,
@@ -1443,7 +1443,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1469,7 +1469,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1489,7 +1489,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ch->GetMapIndex(), ch->GetPlayerID(), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+						LogManager::instance().ChatLog(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 					}
 #endif
 				}
@@ -1861,7 +1861,7 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 			
 		case 3:
 		{
-			uint32_t dwPlayerId = ch->GetPlayerID();
+			uint32_t dwPlayerId = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 			uint8_t bIsGlobal = 0;
 			
 			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
@@ -2097,7 +2097,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 
 					if (to_ch->IsPC())
 					{
-						if (quest::CQuestManager::instance().GiveItemToPC(ch->GetPlayerID(), to_ch))
+						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), to_ch))
 						{
 							LOG_INFO("Exchange canceled by quest {} {}", ch->GetName(), to_ch->GetName());
 							return;
@@ -2448,7 +2448,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 
 	TSkillColor db_pack;
 	memcpy(db_pack.dwSkillColor, data, sizeof(data));
-	db_pack.player_id = ch->GetPlayerID();
+	db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
 	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
 }
@@ -2741,21 +2741,21 @@ void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptButton * p = (TPacketCGScriptButton *) c_pData;
-	LOG_INFO("QUEST ScriptButton pid {} idx {}", ch->GetPlayerID(), p->idx);
+	LOG_INFO("QUEST ScriptButton pid {} idx {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->idx);
 
-	quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
+	quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	if (pc && pc->IsConfirmWait())
 	{
-		quest::CQuestManager::instance().Confirm(ch->GetPlayerID(), quest::CONFIRM_TIMEOUT);
+		quest::CQuestManager::instance().Confirm(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), quest::CONFIRM_TIMEOUT);
 	}
 	else if (p->idx & 0x80000000)
 	{
 		//퀘스트 창에서 클릭시(__SelectQuest) 여기로
-		quest::CQuestManager::Instance().QuestInfo(ch->GetPlayerID(), p->idx & 0x7fffffff);
+		quest::CQuestManager::Instance().QuestInfo(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->idx & 0x7fffffff);
 	}
 	else
 	{
-		quest::CQuestManager::Instance().QuestButton(ch->GetPlayerID(), p->idx);
+		quest::CQuestManager::Instance().QuestButton(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->idx);
 	}
 }
 
@@ -2768,15 +2768,15 @@ void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
-	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ch->GetPlayerID(), p->answer);
+	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->answer);
 
 	if (p->answer > 250) // 다음 버튼에 대한 응답으로 온 패킷인 경우
 	{
-		quest::CQuestManager::Instance().Resume(ch->GetPlayerID());
+		quest::CQuestManager::Instance().Resume(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	}
 	else // 선택 버튼을 골라서 온 패킷인 경우
 	{
-		quest::CQuestManager::Instance().Select(ch->GetPlayerID(),  p->answer);
+		quest::CQuestManager::Instance().Select(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)),  p->answer);
 	}
 }
 
@@ -2791,8 +2791,8 @@ void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptSelectItem* p = (TPacketCGScriptSelectItem*) c_pData;
-	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ch->GetPlayerID(), p->selection);
-	quest::CQuestManager::Instance().SelectItem(ch->GetPlayerID(), p->selection);
+	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->selection);
+	quest::CQuestManager::Instance().SelectItem(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->selection);
 }
 // END_OF_SCRIPT_SELECT_ITEM
 
@@ -2808,9 +2808,9 @@ void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
 
 	char msg[65];
 	strlcpy(msg, p->msg, sizeof(msg));
-	LOG_INFO("QUEST InputString pid {} msg {}", ch->GetPlayerID(), msg);
+	LOG_INFO("QUEST InputString pid {} msg {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), msg);
 
-	quest::CQuestManager::Instance().Input(ch->GetPlayerID(), msg);
+	quest::CQuestManager::Instance().Input(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), msg);
 }
 
 void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
@@ -2828,7 +2828,7 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ch->GetName(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
 	if (ch_wait)
 	{
-		quest::CQuestManager::Instance().Confirm(ch_wait->GetPlayerID(), (quest::EQuestConfirmType) p->answer, ch->GetPlayerID());
+		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_wait)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	}
 }
 
@@ -2875,7 +2875,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckin");//INGAME_DEBUG_RAZOR93
 #endif
 
-	if (quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID())->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->IsRunning() == true)
 		return;
 
 	TPacketCGSafeboxCheckin * p = (TPacketCGSafeboxCheckin *) c_pData;
@@ -3535,7 +3535,7 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 #endif
 	}
 	else if (!p->accept) {
-		pInviter->PartyInviteDeny(ch->GetPlayerID());
+		pInviter->PartyInviteDeny(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	} else {
 		pInviter->PartyInviteAccept(ch);
 	}
@@ -3563,7 +3563,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() != ch->GetPlayerID())
+	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 206, "");
@@ -3596,7 +3596,7 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 			if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SetRole(pid, p->byRole, p->flag))
 			{
 				TPacketPartyStateChange pack;
-				pack.dwLeaderPID = ch->GetPlayerID();
+				pack.dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 				pack.dwPID = p->pid;
 				pack.bRole = p->byRole;
 				pack.bFlag = p->flag;
@@ -3647,7 +3647,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 		return;
 
 	LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-	if (pParty->GetLeaderPID() == ch->GetPlayerID())
+	if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
 	{
 		if (!ch->GetDungeon()) {
 			// 적룡성에서 파티장이 던젼 밖에서 파티 해산 못하게 막자
@@ -3660,7 +3660,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 			}
 
 			// leader can remove any member
-			if (p->pid == ch->GetPlayerID() || pParty->GetMemberCount() == 2)
+			if (p->pid == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) || pParty->GetMemberCount() == 2)
 			{
 				// party disband
 				CPartyManager::instance().DeleteParty(pParty);
@@ -3673,7 +3673,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 					//pParty->SendPartyRemoveOneToAll(B);
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(B), CHAT_TYPE_INFO, 216, "");
 					//pParty->Unlink(B);
-					//CPartyManager::instance().SetPartyMember(B->GetPlayerID(), NULL);
+					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(B)), NULL);
 				}
 #endif
 				pParty->Quit(p->pid);
@@ -3687,7 +3687,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 	}
 	else
 	{
-		if (p->pid == ch->GetPlayerID())
+		if (p->pid == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
 		{
 			if (!ch->GetDungeon()) {
 				if (pParty->GetMemberCount() == 2) {
@@ -3697,9 +3697,9 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 215, "");
 #endif
 					//pParty->SendPartyRemoveOneToAll(ch);
-					pParty->Quit(ch->GetPlayerID());
+					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 					//pParty->SendPartyRemoveAllToOne(ch);
-					//CPartyManager::instance().SetPartyMember(ch->GetPlayerID(), NULL);
+					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), NULL);
 				}
 			}
 #ifdef TEXTS_IMPROVEMENT
@@ -3778,7 +3778,7 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 		int GuildCreateFee = 200000;
 
 		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -GuildCreateFee);
-		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ch->GetPlayerID(), -GuildCreateFee);
+		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), -GuildCreateFee);
 
 		char Log[128];
 		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ch->GetName());
@@ -3806,7 +3806,7 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ch->GetPlayerID() != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID())
+	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 211, "");
@@ -3823,7 +3823,7 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 			{
 				LPCHARACTER pch = CHARACTER_MANAGER::instance().Find(p->vid);
 				if (pch) {
-					ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SummonToLeader(pch->GetPlayerID());
+					ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pch)));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -4107,7 +4107,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				}
 
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
-				const TGuildMember* m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 				if (nullptr == m)
 					return -1;
@@ -4133,7 +4133,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					}
 
 					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(member), "guild_manage.new_withdraw_time", get_global_time());
-					pGuild->RequestRemoveMember(member->GetPlayerID());
+					pGuild->RequestRemoveMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(member)));
 
 					if (g_bGuildInviteLimit)
 					{
@@ -4166,7 +4166,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				char gradename[GUILD_GRADE_NAME_MAX_LEN + 1];
 				strlcpy(gradename, c_pData + 1, sizeof(gradename));
 
-				const TGuildMember * m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember * m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 				if (nullptr == m)
 					return -1;
@@ -4193,7 +4193,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 		case GUILD_SUBHEADER_CG_CHANGE_GRADE_AUTHORITY:
 			{
-				const TGuildMember* m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 				if (nullptr == m)
 					return -1;
 
@@ -4272,7 +4272,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (uiBytes < 1 + length)
 					return -1;
 
-				const TGuildMember* m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 				if (nullptr == m)
 					return -1;
@@ -4308,7 +4308,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t grade = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 				if (nullptr == m)
 					return -1;
@@ -4317,7 +4317,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 176, "");
 #endif
-				} else if (ch->GetPlayerID() == pid) {
+				} else if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == pid) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 143, "");
 #endif
@@ -4343,7 +4343,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t is_general = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ch->GetPlayerID());
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 				if (nullptr == m)
 					return -1;
@@ -4370,7 +4370,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (accept)
 						g->InviteAccept(ch);
 					else
-						g->InviteDeny(ch->GetPlayerID());
+						g->InviteDeny(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 				}
 			}
 			return SubPacketLen;
@@ -4622,7 +4622,7 @@ void CInputMain::Acce(LPCHARACTER pkChar, const char* c_pData)
 // TODO Phase 8: migrate Acce handler ECS
 // DUAL-PATH: legacy only during migration window
 
-	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(pkChar->GetPlayerID());
+	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)));
 	if (pPC->IsRunning())
 		return;
 
@@ -5896,13 +5896,13 @@ int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 			vec_alternatives.emplace_back(*pAttr);
 		}
 
-		CSwitchbotManager::Instance().Start(ch->GetPlayerID(), p->slot, vec_alternatives);
+		CSwitchbotManager::Instance().Start(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->slot, vec_alternatives);
 		return extraLen;
 	}
 
 	case SUBHEADER_CG_SWITCHBOT_STOP:
 	{
-		CSwitchbotManager::Instance().Stop(ch->GetPlayerID(), p->slot);
+		CSwitchbotManager::Instance().Stop(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), p->slot);
 		return 0;
 	}
 	}

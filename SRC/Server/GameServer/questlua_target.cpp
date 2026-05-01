@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "questmanager.h"
 #undef sys_err
@@ -42,7 +44,7 @@ namespace quest
 		int x = pos.x + (int) lua_tonumber(L, 2) * 100;
 		int y = pos.y + (int) lua_tonumber(L, 3) * 100;
 
-		CTargetManager::instance().CreateTarget(((ch)->GetPlayerID()),
+		CTargetManager::instance().CreateTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_POS,
@@ -70,7 +72,7 @@ namespace quest
 		}
 
 
-		CTargetManager::instance().CreateTarget(((ch)->GetPlayerID()),
+		CTargetManager::instance().CreateTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_VID,
@@ -98,7 +100,7 @@ namespace quest
 			return 0;
 		}
 
-		CTargetManager::instance().DeleteTarget(((ch)->GetPlayerID()), iQuestIndex, lua_tostring(L, 1));
+		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), iQuestIndex, lua_tostring(L, 1));
 
 		return 0;
 	}
@@ -112,7 +114,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
-		CTargetManager::instance().DeleteTarget(((ch)->GetPlayerID()), iQuestIndex, nullptr);
+		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), iQuestIndex, nullptr);
 
 		return 0;
 	}
@@ -132,7 +134,7 @@ namespace quest
 			return 1;
 		}
 
-		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent(((ch)->GetPlayerID()), dwQuestIndex, (const char *) lua_tostring(L, 1));
+		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIndex, (const char *) lua_tostring(L, 1));
 
 		if (pkEvent)
 		{

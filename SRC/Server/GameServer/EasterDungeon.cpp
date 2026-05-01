@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -458,7 +459,7 @@ public:
                 if (!pc || !pc->IsPC())
                     return;
 
-                if (leaderPid <= 0 || (int32_t)pc->GetPlayerID() == leaderPid)
+                if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pc)) == leaderPid)
                     leaderName = pc->GetName();
             });
 
@@ -826,7 +827,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
     }
 
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ch->GetPlayerID())
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Easter Dungeon.");
         return true;
@@ -918,7 +919,7 @@ if (!it.ok)
     d->SetFlag(kFlagStep, 0);
     d->SetFlag(kFlagBossVid, 0);
     d->SetFlag(kFlagIsParty, party ? 1 : 0);
-    d->SetFlag(kFlagLeaderPid, (int32_t)ch->GetPlayerID());
+    d->SetFlag(kFlagLeaderPid, (int32_t)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
     d->SetFlag(kFlagF2Retry, 0);
     d->SetFlag(kFlagF1ToF2, 0);
 

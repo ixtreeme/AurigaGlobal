@@ -187,7 +187,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //
 //    if (!*a1)
 //    {
-//        CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(((ch)->GetPlayerID()), mapIndex);
+//        CLostCastleDungeon::instance().PurgeTestClonesForTargetPID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), mapIndex);
 //        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve (target: te, map: %d)", mapIndex);
 //        return;
 //    }
@@ -206,7 +206,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 //        return;
 //    }
 //
-//    CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(target->GetPlayerID(), mapIndex);
+//    CLostCastleDungeon::instance().PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target)), mapIndex);
 //    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve (target: %s, map: %d)", target->GetName(), mapIndex);
 //}
 
@@ -1417,7 +1417,7 @@ ACMD(do_state)
 			if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(tch)))
 				iByGuild = CPrivManager::instance().GetPrivByGuild(ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(tch))->GetID(), i);
 
-			int iByPlayer = CPrivManager::instance().GetPrivByCharacter(((tch)->GetPlayerID()), i);
+			int iByPlayer = CPrivManager::instance().GetPrivByCharacter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch))), i);
 
 #ifdef TEXTS_IMPROVEMENT
 			if (iByEmpire) {
@@ -2171,7 +2171,7 @@ ACMD(do_makeguild)
 ACMD(do_deleteguild)
 {
 	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
-		ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->RequestDisband(((ch)->GetPlayerID()));
+		ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->RequestDisband((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 }
 
 ACMD(do_greset)
@@ -2335,7 +2335,7 @@ ACMD(do_qf)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	std::string questname = pPC->GetCurrentQuestName();
 
 	if (!questname.empty())
@@ -2727,7 +2727,7 @@ ACMD(do_getqf)
 		}
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(tch->GetPlayerID());
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
 
 	if (pPC)
 		pPC->SendFlagList(ch);
@@ -2765,9 +2765,9 @@ ACMD(do_set_state)
 			return;
 		}
 	}
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(tch->GetPlayerID());
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
 #else
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 #endif
 	std::string questname = arg1;
 	std::string statename = arg2;
@@ -2826,7 +2826,7 @@ ACMD(do_setqf)
 		return;
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(tch->GetPlayerID());
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
 
 	if (pPC)
 	{
@@ -2861,7 +2861,7 @@ ACMD(do_delqf)
 		return;
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(tch->GetPlayerID());
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
 
 	if (pPC)
 	{
@@ -3037,7 +3037,7 @@ ACMD(do_priv_guild)
 			snprintf(buf, sizeof(buf), msg, g->GetID());
 
 			using namespace quest;
-			PC * pc = CQuestManager::instance().GetPC(((ch)->GetPlayerID()));
+			PC * pc = CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 			QuestState qs = CQuestManager::instance().OpenState("ADMIN_QUEST", QUEST_FISH_REFINE_STATE_INDEX);
 			luaL_loadbuffer(qs.co, buf, strlen(buf), "ADMIN_QUEST");
 			pc->SetQuest("ADMIN_QUEST", qs);
@@ -3128,7 +3128,7 @@ ACMD(do_block_chat_list)
 		return;
 	}
 
-	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, ((ch)->GetPlayerID()), nullptr,
+	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), nullptr,
 			"SELECT p.name, a.lDuration FROM affect%s as a, player%s as p WHERE a.bType = %d AND a.dwPID = p.id",
 			get_table_postfix(), get_table_postfix(), AFFECT_BLOCK_CHAT);
 }
@@ -3289,7 +3289,7 @@ ACMD(do_build)
 		}
 
 		//  渶ΰ?
-		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID() != ((ch)->GetPlayerID()))
+		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetMasterPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 		{
 			LOG_ERROR("{} trying to build while not the guild master.", ((ch)->GetName()));
 			return;
@@ -3560,7 +3560,7 @@ ACMD(do_clear_quest)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	pPC->ClearQuest(arg1);
 }
 
@@ -3792,7 +3792,7 @@ ACMD(do_end_duel)
 		return;
 	}
 
-	CArenaManager::instance().EndDuel(pChar->GetPlayerID());
+	CArenaManager::instance().EndDuel(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar)));
 }
 
 ACMD(do_duel)
@@ -3841,7 +3841,7 @@ ACMD(do_duel)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar1), CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(pChar1->GetPlayerID());
+				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar1)));
 			}
 		}
 
@@ -3857,7 +3857,7 @@ ACMD(do_duel)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar2), CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(pChar2->GetPlayerID());
+				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar2)));
 			}
 		}
 

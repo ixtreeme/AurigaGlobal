@@ -1,20 +1,35 @@
 #include "../../stdafx.h"
 
+#include "PlayerRuntimeSystem.hpp"
 #include "GayaSystem.hpp"
 
+#include "PlayerRuntimeSystem.hpp"
 #include "../../char.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../config.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../item.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../item_manager.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../locale_service.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../../questmanager.h"
+#include "PlayerRuntimeSystem.hpp"
 #include "../AIHelpers.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../EntityFactory.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "ItemSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../Registry.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/dirty_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/identity_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 
 #include <string>
@@ -532,11 +547,11 @@ int GetState(entt::entity pc, std::string_view state)
 		return 0;
 
 	quest::CQuestManager& q = quest::CQuestManager::instance();
-	quest::PC* pPC = q.GetPC(ch->GetPlayerID());
+	quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 	if (!pPC)
 	{
-		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ch->GetPlayerID());
+		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return 0;
 	}
 
@@ -550,11 +565,11 @@ void SetState(entt::entity pc, std::string_view state, int value)
 		return;
 
 	quest::CQuestManager& q = quest::CQuestManager::instance();
-	quest::PC* pPC = q.GetPC(ch->GetPlayerID());
+	quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 	if (!pPC)
 	{
-		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ch->GetPlayerID());
+		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		return;
 	}
 

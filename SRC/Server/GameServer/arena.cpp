@@ -475,8 +475,8 @@ EVENTFUNC(duel_time_out)
 
 bool CArena::StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint, int nMinute)
 {
-	this->m_dwPIDA = pCharFrom->GetPlayerID();
-	this->m_dwPIDB = pCharTo->GetPlayerID();
+	this->m_dwPIDA = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharFrom));
+	this->m_dwPIDB = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharTo));
 	this->m_dwSetCount = nSetPoint;
 
 	pCharFrom->WarpSet(GetStartPointA().x * 100, GetStartPointA().y * 100);
@@ -666,8 +666,8 @@ bool CArenaMap::CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim)
 {
 	if (pCharAttacker == nullptr || pCharVictim == nullptr) return false;
 
-	uint32_t dwPIDA = pCharAttacker->GetPlayerID();
-	uint32_t dwPIDB = pCharVictim->GetPlayerID();
+	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharAttacker));
+	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharVictim));
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
@@ -705,8 +705,8 @@ bool CArenaManager::OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim)
 
 bool CArenaMap::OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim)
 {
-	uint32_t dwPIDA = pCharKiller->GetPlayerID();
-	uint32_t dwPIDB = pCharVictim->GetPlayerID();
+	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharKiller));
+	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharVictim));
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
@@ -903,7 +903,7 @@ bool CArena::IsMyObserver(uint16_t ObserverX, uint16_t ObserverY)
 
 bool CArena::AddObserver(LPCHARACTER pChar)
 {
-	uint32_t pid = ((pChar)->GetPlayerID());
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar)));
 
 	m_mapObserver.insert(std::make_pair(pid, (LPCHARACTER)nullptr));
 
@@ -1070,7 +1070,7 @@ bool CArenaMap::RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint16_t
 
 bool CArena::RegisterObserverPtr(LPCHARACTER pChar)
 {
-	uint32_t pid = ((pChar)->GetPlayerID());
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar)));
 
 	if (const auto iter = m_mapObserver.find(pid); iter == m_mapObserver.end())
 	{

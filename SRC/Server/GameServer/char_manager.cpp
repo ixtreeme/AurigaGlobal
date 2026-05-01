@@ -455,9 +455,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 			m_map_pkPCChr.erase(it);
 	}
 
-	if (0 != ch->GetPlayerID())
+	if (0 != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
 	{
-		auto it = m_map_pkChrByPID.find(ch->GetPlayerID());
+		auto it = m_map_pkChrByPID.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		if (m_map_pkChrByPID.end() != it)
 		{
@@ -530,8 +530,8 @@ LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
-	if (found != nullptr && dwPID != found->GetPlayerID()) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, found->GetPlayerID());
+	if (found != nullptr && dwPID != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(found))) {
+		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(found)));
 		return nullptr;
 	}
 	return found;

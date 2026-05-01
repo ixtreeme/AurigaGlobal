@@ -6,7 +6,7 @@
 
 #ifdef __USE_PID_AS_GUESTLIST__
 #define AS_LPGUEST(some)  (CHARACTER_MANAGER::instance().FindByPID(some)) 
-#define AS_GUESTID(some)  (some->GetPlayerID())
+#define AS_GUESTID(some)  (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(some)))
 #else
 #define AS_LPGUEST(some) (some)
 #define AS_GUESTID(some) (some)

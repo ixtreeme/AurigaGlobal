@@ -550,7 +550,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             d,
             ch->GetLegacyVID());
         d->SetEntity(ecs_e);
-        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ch->GetPlayerID());
+        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 
         // Phase 7: sync ECS vital components from DB result
@@ -581,7 +581,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		p.bHeader = HEADER_GG_LOGIN;
 		strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
-		p.dwPID = ((ch)->GetPlayerID());
+		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
 		p.bChannel = g_bChannel;
@@ -598,7 +598,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, ((ch)->GetPlayerID()), ((ch)->GetLevel()), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetLevel()), ch->GetJob(), ch->GetRealPoint(POINT_PLAYTIME));
 
 			if (0)
 				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName()));
@@ -1182,13 +1182,13 @@ EVENTFUNC(quest_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		LOG_INFO("QUEST_LOAD: Login pc {} by event", ((ch)->GetPlayerID()));
-		quest::CQuestManager::instance().Login(((ch)->GetPlayerID()));
+		LOG_INFO("QUEST_LOAD: Login pc {} by event", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		quest::CQuestManager::instance().Login((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		return 0;
 	}
 	else
 	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ((ch)->GetPlayerID()));
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		return 0;
 	}
 }
@@ -1211,16 +1211,16 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	{
 		if (dwCount != 0)
 		{
-			if (((ch)->GetPlayerID()) != pQuestTable[0].dwPID)
+			if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) != pQuestTable[0].dwPID)
 			{
-				LOG_ERROR("PID differs {} {}", ((ch)->GetPlayerID()), pQuestTable[0].dwPID);
+				LOG_ERROR("PID differs {} {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), pQuestTable[0].dwPID);
 				return;
 			}
 		}
 
 		LOG_INFO("QUEST_LOAD: count {}", dwCount);
 
-		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 		if (!pkPC)
 		{
@@ -1275,7 +1275,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		else
 		{
 			quest_login_event_info* info = AllocEventInfo<quest_login_event_info>();
-			info->dwPID = ((ch)->GetPlayerID());
+			info->dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 			event_create(quest_login_event, info, PASSES_PER_SEC(1));
 		}
@@ -1691,7 +1691,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			const entt::entity staleOwner = ItemSystem::GetItemOwner(staleItem);
 			const bool samePlayer =
 				(staleOwner == AIHelpers::EcsOf(ch)) ||
-				(ItemSystem::GetItemLastOwnerPID(staleItem) == ch->GetPlayerID());
+				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 #ifdef ENABLE_EXTRA_INVENTORY
 			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
@@ -1703,10 +1703,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			{
 				++duplicatePurgeCount;
 				LOG_ERROR("DUP_ITEM_PURGE_BEGIN index={} id={} owner_pid={} window={} entity={}",
-					i, p->id, ((ch)->GetPlayerID()), p->window, static_cast<uint32_t>(staleItem));
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), p->window, static_cast<uint32_t>(staleItem));
 				const bool destroyed = ItemSystem::DestroyLoadedDuplicateItem(staleItem);
 				LOG_ERROR("DUP_ITEM_PURGE_END index={} id={} owner_pid={} window={} destroyed={}",
-					i, p->id, ((ch)->GetPlayerID()), p->window, destroyed);
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), p->window, destroyed);
 			}
 		}
 
@@ -1789,7 +1789,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	if (duplicatePurgeCount > 0)
 	{
 		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
-			((ch)->GetPlayerID()), ch->GetName(), duplicatePurgeCount, dwCount);
+			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ch->GetName(), duplicatePurgeCount, dwCount);
 	}
 
 	auto it = v.begin();
@@ -1842,7 +1842,7 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ch->GetPlayerID() != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
 		return;
 
 	ch->LoadBattlePass(dwCount, (TPlayerBattlePassMission *)c_pData);
@@ -1869,7 +1869,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 
 	//LOG_ERROR("BattlePassLoadRanking count {} playerid {}", dwCount, dwPID);
 	
-	if (ch->GetPlayerID() != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
 		return;
 	
 	if(dwCount)
@@ -1924,7 +1924,7 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ch->GetPlayerID() != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
 		return;
 
 	ch->LoadAffect(dwCount, (TPacketAffectElement *) c_pData);
@@ -3390,7 +3390,7 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 
 			if(d->IsPhase(PHASE_GAME))			//�����������϶�
 			{
-				quest::CQuestManager::instance().ItemInformer(((ch)->GetPlayerID()),ch->GetItemAward_vnum());	//questmanager ȣ��
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),ch->GetItemAward_vnum());	//questmanager ȣ��
 			}
 		}
 	}

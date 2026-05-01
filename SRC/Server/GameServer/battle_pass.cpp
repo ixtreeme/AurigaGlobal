@@ -54,7 +54,7 @@ namespace
 		if (!ch)
 			return false;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pc)
 			return false;
 
@@ -67,7 +67,7 @@ namespace
 		if (!ch)
 			return;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(((ch)->GetPlayerID()));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		if (!pc)
 			return;
 

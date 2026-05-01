@@ -102,7 +102,7 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
-		((ch)->GetPlayerID()),
+		(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id
 	));
 
@@ -151,16 +151,16 @@ ACMD(do_daily_reward_reload){
 	std::string time = "";
 	std::string rewards = "";
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 	if (msg->Get()->uiNumRows > 0) {
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", ((ch)->GetPlayerID())));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 		if (msg2->Get()->uiNumRows > 0) {
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ((ch)->GetPlayerID())));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 721, "");
 #endif
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -169,7 +169,7 @@ ACMD(do_daily_reward_reload){
 				}
 			}
 		} else {
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -179,9 +179,9 @@ ACMD(do_daily_reward_reload){
 			}
 		}
 	} else {
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", ((ch)->GetPlayerID())));
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 		
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", ((ch)->GetPlayerID())));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 		if (msg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row;
 			while ((row = mysql_fetch_row(msg2->Get()->pSQLResult)) != nullptr) {
@@ -213,7 +213,7 @@ ACMD(do_daily_reward_get_reward){
 	std::string rewards = "";
 	// and (NOW() - interval 30 minute > time) 
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", ((ch)->GetPlayerID())));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 	if (msg->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr) {
@@ -249,7 +249,7 @@ ACMD(do_daily_reward_get_reward){
 		str_to_number(item, items.c_str());
 		str_to_number(count, counts.c_str());
 		ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), item, count);
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", ((ch)->GetPlayerID())));
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -1893,7 +1893,7 @@ ACMD(do_guildskillup)
 	}
 
 	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
-	TGuildMember* gm = g->GetMember(((ch)->GetPlayerID()));
+	TGuildMember* gm = g->GetMember((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	if (gm->grade == GUILD_LEADER_GRADE)
 	{
 		uint32_t vnum = 0;
@@ -2110,7 +2110,7 @@ ACMD(do_ungroup)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 215, "");
 #endif
 		//pParty->SendPartyRemoveOneToAll(ch);
-		pParty->Quit(((ch)->GetPlayerID()));
+		pParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 		//pParty->SendPartyRemoveAllToOne(ch);
 	}
 }
@@ -2178,7 +2178,7 @@ ACMD(do_war)
 	uint32_t gm_pid = g->GetMasterPID();
 
 	// üũ( 常 )
-	if (gm_pid != ((ch)->GetPlayerID()))
+	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
@@ -2362,7 +2362,7 @@ ACMD(do_nowar)
 
 	uint32_t gm_pid = g->GetMasterPID();
 
-	if (gm_pid != ((ch)->GetPlayerID()))
+	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
@@ -2527,7 +2527,7 @@ ACMD(do_observer_exit)
 			ch->SetArenaObserverMode(false);
 
 			if (ch->GetArena() != nullptr)
-				ch->GetArena()->RemoveObserver(((ch)->GetPlayerID()));
+				ch->GetArena()->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 			ch->SetArena(nullptr);
 			ch->WarpSet(ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
@@ -3365,7 +3365,7 @@ ACMD(do_in_game_mall)
 	char language[3];
 	strcpy(language, "en");//If you have multilanguage, update this
 	
-	snprintf(buf, sizeof(buf), "%u%u%s", ((ch)->GetPlayerID()), ch->GetAID(), sas_key);
+	snprintf(buf, sizeof(buf), "%u%u%s", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ch->GetAID(), sas_key);
 
 	MD5Init(&ctx);
 	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
@@ -3384,9 +3384,9 @@ ACMD(do_in_game_mall)
 #endif
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
-			// g_strWebMallURL.c_str(), ((ch)->GetPlayerID()), language, g_server_id, sas);
+			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), language, g_server_id, sas);
 	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
-			((ch)->GetPlayerID()), language, sas);
+			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), language, sas);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, buf);
 
 //	char buf[512+1];
@@ -4164,7 +4164,7 @@ ACMD(do_gr_set_tax)
 	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
 	if (!g)
 		return;
-	if (!g->IsGuildMaster(((ch)->GetPlayerID())))
+	if (!g->IsGuildMaster((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only guild leader can set tax request.");
 		return;

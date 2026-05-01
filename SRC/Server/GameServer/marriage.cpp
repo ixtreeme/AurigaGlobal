@@ -259,13 +259,13 @@ namespace marriage
 
 	void TMarriage::Login(LPCHARACTER ch)
 	{
-		if (((ch)->GetPlayerID()) == m_pid1)
+		if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_pid1)
 		{
 			ch1 = ch;
 			if (is_married)
 				SendLoverInfo(ch1, name2, GetMarriagePoint());
 		}
-		else if (((ch)->GetPlayerID()) == m_pid2)
+		else if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_pid2)
 		{
 			ch2 = ch;
 			if (is_married)
@@ -745,7 +745,7 @@ namespace marriage
 
 	void CManager::Login(LPCHARACTER ch)
 	{
-		uint32_t pid = ((ch)->GetPlayerID());
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 
 		TMarriage* pMarriage = Get(pid);
 		if (!pMarriage)
@@ -766,7 +766,7 @@ namespace marriage
 
 	void CManager::Logout(LPCHARACTER ch)
 	{
-		Logout(((ch)->GetPlayerID()));
+		Logout((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 	}
 
 	void CManager::WeddingReady(uint32_t dwPID1, uint32_t dwPID2, uint32_t dwMapIndex)

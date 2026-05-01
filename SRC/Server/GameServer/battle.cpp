@@ -956,7 +956,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //			"UPDATE player.player "
 //			"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
 //			"WHERE id=%u",
-//			iRetDam, pkAttacker->GetPlayerID()));
+//			iRetDam, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker))));
 //
 //		///*pkAttacker->*/viChatPacket(CHAT_TYPE_TALKING, "You hit a Skill Mob for %d damage!", iRetDam);
 //		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
@@ -966,7 +966,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //
 //		LOG_TRACE("DEBUG MAP1_SKILL_MOB: attacker={} (id={}) victimVnum={} dmg={} skillhit={}",
 //			((pkAttacker)->GetName()),
-//			pkAttacker->GetPlayerID(),
+//			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)),
 //			pkVictim->GetRaceNum(),
 //			iRetDam,
 //			pkAttacker->IsSkillHit());
@@ -1001,7 +1001,7 @@ void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 
 void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	if (victim && ch && ch->IsPC()) {
-		victim->GetAttackedLogRef().dwPID = ((ch)->GetPlayerID());
+		victim->GetAttackedLogRef().dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		victim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}
 }
@@ -1033,7 +1033,7 @@ bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {
 	
 		SET_ATTACK_TIME(ch, victim, current_time);
 	
-		if (victim->GetAttackedLogRef().dwPID == ((ch)->GetPlayerID())) {
+		if (victim->GetAttackedLogRef().dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) {
 			if (current_time - victim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(ch)) {
 				INCREASE_SPEED_HACK_COUNT(ch);
 				if (ch->GetSpeedHackCount() > 30) {

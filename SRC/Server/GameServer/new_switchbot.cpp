@@ -665,7 +665,7 @@ void CSwitchbot::SwitchItems()
 				if (!HasActiveSlots()) {
 					Stop();
 				} else {
-					CSwitchbotManager::Instance().SendSwitchbotUpdate(pkOwner->GetPlayerID());
+					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkOwner)));
 				}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -1136,10 +1136,10 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 void CSwitchbotManager::EnterGame(LPCHARACTER ch)
 {
 	SendItemAttributeInformations(ch);
-	SetIsWarping(ch->GetPlayerID(), false);
-	SendSwitchbotUpdate(ch->GetPlayerID());
+	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), false);
+	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	
-	CSwitchbot* pkSwitchbot = FindSwitchbot(ch->GetPlayerID());
+	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
 	{
 		pkSwitchbot->Start();

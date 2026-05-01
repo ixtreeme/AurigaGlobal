@@ -434,13 +434,13 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		LOG_INFO("Sell Item price id {} {} itemid {}", ch->GetPlayerID(), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
 
 	const int64_t nTotalMoney = ch->GetGold() + dwPrice;
 
 	if (GOLD_MAX <= nTotalMoney)
 	{
-		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ch->GetPlayerID(), ch->GetName(), ch->GetGold());
+		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetName(), ch->GetGold());
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226, 
 		"%lld"

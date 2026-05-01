@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -69,7 +70,7 @@ void CHorseNameManager::Validate(LPCHARACTER pChar)
 		{
 			pChar->HorseSummon(false, true);
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pChar), pkAff);
-			UpdateHorseName(pChar->GetPlayerID(), "", true);
+			UpdateHorseName(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar)), "", true);
 			pChar->HorseSummon(true, true);
 		}
 		else

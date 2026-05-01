@@ -2485,7 +2485,7 @@ struct FuncSplashDamage
 //				"UPDATE player.player "
 //				"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
 //				"WHERE id=%u",
-//				iAmount, m_pkChr->GetPlayerID());
+//				iAmount, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkChr)));
 //
 //			// (opcionális) debug üzenet a játékosnak
 //			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkChr), CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
@@ -3829,7 +3829,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 		TSkillColor db_pack;
 		memcpy(db_pack.dwSkillColor, data, sizeof(data));
-		db_pack.player_id = pkVictim->GetPlayerID();
+		db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim));
 		db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
 		db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
 	}

@@ -663,7 +663,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 
 	if (ch->GetItemAward_cmd())																		// ?
-		quest::CQuestManager::instance().ItemInformer(ch->GetPlayerID(), ch->GetItemAward_vnum());	//questmanager ?
+		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetItemAward_vnum());	//questmanager ?
 
 	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ch->GetName(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ch->GetMapIndex());
 
@@ -763,7 +763,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	}
 	else if (CArenaManager::instance().IsArenaMap(ch->GetMapIndex()) == true)
 	{
-		int memberFlag = CArenaManager::instance().IsMember(ch->GetMapIndex(), ch->GetPlayerID());
+		int memberFlag = CArenaManager::instance().IsMember(ch->GetMapIndex(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (memberFlag == MEMBER_OBSERVER)
 		{
 			ch->SetObserverMode(true);
@@ -802,7 +802,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 				}
 				else
 				{
-					pParty->Quit(ch->GetPlayerID());
+					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 				}
 			}
 		}
@@ -854,7 +854,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	if (ch->GetHorseLevel() > 0)
 	{
-		uint32_t pid = ch->GetPlayerID();
+		uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 		if (pid != 0 && CHorseNameManager::instance().GetHorseName(pid) == nullptr)
 			db_clientdesc->DBPacket(HEADER_GD_REQ_HORSE_NAME, 0, &pid, sizeof(uint32_t));
 
@@ -876,11 +876,11 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	if (ch->IsPC())
 	{
-		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ch->GetPlayerID());
+		offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (pkShop)
 			ch->SetOfflineShop(pkShop);
 
-		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ch->GetPlayerID());
+		offlineshop::CAuction* auction = offlineshop::GetManager().GetAuctionByOwnerID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		if (auction)
 			ch->SetAuction(auction);
 	}

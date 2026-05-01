@@ -308,7 +308,7 @@ namespace quest
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == ((ch)->GetPlayerID()) )
+            if ( pGuild->GetMasterPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) )
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
@@ -339,7 +339,7 @@ namespace quest
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == ((ch)->GetPlayerID()) )
+            if ( pGuild->GetMasterPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) )
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
@@ -353,7 +353,7 @@ namespace quest
                         else
                         {
                             int nBeOtherLeader = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_leader");
-                            CQuestManager::instance().GetPC( ((ch)->GetPlayerID()) );
+                            CQuestManager::instance().GetPC( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
                             if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
                             if ( nBeOtherLeader > get_global_time() )
                                 lua_pushnumber(L, 7);
