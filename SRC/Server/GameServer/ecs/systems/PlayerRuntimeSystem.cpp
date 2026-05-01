@@ -102,8 +102,7 @@ uint8_t GetGMLevel(entt::entity e)
 			return flags->gmLevel;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetGMLevel() : 0;
+	return 0;
 }
 
 uint32_t GetPacketVID(entt::entity e)
