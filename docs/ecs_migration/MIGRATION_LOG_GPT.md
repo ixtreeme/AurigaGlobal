@@ -8534,6 +8534,20 @@ Commit status:
   - `SRC/Server/GameServer/input_db.cpp`
   - `SRC/Server/GameServer/questlua_global.cpp`
 
+Commit consolidation update:
+- The previously uncommitted login-crash hotfixes were consolidated before
+  continuing Phase 17a Batch 2.
+- Source hotfix commits:
+  - `d8c1488` Phase 17a pre-cleanup: Fix affect mirror lifetime ownership
+  - `0f6306a` Phase 17a pre-cleanup: Stabilize duplicate item purge
+  - `dcee4a4` Phase 17a pre-cleanup: Add quest timer compatibility aliases
+- Documentation commit:
+  - `f23e8d2` Phase 17a status audit log update
+- Build gate after consolidation:
+  - `cmake --build build --config RelWithDebInfo --target GameServer --parallel 8`
+  - Result: passed.
+- Working tree after consolidation: clean.
+
 ## Phase 16-5 - Primitive Logging Cleanup
 
 Mode:
