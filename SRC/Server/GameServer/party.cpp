@@ -1477,9 +1477,10 @@ void CParty::UpdateOfflineState(uint32_t dwPID)
 	}
 }
 
-int CParty::GetFlag(const std::string& name)
+int CParty::GetFlag(std::string_view name)
 {
-	TFlagMap::iterator it = m_map_iFlag.find(name);
+	const std::string key(name);
+	TFlagMap::iterator it = m_map_iFlag.find(key);
 
 	if (it != m_map_iFlag.end())
 	{
@@ -1491,14 +1492,15 @@ int CParty::GetFlag(const std::string& name)
 	return 0;
 }
 
-void CParty::SetFlag(const std::string& name, int value)
+void CParty::SetFlag(std::string_view name, int value)
 {
-	TFlagMap::iterator it = m_map_iFlag.find(name);
+	const std::string key(name);
+	TFlagMap::iterator it = m_map_iFlag.find(key);
 
 	//LOG_INFO("PARTY SetFlag {} {}", name.c_str(), value);
 	if (it == m_map_iFlag.end())
 	{
-		m_map_iFlag.insert(make_pair(name, value));
+		m_map_iFlag.insert(make_pair(key, value));
 	}
 	else if (it->second != value)
 	{

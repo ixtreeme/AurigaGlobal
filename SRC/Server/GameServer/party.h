@@ -3,6 +3,7 @@
 
 #include "char_interface.hpp"
 #include <Core/Logging.hpp>
+#include <string_view>
 
 enum // unit : minute
 {
@@ -180,8 +181,8 @@ class CParty
 
 		LPCHARACTER	GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y);
 
-		void		SetFlag(const std::string& name, int value);
-		int		GetFlag(const std::string& name);
+		void		SetFlag(std::string_view name, int value);
+		int		GetFlag(std::string_view name);
 
 		void		SetDungeon(LPDUNGEON pDungeon);
 		LPDUNGEON	GetDungeon();
