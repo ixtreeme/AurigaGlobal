@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <string_view>
 
 #include "../../typedef.h"
 
@@ -11,6 +12,8 @@ uint32_t GetPlayerID(entt::entity e);
 uint8_t GetEmpire(entt::entity e);
 uint8_t GetGMLevel(entt::entity e);
 uint32_t GetPacketVID(entt::entity e);
+uint32_t GetRaceNum(entt::entity e);
+std::string_view GetName(entt::entity e);
 bool IsPC(entt::entity e);
 bool IsNPC(entt::entity e);
 bool IsStone(entt::entity e);

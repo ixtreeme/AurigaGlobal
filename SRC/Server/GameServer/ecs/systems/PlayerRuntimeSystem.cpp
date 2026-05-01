@@ -115,6 +115,31 @@ uint32_t GetPacketVID(entt::entity e)
 	return ch ? ch->GetPacketVID() : 0;
 }
 
+uint32_t GetRaceNum(entt::entity e)
+{
+	auto* ch = ecs::LegacyCharOf(e);
+	if (ch)
+		return ch->GetRaceNum();
+
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* race = g_registry.try_get<ecs::RaceComponent>(e))
+			return race->value;
+	}
+
+	return 0;
+}
+
+std::string_view GetName(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* name = g_registry.try_get<ecs::PlayerName>(e))
+			return name->value;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? std::string_view(ch->GetName()) : std::string_view {};
+}
+
 bool IsPC(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e))
