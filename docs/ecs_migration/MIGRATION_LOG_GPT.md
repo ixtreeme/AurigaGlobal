@@ -8431,6 +8431,74 @@ Commit status:
 - Code batches committed individually.
 - WinTest not run in this environment.
 
+## Phase 17a Batch 3 - string_view migration
+
+Mode:
+- Continued `std::string_view` parameter migration after Batch 2.
+- Scope limited to safe read-only parameters and narrow helper APIs.
+- No `questmanager`, `questpc`, or `char.h` changes.
+- Member-owned string parameters and cross-deferred quest boundaries were skipped.
+
+Completed file groups:
+- `desc_manager.cpp/.h`
+  - `ConnectAccount`, `DisconnectAccount`, and `FindByLoginName` now take `std::string_view`.
+  - Internal map lookup and SQL/dev-log boundaries use a local owning `std::string`.
+  - Commit: `87a3a72 Phase 17a Batch 3: desc_manager string_view`
+- `party.cpp/.h`
+  - `CParty::GetFlag` and `CParty::SetFlag` now take `std::string_view`.
+  - `TFlagMap` remains `std::map<std::string, int>`; keys are converted locally at the storage boundary.
+  - Commit: `23bf4a4 Phase 17a Batch 3: party flag string_view`
+- `guild.cpp/.h`
+  - `CGuild::GetMemberPID` and `CGuild::AddComment` now take `std::string_view`.
+  - `AddComment` preserves DB escaping via `str.data()` / `str.size()` and handles empty notice text safely.
+  - Commit: `a997620 Phase 17a Batch 3: guild string_view`
+- `dungeon.cpp/.h`
+  - `CDungeon::KillUnique`, `GetUniqueVid`, and `IsUniqueDead` now take `std::string_view`.
+  - Unique mob map lookup still uses an owning `std::string` key at the map boundary.
+  - Commit: `5551860 Phase 17a Batch 3: dungeon unique string_view`
+- `Poly.cpp/.h` and `skill.cpp/.h`
+  - `CPoly::SetStr`, `SetVar`, `GetVar`, `insert`, and `find` now take `std::string_view`.
+  - `CSkillProto::SetPointVar`, `SetDurationVar`, and `SetSPCostVar` now take `std::string_view`.
+  - `CPoly` keeps owning `std::string` storage internally.
+  - Commit: `3870414 Phase 17a Batch 3: skill poly string_view`
+- `locale_service.cpp/.h`
+  - `LocaleService_Init`, `LC_InitLocalization`, and local service-name helper now take `std::string_view`.
+  - Global owning strings use explicit `assign(data, size)` conversion.
+  - Commit: `feaeae7 Phase 17a Batch 3: locale_service string_view`
+
+Counts:
+```text
+const std::string& before Batch 3: 142
+std::string_view before Batch 3:   87
+
+const std::string& after Batch 3:  105
+std::string_view after Batch 3:    135
+
+Reduction this batch: 37 const std::string& occurrences
+```
+
+Intentional deferrals:
+- `item_manager.h` constructors still take `const std::string&` because the parameter is immediately stored in owning `std::string` members.
+- `item_manager.cpp` `DropEvent_*_SetValue` helpers were skipped because their extern declarations live in `questmanager.cpp`, which is explicitly deferred.
+- `locale_service` remaining `const std::string&` matches are return types, not parameter migration targets.
+- Remaining `PlayerRuntimeSystem.cpp` / `GayaSystem.cpp` matches are legacy `CHARACTER::` member bodies and are deferred to a character/API phase.
+
+Build results:
+- Build passed after every committed file group.
+- Final successful command:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Next recommendation:
+- Batch 4 should be a small targeted tail cleanup only.
+- Suggested candidates: `file_loader`, `banword`, `char_manager`, `messenger_manager`, `profiler`, and `cmd.h`.
+- Keep DB/SQL/Core/CHARACTER/quest-related parameters in separate reviewed phases.
+
+Commit status:
+- Code batches committed individually.
+- WinTest not run in this environment.
+
 ## 2026-05-01 WinTest Crash Investigation - core99 heap corruption
 
 Context:
