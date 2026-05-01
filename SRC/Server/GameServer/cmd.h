@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_CMD_H__
 #define __INC_METIN_II_GAME_CMD_H__
 
+#include <string_view>
+
 #define ACMD(name)  void (name)(LPCHARACTER ch, const char *argument, int cmd, int subcmd)
 #define CMD_NAME(name) cmd_info[cmd].command
 
@@ -64,7 +66,7 @@ void CHARACTER_AddBGMInfo(unsigned mapIndex, const char* name, float vol);
 // END_OF_LUA_ADD_BGM_INFO
 
 // LUA_ADD_GOTO_INFO
-extern void CHARACTER_AddGotoInfo(const std::string& c_st_name, uint8_t empire, int mapIndex, uint32_t x, uint32_t y);
+extern void CHARACTER_AddGotoInfo(std::string_view c_st_name, uint8_t empire, int mapIndex, uint32_t x, uint32_t y);
 // END_OF_LUA_ADD_GOTO_INFO
 
 #endif

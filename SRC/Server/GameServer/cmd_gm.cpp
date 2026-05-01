@@ -356,17 +356,17 @@ struct GotoInfo
 
 static std::vector<GotoInfo> gs_vec_gotoInfo;
 
-void CHARACTER_AddGotoInfo(const std::string& c_st_name, uint8_t empire, int mapIndex, uint32_t x, uint32_t y)
+void CHARACTER_AddGotoInfo(std::string_view c_st_name, uint8_t empire, int mapIndex, uint32_t x, uint32_t y)
 {
 	GotoInfo newGotoInfo;
-	newGotoInfo.st_name = c_st_name;
+	newGotoInfo.st_name.assign(c_st_name.data(), c_st_name.size());
 	newGotoInfo.empire = empire;
 	newGotoInfo.mapIndex = mapIndex;
 	newGotoInfo.x = x;
 	newGotoInfo.y = y;
 	gs_vec_gotoInfo.emplace_back(newGotoInfo);
 
-	LOG_INFO("AddGotoInfo(name={}, empire={}, mapIndex={}, pos=({}, {}))", c_st_name.c_str(), static_cast<int>(empire), mapIndex, x, y);
+	LOG_INFO("AddGotoInfo(name={}, empire={}, mapIndex={}, pos=({}, {}))", c_st_name, static_cast<int>(empire), mapIndex, x, y);
 }
 
 bool FindInString(const char * c_pszFind, const char * c_pszIn)
