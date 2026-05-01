@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include <common/stl.h>
 
@@ -45,7 +47,7 @@ void P2P_MANAGER::Boot(LPDESC d)
 		p.bHeader = HEADER_GG_LOGIN;
 		strlcpy(p.szName, ((ch)->GetName()), sizeof(p.szName));
 		p.dwPID = ((ch)->GetPlayerID());
-		p.bEmpire = ch->GetEmpire();
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(((ch)->GetX()), ((ch)->GetY()));
 		p.bChannel = g_bChannel;
 

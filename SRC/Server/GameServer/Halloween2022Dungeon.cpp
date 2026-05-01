@@ -266,8 +266,8 @@ namespace
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ch->GetEmpire(), x, y);
-        ch->SetWarpLocation(GetOutsideMapByEmpire(ch->GetEmpire()), x, y);
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), x, y);
+        ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), x, y);
     }
 
     void WarpOut(LPCHARACTER ch)
@@ -275,8 +275,8 @@ namespace
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ch->GetEmpire(), x, y);
-        ch->WarpSet(x * 100, y * 100, GetOutsideMapByEmpire(ch->GetEmpire()));
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), x, y);
+        ch->WarpSet(x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
     }
 
     void WarpAllOut(int32_t mapIndex)

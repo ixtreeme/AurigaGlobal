@@ -2609,7 +2609,7 @@ EVENTFUNC(skill_gwihwan_event)
 		PIXEL_POSITION pos;
 
 		// Ľş°ř
-		if (ecs::GetRecallPosition(ch->GetMapIndex(), ch->GetEmpire(), pos))
+		if (ecs::GetRecallPosition(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 		{
 			LOG_INFO("Recall: {} {} {} -> {} {}", ch->GetName(), ch->GetX(), ch->GetY(), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
@@ -2617,7 +2617,7 @@ EVENTFUNC(skill_gwihwan_event)
 		else
 		{
 			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ch->GetName(), ch->GetX(), ch->GetY());
-			ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT

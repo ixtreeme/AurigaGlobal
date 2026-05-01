@@ -475,7 +475,7 @@ ACMD(do_goto)
 			empire = MINMAX(1, empire, 3);
 		}
 		else
-			empire = ((ch)->GetEmpire());
+			empire = (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
 
 		if (CHARACTER_GoToName(ch, empire, mapIndex, arg1))
 		{
@@ -1411,7 +1411,7 @@ ACMD(do_state)
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
 		if (CPrivManager::instance().GetPriv(tch, i))
 		{
-			int iByEmpire = CPrivManager::instance().GetPrivByEmpire(((tch)->GetEmpire()), i);
+			int iByEmpire = CPrivManager::instance().GetPrivByEmpire((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(tch))), i);
 			int iByGuild = 0;
 
 			if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(tch)))
@@ -1569,7 +1569,7 @@ struct noticenew_packet_func {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
 			}
 		}
-		else if (d->GetCharacter()->GetEmpire() == m_empire) {
+		else if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(d->GetCharacter())) == m_empire) {
 			if (m_mapidx == 0) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), m_type, m_idx, m_str);
 			} else if (d->GetCharacter()->GetMapIndex() == m_mapidx) {
@@ -4018,7 +4018,7 @@ struct FCountInMap
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
 			if (ch && ((ch)->IsPC()))
-				++m_Count[((ch)->GetEmpire())];
+				++m_Count[(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))];
 		}
 	}
 	int GetCount(uint8_t bEmpire) { return m_Count[bEmpire]; }

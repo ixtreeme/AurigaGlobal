@@ -156,7 +156,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	bool bOtherEmpire = false;
 
-	if (pkChr->GetEmpire() != pkChrShopKeeper->GetEmpire())
+	if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChrShopKeeper)))
 		bOtherEmpire = true;
 
 	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChrShopKeeper)), bOtherEmpire);

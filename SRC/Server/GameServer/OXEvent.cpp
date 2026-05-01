@@ -404,7 +404,7 @@ bool COXEventManager::CloseEvent()
 		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
 
 		if (pkChar != nullptr)
-			pkChar->WarpSet(EMPIRE_START_X(pkChar->GetEmpire()), EMPIRE_START_Y(pkChar->GetEmpire()));
+			pkChar->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))));
 	}
 
 	m_map_char.clear();

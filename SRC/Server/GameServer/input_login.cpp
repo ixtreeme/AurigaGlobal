@@ -605,7 +605,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (!SECTREE_MANAGER::instance().GetMovablePosition(ch->GetMapIndex(), pos.x, pos.y, pos))
 	{
 		PIXEL_POSITION pos2;
-		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ch->GetEmpire(), pos2);
+		SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ch->GetMapIndex(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos2);
 
 		LOG_ERROR("!GetMovablePosition (name {} {}x{} map {} changed to {}x{})", ch->GetName(), pos.x, pos.y, ch->GetMapIndex(), pos2.x, pos2.y);
 		pos = pos2;
@@ -809,7 +809,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		else if (memberFlag == MEMBER_NO)
 		{
 			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
-				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 		else
 		{
@@ -839,7 +839,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		{
 			// ox   ?  . ÷?  
 			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
-				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
 	else
@@ -848,7 +848,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			marriage::WeddingManager::instance().IsWeddingMap(ch->GetMapIndex()))
 		{
 			if (!test_server)
-				ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
 

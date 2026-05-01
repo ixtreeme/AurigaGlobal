@@ -1021,7 +1021,7 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	iRandRange = 4000000;
 #ifdef ENABLE_EVENT_MANAGER
 	int extraDrop = CPrivManager::instance().GetPriv(pkKiller, PRIV_ITEM_DROP) + (pkKiller->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
-	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(ITEM_DROP_EVENT, pkKiller->GetEmpire());
+	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(ITEM_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)));
 	if (event != nullptr)
 		extraDrop += event->value[0];
 	iRandRange = iRandRange * 100 / (100 + extraDrop);

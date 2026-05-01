@@ -582,7 +582,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		p.bHeader = HEADER_GG_LOGIN;
 		strlcpy(p.szName, ch->GetName(), sizeof(p.szName));
 		p.dwPID = ((ch)->GetPlayerID());
-		p.bEmpire = ch->GetEmpire();
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
 		p.bChannel = g_bChannel;
 

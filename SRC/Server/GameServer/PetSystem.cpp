@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "config.h"
@@ -269,7 +270,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 //	m_pkChar->DetailLog();
 
 	//펫의 국가를 주인의 국가로 설정함.
-	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
+	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(m_pkOwner)));
 
 	m_dwVID = m_pkChar->GetLegacyVID();
 

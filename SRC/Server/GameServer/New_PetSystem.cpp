@@ -1014,7 +1014,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 //	m_pkChar->DetailLog();
 
 	//펫의 국가를 주인의 국가로 설정함.
-	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
+	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(m_pkOwner)));
 
 	m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 

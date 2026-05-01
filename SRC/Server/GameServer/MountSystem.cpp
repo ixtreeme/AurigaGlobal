@@ -417,7 +417,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	m_pkChar->SetMount();
 
-	m_pkChar->SetEmpire(m_pkOwner->GetEmpire());
+	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(m_pkOwner)));
 
 	m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 

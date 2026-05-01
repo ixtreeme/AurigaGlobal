@@ -754,7 +754,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
             clone->SetRace((uint8_t)source->GetRaceNum());
-            clone->SetEmpire(source->GetEmpire());
+            clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
             clone->SetPKMode(PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
 
@@ -1303,7 +1303,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         clone->SetName(std::string(cloneName));
 
         clone->SetRace((uint8_t)source->GetRaceNum());
-        clone->SetEmpire(source->GetEmpire());
+        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
         clone->SetPKMode(PK_MODE_FREE);
         clone->SetSkillGroup(source->GetSkillGroup());
 

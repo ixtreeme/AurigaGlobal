@@ -1109,7 +1109,7 @@ namespace quest
 				LPCHARACTER ch = (LPCHARACTER) ent;
 				if (((ch)->IsPC()))
 				{
-					uint8_t bEmpire =  ch->GetEmpire();
+					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 					if ( bEmpire == 0 )
 					{
 						sys_err("Unkonwn Empire {} {} ", ((ch)->GetName()), ((ch)->GetPlayerID()));
@@ -1169,7 +1169,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (nullptr != ch)
 		{
-			uint8_t bEmpire = ch->GetEmpire();
+			uint8_t bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 			ch->WarpSet( g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 		}
 

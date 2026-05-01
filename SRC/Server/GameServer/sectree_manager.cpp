@@ -1269,10 +1269,10 @@ class FRemoveIfAttr
 				{
 					PIXEL_POSITION pos;
 
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(((ch)->GetMapIndex()), ch->GetEmpire(), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(((ch)->GetMapIndex()), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 						ch->WarpSet(pos.x, pos.y);
 					else
-						ch->WarpSet(EMPIRE_START_X(ch->GetEmpire()), EMPIRE_START_Y(ch->GetEmpire()));
+						ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 				}
 				else
 					ch->Dead();

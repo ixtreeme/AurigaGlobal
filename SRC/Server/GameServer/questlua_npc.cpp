@@ -65,7 +65,7 @@ namespace quest
 		if (!emp) {
 			const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
 			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushnumber(L, npc ? npc->GetEmpire() : 0);
+			lua_pushnumber(L, npc ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(npc)) : 0);
 			return 1;
 		}
 		lua_pushnumber(L, emp->value);

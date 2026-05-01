@@ -484,7 +484,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	else
 	{
 		pkDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr));
-		bOpponentEmpire = pkChr->GetEmpire();
+		bOpponentEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr));
 	}
 
 	if (!pkDesc)
@@ -612,18 +612,18 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			if (g_bEmpireWhisper)
 				if (!ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!(pkChr && pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)))
-						if (bOpponentEmpire != ch->GetEmpire() && ch->GetEmpire() && bOpponentEmpire // 서로 제국이 다르면서
+						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) && bOpponentEmpire // 서로 제국이 다르면서
 								&& ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // 둘다 일반 플레이어이면
 							// 이름 밖에 모르니 gm_get_level 함수를 사용
 						{
 							if (!pkChr)
 							{
 								// 다른 서버에 있으니 제국 표시만 한다. bType의 상위 4비트를 Empire번호로 사용한다.
-								bType = ch->GetEmpire() << 4;
+								bType = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) << 4;
 							}
 							else
 							{
-								ConvertEmpireText(ch->GetEmpire(), buf, buflen, 10 + 2 * pkChr->GetSkillPower(SKILL_LANGUAGE1 + ch->GetEmpire() - 1)/*변환확률*/);
+								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), buf, buflen, 10 + 2 * pkChr->GetSkillPower(SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) - 1)/*변환확률*/);
 							}
 						}
 
@@ -1048,12 +1048,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
-					langName.c_str(), ch->GetEmpire(), nameWithPrefix.c_str(), body);
+					langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), nameWithPrefix.c_str(), body);
 
 #else
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
-					langName.c_str(), ch->GetEmpire(), ch->GetName(), body);
+					langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ch->GetName(), body);
 #endif
 #else
 				snprintf(shoutbuf, sizeof(shoutbuf), "%s : %s", ch->GetName(), body);
@@ -1061,11 +1061,11 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 				TPacketGGShout p;
 				p.bHeader = HEADER_GG_SHOUT;
-				p.bEmpire = ch->GetEmpire();
+				p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 				strlcpy(p.szText, shoutbuf, sizeof(p.szText));
 
 				P2P_MANAGER::instance().Send(&p, sizeof(p));
-				SendShout(shoutbuf, ch->GetEmpire());
+				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
 #ifdef ENABLE_BATTLE_PASS
 				if (uint8_t bBattlePassId = ch->GetBattlePassId())
 				{
@@ -1313,7 +1313,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		len = snprintf(chatbuf, sizeof(chatbuf),
 			"|L%s|l|E%d|e |Hmsg:%s|h%s%s |h|r %s%s: %s",
 			langName.c_str(),
-			ch->GetEmpire(),
+			ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 			name,               // whisper target
 			prefix.c_str(),      
 			name,
@@ -1327,7 +1327,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		len = snprintf(chatbuf, sizeof(chatbuf),
 			"|L%s|l|E%d|e |Hmsg:%s|h%s [PM]|h|r : %s",
 			langName.c_str(),
-			ch->GetEmpire(),
+			ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 			ch->GetName(),
 			ch->GetName(),
 			buf);
@@ -1339,20 +1339,20 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		const std::string nameWithPrefix = MakeNameWithPrefix(ch);
 
 		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s",
-			langName.c_str(), ch->GetEmpire(), nameWithPrefix.c_str(), buf);
+			langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), nameWithPrefix.c_str(), buf);
 
 // else
-//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ch->GetEmpire(), 3)]), ch->GetName(), buf);
-		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ch->GetEmpire(), ch->GetName(), buf);
+//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ch->GetName(), buf);
+		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), ch->GetName(), buf);
 //#endif
 	}
 #else
-	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ch->GetEmpire(), 3)]), ch->GetName(),buf);
+	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), 3)]), ch->GetName(),buf);
 #endif
 
 	if (CHAT_TYPE_SHOUT == pinfo->type)
 	{
-		LogManager::instance().ShoutLog(g_bChannel, ch->GetEmpire(), chatbuf);
+		LogManager::instance().ShoutLog(g_bChannel, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), chatbuf);
 	}
 
 	if (len < 0 || len >= (int) sizeof(chatbuf))
@@ -1378,12 +1378,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		TPacketGGShout p;
 
 		p.bHeader = HEADER_GG_SHOUT;
-		p.bEmpire = ch->GetEmpire();
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
 		strlcpy(p.szText, chatbuf, sizeof(p.szText));
 
 		P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGShout));
 
-		SendShout(chatbuf, ch->GetEmpire());
+		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
 
 #ifdef ENABLE_BATTLE_PASS
 		uint8_t bBattlePassId = ch->GetBattlePassId();
@@ -1427,7 +1427,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 								ch->GetName(),
 								strlen(ch->GetName()),
 								ch->GetMapIndex(),
-								ch->GetEmpire(),
+								ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 								ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)));
 				}
 				else
@@ -1437,7 +1437,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 								chatbuf,
 								len,
 								(ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ||
-								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ch->GetEmpire(),
+								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)),
 								ch->GetMapIndex(), strlen(ch->GetName())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
@@ -3464,7 +3464,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	// iMapIndex = rConf.iMapIndex;
 
 	// PIXEL_POSITION pos;
-	// SECTREE_MANAGER::instance().GetRecallPositionByEmpire(iMapIndex, ch->GetEmpire(), pos);
+	// SECTREE_MANAGER::instance().GetRecallPositionByEmpire(iMapIndex, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos);
 
 	// ch->WarpSet(pos.x, pos.y);
 

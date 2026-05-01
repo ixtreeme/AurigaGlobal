@@ -1297,7 +1297,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 
 	// , ȸ ġ ̺Ʈ 
 #ifdef ENABLE_EVENT_MANAGER
-	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, to->GetEmpire());
+	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(to)));
 	if (event != 0)
 		iExp = iExp * (100 + (event->value[0] + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT))) / 100;
 	else
@@ -2030,7 +2030,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 						if (auto* flags = RuntimeFlags(this))
 				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
-			if (GetEmpire() != pkKiller->GetEmpire())
+			if (GetEmpire() != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)))
 			{
 				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), pkKiller->GetPoint(POINT_EMPIRE_POINT));
 
@@ -2042,7 +2042,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					pkKiller->GetEmpire(), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
 
 				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
 			}
@@ -2087,7 +2087,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					pkKiller->GetEmpire(), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
+					ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), pkKiller->GetName());
 
 				LogManager::instance().CharLog(this, pkKiller->GetPlayerID(), "DEAD_BY_PC", buf);
 			}
@@ -4232,7 +4232,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 #ifdef ENABLE_EVENT_MANAGER
 			if (pkAttacker->IsPC())
 			{
-				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, pkAttacker->GetEmpire());
+				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkAttacker)));
 				if (event != nullptr)
 					iGoldPercent = iGoldPercent * (100 + (event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP))) / 100;
 				else
@@ -4290,7 +4290,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 			int iGold10DropPct = 100;
 #ifdef ENABLE_EVENT_MANAGER
-			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, pkAttacker->GetEmpire());
+			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkAttacker)));
 			if (event != nullptr)
 				iGold10DropPct = (iGold10DropPct * 100) / (100 + event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
 			else
@@ -4484,7 +4484,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_NEWSTUFF
 	if (pAttacker && IsStone() && pAttacker->IsPC())
 	{
-		if (GetEmpire() && GetEmpire() == pAttacker->GetEmpire())
+		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pAttacker)))
 		{
 			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
 			return false;
@@ -5110,7 +5110,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 		if (pAttacker->IsPC())
 		{
-			int iEmpire = pAttacker->GetEmpire();
+			int iEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pAttacker));
 			int32_t lMapIndex = pAttacker->GetMapIndex();
 			int iMapEmpire = ecs::GetEmpireFromMap(lMapIndex);
 

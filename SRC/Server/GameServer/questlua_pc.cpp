@@ -249,7 +249,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		const uint8_t empireIndex = ch ? ch->GetEmpire() : 0;
+		const uint8_t empireIndex = ch ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) : 0;
 		lua_pushnumber(L, g_start_map[empireIndex]);
 		lua_pushnumber(L, g_start_position[empireIndex][0] / 100);
 		lua_pushnumber(L, g_start_position[empireIndex][1] / 100);
@@ -1674,7 +1674,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetEmpire() : 0);
+		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) : 0);
 		return 1;
 	}
 
@@ -2929,7 +2929,7 @@ teleport_area:
         if (ch)
         {
             if (auto* empire = ECS_TryGet<ecs::EmpireComponent>(e))
-                empire->value = static_cast<uint8_t>(ch->GetEmpire());
+                empire->value = static_cast<uint8_t>(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
             if (e != entt::null && g_registry.valid(e))
                 g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }

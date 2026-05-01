@@ -121,7 +121,7 @@ namespace quest
 		{
 			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
 			{
-				if (ch->GetEmpire() == bEmpire)
+				if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == bEmpire)
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
 			}
 		}
@@ -131,7 +131,7 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ((ch)->IsPC()) && ch->GetEmpire() == m_bEmpire)
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ((ch)->IsPC()) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == m_bEmpire)
 			{
 				ch->WarpSet(m_x, m_y, m_lMapIndexTo);
 			}

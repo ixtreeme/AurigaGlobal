@@ -2242,7 +2242,7 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 #endif
 		return;
 	}
-/* 	else if ( pchInvitee->GetEmpire() != pchInviter->GetEmpire() )//razor93 mas birodalom cehbe hivasa
+/* 	else if ( ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pchInvitee)) != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pchInviter)) )//razor93 mas birodalom cehbe hivasa
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pchInviter), CHAT_TYPE_INFO, 148, "");

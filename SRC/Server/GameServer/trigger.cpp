@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
 #include "config.h"
@@ -315,19 +316,19 @@ public:
 
 		if (m_pkChr->IsNoAttackShinsu())
 		{
-			if (pkChr->GetEmpire() == 1)
+			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 1)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackChunjo())
 		{
-			if (pkChr->GetEmpire() == 2)
+			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 2)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackJinno())
 		{
-			if (pkChr->GetEmpire() == 3)
+			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 3)
 				return false;
 		}
 

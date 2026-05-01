@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -218,7 +219,7 @@ int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 
 		// ����, ����, ���, ��ü �� ū ���� ���Ѵ�.
 		val = MAX(val_ch, GetPrivByEmpire(0, type));
-		val = MAX(val, GetPrivByEmpire(ch->GetEmpire(), type));
+		val = MAX(val, GetPrivByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), type));
 
 		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 			val = MAX(val, GetPrivByGuild(ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), type));

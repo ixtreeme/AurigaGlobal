@@ -52,7 +52,7 @@ struct FWarpToHome
 					if ( ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(lpChar)) != GM_PLAYER ) return;
 				}
 
-				int nEmpire = lpChar->GetEmpire();
+				int nEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(lpChar));
 				int nMapIndex = EMPIRE_START_MAP(nEmpire);
 				int x = EMPIRE_START_X(nEmpire);
 				int y = EMPIRE_START_Y(nEmpire);

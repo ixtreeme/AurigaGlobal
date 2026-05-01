@@ -598,7 +598,7 @@ namespace {
             m_lY = pkWarp->GetY();
 
             m_bInvalid = false;
-            m_bEmpire = pkWarp->GetEmpire();
+            m_bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkWarp));
 
             char szTmp[64];
 
@@ -649,7 +649,7 @@ namespace {
             if (iDist > 300)
                 return;
 
-            if (m_bEmpire && pkChr->GetEmpire() && m_bEmpire != pkChr->GetEmpire())
+            if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)))
                 return;
 
             if (pkChr->IsHack())

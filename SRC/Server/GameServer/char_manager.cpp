@@ -629,7 +629,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
-		if (ch->GetEmpire() == 0)
+		if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 	ch->SetRotation(number(0, 360));
@@ -760,7 +760,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
-		if (ch->GetEmpire() == 0)
+		if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 #ifdef ENABLE_ANCIENT_PYRAMID
@@ -1600,7 +1600,7 @@ void CHARACTER_MANAGER::CheckBonusEvent(LPCHARACTER ch)
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
 	//#endif
-	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ch->GetEmpire());
+	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
 	if (eventPtr)
 		ch->ApplyPoint(eventPtr->value[0], eventPtr->value[1]);
 }
@@ -1633,7 +1633,7 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 }
 void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
 {
-	const uint8_t killerEmpire = pkKiller->GetEmpire();
+	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller));
 	const TEventManagerData* eventPtr = nullptr;
 	LPITEM rewardItem = nullptr;
 
@@ -2156,7 +2156,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 			if (!ch)
 				continue;
 			if (eventData->empireFlag != 0)
-				if (eventData->empireFlag != ch->GetEmpire())
+				if (eventData->empireFlag != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))
 					continue;
 			if (eventData->channelFlag != 0)
 				if (eventData->channelFlag != g_bChannel)

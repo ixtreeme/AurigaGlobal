@@ -558,7 +558,7 @@ void CArena::EndDuel()
 
 		playerA->SetArena(nullptr);
 
-		playerA->WarpSet(ARENA_RETURN_POINT_X(playerA->GetEmpire()), ARENA_RETURN_POINT_Y(playerA->GetEmpire()));
+		playerA->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))));
 	}
 
 	if (playerB != nullptr)
@@ -571,7 +571,7 @@ void CArena::EndDuel()
 
 		playerB->SetArena(nullptr);
 
-		playerB->WarpSet(ARENA_RETURN_POINT_X(playerB->GetEmpire()), ARENA_RETURN_POINT_Y(playerB->GetEmpire()));
+		playerB->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))));
 	}
 
 	for (auto iter = m_mapObserver.begin(); iter != m_mapObserver.end(); ++iter)
@@ -579,7 +579,7 @@ void CArena::EndDuel()
 		LPCHARACTER pChar = CHARACTER_MANAGER::instance().FindByPID(iter->first);
 		if (pChar != nullptr)
 		{
-			pChar->WarpSet(ARENA_RETURN_POINT_X(pChar->GetEmpire()), ARENA_RETURN_POINT_Y(pChar->GetEmpire()));
+			pChar->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))));
 		}
 	}
 

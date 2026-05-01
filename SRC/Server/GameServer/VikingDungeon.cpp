@@ -300,7 +300,7 @@ namespace
         if (!ch)
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ch->GetEmpire(), mapIdx, x, y);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), mapIdx, x, y);
         ch->SetWarpLocation(mapIdx, x, y);
     }
 
@@ -309,7 +309,7 @@ namespace
         if (!ch)
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ch->GetEmpire(), mapIdx, x, y);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), mapIdx, x, y);
         ch->WarpSet(x * 100, y * 100, mapIdx);
     }
 
