@@ -134,8 +134,7 @@ std::string_view GetName(entt::entity e)
 			return name->value;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? std::string_view(ch->GetName()) : std::string_view {};
+	return {};
 }
 
 int32_t GetMapIndex(entt::entity e)
