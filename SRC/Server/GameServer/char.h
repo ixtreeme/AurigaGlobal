@@ -1222,6 +1222,7 @@ public:
 
 	CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const;
 	const std::list<CAffect*>& GetAffectContainer() const { return m_list_pkAffect; }
+	const TAffectFlag& GetAffectFlags() const { return m_afAffectFlag; }
 	bool			RemoveAffect(CAffect* pkAff);
 
 protected:

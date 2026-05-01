@@ -310,6 +310,7 @@ void SyncAffectList(entt::entity e, LegacyCharHandle ch)
 
     auto& affectList = g_registry.get_or_emplace<ecs::AffectList>(e);
     affectList.affects.assign(ch->GetAffectContainer().begin(), ch->GetAffectContainer().end());
+    affectList.flags = ch->GetAffectFlags();
     affectList.isLoaded = true;
 }
 
@@ -574,8 +575,36 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->FindAffect(type, apply) : nullptr;
+    if (e == entt::null || !g_registry.valid(e)) {
+        return nullptr;
+    }
+
+    auto* affectList = g_registry.try_get<ecs::AffectList>(e);
+    if (!affectList) {
+        return nullptr;
+    }
+
+    for (auto* affect : affectList->affects) {
+        if (!affect) {
+            continue;
+        }
+
+        if (affect->dwType == type && (apply == APPLY_NONE || affect->bApplyOn == apply)) {
+            return affect;
+        }
+    }
+
+    return nullptr;
+}
+
+bool IsAffectFlag(entt::entity e, uint32_t flag)
+{
+    if (e == entt::null || !g_registry.valid(e)) {
+        return false;
+    }
+
+    const auto* affectList = g_registry.try_get<ecs::AffectList>(e);
+    return affectList ? affectList->flags.IsSet(flag) : false;
 }
 
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,

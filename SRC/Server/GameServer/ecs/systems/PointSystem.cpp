@@ -5,6 +5,8 @@
 #include <common/VnumHelper.h>
 
 #include "../CharacterAccessors.hpp"
+#include "../components/inventory_components.hpp"
+#include "../components/vital_components.hpp"
 #include "../../char.h"
 
 
@@ -82,6 +84,62 @@
 #include <common/CommonDefines.h>
 
 namespace ecs::PointSystem {
+
+int64_t Get(entt::entity e, uint8_t type)
+{
+	if (auto* ch = ecs::LegacyCharOf(e))
+		return ch->GetPoint(type);
+
+	return 0;
+}
+
+int64_t GetReal(entt::entity e, uint8_t type)
+{
+	if (auto* ch = ecs::LegacyCharOf(e))
+		return ch->GetRealPoint(type);
+
+	return 0;
+}
+
+int64_t GetGold(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* gold = g_registry.try_get<ecs::GoldAmount>(e))
+			return gold->amount;
+	}
+
+	return 0;
+}
+
+int32_t GetMaxHP(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* health = g_registry.try_get<ecs::Health>(e))
+			return health->max;
+	}
+
+	return 0;
+}
+
+int32_t GetMaxSP(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
+			return mana->max;
+	}
+
+	return 0;
+}
+
+int8_t GetLevel(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* level = g_registry.try_get<ecs::LevelComponent>(e))
+			return static_cast<int8_t>(level->value);
+	}
+
+	return 0;
+}
 
 void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
 #ifdef __ENABLE_BLOCK_EXP__

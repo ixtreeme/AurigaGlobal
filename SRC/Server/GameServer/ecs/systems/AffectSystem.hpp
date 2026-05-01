@@ -22,6 +22,7 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag);
 void ApplyMobAttribute(entt::entity target, const TMobTable* table);
 
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply = APPLY_NONE);
+bool IsAffectFlag(entt::entity e, uint32_t flag);
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube = false);
