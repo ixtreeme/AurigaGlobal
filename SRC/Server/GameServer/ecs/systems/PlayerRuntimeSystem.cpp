@@ -68,6 +68,53 @@ LPDESC GetDesc(entt::entity e)
 	return ch ? ch->GetDesc() : nullptr;
 }
 
+uint32_t GetPlayerID(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* playerID = g_registry.try_get<ecs::PlayerID>(e))
+			return playerID->pid;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetPlayerID() : 0;
+}
+
+uint8_t GetEmpire(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* empire = g_registry.try_get<ecs::EmpireComponent>(e))
+			return empire->value;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetEmpire() : 0;
+}
+
+uint8_t GetGMLevel(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* gmLevel = g_registry.try_get<ecs::GMLevel>(e))
+			return gmLevel->level;
+
+		if (const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e))
+			return flags->gmLevel;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetGMLevel() : 0;
+}
+
+uint32_t GetPacketVID(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e))
+			return vid->value;
+	}
+
+	auto* ch = ecs::LegacyCharOf(e);
+	return ch ? ch->GetPacketVID() : 0;
+}
+
 } // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
