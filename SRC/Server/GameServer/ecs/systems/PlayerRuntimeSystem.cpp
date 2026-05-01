@@ -180,11 +180,7 @@ LPSECTREE GetSectree(entt::entity e)
 
 bool IsPC(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e))
-		return true;
-
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->IsPC() : false;
+	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e);
 }
 
 bool IsNPC(entt::entity e)
