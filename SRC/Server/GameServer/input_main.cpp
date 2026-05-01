@@ -151,7 +151,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 		{
 			pkInfoItem = s_vec_item[0];
 			pInfo.dwVID	= ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
-			pInfo.race = m_pkChrTarget->GetRaceNum();
+			pInfo.race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget));
 			pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 			pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
@@ -170,7 +170,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 				}
 
 					pInfo.dwVID	= ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
-					pInfo.race = m_pkChrTarget->GetRaceNum();
+					pInfo.race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget));
 					pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 					pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
 					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));

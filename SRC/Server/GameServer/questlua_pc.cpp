@@ -1071,7 +1071,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetRaceNum()) : 0);
+		lua_pushnumber(L, ch ? (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) : 0);
 		return 1;
 	}
 
@@ -1096,7 +1096,7 @@ namespace quest
         }
         const int result = ch->ChangeSex();
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(((ch)->GetRaceNum()));
+            race->value = static_cast<uint16_t>((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))));
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         lua_pushnumber(L, result);
@@ -4045,7 +4045,7 @@ teleport_area:
                 break;
 #endif
         }
-        if (dwRace!=((ch)->GetRaceNum()))
+        if (dwRace!=(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))))
         {
             ch->SetRace(dwRace);
             ch->ClearSkill();
@@ -4054,7 +4054,7 @@ teleport_area:
             ch->SetPolymorph(0);
         }
         if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>(((ch)->GetRaceNum()));
+            race->value = static_cast<uint16_t>((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))));
         if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
             points->base.skill_group = ch->GetSkillGroup();
         if (e != entt::null && g_registry.valid(e))

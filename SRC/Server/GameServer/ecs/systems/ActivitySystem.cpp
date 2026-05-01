@@ -603,7 +603,7 @@ void CHARACTER::mining(LPCHARACTER chLoad)
     if (GetMapIndex() != chLoad->GetMapIndex() || DISTANCE_APPROX(GetX() - chLoad->GetX(), GetY() - chLoad->GetY()) > 1000)
         return;
 
-    if (mining::GetRawOreFromLoad(chLoad->GetRaceNum()) == 0)
+    if (mining::GetRawOreFromLoad(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chLoad))) == 0)
         return;
 
     LPITEM pick = GetWear(WEAR_WEAPON);

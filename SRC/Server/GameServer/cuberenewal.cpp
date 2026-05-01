@@ -362,7 +362,7 @@ void Cube_open (LPCHARACTER ch)
 		return;
 	}
 
-	uint32_t npcVNUM = npc->GetRaceNum();
+	uint32_t npcVNUM = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
 
 	if ( FN_check_valid_npc(npcVNUM) == false )
 	{
@@ -439,7 +439,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	uint32_t copySocket[ITEM_SOCKET_MAX_NUM];
 	bool item_copy_bonus = false;
 #endif
-	const TCubeResultList& resultList = cube_info_map[npc->GetRaceNum()];
+	const TCubeResultList& resultList = cube_info_map[ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc))];
 	for (TCubeResultList::const_iterator iter = resultList.begin(); resultList.end() != iter; ++iter)
 	{
 		if (index_value == index)

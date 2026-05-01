@@ -408,7 +408,7 @@ void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d || d->GetFlag(kFlagFloor) != 2)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
 
     if (vnum == kBossVnum)
     {

@@ -956,7 +956,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
     const int32_t floor = d->GetFlag(kFlagFloor);
     const int32_t type = d->GetFlag(kFlagType);
 

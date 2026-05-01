@@ -487,7 +487,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
     const int32_t floorNum = d->GetFlag(kFlagFloor);
 
     if (vnum == kBossVnum)

@@ -2478,7 +2478,7 @@ struct FuncSplashDamage
 			LOG_INFO("FuncSplashDamage End :{} ", m_pkChr->GetName());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
-//		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && pkChrVictim->IsMonster() && pkChrVictim->GetRaceNum() == 136)
+//		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && pkChrVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrVictim)) == 136)
 //		{
 //			
 //			DBManager::instance().DirectQuery(

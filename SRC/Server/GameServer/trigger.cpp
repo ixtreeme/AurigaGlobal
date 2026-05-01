@@ -108,7 +108,7 @@ int OnClickOrcsDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 9239
-	if (!ch || ((ch)->GetRaceNum()) != 9239)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9239)
 		return 0;
 
 	COrcsDungeon::instance().OnClickNpc(causer);
@@ -121,7 +121,7 @@ int OnClickTritonTempleDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20094
-	if (!ch || ((ch)->GetRaceNum()) != 20094)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20094)
 		return 0;
 
 	CTritonTempleDungeon::instance().OnClickNpc(causer);
@@ -134,7 +134,7 @@ int OnClickValentineDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20012
-	if (!ch || ((ch)->GetRaceNum()) != 20012)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20012)
 		return 0;
 
 	CValentineDungeon::instance().OnClickNpc(causer);
@@ -147,7 +147,7 @@ int OnClickEasterDungeon(TRIGGERPARAM)
         return 0;
 
     // NPC vnum 21
-    if (!ch || ((ch)->GetRaceNum()) != 9308)
+    if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9308)
         return 0;
 
     CEasterDungeon::instance().OnClickNpc(causer);
@@ -160,7 +160,7 @@ int OnClickRuneDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 20506
-	if (!ch || ((ch)->GetRaceNum()) != 20506)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20506)
 		return 0;
 
 	CRuneDungeon::instance().OnClickNpc(causer);
@@ -173,7 +173,7 @@ int OnClickPyramidDungeon(TRIGGERPARAM)
 		return 0;
 
 	// NPC vnum 9331
-	if (!ch || ((ch)->GetRaceNum()) != 9331)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9331)
 		return 0;
 
 	CPyramidDungeonRazor93::instance().OnClickNpc(causer);
@@ -185,7 +185,7 @@ int OnClickNightmareDungeon(TRIGGERPARAM)
 	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
-	if (!ch || ((ch)->GetRaceNum()) != 20088)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20088)
 		return 0;
 
 	CNightmareDungeonRazor93::instance().OnClickNpc(causer);
@@ -199,7 +199,7 @@ int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 	if (!ch)
 		return 0;
 
-	if (((ch)->GetRaceNum()) != 9475 && ((ch)->GetRaceNum()) != 9484)
+	if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9475 && (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9484)
 		return 0;
 
 	CHalloween2022Dungeon::instance().OnClickNpc(causer, ch);
@@ -216,7 +216,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 
 	// entry npc: 9615
 	// reward chest: 9626
-	if (((ch)->GetRaceNum()) != 9615 && ((ch)->GetRaceNum()) != 9626)
+	if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9615 && (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9626)
 		return 0;
 
 	CVikingDungeon::instance().OnClickNpc(causer, ch);
@@ -228,7 +228,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 		return 0;
 
-	if (!ch || ((ch)->GetRaceNum()) != 9005)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9005)
 		return 0;
 
 	if (causer->GetExchange() || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
@@ -244,7 +244,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 //	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
 //		return 0;
 //
-//	if (!ch || ((ch)->GetRaceNum()) != 20021)
+//	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20021)
 //		return 0;
 //
 //	CLostCastleDungeon::instance().OnClickNpc(causer);

@@ -605,7 +605,7 @@ namespace {
             if (3 != sscanf(pkWarp->GetName(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
             {
                 if (number(1, 100) < 5)
-                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", pkWarp->GetRaceNum(), pkWarp->GetName());
+                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkWarp)), pkWarp->GetName());
 
                 m_bInvalid = true;
 

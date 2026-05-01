@@ -1942,7 +1942,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	//	if (pkKiller)
 	//		SetQuestNPCID(pkKiller->GetVID());
 	//	// quest::CQuestManager::instance().Die(GetPlayerID(), quest::QUEST_NO_NPC);
-	//	quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller)?pkKiller->GetRaceNum():quest::QUEST_NO_NPC);
+	//	quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller)?ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkKiller)):quest::QUEST_NO_NPC);
 	//}
 	if (IsPC())
 	{
@@ -1950,7 +1950,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkKiller)));
 		}
 
-		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? pkKiller->GetRaceNum() : quest::QUEST_NO_NPC);
+		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkKiller)) : quest::QUEST_NO_NPC);
 	}
 #endif
 
@@ -2019,7 +2019,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
 						if (auto* flags = RuntimeFlags(this))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
-			LogManager::instance().CharLog(this, pkKiller->GetRaceNum(), "DEAD_BY_NPC", pkKiller->GetName());
+			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkKiller)), "DEAD_BY_NPC", pkKiller->GetName());
 		}
 		else
 		{
@@ -6244,49 +6244,49 @@ public:
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 		case SKILL_SANGONG:
 		{
-			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum())
+			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)))
 			{
 				int iDam = CalcMeleeDamage(m_me, pkVictim);
 
 				if (m_me->GetJob() == JOB_ASSASSIN &&
-					(ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || pkVictim->GetRaceNum() == 136))
+					(ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkVictim)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 136))
 				{
 					int multiplier = 36; // alap multiplier
 
 
-					if (pkVictim->GetRaceNum() == 331)
+					if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 331)
 					{
 						iDam = 0;
 					}
 					else
 					{
 
-						if (pkVictim->GetRaceNum() == 8055)
+						if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 8055)
 						{
 							multiplier = 34;
 						}
-						else if (pkVictim->GetRaceNum() == 6193)
+						else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 6193)
 						{
 							multiplier = 20;
 						}
-						else if (pkVictim->GetRaceNum() == 8010 ||
-							pkVictim->GetRaceNum() == 8020 ||
-							pkVictim->GetRaceNum() == 180 ||
-							pkVictim->GetRaceNum() == 181 ||
-							pkVictim->GetRaceNum() == 182)
+						else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 8010 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 8020 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 180 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 181 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 182)
 						{
 							multiplier = 20;
 						}
-						else if (pkVictim->GetRaceNum() == 180 ||
-							pkVictim->GetRaceNum() == 181 ||
-							pkVictim->GetRaceNum() == 182
+						else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 180 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 181 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 182
 							)
 						{
 							multiplier = 100;
 						}
-						else if (pkVictim->GetRaceNum() == 4582 ||
-							pkVictim->GetRaceNum() == 4583 ||
-							pkVictim->GetRaceNum() == 4584
+						else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 4582 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 4583 ||
+							ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 4584
 							)
 						{
 							multiplier = 80	;
@@ -7300,15 +7300,15 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 #endif
 		else
 		{
-			if (m_pkChrTarget->GetRaceNum() == 20101 ||
-				m_pkChrTarget->GetRaceNum() == 20102 ||
-				m_pkChrTarget->GetRaceNum() == 20103 ||
-				m_pkChrTarget->GetRaceNum() == 20104 ||
-				m_pkChrTarget->GetRaceNum() == 20105 ||
-				m_pkChrTarget->GetRaceNum() == 20106 ||
-				m_pkChrTarget->GetRaceNum() == 20107 ||
-				m_pkChrTarget->GetRaceNum() == 20108 ||
-				m_pkChrTarget->GetRaceNum() == 20109)
+			if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20101 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20102 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20103 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20104 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20105 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20106 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20107 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20108 ||
+				ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget)) == 20109)
 			{
 				LPCHARACTER owner = m_pkChrTarget->GetVictim();
 

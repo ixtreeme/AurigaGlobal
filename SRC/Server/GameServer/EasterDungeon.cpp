@@ -199,7 +199,7 @@ namespace
             if (!(ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
                 return;
 
-            if (ch->GetRaceNum() == vnum)
+            if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) == vnum)
                 ++count;
         }
     };
@@ -705,7 +705,7 @@ void CEasterDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     // ---------------- Floor 1: stones countdown -> floor2 10 mp kesleltetessel ----------------

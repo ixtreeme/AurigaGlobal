@@ -128,7 +128,7 @@ void CMobManager::RebindMobProto(LPCHARACTER ch)
 	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		return;
 
-	const CMob * pMob = Get(ch->GetRaceNum());
+	const CMob * pMob = Get(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)));
 
 	if (pMob)
 		ch->SetProto(pMob);

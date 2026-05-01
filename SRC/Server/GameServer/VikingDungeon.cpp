@@ -1126,7 +1126,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     if (!ch || !npc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
-    const uint32_t race = npc->GetRaceNum();
+    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const int32_t now = get_global_time();
 
     const int32_t currentIdx = ch->GetMapIndex();
@@ -1368,7 +1368,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
     if (!d)
         return false;
 
-    const uint32_t npcVnum = npc->GetRaceNum();
+    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
@@ -1464,7 +1464,7 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (floor == 1 && vnum == kFloor1LowBossVnum)

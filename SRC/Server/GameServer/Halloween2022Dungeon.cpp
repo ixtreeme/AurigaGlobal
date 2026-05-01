@@ -660,7 +660,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) || !npc)
         return false;
 
-    const uint32_t race = npc->GetRaceNum();
+    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const int32_t now = get_global_time();
     const int32_t currentIdx = ch->GetMapIndex();
 
@@ -894,7 +894,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = victim->GetRaceNum();
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     // Floor 1 - full stones
@@ -1095,7 +1095,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
         return false;
 
     const int32_t floor = d->GetFlag(kFlagFloor);
-    const uint32_t npcVnum = npc->GetRaceNum();
+    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
     const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
 
     // Angel statue

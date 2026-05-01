@@ -146,7 +146,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (iShopVnum)
 		pkShop = Get(iShopVnum);
 	else
-		pkShop = GetByNPCVnum(pkChrShopKeeper->GetRaceNum());
+		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrShopKeeper)));
 
 	if (!pkShop)
 	{

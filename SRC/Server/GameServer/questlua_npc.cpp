@@ -455,7 +455,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, ((npc)->GetRaceNum()));
+		lua_pushnumber(L, (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc))));
 		return 1;
 	}
 

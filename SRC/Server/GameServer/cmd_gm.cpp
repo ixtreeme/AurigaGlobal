@@ -1956,7 +1956,7 @@ ACMD(do_set)
 						break;
 #endif
 				}
-				if (dwRace!=tch->GetRaceNum())
+				if (dwRace!=ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(tch)))
 				{
 					tch->SetRace(dwRace);
 					tch->ClearSkill();

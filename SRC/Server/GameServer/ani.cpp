@@ -8,6 +8,8 @@
 #define _ani_cpp_
 
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
@@ -355,7 +357,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (ITEM_WEAPON != ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)))
 		return speed;
 
-	int race = ((ch)->GetRaceNum());
+	int race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)));
 	int weapon = ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item));
 
 	/*
@@ -381,7 +383,7 @@ uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 	if (nullptr == item || combo > 8)
 		return 1000;
 
-	return s_ANI.attack_speed(((ch)->GetRaceNum()), ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)), combo, ch->IsRiding());
+	return s_ANI.attack_speed((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))), ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)), combo, ch->IsRiding());
 }
 
 void ani_print_attack_speed()

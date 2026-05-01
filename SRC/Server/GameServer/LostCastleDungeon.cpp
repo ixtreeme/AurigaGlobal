@@ -294,7 +294,7 @@ namespace
             return 220;
 
         const uint32_t mode = ch->GetMotionMode();
-        const float durSec = CMotionManager::instance().GetMotionDuration(ch->GetRaceNum(), MAKE_MOTION_KEY(mode, motionIndex));
+        const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)), MAKE_MOTION_KEY(mode, motionIndex));
         uint32_t durMs = (durSec > 0.01f) ? (uint32_t)(durSec * 1000.0f) : 650;
 
         // Hit generally lands early-mid swing
@@ -753,7 +753,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
-            clone->SetRace((uint8_t)source->GetRaceNum());
+            clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(source)));
             clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
             clone->SetPKMode(PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
@@ -1302,7 +1302,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
       //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
-        clone->SetRace((uint8_t)source->GetRaceNum());
+        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(source)));
         clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
         clone->SetPKMode(PK_MODE_FREE);
         clone->SetSkillGroup(source->GetSkillGroup());
@@ -1637,7 +1637,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     const int32_t floor = d->GetFlag(kFlagFloor);
 
-    if (floor == 1 && victim->GetRaceNum() == kMetinVnum)
+    if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == kMetinVnum)
     {
         const uint32_t correctVid = (uint32_t)d->GetFlag(kFlagCorrectMetin);
 	if (correctVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)) == correctVid)
@@ -1660,7 +1660,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     {
         if (killer && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)) && victim->IsMonster())
         {
-            const uint16_t vnum = victim->GetRaceNum();
+            const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
                 if (number(1, 100) <= kTileDropChancePct)

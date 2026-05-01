@@ -57,10 +57,10 @@ namespace
 	static bool g_bDungeonTicketExtraMetinSpawn = false;
 	static inline void CalcDungeonTicketExtraPos(int baseX, int baseY, int idx, int& outX, int& outY)
 	{
-		 
+
 		const int STEP = 35;
 
-		 
+
 		const int ring = (idx / 8) + 1;
 		const int r = STEP * ring;
 
@@ -144,7 +144,7 @@ namespace
 				continue;
 			}
 
-			if (ch->IsDead() || ch->GetMapIndex() != st.mapIndex || ch->GetRaceNum() != st.mobVnum)
+			if (ch->IsDead() || ch->GetMapIndex() != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
 			{
 				toErase.push_back(vid);
 				continue;
@@ -920,7 +920,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 
 		if (!tch)
 		{
-			if (i == 0)	//  Ͱ  쿡 ׳ 
+			if (i == 0)	//  Ͱ  쿡 ׳
 				return false;
 
 			continue;
@@ -1008,7 +1008,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 
 		if (!tch)
 		{
-			if (i == 0)	//  Ͱ  쿡 ׳ 
+			if (i == 0)	//  Ͱ  쿡 ׳
 				return nullptr;
 
 			continue;
@@ -1064,7 +1064,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 	BeginPendingDestroy();
 #ifdef ENABLE_EVENT_MANAGER
-	 
+
 	const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
 	const bool nowActive = (ev != nullptr);
 
@@ -1081,7 +1081,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 	if (needResync)
 	{
-		 
+
 		CHARACTER_VECTOR all;
 		all.reserve(m_map_pkChrByVID.size());
 		for (const auto& it : m_map_pkChrByVID)
@@ -1095,10 +1095,10 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				DestroyCharacter(ch);
 		}
 
-		 
+
 		if (nowActive && nowExtraCount > 0)
 		{
-			 
+
 			all.clear();
 			all.reserve(m_map_pkChrByVID.size());
 			for (const auto& it : m_map_pkChrByVID)
@@ -1120,7 +1120,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				if (isDungeonMap)
 					continue;
 
-				const uint32_t vnum = ch->GetRaceNum();
+				const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
 				const int32_t x = ch->GetX();
 				const int32_t y = ch->GetY();
 				const int32_t z = ch->GetZ();
@@ -1150,7 +1150,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	{
 		if (!m_map_pkPCChr.empty())
 		{
-			// ̳ 
+			// ̳
 			CHARACTER_VECTOR v;
 			v.reserve(m_map_pkPCChr.size());
 			//#ifdef __GNUC__
@@ -1171,7 +1171,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			}
 		}
 		//#ifdef ENABLE_FAKE_SHOP_HEADER
-		//		
+		//
 		//		if (0 == (iPulse % PASSES_PER_SEC(5)))
 		//		{
 		//			for (const auto& it : m_map_pkPCChr)
@@ -1199,7 +1199,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		}
 	}
 
-	// 1ð ѹ    
+	// 1ð ѹ
 	if (0 == iPulse % PASSES_PER_SEC(3600))
 	{
 		for (auto it = m_map_dwMobKillCount.begin(); it != m_map_dwMobKillCount.end(); ++it)
@@ -1208,7 +1208,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		m_map_dwMobKillCount.clear();
 	}
 
-	// ׽Ʈ  60ʸ ĳ  
+	// ׽Ʈ  60ʸ ĳ
 	if (test_server && 0 == iPulse % PASSES_PER_SEC(60))
 		LOG_INFO("CHARACTER COUNT vid {} pid {}", m_map_pkChrByVID.size(), m_map_pkChrByPID.size());
 
@@ -1349,7 +1349,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	uint32_t dwVnum = ch->GetRaceNum();
+	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
 	{
@@ -1363,7 +1363,7 @@ void CHARACTER_MANAGER::UnregisterRaceNumMap(LPCHARACTER ch)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	uint32_t dwVnum = ch->GetRaceNum();
+	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
 
 	if (const auto it = m_map_pkChrByRaceNum.find(dwVnum); it != m_map_pkChrByRaceNum.end())
 		it->second.erase(ch);
@@ -1542,7 +1542,7 @@ void CHARACTER_MANAGER::SendScriptToMap(int32_t lMapIndex, std::string_view s)
 
 bool CHARACTER_MANAGER::BeginPendingDestroy()
 {
-	// Begin  Ŀ Begin  ϴ 쿡 Flush  ʴ   
+	// Begin  Ŀ Begin  ϴ 쿡 Flush  ʴ
 	// ̹ ۵Ǿ false  ó
 	if (m_bUsePendingDestroy)
 		return false;
@@ -1555,7 +1555,7 @@ void CHARACTER_MANAGER::FlushPendingDestroy()
 {
 	using namespace std;
 
-	m_bUsePendingDestroy = false; // ÷׸  ؾ  Destroy ó 
+	m_bUsePendingDestroy = false; // ÷׸  ؾ  Destroy ó
 
 	if (!m_set_pkChrPendingDestroy.empty())
 	{
@@ -1655,25 +1655,25 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		}
 	}
-	else if (pkChr->GetRaceNum() == 693//Szellem orkvezr
-		|| pkChr->GetRaceNum() == 2832//Shen tbornok
-		|| pkChr->GetRaceNum() == 6191//Nemere
-		|| pkChr->GetRaceNum() == 768//slime
-		|| pkChr->GetRaceNum() == 1093//Kaszs
-		|| pkChr->GetRaceNum() == 3491//Triton
-		|| pkChr->GetRaceNum() == 2493//Beran-Setaou
-		|| pkChr->GetRaceNum() == 4158//Szfinksz
-		|| pkChr->GetRaceNum() == 4203//Agares
-		|| pkChr->GetRaceNum() == 2598//Irn Azrael
-		|| pkChr->GetRaceNum() == 719//Ru-Taig
-		|| pkChr->GetRaceNum() == 6393//Ers Ochao fejedelem
-		|| pkChr->GetRaceNum() == 6191//Nemere
-		|| pkChr->GetRaceNum() == 6091//Razador
-		|| pkChr->GetRaceNum() == 2092//Pk-brn 
-		|| pkChr->GetRaceNum() == 4815//	Fagyvész zsarnok óriás
-		|| pkChr->GetRaceNum() == 4584//Fandalia nover
-		|| pkChr->GetRaceNum() == 4011//Eien (BOSS)
-		|| pkChr->GetRaceNum() == 3910//Skeletos
+	else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 693//Szellem orkvezr
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2832//Shen tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 768//slime
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 1093//Kaszs
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3491//Triton
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2493//Beran-Setaou
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4158//Szfinksz
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4203//Agares
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2598//Irn Azrael
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 719//Ru-Taig
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6393//Ers Ochao fejedelem
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6091//Razador
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2092//Pk-brn
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815//	Fagyvész zsarnok óriás
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4584//Fandalia nover
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011//Eien (BOSS)
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3910//Skeletos
 
 
 
@@ -1694,35 +1694,35 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 				vec_item.emplace_back(rItem);
 
 		}
-		if (pkChr->GetRaceNum() == 4011)
+		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011)
 		{
 			LPITEM extraDrop = ITEM_MANAGER::Instance().CreateItem(50101, 1, 0, true);
 			if (extraDrop)
 				vec_item.emplace_back(extraDrop);
 		}
 	}
-	else if (pkChr->GetRaceNum() == 491//map1
-		|| pkChr->GetRaceNum() == 492//map1
-		|| pkChr->GetRaceNum() == 493//map1
-		|| pkChr->GetRaceNum() == 494//map1
-		|| pkChr->GetRaceNum() == 691//orkvezr
-		|| pkChr->GetRaceNum() == 2491//Yonghan Parancsnok
-		|| pkChr->GetRaceNum() == 3590//Arccsont
-		|| pkChr->GetRaceNum() == 3490//Kappa tbornok 
-		|| pkChr->GetRaceNum() == 3690//Homr tbornok
-		|| pkChr->GetRaceNum() == 3691//Tarisznyark kirly
-		|| pkChr->GetRaceNum() == 3791//Wubba kirly
-		|| pkChr->GetRaceNum() == 3591//Vrs fnk
-		|| pkChr->GetRaceNum() == 3595//Brutlis Arccsont
-		|| pkChr->GetRaceNum() == 4157//Anubis
-		|| pkChr->GetRaceNum() == 4155//Bastet
-		|| pkChr->GetRaceNum() == 4156//Ra
-		|| pkChr->GetRaceNum() == 2597//Charon
-		|| pkChr->GetRaceNum() == 5001//Szellem I
-		|| pkChr->GetRaceNum() == 6407//En-Tai uralkod 
-		|| pkChr->GetRaceNum() == 6408//Bagjanamu 
-		|| pkChr->GetRaceNum() == 2206//Lngkirly
-		|| pkChr->GetRaceNum() == 2094//Pk-br 
+	else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 491//map1
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 492//map1
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 493//map1
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 494//map1
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 691//orkvezr
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2491//Yonghan Parancsnok
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3590//Arccsont
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3490//Kappa tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3690//Homr tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3691//Tarisznyark kirly
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3791//Wubba kirly
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3591//Vrs fnk
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3595//Brutlis Arccsont
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4157//Anubis
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4155//Bastet
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4156//Ra
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2597//Charon
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 5001//Szellem I
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6407//En-Tai uralkod
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6408//Bagjanamu
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2206//Lngkirly
+		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2094//Pk-br
 		)
 	{
 		eventPtr = CheckEventIsActive(DOUBLE_BOSS_LOOT_EVENT, killerEmpire);
@@ -1832,8 +1832,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 	eventPtr = CheckEventIsActive(VALENTIN_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
-		 
-		const uint32_t dwBossVnum = eventPtr->value[0];  
+
+		const uint32_t dwBossVnum = eventPtr->value[0];
 
 		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 		{
@@ -1844,7 +1844,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 			LPCHARACTER boss = nullptr;
 
-			 
+
 			for (int i = 0; i < 16 && !boss; ++i)
 			{
 				PIXEL_POSITION p;
@@ -1859,8 +1859,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 			if (boss)
 			{
-				boss->SetAggressive();       
-				boss->SetVictim(pkKiller);   
+				boss->SetAggressive();
+				boss->SetVictim(pkKiller);
 			}
 		}
 
@@ -1931,28 +1931,28 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
 		if (
-			pkChr->GetRaceNum() == 491 || // map1
-			pkChr->GetRaceNum() == 492 || // map1
-			pkChr->GetRaceNum() == 493 || // map1
-			pkChr->GetRaceNum() == 494 || // map1
-			pkChr->GetRaceNum() == 691 || // Orkvezr
-			pkChr->GetRaceNum() == 2491 || // Yonghan Parancsnok
-			pkChr->GetRaceNum() == 3590 || // Arccsont
-			pkChr->GetRaceNum() == 3490 || // Kappa tbornok
-			pkChr->GetRaceNum() == 3690 || // Homr tbornok
-			pkChr->GetRaceNum() == 3691 || // Tarisznyark kirly
-			pkChr->GetRaceNum() == 3791 || // Wubba kirly
-			pkChr->GetRaceNum() == 3591 || // Vrs fnk
-			pkChr->GetRaceNum() == 3595 || // Brutlis Arccsont
-			pkChr->GetRaceNum() == 4157 || // Anubis
-			pkChr->GetRaceNum() == 4155 || // Bastet
-			pkChr->GetRaceNum() == 4156 || // Ra
-			pkChr->GetRaceNum() == 2597 || // Charon
-			pkChr->GetRaceNum() == 5001 || // Szellem I
-			pkChr->GetRaceNum() == 6407 || // En-Tai uralkod
-			pkChr->GetRaceNum() == 6408 || // Bagjanamu
-			pkChr->GetRaceNum() == 2206 || // Lngkirly
-			pkChr->GetRaceNum() == 2094    // Pk-br
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 491 || // map1
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 492 || // map1
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 493 || // map1
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 494 || // map1
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 691 || // Orkvezr
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2491 || // Yonghan Parancsnok
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3590 || // Arccsont
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3490 || // Kappa tbornok
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3690 || // Homr tbornok
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3691 || // Tarisznyark kirly
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3791 || // Wubba kirly
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3591 || // Vrs fnk
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3595 || // Brutlis Arccsont
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4157 || // Anubis
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4155 || // Bastet
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4156 || // Ra
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2597 || // Charon
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 5001 || // Szellem I
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6407 || // En-Tai uralkod
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6408 || // Bagjanamu
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2206 || // Lngkirly
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2094    // Pk-br
 			)
 		{
 			// === DROP ===
@@ -1964,25 +1964,25 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 	eventPtr = CheckEventIsActive(DUPLA_RUN_PONT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
-		if (pkChr->GetRaceNum() == 693//Szellem orkvezr
-			|| pkChr->GetRaceNum() == 2832//Shen tbornok
-			|| pkChr->GetRaceNum() == 4584//Blood run
-			|| pkChr->GetRaceNum() == 6191//Nemere
-			|| pkChr->GetRaceNum() == 768//slime
-			|| pkChr->GetRaceNum() == 1093//Kaszs
-			|| pkChr->GetRaceNum() == 3491//Triton
-			|| pkChr->GetRaceNum() == 2493//Beran-Setaou
-			|| pkChr->GetRaceNum() == 4158//Szfinksz
-			|| pkChr->GetRaceNum() == 4203//Agares
-			|| pkChr->GetRaceNum() == 2598//Irn Azrael
-			|| pkChr->GetRaceNum() == 719//Ru-Taig
-			|| pkChr->GetRaceNum() == 6393//Er s Ochao fejedelem
-			|| pkChr->GetRaceNum() == 6191//Nemere
-			|| pkChr->GetRaceNum() == 6091//Razador
-			|| pkChr->GetRaceNum() == 2092//Pk-b 
-			|| pkChr->GetRaceNum() == 4011//Eien (BOSS
-			|| pkChr->GetRaceNum() == 6192//	Jotun Thrym/
-			|| pkChr->GetRaceNum() == 3910//Skeletos
+		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 693//Szellem orkvezr
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2832//Shen tbornok
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4584//Blood run
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 768//slime
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 1093//Kaszs
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3491//Triton
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2493//Beran-Setaou
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4158//Szfinksz
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4203//Agares
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2598//Irn Azrael
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 719//Ru-Taig
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6393//Er s Ochao fejedelem
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6091//Razador
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2092//Pk-b
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011//Eien (BOSS
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6192//	Jotun Thrym/
+			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3910//Skeletos
 			)
 		{
 			// === DROP ===

@@ -414,7 +414,7 @@ namespace mining
 
 		if (number(1, 100) <= iPct)
 		{
-			OreDrop(ch, load->GetRaceNum());
+			OreDrop(ch, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(load)));
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 470, "");
 #endif

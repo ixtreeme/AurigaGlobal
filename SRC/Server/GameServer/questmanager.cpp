@@ -952,7 +952,7 @@ namespace quest
 					return bRet;
 			}
 
-			uint32_t dwCurrentNPCRace = pkChrTarget->GetRaceNum();
+			uint32_t dwCurrentNPCRace = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrTarget));
 
 			if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChrTarget)))
 			{
@@ -1280,7 +1280,8 @@ namespace quest
 
 	unsigned int CQuestManager::GetCurrentNPCRace()
 	{
-		return GetCurrentNPCCharacterPtr() ? GetCurrentNPCCharacterPtr()->GetRaceNum() : 0;
+		auto* npc = GetCurrentNPCCharacterPtr();
+		return npc ? ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) : 0;
 	}
 
 	LPITEM CQuestManager::GetCurrentItem()

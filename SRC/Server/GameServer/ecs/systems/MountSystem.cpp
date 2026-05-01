@@ -387,7 +387,7 @@ bool CHARACTER::StartRiding()
 	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		return false;
 
-	uint32_t dwMountVnum = m_chHorse ? m_chHorse->GetRaceNum() : GetMyHorseVnum();
+	uint32_t dwMountVnum = m_chHorse ? ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_chHorse)) : GetMyHorseVnum();
 
 	if (false == CHorseRider::StartRiding())
 	{

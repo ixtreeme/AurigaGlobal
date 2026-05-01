@@ -1040,9 +1040,9 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
 	if (pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
 	{
-		if (!IsRegisteredDropMob(pkChr->GetRaceNum()))
+		if (!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr))))
 		{
-			LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben   CreateDropItemVector megszakitva.", pkChr->GetName(), pkChr->GetRaceNum());
+			LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben   CreateDropItemVector megszakitva.", pkChr->GetName(), ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 			return false;
 		}
 	}
@@ -1080,7 +1080,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
 				if (item)
-					item->SetSocket(0, pkChr->GetRaceNum());
+					item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 			}
 		}
 		else
@@ -1092,7 +1092,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 	// Drop Item Group
 	{
 
-		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
 		{
@@ -1108,7 +1108,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 					{
 						if (item->GetVnum() == pkChr->GetPolymorphItemVnum())
 						{
-							item->SetSocket(0, pkChr->GetRaceNum());
+							item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 						}
 					}
 
@@ -1120,7 +1120,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	// MobDropItem Group
 	{
-		auto it = m_map_pkMobItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (it != m_map_pkMobItemGroup.end())
 		{
@@ -1141,7 +1141,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	// Level Item Group
 	{
-		auto it = m_map_pkLevelItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
@@ -1167,7 +1167,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 #endif
 			))
 		{
-			auto it = m_map_pkGloveItemGroup.find(pkChr->GetRaceNum());
+			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 			if (it != m_map_pkGloveItemGroup.end())
 			{
 				auto v = it->second->GetVector();
@@ -1225,10 +1225,10 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
-	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(pkChr->GetRaceNum());
+	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 	if (!pGroup || pGroup->IsEmpty())
 	{
-		LOG_INFO("[DROP BLOCKED] Metin VNUM {} nincs regisztr?va mob_drop_item.txt-ben!", pkChr->GetRaceNum());
+		LOG_INFO("[DROP BLOCKED] Metin VNUM {} nincs regisztr?va mob_drop_item.txt-ben!", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 		return false;
 	}
 
@@ -1273,7 +1273,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
 					if (item)
-						item->SetSocket(0, pkChr->GetRaceNum());
+						item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 				}
 			}
 			else
@@ -1285,11 +1285,11 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	// Drop Item Group
 	{
-		if (pkChr->GetRaceNum() == 4815)
+		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815)
 		{
 			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? pkKiller->GetLevel() : 0, pkChr->GetLevel(), iDeltaPercent, iRandRange);
 		}
-		auto it = m_map_pkDropItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
 		{
@@ -1310,10 +1310,10 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 						{
 							if (item->GetVnum() == pkChr->GetPolymorphItemVnum())
 							{
-								item->SetSocket(0, pkChr->GetRaceNum());
+								item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 							}
 						}
-						if (pkChr->GetRaceNum() == 4815)
+						if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815)
 						{
 							LOG_ERROR("VIKING DROP ROLL: item={} pct_raw={} final={} count={}", v[i].dwVnum, v[i].dwPct, iPercent, v[i].iCount);
 						}
@@ -1326,7 +1326,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	// MobDropItem Group
 	{
-		auto it = m_map_pkMobItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (it != m_map_pkMobItemGroup.end())
 		{
@@ -1352,7 +1352,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	// Level Item Group
 	{
-		auto it = m_map_pkLevelItemGroup.find(pkChr->GetRaceNum());
+		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
@@ -1380,7 +1380,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 #endif
 			))
 		{
-			auto it = m_map_pkGloveItemGroup.find(pkChr->GetRaceNum());
+			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 
 			if (it != m_map_pkGloveItemGroup.end())
 			{

@@ -128,7 +128,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 		return true;
 
 #ifdef __DEFENSE_WAVE__
-	if (victim->GetRaceNum() == 20434 && ch->IsMonster())
+	if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == 20434 && ch->IsMonster())
 	{
 		return true;
 	}
@@ -203,7 +203,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		}
 
 #ifdef __DEFENSE_WAVE__
-		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (victim->GetRaceNum() == 3960 || victim->GetRaceNum() == 3961 || victim->GetRaceNum() == 3962))
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == 3960 || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == 3961 || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == 3962))
 		{
 			max += 400;
 		}
@@ -382,7 +382,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 		}
 #else
 #ifdef ENABLE_MAP1_SKILL_MOB__disable
-		if (!(pkVictim && pkVictim->IsMonster() && pkVictim->GetRaceNum() == 136 && pkAttacker->IsSkillHit()))
+		if (!(pkVictim && pkVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 136 && pkAttacker->IsSkillHit()))
 		{
 			iAtk += (iAtk * pkAttacker->GetPoint(POINT_ATTBONUS_MONSTER)) / 100;
 		}
@@ -950,7 +950,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 		return (BATTLE_DEAD);
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkAttacker)) /*&& pkAttacker->IsSkillHit()*/
-//		&& pkVictim->GetRaceNum() == 136)
+//		&& ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)) == 136)
 //	{
 //		std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
 //			"UPDATE player.player "
@@ -967,7 +967,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 //		LOG_TRACE("DEBUG MAP1_SKILL_MOB: attacker={} (id={}) victimVnum={} dmg={} skillhit={}",
 //			((pkAttacker)->GetName()),
 //			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)),
-//			pkVictim->GetRaceNum(),
+//			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim)),
 //			iRetDam,
 //			pkAttacker->IsSkillHit());
 //

@@ -1786,7 +1786,7 @@ ACMD(do_pvp_advanced)
 	int m_MaxHP = pkVictim->GetMaxHP();
 	int m_MaxSP = pkVictim->GetMaxSP();
 	
-	uint32_t m_Race = pkVictim->GetRaceNum();
+	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim));
 	
 	if (g)
 	{ 
@@ -3050,11 +3050,11 @@ namespace
 			return nullptr;
 
 		auto* npc = ch->GetQuestNPC();
-		if (npc && npc->GetRaceNum() == STONE_CRAFT_NPC_VNUM)
+		if (npc && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
 		npc = ch->GetTarget();
-		if (npc && npc->GetRaceNum() == STONE_CRAFT_NPC_VNUM)
+		if (npc && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
 		return nullptr;
@@ -3065,7 +3065,7 @@ namespace
 		if (!ch || !npc)
 			return false;
 
-		if (npc->GetRaceNum() != STONE_CRAFT_NPC_VNUM)
+		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
 		if (ch->IsDead() || ch->IsStun() || ch->IsObserverMode())

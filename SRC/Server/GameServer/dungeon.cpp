@@ -615,7 +615,7 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
 				{
-					int32_t racevnum = ch->GetRaceNum();
+					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
 					if (racevnum != 3963 && racevnum != 3964)
 					{
 						ch->Dead();

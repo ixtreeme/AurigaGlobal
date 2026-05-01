@@ -23,7 +23,7 @@
 #ifdef ENABLE_PVP_ADVANCED
 /*
 #ifdef __NEWPET_SYSTEM__
-	#include "New_PetSystem.h" roba tua... 
+	#include "New_PetSystem.h" roba tua...
 #endif
 */
 	#include "affect.h"
@@ -48,7 +48,7 @@ EVENTINFO(TPVPDuelEventInfo)
 	DynamicCharacterPtr victim;
 	CPVP * pvp;
 	uint8_t state;
-	
+
 	TPVPDuelEventInfo() : ch(), victim(), state(0) {}
 };
 
@@ -56,7 +56,7 @@ EVENTINFO(TPVPCheckDisconnect)
 {
 	DynamicCharacterPtr ch;
 	DynamicCharacterPtr victim;
-	
+
 	TPVPCheckDisconnect() : ch(), victim() {}
 };
 
@@ -66,21 +66,21 @@ EVENTFUNC(pvp_check_disconnect)
 {
 	if (event == nullptr)
 		return 0;
-	
+
 	if (event->info == nullptr)
 		return 0;
-	
+
 	TPVPCheckDisconnect* info = dynamic_cast<TPVPCheckDisconnect*>(event->info);
-	
+
 	if (info == nullptr)
 	{
 		LOG_ERROR("disconnect_event> <Factor> Null pointer");
 		return 0;
 	}
-	
+
 	LPCHARACTER chA = info->ch;
 	LPCHARACTER chB = info->victim;
-	
+
 	if (chA == nullptr && chB == nullptr)
 	{
 		return 0;
@@ -89,9 +89,9 @@ EVENTFUNC(pvp_check_disconnect)
 	if (chA == nullptr)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
-		
+
 		int betMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[8]);
-		
+
 		if (betMoney > 0)
 		{
 			ecs::PointSystem::Change(AIHelpers::EcsOf(chB), POINT_GOLD, betMoney, true);
@@ -99,29 +99,29 @@ EVENTFUNC(pvp_check_disconnect)
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 514, "");
 #endif
 		}
-		
+
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(chB), CHAT_TYPE_COMMAND, buf);	
-		
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(chB), CHAT_TYPE_COMMAND, buf);
+
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[i], 0);	
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[i], 0);
 		}
-		
+
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chB), CHAT_TYPE_INFO, 513, "");
 #endif
 		event_cancel(&m_pCheckDisconnect);
-		m_pCheckDisconnect = nullptr;		
+		m_pCheckDisconnect = nullptr;
 		return 0;
-	}	
-	
+	}
+
 	if (chB == nullptr)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
-		
+
 		int betMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[8]);
-		
+
 		if (betMoney > 0)
 		{
 			ecs::PointSystem::Change(AIHelpers::EcsOf(chA), POINT_GOLD, betMoney, true);
@@ -129,20 +129,20 @@ EVENTFUNC(pvp_check_disconnect)
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 514, "");
 #endif
 		}
-		
+
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(chA), CHAT_TYPE_COMMAND, buf);	
-		
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(chA), CHAT_TYPE_COMMAND, buf);
+
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[i], 0);	
+			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[i], 0);
 		}
-		
+
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(chA), CHAT_TYPE_INFO, 513, "");
 #endif
 		event_cancel(&m_pCheckDisconnect);
-		m_pCheckDisconnect = nullptr;			
+		m_pCheckDisconnect = nullptr;
 		return 0;
 	}
 
@@ -154,40 +154,40 @@ EVENTFUNC(pvp_duel_counter)
 
 	if (event == nullptr)
 		return 0;
-	
+
 	if (event->info == nullptr)
 		return 0;
-	
+
 	TPVPDuelEventInfo* info = dynamic_cast<TPVPDuelEventInfo*>(event->info);
-	
+
 	if (info == nullptr)
 	{
 		LOG_ERROR("ready_to_start_event> <Factor> Null pointer");
 		return 0;
 	}
-	
+
 	LPCHARACTER chA = info->ch;
 	LPCHARACTER chB = info->victim;
-	
+
 	if (chA == nullptr)
 	{
 		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
 	}
-	
+
 	if (chB == nullptr)
 	{
 		LOG_ERROR("Duel: Duel start event info is null.");
 		return 0;
 	}
-	
+
 	switch (info->state)
 	{
 		case 0:
 		{
 			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
 			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
-			
+
 			info->state++;
 			return PASSES_PER_SEC(1); break;
 		}
@@ -201,57 +201,57 @@ EVENTFUNC(pvp_duel_counter)
 		}
 		case 2:
 		{
-			if ((chA->GetDuel("BlockParty")) && (chB->GetDuel("BlockParty")))	
-			{	
+			if ((chA->GetDuel("BlockParty")) && (chB->GetDuel("BlockParty")))
+			{
 				LPPARTY chParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chA));
 				LPPARTY victimParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB));
-				
+
 				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chA)))
 					chParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chA))));
-				
+
 				if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(chB)))
 					victimParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(chB))));
 			}
-			
+
 			if ((chA->GetDuel("BlockPet")) && (chB->GetDuel("BlockPet")))
 			{
 #ifdef __PET_SYSTEM__
 				{
-					CPetSystem* chPet = chA->GetPetSystem(); 
+					CPetSystem* chPet = chA->GetPetSystem();
 					CPetSystem* victimPet = chB->GetPetSystem();
 					if (chPet)
 						chPet->UnsummonAll();
-					
+
 					if (victimPet)
 						victimPet->UnsummonAll();
 				}
 #endif
 #ifdef __NEWPET_SYSTEM__
 				{
-					CNewPetSystem* chPet = chA->GetNewPetSystem(); 
+					CNewPetSystem* chPet = chA->GetNewPetSystem();
 					CNewPetSystem* victimPet = chB->GetNewPetSystem();
 					if (chPet)
 						chPet->UnsummonAll(chA);
-					
+
 					if (victimPet)
 						victimPet->UnsummonAll(chB);
 				}
 #endif
 			}
-			
+
 			if ((chA->GetDuel("BlockPoly")) && (chB->GetDuel("BlockPoly")))
 			{
 				if (chA->IsPolymorphed()) {
 					chA->SetPolymorph(0);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_POLYMORPH);
 				}
-				
+
 				if (chB->IsPolymorphed()) {
 					chB->SetPolymorph(0);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_POLYMORPH);
 				}
-			}	
-			
+			}
+
 			if ((chA->GetDuel("BlockRide")) && (chB->GetDuel("BlockRide")))
 			{
 				if (chA->FindAffect(AFFECT_MOUNT)) {
@@ -259,52 +259,52 @@ EVENTFUNC(pvp_duel_counter)
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT_BONUS);
 					chA->MountVnum(0);
 				}
-				
+
 				if (chB->FindAffect(AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT_BONUS);
 					chB->MountVnum(0);
 				}
-				
+
 				if (chA->IsHorseRiding())
 					chA->StopRiding();
-				
+
 				if (chB->IsHorseRiding())
 					chB->StopRiding();
-				
+
 				if (chA->GetHorse())
 					chA->HorseSummon(false);
-				
+
 				if (chB->GetHorse())
 					chB->HorseSummon(false);
 			}
-			
-			int m_nTableSkill[] = {94,95,96,109,110,111};	
-			
+
+			int m_nTableSkill[] = {94,95,96,109,110,111};
+
 			for (unsigned int i = 0; i < _countof(m_nTableSkill); i++)
 			{
 				if ((chA->GetDuel("BlockBuff")) && (chB->GetDuel("BlockBuff")))
 				{
 					if (chA->GetJob() != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), m_nTableSkill[i]);
-				  
+
 					if (chB->GetJob() != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), m_nTableSkill[i]);
 				}
 			}
-			
+
 			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/1.mse");
 			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/1.mse");
-			
+
 			info->state++;
 			return PASSES_PER_SEC(1);
-			break; 
+			break;
 		}
 		case 3:
-		{   
+		{
 			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/go.mse");
 			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/go.mse");
-			
+
 			info->state++;
 			return PASSES_PER_SEC(1);
 			break;
@@ -315,27 +315,27 @@ EVENTFUNC(pvp_duel_counter)
 
 			const char* chA_Name = ((chA)->GetName());
 			const char* chB_Name = ((chB)->GetName());
-			
+
 			int chA_Level = ((chA)->GetLevel());
 			int chB_Level = ((chB)->GetLevel());
-			
-			uint32_t chA_Race = ((chA)->GetRaceNum());
-			uint32_t chB_Race = ((chB)->GetRaceNum());
-			
+
+			uint32_t chA_Race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chA)));
+			uint32_t chB_Race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chB)));
+
 			int chA_[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[8]))};
 			int chB_[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[8]))};
-			
+
 			char chA_buf[CHAT_MAX_LEN + 1], chB_buf[CHAT_MAX_LEN + 1];
-			
+
 			snprintf(chA_buf, sizeof(chA_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chB_Name, chB_Level, chB_Race, chA_[0], chA_[1], chA_[2], chA_[3], chA_[4], chA_[5], chA_[6], chA_[7], chA_[8]);
 			snprintf(chB_buf, sizeof(chB_buf), "BINARY_Duel_LiveInterface %s %d %d %d %d %d %d %d %d %d %d %d", chA_Name, chA_Level, chA_Race, chB_[0], chB_[1], chB_[2], chB_[3], chB_[4], chB_[5], chB_[6], chB_[7], chB_[8]);
-			
+
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(chA), CHAT_TYPE_COMMAND, chA_buf);
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(chB), CHAT_TYPE_COMMAND, chB_buf);
-			
+
 			chA->SetHP(chA->GetMaxHP());
 			chB->SetHP(chB->GetMaxHP());
-			
+
 			info->pvp->Packet();
 			return 0;
 			break;
@@ -454,12 +454,12 @@ bool CPVP::Agree(uint32_t dwPID)
 		{
 			event_cancel(&m_pAdvancedDuelTimer);
 		}
-		
+
 		if (m_pCheckDisconnect != nullptr)
 		{
 			event_cancel(&m_pCheckDisconnect);
 		}
-		
+
 		LPCHARACTER chA = CHARACTER_MANAGER::Instance().FindByPID(dwPID);
 		LPCHARACTER chB = CHARACTER_MANAGER::Instance().FindByPID(m_players[m_players[0].dwPID != dwPID ? 0 : 1].dwPID);
 		if (!chA || !chB) {
@@ -469,31 +469,31 @@ bool CPVP::Agree(uint32_t dwPID)
 		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chA), "pvp.timed", 0);
 		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(chB), "pvp.timed", 0);
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
-		
+
 		if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chA), szTableStaticPvP[9]) != 1 && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(chB), szTableStaticPvP[9]) != 1)
 		{
 			chA->SetDuel("IsFight", 1);
 			chB->SetDuel("IsFight", 1);
 		}
-		
+
 		{
 			TPVPDuelEventInfo* info = AllocEventInfo<TPVPDuelEventInfo>();
 			info->ch = chA;
 			info->victim = chB;
 			info->state = 0;
 			info->pvp = this;
-			
+
 			m_pAdvancedDuelTimer = event_create(pvp_duel_counter, info, PASSES_PER_SEC(1));
 		}
-		
+
 		{
 			TPVPCheckDisconnect* info = AllocEventInfo<TPVPCheckDisconnect>();
 			info->ch = chA;
 			info->victim = chB;
-			
+
 			m_pCheckDisconnect = event_create(pvp_check_disconnect, info, PASSES_PER_SEC(1));
 		}
-		
+
 		return true;
 	}
 #else
@@ -562,13 +562,13 @@ void RemoveStateFull(LPCHARACTER pkChr)
 	if (pkChr != nullptr)
 	{
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
-				
+
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++)
 		{
 			char buf[CHAT_MAX_LEN + 1];
 			snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-					
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkChr), CHAT_TYPE_COMMAND, buf);	
+
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkChr), CHAT_TYPE_COMMAND, buf);
 			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[i], 0);
 		}
 	}
@@ -586,23 +586,23 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 	}
 
 	CPVPSetMap::iterator it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
-	
+
 	if (it == m_map_pkPVPSetByID.end())
 		return;
-	
+
 	//bool found = false;
-	
+
 	std::unordered_set<CPVP*>::iterator it2 = it->second.begin();
-	
+
 	while (it2 != it->second.end()) {
 		CPVP * pkPVP = *it2++;
 		uint32_t dwCompanionPID;
-		
+
 		if (pkPVP->m_players[0].dwPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))))
 			dwCompanionPID = pkPVP->m_players[1].dwPID;
 		else
 			dwCompanionPID = pkPVP->m_players[0].dwPID;
-		
+
 		if (dwCompanionPID == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))))
 		{
 			if (pkPVP->IsFight())
@@ -612,7 +612,7 @@ void CPVPManager::Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 #endif
 				return;
 			}
-			
+
 			pkPVP->Packet(true);
 			Delete(pkPVP);
 			pkPVP->SetLastFightTime();
@@ -675,31 +675,31 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 		const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT};
 
 		int mTable[] = {(ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), szTableStaticPvP[8]))};
-		
+
 		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkChr));
 
 		const char* m_Name = ((pkChr)->GetName());
 		const char* m_GuildName = "-";
-		
-		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));	
+
+		int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChr));
 		int m_Level = ((pkChr)->GetLevel());
 		int m_PlayTime = pkChr->GetRealPoint(POINT_PLAYTIME);
 		int m_MaxHP = pkChr->GetMaxHP();
 		int m_MaxSP = pkChr->GetMaxSP();
 		int PVP_BLOCK_VIEW_EQUIPMENT = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkChr), BLOCK_EQUIPMENT_);
-		
-		uint32_t m_Race = ((pkChr)->GetRaceNum());	
-		
+
+		uint32_t m_Race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+
 		if (g)
-		{ 
+		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
-			
+
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-				pkChr->SendEquipment(pkVictim);	
+				pkChr->SendEquipment(pkVictim);
 		}
-		else { 
+		else {
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
-			
+
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
 				pkChr->SendEquipment(pkVictim);
 		}
@@ -769,16 +769,16 @@ void CPVPManager::Disconnect(LPCHARACTER pkChr)
 {
 #ifdef ENABLE_PVP_ADVANCED
 	const auto it = m_map_pkPVPSetByID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))));
-	
+
 	if (it == m_map_pkPVPSetByID.end())
 		return;
 
 	auto it2 = it->second.begin();
-	
+
 	while (it2 != it->second.end()) {
 		CPVP * pkPVP = *it2++;
 		pkPVP->Packet(true);
-		Delete(pkPVP);	
+		Delete(pkPVP);
 	}
 #endif
 }
@@ -858,7 +858,7 @@ bool CPVPManager::Dead(LPCHARACTER pkChr, uint32_t dwKillerPID)
 				pkPVP->Packet(true);
 				Delete(pkPVP);
 #else
-				pkPVP->Win(dwKillerPID);	
+				pkPVP->Win(dwKillerPID);
 #endif
 				found = true;
 				break;
@@ -936,11 +936,11 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 			if ( pkChr->GetPKMode() == PK_MODE_PROTECT || pkVictim->GetPKMode() == PK_MODE_PROTECT )
 			{
 				return false;
-				
+
 
 			}
 		}
-		
+
 			if (bIsFarmMap == true)
 				return false;
 		return true;
@@ -991,9 +991,9 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 				break;
 
 			case PK_MODE_FREE:
-				
+
 				pkChr->SetKillerMode(true);
-				
+
 				return true;
 				break;
 		}
