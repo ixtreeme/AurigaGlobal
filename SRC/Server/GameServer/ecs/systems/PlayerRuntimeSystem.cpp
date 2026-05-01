@@ -23,6 +23,7 @@
 #include "../../dungeon.h"
 #include "../../ecs/EntityFactory.hpp"
 #include "../../ecs/AIHelpers.hpp"
+#include "../../ecs/PositionSync.hpp"
 #include "../../ecs/SpatialHelpers.hpp"
 #include "../../ecs/Registry.hpp"
 #include "../../ecs/components/appearance_components.hpp"
@@ -143,10 +144,6 @@ std::string_view GetName(entt::entity e)
 
 int32_t GetMapIndex(entt::entity e)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (ch)
-		return ch->GetMapIndex();
-
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* map = g_registry.try_get<ecs::MapIndex>(e))
 			return map->value;
@@ -157,10 +154,6 @@ int32_t GetMapIndex(entt::entity e)
 
 int32_t GetX(entt::entity e)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (ch)
-		return ch->GetX();
-
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
 			return pos->x;
@@ -171,10 +164,6 @@ int32_t GetX(entt::entity e)
 
 int32_t GetY(entt::entity e)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (ch)
-		return ch->GetY();
-
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
 			return pos->y;
@@ -3760,6 +3749,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     SetMapIndex(t->lMapIndex);
     SetXYZ(t->x, t->y, t->z);
+    ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
 
     ComputePoints();
 
@@ -3991,6 +3981,7 @@ bool CHARACTER::OnIdle()
 void CHARACTER::OnMove(bool bIsAttack)
 {
     m_dwLastMoveTime = get_dword_time();
+    ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), GetX(), GetY(), GetZ());
 
     if (bIsAttack)
     {

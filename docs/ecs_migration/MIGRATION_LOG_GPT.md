@@ -10880,3 +10880,29 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 ```
 - Build passed.
 - WinTest pending: mounted melee/skill damage against metin stones, dismount/remount, map transfer, VID_DRIFT.
+
+
+## Phase 15E-59 Hotfix v2 - Pure ECS Position Sync
+
+Correction:
+- The previous quick hotfix made PlayerRuntime::GetMapIndex/GetX/GetY prefer legacy CHARACTER values.
+- That was rejected because Phase 15E migration requires entity-first, ECS-backed reads without LPCHARACTER fallback for position accessors.
+
+Root cause:
+- ECS Position/MapIndex was not synchronously updated on all legacy movement paths.
+- Mounted combat reached attack range using legacy coordinates, while ECS Position could still contain stale coordinates.
+
+Fix:
+- Added ecs::SyncPositionComponents helper to write Position, MapIndex, and DirtyTag together.
+- PlayerRuntime::GetMapIndex/GetX/GetY now read only ECS components and return 0 if missing.
+- CHARACTER::Sync mirrors SetXYZ into ECS immediately.
+- CHARACTER::Show mirrors spawn/warp coordinates into ECS immediately.
+- CHARACTER::OnMove mirrors current legacy coordinates into ECS before attack/move side effects, covering HEADER_CG_ATTACK where no coordinate packet is present.
+- Player load mirrors DB-loaded map/x/y/z into ECS after SetMapIndex/SetXYZ.
+
+Verification:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- Required WinTest: mounted melee and skills against metin stones, dismount/remount, map transfer, normal movement, VID_DRIFT.

@@ -52,6 +52,7 @@
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../SpatialHelpers.hpp"
+#include "../PositionSync.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../components/dirty_components.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -144,13 +145,14 @@ namespace
             return;
 
         LPCHARACTER ch = legacy->ptr;
-        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) == position.x && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) == position.y)
+        if (ch->GetX() == position.x && ch->GetY() == position.y)
             return;
 
         ch->SetXYZ(position.x, position.y, ch->GetZ());
+        ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
         ch->UpdateSectree();
 
-        ecs::SyncSectorPlacement(reg, entity, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+        ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
     }
 }
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
@@ -363,6 +365,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 	SetRotationToXY(x, y);
 	SetXYZ(x, y, 0);
+	ecs::SyncPositionComponents(g_registry, EcsEntityOf(this), GetMapIndex(), x, y, GetZ());
 
 	if (GetDungeon())
 	{

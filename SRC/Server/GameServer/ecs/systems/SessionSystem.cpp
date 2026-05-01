@@ -28,6 +28,7 @@
 #include "../../pvp.h"
 #include "../EventDispatcher.hpp"
 #include "../EntityFactory.hpp"
+#include "../PositionSync.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
 #include "../Registry.hpp"
@@ -899,6 +900,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     }
 
     SetXYZ(x, y, z);
+    ecs::SyncPositionComponents(g_registry, GetEntityHandle(), lMapIndex, x, y, z);
 
     m_posDest.x = x;
     m_posDest.y = y;
