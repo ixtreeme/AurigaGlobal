@@ -10927,3 +10927,81 @@ Accepted fix:
 Status:
 - Phase 15E-59 position layer is WinTest verified.
 - Next planned phase: Phase 15E-60 stat accessors.
+
+
+## Phase 15E-60 - Stat Accessors ECS Migration
+
+Scope:
+- Migrated stat-layer CHARACTER caller-side reads to entity-first ECS APIs:
+  - GetPoint -> ecs::PointSystem::Get
+  - GetRealPoint -> ecs::PointSystem::GetReal
+  - GetGold -> ecs::PointSystem::GetGold
+  - GetMaxHP -> ecs::PointSystem::GetMaxHP
+  - GetMaxSP -> ecs::PointSystem::GetMaxSP
+  - GetLevel -> ecs::PointSystem::GetLevel
+  - FindAffect -> AffectSystem::FindAffect
+  - IsAffectFlag -> AffectSystem::IsAffectFlag
+
+Implementation notes:
+- PointSystem read API was added in commit 2a4c562.
+- GetGold/GetMaxHP/GetMaxSP/GetLevel read ECS components directly.
+- GetPoint/GetReal preserve the legacy POINT_* semantic split internally while caller-side access is entity-first.
+- AffectSystem read API now reads the ECS AffectList mirror; affect flags are mirrored via GetAffectFlags().
+- No LPCHARACTER overloads were added.
+
+Commits:
+- 2a4c562 Phase 15E-60.1: Add PointSystem/AffectSystem read API
+- 45dff69 Phase 15E-60.2a: Migrate GetMaxSP
+- a4f1902 Phase 15E-60.2b: Migrate GetMaxHP
+- 95a38d8 Phase 15E-60.2c: Migrate GetRealPoint
+- d4f9523 Phase 15E-60.2d: Migrate affect read API
+- f87aa19 Phase 15E-60.2e: Migrate GetGold
+- 25ff2f3 Phase 15E-60.2f: Migrate GetLevel
+- e0c44e9 Phase 15E-60.2g: Migrate GetPoint
+- 00b68c1 Phase 15E-60.2g: Migrate remaining stat read callers
+- c0c1b26 Phase 15E-60: COMPLETE - Stat accessors on ECS
+
+Build:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+
+Remaining notes:
+- Remaining GetLevel hits are guild/pet false positives.
+- Remaining GetPoint hits are ECS sync/diagnostic boundary or commented code, not runtime caller migration targets.
+
+
+## Phase 15E-60 Hotfix - GetLevel Signed Byte Overflow
+
+Symptom:
+- On login and teleport, the character level appeared as a negative value.
+- After killing a metin stone, the correct level returned.
+
+Root cause:
+- ecs::PointSystem::GetLevel returned int8_t and cast LevelComponent::value to int8_t.
+- Player levels above 127 overflowed signed byte range and displayed as negative values.
+- Later stat/level refresh paths restored the visible level, masking the issue after combat progress.
+
+Fix:
+- Changed ecs::PointSystem::GetLevel return type from int8_t to int32_t.
+- Removed the static_cast<int8_t> truncation and return LevelComponent::value directly.
+
+Commit:
+- df02eda Phase 15E-60 Hotfix: Fix GetLevel signed byte overflow
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- Operator confirmed WinTest successful after the hotfix.
+
+Validated scenario:
+- Login no longer shows negative character level.
+- Teleport no longer causes negative level.
+- Level remains correct before and after killing a metin stone.
+
+Status:
+- Phase 15E-60 stat accessor layer is WinTest verified after hotfix.
+- Next planned phase: Phase 15E-61 misc accessors, unless additional stat regressions appear.
