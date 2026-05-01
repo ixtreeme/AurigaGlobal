@@ -1070,7 +1070,7 @@ bool CExchange::Done()
 		if (m_lGold > 1000)
 		{
 			char exchange_buf[51];
-			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), GetOwner()->GetName());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
 			LogManager::instance().CharLog(victim, m_lGold, "EXCHANGE_GOLD_TAKE", exchange_buf);
 
 			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
@@ -1121,7 +1121,7 @@ bool CExchange::Accept(bool bAccept)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 232, "");
 #endif
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 274, "%s", GetOwner()->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 274, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
 			goto EXCHANGE_END;
 		}
 
@@ -1148,7 +1148,7 @@ bool CExchange::Accept(bool bAccept)
 		if (!GetCompany()->CheckSpace())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 365, "%s", GetOwner()->GetName());
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 365, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 366, "");
 #endif
 			goto EXCHANGE_END;
@@ -1176,7 +1176,7 @@ bool CExchange::Accept(bool bAccept)
 
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 105, "%s", GetOwner()->GetName());
+				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
 #endif
 			}
 		}

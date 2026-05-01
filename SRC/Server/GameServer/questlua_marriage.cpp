@@ -29,7 +29,7 @@ namespace quest
 		LPCHARACTER ch_you = CHARACTER_MANAGER::instance().Find(vid);
 		if (ch_you)
 		{
-			marriage::CManager::instance().RequestAdd((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_you)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch_you->GetName());
+			marriage::CManager::instance().RequestAdd((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_you)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch_you)).data());
 		}
 		return 0;
 	}

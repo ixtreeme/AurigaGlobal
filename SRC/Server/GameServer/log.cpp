@@ -285,7 +285,7 @@ void LogManager::LevelLog(LPCHARACTER pChar, unsigned int level, unsigned int pl
 	}
 
 	Query("REPLACE INTO levellog%s (name, level, time, account_id, pid, playtime) VALUES('%s', %u, NOW(), %u, %u, %d)",
-			get_table_postfix(), ((pChar)->GetName()), level, aid, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar))), playhour);
+			get_table_postfix(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pChar)).data(), level, aid, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar))), playhour);
 }
 
 void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)

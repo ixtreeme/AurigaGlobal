@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include "config.h"
 #include "utils.h"
@@ -670,7 +672,7 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 		}
 
 		if (GetCharacter())
-			LOG_INFO("Handshake: client_time {} server_time {} name: {}", m_dwClientTime, dwCurTime, GetCharacter()->GetName());
+			LOG_INFO("Handshake: client_time {} server_time {} name: {}", m_dwClientTime, dwCurTime, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetCharacter())).data());
 		else
 			LOG_INFO("Handshake: client_time {} server_time {}", m_dwClientTime, dwCurTime);
 
@@ -691,7 +693,7 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 
 	if (!bInfiniteRetry)
 		if (++m_iHandshakeRetry > HANDSHAKE_RETRY_LIMIT) {
-			LOG_ERROR("handshake retry limit reached! (limit {} character {})", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? GetCharacter()->GetName() : "!NO CHARACTER!");
+			LOG_ERROR("handshake retry limit reached! (limit {} character {})", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetCharacter())).data() : "!NO CHARACTER!");
 			SetPhase(PHASE_CLOSE);
 			return false;
 		}
@@ -1085,8 +1087,8 @@ void DESC::ChatPacket(uint8_t type, const char * format, ...)
 
 #ifdef TEXTS_IMPROVEMENT
 void DESC::ChatPacketNew(uint8_t type, uint32_t idx, const char * format, ...) {
-	if (type != CHAT_TYPE_INFO && 
-		type != CHAT_TYPE_NOTICE && 
+	if (type != CHAT_TYPE_INFO &&
+		type != CHAT_TYPE_NOTICE &&
 		type != CHAT_TYPE_BIG_NOTICE
 #ifdef ENABLE_DICE_SYSTEM
 		 && type != CHAT_TYPE_DICE_INFO

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "config.h"
 #include "utils.h"
 #include "crc32.h"
@@ -520,7 +522,7 @@ struct name_with_desc_func
 
 	bool operator () (LPDESC d)
 	{
-		if (d->GetCharacter() && !strcmp(d->GetCharacter()->GetName(), m_name))
+		if (d->GetCharacter() && !strcmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(d->GetCharacter())).data(), m_name))
 			return true;
 
 		return false;

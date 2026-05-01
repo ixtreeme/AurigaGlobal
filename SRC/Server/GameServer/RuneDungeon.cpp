@@ -1325,7 +1325,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             if (pc->GetLevel() < kMinLevel || pc->GetLevel() > kMaxLevel)
             {
                 ok = false;
-                badName = pc->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pc)).data();
                 badLevel = pc->GetLevel();
                 missingItem = false;
                 return;
@@ -1334,7 +1334,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             if (pc->CountSpecifyItem(kRequiredItem) < 1)
             {
                 ok = false;
-                badName = pc->GetName();
+                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pc)).data();
                 badLevel = pc->GetLevel();
                 missingItem = true;
                 return;

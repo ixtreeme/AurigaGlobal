@@ -122,7 +122,7 @@ bool CBattlePass::ReadBattlePassFile()
 {
 	char szBattlePassFileName[256];
 	snprintf(szBattlePassFileName, sizeof(szBattlePassFileName),"%s/battle_pass.txt", LocaleService_GetBasePath().c_str());
-			
+
 	m_pLoader = new CGroupTextParseTreeLoader;
 	CGroupTextParseTreeLoader& loader = *m_pLoader;
 
@@ -134,10 +134,10 @@ bool CBattlePass::ReadBattlePassFile()
 
 	if (!ReadBattlePassGroup())
 		return false;
-	
+
 	if (!ReadBattlePassMissions())
 		return false;
-	
+
 	return true;
 }
 
@@ -169,13 +169,13 @@ bool CBattlePass::ReadBattlePassGroup()
 
 		std::string stBattlePassName;
 		uint8_t battlePassId;
-		
+
 		if (!pRow->GetValue("battlepassname", stBattlePassName))
 		{
 			LOG_ERROR("In Group BattlePass, No BattlePassName column.");
 			return false;
 		}
-		
+
 		if (!pRow->GetValue("battlepassid", battlePassId))
 		{
 			LOG_ERROR("In Group BattlePass, {}'s ID is invalid", stBattlePassName.c_str());
@@ -187,12 +187,12 @@ bool CBattlePass::ReadBattlePassGroup()
 			LOG_ERROR("In Group BattlePass, duplicated id exist.");
 			return false;
 		}
-		
+
 		setIDs.insert(battlePassId);
 
 		m_map_battle_pass_name.insert(TMapBattlePassName::value_type(battlePassId, stBattlePassName));
 	}
-	
+
 	return true;
 }
 //#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -245,22 +245,22 @@ bool CBattlePass::ReadBattlePassMissions()
 	while (it != m_map_battle_pass_name.end())
 	{
 		std::string battlePassName = it++->second;
-		
+
 		CGroupNode* pGroupNode = m_pLoader->GetGroup(battlePassName.c_str());
-	
+
 		if (nullptr == pGroupNode)
 		{
 			LOG_ERROR("battle_pass.txt need group {}.", battlePassName.c_str());
 			return false;
 		}
-		
+
 		int n = pGroupNode->GetChildNodeCount();
 		if (n < 2)
 		{
 			LOG_ERROR("Group {} need to have at least one grup for Reward and one Mission. Row: {}", battlePassName.c_str(), n);
 			return false;
 		}
-		
+
 		{
 			CGroupNode* pChild;
 			if (nullptr == (pChild = pGroupNode->GetChildNode("reward")))
@@ -268,7 +268,7 @@ bool CBattlePass::ReadBattlePassMissions()
 				LOG_ERROR("In Group {}, Reward group is not defined.", battlePassName.c_str());
 				return false;
 			}
-			
+
 			int m = pChild->GetRowCount();
 			std::vector<TBattlePassRewardItem> rewardVector;
 
@@ -277,14 +277,14 @@ bool CBattlePass::ReadBattlePassMissions()
 				std::stringstream ss;
 				ss << j;
 				const CGroupNode::CGroupNodeRow* pRow = nullptr;
-	
+
 				pChild->GetRow(ss.str(), &pRow);
 				if (nullptr == pRow)
 				{
 					LOG_ERROR("In Group {}, subgroup Reward, No {} row.", battlePassName.c_str(), j);
 					return false;
 				}
-				
+
 				TBattlePassRewardItem itemReward;
 
 				if (!pRow->GetValue("itemvnum", itemReward.dwVnum))
@@ -292,24 +292,24 @@ bool CBattlePass::ReadBattlePassMissions()
 					LOG_ERROR("In Group {}, subgroup Reward, ItemVnum is empty.", battlePassName.c_str());
 					return false;
 				}
-				
+
 				if (!pRow->GetValue("itemcount", itemReward.bCount))
 				{
 					LOG_ERROR("In Group {}, subgroup Reward, ItemCount is empty.", battlePassName.c_str());
 					return false;
 				}
-				
+
 				rewardVector.push_back(itemReward);
 			}
-			
+
 			m_map_battle_pass_reward.insert(TMapBattlePassReward::value_type(battlePassName.c_str(), rewardVector));
 		}
-		
+
 		std::vector<TBattlePassMissionInfo> missionInfoVector;
 
 		std::array<bool, 3> useItemSlots = { false, false, false };
 		std::array<bool, 3> collectItemSlots = { false, false, false };
-		
+
 		for (int i = 1; i < n; i++)
 		{
 			std::stringstream ss;
@@ -321,9 +321,9 @@ bool CBattlePass::ReadBattlePassMissions()
 				LOG_ERROR("In Group {}, {} subgroup is not defined.", battlePassName.c_str(), ss.str().c_str());
 				return false;
 			}
-			
+
 			int m = pChild->GetRowCount();
-			
+
 			std::string stMissionSearch[] = {"", ""};
 			bool bAlreadySearched = false;
 			uint8_t bRewardContor = 0;
@@ -332,14 +332,14 @@ bool CBattlePass::ReadBattlePassMissions()
 			for (int j = 0; j < m; j++)
 			{
 				const CGroupNode::CGroupNodeRow* pRow = nullptr;
-	
+
 				pChild->GetRow(j, &pRow);
 				if (nullptr == pRow)
 				{
 					LOG_ERROR("In Group {} and subgroup {} null row.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
-				
+
 				// InfoDesc = ItemVnum from reward
 				// InfoName = ItemCount from reward
 
@@ -349,7 +349,7 @@ bool CBattlePass::ReadBattlePassMissions()
 					LOG_ERROR("In Group {} and subgroup {} InfoDesc does not exist.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
-				
+
 				if(stInfoDesc == "type")
 				{
 					std::string stInfoName;
@@ -358,22 +358,22 @@ bool CBattlePass::ReadBattlePassMissions()
 						LOG_ERROR("In Group {} and subgroup {} InfoName does not exist.", battlePassName.c_str(), ss.str().c_str());
 						return false;
 					}
-					
+
 					missionInfo.bMissionType = GetMissionTypeByName(stInfoName);
 				}
-				
+
 				if(missionInfo.bMissionType <= MISSION_TYPE_NONE || missionInfo.bMissionType >= MISSION_TYPE_MAX)
 				{
 					LOG_ERROR("In Group {} and subgroup {} Wrong mission type: {}.", battlePassName.c_str(), ss.str().c_str(), static_cast<int>(missionInfo.bMissionType));
 					return false;
 				}
-				
+
 				if(!bAlreadySearched)
 				{
 					GetMissionSearchName(missionInfo.bMissionType, &stMissionSearch[0], &stMissionSearch[1]);
 					bAlreadySearched = true;
 				}
-				
+
 				for(int k = 0; k < 2; k++)
 				{
 					if(stMissionSearch[k] != "")
@@ -385,31 +385,31 @@ bool CBattlePass::ReadBattlePassMissions()
 								LOG_ERROR("In Group {} and subgroup {} InfoDesc {} InfoName does not exist.", battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str());
 								return false;
 							}
-							
+
 							LOG_TRACE("BattlePassInfo: Group {} // Subgroup {} // InfoName {} // InfoValue {}", battlePassName.c_str(), ss.str().c_str(), stMissionSearch[k].c_str(), missionInfo.dwMissionInfo[k]);
-							
+
 							stMissionSearch[k] = "";
 						}
 					}
 				}
-				
+
 				if(bRewardContor >= MISSION_REWARD_COUNT)
 				{
 					LOG_ERROR("In Group {} and subgroup {} More than 3 rewards.", battlePassName.c_str(), ss.str().c_str());
 					return false;
 				}
-				
+
 				if(isdigit(*stInfoDesc.c_str()))
 				{
 					uint32_t dwVnum = atoi(stInfoDesc.c_str());
 					uint8_t bCount = 1;
-		
+
 					if (!pRow->GetValue("infoname", bCount))
 					{
 						LOG_ERROR("In Group {} and subgroup {} Wrong ItemCount.", battlePassName.c_str(), ss.str().c_str());
 						return false;
 					}
-							
+
 					missionInfo.aRewardList[bRewardContor].dwVnum = dwVnum;
 					missionInfo.aRewardList[bRewardContor].bCount = bCount;
 					bRewardContor++;
@@ -473,10 +473,10 @@ bool CBattlePass::ReadBattlePassMissions()
 				}
 				missionInfo.bMissionType = assignedType.value();
 			}
-			
+
 			missionInfoVector.push_back(missionInfo);
 		}
-		
+
 		m_map_battle_pass_mission_info.insert(TMapBattleMissionInfo::value_type(battlePassName.c_str(), missionInfoVector));
 	}
 
@@ -500,19 +500,19 @@ std::string CBattlePass::GetMissionNameByType(uint8_t bType)
 		if(i == bType)
 			return g_astMissionType[i];
 	}
-	
+
 	return "";
 }
 
 std::string CBattlePass::GetBattlePassNameByID(uint8_t bID)
 {
 	const auto it = m_map_battle_pass_name.find(bID);
-	
+
 	if(it == m_map_battle_pass_name.end())
 	{
 		return "";
 	}
-	
+
 	return it->second;
 }
 
@@ -539,17 +539,17 @@ void CBattlePass::GetMissionSearchName(uint8_t bMissionType, std::string * st_na
 			*st_name_1 = "min_level";
 			*st_name_2 = "count";
 			break;
-			
+
 		case MONSTER_DAMAGE:
 			*st_name_1 = "vnum";
 			*st_name_2 = "value";
 			break;
-			
+
 		case PLAYER_DAMAGE:
 			*st_name_1 = "min_level";
 			*st_name_2 = "value";
 			break;
-			
+
 		case FRY_FISH:
 		case CATCH_FISH:
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -561,21 +561,21 @@ void CBattlePass::GetMissionSearchName(uint8_t bMissionType, std::string * st_na
 			*st_name_1 = "";
 			*st_name_2 = "count";
 			break;
-			
+
 		case SPENT_YANG:
 		case FARM_YANG:
 			*st_name_1 = "";
 			*st_name_2 = "value";
-			break;	
-			
+			break;
+
 		case COMPLETE_DUNGEON:
 		case COMPLETE_MINIGAME:
 			*st_name_1 = "id";
 			*st_name_2 = "count";
-			break;	
-	
-		
-		
+			break;
+
+
+
 		default:
 			*st_name_1 = "";
 			*st_name_2 = "";
@@ -587,10 +587,10 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 {
 	if(!pkChar)
 		return;
-	
+
 	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
-	
+
 	if(!pkChar->IsLoadedBattlePass())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -601,14 +601,14 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();
 	uint8_t fakeBattlePassID = 1; // (can be return actual month)
-	
+
 	// So if there is no active battlepass, we can't send data info,
 	// but we do a fake id to send the infos else we continue as how until now.
 	if (!bBattlePassId)
 		bBattlePassId = fakeBattlePassID;
 
 	TMapBattlePassName::iterator it = m_map_battle_pass_name.find(bBattlePassId);
-	
+
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -616,10 +616,10 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	std::string battlePassName = it->second;
 	TMapBattleMissionInfo::iterator itInfo = m_map_battle_pass_mission_info.find(battlePassName);
-	
+
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -627,7 +627,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	TMapBattlePassReward::iterator itReward = m_map_battle_pass_reward.find(battlePassName);
 	if(itReward == m_map_battle_pass_reward.end())
 	{
@@ -636,10 +636,10 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	std::vector<TBattlePassRewardItem> rewardInfo = itReward->second;
 	std::vector<TBattlePassMissionInfo> missionInfo = itInfo->second;
-	
+
 #ifdef ENABLE_FREE_PASS_RAZOR93
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
@@ -678,7 +678,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 {
 	if(!pkChar)
 		return;
-	
+
 	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 
@@ -691,7 +691,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	}
 
 	auto it = m_map_battle_pass_name.find(bBattlePassId);
-	
+
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -699,10 +699,10 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 #endif
 		return;
 	}
-	
+
 	std::string battlePassName = it->second;
 	TMapBattleMissionInfo::iterator itInfo = m_map_battle_pass_mission_info.find(battlePassName);
-	
+
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -710,9 +710,9 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 #endif
 		return;
 	}
-	
+
 	std::vector<TBattlePassMissionInfo> missionInfo = itInfo->second;
-	
+
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
 		if(missionInfo[i].bMissionType == bMissionType)
@@ -722,7 +722,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 				if(missionInfo[i].aRewardList[j].dwVnum && missionInfo[i].aRewardList[j].bCount > 0)
 					pkChar->AutoGiveItem(missionInfo[i].aRewardList[j].dwVnum, missionInfo[i].aRewardList[j].bCount);
 			}
-			
+
 			break;
 		}
 	}
@@ -732,10 +732,10 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 {
 	if(!pkChar)
 		return;
-	
+
 	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
-	
+
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();
 	if (!bBattlePassId)
 		return;
@@ -746,19 +746,19 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(pkChar), CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
 	}
-	
+
 	TMapBattlePassName::iterator it = m_map_battle_pass_name.find(bBattlePassId);
 	if(it == m_map_battle_pass_name.end())
 		return;
-	
+
 	std::string battlePassName = it->second;
 	TMapBattleMissionInfo::iterator itInfo = m_map_battle_pass_mission_info.find(battlePassName);
-	
+
 	if(itInfo == m_map_battle_pass_mission_info.end())
 		return;
-	
+
 	std::vector<TBattlePassMissionInfo> missionInfo = itInfo->second;
-	
+
 	bool bIsCompleted = true;
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
@@ -768,11 +768,11 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 			break;
 		}
 	}
-	
+
 	if(bIsCompleted)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ((pkChar)->GetName()), battlePassName.c_str());
+		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChar)).data(), battlePassName.c_str());
 #endif
 		BattlePassReward(pkChar);
 	}
@@ -782,7 +782,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 {
 	if(!pkChar)
 		return;
-	
+
 	if(!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar)))
 		return;
 
@@ -794,7 +794,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	// plusz vedelem: ujra login / karaktervaltas utan se tudja ujra felvenni
 	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
 	{
@@ -803,7 +803,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	}
 
 	TMapBattlePassName::iterator it = m_map_battle_pass_name.find(bBattlePassId);
-	
+
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -811,7 +811,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	std::string battlePassName = it->second;
 	TMapBattlePassReward::iterator itReward = m_map_battle_pass_reward.find(battlePassName);
 	if(itReward == m_map_battle_pass_reward.end())
@@ -821,19 +821,19 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 #endif
 		return;
 	}
-	
+
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkChar), AFFECT_BATTLE_PASS);
-	
-	std::vector<TBattlePassRewardItem> rewardInfo = itReward->second;	
-	
+
+	std::vector<TBattlePassRewardItem> rewardInfo = itReward->second;
+
 	for (unsigned int i = 0; i < rewardInfo.size(); i++)
 	{
 		pkChar->AutoGiveItem(rewardInfo[i].dwVnum, rewardInfo[i].bCount);
 	}
-	
+
 	TBattlePassRegisterRanking ranking;
 	ranking.bBattlePassId = bBattlePassId;
-	strlcpy(ranking.playerName, ((pkChar)->GetName()), sizeof(ranking.playerName));
+	strlcpy(ranking.playerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChar)).data(), sizeof(ranking.playerName));
 	db_clientdesc->DBPacket(HEADER_GD_REGISTER_BP_RANKING, 0, &ranking, sizeof(TBattlePassRegisterRanking));
 	SetBattlePassFinalRewardTaken(pkChar, bBattlePassId);
 }
@@ -846,12 +846,12 @@ bool CBattlePass::BattlePassMissionGetInfo(uint8_t bBattlePassId, uint8_t bMissi
 
 	const std::string battlePassName = it->second;
 	const auto itInfo = m_map_battle_pass_mission_info.find(battlePassName);
-	
+
 	if(itInfo == m_map_battle_pass_mission_info.end())
 		return false;
 
 	std::vector<TBattlePassMissionInfo> missionInfo = itInfo->second;
-	
+
 	for (const auto& i : missionInfo)
 	{
 		if(i.bMissionType == bMissionType)
@@ -871,14 +871,14 @@ bool CBattlePass::IsEligibleForPlayerKill(uint32_t dwKillerID, uint32_t dwPlayer
 	TKillMap::iterator it = m_playersKills.find(dwKillerID);
 	if(it == m_playersKills.end()) // no instance for pid so can register
 		return true;
-	
+
 	std::vector<TBattlePassKillVictim *> &victimVector = it->second;
-	
+
 	auto itV = victimVector.begin();
 	while (itV != victimVector.end())
 	{
 		TBattlePassKillVictim * tempVictim = *itV;
-	
+
 		if(tempVictim->dwVictimPid == dwPlayerID)
 		{
 			if (get_dword_time() < tempVictim->dwLastKillTime + 900 * 1000) // 900 seconds = 15 minutes
@@ -892,10 +892,10 @@ bool CBattlePass::IsEligibleForPlayerKill(uint32_t dwKillerID, uint32_t dwPlayer
 				return true;
 			}
 		}
-		
+
 		++itV;
 	}
-	
+
 	return true;
 }
 
@@ -905,23 +905,23 @@ void CBattlePass::RegisterPlayerKill(uint32_t dwKillerID, uint32_t dwPlayerID)
 	if(it == m_playersKills.end())
 	{
 		std::vector<TBattlePassKillVictim *> victimVector;
-		
+
 		TBattlePassKillVictim * tempVictim = new TBattlePassKillVictim;
 		tempVictim->dwVictimPid = dwPlayerID;
 		tempVictim->dwLastKillTime = get_dword_time();
-		
+
 		victimVector.push_back(tempVictim);
-		
+
 		m_playersKills.insert(std::make_pair(dwKillerID, victimVector));
 	}
 	else
 	{
 		std::vector<TBattlePassKillVictim *> &victimVector = it->second;
-		
+
 		TBattlePassKillVictim * tempVictim = new TBattlePassKillVictim;
 		tempVictim->dwVictimPid = dwPlayerID;
 		tempVictim->dwLastKillTime = get_dword_time();
-		
+
 		victimVector.push_back(tempVictim);
 	}
 }

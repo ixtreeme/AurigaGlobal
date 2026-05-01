@@ -1741,7 +1741,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", ch_companion->GetName());
+					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch_companion)).data());
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
@@ -1763,7 +1763,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				MessengerManager::instance().RequestToAdd(ch, ch_companion);
-				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch_companion->GetName());
+				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch_companion)).data());
 			}
 			return sizeof(TPacketCGMessengerAddByVID);
 
@@ -2099,7 +2099,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					{
 						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), to_ch))
 						{
-							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), to_ch->GetName());
+							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(to_ch)).data());
 							return;
 						}
 					}
@@ -2825,7 +2825,7 @@ void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
 	if (p->answer)
 		p->answer = quest::CONFIRM_YES;
-	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->requestPID, (ch_wait)?ch_wait->GetName():"", p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch_wait)).data():"", p->answer);
 	if (ch_wait)
 	{
 		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_wait)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));

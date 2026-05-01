@@ -460,7 +460,7 @@ public:
                     return;
 
                 if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pc)) == leaderPid)
-                    leaderName = pc->GetName();
+                    leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pc)).data();
             });
 
         if (!leaderName)

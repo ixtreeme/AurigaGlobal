@@ -806,7 +806,7 @@ void CParty::SendPartyInfoOneToAll(uint32_t pid)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
+			//LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(it->second.pCharacter)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -827,7 +827,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 	{
 		if ((it->second.pCharacter) && (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))))
 		{
-			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
+			LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(it->second.pCharacter)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)));
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(it->second.pCharacter))->Packet(&p, sizeof(p));
 		}
 	}
@@ -854,7 +854,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 		}
 
 		it->second.pCharacter->BuildUpdatePartyPacket(p);
-		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", it->second.pCharacter->GetName(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
+		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(it->second.pCharacter)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}
 }

@@ -1988,7 +1988,7 @@ namespace offlineshop
 				}
 				chGuest->SetAuctionGuest(nullptr);
 
-				OFFSHOP_DEBUG("removing guest from auction %s ", ((chGuest)->GetName()));
+				OFFSHOP_DEBUG("removing guest from auction %s ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(chGuest)).data());
 				tempGuestList.push_back(AS_GUESTID(chGuest));
 			}
 

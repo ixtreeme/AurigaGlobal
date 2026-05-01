@@ -932,7 +932,7 @@ namespace quest
 				return 0;
 			}
 
-			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, CQuestManager::instance().GetCurrentCharacterPtr()->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
+			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
 			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum);
 		}
 		else if (lua_gettop(L) == 2)
@@ -958,7 +958,7 @@ namespace quest
 			}
 
 			int32_t item_count = static_cast<int32_t>(lua_tonumber(L, 2));
-			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, CQuestManager::instance().GetCurrentCharacterPtr()->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
+			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
 
 			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum, item_count);
 		}

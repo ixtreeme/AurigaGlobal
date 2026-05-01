@@ -548,8 +548,8 @@ LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
-	if (found != nullptr && strncasecmp(szName, found->GetName(), CHARACTER_NAME_MAX_LEN) != 0) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, found->GetName());
+	if (found != nullptr && strncasecmp(szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(found)).data(), CHARACTER_NAME_MAX_LEN) != 0) {
+		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(found)).data());
 		return nullptr;
 	}
 	return found;

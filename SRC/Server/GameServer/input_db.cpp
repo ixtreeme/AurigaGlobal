@@ -524,7 +524,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
 	{
 		auto* p = d->GetCharacter();
-		LOG_ERROR("login state already has main state (character {} {})", p->GetName(), static_cast<const void*>(get_pointer(p)));
+		LOG_ERROR("login state already has main state (character {} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(p)).data(), static_cast<const void*>(get_pointer(p)));
 		return;
 	}
 

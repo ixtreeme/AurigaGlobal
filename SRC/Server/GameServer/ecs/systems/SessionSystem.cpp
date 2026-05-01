@@ -602,10 +602,10 @@ namespace {
 
             char szTmp[64];
 
-            if (3 != sscanf(pkWarp->GetName(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
+            if (3 != sscanf(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkWarp)).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
             {
                 if (number(1, 100) < 5)
-                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkWarp)), pkWarp->GetName());
+                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkWarp)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkWarp)).data());
 
                 m_bInvalid = true;
 

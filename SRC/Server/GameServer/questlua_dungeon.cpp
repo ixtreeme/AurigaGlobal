@@ -38,7 +38,7 @@ template <class Func> Func CDungeon::ForEachMember(Func f)
 {
 	for (auto it = m_set_pkCharacter.begin(); it != m_set_pkCharacter.end(); ++it)
 	{
-		LOG_INFO("Dungeon ForEachMember {}", (*it)->GetName());
+		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf((*it))).data());
 		f(*it);
 	}
 	return f;

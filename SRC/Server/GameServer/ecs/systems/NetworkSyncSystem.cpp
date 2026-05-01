@@ -301,7 +301,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     }
 
     if (entity->IsType(ENTITY_CHARACTER)) {
-        LOG_TRACE("EntityInsert {} (RaceNum {}) ({} {}) TO {}", GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ((LPCHARACTER)entity)->GetName());
+        LOG_TRACE("EntityInsert {} (RaceNum {}) ({} {}) TO {}", GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)entity))).data());
     }
 #ifdef ENABLE_FAKE_SHOP_HEADER
     if (IsPC() && entity->IsType(ENTITY_CHARACTER))
@@ -331,7 +331,7 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
     d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
 
     if (entity->IsType(ENTITY_CHARACTER))
-        LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ((LPCHARACTER)entity)->GetName());
+        LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)entity))).data());
 }
 
 LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
@@ -383,7 +383,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         }
 
         if (m_pkChrSyncOwner)
-            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), m_pkChrSyncOwner->GetName());
+            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrSyncOwner)).data());
 
         m_pkChrSyncOwner = nullptr;
     }
@@ -406,7 +406,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         {
             if (m_pkChrSyncOwner)
             {
-                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), m_pkChrSyncOwner->GetName());
+                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrSyncOwner)).data());
                 m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
             }
 
@@ -974,7 +974,7 @@ void CItem::EncodeRemovePacket(LPENTITY ent)
 	pack.dwVID = m_dwVID;
 
 	d->Packet(&pack, sizeof(pack));
-	LOG_TRACE("Item::EncodeRemovePacket {} to {}", GetName(), ((LPCHARACTER)ent)->GetName());
+	LOG_TRACE("Item::EncodeRemovePacket {} to {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)ent))).data());
 }
 
 void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)

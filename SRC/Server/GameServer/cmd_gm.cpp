@@ -1688,7 +1688,7 @@ class user_func
 			if (!d->GetCharacter())
 				return;
 
-			int len = snprintf(str + str_len, sizeof(str) - str_len, "%-16s ", d->GetCharacter()->GetName());
+			int len = snprintf(str + str_len, sizeof(str) - str_len, "%-16s ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(d->GetCharacter())).data());
 
 			if (len < 0 || len >= (int) sizeof(str) - str_len)
 				len = (sizeof(str) - str_len) - 1;

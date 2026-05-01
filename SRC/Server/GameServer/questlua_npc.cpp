@@ -341,7 +341,7 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		
+
 		lua_pushnumber(L, ch->GetAttMul());
 		return 1;
 	}
@@ -433,7 +433,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushstring(L, ((npc)->GetName()));
+		lua_pushstring(L, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(npc)).data());
 		return 1;
 	}
 

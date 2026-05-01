@@ -395,7 +395,7 @@ struct FPartyDropDiceRoll
 			{
 				m_itemDrop->SetOwnership(m_itemOwner);
 #ifdef TEXTS_IMPROVEMENT
-				pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s", m_itemOwner->GetName(), m_itemDrop->GetName());
+				pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_itemOwner)).data(), m_itemDrop->GetName());
 #endif
 			}
 		}

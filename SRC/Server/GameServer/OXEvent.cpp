@@ -94,7 +94,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 {
 	if (GetStatus() == OXEVENT_FINISH)
 	{
-		LOG_INFO("OXEVENT : map finished. but char enter. {}", ((pkChar)->GetName()));
+		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChar)).data());
 		return false;
 	}
 
@@ -281,7 +281,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 	if (m_map_attender.size() <= 0) return true;
 
 	auto iter = m_map_attender.begin();
-	
+
 
 	m_map_miss.clear();
 
@@ -429,9 +429,9 @@ bool COXEventManager::LogWinner()
 
 bool COXEventManager::GiveItemToAttender(uint32_t dwItemVnum,
 #ifdef ENABLE_NEW_STACK_LIMIT
-int 
+int
 #else
-uint8_t 
+uint8_t
 #endif
 count)
 {

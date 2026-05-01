@@ -1727,7 +1727,7 @@ EVENTFUNC(ChainLightningEvent)
 	}
 	else
 	{
-		LOG_INFO("{} use chainlighting, but find victim failed near {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), pkChrVictim->GetName());
+		LOG_INFO("{} use chainlighting, but find victim failed near {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data());
 	}
 
 	return 0;
@@ -1960,7 +1960,7 @@ struct FuncSplashDamage
 		}
 #endif
 		////////////////////////////////////////////////////////////////////////////////
-		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkSk->szName, iAmount, pkChrVictim->GetName());
+		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkSk->szName, iAmount, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data());
 		iDam = CalcBattleDamage(iAmount, m_pkChr->GetLevel(), pkChrVictim->GetLevel());
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
 		{
@@ -2420,7 +2420,7 @@ struct FuncSplashDamage
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), pkChrVictim->GetName(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
+				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
 				int32_t tx = pkChrVictim->GetX()+static_cast<int32_t>(fx);
 				int32_t ty = pkChrVictim->GetY()+static_cast<int32_t>(fy);
 

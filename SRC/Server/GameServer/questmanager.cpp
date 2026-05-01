@@ -1176,7 +1176,7 @@ namespace quest
 			m_iCurrentSkin = QUEST_SKIN_NOWINDOW;
 		}
 
-		//LOG_INFO(0, "Send Quest Script to %s", GetCurrentCharacterPtr()->GetName());
+		// Legacy debug: Send Quest Script to current character name.
 		//send -_-!
 		struct ::packet_script packet_script;
 
