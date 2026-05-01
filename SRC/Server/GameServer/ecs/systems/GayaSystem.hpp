@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <string_view>
 
 #include <entt/entt.hpp>
 
@@ -20,8 +20,8 @@ void UpdateItems(entt::entity pc);
 void CraftItems(entt::entity pc, int slot);
 void MarketItems(entt::entity pc, int slot);
 void RefreshItems(entt::entity pc);
-int GetState(entt::entity pc, const std::string& state);
-void SetState(entt::entity pc, const std::string& state, int value);
+int GetState(entt::entity pc, std::string_view state);
+void SetState(entt::entity pc, std::string_view state, int value);
 void StartCheckTimeMarket(entt::entity pc);
 
 } // namespace GayaSystem

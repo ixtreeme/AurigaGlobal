@@ -17,6 +17,8 @@
 #include "../components/identity_components.hpp"
 #include <Core/Logging.hpp>
 
+#include <string>
+
 namespace
 {
 
@@ -523,7 +525,7 @@ void RefreshItems(entt::entity pc)
 	MarkDirty(pc);
 }
 
-int GetState(entt::entity pc, const std::string& state)
+int GetState(entt::entity pc, std::string_view state)
 {
 	auto* ch = LegacyCharOf(pc);
 	if (!ch)
@@ -538,10 +540,10 @@ int GetState(entt::entity pc, const std::string& state)
 		return 0;
 	}
 
-	return pPC->GetFlag(state);
+	return pPC->GetFlag(std::string(state));
 }
 
-void SetState(entt::entity pc, const std::string& state, int value)
+void SetState(entt::entity pc, std::string_view state, int value)
 {
 	auto* ch = LegacyCharOf(pc);
 	if (!ch)
@@ -556,7 +558,7 @@ void SetState(entt::entity pc, const std::string& state, int value)
 		return;
 	}
 
-	pPC->SetFlag(state, value);
+	pPC->SetFlag(std::string(state), value);
 	MarkDirty(pc);
 }
 
