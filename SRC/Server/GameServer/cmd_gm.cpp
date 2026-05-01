@@ -33,6 +33,7 @@
 #include "arena.h"
 #include "start_position.h"
 #include "party.h"
+#include <string_view>
 #include "BattleArena.h"
 #include "log.h"
 #include "pcbang.h"
@@ -4852,14 +4853,16 @@ ACMD (do_dragon_soul)
 }
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-std::string GetNewShopName(const std::string& oldname, const std::string& newname) {
+std::string GetNewShopName(std::string_view oldname, std::string_view newname) {
 	auto nameindex = oldname.find('@');
-	if (nameindex == std::string::npos)
-		return newname;
+	if (nameindex == std::string_view::npos)
+		return std::string(newname);
 
 	else {
-		auto playername = oldname.substr(0, nameindex);
-		return playername + '@' + newname;
+		std::string playername(oldname.substr(0, nameindex));
+		playername += '@';
+		playername.append(newname);
+		return playername;
 	}
 }
 
