@@ -721,6 +721,11 @@ void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 
     AffectSystem::UpdateAffect(reg, tick);
 
+    // Legacy CHARACTER::ProcessAffect owns CAffect* lifetime. The ECS
+    // component is a mirror only; releasing those pointers here races the
+    // legacy affect event and corrupts the heap on login/tick boundaries.
+    return;
+
     auto view = reg.view<ecs::AffectList, ecs::LegacyCharPtr>();
     view.each([&](const entt::entity entity, ecs::AffectList& affectList, const ecs::LegacyCharPtr& legacy) {
         (void)legacy;
@@ -1285,6 +1290,7 @@ EVENTFUNC(load_affect_login_event)
 	if (!ch)
 	{
 		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
 		return 0;
 	}
 
@@ -1293,6 +1299,7 @@ EVENTFUNC(load_affect_login_event)
 	if (!d)
 	{
 		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
 		return 0;
 	}
 
@@ -1307,19 +1314,28 @@ EVENTFUNC(load_affect_login_event)
 	else if (d->IsPhase(PHASE_CLOSE))
 	{
 		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
 		return 0;
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
 		LOG_INFO("Affect Load by Event");
+		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
+			ch->GetPlayerID(), ch->GetName(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
 		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
+		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
+			ch->GetPlayerID(), ch->GetName(), info->count, static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ch->GetPlayerID(), static_cast<const void*>(info->data));
 		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ch->GetPlayerID(), static_cast<const void*>(info->data));
 		return 0;
 	}
 	else
 	{
 		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ch->GetPlayerID());
 		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
 		return 0;
 	}
 }
@@ -1362,8 +1378,11 @@ void CHARACTER::CheckBiologistReward() {
 void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 {
 	m_bIsLoadedAffect = false;
+	LPDESC desc = GetDesc();
+	LOG_ERROR("LOAD_AFFECT_BEGIN pid={} name={} count={} elements={} desc={}",
+		GetPlayerID(), GetName(), dwCount, static_cast<const void*>(pElements), static_cast<const void*>(desc));
 
-	if (!GetDesc()->IsPhase(PHASE_GAME))
+	if (!desc->IsPhase(PHASE_GAME))
 	{
 		if (test_server)
 			LOG_INFO("LOAD_AFFECT: Creating Event", GetName(), dwCount);
@@ -1377,10 +1396,14 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 		event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
 
+		LOG_ERROR("LOAD_AFFECT_REQUEUE pid={} name={} count={} data={}",
+			GetPlayerID(), GetName(), dwCount, static_cast<const void*>(info->data));
 		return;
 	}
 
+	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
 	ClearAffect(true);
+	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
 
 	if (test_server)
 		LOG_INFO("LOAD_AFFECT: {} count {}", GetName(), dwCount);
@@ -1497,6 +1520,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 
 	}
+	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
 
 	if ( CArenaManager::instance().IsArenaMap(GetMapIndex()) == true )
 	{
@@ -1518,18 +1542,24 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		UpdatePacket();
 	}
 
+	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", GetPlayerID(), GetName());
 	StartAffectEvent();
+	LOG_ERROR("LOAD_AFFECT_START_EVENT_END pid={} name={}", GetPlayerID(), GetName());
 
 	m_bIsLoadedAffect = true;
 
 	// 용혼석 셋팅 로드 및 초기화
+	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", GetPlayerID(), GetName());
 	DragonSoul_Initialize();
+	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", GetPlayerID(), GetName());
 
 	// @fixme118 (regain affect hp/mp)
 	if (!IsDead())
 	{
+		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_BEGIN pid={} name={}", GetPlayerID(), GetName());
 		PointChange(POINT_HP, GetMaxHP() - GetHP());
 		PointChange(POINT_SP, GetMaxSP() - GetSP());
+		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_END pid={} name={}", GetPlayerID(), GetName());
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	if (GetGuild())
@@ -1550,8 +1580,11 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	SetDropStatus();
 #endif
 #ifdef ENABLE_BIOLOGIST_UI
+	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_BEGIN pid={} name={}", GetPlayerID(), GetName());
 	CheckBiologistReward();
+	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", GetPlayerID(), GetName());
 #endif
+	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, m_list_pkAffect.size());
 }
 
 bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube )
