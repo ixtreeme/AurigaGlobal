@@ -713,7 +713,7 @@ TGuildMember* CGuild::GetMember(uint32_t pid)
 	return &it->second;
 }
 
-uint32_t CGuild::GetMemberPID(const std::string& strName)
+uint32_t CGuild::GetMemberPID(std::string_view strName)
 {
 	for ( TGuildMemberContainer::iterator iter = m_member.begin();
 			iter != m_member.end(); iter++ )
@@ -1069,17 +1069,17 @@ void CGuild::RequestDisband(uint32_t pid)
 	// END_LAND_CLEAR
 }
 
-void CGuild::AddComment(LPCHARACTER ch, const std::string& str)
+void CGuild::AddComment(LPCHARACTER ch, std::string_view str)
 {
-	if (str.length() > GUILD_COMMENT_MAX_LEN)
+	if (str.size() > GUILD_COMMENT_MAX_LEN)
 		return;
 
 	char text[GUILD_COMMENT_MAX_LEN * 2 + 1];
-	DBManager::instance().EscapeString(text, sizeof(text), str.c_str(), str.length());
+	DBManager::instance().EscapeString(text, sizeof(text), str.data(), str.size());
 
 	DBManager::instance().FuncAfterQuery(std::bind(&CGuild::RefreshCommentForce,this,ch->GetPlayerID()),
 			"INSERT INTO guild_comment%s(guild_id, name, notice, content, time) VALUES(%u, '%s', %d, '%s', NOW())",
-			get_table_postfix(), m_data.guild_id, ch->GetName(), (str[0] == '!') ? 1 : 0, text);
+			get_table_postfix(), m_data.guild_id, ch->GetName(), (!str.empty() && str.front() == '!') ? 1 : 0, text);
 }
 
 void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)

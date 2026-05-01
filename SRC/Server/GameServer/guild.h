@@ -2,6 +2,7 @@
 #define __INC_GUILD_H
 
 #include "skill.h"
+#include <string_view>
 
 typedef struct _SQLMsg SQLMsg;
 
@@ -250,11 +251,11 @@ void		Reset() { m_data.power = m_data.max_power; }
 		int		GetGeneralCount() const		{ return m_general_count; }
 
 		TGuildMember*	GetMember(uint32_t pid);
-		uint32_t			GetMemberPID(const std::string& strName);
+		uint32_t			GetMemberPID(std::string_view strName);
 
 		bool		HasGradeAuth(int grade, int auth_flag) const	{ return (bool)(m_data.grade_array[grade-1].auth_flag & auth_flag);}
 
-		void		AddComment(LPCHARACTER ch, const std::string& str);
+		void		AddComment(LPCHARACTER ch, std::string_view str);
 		void		DeleteComment(LPCHARACTER ch, uint32_t comment_id);
 
 		void		RefreshComment(LPCHARACTER ch);
