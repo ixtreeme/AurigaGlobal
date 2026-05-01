@@ -185,11 +185,7 @@ bool IsPC(entt::entity e)
 
 bool IsNPC(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagNPC>(e))
-		return true;
-
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->IsNPC() : false;
+	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagNPC>(e);
 }
 
 bool IsStone(entt::entity e)
