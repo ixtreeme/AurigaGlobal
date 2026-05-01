@@ -900,8 +900,8 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
 	if (!pSummonItem)
 		return 0;
-	int32_t x = m_pkOwner->GetX();
-	int32_t y = m_pkOwner->GetY();
+	int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
+	int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
 	int32_t z = m_pkOwner->GetZ();
 
 	if (true == bSpawnFar)
@@ -1131,21 +1131,21 @@ bool CNewPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 {
 	float fDist = number(fMinDist, fMaxDist);
 	float r = (float)number (0, 359);
-	float dest_x = GetOwner()->GetX() + fDist * cos(r);
-	float dest_y = GetOwner()->GetY() + fDist * sin(r);
+	float dest_x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(GetOwner())) + fDist * cos(r);
+	float dest_y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(GetOwner())) + fDist * sin(r);
 
 	//m_pkChar->SetRotation(number(0, 359));        // 방향은 랜덤으로 설정
 
 	//GetDeltaByDegree(m_pkChar->GetRotation(), fDist, &fx, &fy);
 
 	// 느슨한 못감 속성 체크; 최종 위치와 중간 위치가 갈수없다면 가지 않는다.
-	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy)
-	//			&& SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), m_pkChar->GetX() + (int) fx/2, m_pkChar->GetY() + (int) fy/2)))
+	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar)) + (int) fx, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar)) + (int) fy)
+	//			&& SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkChar)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar)) + (int) fx/2, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar)) + (int) fy/2)))
 	//	return true;
 
 	m_pkChar->SetNowWalking(true);
 
-	//if (m_pkChar->Goto(m_pkChar->GetX() + (int) fx, m_pkChar->GetY() + (int) fy))
+	//if (m_pkChar->Goto(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar)) + (int) fx, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar)) + (int) fy))
 	//	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	const entt::entity petEntity = AIHelpers::EcsOf(m_pkChar);
 	const bool isMoving = petEntity != entt::null
@@ -1191,8 +1191,8 @@ bool CNewPetActor::_UpdateFollowAI()
 
 	uint32_t currentTime = get_dword_time();
 
-	int32_t ownerX = m_pkOwner->GetX();		int32_t ownerY = m_pkOwner->GetY();
-	int32_t charX = m_pkChar->GetX();			int32_t charY = m_pkChar->GetY();
+	int32_t ownerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));		int32_t ownerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
+	int32_t charX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));			int32_t charY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
 
 	float fDist = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
 
@@ -1287,11 +1287,11 @@ bool CNewPetActor::Follow(float fMinDistance)
 	if( !m_pkOwner || !m_pkChar)
 		return false;
 
-	float fOwnerX = m_pkOwner->GetX();
-	float fOwnerY = m_pkOwner->GetY();
+	float fOwnerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
+	float fOwnerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
 
-	float fPetX = m_pkChar->GetX();
-	float fPetY = m_pkChar->GetY();
+	float fPetX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));
+	float fPetY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
 
 	float fDist = DISTANCE_SQRT(fOwnerX - fPetX, fOwnerY - fPetY);
 	if (fDist <= fMinDistance)

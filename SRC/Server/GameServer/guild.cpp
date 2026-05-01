@@ -1389,7 +1389,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 			//   ִ   õ.
 			SendDBSkillUpdate(-iNeededSP);
 			if ((victim = (CHARACTER_MANAGER::instance().FindByPID(pid))))
-				ch->WarpSet(victim->GetX(), victim->GetY());
+				ch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
 			else
 			{
 				if (m_memberP2POnline.find(pid) != m_memberP2POnline.end())

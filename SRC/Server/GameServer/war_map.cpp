@@ -439,7 +439,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 				uint8_t idx;
 
 				if (GetTeamIndex(pkAff->lApplyValue, idx))
-					AddFlag(idx, ch->GetX(), ch->GetY());
+					AddFlag(idx, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 
 				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 			}
@@ -826,7 +826,7 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 				if (pkAff)
 				{
 					if (GetTeamIndex(pkAff->lApplyValue, idx))
-						AddFlag(idx, ch->GetX(), ch->GetY());
+						AddFlag(idx, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_WAR_FLAG);
 				}

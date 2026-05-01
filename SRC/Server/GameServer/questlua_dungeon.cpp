@@ -1773,10 +1773,10 @@ namespace quest
 
 		int32_t time = get_dword_time();
 
-		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, statue1->GetX(), statue1->GetY(), 0, time);
-		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, statue2->GetX(), statue2->GetY(), 0, time);
-		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, statue3->GetX(), statue3->GetY(), 0, time);
-		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, statue4->GetX(), statue4->GetY(), 0, time);
+		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue1)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue1)), 0, time);
+		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue2)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue2)), 0, time);
+		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue3)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue3)), 0, time);
+		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue4)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue4)), 0, time);
 
 		return 0;
 	}

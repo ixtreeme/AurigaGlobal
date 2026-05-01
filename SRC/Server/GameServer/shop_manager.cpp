@@ -133,7 +133,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	}
 	//END_PREVENT_TRADE_WINDOW
 
-	int32_t distance = DISTANCE_APPROX(pkChr->GetX() - pkChrShopKeeper->GetX(), pkChr->GetY() - pkChrShopKeeper->GetY());
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrShopKeeper)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrShopKeeper)));
 
 	if (distance >= SHOP_MAX_DISTANCE)
 	{
@@ -246,7 +246,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (ch->GetShopOwner())
 	{
-		if (DISTANCE_APPROX(ch->GetX() - ch->GetShopOwner()->GetX(), ch->GetY() - ch->GetShopOwner()->GetY()) > 2000)
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner()))) > 2000)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 381, "");
@@ -287,7 +287,7 @@ void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (ch->GetShopOwner()) {
-		if (DISTANCE_APPROX(ch->GetX() - ch->GetShopOwner()->GetX(), ch->GetY() - ch->GetShopOwner()->GetY()) > 2000) {
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner()))) > 2000) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 381, "");
 #endif
@@ -376,7 +376,7 @@ uint8_t bCount
 		return;
 
 	/*
-	if (DISTANCE_APPROX(ch->GetX()-ch->GetShopOwner()->GetX(), ch->GetY()-ch->GetShopOwner()->GetY())>2000)
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch))-ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))-ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner())))>2000)
 	{
 		return;
 	}

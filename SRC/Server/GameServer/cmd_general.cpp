@@ -3074,7 +3074,7 @@ namespace
 		if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 			return false;
 
-		const int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - npc->GetX(), ((ch)->GetY()) - npc->GetY());
+		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
 		if (distance >= STONE_CRAFT_MAX_DISTANCE)
 			return false;
 

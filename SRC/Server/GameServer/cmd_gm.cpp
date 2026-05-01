@@ -293,8 +293,8 @@ ACMD(do_transfer)
 
 			pgg.bHeader = HEADER_GG_TRANSFER;
 			strlcpy(pgg.szName, arg1, sizeof(pgg.szName));
-			pgg.lX = ((ch)->GetX());
-			pgg.lY = ((ch)->GetY());
+			pgg.lX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+			pgg.lY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 
 			P2P_MANAGER::instance().Send(&pgg, sizeof(TPacketGGTransfer));
 #ifdef TEXTS_IMPROVEMENT
@@ -313,8 +313,8 @@ ACMD(do_transfer)
 		return;
 	}
 
-	//tch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()), ch->GetZ());
-	tch->WarpSet(((ch)->GetX()), ((ch)->GetY()), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+	//tch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
+	tch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -451,7 +451,7 @@ ACMD(do_goto)
 
 		PIXEL_POSITION p;
 
-		if (SECTREE_MANAGER::instance().GetMapBasePosition(((ch)->GetX()), ((ch)->GetY()), p))
+		if (SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), p))
 		{
 			x += p.x / 100;
 			y += p.y / 100;
@@ -544,8 +544,8 @@ ACMD(do_warp)
 		}
 		else
 		{
-			x = ((tch)->GetX()) / 100;
-			y = ((tch)->GetY()) / 100;
+			x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) / 100;
+			y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) / 100;
 #ifdef __CMD_WARP_IN_DUNGEON__
 			mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch));
 #endif
@@ -575,9 +575,9 @@ ACMD(do_warp)
 ACMD(do_rewarp)
 {
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ((ch)->GetX()), ((ch)->GetY()));
+	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 #endif
-	ch->WarpSet(((ch)->GetX()), ((ch)->GetY()));
+	ch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 	ch->Stop();
 }
 #endif
@@ -697,7 +697,7 @@ ACMD(do_group_random)
 
 	uint32_t dwVnum = 0;
 	str_to_number(dwVnum, arg1);
-	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + 500);
 }
 
 ACMD(do_group)
@@ -715,9 +715,9 @@ ACMD(do_group)
 	str_to_number(dwVnum, arg1);
 
 	if (test_server)
-		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 
-	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()) - 500, ((ch)->GetY()) - 500, ((ch)->GetX()) + 500, ((ch)->GetY()) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + 500);
 }
 
 ACMD(do_mob_coward)
@@ -770,10 +770,10 @@ ACMD(do_mob_coward)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
 				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
-				((ch)->GetX()) - number(200, 750),
-				((ch)->GetY()) - number(200, 750),
-				((ch)->GetX()) + number(200, 750),
-				((ch)->GetY()) + number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -797,7 +797,7 @@ ACMD(do_mob_map)
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	if (tch)
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), ((tch)->GetX()), ((tch)->GetY()));
+		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)));
 	else
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -852,10 +852,10 @@ ACMD(do_mob_aggresive)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
 				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
-				((ch)->GetX()) - number(200, 750),
-				((ch)->GetY()) - number(200, 750),
-				((ch)->GetX()) + number(200, 750),
-				((ch)->GetY()) + number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -919,10 +919,10 @@ ACMD(do_mob)
 	{
 		CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
 				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
-				((ch)->GetX()) - number(200, 750),
-				((ch)->GetY()) - number(200, 750),
-				((ch)->GetX()) + number(200, 750),
-				((ch)->GetY()) + number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - number(200, 750),
+				ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(200, 750),
+				ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 	}
@@ -1000,7 +1000,7 @@ struct FuncPurge
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
 
-		int iDist = DISTANCE_APPROX(((pkChr)->GetX()) - ((m_pkGM)->GetX()), ((pkChr)->GetY()) - ((m_pkGM)->GetY()));
+		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkGM)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkGM)));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
@@ -1033,7 +1033,7 @@ ACMD(do_purge)
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
-		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
+		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 }
 
 #define ENABLE_CMD_IPURGE_EX
@@ -1232,18 +1232,18 @@ ACMD(do_state)
 
 	int len;
 	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
-			((tch)->GetX()), ((tch)->GetY()), ((tch)->GetX()) / 100, ((tch)->GetY()) / 100);
+			ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) / 100, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) / 100);
 
 	if (len < 0 || len >= (int) sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), ((tch)->GetX()), ((tch)->GetY()));
+	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)));
 
 	if (pSec)
 	{
 		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)))->m_setting;
 		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
-			ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), pSec->GetAttribute(((tch)->GetX()), ((tch)->GetY())), (((tch)->GetX()) - map_setting.iBaseX)/100, (((tch)->GetY()) - map_setting.iBaseY)/100);
+			ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)), pSec->GetAttribute(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch))), (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) - map_setting.iBaseX)/100, (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) - map_setting.iBaseY)/100);
 	}
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);
@@ -2116,7 +2116,7 @@ ACMD(do_respawn)
 	else
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Respaw around");
-		regen_reset(((ch)->GetX()), ((ch)->GetY()));
+		regen_reset(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 	}
 }
 
@@ -2683,7 +2683,7 @@ struct FuncWeaken
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
 
-		int iDist = DISTANCE_APPROX(pkChr->GetX() - m_pkGM->GetX(), pkChr->GetY() - m_pkGM->GetY());
+		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkGM)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkGM)));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
@@ -3262,7 +3262,7 @@ ACMD(do_build)
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
 	uint8_t GMLevel = (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
-	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
+	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 
 	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ
 	//       ޼  ʰ  Ѵ.
@@ -4112,7 +4112,7 @@ ACMD(do_get_mob_count)
 
 ACMD(do_clear_land)
 {
-	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ((ch)->GetX()), ((ch)->GetY()));
+	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 
 	if(nullptr == pLand )
 	{

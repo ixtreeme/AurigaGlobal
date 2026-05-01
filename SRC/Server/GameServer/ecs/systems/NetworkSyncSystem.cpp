@@ -392,7 +392,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         if (!IsSyncOwner(ch))
             return false;
 
-        if (DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY()) > 250)
+        if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) > 250)
         {
             LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
@@ -469,7 +469,7 @@ bool CHARACTER::BuildUpdatePartyPacket(TPacketGCPartyUpdate& out)
 
     LPCHARACTER l = GetParty()->GetLeaderCharacter();
 
-    if (l && DISTANCE_APPROX(GetX() - l->GetX(), GetY() - l->GetY()) < PARTY_DEFAULT_RANGE)
+    if (l && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l))) < PARTY_DEFAULT_RANGE)
     {
         out.affects[0] = GetParty()->GetPartyBonusExpPercent();
         out.affects[1] = GetPoint(POINT_PARTY_ATTACKER_BONUS);

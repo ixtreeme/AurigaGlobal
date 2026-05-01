@@ -659,7 +659,7 @@ bool CItem::DistanceValid(LPCHARACTER ch)
 	if (!GetSectree())
 		return false;
 
-	int iDist = DISTANCE_APPROX(GetX() - ch->GetX(), GetY() - ch->GetY());
+	int iDist = DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 	if (iDist > 2400)
 		return false;
 

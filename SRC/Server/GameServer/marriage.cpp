@@ -144,13 +144,13 @@ namespace marriage
 		// �Ÿ� üũ�� �������
 		/*const int DISTANCE = 5000;
 
-		  if (labs(ch1->GetX() - ch2->GetX()) > DISTANCE)
+		  if (labs(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch1)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch2))) > DISTANCE)
 		  return false;
 
-		  if (labs(ch1->GetY() - ch2->GetY()) > DISTANCE)
+		  if (labs(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch1)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch2))) > DISTANCE)
 		  return false;
 
-		  return (DISTANCE_APPROX(ch1->GetX() - ch2->GetX(), ch1->GetY() - ch2->GetY()) < DISTANCE);*/
+		  return (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch1)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch2)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch1)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch2))) < DISTANCE);*/
 	}
 
 	// �ݽ� ��ġ

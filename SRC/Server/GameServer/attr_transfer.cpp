@@ -47,7 +47,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY()));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
 	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
 	{
 		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance, ATTR_TRANSFER_MAX_DISTANCE);
@@ -164,7 +164,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
+	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 84, "");
 #endif

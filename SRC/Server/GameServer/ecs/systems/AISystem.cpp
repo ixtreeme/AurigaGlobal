@@ -47,15 +47,15 @@ uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
     }
 
     if (LPCHARACTER victim = ch->GetVictim()) {
-        const int32_t dx = victim->GetX() - ch->GetX();
-        const int32_t dy = victim->GetY() - ch->GetY();
+        const int32_t dx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+        const int32_t dy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
         const int32_t distance = DISTANCE_APPROX(dx, dy);
         const int32_t attackRange = static_cast<int32_t>(ch->GetMobAttackRange()) * 100;
         return distance <= attackRange ? AI_STATE_ATTACK : AI_STATE_CHASE;
     }
 
     if (const auto* spawn = reg.try_get<ecs::SpawnInfo>(entity)) {
-        if (ch->GetX() != spawn->x || ch->GetY() != spawn->y) {
+        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) != spawn->x || ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) != spawn->y) {
             return AI_STATE_RETURN;
         }
     }
@@ -168,7 +168,7 @@ void CHARACTER::__StateIdle_NPC()
     }
 
     LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 500) {
+    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 500) {
         if (Follow(protege, number(100, 300))) {
             return;
         }
@@ -244,7 +244,7 @@ void CHARACTER::__StateIdle_Monster()
         : PASSES_PER_SEC(number(3, 5));
 
     LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 1000) {
+    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 1000) {
         if (Follow(protege, number(150, 400))) {
             MonsterLog("[IDLE] returning to protege");
             return;
@@ -327,11 +327,11 @@ void CHARACTER::StateBattle()
     }
 
     LPCHARACTER protege = GetProtege();
-    const float dist = static_cast<float>(DISTANCE_APPROX(GetX() - victim->GetX(), GetY() - victim->GetY()));
+    const float dist = static_cast<float>(DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim))));
 
     if (dist >= 4000.0f) {
         SetVictim(nullptr);
-        if (protege && DISTANCE_APPROX(GetX() - protege->GetX(), GetY() - protege->GetY()) > 1000) {
+        if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 1000) {
             Follow(protege, number(150, 400));
         } else {
             SetPosition(POS_STANDING);
@@ -371,7 +371,7 @@ void CHARACTER::StateBattle()
                 continue;
             }
 
-            SetRotationToXY(victim->GetX(), victim->GetY());
+            SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
             if (UseMobSkill(skillIdx)) {
                 SendMovePacket(FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
 
@@ -409,7 +409,7 @@ void CHARACTER::StateBattle()
         return;
     }
 
-    SetRotationToXY(victim->GetX(), victim->GetY());
+    SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
     SendMovePacket(FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
 
     const float motionDuration = CMotionManager::instance().GetMotionDuration(

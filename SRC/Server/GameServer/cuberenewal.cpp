@@ -392,7 +392,7 @@ void Cube_open (LPCHARACTER ch)
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(ch->GetX() - npc->GetX(), ch->GetY() - npc->GetY());
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{

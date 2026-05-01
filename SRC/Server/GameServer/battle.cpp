@@ -47,7 +47,7 @@ bool battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty)
 
 bool battle_distance_valid(LPCHARACTER ch, LPCHARACTER victim)
 {
-	return battle_distance_valid_by_xy(ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY());
+	return battle_distance_valid_by_xy(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
 }
 
 bool timed_event_cancel(LPCHARACTER ch)
@@ -94,13 +94,13 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 		SECTREE* sectree = nullptr;
 
 		sectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch));
-		if (sectree && sectree->IsAttr(ch->GetX(), ch->GetY(), ATTR_BANPK))
+		if (sectree && sectree->IsAttr(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ATTR_BANPK))
 		{
 			return false;
 		}
 
 		sectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(victim));
-		if (sectree && sectree->IsAttr(victim->GetX(), victim->GetY(), ATTR_BANPK))
+		if (sectree && sectree->IsAttr(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)), ATTR_BANPK))
 		{
 			return false;
 		}
@@ -184,7 +184,7 @@ int battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim)
 		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
 
 	// �A�� A1A�
-	int distance = DISTANCE_APPROX(ch->GetX() - victim->GetX(), ch->GetY() - victim->GetY());
+	int distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
 
 	if (!victim->IsBuilding())
 	{
@@ -708,7 +708,7 @@ int CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity b
 		return 0;
 
 	// Y??g ????
-	int iDist = (int) (DISTANCE_SQRT(pkAttacker->GetX() - pkVictim->GetX(), pkAttacker->GetY() - pkVictim->GetY()));
+	int iDist = (int) (DISTANCE_SQRT(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkAttacker)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkAttacker)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))));
 	//int iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkBow), 5) - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
 	int iGap = (iDist / 100) - 5 - pkAttacker->GetPoint(POINT_BOW_DISTANCE);
 	int iPercent = 100 - (iGap * 5);

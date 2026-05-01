@@ -144,13 +144,13 @@ namespace
             return;
 
         LPCHARACTER ch = legacy->ptr;
-        if (ch->GetX() == position.x && ch->GetY() == position.y)
+        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) == position.x && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) == position.y)
             return;
 
         ch->SetXYZ(position.x, position.y, ch->GetZ());
         ch->UpdateSectree();
 
-        ecs::SyncSectorPlacement(reg, entity, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY());
+        ecs::SyncSectorPlacement(reg, entity, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
     }
 }
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)

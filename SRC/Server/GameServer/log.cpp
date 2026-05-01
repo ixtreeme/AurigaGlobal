@@ -88,7 +88,7 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 		return;
 	}
 
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), item->GetID(),
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), item->GetID(),
 	        nullptr == c_pszText ? "" : c_pszText,
 		   	c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "",
 		   	item->GetOriginalVnum());
@@ -103,7 +103,7 @@ void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c
 		return;
 	}
 
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), ItemSystem::GetItemID(item),
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(item),
 	        nullptr == c_pszText ? "" : c_pszText,
 		   	c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "",
 		   	ItemSystem::GetItemOriginalVnum(item));
@@ -112,7 +112,7 @@ void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c
 void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "", itemVnum);
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "", itemVnum);
 }
 
 void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValue, const char * c_pszText, const char * c_pszHint, const char * c_pszIP)
@@ -128,7 +128,7 @@ void LogManager::CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, co
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	if (ch)
-		CharLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ((ch)->GetX()), ((ch)->GetY()), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+		CharLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 	else
 		CharLog(0, 0, 0, dw, c_pszText, c_pszHint, "");
 }

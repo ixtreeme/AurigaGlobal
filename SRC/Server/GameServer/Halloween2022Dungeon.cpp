@@ -307,8 +307,8 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = victim->GetX() + number(-200, 200);
-        pos.y = victim->GetY() + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) + number(-200, 200);
         pos.z = victim->GetZ();
 
         item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);

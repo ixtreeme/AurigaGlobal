@@ -155,8 +155,8 @@ namespace mining
 		}
 
 		PIXEL_POSITION pos;
-		pos.x = ((ch)->GetX()) + number(-200, 200);
-		pos.y = ((ch)->GetY()) + number(-200, 200);
+		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
 
 		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();

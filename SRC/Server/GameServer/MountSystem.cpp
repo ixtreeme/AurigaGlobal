@@ -376,8 +376,8 @@ void CMountActor::Unsummon()
 
 uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 {
-	int32_t x = m_pkOwner->GetX();
-	int32_t y = m_pkOwner->GetY();
+	int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
+	int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
 	int32_t z = m_pkOwner->GetZ();
 
 	if (true == bSpawnFar)
@@ -455,8 +455,8 @@ bool CMountActor::UpdateFollowAI()
 
 	uint32_t currentTime = get_dword_time();
 
-	int32_t ownerX = m_pkOwner->GetX();		int32_t ownerY = m_pkOwner->GetY();
-	int32_t charX = m_pkChar->GetX();			int32_t charY = m_pkChar->GetY();
+	int32_t ownerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));		int32_t ownerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
+	int32_t charX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));			int32_t charY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
 
 	float fDist = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
 
@@ -509,11 +509,11 @@ bool CMountActor::Follow(float fMinDistance)
 	if( !m_pkOwner || !m_pkChar)
 		return false;
 
-	int32_t fOwnerX = m_pkOwner->GetX();
-	int32_t fOwnerY = m_pkOwner->GetY();
+	int32_t fOwnerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
+	int32_t fOwnerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
 
-	int32_t fPetX = m_pkChar->GetX();
-	int32_t fPetY = m_pkChar->GetY();
+	int32_t fPetX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));
+	int32_t fPetY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
 
 	float fDist = DISTANCE_SQRT(fOwnerX - fPetX, fOwnerY - fPetY);
 	if (fDist <= fMinDistance)

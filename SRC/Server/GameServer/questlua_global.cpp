@@ -1402,10 +1402,10 @@ namespace quest
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
 						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)),
-						((pChar)->GetX()) - number(200, 750),
-						((pChar)->GetY()) - number(200, 750),
-						((pChar)->GetX()) + number(200, 750),
-						((pChar)->GetY()) + number(200, 750),
+						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) - number(200, 750),
+						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) - number(200, 750),
+						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) + number(200, 750),
+						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) + number(200, 750),
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
@@ -1418,8 +1418,8 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						pSpawnMonster->GetX(),
-						pSpawnMonster->GetY(),
+						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pSpawnMonster)),
+						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
@@ -1487,8 +1487,8 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						pSpawnMonster->GetX(),
-						pSpawnMonster->GetY(),
+						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pSpawnMonster)),
+						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
 						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
 				}
@@ -1563,7 +1563,7 @@ namespace quest
 				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
 #endif
 				{
-					if (x1 <= ((pChar)->GetX()) && ((pChar)->GetX()) <= x2 && y1 <= ((pChar)->GetY()) && ((pChar)->GetY()) <= y2)
+					if (x1 <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) <= x2 && y1 <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) <= y2)
 					{
 						M2_DESTROY_CHARACTER(pChar);
 					}
@@ -1621,7 +1621,7 @@ namespace quest
 
 				if (true == (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pChar))))
 				{
-					if (from_x1 <= ((pChar)->GetX()) && ((pChar)->GetX()) <= from_x2 && from_y1 <= ((pChar)->GetY()) && ((pChar)->GetY()) <= from_y2)
+					if (from_x1 <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) <= from_y2)
 					{
 						++warpCount;
 

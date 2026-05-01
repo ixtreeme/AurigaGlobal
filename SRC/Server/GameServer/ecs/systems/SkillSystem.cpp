@@ -1638,10 +1638,10 @@ struct FFindNearVictim
 			return;
 		}
 
-		if (abs(m_pkChrCenter->GetX() - pkChr->GetX()) > 1000 || abs(m_pkChrCenter->GetY() - pkChr->GetY()) > 1000)
+		if (abs(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr))) > 1000 || abs(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))) > 1000)
 			return;
 
-		float fDist = DISTANCE_APPROX(m_pkChrCenter->GetX() - pkChr->GetX(), m_pkChrCenter->GetY() - pkChr->GetY());
+		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));
 
 		if (fDist < 1000)
 		{
@@ -1698,7 +1698,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))) // ĆÄĆĽ ¸ŐŔú
 	{
-		pkTarget = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))->GetNextOwnership(nullptr, pkChrVictim->GetX(), pkChrVictim->GetY());
+		pkTarget = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)));
 		if (pkTarget == pkChrVictim || !number(0, 2) || pkChr->GetChainLightingExcept().find(pkTarget) != pkChr->GetChainLightingExcept().end())
 			pkTarget = nullptr;
 	}
@@ -1783,7 +1783,7 @@ struct FuncSplashDamage
 
 		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
 
-		if (DISTANCE_APPROX(m_x - pkChrVictim->GetX(), m_y - pkChrVictim->GetY()) > m_pkSk->iSplashRange)
+		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), m_y - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim))) > m_pkSk->iSplashRange)
 		{
 			if(test_server)
 				LOG_INFO("XXX target too far {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
@@ -2406,7 +2406,7 @@ struct FuncSplashDamage
 					fCrushSlidingLength *= 2;
 
 				float fx, fy;
-				float degree = GetDegreeFromPositionXY(m_pkChr->GetX(), m_pkChr->GetY(), pkChrVictim->GetX(), pkChrVictim->GetY());
+				float degree = GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChr)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)));
 
 				if (m_pkSk->dwVnum == SKILL_HORSE_WILDATTACK)
 				{
@@ -2420,9 +2420,9 @@ struct FuncSplashDamage
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data(), pkChrVictim->GetX(), pkChrVictim->GetY(), pkChrVictim->GetX() + static_cast<int32_t>(fx), pkChrVictim->GetY() + static_cast<int32_t>(fy));
-				int32_t tx = pkChrVictim->GetX()+static_cast<int32_t>(fx);
-				int32_t ty = pkChrVictim->GetY()+static_cast<int32_t>(fy);
+				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fx), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fy));
+				int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim))+static_cast<int32_t>(fx);
+				int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim))+static_cast<int32_t>(fy);
 
 #ifdef ENABLE_BUG_FIXES
 				while (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim))->GetAttribute(tx, ty) & (ATTR_BLOCK | ATTR_OBJECT) && fCrushSlidingLength > 0) {
@@ -2433,8 +2433,8 @@ struct FuncSplashDamage
 					}
 
 					GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-					tx = pkChrVictim->GetX() + static_cast<int32_t>(fx);
-					ty = pkChrVictim->GetY() + static_cast<int32_t>(fy);
+					tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fx);
+					ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fy);
 				}
 #endif
 
@@ -2540,7 +2540,7 @@ struct FuncSplashAffect
 
 			if (test_server)
 				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
-			if (DISTANCE_APPROX(m_x - pkChr->GetX(), m_y - pkChr->GetY()) < m_iDist)
+			if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), m_y - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))) < m_iDist)
 			{
 				if (test_server)
 					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
@@ -2611,12 +2611,12 @@ EVENTFUNC(skill_gwihwan_event)
 		// Ľş°ř
 		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
 		{
-			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), pos.x, pos.y);
+			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
 		}
 		else
 		{
-			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY());
+			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
@@ -3020,7 +3020,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 		else
@@ -3096,10 +3096,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		return BATTLE_NONE;
 	}
 
-	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()) >= pkSk->dwTargetRange + 50)
+	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
-			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), (int32_t)DISTANCE_SQRT(GetX() - pkVictim->GetX(), GetY() - pkVictim->GetY()), pkSk->dwTargetRange);
+			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), (int32_t)DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))), pkSk->dwTargetRange);
 
 		return BATTLE_NONE;
 	}
@@ -3223,7 +3223,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			SetSkillHit(true);
 #endif
 
-			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
@@ -3260,7 +3260,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				{
 					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
-						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
@@ -3283,7 +3283,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				{
 					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
-						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
@@ -3313,7 +3313,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				{
 					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
-						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
@@ -3459,7 +3459,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				{
 					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 					{
-						FuncSplashAffect f(this, pkVictim->GetX(), pkVictim->GetY(), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 					}
 				}
@@ -3475,7 +3475,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(pkVictim->GetX(), pkVictim->GetY(), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 				ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 

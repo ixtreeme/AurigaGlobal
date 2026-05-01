@@ -369,8 +369,8 @@ void CLand::PutData(const TLand * data)
 					if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != m_data.lMapIndex)
 						continue;
 
-					int x = ((ch)->GetX()) - r->sx;
-					int y = ((ch)->GetY()) - r->sy;
+					int x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - r->sx;
+					int y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - r->sy;
 
 					if (x > m_data.x + m_data.width || x < m_data.x)
 						continue;
@@ -490,8 +490,8 @@ struct FIsIn
 			{
 				return;
 			}
-			if (sx <= ((ch)->GetX()) && ((ch)->GetX()) <= ex
-				&& sy <= ((ch)->GetY()) && ((ch)->GetY()) <= ey)
+			if (sx <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) <= ex
+				&& sy <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) <= ey)
 			{
 				bIn = true;
 			}

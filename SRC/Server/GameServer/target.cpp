@@ -86,7 +86,7 @@ EVENTFUNC(target_event)
 		case TARGET_TYPE_POS:
 			x = info->iArg1;
 			y = info->iArg2;
-			iDist = DISTANCE_APPROX(((pkChr)->GetX()) - x, ((pkChr)->GetY()) - y);
+			iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - y);
 			break;
 
 		case TARGET_TYPE_VID:
@@ -95,9 +95,9 @@ EVENTFUNC(target_event)
 
 				if (tch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)))
 				{
-					x = ((tch)->GetX());
-					y = ((tch)->GetY());
-					iDist = DISTANCE_APPROX(((pkChr)->GetX()) - x, ((pkChr)->GetY()) - y);
+					x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch));
+					y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch));
+					iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - y);
 				}
 			}
 			break;

@@ -535,7 +535,7 @@ ACMD(do_gotoxy)
 	str_to_number(x, arg1);
 	str_to_number(y, arg2);
 	PIXEL_POSITION p;
-	if (!SECTREE_MANAGER::instance().GetMapBasePosition(((ch)->GetX()), ((ch)->GetY()), p))
+	if (!SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), p))
 		return;
 
 	if (ch->GetGold() < 1000000) {
@@ -666,8 +666,8 @@ ACMD(do_go_savepoint) {
 			int x = atoi(data[c++]), y = atoi(data[c++]), mapIdx = atoi(data[c++]);
 
 			if (mapIdx == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) {
-				int x2 = x - ((ch)->GetX());
-				int y2 = y - ((ch)->GetY());
+				int x2 = x - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+				int y2 = y - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 				double nDist = 0;
 				const double nDistant = 5000.0;
 				nDist = sqrt(pow((float)x2, 2) + pow((float)y2, 2));
@@ -756,8 +756,8 @@ ACMD(do_save_savepoint) {
 			return;
 		}
 
-		int x = (((ch)->GetX()) - map->m_setting.iBaseX) / 100;
-		int y = (((ch)->GetY()) - map->m_setting.iBaseY) / 100;
+		int x = (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - map->m_setting.iBaseX) / 100;
+		int y = (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - map->m_setting.iBaseY) / 100;
 		PIXEL_POSITION pos = ch->GetXYZ();
 
 		char query2[512] = {0};

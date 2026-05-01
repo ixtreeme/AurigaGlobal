@@ -161,8 +161,8 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t item_vnum = (uint32_t) lua_tonumber(L, 1);
 		int count = (int) lua_tonumber(L, 2);
-		int32_t x = ((ch)->GetX());
-		int32_t y = ((ch)->GetY());
+		int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+		int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(item_vnum, count);
 
@@ -223,8 +223,8 @@ namespace quest
 			item->SetOwnership( ch );
 
 		PIXEL_POSITION pos;
-		pos.x = ((ch)->GetX()) + number(-200, 200);
-		pos.y = ((ch)->GetY()) + number(-200, 200);
+		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
 
 		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();
@@ -281,8 +281,8 @@ namespace quest
 			item->SetOwnership( ch );
 
 		PIXEL_POSITION pos;
-		pos.x = ((ch)->GetX()) + number(-200, 200);
-		pos.y = ((ch)->GetY()) + number(-200, 200);
+		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
 
 		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 		item->StartDestroyEvent();

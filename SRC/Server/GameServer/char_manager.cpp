@@ -648,15 +648,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 	}
 
@@ -820,15 +820,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)))
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (ch->IsMonster())
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ch->GetX(), ch->GetY(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
 		}
 	}
 
@@ -869,7 +869,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetLegacyVID(), ch->GetX(), ch->GetY());
+			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetLegacyVID(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -926,10 +926,10 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 			continue;
 		}
 
-		sx = tch->GetX() - number(300, 500);
-		sy = tch->GetY() - number(300, 500);
-		ex = tch->GetX() + number(300, 500);
-		ey = tch->GetY() + number(300, 500);
+		sx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) - number(300, 500);
+		sy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) - number(300, 500);
+		ex = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) + number(300, 500);
+		ey = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
 			tch->SetStone(m_pkChrSelectedStone);
@@ -1019,10 +1019,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 
 		tch->SetDungeon(pDungeon);
 
-		sx = tch->GetX() - number(300, 500);
-		sy = tch->GetY() - number(300, 500);
-		ex = tch->GetX() + number(300, 500);
-		ey = tch->GetY() + number(300, 500);
+		sx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) - number(300, 500);
+		sy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) - number(300, 500);
+		ex = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) + number(300, 500);
+		ey = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
 			tch->SetStone(m_pkChrSelectedStone);
@@ -1121,8 +1121,8 @@ void CHARACTER_MANAGER::Update(int iPulse)
 					continue;
 
 				const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
-				const int32_t x = ch->GetX();
-				const int32_t y = ch->GetY();
+				const int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+				const int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 				const int32_t z = ch->GetZ();
 
 				g_bDungeonTicketExtraMetinSpawn = true;
@@ -1311,7 +1311,7 @@ void CHARACTER_MANAGER::PacketMonsterLog(LPCHARACTER ch, const void* buf, int si
 	{
 		LPCHARACTER c = *it;
 
-		if (ch && DISTANCE_APPROX(c->GetX() - ch->GetX(), c->GetY() - ch->GetY()) > 6000)
+		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(c)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(c)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) > 6000)
 			continue;
 
 		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(c));
@@ -1838,8 +1838,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 		{
 			const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
-			const int32_t baseX = pkChr->GetX();
-			const int32_t baseY = pkChr->GetY();
+			const int32_t baseX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr));
+			const int32_t baseY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr));
 			const int32_t baseZ = pkChr->GetZ();
 
 			LPCHARACTER boss = nullptr;
@@ -1880,8 +1880,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
 			{
 				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
-				const int32_t baseX = pkChr->GetX();
-				const int32_t baseY = pkChr->GetY();
+				const int32_t baseX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr));
+				const int32_t baseY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr));
 				const int32_t baseZ = pkChr->GetZ();
 
 				LPCHARACTER boss = nullptr;

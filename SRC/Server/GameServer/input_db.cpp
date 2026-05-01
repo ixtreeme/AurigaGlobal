@@ -583,7 +583,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
 		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
 		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY());
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 		p.bChannel = g_bChannel;
 
 		P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
@@ -631,7 +631,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	ch->PointsPacket();
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ch->GetX(), ch->GetY(), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), ((ch)->GetLevel()), ch->GetPoint(POINT_MOV_SPEED), ch->GetJob(), ch->GetPoint(POINT_ATT_GRADE), ch->GetPoint(POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();
@@ -1803,8 +1803,8 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if (pos < 0)
 		{
 			PIXEL_POSITION coord;
-			coord.x = ch->GetX();
-			coord.y = ch->GetY();
+			coord.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+			coord.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 
 			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), coord);
 			item->SetOwnership(ch, 180);

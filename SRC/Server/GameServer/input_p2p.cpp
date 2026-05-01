@@ -315,8 +315,8 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 		TPacketGGWarpCharacter pw;
 		pw.header = HEADER_GG_WARP_CHARACTER;
 		pw.pid = p->dwFromPID;
-		pw.x = ((ch)->GetX());
-		pw.y = ((ch)->GetY());
+		pw.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+		pw.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
 #ifdef __CMD_WARP_IN_DUNGEON__
 		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 #endif

@@ -19,7 +19,7 @@ namespace quest
 
 				if ( (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) == true && ch->IsGM() != true )
 				{
-					if ( ((((ch)->GetX()) >= 764503 && ((ch)->GetX()) <= 772362) && (((ch)->GetY()) >= 22807 && ((ch)->GetY()) <= 26499)) == false )
+					if ( ((ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) >= 764503 && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) <= 772362) && (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) >= 22807 && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) <= 26499)) == false )
 					{
 						ch->GoHome();
 					}

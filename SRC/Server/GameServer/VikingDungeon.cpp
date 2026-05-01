@@ -1504,8 +1504,8 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
         SpawnFloor3ProtectorsForRemainingSlots(d);
 
-        const int32_t bossLocalX = std::max<int32_t>(1, killer->GetX() / 100 - kBaseCellX);
-        const int32_t bossLocalY = std::max<int32_t>(1, killer->GetY() / 100 - kBaseCellY);
+        const int32_t bossLocalX = std::max<int32_t>(1, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(killer)) / 100 - kBaseCellX);
+        const int32_t bossLocalY = std::max<int32_t>(1, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(killer)) / 100 - kBaseCellY);
         LPCHARACTER boss = d->SpawnMob(kFloor3BossVnum, bossLocalX, bossLocalY, 0);
         if (boss)
 		d->SetUnique("vk_floor3_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));

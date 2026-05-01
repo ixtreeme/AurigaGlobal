@@ -189,7 +189,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY())) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc))) < dist*100);
 			return 1;
 		}
 
@@ -224,7 +224,7 @@ namespace quest
 			if (ch == nullptr || npc == nullptr)
 				lua_pushboolean(L, false);
 			else
-				lua_pushboolean(L, DISTANCE_APPROX(((ch)->GetX()) - ((npc)->GetX()), ((ch)->GetY()) - ((npc)->GetY())) < dist*100);
+				lua_pushboolean(L, DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc))) < dist*100);
 			return 1;
 		}
 

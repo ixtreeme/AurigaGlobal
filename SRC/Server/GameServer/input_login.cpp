@@ -665,7 +665,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ch->GetItemAward_cmd())																		// ?
 		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ch->GetItemAward_vnum());	//questmanager ?
 
-	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 
 	if (ch->GetHorseLevel() > 0)
 	{
@@ -768,7 +768,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		{
 			ch->SetObserverMode(true);
 			ch->SetArenaObserverMode(true);
-			if (CArenaManager::instance().RegisterObserverPtr(ch, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() / 100, ch->GetY() / 100))
+			if (CArenaManager::instance().RegisterObserverPtr(ch, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100))
 			{
 				LOG_INFO("ARENA : Observer add failed");
 			}

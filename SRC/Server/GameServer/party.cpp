@@ -1088,7 +1088,7 @@ void CParty::HealParty()
 
 		auto* ch = it->second.pCharacter;
 
-		if (DISTANCE_APPROX(l->GetX()-ch->GetX(), l->GetY()-ch->GetY()) < PARTY_DEFAULT_RANGE)
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) < PARTY_DEFAULT_RANGE)
 		{
 			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetMaxHP()-ch->GetHP());
 			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ch->GetMaxSP()-ch->GetSP());
@@ -1153,7 +1153,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	{
 		PIXEL_POSITION p;
 
-		if (s.GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(l)), l->GetX() + xy [i][0], l->GetY() + xy[i][1], p))
+		if (s.GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(l)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l)) + xy [i][0], ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l)) + xy[i][1], p))
 		{
 			x[n] = p.x;
 			y[n] = p.y;
@@ -1203,7 +1203,7 @@ LPCHARACTER CParty::GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y)
 	{
 		auto* pkMember = m_itNextOwner->second.pCharacter;
 
-		if (pkMember && DISTANCE_APPROX(pkMember->GetX() - x, pkMember->GetY() - y) < 3000)
+		if (pkMember && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkMember)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkMember)) - y) < 3000)
 		{
 			IncreaseOwnership();
 			return pkMember;
@@ -1334,7 +1334,7 @@ void CParty::Update()
 		if (l->GetDungeon())
 			it->second.bNear = l->GetDungeon() == ch->GetDungeon();
 		else
-			it->second.bNear = (DISTANCE_APPROX(l->GetX()-ch->GetX(), l->GetY()-ch->GetY()) < PARTY_DEFAULT_RANGE);
+			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l))-ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) < PARTY_DEFAULT_RANGE);
 
 		if (it->second.bNear)
 		{
@@ -1535,7 +1535,7 @@ bool CParty::IsPositionNearLeader(LPCHARACTER ch)
 	if (!m_pkChrLeader)
 		return false;
 
-	if (DISTANCE_APPROX(ch->GetX() - m_pkChrLeader->GetX(), ch->GetY() - m_pkChrLeader->GetY()) >= PARTY_DEFAULT_RANGE)
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrLeader)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrLeader))) >= PARTY_DEFAULT_RANGE)
 		return false;
 
 	return true;

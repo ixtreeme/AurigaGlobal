@@ -270,8 +270,8 @@ public:
 		m_pkChr(pkChr),
 		m_iMinDistance(~(1L << 31)),
 		m_iMaxDistance(iMaxDistance),
-		m_lx(((pkChr)->GetX())),
-		m_ly(((pkChr)->GetY())),
+		m_lx(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr))),
+		m_ly(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))),
 		m_pkChrVictim(nullptr),
 		m_pkChrBuilding(nullptr)
 	{
@@ -332,7 +332,7 @@ public:
 				return false;
 		}
 
-		int iDistance = DISTANCE_APPROX(m_lx - ((pkChr)->GetX()), m_ly - ((pkChr)->GetY()));
+		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), m_ly - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));
 
 		if (iDistance < m_iMinDistance && iDistance <= m_iMaxDistance)
 		{

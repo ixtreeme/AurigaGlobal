@@ -2259,7 +2259,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 //	if (!test_server)
 	{
-		const float fDistFromCurrent = DISTANCE_SQRT((ch->GetX() - pinfo->lX) / 100, (ch->GetY() - pinfo->lY) / 100);
+		const float fDistFromCurrent = DISTANCE_SQRT((ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - pinfo->lX) / 100, (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - pinfo->lY) / 100);
 		float fDist = fDistFromCurrent;
 
 		// When movement is already in-flight, compare the next client target against the
@@ -2267,7 +2267,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		// packets get treated as teleports and the server rubberbands the player.
 		if (pinfo->bFunc == FUNC_MOVE &&
 			ch->GetCurrentMoveDuration() > 0 &&
-			(ch->GetCurrentDestX() != ch->GetX() || ch->GetCurrentDestY() != ch->GetY()))
+			(ch->GetCurrentDestX() != ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) || ch->GetCurrentDestY() != ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))))
 		{
 			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
 			fDist = std::min(fDistFromCurrent, fDistFromDest);
@@ -2276,7 +2276,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
-			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY(), ch->GetZ());
+			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
 			ch->Stop();
 			return;
 		}
@@ -2291,7 +2291,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
-			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX(), ch->GetY(), ch->GetZ());
+			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
 			ch->Stop();
 			return;
 		}
@@ -2637,7 +2637,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 		if (!victim->SetSyncOwner(ch))
 			continue;
 
-		const float fDistWithSyncOwner = DISTANCE_SQRT( (victim->GetX() - ch->GetX()) / 100, (victim->GetY() - ch->GetY()) / 100 );
+		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch))) / 100, (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) / 100 );
 		static constexpr float fLimitDistWithSyncOwner = 2500.f + 1000.f;
 
 		if (fDistWithSyncOwner > fLimitDistWithSyncOwner)
@@ -2648,7 +2648,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2656,7 +2656,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			}
 		}
 
-		const float fDist = DISTANCE_SQRT( (victim->GetX() - e->lX) / 100, (victim->GetY() - e->lY) / 100 );
+		const float fDist = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) - e->lX) / 100, (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) - e->lY) / 100 );
 
 
 		static constexpr int32_t g_lValidSyncInterval = 50 * 1000;
@@ -2674,7 +2674,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			{
 				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
 
-				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 
@@ -2685,7 +2685,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetX(), ch->GetY(), victim->GetX(), victim->GetY(), e->lX, e->lY);
+			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)), e->lX, e->lY);
 
 			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_CLOSE);
 

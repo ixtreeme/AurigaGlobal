@@ -601,9 +601,9 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		{
 			chHorse->SetNowWalking(false);
 			float fx, fy;
-			chHorse->SetRotation(GetDegreeFromPositionXY(chHorse->GetX(), chHorse->GetY(), GetX(), GetY())+180);
+			chHorse->SetRotation(GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(chHorse)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(chHorse)), GetX(), GetY())+180);
 			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
-			chHorse->Goto((int32_t)(chHorse->GetX()+fx), (int32_t) (chHorse->GetY()+fy));
+			chHorse->Goto((int32_t)(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(chHorse))+fx), (int32_t) (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(chHorse))+fy));
 			chHorse->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 		}
 

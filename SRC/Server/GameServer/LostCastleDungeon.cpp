@@ -182,8 +182,8 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = victim->GetX() + number(-200, 200);
-        pos.y = victim->GetY() + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) + number(-200, 200);
         pos.z = victim->GetZ();
 
         item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
@@ -356,7 +356,7 @@ namespace
         if (!clone)
             return;
 
-        if (clone->GetX() == tx && clone->GetY() == ty)
+        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)) == tx && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)) == ty)
             return;
 
         clone->StartStateMachine(1);
@@ -373,11 +373,11 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(target->GetX(), target->GetY());
+        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
         clone->Stop();
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
-        clone->SendMovePacket(FUNC_COMBO, motionIndex, clone->GetX(), clone->GetY(), 0, now);
+        clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
         clone->OnMove(true);
     }
 
@@ -386,12 +386,12 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(target->GetX(), target->GetY());
+        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
         clone->Stop();
 
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)
         const uint8_t func = (uint8_t)(FUNC_SKILL | (skillVnum & 0x7F));
-        clone->SendMovePacket(func, 0, clone->GetX(), clone->GetY(), 0, now);
+        clone->SendMovePacket(func, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
         clone->OnMove(true);
     }
 }
@@ -708,8 +708,8 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             // owner GLOBAL cell -> LOCAL cell (private map uses LOCAL in many APIs)
-            const int32_t ox = (owner->GetX() / 100) - baseCellX;
-            const int32_t oy = (owner->GetY() / 100) - baseCellY;
+            const int32_t ox = (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(owner)) / 100) - baseCellX;
+            const int32_t oy = (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(owner)) / 100) - baseCellY;
 
             int32_t sx = ox, sy = oy;
             for (int t = 0; t < 30; ++t)
@@ -1059,7 +1059,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
             }
 
-            const int32_t dist = DISTANCE_APPROX(target->GetX() - clone->GetX(), target->GetY() - clone->GetY());
+            const int32_t dist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)));
 
             // 1) Pending hit: damage only when we previously started an animation
             auto pendIt = s_lc.m_clonePending.find(cloneVid);
@@ -1123,8 +1123,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             // ha túl közel van, lépjen hátra kicsit (különben "átfut" és köröz)
             if (dist < desired - 40)
             {
-                const int32_t dx = clone->GetX() - target->GetX();
-                const int32_t dy = clone->GetY() - target->GetY();
+                const int32_t dx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
+                const int32_t dy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
                 float len = sqrtf((float)dx * (float)dx + (float)dy * (float)dy);
                 if (len < 1.0f) len = 1.0f;
 
@@ -1136,8 +1136,8 @@ void ClearClonesOnMap(int32_t mapIndex)
                     oy = offIt->second.second;
                 }
 
-                int32_t tx = target->GetX() + (int32_t)((dx / len) * desired) + ox;
-                int32_t ty = target->GetY() + (int32_t)((dy / len) * desired) + oy;
+                int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) + (int32_t)((dx / len) * desired) + ox;
+                int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) + (int32_t)((dy / len) * desired) + oy;
 
                 if (SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, tx, ty))
                     LostCastleCloneStartMove(clone, tx, ty, now);
@@ -1155,11 +1155,11 @@ void ClearClonesOnMap(int32_t mapIndex)
                     oy = offIt->second.second;
                 }
 
-                int32_t tx = target->GetX();
-                int32_t ty = target->GetY();
+                int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
+                int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
 
-                const int32_t dx = tx - clone->GetX();
-                const int32_t dy = ty - clone->GetY();
+                const int32_t dx = tx - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone));
+                const int32_t dy = ty - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone));
                 float len = sqrtf((float)dx * (float)dx + (float)dy * (float)dy);
                 if (len < 1.0f) len = 1.0f;
 
@@ -1169,8 +1169,8 @@ void ClearClonesOnMap(int32_t mapIndex)
 
                 if (!SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, tx, ty))
                 {
-                    tx = target->GetX();
-                    ty = target->GetY();
+                    tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
+                    ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
                 }
 
                 LostCastleCloneStartMove(clone, tx, ty, now);
@@ -1272,16 +1272,16 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
     int32_t spawned = 0;
     for (int32_t n = 0; n < count; ++n)
     {
-        int32_t gx = target->GetX();
-        int32_t gy = target->GetY();
+        int32_t gx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
+        int32_t gy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
 
         // try random nearby points
         for (int t = 0; t < 25; ++t)
         {
             const int dx = number(-400, 400);
             const int dy = number(-400, 400);
-            const int32_t tx = target->GetX() + dx;
-            const int32_t ty = target->GetY() + dy;
+            const int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) + dx;
+            const int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) + dy;
             if (SECTREE_MANAGER::instance().Get(mapIndex, tx, ty))
             {
                 gx = tx;
@@ -1509,8 +1509,8 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
     const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
-    const int32_t lobbyX = ch->GetX() / 100;
-    const int32_t lobbyY = ch->GetY() / 100;
+    const int32_t lobbyX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100;
+    const int32_t lobbyY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100;
 
     LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
 

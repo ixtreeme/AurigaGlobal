@@ -815,7 +815,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetX()) / 100 : 0);
+		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100 : 0);
 		return 1;
 	}
 
@@ -830,7 +830,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetY()) / 100 : 0);
+		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100 : 0);
 		return 1;
 	}
 
@@ -853,7 +853,7 @@ namespace quest
 			return 1;
 		}
 		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-		lua_pushnumber(L, pMap ? ((((ch)->GetX()) - pMap->m_setting.iBaseX) / 100) : (((ch)->GetX()) / 100));
+		lua_pushnumber(L, pMap ? ((ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - pMap->m_setting.iBaseX) / 100) : (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100));
 		return 1;
 	}
 
@@ -876,7 +876,7 @@ namespace quest
 			return 1;
 		}
 		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-		lua_pushnumber(L, pMap ? ((((ch)->GetY()) - pMap->m_setting.iBaseY) / 100) : (((ch)->GetY()) / 100));
+		lua_pushnumber(L, pMap ? ((ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - pMap->m_setting.iBaseY) / 100) : (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100));
 		return 1;
 	}
 
@@ -2673,8 +2673,8 @@ namespace quest
             }
             else
             {
-                exitPos->x = ((ch)->GetX());
-                exitPos->y = ((ch)->GetY());
+                exitPos->x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
+                exitPos->y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
             }
             if (const auto* mapIndex = ECS_TryGet<ecs::MapIndex>(e))
                 exitPos->mapIndex = mapIndex->value;
@@ -2779,8 +2779,8 @@ namespace quest
 			}
 			else
 			{
-				x = ((tch)->GetX()) / 100;
-				y = ((tch)->GetY()) / 100;
+				x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) / 100;
+				y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) / 100;
 			}
 		}
 
@@ -3320,7 +3320,7 @@ teleport_area:
 		const entt::entity pMeEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pMe = ecs::LegacyCharOf(pMeEntity);
 		LPCHARACTER pOther = CHARACTER_MANAGER::instance().Find(vid);
-		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(((pMe)->GetX()) - pOther->GetX(), ((pMe)->GetY()) - pOther->GetY()) < range) ? 1 : 0);
+		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pMe)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pOther)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pMe)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pOther))) < range) ? 1 : 0);
 		return 1;
 	}
 
@@ -3995,8 +3995,8 @@ teleport_area:
 					else
 						pkNewItem->SetOwnership(ch);
 				case PCMI0_DROP:
-					pos.x = ((ch)->GetX()) + number(-200, 200);
-					pos.y = ((ch)->GetY()) + number(-200, 200);
+					pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
+					pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
 
 					pkNewItem->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
 					pkNewItem->StartDestroyEvent();

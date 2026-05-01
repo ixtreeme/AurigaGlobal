@@ -594,8 +594,8 @@ namespace {
             m_lTargetY = 0;
             m_lTargetX = 0;
 
-            m_lX = pkWarp->GetX();
-            m_lY = pkWarp->GetY();
+            m_lX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkWarp));
+            m_lY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkWarp));
 
             m_bInvalid = false;
             m_bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkWarp));
@@ -644,7 +644,7 @@ namespace {
             if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
                 return;
 
-            int iDist = DISTANCE_APPROX(pkChr->GetX() - m_lX, pkChr->GetY() - m_lY);
+            int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - m_lX, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - m_lY);
 
             if (iDist > 300)
                 return;
@@ -744,7 +744,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         {
             if (CAN_ENTER_ZONE(this, mapIdx))
             {
-                WarpSet(victim->GetX(), victim->GetY());
+                WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
             }
             else
             {

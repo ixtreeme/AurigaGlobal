@@ -648,7 +648,7 @@ struct FuncAggregateMonster
 				return;
 
 			//if (number(1, 100) <= 50) // ӽ÷ 50% Ȯ  ´
-			if (DISTANCE_APPROX(ch->GetX() - m_ch->GetX(), ch->GetY() - m_ch->GetY()) < 7000)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_ch))) < 7000)
 				if (ch->CanBeginFight())
 					ch->BeginFight(m_ch);
 		}
@@ -676,7 +676,7 @@ struct FuncAggregateMonsterPlus
 
 			const int AGGRO_RANGE = 14000;
 
-			if (DISTANCE_APPROX(ch->GetX() - m_ch->GetX(), ch->GetY() - m_ch->GetY()) < AGGRO_RANGE)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_ch))) < AGGRO_RANGE)
 				if (ch->CanBeginFight())
 					ch->BeginFight(m_ch);
 
@@ -736,7 +736,7 @@ struct FuncPullMonster
 				return;
 			//if (ch->GetVictim() && ch->GetVictim() != m_ch)
 			//return;
-			float fDist = DISTANCE_APPROX(m_ch->GetX() - ch->GetX(), m_ch->GetY() - ch->GetY());
+			float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 			if (fDist > 3000 || fDist < 100)
 				return;
 
@@ -744,13 +744,13 @@ struct FuncPullMonster
 			if (fNewDist < 100)
 				fNewDist = 100;
 
-			float degree = GetDegreeFromPositionXY(ch->GetX(), ch->GetY(), m_ch->GetX(), m_ch->GetY());
+			float degree = GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_ch)));
 			float fx;
 			float fy;
 
 			GetDeltaByDegree(degree, fDist - fNewDist, &fx, &fy);
-			int32_t tx = (int32_t)(ch->GetX() + fx);
-			int32_t ty = (int32_t)(ch->GetY() + fy);
+			int32_t tx = (int32_t)(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + fx);
+			int32_t ty = (int32_t)(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + fy);
 
 			ch->Sync(tx, ty);
 			ch->Goto(tx, ty);
@@ -1092,7 +1092,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 			{
 				auto* ch = LegacyCharOf(it->first);
 
-				if (ch && !ch->IsDead() && DISTANCE_APPROX(ch->GetX() - GetX(), ch->GetY() - GetY()) < 5000)
+				if (ch && !ch->IsDead() && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - GetX(), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - GetY()) < 5000)
 				{
 					itFind = it;
 					iNewAggro = it->second.iAggro;
@@ -1448,13 +1448,13 @@ namespace NPartyExpDistribute
 		int		x, y;
 
 		FPartyTotaler(LegacyCharHandle center)
-			: total(0), member_count(0), x(center->GetX()), y(center->GetY())
+			: total(0), member_count(0), x(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(center))), y(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(center)))
 		{
 		};
 
 		void operator () (LegacyCharHandle ch)
 		{
-			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - y) <= PARTY_DEFAULT_RANGE)
 			{
 				total += __GetPartyExpNP(ch->GetLevel());
 
@@ -1473,7 +1473,7 @@ namespace NPartyExpDistribute
 		int		m_iMemberCount;
 
 		FPartyDistributor(LegacyCharHandle center, int member_count, int total, uint32_t iExp, int iMode)
-			: total(total), c(center), x(center->GetX()), y(center->GetY()), _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
+			: total(total), c(center), x(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(center))), y(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(center))), _iExp(iExp), m_iMode(iMode), m_iMemberCount(member_count)
 		{
 			if (m_iMemberCount == 0)
 				m_iMemberCount = 1;
@@ -1481,7 +1481,7 @@ namespace NPartyExpDistribute
 
 		void operator () (LegacyCharHandle ch)
 		{
-			if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - x, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - y) <= PARTY_DEFAULT_RANGE)
 			{
 				uint32_t iExp2 = 0;
 
@@ -1535,7 +1535,7 @@ typedef struct SDamageInfo
 			{
 				auto* tch = pParty->GetExpCentralizeCharacter();
 
-				if (DISTANCE_APPROX(ch->GetX() - tch->GetX(), ch->GetY() - tch->GetY()) <= PARTY_DEFAULT_RANGE)
+				if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch))) <= PARTY_DEFAULT_RANGE)
 				{
 					int iExpCenteralize = (int)(iExp * 0.05f);
 					iExp -= iExpCenteralize;
@@ -1580,7 +1580,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
-		if (!pAttacker || ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pAttacker)) || DISTANCE_APPROX(GetX() - pAttacker->GetX(), GetY() - pAttacker->GetY()) > 5000)
+		if (!pAttacker || ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pAttacker)) || DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pAttacker)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pAttacker))) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -2065,7 +2065,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 //					else {
 //						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller)))
 //						{
-//							FPartyAlignmentCompute f(-20000, pkKiller->GetX(), pkKiller->GetY());
+//							FPartyAlignmentCompute f(-20000, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkKiller)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkKiller)));
 //							ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkKiller))->ForEachOnlineMember(f);
 //
 //							if (f.m_iCount == 0)
@@ -2449,7 +2449,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	SECTREE* vsectree = ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim));
 
 	if (sectree && vsectree) {
-		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(pkVictim->GetX(), pkVictim->GetY(), ATTR_BANPK)) {
+		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), ATTR_BANPK)) {
 			if (GetDesc()) {
 				LogManager::instance().HackLog("ANTISAFEZONE", this);
 				GetDesc()->DelayedDisconnect(3);
@@ -2500,11 +2500,11 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			iRet = battle_melee_attack(this, pkVictim);
 			break;
 		case BATTLE_TYPE_RANGE:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(0) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		case BATTLE_TYPE_MAGIC:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), pkVictim->GetX(), pkVictim->GetY(), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(1) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		default:
@@ -5962,7 +5962,7 @@ public:
 
 		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(m_me)))
 		{
-			if (DISTANCE_APPROX(m_me->GetX() - pkVictim->GetX(), m_me->GetY() - pkVictim->GetY()) > 5000)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_me)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_me)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))) > 5000)
 				return;
 		}
 
@@ -6360,8 +6360,8 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 	if (pkVictim)
 	{
 		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
-		pack.x = pkVictim->GetX();
-		pack.y = pkVictim->GetY();
+		pack.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim));
+		pack.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim));
 
 		if (bHeader == HEADER_CG_FLY_TARGETING)
 			m_dwFlyTargetID = dwTargetVID;
@@ -6405,7 +6405,7 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 			pAttacker->IsAffectFlag(AFF_REVIVE_INVISIBLE))
 			continue;
 
-		float fDist = DISTANCE_APPROX(pAttacker->GetX() - pkChr->GetX(), pAttacker->GetY() - pkChr->GetY());
+		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pAttacker)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pAttacker)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));
 
 		if (fDist < fMinDist)
 		{
@@ -6690,16 +6690,16 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 	for (int step = ch->GetMaxSP() + 1; step <= wantStep; ++step)
 	{
 		ch->SetMaxSP(step);
-		ch->SendMovePacket(FUNC_ATTACK, 0, ch->GetX(), ch->GetY(), 0);
+		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), 0);
 
 		CHARACTER_MANAGER::instance().SelectStone(ch);
 
 		if (step == 10 || step == 9)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 1500, ch->GetY() - 1500, ch->GetX() + 1500, ch->GetY() + 1500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - 1500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - 1500, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + 1500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + 1500);
 		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 1000, ch->GetY() - 1000, ch->GetX() + 1000, ch->GetY() + 1000);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - 1000, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - 1000, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + 1000, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + 1000);
 		else if (step == 5 || step == 4 || step == 2)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetX() - 500, ch->GetY() - 500, ch->GetX() + 500, ch->GetY() + 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - 500, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + 500, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + 500);
 
 		CHARACTER_MANAGER::instance().SelectStone(nullptr);
 	}
@@ -7491,7 +7491,7 @@ void CHARACTER::CheckTarget()
 	if (!m_pkChrTarget)
 		return;
 
-	if (DISTANCE_APPROX(GetX() - m_pkChrTarget->GetX(), GetY() - m_pkChrTarget->GetY()) >= 4800)
+	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrTarget)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrTarget))) >= 4800)
 		SetTarget(nullptr);
 }
 
@@ -7502,7 +7502,7 @@ bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
 
 	uint32_t dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
 
-	if (DISTANCE_APPROX(GetX() - target->GetX(), GetY() - target->GetY()) >
+	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target))) >
 		AI_CHANGE_ATTACK_POISITION_DISTANCE + GetMobAttackRange())
 		dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
 
@@ -7671,7 +7671,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 			{
 				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
 				{
-					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(pkChr->GetX() - GetX(), pkChr->GetY() - GetY()))
+					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - GetX(), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - GetY()))
 						if (Return())
 							return true;
 				}
@@ -7680,8 +7680,8 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		return false;
 	}
 
-	int32_t x = pkChr->GetX();
-	int32_t y = pkChr->GetY();
+	int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr));
+	int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr));
 
 	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
 	{
@@ -7719,7 +7719,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		)
 	{
 		float rot = pkChr->GetRotation();
-		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), pkChr->GetX(), pkChr->GetY()));
+		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))));
 
 		float yourSpeed = pkChr->GetMoveSpeed();
 		float mySpeed = GetMoveSpeed();

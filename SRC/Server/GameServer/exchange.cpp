@@ -138,7 +138,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	}
 #endif
 	//END_PREVENT_TRADE_WINDOW
-	int iDist = DISTANCE_APPROX(GetX() - victim->GetX(), GetY() - victim->GetY());
+	int iDist = DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
 
 	// 거리 체크
 	if (iDist >= EXCHANGE_MAX_DISTANCE)

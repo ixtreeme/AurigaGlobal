@@ -1242,7 +1242,7 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) / 60, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0));
 #endif
-	LogManager::instance().VCardLog(p.dwID, CardTaker->GetX(), CardTaker->GetY(), g_stHostname.c_str(),
+	LogManager::instance().VCardLog(p.dwID, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(CardTaker)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(CardTaker)), g_stHostname.c_str(),
 			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetHostName(),
 			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetHostName());
 

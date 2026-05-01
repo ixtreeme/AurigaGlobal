@@ -217,7 +217,7 @@ ACMD(do_emotion)
 			return;
 		}
 
-		int32_t distance = DISTANCE_APPROX(((ch)->GetX()) - ((victim)->GetX()), ((ch)->GetY()) - ((victim)->GetY()));
+		int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
 
 		if (distance < 10)
 		{
