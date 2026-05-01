@@ -23,6 +23,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include <string_view>
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -279,20 +280,20 @@ bool Cube_load (const char *file)
 }
 
 
-SItemNameAndLevel SplitItemNameAndLevelFromName(const std::string& name)
+SItemNameAndLevel SplitItemNameAndLevelFromName(std::string_view name)
 {
 	int level = 0;
 	SItemNameAndLevel info;
-	info.name = name;
+	info.name.assign(name.data(), name.size());
 
 	size_t pos = name.find("+");
 	
-	if (std::string::npos != pos)
+	if (std::string_view::npos != pos)
 	{
-		const std::string levelStr = name.substr(pos + 1, name.size() - pos - 1);
+		const std::string levelStr(name.substr(pos + 1, name.size() - pos - 1));
 		str_to_number(level, levelStr.c_str());
 
-		info.name = name.substr(0, pos);
+		info.name.assign(name.data(), pos);
 	}
 
 	info.level = level;
