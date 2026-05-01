@@ -1,0 +1,351 @@
+# Phase 15E-60.5 - Legacy fallback elimination audit
+
+Date: 2026-05-02
+Scope: audit and plan only. No source-code migration performed.
+
+## 1. Executive summary
+
+The current ECS API is mixed:
+
+- Pure ECS reads already exist for position and the safest stat/affect reads:
+  PlayerRuntime::GetMapIndex/GetX/GetY, PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel, AffectSystem::FindAffect/IsAffectFlag.
+- Several PlayerRuntime identity and predicate accessors are ECS-first but still fall back to LegacyCharOf(e)->GetX/IsX.
+- PointSystem::Get and PointSystem::GetReal are legacy-first by design from the 15C-1j parking decision. This preserves POINT_* semantic routing, but it is architectural debt.
+- Service-object and behavior APIs such as GetDesc, GetSectree, SocialSystem::GetParty/GetGuild, QuestSystem::GetFlag, ChatSystem sends, CombatSystem, SkillSystem, MountSystem, ItemSystem and GayaSystem still delegate heavily to CHARACTER.
+
+Architectural conclusion:
+
+The migration is not yet "pure ECS". It is safe and production-tested for the migrated caller side, but any ECS read API that calls LegacyCharOf in production is still an OOP bridge. The next phases should remove read fallbacks by making ECS components the single source of truth and syncing legacy writes into ECS.
+
+## 2. Classification rules used
+
+PURE ECS:
+Reads only ECS components/tags and returns a default if the entity/component is missing.
+
+ECS-FIRST + FALLBACK:
+Reads ECS first, then calls LegacyCharOf(e)->... if the component/tag is missing.
+
+LEGACY-FIRST:
+Calls LegacyCharOf first and only uses ECS as a secondary path, or not at all.
+
+LEGACY-ONLY:
+No ECS read path exists.
+
+WRITE/SYNC BRIDGE:
+Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state into ECS. This is not a read fallback, but it is still migration debt unless the API is intentionally a side-effect adapter.
+
+## 3. Accessor inventory
+
+| Namespace::Function | Status | File:Line | Why |
+|---------------------|--------|-----------|-----|
+| PlayerRuntime::GetDesc | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp:67 | LPDESC is still stored on CHARACTER/NetworkSession boundary is not fully used here. |
+| PlayerRuntime::GetPlayerID | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:73 | Reads PlayerID, then falls back to ch->GetPlayerID(). |
+| PlayerRuntime::GetEmpire | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:84 | Reads EmpireComponent, then falls back to ch->GetEmpire(). |
+| PlayerRuntime::GetGMLevel | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:95 | Reads GMLevel/runtime flags, then falls back to ch->GetGMLevel(). |
+| PlayerRuntime::GetPacketVID | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:109 | Reads VIDComponent, then falls back to ch->GetPacketVID(). |
+| PlayerRuntime::GetRaceNum | LEGACY-FIRST | PlayerRuntimeSystem.cpp:120 | Uses ch->GetRaceNum() first to preserve polymorph/mob data semantics. |
+| PlayerRuntime::GetName | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:134 | Reads PlayerName, then falls back to ch->GetName(). |
+| PlayerRuntime::GetMapIndex | PURE ECS | PlayerRuntimeSystem.cpp:145 | Reads MapIndex component only. |
+| PlayerRuntime::GetX | PURE ECS | PlayerRuntimeSystem.cpp:155 | Reads Position.x only. |
+| PlayerRuntime::GetY | PURE ECS | PlayerRuntimeSystem.cpp:165 | Reads Position.y only. |
+| PlayerRuntime::GetSectree | LEGACY-ONLY | PlayerRuntimeSystem.cpp:175 | LPSECTREE remains a legacy spatial service pointer. |
+| PlayerRuntime::IsPC | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:181 | TagPC check, then ch->IsPC(). |
+| PlayerRuntime::IsNPC | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:190 | TagNPC check, then ch->IsNPC(). |
+| PlayerRuntime::IsStone | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:199 | TagStone check, then ch->IsStone(). |
+| PlayerRuntime::IsMonster | ECS-FIRST + FALLBACK | PlayerRuntimeSystem.cpp:208 | TagMonster check, then ch->IsMonster(). |
+| PointSystem::Get | LEGACY-FIRST | SRC/Server/GameServer/ecs/systems/PointSystem.cpp:88 | Delegates to ch->GetPoint(type) to preserve POINT_* semantic split. |
+| PointSystem::GetReal | LEGACY-FIRST | PointSystem.cpp:96 | Delegates to ch->GetRealPoint(type). |
+| PointSystem::GetGold | PURE ECS | PointSystem.cpp:104 | Reads GoldAmount component. |
+| PointSystem::GetMaxHP | PURE ECS | PointSystem.cpp:114 | Reads Health.max. |
+| PointSystem::GetMaxSP | PURE ECS | PointSystem.cpp:124 | Reads Mana.max. |
+| PointSystem::GetLevel | PURE ECS | PointSystem.cpp:134 | Reads LevelComponent.value. Hotfix changed return type to int32_t to avoid signed byte overflow. |
+| PointSystem::Change | WRITE/SYNC BRIDGE | PointSystem.cpp:144 | Still calls legacy ch->PointChange(), which must sync ECS mirrors. |
+| AffectSystem::FindAffect | PURE ECS | SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:577 | Reads AffectList mirror. |
+| AffectSystem::IsAffectFlag | PURE ECS | AffectSystem.cpp:601 | Reads AffectList.flags mirror. |
+| AffectSystem::IsImmune | LEGACY-ONLY | AffectSystem.cpp:496 | Reads ch->GetImmuneFlag(); no ECS immune component yet. |
+| AffectSystem::Add/Remove/Clear/RefreshAffect | WRITE/SYNC BRIDGE | AffectSystem.cpp:614-668 | Calls legacy affect mutation, then SyncAffectList. |
+| SocialSystem::GetParty | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:28 | Party pointer remains on CHARACTER. |
+| SocialSystem::GetGuild | LEGACY-ONLY | SocialSystem.cpp:37 | Guild pointer remains on CHARACTER. |
+| QuestSystem::GetFlag | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/QuestSystem.cpp:12 | Quest flag storage remains in quest/CHARACTER path. |
+| QuestSystem::SetFlag | WRITE/SYNC BRIDGE | QuestSystem.cpp:21 | Delegates to legacy SetQuestFlag. |
+| ChatSystem::Send/SendNew/Broadcast | WRITE/SYNC BRIDGE | SRC/Server/GameServer/ecs/systems/ChatSystem.cpp:49,95,151 | Uses CHARACTER/desc packet output path. |
+| CombatSystem core wrappers | LEGACY-ONLY / WRITE BRIDGE | SRC/Server/GameServer/ecs/systems/CombatSystem.cpp:134-418 | Combat behavior still mostly delegates to CHARACTER methods. |
+| SkillSystem skill data reads | MIXED | SRC/Server/GameServer/ecs/systems/SkillSystem.cpp:146-184 | Basic skill levels/groups are ECS; learn/use/hit/cooltime behavior still delegates. |
+| MountSystem riding/horse accessors | LEGACY-ONLY / WRITE BRIDGE | SRC/Server/GameServer/ecs/systems/MountSystem.cpp:79-323 | Mount state has ECS component pieces, but behavior and reads still route to CHARACTER. |
+
+## 4. Fallback sites and cause classification
+
+### Cause A - tag/component not trusted on all entity paths
+
+Affected:
+
+- PlayerRuntime::IsPC
+- PlayerRuntime::IsNPC
+- PlayerRuntime::IsStone
+- PlayerRuntime::IsMonster
+- PlayerRuntime::GetPlayerID
+- PlayerRuntime::GetEmpire
+- PlayerRuntime::GetGMLevel
+- PlayerRuntime::GetPacketVID
+- PlayerRuntime::GetName
+
+Observed factory coverage:
+
+- EntityFactory::CreatePlayer populates PlayerID, AccountID, EmpireComponent, RaceComponent, PlayerName, GMLevel, TagPC, Position, Health, Mana, LevelComponent, Experience, CharacterPoints, GoldAmount.
+- EntityFactory::CreateMonster/CreateNPC/CreateStone route through CreateMobEntity<TagMonster/TagNPC/TagStone>, which populates RaceComponent, tag, Position, MapIndex, Health, Mana, LevelComponent and CharacterPoints.
+
+Root cause:
+
+The main factory paths are populated, but the fallback exists because previous regressions showed some runtime paths did not have reliable tags/components at read time. The likely causes are legacy creation paths, reuse of existing VID entities, or state initialization order before factory population is complete.
+
+Required elimination action:
+
+Add a tag/component invariant check and then remove fallback only after every CHARACTER creation path is routed through EntityFactory or calls a single post-create ECS hydration hook.
+
+### Cause B - stale or incomplete write-side sync
+
+Affected:
+
+- Position components were fixed by 15E-59 Hotfix v2 and are now pure reads.
+- PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel are pure reads, but remain dependent on all legacy writes syncing GoldAmount, Health.max, Mana.max and LevelComponent.
+- AffectSystem::FindAffect/IsAffectFlag are pure reads, but remain dependent on SyncAffectList after every affect mutation.
+
+Observed position sync coverage:
+
+- MovementSystem.cpp:152-153 syncs SetXYZ movement writes.
+- MovementSystem.cpp:368-369 syncs CHARACTER::Sync.
+- SessionSystem.cpp:903-904 syncs login/show placement.
+- PlayerRuntimeSystem.cpp:3750-3752 syncs exit/saved-location restore.
+- PlayerRuntimeSystem.cpp:3984 syncs OnMove/current position mirror.
+
+Potential unsynced position write risks:
+
+- LostCastleDungeon.cpp clone SetXYZ/SetMapIndex paths.
+- new_offlineshop_manager.cpp NPC/entity SetMapIndex/SetXYZ paths.
+- SkillSystem.cpp direct m_x/m_y writes around line 2517.
+
+These are not necessarily player-character reads, but they must be reviewed before claiming full pure ECS position coverage for every entity type.
+
+### Cause C - legacy factory routing bypass
+
+Risk:
+
+Any code that constructs or reuses CHARACTER without EntityFactory hydration can miss tags/components. This is the likely historical source of predicate fallback.
+
+Required elimination action:
+
+Inventory all CHARACTER creation/reuse paths and enforce one of:
+
+- Route through EntityFactory.
+- Call a post-create HydrateCharacterEntity(reg, ch, entity) hook.
+- Assert in debug/test builds when a live character entity lacks the expected core components.
+
+### Cause D - state-dependent behavior not modeled in ECS
+
+Affected:
+
+- PlayerRuntime::GetRaceNum: polymorph race, mob prototype race, and player job are still encoded in CHARACTER::GetRaceNum().
+- PlayerRuntime::GetSectree: sectree service pointer is not modeled.
+- AffectSystem::IsImmune: immune flags are still legacy.
+- CombatSystem alignment/PK/dead/stun/victim state wrappers.
+- SkillSystem learn/use/hit/cooltime behavior wrappers.
+- MountSystem riding/horse behavior wrappers.
+
+Required elimination action:
+
+Extend components before removing fallback. Examples:
+
+- RaceState component: baseRace, currentRace, polymorphRace.
+- SpatialPlacement/SectreeRef component or service query adapter.
+- ImmunityFlags component.
+- CombatState component: dead, stun, victim, alignment, PK mode.
+- MountState read completion: riding, mountVnum, horse state.
+
+### Cause E - accepted legacy-only behavior until later phases
+
+Affected:
+
+- ChatSystem output path.
+- SocialSystem party/guild pointers.
+- QuestSystem flags.
+- Large parts of CombatSystem, SkillSystem, MountSystem, ItemSystem and GayaSystem.
+- NetworkSyncSystem packet writes.
+
+These are not good permanent ECS APIs, but they are outside the safe scope of a fallback cleanup pass. Treat them as explicit future migration phases, not accidental bugs.
+
+## 5. Tag population audit
+
+Main EntityFactory paths are correctly populated:
+
+- PC: TagPC plus PlayerID, AccountID, EmpireComponent, RaceComponent, PlayerName, GMLevel, Position, Health, Mana, LevelComponent, Experience, CharacterPoints, GoldAmount.
+- Monster: CreateMobEntity<TagMonster>.
+- NPC: CreateMobEntity<TagNPC>.
+- Stone: CreateMobEntity<TagStone>.
+
+No trivial missing emplace<Tag*> fix was found in the main factory path.
+
+Recommended follow-up:
+
+- Add a debug-only ValidateCoreCharacterComponents(entt::entity e) helper.
+- Validate PC entities have TagPC, PlayerID, PlayerName, EmpireComponent, VIDComponent, Position, MapIndex, Health, Mana, LevelComponent.
+- Validate mob/NPC/stone entities have one type tag, RaceComponent, VIDComponent, Position, MapIndex, Health, LevelComponent.
+- Run validation after create, Show, warp, and player load.
+
+## 6. Position sync audit
+
+Current pure ECS position reads are valid because the write-side sync exists in the important runtime paths:
+
+- Movement update.
+- CHARACTER::Sync.
+- Show/login placement.
+- saved-location restore.
+- OnMove/pre-attack movement mirror.
+
+Known review items before declaring complete for all entity types:
+
+- LostCastleDungeon clone position setup.
+- new_offlineshop_manager entity setup.
+- SkillSystem direct m_x/m_y mutation.
+
+Recommended action:
+
+Phase 15E-60.7 should add a small central SyncPositionComponents call or route those paths through the same Movement/Show APIs if they affect real ECS-readable entities.
+
+## 7. Stat and affect sync audit
+
+### Stats
+
+PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel are pure ECS and production-tested after the GetLevel int32_t hotfix.
+
+Remaining architectural debt:
+
+- PointSystem::Get delegates to ch->GetPoint(type).
+- PointSystem::GetReal delegates to ch->GetRealPoint(type).
+- PointSystem::Change delegates to ch->PointChange(), so the write side still lives in legacy.
+
+Reason:
+
+The 15C-1j lesson remains valid: POINT_* is not one flat storage class. It has true stat-array, virtual/live, and computed values. Removing the bridge before modeling this semantic split would risk damage, EXP, HP/SP and gold regressions.
+
+Required component model:
+
+- CharacterPoints for true stat-array values.
+- Dedicated live components for HP, SP, EXP, Gold.
+- Computed route for POINT_NEXT_EXP and derived values.
+- One ECS semantic router for POINT_* reads, equivalent to legacy GetPoint behavior.
+
+### Affects
+
+AffectSystem::FindAffect and IsAffectFlag read AffectList and are pure ECS.
+
+Sync coverage:
+
+- AddAffect, RemoveAffect, ClearAffect and RefreshAffect wrappers call SyncAffectList after legacy mutation.
+- UpdateAffect periodically calls SyncAffectList.
+
+Risks:
+
+- Direct legacy mutation of m_list_pkAffect or m_afAffectFlag inside CHARACTER methods can bypass the mirror.
+- LoadAffect and ProcessAffect contain direct list/flag work; verify SyncAffectList runs after all load/process transitions.
+
+Recommended action:
+
+Phase 15E-60.7 should add a focused audit/fix for every m_list_pkAffect and m_afAffectFlag write that does not go through the wrapper or does not call SyncAffectList.
+
+## 8. Bucket breakdown
+
+Bucket 1 - Tag population and invariant fixes
+
+- Scope: IsPC/IsNPC/IsStone/IsMonster and scalar identity fallback prerequisites.
+- Effort: 1-2 days.
+- Risk: low to medium.
+- Validation: remove predicate fallback, run combat, NPC dialog, metin stone, mob drop tests.
+
+Bucket 2 - Sync-at-write fixes
+
+- Scope: position tail write paths, stat component write coverage, affect mirror coverage.
+- Effort: 2-4 days.
+- Risk: medium.
+- Validation: movement/warp/mount attack, stat/gold/affect persistence, VID_DRIFT and POINT_DRIFT checks.
+
+Bucket 3 - Factory routing fixes
+
+- Scope: ensure all CHARACTER creation/reuse paths hydrate ECS components.
+- Effort: 3-5 days.
+- Risk: high.
+- Validation: login, mob spawn, NPC spawn, stone spawn, dungeon clone, offline shop entity, reload/reuse paths.
+
+Bucket 4 - Component extension
+
+- Scope: RaceState/polymorph, SectreeRef/spatial adapter, ImmunityFlags, CombatState, MountState read completion.
+- Effort: 4-8 days depending on breadth.
+- Risk: medium.
+- Validation: polymorph, sectree/zone logic, immunity, combat, mount.
+
+Bucket 5 - Accepted debt
+
+- Scope: QuestSystem, ChatSystem, SocialSystem, NetworkSyncSystem, large legacy side-effect wrappers.
+- Effort: later dedicated phases.
+- Risk: high if bundled with fallback cleanup.
+- Recommendation: do not mix with 15E-60.6.
+
+## 9. Recommended phase structure
+
+Phase 15E-60.6 - Predicate fallback removal
+
+- Add/harden core entity hydration and invariant validation.
+- Remove LegacyCharOf fallback from IsPC/IsNPC/IsStone/IsMonster.
+- Keep behavior unchanged, but fail closed if tags are missing.
+
+Phase 15E-60.7 - Scalar identity fallback removal
+
+- Prove PlayerID, Empire, GMLevel, PacketVID and PlayerName are always populated.
+- Remove fallback from GetPlayerID/GetEmpire/GetGMLevel/GetPacketVID/GetName.
+- Add explicit sync/hydration at player load and descriptor attach if needed.
+
+Phase 15E-60.8 - Generic POINT router
+
+- Implement ECS semantic router for PointSystem::Get/GetReal.
+- Preserve 15C-1j semantic split.
+- Remove ch->GetPoint/ch->GetRealPoint bridge.
+
+Phase 15E-60.9 - State extension pass
+
+- Add RaceState for polymorph/current race and remove GetRaceNum legacy-first.
+- Add ImmunityFlags and remove AffectSystem::IsImmune legacy read.
+- Decide SectreeRef/service adapter strategy before removing GetSectree bridge.
+
+Phase 15E-61+ - Service/behavior systems
+
+- CombatSystem, SkillSystem, MountSystem, ItemSystem, GayaSystem, SocialSystem, QuestSystem and ChatSystem still contain large behavior bridges.
+- These need domain-specific migrations, not a generic fallback cleanup.
+
+## 10. Final architectural conclusion
+
+Closest to target:
+
+- Position reads.
+- Gold/max HP/max SP/level reads.
+- Affect flag/find reads.
+
+Transitional but removable soon:
+
+- Type predicates.
+- Scalar identity getters.
+- GetName.
+
+Architectural debt that must not be hidden:
+
+- GetRaceNum.
+- GetDesc/GetSectree.
+- PointSystem::Get/GetReal.
+- SocialSystem and QuestSystem accessors.
+- Combat/Skill/Mount/Item/Gaya side-effect wrappers.
+
+Target end state:
+
+- ECS components are the single source of truth.
+- Legacy CHARACTER is a transient compatibility cache.
+- Legacy writes sync into ECS.
+- ECS read APIs never call LegacyCharOf.
+- Legacy side-effect adapters remain only where the subsystem itself has not yet been migrated, and they are documented as future phase boundaries.
