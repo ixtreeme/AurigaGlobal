@@ -10857,3 +10857,26 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Notes:
 - During GetX/GetY migration, one scripted replacement bug produced partial receiver substitutions such as `tecs::` and `m_ecs::`; these were fixed before the green build.
 - Generic LPENTITY and building/object position reads were intentionally left on their native methods.
+
+
+## Phase 15E-59 Hotfix - Mounted Combat Position Drift
+
+Symptom:
+- Mounted character could run to a metin stone and start attacking, but melee/skill damage did not apply.
+- After dismounting and moving to another stone, damage worked again; remounting reproduced the no-damage state.
+
+Root cause:
+- Phase 15E-59 changed PlayerRuntime::GetX/GetY/GetMapIndex to prefer ECS Position/MapIndex components.
+- Mounted movement can leave ECS Position stale behind the live legacy CHARACTER coordinates.
+- Combat range checks then evaluated against stale ECS coordinates and rejected damage as out-of-range.
+
+Fix:
+- PlayerRuntime::GetMapIndex/GetX/GetY now prefer live legacy CHARACTER coordinates when a legacy character exists.
+- ECS component reads remain as fallback for non-legacy/pure ECS entities.
+
+Verification:
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- WinTest pending: mounted melee/skill damage against metin stones, dismount/remount, map transfer, VID_DRIFT.

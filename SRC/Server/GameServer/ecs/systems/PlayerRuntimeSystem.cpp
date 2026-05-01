@@ -143,35 +143,44 @@ std::string_view GetName(entt::entity e)
 
 int32_t GetMapIndex(entt::entity e)
 {
+	auto* ch = ecs::LegacyCharOf(e);
+	if (ch)
+		return ch->GetMapIndex();
+
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* map = g_registry.try_get<ecs::MapIndex>(e))
 			return map->value;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetMapIndex() : 0;
+	return 0;
 }
 
 int32_t GetX(entt::entity e)
 {
+	auto* ch = ecs::LegacyCharOf(e);
+	if (ch)
+		return ch->GetX();
+
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
 			return pos->x;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetX() : 0;
+	return 0;
 }
 
 int32_t GetY(entt::entity e)
 {
+	auto* ch = ecs::LegacyCharOf(e);
+	if (ch)
+		return ch->GetY();
+
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
 			return pos->y;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetY() : 0;
+	return 0;
 }
 
 LPSECTREE GetSectree(entt::entity e)
