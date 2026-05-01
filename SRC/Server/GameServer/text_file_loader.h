@@ -3,6 +3,7 @@
 #include <common/d3dtype.h>
 #include <common/pool.h>
 #include "file_loader.h"
+#include <string_view>
 
 typedef std::map<std::string, TTokenVector, std::less<>> TTokenVectorMap;
 
@@ -35,30 +36,30 @@ public:
     uint32_t GetChildNodeCount();
 
     bool SetChildNode(const char* c_szKey);
-    bool SetChildNode(const std::string& c_rstrKeyHead, uint32_t dwIndex);
+    bool SetChildNode(std::string_view c_rstrKeyHead, uint32_t dwIndex);
     bool SetChildNode(uint32_t dwIndex);
     bool SetParentNode();
     bool GetCurrentNodeName(std::string* pstrName);
 
-    bool IsToken(const std::string& c_rstrKey);
-    bool GetTokenVector(const std::string& c_rstrKey, TTokenVector** ppTokenVector);
-    bool GetTokenBoolean(const std::string& c_rstrKey, bool* pData);
-    bool GetTokenByte(const std::string& c_rstrKey, uint8_t* pData);
-    bool GetTokenWord(const std::string& c_rstrKey, uint16_t* pData);
-    bool GetTokenInteger(const std::string& c_rstrKey, int* pData);
-    bool GetTokenDoubleWord(const std::string& c_rstrKey, uint32_t* pData);
-    bool GetTokenFloat(const std::string& c_rstrKey, float* pData);
+    bool IsToken(std::string_view c_rstrKey);
+    bool GetTokenVector(std::string_view c_rstrKey, TTokenVector** ppTokenVector);
+    bool GetTokenBoolean(std::string_view c_rstrKey, bool* pData);
+    bool GetTokenByte(std::string_view c_rstrKey, uint8_t* pData);
+    bool GetTokenWord(std::string_view c_rstrKey, uint16_t* pData);
+    bool GetTokenInteger(std::string_view c_rstrKey, int* pData);
+    bool GetTokenDoubleWord(std::string_view c_rstrKey, uint32_t* pData);
+    bool GetTokenFloat(std::string_view c_rstrKey, float* pData);
 
-    bool GetTokenVector2(const std::string& c_rstrKey, D3DXVECTOR2* pVector2);
-    bool GetTokenVector3(const std::string& c_rstrKey, D3DXVECTOR3* pVector3);
-    bool GetTokenVector4(const std::string& c_rstrKey, D3DXVECTOR4* pVector4);
+    bool GetTokenVector2(std::string_view c_rstrKey, D3DXVECTOR2* pVector2);
+    bool GetTokenVector3(std::string_view c_rstrKey, D3DXVECTOR3* pVector3);
+    bool GetTokenVector4(std::string_view c_rstrKey, D3DXVECTOR4* pVector4);
 
-    bool GetTokenPosition(const std::string& c_rstrKey, D3DXVECTOR3* pVector);
-    bool GetTokenQuaternion(const std::string& c_rstrKey, D3DXQUATERNION* pQ);
-    bool GetTokenDirection(const std::string& c_rstrKey, D3DVECTOR* pVector);
-    bool GetTokenColor(const std::string& c_rstrKey, D3DXCOLOR* pColor);
-    bool GetTokenColor(const std::string& c_rstrKey, D3DCOLORVALUE* pColor);
-    bool GetTokenString(const std::string& c_rstrKey, std::string* pString);
+    bool GetTokenPosition(std::string_view c_rstrKey, D3DXVECTOR3* pVector);
+    bool GetTokenQuaternion(std::string_view c_rstrKey, D3DXQUATERNION* pQ);
+    bool GetTokenDirection(std::string_view c_rstrKey, D3DVECTOR* pVector);
+    bool GetTokenColor(std::string_view c_rstrKey, D3DXCOLOR* pColor);
+    bool GetTokenColor(std::string_view c_rstrKey, D3DCOLORVALUE* pColor);
+    bool GetTokenString(std::string_view c_rstrKey, std::string* pString);
 
 protected:
     bool LoadGroup(TGroupNode* pGroupNode);

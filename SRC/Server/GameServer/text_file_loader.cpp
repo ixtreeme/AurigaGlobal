@@ -179,10 +179,10 @@ bool CTextFileLoader::SetChildNode(const char* c_szKey)
     return false;
 }
 
-bool CTextFileLoader::SetChildNode(const std::string& c_rstrKeyHead, uint32_t dwIndex)
+bool CTextFileLoader::SetChildNode(std::string_view c_rstrKeyHead, uint32_t dwIndex)
 {
     char szKey[32];
-    snprintf(szKey, sizeof(szKey), "%s%02u", c_rstrKeyHead.c_str(), (unsigned int)dwIndex);
+    snprintf(szKey, sizeof(szKey), "%.*s%02u", static_cast<int>(c_rstrKeyHead.size()), c_rstrKeyHead.data(), (unsigned int)dwIndex);
     return SetChildNode(szKey);
 }
 
@@ -235,7 +235,7 @@ bool CTextFileLoader::GetCurrentNodeName(std::string* pstrName)
     return true;
 }
 
-bool CTextFileLoader::IsToken(const std::string& c_rstrKey)
+bool CTextFileLoader::IsToken(std::string_view c_rstrKey)
 {
     if (!m_pcurNode)
     {
@@ -246,7 +246,7 @@ bool CTextFileLoader::IsToken(const std::string& c_rstrKey)
     return m_pcurNode->LocalTokenVectorMap.end() != m_pcurNode->LocalTokenVectorMap.find(c_rstrKey);
 }
 
-bool CTextFileLoader::GetTokenVector(const std::string& c_rstrKey, TTokenVector** ppTokenVector)
+bool CTextFileLoader::GetTokenVector(std::string_view c_rstrKey, TTokenVector** ppTokenVector)
 {
     if (!m_pcurNode)
     {
@@ -257,7 +257,7 @@ bool CTextFileLoader::GetTokenVector(const std::string& c_rstrKey, TTokenVector*
     TTokenVectorMap::iterator it = m_pcurNode->LocalTokenVectorMap.find(c_rstrKey);
     if (m_pcurNode->LocalTokenVectorMap.end() == it)
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenVector - Failed to find the key {} [{} :: {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenVector - Failed to find the key {} [{} :: {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -265,7 +265,7 @@ bool CTextFileLoader::GetTokenVector(const std::string& c_rstrKey, TTokenVector*
     return true;
 }
 
-bool CTextFileLoader::GetTokenBoolean(const std::string& c_rstrKey, bool* pData)
+bool CTextFileLoader::GetTokenBoolean(std::string_view c_rstrKey, bool* pData)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -273,7 +273,7 @@ bool CTextFileLoader::GetTokenBoolean(const std::string& c_rstrKey, bool* pData)
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenBoolean - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenBoolean - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -283,7 +283,7 @@ bool CTextFileLoader::GetTokenBoolean(const std::string& c_rstrKey, bool* pData)
     return true;
 }
 
-bool CTextFileLoader::GetTokenByte(const std::string& c_rstrKey, uint8_t* pData)
+bool CTextFileLoader::GetTokenByte(std::string_view c_rstrKey, uint8_t* pData)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -291,7 +291,7 @@ bool CTextFileLoader::GetTokenByte(const std::string& c_rstrKey, uint8_t* pData)
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenByte - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenByte - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -301,7 +301,7 @@ bool CTextFileLoader::GetTokenByte(const std::string& c_rstrKey, uint8_t* pData)
     return true;
 }
 
-bool CTextFileLoader::GetTokenWord(const std::string& c_rstrKey, uint16_t* pData)
+bool CTextFileLoader::GetTokenWord(std::string_view c_rstrKey, uint16_t* pData)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -309,7 +309,7 @@ bool CTextFileLoader::GetTokenWord(const std::string& c_rstrKey, uint16_t* pData
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenWord - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenWord - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -319,7 +319,7 @@ bool CTextFileLoader::GetTokenWord(const std::string& c_rstrKey, uint16_t* pData
     return true;
 }
 
-bool CTextFileLoader::GetTokenInteger(const std::string& c_rstrKey, int* pData)
+bool CTextFileLoader::GetTokenInteger(std::string_view c_rstrKey, int* pData)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -327,7 +327,7 @@ bool CTextFileLoader::GetTokenInteger(const std::string& c_rstrKey, int* pData)
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenInteger - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenInteger - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -337,13 +337,13 @@ bool CTextFileLoader::GetTokenInteger(const std::string& c_rstrKey, int* pData)
     return true;
 }
 
-bool CTextFileLoader::GetTokenDoubleWord(const std::string& c_rstrKey, uint32_t* pData)
+bool CTextFileLoader::GetTokenDoubleWord(std::string_view c_rstrKey, uint32_t* pData)
 {
     // Reuse integer path; be aware of potential sign/width differences in content.
     return GetTokenInteger(c_rstrKey, (int*)pData);
 }
 
-bool CTextFileLoader::GetTokenFloat(const std::string& c_rstrKey, float* pData)
+bool CTextFileLoader::GetTokenFloat(std::string_view c_rstrKey, float* pData)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -351,7 +351,7 @@ bool CTextFileLoader::GetTokenFloat(const std::string& c_rstrKey, float* pData)
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenFloat - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenFloat - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -359,7 +359,7 @@ bool CTextFileLoader::GetTokenFloat(const std::string& c_rstrKey, float* pData)
     return true;
 }
 
-bool CTextFileLoader::GetTokenVector2(const std::string& c_rstrKey, D3DXVECTOR2* pVector2)
+bool CTextFileLoader::GetTokenVector2(std::string_view c_rstrKey, D3DXVECTOR2* pVector2)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -367,7 +367,7 @@ bool CTextFileLoader::GetTokenVector2(const std::string& c_rstrKey, D3DXVECTOR2*
 
     if (pTokenVector->size() != 2)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenVector2 - This key should have 2 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenVector2 - This key should have 2 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -376,7 +376,7 @@ bool CTextFileLoader::GetTokenVector2(const std::string& c_rstrKey, D3DXVECTOR2*
     return true;
 }
 
-bool CTextFileLoader::GetTokenVector3(const std::string& c_rstrKey, D3DXVECTOR3* pVector3)
+bool CTextFileLoader::GetTokenVector3(std::string_view c_rstrKey, D3DXVECTOR3* pVector3)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -384,7 +384,7 @@ bool CTextFileLoader::GetTokenVector3(const std::string& c_rstrKey, D3DXVECTOR3*
 
     if (pTokenVector->size() != 3)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenVector3 - This key should have 3 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenVector3 - This key should have 3 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -394,7 +394,7 @@ bool CTextFileLoader::GetTokenVector3(const std::string& c_rstrKey, D3DXVECTOR3*
     return true;
 }
 
-bool CTextFileLoader::GetTokenVector4(const std::string& c_rstrKey, D3DXVECTOR4* pVector4)
+bool CTextFileLoader::GetTokenVector4(std::string_view c_rstrKey, D3DXVECTOR4* pVector4)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -402,7 +402,7 @@ bool CTextFileLoader::GetTokenVector4(const std::string& c_rstrKey, D3DXVECTOR4*
 
     if (pTokenVector->size() != 4)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenVector4 - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenVector4 - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -413,12 +413,12 @@ bool CTextFileLoader::GetTokenVector4(const std::string& c_rstrKey, D3DXVECTOR4*
     return true;
 }
 
-bool CTextFileLoader::GetTokenPosition(const std::string& c_rstrKey, D3DXVECTOR3* pVector)
+bool CTextFileLoader::GetTokenPosition(std::string_view c_rstrKey, D3DXVECTOR3* pVector)
 {
     return GetTokenVector3(c_rstrKey, pVector);
 }
 
-bool CTextFileLoader::GetTokenQuaternion(const std::string& c_rstrKey, D3DXQUATERNION* pQ)
+bool CTextFileLoader::GetTokenQuaternion(std::string_view c_rstrKey, D3DXQUATERNION* pQ)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -426,7 +426,7 @@ bool CTextFileLoader::GetTokenQuaternion(const std::string& c_rstrKey, D3DXQUATE
 
     if (pTokenVector->size() != 4)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenQuaternion - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenQuaternion - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -437,7 +437,7 @@ bool CTextFileLoader::GetTokenQuaternion(const std::string& c_rstrKey, D3DXQUATE
     return true;
 }
 
-bool CTextFileLoader::GetTokenDirection(const std::string& c_rstrKey, D3DVECTOR* pVector)
+bool CTextFileLoader::GetTokenDirection(std::string_view c_rstrKey, D3DVECTOR* pVector)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -445,7 +445,7 @@ bool CTextFileLoader::GetTokenDirection(const std::string& c_rstrKey, D3DVECTOR*
 
     if (pTokenVector->size() != 3)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenDirection - This key should have 3 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenDirection - This key should have 3 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -455,7 +455,7 @@ bool CTextFileLoader::GetTokenDirection(const std::string& c_rstrKey, D3DVECTOR*
     return true;
 }
 
-bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DXCOLOR* pColor)
+bool CTextFileLoader::GetTokenColor(std::string_view c_rstrKey, D3DXCOLOR* pColor)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -463,7 +463,7 @@ bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DXCOLOR* pCo
 
     if (pTokenVector->size() != 4)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenColor - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenColor - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -474,7 +474,7 @@ bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DXCOLOR* pCo
     return true;
 }
 
-bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DCOLORVALUE* pColor)
+bool CTextFileLoader::GetTokenColor(std::string_view c_rstrKey, D3DCOLORVALUE* pColor)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -482,7 +482,7 @@ bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DCOLORVALUE*
 
     if (pTokenVector->size() != 4)
     {
-        LOG_INFO(" CTextFileLoader::GetTokenColor - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_INFO(" CTextFileLoader::GetTokenColor - This key should have 4 values {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
@@ -493,7 +493,7 @@ bool CTextFileLoader::GetTokenColor(const std::string& c_rstrKey, D3DCOLORVALUE*
     return true;
 }
 
-bool CTextFileLoader::GetTokenString(const std::string& c_rstrKey, std::string* pString)
+bool CTextFileLoader::GetTokenString(std::string_view c_rstrKey, std::string* pString)
 {
     TTokenVector* pTokenVector;
     if (!GetTokenVector(c_rstrKey, &pTokenVector))
@@ -501,7 +501,7 @@ bool CTextFileLoader::GetTokenString(const std::string& c_rstrKey, std::string* 
 
     if (pTokenVector->empty())
     {
-        LOG_TRACE(" CTextFileLoader::GetTokenString - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey.c_str());
+        LOG_TRACE(" CTextFileLoader::GetTokenString - Failed to find the value {} [{} : {}]", m_strFileName.c_str(), m_pcurNode->strGroupName.c_str(), c_rstrKey);
         return false;
     }
 
