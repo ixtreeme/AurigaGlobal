@@ -77,8 +77,7 @@ uint32_t GetPlayerID(entt::entity e)
 			return playerID->pid;
 	}
 
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetPlayerID() : 0;
+	return 0;
 }
 
 uint8_t GetEmpire(entt::entity e)
