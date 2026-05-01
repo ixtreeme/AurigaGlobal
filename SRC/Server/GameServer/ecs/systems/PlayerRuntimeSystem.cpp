@@ -117,8 +117,8 @@ uint32_t GetPacketVID(entt::entity e)
 
 bool IsPC(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e))
-		return g_registry.all_of<ecs::TagPC>(e);
+	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e))
+		return true;
 
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->IsPC() : false;
@@ -126,8 +126,8 @@ bool IsPC(entt::entity e)
 
 bool IsNPC(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e))
-		return g_registry.all_of<ecs::TagNPC>(e);
+	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagNPC>(e))
+		return true;
 
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->IsNPC() : false;
@@ -135,8 +135,8 @@ bool IsNPC(entt::entity e)
 
 bool IsStone(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e))
-		return g_registry.all_of<ecs::TagStone>(e);
+	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagStone>(e))
+		return true;
 
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->IsStone() : false;
@@ -144,8 +144,8 @@ bool IsStone(entt::entity e)
 
 bool IsMonster(entt::entity e)
 {
-	if (e != entt::null && g_registry.valid(e))
-		return g_registry.all_of<ecs::TagMonster>(e);
+	if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e))
+		return true;
 
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->IsMonster() : false;
