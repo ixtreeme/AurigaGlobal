@@ -1,0 +1,309 @@
+# Phase 15E-61.0 Caller-Side Audit
+
+Date: 2026-05-02
+Scope: Audit remaining caller-side `->Method()` references before Phase 15E-61 batches.
+Mode: Audit only. No source code changes.
+
+## 1. Remaining Method-Call Counts
+
+Tree-wide raw `->Method(` count:
+- Total: 11,490
+
+Caller-side non-bridge filtered count:
+- Total: 8,028
+- Filter used: excluded `ecs/systems/` and legacy `char.cpp`, `char_battle.cpp`, `char_item.cpp`, `char_skill.cpp`.
+
+Important caveat:
+- These are syntactic `->Method(` counts, not guaranteed CHARACTER calls.
+- The count includes non-CHARACTER calls such as CItem, CParty, CGuild, DESC, DB, quest state and container-like APIs.
+- Method names that exist on multiple classes require per-file review before migration.
+
+Top caller-side files by filtered `->Method(` count:
+- 524: `SRC/Server/GameServer/cmd_general.cpp`
+- 514: `SRC/Server/GameServer/input_main.cpp`
+- 411: `SRC/Server/GameServer/cmd_gm.cpp`
+- 329: `SRC/Server/GameServer/new_offlineshop_manager.cpp`
+- 306: `SRC/Server/GameServer/exchange.cpp`
+- 300: `SRC/Server/GameServer/questlua_pc.cpp`
+- 255: `SRC/Server/GameServer/item_manager.cpp`
+- 225: `SRC/Server/GameServer/input_db.cpp`
+- 211: `SRC/Server/GameServer/RuneDungeon.cpp`
+- 204: `SRC/Server/GameServer/New_PetSystem.cpp`
+- 196: `SRC/Server/GameServer/LostCastleDungeon.cpp`
+- 181: `SRC/Server/GameServer/VikingDungeon.cpp`
+- 179: `SRC/Server/GameServer/Halloween2022Dungeon.cpp`
+- 145: `SRC/Server/GameServer/guild_manager.cpp`
+- 144: `SRC/Server/GameServer/questlua_dungeon.cpp`
+- 139: `SRC/Server/GameServer/input_login.cpp`
+- 135: `SRC/Server/GameServer/char_manager.cpp`
+- 121: `SRC/Server/GameServer/arena.cpp`
+- 119: `SRC/Server/GameServer/guild.cpp`
+- 111: `SRC/Server/GameServer/pvp.cpp`
+
+## 2. Top 30 Method Names By Filtered Count
+
+These are raw method names from non-bridge files and include false positives:
+
+- SetFlag: 321
+- GetFlag: 235
+- Packet: 234
+- Get: 209
+- GetSize: 133
+- GetCharacter: 126
+- DBPacket: 108
+- GetName: 107
+- GetID: 106
+- Show: 82
+- at: 81
+- CountSpecifyItem: 80
+- BufferedPacket: 78
+- RemoveSpecifyItem: 70
+- GetAccountTable: 70
+- WarpSet: 69
+- Notice: 68
+- SpawnMob: 68
+- Put: 65
+- EquipTo: 60
+- FindEquipCell: 56
+- IsType: 54
+- GetLegacyVID: 53
+- SetPhase: 53
+- GetValue: 52
+- GetWear: 52
+- AddToCharacter: 52
+- ComputePoints: 45
+- GetExchange: 44
+- GetHostName: 43
+
+Interpretation:
+- The highest counts are not all CHARACTER migration targets.
+- `Packet`, `BufferedPacket`, `DBPacket`, `GetAccountTable`, `GetHostName`, `SetPhase` are service/session calls.
+- `GetSize`, `IsType`, `GetValue`, `AddToCharacter`, `FindEquipCell` are item/offline-shop heavy and should not be bulk-migrated as CHARACTER accessors.
+- `SetFlag/GetFlag` are mostly quest/party/guild state and need a QuestSystem/SocialSystem-specific phase.
+
+## 3. Targeted CHARACTER Method Counts
+
+Counts below use the Phase 15E-61 candidate method list, filtered outside ECS system bridge files and core char implementation files.
+
+### Category A - Simple Read Accessors
+
+Candidate for 15E-61.1 if a stable ECS component or service ref already exists.
+
+- GetExchange: 44
+  - Top files: `input_main.cpp` 20, `cmd_general.cpp` 6, `questlua_pc.cpp` 3, `New_PetSystem.cpp` 3, `exchange.cpp` 3
+- GetInventoryItem: 39
+  - Top files: `cmd_gm.cpp` 9, `questlua_pc.cpp` 6, `cmd_general.cpp` 5, `exchange.cpp` 4, `guild_renewal.cpp` 3
+- GetWear: 52
+  - Top files: `cmd_gm.cpp` 14, `questlua_pc.cpp` 12, `cmd_general.cpp` 8, `fishing.cpp` 3, `battle.cpp` 3
+- GetItem: 37
+  - Top files: `new_offlineshop_manager.cpp` 15, `DragonSoul.cpp` 8, `cmd_gm.cpp` 6, `input_main.cpp` 3, `exchange.cpp` 2
+- MountVnum: 15
+  - Top files: `questlua_horse.cpp` 4, `questlua_pc.cpp` 4, `pvp.cpp` 2, `MountSystem.cpp` 2, `cmd_gm.cpp` 1
+
+Notes:
+- Inventory/equipment reads should be routed through InventorySystem/ItemSystem, not PlayerRuntime.
+- `GetItem` has high false-positive risk because item-like classes also expose `GetItem`.
+- MountVnum belongs in MountSystem or a MountState read API.
+
+### Category B - Simple State Predicates
+
+Candidate for 15E-61.2 if state components are current and write sync exists.
+
+- IsObserverMode: 33
+  - Top files: `input_main.cpp` 16, `cmd_general2.cpp` 5, `cmd_general.cpp` 4, `cmd.cpp` 3, `pvp.cpp` 2
+- CanWarp: 18
+  - Top files: `questlua_dungeon.cpp` 3, `Halloween2022Dungeon.cpp` 2, `VikingDungeon.cpp` 2, `cmd_general2.cpp` 2, `questlua_pc.cpp` 1
+- IsDead: 38
+  - Top files: `New_PetSystem.cpp` 7, `cmd_general.cpp` 5, `input_main.cpp` 4, `PetSystem.cpp` 3, `cmd.cpp` 3
+- IsStun: 9
+  - Top files: `cmd_general.cpp` 3, `input_main.cpp` 2, `cmd.cpp` 2, `battle.cpp` 1, `cmd_general2.cpp` 1
+- CanUseSkill: 4
+  - Top files: `input_main.cpp` 1, `LostCastleDungeon.cpp` 1, `cmd_general.cpp` 1, `cmd_gm.cpp` 1
+
+Notes:
+- `IsDead` and `IsStun` likely map to existing StatusFlags or tags.
+- `IsObserverMode` needs an observer-mode component or runtime flag audit.
+- `CanWarp` may be computed state, not a simple stored flag.
+
+### Category C - State Mutation / Write Methods
+
+Requires write/sync bridge and careful behavioral parity. Do not batch with read-only accessors.
+
+- WarpSet: 69
+  - Top files: `cmd_gm.cpp` 6, `dungeon.cpp` 6, `RuneDungeon.cpp` 6, `arena.cpp` 6, `questlua_pc.cpp` 5
+- ExitToSavedLocation: 28
+  - Top files: `cmd_general.cpp` 20, `ValentineDungeon.cpp` 2, `EasterDungeon.cpp` 2, `wedding.cpp` 1, `war_map.cpp` 1
+- Goto: 11
+  - Top files: `New_PetSystem.cpp` 3, `PetSystem.cpp` 3, `char_manager.cpp` 1, `party.cpp` 1, `input_main.cpp` 1
+- Show: 82
+  - Top files: `cmd_general.cpp` 54, `OXEvent.cpp` 5, `New_PetSystem.cpp` 3, `input_main.cpp` 2, `PetSystem.cpp` 2
+- SetQuestNPCID: 6
+  - Top files: `questlua_npc.cpp` 4, `trigger.cpp` 1, `questpc.cpp` 1
+- SetHorseLevel: 6
+  - Top files: `questlua_horse.cpp` 2, `cmd_gm.cpp` 2, `cmd_general2.cpp` 1, `input_login.cpp` 1
+- Stop: 16
+  - Top files: `cmd_gm.cpp` 4, `input_main.cpp` 3, `LostCastleDungeon.cpp` 2, `party.cpp` 1, `PetSystem.cpp` 1
+- Move: 1
+  - Top file: `input_main.cpp` 1
+- OnMove: 5
+  - Top files: `input_main.cpp` 3, `LostCastleDungeon.cpp` 2
+
+Notes:
+- Warp/Show/Move touch position, sectree, packet visibility and persistence.
+- These should become MovementSystem/NetworkSyncSystem service APIs with write sync.
+- `Show` has many GM command use sites and should be a dedicated sub-batch with WinTest.
+
+### Category D - Complex Behavior
+
+Do not migrate in 15E-61 simple batches. These need subsystem-specific phases.
+
+- UseSkillBook: 0 in filtered candidate list
+- StartStateMachine: 3
+  - Top files: `sectree.cpp` 1, `LostCastleDungeon.cpp` 1, `entity_view.cpp` 1
+- SetState: 1
+  - Top file: `questlua_quest.cpp` 1
+- ChangeMobAi: 0 in filtered candidate list
+- OnClick: 1
+  - Top file: `input_main.cpp` 1
+- HorseSummon: 26
+  - Top files: `MountSystem.cpp` 6, `questlua_horse.cpp` 4, `input_login.cpp` 4, `pvp.cpp` 2, `questlua_arena.cpp` 2
+- ItemDropPenalty: 0 in filtered candidate list
+- DropItem: 2
+  - Top file: `input_main.cpp` 2
+- DropPickupAll: 0 in filtered candidate list
+
+Notes:
+- AI state machine, click handling, mount/horse summon and item dropping are behavior operations.
+- These should be domain refactors, not accessor migrations.
+
+### Category E - Service / Network / Persistence
+
+Requires service abstraction. Do not migrate in 15E-61 simple batches.
+
+- Disconnect: 5
+  - Top files: `cmd_general.cpp` 2, `questlua_pc.cpp` 1, `desc.cpp` 1, `char_manager.cpp` 1
+- Save: 11
+  - Top files: `shop.cpp` 2, `exchange.cpp` 2, `questpc.cpp` 1, `safebox.cpp` 1, `shopEx.cpp` 1
+- SendDamagePacket: 0 in filtered candidate list
+
+Notes:
+- These cross process/session/persistence boundaries.
+- Keep for network/session/database service phases.
+
+## 4. Phase 15E-61 Sub-Batch Proposal
+
+### Phase 15E-61.1 - Simple Read Accessors
+
+Targets:
+- GetExchange
+- GetInventoryItem
+- GetWear
+- MountVnum
+
+Approach:
+- Add entity-first read APIs in InventorySystem, ItemSystem or MountSystem.
+- Keep ownership/service semantics unchanged.
+- Migrate caller side in small file batches.
+
+Risk:
+- Medium. Inventory/equipment paths are gameplay-critical but mostly read-only.
+
+Estimated caller-side calls:
+- Around 150 from the targeted list, before false-positive filtering.
+
+### Phase 15E-61.2 - Simple Predicates
+
+Targets:
+- IsObserverMode
+- IsDead
+- IsStun
+- CanUseSkill
+- Possibly CanWarp after logic review
+
+Approach:
+- Use StatusFlags/tags or add small state components.
+- Verify all write paths sync into ECS before removing legacy reads.
+
+Risk:
+- Medium-high. Dead/stun/warp predicates affect combat, login, map transfer and command handling.
+
+Estimated caller-side calls:
+- Around 100 from the targeted list.
+
+### Phase 15E-61.3 - Movement / Warp Writes
+
+Targets:
+- WarpSet
+- ExitToSavedLocation
+- Goto
+- Show
+- Stop
+- Move
+- OnMove
+
+Approach:
+- Domain-specific MovementSystem/NetworkSyncSystem APIs.
+- Preserve position sync, sectree registration and packet visibility semantics.
+
+Risk:
+- High. This touches the same class of issues as the mounted-position/metin damage regression.
+
+Estimated caller-side calls:
+- Around 210 from the targeted list.
+
+### Phase 15E-61.4 - Quest / State Machine / Click Behavior
+
+Targets:
+- SetQuestNPCID
+- StartStateMachine
+- SetState
+- OnClick
+- Quest `SetFlag/GetFlag` family after separate quest flag audit
+
+Risk:
+- High. Quest state and click routing are behavior systems.
+
+Recommendation:
+- Audit-only or dedicated QuestSystem phase, not mixed with movement or inventory.
+
+### Phase 15E-61.5 - Service / Persistence / Network
+
+Targets:
+- Disconnect
+- Save
+- Any remaining Packet/BufferedPacket/DBPacket/DESC operations
+
+Risk:
+- High. Requires service abstraction and process boundary awareness.
+
+Recommendation:
+- Defer until GameServer service API boundaries are explicitly designed.
+
+## 5. VS-Like Reference Metrics
+
+Tree-wide references:
+- LPCHARACTER references: 2,026
+- CHARACTER class references / direct member patterns: 683
+
+Use these as coarse progress metrics:
+- They will not drop one-to-one with caller migration because bridge files still intentionally use LPCHARACTER.
+- They should decrease after each dedicated subsystem phase.
+
+## 6. Recommended Next Action
+
+Recommended next phase: Phase 15E-61.1.
+
+Start with read-only accessors:
+- GetExchange
+- GetInventoryItem
+- GetWear
+- MountVnum
+
+Reason:
+- They have clearer ownership than warp/show/network writes.
+- They reduce caller-side CHARACTER dependence without immediately touching position, sectree or network visibility.
+
+Explicit deferrals:
+- Do not bulk-migrate `Show`, `WarpSet`, `OnMove`, `ExitToSavedLocation` in the same batch.
+- Do not treat top raw method names such as `SetFlag/GetFlag/Packet/Get` as CHARACTER methods without class-context review.
+- Do not migrate Category D/E methods in 15E-61.1.
