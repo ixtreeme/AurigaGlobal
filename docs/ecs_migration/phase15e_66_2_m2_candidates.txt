@@ -1,0 +1,44 @@
+# Phase 15E-66.2 - M2 Signature Candidates
+
+Date: 2026-05-02
+Scope: M2 service-call bridge signature review and safe migration.
+
+## Baseline
+
+- Baseline after 15E-66.1: 127 broad `LPCHARACTER` / `CHARACTER*` matches in ECS files.
+- Current pre-66.2 measured broad count: 128. The delta comes from the broad regex including local variables and helper definitions, not only public signatures.
+
+## Migrated Candidates
+
+| File | Function | Previous form | New form | Service ops / reason |
+|------|----------|---------------|----------|----------------------|
+| `PlayerRuntimeSystem.cpp` | `HasCombatState` | `const CHARACTER*` helper | `entt::entity` helper | Pure ECS tag read. |
+| `PlayerRuntimeSystem.cpp` | `HasIdleState` | `const CHARACTER*` helper | `entt::entity` helper | Pure ECS movement/combat tag read. |
+| `PlayerRuntimeSystem.cpp` | `EnterIdleState` | `CHARACTER*` helper | `entt::entity` helper | Pure ECS removal of combat/movement components. |
+| `PlayerRuntimeSystem.cpp` | `GetDuelImpl` | `const CHARACTER*` helper | `entt::entity` helper | Quest flag reads are entity-first. |
+| `PlayerRuntimeSystem.cpp` | `SetDuelImpl` | `CHARACTER*` helper | `entt::entity` helper | Quest flag writes are entity-first. |
+| `InventorySystem.cpp` | `SyncCharacterEquipmentSlot` | `LPCHARACTER ch` | `entt::entity chEntity` | Syncs ECS equipment slot mirror; legacy item pointer remains only for item service pointer storage. |
+| `DragonSoulSystem.cpp` | DragonSoul service functions | local `LPCHARACTER ch` + repeated `AIHelpers::EcsOf(ch)` | owner entity used directly for ECS calls; legacy pointer kept as `auto*` service bridge | DSManager/inventory item access still needs legacy service object; ECS affect/desc/name calls now use owner entity directly. |
+
+## Deferred Candidates
+
+These were reviewed and intentionally not migrated in 15E-66.2:
+
+- `PlayerRuntimeSystem.cpp` legacy method bodies such as `CHARACTER::GetQuestNPC`, `CHARACTER::GetSoulItemDamage`, `CHARACTER::SetShopOwner`, marry partner methods, event callbacks, dynamic pointer assignment and `GET_SEX`.
+- `InventorySystem.cpp` `CItem::AddToCharacter`, `DistanceValid`, `IsOwnership`, `SetOwnership`, `CanUsedBy`, `FindEquipCell`, `EquipTo`, and unequip local owner handling.
+- `NetworkSyncSystem.cpp`, `MovementSystem.cpp`, `ActivitySystem.cpp`, `CombatSystem.cpp`: higher M3 ratio, deferred to subsystem-specific phases.
+
+## Result
+
+- Broad count after 66.2 migrated candidates: 117.
+- Reduction: 11 broad matches.
+- The result is lower than the initial target because the remaining matches are mostly M3 legacy method bodies and event/callback bridge code, not safe M2 wrapper signatures.
+
+## Recommendation
+
+- Do not chase the numeric under-80 target by hiding `LPCHARACTER` behind `auto*` in M3 code.
+- Proceed with a formal M3 defer list, then schedule subsystem refactor phases:
+  - NetworkSync service abstraction.
+  - Movement callback/service abstraction.
+  - Inventory/CItem service abstraction.
+  - Combat subsystem extraction.

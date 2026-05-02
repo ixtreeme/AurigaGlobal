@@ -1,0 +1,32 @@
+# Phase 15E-66.3 - M3 Defer List
+
+Date: 2026-05-02
+Scope: Formal defer list for LPCHARACTER/CHARACTER pointer usages that are not safe M2 migrations.
+
+## Summary
+
+After Phase 15E-66.2, broad ECS `LPCHARACTER` / `CHARACTER*` matches are 117. The remaining surface is mostly not public ECS API. It is legacy method bodies, event callbacks, packet encoding, combat logic and service-object bridges.
+
+## Deferred Areas
+
+| Area | Status | Reason | Future phase |
+|------|--------|--------|--------------|
+| `ItemSystem_LegacyBridge.cpp` | M3 / accepted bridge | File is an explicit bridge for CItem/CHARACTER legacy item behavior. | Item service/CItem deletion phase. |
+| `InventorySystem.cpp` CItem methods | M3 | `CItem::AddToCharacter`, equip, ownership and position logic mutate legacy item/owner state and service side effects. | Inventory service abstraction. |
+| `NetworkSyncSystem.cpp` | M3 | Packet encoding is tightly bound to `CHARACTER` fields, descriptors, view maps and sectree behavior. | NetworkSync service refactor. |
+| `CombatSystem.cpp` | M3 | Combat method bodies rely on `CHARACTER` internals, damage flow, events and legacy battle service state. | Combat subsystem extraction. |
+| `MovementSystem.cpp` | M3 | State callbacks and movement service paths are still legacy CHARACTER event/state-machine code. | Movement service/callback refactor. |
+| `ActivitySystem.cpp` | M3 | Fishing/mining/activity callbacks still carry legacy character context. | Activity service refactor. |
+| `PlayerRuntimeSystem.cpp` remaining legacy methods | M3 | Remaining matches are legacy `CHARACTER::` method bodies, event callbacks, dynamic pointer helpers or external API compatibility functions. | CHARACTER deletion preparation phase. |
+| `DragonSoulSystem.cpp` `LegacyCharacter` resolver | M2 accepted service bridge | Public API is already entity-first; DSManager/inventory service calls still require legacy object. | DragonSoul service abstraction. |
+
+## Rule
+
+Do not mechanically convert M3 signatures in 15E-66.x. These need subsystem-owned phases because they combine state mutation, packet/service side effects and legacy lifetime assumptions.
+
+## Next Step
+
+Recommended next phase:
+
+- Phase 15E-66.3: commit this defer list and use it to split future subsystem work.
+- Then choose either NetworkSync service abstraction or Inventory/CItem service abstraction depending on risk priority.
