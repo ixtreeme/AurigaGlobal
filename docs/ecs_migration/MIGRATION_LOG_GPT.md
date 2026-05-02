@@ -11331,3 +11331,63 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- 
 Status:
 - Phase 15E-61.2 is production-validated after hotfix.
 - Next planned phase: Phase 15E-61.3 movement/warp write-side methods or the next caller-side category, depending on risk priority.
+
+
+## Phase 15E-61.3 - Movement and Warp Writes Caller-Side Migration
+
+Scope:
+- Migrated Category C movement/write call sites away from direct CHARACTER methods:
+  - Move
+  - OnMove
+  - Goto
+  - Stop
+  - ExitToSavedLocation
+  - WarpSet
+  - Show
+
+Implementation notes:
+- Added entity-first write API under `ecs::MovementSystem`.
+- These APIs are WRITE/SYNC BRIDGE methods, not pure read accessors.
+- ECS state is written first, then legacy service operations run for compatibility:
+  - `MovementSystem::Show` writes Position/MapIndex/DirtyTag first, then calls legacy `CHARACTER::Show` for sectree registration, visibility tracking and spawn packets.
+  - `MovementSystem::WarpSet` writes WarpPosition/DirtyTag first, then calls legacy `CHARACTER::WarpSet` for map-location validation and warp packet emission.
+  - `MovementSystem::ExitToSavedLocation` mirrors ExitPosition into WarpPosition before the legacy warp call and clears ExitPosition afterward.
+  - `MovementSystem::Goto` writes MovementDestination before legacy pathing behavior.
+  - `MovementSystem::Stop` clears MovementDestination before legacy idle-state behavior.
+  - `MovementSystem::Move` and `MovementSystem::OnMove` route through existing legacy service paths that already sync position into ECS via the 15E-59 hotfix pattern.
+- This preserves the 15E-59 rule: ECS position/map movement state is updated before legacy service side effects.
+
+Commits:
+- c59b641 Phase 15E-61.3.1: Add MovementSystem write API
+- b608081 Phase 15E-61.3.a: Migrate Move
+- cb3a779 Phase 15E-61.3.b: Migrate OnMove
+- 88b3ef6 Phase 15E-61.3.c: Migrate Goto
+- d23057b Phase 15E-61.3.d: Migrate Stop
+- 3fcfa47 Phase 15E-61.3.e: Migrate ExitToSavedLocation
+- 291aec5 Phase 15E-61.3.f: Migrate WarpSet
+- f8baad5 Phase 15E-61.3.g: Migrate Show
+- 1bfa3e8 Phase 15E-61.3: COMPLETE - Movement/warp writes migrated
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+~~~
+- Build passed after each sub-batch.
+- Final build passed.
+
+Final caller-side counts:
+- WarpSet: 0 remaining CHARACTER caller-side calls.
+- ExitToSavedLocation: 0 remaining CHARACTER caller-side calls.
+- Goto: 0 remaining CHARACTER caller-side calls.
+- Move: 0 remaining CHARACTER caller-side calls.
+- OnMove: 0 remaining CHARACTER caller-side calls.
+- Stop: 0 remaining CHARACTER caller-side calls; one remaining `Stop` is `CSwitchbot::Stop`, not CHARACTER.
+- Show: 0 remaining CHARACTER caller-side calls; two remaining `Show` calls are building object methods, not CHARACTER.
+
+WinTest:
+- Operator confirmed all movement/warp/show paths work correctly in-game.
+- Movement, warp, show/spawn, pet/mount positioning and combat-critical OnMove behavior are production-validated for this batch.
+
+Status:
+- Phase 15E-61.3 is production-validated.
+- Next planned phase: Phase 15E-61.4 quest/state-machine domain-specific methods, or the next caller-side category depending on risk priority.
