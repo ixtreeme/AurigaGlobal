@@ -1,0 +1,56 @@
+# Phase 15E-final.0 - Deletion Blockers
+
+Date: 2026-05-02
+Scope: blocker inventory for actual `CHARACTER` and `CItem` class deletion.
+
+## Current Blocking Surface
+
+After Phase 15E-66.2 / 15E-66.3 planning, the broad ECS `LPCHARACTER` / `CHARACTER*` surface is 117 matches. The remaining surface is no longer safe M1/M2 signature cleanup. It is mostly M3: legacy method bodies, packet encoding, event callbacks, service bridges and subsystem behavior.
+
+Additional method-body inventory:
+
+- `CHARACTER::` definitions remaining: 751
+- `CItem::` definitions remaining: 138
+- Broad tree item legacy reference hotspots still include `ItemSystem_LegacyBridge.cpp`, `ItemSystem.cpp`, `DragonSoul.cpp`, quest Lua item/pc files, `item_manager.cpp`, and `item.h`.
+
+## Blocker Inventory
+
+| Blocker | Subsystem | Effort | Priority | Minimum work to remove |
+|---------|-----------|--------|----------|------------------------|
+| `NetworkSyncSystem` CHARACTER bindings | Network | High | Critical | Extract packet construction from `CHARACTER` fields into ECS snapshot builders; keep descriptor as service boundary. |
+| `CombatSystem` legacy damage flow | Combat | High | Critical | Move attack, victim, reward, drop, PK/alignment and damage-map behavior to entity-first flow; isolate packet/service calls. |
+| `ItemSystem_LegacyBridge.cpp` | Item bridge | High | Critical | Split CItem compatibility methods into item service functions; replace CItem state reads with item components; keep manager service boundary explicit. |
+| `InventorySystem` CItem methods | Inventory/item | Medium | High | Move equip/add/remove/ownership/cell mutation to ECS item operations; keep LPITEM only at service edge until CItem deletion. |
+| `MovementSystem` callbacks | Movement | Medium | Medium | Extract movement state callbacks and event handlers to ECS scheduler/state components; keep sectree service calls isolated. |
+| `AISystem` state machine hooks | AI | Medium | Medium | Replace direct CHARACTER state transitions with ECS state component transitions. |
+| `ActivitySystem` fishing/mining callbacks | Activity | Low-Medium | Low | Move activity sessions/timers to ECS activity state plus scheduler handles. |
+| `AffectSystem` behavior methods | Affect | Medium | Medium | Remove remaining legacy service calls around polymorph/affect application where state is already ECS-owned. |
+| `SkillSystem` behavior methods | Skill | Medium | Medium | Move skill-use behavior and skill packet/service hooks to ECS skill flow. |
+| `SessionSystem` / `PlayerRuntimeSystem` tails | Runtime/session | Low-Medium | Low | Delete obsolete read bodies, keep only service boundary wrappers until final compile pass. |
+| `DragonSoulSystem` service bridge | DragonSoul | Low | Low | Keep DSManager as service boundary or extract DragonSoul service abstraction. |
+| Quest Lua direct legacy references | Quest Lua | Medium | Medium | Preserve Lua API shape but route implementation through entity/item ECS handles. |
+
+## External Constraints
+
+These can block class deletion even when gameplay state has an ECS component:
+
+- Packet binary compatibility: client packets still expect existing payload layout.
+- DB/save format compatibility: player/item rows and save timing cannot change accidentally.
+- Quest Lua API compatibility: script-visible behavior must stay stable.
+- Manager singletons: `CHARACTER_MANAGER`, `ITEM_MANAGER`, `DSManager`, shop, exchange and dungeon managers still own service lifecycle.
+- Event scheduler compatibility: existing event payloads often carry legacy object pointers.
+- Sectree/network descriptor ownership: these are accepted service boundaries, not pure ECS state.
+
+## Critical Path
+
+The deletion critical path is:
+
+1. NetworkSync extraction.
+2. Combat flow extraction.
+3. Inventory/CItem service extraction.
+4. ItemSystem_LegacyBridge split/removal.
+5. Movement/AI callback extraction.
+6. Final header pruning and compile deletion pass.
+
+The first four are sequential risk gates because they touch packet compatibility, damage/loot correctness, item persistence and CItem lifecycle.
+

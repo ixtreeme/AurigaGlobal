@@ -11511,3 +11511,42 @@ Status:
 - Phase 15E-66.2 code/documentation work is complete.
 - WinTest is still pending operator validation before a `verified` commit.
 - Recommended next phase: formal 15E-66.3 M3 defer close-out or begin a subsystem-specific refactor phase (NetworkSync, Inventory/CItem service, Movement callbacks, or Combat extraction).
+
+
+## Phase 15E-final.0 - CHARACTER + CItem Deletion Roadmap Audit
+
+Scope:
+- Audited the remaining `CHARACTER` and `CItem` class deletion blockers.
+- Confirmed this is no longer accessor migration work; the remaining blockers are subsystem extraction, service boundaries and legacy method bodies.
+- Added a concrete Phase 15E-final.x roadmap for actual class deletion.
+
+Key findings:
+- The old split files `char.cpp`, `char_battle.cpp`, `char_item.cpp`, `char_skill.cpp`, `char_state.cpp` and `item.cpp` are no longer present.
+- `char.h` and `item.h` still declare the legacy classes.
+- Transitional method bodies now live mostly inside ECS subsystem files.
+- Remaining method body inventory:
+  - `CHARACTER::` definitions: 751
+  - `CItem::` definitions: 138
+- Broad ECS `LPCHARACTER` / `CHARACTER*` surface remains 117 after 15E-66.2/66.3 planning, but the remainder is M3 subsystem/service debt rather than safe signature cleanup.
+
+Critical blockers:
+- NetworkSync packet construction still needs a service extraction pass.
+- Combat flow still contains legacy damage/reward/drop behavior.
+- `ItemSystem_LegacyBridge.cpp` and inventory item mutation paths block `CItem` deletion.
+- Movement/AI callbacks, quest Lua compatibility and activity/skill/mount tails are secondary blockers.
+
+Documentation added:
+- `docs/ecs_migration/phase15e_final_0_char_class_audit.txt`
+- `docs/ecs_migration/phase15e_final_0_deletion_blockers.txt`
+- `docs/ecs_migration/phase15e_final_0_deletion_roadmap.txt`
+
+Effort estimate:
+- CHARACTER deletion path: 25-35 engineering days.
+- CItem deletion path: 15-25 engineering days.
+- Sequential critical path: 35-50 engineering days.
+- Parallelizable work: 10-15 engineering days.
+
+Status:
+- Phase 15E-final.0 audit is complete.
+- No code changes were made.
+- Recommended next phase: Phase 15E-final.1 NetworkSync service extraction, followed by Combat flow extraction and Inventory/CItem service extraction.

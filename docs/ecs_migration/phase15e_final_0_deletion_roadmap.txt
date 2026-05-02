@@ -1,0 +1,298 @@
+# Phase 15E-final.0 - CHARACTER + CItem Deletion Roadmap Audit
+
+Date: 2026-05-02
+Mode: audit and plan only.
+Build target: `GameServer` / `RelWithDebInfo`.
+
+## 1. Current State
+
+The project is past accessor migration. The remaining work is subsystem extraction.
+
+Confirmed state:
+
+- CHARACTER read API is pure ECS for migrated gameplay state.
+- Accepted E-class service debt remains for `GetDesc` and `GetSectree`.
+- Item ECS read API is 100% pure ECS.
+- Broad ECS `LPCHARACTER` / `CHARACTER*` surface after Phase 15E-66.2 is 117 matches.
+- The remaining 117 are mostly M3 legacy-bound signatures, not safe mechanical signature cleanup.
+- `CHARACTER::` method bodies remaining: 751.
+- `CItem::` method bodies remaining: 138.
+
+Important topology note:
+
+- The old `char.cpp`, `char_battle.cpp`, `char_item.cpp`, `char_skill.cpp`, `char_state.cpp` and `item.cpp` files are absent.
+- Legacy class declarations remain in `char.h` and `item.h`.
+- Transitional method bodies now live mostly in ECS subsystem files.
+
+Supporting details:
+
+- Character/class field audit: `docs/ecs_migration/phase15e_final_0_char_class_audit.txt`
+- Deletion blocker inventory: `docs/ecs_migration/phase15e_final_0_deletion_blockers.txt`
+
+## 2. CHARACTER Field and Method Audit
+
+Field state:
+
+| Category | Status | Examples |
+|----------|--------|----------|
+| M1 mirrored in ECS | broadly complete | identity, name, VID, type tags, race, position, health/mana, point router, affects, immunity, party/guild refs |
+| M2 needs components | still blocks deletion | refine session, shop/private shop state, quest interaction, movement sync ownership, combat timing, activity runtime |
+| M3 service pointer | accepted boundary | desc, sectree, dungeon/shop/exchange service objects, event handles |
+| M4 cache/transient | should be deleted or moved with subsystem | combo counters, last attack/move pulses, anti-spam counters, skip-save flags |
+
+Method body hotspots:
+
+| Area | Count | Deletion impact |
+|------|------:|-----------------|
+| `PlayerRuntimeSystem.cpp` | 180 | runtime tail cleanup and compatibility bodies |
+| `CombatSystem.cpp` | 109 | critical combat extraction blocker |
+| `ItemSystem_LegacyBridge.cpp` | 92 | critical item/character bridge blocker |
+| `SkillSystem.cpp` | 44 | skill behavior bridge |
+| `MountSystem.cpp` | 37 | mount service bridge |
+| `AffectSystem.cpp` | 34 | affect/polymorph behavior bridge |
+| `SessionSystem.cpp` | 33 | session/network bridge |
+| `MovementSystem.cpp` | 32 | movement callback blocker |
+| `NetworkSyncSystem.cpp` | 21 | critical packet sync blocker |
+
+Conclusion:
+
+The class cannot be deleted by removing accessors. The remaining `CHARACTER::` bodies are behavior and service integration. They must be extracted by subsystem.
+
+## 3. CItem Field and Method Audit
+
+Field state:
+
+| Category | Status | Examples |
+|----------|--------|----------|
+| M1 mirrored in ECS | complete for read API | identity, vnum, location, count, owner, equipped, flags, sockets, attributes, proto snapshot |
+| M2 needs components | still blocks deletion | expiration state, ownership lease, lock/exchange state, mask/signature vnum, special proto state |
+| M3 service pointer | accepted boundary | owner pointer, event handles, item manager lifecycle, DSManager/shop/trade/safebox service paths |
+| M4 cache/transient | delete or move with item service | skip-save, exchanging, lock flags, event caches |
+
+Method body hotspots:
+
+| Area | Count | Deletion impact |
+|------|------:|-----------------|
+| `ItemSystem_LegacyBridge.cpp` | 119 | primary CItem deletion blocker |
+| `InventorySystem.cpp` | 15 | inventory/equipment mutation bridge |
+| `NetworkSyncSystem.cpp` | 4 | packet bridge |
+
+Conclusion:
+
+Item read access is clean, but CItem deletion is blocked by lifecycle and mutation behavior. The next item phase is not more read fallback work; it is item service extraction.
+
+## 4. Deletion Blocker Inventory
+
+| Blocker | Subsystem | Priority | Effort | Notes |
+|---------|-----------|----------|--------|-------|
+| Network packet sync still bound to legacy object shape | NetworkSync | Critical | High | Packet compatibility must be preserved while building ECS snapshots. |
+| Combat damage/reward/drop flow still has legacy method bodies | Combat | Critical | High | Highest gameplay risk: damage, drops, PK, alignment, death. |
+| CItem compatibility methods | Item bridge | Critical | High | Main CItem deletion blocker. |
+| Inventory equip/add/remove ownership mutations | Inventory | High | Medium | Must make item components source of truth for writes. |
+| Movement and state callbacks | Movement/AI | Medium | Medium | Needs ECS scheduler/state-machine boundary. |
+| Fishing/mining/activity callbacks | Activity | Low | Low-Medium | Lower risk after core gameplay extraction. |
+| Runtime/session tails | PlayerRuntime/Session | Low | Low-Medium | Mostly final cleanup once critical systems are extracted. |
+| DragonSoul service bridge | DragonSoul | Low | Low | Service abstraction can be deferred if boundary remains explicit. |
+
+## 5. Proposed Phase 15E-final.x Structure
+
+### Phase 15E-final.1 - NetworkSync Service Extraction
+
+Estimate: 3-5 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp`
+- packet/header definitions touched only if required.
+
+Approach:
+
+- Build ECS snapshot structs for character/item packet data.
+- Keep `LPDESC` as a service boundary.
+- Remove direct dependency on `CHARACTER` fields from packet encoding.
+- Validate login, spawn, update packet, additional-info/rank title, item update packets.
+
+### Phase 15E-final.2 - Combat Flow Extraction
+
+Estimate: 7-10 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/PointSystem.cpp`
+- drop/reward integration files.
+
+Approach:
+
+- Move attack/victim/death/reward/drop flow to entity-first functions.
+- Add missing combat timing/target components.
+- Keep packet/service output as explicit bridges.
+- Validate melee, skill, mount combat, metin stones, drops, PvP, alignment.
+
+### Phase 15E-final.3 - Inventory and CItem Service Extraction
+
+Estimate: 5-8 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `SRC/Server/GameServer/item_manager.cpp`
+- `SRC/Server/GameServer/item.h`
+
+Approach:
+
+- Move equip/add/remove/ownership/window/cell mutation to ECS item operations.
+- Add item transaction/lock/ownership lease components.
+- Preserve DB and item manager behavior.
+- Validate inventory, equipment, trade, safebox, drop/pickup, DragonSoul.
+
+### Phase 15E-final.4 - ItemSystem_LegacyBridge Split and Removal
+
+Estimate: 5-8 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `SRC/Server/GameServer/item.h`
+
+Approach:
+
+- Split CItem compatibility methods into named service adapters.
+- Delete obsolete CItem read methods.
+- Move write methods into ECS item lifecycle functions.
+- Keep only external service adapters until final CItem deletion.
+
+### Phase 15E-final.5 - Movement, AI and Event Callback Extraction
+
+Estimate: 3-5 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/AISystem.cpp`
+- event scheduler integration.
+
+Approach:
+
+- Replace legacy state callbacks with ECS state/event components.
+- Keep sectree calls as service boundary.
+- Validate warp, show, movement, AI targeting, respawn and mounted combat.
+
+### Phase 15E-final.6 - Activity, Skill, Mount and Runtime Tail Cleanup
+
+Estimate: 4-7 days.
+
+Key files:
+
+- `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/MountSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp`
+
+Approach:
+
+- Move remaining fishing/mining/skill/mount callbacks to entity-first systems.
+- Delete obsolete `CHARACTER::` compatibility wrappers where callers are gone.
+- Keep only named service boundaries.
+
+### Phase 15E-final.7 - Quest Lua Compatibility Boundary
+
+Estimate: 3-5 days.
+
+Key files:
+
+- `questlua_pc.cpp`
+- `questlua_item.cpp`
+- `questlua_guild.cpp`
+- `questlua_party.cpp`
+- `questlua_horse.cpp`
+
+Approach:
+
+- Preserve Lua API behavior.
+- Route implementation through entity/item ECS handles.
+- Avoid changing script-visible semantics.
+
+### Phase 15E-final.8 - CHARACTER Header Prune and Deletion Compile Pass
+
+Estimate: 3-5 days.
+
+Approach:
+
+- Remove obsolete fields from `char.h`.
+- Replace remaining class references with ECS/service interfaces.
+- Keep only service handle structs if needed.
+- Build frequently and delete dead compatibility bodies.
+
+### Phase 15E-final.9 - CItem Header Prune and Deletion Compile Pass
+
+Estimate: 3-5 days.
+
+Approach:
+
+- Remove obsolete fields from `item.h`.
+- Replace remaining LPITEM/CItem usage with item entity/service handles.
+- Keep packet/DB compatibility isolated.
+- Delete residual bridge methods.
+
+## 6. Effort Estimate
+
+| Track | Estimate |
+|-------|----------|
+| CHARACTER class deletion path | 25-35 engineering days |
+| CItem class deletion path | 15-25 engineering days |
+| Sequential critical path | 35-50 engineering days |
+| Parallelizable work | 10-15 engineering days |
+
+The estimates assume current ECS accessors stay stable and no new major gameplay regression appears. Combat and item lifecycle phases dominate risk.
+
+## 7. Parallel Work Opportunities
+
+These can be parallelized after interfaces are agreed:
+
+- NetworkSync snapshot extraction and Activity/Skill tail cleanup.
+- Inventory/CItem service extraction and Quest Lua compatibility routing.
+- Movement/AI callback extraction and Runtime header pruning.
+- Documentation/test-plan work for packet, DB and Lua compatibility.
+
+Do not parallelize Combat extraction with PointSystem/stat changes unless one owner controls both. That path has already produced high-risk regressions in earlier phases.
+
+## 8. Risk Assessment
+
+| Area | Risk | Reason |
+|------|------|--------|
+| Combat | High | Damage, drops, death, PvP, alignment and metin behavior all depend on it. |
+| Item lifecycle | High | Persistence, ownership, trade, refine, sockets and inventory windows depend on exact state sync. |
+| NetworkSync | High | Packet/client compatibility and visible state refresh depend on it. |
+| Movement/AI | Medium | Sectree and position drift regressions are possible. |
+| Quest Lua | Medium | Script compatibility must remain unchanged. |
+| Activity/Skill/Mount tails | Medium | Feature-specific but narrower blast radius. |
+| Runtime cleanup | Low | Mostly compile-time cleanup after blockers are removed. |
+
+## 9. Feasibility Conclusion
+
+Full deletion is feasible, but not as a single mechanical pass.
+
+Minimum required before `CHARACTER` deletion:
+
+- NetworkSync extraction.
+- Combat extraction.
+- Movement/AI callback extraction.
+- Quest Lua compatibility routing.
+- Runtime/header prune.
+
+Minimum required before `CItem` deletion:
+
+- Inventory/CItem mutation extraction.
+- ItemSystem_LegacyBridge split/removal.
+- Item lifecycle and event-state components.
+- Item manager/DB service boundary isolation.
+
+Can the project ship without full deletion? Yes.
+
+Current state is shippable from an ECS migration perspective because read APIs are pure ECS and the remaining debt is isolated service/behavior debt. Full class deletion is architectural cleanup and risk reduction, not a prerequisite for the current migrated gameplay behavior to function.
+

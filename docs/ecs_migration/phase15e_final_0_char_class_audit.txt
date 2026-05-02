@@ -1,0 +1,184 @@
+# Phase 15E-final.0 - CHARACTER and CItem Class Audit
+
+Date: 2026-05-02
+Scope: deletion-readiness audit for `CHARACTER` and `CItem`.
+Mode: audit/documentation only.
+
+## Topology Finding
+
+The old split implementation files referenced by the original audit prompt are no longer present:
+
+- `SRC/Server/GameServer/char.cpp` - absent
+- `SRC/Server/GameServer/char_battle.cpp` - absent
+- `SRC/Server/GameServer/char_item.cpp` - absent
+- `SRC/Server/GameServer/char_skill.cpp` - absent
+- `SRC/Server/GameServer/char_state.cpp` - absent
+- `SRC/Server/GameServer/item.cpp` - absent
+
+Current class declarations remain in:
+
+- `SRC/Server/GameServer/char.h` - 2469 lines
+- `SRC/Server/GameServer/item.h` - 327 lines
+
+Most remaining legacy method bodies are now implemented in ECS subsystem files as transitional `CHARACTER::` / `CItem::` definitions.
+
+Method body inventory from current tree:
+
+| Method body family | Count | Primary location |
+|--------------------|------:|------------------|
+| `CHARACTER::` definitions | 751 | ECS subsystem files plus quest Lua bridge files |
+| `CItem::` definitions | 138 | `ItemSystem_LegacyBridge.cpp`, `InventorySystem.cpp`, `NetworkSyncSystem.cpp` |
+
+## CHARACTER Field Classification
+
+### M1 - Already Mirrored in ECS
+
+These fields have ECS components/accessors and should not block deletion once legacy method bodies stop owning behavior.
+
+| Legacy field group | ECS state / system |
+|--------------------|--------------------|
+| `m_dwPlayerID`, `m_stName`, VID, empire, GM level | identity components and `PlayerRuntime` |
+| type/race/polymorph fields such as `m_bCharType`, `m_dwPolymorphRace` | type tags and `RaceState` |
+| `m_x`, `m_y`, map index / spatial placement | `Position`, `MapIndex`, spatial placement components |
+| HP/SP/stamina/gold/level/EXP/points | `Health`, `Mana`, vital/stat components, `PointSystem`, `PointRouter` |
+| affects and immunity flags | `AffectSystem`, affect mirror, `ImmunityFlags` |
+| party/guild pointers | `SocialRefs` |
+| inventory/equipment readable state | inventory components plus item entity state |
+| mount/pet state already accessed via ECS helpers | mount/pet runtime components |
+| alignment/rank title runtime data | alignment sync paths and network update packets |
+
+### M2 - Needs New or Expanded ECS Components
+
+These fields still represent deletion blockers unless they are moved into explicit ECS-owned state.
+
+| Legacy field group | Required ECS modeling |
+|--------------------|----------------------|
+| refine state: `m_bUnderRefine`, `m_dwRefineNPCVID`, `m_iRefineAdditionalCell`, refine item references | `RefineSession` component |
+| shop/private shop state: `m_pkShop`, `m_pkMyShop`, shop sign/title fields | `ShopSession` / `PrivateShopState` component |
+| exchange/trade transient state where still pointer-bound | explicit `ExchangeRef` lifecycle validation |
+| quest NPC/session state such as quest NPC VID/id | `QuestInteractionState` component |
+| sync ownership and movement sync owner lists | `MovementSyncOwnership` component |
+| fly target vector and combat target caches | `CombatTargetState` extension |
+| combo and attack-pulse state | `CombatTimingState` extension |
+| AI state-machine timers and event pointers | ECS event/state-machine component |
+| activity runtime for fishing/mining | `ActivityState` extension |
+| dungeon ticket/event flags and dungeon membership details | dungeon/service ref component |
+| mobile/auth/chat/mount anti-spam counters | rate-limit/cooldown components |
+
+### M3 - Service Pointer / Accepted External Debt
+
+These are not pure entity state. They should be isolated behind service abstractions rather than copied blindly into ECS.
+
+| Legacy pointer/state | Reason |
+|----------------------|--------|
+| `m_pkDesc` | network session service pointer |
+| `m_pSectree` | spatial service pointer |
+| dungeon/shop/exchange service pointers | server service objects with external lifecycle |
+| event pointers | event scheduler service handles |
+| descriptor/packet/view-map dependencies | network service compatibility |
+| DB/save related service paths | persistence compatibility |
+
+`GetDesc` and `GetSectree` remain accepted E-class debt for now. They are service pointers, not gameplay state.
+
+### M4 - Internal Cache / Transient Fields
+
+These should either be deleted with their method body, or moved only if the subsystem still needs them after extraction.
+
+Examples:
+
+- movement timing: `m_dwMoveStartTime`, `m_dwMoveDuration`, `m_dwLastMoveTime`, `m_dwWalkStartTime`, `m_dwStopTime`
+- combat timing: `m_dwLastAttackTime`, combo counters, attack-pulse fields
+- anti-spam/rate-limit counters: shout/chat/mount counters
+- skip-save/load flags
+- temporary vectors/maps such as damage maps or fly target lists
+
+## CHARACTER Method Body Classification
+
+Current top `CHARACTER::` method-body locations:
+
+| File | Count | Classification |
+|------|------:|----------------|
+| `ecs/systems/PlayerRuntimeSystem.cpp` | 180 | mixed runtime tails and compatibility bodies |
+| `ecs/systems/CombatSystem.cpp` | 109 | critical subsystem blocker |
+| `ecs/systems/ItemSystem_LegacyBridge.cpp` | 92 | item/character bridge blocker |
+| `ecs/systems/SkillSystem.cpp` | 44 | skill behavior bridge |
+| `ecs/systems/MountSystem.cpp` | 37 | mount service bridge |
+| `questlua_guild.cpp` | 34 | Lua compatibility bridge |
+| `ecs/systems/AffectSystem.cpp` | 34 | affect behavior bridge |
+| `ecs/systems/SessionSystem.cpp` | 33 | session/network bridge |
+| `ecs/systems/MovementSystem.cpp` | 32 | movement callback blocker |
+| `ecs/systems/NetworkSyncSystem.cpp` | 21 | critical network blocker |
+
+Deletion classification:
+
+| Class | Meaning | Examples |
+|-------|---------|----------|
+| KEEP temporarily | write/sync bridge still needed until owning subsystem is extracted | movement writes, packet/session bridges |
+| MIGRATE | behavior must move into entity-first system functions | combat flow, item behavior, network sync, activity callbacks |
+| DELETE | obsolete read accessor bodies no longer called directly | migrated scalar/predicate/position/stat accessors |
+
+## CItem Field Classification
+
+### M1 - Already Mirrored in ECS
+
+| Legacy field | ECS state |
+|--------------|-----------|
+| `m_dwID`, `m_dwVID`, `m_dwVnum` | item identity/proto state |
+| `m_bWindow`, `m_wCell` | `ItemLocation` |
+| `m_dwCount` | `ItemCount` |
+| `m_dwLastOwnerPID`, owner identity | `ItemOwner` |
+| `m_bEquipped` | `ItemEquipped` |
+| `m_lFlag` | `ItemFlags` |
+| `m_alSockets` | `ItemSockets` |
+| `m_aAttr` | `ItemAttributes` |
+| proto-derived values | `ItemProtoRef` |
+
+### M2 - Needs New or Expanded ECS Components
+
+| Legacy field group | Required ECS modeling |
+|--------------------|----------------------|
+| expire events | `ItemExpirationState` / scheduler handle component |
+| accessory socket expiration | accessory socket runtime component |
+| ownership event and ownership PID timeout | `ItemOwnershipLease` component |
+| lock/exchange flags | explicit item transaction/lock component |
+| mask/signature vnum fields | item appearance/signature component |
+| extra proto fields | item special-state component |
+| refine/attribute-generation transient state | item mutation session component |
+
+### M3 - Service Pointer / Accepted External Debt
+
+| Legacy state | Reason |
+|--------------|--------|
+| `m_pOwner` | live owner object/service bridge |
+| event pointers | scheduler service handles |
+| item manager lifecycle hooks | global item service compatibility |
+| DragonSoul/DSManager operations | service-owned behavior |
+| shop/trade/safebox interactions | service-managed transactions |
+
+### M4 - Internal Cache / Transient Fields
+
+Examples:
+
+- `m_bSkipSave`
+- `m_bExchanging`
+- `m_isLocked`
+- timer and event pointer caches
+
+## CItem Method Body Classification
+
+Current `CItem::` method-body locations:
+
+| File | Count | Classification |
+|------|------:|----------------|
+| `ecs/systems/ItemSystem_LegacyBridge.cpp` | 119 | primary CItem deletion blocker |
+| `ecs/systems/InventorySystem.cpp` | 15 | inventory/equipment bridge |
+| `ecs/systems/NetworkSyncSystem.cpp` | 4 | packet/network bridge |
+
+Deletion classification:
+
+| Class | Meaning |
+|-------|---------|
+| KEEP temporarily | bridge methods that preserve item manager, inventory or packet compatibility |
+| MIGRATE | item lifecycle, equip, ownership, socket/attribute mutation behavior |
+| DELETE | read methods already replaced by pure ECS item accessors |
+
