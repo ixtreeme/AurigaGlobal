@@ -1492,14 +1492,6 @@ entt::entity GetItemOwner(entt::entity item)
         }
     }
 
-    if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.owner.fallback");
-        if (LPITEM legacyItem = ITEM_MANAGER::instance().Find(identity->id)) {
-            if (auto* ch = legacyItem->GetOwner())
-                return AIHelpers::EcsOf(ch);
-        }
-    }
-
     return entt::null;
 }
 
