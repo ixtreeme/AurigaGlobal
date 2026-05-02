@@ -11453,3 +11453,61 @@ Status:
 - Item read APIs are now pure ECS for the audited accessor set.
 - Alignment/rank title display regression is fixed in the currently accepted WinTest state.
 - Next planned phase: Phase 15E-65.5 accepted item service debt close-out, or Phase 15E-66.2 M2 signature migration.
+
+
+## Phase 15E-65.5 + 15E-66.2 - Item Debt Close-Out and M2 Signature Migration
+
+Scope:
+- Documented accepted item service debt after item read fallback removal.
+- Migrated safe M2/M1-style helper signatures in PlayerRuntime, Inventory and DragonSoul areas.
+- Formalized the M3 defer list for legacy-bound subsystem work.
+
+Part A - Item service debt close-out:
+- Updated `docs/ecs_migration/phase15e_65_0_item_fallback_audit.txt`.
+- Confirmed remaining `LegacyItemOf` usage is not read accessor fallback.
+- Accepted remaining item legacy usage only in explicit write/sync or service bridge boundaries:
+  - `ItemSystem.cpp` sync/destruction/service helper paths.
+  - `ItemSystem_LegacyBridge.cpp` bridge-only file.
+  - `InventorySystem.cpp` inventory/equipment sync and legacy method bridge paths.
+  - DragonSoul/DSManager service operations.
+- Rule preserved: item read APIs stay pure ECS; bridge debt must stay named and isolated.
+
+Part B - M2 signature migration:
+- `PlayerRuntimeSystem.cpp`:
+  - `HasCombatState`, `HasIdleState`, `EnterIdleState`, `GetDuelImpl`, and `SetDuelImpl` now take `entt::entity`.
+  - Quest flag duel helpers now use the entity directly.
+- `InventorySystem.cpp`:
+  - `SyncCharacterEquipmentSlot` now takes the owner entity directly.
+- `DragonSoulSystem.cpp`:
+  - Public API was already entity-first.
+  - ECS affect/desc/name calls now use the owner entity directly instead of re-resolving from the legacy character pointer.
+  - Legacy character pointer remains only as a local service bridge for DSManager/inventory item access.
+
+Commits:
+- a166536 Phase 15E-65.5: Document accepted item service debt
+- 3f5b169 Phase 15E-66.2.a1: M2 signatures in PlayerRuntimeSystem
+- ebdc910 Phase 15E-66.2.b: M2 signatures in InventorySystem
+- ac43c3a Phase 15E-66.2.c: M2 bridges in DragonSoulSystem
+- d82685e Phase 15E-66.2: Document M2 migration scope
+
+Metrics:
+- Broad ECS `LPCHARACTER` / `CHARACTER*` match count after 15E-66.2: 117.
+- This did not reach the initial under-80 target because the remaining surface is mostly M3 legacy method bodies and callback/service bridge code.
+- The under-80 target should not be pursued by hiding M3 pointers behind `auto*`; those areas require subsystem refactor phases.
+
+Documentation added:
+- `docs/ecs_migration/phase15e_66_2_m2_candidates.txt`
+- `docs/ecs_migration/phase15e_66_3_m3_defer_list.txt`
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after each migrated batch.
+- Final build passed.
+
+Status:
+- Phase 15E-65.5 is complete.
+- Phase 15E-66.2 code/documentation work is complete.
+- WinTest is still pending operator validation before a `verified` commit.
+- Recommended next phase: formal 15E-66.3 M3 defer close-out or begin a subsystem-specific refactor phase (NetworkSync, Inventory/CItem service, Movement callbacks, or Combat extraction).
