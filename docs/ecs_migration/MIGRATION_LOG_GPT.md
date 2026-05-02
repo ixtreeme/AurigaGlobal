@@ -11052,3 +11052,114 @@ Status:
 - Phase 15E-60.6 predicate fallback removal remains active.
 - Metin stone hydration regression is fixed without reintroducing fallback.
 - Next planned phase: Phase 15E-60.7 scalar identity fallback removal.
+
+
+## Phase 15E-60.7 - Scalar Identity Fallback Removal
+
+Scope:
+- Removed LegacyCharOf fallback from scalar identity read accessors.
+- Target accessors:
+  - PlayerRuntime::GetPacketVID
+  - PlayerRuntime::GetGMLevel
+  - PlayerRuntime::GetEmpire
+  - PlayerRuntime::GetPlayerID
+  - PlayerRuntime::GetName
+
+Implementation notes:
+- Scalar identity reads are now pure ECS.
+- Missing scalar identity data fails closed instead of silently delegating back to CHARACTER.
+- Invariant diagnostics were extended to surface missing identity components at runtime.
+- Factory/hydration paths remain the source of truth for fixing missing components.
+
+Commits:
+- 6d7573b Phase 15E-60.7.1: Extend scalar identity invariants
+- 8220dd8 Phase 15E-60.7.2a: Remove fallback from GetPacketVID
+- ad6798e Phase 15E-60.7.2b: Remove fallback from GetGMLevel
+- 6478599 Phase 15E-60.7.2c: Remove fallback from GetEmpire
+- 4fc94b4 Phase 15E-60.7.2d: Remove fallback from GetPlayerID
+- 64b67dd Phase 15E-60.7.2e: Remove fallback from GetName
+- 6b8a7eb Phase 15E-60.7.3: Add scalar identity invariant checks
+- 8acddeb Phase 15E-60.7: Update fallback audit after scalar identity removal
+
+Status:
+- Scalar identity accessor fallback removal is complete.
+- ECS read API remains aligned with the rule: no hidden LegacyCharOf fallback in read accessors.
+
+
+## Phase 15E-60.8 - POINT Router With Semantic Split
+
+Scope:
+- Replaced legacy-first PointSystem::Get/GetReal routing with an ECS semantic router.
+- Preserved the 15C-1j POINT_* semantic split:
+  - Dedicated virtual/live sources: HP/SP/stamina, gold, level, EXP, next EXP.
+  - Instant/live stat-array sources: CharacterStatsComponent.
+  - Real/base stat-array sources: CharacterPoints.base.
+  - Transitional SRC_LEGACY_ONLY only for POINT_INVEN and POINT_GAYA.
+
+Implementation notes:
+- Added PointRouter taxonomy and compile-time mapping table.
+- Added direct ECS routing for all non-legacy-only point sources.
+- Added one-time warning path for SRC_LEGACY_ONLY point reads.
+- Added missing write-side sync:
+  - CHARACTER::SetPoint mirrors non-dedicated stat-array values into ECS.
+  - CHARACTER::SetRealPoint mirrors base values into ECS.
+- Dedicated setters already sync HP/SP/stamina/max values, level, EXP and gold.
+
+Commits:
+- 35e5748 Phase 15E-60.8.1: Add PointRouter table and source taxonomy
+- 1afe825 Phase 15E-60.8.2: Implement PointSystem::Get/GetReal via router
+- 1c629f7 Phase 15E-60.8: COMPLETE - POINT router with semantic split
+
+Build:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+
+WinTest:
+- Operator confirmed gameplay works correctly in-game after 15E-60.8 and follow-up hotfix.
+- Combat damage works.
+- Metin stone damage works.
+- Mounted combat remains correct.
+- No visible HP/SP, level, EXP, gold or damage regression was reported.
+
+Status:
+- PointSystem::Get/GetReal are ECS routed for all non-SRC_LEGACY_ONLY point types.
+- Remaining POINT debt is explicit and surfaced:
+  - POINT_INVEN
+  - POINT_GAYA
+- Next planned area: Phase 15E-60.9 state extension or Phase 15E-61 misc accessors.
+
+
+## Phase 15E-60.8 Hotfix - Null Name Pointer In Race Map Logging
+
+Symptom:
+- core99 console emitted repeated logger errors:
+  - [syslog] string pointer is null
+  - Source location: SRC/Server/GameServer/char_manager.cpp(1357)
+
+Root cause:
+- CHARACTER_MANAGER::RegisterRaceNumMap logged PlayerRuntime::GetName(...).data().
+- PlayerRuntime::GetName returns std::string_view.
+- For an empty view, string_view::data() can be a null pointer.
+- Passing that null const char* to fmt/spdlog triggers "string pointer is null".
+
+Fix:
+- Cached the ECS entity once in RegisterRaceNumMap.
+- Passed the std::string_view directly to LOG_INFO instead of calling .data().
+- This keeps fmt/spdlog responsible for formatting the view safely.
+
+Commit:
+- 7d54459 Phase 15E-60.8 Hotfix: Avoid null name pointer in race map logging
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- Operator confirmed everything is now working correctly in-game.
+
+Status:
+- Hotfix is logger-only.
+- No ECS POINT semantics were changed.
+- Phase 15E-60.8 is WinTest verified after hotfix.

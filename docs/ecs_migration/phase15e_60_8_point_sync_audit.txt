@@ -57,3 +57,17 @@ High-risk validation paths:
 - Economy: POINT_GOLD, POINT_GAYA.
 - HP/SP: POINT_HP, POINT_MAX_HP, POINT_SP, POINT_MAX_SP.
 - Mount/metin regression watch: POINT_ST, POINT_ATT_GRADE, stone damage paths.
+
+## WinTest Result
+
+Status: PASSED.
+
+Operator confirmed after the final hotfix:
+- Gameplay works correctly in-game.
+- No remaining damage regression was observed.
+- The console-side "[syslog] string pointer is null" message was isolated to logging, not gameplay.
+
+Hotfix reference:
+- 7d54459 Phase 15E-60.8 Hotfix: Avoid null name pointer in race map logging
+
+The hotfix did not alter POINT semantics or sync behavior. It only replaced a null-prone string_view .data() log argument with direct string_view formatting.

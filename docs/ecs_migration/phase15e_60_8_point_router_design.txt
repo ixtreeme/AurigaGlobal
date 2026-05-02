@@ -64,3 +64,18 @@ The router depends on write-side sync:
 - Dedicated setters already mirror HP/SP/stamina/max values, level, exp, and gold into ECS components.
 
 Without this sync, GetPoint would read stale ECS values and reproduce the previous stat drift class.
+
+## WinTest Result
+
+Status: PASSED after Phase 15E-60.8 and follow-up hotfix.
+
+Validated by operator:
+- In-game behavior is stable.
+- Combat and metin stone damage work.
+- Mounted combat remains correct after the previous position/predicate fixes.
+- No visible POINT router regression in HP/SP, level, EXP, gold or damage paths.
+
+Follow-up hotfix:
+- Commit 7d54459 fixed a logger-only issue in CHARACTER_MANAGER::RegisterRaceNumMap.
+- Root cause: a LOG_INFO call passed PlayerRuntime::GetName(...).data(), which can be a null pointer when GetName returns an empty std::string_view.
+- Fix: pass the std::string_view directly to fmt/spdlog instead of using .data().

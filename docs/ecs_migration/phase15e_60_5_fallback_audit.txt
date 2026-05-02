@@ -333,6 +333,8 @@ Phase 15E-60.8 - Generic POINT router
 - Implemented ECS semantic router for PointSystem::Get/GetReal.
 - Preserved 15C-1j semantic split: dedicated virtual/live, instant array, real/base array and computed next EXP.
 - Removed ch->GetPoint/ch->GetRealPoint bridge for all non-SRC_LEGACY_ONLY point types.
+- WinTest passed after 15E-60.8.
+- Follow-up logger hotfix 7d54459 fixed a null string pointer in char_manager.cpp without changing ECS POINT behavior.
 
 Phase 15E-60.9 - State extension pass
 
