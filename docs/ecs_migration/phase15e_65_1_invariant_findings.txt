@@ -1,0 +1,138 @@
+# Phase 15E-65.1 Item Invariant Findings
+
+Generated: Phase 15E-65.1
+
+## 1. Diagnostic Infrastructure Added
+
+- Added `ecs::ItemInvariants` in `SRC/Server/GameServer/ecs/ItemInvariants.hpp`.
+- Minimum hydrated item entity set:
+  - `ItemIdentity`
+  - `ItemLocation`
+  - `ItemCount`
+  - `ItemPrototypeMeta`
+  - `ItemOwner`
+  - `ItemFlags`
+  - `ItemSockets`
+  - `ItemAttributes`
+- Diagnostic log tags:
+  - `[ITEM_INVARIANT] entity=<id> ctx=<context> missing component <component>`
+  - `[ITEM_BYPASS] legacy item id=<id> vid=<vid> vnum=<vnum> ctx=<context> has no ECS entity`
+
+## 2. Invariant Checkpoints Added
+
+- `EntityFactory::CreateItemEntity`
+  - `item.factory.existing`
+  - `item.factory.create`
+- ECS-first fallback read accessors:
+  - `item.flags.fallback`
+  - `item.owner.fallback`
+  - `item.attribute.fallback`
+  - `item.window.fallback`
+  - `item.cell.fallback`
+  - `item.equipped.fallback`
+
+These checkpoints do not remove fallback and do not change gameplay behavior. They only surface missing hydration when fallback paths are still used.
+
+## 3. Item Creation Path Audit
+
+Direct allocation:
+
+- `SRC/Server/GameServer/item_manager.cpp:258` uses `M2_NEW CItem(vnum)`.
+
+Canonical hydration:
+
+- `SRC/Server/GameServer/item_manager.cpp:527` calls `EntityFactory::CreateItemEntity(g_registry, item)` before returning from `ITEM_MANAGER::CreateItem`.
+- `SRC/Server/GameServer/item_manager.cpp:408` also hydrates before an early blend-item return.
+- `SRC/Server/GameServer/ecs/EntityFactory.cpp:640` is the canonical `CreateItemEntity` implementation.
+
+Conclusion:
+
+- No obvious direct `new CItem` bypass was found outside `ITEM_MANAGER::CreateItem`.
+- Runtime `[ITEM_BYPASS]` warnings are still required to confirm all legacy item instances with nonzero ID are linked to ECS during production paths.
+
+## 4. High-Volume CreateItem Caller Areas
+
+Representative caller groups found:
+
+- Drop/reward paths: `char_manager.cpp`, `CombatSystem.cpp`
+- GM/admin item creation: `cmd_gm.cpp`
+- Refine/cube/dragon soul: `cuberenewal.cpp`, `DragonSoul.cpp`
+- DB load/session: `input_db.cpp`, `SessionSystem.cpp`
+- Shop/offline shop: `new_offlineshop.cpp`
+- Mount/session/item bridge paths: `MountSystem.cpp`, `ItemSystem_LegacyBridge.cpp`
+
+These should be exercised during WinTest and checked for `[ITEM_INVARIANT]` / `[ITEM_BYPASS]`.
+
+## 5. Write Sync Risk Audit
+
+Potential stale-state write clusters found:
+
+- `item_manager.cpp:286-527`: item initialization writes sockets/count before the final factory hydration. This is acceptable if no ECS read happens before `CreateItemEntity`.
+- `item_manager.cpp:1084,1112,1277,1314`: polymorph item socket writes after item creation. These need later sync verification.
+- `item_manager.cpp:2080-2102`: accessory/refine socket copy writes. These need later sync verification.
+- `ItemSystem_LegacyBridge.cpp`: many item creation/write paths remain intentional bridge territory and need a dedicated sync pass.
+
+No write sync fixes were applied in this phase.
+
+## 6. Bucket Assignment
+
+Bucket 1 - Component population fixes:
+
+- No static missing component in `CreateItemEntity` found. Runtime warnings may still reveal path-specific gaps.
+
+Bucket 2 - Sync at write site:
+
+- Socket/count writes after item creation are likely Phase 15E-65.2 candidates.
+- Priority: `item_manager.cpp` post-create socket writes and `ItemSystem_LegacyBridge.cpp` item mutation paths.
+
+Bucket 3 - Factory routing:
+
+- No static direct allocation bypass outside `ITEM_MANAGER::CreateItem` found.
+- Runtime `[ITEM_BYPASS]` warnings will confirm whether any legacy CItem instance bypasses ECS registration.
+
+## 7. WinTest Catalog Checklist
+
+Tail syslog for:
+
+- `[ITEM_INVARIANT]`
+- `[ITEM_BYPASS]`
+
+Scenarios:
+
+- Login and existing item DB load.
+- Pick up dropped item.
+- Buy from NPC shop.
+- Quest reward item.
+- GM `/item` give.
+- Refine item.
+- Move item between cells.
+- Drop item.
+- Trade with player.
+- Safebox put/take.
+- Dragon soul create/refine/equip paths.
+
+VID_DRIFT must remain zero.
+
+## 8. Recommended Phase 15E-65.2 Priorities
+
+1. Catalog runtime warnings from WinTest.
+2. Fix any `[ITEM_BYPASS]` first because that indicates missing entity routing.
+3. Fix `[ITEM_INVARIANT]` missing components second because those are hydration defects.
+4. Audit post-create legacy writes and add ECS sync where stale sockets/count/location/owner are observed.
+
+## 9. Build Status
+
+Build command:
+
+```text
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Result: passed.
+
+Notes:
+
+- Existing warnings remained in `EntityFactory.cpp` about discarded `[[nodiscard]]` return values.
+- Link warning `LNK4075` remained.
+- Post-build printed `pwsh.exe is not recognized`, but MSBuild returned success.
+
