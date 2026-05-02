@@ -2280,7 +2280,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
-			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
+			ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
 			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return;
 		}
@@ -2295,7 +2295,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
-			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
+			ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
 			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return;
 		}

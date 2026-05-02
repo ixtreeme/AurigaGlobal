@@ -323,7 +323,7 @@ struct FWarpToPosition
 		}
 		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
 		{
-			ch->Show(lMapIndex, x, y, 0);
+			ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, 0);
 			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		}
 		else

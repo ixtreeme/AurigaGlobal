@@ -771,7 +771,7 @@ ACMD(do_restart)
 						PIXEL_POSITION pos;
 						if (CWarMapManager::instance().GetStartPosition(mapidx, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() < dwGuildOpponent ? 0 : 1, pos))
 						{
-							ch->Show(mapidx, pos.x, pos.y);
+							ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, pos.x, pos.y);
 						}
 						else
 						{
@@ -834,25 +834,25 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 445000, 1228200);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 445000, 1228200);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 391700, 1293200);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 391700, 1293200);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ch->Show(mapidx, 443400, 1269800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 443400, 1269800);
 										showed = true;
 									}
 									break;
 								case 4:
 									{
-										ch->Show(mapidx, 314700, 1318700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 314700, 1318700);
 										showed = true;
 									}
 									break;
@@ -869,7 +869,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 843500, 1066800);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 843500, 1066800);
 								showed = true;
 							}
 							else
@@ -883,7 +883,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 87900, 614700);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 87900, 614700);
 								showed = true;
 							}
 							else
@@ -899,13 +899,13 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 216600, 266700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 216600, 266700);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 218600, 348900);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 218600, 348900);
 										showed = true;
 									}
 									break;
@@ -922,7 +922,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 166500, 522100);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 166500, 522100);
 								showed = true;
 							}
 							else
@@ -939,39 +939,39 @@ ACMD(do_restart)
 								case 1:
 								case 2:
 									{
-										ch->Show(mapidx, 588100, 180400);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 588100, 180400);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ch->Show(mapidx, 554000, 207000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 554000, 207000);
 										showed = true;
 									}
 									break;
 								case 4:
 								case 5:
 									{
-										ch->Show(mapidx, 569100, 223000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 569100, 223000);
 										showed = true;
 									}
 									break;
 								case 6:
 									{
-										ch->Show(mapidx, 586600, 206800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 586600, 206800);
 										showed = true;
 									}
 									break;
 								case 7:
 								case 8:
 									{
-										ch->Show(mapidx, 596900, 222500);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 596900, 222500);
 										showed = true;
 									}
 									break;
 								case 9:
 									{
-										ch->Show(mapidx, 604700, 192600);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 604700, 192600);
 										showed = true;
 									}
 									break;
@@ -990,33 +990,33 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 905100, 2261700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 905100, 2261700);
 										showed = true;
 									}
 									break;
 								case 2:
 								case 3:
 									{
-										ch->Show(mapidx, 926600, 2262100);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 926600, 2262100);
 										showed = true;
 									}
 									break;
 								case 4:
 								case 5:
 									{
-										ch->Show(mapidx, 953600, 2260800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 953600, 2260800);
 										showed = true;
 									}
 									break;
 								case 6:
 									{
-										ch->Show(mapidx, 913700, 2355800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 913700, 2355800);
 										showed = true;
 									}
 									break;
 								case 7:
 									{
-										ch->Show(mapidx, 975900, 2365500);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 975900, 2365500);
 										showed = true;
 									}
 									break;
@@ -1041,13 +1041,13 @@ ACMD(do_restart)
 								case 6:
 								case 7:
 									{
-										ch->Show(mapidx, 776600, 671900);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 776600, 671900);
 										showed = true;
 									}
 									break;
 								case 8:
 									{
-										ch->Show(mapidx, 810900, 686700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 810900, 686700);
 										showed = true;
 									}
 									break;
@@ -1066,31 +1066,31 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 624500, 1415200);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 624500, 1415200);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 627300, 1446800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 627300, 1446800);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ch->Show(mapidx, 673200, 1444000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 673200, 1444000);
 										showed = true;
 									}
 									break;
 								case 4:
 									{
-										ch->Show(mapidx, 655400, 1421200);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 655400, 1421200);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ch->Show(mapidx, 695500, 1421300);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 695500, 1421300);
 										showed = true;
 									}
 									break;
@@ -1107,7 +1107,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 942000, 127700);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 942000, 127700);
 								showed = true;
 							}
 							else
@@ -1121,7 +1121,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 853700, 1416400);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 853700, 1416400);
 								showed = true;
 							}
 							else
@@ -1135,7 +1135,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 782400, 1502100);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 782400, 1502100);
 								showed = true;
 							}
 							else
@@ -1151,33 +1151,33 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 377400, 2704000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 377400, 2704000);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 378200, 2680300);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 378200, 2680300);
 										showed = true;
 									}
 									break;
 								case 3:
 								case 4:
 									{
-										ch->Show(mapidx, 401700, 2728500);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 401700, 2728500);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ch->Show(mapidx, 401700, 2705700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 401700, 2705700);
 										showed = true;
 									}
 									break;
 								case 6:
 								case 7:
 									{
-										ch->Show(mapidx, 402200, 2682300);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 402200, 2682300);
 										showed = true;
 									}
 									break;
@@ -1185,20 +1185,20 @@ ACMD(do_restart)
 								case 9:
 								case 10:
 									{
-										ch->Show(mapidx, 423800, 2729400);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2729400);
 										showed = true;
 									}
 									break;
 								case 11:
 								case 12:
 									{
-										ch->Show(mapidx, 423800, 2705900);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2705900);
 										showed = true;
 									}
 									break;
 								case 13:
 									{
-										ch->Show(mapidx, 423800, 2681100);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2681100);
 										showed = true;
 									}
 									break;
@@ -1217,33 +1217,33 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 486400, 25600);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 486400, 25600);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 502500, 70300);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 502500, 70300);
 										showed = true;
 									}
 									break;
 								case 3:
 								case 4:
 									{
-										ch->Show(mapidx, 524300, 43500);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 524300, 43500);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ch->Show(mapidx, 523500, 67000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 523500, 67000);
 										showed = true;
 									}
 									break;
 								case 6:
 								case 7:
 									{
-										ch->Show(mapidx, 546900, 68700);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 546900, 68700);
 										showed = true;
 									}
 									break;
@@ -1251,20 +1251,20 @@ ACMD(do_restart)
 								case 9:
 								case 10:
 									{
-										ch->Show(mapidx, 549400, 45600);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 549400, 45600);
 										showed = true;
 									}
 									break;
 								case 11:
 								case 12:
 									{
-										ch->Show(mapidx, 528900, 46200);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 528900, 46200);
 										showed = true;
 									}
 									break;
 								case 13:
 									{
-										ch->Show(mapidx, 506400, 45600);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 506400, 45600);
 										showed = true;
 									}
 									break;
@@ -1281,7 +1281,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 1528200, 2318700);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 1528200, 2318700);
 								showed = true;
 							}
 							else
@@ -1295,7 +1295,7 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ch->Show(mapidx, 320000, 1529000);
+								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 320000, 1529000);
 								showed = true;
 							}
 							else
@@ -1311,19 +1311,19 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 54500, 2268000);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 54500, 2268000);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 19400, 2306600);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 19400, 2306600);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ch->Show(mapidx, 110500, 2295900);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 110500, 2295900);
 										showed = true;
 									}
 									break;
@@ -1342,13 +1342,13 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ch->Show(mapidx, 2320600, 3077800);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 2320600, 3077800);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ch->Show(mapidx, 2351500, 3141500);
+										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 2351500, 3141500);
 										showed = true;
 									}
 									break;

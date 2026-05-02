@@ -491,7 +491,7 @@ ACMD(do_goto)
 	x *= 100;
 	y *= 100;
 
-	ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
+	ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
 	ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 }
 

@@ -637,7 +637,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	ch->SetRotation(number(0, 360));
 
-	if (!ch->Show(lMapIndex, x, y, 0, false))
+	if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, 0, false))
 	{
 		M2_DESTROY_CHARACTER(ch);
 		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
@@ -772,7 +772,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	ch->SetRotation(iRot);
 #endif
 
-	if (bShow && !ch->Show(lMapIndex, x, y, z, bSpawnMotion))
+	if (bShow && !ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, z, bSpawnMotion))
 	{
 		M2_DESTROY_CHARACTER(ch);
 		//"SpawnMob: cannot show monster");

@@ -617,7 +617,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	CGuildManager::instance().LoginMember(ch);
 
 	// ?? ? ?
-	ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos.x, pos.y, pos.z);
+	ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos.x, pos.y, pos.z);
 	ch->ReviveInvisible(5);
 	d->SetPhase(PHASE_GAME);
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);

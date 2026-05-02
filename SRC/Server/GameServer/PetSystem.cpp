@@ -60,7 +60,7 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 		return true;
 	}
 
-	return follower->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
+	return ecs::MovementSystem::Show(AIHelpers::EcsOf(follower), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
 }
 }
 
@@ -282,7 +282,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
 	this->SetSummonItem(pSummonItemEntity);
 	m_pkOwner->ComputePoints();
-	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
+	ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, true);
 	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
 #ifdef ENABLE_RECALL

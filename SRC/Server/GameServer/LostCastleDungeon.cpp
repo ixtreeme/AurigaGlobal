@@ -836,7 +836,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 skillList.push_back((uint8_t)sv);
             }
 
-            if (!clone->Show(mapIndex, gx, gy, 0))
+            if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(clone), mapIndex, gx, gy, 0))
             {
                 M2_DESTROY_CHARACTER(clone);
                 continue;
@@ -1372,7 +1372,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
             skillList.push_back((uint8_t)sv);
         }
 
-        if (!clone->Show(mapIndex, gx, gy, 0))
+        if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(clone), mapIndex, gx, gy, 0))
         {
             M2_DESTROY_CHARACTER(clone);
             continue;

@@ -333,8 +333,8 @@ EVENTFUNC(ready_to_start_event)
 
 		case 3:
 			{
-				chA->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chA)), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
-				chB->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chB)), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
+				ecs::MovementSystem::Show(AIHelpers::EcsOf(chA), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chA)), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
+				ecs::MovementSystem::Show(AIHelpers::EcsOf(chB), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chB)), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
 
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(chA))->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();

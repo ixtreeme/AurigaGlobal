@@ -380,11 +380,11 @@ void COXEventManager::WarpToAudience()
 		{
 			switch ( number(0, 3))
 			{
-				case 0 : pkChar->Show(OXEVENT_MAP_INDEX, 896300, 28900); break;
-				case 1 : pkChar->Show(OXEVENT_MAP_INDEX, 890900, 28100); break;
-				case 2 : pkChar->Show(OXEVENT_MAP_INDEX, 896600, 20500); break;
-				case 3 : pkChar->Show(OXEVENT_MAP_INDEX, 902500, 28100); break;
-				default : pkChar->Show(OXEVENT_MAP_INDEX, 896300, 28900); break;
+				case 0 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896300, 28900); break;
+				case 1 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 890900, 28100); break;
+				case 2 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896600, 20500); break;
+				case 3 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 902500, 28100); break;
+				default : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896300, 28900); break;
 			}
 		}
 	}

@@ -921,7 +921,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 
 	if (nullptr != m_pkChar)
 	{
-		m_pkChar->Show (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y);
+		ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y);
 		m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
 
 		return m_dwVID;
@@ -1068,7 +1068,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 
 	//this->SetNextExp(m_pkChar->PetGetNextExp());
 	m_pkOwner->ComputePoints();
-	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
+	ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetIcon %d", m_dwSummonItemVnum);
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetEvolution %d", m_dwevolution);
@@ -1205,7 +1205,7 @@ bool CNewPetActor::_UpdateFollowAI()
 		float fOwnerRot = m_pkOwner->GetRotation() * 3.141592f / 180.f;
 		float fx = -APPROACH * cos(fOwnerRot);
 		float fy = -APPROACH * sin(fOwnerRot);
-		if (m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), ownerX + fx, ownerY + fy))
+		if (ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), ownerX + fx, ownerY + fy))
 		{
 			return true;
 		}

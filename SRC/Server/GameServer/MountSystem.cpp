@@ -62,7 +62,7 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 		return true;
 	}
 
-	return follower->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
+	return ecs::MovementSystem::Show(AIHelpers::EcsOf(follower), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
 }
 }
 
@@ -430,7 +430,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	//m_pkOwner->ComputePoints();
 
-	m_pkChar->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
+	ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
 	return m_dwVID;
 }
 
