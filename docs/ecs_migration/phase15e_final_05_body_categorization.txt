@@ -1,0 +1,117 @@
+# Phase 15E-final.0.5 - Dead Method Body Categorization
+
+Date: 2026-05-02
+Scope: identify legacy `CHARACTER::` / `CItem::` method bodies that can be deleted safely.
+Mode: cleanup audit plus strict safety decision.
+
+## Safety Rule Applied
+
+A method body is `DELETE` only if all are true:
+
+- The body still exists as a `CHARACTER::` or `CItem::` definition.
+- The body is pure delegation to an ECS API or an obsolete read mirror.
+- There are no direct callers outside bridge/subsystem code.
+- There are no active calls from other remaining legacy method bodies.
+- The body has no service, packet, DB, sectree, event or write/sync side effects.
+
+If any of those checks failed, the method was kept.
+
+## Current Count Snapshot
+
+Local `Select-String` snapshot after Phase 15E-final.0:
+
+| Metric | Count |
+|--------|------:|
+| `LPCHARACTER` matches | 2009 |
+| `CHARACTER::` method bodies | 614 |
+| `CItem::` method bodies | 129 |
+
+Note: These counts use PowerShell `Select-String` and differ from the operator baseline because the original prompt used grep-style commands and a different body regex. The category decision below is based on actual file/line inspection, not only aggregate counts.
+
+## Migrated CHARACTER Method Body Results
+
+| Method | Category | File:Line | Reason / Action |
+|--------|----------|-----------|-----------------|
+| `CHARACTER::GetPlayerID` | DELETE-NOT-PRESENT | n/a | No body found. Nothing to delete. |
+| `CHARACTER::GetEmpire` | DELETE-NOT-PRESENT | n/a | No body found. Comment references only. |
+| `CHARACTER::IsPC` | DELETE-NOT-PRESENT | n/a | No body found. Comment references only. |
+| `CHARACTER::IsNPC` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::IsStone` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::IsMonster` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::GetMapIndex` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::GetX` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::GetY` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::GetExchange` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::IsObserverMode` | DELETE-NOT-PRESENT | n/a | No body found. |
+| `CHARACTER::GetGMLevel` | REWIRE | `PlayerRuntimeSystem.cpp:812` | Active direct callers remain in `item_manager.cpp`; do not delete until caller-side rewire. |
+| `CHARACTER::GetPacketVID` | KEEP | `PlayerRuntimeSystem.cpp:5216` | Still heavily used by legacy packet/combat/network method bodies. Subsystem cleanup required first. |
+| `CHARACTER::GetName` | KEEP | `NetworkSyncSystem.cpp:825`, `NetworkSyncSystem.cpp:830` | Network/client compatibility body. Active internal and external non-character false positives make this unsafe for this phase. |
+| `CHARACTER::GetGold` | KEEP | `PlayerRuntimeSystem.cpp:716` | Used by remaining legacy point/session/item method bodies. |
+| `CHARACTER::GetMaxHP` | KEEP | `PlayerRuntimeSystem.cpp:3217` | Used by combat, affect, item bridge and packet sync bodies. |
+| `CHARACTER::GetMaxSP` | KEEP | `PlayerRuntimeSystem.cpp:3231` | Used by combat, affect, item bridge and packet sync bodies. |
+| `CHARACTER::GetLevel` | REWIRE/KEEP | `PlayerRuntimeSystem.cpp:694` | Direct character callers remain in `item_manager.cpp`; many internal legacy bodies also call it. |
+| `CHARACTER::GetPoint` | REWIRE/KEEP | `PointSystem.cpp:416` | Direct caller remains in `ani.cpp`; factory hydration also still uses the legacy body. |
+| `CHARACTER::GetRealPoint` | KEEP | `PointSystem.cpp:369` | No non-system direct caller, but active legacy point/session/stat bodies still call it. |
+| `CHARACTER::FindAffect` | KEEP | `AffectSystem.cpp:846` | Active affect/combat/item bridge bodies still call it. |
+| `CHARACTER::IsAffectFlag` | KEEP | `AffectSystem.cpp:1857` | Active affect/combat/movement/skill/item bridge bodies still call it. |
+| `CHARACTER::GetRaceNum` | REWIRE/KEEP | `PlayerRuntimeSystem.cpp:644` | Direct character callers remain in `item_manager.cpp`; many internal reward/drop bodies still call it. |
+| `CHARACTER::IsImmune` | REWIRE | `AffectSystem.cpp:736` | Pure ECS delegate, but direct callers remain in `battle.h` and `trigger.cpp`; deleting now would break links. |
+| `CHARACTER::GetParty` | DELETE-NOT-PRESENT | n/a | No body found in current filtered definition scan. |
+| `CHARACTER::GetGuild` | DELETE-NOT-PRESENT | n/a | No body found in current filtered definition scan. |
+| `CHARACTER::GetInventoryItem` | KEEP | `ItemSystem_LegacyBridge.cpp:2181` | Active item/combat/DragonSoul bridge bodies still call it. |
+| `CHARACTER::GetWear` | KEEP | `ItemSystem_LegacyBridge.cpp:2661` | Active activity/combat/inventory/item bridge bodies still call it. |
+| `CHARACTER::MountVnum` | REWIRE/KEEP | `PlayerRuntimeSystem.cpp:3680` | Direct callers remain in GM, pet, PvP and mount paths. Also a write-style mount state update. |
+| `CHARACTER::IsDead` | KEEP | `CombatSystem.cpp:6569` | Active combat/AI/item/movement/session bodies still call it. |
+| `CHARACTER::IsStun` | KEEP | `CombatSystem.cpp:6482` | Active combat/AI/item/movement/session bodies still call it. |
+| `CHARACTER::CanWarp` | KEEP | `SessionSystem.cpp:483` | Active session/runtime body calls remain; computed/service predicate. |
+| `CHARACTER::CanUseSkill` | KEEP | `SkillSystem.cpp:1052` | Active skill body calls remain; computed skill predicate. |
+| `CHARACTER::WarpSet` | DEFER | `SessionSystem.cpp:524` | Write/service operation. Explicitly out of scope for dead-body deletion. |
+| `CHARACTER::ExitToSavedLocation` | DEFER | `SessionSystem.cpp:406` | Write/service operation. Explicitly out of scope. |
+| `CHARACTER::Goto` | DEFER | `MovementSystem.cpp:572` | Movement write/path operation. Explicitly out of scope. |
+| `CHARACTER::Show` | DEFER | `SessionSystem.cpp:888` | Spawn/visibility/sectree service operation. Explicitly out of scope. |
+| `CHARACTER::Stop` | DEFER | `MovementSystem.cpp:560` | Movement write operation. Explicitly out of scope. |
+| `CHARACTER::Move` | DEFER | `MovementSystem.cpp:768` | Movement write operation. Explicitly out of scope. |
+| `CHARACTER::OnMove` | DEFER | `PlayerRuntimeSystem.cpp:4083` | Movement/combat sync hook. Explicitly out of scope. |
+
+## CItem Method Body Results
+
+Only five migrated read-style `CItem::` bodies from the 15E-65.x target list still exist in the filtered definition scan:
+
+| Method | Category | File:Line | Reason / Action |
+|--------|----------|-----------|-----------------|
+| `CItem::GetName` | KEEP | `ItemSystem_LegacyBridge.cpp:716` | Locale/owner/desc compatibility behavior; not a pure ECS delegate. |
+| `CItem::GetCount` | KEEP | `ItemSystem_LegacyBridge.cpp:765` | Contains proto/count compatibility logic; not a pure ECS delegate. |
+| `CItem::GetValue` | KEEP | `ItemSystem_LegacyBridge.cpp:863` | Proto access still used by legacy item bridge behavior. |
+| `CItem::GetLevelLimit` | KEEP | `ItemSystem_LegacyBridge.cpp:1926` | Proto limit scan still used by legacy item behavior. |
+| `CItem::GetRefineLevel` | KEEP | `ItemSystem_LegacyBridge.cpp:16853` | Parses base name/refine suffix; not a pure ECS delegate. |
+
+No `CItem::` body in this set met the `DELETE` criteria.
+
+## Direct Caller Follow-Up List
+
+These are the concrete non-dead items blocking deletion or requiring a separate caller-side cleanup pass:
+
+| Method | Remaining caller examples | Required follow-up |
+|--------|---------------------------|--------------------|
+| `GetGMLevel` | `item_manager.cpp:1596`, `item_manager.cpp:1734` | Rewire drop logging to `ecs::PlayerRuntime::GetGMLevel`. |
+| `GetRaceNum` | `item_manager.cpp:1579`, `item_manager.cpp:1581` | Rewire event drop logic to `ecs::PlayerRuntime::GetRaceNum`. |
+| `GetPoint` | `ani.cpp:368`, `EntityFactory.cpp:249` | Rewire animation speed and factory hydration carefully; factory path may remain bridge-owned. |
+| `IsImmune` | `battle.h:50`, `battle.h:78`, `trigger.cpp:315` | Rewire to `ecs::AffectSystem::IsImmune`. |
+| `MountVnum` | `cmd_gm.cpp:3073`, `MountSystem.cpp`, `New_PetSystem.cpp`, `PetSystem.cpp`, `pvp.cpp` | Treat as write/state update, not read dead body. Needs mount API caller-side cleanup. |
+
+## Decision
+
+No method body was deleted in this pass.
+
+Reason:
+
+- The already-obsolete bodies for many migrated accessors are already absent.
+- The bodies that still exist are either active from other legacy method bodies, active direct callers, or write/service bridges.
+- Deleting any of them now would either fail the build or silently cut a subsystem bridge that Phase 15E-final.1+ is supposed to own.
+
+Recommended next cleanup:
+
+1. Run a small caller-side rewire phase for `GetGMLevel`, `GetRaceNum`, `GetPoint`, `IsImmune` and possibly mount state calls.
+2. Re-run this categorization.
+3. Delete bodies only after their system refs reach zero or after the owning subsystem extraction replaces the internal calls.
+

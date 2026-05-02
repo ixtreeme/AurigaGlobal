@@ -11550,3 +11550,35 @@ Status:
 - Phase 15E-final.0 audit is complete.
 - No code changes were made.
 - Recommended next phase: Phase 15E-final.1 NetworkSync service extraction, followed by Combat flow extraction and Inventory/CItem service extraction.
+
+
+## Phase 15E-final.0.5 - Dead Method Body Cleanup Audit
+
+Scope:
+- Audited migrated `CHARACTER::` and `CItem::` method bodies for safe deletion.
+- Applied a strict rule: delete only bodies with no active callers, no internal legacy-body references, and no service/write side effects.
+
+Result:
+- No method body was deleted in this pass.
+- The audit found that many already-obsolete migrated accessor bodies are already absent.
+- The remaining bodies are not dead under the strict rule:
+  - Some have direct caller-side leftovers (`GetGMLevel`, `GetRaceNum`, `GetPoint`, `IsImmune`, `MountVnum`).
+  - Some are still called by legacy method bodies inside subsystem files (`GetPacketVID`, `GetLevel`, `GetMaxHP`, `GetWear`, `FindAffect`, etc.).
+  - Movement/session methods (`WarpSet`, `Show`, `Stop`, `Move`, `OnMove`, `ExitToSavedLocation`) are active write/service bridges and were intentionally not touched.
+  - Remaining `CItem::` read-like bodies are compatibility logic, not pure ECS delegates.
+
+Documentation added:
+- `docs/ecs_migration/phase15e_final_05_body_categorization.txt`
+
+Follow-up required before actual deletion:
+- Rewire remaining direct callers:
+  - `item_manager.cpp` uses `GetGMLevel` and `GetRaceNum`.
+  - `ani.cpp` uses `GetPoint`.
+  - `battle.h` and `trigger.cpp` use `IsImmune`.
+  - mount state callers still invoke `MountVnum`.
+- Re-run the body categorization after those rewires.
+- Delete only bodies whose internal subsystem references are also gone.
+
+Status:
+- Phase 15E-final.0.5 produced a safety categorization rather than code deletion.
+- This avoids deleting active bridge/subsystem behavior under a misleading "dead body" label.
