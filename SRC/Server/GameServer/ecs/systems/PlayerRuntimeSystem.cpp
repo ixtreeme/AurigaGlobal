@@ -416,16 +416,14 @@ static const ecs::GoldAmount* TryGetGoldAmountComponent(entt::entity e)
     return g_registry.try_get<ecs::GoldAmount>(e);
 }
 
-inline bool HasCombatState(const CHARACTER* ch)
+inline bool HasCombatState(entt::entity e)
 {
-    const entt::entity e = EcsEntityOf(ch);
     return e != entt::null && g_registry.valid(e) &&
         g_registry.all_of<ecs::CombatActiveTag>(e);
 }
 
-inline bool HasIdleState(const CHARACTER* ch)
+inline bool HasIdleState(entt::entity e)
 {
-    const entt::entity e = EcsEntityOf(ch);
     if (e == entt::null || !g_registry.valid(e))
         return true;
 
@@ -433,9 +431,8 @@ inline bool HasIdleState(const CHARACTER* ch)
         !g_registry.all_of<ecs::MovementDestination>(e);
 }
 
-inline void EnterIdleState(CHARACTER* ch)
+inline void EnterIdleState(entt::entity e)
 {
-    const entt::entity e = EcsEntityOf(ch);
     if (e == entt::null || !g_registry.valid(e))
         return;
 
@@ -445,11 +442,11 @@ inline void EnterIdleState(CHARACTER* ch)
 }
 
 #ifdef ENABLE_PVP_ADVANCED
-int GetDuelImpl(const CHARACTER* ch, const char* type)
+int GetDuelImpl(entt::entity e, const char* type)
 {
     const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-    int m_nDuelTable[] = { (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8])), (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9])) };
+    int m_nDuelTable[] = { (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[8])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[9])) };
 
     if (!strcmp(type, "BlockChangeItem") && m_nDuelTable[0] > 0) {
         return true;
@@ -484,39 +481,39 @@ int GetDuelImpl(const CHARACTER* ch, const char* type)
     return false;
 }
 
-void SetDuelImpl(CHARACTER* ch, const char* type, int value)
+void SetDuelImpl(entt::entity e, const char* type, int value)
 {
     const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
     if (!strcmp(type, "BlockChangeItem")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[0], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[0], value);
     }
     if (!strcmp(type, "BlockBuff")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[1], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[1], value);
     }
     if (!strcmp(type, "BlockPotion")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[2], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[2], value);
     }
     if (!strcmp(type, "BlockRide")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[3], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[3], value);
     }
     if (!strcmp(type, "BlockPet")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[4], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[4], value);
     }
     if (!strcmp(type, "BlockPoly")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[5], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[5], value);
     }
     if (!strcmp(type, "BlockParty")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[6], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[6], value);
     }
     if (!strcmp(type, "BlockExchange")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[7], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[7], value);
     }
     if (!strcmp(type, "BetMoney")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[8], value);
     }
     if (!strcmp(type, "IsFight")) {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9], value);
+        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[9], value);
     }
 }
 #endif
@@ -3064,12 +3061,12 @@ void CHARACTER::RankingSubcategory(int iArg)
 #ifdef ENABLE_PVP_ADVANCED
 int CHARACTER::GetDuel(const char* type) const
 {
-    return GetDuelImpl(this, type);
+    return GetDuelImpl(EcsEntityOf(this), type);
 }
 
 void CHARACTER::SetDuel(const char* type, int value)
 {
-    SetDuelImpl(this, type, value);
+    SetDuelImpl(EcsEntityOf(this), type, value);
 }
 #endif
 
@@ -4931,7 +4928,7 @@ void CHARACTER::Initialize()
 
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
-    EnterIdleState(this);
+    EnterIdleState(EcsEntityOf(this));
     GotoState(m_stateIdle);
     m_dwStateDuration = 1;
 
