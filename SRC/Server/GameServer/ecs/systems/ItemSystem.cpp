@@ -1541,11 +1541,6 @@ TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
     if (const auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item))
         return attrs->attrs[index];
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.attribute.fallback");
-        return legacyItem->GetAttribute(index);
-    }
-
     return {};
 }
 
