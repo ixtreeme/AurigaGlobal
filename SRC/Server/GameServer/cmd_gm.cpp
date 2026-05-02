@@ -316,7 +316,7 @@ ACMD(do_transfer)
 	}
 
 	//tch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
-	tch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(tch), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -425,7 +425,7 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
-			ch->WarpSet(x, y);
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x, y);
 			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return true;
 		}
@@ -561,12 +561,12 @@ ACMD(do_warp)
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 805, "%d#%d#%d", mapIndex, x, y);
 #endif
-	ch->WarpSet(x, y, mapIndex);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x, y, mapIndex);
 #else
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
-	ch->WarpSet(x, y);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x, y);
 #endif
 
 
@@ -579,7 +579,7 @@ ACMD(do_rewarp)
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 #endif
-	ch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 	ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 }
 #endif
@@ -2322,7 +2322,7 @@ ACMD(do_private)
 		ch->SaveExitLocation();
 
 		LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
-		ch->WarpSet(pkSectreeMap->m_setting.posSpawn.x, pkSectreeMap->m_setting.posSpawn.y, lMapIndex);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pkSectreeMap->m_setting.posSpawn.x, pkSectreeMap->m_setting.posSpawn.y, lMapIndex);
 	}
 	else
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Can't find map by index %d", map_index);

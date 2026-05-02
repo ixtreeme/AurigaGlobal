@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -368,7 +369,7 @@ void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
     // Safety: if someone logs into the original dungeon map, move to lobby.
     if (idx == kOrcOriginalMap)
     {
-        ch->WarpSet(535400, 1428400);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
         return;
     }
 
@@ -379,7 +380,7 @@ void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
     {
-        ch->WarpSet(535400, 1428400);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
         return;
     }
 
@@ -641,7 +642,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ch->WarpSet(535400, 1428400);
+            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
             return true;
         }
         // completed -> continue below (fresh entrance flow)
@@ -668,7 +669,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagWasCompleted) == 0)
             {
                 ch->SaveExitLocation();
-                ch->WarpSet(kEnterX * 100, kEnterY * 100, rejoinIdx);
+                ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterX * 100, kEnterY * 100, rejoinIdx);
                 return true;
             }
         }

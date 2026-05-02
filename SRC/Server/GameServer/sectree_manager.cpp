@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include <Base/targa.h>
@@ -1270,9 +1271,9 @@ class FRemoveIfAttr
 					PIXEL_POSITION pos;
 
 					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
-						ch->WarpSet(pos.x, pos.y);
+						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y);
 					else
-						ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 				}
 				else
 					ch->Dead();

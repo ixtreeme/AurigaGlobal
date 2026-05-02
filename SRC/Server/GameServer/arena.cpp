@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "config.h"
@@ -479,8 +480,8 @@ bool CArena::StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint
 	this->m_dwPIDB = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pCharTo));
 	this->m_dwSetCount = nSetPoint;
 
-	pCharFrom->WarpSet(GetStartPointA().x * 100, GetStartPointA().y * 100);
-	pCharTo->WarpSet(GetStartPointB().x * 100, GetStartPointB().y * 100);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pCharFrom), GetStartPointA().x * 100, GetStartPointA().y * 100);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pCharTo), GetStartPointB().x * 100, GetStartPointB().y * 100);
 
 	if (m_pEvent != nullptr) {
 		event_cancel(&m_pEvent);
@@ -558,7 +559,7 @@ void CArena::EndDuel()
 
 		playerA->SetArena(nullptr);
 
-		playerA->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))));
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(playerA), ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerA))));
 	}
 
 	if (playerB != nullptr)
@@ -571,7 +572,7 @@ void CArena::EndDuel()
 
 		playerB->SetArena(nullptr);
 
-		playerB->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))));
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(playerB), ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(playerB))));
 	}
 
 	for (auto iter = m_mapObserver.begin(); iter != m_mapObserver.end(); ++iter)
@@ -579,7 +580,7 @@ void CArena::EndDuel()
 		LPCHARACTER pChar = CHARACTER_MANAGER::instance().FindByPID(iter->first);
 		if (pChar != nullptr)
 		{
-			pChar->WarpSet(ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))));
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pChar), ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar))));
 		}
 	}
 
@@ -908,7 +909,7 @@ bool CArena::AddObserver(LPCHARACTER pChar)
 	m_mapObserver.insert(std::make_pair(pid, (LPCHARACTER)nullptr));
 
 	pChar->SaveExitLocation();
-	pChar->WarpSet(m_ObserverPoint.x * 100, m_ObserverPoint.y * 100);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pChar), m_ObserverPoint.x * 100, m_ObserverPoint.y * 100);
 
 	return true;
 }

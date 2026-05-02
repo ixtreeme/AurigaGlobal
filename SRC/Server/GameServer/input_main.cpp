@@ -3479,7 +3479,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	coord_x = rConf.coord_x;
 	coord_y = rConf.coord_y;
 
-	ch->WarpSet(coord_x, coord_y);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), coord_x, coord_y);
 
 }
 #endif

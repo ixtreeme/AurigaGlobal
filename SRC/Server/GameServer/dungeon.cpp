@@ -73,7 +73,7 @@ struct FWarpToDungeonCoords
 	void operator () (LPCHARACTER ch)
 	{
 		ch->SaveExitLocation();
-		ch->WarpSet(m_x, m_y, m_lMapIndex);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndex);
 	}
 
 	int32_t m_lMapIndex;
@@ -169,7 +169,7 @@ struct FWarpToDungeon
 	void operator () (LPCHARACTER ch)
 	{
 		ch->SaveExitLocation();
-		ch->WarpSet(m_x, m_y, m_lMapIndex);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndex);
 		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
 	}
 
@@ -328,7 +328,7 @@ struct FWarpToPosition
 		}
 		else
 		{
-			ch->WarpSet(x,y,lMapIndex);
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x,y,lMapIndex);
 		}
 	}
 };
@@ -725,15 +725,15 @@ struct FExitDungeonLobby
 			{
 				if (lobby == 1)
 				{
-					ch->WarpSet(535400, 1428400);
+					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
 				}
 				else if (lobby == 2)
 				{
-					ch->WarpSet(536900, 1331400);
+					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 536900, 1331400);
 				}
 				else if (lobby == 3)
 				{
-					ch->WarpSet(645800, 351400);
+					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 645800, 351400);
 				}
 			}
 		}

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -625,7 +626,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ch->WarpSet(535400, 1428400);
+            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
             return true;
         }
         // completed -> continue below to fresh entrance flow
@@ -652,7 +653,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
                 ch->SaveExitLocation();
-                ch->WarpSet(kRejoinWarpX, kRejoinWarpY, rejoinIdx);
+                ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kRejoinWarpX, kRejoinWarpY, rejoinIdx);
                 return true;
             }
         }

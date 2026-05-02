@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
@@ -133,7 +134,7 @@ namespace quest
 		{
 			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == m_bEmpire)
 			{
-				ch->WarpSet(m_x, m_y, m_lMapIndexTo);
+				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndexTo);
 			}
 		}
 	}

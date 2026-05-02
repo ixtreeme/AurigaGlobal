@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -277,7 +278,7 @@ namespace
             return;
         int32_t x = 0, y = 0;
         GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), x, y);
-        ch->WarpSet(x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -721,9 +722,9 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             {
                 const int32_t floor = std::max(1, d->GetFlag(kFlagFloor));
                 if (floor == 1)
-                    ch->WarpSet(kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
                 else
-                    ch->WarpSet(kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
                 ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;
             }

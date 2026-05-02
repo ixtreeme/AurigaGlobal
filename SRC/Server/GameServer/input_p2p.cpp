@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/billing.h>
@@ -334,12 +335,12 @@ void CInputP2P::WarpCharacter(const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 	{
-		ch->WarpSet(p->x, p->y, p->mapIndex);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->x, p->y, p->mapIndex);
 	}
 #else
 	if (ch)
 	{
-		ch->WarpSet(p->x, p->y);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->x, p->y);
 	}
 #endif
 }
@@ -371,7 +372,7 @@ void CInputP2P::Transfer(const char * c_pData)
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(p->szName);
 
 	if (ch)
-		ch->WarpSet(p->lX, p->lY);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->lX, p->lY);
 }
 
 void CInputP2P::LoginPing(LPDESC d, const char * c_pData)

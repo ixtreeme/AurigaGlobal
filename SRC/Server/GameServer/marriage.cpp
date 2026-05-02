@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -527,7 +528,7 @@ namespace marriage
 				return;
 			}
 			ch->SaveExitLocation();
-			ch->WarpSet(pos.x, pos.y, pWeddingInfo->dwMapIndex);
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y, pWeddingInfo->dwMapIndex);
 		}
 	}
 

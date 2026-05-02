@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -691,7 +692,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 	pPC->SetFlag("war.is_war_member", 1);
 
 	ch->SaveExitLocation();
-	ch->WarpSet(pos.x, pos.y, gw.map_index);
+	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y, gw.map_index);
 }
 
 void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -908,7 +909,7 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     // If someone logs in on the base map, kick them to default location.
     if (idx == kRuneOriginalMap)
     {
-        ch->WarpSet(536900, 1331400);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 536900, 1331400);
         return;
     }
 
@@ -1242,15 +1243,15 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             {
                 const int32_t floor = d->GetFlag(kFlagFloor);
                 if (floor == 1)
-                    ch->WarpSet(kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
                 else if (floor == 2)
-                    ch->WarpSet(kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
                 else if (floor == 3)
-                    ch->WarpSet(kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
                 else if (floor == 4)
-                    ch->WarpSet(kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
                 else if (floor == 5)
-                    ch->WarpSet(kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
 
                 ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;

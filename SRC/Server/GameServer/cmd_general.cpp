@@ -1367,11 +1367,11 @@ ACMD(do_restart)
 					PIXEL_POSITION pos;
 					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), pos))
 					{
-						ch->WarpSet(pos.x, pos.y);
+						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y);
 					}
 					else
 					{
-						ch->WarpSet(EMPIRE_START_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), EMPIRE_START_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
+						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), EMPIRE_START_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
 					}
 				}
 
@@ -2534,7 +2534,7 @@ ACMD(do_observer_exit)
 				ch->GetArena()->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
 
 			ch->SetArena(nullptr);
-			ch->WarpSet(ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
 		}
 		else
 		{

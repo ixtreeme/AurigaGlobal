@@ -681,7 +681,7 @@ ACMD(do_go_savepoint) {
 				}
 			}
 
-			ch->WarpSet(x, y);
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x, y);
 		}
 	}
 }

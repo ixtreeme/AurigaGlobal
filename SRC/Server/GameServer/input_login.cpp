@@ -5,6 +5,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
@@ -811,7 +812,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		else if (memberFlag == MEMBER_NO)
 		{
 			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
-				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 		else
 		{
@@ -841,7 +842,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		{
 			// ox   ?  . ÷?
 			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER)
-				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
 	else
@@ -850,7 +851,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
 		{
 			if (!test_server)
-				ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
 		}
 	}
 

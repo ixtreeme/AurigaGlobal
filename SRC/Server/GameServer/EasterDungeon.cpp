@@ -801,7 +801,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagCompleted) == 0)
             {
                 ch->SaveExitLocation();
-                ch->WarpSet(kEnterX * 100, kEnterY * 100, rejoinIdx);
+                ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterX * 100, kEnterY * 100, rejoinIdx);
                 return true;
             }
         }

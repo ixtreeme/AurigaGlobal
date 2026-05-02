@@ -5,6 +5,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "VikingDungeon.h"
 
 #include <unordered_map>
@@ -311,7 +312,7 @@ namespace
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
         GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), mapIdx, x, y);
-        ch->WarpSet(x * 100, y * 100, mapIdx);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x * 100, y * 100, mapIdx);
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -1171,7 +1172,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
         if (d && d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
         {
-            ch->WarpSet(kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
+            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
             ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
             return true;
         }

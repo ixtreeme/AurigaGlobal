@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -344,7 +345,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     // If someone ends up on the original dungeon map, move them out (Lua: idx == 357 -> pc.warp(535400, 1428400))
     if (mapIdx == kOriginalMap)
     {
-        ch->WarpSet(kLobbyX * 100, kLobbyY * 100);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kLobbyX * 100, kLobbyY * 100);
         return;
     }
 
@@ -393,7 +394,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(curMap);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ch->WarpSet(kLobbyX * 100, kLobbyY * 100);
+            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kLobbyX * 100, kLobbyY * 100);
             return true;
         }
         // completed -> continue into fresh entrance flow
@@ -422,7 +423,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
                 {
                     // Lua used pc.warp(218600, 348900, rejoinIDX)
                     ch->SaveExitLocation();
-                    ch->WarpSet(kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
                     ResetRejoinFlags(ch);
                     return true;
                 }

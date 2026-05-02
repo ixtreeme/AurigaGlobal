@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include "constants.h"
@@ -1116,7 +1117,7 @@ namespace quest
 						return;
 					}
 
-					ch->WarpSet( g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 				}
 			}
 		}
@@ -1170,7 +1171,7 @@ namespace quest
 		if (nullptr != ch)
 		{
 			uint8_t bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
-			ch->WarpSet( g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 		}
 
 		return 0;
@@ -1625,7 +1626,7 @@ namespace quest
 					{
 						++warpCount;
 
-						pChar->WarpSet( number(to_x1, to_x2), number(to_y1, to_y2) );
+						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pChar),  number(to_x1, to_x2), number(to_y1, to_y2) );
 					}
 				}
 			}

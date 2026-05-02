@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -501,7 +502,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
                 ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
-                ch->WarpSet(kRejoinX, kRejoinY, rejoinIdx);
+                ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kRejoinX, kRejoinY, rejoinIdx);
                 ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
                 return true;
             }

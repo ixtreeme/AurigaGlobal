@@ -2,6 +2,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "config.h"
@@ -405,7 +406,7 @@ bool COXEventManager::CloseEvent()
 		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
 
 		if (pkChar != nullptr)
-			pkChar->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))));
+			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pkChar), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))));
 	}
 
 	m_map_char.clear();

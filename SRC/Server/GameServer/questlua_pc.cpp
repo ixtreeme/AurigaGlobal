@@ -293,7 +293,7 @@ namespace quest
         }
         if ( test_server )
             ecs::ChatSystem::Send(AIHelpers::EcsOf(ch),  CHAT_TYPE_INFO, "pc_warp %d %d %d",static_cast<int>(lua_tonumber(L, 1)), static_cast<int>(lua_tonumber(L, 2)),map_index );
-        ch->WarpSet(static_cast<int32_t>(lua_tonumber(L, 1)), static_cast<int32_t>(lua_tonumber(L, 2)), map_index);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), static_cast<int32_t>(lua_tonumber(L, 1)), static_cast<int32_t>(lua_tonumber(L, 2)), map_index);
         lua_pushboolean(L, true);
         return 1;
     }
@@ -344,7 +344,7 @@ namespace quest
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
-            ch->WarpSet(warpX, warpY);
+            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), warpX, warpY);
         return 0;
     }
 
@@ -515,7 +515,7 @@ namespace quest
             warpPos->mapIndex = dwMapIndex;
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        ch->WarpSet(pos.x, pos.y, dwMapIndex);
+        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y, dwMapIndex);
         return 0;
     }
 
@@ -2760,7 +2760,7 @@ namespace quest
 								warpPos->mapIndex = pkCCI->lMapIndex;
 								g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 							}
-							ch->WarpSet(pos.x, pos.y);
+							ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y);
 							lua_pushnumber(L, 1 );
 						}
 					}
@@ -2801,7 +2801,7 @@ teleport_area:
 			warpPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
-		ch->WarpSet(x,y);
+		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x,y);
 		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		lua_pushnumber(L, 1 );
 		return 1;

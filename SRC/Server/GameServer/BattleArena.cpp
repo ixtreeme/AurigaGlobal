@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "config.h"
 #include "constants.h"
 #include "BattleArena.h"
@@ -57,7 +58,7 @@ struct FWarpToHome
 				int x = EMPIRE_START_X(nEmpire);
 				int y = EMPIRE_START_Y(nEmpire);
 
-				lpChar->WarpSet(x, y, nMapIndex);
+				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(lpChar), x, y, nMapIndex);
 			}
 		}
 	}
