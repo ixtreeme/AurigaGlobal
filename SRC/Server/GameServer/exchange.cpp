@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -147,7 +148,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (GetExchange())
 		return false;
 
-	if (victim->GetExchange())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim)))
 	{
 		exchange_packet(this, EXCHANGE_SUBHEADER_GC_ALREADY, 0, 0, NPOS, 0);
 		return false;
@@ -164,8 +165,8 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	SetExchange(M2_NEW CExchange(this));
 	victim->SetExchange(M2_NEW CExchange(victim));
 
-	victim->GetExchange()->SetCompany(GetExchange());
-	GetExchange()->SetCompany(victim->GetExchange());
+	ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim))->SetCompany(GetExchange());
+	GetExchange()->SetCompany(ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim)));
 
 	//
 	SetExchangeTime();

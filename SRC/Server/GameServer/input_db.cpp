@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "constants.h"
 #include "config.h"
 #include "utils.h"
@@ -1304,7 +1305,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	auto* ch = d->GetCharacter();
 
 	//PREVENT_TRADE_WINDOW
-	if (ch->GetShopOwner() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen() )
+	if (ch->GetShopOwner() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 296, "");

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/tables.h>
@@ -335,7 +336,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 
-	if(ch->GetExchange())
+	if(ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 	{
 		return false;
 	}

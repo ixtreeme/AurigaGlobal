@@ -1600,7 +1600,7 @@ ACMD(do_pvp)
 		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed", get_global_time() + 30);
 	}
 
-	if (ch->GetExchange() || pkVictim->GetExchange())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(pkVictim)))
 	{
 		CPVPManager::instance().Decline(ch, pkVictim);
 		CPVPManager::instance().Decline(pkVictim, ch);
@@ -2907,7 +2907,7 @@ ACMD(do_FeedCubePet) {
 
 ACMD(do_PetEvo) {
 
-	if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 730, "");
 #endif
@@ -3072,7 +3072,7 @@ namespace
 		if (ch->IsDead() || ch->IsStun() || ch->IsObserverMode())
 			return false;
 
-		if (ch->GetExchange() || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+		if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 			return false;
 
 		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
@@ -3710,7 +3710,7 @@ ACMD(do_extend_range_npc)
 	if (ch->IsDead())
 		return;
 
-	if (ch->IsDead() || ch->GetExchange() || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+	if (ch->IsDead() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 735, "");
@@ -3937,7 +3937,7 @@ ACMD(do_rune_shop)
 	if (!ch)
 		return;
 
-	if (ch->IsOpenSafebox() || ch->GetExchange() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 294, "");

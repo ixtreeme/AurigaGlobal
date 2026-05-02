@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Base/grid.h>
@@ -55,7 +56,7 @@ bool CShopEx::AddGuest(LPCHARACTER ch,uint32_t owner_vid, bool bOtherEmpire)
 	if (!ch)
 		return false;
 
-	if (ch->GetExchange())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 		return false;
 
 	if (ch->GetShop())

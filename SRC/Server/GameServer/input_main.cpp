@@ -2065,7 +2065,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 	switch (pinfo->sub_header)
 	{
 		case EXCHANGE_SUBHEADER_CG_START:	// arg1 == vid of target character
-			if (!ch->GetExchange())
+			if (!ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 			{
 				if ((to_ch = CHARACTER_MANAGER::instance().Find(pinfo->arg1)))
 				{
@@ -2139,26 +2139,26 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ITEM_ADD:	// arg1 == position of item, arg2 == position in exchange window
-			if (ch->GetExchange())
+			if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 			{
-				if (ch->GetExchange()->GetCompany()->GetAcceptStatus() != true)
-					ch->GetExchange()->AddItem(pinfo->Pos, pinfo->arg2);
+				if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->AddItem(pinfo->Pos, pinfo->arg2);
 			}
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ITEM_DEL:	// arg1 == position of item
-			if (ch->GetExchange())
+			if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 			{
-				if (ch->GetExchange()->GetCompany()->GetAcceptStatus() != true)
-					ch->GetExchange()->RemoveItem(pinfo->arg1);
+				if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->RemoveItem(pinfo->arg1);
 			}
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ELK_ADD:	// arg1 == amount of gold
-			if (ch->GetExchange())
+			if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 			{
 
-				const int64_t nTotalGold = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch->GetExchange()->GetCompany()->GetOwner())) + pinfo->arg1;
+				const int64_t nTotalGold = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->GetCompany()->GetOwner())) + pinfo->arg1;
 
 				if (GOLD_MAX <= nTotalGold)
 				{
@@ -2172,22 +2172,22 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					return;
 				}
 
-				if (ch->GetExchange()->GetCompany()->GetAcceptStatus() != true)
-					ch->GetExchange()->AddGold(pinfo->arg1);
+				if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->AddGold(pinfo->arg1);
 			}
 			break;
 		case EXCHANGE_SUBHEADER_CG_ACCEPT:	// arg1 == not used
-			if (ch->GetExchange())
+			if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 			{
 				LOG_INFO("CInputMain()::Exchange() ==> ACCEPT ");
-				ch->GetExchange()->Accept(true);
+				ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->Accept(true);
 			}
 
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_CANCEL:	// arg1 == not used
-			if (ch->GetExchange())
-				ch->GetExchange()->Cancel();
+			if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
+				ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))->Cancel();
 			break;
 	}
 }
@@ -3389,7 +3389,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->IsHack() || ch->GetExchange() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ch->IsHack() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif
@@ -4469,7 +4469,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->IsStun() || ch->IsDead())
 		return (iExtraLen);
 
-	if (ch->GetExchange() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 292, "");
@@ -4512,7 +4512,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	}
 #endif
 
-	if (ch->GetExchange() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 502, "");
@@ -5301,7 +5301,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 		return;
 	}
 
-	if (ch->IsObserverMode() || ch->GetExchange())
+	if (ch->IsObserverMode() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 	{
 		return;
 	}
@@ -5527,7 +5527,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ch->IsObserverMode() || ch->IsOpenSafebox() || ch->GetExchange() || ch->IsCubeOpen() || ch->IsStun() || ch->IsDead()
+					if (!(ch->IsObserverMode() || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || ch->IsStun() || ch->IsDead()
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || ch->IsAttrTransferOpen()
 #endif

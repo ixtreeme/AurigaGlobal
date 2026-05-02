@@ -1225,7 +1225,7 @@ ACMD(do_state)
 	if (ch->GetShop())
 		strlcat(buf, ", Shop", sizeof(buf));
 
-	if (ch->GetExchange())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 		strlcat(buf, ", Exchange", sizeof(buf));
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", buf);

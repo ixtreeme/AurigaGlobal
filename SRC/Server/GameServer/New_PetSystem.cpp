@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -226,7 +227,7 @@ void CNewPetActor::ItemCubeFeed(int type)
 			LPITEM itemxp = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(m_pkOwner), m_dwpetslotitem[i]);
 			if (!itemxp)
 				return;
-			if (ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, itemxp)) == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
+			if (ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, itemxp)) == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(m_pkOwner)) || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
 				return;
 			if(type == 1)
 			{
@@ -1264,8 +1265,8 @@ bool CNewPetActor::Update(uint32_t deltaTime)
 		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 #else
-	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
-	//if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
+	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(m_pkOwner)) || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
+	//if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(m_pkOwner)) || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen() || m_dwduration <= 0))
 	if ((IsSummoned() && m_pkChar->IsDead()) || (IsSummoned() && m_dwduration <= 0)
 		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)

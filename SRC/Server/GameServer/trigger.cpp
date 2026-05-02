@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
@@ -233,7 +234,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9005)
 		return 0;
 
-	if (causer->GetExchange() || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(causer)) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
 		return 0;
 
 	causer->SetQuestNPCID(((ch)->GetLegacyVID()));
