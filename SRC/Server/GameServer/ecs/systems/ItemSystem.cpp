@@ -3,6 +3,7 @@
 
 #include "ItemSystem.hpp"
 #include "../EntityFactory.hpp"
+#include "../ItemInvariants.hpp"
 #include "../VIDRegistry.hpp"
 
 #include "../../utils.h"
@@ -1475,8 +1476,10 @@ int32_t GetItemFlags(entt::entity item)
     if (const auto* flags = g_registry.try_get<ecs::ItemFlags>(item))
         return flags->flags;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.flags.fallback");
         return legacyItem->GetFlag();
+    }
 
     return 0;
 }
@@ -1610,6 +1613,7 @@ entt::entity GetItemOwner(entt::entity item)
     }
 
     if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.owner.fallback");
         if (LPITEM legacyItem = ITEM_MANAGER::instance().Find(identity->id)) {
             if (auto* ch = legacyItem->GetOwner())
                 return AIHelpers::EcsOf(ch);
@@ -1657,8 +1661,10 @@ TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
     if (const auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item))
         return attrs->attrs[index];
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.attribute.fallback");
         return legacyItem->GetAttribute(index);
+    }
 
     return {};
 }
@@ -1918,8 +1924,10 @@ uint8_t GetItemWindow(entt::entity item)
     if (const auto* location = g_registry.try_get<ecs::ItemLocation>(item))
         return location->window;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.window.fallback");
         return legacyItem->GetWindow();
+    }
 
     return 0;
 }
@@ -1929,8 +1937,10 @@ uint16_t GetItemCell(entt::entity item)
     if (const auto* location = g_registry.try_get<ecs::ItemLocation>(item))
         return location->cell;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.cell.fallback");
         return legacyItem->GetCell();
+    }
 
     return 0;
 }
@@ -1940,8 +1950,10 @@ bool IsItemEquipped(entt::entity item)
     if (const auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item))
         return equipped->equipped;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
+        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.equipped.fallback");
         return legacyItem->IsEquipped();
+    }
 
     return false;
 }

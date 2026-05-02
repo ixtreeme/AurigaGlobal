@@ -4,6 +4,7 @@
 
 #include "EntityFactory.hpp"
 #include "EntityInvariants.hpp"
+#include "ItemInvariants.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -652,12 +653,14 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
     if (existing != entt::null && reg.valid(existing)) {
         SyncItemEntity(reg, existing, item);
         CItemRegistry::Instance().Register(itemID, item->GetVID(), existing);
+        ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.existing");
         return existing;
     }
 
     const entt::entity entity = reg.create();
     SyncItemEntity(reg, entity, item);
     CItemRegistry::Instance().Register(itemID, item->GetVID(), entity);
+    ecs::ItemInvariants::ValidateItemEntity(reg, entity, "item.factory.create");
     return entity;
 }
 
