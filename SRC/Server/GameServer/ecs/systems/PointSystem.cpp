@@ -1,10 +1,13 @@
 #include "../../stdafx.h"
 
 #include "PointSystem.hpp"
+#include "PointRouter.hpp"
 
+#include <array>
 #include <common/VnumHelper.h>
 
 #include "../CharacterAccessors.hpp"
+#include "../components/character_stats_components.hpp"
 #include "../components/inventory_components.hpp"
 #include "../components/vital_components.hpp"
 #include "../../char.h"
@@ -85,20 +88,195 @@
 
 namespace ecs::PointSystem {
 
+namespace {
+
+bool IsReadableEntity(entt::entity e)
+{
+	return e != entt::null && g_registry.valid(e);
+}
+
+void WarnLegacyOnlyPointOnce(uint8_t type, entt::entity e)
+{
+	static std::array<bool, POINT_MAX_NUM> warned {};
+	if (type >= POINT_MAX_NUM || warned[type])
+		return;
+
+	warned[type] = true;
+	LOG_WARN("[POINT_LEGACY_ONLY] type={} entity={} no ECS source yet (one-time warning)",
+		static_cast<int>(type), static_cast<uint32_t>(e));
+}
+
+int64_t GetNextExpFromEcs(entt::entity e)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+
+	if (const auto* exp = g_registry.try_get<ecs::Experience>(e); exp && exp->next > 0)
+		return exp->next;
+
+	const auto* level = g_registry.try_get<ecs::LevelComponent>(e);
+	if (!level)
+		return 0;
+
+	if (PLAYER_MAX_LEVEL_CONST < level->value)
+		return 2500000000LL;
+
+	return exp_table[level->value];
+}
+
+int64_t ReadInstantArray(entt::entity e, uint8_t type)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+
+	const auto* stats = g_registry.try_get<ecs::CharacterStatsComponent>(e);
+	if (!stats)
+		return 0;
+
+	return stats->points[type];
+}
+
+int64_t ReadRealArray(entt::entity e, uint8_t type)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+
+	const auto* points = g_registry.try_get<ecs::CharacterPoints>(e);
+	if (!points)
+		return 0;
+
+	return points->base.points[type];
+}
+
+void SyncInstantPointMirror(LPCHARACTER ch, uint8_t type, int64_t val)
+{
+	if (!ch || type >= POINT_MAX_NUM || !ecs::IsStatArrayPoint(type))
+		return;
+
+	const entt::entity e = ch->GetEntityHandle();
+	if (!IsReadableEntity(e))
+		return;
+
+	auto& stats = g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e);
+	stats.points[type] = val;
+
+	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
+	points.instant.points[type] = val;
+}
+
+void SyncRealPointMirror(LPCHARACTER ch, uint8_t type, int64_t val)
+{
+	if (!ch || type >= POINT_MAX_NUM)
+		return;
+
+	const entt::entity e = ch->GetEntityHandle();
+	if (!IsReadableEntity(e))
+		return;
+
+	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
+	points.base.points[type] = val;
+}
+
+} // namespace
+
 int64_t Get(entt::entity e, uint8_t type)
 {
-	if (auto* ch = ecs::LegacyCharOf(e))
-		return ch->GetPoint(type);
+	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
+		return 0;
 
-	return 0;
+	const auto& mapping = ecs::PointRouter::g_pointMap[type];
+
+	switch (mapping.source) {
+	case ecs::PointRouter::PointSource::SRC_NONE:
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_GOLD:
+		if (const auto* gold = g_registry.try_get<ecs::GoldAmount>(e))
+			return gold->amount;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_HP_CURRENT:
+		if (const auto* health = g_registry.try_get<ecs::Health>(e))
+			return health->current;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_HP_MAX:
+		if (const auto* health = g_registry.try_get<ecs::Health>(e))
+			return health->max;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_SP_CURRENT:
+		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
+			return mana->current;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_SP_MAX:
+		if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
+			return mana->max;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_STAMINA_CURRENT:
+		if (const auto* stamina = g_registry.try_get<ecs::Stamina>(e))
+			return stamina->current;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_STAMINA_MAX:
+		if (const auto* stamina = g_registry.try_get<ecs::Stamina>(e))
+			return stamina->max;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_LEVEL:
+		if (const auto* level = g_registry.try_get<ecs::LevelComponent>(e))
+			return level->value;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_EXP:
+		if (const auto* exp = g_registry.try_get<ecs::Experience>(e))
+			return exp->current;
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_NEXT_EXP_COMPUTED:
+		return GetNextExpFromEcs(e);
+	case ecs::PointRouter::PointSource::SRC_INSTANT_ARRAY:
+		return ReadInstantArray(e, mapping.index);
+	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
+		return ReadRealArray(e, mapping.index);
+	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
+		WarnLegacyOnlyPointOnce(type, e);
+		if (auto* ch = ecs::LegacyCharOf(e))
+			return ch->GetPoint(type);
+		return 0;
+	default:
+		return 0;
+	}
 }
 
 int64_t GetReal(entt::entity e, uint8_t type)
 {
-	if (auto* ch = ecs::LegacyCharOf(e))
-		return ch->GetRealPoint(type);
+	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
+		return 0;
 
-	return 0;
+	const auto& mapping = ecs::PointRouter::g_pointMap[type];
+
+	switch (mapping.source) {
+	case ecs::PointRouter::PointSource::SRC_NONE:
+		return 0;
+	case ecs::PointRouter::PointSource::SRC_GOLD:
+	case ecs::PointRouter::PointSource::SRC_HP_CURRENT:
+	case ecs::PointRouter::PointSource::SRC_HP_MAX:
+	case ecs::PointRouter::PointSource::SRC_SP_CURRENT:
+	case ecs::PointRouter::PointSource::SRC_SP_MAX:
+	case ecs::PointRouter::PointSource::SRC_STAMINA_CURRENT:
+	case ecs::PointRouter::PointSource::SRC_STAMINA_MAX:
+	case ecs::PointRouter::PointSource::SRC_EXP:
+	case ecs::PointRouter::PointSource::SRC_NEXT_EXP_COMPUTED:
+		return Get(e, type);
+	case ecs::PointRouter::PointSource::SRC_LEVEL:
+		if (mapping.readable_in_real)
+			return Get(e, type);
+		return ReadRealArray(e, type);
+	case ecs::PointRouter::PointSource::SRC_INSTANT_ARRAY:
+		return ReadRealArray(e, mapping.index);
+	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
+		return ReadRealArray(e, mapping.index);
+	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
+		WarnLegacyOnlyPointOnce(type, e);
+		if (auto* ch = ecs::LegacyCharOf(e))
+			return ch->GetRealPoint(type);
+		return 0;
+	default:
+		return 0;
+	}
 }
 
 int64_t GetGold(entt::entity e)
@@ -196,6 +374,7 @@ int64_t CHARACTER::GetRealPoint(uint8_t type) const
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 {
 	m_points.points[type] = val;
+	ecs::PointSystem::SyncRealPointMirror(this, type, val);
 #ifdef ENABLE_RANKING
 	if (type == POINT_PLAYTIME)
 		SetRankPoints(15, val);
@@ -326,6 +505,7 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 
 
 	m_pointsInstant.points[type] = val;
+	ecs::PointSystem::SyncInstantPointMirror(this, type, val);
 
 
 	if (type == POINT_MOV_SPEED && get_dword_time() < m_dwMoveStartTime + m_dwMoveDuration)

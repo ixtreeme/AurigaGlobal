@@ -1,0 +1,59 @@
+# Phase 15E-60.8 POINT Sync Audit
+
+Date: 2026-05-02
+Scope: Verify ECS POINT router source components are populated and synced.
+
+## Component Population
+
+Player factory path:
+- Health: emplaced from TPlayerTable hp.
+- Mana: emplaced from TPlayerTable sp.
+- Stamina: emplaced from TPlayerTable stamina.
+- LevelComponent: emplaced from TPlayerTable level.
+- Experience: emplaced from TPlayerTable exp.
+- GoldAmount: emplaced from TPlayerTable gold.
+- CharacterPoints: emplaced from TPlayerTable base point fields.
+- CharacterStatsComponent: seeded from legacy GetPoint for non-dedicated stat-array points.
+
+Mob/NPC/stone factory path:
+- Health, Mana, Stamina, LevelComponent, Experience, CharacterPoints, CharacterStatsComponent are populated.
+- CharacterStatsComponent is seeded from legacy GetPoint after legacy binding.
+
+## Write-Side Sync
+
+Dedicated virtual/live fields already sync through their setters:
+- CHARACTER::SetHP -> Health.current
+- CHARACTER::SetSP -> Mana.current
+- CHARACTER::SetStamina -> Stamina.current
+- CHARACTER::SetMaxHP -> Health.max
+- CHARACTER::SetMaxSP -> Mana.max
+- CHARACTER::SetMaxStamina -> Stamina.max
+- CHARACTER::SetLevel -> LevelComponent.value
+- CHARACTER::SetExp -> Experience.current
+- CHARACTER::SetGold -> GoldAmount.amount
+
+15E-60.8 added missing generic array sync:
+- CHARACTER::SetPoint -> CharacterStatsComponent.points[type] for non-dedicated stat-array points.
+- CHARACTER::SetPoint -> CharacterPoints.instant.points[type] for non-dedicated stat-array points.
+- CHARACTER::SetRealPoint -> CharacterPoints.base.points[type] for all valid POINT_* types.
+
+This closes the main stale-mirror risk: legacy PointChange mutates SetPoint/SetRealPoint heavily, so the ECS router must observe these writes immediately.
+
+## Remaining Legacy-Only Sources
+
+These are intentionally not given ad-hoc ECS components in 15E-60.8:
+- POINT_INVEN: inventory-extension state still lives behind Inven_Point / Set_Inventory_Point.
+- POINT_GAYA: Gaya state still lives behind GetGaya / SetGaya.
+
+Reads of these through PointSystem::Get/GetReal emit one one-time [POINT_LEGACY_ONLY] warning per point type and delegate only inside the SRC_LEGACY_ONLY branch.
+
+## Risk Notes
+
+The router avoids legacy fallback for all non-legacy-only point types. If a component is absent, the accessor returns zero, which is intentionally fail-closed and should surface in WinTest as damage/EXP/gold/stat regression rather than being hidden by OOP fallback.
+
+High-risk validation paths:
+- Combat damage: POINT_ATT_GRADE, POINT_DEF_GRADE, POINT_ST/HT/DX/IQ.
+- EXP and level-up: POINT_EXP, POINT_NEXT_EXP, POINT_LEVEL_STEP.
+- Economy: POINT_GOLD, POINT_GAYA.
+- HP/SP: POINT_HP, POINT_MAX_HP, POINT_SP, POINT_MAX_SP.
+- Mount/metin regression watch: POINT_ST, POINT_ATT_GRADE, stone damage paths.
