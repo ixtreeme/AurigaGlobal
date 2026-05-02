@@ -11391,3 +11391,65 @@ WinTest:
 Status:
 - Phase 15E-61.3 is production-validated.
 - Next planned phase: Phase 15E-61.4 quest/state-machine domain-specific methods, or the next caller-side category depending on risk priority.
+
+
+## Phase 15E-65.4 - Item Read Fallback Removal + Alignment Title Hotfixes
+
+Scope:
+- Removed the remaining hidden `LegacyItemOf` fallback from item read accessors.
+- Finalized the item read API state after 15E-65.3 `ItemProtoRef` work.
+- Fixed alignment/rank title packet synchronization regressions found during WinTest.
+
+Item read fallback removal:
+- `GetItemFlags` now reads `ItemFlags.flags` only.
+- `GetItemAttribute` now reads `ItemAttributes` only.
+- `GetItemWindow` now reads `ItemLocation.window` only.
+- `GetItemCell` now reads `ItemLocation.cell` only.
+- `IsItemEquipped` now reads `ItemEquipped.equipped` only.
+- `GetItemOwner` / `GetItemOwnerEntity` now resolve ownership from `ItemOwner.ownerPID` only.
+- Composed inventory predicates now depend on pure `GetItemWindow`.
+- No `LegacyItemOf` fallback remains in item read accessor bodies.
+
+Documentation:
+- `docs/ecs_migration/phase15e_65_0_item_fallback_audit.txt` was updated to mark the post-65.4 final state:
+  - PURE ECS reads: 42
+  - ECS-FIRST + FALLBACK reads: 0
+  - LEGACY-ONLY reads: 0
+- Remaining legacy item usage is explicit write/sync or service bridge debt, not hidden read fallback.
+
+Commits:
+- 30da368 Phase 15E-65.4.a: Remove fallback from GetItemFlags
+- 2788cf8 Phase 15E-65.4.b: Remove fallback from GetItemAttribute
+- 16e8952 Phase 15E-65.4.c: Remove fallback from GetItemWindow
+- 94e30b8 Phase 15E-65.4.d: Remove fallback from GetItemCell
+- cbabcbe Phase 15E-65.4.e: Remove fallback from IsItemEquipped
+- 7ca0c1c Phase 15E-65.4.f: Remove fallback from GetItemOwner
+- 2d5abf0 Phase 15E-65.4: Update item fallback audit
+
+Alignment/rank title hotfix sequence:
+- Operator reported that the character rank/title did not appear before the overhead character name.
+- First fix made packet alignment values read from ECS `CombatStats` and synchronized `CombatStats` from legacy alignment load/update paths.
+- Operator then confirmed the rank appeared, but did not refresh in real time.
+- Second fix changed `UpdateAlignment()` to synchronize visible alignment immediately and send `UpdatePacket()` whenever the visible `alignment / 10` value changes.
+- Operator then confirmed the character panel updated correctly, but the overhead name title still did not refresh.
+- Third fix made `CHARACTER::UpdatePacket()` also resend `HEADER_GC_CHAR_ADDITIONAL_INFO`, because the client overhead title uses the additional-info path rather than only `HEADER_GC_CHARACTER_UPDATE`.
+- Operator confirmed the current state is acceptable: rank displays and refreshes correctly for the character panel and overhead name.
+
+Hotfix commits:
+- 516b10f Phase 15E-65.4 Hotfix: Sync alignment title packets
+- e81ae56 Phase 15E-65.4 Hotfix: Refresh alignment title realtime
+- 5cb5585 Phase 15E-65.4 Hotfix: Refresh overhead alignment info
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after each item fallback removal step.
+- Build passed after each alignment/rank hotfix.
+- Operator validated the final gameplay state in-game.
+
+Status:
+- Phase 15E-65.4 item read fallback removal is complete.
+- Item read APIs are now pure ECS for the audited accessor set.
+- Alignment/rank title display regression is fixed in the currently accepted WinTest state.
+- Next planned phase: Phase 15E-65.5 accepted item service debt close-out, or Phase 15E-66.2 M2 signature migration.
