@@ -1,0 +1,282 @@
+# Phase 15E-65.0 - LPITEM Fallback Elimination Audit
+
+Date: 2026-05-02
+Scope: Audit only. No source changes.
+
+## 1. Item ECS namespaces and systems
+
+Item-related ECS systems found:
+
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.hpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp`
+- `SRC/Server/GameServer/ecs/systems/InventorySystem.hpp`
+- `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp`
+- `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp`
+- `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp`
+
+Namespaces:
+
+- `ItemSystem`
+- `InventorySystem`
+- `DragonSoulSystem`
+
+Important note: these namespaces are currently global namespaces, not `ecs::ItemSystem`. They operate on `entt::entity` and ECS components, but the namespace style predates the later `ecs::PlayerRuntime` convention.
+
+## 2. Accessor inventory and status
+
+| Namespace::Function | Status | File:Line | Why |
+|---------------------|--------|-----------|-----|
+| ItemSystem::IsValidItem | PURE ECS | ItemSystem.cpp:1355 | Validates entity and `ItemIdentity`. |
+| ItemSystem::GetItemID | PURE ECS | ItemSystem.cpp:1361 | Reads `ItemIdentity.id`. |
+| ItemSystem::GetItemVID | PURE ECS | ItemSystem.cpp:1369 | Reads `ItemIdentity.vid`. |
+| ItemSystem::GetItemVnum | PURE ECS | ItemSystem.cpp:1377 | Reads `ItemIdentity.vnum`. |
+| ItemSystem::GetItemOriginalVnum | PURE ECS | ItemSystem.cpp:1385 | Alias of `GetItemVnum`. Mask/original split not modeled separately. |
+| ItemSystem::GetItemType | PURE ECS | ItemSystem.cpp:1390 | Reads `ItemPrototypeMeta.type`. |
+| ItemSystem::GetItemSubType | PURE ECS | ItemSystem.cpp:1398 | Reads `ItemPrototypeMeta.subType`. |
+| ItemSystem::GetItemCount | PURE ECS | ItemSystem.cpp:1406 | Reads `ItemCount.count`. |
+| ItemSystem::GetItemValue | LEGACY-ONLY READ | ItemSystem.cpp:1414 | Delegates to `legacyItem->GetValue(index)`. Proto values are not modeled in ECS. Cause D. |
+| ItemSystem::GetItemName | LEGACY-ONLY READ | ItemSystem.cpp:1425 | Delegates to `legacyItem->GetName()`. Item name/proto ref not modeled. Cause D. |
+| ItemSystem::GetItemSize | LEGACY-ONLY READ | ItemSystem.cpp:1433 | Delegates to `legacyItem->GetSize()`. Item size/proto ref not modeled. Cause D. |
+| ItemSystem::GetItemRefineVnum | LEGACY-ONLY READ | ItemSystem.cpp:1441 | Delegates to `legacyItem->GetRefinedVnum()`. Cause D. |
+| ItemSystem::GetItemRefineLevel | LEGACY-ONLY READ | ItemSystem.cpp:1449 | Delegates to `legacyItem->GetRefineLevel()`. Cause D. |
+| ItemSystem::GetItemLevelLimit | LEGACY-ONLY READ | ItemSystem.cpp:1457 | Delegates to `legacyItem->GetLevelLimit()`. Cause D. |
+| ItemSystem::GetItemLimitTimerBasedOnWearIndex | LEGACY-ONLY READ | ItemSystem.cpp:1465 | Delegates to `legacyItem->GetProto()->cLimitTimerBasedOnWearIndex`. Cause D. |
+| ItemSystem::GetItemFlags | ECS-FIRST + FALLBACK | ItemSystem.cpp:1473 | Reads `ItemFlags.flags`, falls back to `legacyItem->GetFlag()`. Cause A/B if component missing or stale. |
+| ItemSystem::GetItemWearFlags | LEGACY-ONLY READ | ItemSystem.cpp:1484 | Delegates to `legacyItem->GetWearFlag()`. Cause D. |
+| ItemSystem::GetItemWearFlag | LEGACY-ONLY READ | ItemSystem.cpp:1492 | Alias of `GetItemWearFlags`. Cause D. |
+| ItemSystem::GetItemAntiFlags | LEGACY-ONLY READ | ItemSystem.cpp:1497 | Delegates to `legacyItem->GetAntiFlag()`. Cause D. |
+| ItemSystem::GetItemAntiFlag | LEGACY-ONLY READ | ItemSystem.cpp:1505 | Alias of `GetItemAntiFlags`. Cause D. |
+| ItemSystem::GetItemImmuneFlags | LEGACY-ONLY READ | ItemSystem.cpp:1510 | Delegates to `legacyItem->GetImmuneFlag()`. Cause D. |
+| ItemSystem::GetItemProto | LEGACY-ONLY READ | ItemSystem.cpp:1518 | Delegates to `legacyItem->GetProto()`. Accepted until ItemProtoRef is introduced. Cause D/E. |
+| ItemSystem::GetItemOwner | ECS-FIRST + FALLBACK | ItemSystem.cpp:1603 | Reads `ItemOwner.ownerPID`, falls back through legacy item owner if owner component cannot resolve. Cause B/C. |
+| ItemSystem::GetItemOwnerEntity | ECS-FIRST + FALLBACK | ItemSystem.cpp:1622 | Alias of `GetItemOwner`. |
+| ItemSystem::GetItemLastOwnerPID | PURE ECS | ItemSystem.cpp:1627 | Reads `ItemOwner.lastOwnerPID`. |
+| ItemSystem::GetItemSocket | PURE ECS | ItemSystem.cpp:1635 | Reads `ItemSockets`. |
+| ItemSystem::HasItemSocket | PURE ECS | ItemSystem.cpp:1646 | Checks `ItemSockets`. |
+| ItemSystem::GetItemAttribute | ECS-FIRST + FALLBACK | ItemSystem.cpp:1652 | Reads `ItemAttributes`, falls back to legacy attribute if component missing. Cause A/B. |
+| ItemSystem::GetItemAttributeType | PURE ECS | ItemSystem.cpp:1666 | Reads `ItemAttributes`. |
+| ItemSystem::GetItemAttributeValue | PURE ECS | ItemSystem.cpp:1677 | Reads `ItemAttributes`. |
+| ItemSystem::GetItemWindow | ECS-FIRST + FALLBACK | ItemSystem.cpp:1916 | Reads `ItemLocation.window`, falls back to legacy window. Cause A/B. |
+| ItemSystem::GetItemCell | ECS-FIRST + FALLBACK | ItemSystem.cpp:1927 | Reads `ItemLocation.cell`, falls back to legacy cell. Cause A/B. |
+| ItemSystem::IsItemEquipped | ECS-FIRST + FALLBACK | ItemSystem.cpp:1938 | Reads `ItemEquipped`, falls back to legacy equipped state. Cause A/B. |
+| ItemSystem::IsItemInInventory | ECS-FIRST + FALLBACK | ItemSystem.cpp:1949 | Depends on `GetItemWindow`. |
+| ItemSystem::IsItemInExtraInventory | ECS-FIRST + FALLBACK | ItemSystem.cpp:1954 | Depends on `GetItemWindow`. |
+| ItemSystem::IsItemInDragonSoulInventory | ECS-FIRST + FALLBACK | ItemSystem.cpp:1964 | Depends on `GetItemWindow`. |
+| ItemSystem::FindItemByID | PURE ECS registry lookup | ItemSystem.cpp:793 | Uses `CItemRegistry`; no legacy fallback seen in accessor body. |
+| ItemSystem::FindItemByVID | PURE ECS registry lookup | ItemSystem.cpp:800 | Uses `CItemRegistry`; no legacy fallback seen in accessor body. |
+| ItemSystem::GetInventoryItem | PURE ECS owner-slot lookup | ItemSystem.cpp:702 | Reads `MainInventoryRuntimeComponent`; Phase 15E-61.1 path. |
+| ItemSystem::GetInventoryItemPtr | PURE ECS pointer read | ItemSystem.cpp:708 | Returns runtime inventory pointer from ECS mirror. |
+| ItemSystem::GetWearItem | PURE ECS owner-slot lookup | ItemSystem.cpp:849 | Reads `EquipmentSlots`. |
+| ItemSystem::GetWear | PURE ECS pointer read | ItemSystem.cpp:855 | Reads `EquipmentSlots`. |
+| InventorySystem::GetQuickslot | PURE ECS | InventorySystem.cpp:102 | Reads `QuickSlots`. |
+| InventorySystem::SetQuickslot/DelQuickslot/SwapQuickslot | WRITE ECS | InventorySystem.cpp:119 | Writes `QuickSlots` and dirty tag. |
+| DragonSoulSystem::GetActiveDeck | PURE ECS | DragonSoulSystem.cpp:68 | Reads `DragonSoulRuntimeStateComponent.activeDeck`. |
+| DragonSoulSystem::IsDeckActivated | PURE ECS | DragonSoulSystem.cpp:74 | Uses `GetActiveDeck`. |
+| DragonSoulSystem::CanRefine | PURE ECS | DragonSoulSystem.cpp:244 | Reads refine opener pointer component. |
+| DragonSoulSystem::GetRefineWindowOpener | PURE ECS/service pointer | DragonSoulSystem.cpp:250 | Reads ECS service pointer. |
+| DragonSoulSystem::Initialize/ActivateDeck/DeactivateAll/CleanUp/OpenRefineWindow | WRITE/SYNC BRIDGE | DragonSoulSystem.cpp:52 | Uses `LegacyCharacter` and DSManager/Affect/network service operations. |
+
+## 3. LegacyItemOf / legacy item usage classification
+
+Definitions found:
+
+- `InventorySystem.cpp:38` local `LegacyItemOf(entt::entity)` resolves `ItemIdentity.id` through `ITEM_MANAGER`.
+- `ItemSystem.cpp:372` local `LegacyItemOf(entt::entity)` resolves `ItemIdentity.id` through `ITEM_MANAGER`.
+- `ItemSystem_LegacyBridge.cpp:359` local `LegacyItemOf(entt::entity)` mirrors the same pattern inside the explicit legacy bridge file.
+
+Wrapper helpers in `ItemSystem.cpp`:
+
+- `ResolveLegacyItemForSync` - WRITE/SYNC BRIDGE.
+- `ResolveLegacyItemForLegacySideEffect` - mixed use; acceptable for side effects, not acceptable for read accessors long-term.
+- `ResolveLegacyItemForDestruction` - WRITE/SYNC BRIDGE.
+
+Read accessor fallback/debt sites:
+
+- `ItemSystem.cpp:1414` `GetItemValue` -> `legacyItem->GetValue`.
+- `ItemSystem.cpp:1425` `GetItemName` -> `legacyItem->GetName`.
+- `ItemSystem.cpp:1433` `GetItemSize` -> `legacyItem->GetSize`.
+- `ItemSystem.cpp:1441` `GetItemRefineVnum` -> `legacyItem->GetRefinedVnum`.
+- `ItemSystem.cpp:1449` `GetItemRefineLevel` -> `legacyItem->GetRefineLevel`.
+- `ItemSystem.cpp:1457` `GetItemLevelLimit` -> `legacyItem->GetLevelLimit`.
+- `ItemSystem.cpp:1465` `GetItemLimitTimerBasedOnWearIndex` -> `legacyItem->GetProto()`.
+- `ItemSystem.cpp:1473` `GetItemFlags` -> ECS-first with legacy fallback.
+- `ItemSystem.cpp:1484` `GetItemWearFlags` -> `legacyItem->GetWearFlag`.
+- `ItemSystem.cpp:1497` `GetItemAntiFlags` -> `legacyItem->GetAntiFlag`.
+- `ItemSystem.cpp:1510` `GetItemImmuneFlags` -> `legacyItem->GetImmuneFlag`.
+- `ItemSystem.cpp:1518` `GetItemProto` -> `legacyItem->GetProto`.
+- `ItemSystem.cpp:1603` `GetItemOwner` -> ECS-first, then legacy owner fallback.
+- `ItemSystem.cpp:1652` `GetItemAttribute` -> ECS-first, then legacy attr fallback.
+- `ItemSystem.cpp:1916` `GetItemWindow` -> ECS-first, then legacy window fallback.
+- `ItemSystem.cpp:1927` `GetItemCell` -> ECS-first, then legacy cell fallback.
+- `ItemSystem.cpp:1938` `IsItemEquipped` -> ECS-first, then legacy equipped fallback.
+
+Legitimate bridge sites:
+
+- `ItemSystem.cpp:1532+` count mirroring writes ECS first and mirrors to legacy.
+- `ItemSystem.cpp:1688+` socket writes ECS and legacy.
+- `ItemSystem.cpp:1736+` attribute writes ECS and legacy.
+- `ItemSystem.cpp:1825+` exchanging/lock/skip-save/window/cell writes ECS and legacy.
+- `ItemSystem.cpp:2011+` place/remove/equip/unequip bridge through legacy inventory service behavior.
+- `ItemSystem.cpp:2186+` explicit `SyncItem*FromLegacy` paths.
+- `ItemSystem_LegacyBridge.cpp` is intentionally named as an accepted bridge boundary.
+
+## 4. Item entity creation audit
+
+Canonical item entity factory:
+
+- `EntityFactory::CreateItemEntity` at `SRC/Server/GameServer/ecs/EntityFactory.cpp:640`.
+- Existing item entity is found by `CItemRegistry::Instance().Find(itemID)`.
+- Existing entity is re-synced through `SyncItemEntity`.
+- New entity is created, fully synchronized, then registered in `CItemRegistry`.
+
+Factory-populated components:
+
+- `ItemIdentity`
+- `ItemLocation`
+- `ItemCount`
+- `ItemPrototypeMeta`
+- `ItemOwner`
+- `ItemEquipped`
+- `ItemFlags`
+- `ItemSockets`
+- `ItemAttributes`
+
+Creation risk:
+
+- No obvious missing component population was found in `CreateItemEntity`.
+- The main Cause A/C risk is not the factory itself. It is direct `ITEM_MANAGER::CreateItem` usage where the caller forgets to call `EntityFactory::CreateItemEntity` after creating/loading the legacy item.
+- Many call sites already call `EntityFactory::CreateItemEntity(g_registry, item)` immediately after `ITEM_MANAGER::CreateItem`, but this should be enforced with an invariant in 15E-65.1.
+
+## 5. Item write path sync audit
+
+Write-site scan found direct legacy item writes outside ECS systems, especially:
+
+- `item_manager.cpp`: many `SetSocket` and one `SetCount` around item creation/load paths.
+- `cmd_gm.cpp`: direct item creation and socket/count setup paths.
+- `questlua_pc.cpp`: direct item creation and socket setup paths.
+- `safebox.cpp`, `shop.cpp`, `shopEx.cpp`, `shop_manager.cpp`: create/move/consume item paths using `EntityFactory::CreateItemEntity` in several locations.
+
+Current mitigation:
+
+- `CreateItemEntity` re-syncs the full item component state from legacy whenever called.
+- Many write paths call ItemSystem wrappers (`SetItemSocket`, `SetItemCount`, `SetItemAttribute`), which are ECS-first and mirror to legacy.
+
+Remaining risk:
+
+- Direct `LPITEM->SetSocket`, `LPITEM->SetCount`, `LPITEM->SetAttributes`, `SetWindow`, `SetCell`, `SetExchanging`, `Lock`, `SetSkipSave` can leave ECS stale if no later `CreateItemEntity` or `SyncItemStateFromLegacy` follows.
+- This is a Cause B class. It must be handled before removing ECS-first fallback from `GetItemWindow`, `GetItemCell`, `IsItemEquipped`, `GetItemFlags`, and `GetItemAttribute`.
+
+## 6. Cause classification
+
+| Cause | Applies | Evidence | Fix direction |
+|-------|---------|----------|---------------|
+| Cause A - component not populated | Limited | Factory populates all current components. Risk only if creation bypasses `CreateItemEntity`. | Add item hydration invariant and factory audit. |
+| Cause B - stale write sync | High | Direct legacy `SetSocket/SetCount/...` writes exist outside ECS systems. | Convert write sites to ItemSystem wrappers or add sync hooks. |
+| Cause C - legacy creation bypass | Medium | Many `ITEM_MANAGER::CreateItem` call sites exist; most but not all need verification. | Route all creation through `EntityFactory::CreateItemEntity` or add post-create invariant. |
+| Cause D - state not modeled | High | Proto-derived reads still call `LPITEM`: value, name, size, refine, flags, proto. | Add `ItemProtoRef` / extended `ItemPrototypeMeta` / `ItemRuntimeFlags` components. |
+| Cause E - accepted legacy service behavior | Medium | DSManager, ITEM_MANAGER destruction, inventory service behavior remain legacy-owned. | Keep as explicit WRITE/SYNC BRIDGE until item service phases. |
+
+## 7. Bucket breakdown
+
+Bucket 1 - Component population fixes:
+
+- Add `ItemProtoRef` or full proto-derived component coverage.
+- Add missing runtime flag fields if needed: wear flags, anti flags, immune flags, refined vnum, refine level, size, level limit, timer limit.
+- Estimated sites: 1 factory plus 10-12 accessor mappings.
+- Effort: 1-2 days.
+- Risk: low/medium because read behavior changes must match proto semantics exactly.
+
+Bucket 2 - Sync at write site:
+
+- Replace direct `LPITEM->SetSocket`, `SetCount`, `SetAttributes`, location/owner/equipped mutations with ItemSystem APIs or explicit `SyncItemStateFromLegacy`.
+- Estimated sites: 25-40 candidate write sites after filtering false positives.
+- Effort: 2-4 days.
+- Risk: medium because item load/create/shop/safebox paths are gameplay/economy critical.
+
+Bucket 3 - Factory routing:
+
+- Enforce `ITEM_MANAGER::CreateItem` -> `EntityFactory::CreateItemEntity` pairing.
+- Add invariant logging for CItem with nonzero ID and no `CItemRegistry` entity.
+- Estimated sites: 10-20 creation paths.
+- Effort: 2-3 days.
+- Risk: medium/high due to quest, GM, shop, safebox, drop and item manager paths.
+
+Bucket 4 - Component extension:
+
+- Model proto fields and item runtime flags currently read through `LPITEM`.
+- Convert `GetItemValue`, `GetItemName`, `GetItemSize`, `GetItemRefineVnum`, `GetItemRefineLevel`, `GetItemLevelLimit`, `GetItemWearFlags`, `GetItemAntiFlags`, `GetItemImmuneFlags`, `GetItemProto`.
+- Estimated accessors: 10.
+- Effort: 2-3 days.
+- Risk: low if component data is copied directly from proto and validated with logs.
+
+Bucket 5 - Accepted debt:
+
+- `ItemSystem_LegacyBridge.cpp` remains accepted bridge debt.
+- DSManager operations in `DragonSoulSystem` remain accepted service debt.
+- ITEM_MANAGER remove/destroy and legacy inventory service calls remain accepted write-side service bridges until a full item service phase.
+
+## 8. Recommended 15E-65.x phase structure
+
+Phase 15E-65.1 - Item factory and invariant coverage:
+
+- Add item invariant helper: valid item entity must have `ItemIdentity`, `ItemLocation`, `ItemCount`, `ItemPrototypeMeta`, `ItemOwner`, `ItemFlags`, sockets and attrs.
+- Add one-time warning for `LPITEM` with nonzero ID but missing `CItemRegistry` entity.
+- Verify all `ITEM_MANAGER::CreateItem` paths hydrate via `EntityFactory::CreateItemEntity`.
+- Estimated effort: 1-2 days.
+
+Phase 15E-65.2 - Item write sync cleanup:
+
+- Migrate direct `SetSocket/SetCount/SetAttributes/location/flag` writes to ItemSystem wrappers.
+- Add sync at unavoidable legacy write sites.
+- Do not remove read fallbacks until this phase passes WinTest.
+- Estimated effort: 2-4 days.
+
+Phase 15E-65.3 - Proto-derived component extension:
+
+- Add `ItemProtoRef` or expanded `ItemPrototypeSnapshot`.
+- Populate at `CreateItemEntity`.
+- Convert proto-derived read accessors to pure ECS.
+- Estimated effort: 2-3 days.
+
+Phase 15E-65.4 - Remove read fallback:
+
+- Remove legacy fallback from `GetItemFlags`, `GetItemOwner`, `GetItemAttribute`, `GetItemWindow`, `GetItemCell`, `IsItemEquipped`.
+- Remove legacy-only reads for proto-derived accessors after 65.3.
+- Add diagnostics for missing components instead of fallback.
+- Estimated effort: 1-2 days.
+
+Phase 15E-65.5 - Explicit accepted debt close-out:
+
+- Document remaining service bridges: ITEM_MANAGER destruction, DSManager, legacy inventory side effects.
+- Keep these bridges named and isolated, not hidden inside read accessors.
+
+## 9. Reference metrics
+
+Tree-wide metrics at audit time:
+
+- `LPITEM` references in `SRC/Server/GameServer`: 490
+- `CItem` references in `SRC/Server/GameServer`: 32
+
+These include bridge implementations and non-read service code. Use them as broad trend metrics, not as direct fallback counts.
+
+## 10. Architectural conclusion
+
+The item layer is ahead of the old CHARACTER layer in some places:
+
+- Item identity, count, sockets, attributes, basic location and equipped state already have ECS components.
+- `CreateItemEntity` hydrates a complete current item component set.
+- Several caller-facing reads are already ECS-first or pure ECS.
+
+The item layer still violates the strict no-fallback read-accessor goal:
+
+- Proto-derived reads are still legacy-only.
+- Some ECS-first reads still fall back to legacy when components are missing.
+- Direct legacy item writes outside ItemSystem can make ECS stale.
+
+Recommended rule for 15E-65.x:
+
+- Do not remove fallbacks blindly.
+- First prove creation hydration and write-side sync.
+- Then move proto-derived state into ECS components.
+- Finally remove read fallback and surface missing item components with invariant warnings.
