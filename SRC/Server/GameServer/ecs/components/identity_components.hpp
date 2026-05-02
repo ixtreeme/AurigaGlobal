@@ -17,6 +17,10 @@ struct EmpireComponent {
     uint32_t changeCount { 0 };
 };
 struct RaceComponent { uint16_t value; };
+struct RaceState {
+    uint32_t baseRace { 0 };
+    uint32_t polymorphRace { 0 };
+};
 struct PlayerName { std::string value; };
 struct GMLevel { uint8_t level; };
 

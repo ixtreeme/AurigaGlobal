@@ -1994,6 +1994,13 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 		return;
 	m_bPolyMaintainStat = bMaintainStat;
 	m_dwPolymorphRace = dwRaceNum;
+	if (auto* race = g_registry.try_get<ecs::RaceState>(AIHelpers::EcsOf(this))) {
+		race->polymorphRace = dwRaceNum;
+	}
+	if (auto* polymorph = g_registry.try_get<ecs::PolymorphState>(AIHelpers::EcsOf(this))) {
+		polymorph->raceVnum = dwRaceNum;
+		polymorph->maintainStat = bMaintainStat;
+	}
 	LOG_INFO("POLYMORPH: {} race {} ", GetName(), dwRaceNum);
 	if (dwRaceNum != 0)
 		StopRiding();

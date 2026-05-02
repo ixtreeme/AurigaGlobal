@@ -55,6 +55,8 @@ inline void ValidateCommonIdentity(entt::registry& reg, entt::entity e, const ch
         LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerName", static_cast<uint32_t>(e), ctx);
     if (!reg.all_of<ecs::RaceComponent>(e))
         LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceComponent", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::RaceState>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceState", static_cast<uint32_t>(e), ctx);
 }
 
 inline void ValidatePCIdentity(entt::registry& reg, entt::entity e, const char* context)

@@ -115,13 +115,9 @@ uint32_t GetPacketVID(entt::entity e)
 
 uint32_t GetRaceNum(entt::entity e)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (ch)
-		return ch->GetRaceNum();
-
 	if (e != entt::null && g_registry.valid(e)) {
-		if (const auto* race = g_registry.try_get<ecs::RaceComponent>(e))
-			return race->value;
+		if (const auto* race = g_registry.try_get<ecs::RaceState>(e))
+			return race->polymorphRace != 0 ? race->polymorphRace : race->baseRace;
 	}
 
 	return 0;

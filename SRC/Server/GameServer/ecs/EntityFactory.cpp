@@ -284,6 +284,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     }
 
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { static_cast<uint16_t>(data.dwVnum) });
+    reg.emplace_or_replace<ecs::RaceState>(entity, ecs::RaceState { data.dwVnum, 0u });
     reg.emplace_or_replace<ecs::PlayerName>(entity, MakeMobPlayerName(data));
     reg.emplace_or_replace<Tag>(entity);
     reg.emplace_or_replace<ecs::Position>(entity, x, y, 0);
@@ -512,6 +513,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::AccountID>(entity, ecs::AccountID { desc ? desc->GetAccountTable().id : 0u });
     reg.emplace_or_replace<ecs::EmpireComponent>(entity, ecs::EmpireComponent { static_cast<uint8_t>(desc ? desc->GetEmpire() : 0u) });
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { data.job });
+    reg.emplace_or_replace<ecs::RaceState>(entity, ecs::RaceState { static_cast<uint32_t>(data.job), 0u });
     reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
     reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
     reg.emplace_or_replace<ecs::TagPC>(entity);
