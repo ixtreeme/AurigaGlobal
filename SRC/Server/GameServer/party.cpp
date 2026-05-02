@@ -1165,7 +1165,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	if (n != 0) {
 		int i = number(0, n - 1);
 		ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(l)), x[i], y[i]);
-		ch->Stop();
+		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {

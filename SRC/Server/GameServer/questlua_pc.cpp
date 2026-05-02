@@ -7,6 +7,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
 #include "config.h"
@@ -2801,7 +2802,7 @@ teleport_area:
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 		ch->WarpSet(x,y);
-		ch->Stop();
+		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		lua_pushnumber(L, 1 );
 		return 1;
 	}

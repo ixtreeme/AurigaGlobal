@@ -55,7 +55,7 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 
 	if (follower->Sync(x, y))
 	{
-		follower->Stop();
+		ecs::MovementSystem::Stop(AIHelpers::EcsOf(follower));
 		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
 		return true;
 	}

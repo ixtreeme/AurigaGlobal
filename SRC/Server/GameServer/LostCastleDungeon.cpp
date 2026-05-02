@@ -378,7 +378,7 @@ namespace
             return;
 
         clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
-        clone->Stop();
+        ecs::MovementSystem::Stop(AIHelpers::EcsOf(clone));
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
         clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
@@ -391,7 +391,7 @@ namespace
             return;
 
         clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
-        clone->Stop();
+        ecs::MovementSystem::Stop(AIHelpers::EcsOf(clone));
 
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)
         const uint8_t func = (uint8_t)(FUNC_SKILL | (skillVnum & 0x7F));

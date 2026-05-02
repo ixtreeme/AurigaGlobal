@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -425,7 +426,7 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
 			ch->WarpSet(x, y);
-			ch->Stop();
+			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return true;
 		}
 	}
@@ -491,7 +492,7 @@ ACMD(do_goto)
 	y *= 100;
 
 	ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
-	ch->Stop();
+	ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 }
 
 ACMD(do_warp)
@@ -569,7 +570,7 @@ ACMD(do_warp)
 #endif
 
 
-	ch->Stop();
+	ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 }
 
 #ifdef ENABLE_NEWSTUFF
@@ -579,7 +580,7 @@ ACMD(do_rewarp)
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
 #endif
 	ch->WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
-	ch->Stop();
+	ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 }
 #endif
 

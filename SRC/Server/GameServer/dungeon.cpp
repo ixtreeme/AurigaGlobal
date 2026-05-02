@@ -3,6 +3,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "dungeon.h"
@@ -323,7 +324,7 @@ struct FWarpToPosition
 		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
 		{
 			ch->Show(lMapIndex, x, y, 0);
-			ch->Stop();
+			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		}
 		else
 		{

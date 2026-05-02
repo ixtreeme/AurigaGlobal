@@ -5,6 +5,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/service.h>
 #include <common/CommonDefines.h>
@@ -551,7 +552,7 @@ ACMD(do_gotoxy)
 		x *= 100;
 		y *= 100;
 		ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, z);
-		ch->Stop();
+		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		ch->SetGoToXYTime();
 	}
 }

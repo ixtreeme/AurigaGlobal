@@ -2281,7 +2281,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
 			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
-			ch->Stop();
+			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return;
 		}
 #ifdef ENALBE_MOUNT_SECTREE_UPDATE_RAZOR93
@@ -2296,7 +2296,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
 			ch->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
-			ch->Stop();
+			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 			return;
 		}
 #endif
@@ -2365,7 +2365,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		ch->ResetStopTime();
 
 		ecs::MovementSystem::Move(AIHelpers::EcsOf(ch), pinfo->lX, pinfo->lY);
-		ch->Stop();
+		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
 		ch->StopStaminaConsume();
 	}
 
