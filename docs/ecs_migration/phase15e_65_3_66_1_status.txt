@@ -1,0 +1,129 @@
+# Phase 15E-65.3 + 15E-66.1 Status
+
+Generated: Phase 15E-65.3 + 15E-66.1
+
+## 1. ItemProtoRef Component
+
+Added:
+
+- `SRC/Server/GameServer/ecs/components/item_proto_components.hpp`
+- `ecs::ItemProtoRef`
+
+Purpose:
+
+- Store proto-derived item data on the item entity.
+- Allow item read APIs to avoid `LegacyItemOf` / LPITEM resolution for proto fields.
+
+## 2. Factory Population
+
+`EntityFactory::CreateItemEntity` now hydrates `ItemProtoRef` through the shared `SyncItemEntity` path.
+
+Captured fields:
+
+- Base vnum, type, subtype
+- Weapon/min-max, defense, magic min/max
+- Name, size
+- Level limit, wear flags, anti flags, immune flags
+- Refined vnum, refine level
+- Limit timer based on wear index
+- Transitional `const TItemTable* proto`
+
+## 3. Proto-Derived Reads Migrated
+
+The following `ItemSystem` reads now use `ItemProtoRef` and no longer resolve LPITEM:
+
+- `GetItemValue`
+- `GetItemName`
+- `GetItemSize`
+- `GetItemRefineVnum`
+- `GetItemRefineLevel`
+- `GetItemLevelLimit`
+- `GetItemLimitTimerBasedOnWearIndex`
+- `GetItemWearFlags`
+- `GetItemWearFlag`
+- `GetItemAntiFlags`
+- `GetItemAntiFlag`
+- `GetItemImmuneFlags`
+- `GetItemProto`
+
+Note:
+
+- `GetItemValue` and `GetItemProto` still use the transitional proto pointer stored in `ItemProtoRef`.
+- They no longer call `LegacyItemOf` or `ResolveLegacyItemForLegacySideEffect`.
+
+## 4. Invariant Coverage
+
+`ItemInvariants` minimum item component set now includes:
+
+- `ItemProtoRef`
+
+Runtime missing proto hydration will show as:
+
+```text
+[ITEM_INVARIANT] entity=<id> ctx=<context> missing component ItemProtoRef
+```
+
+## 5. M1 Signature Cleanup
+
+LPCHARACTER / CHARACTER pointer broad ECS signature/usages:
+
+- Before 15E-66.1: `159`
+- After 15E-66.1: `127`
+- Reduction: `32`
+
+Changed:
+
+- PlayerRuntime M1 component helper signatures now take `entt::entity`.
+- ItemSystem M1 inventory/window helper signatures now take `entt::entity`.
+- Unused `const CHARACTER*` wrapper helpers in ItemSystem were removed.
+
+Remaining top files:
+
+- `ItemSystem_LegacyBridge.cpp`: 21
+- `PlayerRuntimeSystem.cpp`: 18
+- `NetworkSyncSystem.cpp`: 13
+- `CombatSystem.cpp`: 12
+- `MovementSystem.cpp`: 11
+
+These are mostly M2/M3 bridge or legacy method bodies and should not be bulk-migrated in 66.1.
+
+## 6. Build Status
+
+Build command:
+
+```text
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Result: passed after each major step.
+
+Known existing warnings:
+
+- `EntityFactory.cpp` discarded `[[nodiscard]]` warnings.
+- `PlayerRuntimeSystem.cpp` existing map insert narrowing warning.
+- Link warning `LNK4075`.
+- Post-build `pwsh.exe is not recognized`, but MSBuild returned success.
+
+## 7. WinTest Required
+
+Part A touches proto-derived item reads and requires runtime validation.
+
+Required checks:
+
+- Item tooltip displays name/level limit correctly.
+- Equip restriction uses wear flags, anti flags and level limit correctly.
+- Combat damage using weapon values remains correct.
+- Refine display uses refine level/refined vnum correctly.
+- Item immune/anti flag behavior remains correct.
+- Tail syslog for `[ITEM_INVARIANT]` and `[ITEM_BYPASS]`.
+- `VID_DRIFT` must remain zero.
+
+Status: pending operator WinTest.
+
+## 8. Next Phase
+
+Recommended next:
+
+- Phase 15E-65.4: remove the remaining 7 ECS-FIRST + fallback item reads after WinTest confirms no invariant warnings.
+- Phase 15E-66.2: M2 service-call bridge signature migration.
+
