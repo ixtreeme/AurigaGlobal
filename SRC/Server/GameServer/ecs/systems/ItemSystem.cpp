@@ -1799,11 +1799,6 @@ uint8_t GetItemWindow(entt::entity item)
     if (const auto* location = g_registry.try_get<ecs::ItemLocation>(item))
         return location->window;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.window.fallback");
-        return legacyItem->GetWindow();
-    }
-
     return 0;
 }
 
