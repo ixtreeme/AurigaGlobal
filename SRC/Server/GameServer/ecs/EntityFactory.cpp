@@ -287,6 +287,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::RaceState>(entity, ecs::RaceState { data.dwVnum, 0u });
     reg.emplace_or_replace<ecs::PlayerName>(entity, MakeMobPlayerName(data));
     reg.emplace_or_replace<Tag>(entity);
+    reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
     reg.emplace_or_replace<ecs::Position>(entity, x, y, 0);
     reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
     reg.emplace_or_replace<ecs::ExitPosition>(entity, 0, 0, 0);
@@ -518,6 +519,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
     reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
     reg.emplace_or_replace<ecs::TagPC>(entity);
+    reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
 
     reg.emplace_or_replace<ecs::Position>(entity, data.x, data.y, data.z);
     reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);

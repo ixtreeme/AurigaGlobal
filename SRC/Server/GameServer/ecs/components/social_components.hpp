@@ -16,6 +16,11 @@ class WeddingMap;
 
 namespace ecs {
 
+struct SocialRefs {
+    LPPARTY party { nullptr };
+    CGuild* guild { nullptr };
+};
+
 struct PartyMembership {
     LPPARTY party { nullptr };
     uint32_t lastDeadTime;

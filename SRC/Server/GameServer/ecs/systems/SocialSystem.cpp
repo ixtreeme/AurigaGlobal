@@ -20,6 +20,7 @@
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
+#include "../components/social_components.hpp"
 #include "ItemSystem.hpp"
 #include <Core/Logging.hpp>
 
@@ -27,26 +28,44 @@ namespace ecs::SocialSystem {
 
 LPPARTY GetParty(entt::entity e)
 {
-    auto* ch = ecs::LegacyCharOf(e);
-    if (!ch)
+    if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return ch->GetParty();
+    if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
+        return refs->party;
+
+    if (const auto* party = g_registry.try_get<ecs::PartyMembership>(e))
+        return party->party;
+
+    return nullptr;
 }
 
 CGuild* GetGuild(entt::entity e)
 {
-    auto* ch = ecs::LegacyCharOf(e);
-    if (!ch)
+    if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
-    return ch->GetGuild();
+    if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
+        return refs->guild;
+
+    if (const auto* guild = g_registry.try_get<ecs::GuildMembership>(e))
+        return guild->guild;
+
+    return nullptr;
 }
 
 } // namespace ecs::SocialSystem
 
 void CHARACTER::SetParty(LPPARTY pkParty)
 {
+    const auto entity = AIHelpers::EcsOf(this);
+    if (entity != entt::null && g_registry.valid(entity)) {
+        auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(entity);
+        refs.party = pkParty;
+        auto& membership = g_registry.get_or_emplace<ecs::PartyMembership>(entity);
+        membership.party = pkParty;
+    }
+
     if (pkParty == m_pkParty)
         return;
 
@@ -592,6 +611,14 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const LPC
 
 void CHARACTER::SetGuild(CGuild* pGuild)
 {
+    const auto entity = AIHelpers::EcsOf(this);
+    if (entity != entt::null && g_registry.valid(entity)) {
+        auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(entity);
+        refs.guild = pGuild;
+        auto& membership = g_registry.get_or_emplace<ecs::GuildMembership>(entity);
+        membership.guild = pGuild;
+    }
+
     if (m_pGuild != pGuild)
     {
         m_pGuild = pGuild;
