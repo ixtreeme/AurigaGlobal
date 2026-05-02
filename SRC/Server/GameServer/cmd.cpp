@@ -306,7 +306,7 @@ ACMD(do_hide_costume);
 
 #ifdef ENABLE_ATTR_COSTUMES
 ACMD(do_attrdialog_remove) {
-	if (ch->IsObserverMode() || ch->IsDead()) {
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ch->IsDead()) {
 		return;
 	}
 
@@ -366,7 +366,7 @@ ACMD(do_unlock_extra)
 ACMD(do_wheel_open)
 {
 
-	if ((ch->IsObserverMode()) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
+	if ((ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You Can't do this now");
 		return;
@@ -381,7 +381,7 @@ ACMD(do_wheel_open)
 #ifdef ENABLE_NEW_PET_EDITS
 ACMD(do_petenchant)
 {
-	if ((ch->IsObserverMode()) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
+	if ((ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
 		return;
 
 	char arg1[256];

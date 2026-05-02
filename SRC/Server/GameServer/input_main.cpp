@@ -1738,7 +1738,7 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (!ch_companion)
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ch->IsObserverMode())
+				if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
@@ -5303,7 +5303,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 		return;
 	}
 
-	if (ch->IsObserverMode() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
 	{
 		return;
 	}
@@ -5443,12 +5443,12 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
 
 		case HEADER_CG_ITEM_USE:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemUse(ch, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_DROP:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 			{
 				ItemDrop(ch, c_pData);
 			}
@@ -5461,62 +5461,62 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 
 		case HEADER_CG_ITEM_DROP2:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemDrop2(ch, c_pData);
 			break;
 		case HEADER_CG_ITEM_DESTROY:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemDestroy(ch, c_pData);
 			break;
 		case HEADER_CG_ITEM_DIVISION:
 			{
-				if (!ch->IsObserverMode())
+				if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 					ItemDivision(ch, c_pData);
 			}
 			break;
 		case HEADER_CG_ITEM_MOVE:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemMove(ch, c_pData);
 			break;
 
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 		case ENVANTER_BLACK:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				InventoryExpansion(ch, c_pData);
 		break;
 #endif
 
 		case HEADER_CG_ITEM_PICKUP:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemPickup(ch, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_USE_TO_ITEM:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemToItem(ch, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_GIVE:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				ItemGive(ch, c_pData);
 			break;
 
 		case HEADER_CG_EXCHANGE:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				Exchange(ch, c_pData);
 			break;
 
 		case HEADER_CG_ATTACK:
 		case HEADER_CG_SHOOT:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 			{
 				Attack(ch, bHeader, c_pData);
 			}
 			break;
 
 		case HEADER_CG_USE_SKILL:
-			if (!ch->IsObserverMode())
+			if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 				UseSkill(ch, c_pData);
 			break;
 
@@ -5529,7 +5529,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ch->IsObserverMode() || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead()
+					if (!(ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead()
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || ch->IsAttrTransferOpen()
 #endif

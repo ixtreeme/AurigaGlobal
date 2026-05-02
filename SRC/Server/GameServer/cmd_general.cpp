@@ -115,7 +115,7 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 
 ACMD(do_user_horse_ride)
 {
-	if (ch->IsObserverMode())
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
@@ -755,7 +755,7 @@ ACMD(do_restart)
 
 	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
 
-	if (ch->GetWarMap() && !ch->IsObserverMode())
+	if (ch->GetWarMap() && !ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 	{
 		CWarMap * pMap = ch->GetWarMap();
 		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(ch) : 0;
@@ -2520,7 +2520,7 @@ ACMD(do_unmount)
 
 ACMD(do_observer_exit)
 {
-	if (ch->IsObserverMode())
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 	{
 		if (ch->GetWarMap())
 			ch->SetWarMap(nullptr);
@@ -3071,7 +3071,7 @@ namespace
 		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
-	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsObserverMode())
+	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 			return false;
 
 		if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())

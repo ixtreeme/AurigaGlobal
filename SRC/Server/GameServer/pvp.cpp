@@ -918,7 +918,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 		}
 	}
 
-	if (pkVictim->IsObserverMode() || pkChr->IsObserverMode())
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(pkVictim)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(pkChr)))
 		return false;
 
 	{

@@ -526,7 +526,7 @@ ACMD(do_gotoxy)
 		return;
 	}
 
-	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)) || ch->IsObserverMode() || ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
+	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif
@@ -558,7 +558,7 @@ ACMD(do_gotoxy)
 
 #ifdef ENABLE_SAVEPOINT_SYSTEM
 ACMD(do_open_savepoint) {
-	if (ch->IsObserverMode()) {
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) {
 		return;
 	}
 
@@ -596,7 +596,7 @@ ACMD(do_open_savepoint) {
 }
 
 ACMD(do_empty_savepoint) {
-	if (ch->IsObserverMode()) {
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) {
 		return;
 	}
 
@@ -623,7 +623,7 @@ ACMD(do_empty_savepoint) {
 }
 
 ACMD(do_go_savepoint) {
-	if (ch->IsObserverMode()) {
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) {
 		return;
 	}
 
@@ -686,7 +686,7 @@ ACMD(do_go_savepoint) {
 }
 
 ACMD(do_save_savepoint) {
-	if (ch->IsObserverMode()) {
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch))) {
 		return;
 	}
 

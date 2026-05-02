@@ -3075,7 +3075,7 @@ ACMD(do_mount_test)
 
 ACMD(do_observer)
 {
-	ch->SetObserverMode(!ch->IsObserverMode());
+	ch->SetObserverMode(!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)));
 }
 
 ACMD(do_socket_item)

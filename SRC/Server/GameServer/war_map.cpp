@@ -282,7 +282,7 @@ void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 	if (m_pkEndEvent)
 		return;
 
-	if (ch->IsObserverMode())
+	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
@@ -424,7 +424,7 @@ void CWarMap::DecMember(LPCHARACTER ch)
 	if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
 		gid = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID();
 
-	if (!ch->IsObserverMode())
+	if (!ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 	{
 		if (gid == m_TeamData[0].dwID)
 			m_TeamData[0].RemoveMember(ch);
