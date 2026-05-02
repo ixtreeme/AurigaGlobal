@@ -1232,6 +1232,7 @@ void CItem::SetAttributes(const TPlayerItemAttribute* c_pAttribute)
 {
 
 	memcpy(m_aAttr, c_pAttribute, sizeof(m_aAttr));
+	SyncItemAttributesComponent(this);
 
 	Save();
 
