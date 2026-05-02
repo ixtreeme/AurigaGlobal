@@ -54,6 +54,15 @@ CGuild* GetGuild(entt::entity e)
     return nullptr;
 }
 
+CExchange* GetExchange(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
+    return exchange ? exchange->exchange : nullptr;
+}
+
 } // namespace ecs::SocialSystem
 
 void CHARACTER::SetParty(LPPARTY pkParty)

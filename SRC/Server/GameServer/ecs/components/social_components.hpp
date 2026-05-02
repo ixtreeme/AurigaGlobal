@@ -14,11 +14,17 @@ namespace marriage {
 class WeddingMap;
 }
 
+class CExchange;
+
 namespace ecs {
 
 struct SocialRefs {
     LPPARTY party { nullptr };
     CGuild* guild { nullptr };
+};
+
+struct ExchangeRef {
+    CExchange* exchange { nullptr };
 };
 
 struct PartyMembership {

@@ -1646,6 +1646,14 @@ void CHARACTER::SetShop(LPSHOP pkShop)
 
 void CHARACTER::SetExchange(CExchange* pkExchange)
 {
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& exchange = g_registry.get_or_emplace<ecs::ExchangeRef>(e);
+        exchange.exchange = pkExchange;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
     m_pkExchange = pkExchange;
 }
 
