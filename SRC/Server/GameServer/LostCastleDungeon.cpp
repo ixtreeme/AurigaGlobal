@@ -6,6 +6,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "LostCastleDungeon.h"
@@ -381,7 +382,7 @@ namespace
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
         clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
-        clone->OnMove(true);
+        ecs::MovementSystem::OnMove(AIHelpers::EcsOf(clone), true);
     }
 
     inline void LostCastleCloneBroadcastSkill(LPCHARACTER clone, LPCHARACTER target, uint8_t skillVnum, uint32_t now)
@@ -395,7 +396,7 @@ namespace
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)
         const uint8_t func = (uint8_t)(FUNC_SKILL | (skillVnum & 0x7F));
         clone->SendMovePacket(func, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
-        clone->OnMove(true);
+        ecs::MovementSystem::OnMove(AIHelpers::EcsOf(clone), true);
     }
 }
 

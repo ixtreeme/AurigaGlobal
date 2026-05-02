@@ -2346,7 +2346,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	{
 		if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
 		{
-			ch->OnMove(true);
+			ecs::MovementSystem::OnMove(AIHelpers::EcsOf(ch), true);
 		}
 		else if (pinfo->bFunc & FUNC_SKILL)
 		{
@@ -2358,7 +2358,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(number(150, 500));
 			}
 
-			ch->OnMove();
+			ecs::MovementSystem::OnMove(AIHelpers::EcsOf(ch));
 		}
 
 		ch->SetRotation(pinfo->bRot * 5.0f);
@@ -2552,7 +2552,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
 				}
 				// DUAL-PATH: ECS + legacy call
-				ch->OnMove(true);
+				ecs::MovementSystem::OnMove(AIHelpers::EcsOf(ch), true);
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;
