@@ -1350,11 +1350,12 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
+	const auto entity = AIHelpers::EcsOf(ch);
+	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(entity);
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
 	{
-		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwVnum);
+		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(entity), dwVnum);
 		m_map_pkChrByRaceNum[dwVnum].insert(ch);
 	}
 }
