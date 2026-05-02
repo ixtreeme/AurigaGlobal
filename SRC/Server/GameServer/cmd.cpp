@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -365,7 +366,7 @@ ACMD(do_unlock_extra)
 ACMD(do_wheel_open)
 {
 
-	if ((ch->IsObserverMode()) || (ch->IsDead()) || (ch->IsStun()))
+	if ((ch->IsObserverMode()) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
 	{
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You Can't do this now");
 		return;
@@ -380,7 +381,7 @@ ACMD(do_wheel_open)
 #ifdef ENABLE_NEW_PET_EDITS
 ACMD(do_petenchant)
 {
-	if ((ch->IsObserverMode()) || (ch->IsDead()) || (ch->IsStun()))
+	if ((ch->IsObserverMode()) || (ch->IsDead()) || (CombatSystem::IsStun(AIHelpers::EcsOf(ch))))
 		return;
 
 	char arg1[256];

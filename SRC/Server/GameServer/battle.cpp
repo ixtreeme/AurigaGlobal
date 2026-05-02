@@ -3,6 +3,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "utils.h"
@@ -109,7 +110,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	// 3��! ��3�A��� �ߴ��N�U.
-	if (ch->IsStun() || ch->IsDead())
+	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead())
 	{
 		return false;
 	}

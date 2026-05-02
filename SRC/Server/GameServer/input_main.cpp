@@ -2,6 +2,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
@@ -4467,7 +4468,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 		return (iExtraLen);
 	}
 
-	if (ch->IsStun() || ch->IsDead())
+	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead())
 		return (iExtraLen);
 
 	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
@@ -5528,7 +5529,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ch->IsObserverMode() || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || ch->IsStun() || ch->IsDead()
+					if (!(ch->IsObserverMode() || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead()
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || ch->IsAttrTransferOpen()
 #endif

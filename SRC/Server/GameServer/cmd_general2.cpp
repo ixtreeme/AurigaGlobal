@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -525,7 +526,7 @@ ACMD(do_gotoxy)
 		return;
 	}
 
-	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || ch->IsStun() || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
+	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif

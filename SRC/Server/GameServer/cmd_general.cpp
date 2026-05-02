@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -117,7 +118,7 @@ ACMD(do_user_horse_ride)
 	if (ch->IsObserverMode())
 		return;
 
-	if (ch->IsDead() || ch->IsStun())
+	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (ch->IsHorseRiding() == false)
@@ -3070,7 +3071,7 @@ namespace
 		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
-		if (ch->IsDead() || ch->IsStun() || ch->IsObserverMode())
+	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsObserverMode())
 			return false;
 
 		if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
@@ -3549,7 +3550,7 @@ ACMD(do_ride)
 	}
 #endif
     dev_log(LOG_DEB0, "[DO_RIDE] start");
-    if (ch->IsDead() || ch->IsStun())
+	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
