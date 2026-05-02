@@ -1357,11 +1357,6 @@ int32_t GetItemFlags(entt::entity item)
     if (const auto* flags = g_registry.try_get<ecs::ItemFlags>(item))
         return flags->flags;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.flags.fallback");
-        return legacyItem->GetFlag();
-    }
-
     return 0;
 }
 
