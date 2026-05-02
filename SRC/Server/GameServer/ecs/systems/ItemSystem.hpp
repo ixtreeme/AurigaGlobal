@@ -13,6 +13,7 @@ namespace ItemSystem {
 
 entt::entity GetItem(entt::entity e, TItemPos cell);
 entt::entity GetInventoryItem(entt::entity e, uint16_t cell);
+LPITEM GetInventoryItemPtr(entt::entity e, uint16_t cell);
 #ifdef ENABLE_EXTRA_INVENTORY
 entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell);
 void SyncExtraInventoryAll(entt::entity e);
@@ -32,6 +33,7 @@ bool HasItem(entt::entity e, uint32_t vnum, uint32_t count = 1);
 
 // Slice B - equip / unequip
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos);
+LPITEM GetWear(entt::entity e, uint8_t wearPos);
 void SetWearItem(entt::entity e, uint8_t wearPos, entt::entity item);
 bool UnequipItem(entt::entity e, entt::entity item);
 bool EquipItem(entt::entity e, entt::entity item, int candidateCell = -1);

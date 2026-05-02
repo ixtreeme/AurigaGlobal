@@ -152,6 +152,14 @@ static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeCompo
     return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
 }
 
+static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
+}
+
 static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
 {
     if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
@@ -161,6 +169,15 @@ static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
         return comp->pItems[cell];
 
     return nullptr;
+}
+
+static LPITEM GetMainInventoryItem(entt::entity e, uint16_t cell)
+{
+    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
+        return nullptr;
+
+    const auto* comp = TryGetMainInventoryRuntimeComponent(e);
+    return comp ? comp->pItems[cell] : nullptr;
 }
 
 static uint16_t GetMainInventoryGrid(const CHARACTER* ch, uint16_t cell)
@@ -684,9 +701,13 @@ entt::entity GetItem(entt::entity e, TItemPos cell)
 
 entt::entity GetInventoryItem(entt::entity e, uint16_t cell)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM item = ch ? ch->GetInventoryItem(cell) : nullptr;
+    LPITEM item = GetInventoryItemPtr(e, cell);
     return EntityFactory::CreateItemEntity(g_registry, item);
+}
+
+LPITEM GetInventoryItemPtr(entt::entity e, uint16_t cell)
+{
+    return GetMainInventoryItem(e, cell);
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -827,9 +848,16 @@ bool HasItem(entt::entity e, uint32_t vnum, uint32_t count)
 
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM item = ch ? ch->GetWear(wearPos) : nullptr;
+    LPITEM item = GetWear(e, wearPos);
     return EntityFactory::CreateItemEntity(g_registry, item);
+}
+
+LPITEM GetWear(entt::entity e, uint8_t wearPos)
+{
+    if (wearPos >= WEAR_MAX_NUM)
+        return nullptr;
+
+    return GetMainInventoryItem(e, static_cast<uint16_t>(INVENTORY_MAX_NUM + wearPos));
 }
 
 void SetWearItem(entt::entity e, uint8_t wearPos, entt::entity item)
