@@ -10,7 +10,7 @@ The current ECS API is mixed:
 - Pure ECS reads already exist for position and the safest stat/affect reads:
   PlayerRuntime::GetMapIndex/GetX/GetY, PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel, AffectSystem::FindAffect/IsAffectFlag.
 - Several PlayerRuntime identity and predicate accessors are ECS-first but still fall back to LegacyCharOf(e)->GetX/IsX.
-- PointSystem::Get and PointSystem::GetReal are legacy-first by design from the 15C-1j parking decision. This preserves POINT_* semantic routing, but it is architectural debt.
+- PointSystem::Get and PointSystem::GetReal are now routed through the 15E-60.8 ECS POINT router. Only explicit SRC_LEGACY_ONLY mappings may delegate, and those emit one-time diagnostics.
 - Service-object and behavior APIs such as GetDesc, GetSectree, SocialSystem::GetParty/GetGuild, QuestSystem::GetFlag, ChatSystem sends, CombatSystem, SkillSystem, MountSystem, ItemSystem and GayaSystem still delegate heavily to CHARACTER.
 
 Architectural conclusion:
@@ -53,8 +53,8 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 | PlayerRuntime::IsNPC | PURE ECS | PlayerRuntimeSystem.cpp:186 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagNPC only. |
 | PlayerRuntime::IsStone | PURE ECS | PlayerRuntimeSystem.cpp:191 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagStone only. |
 | PlayerRuntime::IsMonster | PURE ECS | PlayerRuntimeSystem.cpp:196 | Phase 15E-60.6 removed LegacyCharOf fallback; reads TagMonster only. |
-| PointSystem::Get | LEGACY-FIRST | SRC/Server/GameServer/ecs/systems/PointSystem.cpp:88 | Delegates to ch->GetPoint(type) to preserve POINT_* semantic split. |
-| PointSystem::GetReal | LEGACY-FIRST | PointSystem.cpp:96 | Delegates to ch->GetRealPoint(type). |
+| PointSystem::Get | PURE ECS (SRC_LEGACY_ONLY exception) | SRC/Server/GameServer/ecs/systems/PointSystem.cpp:182 | Uses PointRouter table; virtual points read dedicated ECS components and stat points read CharacterStatsComponent. |
+| PointSystem::GetReal | PURE ECS (SRC_LEGACY_ONLY exception) | PointSystem.cpp:244 | Uses PointRouter table; real/base stat points read CharacterPoints.base. |
 | PointSystem::GetGold | PURE ECS | PointSystem.cpp:104 | Reads GoldAmount component. |
 | PointSystem::GetMaxHP | PURE ECS | PointSystem.cpp:114 | Reads Health.max. |
 | PointSystem::GetMaxSP | PURE ECS | PointSystem.cpp:124 | Reads Mana.max. |
@@ -241,22 +241,23 @@ Phase 15E-60.7 should add a small central SyncPositionComponents call or route t
 
 PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel are pure ECS and production-tested after the GetLevel int32_t hotfix.
 
-Remaining architectural debt:
+Current architectural debt:
 
-- PointSystem::Get delegates to ch->GetPoint(type).
-- PointSystem::GetReal delegates to ch->GetRealPoint(type).
+- PointSystem::Get/GetReal delegate only inside explicit SRC_LEGACY_ONLY mappings such as POINT_INVEN and POINT_GAYA.
 - PointSystem::Change delegates to ch->PointChange(), so the write side still lives in legacy.
+- CHARACTER::SetPoint and SetRealPoint now sync generic point writes into ECS mirrors.
 
 Reason:
 
 The 15C-1j lesson remains valid: POINT_* is not one flat storage class. It has true stat-array, virtual/live, and computed values. Removing the bridge before modeling this semantic split would risk damage, EXP, HP/SP and gold regressions.
 
-Required component model:
+Implemented component model:
 
-- CharacterPoints for true stat-array values.
-- Dedicated live components for HP, SP, EXP, Gold.
-- Computed route for POINT_NEXT_EXP and derived values.
-- One ECS semantic router for POINT_* reads, equivalent to legacy GetPoint behavior.
+- CharacterStatsComponent.points[type] for instant/live stat-array values.
+- CharacterPoints.base.points[type] for real/base values.
+- Dedicated live components for HP, SP, stamina, EXP, Gold and Level.
+- Computed route for POINT_NEXT_EXP using Experience.next when populated, otherwise exp_table[level].
+- SRC_LEGACY_ONLY branch for POINT_* values without ECS source yet; emits [POINT_LEGACY_ONLY] once per type.
 
 ### Affects
 
@@ -329,9 +330,9 @@ Phase 15E-60.7 - Scalar identity fallback removal
 
 Phase 15E-60.8 - Generic POINT router
 
-- Implement ECS semantic router for PointSystem::Get/GetReal.
-- Preserve 15C-1j semantic split.
-- Remove ch->GetPoint/ch->GetRealPoint bridge.
+- Implemented ECS semantic router for PointSystem::Get/GetReal.
+- Preserved 15C-1j semantic split: dedicated virtual/live, instant array, real/base array and computed next EXP.
+- Removed ch->GetPoint/ch->GetRealPoint bridge for all non-SRC_LEGACY_ONLY point types.
 
 Phase 15E-60.9 - State extension pass
 
@@ -362,7 +363,7 @@ Architectural debt that must not be hidden:
 
 - GetRaceNum.
 - GetDesc/GetSectree.
-- PointSystem::Get/GetReal.
+- PointSystem::Get/GetReal only for SRC_LEGACY_ONLY extensions (POINT_INVEN/POINT_GAYA).
 - SocialSystem and QuestSystem accessors.
 - Combat/Skill/Mount/Item/Gaya side-effect wrappers.
 
