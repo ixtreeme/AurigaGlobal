@@ -87,6 +87,7 @@
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include "../components/item_components.hpp"
+#include "../components/item_proto_components.hpp"
 #include "../ItemRegistry.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
@@ -1417,56 +1418,63 @@ int32_t GetItemValue(entt::entity item, uint32_t index)
     if (index >= ITEM_VALUES_MAX_NUM)
         return 0;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetValue(index);
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef && protoRef->proto)
+        return protoRef->proto->alValues[index];
 
     return 0;
 }
 
 const char* GetItemName(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetName();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->name;
 
     return "";
 }
 
 uint8_t GetItemSize(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetSize();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->size;
 
     return 0;
 }
 
 uint32_t GetItemRefineVnum(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetRefinedVnum();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->refined_vnum;
 
     return 0;
 }
 
 int GetItemRefineLevel(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetRefineLevel();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->refine_level;
 
     return 0;
 }
 
 int GetItemLevelLimit(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetLevelLimit();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->level_limit;
 
     return 0;
 }
 
 int GetItemLimitTimerBasedOnWearIndex(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetProto() ? legacyItem->GetProto()->cLimitTimerBasedOnWearIndex : -1;
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->limit_timer_wear_index;
 
     return -1;
 }
@@ -1486,8 +1494,9 @@ int32_t GetItemFlags(entt::entity item)
 
 uint32_t GetItemWearFlags(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetWearFlag();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->wear_flags;
 
     return 0;
 }
@@ -1499,8 +1508,9 @@ uint32_t GetItemWearFlag(entt::entity item)
 
 uint32_t GetItemAntiFlags(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetAntiFlag();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->anti_flags;
 
     return 0;
 }
@@ -1512,16 +1522,18 @@ uint32_t GetItemAntiFlag(entt::entity item)
 
 uint32_t GetItemImmuneFlags(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetImmuneFlag();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->immune_flags;
 
     return 0;
 }
 
 const TItemTable* GetItemProto(entt::entity item)
 {
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        return legacyItem->GetProto();
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    if (protoRef)
+        return protoRef->proto;
 
     return nullptr;
 }
