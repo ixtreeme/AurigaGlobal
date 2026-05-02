@@ -623,7 +623,7 @@ namespace
 	{
 		void operator()(LPCHARACTER ch)
 		{
-			ch->ExitToSavedLocation();
+			ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 		}
 	};
 }

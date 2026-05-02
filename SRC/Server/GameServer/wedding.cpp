@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -137,7 +138,7 @@ namespace marriage
 				// ExitToSavedLocation은 WarpSet을 부르는데 이 함수에서
 				// Sectree가 NULL이 된다. 추 후 SectreeManager로 부터는
 				// 이 캐릭터를 찾을 수 없으므로 아래 DestroyAll에서 별도 처리함
-				ch->ExitToSavedLocation();
+				ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 			}
 		}
 	};

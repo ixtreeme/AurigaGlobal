@@ -7,6 +7,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
 #include <md5.h>
@@ -774,7 +775,7 @@ ACMD(do_restart)
 						}
 						else
 						{
-							ch->ExitToSavedLocation();
+							ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 						}
 
 						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
@@ -857,7 +858,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -873,7 +874,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 2170000 && mapidx < 2180000)
@@ -887,7 +888,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 3550000 && mapidx < 3560000)
@@ -910,7 +911,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -926,7 +927,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 3520000 && mapidx < 3530000)
@@ -976,7 +977,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1021,7 +1022,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1052,7 +1053,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1095,7 +1096,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1111,7 +1112,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 2090000 && mapidx < 2100000)
@@ -1125,7 +1126,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 2100000 && mapidx < 2110000)
@@ -1139,7 +1140,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 660000 && mapidx < 670000)
@@ -1203,7 +1204,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1269,7 +1270,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1285,7 +1286,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 2120000 && mapidx < 2130000)
@@ -1299,7 +1300,7 @@ ACMD(do_restart)
 							}
 							else
 							{
-								ch->ExitToSavedLocation();
+								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 							}
 						}
 						else if (mapidx >= 260000 && mapidx < 270000)
@@ -1328,7 +1329,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -1353,7 +1354,7 @@ ACMD(do_restart)
 									break;
 								default:
 									{
-										ch->ExitToSavedLocation();
+										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 									}
 									break;
 							}
@@ -2537,7 +2538,7 @@ ACMD(do_observer_exit)
 		}
 		else
 		{
-			ch->ExitToSavedLocation();
+			ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 		}
 		ch->SetObserverMode(false);
 	}

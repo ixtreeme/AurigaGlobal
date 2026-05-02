@@ -366,7 +366,7 @@ namespace quest
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
         auto* ch = ecs::LegacyCharOf(chEntity);
         if (ch)
-            ch->ExitToSavedLocation();
+            ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
         return 0;
     }
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -470,7 +471,7 @@ struct FExitGuildWar
 	{
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
 		{
-			ch->ExitToSavedLocation();
+			ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
 		}
 	}
 };

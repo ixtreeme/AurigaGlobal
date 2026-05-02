@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -654,7 +655,7 @@ void CEasterDungeon::OnPlayerLogin(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
     {
-        ch->ExitToSavedLocation();
+        ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
         return;
     }
 
@@ -773,7 +774,7 @@ bool CEasterDungeon::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
         if (cur && cur->GetFlag(kFlagCompleted) == 0)
         {
-            ch->ExitToSavedLocation();
+            ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
             return true;
         }
         // completed -> allow starting a new run from the same NPC
