@@ -549,9 +549,18 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 	{
 		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
 	}
+	if (auto* combat = g_registry.try_get<ecs::CombatStats>(AIHelpers::EcsOf(this))) {
+		combat->alignment = m_iAlignment;
+		combat->realAlignment = m_iRealAlignment;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+	}
+
 	if (bShow)
 	{
 		m_iAlignment = m_iRealAlignment;
+
+		if (auto* combat = g_registry.try_get<ecs::CombatStats>(AIHelpers::EcsOf(this)))
+			combat->alignment = m_iAlignment;
 
 		if (i != m_iAlignment / 10)
 			UpdatePacket();

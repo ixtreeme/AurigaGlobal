@@ -3782,6 +3782,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_iAlignment = t->lAlignment;
     m_iRealAlignment = t->lAlignment;
+    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
+        combat->alignment = m_iAlignment;
+        combat->realAlignment = m_iRealAlignment;
+    }
 
     m_points.voice = t->voice;
 

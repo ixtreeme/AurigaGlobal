@@ -134,6 +134,16 @@ struct FuncClearSync
         ch->SetSyncOwner(nullptr, false);
     }
 };
+
+int16_t AlignmentForPacket(entt::entity e, uint32_t legacyAlignment)
+{
+    if (e != entt::null && g_registry.valid(e)) {
+        if (const auto* combat = g_registry.try_get<ecs::CombatStats>(e))
+            return static_cast<int16_t>(combat->alignment / 10);
+    }
+
+    return static_cast<int16_t>(legacyAlignment / 10);
+}
 }
 
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
@@ -250,7 +260,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
             addPacket.dwLevel = GetLevel();
             addPacket.dwMountVnum = GetMountVnum();
             addPacket.dwGuildID = GetGuild() ? GetGuild()->GetID() : 0;
-            addPacket.sAlignment = m_iAlignment / 10;
+            addPacket.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
 
 #ifdef __SKILL_COLOR_SYSTEM__
             memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
@@ -603,7 +613,7 @@ void CHARACTER::UpdatePacket()
     pack.dwAffectFlag[1] = m_afAffectFlag.bits[1];
 #endif
     pack.dwGuildID = 0;
-    pack.sAlignment = m_iAlignment / 10;
+    pack.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
 #ifdef ENABLE_MULTI_LANGUAGE
     pack.bLanguage = (IsPC() && GetDesc()) ? GetDesc()->GetLanguage() : 0;
 #endif
