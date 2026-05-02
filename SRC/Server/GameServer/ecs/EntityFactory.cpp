@@ -313,6 +313,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
     reg.emplace_or_replace<ecs::AffectList>(entity, MakeDefaultAffectList());
     reg.emplace_or_replace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
+    reg.emplace_or_replace<ecs::ImmunityFlags>(entity, ecs::ImmunityFlags {});
     reg.emplace_or_replace<ecs::AIState>(entity, ecs::AIState { 0u, 0u, 1u });
     const auto aiFlags = MakeAIFlags(data);
     reg.emplace_or_replace<ecs::AIFlags>(entity, aiFlags);
@@ -553,6 +554,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::AffectList>(entity, MakeDefaultAffectList());
     auto& statusFlags = reg.emplace_or_replace<ecs::StatusFlags>(entity, MakeDefaultStatusFlags());
     statusFlags.isGM = (gmLevel.level > 0);
+    reg.emplace_or_replace<ecs::ImmunityFlags>(entity, ecs::ImmunityFlags {});
 
     reg.emplace_or_replace<ecs::NetworkSession>(entity, desc);
     reg.emplace_or_replace<ecs::LoginInfo>(entity, MakeLoginInfo(data, desc, now));

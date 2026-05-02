@@ -39,6 +39,10 @@ struct PolymorphState {
     bool maintainStat;
 };
 
+struct ImmunityFlags {
+    uint32_t flags { 0 };
+};
+
 struct DeadTag {};
 struct StunTag {};
 struct SafeZoneTag {};

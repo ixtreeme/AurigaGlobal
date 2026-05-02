@@ -495,38 +495,38 @@ void RemoveBleeding(entt::entity)
 
 bool IsImmune(entt::entity e, uint32_t immuneFlag)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (e == entt::null || !g_registry.valid(e)) {
         return false;
     }
 
-    if (IS_SET(ch->GetImmuneFlag(), immuneFlag))
-    {
+    const auto* immunity = g_registry.try_get<ecs::ImmunityFlags>(e);
+    if (!immunity || !IS_SET(immunity->flags, immuneFlag)) {
+        if (test_server && ecs::PlayerRuntime::IsPC(e)) {
+            const std::string name(ecs::PlayerRuntime::GetName(e));
+            ecs::ChatSystem::Send(e, CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", name.c_str());
+        }
+        return false;
+    }
+
 #ifdef ENABLE_IMMUNE_PERC
-        int immune_pct = 90;
-        int percent = number(1, 100);
+    int immune_pct = 90;
+    int percent = number(1, 100);
 
-        if (percent <= immune_pct)
+    if (percent <= immune_pct)
 #else
-        if (true)
+    if (true)
 #endif
-        {
-            if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-            }
-
-            return true;
+    {
+        if (test_server && ecs::PlayerRuntime::IsPC(e)) {
+            const std::string name(ecs::PlayerRuntime::GetName(e));
+            ecs::ChatSystem::Send(e, CHAT_TYPE_PARTY, "<IMMUNE_SUCCESS> (%s)", name.c_str());
         }
-
-        if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-        }
-
-        return false;
+        return true;
     }
 
-    if (test_server && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+    if (test_server && ecs::PlayerRuntime::IsPC(e)) {
+        const std::string name(ecs::PlayerRuntime::GetName(e));
+        ecs::ChatSystem::Send(e, CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s)", name.c_str());
     }
 
     return false;

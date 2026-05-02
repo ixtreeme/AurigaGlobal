@@ -33,6 +33,7 @@
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/status_components.hpp"
 #include "../../ecs/components/transform_components.hpp"
 #include "../../ecs/components/vital_components.hpp"
 #include "../../exchange.h"
@@ -924,6 +925,8 @@ void CHARACTER::SetImmuneFlag(uint32_t dw)
 {
     if (auto* flags = EnsureRuntimeFlagsComponent(this))
         flags->immuneFlag = dw;
+    auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(AIHelpers::EcsOf(this));
+    immunity.flags = dw;
 }
 
 uint32_t CHARACTER::GetImmuneFlag() const
