@@ -1,0 +1,102 @@
+# Phase 15E-65.2 Item Write Sync
+
+Generated: Phase 15E-65.2
+
+## 1. Scope
+
+Goal: add ECS sync coverage for identified item write paths without removing any read fallback.
+
+Important rule:
+
+- Read fallback remains in place until Phase 15E-65.4.
+- This phase only improves write-side ECS freshness.
+
+## 2. Existing Sync Coverage Found
+
+`ItemSystem_LegacyBridge.cpp` already syncs most central legacy item mutations:
+
+- `CItem::SetCount` calls `SyncItemCountComponent`.
+- `CItem::SetSocket` calls `SyncItemSocketsComponent`.
+- `CItem::SetSockets` calls `SyncItemSocketsComponent`.
+- `CItem::SetAttribute` calls `SyncItemAttributesComponent`.
+- Item flag mutations call `SyncItemFlagsComponent`.
+- `ItemSystem::SyncItemStateFromLegacy` already syncs identity, count, prototype metadata, flags, location, owner, sockets and attributes.
+
+Conclusion:
+
+- The item_manager post-create `SetSocket` / `SetCount` clusters are already covered by central CItem write hooks when the item has an ECS entity.
+- Pre-hydration writes during `ITEM_MANAGER::CreateItem` are captured by the final `EntityFactory::CreateItemEntity` hydration.
+
+## 3. Fix Applied
+
+Missing sync found:
+
+- `CItem::SetAttributes(const TPlayerItemAttribute*)` copied the full attribute array and saved the item, but did not mirror to ECS.
+- `CItem::CopyAttributeTo` uses `SetAttributes`, so accessory/refine attribute-copy paths could leave `ItemAttributes` stale.
+
+Fix:
+
+- Added `SyncItemAttributesComponent(this)` after the `memcpy` in `CItem::SetAttributes`.
+
+Commit:
+
+- `Phase 15E-65.2: Sync bulk item attributes from legacy`
+
+## 4. Remaining Direct Legacy Write Audit
+
+Direct legacy item writes outside `ecs/systems/Item*` after this phase:
+
+- `item_manager.cpp`: 24 active `SetSocket` / `SetCount` / `SetCell` sites.
+- `new_offlineshop.cpp`: `SetWindow(NEW_OFFSHOP)` remains a location/window sync candidate.
+- Comments and false positives:
+  - `AffectSystem.cpp` commented `SetSocket`.
+  - `ItemUse.cpp` commented `SetCount`.
+  - `questlua_item.cpp` commented `SetCount`.
+  - `sectree_manager.cpp::SetAttribute` is not item state.
+
+Interpretation:
+
+- `item_manager.cpp` socket/count sites are mostly covered by central CItem hooks.
+- `item_manager.cpp:713 SetCell` and `new_offlineshop.cpp:481 SetWindow` are Phase 15E-65.4 candidates because location setters are inline legacy writes and need dedicated ECS location sync review.
+
+## 5. Build Status
+
+Build command:
+
+```text
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+```
+
+Result: passed.
+
+Warnings observed:
+
+- Existing `ItemSystem_LegacyBridge.cpp` warnings remained (`C4805`, `C4311`, `C4715`).
+- Existing link warning `LNK4075` remained.
+- Post-build still prints `pwsh.exe is not recognized`, but MSBuild returned success.
+
+## 6. WinTest Checklist
+
+WinTest required before declaring Phase 15E-65.2 verified:
+
+- Refine item with sockets: sockets persist correctly.
+- Polymorph item: socket state correct.
+- Accessory socket: gem inserted/removed/value visible.
+- Quest reward item: count correct.
+- Attribute copy/refine paths: attributes visible and retained.
+
+Tail syslog:
+
+- `[ITEM_INVARIANT]` should remain zero.
+- `[ITEM_BYPASS]` should remain zero.
+- `VID_DRIFT` must remain zero.
+
+Status: pending operator WinTest.
+
+## 7. Next Step
+
+Recommended next item phase:
+
+- Phase 15E-65.3: proto component for LEGACY-ONLY proto-derived reads.
+- Phase 15E-65.4: remove read fallback after runtime warnings remain clean and location/window sync candidates are handled.
+

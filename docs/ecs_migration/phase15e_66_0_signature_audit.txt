@@ -1,0 +1,119 @@
+# Phase 15E-66.0 LPCHARACTER Signature Audit
+
+Generated: Phase 15E-66.0
+
+## 1. Summary
+
+ECS files still contain `LPCHARACTER` / `CHARACTER*` signatures and local variables. This audit is documentation only; no signature changes were made.
+
+Total matched ECS signatures/usages:
+
+- `159`
+
+Scope note:
+
+- The count includes function signatures, legacy bridge method definitions, local variables and callback operators.
+- It is intentionally broad to capture the actual migration surface.
+
+## 2. Per-File Breakdown
+
+Top files:
+
+| Count | File |
+|---:|---|
+| 34 | `SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp` |
+| 21 | `SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp` |
+| 16 | `SRC/Server/GameServer/ecs/systems/ItemSystem.cpp` |
+| 13 | `SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.cpp` |
+| 12 | `SRC/Server/GameServer/ecs/systems/CombatSystem.cpp` |
+| 11 | `SRC/Server/GameServer/ecs/systems/MovementSystem.cpp` |
+| 9 | `SRC/Server/GameServer/ecs/systems/ActivitySystem.cpp` |
+| 9 | `SRC/Server/GameServer/ecs/systems/InventorySystem.cpp` |
+| 5 | `SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp` |
+| 4 | `SRC/Server/GameServer/ecs/systems/SkillSystem.cpp` |
+| 4 | `SRC/Server/GameServer/ecs/systems/SessionSystem.cpp` |
+| 3 | `SRC/Server/GameServer/ecs/systems/AISystem.cpp` |
+| 3 | `SRC/Server/GameServer/ecs/systems/SocialSystem.cpp` |
+| 3 | `SRC/Server/GameServer/ecs/systems/AffectSystem.cpp` |
+| 2 | `SRC/Server/GameServer/ecs/systems/MountSystem.cpp` |
+| 2 | `SRC/Server/GameServer/ecs/systems/PointSystem.cpp` |
+| 1 | `SRC/Server/GameServer/ecs/systems/VitalRegenSystem.cpp` |
+
+## 3. Bucket Definitions
+
+Bucket M1 - Pure entity extraction:
+
+- LPCHARACTER is used only to call `AIHelpers::EcsOf(ch)` or equivalent.
+- Migration: change signature to `entt::entity`.
+- Risk: low.
+
+Bucket M2 - Service-call bridge:
+
+- Function needs legacy service operations such as packets, descriptors, sectree, DB save, event callbacks or item service objects.
+- Migration: public API can become `entt::entity`, but implementation may use `LegacyCharOf` as a write/service bridge.
+- Risk: medium.
+
+Bucket M3 - Heavy legacy-bound:
+
+- Function is a legacy class method body or deeply mutates/depends on CHARACTER internals.
+- Migration requires subsystem refactor, not a mechanical signature pass.
+- Risk: high.
+
+## 4. Classification By Namespace/File
+
+| Area | Examples | Bucket | Recommendation |
+|---|---|---|---|
+| `PlayerRuntimeSystem.cpp` helper ensure/try-get functions | `EnsureHealthComponent(LPCHARACTER)`, `TryGetHealthComponent(const CHARACTER*)` | M1/M2 mixed | Audit function-by-function in 66.1; many can become entity helpers. |
+| `ItemSystem.cpp` inventory runtime helpers | `EnsureMainInventoryRuntimeComponent(LPCHARACTER)`, `GetMainInventoryItem(const CHARACTER*)` | M1/M2 | Good 66.1 candidate if callers already have entity. |
+| `ItemSystem_LegacyBridge.cpp` CItem/CHARACTER method bodies | `CHARACTER::SetRefineNPC`, refine notify helpers, CItem ownership methods | M3 | Keep for bridge/refactor phase; not 66.1. |
+| `NetworkSyncSystem.cpp` | packet encoding, sync owner, `SendEquipment`, `UsePacketEncode` | M2/M3 | Defer to network service abstraction phase. |
+| `CombatSystem.cpp` | `CHARACTER::Attack`, `SetVictim`, `RegisterDamageForExp` | M3 | Defer to combat subsystem refactor. |
+| `MovementSystem.cpp` | state transitions and event callbacks | M2/M3 | Only entity-extraction helpers are 66.1 candidates; callbacks stay bridge. |
+| `ActivitySystem.cpp` | fishing/mining legacy callbacks | M2/M3 | Defer unless function only extracts entity. |
+| `InventorySystem.cpp` | `CItem::AddToCharacter`, ownership, equip | M2/M3 | Needs item/owner service bridge design; not a broad mechanical pass. |
+| `DragonSoulSystem.cpp` | `LegacyCharacter(owner)` service bridge | M2 | Candidate after item service bridge cleanup. |
+| `AISystem.cpp` | sync/observe AI flags from legacy character | M2 | Migration depends on write-side sync ownership. |
+| `SocialSystem.cpp` / `AffectSystem.cpp` / `PointSystem.cpp` | mostly legacy method bodies and bridges | M2/M3 | Defer unless pure entity-extraction is obvious. |
+
+## 5. Recommended Phase 15E-66.x Structure
+
+Phase 15E-66.1 - M1 entity-extraction helpers:
+
+- Target `PlayerRuntimeSystem.cpp` and `ItemSystem.cpp` helper functions first.
+- Replace LPCHARACTER parameters with `entt::entity` where the body only resolves components.
+- Expected risk: low.
+
+Phase 15E-66.2 - M2 service-call wrapper API:
+
+- Target functions where the API can be entity-first but implementation still calls legacy service ops.
+- Examples: session/network/item service boundaries.
+- Expected risk: medium.
+
+Phase 15E-66.3 - M3 defer list:
+
+- Combat, CItem method bodies, CHARACTER method bodies, network packet encoding.
+- These should be handled by subsystem-specific phases, not by bulk signature migration.
+
+## 6. Objective Baseline
+
+Baseline for tracking:
+
+- LPCHARACTER / CHARACTER pointer broad ECS signature/usages: `159`.
+
+This count should decrease after each 15E-66.x batch, but the goal is not zero immediately. Service bridges and legacy method bodies remain expected until their owning subsystem phases.
+
+## 7. Build Status
+
+No code changes were made for Phase 15E-66.0.
+
+Build status comes from Part A:
+
+- `GameServer` build passed after the 15E-65.2 code change.
+
+## 8. Recommendation
+
+Proceed next with:
+
+1. Phase 15E-65.3 proto component, because item LEGACY-ONLY proto-derived reads are still a major blocker for fallback removal.
+2. Phase 15E-66.1 M1-only signature cleanup, limited to pure entity-extraction helpers.
+
