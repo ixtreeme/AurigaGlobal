@@ -366,7 +366,7 @@ namespace
         clone->StartStateMachine(1);
         clone->SetNowWalking(false);
         clone->SetRotationToXY(tx, ty);
-        clone->Goto(tx, ty);
+        ecs::MovementSystem::Goto(AIHelpers::EcsOf(clone), tx, ty);
 
         // server-controlled chars need explicit MOVE packets
         clone->SendMovePacket(FUNC_MOVE, 0, tx, ty, clone->GetCurrentMoveDuration(), now);

@@ -2,6 +2,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -950,7 +951,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		if (bAggressive)
 			tch->SetAggressive();
 
-		if (tch->Goto(tx, ty))
+		if (ecs::MovementSystem::Goto(AIHelpers::EcsOf(tch), tx, ty))
 			tch->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	}
 

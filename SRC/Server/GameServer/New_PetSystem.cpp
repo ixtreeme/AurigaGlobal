@@ -9,6 +9,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "utils.h"
 #include "vector.h"
 #include "char_interface.hpp"
@@ -1148,13 +1149,13 @@ bool CNewPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 
 	m_pkChar->SetNowWalking(true);
 
-	//if (m_pkChar->Goto(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar)) + (int) fx, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar)) + (int) fy))
+	//if (ecs::MovementSystem::Goto(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar)) + (int) fx, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar)) + (int) fy))
 	//	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	const entt::entity petEntity = AIHelpers::EcsOf(m_pkChar);
 	const bool isMoving = petEntity != entt::null
 		&& g_registry.valid(petEntity)
 		&& g_registry.all_of<ecs::MovementDestination>(petEntity);
-	if (!isMoving && m_pkChar->Goto(dest_x, dest_y))
+	if (!isMoving && ecs::MovementSystem::Goto(AIHelpers::EcsOf(m_pkChar), dest_x, dest_y))
 	{
 		if (petEntity != entt::null && g_registry.valid(petEntity))
 				g_registry.emplace_or_replace<ecs::MovementDestination>(petEntity, static_cast<int32_t>(dest_x), static_cast<int32_t>(dest_y));
@@ -1307,7 +1308,7 @@ bool CNewPetActor::Follow(float fMinDistance)
 	float fDistToGo = fDist - fMinDistance;
 	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
 
-	if (!m_pkChar->Goto((int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
+	if (!ecs::MovementSystem::Goto(AIHelpers::EcsOf(m_pkChar), (int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
 		return false;
 
 	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);

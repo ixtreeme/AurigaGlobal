@@ -4,6 +4,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
@@ -528,7 +529,7 @@ bool CMountActor::Follow(float fMinDistance)
 	float fDistToGo = fDist - fMinDistance;
 	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
 
-	if (!m_pkChar->Goto(static_cast<int>(static_cast<float>(fPetX) + fx + 0.5f), static_cast<int>(static_cast<float>(fPetY) + fy + 0.5f)) )
+	if (!ecs::MovementSystem::Goto(AIHelpers::EcsOf(m_pkChar), static_cast<int>(static_cast<float>(fPetX) + fx + 0.5f), static_cast<int>(static_cast<float>(fPetY) + fy + 0.5f)) )
 		return false;
 
 	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);

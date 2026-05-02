@@ -2340,7 +2340,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		ch->SetRotation(pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
-		ch->Goto(pinfo->lX, pinfo->lY);
+		ecs::MovementSystem::Goto(AIHelpers::EcsOf(ch), pinfo->lX, pinfo->lY);
 	}
 	else
 	{

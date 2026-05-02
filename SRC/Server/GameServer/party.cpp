@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -891,7 +892,7 @@ void CParty::SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t
 						pkChr->SetVictim(nullptr);
 						pkChr->SetRotationToXY(x, y);
 
-						if (pkChr->Goto(x, y))
+						if (ecs::MovementSystem::Goto(AIHelpers::EcsOf(pkChr), x, y))
 						{
 							auto* victim = pkChr->GetVictim();
 							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
