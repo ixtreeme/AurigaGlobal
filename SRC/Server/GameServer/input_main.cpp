@@ -2047,7 +2047,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 			return;
 		}
 
-		if( true == to_ch->IsDead() )
+		if( true == CombatSystem::IsDead(AIHelpers::EcsOf(to_ch)) )
 		{
 			return;
 		}
@@ -2290,7 +2290,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 #endif
 #ifdef ENABLE_CHECK_GHOSTMODE
-		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && ch->IsDead())
+		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && CombatSystem::IsDead(AIHelpers::EcsOf(ch)))
 		{
 			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
 
@@ -4468,7 +4468,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 		return (iExtraLen);
 	}
 
-	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead())
+	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || CombatSystem::IsDead(AIHelpers::EcsOf(ch)))
 		return (iExtraLen);
 
 	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
@@ -5529,7 +5529,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead()
+					if (!(ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->IsCubeOpen() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || CombatSystem::IsDead(AIHelpers::EcsOf(ch))
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || ch->IsAttrTransferOpen()
 #endif

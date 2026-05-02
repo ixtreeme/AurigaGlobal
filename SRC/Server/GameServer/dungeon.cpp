@@ -3,6 +3,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "dungeon.h"
 #include "char_interface.hpp"
@@ -499,7 +500,7 @@ bool CDungeon::IsUniqueDead(std::string_view key)
 		return false;
 	}
 
-	return it->second->IsDead();
+	return CombatSystem::IsDead(AIHelpers::EcsOf(it->second));
 }
 
 LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)

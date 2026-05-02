@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
@@ -421,8 +422,8 @@ bool CPetActor::Update(uint32_t deltaTime)
 
 	// 펫 주인이 죽었거나, 소환된 펫의 상태가 이상하다면 펫을 없앰. (NOTE: 가끔가다 이런 저런 이유로 소환된 펫이 DEAD 상태에 빠지는 경우가 있음-_-;)
 	// 펫을 소환한 아이템이 없거나, 내가 가진 상태가 아니라면 펫을 없앰.
-	//if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead())
-	if ((IsSummoned() && m_pkChar->IsDead())
+	//if (CombatSystem::IsDead(AIHelpers::EcsOf(m_pkOwner)) || (IsSummoned() && CombatSystem::IsDead(AIHelpers::EcsOf(m_pkChar)))
+	if ((IsSummoned() && CombatSystem::IsDead(AIHelpers::EcsOf(m_pkChar)))
 		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 	{

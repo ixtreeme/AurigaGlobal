@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -633,7 +634,7 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 {
 	//if (pkChr->IsFakePlayer() || pkVictim->IsFakePlayer())
 	//	return;
-	if (pkChr->IsDead() || pkVictim->IsDead())
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(pkChr)) || CombatSystem::IsDead(AIHelpers::EcsOf(pkVictim)))
 		return;
 
 	CPVP kPVP((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChr))), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim))));

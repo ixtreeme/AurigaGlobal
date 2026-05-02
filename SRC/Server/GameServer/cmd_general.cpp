@@ -118,7 +118,7 @@ ACMD(do_user_horse_ride)
 	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (ch->IsHorseRiding() == false)
@@ -3071,7 +3071,7 @@ namespace
 		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
-	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
 			return false;
 
 		if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
@@ -3550,7 +3550,7 @@ ACMD(do_ride)
 	}
 #endif
     dev_log(LOG_DEB0, "[DO_RIDE] start");
-	if (ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
 		return;
 
 	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
@@ -3709,10 +3709,10 @@ ACMD(do_extend_range_npc)
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
 
-	if (ch->IsDead())
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)))
 		return;
 
-	if (ch->IsDead() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 735, "");

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -3037,7 +3038,7 @@ teleport_area:
 		if (e == entt::null || !g_registry.valid(e)) {
 			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushboolean(L, ch ? (ch->IsDead() ? 1 : 0) : 0);
+			lua_pushboolean(L, ch ? (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) ? 1 : 0) : 0);
 			return 1;
 		}
 		lua_pushboolean(L, g_registry.all_of<ecs::DeadTag>(e) ? 1 : 0);

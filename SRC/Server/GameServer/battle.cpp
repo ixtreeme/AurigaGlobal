@@ -79,7 +79,7 @@ bool timed_event_cancel(LPCHARACTER ch)
 bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 {
 	// ���1aAI ��3�A��� �ߴ��N�U.
-	if (victim->IsDead())
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(victim)))
 	{
 		return false;
 	}
@@ -110,7 +110,7 @@ bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim)
 	}
 
 	// 3��! ��3�A��� �ߴ��N�U.
-	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ch->IsDead())
+	if (CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || CombatSystem::IsDead(AIHelpers::EcsOf(ch)))
 	{
 		return false;
 	}

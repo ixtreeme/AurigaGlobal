@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -1047,7 +1048,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             LPCHARACTER clone = CHARACTER_MANAGER::instance().Find(cloneVid);
-            if (!clone || clone->IsDead())
+            if (!clone || CombatSystem::IsDead(AIHelpers::EcsOf(clone)))
                 continue;
 
             auto tgtIt = s_lc.m_cloneTargetVid.find(cloneVid);
@@ -1055,7 +1056,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             LPCHARACTER target = CHARACTER_MANAGER::instance().Find(tgtIt->second);
-            if (!target || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)) || target->IsDead())
+            if (!target || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)) || CombatSystem::IsDead(AIHelpers::EcsOf(target)))
             {
                 s_lc.m_clonePending.erase(cloneVid);
                 continue;

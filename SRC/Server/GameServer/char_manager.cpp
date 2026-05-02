@@ -2,6 +2,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "utils.h"
@@ -145,7 +146,7 @@ namespace
 				continue;
 			}
 
-			if (ch->IsDead() || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
+			if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
 			{
 				toErase.push_back(vid);
 				continue;

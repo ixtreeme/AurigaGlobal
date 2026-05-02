@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
@@ -491,7 +492,7 @@ bool CMountActor::Update(uint32_t deltaTime)
 {
 	bool bResult = true;
 
-	if (m_pkOwner->IsDead() || (IsSummoned() && m_pkChar->IsDead())
+	if (CombatSystem::IsDead(AIHelpers::EcsOf(m_pkOwner)) || (IsSummoned() && CombatSystem::IsDead(AIHelpers::EcsOf(m_pkChar)))
 		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 	{

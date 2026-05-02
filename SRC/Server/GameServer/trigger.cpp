@@ -3,6 +3,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
 #include "config.h"
@@ -303,7 +304,7 @@ public:
 
 		}
 
-		if (pkChr->IsDead())
+		if (CombatSystem::IsDead(AIHelpers::EcsOf(pkChr)))
 			return false;
 
 		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_EUNHYUNG) ||

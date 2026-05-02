@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -693,7 +694,7 @@ namespace
             }
 
             LPCHARACTER boss = FindUnique(d, "vk_main_boss");
-            if (!boss || boss->IsDead())
+            if (!boss || CombatSystem::IsDead(AIHelpers::EcsOf(boss)))
             {
                 evFloor1BossHp.erase(idx);
                 return 0;
@@ -823,7 +824,7 @@ namespace
             }
 
             LPCHARACTER boss = FindUnique(d, "vk_final_boss");
-            if (!boss || boss->IsDead())
+            if (!boss || CombatSystem::IsDead(AIHelpers::EcsOf(boss)))
             {
                 evFinalHp.erase(idx);
                 return 0;
