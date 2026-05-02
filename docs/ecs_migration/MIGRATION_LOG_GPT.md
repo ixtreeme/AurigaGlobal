@@ -11257,3 +11257,77 @@ WinTest:
 Status:
 - Phase 15E-61.1 is production-validated.
 - Next planned phase: Phase 15E-61.2 predicates/state checks such as IsObserverMode, IsDead, IsStun and CanWarp.
+
+
+## Phase 15E-61.2 - Simple Predicates Caller-Side Migration
+
+Scope:
+- Migrated Category B simple predicate call sites away from direct CHARACTER methods:
+  - CanUseSkill
+  - IsStun
+  - CanWarp
+  - IsObserverMode
+  - IsDead
+
+Implementation notes:
+- Added pure ECS read APIs for predicate/state checks.
+- `CombatSystem::IsStun` now reads ECS stun state from `StunTag`, `StatusFlags::isStunned`, and `CharacterRuntimeFlagsComponent::instantFlag`.
+- `CombatSystem::IsDead` now reads ECS death state from `DeadTag`, `StatusFlags::isDead`, and `CharacterRuntimeFlagsComponent::position`.
+- `PlayerRuntime::IsObserverMode` now reads `ObserverModeTag` / `StatusFlags::isObserverMode`.
+- `PlayerRuntime::CanWarp` now mirrors the legacy warp-blocking formula through ECS state:
+  - `WarpBlockState`
+  - `ExchangeRef`
+  - `ShopState`
+  - `SafeboxRef`
+  - `CubeWindowComponent`
+  - `AcceWindowComponent`
+  - `AttrTransferWindowComponent`
+  - wheel/offline-shop transient state where enabled
+- `SkillSystem::CanUseSkill` now performs a pure ECS check using skill group, race/job, mount riding state, and the legacy skill id tables.
+- No LPCHARACTER fallback was added to the new predicate accessors.
+
+Commits:
+- 36c9090 Phase 15E-61.2.1: Add predicate ECS API
+- 99155b6 Phase 15E-61.2.a: Migrate CanUseSkill
+- 672f325 Phase 15E-61.2.b: Migrate IsStun
+- ff692e4 Phase 15E-61.2.c: Migrate CanWarp
+- d55e7d5 Phase 15E-61.2.d: Migrate IsObserverMode
+- bad64a3 Phase 15E-61.2.e: Migrate IsDead
+- 5e9b617 Phase 15E-61.2: COMPLETE - Predicates caller-side migrated
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+~~~
+- Build passed after each sub-batch.
+- Final targeted caller counts:
+  - CanUseSkill: 0
+  - IsStun: 0
+  - CanWarp: 0
+  - IsObserverMode: 0
+  - IsDead: 0
+
+Hotfix - ECS Skill Group Sync:
+- Operator found that skill stat allocation did not work and `/full` did not set class skills to P.
+- Root cause: `EntityFactory::MakeSkillLevels` copied the skill level array but did not initialize `SkillLevels.group` from `TPlayerTable::skill_group`.
+- Result: pure ECS `SkillSystem::CanUseSkill` saw skill group `0`, so class skills were rejected.
+- Fix:
+  - `MakeSkillLevels` now initializes `SkillLevels.group`.
+  - `SkillSystem::GetSkillGroup` falls back to ECS `CharacterPoints.base.skill_group` if `SkillLevels.group` is still zero.
+  - This keeps the read path pure ECS without restoring LPCHARACTER fallback.
+
+Hotfix commit:
+- 709d43c Phase 15E-61.2 Hotfix: Sync ECS skill group
+
+Hotfix verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+~~~
+- Build passed.
+- Operator confirmed skill stat allocation works again.
+- Operator confirmed `/full` now sets skills to P level correctly.
+- Operator confirmed everything is working correctly in-game after the hotfix.
+
+Status:
+- Phase 15E-61.2 is production-validated after hotfix.
+- Next planned phase: Phase 15E-61.3 movement/warp write-side methods or the next caller-side category, depending on risk priority.
