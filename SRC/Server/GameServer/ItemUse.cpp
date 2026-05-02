@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 
@@ -44,7 +45,7 @@ namespace
 		if (!ch)
 			return false;
 
-		if (!ch->CanWarp())
+		if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
 		{
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item right now.");
 			return false;

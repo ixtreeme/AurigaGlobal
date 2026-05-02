@@ -1182,7 +1182,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     //    return true;
     //}
 
-    if (!ch->CanWarp())
+    if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
     {
         ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
         return true;
@@ -1254,7 +1254,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             return;
         }
 
-        if (!m->CanWarp())
+        if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(m)))
         {
             ok = false;
             bad = BAD_WARP;

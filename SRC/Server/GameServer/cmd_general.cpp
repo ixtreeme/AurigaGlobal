@@ -494,7 +494,7 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (!ch->CanWarp())
+	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "10");

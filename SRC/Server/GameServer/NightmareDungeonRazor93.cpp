@@ -459,7 +459,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
         return false;
 
-    if (!ch->CanWarp())
+    if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
         return true;
 
     const int32_t now = get_global_time();

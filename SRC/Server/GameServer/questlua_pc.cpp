@@ -3583,7 +3583,7 @@ teleport_area:
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushboolean(L, pChar ? (pChar->CanWarp() ? 1 : 0) : 0);
+		lua_pushboolean(L, pChar ? (ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(pChar)) ? 1 : 0) : 0);
 		return 1;
 	}
 

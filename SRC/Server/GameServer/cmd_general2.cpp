@@ -526,7 +526,7 @@ ACMD(do_gotoxy)
 		return;
 	}
 
-	if (!ch->CanWarp() || ch->IsObserverMode() || ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
+	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)) || ch->IsObserverMode() || ch->IsDead() || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) >= 10000) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif
@@ -643,7 +643,7 @@ ACMD(do_go_savepoint) {
 		return;
 	}
 
-	if (!ch->CanWarp()) {
+	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch))) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 528, "");
 #endif

@@ -1002,7 +1002,7 @@ namespace quest
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
 				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
-					if (!tch->CanWarp())
+					if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(tch)))
 					{
 						m_result = 3;
 						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
@@ -1054,7 +1054,7 @@ namespace quest
 		}
 		else
 		{
-			if (!ch->CanWarp())
+			if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
 			{
 				m_result = 3;
 				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
@@ -1596,7 +1596,7 @@ namespace quest
 				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
 				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
 				{
-					if (!tch->CanWarp())
+					if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(tch)))
 					{
 						m_result = 8;
 						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
