@@ -53,7 +53,7 @@ namespace DragonSoulSystem {
 
 void Initialize(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
     if (!ch || !state)
         return;
@@ -66,9 +66,9 @@ void Initialize(entt::entity owner)
     }
 
     state->activeDeck = -1;
-    if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0))
+    if (AffectSystem::FindAffect(owner, AFFECT_DRAGON_SOUL_DECK_0))
         ActivateDeck(owner, DRAGON_SOUL_DECK_0);
-    else if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_1))
+    else if (AffectSystem::FindAffect(owner, AFFECT_DRAGON_SOUL_DECK_1))
         ActivateDeck(owner, DRAGON_SOUL_DECK_1);
     else
         MarkDirty(owner);
@@ -87,7 +87,7 @@ bool IsDeckActivated(entt::entity owner)
 
 bool ActivateDeck(entt::entity owner, int deckIdx)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
     if (!ch || !state)
         return false;
@@ -100,7 +100,7 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
 
     DeactivateAll(owner);
 
-    AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0 + deckIdx, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+    AffectSystem::AddAffect(owner, AFFECT_DRAGON_SOUL_DECK_0 + deckIdx, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
     state->activeDeck = deckIdx;
 
 #ifdef ENABLE_DS_SET
@@ -150,25 +150,25 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
             (std::equal(stepList.begin() + 1, stepList.end(), stepList.begin())) &&
             (std::equal(strengthList.begin() + 1, strengthList.end(), strengthList.begin())))
         {
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 1, 0, INFINITE_AFFECT_DURATION, 0, false);
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1, POINT_ATTBONUS_METIN, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2, POINT_ATTBONUS_MONSTER, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3, POINT_MAX_HP, 1000, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_DS_SET, POINT_NONE, 1, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_DS_BNS1, POINT_ATTBONUS_METIN, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_DS_BNS2, POINT_ATTBONUS_MONSTER, 10, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_DS_BNS3, POINT_MAX_HP, 1000, 0, INFINITE_AFFECT_DURATION, 0, false);
         }
         else
         {
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
-            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
-            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
-            AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
+            AffectSystem::AddAffect(owner, AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+            AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS1);
+            AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS2);
+            AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS3);
         }
     }
     else
     {
-        AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
-        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
-        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
-        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
+        AffectSystem::AddAffect(owner, AFFECT_DS_SET, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, false);
+        AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS1);
+        AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS2);
+        AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS3);
     }
 #endif
 
@@ -178,7 +178,7 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
 
 void DeactivateAll(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
     if (!ch || !state)
         return;
@@ -187,18 +187,18 @@ void DeactivateAll(entt::entity owner)
         DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
 
     state->activeDeck = -1;
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_0);
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DRAGON_SOUL_DECK_1);
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_SET);
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS1);
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS2);
-    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DS_BNS3);
+    AffectSystem::RemoveAffect(owner, AFFECT_DRAGON_SOUL_DECK_0);
+    AffectSystem::RemoveAffect(owner, AFFECT_DRAGON_SOUL_DECK_1);
+    AffectSystem::RemoveAffect(owner, AFFECT_DS_SET);
+    AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS1);
+    AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS2);
+    AffectSystem::RemoveAffect(owner, AFFECT_DS_BNS3);
     MarkDirty(owner);
 }
 
 void CleanUp(entt::entity owner)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharacter(owner);
     if (!ch)
         return;
 
@@ -210,7 +210,7 @@ void CleanUp(entt::entity owner)
 
 bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
 {
-    LPCHARACTER ch = LegacyCharacter(owner);
+    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
     if (!ch || !state)
         return false;
@@ -222,10 +222,10 @@ bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
     pack.header = HEADER_GC_DRAGON_SOUL_REFINE;
     pack.bSubType = DS_SUB_HEADER_OPEN;
 
-    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+    LPDESC d = ecs::PlayerRuntime::GetDesc(owner);
     if (!d)
     {
-        LOG_ERROR("User({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+        LOG_ERROR("User({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(owner).data());
         return false;
     }
 
