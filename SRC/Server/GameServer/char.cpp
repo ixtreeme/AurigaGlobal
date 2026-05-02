@@ -10660,7 +10660,7 @@ bool CHARACTER::CanTakeInventoryItem(LPITEM item, TItemPos* cell)
 
 
 #ifdef ENABLE_SORT_INVEN
-static bool IsExpiringItem(const LPITEM& item)
+static bool IsExpiringItem(const LPITEM& item) 
 {
 	if (!item)
 		return false;
@@ -10739,7 +10739,7 @@ void CHARACTER::EditMyInven()
 		if (!(myitems = GetInventoryItem(i)))
 			continue;
 
-		if (IsExpiringItem(myitems))
+		if (IsExpiringItem(myitems)) 
 			continue;
 
 		//add all items inven to vector
@@ -10901,7 +10901,7 @@ void CHARACTER::EditMyExtraInven()
 		if (!(myitems = GetExtraInventoryItem(i)))
 			continue;
 
-		if (IsExpiringItem(myitems))
+		if (IsExpiringItem(myitems)) 
 			continue;
 
 		//add all items inven to vector
