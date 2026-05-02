@@ -11,7 +11,7 @@ The current ECS API is mixed:
   PlayerRuntime::GetMapIndex/GetX/GetY, PointSystem::GetGold/GetMaxHP/GetMaxSP/GetLevel, AffectSystem::FindAffect/IsAffectFlag.
 - Several PlayerRuntime identity and predicate accessors are ECS-first but still fall back to LegacyCharOf(e)->GetX/IsX.
 - PointSystem::Get and PointSystem::GetReal are now routed through the 15E-60.8 ECS POINT router. Only explicit SRC_LEGACY_ONLY mappings may delegate, and those emit one-time diagnostics.
-- Service-object and behavior APIs such as GetDesc, GetSectree, SocialSystem::GetParty/GetGuild, QuestSystem::GetFlag, ChatSystem sends, CombatSystem, SkillSystem, MountSystem, ItemSystem and GayaSystem still delegate heavily to CHARACTER.
+- Service-object and behavior APIs such as GetDesc, GetSectree, QuestSystem::GetFlag, ChatSystem sends, CombatSystem, SkillSystem, MountSystem, ItemSystem and GayaSystem still delegate heavily to CHARACTER.
 
 Architectural conclusion:
 
@@ -43,7 +43,7 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 | PlayerRuntime::GetEmpire | PURE ECS | PlayerRuntimeSystem.cpp:83 | Phase 15E-60.7 removed LegacyCharOf fallback; reads EmpireComponent only. |
 | PlayerRuntime::GetGMLevel | PURE ECS | PlayerRuntimeSystem.cpp:93 | Phase 15E-60.7 removed LegacyCharOf fallback; reads GMLevel/runtime flags only. |
 | PlayerRuntime::GetPacketVID | PURE ECS | PlayerRuntimeSystem.cpp:106 | Phase 15E-60.7 removed LegacyCharOf fallback; reads VIDComponent only. |
-| PlayerRuntime::GetRaceNum | LEGACY-FIRST | PlayerRuntimeSystem.cpp:120 | Uses ch->GetRaceNum() first to preserve polymorph/mob data semantics. |
+| PlayerRuntime::GetRaceNum | PURE ECS | PlayerRuntimeSystem.cpp:117 | Phase 15E-60.9 added RaceState and removed LegacyCharOf fallback; polymorphRace overrides baseRace. |
 | PlayerRuntime::GetName | PURE ECS | PlayerRuntimeSystem.cpp:130 | Phase 15E-60.7 removed LegacyCharOf fallback; reads PlayerName only. |
 | PlayerRuntime::GetMapIndex | PURE ECS | PlayerRuntimeSystem.cpp:145 | Reads MapIndex component only. |
 | PlayerRuntime::GetX | PURE ECS | PlayerRuntimeSystem.cpp:155 | Reads Position.x only. |
@@ -62,10 +62,10 @@ Uses LegacyCharOf to execute a legacy side effect, or to mirror legacy state int
 | PointSystem::Change | WRITE/SYNC BRIDGE | PointSystem.cpp:144 | Still calls legacy ch->PointChange(), which must sync ECS mirrors. |
 | AffectSystem::FindAffect | PURE ECS | SRC/Server/GameServer/ecs/systems/AffectSystem.cpp:577 | Reads AffectList mirror. |
 | AffectSystem::IsAffectFlag | PURE ECS | AffectSystem.cpp:601 | Reads AffectList.flags mirror. |
-| AffectSystem::IsImmune | LEGACY-ONLY | AffectSystem.cpp:496 | Reads ch->GetImmuneFlag(); no ECS immune component yet. |
+| AffectSystem::IsImmune | PURE ECS | AffectSystem.cpp:496 | Phase 15E-60.9 added ImmunityFlags and removed LegacyCharOf fallback. |
 | AffectSystem::Add/Remove/Clear/RefreshAffect | WRITE/SYNC BRIDGE | AffectSystem.cpp:614-668 | Calls legacy affect mutation, then SyncAffectList. |
-| SocialSystem::GetParty | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:28 | Party pointer remains on CHARACTER. |
-| SocialSystem::GetGuild | LEGACY-ONLY | SocialSystem.cpp:37 | Guild pointer remains on CHARACTER. |
+| SocialSystem::GetParty | PURE ECS | SRC/Server/GameServer/ecs/systems/SocialSystem.cpp:29 | Phase 15E-60.9 added SocialRefs and syncs SetParty into ECS. |
+| SocialSystem::GetGuild | PURE ECS | SocialSystem.cpp:43 | Phase 15E-60.9 added SocialRefs and syncs SetGuild into ECS. |
 | QuestSystem::GetFlag | LEGACY-ONLY | SRC/Server/GameServer/ecs/systems/QuestSystem.cpp:12 | Quest flag storage remains in quest/CHARACTER path. |
 | QuestSystem::SetFlag | WRITE/SYNC BRIDGE | QuestSystem.cpp:21 | Delegates to legacy SetQuestFlag. |
 | ChatSystem::Send/SendNew/Broadcast | WRITE/SYNC BRIDGE | SRC/Server/GameServer/ecs/systems/ChatSystem.cpp:49,95,151 | Uses CHARACTER/desc packet output path. |
@@ -94,7 +94,6 @@ Resolved in Phase 15E-60.7:
 
 Remaining affected in PlayerRuntime:
 
-- PlayerRuntime::GetRaceNum
 - PlayerRuntime::GetDesc
 - PlayerRuntime::GetSectree
 
@@ -168,9 +167,9 @@ Inventory all CHARACTER creation/reuse paths and enforce one of:
 
 Affected:
 
-- PlayerRuntime::GetRaceNum: polymorph race, mob prototype race, and player job are still encoded in CHARACTER::GetRaceNum().
+- PlayerRuntime::GetRaceNum: resolved in Phase 15E-60.9 via RaceState (baseRace + polymorphRace).
 - PlayerRuntime::GetSectree: sectree service pointer is not modeled.
-- AffectSystem::IsImmune: immune flags are still legacy.
+- AffectSystem::IsImmune: resolved in Phase 15E-60.9 via ImmunityFlags.
 - CombatSystem alignment/PK/dead/stun/victim state wrappers.
 - SkillSystem learn/use/hit/cooltime behavior wrappers.
 - MountSystem riding/horse behavior wrappers.
@@ -338,8 +337,9 @@ Phase 15E-60.8 - Generic POINT router
 
 Phase 15E-60.9 - State extension pass
 
-- Add RaceState for polymorph/current race and remove GetRaceNum legacy-first.
-- Add ImmunityFlags and remove AffectSystem::IsImmune legacy read.
+- Added RaceState for polymorph/current race and removed GetRaceNum legacy-first.
+- Added ImmunityFlags and removed AffectSystem::IsImmune legacy read.
+- Added SocialRefs and removed SocialSystem::GetParty/GetGuild legacy-only reads.
 - Decide SectreeRef/service adapter strategy before removing GetSectree bridge.
 
 Phase 15E-61+ - Service/behavior systems
@@ -363,7 +363,6 @@ Transitional but removable soon:
 
 Architectural debt that must not be hidden:
 
-- GetRaceNum.
 - GetDesc/GetSectree.
 - PointSystem::Get/GetReal only for SRC_LEGACY_ONLY extensions (POINT_INVEN/POINT_GAYA).
 - SocialSystem and QuestSystem accessors.
@@ -376,3 +375,25 @@ Target end state:
 - Legacy writes sync into ECS.
 - ECS read APIs never call LegacyCharOf.
 - Legacy side-effect adapters remain only where the subsystem itself has not yet been migrated, and they are documented as future phase boundaries.
+
+## 11. Phase 15E-60.9 final update
+
+Phase 15E-60.9 moved the remaining naturally modelable state accessors to pure ECS:
+
+| Accessor | Final status | Component source | Notes |
+|----------|--------------|------------------|-------|
+| PlayerRuntime::GetRaceNum | PURE ECS | RaceState | baseRace for PC class or mob vnum; polymorphRace overrides when active. |
+| AffectSystem::IsImmune | PURE ECS | ImmunityFlags | SetImmuneFlag mirrors the bitmap into ECS. |
+| SocialSystem::GetParty | PURE ECS | SocialRefs | SetParty mirrors the party service pointer into ECS. |
+| SocialSystem::GetGuild | PURE ECS | SocialRefs | SetGuild mirrors the guild service pointer into ECS. |
+
+Accepted E-class debt after 15E-60.9:
+
+- PlayerRuntime::GetDesc remains LEGACY-ONLY by design. LPDESC is a network-session service pointer and is not ECS-owned yet.
+- PlayerRuntime::GetSectree remains LEGACY-ONLY by design. LPSECTREE is a spatial service pointer and should be handled in a later spatial-service phase.
+
+Fallback elimination count:
+
+- PURE ECS accessors after 15E-60.9: 22.
+- WRITE/SYNC BRIDGE paths remain documented for side-effect systems.
+- Accepted LEGACY-ONLY E debt: GetDesc and GetSectree.

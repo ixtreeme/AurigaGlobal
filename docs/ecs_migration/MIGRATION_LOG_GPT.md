@@ -11163,3 +11163,45 @@ Status:
 - Hotfix is logger-only.
 - No ECS POINT semantics were changed.
 - Phase 15E-60.8 is WinTest verified after hotfix.
+
+
+## Phase 15E-60.9 - State Extension
+
+Scope:
+- Added ECS state components for remaining naturally modelable read accessors.
+- Removed LegacyCharOf fallback from:
+  - PlayerRuntime::GetRaceNum
+  - AffectSystem::IsImmune
+  - SocialSystem::GetParty
+  - SocialSystem::GetGuild
+
+Components:
+- RaceState: baseRace + polymorphRace.
+- ImmunityFlags: immune bitmap.
+- SocialRefs: party/guild service pointers.
+
+Implementation notes:
+- EntityFactory now hydrates RaceState, ImmunityFlags and SocialRefs for relevant character entities.
+- CHARACTER::SetPolymorph syncs RaceState.polymorphRace.
+- CHARACTER::SetImmuneFlag syncs ImmunityFlags.flags.
+- CHARACTER::SetParty and CHARACTER::SetGuild sync SocialRefs.
+- PlayerRuntime::GetDesc and GetSectree remain accepted E-class debt with code comments because they are service pointers, not ordinary entity state.
+
+Commits:
+- 1c52c21 Phase 15E-60.9.1: RaceState component and GetRaceNum pure ECS
+- db85afe Phase 15E-60.9.2: ImmunityFlags component and IsImmune pure ECS
+- f567bd7 Phase 15E-60.9.3: SocialRefs component and social accessors pure ECS
+
+Build:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+~~~
+- Build passed after each code step.
+- Remaining warnings are existing questlua/EntityFactory/MSVC warnings, not 60.9 blockers.
+
+Status:
+- Pure ECS accessor count after 15E-60.9: 22.
+- Accepted legacy-only E debt remains:
+  - PlayerRuntime::GetDesc
+  - PlayerRuntime::GetSectree
+- WinTest is required before marking 15E-60.9 production-verified.

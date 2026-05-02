@@ -67,6 +67,7 @@ namespace ecs::PlayerRuntime {
 
 LPDESC GetDesc(entt::entity e)
 {
+	// E-class service pointer debt: network sessions are not ECS-owned yet.
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->GetDesc() : nullptr;
 }
@@ -166,6 +167,7 @@ int32_t GetY(entt::entity e)
 
 LPSECTREE GetSectree(entt::entity e)
 {
+	// E-class service pointer debt: sectree is spatial-service state, not modeled as ECS state yet.
 	auto* ch = ecs::LegacyCharOf(e);
 	return ch ? ch->GetSectree() : nullptr;
 }

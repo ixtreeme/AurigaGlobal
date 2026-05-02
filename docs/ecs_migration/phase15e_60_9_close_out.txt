@@ -1,0 +1,94 @@
+# Phase 15E-60.9 Close-Out
+
+Date: 2026-05-02
+Scope: State extension for remaining naturally modelable ECS read accessors.
+
+## 1. Components Added
+
+RaceState:
+- Location: SRC/Server/GameServer/ecs/components/identity_components.hpp
+- Fields: baseRace, polymorphRace
+- Purpose: preserve CHARACTER::GetRaceNum semantics without reading CHARACTER.
+- Population:
+  - PC factory: baseRace = TPlayerTable.job
+  - Mob/NPC/stone factory: baseRace = TMobTable.dwVnum
+  - Polymorph write path: CHARACTER::SetPolymorph syncs polymorphRace
+
+ImmunityFlags:
+- Location: SRC/Server/GameServer/ecs/components/status_components.hpp
+- Field: flags
+- Purpose: preserve CHARACTER::GetImmuneFlag / IsImmune semantics without reading CHARACTER.
+- Population:
+  - Factory default: flags = 0
+  - Write sync: CHARACTER::SetImmuneFlag mirrors into ECS
+
+SocialRefs:
+- Location: SRC/Server/GameServer/ecs/components/social_components.hpp
+- Fields: party, guild
+- Purpose: store party/guild service pointers in ECS.
+- Population:
+  - Factory default: nullptr pointers
+  - Write sync: CHARACTER::SetParty and CHARACTER::SetGuild mirror into ECS
+
+## 2. Accessors Moved To PURE ECS
+
+- PlayerRuntime::GetRaceNum now reads RaceState only.
+- AffectSystem::IsImmune now reads ImmunityFlags only.
+- SocialSystem::GetParty now reads SocialRefs / ECS social mirror only.
+- SocialSystem::GetGuild now reads SocialRefs / ECS social mirror only.
+
+No LegacyCharOf fallback remains in these accessor bodies.
+
+## 3. Final Fallback Elimination Summary
+
+Phase 15E-60.5 started with several ECS read APIs still delegating back to CHARACTER.
+
+Resolved through 15E-60.6 / 15E-60.7 / 15E-60.8 / 15E-60.9:
+- Type predicates: IsPC, IsNPC, IsStone, IsMonster
+- Scalar identity: GetPlayerID, GetEmpire, GetGMLevel, GetPacketVID, GetName
+- Position: GetMapIndex, GetX, GetY
+- Stats: GetGold, GetMaxHP, GetMaxSP, GetLevel, GetPoint, GetReal
+- State: GetRaceNum, IsImmune, GetParty, GetGuild
+
+Current pure ECS accessor count: 22.
+
+## 4. Accepted E-Class Debt
+
+PlayerRuntime::GetDesc:
+- LPDESC is a network-session service pointer.
+- It remains legacy-only intentionally.
+- It should be handled in a network/session service phase, not forced into state components.
+
+PlayerRuntime::GetSectree:
+- LPSECTREE is a spatial service pointer.
+- It remains legacy-only intentionally.
+- It should be handled in a spatial-service phase.
+
+## 5. Phase 15E-60.x Package Summary
+
+15E-60.5:
+- Audited fallback sites and classified architectural debt.
+
+15E-60.6:
+- Removed predicate fallback and fixed metin stone tag hydration at source.
+
+15E-60.7:
+- Removed scalar identity fallback and added scalar identity invariant validation.
+
+15E-60.8:
+- Added POINT router with semantic split.
+- Removed GetPoint/GetReal legacy delegation for all non-SRC_LEGACY_ONLY points.
+
+15E-60.9:
+- Added RaceState, ImmunityFlags and SocialRefs.
+- Removed GetRaceNum, IsImmune, GetParty and GetGuild legacy reads.
+
+## 6. Recommended Next Phase
+
+Next recommended phase: Phase 15E-61.
+
+Focus:
+- Misc caller-side migration and documented service/behavior bridges.
+- QuestSystem, ChatSystem, CombatSystem, SkillSystem, MountSystem, ItemSystem, GayaSystem and service pointers should remain domain-specific migrations.
+
+Do not reopen generic fallback cleanup unless new ECS_INVARIANT warnings surface in WinTest.
