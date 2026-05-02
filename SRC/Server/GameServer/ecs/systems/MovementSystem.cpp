@@ -158,6 +158,146 @@ namespace
         ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
     }
 }
+
+namespace ecs::MovementSystem {
+
+namespace {
+
+LPCHARACTER CharacterOf(entt::entity e)
+{
+    return ecs::LegacyCharOf(e);
+}
+
+bool IsValid(entt::entity e)
+{
+    return e != entt::null && g_registry.valid(e);
+}
+
+void MarkDirty(entt::entity e)
+{
+    if (IsValid(e))
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+} // namespace
+
+bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z, bool showSpawnMotion)
+{
+    if (!IsValid(e))
+        return false;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return false;
+
+    const int32_t resolvedZ = (z == LONG_MAX) ? ch->GetZ() : z;
+    ecs::SyncPositionComponents(g_registry, e, mapIndex, x, y, resolvedZ);
+
+    return ch->Show(mapIndex, x, y, z, showSpawnMotion);
+}
+
+bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex)
+{
+    if (!IsValid(e))
+        return false;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return false;
+
+    auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
+    warp.x = x;
+    warp.y = y;
+    warp.mapIndex = privateMapIndex ? privateMapIndex : ecs::PlayerRuntime::GetMapIndex(e);
+    MarkDirty(e);
+
+    return ch->WarpSet(x, y, privateMapIndex);
+}
+
+void ExitToSavedLocation(entt::entity e)
+{
+    if (!IsValid(e))
+        return;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return;
+
+    if (const auto* exit = g_registry.try_get<ecs::ExitPosition>(e)) {
+        auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
+        warp.x = exit->x;
+        warp.y = exit->y;
+        warp.mapIndex = exit->mapIndex;
+        MarkDirty(e);
+    }
+
+    ch->ExitToSavedLocation();
+
+    if (auto* exit = g_registry.try_get<ecs::ExitPosition>(e)) {
+        exit->x = 0;
+        exit->y = 0;
+        exit->mapIndex = 0;
+        MarkDirty(e);
+    }
+}
+
+bool Move(entt::entity e, int32_t x, int32_t y)
+{
+    if (!IsValid(e))
+        return false;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return false;
+
+    return ch->Move(x, y);
+}
+
+void OnMove(entt::entity e, bool isAttack)
+{
+    if (!IsValid(e))
+        return;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return;
+
+    ch->OnMove(isAttack);
+}
+
+bool Goto(entt::entity e, int32_t x, int32_t y)
+{
+    if (!IsValid(e))
+        return false;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return false;
+
+    g_registry.emplace_or_replace<ecs::MovementDestination>(e, x, y);
+    MarkDirty(e);
+
+    return ch->Goto(x, y);
+}
+
+void Stop(entt::entity e)
+{
+    if (!IsValid(e))
+        return;
+
+    auto* ch = CharacterOf(e);
+    if (!ch)
+        return;
+
+    if (g_registry.all_of<ecs::MovementDestination>(e))
+        g_registry.remove<ecs::MovementDestination>(e);
+    MarkDirty(e);
+
+    ch->Stop();
+}
+
+} // namespace ecs::MovementSystem
+
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 {
     // During the migration window, only process entities with an active movement destination.
