@@ -84,9 +84,8 @@ void SyncItemEquipped(entt::entity e, bool equipped)
 	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped, slot);
 }
 
-void SyncCharacterEquipmentSlot(LPCHARACTER ch, uint8_t wearCell, entt::entity item)
+void SyncCharacterEquipmentSlot(entt::entity chEntity, uint8_t wearCell, entt::entity item)
 {
-	const entt::entity chEntity = AIHelpers::EcsOf(ch);
 	if (chEntity == entt::null || !g_registry.valid(chEntity))
 		return;
 
@@ -1079,7 +1078,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	SyncItemEquipped(itemEntity, true);
 	SyncItemLocation(itemEntity);
 	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
-	SyncCharacterEquipmentSlot(ch, bWearCell, itemEntity);
+	SyncCharacterEquipmentSlot(AIHelpers::EcsOf(ch), bWearCell, itemEntity);
 	g_dispatcher.trigger(ecs::EvItemEquipped { AIHelpers::EcsOf(ch), itemEntity });
 
 	Save();
@@ -1172,7 +1171,7 @@ bool CItem::Unequip()
 
 	SyncItemEquipped(itemEntity, false);
 	SyncItemLocation(itemEntity);
-	SyncCharacterEquipmentSlot(owner, wearCell, entt::null);
+	SyncCharacterEquipmentSlot(charEntity, wearCell, entt::null);
 	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
 	return true;
 }
