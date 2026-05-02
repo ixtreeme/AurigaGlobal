@@ -533,17 +533,13 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 {
 	//if (!IsPC()) return;
 	const uint8_t oldGrade = GetAlignmentGrade();
-	bool bShow = false;
 
-	if (m_iAlignment == m_iRealAlignment)
-		bShow = true;
-
-	if (m_iAlignment != m_iRealAlignment)
-		m_iAlignment = m_iRealAlignment;
-
-	uint32_t i = m_iAlignment / 10;
+	m_iAlignment = m_iRealAlignment;
+	const uint32_t oldVisibleAlignment = m_iAlignment / 10;
 
 	m_iRealAlignment = UMINMAX(0, m_iRealAlignment + iAmount, 50000000);
+	m_iAlignment = m_iRealAlignment;
+
 	const uint8_t newGrade = GetAlignmentGrade();
 	if (oldGrade != newGrade)
 	{
@@ -555,16 +551,8 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 		g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
 	}
 
-	if (bShow)
-	{
-		m_iAlignment = m_iRealAlignment;
-
-		if (auto* combat = g_registry.try_get<ecs::CombatStats>(AIHelpers::EcsOf(this)))
-			combat->alignment = m_iAlignment;
-
-		if (i != m_iAlignment / 10)
-			UpdatePacket();
-	}
+	if (oldVisibleAlignment != m_iAlignment / 10)
+		UpdatePacket();
 
 }
 //void CHARACTER::UpdateAlignment(uint32_t iAmount)
