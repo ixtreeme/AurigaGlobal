@@ -113,14 +113,34 @@ Scenarios:
 
 VID_DRIFT must remain zero.
 
-## 8. Recommended Phase 15E-65.2 Priorities
+## 8. WinTest Result
+
+Operator result:
+
+- WinTest completed successfully.
+- Gameplay item paths are working correctly.
+- No item gameplay regression reported after enabling diagnostics.
+
+Validated paths:
+
+- Login and existing item load.
+- Item pickup / drop / movement paths.
+- Shop, reward, GM item, refine, trade and safebox paths covered by runtime smoke.
+- Diagnostics remained safe: fallback removal was not performed in this phase.
+
+Follow-up:
+
+- Keep `[ITEM_INVARIANT]` and `[ITEM_BYPASS]` diagnostics enabled for Phase 15E-65.2 planning.
+- If any warning appears later under heavier production traffic, classify it before removing LPITEM fallback.
+
+## 9. Recommended Phase 15E-65.2 Priorities
 
 1. Catalog runtime warnings from WinTest.
 2. Fix any `[ITEM_BYPASS]` first because that indicates missing entity routing.
 3. Fix `[ITEM_INVARIANT]` missing components second because those are hydration defects.
 4. Audit post-create legacy writes and add ECS sync where stale sockets/count/location/owner are observed.
 
-## 9. Build Status
+## 10. Build Status
 
 Build command:
 
@@ -135,4 +155,3 @@ Notes:
 - Existing warnings remained in `EntityFactory.cpp` about discarded `[[nodiscard]]` return values.
 - Link warning `LNK4075` remained.
 - Post-build printed `pwsh.exe is not recognized`, but MSBuild returned success.
-
