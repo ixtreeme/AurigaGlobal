@@ -397,3 +397,31 @@ Fallback elimination count:
 - PURE ECS accessors after 15E-60.9: 22.
 - WRITE/SYNC BRIDGE paths remain documented for side-effect systems.
 - Accepted LEGACY-ONLY E debt: GetDesc and GetSectree.
+
+## 12. Phase 15E-61.3 movement/warp write API update
+
+Phase 15E-61.3 added entity-first movement write APIs in `ecs::MovementSystem`.
+
+Status:
+
+- `MovementSystem::Show` is a WRITE/SYNC BRIDGE. It writes Position/MapIndex/DirtyTag first, then calls legacy `CHARACTER::Show` for sectree registration, visibility and spawn packet behavior.
+- `MovementSystem::WarpSet` is a WRITE/SYNC BRIDGE. It writes WarpPosition/DirtyTag first, then calls legacy `CHARACTER::WarpSet` for map-location validation and warp packet behavior.
+- `MovementSystem::ExitToSavedLocation` is a WRITE/SYNC BRIDGE. It mirrors ExitPosition to WarpPosition before the legacy warp call and clears ExitPosition afterward.
+- `MovementSystem::Goto` writes MovementDestination before legacy pathing behavior.
+- `MovementSystem::Stop` clears MovementDestination before legacy idle-state behavior.
+- `MovementSystem::Move` and `MovementSystem::OnMove` route through the existing legacy service path, which already syncs position into ECS via the 15E-59 hotfix pattern.
+
+Caller-side migration result:
+
+- `WarpSet`: 0 remaining CHARACTER caller-side calls.
+- `ExitToSavedLocation`: 0 remaining CHARACTER caller-side calls.
+- `Goto`: 0 remaining CHARACTER caller-side calls.
+- `Stop`: 0 remaining CHARACTER caller-side calls; only non-CHARACTER `CSwitchbot::Stop` remains.
+- `Move`: 0 remaining CHARACTER caller-side calls.
+- `OnMove`: 0 remaining CHARACTER caller-side calls.
+- `Show`: 0 remaining CHARACTER caller-side calls; only building object `Show` remains intentionally.
+
+Architecture note:
+
+- These APIs are not pure read accessors. Legacy calls inside the implementation are accepted service bridges because sectree registration, visibility tracking and packet broadcast are still legacy-owned.
+- The invariant remains: ECS state is written first, and legacy service calls are compatibility side effects.
