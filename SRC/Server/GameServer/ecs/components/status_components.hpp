@@ -26,6 +26,7 @@ struct StatusFlags {
     bool isPet : 1;
     bool isMount : 1;
     bool isNewPet : 1;
+    bool isObserverMode : 1;
     bool hasPoisoned : 1;
     bool hasBled : 1;
     bool blockExp : 1;
@@ -45,6 +46,7 @@ struct ImmunityFlags {
 
 struct DeadTag {};
 struct StunTag {};
+struct ObserverModeTag {};
 struct SafeZoneTag {};
 struct PoisonTag {};
 struct BleedTag {};

@@ -36,6 +36,9 @@
 #include "../Registry.hpp"
 #include "../events.hpp"
 #include "../components/appearance_components.hpp"
+#include "../components/dirty_components.hpp"
+#include "../components/inventory_components.hpp"
+#include "../components/social_components.hpp"
 #include "../../questmanager.h"
 #include "../../safebox.h"
 #include "../../sectree.h"
@@ -407,6 +410,74 @@ void CHARACTER::ExitToSavedLocation()
 
     m_posExit.x = m_posExit.y = m_posExit.z = 0;
     m_lExitMapIndex = 0;
+}
+
+namespace
+{
+ecs::WarpBlockState* EnsureWarpBlockState(LPCHARACTER ch)
+{
+    if (!ch)
+        return nullptr;
+
+    const auto e = AIHelpers::EcsOf(ch);
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    return &g_registry.get_or_emplace<ecs::WarpBlockState>(e);
+}
+} // namespace
+
+void CHARACTER::SetOpenSafebox(bool b)
+{
+    m_isOpenSafebox = b;
+
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(e);
+        safebox.isOpening = b;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+}
+
+void CHARACTER::SetSafeboxLoadTime()
+{
+    m_iSafeboxLoadTime = thecore_pulse();
+    if (auto* warp = EnsureWarpBlockState(this))
+    {
+        warp->safeboxLoadTime = m_iSafeboxLoadTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+    }
+}
+
+void CHARACTER::SetRefineTime()
+{
+    m_iRefineTime = thecore_pulse();
+    if (auto* warp = EnsureWarpBlockState(this))
+    {
+        warp->refineTime = m_iRefineTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+    }
+}
+
+void CHARACTER::SetExchangeTime()
+{
+    m_iExchangeTime = thecore_pulse();
+    if (auto* warp = EnsureWarpBlockState(this))
+    {
+        warp->exchangeTime = m_iExchangeTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+    }
+}
+
+void CHARACTER::SetMyShopTime()
+{
+    m_iMyShopTime = thecore_pulse();
+    if (auto* warp = EnsureWarpBlockState(this))
+    {
+        warp->myShopTime = m_iMyShopTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+    }
 }
 
 bool CHARACTER::CanWarp() const

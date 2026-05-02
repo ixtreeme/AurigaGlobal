@@ -22,5 +22,7 @@ bool IsPC(entt::entity e);
 bool IsNPC(entt::entity e);
 bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);
+bool IsObserverMode(entt::entity e);
+bool CanWarp(entt::entity e);
 
 } // namespace ecs::PlayerRuntime

@@ -593,8 +593,17 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::GuildMembership>(entity, nullptr, now > 60000 ? now - 60000 : 0);
     reg.emplace_or_replace<ecs::DungeonMembership>(entity, nullptr, 0, nullptr);
     reg.emplace_or_replace<ecs::MarriageState>(entity, nullptr, nullptr);
-    reg.emplace_or_replace<ecs::ShopState>(entity, nullptr, nullptr, std::string {}, true, false, 0, 0u);
-    reg.emplace_or_replace<ecs::MountState>(entity, ecs::MountState { 0u, 0u, data.horse.bLevel, 0u, 0u, 0 });
+    reg.emplace_or_replace<ecs::ShopState>(entity, ecs::ShopState {});
+    reg.emplace_or_replace<ecs::WarpBlockState>(entity, ecs::WarpBlockState {});
+    reg.emplace_or_replace<ecs::MountState>(entity, ecs::MountState {
+        0u,
+        0u,
+        data.horse.bLevel,
+        0u,
+        0u,
+        0,
+        data.horse.bRiding != 0,
+    });
 
     reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, nullptr);
     reg.emplace_or_replace<ecs::RankPoints>(entity, MakeRankPoints(data));

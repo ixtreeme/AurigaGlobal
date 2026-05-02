@@ -193,6 +193,78 @@ bool IsMonster(entt::entity e)
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e);
 }
 
+bool IsObserverMode(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	if (g_registry.all_of<ecs::ObserverModeTag>(e))
+		return true;
+
+	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+	return status && status->isObserverMode;
+}
+
+bool CanWarp(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const int iPulse = thecore_pulse();
+	const int limitTime = PASSES_PER_SEC(g_nPortalLimitTime);
+
+	if (const auto* warp = g_registry.try_get<ecs::WarpBlockState>(e))
+	{
+		if ((iPulse - warp->safeboxLoadTime) < limitTime)
+			return false;
+		if ((iPulse - warp->exchangeTime) < limitTime)
+			return false;
+		if ((iPulse - warp->myShopTime) < limitTime)
+			return false;
+		if ((iPulse - warp->refineTime) < limitTime)
+			return false;
+	}
+
+	if (const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e); exchange && exchange->exchange)
+		return false;
+
+	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+	if (shop && (shop->currentShop || shop->myShop || shop->shopOwner || shop->underRefine))
+		return false;
+
+	if (const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e); safebox && safebox->isOpening)
+		return false;
+
+	if (const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(e); cube && cube->pNpc)
+		return false;
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+	if (const auto* attr = g_registry.try_get<ecs::AttrTransferWindowComponent>(e); attr && attr->pNpc)
+		return false;
+#endif
+
+#ifdef ENABLE_ACCE_SYSTEM
+	if (const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(e);
+		acce && (acce->combinationOpen || acce->absorptionOpen))
+		return false;
+#endif
+
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+	if (shop && shop->wheelDestiny)
+		return false;
+#endif
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+	if (shop && (shop->offlineShopGuest || shop->auctionGuest))
+		return false;
+
+	if (shop && (iPulse - shop->offlineShopUseTime) < limitTime)
+		return false;
+#endif
+
+	return true;
+}
+
 } // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
 #include "../../../common/stole_length.h"
@@ -1632,6 +1704,14 @@ void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
 
 void CHARACTER::SetShop(LPSHOP pkShop)
 {
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.currentShop = pkShop;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
     if ((m_pkShop = pkShop)) {
         if (auto* flags = EnsureRuntimeFlagsComponent(this))
             SET_BIT(flags->instantFlag, INSTANT_FLAG_SHOP);
@@ -1643,6 +1723,73 @@ void CHARACTER::SetShop(LPSHOP pkShop)
         SetShopOwner(nullptr);
     }
 }
+
+void CHARACTER::SetShopOwner(LPCHARACTER ch)
+{
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.shopOwner = ch;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    m_pkChrShopOwner = ch;
+}
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+void CHARACTER::SetOfflineShopGuest(offlineshop::CShop* pkShop)
+{
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.offlineShopGuest = pkShop;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    m_pkOfflineShopGuest = pkShop;
+}
+
+void CHARACTER::SetAuctionGuest(offlineshop::CAuction* pk)
+{
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.auctionGuest = pk;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    m_pkAuctionGuest = pk;
+}
+
+void CHARACTER::SetOfflineShopUseTime()
+{
+    m_iOfflineShopUseTime = thecore_pulse();
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.offlineShopUseTime = m_iOfflineShopUseTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+}
+#endif
+
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
+{
+    pWheelDestiny = std::move(pt);
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.wheelDestiny = pWheelDestiny;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+}
+#endif
 
 void CHARACTER::SetExchange(CExchange* pkExchange)
 {
@@ -1756,6 +1903,12 @@ void CHARACTER::OpenAcce(bool bCombination)
         }
 
         m_bAcceCombination = true;
+        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        {
+            auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
+            acce.combinationOpen = true;
+            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+        }
     }
     else
     {
@@ -1768,6 +1921,12 @@ void CHARACTER::OpenAcce(bool bCombination)
         }
 
         m_bAcceAbsorption = true;
+        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        {
+            auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
+            acce.absorptionOpen = true;
+            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+        }
     }
 
     TItemPos tPos;
@@ -1816,6 +1975,14 @@ void CHARACTER::CloseAcce()
         m_bAcceCombination = false;
     else
         m_bAcceAbsorption = false;
+
+    if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+    {
+        auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
+        acce.combinationOpen = m_bAcceCombination;
+        acce.absorptionOpen = m_bAcceAbsorption;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
 
     ClearAcceMaterials();
 }
@@ -4607,6 +4774,12 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     PacketAround(&p, sizeof(TPacketGCShopSign));
 
     m_pkMyShop = CShopManager::instance().CreatePCShop(this, pTable, bItemCount);
+    if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+    {
+        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+        shop.myShop = m_pkMyShop;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
 
     if (IsPolymorphed() == true)
     {
@@ -4637,6 +4810,12 @@ void CHARACTER::CloseMyShop()
         m_stShopSign.clear();
         CShopManager::instance().DestroyPCShop(this);
         m_pkMyShop = nullptr;
+        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        {
+            auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
+            shop.myShop = nullptr;
+            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+        }
 #ifdef KASMIR_PAKET_SYSTEM
         m_bKasmirPaketBaslik = 0;
         m_bKasmirPaketDurum = false;

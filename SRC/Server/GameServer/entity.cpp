@@ -2,6 +2,10 @@
 #include "char_interface.hpp"
 #include "desc.h"
 #include "sectree_manager.h"
+#include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/components/dirty_components.hpp"
+#include "ecs/components/status_components.hpp"
 
 CEntity::CEntity()
 {
@@ -117,6 +121,18 @@ void CEntity::SetObserverMode(bool bFlag)
 	if (IsType(ENTITY_CHARACTER))
 	{
 		LPCHARACTER ch = (LPCHARACTER) this;
+		const auto e = AIHelpers::EcsOf(ch);
+		if (e != entt::null && g_registry.valid(e))
+		{
+			if (bFlag)
+				g_registry.emplace_or_replace<ecs::ObserverModeTag>(e);
+			else if (g_registry.all_of<ecs::ObserverModeTag>(e))
+				g_registry.remove<ecs::ObserverModeTag>(e);
+
+			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+				status->isObserverMode = bFlag;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
 	}
 }

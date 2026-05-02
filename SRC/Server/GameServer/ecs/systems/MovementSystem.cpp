@@ -61,6 +61,8 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "../components/movement_components.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "../components/status_components.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../components/transform_components.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../components/combat_components.hpp"
@@ -784,12 +786,36 @@ void CHARACTER::SetPosition(int pos)
 		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
 		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
+		const auto e = EcsEntityOf(this);
+		if (e != entt::null && g_registry.valid(e))
+		{
+			if (g_registry.all_of<ecs::DeadTag>(e))
+				g_registry.remove<ecs::DeadTag>(e);
+			if (g_registry.all_of<ecs::StunTag>(e))
+				g_registry.remove<ecs::StunTag>(e);
+			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+			{
+				status->isDead = false;
+				status->isStunned = false;
+			}
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
 
 		event_cancel(&m_pkDeadEvent);
 		event_cancel(&m_pkStunEvent);
 	}
 	else if (pos == POS_DEAD)
+	{
 		SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
+		const auto e = EcsEntityOf(this);
+		if (e != entt::null && g_registry.valid(e))
+		{
+			g_registry.emplace_or_replace<ecs::DeadTag>(e);
+			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+				status->isDead = true;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+		}
+	}
 
 	if (!IsStone() && !IsPC())
 	{

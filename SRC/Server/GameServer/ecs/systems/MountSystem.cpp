@@ -72,6 +72,16 @@ void SyncMountState(entt::entity e, uint32_t mountVnum, uint32_t mountTime,
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+void SyncHorseRiding(entt::entity e, bool riding)
+{
+    auto* state = GetMountState(e);
+    if (!state)
+        return;
+
+    state->horseRiding = riding;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 } // namespace
 
 namespace MountSystem {
@@ -314,8 +324,11 @@ void SetHorseLevel(entt::entity owner, int level)
 
 bool IsRiding(entt::entity rider)
 {
-    auto* ch = LegacyCharOf(rider);
-    return ch ? ch->IsRiding() : false;
+    if (rider == entt::null || !g_registry.valid(rider))
+        return false;
+
+    const auto* state = g_registry.try_get<ecs::MountState>(rider);
+    return state && (state->horseRiding || state->mountVnum != 0);
 }
 
 uint32_t GetMountVnum(entt::entity rider)
@@ -418,6 +431,7 @@ bool CHARACTER::StartRiding()
 #else
 	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
+	SyncHorseRiding(AIHelpers::EcsOf(this), true);
 	return true;
 }
 
@@ -451,6 +465,7 @@ bool CHARACTER::StopRiding()
 #else
 		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
+		SyncHorseRiding(AIHelpers::EcsOf(this), false);
 		return true;
 	}
 

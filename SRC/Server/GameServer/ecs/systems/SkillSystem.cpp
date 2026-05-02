@@ -9,6 +9,7 @@
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
+#include "MountSystem.hpp"
 
 #include "../../utils.h"
 #include "../../vector.h"
@@ -41,6 +42,8 @@
 #endif
 
 #define ENABLE_FORCE2MASTERSKILL
+
+extern bool RaceToJob(unsigned race, unsigned* ret_job);
 
 #include "../SpatialHelpers.hpp"
 #include "../AIHelpers.hpp"
@@ -239,8 +242,50 @@ bool CanUseMobSkill(entt::entity e, unsigned int idx)
 
 bool CanUseSkill(entt::entity e, uint32_t skillId)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->CanUseSkill(skillId) : false;
+    if (e == entt::null || !g_registry.valid(e) || skillId == 0)
+        return false;
+
+    const uint8_t skillGroup = GetSkillGroup(e);
+    if (skillGroup > 0) {
+        unsigned job = JOB_WARRIOR;
+        if (RaceToJob(ecs::PlayerRuntime::GetRaceNum(e), &job) && job < JOB_MAX_NUM) {
+            const uint32_t* pSkill = SkillListByJob[job][skillGroup - 1];
+            for (int i = 0; i < SKILL_LIST_COUNT; ++i) {
+                if (pSkill[i] == skillId)
+                    return true;
+            }
+        }
+    }
+
+    if (MountSystem::IsRiding(e)) {
+        const uint32_t mountVnum = MountSystem::GetMountVnum(e);
+#ifdef ENABLE_MOUNTSKILL_CHECK
+        const eMountType mountType = GetMountLevelByVnum(mountVnum, false);
+        if (mountType != MOUNT_TYPE_MILITARY) {
+            if (test_server)
+                LOG_INFO("CanUseSkill: Mount can't skill. vnum({}) type({})", mountVnum, static_cast<int>(mountType));
+            return false;
+        }
+#endif
+        switch (skillId) {
+        case SKILL_HORSE_WILDATTACK:
+        case SKILL_HORSE_CHARGE:
+        case SKILL_HORSE_ESCAPE:
+        case SKILL_HORSE_WILDATTACK_RANGE:
+            return true;
+        default:
+            break;
+        }
+    }
+
+    switch (skillId) {
+    case 121: case 122: case 124: case 126: case 127: case 128: case 129: case 130:
+    case 131:
+    case 151: case 152: case 153: case 154: case 155: case 156: case 157: case 158: case 159:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target)

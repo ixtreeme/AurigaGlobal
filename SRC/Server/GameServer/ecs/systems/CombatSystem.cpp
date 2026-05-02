@@ -207,11 +207,18 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
 
 bool IsStun(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->IsStun();
-    }
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
 
-    return false;
+    if (g_registry.all_of<ecs::StunTag>(e))
+        return true;
+
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    if (status && status->isStunned)
+        return true;
+
+    const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+    return runtime && IS_SET(runtime->instantFlag, INSTANT_FLAG_STUN);
 }
 
 void Stun(entt::entity e)
@@ -223,11 +230,18 @@ void Stun(entt::entity e)
 
 bool IsDead(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->IsDead();
-    }
+    if (e == entt::null || !g_registry.valid(e))
+        return true;
 
-    return true;
+    if (g_registry.all_of<ecs::DeadTag>(e))
+        return true;
+
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    if (status && status->isDead)
+        return true;
+
+    const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+    return runtime && runtime->position == POS_DEAD;
 }
 
 void SetLastAttacked(entt::entity e, uint32_t tick)
@@ -6494,8 +6508,15 @@ EVENTFUNC(StunEvent)
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkStunEvent
 	ch->m_pkStunEvent = nullptr;
 	const entt::entity e = AIHelpers::EcsOf(ch);
-	if (e != entt::null)
+	if (e != entt::null && g_registry.valid(e))
+	{
+		if (g_registry.all_of<ecs::StunTag>(e))
+			g_registry.remove<ecs::StunTag>(e);
+		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+			status->isStunned = false;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		g_dispatcher.trigger(ecs::EvStunBegin { e, 3000u });
+	}
 	ch->Dead();
 	return 0;
 }
@@ -6529,6 +6550,14 @@ void CHARACTER::Stun()
 
 		if (auto* flags = RuntimeFlags(this))
 		SET_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
+	const entt::entity e = AIHelpers::EcsOf(this);
+	if (e != entt::null && g_registry.valid(e))
+	{
+		g_registry.emplace_or_replace<ecs::StunTag>(e);
+		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+			status->isStunned = true;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
 
 	if (m_pkStunEvent)
 		return;

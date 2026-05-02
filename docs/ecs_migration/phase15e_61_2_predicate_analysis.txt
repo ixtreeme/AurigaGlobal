@@ -1,0 +1,55 @@
+Phase 15E-61.2 Predicate Analysis
+=================================
+
+Scope
+-----
+Target methods:
+- CHARACTER::CanUseSkill(uint32_t)
+- CHARACTER::IsStun()
+- CHARACTER::CanWarp()
+- CHARACTER::IsObserverMode()
+- CHARACTER::IsDead()
+
+Legacy Formula Summary
+----------------------
+IsDead:
+- Legacy source: CHARACTER::IsDead() checks whether position is POS_DEAD.
+- ECS source: CharacterRuntimeFlagsComponent.position plus StatusFlags::isDead / DeadTag mirror.
+- Sync path: CHARACTER::SetPosition updates DeadTag and StatusFlags.
+
+IsObserverMode:
+- Legacy source: CEntity::m_bIsObserver via CEntity::SetObserverMode.
+- ECS source: ObserverModeTag plus StatusFlags::isObserverMode.
+- Sync path: CEntity::SetObserverMode mirrors the flag into ECS.
+
+IsStun:
+- Legacy source: instant flag INSTANT_FLAG_STUN.
+- ECS source: CharacterRuntimeFlagsComponent.instantFlag, StatusFlags::isStunned and StunTag.
+- Sync path: CHARACTER::Stun and StunEvent mirror the tag/flag state.
+
+CanWarp:
+- Legacy formula blocks warp when one of these is active:
+  safebox/exchange/myshop/refine portal limit timestamps,
+  exchange, myshop, shop owner, safebox, cube, acce, attr transfer,
+  wheel-of-destiny, offline shop guest, auction guest, or offline shop use pulse.
+- ECS source:
+  WarpBlockState, ExchangeRef, ShopState, SafeboxRef,
+  CubeWindowComponent, AcceWindowComponent, AttrTransferWindowComponent.
+- Sync path:
+  CHARACTER setters and open/close functions mirror the transient state into ECS.
+
+CanUseSkill:
+- Legacy formula:
+  skill id 0 is rejected;
+  class skill group skills are accepted;
+  riding enables horse skills subject to ENABLE_MOUNTSKILL_CHECK;
+  hard-coded utility skill ids 121/122/124/126/127/128/129/130/131 and 151-159 are accepted.
+- ECS source:
+  SkillLevels/skill group, PlayerRuntime::GetRaceNum, MountState.
+- Sync path:
+  EntityFactory initializes MountState and CHARACTER mount/riding write paths mirror updates.
+
+Architectural Decision
+----------------------
+No LPCHARACTER fallback was added to the new read APIs.
+Missing state must be fixed at write/factory sync sites instead of hidden in accessors.

@@ -1160,14 +1160,14 @@ public:
 	void					SetOfflineShop(offlineshop::CShop* pkShop) { m_pkOfflineShop = pkShop; }
 
 	offlineshop::CShop* GetOfflineShopGuest() const { return m_pkOfflineShopGuest; }
-	void					SetOfflineShopGuest(offlineshop::CShop* pkShop) { m_pkOfflineShopGuest = pkShop; }
+	void					SetOfflineShopGuest(offlineshop::CShop* pkShop);
 
 	offlineshop::CShopSafebox*
 		GetShopSafebox() { return m_pkShopSafebox; }
 	void					SetShopSafebox(offlineshop::CShopSafebox* pk);
 
 	void					SetAuction(offlineshop::CAuction* pk) { m_pkAuction = pk; }
-	void					SetAuctionGuest(offlineshop::CAuction* pk) { m_pkAuctionGuest = pk; }
+	void					SetAuctionGuest(offlineshop::CAuction* pk);
 
 	offlineshop::CAuction* GetAuction() { return m_pkAuction; }
 	offlineshop::CAuction* GetAuctionGuest() const { return m_pkAuctionGuest; }
@@ -1177,7 +1177,7 @@ public:
 	void					SetLookingOfflineshopOfferList(bool is) { m_bIsLookingOfflineshopOfferList = is; }
 	bool					IsLookingOfflineshopOfferList() { return m_bIsLookingOfflineshopOfferList; }
 	int						GetOfflineShopUseTime() const { return m_iOfflineShopUseTime; }
-	void					SetOfflineShopUseTime() { m_iOfflineShopUseTime = thecore_pulse(); }
+	void					SetOfflineShopUseTime();
 
 private:
 	offlineshop::CShop* m_pkOfflineShop;
@@ -1582,7 +1582,7 @@ public:
 	LPSHOP			GetShop() const { return m_pkShop; }
 	void			ShopPacket(uint8_t bSubHeader);
 
-	void			SetShopOwner(LPCHARACTER ch) { m_pkChrShopOwner = ch; }
+	void			SetShopOwner(LPCHARACTER ch);
 	LPCHARACTER		GetShopOwner() const { return m_pkChrShopOwner; }
 
 	void			OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
@@ -1628,7 +1628,7 @@ public:
 	CExchange* GetExchange() const { return m_pkExchange; }
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 	public:
-		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt) { pWheelDestiny = std::move(pt); };
+		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt);
 		std::shared_ptr<CWheelDestiny> GetWheelDestiny() const { return pWheelDestiny; }
 		void SetWheelFreeCount(const int count) { SetQuestFlag("wheel.free", GetWheelFreeCount() + count); }
 		int GetWheelFreeCount() const { return GetQuestFlag("wheel.free"); }
@@ -2431,10 +2431,10 @@ public:
 		//PREVENT_TRADE_WINDOW
 public:
 	bool	IsOpenSafebox() const { return m_isOpenSafebox ? true : false; }
-	void 	SetOpenSafebox(bool b) { m_isOpenSafebox = b; }
+	void 	SetOpenSafebox(bool b);
 
 	int		GetSafeboxLoadTime() const { return m_iSafeboxLoadTime; }
-	void	SetSafeboxLoadTime() { m_iSafeboxLoadTime = thecore_pulse(); }
+	void	SetSafeboxLoadTime();
 	//END_PREVENT_TRADE_WINDOW
 private:
 	bool	m_isOpenSafebox;
@@ -2444,7 +2444,7 @@ public:
 
 	//PREVENT_REFINE_HACK
 	int		GetRefineTime() const { return m_iRefineTime; }
-	void	SetRefineTime() { m_iRefineTime = thecore_pulse(); }
+	void	SetRefineTime();
 	int		m_iRefineTime;
 	//END_PREVENT_REFINE_HACK
 
@@ -2456,13 +2456,13 @@ public:
 
 	//PREVENT_PORTAL_AFTER_EXCHANGE
 	int		GetExchangeTime() const { return m_iExchangeTime; }
-	void	SetExchangeTime() { m_iExchangeTime = thecore_pulse(); }
+	void	SetExchangeTime();
 	int		m_iExchangeTime;
 	//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
 	int 	m_iMyShopTime;
 	int		GetMyShopTime() const { return m_iMyShopTime; }
-	void	SetMyShopTime() { m_iMyShopTime = thecore_pulse(); }
+	void	SetMyShopTime();
 
 	// Hack 방지를 위한 체크.
 	bool	IsHack(bool bSendMsg = true, bool bCheckShopOwner = true, int limittime = g_nPortalLimitTime);

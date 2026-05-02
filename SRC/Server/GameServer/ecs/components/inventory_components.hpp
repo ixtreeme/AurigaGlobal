@@ -58,6 +58,8 @@ struct AttrTransferWindowComponent {
 #ifdef ENABLE_ACCE_SYSTEM
 struct AcceWindowComponent {
     LPITEM pMaterials[ACCE_WINDOW_MAX_MATERIALS] {};
+    bool combinationOpen { false };
+    bool absorptionOpen { false };
 };
 #endif
 
