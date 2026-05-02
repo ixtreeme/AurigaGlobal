@@ -53,6 +53,7 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/skill_components.hpp"
+#include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
 
 namespace
@@ -171,7 +172,13 @@ int GetSkillLevel(entt::entity e, uint32_t skillId)
 uint8_t GetSkillGroup(entt::entity e)
 {
     const auto* levels = TryGetSkillLevels(e, 0);
-    return levels ? levels->group : 0;
+    if (levels && levels->group != 0)
+        return levels->group;
+
+    const auto* points = (e != entt::null && g_registry.valid(e))
+        ? g_registry.try_get<ecs::CharacterPoints>(e)
+        : nullptr;
+    return points ? points->base.skill_group : 0;
 }
 
 void SetSkillGroup(entt::entity e, uint8_t skillGroup)

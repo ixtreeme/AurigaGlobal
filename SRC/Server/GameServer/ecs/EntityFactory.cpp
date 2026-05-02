@@ -163,6 +163,7 @@ ecs::SkillLevels MakeSkillLevels(const TPlayerTable& data)
     ecs::SkillLevels levels {};
     levels.levels = new TPlayerSkill[SKILL_MAX_NUM] {};
     std::copy_n(std::begin(data.skills), SKILL_MAX_NUM, levels.levels);
+    levels.group = data.skill_group;
     return levels;
 }
 
