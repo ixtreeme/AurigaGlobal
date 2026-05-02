@@ -236,6 +236,23 @@ Phase 15E-65.5 - Explicit accepted debt close-out:
 - Document remaining service bridges: ITEM_MANAGER destruction, DSManager, legacy inventory side effects.
 - Keep these bridges named and isolated, not hidden inside read accessors.
 
+## 8.1 Accepted Service Debt Close-Out (Phase 15E-65.5)
+
+Post 15E-65.4, item read accessor fallback is eliminated. Remaining `LegacyItemOf` usage is intentionally retained only at explicit bridge boundaries:
+
+- `ItemSystem.cpp`: local resolver plus `ResolveLegacyItemForSync`, `ResolveLegacyItemForLegacySideEffect`, and `ResolveLegacyItemForDestruction`. These support item write/sync operations, lifecycle destruction, inventory placement/equip service calls, refine operations, and compatibility calls that still require the legacy `CItem` service object.
+- `ItemSystem_LegacyBridge.cpp`: bridge-only file by design. This file remains accepted transitional debt until the full item service/CItem deletion phase.
+- `InventorySystem.cpp`: local resolver is used by legacy inventory/equipment sync paths and `CHARACTER::ChainQuickslotItem`. These are write/sync or legacy CHARACTER method bridge paths, not read accessor fallback.
+- `DragonSoulSystem.cpp`: DragonSoul deck/refine operations remain service-driven through DSManager and legacy character/item service objects. They are accepted service debt, not hidden read fallback.
+
+Accepted debt classification:
+
+- WRITE/SYNC bridge: keep until item write-side service abstraction is complete.
+- Service operation bridge: keep until DSManager, ITEM_MANAGER lifecycle and inventory service operations are modeled outside legacy classes.
+- Read accessor fallback: none accepted; if reintroduced, it is a regression and must be fixed at source.
+
+This close-out preserves the architectural rule established by 15E-60.x and 15E-65.4: ECS read APIs are source-of-truth reads, while legacy object access is allowed only in named service/write bridge boundaries.
+
 ## 9. Reference metrics
 
 Tree-wide metrics at audit time:
