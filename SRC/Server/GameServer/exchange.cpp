@@ -402,14 +402,14 @@ bool CExchange::CheckSpace()
 #endif
 
 	for (i = 0; i < INVEN_NUM_SLOT; ++i) {
-		if (!(item = victim->GetInventoryItem(i)))
+		if (!(item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(victim), i)))
 			continue;
 
 		s_grid1->Put(i, 1, item->GetSize());
 	}
 
 	for (i = INVEN_NUM_SLOT; i < INVEN_NUM_SLOT * 2; ++i) {
-		if (!(item = victim->GetInventoryItem(i)))
+		if (!(item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(victim), i)))
 			continue;
 
 		s_grid2->Put(i - INVEN_NUM_SLOT, 1, item->GetSize());
@@ -417,14 +417,14 @@ bool CExchange::CheckSpace()
 
 #ifdef ENABLE_EXTEND_INVEN_SYSTEM
 	for (i = INVEN_NUM_SLOT * 2; i < INVEN_NUM_SLOT * 3; ++i) {
-		if (!(item = victim->GetInventoryItem(i)))
+		if (!(item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(victim), i)))
 			continue;
 
 		s_grid3->Put(i - INVEN_NUM_SLOT * 2, 1, item->GetSize());
 	}
 
 	for (i = INVEN_NUM_SLOT * 3; i < INVEN_NUM_SLOT * 4; ++i) {
-		if (!(item = victim->GetInventoryItem(i)))
+		if (!(item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(victim), i)))
 			continue;
 
 		s_grid4->Put(i - INVEN_NUM_SLOT * 3, 1, item->GetSize());

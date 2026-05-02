@@ -4551,7 +4551,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 
 	const entt::entity owner = AIHelpers::EcsOf(ch);
 	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, p->pos);
-	LPITEM item = ch->GetInventoryItem(p->pos);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), p->pos);
 
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM

@@ -489,7 +489,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-						LPITEM item2 = ch->GetInventoryItem(i);
+						LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 						if (!item2)
 							continue;
 
@@ -621,7 +621,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-					LPITEM item2 = ch->GetInventoryItem(i);
+					LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 					if (!item2)
 						continue;
 

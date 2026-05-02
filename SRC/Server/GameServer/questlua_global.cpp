@@ -513,7 +513,7 @@ namespace quest
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch->GetInventoryItem(bCell);
+		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
 
 		int ret = mining::RealRefinePick(ch, EntityFactory::CreateItemEntity(g_registry, item));
 		lua_pushnumber(L, ret);
@@ -532,7 +532,7 @@ namespace quest
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch->GetInventoryItem(bCell);
+		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
 
 		int ret = fishing::RealRefineRod(ch, item);
 		lua_pushnumber(L, ret);

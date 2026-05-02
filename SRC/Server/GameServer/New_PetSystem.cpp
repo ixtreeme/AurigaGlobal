@@ -223,7 +223,7 @@ void CNewPetActor::ItemCubeFeed(int type)
 	{
 		if (m_dwpetslotitem[i] != -1)
 		{
-			LPITEM itemxp = m_pkOwner->GetInventoryItem(m_dwpetslotitem[i]);
+			LPITEM itemxp = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(m_pkOwner), m_dwpetslotitem[i]);
 			if (!itemxp)
 				return;
 			if (ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, itemxp)) == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || m_pkOwner->GetExchange() || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())

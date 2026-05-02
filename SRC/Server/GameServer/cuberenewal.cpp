@@ -499,7 +499,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 				if (index_item_improve != -1)
 				{
 
-					LPITEM item = ch->GetInventoryItem(index_item_improve);
+					LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), index_item_improve);
 					if(item != nullptr)
 					{
 
@@ -739,7 +739,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 #endif
 						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
 						for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-							LPITEM item2 = ch->GetInventoryItem(i);
+							LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 							if (!item2)
 								continue;
 

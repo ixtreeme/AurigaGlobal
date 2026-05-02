@@ -385,7 +385,7 @@ uint8_t bCount
 #ifdef ENABLE_EXTRA_INVENTORY
 	LPITEM item = ch->GetItem(Cell);
 #else
-	LPITEM item = ch->GetInventoryItem(bCell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
 #endif
 
 	if (!item)

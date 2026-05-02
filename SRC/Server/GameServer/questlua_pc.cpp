@@ -2065,7 +2065,7 @@ namespace quest
 		bool bFind = false;
 		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
 		{
-			LPITEM item = ch->GetInventoryItem(iCell);
+			LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iCell);
 			if (!item)
 				continue;
 
@@ -2130,7 +2130,7 @@ namespace quest
 		bool bFind = false;
 		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
 		{
-			LPITEM item = ch->GetInventoryItem(iCell);
+			LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iCell);
 			if (!item)
 				continue;
 
@@ -2550,7 +2550,7 @@ namespace quest
 		if (inv_type == EXTRA_INVENTORY)
 			metinstone_item = ch->GetExtraInventoryItem(cell);
 		else
-			metinstone_item = ch->GetInventoryItem(cell);
+			metinstone_item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 
 		if (item && metinstone_item)
 			lua_pushboolean(L, mining::OreRefine(
@@ -3367,7 +3367,7 @@ teleport_area:
 		int idx = 1;
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			LPITEM pItem = pChar->GetInventoryItem(i);
+			LPITEM pItem = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(pChar), i);
 			if (!pItem)
 				continue;
 			int j = 0;
@@ -3706,7 +3706,7 @@ teleport_area:
 		{
 			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 			{
-				LPITEM item = ch->GetInventoryItem(i);
+				LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 				if (item != nullptr && item->GetSIGVnum() == group_vnum)
 				{
 					lua_pushnumber(L, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
@@ -4591,7 +4591,7 @@ teleport_area:
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch->GetInventoryItem(lua_tonumber(L, 1));
+		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), lua_tonumber(L, 1));
 		lua_pushboolean(L, (item)?ch->EquipItem(item):false);
 		return 1;
 	}

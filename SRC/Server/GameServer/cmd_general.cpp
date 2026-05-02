@@ -2791,7 +2791,7 @@ ACMD(do_inventory)
 		if (index >= INVENTORY_MAX_NUM)
 			break;
 
-		item = ch->GetInventoryItem(index);
+		item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), index);
 #ifdef TEXTS_IMPROVEMENT
 		if (item) {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 727, "%d#%s", index, item->GetName());
@@ -3620,7 +3620,7 @@ ACMD(do_ride)
 
 	for (UINT i=0; i< INVENTORY_MAX_NUM; ++i) //INVENTORY_MAX_NUM
 	{
-		LPITEM item = ch->GetInventoryItem(i);
+		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 		if (nullptr == item)
 			continue;
 
@@ -3632,7 +3632,7 @@ ACMD(do_ride)
 //// belt inventory kereses
 //	for (uint8_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 //	{
-//		LPITEM item = ch->GetInventoryItem(i);
+//		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 //		if (!item)
 //			continue;
 //
@@ -3872,7 +3872,7 @@ ACMD(do_rune_charge)
 	else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkRune)) == RUNE_SLOT7)
 		return;
 
-	LPITEM pkBottle = ch->GetInventoryItem(iArg2);
+	LPITEM pkBottle = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iArg2);
 	if (!pkBottle)
 		return;
 
@@ -4124,7 +4124,7 @@ ACMD(do_gr_deposit_item)
 	if (cell < 0 || count == 0)
 		return;
 
-	LPITEM item = ch->GetInventoryItem(cell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 	if (!item)
 		return;
 	if (count > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))

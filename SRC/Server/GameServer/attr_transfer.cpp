@@ -178,7 +178,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (i_index < 0 || INVENTORY_MAX_NUM <= i_index || w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
 
-	LPITEM item = ch->GetInventoryItem(i_index);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i_index);
 	if (item == nullptr)
 		return;
 

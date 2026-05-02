@@ -4,6 +4,7 @@
 #include "char_interface.hpp"
 #include "item.h"
 #include "ecs/EntityFactory.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
@@ -115,7 +116,7 @@ public:
 	{
 		for (uint16_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 		{
-			LPITEM beltInventoryItem = pc->GetInventoryItem(i);
+			LPITEM beltInventoryItem = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(pc), i);
 
 			if (nullptr != beltInventoryItem)
 				return true;

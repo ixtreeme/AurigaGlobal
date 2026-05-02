@@ -591,7 +591,7 @@ uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
 	uint64_t total = 0;
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
 	{
-		LPITEM it = ch->GetInventoryItem(i);
+		LPITEM it = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 		if (it && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
 			total += ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
 	}
@@ -617,7 +617,7 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 	uint32_t need = count;
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
 	{
-		LPITEM it = ch->GetInventoryItem(i);
+		LPITEM it = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
 		if (!it || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) != vnum)
 			continue;
 
@@ -776,7 +776,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	}
 	const LevelReq& req = itReq->second;
 
-	LPITEM item = ch->GetInventoryItem(invCell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), invCell);
 	if (!item)
 		return false;
 

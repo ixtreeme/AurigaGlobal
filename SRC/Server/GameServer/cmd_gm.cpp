@@ -1073,7 +1073,7 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 		{
-			if ((item = ch->GetInventoryItem(i)))
+			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
@@ -1100,7 +1100,7 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetInventoryItem(i)))
+			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
@@ -1111,7 +1111,7 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < WEAR_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetInventoryItem(INVENTORY_MAX_NUM + i)))
+			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), INVENTORY_MAX_NUM + i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, INVENTORY_MAX_NUM + i, 255);
@@ -1132,7 +1132,7 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < BELT_INVENTORY_SLOT_COUNT; ++i)
 		{
-			if ((item = ch->GetInventoryItem(BELT_INVENTORY_SLOT_START + i)))
+			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), BELT_INVENTORY_SLOT_START + i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, BELT_INVENTORY_SLOT_START + i, 255);
@@ -1157,7 +1157,7 @@ ACMD(do_item_purge)
 
 	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 	{
-		if ((item = ch->GetInventoryItem(i)))
+		if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
 		{
 			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
 			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
@@ -2188,7 +2188,7 @@ ACMD(do_refine_rod)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ch->GetInventoryItem(cell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 	if (item)
 		fishing::RealRefineRod(ch, item);
 }
@@ -2202,7 +2202,7 @@ ACMD(do_refine_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ch->GetInventoryItem(cell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 	if (item)
 	{
 		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
@@ -2218,7 +2218,7 @@ ACMD(do_max_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ch->GetInventoryItem(cell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 	if (item)
 	{
 		mining::CHEAT_MAX_PICK(ch, EntityFactory::CreateItemEntity(g_registry, item));
@@ -4810,7 +4810,7 @@ ACMD (do_use_item)
 	int cell = 0;
 	str_to_number(cell, arg1);
 
-	LPITEM item = ch->GetInventoryItem(cell);
+	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
 	if (item)
 	{
 		ch->UseItem(TItemPos (INVENTORY, cell));
