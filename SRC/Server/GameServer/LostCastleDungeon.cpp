@@ -4,6 +4,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "LostCastleDungeon.h"
@@ -1194,7 +1195,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     const uint8_t sv = skills[number(0, (int)skills.size() - 1)];
                     if (sv == 0)
                         continue;
-                    if (!clone->CanUseSkill(sv))
+                    if (!SkillSystem::CanUseSkill(AIHelpers::EcsOf(clone), sv))
                         continue;
                     chosenSkill = sv;
                     break;

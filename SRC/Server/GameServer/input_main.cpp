@@ -4,6 +4,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 
 
 #include "constants.h"
@@ -2474,7 +2475,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 
 	if (type->type > 0)
 	{
-		if (false == ch->CanUseSkill(type->type))
+		if (false == SkillSystem::CanUseSkill(AIHelpers::EcsOf(ch), type->type))
 		{
 			return;
 		}

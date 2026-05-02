@@ -5,6 +5,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "desc_client.h"
@@ -4296,7 +4297,7 @@ ACMD (do_all_skill_master)
 	ch->SetHorseLevel(SKILL_MAX_LEVEL);
 	for (int i = 0; i < SKILL_MAX_NUM; i++)
 	{
-		if (true == ch->CanUseSkill(i))
+		if (true == SkillSystem::CanUseSkill(AIHelpers::EcsOf(ch), i))
 		{
 			ch->SetSkillLevel(i, SKILL_MAX_LEVEL);
 		}

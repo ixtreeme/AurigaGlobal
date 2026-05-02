@@ -5,6 +5,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
 #include <md5.h>
@@ -1919,7 +1920,7 @@ ACMD(do_skillup)
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
 
-	if (true == ch->CanUseSkill(vnum))
+	if (true == SkillSystem::CanUseSkill(AIHelpers::EcsOf(ch), vnum))
 	{
 		ch->SkillLevelUp(vnum);
 	}
