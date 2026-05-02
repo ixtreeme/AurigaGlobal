@@ -1807,11 +1807,6 @@ uint16_t GetItemCell(entt::entity item)
     if (const auto* location = g_registry.try_get<ecs::ItemLocation>(item))
         return location->cell;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.cell.fallback");
-        return legacyItem->GetCell();
-    }
-
     return 0;
 }
 
