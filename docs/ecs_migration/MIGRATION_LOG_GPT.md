@@ -11205,3 +11205,55 @@ Status:
   - PlayerRuntime::GetDesc
   - PlayerRuntime::GetSectree
 - WinTest is required before marking 15E-60.9 production-verified.
+
+
+## Phase 15E-61.1 - Simple Read Accessors Caller-Side Migration
+
+Scope:
+- Migrated Category A simple read accessor call sites away from direct CHARACTER methods:
+  - GetInventoryItem
+  - GetExchange
+  - GetWear
+  - GetMountVnum read paths
+- Deferred GetItem to a later sub-batch because multiple classes expose GetItem and it needs per-call class-context review.
+- Left MountVnum(vnum) write calls untouched; those are write/mutation calls and belong to a later write-side migration batch.
+
+Implementation notes:
+- Mount reads now use MountSystem::GetMountVnum(entt::entity).
+- MountSystem::GetMountVnum is pure ECS and reads MountState.
+- CHARACTER::MountVnum now syncs MountState on write so read-side state does not drift.
+- Added default initializers to MountState so component creation is safe.
+- Added ItemSystem::GetInventoryItemPtr(entt::entity, uint16_t) and ItemSystem::GetWear(entt::entity, uint8_t).
+- Inventory/equipment reads now use MainInventoryRuntimeComponent, which is already synchronized by CHARACTER::SetItem.
+- Added ExchangeRef and ecs::SocialSystem::GetExchange(entt::entity).
+- CHARACTER::SetExchange now syncs ExchangeRef.
+
+Commits:
+- e3a23e8 Phase 15E-61.1.a: Migrate MountVnum reads
+- 691e4ad Phase 15E-61.1.b0: Add pure inventory read API
+- 7291d8f Phase 15E-61.1.b: Migrate GetInventoryItem reads
+- fd81fcf Phase 15E-61.1.c0: Add ExchangeRef read API
+- 9b45449 Phase 15E-61.1.c: Migrate GetExchange reads
+- b58e05a Phase 15E-61.1.d: Migrate GetWear reads
+- f7c424f Phase 15E-61.1: COMPLETE - Read accessors caller-side migrated
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8 -- /nodeReuse:false
+~~~
+- Build passed after each sub-batch.
+- Final build passed.
+
+Final counts:
+- GetInventoryItem remaining outside bridge/CHARACTER files: 0.
+- GetExchange remaining outside bridge/CHARACTER files: 0.
+- GetWear remaining outside bridge/CHARACTER files: 0.
+- MountVnum remaining count is write calls plus direct ECS MountState field usage, not read-accessor debt.
+
+WinTest:
+- Operator confirmed WinTest completed without issues.
+- Inventory, equipment, exchange/trade and mount paths are production-validated for this batch.
+
+Status:
+- Phase 15E-61.1 is production-validated.
+- Next planned phase: Phase 15E-61.2 predicates/state checks such as IsObserverMode, IsDead, IsStun and CanWarp.
