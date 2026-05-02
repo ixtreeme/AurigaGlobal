@@ -527,7 +527,7 @@ void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 
 int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDefense, bool bIgnoreTargetRating)
 {
-	LPITEM pWeapon = pkAttacker->GetWear(WEAR_WEAPON);
+	LPITEM pWeapon = ItemSystem::GetWear(AIHelpers::EcsOf(pkAttacker), WEAR_WEAPON);
 	bool bPolymorphed = pkAttacker->IsPolymorphed();
 
 	if (pWeapon && !(bPolymorphed && !pkAttacker->IsPolyMaintainStat()))
@@ -819,7 +819,7 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	// ?????? ???
 	//iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST)) / 100;
-	LPITEM pkWeapon = pkAttacker->GetWear(WEAR_WEAPON);
+	LPITEM pkWeapon = ItemSystem::GetWear(AIHelpers::EcsOf(pkAttacker), WEAR_WEAPON);
 
 	if (pkWeapon)
 		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
@@ -990,7 +990,7 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 	int32_t ani_speed = ani_attack_speed(ch);
 	int32_t real_speed = (ani_speed * 100) / (default_bonus + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED) + riding_bonus);
 
-	LPITEM item = ch->GetWear(WEAR_WEAPON);
+	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	return item && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == WEAPON_DAGGER ? real_speed / 2 : real_speed;
 }
 

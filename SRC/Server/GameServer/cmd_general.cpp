@@ -2462,10 +2462,10 @@ ACMD(do_unmount)
 {
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if(ch->GetWear(WEAR_COSTUME_MOUNT))
+	if(ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT))
 	{
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
+		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
 
 		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
@@ -3561,10 +3561,10 @@ ACMD(do_ride)
 #endif
 		return;
 	}
-	if(ch->GetWear(WEAR_COSTUME_MOUNT))
+	if(ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT))
 	{
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
+		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
 
 		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
@@ -3801,7 +3801,7 @@ ACMD(do_rune)
 				if (slot == WEAR_RUNE7)
 					return;
 
-				LPITEM pkItem = ch->GetWear(slot);
+				LPITEM pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), slot);
 				if (pkItem)
 					pkItem->ActivateRune();
 			}
@@ -3816,7 +3816,7 @@ ACMD(do_rune)
 				if (slot == WEAR_RUNE7)
 					return;
 
-				LPITEM pkItem = ch->GetWear(slot);
+				LPITEM pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), slot);
 				if (pkItem)
 					pkItem->DeactivateRune();
 			}
@@ -3831,7 +3831,7 @@ ACMD(do_rune)
 				int iMaxSubTypes = RUNE_SUBTYPES - 1;
 				LPITEM pkItem = nullptr;
 				for (int i = 0; i < iMaxSubTypes; i++) {
-					pkItem = ch->GetWear(WEAR_RUNE1 + i);
+					pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_RUNE1 + i);
 					if (pkItem) {
 						if (w == 0)
 							pkItem->DeactivateRune();
@@ -3863,7 +3863,7 @@ ACMD(do_rune_charge)
 	if (str_to_number(iArg2, arg2) == false)
 		return;
 
-	LPITEM pkRune = ch->GetWear(iArg1);
+	LPITEM pkRune = ItemSystem::GetWear(AIHelpers::EcsOf(ch), iArg1);
 	if (!pkRune)
 		return;
 

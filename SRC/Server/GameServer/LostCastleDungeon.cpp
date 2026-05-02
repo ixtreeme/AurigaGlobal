@@ -326,11 +326,11 @@ namespace
 
         // A legtobb PvP skill ellenorzi a WEAR_WEAPON-t (es a weapon tipust),
         // ezert a klonnak is legyen valodi fegyver itemje, nem csak vizualis PART.
-        LPITEM srcW = source->GetWear(WEAR_WEAPON);
+        LPITEM srcW = ItemSystem::GetWear(AIHelpers::EcsOf(source), WEAR_WEAPON);
         if (!srcW)
             return;
 
-        if (clone->GetWear(WEAR_WEAPON))
+        if (ItemSystem::GetWear(AIHelpers::EcsOf(clone), WEAR_WEAPON))
             return;
 
 		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.

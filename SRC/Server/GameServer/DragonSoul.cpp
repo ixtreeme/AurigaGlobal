@@ -1631,7 +1631,7 @@ void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 		return ;
 	for (int i = WEAR_MAX_NUM; i < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; i++)
 	{
-		LPITEM pItem = ch->GetWear(i);
+		LPITEM pItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), i);
 		if (pItem != nullptr)
 		{
 			if(IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))

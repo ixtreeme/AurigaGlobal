@@ -758,7 +758,7 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 
 	mountActor->Unmount();
 
-	if(LPITEM pSummonItem = m_pkOwner->GetWear(WEAR_COSTUME_MOUNT))
+	if(LPITEM pSummonItem = ItemSystem::GetWear(AIHelpers::EcsOf(m_pkOwner), WEAR_COSTUME_MOUNT))
 	{
 		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, 0);
 		this->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);

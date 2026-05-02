@@ -171,7 +171,7 @@ namespace mining
 		int defaultPct = NAGYFASZU_MINING_CHANCE;
 		int iSkillLevel = ch->GetSkillLevel(SKILL_MINING);
 
-		LPITEM pick = ch->GetWear(WEAR_WEAPON);
+		LPITEM pick = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 		if (!pick || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pick)) != ITEM_PICK)
 			return 0;
@@ -391,7 +391,7 @@ namespace mining
 
 		ch->mining_take();
 
-		LPITEM pick = ch->GetWear(WEAR_WEAPON);
+		LPITEM pick = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 		// REFINE_PICK
 		if (!pick || !Pick_Check(*pick))

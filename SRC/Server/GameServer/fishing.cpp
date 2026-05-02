@@ -356,7 +356,7 @@ void FishingPractice(LPCHARACTER ch)
 	if (!ch)
 		return;
 
-	LPITEM rod = ch->GetWear(WEAR_WEAPON);
+	LPITEM rod = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
 	{
 		// AÖ´ë 1ö·Aµµ°! 3A´N °a?i 3¬1A´ë 1ö·A
@@ -407,7 +407,7 @@ EVENTFUNC(fishing_event)
 		return 0;
 
 
-	LPITEM rod = ch->GetWear(WEAR_WEAPON);
+	LPITEM rod = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 	if (!(rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD))
 	{
@@ -469,7 +469,7 @@ LPEVENT CreateFishingEvent(LPCHARACTER ch)
 
 int GetFishingLevel(LPCHARACTER ch)
 {
-	LPITEM rod = ch->GetWear(WEAR_WEAPON);
+	LPITEM rod = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 	if (!rod || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod))!= ITEM_ROD)
 		return 0;

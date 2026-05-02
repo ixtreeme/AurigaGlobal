@@ -1735,7 +1735,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #endif
 
 		if ((p->window == INVENTORY && ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), p->pos)) ||
-				(p->window == EQUIPMENT && ch->GetWear(p->pos)))
+				(p->window == EQUIPMENT && ItemSystem::GetWear(AIHelpers::EcsOf(ch), p->pos)))
 		{
 			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetName());
 			v.push_back(item);

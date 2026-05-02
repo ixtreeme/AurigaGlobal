@@ -6,6 +6,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 
 #include "config.h"
@@ -826,7 +827,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		}
 
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
+		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		if (mountSystem && MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)) && mount) {
 			mountSystem->Unmount(mount->GetValue(1));
 		}
@@ -923,7 +924,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		}
 
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ch->GetWear(WEAR_COSTUME_MOUNT);
+		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		if (mountSystem && MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)) && mount) {
 			mountSystem->Unmount(mount->GetValue(1));
 		}

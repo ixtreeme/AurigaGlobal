@@ -349,7 +349,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (nullptr == ch)
 		return speed;
 
-	LPITEM item = ch->GetWear(WEAR_WEAPON);
+	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 	if (nullptr == item)
 		return speed;
@@ -378,7 +378,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 {
-	LPITEM item = ch->GetWear(WEAR_WEAPON);
+	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 
 	if (nullptr == item || combo > 8)
 		return 1000;

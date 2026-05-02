@@ -3732,21 +3732,21 @@ ACMD(do_affect_remove)
 
 ACMD(do_change_attr)
 {
-	LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (weapon)
 		weapon->ChangeAttribute();
 }
 
 ACMD(do_add_attr)
 {
-	LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (weapon)
 		weapon->AddAttribute();
 }
 
 ACMD(do_add_socket)
 {
-	LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (weapon)
 		weapon->AddSocket();
 }
@@ -3754,14 +3754,14 @@ ACMD(do_add_socket)
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_change_rare_attr)
 {
-	LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (weapon)
 		weapon->ChangeRareAttribute();
 }
 
 ACMD(do_add_rare_attr)
 {
-	LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 	if (weapon)
 		weapon->AddRareAttribute();
 }
@@ -4675,7 +4675,7 @@ ACMD (do_attr_full_set)
 	#endif
 		{
 
-			item = ch->GetWear(WEAR_HEAD);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_HEAD);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4689,7 +4689,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_WEAPON);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4703,7 +4703,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_SHIELD);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_SHIELD);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4717,7 +4717,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_BODY);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_BODY);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4731,7 +4731,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_FOOTS);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_FOOTS);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4745,7 +4745,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_WRIST);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WRIST);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4759,7 +4759,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_NECK);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_NECK);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4773,7 +4773,7 @@ ACMD (do_attr_full_set)
 				item->ModifyPoints(true);
 			}
 
-			item = ch->GetWear(WEAR_EAR);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_EAR);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
@@ -4786,7 +4786,7 @@ ACMD (do_attr_full_set)
 				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
 				item->ModifyPoints(true);
 			}
-			item = ch->GetWear(WEAR_PENDANT);
+			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_PENDANT);
 			if (item != nullptr)
 			{
 				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));

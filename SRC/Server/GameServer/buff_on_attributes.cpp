@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include <common/tables.h>
 #include "item.h"
@@ -132,7 +133,7 @@ bool CBuffOnAttributes::On(uint8_t bValue)
 	m_map_additional_attrs.clear();
 	for (int i = 0; i < n; i++)
 	{
-		LPITEM pItem = m_pBuffOwner->GetWear(m_p_vec_buff_wear_targets->at(i));
+		LPITEM pItem = ItemSystem::GetWear(AIHelpers::EcsOf(m_pBuffOwner), m_p_vec_buff_wear_targets->at(i));
 		if (nullptr != pItem)
 		{
 			int m = pItem->GetAttributeCount();

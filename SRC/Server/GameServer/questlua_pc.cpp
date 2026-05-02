@@ -1088,10 +1088,10 @@ namespace quest
             return 1;
         }
         LPITEM item;
-        if (item = ch->GetWear(WEAR_COSTUME_BODY)) {
+        if (item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_BODY)) {
             lua_pushnumber(L, 2);
             return 1;
-        } else if (item = ch->GetWear(WEAR_COSTUME_HAIR)) {
+        } else if (item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_HAIR)) {
             lua_pushnumber(L, 3);
             return 1;
         }
@@ -1306,7 +1306,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ch->GetWear(WEAR_WEAPON) : nullptr;
+		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON) : nullptr;
 		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
 	}
@@ -1323,7 +1323,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ch->GetWear(WEAR_BODY) : nullptr;
+		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_BODY) : nullptr;
 		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
 		return 1;
 	}
@@ -1349,7 +1349,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ch->GetWear(bCell) : nullptr;
+		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), bCell) : nullptr;
 		if (!item)
 			lua_pushnil(L);
 		else
@@ -1834,7 +1834,7 @@ namespace quest
 		}
 		bool ret = MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)) != 0;
 		if (!ret) {
-			LPITEM item = ch->GetWear(WEAR_COSTUME_MOUNT);
+			LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 			if (item) {
 				ret = true;
 			}
@@ -2171,7 +2171,7 @@ namespace quest
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ch->GetWear(cell) : nullptr;
+		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), cell) : nullptr;
 		lua_pushnumber(L, item ? item->GetRefineLevel() : 0);
 		return 1;
 	}
@@ -2193,7 +2193,7 @@ namespace quest
 		int level_limit = (int) lua_tonumber(L, 2);
 		int pct = lua_isnumber(L, 3) ? (int)lua_tonumber(L, 3) : 100;
 
-		LPITEM item = ch->GetWear(cell);
+		LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), cell);
 		if (!item)
 		{
 			lua_pushboolean(L, 0);
@@ -3537,10 +3537,10 @@ teleport_area:
 		auto* pChar = ecs::LegacyCharOf(pCharEntity);
 		if (pChar != nullptr)
 		{
-			LPITEM Unique1 = pChar->GetWear(WEAR_UNIQUE1);
-			LPITEM Unique2 = pChar->GetWear(WEAR_UNIQUE2);
+			LPITEM Unique1 = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_UNIQUE1);
+			LPITEM Unique2 = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_UNIQUE2);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			LPITEM MountCostume = pChar->GetWear(WEAR_COSTUME_MOUNT);
+			LPITEM MountCostume = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_COSTUME_MOUNT);
 #endif
 			if (Unique1 && UNIQUE_GROUP_SPECIAL_RIDE == Unique1->GetSpecialGroup())
 			{
@@ -4600,7 +4600,7 @@ teleport_area:
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch->GetWear(lua_tonumber(L, 1));
+		LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), lua_tonumber(L, 1));
 		lua_pushboolean(L, (item)?ch->UnequipItem(item):false);
 		return 1;
 	}
