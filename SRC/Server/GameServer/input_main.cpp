@@ -6,6 +6,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 
 
 #include "constants.h"
@@ -2363,7 +2364,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		ch->SetRotation(pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
-		ch->Move(pinfo->lX, pinfo->lY);
+		ecs::MovementSystem::Move(AIHelpers::EcsOf(ch), pinfo->lX, pinfo->lY);
 		ch->Stop();
 		ch->StopStaminaConsume();
 	}
