@@ -21,6 +21,7 @@
 #include "components/identity_components.hpp"
 #include "components/inventory_components.hpp"
 #include "components/item_components.hpp"
+#include "components/item_proto_components.hpp"
 #include "components/movement_components.hpp"
 #include "components/quest_components.hpp"
 #include "components/session_components.hpp"
@@ -461,6 +462,39 @@ ecs::ItemAttributes MakeItemAttributes(LPITEM item)
     return attributes;
 }
 
+ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
+{
+    ecs::ItemProtoRef protoRef {};
+    const TItemTable* proto = item->GetProto();
+    if (!proto)
+        return protoRef;
+
+    protoRef.base_vnum = proto->dwVnum;
+    protoRef.type = proto->bType;
+    protoRef.subtype = proto->bSubType;
+    protoRef.weapon_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[3]));
+    protoRef.weapon_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[4]));
+    protoRef.defense = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[1]));
+    protoRef.magic_min = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[5]));
+    protoRef.magic_max = static_cast<uint32_t>(std::max<int32_t>(0, proto->alValues[6]));
+#ifdef ENABLE_MULTI_NAMES
+    std::strncpy(protoRef.name, proto->szLocaleName[0], ITEM_NAME_MAX_LEN);
+#else
+    std::strncpy(protoRef.name, proto->szLocaleName, ITEM_NAME_MAX_LEN);
+#endif
+    protoRef.name[ITEM_NAME_MAX_LEN] = '\0';
+    protoRef.size = proto->bSize;
+    protoRef.level_limit = static_cast<uint8_t>(std::clamp(item->GetLevelLimit(), 0, 255));
+    protoRef.wear_flags = proto->dwWearFlags;
+    protoRef.anti_flags = proto->dwAntiFlags;
+    protoRef.immune_flags = proto->dwImmuneFlag;
+    protoRef.refined_vnum = item->GetRefinedVnum();
+    protoRef.refine_level = static_cast<uint8_t>(std::clamp(item->GetRefineLevel(), 0, 255));
+    protoRef.limit_timer_wear_index = static_cast<int8_t>(proto->cLimitTimerBasedOnWearIndex);
+    protoRef.proto = proto;
+    return protoRef;
+}
+
 void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
 {
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
@@ -472,6 +506,7 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
     reg.emplace_or_replace<ecs::ItemSockets>(entity, MakeItemSockets(item));
     reg.emplace_or_replace<ecs::ItemAttributes>(entity, MakeItemAttributes(item));
+    reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
 }
 
 } // namespace
