@@ -419,7 +419,7 @@ void CClientManager::Quit()
 
 void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 {
-	const uint8_t bPacketVersion = 6; // BOOT 패킷이 바뀔때마다 번호를 올리도록 한다.
+	const uint8_t bPacketVersion = 7; // BOOT 패킷이 바뀔때마다 번호를 올리도록 한다.
 
 	std::vector<tAdminInfo> vAdmin;
 	std::vector<std::string> vHost;
@@ -439,6 +439,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TRefineTable) * m_iRefineTableSize +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemAttrTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRareTable.size() +
+		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRare8Table.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TBanwordTable) * m_vec_banwordTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TLand) * m_vec_kLandTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObjectProto) * m_vec_kObjectProto.size() +
@@ -465,6 +466,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	sys_log(0, "sizeof(TRefineTable) = %d", sizeof(TRefineTable));
 	sys_log(0, "sizeof(TItemAttrTable) = %d", sizeof(TItemAttrTable));
 	sys_log(0, "sizeof(TItemRareTable) = %d", sizeof(TItemAttrTable));
+	sys_log(0, "sizeof(TItemRare8Table) = %d", sizeof(TItemAttrTable));
 	sys_log(0, "sizeof(TBanwordTable) = %d", sizeof(TBanwordTable));
 	sys_log(0, "sizeof(TLand) = %d", sizeof(building::TLand));
 	sys_log(0, "sizeof(TObjectProto) = %d", sizeof(building::TObjectProto));
@@ -500,6 +502,10 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	peer->EncodeWORD(sizeof(TItemAttrTable));
 	peer->EncodeWORD(m_vec_itemRareTable.size());
 	peer->Encode(m_vec_itemRareTable.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRareTable.size());
+
+	peer->EncodeWORD(sizeof(TItemAttrTable));
+	peer->EncodeWORD(m_vec_itemRare8Table.size());
+	peer->Encode(m_vec_itemRare8Table.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRare8Table.size());
 
 	peer->EncodeWORD(sizeof(TBanwordTable));
 	peer->EncodeWORD(m_vec_banwordTable.size());
@@ -744,7 +750,8 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 				"attrtype3, attrvalue3, "
 				"attrtype4, attrvalue4, "
 				"attrtype5, attrvalue5, "
-				"attrtype6, attrvalue6 "
+				"attrtype6, attrvalue6, "
+				"attrtype7, attrvalue7 "
 
 				"FROM item%s WHERE owner_id=%d AND window='%s'",
 				GetTablePostfix(), pi->account_id, pi->ip[0] == 0 ? "SAFEBOX" : "MALL");
@@ -1555,12 +1562,12 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			"attrtype3, attrvalue3, "
 			"attrtype4, attrvalue4, "
 			"attrtype5, attrvalue5, "
-			"attrtype6, attrvalue6) "
+			"attrtype6, attrvalue6, attrtype7, attrvalue7) "
 			"VALUES(%u, %u, %d, %d, %u, %u, "
 #ifdef ATTR_LOCK
 			"%d, "
 #endif
-			"%ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+			"%ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
 			GetTablePostfix(),
 			p->id,
 			p->owner,
@@ -1580,7 +1587,8 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 			p->aAttr[3].bType, p->aAttr[3].sValue,
 			p->aAttr[4].bType, p->aAttr[4].sValue,
 			p->aAttr[5].bType, p->aAttr[5].sValue,
-			p->aAttr[6].bType, p->aAttr[6].sValue);
+			p->aAttr[6].bType, p->aAttr[6].sValue,
+				p->aAttr[7].bType, p->aAttr[7].sValue);
 
 		CDBManager::instance().ReturnQuery(szQuery, QID_ITEM_SAVE, pkPeer->GetHandle(), nullptr);
 	}
@@ -5329,4 +5337,5 @@ void CClientManager::SendItemShopData(CPeer* pkPeer, bool isPacket)
 	}
 }
 #endif
+
 

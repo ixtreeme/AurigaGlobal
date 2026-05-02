@@ -626,7 +626,7 @@ void CInputDB::Boot(const char* data)
 
 	sys_log(0, "BOOT: PACKET: %d", dwPacketSize);
 	sys_log(0, "BOOT: VERSION: %d", bVersion);
-	if (bVersion != 6)
+	if (bVersion != 7)
 	{
 		sys_err("boot version error");
 		thecore_shutdown();
@@ -639,6 +639,7 @@ void CInputDB::Boot(const char* data)
 	sys_log(0, "sizeof(TRefineTable) = %d", sizeof(TRefineTable));
 	sys_log(0, "sizeof(TItemAttrTable) = %d", sizeof(TItemAttrTable));
 	sys_log(0, "sizeof(TItemRareTable) = %d", sizeof(TItemAttrTable));
+	sys_log(0, "sizeof(TItemRare8Table) = %d", sizeof(TItemAttrTable));
 	sys_log(0, "sizeof(TBanwordTable) = %d", sizeof(TBanwordTable));
 	sys_log(0, "sizeof(TLand) = %d", sizeof(building::TLand));
 	sys_log(0, "sizeof(TObjectProto) = %d", sizeof(building::TObjectProto));
@@ -834,8 +835,36 @@ void CInputDB::Boot(const char* data)
 	}
 
 	data += size * sizeof(TItemAttrTable);
+	/*
+     * ITEM RARE 8
+     */
+	if (decode_2bytes(data) != sizeof(TItemAttrTable))
+	{
+		sys_err("item rare 8 table size error");
+		thecore_shutdown();
+		return;
+	}
+	data += 2;
 
+	size = decode_2bytes(data);
+	data += 2;
+	sys_log(0, "BOOT: ITEM_RARE8: %d", size);
 
+	if (size)
+	{
+		TItemAttrTable * p = (TItemAttrTable *) data;
+
+		for (int i = 0; i < size; ++i, ++p)
+		{
+			if (p->dwApplyIndex >= MAX_APPLY_NUM)
+				continue;
+
+			g_map_itemRare8[p->dwApplyIndex] = *p;
+			sys_log(0, "ITEM_RARE8[%d]: %s %u", p->dwApplyIndex, p->szApply, p->dwProb);
+		}
+	}
+
+	data += size * sizeof(TItemAttrTable);
 	/*
 	 * BANWORDS
 	 */

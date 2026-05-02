@@ -197,6 +197,7 @@ extern const int KOR_aiUniqueItemPartyBonusExpPercentByMemberCount[9];
 typedef std::map<uint32_t, TItemAttrTable> TItemAttrMap;
 extern TItemAttrMap g_map_itemAttr;
 extern TItemAttrMap g_map_itemRare;
+extern TItemAttrMap g_map_itemRare8;
 
 extern const int * aiChainLightningCountBySkillLevel;
 extern const int aiChainLightningCountBySkillLevel_euckr[SKILL_MAX_LEVEL + 1];

@@ -10660,6 +10660,21 @@ bool CHARACTER::CanTakeInventoryItem(LPITEM item, TItemPos* cell)
 
 
 #ifdef ENABLE_SORT_INVEN
+static bool IsExpiringItem(const LPITEM& item)
+{
+	if (!item)
+		return false;
+
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+	{
+		const uint8_t limitType = item->GetLimitType(i);
+		if (limitType == LIMIT_REAL_TIME || limitType == LIMIT_REAL_TIME_START_FIRST_USE || limitType == LIMIT_TIMER_BASED_ON_WEAR)
+			return true;
+	}
+
+	return false;
+}
+
 static bool SortMyItems(const LPITEM& s1, const LPITEM& s2)
 {
 	// Sort By Name
@@ -10675,7 +10690,7 @@ static bool SortMyItems(const LPITEM& s1, const LPITEM& s2)
 }
 void CHARACTER::EditMyInven()
 {
-	return;
+	//return;
 
 	int iPulse = thecore_pulse() - GetSortInv1Time();
 	if (iPulse < PASSES_PER_SEC(30)) {
@@ -10722,6 +10737,9 @@ void CHARACTER::EditMyInven()
 	for (int i = 0; i < size; ++i)
 	{
 		if (!(myitems = GetInventoryItem(i)))
+			continue;
+
+		if (IsExpiringItem(myitems))
 			continue;
 
 		//add all items inven to vector
@@ -10837,7 +10855,7 @@ static bool SortMyExtraItems(const LPITEM& s1, const LPITEM& s2)
 }
 void CHARACTER::EditMyExtraInven()
 {
-	return;
+	//return;
 
 	int iPulse = thecore_pulse() - GetSortInv2Time();
 	if (iPulse < PASSES_PER_SEC(30)) {
@@ -10881,6 +10899,9 @@ void CHARACTER::EditMyExtraInven()
 	for (int i = 0; i < size; ++i)
 	{
 		if (!(myitems = GetExtraInventoryItem(i)))
+			continue;
+
+		if (IsExpiringItem(myitems))
 			continue;
 
 		//add all items inven to vector

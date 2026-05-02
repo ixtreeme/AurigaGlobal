@@ -6305,6 +6305,102 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 			}
 			break;
+
+			case 30619: // 8. bonusz hozzáadása
+			{
+				LPITEM item2;
+
+				if (!IsValidItemPosition(DestCell) || !(item2 = GetInventoryItem(wDestCell)))
+					return false;
+
+				if (ITEM_COSTUME == item2->GetType())
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ChatPacketNew(CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (item2->IsExchanging() || item2->IsEquipped())
+					return false;
+
+				if (item2->GetAttributeSetIndex() == -1)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ChatPacketNew(CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (item2->AddRareAttribute8() == true)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ChatPacketNew(CHAT_TYPE_INFO, 389, "");
+#endif
+					char buf[21];
+					snprintf(buf, sizeof(buf), "%u", item2->GetID());
+
+					LogManager::instance().ItemLog(
+						GetPlayerID(),
+						item2->GetAttributeType(ITEM_ATTRIBUTE_EXTRA_RARE_START),
+						item2->GetAttributeValue(ITEM_ATTRIBUTE_EXTRA_RARE_START),
+						item->GetID(),
+						"ADD_RARE8_ATTR",
+						buf,
+						GetDesc()->GetHostName(),
+						item->GetOriginalVnum());
+
+					item->SetCount(item->GetCount() - 1);
+				}
+#ifdef TEXTS_IMPROVEMENT
+				else {
+					ChatPacketNew(CHAT_TYPE_INFO, 308, "");
+				}
+#endif
+			}
+			break;
+
+			case 30620: // 8. bonusz csere
+			{
+				LPITEM item2;
+
+				if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+					return false;
+
+				if (ITEM_COSTUME == item2->GetType())
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ChatPacketNew(CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (item2->IsExchanging() || item2->IsEquipped())
+					return false;
+
+				if (item2->GetAttributeSetIndex() == -1)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					ChatPacketNew(CHAT_TYPE_INFO, 396, "");
+#endif
+					return false;
+				}
+
+				if (item2->ChangeRareAttribute8() == true)
+				{
+					char buf[21];
+					snprintf(buf, sizeof(buf), "%u", item2->GetID());
+					LogManager::instance().ItemLog(this, item, "CHANGE_RARE8_ATTR", buf);
+
+					item->SetCount(item->GetCount() - 1);
+				}
+#ifdef TEXTS_IMPROVEMENT
+				else {
+					ChatPacketNew(CHAT_TYPE_INFO, 354, "");
+				}
+#endif
+			}
+			break;
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 			case 70251: // ÁøÀç°æ
 			{

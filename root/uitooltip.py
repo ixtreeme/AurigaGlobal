@@ -397,6 +397,7 @@ class ToolTip(ui.ThinBoard):
 	POSITIVE_COLOR = grp.GenerateColor(0.5411, 0.7254, 0.5568, 1.0)#1-5 opt szine
 	SPECIAL_POSITIVE_COLOR = grp.GenerateColor(0.6911, 0.8754, 0.7068, 1.0)#atlagos kar +vert opt szine
 	SPECIAL_POSITIVE_COLOR2 = 0xffFF34B3#6-7 opt szine
+	SPECIAL_POSITIVE_COLOR3 = 0xff15d131#8. bonusz szine (zold)
 	if app.ENABLE_GAYA_SYSTEM:
 		GAYA_PRICE_COLOR = grp.GenerateColor(59.87, 61.24, 42.01, 1.0)
 	if app.ENABLE_CAPITALE_SYSTEM:
@@ -1988,6 +1989,7 @@ class ItemToolTip(ToolTip):
 							affectColor = self.NEGATIVE_COLOR
 					else:
 						affectColor = self.__GetAttributeColor(i, value)
+					isRareSlot = (i >= player.ATTRIBUTE_SLOT_RARE_START and i < player.ATTRIBUTE_SLOT_RARE_END)
 					
 					# max bonus highlight
 					if self.MAX_BONUS_HIGHLIGHT_ENABLED:
@@ -1998,12 +2000,12 @@ class ItemToolTip(ToolTip):
 									if hasattr(item, 'COSTUME_TYPE_ACCE') and item.GetItemSubType() == item.COSTUME_TYPE_ACCE:
 										if itemAbsChance != 0:
 											_maxV = self.CalcAcceValue(_maxV, itemAbsChance)
-							if value == _maxV:
+							if value == _maxV and not isRareSlot:
 								affectColor = self.MAX_BONUS_HIGHLIGHT_COLOR
 
 
 					# vállszalag special thresholds (yellow) - ONLY for selected VNUMs
-					if self.VALLSZALAG_SPECIAL_HIGHLIGHT_ENABLED and self.itemVnum in self.VALLSZALAG_VNUMS and value > 0:
+					if self.VALLSZALAG_SPECIAL_HIGHLIGHT_ENABLED and self.itemVnum in self.VALLSZALAG_VNUMS and value > 0 and not isRareSlot:
 						_th = self.VALLSZALAG_SPECIAL_THRESHOLDS.get(type, None)
 						if _th is not None and value >= _th:
 							affectColor = self.VALLSZALAG_SPECIAL_HIGHLIGHT_COLOR
@@ -2053,10 +2055,11 @@ class ItemToolTip(ToolTip):
 
 	def __GetAttributeColor(self, index, value):
 		if value > 0:
+			extraRareStart = getattr(player, "ATTRIBUTE_SLOT_EXTRA_RARE_START", player.ATTRIBUTE_SLOT_RARE_END)
+			extraRareEnd = getattr(player, "ATTRIBUTE_SLOT_EXTRA_RARE_END", extraRareStart + 1)
+			if index >= extraRareStart and index < extraRareEnd:
+				return self.SPECIAL_POSITIVE_COLOR3
 			if index >= player.ATTRIBUTE_SLOT_RARE_START and index < player.ATTRIBUTE_SLOT_RARE_END:
-				if app.ENABLE_ATTR_COSTUMES and item.GetItemType() == item.ITEM_TYPE_COSTUME and (item.GetItemSubType() == item.COSTUME_TYPE_HAIR or item.GetItemSubType() == item.COSTUME_TYPE_BODY or item.GetItemSubType() == item.COSTUME_TYPE_WEAPON):
-					return grp.GenerateColor(1.0, 0.7843, 0.0, 1.0)
-				
 				return self.SPECIAL_POSITIVE_COLOR2
 			else:
 				return self.SPECIAL_POSITIVE_COLOR

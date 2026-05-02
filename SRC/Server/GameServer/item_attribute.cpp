@@ -178,13 +178,18 @@ bool CItem::HasAttr(uint8_t bApply)
 }
 
 
-bool CItem::HasRareAttr(uint8_t bApply)
+bool CItem::HasAnyRareAttr(uint8_t bApply) const
 {
-	for (int i = 0; i < MAX_RARE_ATTR_NUM; ++i)
-		if (GetAttributeType(i + 5) == bApply)
+	for (int i = ITEM_ATTRIBUTE_RARE_START; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		if (m_aAttr[i].bType == bApply)
 			return true;
 
 	return false;
+}
+
+bool CItem::HasRareAttr(uint8_t bApply)
+{
+	return HasAnyRareAttr(bApply);
 }
 
 void CItem::AddAttribute(uint8_t bApply, short sValue)
@@ -288,7 +293,7 @@ bool CItem::AddRareAttribute3(uint8_t bApply, short sValue)
 	{
 		const TItemAttrTable& r = g_map_itemRare[i];
 
-		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && HasRareAttr(i) != true)
+		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && !HasAnyRareAttr(i))
 		{
 			avail.push_back(i);
 		}
@@ -657,6 +662,70 @@ bool CItem::ChangeRareAttribute()
 	return true;
 }
 
+bool CItem::ChangeRareAttribute8()
+{
+	if (m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType == 0)
+		return false;
+
+	m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType = 0;
+	m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].sValue = 0;
+
+	if (GetOwner() && GetOwner()->GetDesc())
+		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(GetOwner(), this, "SET_RARE8_CHANGE", ""))
+	else
+		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(0, 0, 0, GetID(), "SET_RARE8_CHANGE", "", "", GetOriginalVnum()))
+
+	return AddRareAttribute8();
+}
+
+bool CItem::AddRareAttribute8()
+{
+	if (m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType != 0)
+		return false;
+
+	int nAttrSet = GetAttributeSetIndex();
+	if (nAttrSet < 0)
+		return false;
+
+	std::vector<int> avail;
+
+	for (int i = 0; i < MAX_APPLY_NUM; ++i)
+	{
+		const TItemAttrTable& r = g_map_itemRare8[i];
+
+		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && !HasAnyRareAttr(i))
+			avail.push_back(i);
+	}
+
+	if (avail.empty())
+	{
+		sys_err("Could not add an 8th bonus - item_attr_rare_8 has incorrect values!");
+		return false;
+	}
+
+	const TItemAttrTable& r = g_map_itemRare8[avail[number(0, avail.size() - 1)]];
+	int nAttrLevel = 5;
+
+	if (nAttrLevel > r.bMaxLevelBySet[nAttrSet])
+		nAttrLevel = r.bMaxLevelBySet[nAttrSet];
+
+	m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType = r.dwApplyIndex;
+	m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].sValue = r.lValues[nAttrLevel - 1];
+
+	UpdatePacket();
+	Save();
+
+	const char* pszIP = nullptr;
+
+	if (GetOwner() && GetOwner()->GetDesc())
+		pszIP = GetOwner()->GetDesc()->GetHostName();
+
+	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(ITEM_ATTRIBUTE_EXTRA_RARE_START,
+		m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].bType,
+		m_aAttr[ITEM_ATTRIBUTE_EXTRA_RARE_START].sValue,
+		GetID(), "SET_RARE8", "", pszIP ? pszIP : "", GetOriginalVnum()));
+	return true;
+}
 bool CItem::AddRareAttribute()
 {
 	int count = GetRareAttrCount();
@@ -674,7 +743,7 @@ bool CItem::AddRareAttribute()
 	{
 		const TItemAttrTable & r = g_map_itemRare[i];
 
-		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && HasRareAttr(i) != true)
+		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && !HasAnyRareAttr(i))
 		{
 			avail.push_back(i);
 		}
@@ -755,7 +824,7 @@ void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
 	{
 		const TItemAttrTable & r = g_map_itemRare[i];
 
-		if (r.bMaxLevelBySet[iAttributeSet] && !HasRareAttr(i))
+		if (r.bMaxLevelBySet[iAttributeSet] && !HasAnyRareAttr(i))
 		{
 			avail.push_back(i);
 			total += r.dwProb;

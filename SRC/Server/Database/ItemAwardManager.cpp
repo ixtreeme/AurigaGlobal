@@ -68,6 +68,7 @@ void ItemAwardManager::RequestLoad()
 			"attrtype4, attrvalue4, "
 			"attrtype5, attrvalue5, "
 			"attrtype6, attrvalue6, "
+			"attrtype7, attrvalue7, "
 			"mall, why "
 			"FROM item_award WHERE taken_time IS NULL and id > %d", g_dwLastCachedItemAwardID);
 #else

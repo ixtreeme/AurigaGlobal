@@ -248,6 +248,8 @@ class CItem : public CEntity
 		int			GetRareAttrCount();
 		bool		AddRareAttribute();
 		bool		ChangeRareAttribute();
+		bool		AddRareAttribute8();
+		bool		ChangeRareAttribute8();
 
 		void		AttrLog();
 
@@ -279,7 +281,7 @@ class CItem : public CEntity
 		void		AddRareAttr(uint8_t bApply, uint8_t bLevel);
 		void		PutRareAttribute(const int * aiAttrPercentTable);
 		void		PutRareAttributeWithLevel(uint8_t bLevel);
-
+		bool		HasAnyRareAttr(uint8_t bApply) const;
 	protected:
 		friend class CInputDB;
 		bool		OnAfterCreatedItem();			// 서버상에 아이템이 모든 정보와 함께 완전히 생성(로드)된 후 불리우는 함수.
