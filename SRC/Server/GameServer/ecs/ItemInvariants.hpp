@@ -7,6 +7,7 @@
 #include "ItemRegistry.hpp"
 #include "Registry.hpp"
 #include "components/item_components.hpp"
+#include "components/item_proto_components.hpp"
 #include "../item.h"
 #include <Core/Logging.hpp>
 
@@ -23,7 +24,8 @@ inline bool HasMinimumItemComponents(entt::registry& reg, entt::entity itemE)
         && reg.all_of<ecs::ItemOwner>(itemE)
         && reg.all_of<ecs::ItemFlags>(itemE)
         && reg.all_of<ecs::ItemSockets>(itemE)
-        && reg.all_of<ecs::ItemAttributes>(itemE);
+        && reg.all_of<ecs::ItemAttributes>(itemE)
+        && reg.all_of<ecs::ItemProtoRef>(itemE);
 }
 
 inline const char* DescribeItemEntity(entt::registry& reg, entt::entity itemE)
@@ -59,6 +61,8 @@ inline void ValidateItemEntity(entt::registry& reg, entt::entity itemE, const ch
         missing = "ItemSockets";
     else if (!reg.all_of<ecs::ItemAttributes>(itemE))
         missing = "ItemAttributes";
+    else if (!reg.all_of<ecs::ItemProtoRef>(itemE))
+        missing = "ItemProtoRef";
 
     if (missing) {
         LOG_WARN("[ITEM_INVARIANT] entity={} ctx={} missing component {}",
