@@ -1815,11 +1815,6 @@ bool IsItemEquipped(entt::entity item)
     if (const auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item))
         return equipped->equipped;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item)) {
-        ecs::ItemInvariants::ValidateItemEntity(g_registry, item, "item.equipped.fallback");
-        return legacyItem->IsEquipped();
-    }
-
     return false;
 }
 
