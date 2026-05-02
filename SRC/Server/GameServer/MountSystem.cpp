@@ -2,6 +2,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
@@ -166,7 +167,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
-	uint32_t myMountVnum = m_pkOwner->GetMountVnum();
+	uint32_t myMountVnum = MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner));
 
 #ifdef ENABLE_COSTUME_MOUNT
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
@@ -228,7 +229,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	return myMountVnum == m_dwVnum;
 #else
 	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
-	return m_pkOwner->GetMountVnum() == m_dwVnum;
+	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;
 #endif
 }
 #else
@@ -264,7 +265,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
-	uint32_t myMountVnum = m_pkOwner->GetMountVnum();
+	uint32_t myMountVnum = MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner));
 #ifdef ENABLE_COSTUME_MOUNT
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
 	if (dwMountSkinvnum > 0) {
@@ -308,7 +309,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	return myMountVnum == m_dwVnum;
 #else
 	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
-	return m_pkOwner->GetMountVnum() == m_dwVnum;
+	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;
 #endif
 }
 
@@ -320,7 +321,7 @@ void CMountActor::Unmount()
 	if (nullptr == m_pkOwner)
 		return;
 
-	if (!m_pkOwner->GetMountVnum())
+	if (!MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)))
 		return;
 
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT);

@@ -4,6 +4,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -900,7 +901,8 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 	}
 	else
 	{
-		eMountType eIsMount = GetMountLevelByVnum(pkChr->GetMountVnum(), false);
+		const uint32_t mountVnum = MountSystem::GetMountVnum(AIHelpers::EcsOf(pkChr));
+		eMountType eIsMount = GetMountLevelByVnum(mountVnum, false);
 		switch (eIsMount)
 		{
 			case MOUNT_TYPE_NONE:
@@ -910,7 +912,7 @@ bool CPVPManager::CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFar
 			case MOUNT_TYPE_NORMAL:
 			default:
 				if (test_server)
-					LOG_TRACE("CanUseSkill: Mount can't attack. vnum({}) type({})", pkChr->GetMountVnum(), static_cast<int>(eIsMount));
+					LOG_TRACE("CanUseSkill: Mount can't attack. vnum({}) type({})", mountVnum, static_cast<int>(eIsMount));
 				return false;
 				break;
 		}

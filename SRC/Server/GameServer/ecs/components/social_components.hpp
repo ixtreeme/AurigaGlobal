@@ -53,12 +53,12 @@ struct ShopState {
 };
 
 struct MountState {
-    uint32_t mountVnum;
-    uint32_t mountTime;
-    uint8_t sendHorseLevel;
-    uint8_t sendHorseHealthGrade;
-    uint8_t sendHorseStaminaGrade;
-    int mountPulse;
+    uint32_t mountVnum { 0 };
+    uint32_t mountTime { 0 };
+    uint8_t sendHorseLevel { 0 };
+    uint8_t sendHorseHealthGrade { 0 };
+    uint8_t sendHorseStaminaGrade { 0 };
+    int mountPulse { 0 };
 };
 
 } // namespace ecs

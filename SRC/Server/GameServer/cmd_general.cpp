@@ -4,6 +4,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
 #include <md5.h>
@@ -120,7 +121,7 @@ ACMD(do_user_horse_ride)
 
 	if (ch->IsHorseRiding() == false)
 	{
-		if (ch->GetMountVnum()) {
+		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch))) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 532, "");
 #endif
@@ -264,7 +265,7 @@ ACMD(do_user_horse_back)
 
 	CMountSystem* mountSystem = ch->GetMountSystem();
 	if (mountSystem) {
-		if ((mountSystem->CountSummoned() > 0) || (ch->GetMountVnum())) {
+		if ((mountSystem->CountSummoned() > 0) || MountSystem::GetMountVnum(AIHelpers::EcsOf(ch))) {
 			const entt::entity owner = AIHelpers::EcsOf(ch);
 			const entt::entity item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 			if (item != entt::null) {
@@ -2487,7 +2488,7 @@ ACMD(do_unmount)
 			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #endif
 
-		if (ch->GetMountVnum())
+		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
 		{
 			if(mountSystem->CountSummoned() == 0)
 			{
@@ -3586,7 +3587,7 @@ ACMD(do_ride)
 			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
 #endif
 
-		if (ch->GetMountVnum())
+		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
 		{
 			if(mountSystem->CountSummoned() == 0)
 			{

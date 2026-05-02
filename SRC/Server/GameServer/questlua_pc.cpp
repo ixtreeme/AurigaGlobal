@@ -5,6 +5,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
 #include "config.h"
@@ -1831,7 +1832,7 @@ namespace quest
 			lua_pushboolean(L, 0);
 			return 1;
 		}
-		bool ret = ch->GetMountVnum();
+		bool ret = MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)) != 0;
 		if (!ret) {
 			LPITEM item = ch->GetWear(WEAR_COSTUME_MOUNT);
 			if (item) {
@@ -1940,7 +1941,7 @@ namespace quest
 		if(nullptr != ch )
 		{
 			// @fixme134
-			if (!ch->GetMountVnum())
+			if (!MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
 				return 0;
 			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS, aApplyInfo[applyOn].bPointType, value, AFF_NONE, duration, 0, false);

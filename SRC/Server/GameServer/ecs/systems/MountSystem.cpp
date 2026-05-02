@@ -320,8 +320,11 @@ bool IsRiding(entt::entity rider)
 
 uint32_t GetMountVnum(entt::entity rider)
 {
-    auto* ch = LegacyCharOf(rider);
-    return ch ? ch->GetMountVnum() : 0;
+    if (rider == entt::null || !g_registry.valid(rider))
+        return 0;
+
+    const auto* state = g_registry.try_get<ecs::MountState>(rider);
+    return state ? state->mountVnum : 0;
 }
 
 } // namespace MountSystem

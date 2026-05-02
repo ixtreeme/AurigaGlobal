@@ -33,6 +33,7 @@
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/social_components.hpp"
 #include "../../ecs/components/status_components.hpp"
 #include "../../ecs/components/transform_components.hpp"
 #include "../../ecs/components/vital_components.hpp"
@@ -3577,6 +3578,15 @@ void CHARACTER::MountVnum(uint32_t vnum)
 
     m_dwMountVnum = vnum;
     m_dwMountTime = get_dword_time();
+
+    const auto e = AIHelpers::EcsOf(this);
+    if (e != entt::null && g_registry.valid(e))
+    {
+        auto& mount = g_registry.get_or_emplace<ecs::MountState>(e);
+        mount.mountVnum = vnum;
+        mount.mountTime = m_dwMountTime;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
 
     if (m_bIsObserver)
         return;

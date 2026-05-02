@@ -6,6 +6,7 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "utils.h"
 #include "vector.h"
 #include "char_interface.hpp"
@@ -770,7 +771,7 @@ bool CNewPetActor::Mount()
 	if (true == HasOption(EPetOption_Mountable))
 		m_pkOwner->MountVnum(m_dwVnum);
 
-	return m_pkOwner->GetMountVnum() == m_dwVnum;;
+	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;;
 }
 
 void CNewPetActor::UpdateTime(bool now)

@@ -2,6 +2,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
@@ -147,7 +148,7 @@ bool CPetActor::Mount()
 	if (true == HasOption(EPetOption_Mountable))
 		m_pkOwner->MountVnum(m_dwVnum);
 
-	return m_pkOwner->GetMountVnum() == m_dwVnum;;
+	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;;
 }
 
 void CPetActor::Unmount()
