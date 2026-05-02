@@ -141,22 +141,12 @@ static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(e
 static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity e);
 static LPITEM GetMainInventoryItem(entt::entity e, uint16_t cell);
 
-static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(const CHARACTER* ch)
-{
-    return TryGetMainInventoryRuntimeComponent(AIHelpers::EcsOf(ch));
-}
-
 static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
 
     return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
-}
-
-static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
-{
-    return GetMainInventoryItem(AIHelpers::EcsOf(ch), cell);
 }
 
 static LPITEM GetMainInventoryItem(entt::entity e, uint16_t cell)
@@ -168,16 +158,6 @@ static LPITEM GetMainInventoryItem(entt::entity e, uint16_t cell)
     return comp ? comp->pItems[cell] : nullptr;
 }
 
-static uint16_t GetMainInventoryGrid(const CHARACTER* ch, uint16_t cell)
-{
-    if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
-        return 0;
-
-    if (const auto* comp = TryGetMainInventoryRuntimeComponent(AIHelpers::EcsOf(ch)))
-        return comp->bItemGrid[cell];
-
-    return 0;
-}
 #ifdef ENABLE_EXTRA_INVENTORY
 static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(entt::entity e)
 {
@@ -190,14 +170,6 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
     return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(e);
 }
 
-static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
-}
 #endif
 
 static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(entt::entity e)
@@ -211,16 +183,6 @@ static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(ent
     return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(e);
 }
 
-static const ecs::DragonSoulInventoryComponent* TryGetDragonSoulInventoryComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::DragonSoulInventoryComponent>(e);
-}
-
-
 static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -230,15 +192,6 @@ static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity e)
         return comp;
 
     return &g_registry.emplace<ecs::CubeWindowComponent>(e);
-}
-
-static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::CubeWindowComponent>(e);
 }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
@@ -253,14 +206,6 @@ static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(entt:
     return &g_registry.emplace<ecs::AttrTransferWindowComponent>(e);
 }
 
-static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AttrTransferWindowComponent>(e);
-}
 #endif
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -275,14 +220,6 @@ static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity e)
     return &g_registry.emplace<ecs::AcceWindowComponent>(e);
 }
 
-static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AcceWindowComponent>(e);
-}
 #endif
 
 #ifdef ENABLE_SWITCHBOT
@@ -297,14 +234,6 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
     return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(e);
 }
 
-static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(const CHARACTER* ch)
-{
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e);
-}
 #endif
 
 static entt::entity ItemEntityOf(LPITEM item)
