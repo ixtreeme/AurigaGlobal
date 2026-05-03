@@ -723,7 +723,10 @@ void CHARACTER::UpdatePacket()
         }
 #endif
 
-        PacketAround(&addPacket, sizeof(addPacket));
+        // AdditionalInfo is append-side payload on the client. Sending it
+        // standalone to the owner makes the main actor append path clear
+        // dynamic actors; the owner already receives CHARACTER_UPDATE.
+        PacketAround(&addPacket, sizeof(addPacket), this);
     }
 }
 
