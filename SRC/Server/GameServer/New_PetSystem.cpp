@@ -772,7 +772,7 @@ bool CNewPetActor::Mount()
 		return false;
 
 	if (true == HasOption(EPetOption_Mountable))
-		m_pkOwner->MountVnum(m_dwVnum);
+		MountSystem::SetMountVnum(AIHelpers::EcsOf(m_pkOwner), m_dwVnum);
 
 	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;;
 }

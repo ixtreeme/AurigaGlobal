@@ -7,6 +7,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "desc_client.h"
@@ -3070,7 +3071,7 @@ ACMD(do_mount_test)
 	{
 		uint32_t vnum = 0;
 		str_to_number(vnum, arg1);
-		ch->MountVnum(vnum);
+		MountSystem::SetMountVnum(AIHelpers::EcsOf(ch), vnum);
 	}
 }
 

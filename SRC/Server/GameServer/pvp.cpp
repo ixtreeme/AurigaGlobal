@@ -259,13 +259,13 @@ EVENTFUNC(pvp_duel_counter)
 				if (AffectSystem::FindAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chA), AFFECT_MOUNT_BONUS);
-					chA->MountVnum(0);
+					MountSystem::SetMountVnum(AIHelpers::EcsOf(chA), 0);
 				}
 
 				if (AffectSystem::FindAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT);
 					AffectSystem::RemoveAffect(AIHelpers::EcsOf(chB), AFFECT_MOUNT_BONUS);
-					chB->MountVnum(0);
+					MountSystem::SetMountVnum(AIHelpers::EcsOf(chB), 0);
 				}
 
 				if (chA->IsHorseRiding())

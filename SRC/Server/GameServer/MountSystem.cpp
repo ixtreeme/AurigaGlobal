@@ -331,7 +331,7 @@ void CMountActor::Unmount()
 
 
 
-	m_pkOwner->MountVnum(0);
+	MountSystem::SetMountVnum(AIHelpers::EcsOf(m_pkOwner), 0);
 
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();
@@ -367,7 +367,7 @@ void CMountActor::Unsummon()
 
 
 
-		m_pkOwner->MountVnum(0);
+		MountSystem::SetMountVnum(AIHelpers::EcsOf(m_pkOwner), 0);
 
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();

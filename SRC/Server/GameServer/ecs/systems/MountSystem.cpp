@@ -340,6 +340,13 @@ uint32_t GetMountVnum(entt::entity rider)
     return state ? state->mountVnum : 0;
 }
 
+void SetMountVnum(entt::entity rider, uint32_t vnum)
+{
+    auto* ch = LegacyCharOf(rider);
+    if (ch)
+        ch->MountVnum(vnum);
+}
+
 } // namespace MountSystem
 
 bool CHARACTER::StartRiding()
