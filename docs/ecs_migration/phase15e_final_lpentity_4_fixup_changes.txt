@@ -1,0 +1,333 @@
+Phase 15E-final.LPENTITY.4-fixup - Complete change log
+======================================================
+
+This document lists every modification made during the LPENTITY.4-fixup
+phase. It is written before the closing 4-fixup.6 document because the
+phase is currently mid-flight: 4-fixup.0 through 4-fixup.4 are committed
+and build-verified, 4-fixup.5 (native character dispatch re-enable) is
+gated on user WinTest of the audit detectors, and 4-fixup.6 closes the
+phase only after WinTest passes.
+
+Branch: ECS_+_BGFX
+Base: 6b6b6dd (LPENTITY.4 hotfix tip)
+Head at writing: 897d73c
+
+Aggregate stats:
+  14 files touched
+  892 insertions, 263 deletions
+  (deletions are mostly CRLF normalization noise, not behavior changes)
+
+Commits in order
+----------------
+
+35cbd25  4-fixup.0  Movement state drift audit
+eb88cd9  4-fixup.1  Sync*Write API skeleton
+45a816c  4-fixup.2.a  Sync Goto timing to ECS MovementState
+81bd643  4-fixup.2.b  Sync Stop and walk-mode to ECS
+7c0ccac  4-fixup.2.c  Sync stun dest reset to ECS
+9e8fd1f  4-fixup.2.d  Sync warp / Show position to ECS
+e373354  4-fixup.2.e  Sync MountVnum dest reset to ECS
+8671bbc  4-fixup.2.f  Sync state flags m_bAddChrState <-> StatusFlags
+4a4cab0  4-fixup.2.g  Sync KASMIR shop title to ECS ShopState
+9a21850  4-fixup.3  Movement drift detector audit TU
+897d73c  4-fixup.4  Packet byte-parity verifier
+
+Files touched
+-------------
+
+New files:
+  docs/ecs_migration/phase15e_final_lpentity_4_fixup_audit.txt
+  SRC/Server/GameServer/ecs/services/EntityNetworkDispatchAudit.hpp
+  SRC/Server/GameServer/ecs/services/EntityNetworkDispatchAudit.cpp
+
+Modified files:
+  SRC/Server/GameServer/CMakeLists.txt
+  SRC/Server/GameServer/char.h
+  SRC/Server/GameServer/ecs/components/social_components.hpp
+  SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp
+  SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.cpp
+  SRC/Server/GameServer/ecs/systems/MovementSystem.hpp
+  SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+  SRC/Server/GameServer/ecs/systems/AffectSystem.cpp
+  SRC/Server/GameServer/ecs/systems/SessionSystem.cpp
+  SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.cpp
+  SRC/Server/GameServer/ecs/systems/CombatSystem.cpp
+
+Per-commit detail
+-----------------
+
+35cbd25 - 4-fixup.0: Movement state drift audit
+  New: docs/ecs_migration/phase15e_final_lpentity_4_fixup_audit.txt
+  Lists 12 confirmed write-path drift sources between legacy CHARACTER
+  fields and parallel ECS components consumed by native dispatch:
+    - 5 movement-field sites (m_posDest, m_dwMoveStartTime,
+      m_dwMoveDuration, m_bNowWalking)
+    - 4 m_bAddChrState writes without StatusFlags companion
+    - 2 reverse-direction StatusFlags writes without m_bAddChrState
+    - 1 KASMIR shop sign field hard-coded in native dispatch
+  Documents WinTest matrix and out-of-scope items.
+  No source code change.
+
+eb88cd9 - 4-fixup.1: Sync*Write API skeleton
+  Modified: ecs/systems/MovementSystem.hpp
+  Modified: ecs/systems/MovementSystem.cpp
+
+  Added four namespace-level helpers in ecs::MovementSystem:
+    SyncDestinationWrite(e, x, y)
+      emplace_or_replace<MovementDestination>
+    SyncDestinationClear(e)
+      remove<MovementDestination> + zero MovementState timing
+    SyncTimingWrite(e, startTime, duration)
+      patch MovementState moveStartTime and moveDuration
+    SyncWalkingWrite(e, isNowWalking)
+      patch MovementState isNowWalking
+
+  All helpers are no-op safe on null/invalid entities.
+  No callers in this commit.
+
+45a816c - 4-fixup.2.a: Sync Goto timing
+  Modified: ecs/systems/MovementSystem.cpp
+  Site: CHARACTER::CalculateMoveDuration
+  Added one line after the existing m_dwMoveStartTime write:
+    ecs::MovementSystem::SyncTimingWrite(EcsEntityOf(this),
+                                         m_dwMoveStartTime,
+                                         m_dwMoveDuration);
+
+81bd643 - 4-fixup.2.b: Sync Stop and walk-mode
+  Modified: ecs/systems/MovementSystem.cpp
+  Site 1: CHARACTER::Stop
+    Added: ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
+    after the legacy m_posDest = current position reset
+  Site 2: CHARACTER::SetNowWalking
+    Added: ecs::MovementSystem::SyncWalkingWrite(EcsEntityOf(this),
+                                                  m_bNowWalking);
+    after the legacy m_bNowWalking write, before the WALK_MODE broadcast
+
+7c0ccac - 4-fixup.2.c: Sync stun dest reset
+  Modified: ecs/systems/AffectSystem.cpp
+  Added include: MovementSystem.hpp
+  Site: CHARACTER::AddAffect, AFF_STUN branch
+    Added: ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
+    after the legacy m_posDest reset, before BroadcastSyncPacket
+
+9e8fd1f - 4-fixup.2.d: Sync warp / Show position
+  Modified: ecs/systems/SessionSystem.cpp
+  Added include: MovementSystem.hpp
+  Site: CHARACTER::Show (after the legacy m_posDest = x/y/z and m_posStart = x/y/z writes)
+    Added: ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
+    Reasoning: warp parks the character at the new position with no
+    active movement; clear MovementDestination so native dispatch does
+    not encode a phantom move on subsequent inserts.
+
+e373354 - 4-fixup.2.e: Sync MountVnum dest reset
+  Modified: ecs/systems/PlayerRuntimeSystem.cpp
+  Added include: MovementSystem.hpp
+  Site: CHARACTER::MountVnum (between m_posDest reset and EncodeInsertPacket loop)
+    Added: ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
+
+  Initialize() drift sites at lines 4889 (m_posDest reset),
+  4976-4977 (m_dwMoveStartTime/Duration reset), 4999 (m_bNowWalking
+  reset) intentionally NOT addressed: m_entity is set to entt::null at
+  line 4839 before these resets, so any Sync*Write call would no-op.
+  EntityFactory creates the new MovementState with default values that
+  align with the zeroed legacy fields.
+
+8671bbc - 4-fixup.2.f: Sync state flags
+  Modified: ecs/systems/AffectSystem.cpp
+  Modified: ecs/systems/MovementSystem.cpp
+  Modified: ecs/systems/CombatSystem.cpp
+
+  AffectSystem polymorph (around the existing m_bAddChrState SET/REMOVE
+  SPAWN bit pair surrounding ViewReencode):
+    Added: status->isSpawnState = true before ViewReencode
+    Added: status->isSpawnState = false after ViewReencode
+    Both gated on g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this))
+
+  MovementSystem SetPosition(POS_STANDING):
+    Added: REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+    next to the existing REMOVE_BIT for DEAD. Reverse-direction drift
+    fix: previously only ECS isSpawnState was cleared in the same scope,
+    leaving legacy SPAWN bit stuck.
+
+  CombatSystem on-kill (CombatSystem_Update view callback):
+    No code change. Added a documentation comment marking this as a
+    known transient drift. Setting legacy m_bAddChrState DEAD here
+    would require either a new public CHARACTER setter or a friend
+    declaration, both out of scope. The bit is set later by
+    SetPosition(POS_DEAD) via the EvEntityDied event chain.
+
+4a4cab0 - 4-fixup.2.g: Sync KASMIR shop title
+  Modified: ecs/components/social_components.hpp
+  Modified: ecs/systems/PlayerRuntimeSystem.cpp
+  Modified: ecs/services/EntityNetworkDispatch.cpp
+
+  social_components.hpp ShopState struct:
+    Added (under #ifdef KASMIR_PAKET_SYSTEM):
+      uint8_t kasmirTitle { 0 };
+
+  PlayerRuntimeSystem.cpp:
+    Site 1: CHARACTER::OpenMyShop or similar (line ~4639)
+      After: m_bKasmirPaketBaslik = KasmirBaslik;
+      Added: shop->kasmirTitle = m_bKasmirPaketBaslik on the ECS ShopState
+    Site 2: CHARACTER::CloseMyShop or similar (line ~4779)
+      After: m_bKasmirPaketBaslik = 0;
+      Added: shop->kasmirTitle = 0 on the ECS ShopState
+    Site 3: Initialize() at line ~5193 NOT mirrored (entity null at this
+    point; ShopState created later by EntityFactory with default 0).
+
+  EntityNetworkDispatch.cpp BuildCharacterInsert shop sign emission:
+    Replaced: sign.bShopKasmirTitle = false;  (hard-coded)
+    With:     sign.bShopKasmirTitle = shop->kasmirTitle;
+
+9a21850 - 4-fixup.3: Movement drift detector audit TU
+  New: ecs/services/EntityNetworkDispatchAudit.hpp
+  New: ecs/services/EntityNetworkDispatchAudit.cpp
+  Modified: ecs/services/EntityNetworkDispatch.cpp (audit hook)
+  Modified: CMakeLists.txt (target_compile_definitions)
+  Modified: char.h (3 audit-only public accessors)
+
+  The new TU defines:
+    namespace ecs::EntityNetworkDispatchAudit {
+      void CheckMovementDrift(entt::registry& reg, entt::entity source);
+    }
+
+  Compares for the source character entity, logging [MOVEMENT_DRIFT]
+  per divergent field:
+    m_posDest vs MovementDestination
+    m_dwMoveStartTime / m_dwMoveDuration vs MovementState
+    m_bNowWalking vs MovementState::isNowWalking
+    m_bAddChrState vs StatusFlags isDead/isSpawnState/isKillerMode/isPartyState
+
+  CMakeLists.txt:
+    Added target_compile_definitions for AURIGA_LPENTITY_FIXUP_AUDIT,
+    enabled for Debug and RelWithDebInfo configurations only.
+
+  char.h:
+    Added (under #ifdef AURIGA_LPENTITY_FIXUP_AUDIT) three public
+    accessors to expose protected fields without breaking encapsulation
+    in production builds:
+      uint32_t GetMoveStartTimeForAudit() const
+      bool GetNowWalkingForAudit() const
+      uint8_t GetAddChrStateForAudit() const
+
+  Hook initially placed inside BuildCharacterInsert. Moved in 4-fixup.4
+  to SendInsert (Character branch) so the audit runs in the current
+  hotfix state where native dispatch is bypassed for characters.
+
+897d73c - 4-fixup.4: Packet byte-parity verifier
+  Modified: ecs/services/EntityNetworkDispatchAudit.hpp
+  Modified: ecs/services/EntityNetworkDispatchAudit.cpp
+  Modified: ecs/services/EntityNetworkDispatch.hpp
+  Modified: ecs/services/EntityNetworkDispatch.cpp
+
+  EntityNetworkDispatch.hpp under AURIGA_LPENTITY_FIXUP_AUDIT:
+    Added include of packet.h
+    Added BuildCharacterInsertForAudit(reg, source, packet) declaration
+
+  EntityNetworkDispatch.cpp:
+    Added BuildCharacterInsertForAudit definition that wraps the
+    anonymous-namespace BuildCharacterInsert.
+    Audit hooks moved from BuildCharacterInsert to SendInsert
+    Character branch, after the legacy EncodeInsertPacket emission.
+
+  EntityNetworkDispatchAudit (cpp/hpp):
+    Added CheckCharacterInsertParity(reg, source).
+    Builds the native packet via BuildCharacterInsertForAudit, then
+    compares each field against the value legacy EncodeInsertPacket
+    would emit (using the public CHARACTER accessors).
+    Logs [INSERT_PARITY] per divergent field:
+      dwVID, bType, angle, z, wRaceNum, bAttackSpeed, bStateFlag
+      x / y with snap-to-dest aware comparison
+
+  Both hooks fire from SendInsert character branch:
+    sourceLegacy->EncodeInsertPacket(viewerLegacy);
+    #ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+        ecs::EntityNetworkDispatchAudit::CheckMovementDrift(reg, source);
+        ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
+    #endif
+
+State at end of 4-fixup.4
+-------------------------
+
+Wire packet:
+  Character insert and remove still emit through legacy
+  CHARACTER::EncodeInsertPacket / EncodeRemovePacket. The hotfix
+  21dc2df fallback in EntityNetworkDispatch::SendInsert/SendRemove
+  remains in place. Item, Building, OfflineShop dispatch is native
+  since LPENTITY.4 and unchanged by this fixup.
+
+Audit:
+  Active in Debug and RelWithDebInfo builds. Each character insert
+  triggers two checks:
+    - CheckMovementDrift: legacy fields vs ECS components
+    - CheckCharacterInsertParity: native packet build vs legacy fields
+  Quiet on aligned state; warnings only on actual mismatch.
+
+Production behavior:
+  Identical to 6b6b6dd. The Sync*Write helpers add ECS state mirroring
+  but do not change wire output (legacy is still authoritative).
+  The drift detector adds runtime overhead to debug builds only.
+
+Build:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+  Passes with only pre-existing warnings (C4805, C4715, C4005, C4311).
+
+Pending: WinTest checkpoint
+---------------------------
+
+The plan gates 4-fixup.5 (native character dispatch re-enable) on
+zero-warning WinTest of the matrix in the 4-fixup.0 audit doc.
+
+Required scenarios:
+  1. Two clients in mutual view, walk / run / mount toggle
+  2. Mid-move login of a third client
+  3. Stun / dash mid-walk
+  4. Map warp + viewer crossing boundary
+  5. Observer mode toggle on / off
+  6. Character death and respawn
+  7. Drift-injection negative test: temporary commit that bypasses one
+     Sync*Write helper, verify [MOVEMENT_DRIFT] fires for the affected
+     entity, then revert. This proves the detector is not placebo.
+
+Pass criteria for syslog.txt: zero new warnings on
+  [MOVEMENT_DRIFT]
+  [INSERT_PARITY]
+and no growth on existing
+  [VIEWMAP_DRIFT]
+  [BROADCAST_DRIFT]
+  [DISPATCH_FALLBACK]
+  [SPATIAL_INVARIANT]
+
+Next phases (deferred until WinTest passes)
+-------------------------------------------
+
+4-fixup.5: Native character dispatch re-enable
+  EntityNetworkDispatch.cpp: remove the hotfix legacy fallback from the
+  Character branch in SendInsert and SendRemove.
+  NetworkSyncSystem.cpp: restore CHARACTER::EncodeInsertPacket /
+  EncodeRemovePacket bodies to the pre-21dc2df form (try
+  EntityNetworkDispatch first; legacy body only as unmappable fallback
+  with [DISPATCH_FALLBACK] warning).
+  Audit (4-fixup.3, 4-fixup.4) stays active in debug builds as
+  continuous regression guard.
+  Build gate + WinTest matrix.
+
+4-fixup.6: Closing doc
+  docs/ecs_migration/phase15e_final_lpentity_4_fixup_complete.txt
+  Drift sources and resolutions, deferred items (CombatSystem on-kill
+  legacy DEAD bit), audit guard removal schedule (LPENTITY.6),
+  out-of-scope items, residual risks.
+
+Out of scope (separate phases)
+------------------------------
+
+LPENTITY.4-fixup-B
+  BroadcastToView ViewerMap mirror lag (hotfix 2caa410). Recipient set
+  is currently legacy-authoritative; this fixup does not touch it. The
+  new audit detectors observe wire packet bytes, not recipient set, so
+  the BroadcastToView issue is invisible to them.
+
+LPENTITY.6
+  Legacy CHARACTER body deletion. The audit TU and the audit-only
+  accessors on char.h are scheduled for removal alongside the legacy
+  bodies they observe.
