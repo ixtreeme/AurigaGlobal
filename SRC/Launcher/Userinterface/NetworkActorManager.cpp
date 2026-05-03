@@ -479,7 +479,22 @@ void CNetworkActorManager::AppendActor(const SNetworkActorData& c_rkNetActorData
 
 		}
 
-		if( !bChangeMountStatus )
+		bool bSamePositionReappend = false;
+		if (pMainInstance)
+		{
+			TPixelPosition kCurrentPos;
+			pMainInstance->GetGraphicThingInstancePtr()->GetPixelPosition(&kCurrentPos);
+
+			const int32_t lCurrentX = static_cast<int32_t>(kCurrentPos.x);
+			const int32_t lCurrentY = static_cast<int32_t>(-kCurrentPos.y);
+			const int32_t lDeltaX = lCurrentX - c_rkNetActorData.m_lCurX;
+			const int32_t lDeltaY = lCurrentY - c_rkNetActorData.m_lCurY;
+			bSamePositionReappend =
+				(lDeltaX < 0 ? -lDeltaX : lDeltaX) <= 100 &&
+				(lDeltaY < 0 ? -lDeltaY : lDeltaY) <= 100;
+		}
+
+		if( !bChangeMountStatus && !bSamePositionReappend )
 		{
 			//__RemoveAllActors();
 			__RemoveDynamicActors();
