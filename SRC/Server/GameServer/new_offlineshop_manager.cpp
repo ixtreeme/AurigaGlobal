@@ -26,6 +26,11 @@
 #include "log.h"
 #endif
 #include "new_offlineshop.h"
+#include "ecs/OfflineShopEntityRegistry.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/services/SpatialService.hpp"
+#include "ecs/components/identity_components.hpp"
+#include "ecs/components/spatial_components.hpp"
 #include "new_offlineshop_manager.h"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
@@ -691,8 +696,36 @@ namespace offlineshop
 				pEntity->SetXYZ(shop_pos_x, shop_pos_y, 0);
 				pEntity->SetShop(&rShop);
 
-				sectree->InsertEntity(pEntity);
-				pEntity->UpdateSectree();
+				entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(pEntity->GetVID());
+				if (shopEntity == entt::null || !g_registry.valid(shopEntity))
+					shopEntity = g_registry.create();
+
+				ecs::OfflineShopEntityRegistry::Register(pEntity->GetVID(), pEntity->GetVID(), shopEntity, pEntity);
+				g_registry.emplace_or_replace<ecs::VIDComponent>(shopEntity, pEntity->GetVID());
+				g_registry.emplace_or_replace<ecs::OfflineShopState>(
+					shopEntity,
+					ecs::OfflineShopState {
+						pEntity->GetVID(),
+#ifdef KASMIR_PAKET_SYSTEM
+						pEntity->GetShopRace(),
+#else
+						0u,
+#endif
+						pEntity->GetShopType(),
+					});
+
+				if (!ecs::SpatialService::InsertEntity(g_registry, shopEntity, static_cast<uint32_t>(map_index), shop_pos_x, shop_pos_y, 0))
+				{
+					LOG_ERROR("cannot insert offline shop entity vid {} map {} pos {} {}",
+						pEntity->GetVID(), map_index, shop_pos_x, shop_pos_y);
+					ecs::OfflineShopEntityRegistry::Unregister(pEntity->GetVID());
+					if (shopEntity != entt::null && g_registry.valid(shopEntity))
+						g_registry.destroy(shopEntity);
+					pEntity->Destroy();
+					delete pEntity;
+					continue;
+				}
+				ecs::SpatialService::UpdateSectree(g_registry, shopEntity);
 
 				city.entitiesByPID.insert(std::make_pair(rShop.GetOwnerPID(),	pEntity));
 				city.entitiesByVID.insert(std::make_pair(pEntity->GetVID(),		pEntity));
@@ -725,14 +758,25 @@ namespace offlineshop
 
 			ShopEntity* entity = iter->second;
 			uint32_t dwVID = entity->GetVID();
+			const entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(dwVID);
 
 			if (entity->GetSectree())
 			{
 				entity->ViewCleanup();
-				entity->GetSectree()->RemoveEntity(entity);
+				if (shopEntity != entt::null && g_registry.valid(shopEntity))
+				{
+					ecs::SpatialService::RemoveEntity(g_registry, shopEntity);
+				}
+				else
+				{
+					entity->GetSectree()->RemoveEntity(entity);
+				}
 			}
 
 			entity->Destroy();
+			if (shopEntity != entt::null && g_registry.valid(shopEntity))
+				g_registry.destroy(shopEntity);
+			ecs::OfflineShopEntityRegistry::Unregister(dwVID);
 
 
 			delete(entity);
@@ -3780,5 +3824,3 @@ namespace offlineshop
 }
 
 #endif //__ENABLE_NEW_OFFLINESHOP__
-
-

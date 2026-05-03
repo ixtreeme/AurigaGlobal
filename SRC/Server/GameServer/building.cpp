@@ -18,6 +18,11 @@
 #include "desc_client.h"
 #include "questmanager.h"
 #include "building.h"
+#include "ecs/CBuildingRegistry.hpp"
+#include "ecs/Registry.hpp"
+#include "ecs/services/SpatialService.hpp"
+#include "ecs/components/identity_components.hpp"
+#include "ecs/components/spatial_components.hpp"
 
 enum
 {
@@ -65,8 +70,17 @@ void CObject::Destroy()
 
 	CEntity::Destroy();
 
-	if (GetSectree())
+	const entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
+	if (objectEntity != entt::null && g_registry.valid(objectEntity))
+	{
+		ecs::SpatialService::RemoveEntity(g_registry, objectEntity);
+		g_registry.destroy(objectEntity);
+	}
+	else if (GetSectree())
+	{
 		GetSectree()->RemoveEntity(this);
+	}
+	ecs::CBuildingRegistry::Unregister(GetID());
 
 	// <Factor> NPC should be destroyed in CHARACTER_MANAGER
 	// BUILDING_NPC
@@ -162,7 +176,11 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 
 	if (GetSectree())
 	{
-		GetSectree()->RemoveEntity(this);
+		const entt::entity existing = ecs::CBuildingRegistry::FindByID(GetID());
+		if (existing != entt::null && g_registry.valid(existing))
+			ecs::SpatialService::RemoveEntity(g_registry, existing);
+		else
+			GetSectree()->RemoveEntity(this);
 		ViewCleanup();
 	}
 
@@ -175,8 +193,29 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 	SetMapIndex(lMapIndex);
 	SetXYZ(x, y, 0);
 
-	tree->InsertEntity(this);
-	UpdateSectree();
+	entt::entity objectEntity = ecs::CBuildingRegistry::FindByID(GetID());
+	if (objectEntity == entt::null || !g_registry.valid(objectEntity))
+		objectEntity = g_registry.create();
+
+	ecs::CBuildingRegistry::Register(GetID(), GetVID(), objectEntity, this);
+	g_registry.emplace_or_replace<ecs::VIDComponent>(objectEntity, GetVID());
+	g_registry.emplace_or_replace<ecs::BuildingState>(
+		objectEntity,
+		ecs::BuildingState {
+			GetVnum(),
+			GetLand() ? GetLand()->GetID() : 0u,
+			GetLand() ? GetLand()->GetOwner() : 0u,
+			m_data.xRot,
+			m_data.yRot,
+			m_data.zRot,
+		});
+
+	if (!ecs::SpatialService::InsertEntity(g_registry, objectEntity, static_cast<uint32_t>(lMapIndex), x, y, 0))
+	{
+		LOG_ERROR("cannot insert building entity by {}x{} mapindex {}", x, y, lMapIndex);
+		return false;
+	}
+	ecs::SpatialService::UpdateSectree(g_registry, objectEntity);
 
 	SECTREE_MANAGER::instance().ForAttrRegion(lMapIndex,
 			x + m_pProto->lRegion[0],

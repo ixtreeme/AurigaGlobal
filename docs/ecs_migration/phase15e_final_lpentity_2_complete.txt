@@ -1,0 +1,112 @@
+Phase 15E-final.LPENTITY.2 - SpatialService boundary complete
+
+Date: 2026-05-03
+Build gate:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+  Result: PASS
+
+1. SpatialService API and implementation
+
+Added ecs::SpatialService as the canonical ECS-first boundary for sectree-backed spatial operations:
+
+  - InsertEntity(reg, e, mapIndex, x, y, z)
+  - RemoveEntity(reg, e)
+  - UpdateSectree(reg, e)
+  - ForEachAround(reg, sourceE, range, callback)
+  - ForEachInMap(reg, mapIndex, callback)
+  - GetSectree(reg, e)
+  - LPENTITYFromEntity(reg, e)
+  - EntityFromLPENTITY(legacyEntity)
+
+The boundary keeps LPENTITY/LPSECTREE access inside the spatial service layer. Subsystems should pass entt::entity and use SpatialService rather than calling sectree InsertEntity/RemoveEntity directly.
+
+2. CBuildingRegistry + OfflineShopEntityRegistry
+
+Added transitional registries for LPENTITY-derived non-character spatial objects:
+
+  - ecs::CBuildingRegistry
+  - ecs::OfflineShopEntityRegistry
+
+The registries map runtime IDs / VIDs to entt::entity and keep the legacy object pointer only at the service boundary. This enables EntityFromLPENTITY and LPENTITYFromEntity to resolve building::CObject and offlineshop::ShopEntity.
+
+3. EntityFromLPENTITY extension
+
+EntityFromLPENTITY now resolves:
+
+  - ENTITY_CHARACTER -> AIHelpers::EcsOf
+  - ENTITY_ITEM -> CItemRegistry
+  - ENTITY_OBJECT -> CBuildingRegistry
+  - ENTITY_NEWSHOPS -> OfflineShopEntityRegistry
+
+LPENTITYFromEntity resolves the inverse direction for service-boundary calls into legacy sectree. This is transitional and must stay isolated to SpatialService / virtual dispatch boundaries.
+
+4. Sectree callers migrated
+
+Migrated safe spatial lifecycle paths:
+
+  - CItem::AddToGround now inserts through SpatialService.
+  - CItem::RemoveFromGround now removes through SpatialService when ECS item entity exists.
+  - building::CObject::Show creates/registers ECS building state and inserts through SpatialService.
+  - building::CObject::Destroy removes through SpatialService and destroys the ECS building entity.
+  - offlineshop::CShopManager::CreateNewShopEntities creates/registers ECS shop state and inserts through SpatialService.
+  - offlineshop::CShopManager::DestroyNewShopEntities removes through SpatialService, destroys the ECS shop entity, and unregisters the legacy pointer mapping.
+
+Deferred direct sectree calls remain in CHARACTER legacy subsystem bodies and legacy bridge files:
+
+  - MovementSystem.cpp: CHARACTER::Sync sector transition
+  - SessionSystem.cpp: CHARACTER::Show / warp cleanup
+  - PlayerRuntimeSystem.cpp: disable/logout cleanup
+  - ItemSystem_LegacyBridge.cpp: bridge-only removal path
+
+These are intentionally deferred because they are high-risk CHARACTER lifecycle paths and belong with the ViewMap/ViewerMap mirror and LPENTITY dispatch phases.
+
+5. Invariant expansion
+
+SpatialService::InsertEntity updates and validates:
+
+  - SpatialEntity
+  - SpatialKindTag
+  - Position
+  - PositionZ
+  - MapIndex
+  - VIDComponent
+  - SectorPlacement
+  - ViewActiveTag
+
+SpatialService::RemoveEntity clears active placement state:
+
+  - SectorPlacement
+  - ViewActiveTag
+  - SpatialEntity
+
+Item/building/offline-shop callers still clear their own domain components where needed.
+
+6. Tree-wide LPENTITY count
+
+PowerShell line-reference metric after this phase: 151.
+
+This metric is not directly comparable to the LPENTITY.0 baseline because SpatialService intentionally introduces a new LPENTITY boundary layer and registry APIs. The expected reduction comes in LPENTITY.3-LPENTITY.6 when virtual dispatch and legacy view-map calls are removed.
+
+The meaningful result for this phase is boundary consolidation:
+
+  - Item ground lifecycle no longer calls sectree InsertEntity directly.
+  - Building lifecycle no longer calls sectree InsertEntity directly.
+  - OfflineShop lifecycle no longer calls sectree InsertEntity directly.
+  - LPENTITY conversion is centralized in SpatialService.
+
+7. WinTest status
+
+Manual WinTest still required before marking runtime verified:
+
+  - PC login / map transfer
+  - Mob/NPC/stone visibility
+  - Ground item drop and pickup visibility
+  - Building visibility
+  - Offline shop creation/destruction visibility
+  - Mount movement / sectree crossing
+  - VID_DRIFT zero
+  - No SPATIAL_INVARIANT warnings
+
+8. Next phase
+
+Phase 15E-final.LPENTITY.3 should add ViewMap/ViewerMap mirrors and use SpatialService iteration as the source for native visibility updates. After that, CHARACTER::Show/Sync/Disable direct sectree calls can be migrated with lower risk.

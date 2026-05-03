@@ -19,6 +19,7 @@
 #include "../EntityFactory.hpp"
 #include "../EntityInvariants.hpp"
 #include "../SpatialHelpers.hpp"
+#include "../services/SpatialService.hpp"
 #include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
 #include "../events.hpp"
@@ -590,9 +591,12 @@ LPITEM CItem::RemoveFromGround()
 	{
 		SetOwnership(nullptr);
 
-		GetSectree()->RemoveEntity(this);
-
 		const entt::entity itemEntity = ItemEntityOf(this);
+		if (itemEntity != entt::null && g_registry.valid(itemEntity))
+			ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
+		else
+			GetSectree()->RemoveEntity(this);
+
 		if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		{
 			g_registry.remove<ecs::SectorPlacement>(itemEntity);
@@ -662,13 +666,14 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		ecs::Invariants::ValidateSpatialCoverage(g_registry, itemEntity, "item.add_to_ground");
 	}
 
-	tree->InsertEntity(this);
-	UpdateSectree();
+	if (!ecs::SpatialService::InsertEntity(g_registry, itemEntity, static_cast<uint32_t>(lMapIndex), pos.x, pos.y, pos.z))
+	{
+		LOG_ERROR("cannot insert ground item entity id {} vid {} by {}x{} mapindex {}",
+			GetID(), GetVID(), pos.x, pos.y, lMapIndex);
+		return false;
+	}
+	ecs::SpatialService::UpdateSectree(g_registry, itemEntity);
 	Save();
-
-	ecs::SyncSectorPlacement(g_registry, itemEntity, lMapIndex, GetX(), GetY());
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.emplace_or_replace<ecs::ViewActiveTag>(itemEntity);
 	return true;
 }
 
