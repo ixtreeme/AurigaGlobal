@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -365,7 +366,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
-			ch->GetPoint(POINT_ATT_SPEED));
+			ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED));
 	*/
 
 	/* ���ڵ�� �ҵ��� ��� �￬�����ݰ� �¸��� */

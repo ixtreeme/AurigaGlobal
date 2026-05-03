@@ -47,7 +47,7 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 {
 	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
 	{
-		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !pkVictim->IsImmune(immune_flag))
+		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !AffectSystem::IsImmune(AIHelpers::EcsOf(pkVictim), immune_flag))
 		{
 			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
@@ -75,7 +75,7 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 {
 	if (success_pct && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
 	{
-		if (number(1, 1000) <= success_pct && !pkVictim->IsImmune(immune_flag))
+		if (number(1, 1000) <= success_pct && !AffectSystem::IsImmune(AIHelpers::EcsOf(pkVictim), immune_flag))
 		{
 			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 

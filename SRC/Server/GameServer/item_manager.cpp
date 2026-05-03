@@ -1576,9 +1576,11 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
 	if (victim.IsStone())
 	{
-		if (!itemMgr.IsRegisteredDropMob(victim.GetRaceNum()))
+		const auto victimEntity = AIHelpers::EcsOf(&victim);
+		const uint32_t victimRace = ecs::PlayerRuntime::GetRaceNum(victimEntity);
+		if (!itemMgr.IsRegisteredDropMob(victimRace))
 		{
-			LOG_INFO("[DROP-BLOKK-EVENT] Metinko {} ({}) nincs mob_drop_item.txt-ben   event drop letiltva.", victim.GetName(), victim.GetRaceNum());
+			LOG_INFO("[DROP-BLOKK-EVENT] Metinko {} ({}) nincs mob_drop_item.txt-ben   event drop letiltva.", victim.GetName(), victimRace);
 			return;
 		}
 	}
@@ -1593,7 +1595,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 	if (number(1, MaxRange) <= dropPercent)
 	{
-		int log_level = (test_server || killer.GetGMLevel() >= GM_LOW_WIZARD) ? 0 : 1;
+		int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer)) >= GM_LOW_WIZARD) ? 0 : 1;
 		int victim_level = victim.GetLevel();
 		int level_diff = victim_level - killer_level;
 
@@ -1731,7 +1733,7 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 	if (!gs_dropEvent_refineBox.alive)
 		return;
 
-	int log_level = (test_server || killer.GetGMLevel() >= GM_LOW_WIZARD) ? 0 : 1;
+	int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer)) >= GM_LOW_WIZARD) ? 0 : 1;
 
 	LPITEM p_item = __DropEvent_RefineBox_GetDropItem(killer, victim, itemMgr);
 
