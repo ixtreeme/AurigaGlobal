@@ -1,0 +1,33 @@
+#vérhold items
+41600	"d:/ymir work/item/weapon/halloween_2022/bell.mse"
+41601	"d:/ymir work/item/weapon/halloween_2022/fan.mse"
+41602	"d:/ymir work/item/weapon/halloween_2022/twohand.mse"
+41603	"d:/ymir work/item/weapon/halloween_2022/bow.mse"
+41604	"d:/ymir work/item/weapon/halloween_2022/dagger.mse"
+41605	"d:/ymir work/item/weapon/halloween_2022/sura_sword.mse"
+41606	"d:/ymir work/item/weapon/halloween_2022/armor.mse"
+41607	"d:/ymir work/item/weapon/halloween_2022/armor.mse"
+
+#necromancer items
+
+41610	"d:/ymir work/item/weapon/plechito/necromancer/bell_effect.mse"
+41611	"d:/ymir work/item/weapon/plechito/necromancer/fan_effect.mse"
+41612	"d:/ymir work/item/weapon/plechito/necromancer/twohand_effect.mse"
+41613	"d:/ymir work/item/weapon/plechito/necromancer/bow_effect.mse"
+41614	"d:/ymir work/item/weapon/plechito/necromancer/dagger_effect.mse"
+41615	"d:/ymir work/item/weapon/plechito/necromancer/sword_effect.mse"
+41616	"d:/ymir work/item/weapon/plechito/necromancer/costume_effect.mse"
+41617	"d:/ymir work/item/weapon/plechito/necromancer/costume_effect.mse"
+
+
+#valentin items
+
+41620	"d:/ymir work/item/weapon/angel_of_love/bell_p.mse"
+41621	"d:/ymir work/item/weapon/angel_of_love/fan_p.mse"
+41622	"d:/ymir work/item/weapon/angel_of_love/twohand_p.mse"
+41623	"d:/ymir work/item/weapon/angel_of_love/bow_p.mse"
+41624	"d:/ymir work/item/weapon/angel_of_love/dagger_p.mse"
+41625	"d:/ymir work/item/weapon/angel_of_love/sword_p.mse"
+41259	"d:/ymir work/item/weapon/angel_of_love/armor_p.mse"
+41260	"d:/ymir work/item/weapon/angel_of_love/armor_p.mse"
+

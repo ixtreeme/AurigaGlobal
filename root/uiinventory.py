@@ -959,10 +959,9 @@ class InventoryWindow(ui.ScriptWindow):
 			self.SwitchbotButton = self.GetChild2("SwitchbotButton")
 			self.BattlepassButton = self.GetChild2("BattlepassButton")
 			self.RankingButton = self.GetChild2("RankingButton")
-			#if app.ENABLE_SORT_INVEN:
-			#	self.separateButton = self.GetChild("SeparateButton")
-			#	self.separateButton.SetEvent(self.Sort_Inventory)
-			#	self.separateButton.Hide()
+			if app.ENABLE_SORT_INVEN:
+				self.separateButton = self.GetChild("SeparateButton")
+				self.separateButton.SetEvent(self.Sort_Inventory)
 
 			self.inventoryTab = []
 			for i in xrange(player.INVENTORY_PAGE_COUNT):
@@ -1077,10 +1076,6 @@ class InventoryWindow(ui.ScriptWindow):
 			self.wndCostume.Hide()
 		
 		self.dlgPickMoney = dlgPickMoney
-		if app.__ENABLE_EXTEND_INVEN_SYSTEM__:
-			for i in xrange(9):
-				self.EX_INVEN_COVER_IMG_OPEN[i].SetEvent(ui.__mem_func__(self.Env_key))
-
 		# MallButton
 		# if self.mallButton:
 			# self.mallButton.SetEvent(ui.__mem_func__(self.ClickMallButton))
@@ -1170,9 +1165,9 @@ class InventoryWindow(ui.ScriptWindow):
 		self.wndMoney = 0
 		self.wndMoneySlot = 0
 		self.questionDialog = None
-		# self.mallButton = None
-		#if app.ENABLE_SORT_INVEN:
-		#	self.separateButton = None
+		self.mallButton = None
+		if app.ENABLE_SORT_INVEN:
+			self.separateButton = None
 		self.DSSButton = None
 		self.RuneButton = None
 		self.OfflineshopButton = None
@@ -1227,50 +1222,21 @@ class InventoryWindow(ui.ScriptWindow):
 
 	if app.__ENABLE_EXTEND_INVEN_SYSTEM__:
 		def UpdateInven(self):
-			page = self.inventoryPageIndex
 			for i in xrange(9):
-				inv_plus = player.GetEnvanter() + i
-				inv_pluss = player.GetEnvanter() - i
-				if page == 2:
-					if player.GetEnvanter() > 8:
-						self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-					else:
-						self.EX_INVEN_COVER_IMG_OPEN[player.GetEnvanter()].Show()
-						self.EX_INVEN_COVER_IMG_CLOSE[player.GetEnvanter()].Hide()
-						if inv_pluss >= 0:
-							self.EX_INVEN_COVER_IMG_OPEN[inv_pluss].Hide()
-							self.EX_INVEN_COVER_IMG_CLOSE[inv_pluss].Hide()
-						if inv_plus < 9:
-							self.EX_INVEN_COVER_IMG_CLOSE[inv_plus].Show()
-							self.EX_INVEN_COVER_IMG_OPEN[inv_plus].Hide()	
-				elif page == 3:
-					if player.GetEnvanter() < 9:	
-						self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Show()
-					elif player.GetEnvanter() > 17:
-						self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-					else:
-						self.EX_INVEN_COVER_IMG_OPEN[player.GetEnvanter()-9].Show()
-						self.EX_INVEN_COVER_IMG_CLOSE[player.GetEnvanter()-9].Hide()
-						if inv_pluss >= 0:
-							self.EX_INVEN_COVER_IMG_OPEN[inv_pluss-9].Hide()
-						if inv_plus < 18:
-							self.EX_INVEN_COVER_IMG_CLOSE[inv_plus-9].Show()
-				else:
-					self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-					self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
+				self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
+				self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
 					
 		def Expansion_env(self):
 			net.Envanter_expansion()
 			self.OnCloseQuestionDialog()
 			
 		def Env_key(self):
-			if player.GetEnvanter() < 18:
+			maxStage = (player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT - (player.INVENTORY_PAGE_SIZE * 2)) / 5
+			if player.GetEnvanter() < maxStage:
 				needkeys = (2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7)
+				needKey = needkeys[player.GetEnvanter()] if player.GetEnvanter() < len(needkeys) else 7 + ((player.GetEnvanter() - len(needkeys)) / 6)
 				self.questionDialog = uicommon.QuestionDialog()
-				self.questionDialog.SetText(localeinfo.ENVANTER_EXPANS_1 % needkeys[player.GetEnvanter()])
+				self.questionDialog.SetText(localeinfo.ENVANTER_EXPANS_1 % needKey)
 				self.questionDialog.SetAcceptEvent(ui.__mem_func__(self.Expansion_env))
 				self.questionDialog.SetCancelEvent(ui.__mem_func__(self.OnCloseQuestionDialog))
 				self.questionDialog.Open()

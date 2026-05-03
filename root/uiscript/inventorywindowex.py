@@ -73,43 +73,43 @@ window = {
 						),
 					},
 
-					## Separate
-					#{
-					#	"name" : "SeparateBaseImage",
-					#	"type" : "image",
-					#	"style" : ("attach",),
-					#
-					#	"x" : 8,
-					#	"y" : 7,
-					#
-					#	"image" : "d:/ymir work/ui/pattern/titlebar_inv_refresh_baseframe.tga",
-					#
-					#	"children" :
-					#	(
-					#		# Separate Button (38x24) SORT_IVNENTORY
-					#		{
-					#			"name" : "SeparateButton",
-					#			"type" : "button",
-					#
-					#			"x" : 11,
-					#			"y" : 3,
-					#
-					#			"tooltip_text" : uiscriptlocale.INVENTORY_SEPARATE,
-					#
-					#			"default_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_01.sub",
-					#			"over_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_02.sub",
-					#			"down_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_03.sub",
-					#			"disable_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_04.sub",
-					#		},
-					#	),
-					#},
+					# Separate
+					{
+						"name" : "SeparateBaseImage",
+						"type" : "image",
+						"style" : ("attach",),
+					
+						"x" : 121,
+						"y" : 7,
+					
+						"image" : "d:/ymir work/ui/pattern/titlebar_inv_refresh_baseframe.tga",
+					
+						"children" :
+						(
+							# Separate Button (38x24) SORT_IVNENTORY
+							{
+								"name" : "SeparateButton",
+								"type" : "button",
+					
+								"x" : 11,
+								"y" : 3,
+					
+								"tooltip_text" : uiscriptlocale.INVENTORY_SEPARATE,
+					
+								"default_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_01.sub",
+								"over_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_02.sub",
+								"down_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_03.sub",
+								"disable_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_04.sub",
+							},
+						),
+					},
 
 					## Equipment Slot
 					{
 						"name" : "Equipment_Base",
 						"type" : "image",
 
-						"x" : 10,
+						"x" : 8,
 						"y" : 33,
 
 						"image" : "d:/ymir work/ui/equipment_bg_with_talisman.tga",
@@ -491,12 +491,12 @@ window = {
 						"name" : "Inventory_Tab_01",
 						"type" : "radio_button",
 
-						"x" : 10,
+						"x" : 8,
 						"y" : 53 + 191,
 
-						"default_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_01.sub",
-						"over_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_02.sub",
-						"down_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_03.sub",
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
 						"tooltip_text" : uiscriptlocale.INVENTORY_PAGE_BUTTON_TOOLTIP_1,
 
 						"children" :
@@ -510,7 +510,7 @@ window = {
 
 								"all_align" : "center",
 
-								"text" : "I",
+								"text" : "1",
 							},
 						),
 					},
@@ -519,12 +519,12 @@ window = {
 						"type" : "radio_button",
 
 						#"x" : 10 + 78,
-						"x" : 10 + 39,
+						"x" : 8 + 20,
 						"y" : 53 + 191,
 
-						"default_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_01.sub",
-						"over_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_02.sub",
-						"down_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_03.sub",
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
 						"tooltip_text" : uiscriptlocale.INVENTORY_PAGE_BUTTON_TOOLTIP_2,
 
 						"children" :
@@ -538,7 +538,7 @@ window = {
 
 								"all_align" : "center",
 
-								"text" : "II",
+								"text" : "2",
 							},
 						),
 					},
@@ -547,12 +547,12 @@ window = {
 						"name" : "Inventory_Tab_03",
 						"type" : "radio_button",
 
-						"x" : 10 + 39 + 39,
+						"x" : 8 + 20 + 20,
 						"y" : 53 + 191,
 
-						"default_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_01.sub",
-						"over_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_02.sub",
-						"down_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_03.sub",
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
 						"tooltip_text" : uiscriptlocale.INVENTORY_PAGE_BUTTON_TOOLTIP_3,
 
 						"children" :
@@ -566,7 +566,7 @@ window = {
 
 								"all_align" : "center",
 
-								"text" : "III",
+								"text" : "3",
 							},
 						),
 					},
@@ -575,12 +575,12 @@ window = {
 						"name" : "Inventory_Tab_04",
 						"type" : "radio_button",
 
-						"x" : 10 + 39 + 39 + 39,
+						"x" : 8 + 20 + 20 + 20,
 						"y" : 53 + 191,
 
-						"default_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_01.sub",
-						"over_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_02.sub",
-						"down_image" : "d:/ymir work/ui/game/windows/tab_button_large_half_03.sub",
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
 						"tooltip_text" : uiscriptlocale.INVENTORY_PAGE_BUTTON_TOOLTIP_4,
 
 						"children" :
@@ -594,7 +594,103 @@ window = {
 
 								"all_align" : "center",
 
-								"text" : "IV",
+								"text" : "4",
+							},
+						),
+					},
+
+					{
+						"name" : "Inventory_Tab_05",
+						"type" : "radio_button",
+
+						"x" : 8 + 20 + 20 + 20 + 20,
+						"y" : 53 + 191,
+
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
+
+						"children" :
+						(
+							{
+								"name" : "Inventory_Tab_05_Print",
+								"type" : "text",
+								"x" : 0,
+								"y" : 0,
+								"all_align" : "center",
+								"text" : "5",
+							},
+						),
+					},
+
+					{
+						"name" : "Inventory_Tab_06",
+						"type" : "radio_button",
+
+						"x" : 8 + 20 + 20 + 20 + 20 + 20,
+						"y" : 53 + 191,
+
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
+
+						"children" :
+						(
+							{
+								"name" : "Inventory_Tab_06_Print",
+								"type" : "text",
+								"x" : 0,
+								"y" : 0,
+								"all_align" : "center",
+								"text" : "6",
+							},
+						),
+					},
+
+					{
+						"name" : "Inventory_Tab_07",
+						"type" : "radio_button",
+
+						"x" : 8 + 20 + 20 + 20 + 20 + 20 + 20,
+						"y" : 53 + 191,
+
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
+
+						"children" :
+						(
+							{
+								"name" : "Inventory_Tab_07_Print",
+								"type" : "text",
+								"x" : 0,
+								"y" : 0,
+								"all_align" : "center",
+								"text" : "7",
+							},
+						),
+					},
+
+					{
+						"name" : "Inventory_Tab_08",
+						"type" : "radio_button",
+
+						"x" : 8 + 20 + 20 + 20 + 20 + 20 + 20 + 20,
+						"y" : 53 + 191,
+
+						"default_image" : "d:/ymir work/razor93/inventory1.dds",
+						"over_image" : "d:/ymir work/razor93/inventory2.dds",
+						"down_image" : "d:/ymir work/razor93/inventory3.dds",
+
+						"children" :
+						(
+							{
+								"name" : "Inventory_Tab_08_Print",
+								"type" : "text",
+								"x" : 0,
+								"y" : 0,
+								"all_align" : "center",
+								"text" : "8",
 							},
 						),
 					},

@@ -4353,7 +4353,7 @@ window = {
 
 							"x": 0, "y": 0,
 
-							"image": "offlineshop/createauction/base_image.png",
+							#"image": "offlineshop/createauction/base_image.png",
 						},
 						{
 							"name": "CreateAuctionDaysInput",

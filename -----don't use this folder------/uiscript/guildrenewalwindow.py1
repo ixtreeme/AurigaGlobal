@@ -1,0 +1,191 @@
+import uiScriptLocale
+
+WIN_W = 760
+WIN_H = 520
+
+SLOT_X = 10
+SLOT_Y = 10
+SLOT_STEP = 32
+
+RIGHT_X = 360
+
+TAX_SLOTS_Y = 278
+
+window = {
+	"name" : "GuildRenewalWindow",
+	"x" : SCREEN_WIDTH/2 - WIN_W/2,
+	"y" : SCREEN_HEIGHT/2 - WIN_H/2,
+	"style" : ("movable", "float",),
+	"width" : WIN_W,
+	"height" : WIN_H,
+	"children" :
+	(
+		{
+			"name" : "Board",
+			"type" : "board",
+			"style" : ("attach",),
+			"x" : 0,
+			"y" : 0,
+			"width" : WIN_W,
+			"height" : WIN_H,
+			"children" :
+			(
+				{
+					"name" : "TitleBar",
+					"type" : "titlebar",
+					"style" : ("attach",),
+					"x" : 8,
+					"y" : 8,
+					"width" : WIN_W-15,
+					"children" :
+					(
+						{ "name":"TitleName", "type":"text", "x":0, "y":3, "text":"Ceh fejlesztes", "horizontal_align":"center", "text_horizontal_align":"center" },
+					),
+				},
+
+				{
+					"name" : "StorageSlots",
+					"type" : "grid_table",
+					"x" : 15,
+					"y" : 40,
+					"start_index" : 0,
+					"x_count" : SLOT_X,
+					"y_count" : SLOT_Y,
+					"x_step" : SLOT_STEP,
+					"y_step" : SLOT_STEP,
+					"image" : "d:/ymir work/ui/public/Slot_Base.sub",
+				},
+
+				{ "name":"StorageMoneyLabel", "type":"text", "x":15, "y":40 + SLOT_Y*SLOT_STEP + 8, "text":"Ceh leltar yang:" },
+				{ "name":"StorageMoneyText", "type":"text", "x":140, "y":40 + SLOT_Y*SLOT_STEP + 8, "text":"0" },
+
+				{
+					"name" : "DepositYangButton",
+					"type" : "button",
+					"x" : 15,
+					"y" : 40 + SLOT_Y*SLOT_STEP + 30,
+					"text" : "Yang betetes",
+					"default_image" : "d:/ymir work/ui/public/large_button_01.sub",
+					"over_image" : "d:/ymir work/ui/public/large_button_02.sub",
+					"down_image" : "d:/ymir work/ui/public/large_button_03.sub",
+				},
+
+				{ "name":"GuildLevelLabel", "type":"text", "x":RIGHT_X, "y":40, "text":"Ceh szint:" },
+				{ "name":"GuildLevelText", "type":"text", "x":RIGHT_X+70, "y":40, "text":"0" },
+
+				{ "name":"PaidStatusLabel", "type":"text", "x":RIGHT_X+150, "y":40, "text":"Ado:" },
+				{ "name":"PaidStatusText", "type":"text", "x":RIGHT_X+185, "y":40, "text":"X" },
+
+				{ "name":"ReqTitle", "type":"text", "x":RIGHT_X, "y":70, "text":"Kovetkezo szint igeny" },
+
+				{ "name":"ReqYangLabel", "type":"text", "x":RIGHT_X, "y":92, "text":"Hatralevo yang:" },
+				{ "name":"ReqYangText", "type":"text", "x":RIGHT_X+110, "y":92, "text":"0" },
+
+				{ "name":"ReqYangTotalLabel", "type":"text", "x":RIGHT_X, "y":112, "text":"Osszes igeny:" },
+				{ "name":"ReqYangTotalText", "type":"text", "x":RIGHT_X+110, "y":112, "text":"0" },
+
+				{
+					"name" : "ReqSlots",
+					"type" : "grid_table",
+					"x" : RIGHT_X,
+					"y" : 135,
+					"start_index" : 0,
+					"x_count" : 5,
+					"y_count" : 1,
+					"x_step" : SLOT_STEP,
+					"y_step" : SLOT_STEP,
+					"image" : "d:/ymir work/ui/public/Slot_Base.sub",
+				},
+
+				{
+					"name" : "LevelUpButton",
+					"type" : "button",
+					"x" : RIGHT_X,
+					"y" : 175,
+					"text" : "Ceh fejlesztes",
+					"default_image" : "d:/ymir work/ui/public/large_button_01.sub",
+					"over_image" : "d:/ymir work/ui/public/large_button_02.sub",
+					"down_image" : "d:/ymir work/ui/public/large_button_03.sub",
+				},
+
+				{ "name":"TaxTitle", "type":"text", "x":RIGHT_X, "y":220, "text":"Ado kovetelmeny" },
+				{ "name":"TaxDeadlineLabel", "type":"text", "x":RIGHT_X, "y":242, "text":"Hatarido:" },
+				{ "name":"TaxDeadlineText", "type":"text", "x":RIGHT_X+70, "y":242, "text":"-" },
+
+				{ "name":"TaxMoneyLabel", "type":"text", "x":RIGHT_X, "y":262, "text":"Yang / fo:" },
+				{ "name":"TaxMoneyText", "type":"text", "x":RIGHT_X+70, "y":262, "text":"0" },
+
+				# FIX: slotok egymas alatt (1x5)
+				{
+					"name" : "TaxSlots",
+					"type" : "grid_table",
+					"x" : RIGHT_X,
+					"y" : TAX_SLOTS_Y,
+					"start_index" : 0,
+					"x_count" : 1,
+					"y_count" : 5,
+					"x_step" : 32,
+					"y_step" : 32,
+					"image" : "d:/ymir work/ui/public/Slot_Base.sub",
+				},
+
+				{ "name":"TaxNameText0",  "type":"text", "x":RIGHT_X + 40,  "y":TAX_SLOTS_Y + 0*32 + 8, "text":"-" },
+				{ "name":"TaxCountText0", "type":"text", "x":RIGHT_X + 210, "y":TAX_SLOTS_Y + 0*32 + 8, "text":"", "text_horizontal_align":"right" },
+
+				{ "name":"TaxNameText1",  "type":"text", "x":RIGHT_X + 40,  "y":TAX_SLOTS_Y + 1*32 + 8, "text":"-" },
+				{ "name":"TaxCountText1", "type":"text", "x":RIGHT_X + 210, "y":TAX_SLOTS_Y + 1*32 + 8, "text":"", "text_horizontal_align":"right" },
+
+				{ "name":"TaxNameText2",  "type":"text", "x":RIGHT_X + 40,  "y":TAX_SLOTS_Y + 2*32 + 8, "text":"-" },
+				{ "name":"TaxCountText2", "type":"text", "x":RIGHT_X + 210, "y":TAX_SLOTS_Y + 2*32 + 8, "text":"", "text_horizontal_align":"right" },
+
+				{ "name":"TaxNameText3",  "type":"text", "x":RIGHT_X + 40,  "y":TAX_SLOTS_Y + 3*32 + 8, "text":"-" },
+				{ "name":"TaxCountText3", "type":"text", "x":RIGHT_X + 210, "y":TAX_SLOTS_Y + 3*32 + 8, "text":"", "text_horizontal_align":"right" },
+
+				{ "name":"TaxNameText4",  "type":"text", "x":RIGHT_X + 40,  "y":TAX_SLOTS_Y + 4*32 + 8, "text":"-" },
+				{ "name":"TaxCountText4", "type":"text", "x":RIGHT_X + 210, "y":TAX_SLOTS_Y + 4*32 + 8, "text":"", "text_horizontal_align":"right" },
+
+				{
+					"name" : "PayTaxButton",
+					"type" : "button",
+					"x" : RIGHT_X + 240,
+					"y" : TAX_SLOTS_Y + 0,
+					"text" : "Ado befizetese",
+					"default_image" : "d:/ymir work/ui/public/large_button_01.sub",
+					"over_image" : "d:/ymir work/ui/public/large_button_02.sub",
+					"down_image" : "d:/ymir work/ui/public/large_button_03.sub",
+				},
+				{
+					"name" : "SetTaxButton",
+					"type" : "button",
+					"x" : RIGHT_X + 240,
+					"y" : TAX_SLOTS_Y + 32,
+					"text" : "Ado kivetese",
+					"default_image" : "d:/ymir work/ui/public/large_button_01.sub",
+					"over_image" : "d:/ymir work/ui/public/large_button_02.sub",
+					"down_image" : "d:/ymir work/ui/public/large_button_03.sub",
+				},
+
+				{ "name":"ContribTitle", "type":"text", "x":RIGHT_X, "y":410, "text":"Befizetesek" },
+				{
+					"name" : "ContribList",
+					"type" : "listboxex",
+					"x" : RIGHT_X,
+					"y" : 432,
+					"width" : WIN_W - RIGHT_X - 35,
+					"height" : 80,
+					"itemsize_x" : WIN_W - RIGHT_X - 35,
+					"itemsize_y" : 16,
+					"itemstep" : 16,
+					"viewcount" : 5,
+				},
+				{
+					"name" : "ContribScroll",
+					"type" : "scrollbar",
+					"x" : WIN_W - 22,
+					"y" : 432,
+					"size" : 80,
+				},
+			),
+		},
+	),
+}

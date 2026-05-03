@@ -1,0 +1,259 @@
+Villo Rosso
+{
+title	Villo Rosso
+desc	Villo Rosso
+buttonx	127
+buttony	167
+coord_x	311200
+coord_y	336800
+}
+
+Villo blu
+{
+title	Villo blu
+desc	Villo blu
+buttonx	81
+buttony	272
+coord_x	413700
+coord_y	337000
+}
+
+Villo Giallo
+{
+title	Villo Giallo
+desc	Villo Giallo
+buttonx	173
+buttony	417
+coord_x	516400
+coord_y	336600
+}
+
+Villaggio delle Meraviglie
+{
+title	Villaggio Meraviglie
+desc	Villaggio delle Meraviglie
+buttonx	157
+buttony	287
+coord_x	625700
+coord_y	340500
+}
+
+Valle Seungryong
+{
+title	Valle Seungryong
+desc	Valle Seungryong
+buttonx	387
+buttony	280
+coord_x	335300
+coord_y	751700
+}
+
+Tempio Hwang
+{
+title	Tempio Hwang
+desc	Tempio Hwang
+buttonx	474
+buttony	365
+coord_x	553500
+coord_y	143400
+}
+
+Doyyumhwaji
+{
+title	Doyyumhwaji
+desc	Doyyumhwaji
+buttonx	276
+buttony	304
+coord_x	600200
+coord_y	687700
+}
+
+Deserto Yongbi
+{
+title	Deserto Yongbi
+desc	Deserto Yongbi
+buttonx	575
+buttony	298
+coord_x	297400
+coord_y	545500
+}
+
+Monthe Sohan
+{
+title	Monthe Sohan
+desc	Monthe Sohan
+buttonx	572
+buttony	191
+coord_x	435600
+coord_y	215300
+}
+
+Covo 1
+{
+title	Covo 1
+desc	Covo 1
+buttonx	230
+buttony	402
+coord_x	59900
+coord_y	496000
+}
+
+Covo 2
+{
+title	Covo 2
+desc	Covo 2
+buttonx	263
+buttony	402
+coord_x	665600
+coord_y	435200
+}
+
+Covo3
+{
+title	Covo 3
+desc	Covo 3
+buttonx	295
+buttony	402
+coord_x	51200
+coord_y	563200
+}
+
+Campo Serpi
+{
+title	Campo Serpi
+desc	Campo Serpi
+buttonx	327
+buttony	103
+coord_x	1059200
+coord_y	727000
+}
+
+Terra dei Giganti
+{
+title	Terra dei Giganti
+desc	Terra dei Giganti
+buttonx	204
+buttony	116
+coord_x	828500
+coord_y	763400
+}
+
+Bosco Fantasma
+{
+title	Bosco Fantasma
+desc	Bosco Fantasma
+buttonx	319
+buttony	223
+coord_x	303300
+coord_y	26500
+}
+
+Bosco Rosso
+{
+title	Bosco Rosso
+desc	Bosco Rosso
+buttonx	420
+buttony	235
+coord_x	1119100
+coord_y	70000
+}
+
+Altantide 1
+{
+title	Altantide 1
+desc	Altantide 1
+buttonx	374
+buttony	180
+coord_x	9900
+coord_y	1208000
+}
+
+Altantide 2
+{
+title	Altantide 2
+desc	Altantide 2
+buttonx	405
+buttony	180
+coord_x	241700
+coord_y	1274200
+}
+
+Capo Fuoco del Drago
+{
+title	Capo Fuoco del Drago
+desc	Capo Fuoco del Drago
+buttonx	729
+buttony	404
+coord_x	1085000
+coord_y	1784400
+level	90
+price	1000000
+}
+
+Baia Nefrite
+{
+title	Baia Nefrite
+desc	Baia Nefrite
+buttonx	685
+buttony	169
+coord_x	1087900
+coord_y	1652300
+level	90
+price	1000000
+}
+
+Monti Tonanti
+{
+title	Monti Tonanti
+desc	Monti Tonanti
+buttonx	733
+buttony	244
+coord_x	1134700
+coord_y	1653900
+level	90
+price	1000000
+}
+
+Falesia Gautama
+{
+title	Falesia Gautama
+desc	Falesia Gautama
+buttonx	705
+buttony	317
+coord_x	1225700
+coord_y	1681600
+level	90
+price	1000000
+}
+
+Sottobosco
+{
+title	Sottobosco
+desc	Sottobosco
+buttonx	626
+buttony	409
+coord_x	813000
+coord_y	1502400
+level	100
+price	2000000
+}
+
+Lobby Dungeon
+{
+title	Lobby Dungeon
+desc	Lobby Dungeon Normali
+buttonx	47
+buttony	493
+coord_x	535400
+coord_y	1428400
+}
+
+Lobby Dungeon Speciali
+{
+title	Lobby Dungeon Speciali
+desc	Lobby Dungeon Speciali
+buttonx	153
+buttony	531
+coord_x	537050
+coord_y	1331380
+}

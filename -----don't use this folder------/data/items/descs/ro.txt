@@ -1,0 +1,1350 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	Acest cufãr conþine o piatrã spirit +5 aleatoriu.
+49021	Spirit Sword (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49022	Spirit Dagger (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49023	Spirit Bow (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49024	Spirit Glaive (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49025	Spirit Bell (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49026	Spirit Fan (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49027	Spirit Costume (F) (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+49028	Spirit Costume (M) (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+85112	Spirit Stole (inf)	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+71056	Helper Scroll	Acest item este disponibil doar celor ce dispun de rolul de Helper.
+89001	Voucher	Voucher în valoare de 1 Monedã Dragon.
+89002	Voucher	Voucher în valoare de 2 Monede Dragon.
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+89003	Voucher	Voucher în valoare de 3 Monede Dragon.
+89004	Voucher	Voucher în valoare de 50 de Monede Dragon.
+89005	Voucher	Voucher în valoare de 100 de Monede Dragon.
+89006	Voucher	Voucher în valoare de 500 de Monede Dragon.
+89007	Voucher	Voucher în valoare de 1000 de Monede Dragon.
+50001	Item-Shop	În cufãr se aflã:
+70027	Mistyc Blessing scroll	Item refine prob 100%
+100000	Elixirul Timpului (S)	Umple timpul unei Pietre Dragon.
+100001	Elixirul Timpului (M)	Umple timpul unei Pietre Dragon.
+100002	Elixirul Timpului (L)	Umple timpul unei Pietre Dragon.
+100100	Clesti de Dragon	Unealta flositoare la cresterea sansei de succes in timpul inlocuirii Pietrei Dragon.
+100300	Fasole Dragon Verde	Fasolea magica creste nivelul Pietrei Dragon. Procesul de intarire poate esua.
+100400	Fasole Dragon Albastra	Fasolea magica creste sansa de succes a imbunatatirii unei Pietrei Dragon cu un nivel.
+100500	Fasole Dragon Roz	Sansa de succes a imbunatatirii unei Pietrei Dragon cu un nivel este cu 10% mai mare.
+11901	Smoking	Un costum barbatesc, elegant, ce poate fi purtat la nunta.
+11902	Smoking	Un costum barbatesc, elegant, ce poate fi purtat la nunta.
+11903	Rochie de mireasã	O rochie deosebitã pe care o poartã o femeie la nunta ei.
+11904	Rochie de mireasã	O rochie deosebitã pe care o poartã o femeie la nunta ei.
+18900	Piatrã Flacãrã Roºie	Imbunatateste bonusurile curelei tale.
+25040	Pergament Binecuvantat	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã doar cu 1 punct.
+25041	Piatra Magica	O bucatã din metalul legendar îþi poate creºte ºansele de upgrade ale unui element. Elementul upgradat nu poate apoi fi apoi distrus sau degradat.
+25100	Perg. Piatra Spiritului	Pergamentul îþi oferã posibilitatea eliminãrii Pietrei Spiritului dintr-o armã sau armurã. O aºchie va rãmâne.
+27600	Foc de tabãrã	Lemn cu care poþi aprinde un foc de tabãrã.
+27610	Marmurã de pescuit	Acest glob magic îþi aratã ce s-a prins în cârligul undiþei.
+27620	Cartea pescuitului	O carte cu care timp de 3 zile vei prinde de douã ori mai mulþi peºti rari.
+27803	ªalãu	Peºte comun care trãieºte de regulã într-un lac.
+27804	Peºte mandarinã	Peºte foarte gustos.
+27805	ªalãu mare	ªalãu mare si gras.
+27806	Crap	Un peºte mare argintiu.
+27807	Somon	Peºte care în perioada împerecherii se întoarce acasã.
+27808	Crap chinezesc	Crap care se hrãneºte de obicei cu ierburi.
+27809	Pãstrãv	Peºte strident înrudit cu somonul.
+27810	Anghilã	Peºte lung ºi subþire care se aseamãnã cu un ºarpe. Are o forþã ºi o rezistenþã mare.
+27811	Pãstrãv curcubeu	Peºte care poartã pe spate culorile curcubeului.
+27812	Pãstrãv	Peºte de râu, mult rãspândit în aceste zone.
+27813	Scrumbie	Peºte roºiatic care trãieºte in stoluri.
+27814	Biban	Peºte cunoscut ca ºi "rechinul lacurilor".
+27815	Tenchi	O specie de baracuda care trãieºte doar în ape curate.
+27816	Pisicã de mare	Peºte cu o gurã mare si mustãþi asemãnãtoare cu cele ale pisicii.
+27817	Þipar	Peºte care trãieºte în ape puþin adânci si noroiase.
+27818	Peºte lotus	Peºte mare de apã dulce care se hrãneºte diversificat.
+27819	Ayu	Peºte înrudit cu hamsia. Trãieºte în zona plajelor ºi în apropierea gurilor de vãrsare.
+27820	Hamsie	"Peºte de iarnã", prins adesea la copcã.
+27821	Shiri	Peºte cu formã ºi culori frumoase.
+27822	Crap oglindã	Crap autohton.
+27823	Peºte auriu	Peºte întâlnit rar, de culoare auriu-strãlucitoare.
+27824	Cap de ªarpe	Un prãdãtor de apã dulce care trãieºte în apele tropicale.
+27825	Crap Rãpitor	Un peºte ce poate fi gãsit doar în apele curgãtoare.
+27826	Rege Crab Roºu	Acest gigant este cea mai mare specie de crab rege.
+27827	Yabby	Aceastã specie de raci este în general nocturnã ºi rãmâne ascunsã pe timpul zilei.
+27833	ªalãu mort	Poate fi prãjit la un foc de tabãrã.
+27834	Peºte mandarinã mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27835	ªalãu mare mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27836	Crap mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27837	Somon mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27838	Crap chinezesc mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27839	Pãstrãv mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27840	Anghilã moartã	Idealã pentru a fi prãjitã la un foc de tabãrã.
+27841	Pãstrãv curcubeu mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27842	Pãstrãv mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27843	Scrumbie moartã	Idealã pentru a fi prãjitã la un foc de tabãrã.
+27844	Biban mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27845	Tenchi mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27846	Pisicã de mare moartã	Idealã pentru a fi prãjitã la un foc de tabãrã.
+27847	Peºte zebrã mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27848	Peºte lotus mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27849	Peºte Ayu mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27850	Hamsie moartã	Idealã pentru a fi prãjitã la un foc de tabãrã.
+27851	Shiri mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27852	Crap oglindã mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27853	Peºte auriu mort	Ideal pentru a fi prãjit la un foc de tabãrã.
+27854	Cap de ªarpe Mort	Un peºte perfect pentru grãtar la foc de tabãrã.
+27855	Crap Rãpitor Mort	Un peºte perfect pentru grãtar la foc de tabãrã.
+27856	Rege Crab Roºu Mort	Un crab perfect pentru grãtar la foc de tabãrã.
+27857	Yabby Mort	Un rac de râu perfect pentru grãtar la foc de tabãrã.
+27987	Scoicã	O scoicã cu o cochilie frumoasã. Poate sã conþinã o perlã preþioasã.
+27990	Bucatã de piatrã	Datorita dimensiunilor mici, poate fi transportata usor. Poate fi folosita in foarte multe feluri.
+27992	Perla Alba	O perlã albã ca zãpada din interiorul unei scoici.
+27993	Perla Albastra	O superbã perlã albastrã din interiorul unei scoici.
+27994	Perla Visinie	O perlã viºinie din interiorul unei scoici.
+30179	Cheie Rãsucitã	Aceastã cheie magicã activeazã portalul cãtre Templul Dragonului.
+30270	Ciob Piatra Dragon	Fragmentul unei Pietre Dragon.
+30311	Cheia Suflet Cristalizat	Cheia delicata cu Suflet Albastru Cristalizat deschide poarta etajului 2 din Catacomba Diavolului.
+30312	Totem Schimonosit	Simbolul de lemn cu o grimasa bine conturata te ajuta la deschiderea portii de la etajul 6 al Catacombei Diavolului.
+30320	Cap Mumificat	Acest Cap Mumificat de demon deschide sigiliul etajului al 2-lea din Catacomba Diavolului.
+30321	Cap Mumificat	Acest Cap Mumificat de demon deschide sigiliul etajului al 2-lea din Catacomba Diavolului.
+30325	Cheia Arahnidelor	Deschide portile catre Ascunzatoarea Reginei unde isi depune ouale. Foarte fragila, se dezintegreaza dupa 24 de ore. Poate fi folosita doar de catre liderul de grup.
+30327	Fluierul Arahnidelor	Cantecul acestui instrument o atrage pe Regina Paianjen.
+30329	Roata Zimtata de Aur	Urneste mecanismul ascuns la Stele din Isfet.
+30330	Piatra Maat	Zeita Dreptatii, Maat lupta pentru ordine in mijlocul haosului.
+30331	Cheie de Gheata	Aceasta cheie este rece ca gheata si iti permite accesul la etajul trei din Turnul lui Nemere. Poate fi folosita doar de Samani.
+30332	Steaua Nordului	Sigiliu pietrificat facut din gheata pura. Permite accesul la etajul sase din Turnul lui Nemere.
+30333	Cheie Floare de Gheata	Cheia de gheaþã permite accesul la etajul nouã din Turnul lui Nemere.
+30341	Inel Focul Dragonului	O aurã cu o energie intensã te învãluie. Forjat în flãcãrile unui dragon, acest inel va distruge instant statuia din Adãpostul lui Meley.
+30505	Ornament Smarald	Element pentru rafinarea armei tale.
+30506	Cutit Gravat Safir	Unleata pentru rafinarea armei tale.
+30512	Chinga Dragon Rosu	Pielea de Dragon este extrem de usoara si flexibila, dar de asemenea si indestructibila. Poate fi procesata in metal si folosita la fabricarea armurilor.
+30518	Ata Aurie	Un ghem magic de ata produsa din aur topit. Poate fi fabricata cu o piatra pretioasa si transformata intr-o bijuterie valoroasa.
+30519	Carlig Auriu	Fabricat din aur pur, ornat cu o piatra pretioasa, poate fi transformat intr-o bijuterie valoroasa.
+30520	Catarama Aurie	Fabricata din aur pur, ornata cu o piatra pretioasa, poate fi transformata intr-o bijuterie valoroasa.
+30613	Piatra Driadelor	Învãluitã de o strãlucire verde, aceastã piatrã misterioasã îmbracã sufletul unei driade, un spirit copac. Driadele cunosc cuvintele secrete pentru a putea avea acces la temniþa Erebus.
+30616	Dioxid de Titan	Acest cristal prismatic este folosit pentru rafinarea unei piese din echipament.
+30617	Agate	Piatra preþioasã strãlucitoare este folositã pentru rafinarea unei piese din echipament.
+30618	Piatra Lunii	O scânteie din lumina lunii este prinsã în aceastã bijuterie în formã de lacrimã. Folositã pentru rafinarea unei piese din echipament.
+33031	Floare elementalã	Piatrã preþioasã în formã de floare pentru îmbunãtãþirea talismanelor elementale.
+39001	Piatra Magica	Aceastã piatrã îþi garanteazã succesul în îmbunãtãþirea obiectului. Pe lângã asta, obiectul nu va fi nici distrus ºi nici decãzut. Obiectul se poate negocia.
+39007	Manualul Fierarului	Aceastã carte este binecuvântatã cu sufletul unui fierar înþelept. Creºte ºansa de a îmbunãtãþi un obiect. Obiectul se poate negocia.
+39008	Pergamentul Exorcizarii	Va desface blestemul spiritelor rele daca invatatul nu are succes. Cu ajutorul acestui pergament poti citi un alt document in aceeasi zi. Obiectul se poate negocia.
+39022	Pergamentul Dragonului	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã doar cu 1 punct. Adiþional, ºansa succesului la îmbunãtãþire va creºte cu 10%. Obiectul se poate negocia.
+39027	Cartea Pietrelor	Elimina toate pietrele sparte dintr-un obiect. Astfel primesti o noua incercare de a imbunatati arma sau armura. Obiectul se poate negocia.
+39030	Citit Concentrat	Creºte ºansa îmbunãtãþirii abilitãþilor tale atunci când citeºti urmãtoarea carte (sau Piatra Sufletului) de 2.5 ori. Obiectul se poate negocia.
+39039	Elixirul Soarelui (L)	Umplerea automata a PV-ului. Contine 7,000,000 de PV. Obiectul se poate negocia.
+39042	Elixirul Lunii (L)	Umplerea automata a PM-ului. Contine 700,000 de PM. Obiectul se poate negocia.
+39063	Actualizeazã Piaþã Gaya	Actualizeazã Piaþã Gaya înainte de timpul standard de 5 ore ºi gãseºte obiecte noi.
+39064	Extinde Piaþã Gaya	Extinde Piaþã Gaya, deschide un loc suplimentar pentru a oferta obiecte, începând cu primul loc din al doilea rând.
+40108	Lamã cu Dinþi+	Acest accesoriu pentru armã îþi va transforma sabia într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40109	Pumnal cu Dinþi+	Acest accesoriu pentru armã îþi va transforma pumnalul într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40110	Arc cu Dinþi+	Acest accesoriu pentru armã îþi va transforma arcul într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40111	Spadã cu Dinþi+	Acest accesoriu pentru armã îþi va transforma spada într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40112	Clopot cu Dinþi+	Acest accesoriu pentru armã îþi va transforma clopotul într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40113	Evantai cu Dinþi+	Acest accesoriu pentru armã îþi va transforma evantaiul într-o drujbã de Halloween. Îþi ofera cel puþin un bonus aleatoriu.
+40129	Lamã Aquarian	Accesoriu de armã care îþi contureazã lama cu un strat de apã durã ºi strãlucitoare.
+40130	Pumnal Aquarian	Accesoriu de armã care îþi contureazã pumnalul cu un strat de apã durã ºi strãlucitoare.
+40131	Arc Aquarian	Accesoriu de armã care îþi contureazã arcul cu un strat de apã durã ºi strãlucitoare.
+40132	Glaive Aquarian	Accesoriu de armã care îþi contureazã sabia douã mâini cu un strat de apã durã ºi strãlucitoare.
+40133	Clopot Aquarian	Accesoriu de armã care îþi contureazã clopotul cu un strat de apã durã ºi strãlucitoare.
+40134	Evantai Aquarian	Accesoriu de armã care îþi contureazã evantaiul cu un strat de apã durã ºi strãlucitoare.
+41029	Sihastru (m, Bonus)	Þinutã de luptã pentru bãrbaþi, idealã pentru a supravieþui în condiþiile aspre din deºert. Îþi oferã cel puþin un bonus aleatoriu. Obiectul se poate negocia.
+41030	Sihastru (f, Bonus)	Vesmant de lupta pentru femei care apara de conditiile grele de trai din desert. Obiectul poate fi vandut.
+41117	Costum de Muschetar	Costum extravagant in stilul muschetarilor.
+41118	Uniforma de Menajera	Rochie neagra cu un sortulet alb in fata in stilul menajerelor frantuzoaice.
+41119	Costum de Salsa	Costum in stilul dansatorilor Latino-Americani, stramt si colorat in negru si portocaliu.
+41120	Rochie de Salsa	Stramta si rosie, rochie de dans cu manusi nerge.
+41121	Costum de Cavaler	Costum elegant in stilul unui cavaler cu bune maniere.
+41122	Rochie de Cocktail	Rochie albastra de culoarea cerului cu fundita si sandale din cureluse.
+41125	Dovleac Tuxedo	Te prinde in capcana - creata special pentru aceasta ocazie speciala.
+41126	Rochie Dovleac	Te prinde in capcana - creata special pentru aceasta ocazie speciala.
+41129	Costum de Muschetar +	Costum extravagant in stilul muschetarilor. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41130	Uniforma de Menajera +	Rochie neagra cu un sortulet alb in fata in stilul menajerelor frantuzoaice. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41131	Costum de Salsa +	Costum in stilul dansatorilor Latino-Americani, stramt si colorat in negru si portocaliu. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41132	Rochie de Salsa +	Stramta si rosie, rochie de dans cu manusi nerge. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41133	Costum de Cavaler +	Costum elegant in stilul unui cavaler cu bune maniere. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41134	Rochie de Cocktail +	Rochie albastra de culoarea cerului cu fundita si sandale din cureluse. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+41135	Dovleac Tuxedo (Bonus)	Te prinde in capcana - creata special pentru aceasta ocazie speciala. Acest costum iti ofera un bonus random.
+41136	Rochie Dovleac (Bonus)	Te prinde in capcana - creata special pentru aceasta ocazie speciala. Acest costum iti ofera un bonus random.
+41307	Costum Cobra (m)	Costum stralucitor de culoare neagra cu simbolurile unui sarpe.
+41308	Costum Cobra (f)	Costum stralucitor de culoare neagra cu simbolurile unui sarpe.
+41309	Costum Cobra+ (m)	Costum stralucitor de culoare neagra cu simbolurile unui sarpe. Iti ofera cel putin un bonus aleatoriu.
+41310	Costum Cobra+ (f)	Costum stralucitor de culoare neagra cu simbolurile unui sarpe. Iti ofera cel putin un bonus aleatoriu.
+41311	Sihastru (M,negru)	Vesmant negru de lupta pentru barbati.
+41312	Sihastru (F,negru)	Vesmant negru de lupta pentru femei.
+41313	Sihastru+ (M,negru)	Veºmânt negru de luptã pentru bãrbaþi. Îþi oferã cel puþin un bonus aleatoriu. Obiectul se poate negocia.
+41314	Sihastru+ (F,negru)	Vesmant negru de lupta pentru femei. Iti ofera cel putin un bonus aleatoriu.
+41315	Armura Azrael (m)	Armura din otel ce apartine unui neinfricat lider al demonilor.
+41316	Armura Azrael (f)	Armura din otel ce apartine unui neinfricat lider al demonilor.
+41317	Armura Azrael+ (m)	Armura din otel ce apartine unui neinfricat lider al demonilor. Iti ofera cel putin un bonus aleatoriu.
+41318	Armura Azrael+ (f)	Armura din otel ce apartine unui neinfricat lider al demonilor. Iti ofera cel putin un bonus aleatoriu.
+41324	Rãzboinic Semilunã	Îmbrãcãminte de luptã bãrbãteascã intruchipând un star si emblema semilunã.
+41325	Rãzboinicã Semilunã	Îmbrãcãminte de luptã de damã intruchipând un star si emblema semilunã.
+41326	Rãzboinic Semilunã+	Îmbrãcãminte de luptã bãrbãteascã intruchipând un star si emblema semilunã. Îþi oferã cel puþin un bonus aleatoriu.
+41327	Rãzboinicã Semilunã+	Îmbrãcãminte de luptã de damã intruchipând un star si emblema semilunã. Îþi oferã cel puþin un bonus aleatoriu.
+41528	Prinþ Deºert (Roºu)	Îmbrãcãminte pentru rãzboinici, confecþionatã din material roºu, potrivit pentru barbaþii lider.
+41529	Prinþ Deºert (Albastru)	Îmbrãcãminte pentru rãzboinici, confecþionatã din material albastru, potrivit pentru barbaþii lider.
+45053	Frizurã de Muschetar	Frizura cu par blond si bine prins, infatisarea perfecta a unui muschetar.
+45054	Boneta de Menajera	Coc blond cu boneta de menajera.
+45055	Creasta Scurta	Extravaganta, frizura scurta in stil Iroquois.
+45056	Coc Salsa	Coc elegant cu o floare rosie.
+45057	Palarie Fedora	Palarie clasica Fedora in stilul lui Humphrey Bogart.
+45065	Frizurã de Muschetar +	Frizura cu par blond si bine prins, infatisarea perfecta a unui muschetar. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45066	Boneta de Menajera +	Coc blond cu boneta de menajera. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45067	Creasta Scurta +	Extravaganta, frizura scurta in stil Iroquois. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45068	Coc Salsa +	Coc elegant cu o floare rosie. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45069	Palarie Fedora +	Palarie clasica Fedora in stilul lui Humphrey Bogart. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45070	Frizurã cu Flori +	Coada frumos impletita cu flori colorate. Iti ofera cel putin un bonus aleatoriu. Obiectul se poate negocia.
+45135	Frizura Cobra (m)	O frizura potrivita pentru Costumul Cobra.
+45136	Frizura Cobra (f)	O frizura potrivita pentru Costumul Cobra.
+45147	Turban Negru (m)	Bucata din material negru folosit pentru acoperirea capului la barbati.
+45148	Turban Negru (f)	Bucata din material negru folosit pentru acoperirea capului la femei.
+45149	Turban Negru+ (m)	O bandanã bãrbãteascã confecþionatã dintr-un material negru. Îþi oferã cel puþin un bonus aleatoriu. Obiectul se poate negocia.
+45150	Turban Negru+ (f)	Bucata din material negru folosit pentru acoperirea capului la femei. Ofera cel putin un bonus aleatoriu.
+45151	Coif Azrael (m)	Frizura ce ofera aspectul unui lider neinfricat al demonilor.
+45152	Coif Azrael (f)	Frizura ce ofera aspectul unui lider neinfricat al demonilor.
+45153	Coif Azrael+ (m)	Frizura ce ofera aspectul unui lider neinfricat al demonilor. Iti ofera cel putin un bonus aleatoriu.
+45154	Coif Azrael+ (f)	Frizura ce ofera aspectul unui lider neinfricat al demonilor. Iti ofera cel putin un bonus aleatoriu.
+45160	Coafurã Semilunã (m)	Dreaduri bine definite, vopsite în roºu ºi alb.
+45161	Coafurã Semilunã (f)	Dreaduri bine definite, vopsite în roºu ºi alb cu o bandanã.
+45198	Turban Maro	Un turban de culoare maro, elegant, fabricat dintr-un material rezistent, numai bun pentru rãzboinici.
+45199	Turban Alb	Un turban de culoare albã, elegant, fabricat dintr-un material rezistent, numai bun pentru rãzboinici.
+45200	Vãl Maro	Un vãl de culoare maro, fabricat dintr-un material uºor, perfect pentru femeile rãzboinic.
+45201	Vãl Alb	Un vãl de culoare alba, fabricat dintr-un material uºor, perfect pentru femeile rãzboinic.
+45202	Turban Maro+	Un turban de culoare maro, elegant, fabricat dintr-un material rezistent, numai bun pentru rãzboinici. Îþi oferã cel puþin un bonus aleatoriu.
+45203	Turban Alb+	Un turban de culoare albã, elegant, fabricat dintr-un material rezistent, numai bun pentru rãzboinici. Îþi oferã cel puþin un bonus aleatoriu.
+45240	Vãl Maro+	Un vãl de culoare maro, din material uºor, perfect pentru femeile rãzboinic. Îþi oferã cel puþin un bonus aleatoriu.
+45241	Vãl Verde+	Un vãl de culoare verde, din material uºor, perfect pentru femeile rãzboinic. Îþi oferã cel puþin un bonus aleatoriu.
+50010	Soseta	Cineva pune cadouri de crãciun în aceastã ºosetã.
+50011	Cufãr Lumina Lunii	Un obiect ornamental impresionant si stralucitor. Lucruri stranii se petrec atunci cand lumina lunii il atinge.
+50053	Cartea Cailor Militari	Cu aceastã licenþã poþi sã îþi strigi calul, însã doar dacã ai absolvit examenul de calificare pentru cai profesioniºti la grãjdar.
+50054	Fân	Fân pentru hrana unui cal începãtor.
+50055	Morcov	Hrana preferatã a unui cal avansat.
+50056	Ginseng roºu	Ginseng înãbuºit. Hranã pentru caii profesioniºti.
+50070	Ladã Oberork	Lada cãpitanului orcilor. În ea se aflã ceva de valoare.
+50071	Ladã Comandant întunecat	Lada comandantului esoteric. În ea se aflã ceva de valoare.
+50073	Lada Reginei Paianjen	Lada Reginei Paianjen. În ea se aflã ceva de valoare.
+50076	Ladã þestoasã de deºert	Lada þestoasei de deºert uriaºe. În ea se aflã ceva de valoare.
+50077	Ladã nouã-cozi	Lada celui cu nouã cozi. În ea se aflã ceva de valoare.
+50078	Lada tigrului galben	Lada spiritului tigrului galben. În ea se aflã ceva de valoare.
+50079	Lada regelui focului	Lada regelui focului. Din ea iese putere magicã.  Lada regele focului
+50080	Lada Dragonului Rosu	Cufãrul Dragon Roºu. În el se aflã ceva de valoare.
+50082	Lada îngerului cu coasã	Lada îngerului cu coasã. În ea se aflã ceva de valoare.
+50084	Piatra Cheie	O aurã de energie înconjoarã aceasta piatra. Funcþioneazã împotriva sigiliului de magie.
+50097	Cufãrul lui Azrael	Acest cufãr este þinut încuiat de puterile demonice. Pot fi în el lucruri foarte valoroase.
+50187	Cufãr Ucenic I	Cadoul de bun venit contine un echipament de baza potrivit pentru a putea incepe aventura.
+50188	Cufãr Ucenic II	Acest cufãr se va deschide doar când ai atins nivelul 10.
+50189	Cufãr Ucenic III	Acest cufãr se va deschide doar când ai atins nivelul 20.
+50190	Cufãr Expert I	Acest cufãr se va deschide doar când ai atins nivelul 30.
+50191	Cufãr Expert II	Acest cufãr se va deschide doar când ai atins nivelul 40.
+50192	Cufãr Expert III	Acest cufãr se va deschide doar când ai atins nivelul 50.
+50193	Cufãr Master I	Acest cufãr se va deschide doar când ai atins nivelul 60.
+50194	Cufãr Master II	Acest cufãr se va deschide doar când ai atins nivelul 75.
+50195	Cufãr Master III	Acest cufãr se va deschide doar când ai atins nivelul 100.
+50196	Cufãr Mare Maestru	Acest cufãr se va deschide doar când ai atins nivelul 120.
+50212	Cufãr Ucenic I	Cadoul de bun venit contine un echipament de baza potrivit pentru a putea incepe aventura.
+50213	Cufãr Ucenic I	Cadoul de bun venit contine un echipament de baza potrivit pentru a putea incepe aventura.
+50259	Cor Draconis (Antic)	Inima cristalina a dragonului pastreaza in ea sufletul, Piatra Dragonului.
+50266	Cufãr Jotun Thrym	Cufãrul Jotun Thrym. Judecând dupã aspectul incuietorii, ceva valoros se ascunde înãuntru.
+50270	Cufãr Regina Meley	Acest cufãr a fost recuperat din adãpostul Reginei Dragon Meley. Conþine o comoarã valoroasã. Obiectul se poate negocia.
+50271	Cufãr Gardã Dragon	Acest cufãr conþine comorile magnifice ale gãrzilor dragon care timp de secole s-au crezut pierdute. Obiectul se poate negocia.
+50301	Arta de rãzboi Sun-zi	Prima din cele 3 cãrþi de strategie de rãzboi. Ridicã puterea de conducere. Cartea dispare dupã citire.
+50302	Arta de rãzboi Wu-zi	A doua din cele 3 cãrþi de strategie de rãzboi. Ridicã puterea de conducere. Cartea dispare dupã citire.
+50303	WeiLiao Zi	A treia din cele 3 cãrþi de strategie de rãzboi. Ridicã puterea de conducere. Cartea dispare dupã citire.
+50307	Cartea misiunii (uºor)	Conþine o sarcinã uºoarã a carei îndeplinire este rãsplãtitã.
+50308	Cartea misiunii (normal)	Conþine o sarcinã normalã a cãrei îndeplinire este rãsplãtitã.
+50309	Cartea misiunii (greu)	Conþine o sarcinã grea a cãrei îndeplinire este rãsplãtitã.
+50310	Cartea misiunii (expert)	Conþine o misiune pentru experþi. Dacã o îndeplineºti vei fi rãsplãtit.
+50314	Cartea transformãrii	Studierea cu succes a acestei carti iti creste abilitatea de transformare. Cartea dispare dupa citire.
+50315	Cartea transformãrii av.	Dacã studiezi cum trebuie aceastã carte îþi va mari atributele de transformare. Însã vor dispãrea dupã ce ai terminat de citit cartea.
+50316	Cartea transformãrii exp	Studiul acestei carti creste capacitatea de transformare. Cartea dispare dupa citire.
+50323	Cufãr Cãrti Respingere	Acest cufãr conþine o carte de abilitãþi pentru respingere aleasã aleatoriu.
+50324	Cufãr Cãrþi Ajutor	Acest cufãr conþine o carte de abilitãþi pentru ajutor aleasã aleatoriu.
+50401	Carte Incizie Tripla	Foloseste aceasta carte pentru maestru Incizie Tripla. Cartea dispare dupa citire.
+50402	Cartea Vartejul Sabiei	Foloseste aceasta carte pentru maestru Vartejul Sabiei. Cartea dispare dupa citire.
+50403	Cartea Iuresului	Foloseste aceasta carte pentru maestru Betia de Lupta. Cartea dispare dupa citire.
+50404	Cartea aura sabiei	Foloseste aceasta carte pentru maestru Aura Sabiei. Cartea dispare dupa citire.
+50405	Cartea bãtaia vântului	Foloseste aceasta carte pentru maestru Bataia Vantului. Cartea dispare dupa citire.
+50406	Manual Puterea Vieþii	Foloseºte aceastã carte pentru master la abilitatea Puterea Vieþii. Cartea dispare dupa citire.
+50416	Cartea pãtrunderii	Foloseste aceasta carte pentru maestru Patrundere. Cartea dispare dupa citire.
+50417	Cartea lov. puternice	Foloseste aceasta carte pentru maestru Lovitura Puternica. Cartea dispare dupa citire.
+50418	Cartea tropãitului	Foloseste aceasta carte pentru maestru Tropait. Cartea dispare dupa citire.
+50419	Cartea trupului puternic	Foloseste aceasta carte pentru maestru Trup Puternic. Cartea dispare dupa citire.
+50420	Cartea lov. de sabie	Foloseste aceasta carte pentru maestru Lovitura de Sabie. Cartea dispare dupa citire.
+50421	Manual Sfera Sabiei	Foloseste aceasta carte pentru master la abilitatea Sabie Sfera. Cartea dispare dupa citire.
+50431	Cartea Ambuscadei	Foloseste aceasta carte pentru maestru Ambuscada. Cartea dispare dupa citire.
+50432	Cartea Atac Rapid	Foloseste aceasta carte pentru maestru Atac Fulger. Cartea dispare dupa citire.
+50433	Cartea Pumnal Rulant	Foloseste aceasta carte pentru maestru Pumnal Rulant. Cartea dispare dupa citire.
+50434	Cartea camuflãrii	Foloseste aceasta carte pentru maestru Camuflaj. Cartea dispare dupa citire.
+50435	Cartea Nor Otravitor	Foloseste aceasta carte pentru maestru Nor Otravitor. Cartea dispare dupa citire.
+50436	Manual Otrava Subtila	Foloseste aceasta carte pentru master la abilitatea Otrava Subtila. Cartea dispare dupa citire.
+50446	Cartea Foc Repetat	Foloseste aceasta carte pentru maestru Foc Repetat. Cartea dispare dupa citire.
+50447	Cartea Ploaie de Sageti	Foloseste aceasta carte pentru maestru Ploaie de Sageti. Cartea dispare dupa citire.
+50448	Cartea sãgeþii de foc	Foloseste aceasta carte pentru maestru Sageata de Foc. Cartea dispare dupa citire.
+50449	Cartea mersului lin	Foloseste aceasta carte pentru maestru Mers Lin. Cartea dispare dupa citire.
+50450	Cartea sãgeþii otrãvite	Foloseste aceasta carte pentru maestru Sageata Otravita. Cartea dispare dupa citire.
+50451	Manual Scanteie	Foloseste aceasta carte pentru master la abilitatea Scanteie. Cartea dispare dupa citire.
+50461	Cartea pocnit din degete	Foloseste aceasta carte pentru maestru Lovitura Degetului. Cartea dispare dupa citire.
+50462	Cartea Vartejul Dragon	Foloseste aceasta carte pentru maestru Vartejul Dragon. Cartea dispare dupa citire.
+50463	Cartea lamei fermecate	Foloseste aceasta carte pentru maestru Lama Fermecata. Cartea dispare dupa citire.
+50464	Cartea fricii	Foloseste aceasta carte pentru maestru Frica. Cartea dispare dupa citire.
+50465	Cartea armurii fermecate	Foloseste aceasta carte pentru maestru Armura Fermecata. Cartea dispare dupa citire.
+50466	Cartea anularea vrãjii	Foloseste aceasta carte pentru maestru Anulare Vraja. Cartea dispare dupa citire.
+50476	Cartea lov. întunecate	Foloseste aceasta carte pentru maestru Lovitura Intunecata. Cartea dispare dupa citire.
+50477	Cartea loviturii de foc	Foloseste aceasta carte pentru maestru Lovitura de Foc. Cartea dispare dupa citire.
+50478	Cartea spiritul focului	Foloseste aceasta carte pentru maestru Spiritul Focului. Cartea dispare dupa citire.
+50479	Cartea prot. întunecate	Foloseste aceasta carte pentru maestru Protectie Intunecata. Cartea dispare dupa citire.
+50480	Cartea lov. stafiei	Foloseste aceasta carte pentru maestru Lovitura Stafiei. Cartea dispare dupa citire.
+50481	Cartea pietrei întunecat	Foloseste aceasta carte pentru maestru Sfera Intunecata. Cartea dispare dupa citire.
+50491	Cartea Talisman Zburator	Foloseste aceasta carte pentru maestru Talismanul Zburator. Cartea dispare dupa citire.
+50492	Cartea Focul dragonului	Foloseste aceasta carte pentru maestru Aruncarea Dragonului. Cartea dispare dupa citire.
+50493	Cartea limbii dragonului	Foloseste aceasta carte pentru maestru Ragetul Dragonului. Cartea dispare dupa citire.
+50494	Cartea Binecuvantarii	Foloseste aceasta carte pentru maestru Binecuvantare. Cartea dispare dupa citire.
+50495	Cartea reflecþiei	Foloseste aceasta carte pentru maestru Reflectie. Cartea dispare dupa citire.
+50496	Cartea Ajutorul Dragon	Foloseste aceasta carte pentru maestru Ajutorul Dragonului. Cartea dispare dupa citire.
+50506	Cartea aruncãtura fulger	Foloseste aceasta carte pentru maestru Aruncarea Fulgerului. Cartea dispare dupa citire.
+50507	Cartea despre fulgerat	Foloseste aceasta carte pentru maestru Fulger. Cartea dispare dupa citire.
+50508	Cartea gheara fulgerului	Foloseste aceasta carte pentru maestru Gheara Fulgerului. Cartea dispare dupa citire.
+50509	Cartea vindecãrii	Foloseste aceasta carte pentru maestru Vindecare. Cartea dispare dupa citire.
+50510	Cartea repeziciunii	Foloseste aceasta carte pentru maestru Repeziciune. Cartea dispare dupa citire.
+50511	Cartea atacului	Foloseste aceasta carte pentru maestru Atac Fortat. Cartea dispare dupa citire.
+50513	Piatra Sufletului	Piatra legendarã care creºte abilitãþile de mare maestru. Piatra dispare dupã folosire.
+50516	Respingere Vârtej Sabiei	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Vârtejul Sabiei.
+50517	Respingere Ambuscadã	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Ambuscadã.
+50518	Respingere Lov. Deget	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Lovitura Degetului.
+50519	Respingere Arunc. Dragon	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Aruncarea Dragonului.
+50520	Respingere Atacul Spirit	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Atacul Spiritului.
+50521	Respingere Sageatã Foc	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Sãgeata de Foc.
+50522	Respingere Lov. Întunec.	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Lovitura Întunecatã.
+50523	Respingere Chem. Fulger.	Aceastã carte te învaþã abilitatea de a reduce daunele cauzate de Chemarea Fulgerului.
+50560	Ajutor Vârtejul Sabiei	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Vârtejul Sabiei.
+50561	Ajutor Ambuscadã	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Ambuscada.
+50562	Ajutor Lovit. Degetului	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Lovitura Degetului.
+50563	Ajutor Arunc. Dragonului	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Aruncarea Dragonului.
+50564	Ajutor Atacul Spiritului	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Atacul Spiritului.
+50565	Ajutor Sãgeata de Foc	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Sãgeata de Foc.
+50566	Ajutor Lovit. Întunecatã	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Lovitura Întunecatã.
+50567	Ajutor Chem. Fulgerului	Aceastã carte te învaþã abilitatea de a îmbunãtãþi Chemarea Fulgerului.
+50621	Diamant	Cea mai puternicã piatrã preþioasã care poate fi adãugat la obiecte de bijuterie.
+50622	Chihlimbar	Frumosul tãu chihlimbar. Poate fi adãugat obiectelor de bijuterie.
+50623	Lemn Fosila	Lemn valoros. Poate fi adaugat obiectelor de bijuterie.
+50624	Cupru	Metal pretios ce poate fi folosit la fabricarea bijuteriilor si monedelor. Poate fi folosit si pentru productia bronzului.
+50625	Argint	Metal lucios folosit la producerea bijuteriilor. Poate fi adaugat obiectelor de bijuterie din argint.
+50626	Aur	Metal auriu folosit la producerea bijuteriilor. Poate fi adaugat obiectelor de bijuterie din aur.
+50627	Jad	Unul din mineralele valoroase folosite de peste 5000 de ani. Poate fi adaugat obiectelor de bijuterie din jad.
+50628	Ebonita	Acest negru si greu material de lemn este unul dintre cele mai valoroase. Poate fi adaugat acesoriilor si bijuteriilor.
+50629	Perla	Folosite la producerea obiectelor de bijuterie. Poate fi adaugat obiectelor de bijuterie.
+50630	Aur Alb	Un metal greu ºi alb asemãnãtor cu aurul, folosit la fabricarea bijuteriilor.
+50631	Cristal	Piatra din cuart cristalin ce poate fi gasita in diferite culori. Folosita de obicei pentru bijuterii.
+50632	Ametist	Cuart obisnuit gasit deseori in nuante purpurii. Folosit adesea la fabricarea bijuteriilor.
+50633	Lacrima cerului	Ploaie din cer cristalizatã. Poate fi adãugatã obiectelor de bijuterie din lacrima cerului.
+50926	Pietre Lucioase	Colecteazã Pietre Lucioase iar Negustorul Gaya le va tãia în Gaya valoroase.
+51001	Fragment de Energie	Fragment pentru un Cristal de Energie. 30 de bucati pot fi topite si unite intr-un cristal.
+51002	Cristal de Energie	Cristalul iti mareste bonusurile pentru doua ore.
+52040	Leu Sãlbatic	Sigiliul foloseste la chemarea Leului Salbatic. Acesta iti va creste puterea de atac cu 30.
+53010	Leonidas	Poþi folosi acest sigiliu pentru a-l sumona pe puiul de leu, Leonidas. Însoþitorul îþi oferã | +15% atac magic/fizic | +1500 PV
+53011	Khan	Poþi folosi acest sigiliu pentru a-l sumona pe puiul de tigru, Khan. Însoþitorul îþi oferã | +15% atac magic/fizic | +1500 PV
+53012	Porcuºor	Poþi folosi acest sigiliu pentru a-l sumona pe tânãrul mistreþ, Porcuºor. Însoþitorul îþi oferã | +15% atac magic/fizic | +1500 PV
+53013	Rufus	Poþi folosi acest sigiliu pentru a-l sumona pe puiul de lup, Rufus. Însoþitorul îþi oferã | +15% atac magic/fizic | +1500 PV
+53017	Phoenix de Jad	Acest sigiliu îl sumoneazã pe graþiosul Phoenix de Jad. Însoþitorul îþi oferã | +15% atac magic/fizic | +50% ºansã de bonus de EXP
+53256	Bonsai	Sigiliul te ajutã la chemarea lui Bonsai rãzboinicul în miniaturã.
+54043	Cufãr Începãtor I	Cadoul de intampinare contine exhipament de baza pentru a avea un start optim in aceasta aventura.
+55008	Pergament Nume Însoþitor	Trage pergamentul peste însoþitor pentru a-i schimba numele.
+55009	Cufãr Carte Însoþitor	Conþine o carte de abilitãþi aleasã aleatoriu.
+55010	Rezistenþã (Rãzboinic)	Dupã învãþarea abilitãþilor, însoþitorul tãu îþi va creºte rezistenþa la atacurile Rãzboinicilor.
+55011	Rezistenta (Sura)	Dupa invatarea acestei abilitati, insotitorul tau va putea sa creasca rezistenta ta la atacurile Sura.
+55012	Rezistenta (Ninja)	Dupa invatarea acestei abilitati, insotitorul tau va putea sa creasca rezistenta ta la atacurile Ninja.
+55013	Rezistenta (Saman)	Dupa invatarea acestei abilitati, insotitorul tau va putea sa creasca rezistenta ta la atacurile Samanului.
+55401	Ou de Maimuta	Cand vrei ca insotitorul sa iasa din cuibar, click dreapta pe ou.
+55402	Ou de Paianjen	Cand vrei ca insotitorul sa iasa din cuibar, click dreapta pe ou.
+55403	Ou Razador	Cand vrei ca insotitorul sa iasa din cuibar, click dreapta pe ou.
+55404	Ou Nemere	Cand vrei ca insotitorul sa iasa din cuibar, click dreapta pe ou.
+55405	Ou Dragon Albastru	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55406	Ou Dragon Roºu	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55407	Ou Mini Azrael	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55408	Ou Mini Executor Gras	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55409	Ou Micul Baashido	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55410	Ou Nessie	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55411	Oul lui Exedyar	Când doreºti ca însoþitorul tãu sã eclozeze, apasã dreapta mouse pe ou.
+55701	Maimuta Mica	Click dreapta sa chemi insotitorul, apoi apasa "P" pe tastatura sa deschizi interfata insotitorului.
+55702	Paianjen Mic	Click dreapta sa chemi insotitorul, apoi apasa "P" pe tastatura sa deschizi interfata insotitorului.
+55703	Razador Mic	Click dreapta sa chemi insotitorul, apoi apasa "P" pe tastatura sa deschizi interfata insotitorului.
+55704	Nemere Mic	Click dreapta sa chemi insotitorul, apoi apasa "P" pe tastatura sa deschizi interfata insotitorului.
+55705	Dragonette	Dreapta mouse pentru a-þi chema însoþitorul, apoi apasã "P" pe tastaturã sã deschizi vederea generalã.
+55706	Meley Mic	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+55707	Mini Azrael	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+55708	Mini Executor Gras	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+55709	Micul Baashido	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+55710	Nessie	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+55711	Micul Exedyar	Click dreapta sã chemi însoþitorul, apoi apasã "P" pe tastaturã sã deschizi interfaþa însoþitorului.
+70031	Pamflet Scrima	Acest pamflet reflecta, printre altele, potenþialul ºi punctele slabe ale anatomiei umane.
+70038	Mantia Curajului	Rãzboinicii din vremurile strãvechi îºi arãtau curajul purtând o mantie coloratã care servea la atragerea monºtrilor.
+70039	Manualul Fierarului	Cartea este umplutã cu sufletul unui bãtrân fierar. Dacã este folositã, ea poate creºte ºansa de a îmbunãtãþi obiecte.
+70063	Costum Transformare	Schimba bonusurile de pe unul dintre costumele tale si inlocuieste-le cu unele noi. Cu putin noroc, numarul bonusurilor se poate schimba (pana la 3 maxim).
+70064	Costum Vrajit	Schimba bonusurile de pe unul dintre costumele tale si inlocuieste-le cu unele noi.
+70065	Transfer Bonus Costum	Transforma bonusurile de la un costum pe altul. Transferul va distruge unul dintre costume.
+70102	Boabã Zen	Scade gradul rãu. Creºte gradul bun.
+70104	Globul transformãrii	Cu ajutorul acestui glob poþi sã te transformi într-un monstru.
+70105	Globul transformãrii	Cu ajutorul acestul glob te poþi transforma într-un monstru.
+70106	Globul transformãrii	Cu ajutorul acestui glob te poþi transforma într-un monstru.
+70107	Globul transformãrii	Cu ajutorul acestui glob te poþi transforma într-un monstru.
+70201	Înãlbitor	Îþi redã culoarea originalã a pãrului. Pãrul decolorat poate fi vopsit din nou.
+70202	Colorant alb de pãr	Coloreazã pãrul în alb. Te poþi vopsi o data la 3 nivele.
+70203	Colorant blond de pãr	Coloreazã pãrul în blond. Te poþi vopsi o data la 3 nivele.
+70204	Colorant roºu de pãr	Coloreazã pãrul în roºu. Te poþi vopsi o data la 3 nivele.
+70205	Colorant maro de pãr	Coloreazã pãrul în saten. Poþi vopsi o datã la 3 lvl.
+70206	Colorant negru de pãr	Coloreazã pãrul în negru. Te poti vopsi o data la 3 nivele.
+70301	Inel de Logodna	Inel purtat de cei logodiþi.
+70302	Inel de cununie	Inel purtat de cei cãsãtoriþi.
+70602	Pergament Spirit (100%)	Cu acest pergament creºti evoluþia spiritului tãu cu un nivel.
+70603	Pergament Spirit	Cu acest pergament creºti evoluþia spiritului tãu cu douã nivele. Poate eºua.
+71001	Pergamentul Exorcizãrii	Va desface blestemul spiritelor rele daca invatatul nu are succes. Cu ajutorul acestui pergament poti citi un alt document in aceeasi zi.
+71002	Pergam. Reset Status	Utilizarea acestui obiect îþi dã posibilitatea sa îþi rearanjezi punctele de status. Astfel poþi conduce evoluþia caracterului tãu în altã direcþie.
+71032	Pergamentul Dragonului	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã doar cu 1 punct. Adiþional, ºansa succesului la îmbunãtãþire va creºte cu 10%.
+71035	Elixirul Explorarii	Îmbunãtãþeºte calitatea obiectelor cercetate pe care le-ai colectat, crescând probabilitatea acceptãrii lor. Nu se aplicã misiunilor din Yohara.
+71048	Vraja schimbãrii	Aceastã vrajã poate schimba sexul caracterului tãu.
+71054	Tinctura regatelor	Îþi dã posibilitatea sã pleci în alt regat in exil.
+71055	Tinctura numelui	Îþi dã posibilitatea sã alegi un alt nume pentru caracterul tãu.
+71075	Vopsea de pãr(alb)	Îþi coloreazã pãrul în alb definitiv.
+71076	Vopsea de pãr(blond)	Îþi coloreazã definitiv pãrul în blond.
+71077	Vopsea de pãr(roºu)	Îþi coloreazã definitiv pãrul în roºu.
+71078	Vopsea de pãr (maro)	Îþi coloreazã definitiv pãrul în maro.
+71079	Vopsea de pãr(negru)	Îþi coloreazã definitiv pãrul în negru.
+71083	Cartea Pietrelor	Elimina toate pietrele sparte dintr-un Obiect. Astfel primesti o noua incercare de a imbunatati arma sau armura.
+71084	Vrãjeºte Obiectul	Eliminã bonusurile unui obiect ºi adaugã altele noi. Se aplicã doar la bonusurile 1-5.
+71093	Globul transformãrii	Cu ajutorul acestui glob te poþi transforma într-un monstru.
+71094	Citit Concentrat	Creºte ºansa îmbunãtãþirii abilitãþilor tale atunci când citeºti urmãtoarea carte (sau Piatra Sufletului) de 2.5 ori.
+71099	Inelul Urmasului	Permite comandantului unei obºti sã îºi aleagã urmaºul, ºi predã acestuia puterea.
+71100	Pergam. Reset Învaþãturã	Uita calificarea si invata una noua.
+71103	Redistribuire (VIT)	Reduce Vitalitatea la 1 punct ºi îþi permite sã redistribui punctele.
+71104	Redistribuire (INT)	Reduce 1 punct la inteligenþa pentru a-l putea realoca.
+71105	Redistribuire (STR)	Iti reduce puterea la 1 si iti permite redistribuirea punctelor.
+71106	Redistribuire (DEX)	Reseteazã dexteritatea la 1 ºi îþi permite sã redistribui punctele.
+71107	Fructul Vieþii	Creste punctele gradului cu 2000 (durata timp: 8 ore).
+71123	Balanþa Dragonului	Balan'a Dragonului este din cele mai grele materiale cunoscute.
+71124	Leul Alb	Animalele cu blanã albã sunt foarte rare ºi mulþi oameni le venereazã, crezând cã acestea au puteri magice.
+71125	Mistreþ Sãlbatic Luptã	Îmblânzirea spiritelor animalelor malefice necesitã ablitãþi magice însã, rezultatele pot fi uimitoare.
+71126	Lup de Luptã	Îmblânzirea spiritelor animalelor malefice necesitã ablitãþi magice însã, rezultatele pot fi uimitoare.
+71127	Tigrul Furtunii	Îmblânzirea spiritelor animalelor malefice necesitã ablitãþi magice însã, rezultatele pot fi uimitoare.
+71128	Leul Luptãtor	Îmblânzirea spiritelor animalelor malefice necesitã ablitãþi magice însã, rezultatele pot fi uimitoare.
+71129	Ghearele Dragonului	Aspectul acestor gheare terifiante, re-aduc amintiri....
+71137	Tigru Regal (albastru)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (albastru). Mãreºte experienþa colectatã cu 30%.
+71138	Tigru Regal (roºu)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (roºu). Mãreºte experienþa colectatã cu 30%.
+71139	Tigru Regal (aur)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (auriu).
+71140	Tigru Regal (verde)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (verde). Mãreºte experienþa colectatã cu 30%.
+71141	Tigru Regal (gri)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (gri). Mãreºte experienþa colectatã cu 30%.
+71142	Tigru Regal (alb)	Magia acestui sigiliu va invoca mountul tãu, maiestuosul Tigru Regal (alb). Mãreºte experienþa colectatã cu 30%.
+71149	Inel Putere Mortala	Îþi oferã +30% EXP, +20% ºansã de apãrare împotriva Sura, +20% ºansã de apãrare împotriva ªamanilor, +20% ºansã de apãrare împotriva Lycanilor, +30% putere împotriva monºtrilor, +10% la maximul de PV ºi +10% la maximul de PM pentru o anumitã perioadã de timp.
+71151	Magie Verde	Înlãturã bonusurile unui obiect din echipament ºi adaugã altele noi. Poate fi folosit doar pe arme ºi armuri pânã la nivelul 30. Obiect de la cufãrul nivelului, nu se poate negocia.
+71161	Sleipnir Porphyreus	Sigiliul unuia dintre cei mai frumoºi ºi extrem de rari cai purpurii. Creºte viteza de miºcare cu 60.
+71164	Comet	Poþi folosi acest sigiliu pentru a-þi chema renul Cometa. Creºte viteza de miºcare cu 60.
+71165	Predator Polar	Poþi folosi acest sigiliu pentru a-l chema pe agresivul Predator Polar. Creºte viteza de miºcare cu 60.
+71166	Panda Blindat	Poþi folosi acest sigiliu pentru a-l chema pe Panda Blindat. Creºte viteza de miºcare cu 60.
+71171	Unicorn	Poþi folosi acest sigiliu pentru a-l chema pe Unicorn. Creºte viteza de miºcare cu 60.
+71172	Vis Urât	Poþi folosi acest sigiliu pentru a-l chema pe Vis Urât. Creºte viteza de miºcare cu 60.
+71176	Pantera Neagra	Poþi folosi acest sigiliu pentru a chema Pantera Neagrã misterioasã. Creºte viteza de miºcare cu 30.
+71177	Leopard	Poþi folosi acest sigiliu pentru a-l chema pe Leopardul curajos. Creºte viteza de miºcare cu 30.
+71182	Muffin (maro)	Poþi folosi acest sigiliu pentru a-l chema pe Muffin, puiul luptãtor ºi invincibil. Creºte viteza de miºcare cu 20.
+71183	Nugget (maro)	Poþi folosi acest sigiliu pentru a-l chema pe Nugget, cocosul luptãtor ºi nervos. Creºte viteza de miºcare cu 20.
+71184	Muffin (albastru)	Poþi folosi acest sigiliu pentru a-l chema pe Muffin, puiul luptãtor ºi invincibil. Creºte viteza de miºcare cu 20.
+71185	Nugget (albastru)	Poþi folosi acest sigiliu pentru a-l chema pe Nugget, cocosul luptãtor ºi nervos. Creºte viteza de miºcare cu 20.
+71186	Muffin (verde)	Poþi folosi acest sigiliu pentru a-l chema pe Muffin, puiul luptãtor ºi invincibil. Creºte viteza de miºcare cu 20.
+71187	Nugget (verde)	Poþi folosi acest sigiliu pentru a-l chema pe Nugget, cocosul luptãtor ºi nervos. Creºte viteza de miºcare cu 20.
+71192	Tunetul	Poþi folosi acest sigiliu pentru a chema renul Donner. Creºte viteza de miºcare cu 20 ºi experienþa colectatã cu 30%.
+71193	Blitzen	Poþi folosi acest sigiliu pentru a chema renul Blitzen. Creºte viteza de miºcare cu 20 ºi experienþa colectatã cu 30%.
+71197	Nugget (bleumarin)	Poþi folosi acest sigiliu pentru a-l chema pe Nugget, cocoºul luptãtor ºi nervos.
+71198	Muffin (roz)	Poþi folosi acest sigiliu pentru a-l chema pe Muffin, puiul luptãtor ºi invincibil.
+71221	Dragon Nirvana	Sigiliul îl cheamã pe Dragon Nirvana.
+71222	Dragon Samsara	Sigiliul îl cheamã pe Dragon Nirvana.
+71223	Manny	Acest sigiliu îl cheamã pe mamutul puternic.
+71224	Ellie	Acest sigiliu îl cheamã pe mamutul puternic.
+71225	Armãsar Spectral	Acest sigiliu il cheama pe mountul tãu strãlucitor.
+71226	Equus Nocturnus	Acest sigiliu il cheama pe mountul tãu negru abanos.
+71227	Armãsar Hialin	Acest sigiliu îl cheamã pe scheleticul Armãsar Hialin pentru cãlãrie.
+71228	Armãsar Argintiu	Acest sigiliu îl cheamã pe scheleticul Armãsar Argintiu pentru cãlãrie.
+71250	Sfinx Alb	Acest sigiliu îl cheamã pe mountul alb înþelept.
+71251	Sfinx de Piatrã	Acest sigiliu îl cheamã pe mountul puternic de piatrã.
+72301	Pergament Binecuvantat	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã doar cu 1 punct.
+72309	Manualul Fierarului	Cartea este umplutã cu sufletul unui bãtrân fierar. Dacã este folositã, ea poate creºte ºansa de a îmbunãtãþi obiecte.
+72310	Pergamentul Exorcizãrii	Va desface blestemul spiritelor rele dacã învãþatul nu are succes. Cu ajutorul acestui pergament poþi sã citeºti un alt document de abilitate în aceeaºi zi.
+72314	Pergamentul Dragonului	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã cu un nivel. Adiþional, ºansa succesului la îmbunãtãþire va creºte cu 10%.
+72319	Extindere Inventar	Foloseºte acest obiect pentru a-þi extinde inventarul. Poate fi negociat.
+72320	Extindere Inventar	Foloseºte acest obiect pentru a-þi extinde inventarul.
+72725	Elixirul Soarelui (L)	Umplerea automata a PV-ului. Contine 7,000,000 de PV.
+72729	Elixirul Lunii (L)	Umplerea automata a PM-ului. Contine 700,000 de PM.
+73001	Frizurã modernã (roºu)	Frizurã modernã care oferã un aspect specific.
+73002	Frizurã modernã(deschis)	Frizurã modernã care oferã un aspect specific.
+73003	Frizurã modernã(albastr)	Frizurã modernã care oferã un aspect specific.
+73004	Frizurã modernã (saten)	Frizurã modernã care oferã un aspect specific.
+73005	Batic de frunte	Pãr scurt, legat într-un batic.
+73006	Batic de frunte	Pãr scurt, legat într-un batic.
+73007	Batic de frunte	Pãr scurt, legat într-un batic.
+73008	Batic de frunte	Pãr scurt, legat într-un batic.
+73009	Pãr lung (negru)	Frizurã impresionantã cu pãr negru frumos.
+73010	Pãr lung (roºu)	Frizurã impresionantã cu pãr roºu frumos.
+73011	Pãr lung (saten)	Frizurã impresionantã cu pãr maro frumos.
+73012	Pãr lung (verde)	Frizurã impresionantã cu pãr verde frumos.
+73251	Coadã de cal (saten)	Pãr lung legat în coadã.
+73252	Coadã de cal (verde)	Par lung legat in coada.
+73253	Coadã de cal (albastru)	Pãr lung legat în coadã.
+73254	Coada de cal (deschisa)	Par lung strans in coada
+73255	Pãr pânã la umeri (roºu)	Frizurã normalã cu pãr pânã la umeri.
+73256	Pãr pânã la umeri(saten)	Frizurã normalã cu pãr pânã la umeri.
+73257	Pãr pânã la umeri (desc)	Frizurã normalã cu pãr lung pânã la umeri.
+73258	Pãr pânã la umeri (lila)	Frizurã normalã cu pãr pânã la umeri.
+73259	Pãr scurt (roºu)	Frizur ce ofera un aspect amenintator.
+73260	Pãr scurt (albastru)	Frizurã scurtã ce oferã un aspect ameninþãtor.
+73261	Pãr scurt (negru)	Frizura cu par scurt ce ofera un aspect amenintator.
+73262	Pãr scurt (blond)	Frizura cu par scurt ce ofera un aspect amenintator.
+73501	Frizurã sportivã (desc.)	Frizurã extravagantã cu pãr scurt.
+73502	Frizurã sportivã (saten)	Frizurã extravagantã cu pãr scurt.
+73503	Frizurã sportivã (blond)	Frizurã extravagantã cu pãr scurt.
+73504	Frizurã sportivã (verde)	Frizurã extravagantã cu pãr scurt.
+73505	Frizurã carismã (alb)	Frizura carismatica cu par lung.
+73506	Frizurã carisma (roºu)	Frizurã carismaticã cu pãr lung.
+73507	Frizurã carisma (negru)	Frizurã carismaticã cu pãr lung.
+73508	Frizurã carisma (violet)	Frizurã carismaticã cu pãr lung.
+73509	Coadã lungã (alb)	Frizurã tradiþionalã cu coadã.
+73510	Coadã lungã (albastru)	Frizurã tradiþionalã cu coadã.
+73511	Coadã lungã (negru)	Frizurã tradiþionalã cu coadã.
+73512	Coadã lungã (saten)	Frizurã tradiþionalã cu coadã.
+73751	Frizurã nobilã (saten)	Frizurã decentã care transmite ceva nobil.
+73752	Frizurã nobilã (negru)	Frizurã elegantã cu pãr prins.
+73753	Frizurã nobilã (albastr)	Frizurã decentã care transmite ceva nobil.
+73754	Frizurã nobilã (deschis)	Frizurã decentã care transmite ceva nobil.
+73755	Pãr semi-lung (saten)	Frizurã elegantã cu pãr neted.
+73756	Pãr semi-lung (negru)	Frizurã elegantã cu pãr neted.
+73757	Pãr semi-lung (blond)	Pãr neted elegantã.
+73758	Pãr semi-lung (violet)	Frizurã elegantã cu pãr neted.
+73759	Frizurã veche (brunet)	Pãr lung purtat într-o frizurã tradiþionalã.
+73760	Frizurã veche (deschis)	Pãr lung purtat într-o frizurã tradiþionalã.
+73761	Frizurã veche (violet)	Pãr lung purtat într-o frizurã tradiþionalã.
+73762	Frizurã veche (roºu)	Pãr lung purtat într-o frizurã tradiþionalã.
+74001	Frizurã moderna (roºu)	Frizura care ofera un aspect aparte
+74002	Frizurã modernã(deschis)	Frizura care ofera un aspect aparte
+74003	Frizurã modernã(albastr)	Frizura care ofera un aspect aparte
+74004	Frizurã modernã (saten)	Frizura care ofera un aspect aparte
+74005	Batic de frunte (roºu)	Par scurt, saten inchis, prins cu batic rosu
+74006	Batic de frunte (carouri	Par scurt, blond, prins cu batic deschis la culoare
+74007	Batic de frunte(albastr)	Par scurt, albastru, prins cu batic
+74008	Batic de frunte(carouri)	Par scurt, verde, prins cu batic verde
+74009	Pãr lung (negru)	Frizura care ofera un aspect aparte
+74010	Par lung (roºu)	Frizura care ofera un aspect aparte
+74011	Pãr lung (saten)	Frizura care ofera un aspect aparte
+74012	Pãr lung (verde)	Frizura care ofera un aspect aparte
+74013	Afro Rãzboinic (m)	Oferã unui bãrbat Rãzboinic un bonus de PV de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+74014	Afro Rãzboinic (m)	Oferã unui bãrbat Rãzboinic un bonus de PM de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+74015	Coif Samurai Rãzb. (m)	Oferã unui bãrbat Rãzboinic un bonus de PV de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+74016	Coif Samurai Rãzb. (m)	Oferã unui bãrbat Rãzboinic un bonus de PM de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+74017	Fes Rãzboinic (m)	Un fes roºu pentru bãrbaþii Rãzboinici. (duratã: 7 zile).
+74018	Keffiyeh Rãzboinic (m)	Pânzã purtatã pe cap de bãrbaþii Rãzboinici. (duratã: 7 zile).
+74019	Turban Rãzboinic (m)	Turban confecþionat dintr-un material de calitate pentru bãrbaþii Rãzboinici. (duratã: 7 zile).
+74020	Jack O' Rãzboinic (m)	O mascã pentru rãzboinici în formã de dovleac. Atributele ºi durata sunt setate aleatoriu. Va înlocui frizura existentã.
+74251	Coada de cal (saten)	Frizura purtata de femei, parul este lung si prins in coada
+74252	Coadã de cal (verde)	O frizura in care parul este legat intr-o coada lunga
+74253	Coadã de cal (albastru)	Par lung si albastru, strans in coada - frizura practica pentru femei
+74254	Coada de cal (deschis)	Par lung si deschis la culoare prins într-o coada - frizura purtata de femei
+74255	Pãr pânã la umeri (roºu)	Frizura dezordonata si moderna
+74256	Pãr pânã la umeri(saten)	Frizura dezordonata si moderna
+74257	Par pana la umeri (desc)	Frizura dezordonata si moderna
+74258	Par pana la umeri (Lila)	Frizura dezordonata si moderna
+74259	Pãr scurt (roºu)	Frizura rosie, ciufulita in stilul Ninja
+74260	Pãr scurt (albastru)	Frizura albastra, ciufulita in stilul Ninja
+74261	Pãr scurt (negru)	Frizura ciufulita neagra in stilul Ninja
+74262	Pãr scurt (blond)	Frizura ciufulita blonda in stilul Ninja
+74263	Afro Ninja (f)	Ofera unei femei Ninja un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74264	Afro Ninja (f)	Ofera unei femei Ninja un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74265	Pãlãrie Con Ninja (f)	Ofera unei femei Ninja un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74266	Pãlãrie Con Ninja (f)	Ofera unei femei Ninja un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74267	Vãl Ninja (f)	Un val purtat pe cap si fata de femeile Ninja facut dintr-un material valoros. (valabilitate: 7 zile).
+74268	Eºarfã Ninja (f)	O esarfa purtata pe cap de femeile Ninja facuta dintr-un material pretios. (valabilitate: 7 zile).
+74269	Turban Ninja (f)	Turban pentru femeile Ninja facut dintr-un material foarte valoros. (valabilitate: 7 zile).
+74270	Jack O'Ninja (f)	O masca pentru fetele ninja in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+74501	Frizurã sport (Alba)	Frizura cu par scurt ce ofera un aspect militaresc
+74502	Frizurã sport (Saten)	Frizura cu par scurt ce ofera un aspect militaresc
+74503	Frizurã sport (Blond)	Frizura cu par scurt ce ofera un aspect militaresc
+74504	Frizurã sportivã (verde)	Frizurã scurtã cu aspect militãresc
+74505	Frizurã carisma (alb)	Frizurã care subliniazã individualitatea unui caracter puternic
+74506	Frizurã carisma (roºu)	Frizurã care subliniazã individualitatea unui caracter puternic (pana la +20% daune împotriva Ninja)
+74507	Frizurã carisma (negru)	Frizurã care subliniazã individualitatea unui caracter puternic
+74508	Frizurã carisma (violet)	Frizurã care subliniazã individualitatea unui caracter puternic
+74509	Coadã lungã (alb)	Coadã în stil vechi, care era un simbol al celor bogaþi
+74510	Coadã lungã (albastru)	Coadã în stil vechi, care era un simbol al celor bogaþi
+74511	Coadã lungã (negru)	Coadã în stil vechi, care era un simbol al celor bogaþi
+74512	Coadã lungã (saten)	Coadã în stil vechi, care era un simbol al celor bogaþi
+74513	Afro Sura (B)	Ofera unui barbat Sura un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74514	Afro Sura (B)	Ofera unui barbat Sura un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74515	Coif Samurai Sura (B)	Ofera unui barbat Sura un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74516	Coif Samurai Sura (B)	Ofera unui barbat Sura un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74517	Fes Sura (B)	Un fes rosu pentru barbatii Sura. (valabilitate: 7 zile).
+74518	Keffiyeh Sura (B)	Panza purtata pe cap de barbatii Sura. (valabilitate: 7 zile).
+74519	Turban Sura (B)	Turban confectionat dintr-un material de calitate pentru barbatii Sura. (valabilitate: 7 zile).
+74520	Jack O'Sura (m)	O masca pentru Sura in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+74521	Frizura Trendy (Gri)	Frizura ce iti ofera un stil aparte.
+74522	Bandana	Par scurt completat cu o bandana.
+74523	Par Lung (Blond)	Frizura impresionanta cu un par magnific blond.
+74524	Frizura Trendy (Auriu)	Frizura trendy cu par auriu si bandana.
+74525	Bandana (Negru)	Par scurt si ciufulit prins cu o bandana.
+74526	Par Lung (Rosu Rubin)	Par lung rosu, minunat.
+74527	Coadã de Cal (Rosu)	Coada lunga prinsa precum coada unui cal.
+74528	Par Lung Mediu (Azuriu)	O frizura discreta cu o bandana albastra.
+74529	Par Scurt (Saten)	Frizura ce iti ofera un aspect impresionant.
+74530	Coada de Cal (Rosu)	Par lung si rosu, prins intr-o coada bine stransa - o frizura foarte populara printre femei.
+74531	Par Mediu (Negru)	Frizura obraznica dar trendy.
+74532	Par Scurt (Gri)	Frizura cu par scurt ce iti ofera un aspect impresionant.
+74533	Frizura Sport (Negru)	Frizura sport ce iti ofera un aspect militaresc.
+74534	Frizurã Veselã (Blond)	Frizura vesela ce accentueaza un caracter aparte.
+74535	Coada Lunga (Roz)	Frizura purtata pe vremuri de cei bogati.
+74536	Frizura Sport (Purple)	Frizura extravaganta cu par scurt.
+74537	Frizurã Veselã (Blond)	Frizura vesela cu par lung blond.
+74538	Coadã Lungã (Roial)	Frizura purtata pe vremuri de cei bogati.
+74539	Frizurã Elegant (Purple)	Frizura eleganta cu par prins la spate.
+74540	Pãr Lung Mediu (Negru)	Frizura eleganta de Saman.
+74541	Frizurã Veche (Alb)	Par lung, aranjat in mod traditional.
+74542	Frizurã Elegantã (Rosu)	Frizura eleganta prinsa cu un ac de par.
+74543	Pãr Lung Mediu (Alb)	Par drept, elegant.
+74544	Frizurã Veche (Negru)	Frizura feminina, cu par lung.
+74545	Codiþe Tribale+ (Roºu)	Codite decorate in stil tribal, purtate de membrii triburilor pe vremuri.
+74546	Codiþe Tribale+ (Galben)	Codite decorate in stil tribal cu motive galbene, purtate de membrii triburilor pe vremuri.
+74547	Codiþe Tribale+ (Albast)	Codite decorate in stil tribal cu motive albastre, purtate de membrii triburilor pe vremuri.
+74548	Codiþe Tribale+ (Mov)	Codite decorate in stil tribal cu motive mov, purtate de membrii triburilor pe vremuri.
+74549	Codiþe Tribale+ (Verde)	Codite decorate in stil tribal cu motive verzi, purtate de membrii triburilor pe vremuri.
+74550	Coroanã Lupin+ (Auriu)	Se poarta pe cap si are decoratiuni handmade, o bijuterie traditionala pentru par.
+74551	Coroanã Lupin+ (Negru)	Se poarta pe cap si are decoratiuni handmade, o bijuterie traditionala pentru par.
+74552	Coroanã Lupin+ (Roºu)	Se poarta pe cap si are decoratiuni handmade, o bijuterie traditionala pentru par.
+74553	Coroanã Lupin+ (Albastr)	Se poarta pe cap si are decoratiuni handmade, o bijuterie traditionala pentru par.
+74554	Coroanã Lupin+ (Alb)	Se poarta pe cap si are decoratiuni handmade, o bijuterie traditionala pentru par.
+74555	Glugã de Lup+ (Auriu)	Se poarta pe cap si are decoratiuni orientale, o bijuterie traditionala pentru par.
+74556	Glugã de Lup+ (Negru)	Se poarta pe cap si are decoratiuni orientale, o bijuterie traditionala pentru par.
+74557	Glugã de Lup+ (Roºu)	Se poarta pe cap si are decoratiuni orientale, o bijuterie traditionala pentru par.
+74558	Glugã de Lup+ (Albastru)	Se poarta pe cap si are decoratiuni orientale, o bijuterie traditionala pentru par.
+74559	Glugã de Lup+ (Verde)	Se poarta pe cap si are decoratiuni orientale, o bijuterie traditionala pentru par.
+74751	Frizurã nobilã (saten)	Frizurã elegantã, decoratã cu un ac de pãr în formã de fluture
+74752	Frizurã nobilã (negru)	Frizurã elegantã, decoratã cu un ac de pãr în formã de fluture
+74753	Frizurã nobilã (albastr)	Frizurã elegantã, decoratã cu un ac de pãr în formã de fluture
+74754	Frizurã nobilã (deschis)	Frizurã elegantã, decoratã cu un ac de pãr în formã de fluture
+74755	Pãr semi-lung (saten)	Frizurã elegantã de ªaman
+74756	Pãr semi-lung (negru)	Frizurã elegantã de ªaman
+74757	Pãr semi-lung (blond)	Frizurã elegantã de ªaman
+74758	Pãr semi-lung (violet)	Frizurã elegantã de ªaman
+74759	Frizurã veche (saten)	Frizurã femininã cu pãr lung, tuns în trepte
+74760	Frizurã veche (Blond)	Frizurã femininã cu pãr lung, tuns în trepte
+74761	Frizurã veche (violet)	Frizurã femininã cu pãr lung, tuns în trepte
+74762	Frizurã veche (roºu)	Frizurã femininã cu pãr lung, tuns în trepte
+74763	Afro ªaman (f)	Ofera unei femei Saman un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74764	Afro ªaman (f)	Ofera unei femei Saman un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74765	Pãlãrie Con ªaman (f)	Ofera unei femei Saman un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74766	Pãlãrie Con ªaman (f)	Ofera unei femei Saman un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+74767	Vãl ªaman (f)	Un val purtat pe cap si fata de femeile Saman facut dintr-un material valoros. (valabilitate: 7 zile).
+74768	Eºarfã ªaman (f)	O esarfa purtata pe cap de femeile Saman facuta dintr-un material pretios. (valabilitate: 7 zile).
+74769	Turban ªaman (f)	Turban pentru femeile Saman facut dintr-un material foarte valoros. (valabilitate: 7 zile).
+74770	Jack O`Shaman (f)	O masca pentru fetele Shaman in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+75001	Frizurã modernã (roºu)	Frizurã modernã, roºcatã, cu banderolã.
+75002	Frizurã modernã(deschis)	Frizurã modernã, blondã, cu banderolã.
+75003	Frizurã modernã(albastr)	Frizurã modernã, pãr albastru, cu banderolã.
+75004	Frizurã modernã (saten)	Frizurã modernã, pãr maro, cu banderolã.
+75005	Batic de frunte (saten)	Tuns scurt, pãr ciufulit legat cu un batic
+75006	Batic de frunte (blond)	Tuns scurt, pãr ciufulit legat cu un batic
+75007	Batic de frunte(albastr)	Pãr scurt, ciufulit, legat cu un batic
+75008	Batic de frunte (verde)	Pãr scurt, ciufulit, legat cu un batic
+75009	Pãr lung (negru)	Pãr negru, splendid
+75010	Pãr lung (roºu)	Pãr roºu, splendid
+75011	Pãr lung (saten)	Pãr ºaten, minunat
+75012	Pãr lung (verde)	Pãr verde, splendid
+75013	Afro Rãzboinic (f)	Oferã unei femei Rãzboinic un bonus de PV de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+75014	Afro Rãzboinic (f)	Oferã unei femei Rãzboinic un bonus de PM de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+75015	Pãlãrie Con Rãzboinic(f)	Oferã unei femei Rãzboinic un bonus de PV de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+75016	Pãlãrie Con Rãzboinic(f)	Oferã unei femei Rãzboinic un bonus de PM de 1%. Înlocuieºte coafura existentã (duratã: 7 zile).
+75017	Vãl Rãzboinic (f)	Un vãl purtat pe cap ºi faþã de femeile Rãzboinice facut dintr-un material valoros. (duratã: 7 zile).
+75018	Eºarfã Rãzboinic (f)	O eºarfã purtatã pe cap de femeile Rãzboinic facutã dintr-un material preþios. (duratã: 7 zile).
+75019	Turban Rãzboinic (f)	Turban confecþionat dintr-un material de calitate pentru femeile Rãzboinic. (duratã: 7 zile).
+75020	Jack O`Warrior (f)	O mascã pentru fetele Rãzboinic în formã de dovleac. Atributele ºi durata sunt setate aleatoriu. Va înlocui frizura existentã.
+75201	Coadã de cal (saten)	Par drept saten inchis, prins in coada
+75202	Coadã de cal (verde)	Frizura cu par prins in coada lunga si frumoasa
+75203	Coadã de cal (albastru)	Frizura cu par prins in coada lunga si frumoasa
+75204	Coadã de cal (deschis)	Frizura cu par grizonat prins in coada lunga si frumoasa
+75205	Pãr pânã la umeri (roºu)	Frizura aranjata cu un batic alb
+75206	Pãr pânã la umeri(saten)	Frizura aranjata cu un batic verde
+75207	Pãr pânã la umeri (desc)	Frizura aranjata cu un batic deschis la culoare
+75208	Pãr pânã la umeri (lila)	Frizura aranjata cu un batic rosu
+75209	Pãr scurt (roºu)	Frizura cu aspect sinistru
+75210	Pãr scurt (albastru)	Frizura cu aspect sinistru
+75211	Pãr scurt (negru)	Frizura cu aspect sinistru
+75212	Pãr scurt (blond)	Frizura cu aspect sinistru
+75213	Afro Ninja (B)	Ofera unui barbat Ninja un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75214	Afro Ninja (B)	Ofera unui barbat Ninja un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75215	Coif Samurai Ninja (B)	Ofera unui barbat Ninja un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75216	Coif Samurai Ninja (B)	Ofera unui barbat Ninja un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75217	Fes Ninja (B)	Un fes rosu pentru barbatii Ninja. (valabilitate: 7 zile).
+75218	Keffiyeh Ninja (B)	Panza purtata pe cap de barbatii Ninja. Protejeaza impotriva furtunilor de nisip. (valabilitate: 7 zile).
+75219	Turban Ninja (B)	Turban confectionat dintr-un material de calitate pentru barbatii Ninja.  +(valabilitate: 7 zile).
+75220	Jack O`Ninja (m)	O masca pentru Ninja in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+75401	Frizurã sportivã (desc.)	Frizurã extravagantã, specificã femeilor sura
+75402	Frizurã sportivã (saten)	Frizurã extravagantã, specificã femeilor sura
+75403	Frizurã sportivã (blond)	Frizurã extravagantã, specificã femeilor sura
+75404	Frizurã sportivã (verde)	Frizurã extravagantã, specificã femeilor sura
+75405	Frizurã carisma (alb)	Pãr lung, alb-ca-zãpada, ce te face sã pari înfumurat
+75406	Frizurã carisma (roºu)	Pãr lung, negru, ce te face sã pari înfumurat
+75407	Frizurã carisma (negru)	Pãr lung, negru, ce te face sã pari înfumurat
+75408	Frizurã carisma (violet)	Pãr lung, violet ce te face sã pari înfumurat
+75409	Coadã lungã (alb)	Coadã.
+75410	Coada lungã (albastra)	Coadã.
+75411	Coadã lungã (negru)	Coadã.
+75412	Coadã lungã (saten)	Coadã.
+75413	Afro Sura (f)	Ofera unei femei Sura un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75414	Afro Sura (f)	Ofera unei femei Sura un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75415	Pãlãrie Con Sura (f)	Ofera unei femei Sura un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75416	Pãlãrie Con Sura (f)	Ofera unei femei Sura un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75417	Vãl Sura (f)	Un val purtat pe cap si fata de femeile Sura facut dintr-un material valoros.  (valabilitate: 7 zile).
+75418	Eºarfã Sura (f)	O esarfa purtata pe cap de femeile Sura facuta dintr-un material pretios. (valabilitate: 7 zile).
+75419	Turban Sura (f)	Turban confectionat dintr-un material de calitate pentru femeile Sura. (valabilitate: 7 zile).
+75420	Jack O`Sura (f)	O masca pentru fetele Sura in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+75601	Frizurã nobilã (saten)	Frizurã modernã, care oferã ªamanului o expresie nobilã.
+75602	Frizurã nobilã (negru)	Frizurã modernã, care oferã ªamanului o expresie nobilã.
+75603	Frizurã nobilã (albastr)	Frizurã modernã, care oferã ªamanului o expresie nobilã.
+75604	Frizurã nobilã (deschis)	Frizurã modernã, care oferã ªamanului o expresie nobilã.
+75605	Pãr semi-lung (saten)	Pãr drept, ºaten
+75606	Pãr semi-lung (negru)	Pãr drept, negru
+75607	Pãr semi-lung (blond)	Pãr drept, blond
+75608	Pãr semi-lung (violet)	Pãr drept, violet
+75609	Frizurã veche (saten)	Frizurã veche de rãzboinic. Pãrul ºaten e legat în coadã.
+75610	Frizurã veche (deschis)	Frizurã veche de rãzboinic. Pãrul blond e legat în coadã.
+75611	Frizurã veche (violet)	Frizurã veche de rãzboinic. Pãrul violet e legat în coadã.
+75612	Frizurã veche (roºu)	Frizurã veche de rãzboinic. Pãrul roºu e legat în coadã.
+75613	Afro Saman (B)	Ofera unui barbat Saman un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75614	Afro Saman (B)	Ofera unui barbat Saman un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75615	Coif Samurai Saman (B)	Ofera unui barbat Saman un bonus de PV de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75616	Coif Samurai Saman (B)	Ofera unui barbat Saman un bonus de PM de 1%. Inlocuieste coafura existenta (valabilitate: 7 zile).
+75617	Fes Saman (B)	Un fes purtat de barbatii Saman (valabilitate: 7 zile).
+75618	Keffiyeh Saman (B)	Panza purtata pe cap de barbatii Saman. Protejeaza impotriva furtunilor de nisip. (valabilitate: 7 zile).
+75619	Turban Saman (B)	Turban confectionat dintr-un material de calitate pentru barbatii Saman. (valabilitate: 7 zile).
+75620	Jack O`Shaman (m)	O masca pentru Samani in forma de dovleac. Atributele si durata sunt setate random. Va inlocui frizura existenta.
+76001	Pergament Reset Skill	Folosirea acestui obiect iti permite redistribuirea punctelor de status. Il poti folosi pentru a redirectiona caracterul tau catre alt tip de dezvoltare. Nu se poate negocia.
+76002	Cap Mumificat	Acest Cap Mumificat de demon deschide sigiliul etajului al 3-lea din Catacomba Diavolului. Nu se poate negocia.
+76007	Mantia Curajului	Rãzboinicii din vremurile strãvechi îºi arãtau curajul purtând o mantie coloratã care servea la atragerea monºtrilor. Nu se poate negocia.
+76016	Pergament Binecuvantat	Reduce riscul distrugerii unui obiect dacã îmbunãtãþirea eºueazã. În cazul eºuãrii, calitatea obiectului va fi scãzutã doar cu 1 punct. Nu se poate negocia.
+76023	Magie Verde	Înlãturã bonusurile unui obiect din echipament ºi adaugã altele noi. Poate fi folosit doar pe arme ºi armuri pânã la nivelul 40. Obiect de la cufãrul nivelului, nu se poate negocia.
+76025	Pantofi De Vant	Cu acest obiect pute?i face fa?a temni?ei Templului lui Ochao.
+79501	Tolba Arcaºului	O tolba care va ofera o sursa inepuizabila de sageti pentru 24 de ore. Lovitura de la distanta nu are daunele reduse.
+79502	Tolba Arcaºului	O tolba care va ofera o sursa inepuizabila de sageti timp de 7 zile. Lovitura de la distanta nu are daunele reduse.
+79503	Tolba Arcaºului	O tolba care va ofera o sursa inepuizabila de sageti. Lovitura de la distanta nu are daunele reduse.
+79504	Tolba Arcaºului	O tolba care va ofera o sursa inepuizabila de sageti. Lovitura de la distanta nu are daunele reduse.
+85001	Esarfa Lord (normala)	Aceasta esarfa obtine 1% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85002	Esarfa Lord (fina)	Aceasta esarfa obtine 5% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85003	Esarfa Lord (nobila)	Aceasta esarfa obtine 10% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85004	Esarfa Lord (avansata)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85005	Esarfa Master (normala)	Aceasta esarfa obtine 1% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85006	Esarfa Master (fina)	Aceasta esarfa obtine 5% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85007	Esarfa Master (nobila)	Aceasta esarfa obtine 10% din bonusurile de pe arme sau armuri folosite la absorbtie.
+85008	Esarfa Master (avansata)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85011	Eºarfã Suveran (normalã)	Aceastã eºarfã obþine 1% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85012	Eºarfã Suveran (finã)	Aceastã eºarfã obþine 5% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85013	Eºarfã Suveran (nobilã)	Aceastã eºarfã obþine 10% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85014	Eºarfã Suveran (avansat)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85015	Eºarfã Roialã (normalã)	Aceastã eºarfã obþine 1% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85016	Eºarfã Roialã (finã)	Aceastã eºarfã obþine 5% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85017	Eºarfã Roialã (nobilã)	Aceastã eºarfã obþine 10% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85018	Eºarfã Roialã (avansatã)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85071	Eºarfã Chou (normalã)	Aceastã eºarfã obþine 1% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85072	Eºarfã Chou (finã)	Aceastã eºarfã obþine 5% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85073	Eºarfã Chou (nobilã)	Aceastã eºarfã obþine 10% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85074	Eºarfã Chou (avansatã)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85075	Eºarfã Mao (normalã)	Aceastã eºarfã obþine 1% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85076	Eºarfã Mao (finã)	Aceastã eºarfã obþine 5% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85077	Eºarfã Mao (nobilã)	Aceastã eºarfã obþine 10% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85078	Eºarfã Mao (avansatã)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85079	Eºarfã You (normalã)	Aceastã eºarfã obþine 1% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85080	Eºarfã You (finã)	Aceastã eºarfã obþine 5% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85081	Eºarfã You (nobilã)	Aceastã eºarfã obþine 10% din bonusurile de pe arme sau armuri folosite la absorbþie.
+85082	Eºarfã You (avansatã)	Aceastã eºarfã obþine 11~25% din bonusurile de pe arme sau armuri folosite la absorbþie.
+90000	Certificat Anulare	Foloseste Certificatul Anularii pentru a inlatura bonusurile de pe o Esarfa.
+10951	Pânzã albã	Acest obiect este folosit pentru a intra în temniþa de Aparare Nava
+10954	Cristal de foc	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman De foc de la un NPC.
+10955	Cristal de gheaþã	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman de gheaþã de la un NPC.
+10956	Cristal de Întuneric	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman de Întuneric de la un NPC.
+10957	Cristal fulger	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman Fulger de la un NPC.
+10958	Cristal de vânt	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman de Vânt de la un NPC.
+10959	Cristal de Pãmânt	Acest cristal este folosit pentru a cumpãra sau upgrada un Talisman de Pãmânt de la un NPC.
+10960	Locul 1 Cufãr din aliaj de aur	Recompensã pentru primul clasat al Ligii de Aur
+10961	Locul 1 Cufãr din aliaj de argint	Recompensã pentru primul clasat al Ligii de Argint
+10962	Locul 1 Cufãr din aliaj de bronz	Recompensã pentru primul clasat al Ligii de Bronz
+10963	Locul 2 Cufãr din aliaj de aur	Recompensã pentru al doilea clasat al Ligii de Aur
+10964	Locul 2 Cufãr din aliaj de argint	Recompensã pentru al doilea clasat al Ligii de Argint
+10965	Locul 2 Cufãr din aliaj de bronz	Recompensã pentru al doilea clasat al Ligii de Bronz
+10966	Locul 3 Cufãr din aliaj de aur	Recompensã pentru al treilea clasat al Ligii de Aur
+10967	Locul 3 Cufãr din aliaj de argint	Recompensã pentru al treilea clasat al Ligii de Argint
+10968	Locul 3 Cufãr din aliaj de bronz	Recompensã pentru al treilea clasat al Ligii de Bronz
+18901	Piatrã flacarã roºie (Permanent)	Îmbunãtãþeºte bonusurile centurii tale.	Duratã : permanent
+27798	Creveþi de apã dulce	Momealã pentru prinderea peºtilor mari.	Crºste ºansa ca un peºte rar sã fie prins cu 20%.
+27799	Oase de peº	Oasele unui peºte
+27800	Paste	O momealã usoarã ºi ieftinã	Creºte ºansa ca un peºte rar sã fie prins cu 5%.
+27801	Vierme	Momealã popularã care atrage pestii.	Crºste ºansa ca un peºte rar sã fie prins cu 8%.
+27802	Peºte mic	Momealã pentru prinderea peºtilor mari.	Creºte ºansa ca un peºte rar sã fie prins cu 12%.
+27863	ªalãu Prãjit	Consum acest peºte pentru a primi
+27864	Mandarin Peºte Prãjit	Consum acest peºte pentru a primi
+27865	Mare ªalãu Prãjit	Consum acest peºte pentru a primi
+27866	Crap Prãjit	Consumã acest peºte pentru a primi
+27867	Somon Prãjit	Consumã acest peºte pentru a primi
+27868	Cosaº Prãjit	Consumã acest peºte pentru a primi
+27869	Pãstrãv de râu Prãjit	Consumã acest peºte pentru a primi
+27870	Anghilã Prãjit	Consumã acest peºte pentru a primi
+27871	Pãstrãv curcubeu Prãjit	Consumã acest peºte pentru a primi
+27872	Pãstrãv Prãjit	Consumã acest peºte pentru a primi
+27873	Roºioarã Prãjitã	Consumã acest peºte pentru a primi
+27874	Biban Prãjit	Consumã acest peºte pentru a primi
+27875	Peºte Tenchi Prãjit	Consumã acest peºte pentru a primi
+27876	Somn Prãjit	Consumã acest peºte pentru a primi
+27877	Peºte Loach Prãjit	Consumã acest peºte pentru a primi
+27878	Peºte Lotus Prãjit	Consumã acest peºte pentru a primi
+27879	Peºte de apã dulce Prãjit	Consumã acest peºte pentru a primi
+27880	Guvid Prãjit	Consumã acest peºte pentru a primi
+27881	Peºte Shiri Prãjit	Consumã acest peºte pentru a primi
+27882	Crap Ciprinus Prãjit	Consumã acest peºte pentru a primi
+27883	Caras auriu Prãjit	Consumã acest peºte pentru a primi
+27884	Peºte Cap de ªarpe Prãjit	Consumã acest peºte pentru a primi
+27885	Peºte stargazer Prãjit	Consumã acest peºte pentru a primi
+27886	Crab rege alaskan Prãjit	Consumã acest peºte pentru a primi
+27887	Peºte Yabby Prãjit	Consumã acest peºte pentru a primi
+30002	Ferigã întunecatã	Ar putea fi de interes pentru Chaegirab.
+30003	Inelul lui Chaegirab	Ar putea fi de interes pentru Chaegirab.
+30004	Cristal Metin	Ar putea fi de interes pentru Chaegirab.
+30005	Miez purificat	Ar putea fi de interes pentru Chaegirab.
+30006	Dinte de orc	Ar putea fi de interes pentru Chaegirab.
+30015	Suvenirul demonului	Ar putea fi de interes pentru Chaegirab.
+30047	Carte blestematã	Ar putea fi de interes pentru Chaegirab.
+30050	Glob de gheaþã	Ar putea fi de interes pentru Chaegirab.
+30094	Sac mic cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi intre 200k-600k
+30095	Sac mediu cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi între 400k si 1.2kk
+30096	Sac mare cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi între 700k si 2.1kk
+30097	Sac mic cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi între 200k-600k
+30098	Sac mediu cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi între 400k si 1.2kk
+30099	Sac mare cu yang	Poþi gãsi yang din acest sac, Apasãã click dreapta pentru a deschide.Poþi gãsi între 700k si 2.1kk
+30165	Crenguþã Zelkova	Ar putea fi de interes pentru Chaegirab.
+30166	Tãbliþa lui Tugyi	Ar putea fi de interes pentru Chaegirab.
+30167	Ramura rosie	Ar putea fi de interes pentru Chaegirab.
+30168	Însemnele Liderilor	Ar putea fi de interes pentru Chaegirab.
+30251	Bijuterie Reavointa	Ar putea fi de interes pentru Chaegirab.
+30252	Bijuterie Întelepciune	Ar putea fi de interes pentru Chaegirab.
+30255	Pergament on Foc	Acest obiect este folosit pentru a upgrada un Talisman De foc .
+30256	Pergament on Fulger	Acest obiect este folosit pentru a upgrada un Talisman De Fulger .
+30257	Pergament on Pãmânt	Acest obiect este folosit pentru a upgrada un Talisman De Pãmânt .
+30258	Pergament on gheaþã	Acest obiect este folosit pentru a upgrada un Talisman De gheaþã .
+30259	Pergament on Vânt	Acest obiect este folosit pentru a upgrada un Talisman De Vânt .
+30260	Pergament de Întuneric	Acest obiect este folosit pentru a upgrada un Talisman de Întuneric.
+30271	Bucatã de piatrã metin	Acest articol este folosit pentru a face upgrade la echipamente.
+30273	Certificat mistic	Acest articol este folosit pentru epicizarea pieselor de echipament.
+30274	Certificat antic	Acest articol este folosit pentru epicizarea pieselor de echipament.
+30275	Certificat epic	Acest articol este folosit pentru epicizarea pieselor de echipament.
+30276	Certificat legendar	Acest articol este folosit pentru epicizarea pieselor de echipament.
+30277	Zeu Cristal	Poþi schimba 100 Zeu Cristal pentru  1 Zeu Cristal+. Apasãã Click Dreapta pentru a-l transforma.
+30278	Zeu Cristal+	Acest articol este utilizat pentru îmbunãtãþiri, lucrãri ºi diverse achiziþii de la NPC.
+30279	Cristal Solar	Poþi schimba 100 Cristal Solar pentru  1  Cristal Solar+. Apasãã Click Dreapta pentru a-l transforma.
+30280	Cristal Solar+	Acest articol este utilizat pentru îmbunãtãþiriþiri, lucrari ºi diverse achiziþii de la NPC.
+30282	Corn de Razador	Acest articol este folosit pentru a face upgrade la echipamente.
+30283	Corn de Nemere	Acest articol este folosit pentru a face upgrade la echipamente.
+30284	Piatra farã spirit	Acest articol este utilizat pentru îmbunãtãþiri ºi diverse achiziþii de la NPC.
+30516	Epolet Antic	Element pentru îmbunãtãþirea echipamentului.
+30524	Piatrã fierbinte	Element pentru îmbunãtãþirea echipamentului.
+30525	Esenþã Cristal Albastru	Element pentru îmbunãtãþirea echipamentului.
+30587	Pânzã violet	Element pentru îmbunãtãþirea echipamentului.
+30602	Colorant Albastru	Element pentru îmbunãtãþirea echipamentului.
+30610	Mithril	Element pentru îmbunãtãþirea echipamentului.
+30612	Curele Dure	Element pentru îmbunãtãþirea echipamentului.
+30614	Colorant negru	Element pentru îmbunãtãþirea echipamentului.
+30615	Colorant alb	Element pentru îmbunãtãþirea echipamentului.
+30623	Sticluþã goalã Slime	Acest obiect este folosit în Temniþa Slime, odatã dropat, trebuie târât spre Slime
+30624	Sticluþã plinã Slime	Acest obiect este folosit în Temniþa Slime, odatã dropat, trebuie târât spre cremene.
+30625	Piatrã Slime	Acest obiect este folosit pentru a intra în Temniþa Slime
+30798	Cruce Ankh	Cu acest obiect poþi intra în Temniþa Piramida.
+30800	Bucatã de pergament 1	Acest obiect este folosit pentru a depãºi etajul al doilea al Temniþa Piramidei
+30801	Bucatã de pergament 2	Acest obiect este folosit pentru a depãºi etajul al doilea al Temniþa Piramidei
+30802	Bucatã de pergament 3	Acest obiect este folosit pentru a depãºi etajul al doilea al Temniþa Piramidei
+30803	Bucatã de pergament 4	Acest obiect este folosit pentru a depãºi etajul al doilea al Temniþa Piramidei
+30804	Bandã de salvie	Acest obiect este folosit in Temniþa Piramidei.
+30805	Cheie Straveche	Acest obiect este folosit in Temniþa Piramidei.
+30806	Cufãr Strãvechi	Acest obiect este folosit in Temniþa Piramidei.
+39015	Piatra fierarului	Cu aceastã piatrã este posibil sã achiziþionezi un obiect de la fierar.
+39048	Cufãr Rãzboinic	Pachet care conþine cãrþi utile pentru rãzboinici.
+39050	Cufãr Ninja	Pachet care conþine cãrþi utile pentru  ninja.
+39052	Cufãr Sura	Pachet care conþine cãrþi utile pentru  surah.
+39054	Cufãr Shamam	Pachet care conþine cãrþi utile pentru  shamani.
+39065	Yang (20kk)	conþine 20kk de Yang.
+39066	Yang (40kk)	conþine 40kk de Yang.
+39067	Yang (70kk)	conþine 70kk de Yang.
+39068	Yang (15kk)	conþine 15kk de Yang.
+39069	Yang (10kk)	conþine 10kk de Yang.
+39070	Yang (30kk)	conþine 30kk de Yang.
+39071	Yang (5kk)	conþine 5kk de Yang.
+39072	Yang (25kk)	conþine 25kk de Yang.
+39073	Yang (35kk)	conþine 35kk de Yang.
+39074	Yang (55kk)	conþine 55kk de Yang.
+39075	Yang (50kk)	conþine 50kk de Yang.
+39076	Yang (100kk)	conþine 100kk de Yang.
+39077	Yang (150kk)	conþine 150kk de Yang.
+39079	Yang (80kk)	conþine 80kk de Yang.
+39080	Yang (130kk)	conþine 130kk de Yang.
+39081	Yang (230kk)	conþine 230kk de Yang.
+39082	Yang (120kk)	conþine 120kk de Yang.
+39083	Yang (220kk)	conþine 220kk de Yang.
+40004	Inelul lui Eek	Un inel fãurit din ingrediente speciale, ce îþi oferã bonusuri speciale.
+40095	Evantai al Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40096	Clopot al Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40097	Spadã a Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40098	Arc al Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40099	Pumnale ale Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40100	Sabie a Zodiacului Întunecat	Un costum de armã care poate fi achiziþionat din magazinul BattlePass.
+40143	Elixirul Cercetãtorului +	Acest elixir creºte calitatea obiectelor ºi reseteazã timpul de aºteptare.
+40144	Elixirul Cercetãtorului	Acest elixir reseteazã timpul de aºteptare.
+40192	Costum Zodiac Întunecat (f)	Costum zodiacal cu efecte care se potrivesc armelor.
+40193	Costum Zodiac Întunecat (m)	Costum zodiacal cu efecte care se potrivesc armelor.
+40194	Costum Zodiac Întunecat (f)	Costum zodiacal cu efecte care se potrivesc armelor.
+40195	Costum Zodiac Întunecat (m)	Costum zodiacal cu efecte care se potrivesc armelor.
+40196	Costum Zodiac Întunecat (m)	Costum zodiacal cu efecte care se potrivesc armelor.
+40197	Costum Zodiac Întunecat(f)	Costum zodiacal cu efecte care se potrivesc armelor.
+40198	Costum Zodiac Întunecat (m)	Costum zodiacal cu efecte care se potrivesc armelor.
+40199	Costum Zodiac Întunecat(f)	Costum zodiacal cu efecte care se potrivesc armelor.
+45242	Dreaduri Negre + (m)	Dreaduri speciale ce se potrivesc costumului Zodiac.
+45243	Dreaduri Negre + (f)	Dreaduri speciale ce se potrivesc costumului Zodiac.
+46003	Costum Semilunã (f)	Acest articol poate fi purtat doar de Suportul shamy.
+46004	Costum Semilunã (m)	Acest articol poate fi purtat doar de Suportul shamy.
+46005	Armurã Azrael (f)	Acest articol poate fi purtat doar de Suportul shamy.
+46006	Armurã Azrael(m)	Acest articol poate fi purtat doar de Suportul shamy.
+46007	Costum deºert(f)	Acest articol poate fi purtat doar de Suportul shamy.
+46008	Costum deºert (m)	Acest articol poate fi purtat doar de Suportul shamy.
+46303	Coif Azrael (f)	Acest articol poate fi purtat doar de Suportul shamy.
+46304	Coif Azrael (m)	Acest articol poate fi purtat doar de Suportul shamy.
+46307	Coc Salsa	Acest articol poate fi purtat doar de Suportul shamy.
+46308	Creastã Scurtã	Acest articol poate fi purtat doar de Suportul shamy.
+46601	Evantai cu Dinþi	Acest articol poate fi purtat doar de Suportul shamy.
+46602	Clopot cu Dinþi	Acest articol poate fi purtat doar de Suportul shamy.
+46603	Evantai Aquarian	Acest articol poate fi purtat doar de Suportul shamy.
+46604	Clopot Aquarian	Acest articol poate fi purtat doar de Suportul shamy.
+46605	Clopot Zaharit	Acest articol poate fi purtat doar de Suportul shamy.
+46606	Evantai Îngheþat	Acest articol poate fi purtat doar de Suportul shamy.
+50063	Cufãrul lui Razador	Acest Cufãr was recovered from the Red Dragon Fortress. It conþine a truly magnifgheaþãnt treasure.
+50064	Cufãrul lui Nemere	Acest Cufãr was recovered from Nemere's Watchtower. It conþine a truly magnifgheaþãnt treasure.
+50065	Cufãrul Vrãjitoarei de gheaþã	The gheaþã Witch's Chest. Acest Cufãr conþine ceva valoros.
+50066	Cufãr Preþios	Acest Cufãr conþine valuable items for your equipment.	It can contain sash costumes and other useful items for costumes.
+50067	Cufãr Cadou Zilnic	Acest Cufãr conþine some fantastic prizes.
+50069	Cufãr Copac Lord Fantomã	Acest Cufãr conþine ceva valoros.
+50072	Cufãr Orc ªef	Acest Cufãr conþine ceva valoros.
+50074	Cufãrul Baronesei	Acest Cufãr conþine ceva valoros.
+50075	Cufãrul Reginei Slime	Acest Cufãr conþine ceva valoros.
+50081	Cufãr Copac Mare Fantomã	Acest Cufãr conþine ceva valoros.
+50098	Cufãr Beran-Satou	Acest Cufãr a fost recuperat din Grota Exilului. El conþine o comoarã magnificã.
+50099	Cufãr Element	Acest Cufãr conþine items needed to upgrade the talismans.
+50100	Cufãr Haru	Cufãrul lui Haru. Acest Cufãr conþine ceva valoros.
+50101	Cufãr Eien	Cufãrul lui Eien. Acest Cufãr conþine ceva valoros.
+50102	Cufãr Buncho	Cufãrul lui Buncho. Acest Cufãr conþine ceva valoros.
+50138	Cufãr Mahon	Cufãrul lui Mahon. Acest Cufãr conþine ceva valoros.
+50139	Cufãr Bo	Cufãrul lui Bo. Acest Cufãr conþine ceva valoros.
+50140	Cufãr Goo-Pae	Cufãrul lui Goo-Pae. Acest Cufãr conþine ceva valoros.
+50141	Cufãr Chuong	Cufãrul lui Chuong . Acest Cufãr conþine ceva valoros.
+50142	Cufãr Comandant Brutal	Cufãrul Comandantului Brutal. Acest Cufãr conþine ceva valoros.
+50143	Cufãrul Abilitãþilor	Cufãr abilitate conþine cãrþi pentru abilitãþile standard.
+50203	Cufãr Hydra	Acest Cufãr conþine ceva valoros.
+50204	Cufãr Ochao	Acest Cufãr conþine ceva valoros.
+50254	Cufãr de Întuneric	The weighty chest conceals the believed to be forgotten riches de the Dark Nation.
+50285	Cufãr Ruler En-Tai	Ruler En-Tai's chest conþine valuable rewards.
+50333	Cartea Forþei Divine	Îmbunatãþiþi puterea divinã. Prin Aceastã carte puteþi Îmbunatãþi standardul abilitatea Forþa Divinã.
+50334	Cartea Maestrul Yang	Îmbunatãþiþi puterea divinã. Prin Aceastã carte puteþi îmbunãtãþi standardul abilitatea de a coleta Zang.
+50335	Cartea Vânãtor De Monºtri	Îmbunatãþiþi puterea divinã. Prin Aceastã carte puteþi Îmbunatãþi abilitatea Vânãtor de Monºtri .
+50336	Cartea Forþei de Viaþã	îmbunãtãþiþi puterea divinã. Prin Aceastã carte puteþi Îmbunatãþi abilitatea Forþã de Viaþã.
+50525	Piatra Sufletului Perfectã	Aceastã piatrã perfectã îþi permite sã îþi urci abilitatea de la G1-P. Piatra dispare dupã utilizare.
+50526	Piatra Sufletului Sprijin	Aceastã piatrã legendarã îþi permite sã îþi urci abilitãþile la Mare-Maestru.  Piatra dispare dupã utilizare.
+50527	Piatra Sufletului Contra-atac	Aceastã piatrã legendarã îþi permite sã îþi urci abilitãþile de contra-atac la  Mare-Maestru.  Piatra dispare dupã utilizare.
+50634	Cristal Suflet	Un cristal, pur ca sufletul. Poate fi inserat într-un accesoriu.
+50635	Rubin	Piatrã preþioasã roºie cu un finisaj unic Poate fi inserat într-un accesoriu.
+50636	Granat	 Piatrã preþioasã portocalie cu un finisaj unic Poate fi inserat într-un accesoriu.
+50637	Smarald	Piatrã preþioasã verde cu un finisaj unic Poate fi inserat într-un accesoriu.
+50638	Safir	Piatrã preþioasã albastrã cu un finisaj unic Poate fi inserat într-un accesoriu.
+50639	Turmalinã	Aceastã piatrã preþioasã magicã straluceºte cu toate culorile curcubeului. Poate fi inserat într-un accesoriu.
+50640	Kyanit	O piatra preþioasã albastrã ºi roºie cu o croialã unicã. Poate fi inserat într-un accesoriu.	Duratã : permanent
+50672	Chihlimbar(Permanent)	O bijuterie clarã facutã din rãºinã fosilizata, care strãluceºte în tonuri de miere sau auriu.	Duratã : permanent
+50673	Lemn Fosil (Permanent)	Un lemn valoros care poate oferi stabilitate articolelor de bijuterii.	Duratã : permanent
+50674	Cupru (Permanent)	Un metal preþios maleabil care poate fi folosit la fabricarea de bijuterii ºi monede. Este, de asemenea, necesar pentru producºia de bronz.	Duratã : permanent
+50675	Argint (Permanent)	Metal preþios stralucitor folosit pentru fabricarea bijuteriilor. Poate fi prelucrat în accesorii de argint.	Duratã : permanent
+50676	Aur (Permanent)	Metal auriu folosit la fabricarea bijuteriilor. Poate fi prelucrat în accesorii de aur.	Duratã : permanent
+50677	Jad (Permanent)	Un mineral valoros care a fost folosit de peste 5000 de ani. Poate fi prelucrat în accesorii ºi bijuterii.	Duratã : permanent
+50678	Ebonitã (Permanent)	Acest lemn negru  dur este unul dintre cele mai valoroase cherestele din toate. Poate fi prelucrat în accesorii ºi bijuterii.	Duratã : permanent
+50679	Perlã (Permanent)	Folosit pentru fabricarea bijuteriilor. Poate fi prelucrat în accesorii ºi bijuterii.	Duratã : permanent
+50680	Aur alb(Permanent)	Un aliaj de aur alb, dur, care este folosit pentru bijuterii.	Duratã : permanent
+50681	Cristal(Permanent)	O piatrã tare din cuarþ cristalin care poate fi gasitã în diferite culori. Des folosit pentru bijuterii.	Duratã : permanent
+50682	Ametist (Permanent)	Un cuarº popular care poate fi gasit în diferite nuanþe de violet. Este folosit pentru a face bijuterii.	Duratã : permanent
+50683	Lacrima Cerului(Permanent)	Ploaie cristalizata din cer. Poate fi folosit pentru a face bijuterii.	Duratã : permanent
+50684	Suflet Cristal (Permanent)	Un cristal, pur ca sufletul. Poate fi inserat într-un accesoriu.	Duratã : permanent
+50685	Rubin (Permanent)	Piatrã preþioasã roºie cu un finisaj unic Poate fi inserat într-un accesoriu.	Duratã : permanent
+50686	Granat (Permanent)	Piatrã preþioasã portocalie cu un finisaj unic Poate fi inserat într-un accesoriu.	Duratã : permanent
+50687	Smarald (Permanent)	Piatrã preþioasã verde cu un finisaj unic Poate fi inserat într-un accesoriu.	Duratã : permanent
+50688	Safir (Permanent)	Piatrã preþioasã albastrã cu un finisaj unic Poate fi inserat într-un accesoriu.	Duratã : permanent
+50689	Turmalinã (Permanent)	Aceastã piatrã preþioasã magicã straluceºte cu toate culorile curcubeului. Poate fi inserat într-un accesoriu.	Duratã : permanent
+50690	Kyanit (Permanent)	O piatra preþioasã albastrã ºi roºie cu o croialã unicã. Poate fi inserat într-un accesoriu.	Duratã : permanent
+53025	Pui Leopard	Acest sigiliu evocã puiul tau leopard.
+53026	Sigiliu Leonidas(15d)	Cu acest sigiliu va puteþi chema puiul de leu Leonidas pentru 15 zile.
+53027	Sigiliu Leonidas(30d)	Cu acest sigiliu va puteþi chema puiul de leu Leonidas pentru 30 zile.
+53028	Sigiliu Leonidas(Permanent)	Cu acest sigiliu va puteþi chema puiul de leu Leonidas permanent.
+53029	Sigiliu Nogai (15d)	Cu acest sigiliu va puteþi chema Nogai pentru 15zile.
+53030	Sigiliu Nogai (30d)	Cu acest sigiliu va puteþi chema  Nogai pentru 30zile.
+53031	Sigiliu Nogai (Permanent)	Cu acest sigiliu va puteþi chema Nogai permanent.
+53248	Donnie (15d)	Cu acest sigiliu va puteþi chema Donnie, animãluþul tãu de coºmar.
+53249	Donnie (30d)	Cu acest sigiliu va puteþi chema Donnie, animãluþul tãu de coºmar.
+53250	Donnie (Permanent)	Cu acest sigiliu va puteþi chema Donnie, animãluþul tãu de coºmar.
+53251	Frank (15d)	Cu acest sigiliu va puteþi chema Frank, animãluþul tãu de coºmar.
+53252	Frank (30d)	Cu acest sigiliu va puteþi chema Frank, animãluþul tãu de coºmar.
+53253	Frank (Permanent)	Cu acest sigiliu va puteþi chema Frank, animãluþul tãu de coºmar.
+53263	Gryph	Acest sigiliu evocã Griffy, Cheamã-þi petul grifon.
+53264	Nogai	Acest sigiliu evocã Nogai, Cheamã-þi petul Nogai.
+53282	All-Seeing Flamecat	Cu acest sigiliu evocã petul 'All-Seeing Flamecat'.
+53283	Atotvazut Frost Cat	Cu acest sigiliu evocã petul 'all-seeing frost cat'.
+55002	Cutie de Transport	Plasând animalul de companie în transportator, îl vei face comercializabil.
+55003	Carte pet tânãr	Aceastã carte este folositã pentru dezvoltarea animalelor de companie.
+55004	Carte pet sãlbatic	Aceastã carte este folositã pentru dezvoltarea animalelor de companie.
+55005	Carte pet curajos	Aceastã carte este folositã pentru dezvoltarea animalelor de companie.
+55014	Cartea Daunelor critice (PvM)	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte daunele critice PVM.
+55015	Carte puternic împotriva Metinelor	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte daunele asupra pietrelor Metin.
+55016	Carte puternic împotriva ªefi	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte daunele asupra ªefilor.
+55017	Cartea intuiþiei	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte ºansa de a captura EXP.
+55018	Cartea Drop Yang	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte ºansa de a captura Yang.
+55019	Cartea Atac/Atac Magic	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte daunele de atac / atacul magic.
+55020	Cartea Blocare atac corporal	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte ºansa de a bloca un atac corporal.
+55021	Cartea Reflectare atac corporal	Dupa ce a învãþat aceastã abilitate, animalului de companie îi creºte ºansa de a reflecta un atac corporal.
+56001	Poþiune de îmbunãtãþire (5%)	Aceastã poºiune creºte ºansa de a upgrada un obiect cu5%.	Acest obiect este folosit pentru a cumpãra iteme de la fierar
+56002	Poþiune de îmbunãtãþire (10%)	Aceastã poºiune creºte ºansa de a upgrada un obiect cu10%.	Acest obiect este folosit pentru a cumpãra iteme de la fierar
+56003	Poþiune de îmbunãtãþire (15%)	Aceastã poºiune creºte ºansa de a upgrada un obiect cu15%.
+70058	Inelul Puterii (15d)	Un inel fãcut din ingrediente secrete, care îþi oferã bonusuri speciale pentru 15zile.
+70059	Inelul Puterii (30d)	Un inel fãcut din ingrediente secrete, care îþi oferã bonusuri speciale pentru 30zile.
+70060	Inelul Puterii (Permanent)	Un inel fãcut din ingrediente secrete, care îþi oferã bonusuri speciale permanent.
+70401	Costum Vrãjit	Eliminaþi bonusurile de pe unul din costumele dvs. ºi aplicaþi altele noi.
+70402	Costum Vrãjit Special (5%)	Adaugaþi un bonus special (pânã la maximum 2) la unul dintre costumele dvs.
+70403	Costum Vrãjit Special+ (10%)	Adaugaþi un bonus special (pânã la maximum 2) la unul dintre costumele dvs.
+70404	Eliminã Bonus Special	Îndeparteazã unul dintre bonusurile speciale din costumele tale.
+70604	Îngheaþã Bonus	Utilizarea acestui articol pe o piesã de echipament cu bonusuri prezente va îngheþa un bonus ales din întâmplare.
+70605	Reîngheaþã Bonus	Acest articol va permite sa modificaþi bonusul îngheþat ales întâmplator.
+70606	Dezgheaþã Bonus	Acest articol va permite sa dezgheþaþi o piesã de echipament care are un bonus îngheþat.
+70610	Battle Pass Voucher	Acest articol este folosit pentru achiziþionarea de costume din magazinul Battle Pass.
+70611	Battle Pass	Acest articol activeazã Battle Pass.
+70612	Diamant Preþios	This Prized Diamond is used to purchase Armã skins, Armurã, and hair from an NPC.
+70613	Poþiune de Frumuseþe	Aceastã poþiune de înfrumuseþare este utilizatã pentru a cumpãra costume de animale de companie de la un NPC.
+70614	Poþiune de Frumuseþe	Aceastã poþiune de înfrumuseþare este utilizatã pentru a cumpãra costume de animale de companie de la un NPC.
+71025	Piatra Fierarului	Cu aceastã piatrã puteþi cumpãra cartea fierarului de la fierar.
+71085	Marmurã Element	Adaugã al 5-lea bonus articolului tãu.
+71135	Inel Semiluna(7d)	Un inel cu o gravurã artizanalã în formã de semilunã.
+71136	Acadea Nãzdrãvanã(7d)	O acadea fãcutã din ingrediente secrete, care îþi oferã bonusuri speciale.
+71148	Inelul Voinþã Puternicã (30d)	Un inel fãcut din ingrediente secrete, care îþi oferã bonusuri speciale
+71153	Poþiunea Înþelepciune (1h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+71174	Permis Trecere Razador	Înmânând Biletul Razador tutorelui, vei obþine permisiunea de a intra în Cetatea Dragonului Roºu.
+71175	Permis Trecere Nemere	Înmânând Biletul Nemere tutorelui, vei obþine permisiunea de a intra în Turnul Nemere.
+71188	Acadea Magicã (15d)	O acadea fãcutã din ingrediente secrete, care îþi oferã bonusuri speciale.
+71203	Cufãr Rãzboinic	Warrior Pachet care conþine 10 cãrþi de abilitãþi selectate aleatoriu.
+71204	Cufãr Ninja	Ninja Pachet care conþine 10 cãrþi de abilitãþi selectate aleatoriu.
+71205	Cufãr Sura	Pachet care conþine 10 cãrþi de abilitãþi selectate aleatoriu.
+71206	Cufãr Shaman	Pachet care conþine 10 cãrþi de abilitãþi selectate aleatoriu.
+71229	Manny (30d)	Sigiliu care evocã un mamut antic.
+71231	Leu alb (30d)	Animalele cu blanã albã sunt foarte rare ºi multe culturi le venereazã, crezând ca poartã puteri remarcabile.
+71233	Cal Spectru (30d)	Acest sigiliu evocã un mount strãlucitor.
+71234	Acadea Magicã (30d)	O acadea fãcutã din ingrediente secrete, care îþi oferã bonusuri speciale.
+71235	Acadea Magicã(Permanent)	O acadea fãcutã din ingrediente secrete, care îþi oferã bonusuri speciale.
+71252	Dragon	Acest mount poate fi gãsit doar la magazinul BattlePass.
+71253	Manny (Permanent)	Sigiliu care evocã un mamut antic.
+71254	Leu Alb(Permanent)	Animalele cu blanã albã sunt foarte rare ºi multe culturi le venereazã, crezând ca poartã puteri remarcabile.
+71255	Cal Spectral (Permanent)	Acest sigiliu evocã un mount strãlucitor.
+72001	Inelul Experienþei(1h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72002	Inelul Experienþei(3h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72006	Mãnuºa Tâlharului (1h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72013	Cartea Pescuitului (30m)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72014	Cartea Pescuitului (1h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72015	Cartea Pescuitului(Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72044	Cartea Liderilor (1h)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+72726	Elixir de soare(E)	Automatically refills your HP. conþine infinite HP.
+72730	Elixir de lunã (E)	Automatically refills your SP.conþine infinite SP.
+80019	Yellow thin fabric	Din acest material se realizeaza un costum eºarfã
+80022	Red thin fabric	Din acest material se realizeaza un costum eºarfã
+80023	Light blue thin fabric	Din acest material se realizeaza un costum eºarfã
+80024	Green thin fabric	Din acest material se realizeaza un costum eºarfã
+80025	Purple thin fabric	Din acest material se realizeaza un costum eºarfã
+80026	Orange thin fabric	Din acest material se realizeaza un costum eºarfã
+80027	Blue thin fabric	Din acest material se realizeaza un costum eºarfã
+84999	Enchant Costumes Stole	Remove bonuses from one de your stole costumes and apply new ones. The variables are random and are based on the grade de the stole.
+85019	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85020	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85021	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85022	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85023	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85024	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85025	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85026	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85027	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85028	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85029	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85030	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85031	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85032	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85033	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85034	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85035	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85036	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85037	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85038	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85039	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85040	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85041	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85042	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85043	Costum Lord Eºarfã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85044	Costum Lord Eºarfã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85045	Costum Lord Eºarfã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85046	Costum Lord Eºarfã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85047	Costum Eºarfã Yu (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85048	Costum Eºarfã Yu (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85049	Costum Eºarfã Yu (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85050	Costum Eºarfã Yu (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85051	Costum Eºarfã Mao (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85052	Costum Eºarfã Mao (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85053	Costum Eºarfã Mao (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85054	Costum Eºarfã Mao (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85055	Costum Eºarfã Realã (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85056	Costum Eºarfã Realã (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85057	Costum Eºarfã Realã (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85058	Costum Eºarfã Realã (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85059	Costum Eºarfã Principe (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85060	Costum Eºarfã Principe (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85061	Costum Eºarfã Principe (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85062	Costum Eºarfã Principe (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85063	Costum Eºarfã Maestru (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85064	Costum Eºarfã Maestru (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85065	Costum Eºarfã Maestru (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85066	Costum Eºarfã Maestru (personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85067	Costum Eºarfã Chou (normal)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85068	Costum Eºarfã Chou (finã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85069	Costum Eºarfã Chou (nobilã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85070	Costum Eºarfã Chou(personalizatã)	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+85083	Aripile Diavolului	Acest obiect este un costum furat, care oferã bonusuri suplimentare caracterului  tau.
+86050	Întãreºte Talisman	Acesta va adãuga un nou bonus talismanului tãu (pânã la maximum 4 bonusuri).
+86051	Vrãjeºte Talisman	Eliminã bonusurile din talisman ºi aplicã altele noi. Variabilele sunt aleatorii.
+86052	Marmurã Talisman	Marmurã legendarã, dacã un talisman are deja 4 atribute, acest lucru va permite sã adaugi ultimul bonus.
+86053	Bucatã de Perlã Galbenã	Poþi schimba 10 Bucãþi de Perlã Galbenã Cu 1 Perlã Galbenã. Apasã Click Dreapta pentru a schimba.
+86054	Bucatã de Perlã Verde	Poþi schimba 10 Bucãþi de Perlã Verde Cu 1 Perlã Verde. Apasã Click Dreapta pentru a schimba.
+86055	Bucatã de Perlã Violet	Poþi schimba 10 Bucãþi de Perlã Violet Cu 1 Perlã Violet. Apasã Click Dreapta pentru a schimba.
+86056	Perlã Galbenã	O perlã foarte rarã care este folositã pentru a evolua animalul de companie.
+86057	Perlã Verde	O perlã foarte rarã care este folositã pentru a evolua animalul de companie.
+86058	Perlã Violet	O perlã foarte rarã care este folositã pentru a evolua animalul de companie.
+86060	Vrãjeºte Zodiac	Eliminã bonusurile din armã ºi armurã Zodiac ºi aplicã altele noi.
+86062	Vrãjeºte Alchemie	Eliminã bonusurile din piatra dragon ºi aplicã altele noi.
+86066	Bucatã de piatrã magicã	Cu acest obiect, mergând la fierar, puteþi cumpãra Piatra Magicã.
+86067	Talisman Brut	Acest element este utilizat pentru îmbunãtãþirea talismanelor.
+86071	Snack Proteic (2d)	Cu aceastã muºcãturã poþi reînvia sau creºte durata de viaþã animalului dvs. de companie. Vei primi o nouã duratã de: 2zile. Trage snack-ul peste pictograma animalului de companie pentru a-l utiliza.
+86072	Snack Proteic (4d)	Cu aceastã muºcãturã poþi reînvia sau creºte durata de viaþã animalului dvs. de companie. Vei primi o nouã duratã de: 4zile. Trage snack-ul peste pictograma animalului de companie pentru a-l utiliza.
+86073	Snack Proteic (8d)	Cu aceastã muºcãturã poþi reînvia sau creºte durata de viaþã animalului dvs. de companie. Vei primi o nouã duratã de: 8zile. Trage snack-ul peste pictograma animalului de companie pentru a-l utiliza.
+86074	Snack Proteic Divin (Permanent)	Cu aceastã muºcãturã poþi reînvia sau creºte durata de viaþã animalului dvs. de companie. Vei primi o nouã duratã : permanent. Trage snack-ul peste pictograma animalului de companie pentru al utiliza.
+86075	Snack special	Prin aceastã muºcãturã poþi îmbunãtãþi un bonus al animalului dvs. de companie. Trage snack-ul peste pictograma animalului de companie pentru al utiliza.
+86076	Reseteazã abilitate petului	Acest articol vã permite sã uitaþi o abilitate a animalului dvs. de companie. Pentru a-l utiliza, trebuie sa aveþi un animal de companie convocat.
+86077	Reseteazã abilitatea petului (S)	Acest articol va permite sa uita?i o abilitate a animalului dvs. de companie. Pentru a-l utiliza, trebuie sa aveþi un animal de companie convocat.
+86080	Eliminã Bonus Costum	Prin intermediul acestui element puteþi elimina bonusurile unui costum. Trageþi obiectul peste fura pentru a-i elimina bonusurile.
+88001	Eºarfã Lord Suport Shaman	Acest articol poate fi purtat numai de Suportul Shaman.
+88005	Eºarfã Roºie Suport Shaman	Acest articol poate fi purtat numai de Suportul Shaman.
+88009	Eºarfã Neagrã Suport Shaman	Acest articol poate fi purtat numai de Suportul Shaman.
+88010	Costum Maimuþã (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88011	Costum Maimuþã (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88012	Costum Paianjen (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88013	Costum Paianjen (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88014	Costum Razador (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88015	Costum Razador (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88016	Costum Nemere (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88017	Costum Nemere (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88018	Costum Dragon (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88019	Costum Dragon (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88020	Costum Meley(7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88021	Costum Meley(Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88022	Costum Azrael (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88023	Costum Azrael (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88024	Costum Executor Gras (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88025	Costum Mini Executor Gras(Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88026	Costum Pui Bashido(7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88027	Costum Pui Bashido(Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88028	Costum Nessie (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88029	Costum Nessie (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88030	Costum Exedyar (7d)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie pentru 7zile.
+88031	Costum Exedyar (Permanent)	Acest articol oferã o esteticã specialã pentru animalul dvs. de companie permanent.
+88035	Eºarfã Albã Suport Shaman	Acest articol poate fi purtat numai de Suportul Shaman.
+88039	Eºarfã Chou Suport Shaman	Acest articol poate fi purtat numai de Suportul Shaman.
+88110	Costum Leu (7d)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. pentru 7zile.
+88111	Costum Leu (Permanent)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. permanent.
+88112	Costum Dragon (7d)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. pentru 7zile.
+88113	Costum Dragon (Permanent)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. permanent.
+88114	Costum Elefant (7d)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. pentru 7zile.
+88115	Costum Elefant (Permanent)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. permanent.
+88116	Costum Panda (7d)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. pentru 7zile.
+88117	Costum Panda (Permanent)	Acest articol oferã o esteticã specialã pentru mount-ul dvs. permanent.
+88210	Efect Armã Neagrã I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88211	Efect Armã Neagrã I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88212	Efect Armurã NeagrãI (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88213	Efect Armurã NeagrãI (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88214	Efect Armã Roz I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88215	Efect Armã Roz  I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88216	Efect Armurã Roz I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88217	Efect Armurã Roz I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88218	Efect Armã Portocalie I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88219	Efect Armã Portocalie I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88220	Efect Armurã Portocalie I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88221	Efect Armurã Portocalie I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88222	Efect Armã Verde I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88223	Efect Armã Verde I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88224	Efect Armurã Verde I (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88225	Efect Armurã Verde I (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88226	Efect Armã Violet II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88227	Efect Armã Violet II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88228	Efect Armurã Violet II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88229	Efect Armurã Violet II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88230	Efect Armã Albastrã II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88231	Efect Armã Albastrã II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88232	Efect Armurã Albastrã II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88233	Efect Armurã Albastrã II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88234	Efect Armã Roz II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88235	Efect Armã Roz II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88236	Efect Armurã Roz II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88237	Efect Armurã Roz II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88238	Efect Armã Albã II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88239	Efect Armã Albã II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88240	Efect Armurã Albã II (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88241	Efect Armurã Albã II (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88242	Efect Armã Verde III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88243	Efect Armã Verde III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88244	Efect Armurã Verde III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88245	Efect Armurã Verde III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88246	Efect Armã Roºie III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88247	Efect Armã Roºie III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88248	Efect Armurã Roºie III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88249	Efect Armurã Roºie III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88250	Efect Armã Albastrã III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88251	Efect Armã Albastrã III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88252	Efect Armurã Bleu III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88253	Efect Armurã Bleu III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88254	Efect Armã Galbenã III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88255	Efect Armã Galbenã III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88256	Efect Armurã Galbenã III (7d)	Acest articol oferã o estetica specialã caracterului tãu.
+88257	Efect Armurã Galbenã III (Permanent)	Acest articol oferã o estetica specialã caracterului tãu.
+88902	Pachetul Kashmir	Acest pachet vã permite sã vã decoraþi magazinul într-un mod unic.
+88910	Fiolã Portocalie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88911	Fiolã Galbenã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88912	Fiolã Albastrã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88913	Fiolã Roºie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88914	Fiolã Verde	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88915	Fiolã Violet	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88916	Rocã Albastrã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88917	Rocã Portocalie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88918	Rocã Albã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88919	Rocã Galbenã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88920	Rocã Roºie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88921	Rocã Verde	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88922	Loviturã Criticã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88923	Loviturã Pãtrunzãtoare	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88924	Atacul Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88925	Apãrarea Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88926	Inteligenþa Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88927	Viaþa Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88928	Elixir Vitezã de Atac	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88929	Poþiune Verde(L) (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88930	Rocã Albastrã (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88931	Rocã Portocalie (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88932	Rocã Galbenã (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88933	Rocã Roºie (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88934	Rocã Verde (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88935	Loviturã Criticã (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88936	Loviturã Pãtrunzãtoare (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88937	Atacul Zeului Dragon (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88938	Apãrarea Zeului Dragon (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88939	Inteligenþa Zeului Dragon (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88940	Viaþa Zeului Dragon (Permanent)	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88941	Rocã Albastrã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88942	Rocã Portocalie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88943	Rocã Galbenã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88944	Rocã Roºie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88945	Rocã Verde	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88946	Fiolã Portocalie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88947	Fiolã Galbenã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88948	Fiolã Albastrã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88949	Fiolã Roºie	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88950	Fiolã Verde	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88951	Fiolã Violet	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88952	Loviturã Criticã	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88953	Loviturã Pãtrunzãtoare	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88954	Atacul Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88955	Apãrarea Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88956	Inteligenþa Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88957	Viaþa Zeului Dragon	Zeul Dragon te va binecuvânta: Apasã click-dreapta pentru a primi binecuvântarea
+88958	Pergament Suflet	With this scroll you make your soul evolve one level
+88959	Vrãjeºte Obiectul	It removes the bonuses from one de your items and adds more
+88960	Snack Special	Prin aceastã muºcãturã poþi îmbunãtãþi un bonus al animalului dvs. de companie. Trage snack-ul peste pictograma animalului de companie pentru al utiliza.
+88961	Vrãjeºte Alchemie	Eliminã bonusurile din piatra dragon ºi aplicã altele noi.
+88962	Costum Vrãjit	Eliminaþi bonusurile de pe unul din costumele dvs. ºi aplicaþi altele noi. Variabilele sunt aleatorii în funcþie de gradul costumului.
+88963	Vrãjeºte Costum	Eliminaþi bonusurile de pe unul din costumele dvs. ºi aplicaþi altele noi.
+88964	Marmurã Talisman	Marmurã legendarã, dacã un talisman are deja 4 atribute, acest lucru va permite sã adaugi ultimul bonus.
+88965	Vrãjeºte Talisman	Eliminã bonusurile din talisman ºi aplicã altele noi. Variabilele sunt aleatorii.
+88966	Întãreºte Talisman	Acesta va adãuga un nou bonus talismanului tãu (pânã la maximum 4 bonusuri).
+88967	Cufãr animal de companie	Conþine oul de la un animal de companie.	Apasã click-dreapta pentru a alege animalul.
+88968	Poþiune de Frumuseþe	Aceastã poþiune de înfrumuseþare este utilizatã pentru a cumpãra costume de animale de companie de la un NPC.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Piatra lui Zeus	Acest element vã permite sã resetaþi timpul de reîncarcare al temniþei runelor.
+89101	Permis Runã	Permis de trecere cãtre Temniþa Runelor.
+89102	Suflet Runã	Poþi schimba 10 suflete runã pentru 1 Cheie Divinã. Apasã Click Dreapta pentru a schimba.
+89103	Cheie Divinã	Aceastã cheie este utilizatã în etajul 1 de la temniþa Runelor. Este, de asemenea, de utilizat la ultimul etaj al temniþei runelor. Apasã clic dreapta pentru a o utiliza la etajul 1. Trage pe Piatra Runã pentru a o distruge la ultimul etaj al temniþei Runelor.
+89104	Cheia Orcilor	Acest obiect este folosit pentru debloca un sigiliu în Temniþaa Orcilor.
+89105	Cheia Orcilor Negri	Acest obiect este folosit pentru debloca un sigiliu în Temniþa Orcilor.
+89106	Permis trecere Temniþa Orcilor	Acest obiect este folosit pentru a intra în Temniþa Orcilor.
+89107	Permis Runã	Permis de trecere cãtre Temniþa Runelor.
+89108	Cerceii Armoniei (2h)	Mãreºte ºansa unei lovituri pãtrunzãtoare pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89109	Brãþara Dragostei(2h)	Mãreºte ºansa de a colecta puncte EXP pentru ambii soþi cu 20% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89110	Cerceii Dragostei (2h)	Mãreºte ºansa unei lovituri critice pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89111	Brãþara Armoniei (2h)	Reduce valoarea atacului monºtrilor asupra ambilor soþi de maximum 15% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89112	Colierul Dragostei (2h)	Mãreºte valoarea atacului pentru ambii soþi cu 40 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89113	Colierul  Armoniei (2h)	Mãreºte apãrarea pentru ambii soþi cu 30 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89114	Cerceii Armoniei (8h)	Mãreºte ºansa unei lovituri pãtrunzãtoare pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89115	Love Bracelet (8h)	Mãreºte ºansa de a colecta puncte EXP pentru ambii soþi cu 20% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89116	Cerceii Dragostei (8h)	Mãreºte ºansa unei lovituri critice pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89117	Brãþara Armoniei (8h)	Reduce valoarea atacului monºtrilor asupra ambilor soþi de maximum 15% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89118	Colierul Dragostei (8h)	Mãreºte valoarea atacului pentru ambii soþi cu 40 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89119	Colierul Armoniei (8h)	Mãreºte apãrarea pentru ambii soþi cu 30 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89120	Cerceii Armoniei (Permanent)	Mãreºte ºansa unei lovituri pãtrunzãtoare pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89121	Love Bracelet (Permanent)	Mãreºte ºansa de a colecta puncte EXP pentru ambii soþi cu 20% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89122	Cerceii Dragostei (Permanent)	Mãreºte ºansa unei lovituri critice pentru ambii soþi cu 8% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89123	Brãþara Armoniei (Permanent)	Reduce valoarea atacului monºtrilor asupra ambilor soþi de maximum 15% pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89124	Colierul Dragostei (Permanent)	Mãreºte valoarea atacului pentru ambii soþi cu 40 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+89125	Colierul Armoniei (Permanent)	Mãreºte apãrarea pentru ambii soþi cu 30 pentru 3ore, dacã e purtat de cãtre unul din ei. Efectul depinde de procentajul punctelor Dragoste.. Dacã un cuplu are spre exemplu 50% puncte Dragoste, efectul maxim va fi redus la jumate.
+164401	Magia Biologului	Cu acest obiect este posibil sã resetaþi timpul de aºteptare a misiunilor de la biolog.
+164402	Papirus Chaegirab	Cu acest papirus este posibil sã cumperi obiecte de la biolog.
+164406	Elixir Curcubeu	Acest obiect îþi oferã ºansa sã schimbi culoarea abilitãþilor tale.
+164407	Poþiune Strãlucitoare	Aceastã poºiune este folositã pentru a cumpãra efecte de  Armã ºi Armurã de la un NPC.
+164408	Fructul Zeilor	Fruct cu gust dulce din Grãdina Zeului Dragonului. Este folosit pentru rafinarea unui obiect de echipament.
+164409	Elixirul Zeilor	Sticla conþine un lichid luminos misterios. Este folosit pentru rafinarea unui obiect de echipament.
+164410	Suflet Adevãr	Un suflet bun închis pentru totdeauna într-o sferã de sticlã. Este folosit pentru rafinarea unui obiect de echipament.
+164411	Carte Adevãr	Volum puternic al carui titlu pare sa strãluceascã. Este folosit pentru rafinarea unui obiect de echipament.
+164412	Floare Divinã	Floare sacrã din Grãdina Zeului Dragonului. Este folosit pentru rafinarea unui obiect de echipament.
+164413	Bucatã de sabie a lui Dumnezeu	Cu acest obiect este posibil sã craftezi Sabie otrãvitã de la +9 la rangul Epic.
+164414	Bucatã de lamã a Demonului	Cu acest obiect este posibil sã craftezi Sabie Leu de la +9 la rangul Epic.
+164415	Bucatã de lama Furtului de Suflete	Cu acest obiect este posibil sã craftezi Sabie Mânie de la +9 la rangul Epic.
+164416	Bucatã de Arc Dragon Albastru	Cu acest obiect este posibil sã craftezi Arcul Oþelit al Ciorii de la +9 la rangul Epic.
+164417	Bucatã de Clopot Extaz	Cu acest obiect este posibil sã craftezi Clopot Orhidee de la +9 la rangul Epic.
+164418	Bucatã de Cuþite Siameze	Cu acest obiect este posibil sã craftezi Pumnale Chakram Diavol de la +9 la rangul Epic.
+164419	Poþiune Strãlucitoare	Aceastã poºiune este folositã pentru a cumpãra efecte de  Armã ºi Armurã de la un NPC.
+30897	Inel de teleportare	Cu acest inel te poºi teleporta in orice mapa mult mai rapid.	BwMt2-Global
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min

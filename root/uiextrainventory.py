@@ -52,8 +52,7 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 
 		try:
 			self.GetChild("TitleBar").SetCloseEvent(ui.__mem_func__(self.Close))
-			#self.GetChild("RefreshButton").SetEvent(ui.__mem_func__(self.SortExtraInventory))
-			#self.GetChild("RefreshButton").Hide()
+			self.GetChild("RefreshButton").SetEvent(ui.__mem_func__(self.SortExtraInventory))
 			self.GetChild("Mall_cat").SetEvent(ui.__mem_func__(self.ClickMallButton))
 			self.GetChild("Safebox_cat").SetEvent(ui.__mem_func__(self.ClickSafeboxButton))
 			
@@ -81,7 +80,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 			for i in xrange(9):
 				self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
 				self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-				self.EX_INVEN_COVER_IMG_OPEN[i].SetEvent(ui.__mem_func__(self.Env_key))
 		
 		self.wndItem.SetSelectEmptySlotEvent(ui.__mem_func__(self.SelectEmptySlot))
 		self.wndItem.SetSelectItemSlotEvent(ui.__mem_func__(self.SelectItemSlot))
@@ -121,17 +119,8 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 
 	if app.ENABLE_HIGHLIGHT_SYSTEM:
 		def HighlightSlot(self, slot):
-			category = 0
-			if slot >= 180 and slot < 360:
-				category = 1
-			if slot >= 360 and slot < 540:
-				category = 2
-			if slot >= 540 and slot < 720:
-				category = 3
-			if slot >= 720 and slot < 900:
-				category = 4
-			if slot >= 900 and slot < 1080:
-				category = 5
+			categorySlotCount = player.EXTRA_INVENTORY_PAGE_SIZE * (player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT)
+			category = min(slot / categorySlotCount, player.EXTRA_INVENTORY_CATEGORY_COUNT - 1)
 			
 			if not slot in self.listHighlightedSlot[category]:
 				self.listHighlightedSlot[category].append(slot)
@@ -169,47 +158,6 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 			for i in xrange(9):
 				self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
 				self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-			
-			slotsAv = player.GetStatus(int(self.category) + player.EXTRA_INVENTORY1)
-			page = self.inventoryPageIndex
-			
-			if page == 2:
-				first = False
-				for i in xrange(4, 9):
-					if slotsAv > int(i - 4):
-						self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-					else:
-						if not first and (int(slotsAv) < 6):
-							self.EX_INVEN_COVER_IMG_OPEN[i].Show()
-							self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-							first = True
-						else:
-							self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-							self.EX_INVEN_COVER_IMG_CLOSE[i].Show()
-			elif page == 3:
-				first = False
-				slotsAv -= 5
-				for i in xrange(9):
-					if slotsAv == 0 and not first:
-						self.EX_INVEN_COVER_IMG_OPEN[i].Show()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-						first = True
-					elif slotsAv <= 0:
-						self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-						self.EX_INVEN_COVER_IMG_CLOSE[i].Show()
-					else:
-						if slotsAv >= int(i + 1):
-							self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-							self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-						else:
-							if not first:
-								self.EX_INVEN_COVER_IMG_OPEN[i].Show()
-								self.EX_INVEN_COVER_IMG_CLOSE[i].Hide()
-								first = True
-							else:
-								self.EX_INVEN_COVER_IMG_OPEN[i].Hide()
-								self.EX_INVEN_COVER_IMG_CLOSE[i].Show()
 
 		def Expansion_env(self):
 			net.SendChatPacket("/unlock_extra " + str(self.category))
@@ -217,32 +165,20 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 
 		def Env_key(self):
 			slotsAv = player.GetStatus(int(self.category) + player.EXTRA_INVENTORY1)
-			if slotsAv < 14:
-				needkeys = (
-								1,
-								1,
-								1,
-								2,
-								2,
-								2,
-								3,
-								3,
-								3,
-								4,
-								4,
-								4,
-								5,
-								6,
-				)
+			freeSlots = (player.EXTRA_INVENTORY_PAGE_SIZE * 2) + 20
+			maxStage = (player.EXTRA_INVENTORY_PAGE_SIZE * (player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT) - freeSlots) / 5
+			if slotsAv < maxStage:
+				needkeys = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 6]
+				needKey = needkeys[slotsAv] if slotsAv < len(needkeys) else 6 + ((slotsAv - len(needkeys)) / 6)
 				
 				self.questionDialog = uicommon.QuestionDialog()
-				self.questionDialog.SetText(localeinfo.ENVANTER_EXPANS_1 % needkeys[slotsAv])
+				self.questionDialog.SetText(localeinfo.ENVANTER_EXPANS_1 % needKey)
 				self.questionDialog.SetAcceptEvent(ui.__mem_func__(self.Expansion_env))
 				self.questionDialog.SetCancelEvent(ui.__mem_func__(self.OnCloseQuestionDialog))
 				self.questionDialog.Open()
 
 	def GetInventoryPageIndex(self):
-		return self.inventoryPageIndex + (self.category * 4)
+		return self.inventoryPageIndex + (self.category * (player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT))
 
 	def SetInventoryPage(self, page):
 		self.inventoryPageIndex = page
@@ -287,7 +223,8 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 				mousemodule.mouseController.AttachObject(self, player.SLOT_TYPE_EXTRA_INVENTORY, itemSlotIndex, selectedItemVNum, count)
 
 	def __InventoryLocalSlotPosToGlobalSlotPos(self, local):
-		return self.inventoryPageIndex * player.EXTRA_INVENTORY_PAGE_SIZE + local + (self.category * (player.EXTRA_INVENTORY_PAGE_SIZE * 4)) 
+		categoryPageCount = player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT
+		return self.inventoryPageIndex * player.EXTRA_INVENTORY_PAGE_SIZE + local + (self.category * (player.EXTRA_INVENTORY_PAGE_SIZE * categoryPageCount)) 
 
 
 	def __SplitItemToPackages(self, srcSlotPos, packageCount, packageSize):

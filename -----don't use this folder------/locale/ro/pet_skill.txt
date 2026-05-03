@@ -1,0 +1,12 @@
+1	Rezistenþã (Rãboinic)	jijoong	PASSIVE	Rezitenþã la atacurile Raboinicului (pasiv)	0
+2	Rezistenþã (Sura)	jijoong	PASSIVE	Rezitenta la atacurile Sura (pasiv)	0
+3	Rezistenþã (Ninja)	jijoong	PASSIVE	Rezitenta la atacurile Ninja (pasiv)	0
+4	Rezistenþã (ªaman)	jijoong	PASSIVE	Rezitenta la atacurile Samanului (pasiv)	0
+5	Pagube critice (PvM)	banya	PASSIVE	Creste daunele critice PVM (pasiv)	0
+6	Tare împotriva Metinelor	cheonryeong	PASSIVE	Creste daunele cauzate lui Metin (pasiv)	0
+7	Tare împotriva ªefilor	choehoenbimu	PASSIVE	Creste daunele provocate in ?efi (pasiv)	0
+8	Ochi de Vultur	stealmp	PASSIVE	Rata de castig a Exp este crescuta (pasiv)	0
+9	Drop Yang	gold_drop	PASSIVE	Rata de castig a Yang-ului este crescuta (pasiv)	0
+10	Valoare de atac / magie	pacheon	PASSIVE	Creste valoarea atacului (pasiv)	0
+11	Bloc de atac corporal	block	PASSIVE	Absorbi PM de la oponent (pasiv)	0
+12	Ref. a. caporal	reflect_melee	PASSIVE	Daunele primite se reflecta in inamic (pasiv)	0

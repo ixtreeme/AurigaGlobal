@@ -1,0 +1,10 @@
+1	Zabic szefa	Zabija do zrobienia: %s	Potwór: |cffff9d9d|H|h%s|h|r	Zabij |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+5	Uzyj obiektu	Obiekt do uzycia: %s	Obiekt: |cffff9d9d|H|h%s|h|r	Uzyj |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+6	Sprzedaj przedmiot	Obiekt do sprzedania: %s	Obiekt: |cffff9d9d|H|h%s|h|r	Sprzedac |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+8	Wzbogac obiekt	Obiekt do poprawy: %s	Obiekt: |cffff9d9d|H|h%s|h|r	Wzbogac |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+9	Zniszcz swój przedmiot	Obiekt do zniszczenia: %s	Obiekt: |cffff9d9d|H|h%s|h|r	Zniszczyc |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+10	Zebrac	Obiekt kolekcjonerski: %s	Obiekt: |cffff9d9d|H|h%s|h|r	Zebrac |cffff9d9d|H|h%s|h|r aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+11	Usmaz rybe	Ryby, które trzeba usmazyc: %s	Smazyc: Wszystko	Smaz dowolna rybe aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+12	Zlap ryby	Ryby do polowu: %s	Wedkarstwo: Wszystko	Zlap dowolna rybe aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+14	Zbierz yang	Yang zebrac: %s	Zbierac: Wszystko	Zbierz yang aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.
+15	Ukoncz loch	Loch do ukonczenia: %s	Loch: Wszystko	Ukoncz 70 lochów aby	ukonczyc misje i zdobyc nagrody	dla swojej postaci.

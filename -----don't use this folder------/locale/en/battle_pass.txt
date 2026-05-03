@@ -1,0 +1,10 @@
+1	Kill the boss	Kills Remaining: %s	Monster: |cffff9d9d|H|h%s|h|r	Kill the |cffff9d9d|H|h%s|h|r for	complete the mission and earn	the rewards for your character.
+5	Use the object	Object to use: %s	Object: |cffff9d9d|H|h%s|h|r	Use |cffff9d9d|H|h%s|h|r to complete	the mission and earn the rewards	for your character.
+6	Sell the object	Object to sell: %s	Oggetto: |cffff9d9d|H|h%s|h|r	Sell |cffff9d9d|H|h%s|h|r to complete	the mission and earn the rewards	for your character.
+8	Refine the object	Object to refine: %s	Object: |cffff9d9d|H|h%s|h|r	Refine |cffff9d9d|H|h%s|h|r to complete	the mission and earn the rewards	for your character.
+9	Destroy your object	Object to be destroyed: %s	Object: |cffff9d9d|H|h%s|h|r	Destroy |cffff9d9d|H|h%s|h|r to complete	the mission and earn the rewards	for your character.
+10	Collect	Object to collect: %s	Object: |cffff9d9d|H|h%s|h|r	Collect |cffff9d9d|H|h%s|h|r to complete	the mission and earn the rewards	for your character.
+11	Fry the fish	Fish for Frying: %s	Fry: All	Fry any fish for	complete the mission and earn	ricompense for your character.
+12	Catch the Pisces	Fish to catch: %s	To fish: All	Catch any fish to complete	the mission and earn the rewards	for your character.
+14	Yang farm	Yang to Farm: %s	Farma from: All	Farma yang to complete the	mission and earn rewards	for your character.
+15	Complete Dungeon	Dungeon to complete: %s	Dungeon: All	Complete 70 dungeons to complete	the mission and receive rewards	for your character.

@@ -1,0 +1,10 @@
+1	Zabijte Morte personificata	Zbývající zabití: %s	Netvor: |cffff9d9d|H|h%s|h|r	Zabijte |cffff9d9d|H|h%s|h|r pro	splnte misi a vydelávejte	odmeny pro vaši postavu.
+5	Použijte objekt	Objekt k použití: %s	Objekt: |cffff9d9d|H|h%s|h|r	Použití |cffff9d9d|H|h%s|h|r pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+6	Prodat položku	Objekt na prodej: %s	Objekt: |cffff9d9d|H|h%s|h|r	Prodat |cffff9d9d|H|h%s|h|r pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+8	Zlepšit objekt	Objekt ke zlepšení: %s	Objekt: |cffff9d9d|H|h%s|h|r	Zlepšit |cffff9d9d|H|h%s|h|r pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+9	Znicte svuj objekt	Objekt, který má být znicen: %s	Objekt: |cffff9d9d|H|h%s|h|r	Znicte |cffff9d9d|H|h%s|h|r pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+10	Sbírat	Sbírat objekt: %s	objekt: |cffff9d9d|H|h%s|h|r	Sbírat |cffff9d9d|H|h%s|h|r pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+11	Smažit ryby	Celková ryba na smažit: %s	Smažit: Všechno	Smažit jakákoli ryba pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+12	Chytit rybu	Ryby na ulovení: %s	Zachytte: Všechno	Chytte jakoukoli rybu pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+14	Sbírejte yang	Yang sbírat: %s	Sbírejte od: Všechno	Sbírejte yang pro splnte	misi a vydelávejte odmeny	pro vaši postavu.
+15	Kompletní Žalár	Žalár na dokoncení: %s	Žalár: Všechno	Dokoncete 70 Žalár pro splnte	misi a vydelávejte odmeny	pro vaši postavu.

@@ -1,0 +1,1349 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	Este bau contem uma pedra espiritual +5 aleatoria.
+49021	Spirit Sword (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49022	Spirit Dagger (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49023	Spirit Bow (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49024	Spirit Glaive (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49025	Spirit Bell (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49026	Spirit Fan (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49027	Spirit Costume (F) (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+49028	Spirit Costume (M) (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+85112	Spirit Stole (inf)	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+71056	Helper Scroll	Este item esta disponivel apenas para aqueles que tem a funcao de Ajudante.
+89001	Voucher	Voucher no valor de 1 Moedas Drag o.
+89002	Voucher	Voucher no valor de 2 Moedas Drag o.
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+89003	Voucher	Voucher no valor de 3 Moedas Drag o.
+89004	Voucher	Voucher no valor de 50 Moedas Drag o.
+89005	Voucher	Voucher no valor de 100 Moedas Drag o.
+70027	Mistyc Blessing scroll	Item refine prob 100%
+89006	Voucher	Voucher no valor de 500 Moedas Drag o.
+89007	Voucher	Voucher no valor de 1000 Moedas Drag o.
+50001	Item-Shop	Dentro do ba  h :
+100000	Elixir do Tempo (P)	Recupera a dura  o de uma Pedra do Drag o.
+100001	Elixir do Tempo (M)	Recupera a dura  o de uma Pedra do Drag o.
+100002	Elixir do Tempo (G)	Recupera a dura  o de uma Pedra do Drag o.
+100100	Pin as do Drag o	Uma ferramenta  til que aumenta a probabilidade de sucesso durante a remo  o de uma Pedra do Drag o.
+100300	Feij o do Drag o Verde	Este m gico feij o aumenta o n vel da tua Pedra do Drag o. O processo de fortalecimento pode falhar.
+100400	Feij o do Drag o Azul	Este feij o m gico aumenta a probabilidade de sucesso do melhoramento em um n vel da Pedra do Drag o.
+100500	Feij o do Drag o Rosa	A probabilidade de sucesso de melhoramento em um n vel de uma Pedra do Drag o   10% mais alta.
+11901	Fato de Casamento	Um fato elegante para um homem usar num casamento.
+11902	Fato de Casamento	Um fato elegante para um homem usar num casamento.
+11903	Vestido de Casamento	Um vestido especial para uma mulher vestir num casamento.
+11904	Vestido de Casamento	Um vestido especial para uma mulher vestir num casamento.
+18900	Pedra da Chama Vermelha	Aumenta os b nus do teu cinto.
+25040	Pergaminho da B n  o	Elimina o risco de um item ser destru do caso um melhoramento falhe. Caso falhe, a qualidade do item ser  apenas reduzida em 1 n vel.
+25041	Pedra M gica	Um fragmento do metal lend rio que aumenta as probabilidades de conseguires melhorar um item. O item que tentas melhorar n o ser  destru do nem a sua qualidade diminuir .
+25100	Pergaminho da Extrac  o	Pergaminho que permite extrair Pedras Esp ritas de uma arma ou armadura. Deixa uma marca de extrac  o.
+27600	Fogueira	Madeira que foi cortada para uma fogueira.
+27610	M rmore de Pesca	Este m rmore m gico revela qual o peixe que mordeu o anzol.
+27620	Livro de Pesca	Um livro que mostra informa  es sobre o peixe.
+27803	L cio	Peixe comum que normalmente vive em lagos.
+27804	Peixe Mandarim	Um peixe delicioso.
+27805	L cio Grande	L cio grande e gordo.
+27806	Carpa	Um grande peixe de cor prateada.
+27807	Salm o	Um peixe que regressa a casa sozinho na  poca do cio.
+27808	Carpa Herbivora	Uma carpa que normalmente se alimenta de ervas.
+27809	Truta Texugo	Um peixe que   primo do salm o.
+27810	Enguia	Um peixe longo e fino que parece uma serpente. Tem muita resist ncia.
+27811	Truta Arco- ris	Um peixe que tem um arco- ris na parte de tr s.
+27812	Truta de Rio	Um peixe de  gua doce muito comum nesta  rea.
+27813	Escard nio	Um peixe vermelho e reluzente que vive em cardume.
+27814	Perca	Um peixe que   conhecido como "tubar o dos mares".
+27815	Tenchi	Um tipo de tainha que vive apenas em  guas limpas.
+27816	Peixe Gato	Um peixe com uma grande boca e bigodes como os dos gatos.
+27817	Verdem 	Um peixe escorregadio que normalmente vive em  guas rasas e lamacentas.
+27818	Peixe L tus	Um peixe grande de  gua fria, que vive de uma dieta variada.
+27819	Peixe Doce	Peixe da fam lia do Eperlano. Vive ao longo da costa e em estu rios.
+27820	Eperlano	Um peixe que   capturado maioritariamente no gelo.
+27821	Shiri	Um peixe com uma forma e cor bonitas.
+27822	Carpa Espelhada	Carpa domesticada.
+27823	Carpa Dourada	Um raro peixe dourado e reluzente.
+27824	Cabe a-de-Cobra	Um predador de  gua doce que vive em  guas tropicais.
+27825	Mira-C u	Um peixe que apenas pode ser encontrado em  guas movimentadas.
+27826	Rei Caranguejo Vermelho	Este gigante   a maior esp cie de Rei Caranguejo que se conhece.
+27827	Yabby	Esta esp cie de lagostim   geralmente nocturna e permanece escondida durante o dia.
+27833	L cio Morto	Peixe perfeito para ser grelhado numa fogueira.
+27834	Peixe Mandarim Morto	Peixe perfeito para ser grelhado numa fogueira.
+27835	L cio Grande Morto	Peixe perfeito para ser grelhado numa fogueira.
+27836	Carpa Morta	Peixe perfeito para ser grelhado numa fogueira.
+27837	Salm o Morto	Este peixe pode ser grelhado numa fogueira.
+27838	Carpa Herb vora Morta	  saborosa quando grelhada numa fogueira.
+27839	Truta Texugo Morta	  saborosa quando grelhada numa fogueira.
+27840	Enguia Morta	  saborosa quando grelhada numa fogueira.
+27841	Truta Arco- ris Morta	  saborosa quando grelhada numa fogueira.
+27842	Truta de Rio Morta	  saborosa quando grelhada numa fogueira.
+27843	Escard nio Morto	  saboroso quando grelhado numa fogueira.
+27844	Perca Morta	  saborosa quando grelhada numa fogueira.
+27845	Tenchi Morto	  saboroso quando grelhado numa fogueira.
+27846	Peixe Gato Morto	  saboroso quando grelhado numa fogueira.
+27847	Verdem  Morto	  saboroso quando grelhado numa fogueira.
+27848	Peixe L tus Morto	  saboroso quando grelhado numa fogueira.
+27849	Peixe Doce Morto	  saboroso quando grelhado numa fogueira.
+27850	Eperlano Morto	  saboroso quando grelhado numa fogueira.
+27851	Shiri Morto	  saboroso quando grelhado numa fogueira.
+27852	Carpa Espelhada Morta	  saborosa quando grelhada numa fogueira.
+27853	Carpa Dourada Morta	  saborosa quando grelhada numa fogueira.
+27854	Cabe a-de-Cobra Morto	Peixe perfeito para ser grelhado numa fogueira.
+27855	Mira-C u Morto	Peixe perfeito para ser grelhado numa fogueira.
+27856	Rei Carang. Verm. Morto	Caranguejo perfeito para ser grelhado numa fogueira.
+27857	Yabby Morto	Lagostim perfeito para ser grelhado numa fogueira.
+27987	Ostra	Um molusco com uma bonita concha. Pode conter uma p rola no seu interior.
+27990	Peda o de Pedra	Devido ao pequeno tamanho pode ser transportada facilmente. Tem v rias utiliza  es poss veis.
+27992	P rola Branca	Um tesouro branco puro encontrado dentro de uma Ostra.
+27993	P rola Azul	Uma magn fica p rola de cor azul profundo encontrada dentro de uma Ostra.
+27994	P rola Vermelha	Uma p rola de cor avermelhada encontrada dentro de uma Ostra.
+30179	Chave Torcida	A chave m gica activa o portal para o Templo do Drag o.
+30270	Lasca de Pedra do Drag o	Lasca de uma Pedra do Drag o rara
+30311	Chave de Azurite	Esta delicada chave, com uma pedra de Azurite, abre a passagem para o 2  Andar das Catacumbas do Dem nio.
+30312	Totem de Rosto	Este peda o de madeira com um rosto cravado serve como chave para o 6  Andar das Catacumbas do Dem nio.
+30320	Cabe a Encolhida	Esta cabe a de dem nio encolhida abre o selo para o 2  Andar das Catacumbas do Dem nio.
+30321	Cabe a Encolhida	Esta cabe a de dem nio encolhida abre o selo para o 2  Andar das Catacumbas do Dem nio.
+30325	Chave do Aracn deo	Abre o port o para o Ninho de Reprodu  o da Baronesa. Desintegra-se ap s 24 horas. Apenas pode ser usada por l deres de grupo.
+30327	Apito do Aracn deo	A m sica deste instrumento atrai a Aranha Baronesa.
+30329	Roda Dentada Dourada	Activa o mecanismo escondido na Estela de Isfet.
+30330	Pedra de Maat	Como Deusa da Justi a, Maat luta pela ordem entre o caos.
+30331	Chave da Geada	A chave   fria como o gelo e d  acesso ao terceiro piso da Torre de Vigia de Nemere. Apenas pode ser usada por Xam s.
+30332	Estrela Polar	Pedra-chave feita de gelo puro. Permite o acesso ao sexto andar da Torre de Vigia de Nemere.
+30333	Chave da Flor da Geada	Esta chave feita de gelo permite o acesso ao nono andar da Torre de Vigia de Nemere.
+30341	Anel Fogo do Drag o	Uma aura de energia intensa rodeia-te. Forjado nas chamas de um drag o, este anel ir  destruir num instante as est tuas no Covil de Meley.
+30505	Decora  o Esmeralda	Elemento para refinares a tua arma.
+30506	Faca de Gravura Lazuli	Ferramenta para refinares a tua arma.
+30512	A o de Drag o Vermelho	Couro de drag o   extremamente leve e flex vel, mas tamb m virtualmente indestrut vel. Pode ser processado como metal e usado na produ  o de armaduras.
+30518	Fio Dourado	Rolo de fio m gico, feito de ouro fundido. Pode ser processado, juntamente com uma pedra preciosa, em joalharia valiosa.
+30519	Gancho Dourado	Feito de ouro puro, pode ser processado, juntamente com uma pedra preciosa, em joalharia valiosa.
+30520	Fivela Dourada	Feita de ouro puro, pode ser processada, juntamente com uma pedra preciosa, em joalharia valiosa.
+30613	Pedra das Dr ades	Rodeada por um brilho verde, esta misteriosa pedra cont m no seu interior a alma de uma dr ade, o esp rito de uma  rvore. As dr ades conhecem as palavras secretas que te garantem acesso   masmorra Erebus.
+30616	Di xido de Tit nio	Este cristal prism tico   usado para refinar uma pe a de equipamento.
+30617	 gata	Esta misteriosa e reluzente pedra preciosa   usada para refinar uma pe a de equipamento.
+30618	Pedra Lunar	Um raio de luar est  encapsulado nesta j ia em forma de l grima.   usada para refinar uma pe a de equipamento.
+33031	Flor Elemental	Pedra preciosa em forma de flor para melhorares os teus talism s elementais.
+39001	Pedra M gica	Esta Pedra garante a melhor probabilidade de melhorares um item. Al m disso, o item n o ser  destru do nem perder  qualidade se o melhoramento falhar. Este item   negoci vel.
+39007	Manual do Ferreiro	Este livro cont m a alma de um Ferreiro antigo. Se for usado aumenta a probabilidade de melhorar um Item. Este item   negoci vel.
+39008	Pergaminho do Exorcismo	Remove a maldi  o do esp rito malvado se a aprendizagem n o   bem sucedida. Com a ajuda deste pergaminho podes ler outro livro no mesmo dia. Este item   negoci vel.
+39022	Pergaminho do Drag o	Remove o risco de um Item ser destru do se o Melhoramento falhar. A sua qualidade ser  apenas reduzida 1 n vel. Adicionalmente, a probabilidade do Melhoramento ser bem sucedido   aumentada em 10%. Este item   negoci vel.
+39027	Manual da Pedra	Remove todos os Peda os de Pedra Partida de um item. Ter s assim outra oportunidade de melhorar o teu equipamento. Este item   negoci vel.
+39030	Conselho do Eremita	Aumenta a probabilidade de acertares a leitura de um Livro de Habilidade (ou Pedra da Alma) em 2.5 vezes. Este item   negoci vel.
+39039	Elixir do Sol (G)	Recupera automaticamente a tua VD. Cont m 7.000.000 VD. Este item   negoci vel.
+39042	Elixir da Lua (G)	Recupera automaticamente a tua MN. Cont m 15.000 MN. Este item   negoci vel.
+39063	Actualiza Mercado Gaya	Actualiza o Mercado de Gaya antes do normal temporizador de 5 horas e revela novos itens valiosos.
+39064	Expande Mercado de Gaya	Expande o Mercado de Gaya, abrindo um novo espa o para oferta de itens, come ando pelo primeiro espa o na segunda fila.
+40108	L mina Motosserra+	Uma skin de arma que transforma a tua espada numa motosserra para o Halloween. D -te pelo menos um b nus aleat rio.
+40109	Adaga Motosserra+	Uma skin de arma que transforma a tua adaga numa motosserra para o Halloween. D -te pelo menos um b nus aleat rio.
+40110	Arco Motosserra+	Uma skin de arma que transforma o teu arco numa motosserra dupla para o Halloween. D -te pelo menos um b nus aleat rio.
+40111	Glava Motosserra+	Uma skin de arma que transforma a tua espada de duas-m os numa motosserra de pique para o Halloween. D -te pelo menos um b nus aleat rio.
+40112	Campainha Motosserra+	Uma skin de arma que transforma a tua campainha numa moca-motosserra para o Halloween. D -te pelo menos um b nus aleat rio.
+40113	Leque Motosserra+	Uma skin de arma que transforma o teu leque num leque-motosserra para o Halloween. D -te pelo menos um b nus aleat rio.
+40129	L mina Aquariana	Uma skin de arma que cobre a tua l mina com uma camada de  gua dura e iridescente.
+40130	Adaga Aquariana	Uma skin de arma que cobre a tua adaga com uma camada de  gua dura e iridescente.
+40131	Arco Aquariano	Uma skin de arma que cobre o teu arco com uma camada de  gua dura e iridescente.
+40132	Glava Aquariana	Uma skin de arma que cobre a tua espada de duas-m os com uma camada de  gua dura e iridescente.
+40133	Campainha Aquariana	Uma skin de arma que cobre a tua campainha com uma camada de  gua dura e iridescente.
+40134	Leque Aquariano	Uma skin de arma que cobre o teu leque com uma camada de  gua dura e iridescente.
+41029	Guerreiro Deserto (M, B)	Roupa de combate para homens, para ajudar a sobreviver  s desumanas condi  es do deserto. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41030	Guerreiro Deserto (F, B)	Roupa de combate para mulheres, para ajudar a sobreviver  s desumanas condi  es do deserto. Item negoci vel.
+41117	Disfarce Mosqueteiro	Fato extravagante no estilo dos mosqueteiros.
+41118	Uniforme de Empregada	Vestido negro com um avental branco no estilo de uma empregada Francesa.
+41119	Fato de Salsa	Fato laranja e negro, justo, para bailarinos de dan as latinas.
+41120	Vestido de Salsa	Vestido vermelho, justo, para dan arinas, com luvas pretas.
+41121	Fato de Cavalheiro	Fato elegante para homens de bons costumes.
+41122	Vestido de Cocktail	Vestido azul com um arco e sand lia de tiras a combinar.
+41125	Smoking de Ab bora	Uma pe a cl ssica - reinterpretada para esta ocasi o especial.
+41126	Vestido de Ab bora	Uma pe a cl ssica - reinterpretada para esta ocasi o especial.
+41129	Disfarce Mosqueteiro +	Fato extravagante no estilo dos mosqueteiros. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41130	Uniforme de Empregada +	Vestido negro com um avental branco no estilo de uma empregada Francesa. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41131	Fato de Salsa +	Fato laranja e negro, justo, para bailarinos de dan as latinas. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41132	Vestido de Salsa +	Vestido vermelho, justo, para dan arinas, com luvas pretas. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41133	Fato de Cavalheiro +	Fato elegante para homens de bons costumes. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41134	Vestido de Cocktail +	Vestido azul com um arco e sand lia de tiras a combinar. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41135	Smoking de Ab bora (B n)	Uma pe a cl ssica - reinterpretada para esta ocasi o especial. Este disfarce d -te um b nus aleat rio.
+41136	Vestido de Ab bora (B n)	Uma pe a cl ssica - reinterpretada para esta ocasi o especial. Este disfarce d -te um b nus aleat rio.
+41307	Disfarce Cobra (m)	Disfarce preto reluzente com s mbolos de cobras.
+41308	Disfarce Cobra (f)	Disfarce preto reluzente com s mbolos de cobras.
+41309	Disfarce Cobra+ (m)	Disfarce preto reluzente com s mbolos de cobras. D -te pelo menos um b nus aleat rio.
+41310	Disfarce Cobra+ (f)	Disfarce preto reluzente com s mbolos de cobras. D -te pelo menos um b nus aleat rio.
+41311	Guerreiro Deserto(Preto)	Roupas de combate pretas para homens.
+41312	Guerreira Deserto(Preto)	Roupas de combate pretas para mulheres.
+41313	Guerreiro Deserto+(Prt)	Roupas de combate pretas para homens. D -te pelo menos um b nus aleat rio. Item negoci vel.
+41314	Guerreira Deserto+(Prt)	Roupas de combate pretas para mulheres. D -te pelo menos um b nus aleat rio.
+41315	Armadura Azrael (m)	Armadura de a o pertencente ao infame l der demon aco.
+41316	Armadura Azrael (f)	Armadura de a o pertencente ao infame l der demon aco.
+41317	Armadura Azrael+ (m)	Armadura de a o pertencente ao infame l der demon aco. D -te pelo menos um b nus aleat rio.
+41318	Armadura Azrael+ (f)	Armadura de a o pertencente ao infame l der demon aco. D -te pelo menos um b nus aleat rio.
+41324	Guerreiro Crescente	Fato de batalha masculino com uma estrela e um emblema crescente.
+41325	Guerreira Crescente	Fato de batalha feminino com uma estrela e um emblema crescente.
+41326	Guerreiro Crescente+	Fato de batalha masculino com uma estrela e um emblema crescente. D -te pelo menos um b nus aleat rio.
+41327	Guerreira Crescente+	Fato de batalha feminino com uma estrela e um emblema crescente. D -te pelo menos um b nus aleat rio.
+41528	Pr ncipe Deserto (Verm)	Vestimenta de um guerreiro, feita de um tecido vermelho e pr pria de um l der.
+41529	Pr ncipe Deserto (Azul)	Vestimenta de um guerreiro, feita de um tecido azul e pr pria de um l der.
+45053	Penteado Mosqueteiro	Cabelo curto e loiro, bem mantido, para um estilo perfeito de mosqueteiro.
+45054	Touca de Empregada	Penteado loiro com uma touca de empregada.
+45055	Mini Moicano	Penteado curto e estiloso no estilo dos Iroquois.
+45056	Penteado de Salsa	Penteado elegante com uma flor vermelha.
+45057	Fedora Bogart	Fedora cl ssico no estilo de Humphrey Bogart.
+45065	Penteado Mosqueteiro +	Cabelo curto e loiro, bem mantido, para um estilo perfeito de mosqueteiro. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45066	Touca de Empregada +	Penteado loiro com uma touca de empregada. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45067	Mini Moicano +	Penteado curto e estiloso no estilo dos Iroquois. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45068	Penteado de Salsa +	Penteado elegante com uma flor vermelha. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45069	Fedora Bogart +	Fedora cl ssico no estilo de Humphrey Bogart. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45070	Penteado de Flores +	Tran as com flores coloridas como acess rio. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45135	Penteado Cobra (m)	Um penteado que condiz com o Disfarce Cobra.
+45136	Penteado Cobra (f)	Um penteado que condiz com o Disfarce Cobra.
+45147	Turbante Preto (M)	Um adere o para a cabe a feito de materiais pretos para homens.
+45148	Turbante Preto (F)	Um adere o para a cabe a feito de materiais pretos para mulheres.
+45149	Turbante Preto+ (M)	Um adere o para a cabe a feito de materiais pretos para homens. D -te pelo menos um b nus aleat rio. Item negoci vel.
+45150	Turbante Preto+ (F)	Um adere o para a cabe a feito de materiais pretos para mulheres. D -te pelo menos um b nus aleat rio.
+45151	Elmo Azrael (m)	Adere o de cabe a com o esgar do infame l der demon aco.
+45152	Elmo Azrael (f)	Adere o de cabe a com o esgar do infame l der demon aco.
+45153	Elmo Azrael+ (m)	Adere o de cabe a com o esgar do infame l der demon aco. D -te pelo menos um b nus aleat rio.
+45154	Elmo Azrael+ (f)	Adere o de cabe a com o esgar do infame l der demon aco. D -te pelo menos um b nus aleat rio.
+45160	Penteado Crescente (M)	Dreadlocks atadas, pintadas de vermelho e branco.
+45161	Penteado Crescente (F)	Dreadlocks atadas, pintadas de vermelho e branco, com uma bandana.
+45198	Turbante Castanho	Um nobre turbante castanho, feito de material suficientemente dur vel para guerreiros.
+45199	Turbante Branco	Um nobre turbante branco, feito de material suficientemente dur vel para guerreiros.
+45200	Len o Cabe a Castanho	Um len o de cabe a castanho, feito de material leve e perfeito para guerreiras.
+45201	Len o Cabe a Branco	Um len o de cabe a branco, feito de material leve e perfeito para guerreiras.
+45202	Turbante Castanho+	Um nobre turbante castanho, feito de material suficientemente dur vel para guerreiros. D -te pelo menos um b nus aleat rio.
+45203	Turbante Branco+	Um nobre turbante branco, feito de material suficientemente dur vel para guerreiros. D -te pelo menos um b nus aleat rio.
+45240	Len o Cabe a Castanho+	Um len o de cabe a castanho, feito de material leve e perfeito para guerreiras. D -te pelo menos um b nus aleat rio.
+45241	Len o Cabe a Verde+	Um len o de cabe a verde, feito de material leve e perfeito para guerreiras. D -te pelo menos um b nus aleat rio.
+50010	Meia	Algu m p e presentes nesta meia durante a  poca de Natal.
+50011	Caixa Tesouro do Luar	Uma decora  o deslumbrante que seduz as pessoas. Coisas sobrenaturais acontecem quando recebe o luar.
+50053	Livro do Cavalo Militar	Certifica  o mestre para montar a cavalo |Permite utilizar habilidades a cavalo.
+50054	Feno	Feno seco para alimentar um cavalo.
+50055	Cenoura	O vegetal favorito de um cavalo.
+50056	Ginseng Vermelho	Apenas os cavalos militares comem Ginseng Vermelho.
+50070	Cofre do Chefe Orc	O cofre do Chefe Orc. Algo valioso est  no interior do cofre.
+50071	Cofre do L der Negro	O cofre do L der Negro. Algo valioso est  no interior do cofre.
+50073	Cofre da Rainha Aranha	O cofre da Rainha Aranha. Algo valioso est  no interior do cofre.
+50076	Cofre Tartaruga Gigante	O cofre da Tartaruga Gigante. Algo valioso est  no interior do cofre.
+50077	Cofre do Nove Caudas	O cofre do Nove Caudas. Algo valioso est  no interior do cofre.
+50078	Cofre do Tigre Fantasma	O cofre do Tigre Fantasma. Algo valioso est  no interior do cofre.
+50079	Cofre do Rei Chama	O cofre do Rei Chama. Algo valioso est  no interior do cofre.
+50080	Cofre do Drag o Vermelho	O cofre do Drag o Vermelho. Algo valioso est  no interior do cofre.
+50082	Cofre da Morte	O cofre do Fantasma da Morte. Algo valioso est  no interior do cofre.
+50084	Pedra-Chave	Este item possui uma aura que remove Selos M gicos.
+50097	Cofre de Azrael	Poderes demon acos mant m este cofre trancado. Certamente existir o tesouros valiosos no seu interior.
+50187	Cofre do Aprendiz I	O teu presente de boas-vindas cont m um conjunto de equipamento b sico para optimizar o in cio da tua aventura.
+50188	Cofre do Aprendiz II	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 10.
+50189	Cofre do Aprendiz III	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 20.
+50190	Cofre do Perito I	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 30.
+50191	Cofre do Perito II	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 40.
+50192	Cofre do Perito III	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 50.
+50193	Cofre do Mestre I	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 60.
+50194	Cofre do Mestre II	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 75.
+50195	Cofre do Mestre III	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 100.
+50196	Cofre do Grande Mestre	Este cofre apenas pode ser aberto quanto tiveres atingido o n vel 120.
+50212	Cofre do Aprendiz I	O teu presente de boas-vindas cont m um conjunto de equipamento b sico para optimizar o in cio da tua aventura.
+50213	Cofre do Aprendiz I	O teu presente de boas-vindas cont m um conjunto de equipamento b sico para optimizar o in cio da tua aventura.
+50259	Cor Draconis (Antigo)	O cristalino cora  o do drag o cont m a alma, a Pedra do Drag o, no seu interior.
+50266	Cofre de Jotun Thrym	O cofre de Jotun Thrym. Julgando pela pesada fechadura, deve conter algo valioso no seu interior.
+50270	Cofre da Rainha Meley	Este cofre foi recuperado do covil da Rainha Drag o Meley. Cont m um tesouro verdadeiramente magn fico. Este item   negoci vel.
+50271	Cofre Guarda do Drag o	Este cofre cont m os tesouros de in meros guardas de drag es, tesouros que h  s culos se pensavam estar perdidos. Este item   negoci vel.
+50301	Arte da Guerra Sun-Zi	Um dos tr s livros de Arte de Guerra - aumenta o n vel de Lideran a daquele que o l . O livro desaparece depois de lido.
+50302	Arte da Guerra Wu-Zi	Um dos tr s livros de Arte de Guerra - aumenta o n vel de Lideran a daquele que o l . O livro desaparece depois de lido.
+50303	Arte da Guerra WeiLao-Zi	Um dos tr s livros de Arte de Guerra - aumenta o n vel de Lideran a daquele que o l . O livro desaparece depois de lido.
+50307	Livro da Miss o F cil	Cont m uma Miss o de n vel F cil.
+50308	Livro da Miss o Normal	Cont m uma Miss o de n vel Normal.
+50309	Livro da Miss o Dif cil	Cont m uma Miss o de n vel Dif cil.
+50310	Livro da Miss o Mestre	Cont m uma Miss o de n vel Mestre.
+50314	Livro da Forma(1)	A leitura bem-sucedida deste livro aumenta as tuas habilidades de transforma  o. O livro desaparece depois de lido.
+50315	Livro da Muta  o(2)	A leitura bem-sucedida deste Livro aumenta a tua habilidade de Polimorfismo. Desaparece depois de usado.
+50316	Livro do Polimorfismo(3)	Usa este livro para aumentar o n vel de Polimorfismo. O livro desaparece depois de lido.
+50323	Cofre Livro da Guarda	Este cofre cont m um livro de habilidade aleat rio para aprenderes habilidades de guarda.
+50324	Cofre Livro do Refor o	Este cofre cont m um livro de habilidade aleat rio para aprenderes habilidades de refor o.
+50401	Manual Ataque Triplo	Usa este livro para dominares a habilidade Ataque Triplo. O livro desaparece depois de lido.
+50402	Manual Espada Rotativa	Usa este livro para dominares a habilidade Espada Rotativa. O livro desaparece depois de lido.
+50403	Manual Raiva	Usa este livro para dominares a habilidade Raiva. O livro desaparece depois de lido.
+50404	Manual Aura da Espada	Usa este livro para dominares a habilidade Aura da Espada. O livro desaparece depois de lido.
+50405	Manual Investida	Usa este livro para dominares a habilidade Investida. O livro desaparece depois de lido.
+50406	Manual For a Vital	Usa este livro para dominares a habilidade For a Vital. O livro desaparece depois de lido.
+50416	Manual For a do Golpe	Usa este livro para dominares a habilidade For a do Golpe. O livro desaparece depois de lido.
+50417	Manual Ataque Destrutivo	Usa este livro para dominares a habilidade Ataque Destrutivo. O livro desaparece depois de lido.
+50418	Manual Terramoto	Usa este livro para dominares a habilidade Terramoto. O livro desaparece depois de lido.
+50419	Manual Corpo Forte	Usa este livro para dominares a habilidade Corpo Forte. O livro desaparece depois de lido.
+50420	Manual Ataque de Espada	Usa este livro para dominares a habilidade Ataque de Espada. O livro desaparece depois de lido.
+50421	Manual Orbe da Espada	Usa este livro para dominares a habilidade Orbe da Espada. O livro desaparece depois de lido.
+50431	Manual Emboscar	Usa este livro para dominares a habilidade Emboscar. O livro desaparece depois de lido.
+50432	Manual Ataque R pido	Usa este livro para dominares a habilidade Ataque R pido. O livro desaparece depois de lido.
+50433	Manual Adaga Rotativa	Usa este livro para dominares a habilidade Adaga Rotativa. O livro desaparece depois de lido.
+50434	Manual Modo Furtivo	Usa este livro para dominares a habilidade Modo Furtivo. O livro desaparece depois de lido.
+50435	Manual Nuvem Venenosa	Usa este livro para dominares a habilidade Nuvem Venenosa. O livro desaparece depois de lido.
+50436	Manual Veneno Insidioso	Usa este livro para dominares a habilidade Veneno Insidioso. O livro desaparece depois de lido.
+50446	Manual Tiro Duplo	Usa este livro para dominares a habilidade Tiro Duplo. O livro desaparece depois de lido.
+50447	Manual Chuva de Setas	Usa este livro para dominares a habilidade Chuva de Setas. O livro desaparece depois de lido.
+50448	Manual Flecha de Fogo	Usa este livro para dominares a habilidade Flecha de Fogo. O livro desaparece depois de lido.
+50449	Manual Flutuar	Usa este livro para dominares a habilidade Flutuar. O livro desaparece depois de lido.
+50450	Manual Seta Envenenada	Usa este livro para dominares a habilidade Seta Envenenada. O livro desaparece depois de lido.
+50451	Manual Fa sca	Usa este livro para dominares a habilidade Fa sca. O livro desaparece depois de lido.
+50461	Manual Ataque do Dedo	Usa este livro para dominares a habilidade Ataque do Dedo. O livro desaparece depois de lido.
+50462	Manual Espiral do Drag o	Usa este livro para dominares a habilidade Espiral do Drag o. O livro desaparece depois de lido.
+50463	Manual L mina Encantada	Usa este livro para dominares a habilidade L mina Encantada. O livro desaparece depois de lido.
+50464	Manual Receio	Usa este livro para dominares a habilidade Receio. O livro desaparece depois de lido.
+50465	Manual Armadura Negra	Usa este livro para dominares a habilidade Armadura Negra. O livro desaparece depois de lido.
+50466	Manual Remover Efeito	Usa este livro para dominares a habilidade Remover Efeito. O livro desaparece depois de lido.
+50476	Manual Ataque Obscuro	Usa este livro para dominares a habilidade Ataque Obscuro. O livro desaparece depois de lido.
+50477	Manual Ataque Chama	Usa este livro para dominares a habilidade Ataque Chama. O livro desaparece depois de lido.
+50478	Manual Esp rito da Chama	Usa este livro para dominares a habilidade Esp rito da Chama. O livro desaparece depois de lido.
+50479	Manual Protec  o Sombria	Usa este livro para dominares a habilidade Protec  o Sombria. O livro desaparece depois de lido.
+50480	Manual Ataque Espiritual	Usa este livro para dominares a habilidade Ataque Espiritual. O livro desaparece depois de lido.
+50481	Manual Bola da Escurid o	Usa este livro para dominares a habilidade Bola da Escurid o. O livro desaparece depois de lido.
+50491	Manual Talism  Voador	Usa este livro para dominares a habilidade Talism  Voador. O livro desaparece depois de lido.
+50492	Manual Ataque do Drag o	Usa este livro para dominares a habilidade Ataque do Drag o. O livro desaparece depois de lido.
+50493	Manual Rugido do Drag o	Usa este livro para dominares a habilidade Rugido do Drag o. O livro desaparece depois de lido.
+50494	Manual B n  o	Usa este livro para dominares a habilidade B n  o. O livro desaparece depois de lido.
+50495	Manual Poder Reflectivo	Usa este livro para dominares a habilidade Poder Reflectivo. O livro desaparece depois de lido.
+50496	Manual Ajuda do Drag o	Usa este livro para dominares a habilidade Ajuda do Drag o. O livro desaparece depois de lido.
+50506	Manual Atirar Raio	Usa este livro para dominares a habilidade Atirar Raio. O livro desaparece depois de lido.
+50507	Manual Invocar Raio	Usa este livro para dominares a habilidade Invocar Raio. O livro desaparece depois de lido.
+50508	Manual Garra de Raios	Usa este livro para dominares a habilidade Garra de Raios. O livro desaparece depois de lido.
+50509	Manual Cura	Usa este livro para dominares a habilidade Cura. O livro desaparece depois de lido.
+50510	Manual Rapidez	Usa este livro para dominares a habilidade Rapidez. O livro desaparece depois de lido.
+50511	Manual Energia	Usa este livro para dominares a habilidade Energia. O livro desaparece depois de lido.
+50513	Pedra da Alma	A pedra lend ria utilizada para aumentar as tuas Habilidades em Grande Mestre. Desaparece depois de ser usada.
+50516	Guarda Espada Rotativa	Este livro ensina-te a habilidade de reduzires o dano infligido pela Espada Rotativa.
+50517	Guarda Emboscada	Este livro ensina-te a habilidade de reduzires o dano infligido pela Emboscada.
+50518	Guarda Ataque do Dedo	Este livro ensina-te a habilidade de reduzires o dano infligido pelo Ataque do Dedo.
+50519	Guarda Ataque do Drag o	Este livro ensina-te a habilidade de reduzires o dano infligido pelo Ataque do Drag o.
+50520	Guarda Ataque Espiritual	Este livro ensina-te a habilidade de reduzires o dano infligido pelo Ataque Espiritual.
+50521	Guarda Flecha de Fogo	Este livro ensina-te a habilidade de reduzires o dano infligido pela Flecha de Fogo.
+50522	Guarda Ataque Obscuro	Este livro ensina-te a habilidade de reduzires o dano infligido pelo Ataque Obscuro.
+50523	Guarda Invocar Raio	Este livro ensina-te a habilidade de reduzires o dano infligido por Invocar Raio.
+50560	Refor o Espada Rotativa	Este livro ensina-te a habilidade de fortaleceres a Espada Rotativa.
+50561	Refor o Emboscada	Este livro ensina-te a habilidade de fortaleceres a Emboscada.
+50562	Refor o Ataque do Dedo	Este livro ensina-te a habilidade de fortaleceres o Ataque do Dedo.
+50563	Refor o Ataque do Drag o	Este livro ensina-te a habilidade de fortaleceres o Ataque do Drag o.
+50564	Refor o Atq. Espiritual	Este livro ensina-te a habilidade de fortaleceres o Ataque Espiritual.
+50565	Refor o Flecha de Fogo	Este livro ensina-te a habilidade de fortaleceres a Flecha de Fogo.
+50566	Refor o Ataque Obscuro	Este livro ensina-te a habilidade de fortaleceres o Ataque Obscuro.
+50567	Refor o Invocar Raio	Este livro ensina-te a habilidade de fortaleceres Invocar Raio.
+50621	Diamante	A pedra preciosa mais forte que   usada para adicionar um socket nos Acess rios.
+50622	 mbar	Uma bonita pedra  mbar| Pode ser adicionada a um Acess rio.
+50623	Madeira	Uma Madeira valiosa| Pode ser adicionada a um Acess rio de Madeira.
+50624	Cobre	Por vezes   usado para fazer bronze e moedas. | Pode ser adicionado a um Acess rio de Cobre.
+50625	Prata	Metal brilhante usado para fazer j ias. | Pode ser adicionada a um Acess rio de Prata.
+50626	Ouro	Metal dourado usado para fazer j ias. | Pode ser adicionado a um Acess rio de Ouro.
+50627	Jade	Um dos valiosos minerais. | Pode ser adicionado a um Acess rio de Jade.
+50628	 bano	A madeira mais leve e forte de todas.| Pode ser adicionado a um Acess rio de  bano.
+50629	P rola	Usada para fazer j ias.| Pode ser adicionada a um Acess rio de P rola.
+50630	Platina	Um tipo de mineral parecido com a Prata, mas mais duro.| Pode ser adicionada a um Acess rio de Platina.
+50631	Cristal	  tamb m chamado de Rocha Cristal ou Quartzo.| Pode ser adicionado a um Acess rio de Cristal.
+50632	Ametista	Um Quartzo roxo. | Pode ser adicionada a um Acess rio de Ametista.
+50633	Safira	Chuva do c u cristalizada. | Pode ser adicionada a um Acess rio de Safira.
+50926	Pedra Reluzente	Recolhe Pedras Reluzentes e pede ao Mercador de Gaya que as corte para formar valiosas Gaya.
+51001	Fragmento de Energia	Fragmento de um Cristal de Energia. 30 pe as podem ser usadas para formar um Cristal.
+51002	Cristal de Energia	Este Cristal aumenta os teus b nus durante 2 horas.
+52040	Le o Selvagem	O selo invoca o teu Le o Selvagem. Esta montada aumenta em 30 o Valor de Ataque do seu utilizador.
+53010	Leonidas	Podes usar este Selo para invocares a tua cria de le o, Leonidas. O pet proporciona-te | +15% Ataque M gico/Corpo-a-Corpo | +1.500 VD
+53011	Khan	Podes usar este Selo para invocares a tua cria de tigre, Khan. O pet proporciona-te | +15% Ataque M gico/Corpo-a-Corpo | +1.500 VD
+53012	Porky	Podes usar este Selo para invocares o teu jovem javali, Porky. O pet proporciona-te | +15% Ataque M gico/Corpo-a-Corpo | +1.500 VD
+53013	Rufus	Podes usar este Selo para invocares a tua cria de lobo, Rufus. O pet proporciona-te | +15% Ataque M gico/Corpo-a-Corpo | +1.500 VD
+53017	F nix Jade	Este selo invoca a graciosa F nix Jade. O pet proporciona-te | +15% Ataque M gico/Corpo-a-Corpo | +50% Probabilidade de EXP B nus
+53256	Bonsai	Este selo invoca Bonsai, o guerreiro miniatura.
+54043	Cofre de Aprendiz I	O teu cart o de boas-vindas cont m um conjunto de equipamento base para um  ptimo come o da tua aventura.
+55008	Pergaminho Nome do Pet	Arrasta o pergaminho para o teu pet para mudares o seu nome.
+55009	Cofre do Livro do Pet	Cont m um livro de habilidade de pet seleccionado aleatoriamente.
+55010	Resist ncia (Guerreiro)	Ap s aprender esta habilidade, o teu pet aumenta a tua resist ncia contra ataques de Guerreiros.
+55011	Resist ncia (Sura)	Ap s aprender esta habilidade, o teu pet aumenta a tua resist ncia contra ataques de Suras.
+55012	Resist ncia (Ninja)	Ap s aprender esta habilidade, o teu pet aumenta a tua resist ncia contra ataques de Ninjas.
+55013	Resist ncia (Xam )	Ap s aprender esta habilidade, o teu pet aumenta a tua resist ncia contra ataques de Xam s.
+55401	Ovo do Macaco	Quando quiseres ver o teu pet eclodir, clica com o bot o direito no ovo.
+55402	Ovo da Aranha	Quando quiseres ver o teu pet eclodir, clica com o bot o direito no ovo.
+55403	Ovo do Razador	Quando quiseres ver o teu pet eclodir, clica com o bot o direito no ovo.
+55404	Ovo de Nemere	Quando quiseres ver o teu pet eclodir, clica com o bot o direito no ovo.
+55405	Ovo do Drag o Azul	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55406	Ovo do Drag o Vermelho	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55407	Ovo de Mini Azrael	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55408	Ovo de Mini Executor Grd	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55409	Ovo do Baashido Beb 	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55410	Ovo de Nessie	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55411	Ovo de Exedyar	Quando quiseres fazer eclodir o teu pet, clica no ovo com o bot o direito do rato.
+55701	Mini Macaco	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55702	Mini Aranha	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55703	Mini Razador	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55704	Mini Nemere	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55705	Dragonette	Clica com o bot o direito do rato para invocares o teu pet, depois clica em "P" no teu teclado para abrires a interface do pet.
+55706	Mini Meley	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55707	Mini Azrael	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55708	Mini Executor Grd	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55709	Baashido Beb 	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55710	Nessie	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+55711	Prole de Exedyar	Clica com o bot o direito para invocares o teu pet, depois clica na tecla "P" do teu teclado para abrires a interface do pet.
+70031	Manual de Duelos	Este manual refere-se, entre outras coisas, aos potenciais e fraquezas da anatomia humana.
+70038	Capa de Bravura	Os Guerreiros antigos demonstravam a sua bravura ao usar uma capa colorida com a qual puxavam a aten  o de todos os monstros para si.
+70039	Manual do Ferreiro	Este livro cont m a alma de um Ferreiro antigo. Se for usado aumenta a probabilidade de melhorar um Item.
+70063	Transformar Disfarce	Remove os b nus de um dos teus disfarces e substitui-os por novos. Com alguma sorte, a quantidade de b nus pode at  ser mudada (at  um m x. de 3).
+70064	Encantar Disfarce	Remove os b nus de um dos teus disfarces e substitui-os por novos.
+70065	Passa-B nus de Disfarce	Transfere os b nus de um disfarce para outro. A transfer ncia destr i um dos disfarces.
+70102	Feij o Zen	Diminui o Karma negativo.
+70104	M rmore do Polimorfismo	Podes transformar-te num monstro a partir do m rmore.
+70105	M rmore do Polimorfismo	Podes transformar-te num monstro a partir do m rmore.
+70106	M rmore do Polimorfismo	Podes transformar-te num monstro a partir do m rmore.
+70107	M rmore do Polimorfismo	Podes transformar-te num monstro a partir do m rmore.
+70201	Descolorante	Faz o cabelo regressar   sua cor original. O cabelo branqueado pode ser tingido.
+70202	Cor de Cabelo Branca	Pinta o cabelo de branco.|Podes pintar uma vez a cada 3 n veis.
+70203	Cor de Cabelo Loira	Pinta o cabelo de loiro.|Podes pintar uma vez a cada 3 n veis.
+70204	Cor de Cabelo Vermelha	Pinta o cabelo de vermelho.|Podes pintar uma vez a cada 3 n veis.
+70205	Cor de Cabelo Castanha	Pinta o cabelo de castanho.|Podes pintar uma vez a cada 3 n veis.
+70206	Cor de Cabelo Preta	Pinta o cabelo de preto.|Podes pintar uma vez a cada 3 n veis.
+70301	Anel de Casal	Um anel usado por amantes.
+70302	Alian a	Um anel usado por um par casado.
+70602	Pergaminho da Alma(100%)	Aumenta o desenvolvimento da tua alma em 1 n vel com este pergaminho.
+70603	Pergaminho da Alma	Aumenta o desenvolvimento da tua alma em at  2 n veis com este pergaminho. A tentativa pode falhar.
+71001	Pergaminho do Exorcismo	Remove a maldi  o do esp rito malvado se a aprendizagem n o   bem sucedida. Com a ajuda deste pergaminho podes ler outro livro no mesmo dia.
+71002	Pergaminho dos Atributos	Torna poss vel redistribuir todos os Pontos de Atributo.
+71032	Pergaminho do Drag o	Remove o risco de um Item ser destru do se o Melhoramento falhar. A sua qualidade ser  apenas reduzida 1 n vel. Adicionalmente, a probabilidade do Melhoramento ser bem sucedido   aumentada em 10%.
+71035	Elixir do Investigador	Melhora a qualidade dos objetos de investiga  o que recolheste, aumentando assim a probabilidade de serem aceites. N o se aplica a miss es em Yohara.
+71048	Feiti o de Mudan a	Este feiti o ir  mudar o g nero da tua personagem.
+71054	Permiss o de Ex lio	Uma personagem poder  ir para o ex lio noutro Reino. Isto significa mudar de Reino.
+71055	Permiss o de Mudar Nome	Altera o nome da Personagem.
+71075	Cor de Cabelo (Branca)	Tinge o cabelo de branco.
+71076	Cor de Cabelo (Loira)	Tinge o cabelo de loiro.
+71077	Cor de Cabelo (Vermelha)	Tinge o cabelo de vermelho.
+71078	Cor de Cabelo (Casanha)	Tinge o cabelo de castanho.
+71079	Cor de Cabelo (Preta)	Tinge o cabelo de preto.
+71083	Manual da Pedra	Remove todos os Peda os de Pedra Partida de um item. Ter s assim outra oportunidade de melhorar o teu equipamento.
+71084	Feiti o para Itens	Remove os b nus de um dos teus itens e adiciona novos. Aplica-se apenas aos b nus 1-5.
+71093	M rmore do Polimorfismo	Podes transformar-te num monstro a partir do m rmore.
+71094	Conselho do Eremita	Aumenta a probabilidade de acertares a leitura de um Livro de Habilidade (ou Pedra da Alma) em 2.5 vezes.
+71099	Anel do Substituto	Permite ao L der de uma Guild escolher um substituto.
+71100	Pergaminho da Mudan a	Esquece o teu treino e come a um novo.
+71103	Redistribui  o (VIT)	Coloca a tua Vitalidade a 1 e permite que distribuas esses pontos de novo.
+71104	Redistribui  o (INT)	Coloca a tua Intelig ncia a 1 e permite que distribuas esses pontos de novo.
+71105	Redistribui  o (FR )	Coloca a tua For a a 1 e permite que distribuas esses pontos de novo.
+71106	Redistribui  o (DES)	Coloca a tua Destreza a 1 e permite-te redistribuir os pontos recebidos.
+71107	Fruta da Vida	Aumenta os Pontos de Karma em 2000. Ter s de esperar 8 horas entre cada uso.
+71123	Escamas do Drag o	As Escamas do Drag o s o dos materiais mais resistentes que existem.
+71124	Le o Branco	Animais de p lo branco s o extremamente raros e muitas culturas adoram-nos, crendo que eles possuem poderes extraordin rios.
+71125	Javali de Guerra	Domesticar esp ritos de animais mal ficos requer uma h bil utiliza  o da magia, mas os resultados podem ser muito impressionantes.
+71126	Lobo de Combate	Domesticar esp ritos de animais mal ficos requer uma h bil utiliza  o da magia, mas os resultados podem ser muito impressionantes.
+71127	Tigre da Tempestade	Domesticar esp ritos de animais mal ficos requer uma h bil utiliza  o da magia, mas os resultados podem ser muito impressionantes.
+71128	Le o da Batalha	Domesticar esp ritos de animais mal ficos requer uma h bil utiliza  o da magia, mas os resultados podem ser muito impressionantes.
+71129	Garra do Drag o	O aspecto desta imponente garra traz-me algo   mem ria...
+71137	Tigre Real (Azul)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (azul). Aumenta a experi ncia obtida em 30%.
+71138	Tigre Real (Vermelho)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (vermelho). Aumenta a experi ncia obtida em 30%.
+71139	Tigre Real (Ouro)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (ouro).
+71140	Tigre Real (Verde)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (verde). Aumenta a experi ncia obtida em 30%.
+71141	Tigre Real (Cinza)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (cinzento). Aumenta a experi ncia obtida em 30%.
+71142	Tigre Real (Branco)	A magia deste selo invoca a tua montada, o majestoso Tigre Real (branco). Aumenta a experi ncia obtida em 30%.
+71149	Anel do Poder Mortal	D -te +30% EXP, +20% Resist ncia a dano de Suras, +20% Resist ncia a dano de Xam s, +20% Resist ncia a dano de Lycans, +30% Forte contra Monstros, +10% VD M x. e +10% MN M x. durante algum tempo.
+71151	Feiti o Verde	Remove os b nus de um dos teus itens e adiciona novos. Apenas pode ser usado em armas e armaduras at  n vel 30. Item dos cofres de n vel. N o negoci vel.
+71161	Equus P rpura	Selo para um dos mais belos e raros cavalos p rpura. Aumenta a tua Rapidez de Movimento em 60.
+71164	Cometa	Podes usar este selo para invocares a tua rena, Cometa. Aumenta a tua Rapidez de Movimento em 60.
+71165	Predador Polar	Podes usar este selo para invocares o teu agressivo Predador Polar. Aumenta a tua Rapidez de Movimento em 60.
+71166	Panda Blindado	Podes usar este selo para invocares o teu Panda Blindado. Aumenta a tua Rapidez de Movimento em 60.
+71171	Unic rnio	Podes usar este selo para invocares o teu Unic rnio. Aumenta a tua Rapidez de Movimento em 60.
+71172	Pesadelo	Podes usar este selo para invocares o teu Pesadelo. Aumenta a tua Rapidez de Movimento em 60.
+71176	Pantera Negra	Este selo invoca a tua misteriosa Pantera Negra. Aumenta a tua Rapidez de Movimento em 30.
+71177	Leopardo	Este selo invoca o teu corajoso Leopardo. Aumenta a tua Rapidez de Movimento em 30.
+71182	Muffin (Castanho)	Podes usar este selo para invocares Muffin, o temido frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71183	Nugget (Castanho)	Podes usar este selo para invocares Nugget, o colossal frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71184	Muffin (Azul)	Podes usar este selo para invocares Muffin, o temido frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71185	Nugget (Azul)	Podes usar este selo para invocares Nugget, o colossal frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71186	Muffin (Verde)	Podes usar este selo para invocares Muffin, o temido frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71187	Nugget (Verde)	Podes usar este selo para invocares Nugget, o colossal frango de combate. Aumenta a tua Rapidez de Movimento em 20.
+71192	Trov o	Podes usar este selo para invocares a tua rena Trov o. Aumenta a tua Rapidez de Movimento em 20 e a experi ncia obtida em 30%.
+71193	Rel mpago	Podes usar este selo para invocares a tua rena Rel mpago. Aumenta a tua Rapidez de Movimento em 20 e a experi ncia obtida em 30%.
+71197	Nugget (Azul Marinho)	Podes usar este selo para invocares Nugget, o colossal frango de combate.
+71198	Muffin (Rosa)	Podes usar este selo para invocares Muffin, o temido frango de combate.
+71221	Drag o de Nirvana	O selo invoca o teu Drag o de Nirvana.
+71222	Drag o de Samsara	O selo invoca o teu Drag o de Samsara.
+71223	Manny	Este selo invoca um poderoso mamute.
+71224	Ellie	Este selo invoca um poderoso mamute.
+71225	Montada Espectral	Este selo invoca a tua montada reluzente.
+71226	Equus Nocturnus	Este selo invoca a tua montada negra.
+71227	Montada da Penumbra	Este selo invoca a Montada da Penumbra esquel tica.
+71228	Montada Astro Prata	Este selo invoca a Montada Astro Prata esquel tica.
+71250	Esfinge Branca	Este selo invoca a tua montada s bia branca.
+71251	Esfinge de Pedra	Este selo invoca a tua montada estoica de pedra.
+72301	Pergaminho da B n  o	Elimina o risco de um item ser destru do caso um melhoramento falhe. Caso falhe, a qualidade do item ser  apenas reduzida em 1 n vel.
+72309	Manual do Ferreiro	Este livro cont m a alma de um Ferreiro antigo. Se usado, aumenta a probabilidade de melhorar um item com sucesso.
+72310	Pergaminho do Exorcismo	Remove a maldi  o do esp rito malvado se a aprendizagem n o for bem sucedida. Com a ajuda deste pergaminho conseguir s ler outro documento de habilidades no mesmo dia.
+72314	Pergaminho do Drag o	Elimina o risco de um item ser destru do quando um melhoramento falha. Caso falhe, a qualidade do item ser  apenas reduzida em 1 n vel. Adicionalmente, a probabilidade de um melhoramento ser bem-sucedido   aumentada em 10%.
+72319	Expans o Invent rio	Usa este item para expandires o teu invent rio. Negoci vel.
+72320	Expans o de Invent rio	Usa este item para expandires o teu invent rio.
+72725	Elixir do Sol (G)	Recupera automaticamente a tua VD. Cont m 7.000.000 VD.
+72729	Elixir da Lua (G)	Recupera automaticamente a tua MN. Cont m 15.000 MN.
+73001	Cabelo Curto (Ruivo)	Penteado para Guerreiros que te d  um aspecto jovial.
+73002	Cabelo Curto (Clara)	Penteado para Guerreiros que te d  um aspecto jovial.
+73003	Cabelo Curto (Azul)	Penteado para Guerreiros que te d  um aspecto jovial.
+73004	Cabelo Curto (Castanho)	Penteado para Guerreiros que te d  um aspecto jovial.
+73005	Len o (Vermelho)	Cabelo para Guerreiros com um len o.
+73006	Len o (Cor-clara)	Cabelo para Guerreiros com um len o.
+73007	Len o (Azul)	Cabelo espetado por baixo de um len o.
+73008	Len o (Verde)	Penteado espetado por baixo de um len o.
+73009	Apanhado (Preto)	Penteado para Guerreiros que te d  uma apar ncia cativante.
+73010	Apanhado (Ruivo)	Penteado que te d  uma apar ncia cativante.
+73011	Apanhado (Castanho)	Penteado que te d  uma apar ncia cativante.
+73012	Apanhado (Verde)	Penteado que te d  uma apar ncia cativante.
+73251	Rabo de Cavalo(Castanho)	Penteado apanhado num rabo de cavalo.
+73252	Rabo de Cavalo(Verde)	Penteado apanhado num rabo de cavalo.
+73253	Rabo de Cavalo(Azul)	Penteado apanhado num rabo de cavalo.
+73254	Rabo de Cavalo(Marfim)	Penteado feito com um rabo de cavalo.
+73255	Corte Rebelde (Ruivo)	Um corte de cabelo natural com cabelo   altura dos ombros.
+73256	Corte Rebelde (Castanho)	Um corte de cabelo natural com cabelo   altura dos ombros.
+73257	Corte M dio (Marfim)	Um corte de cabelo natural com cabelo   altura dos ombros.
+73258	Corte Rebelde (Roxo)	Um corte de cabelo natural com cabelo   altura dos ombros.
+73259	Franja Vermelha	Um penteado com cabelo curto e franja.
+73260	Franja Azul	Um penteado com cabelo curto e franja.
+73261	Franja Negra	Penteado que te d  um look amea ador. Para Ninjas a partir de n vel 25.
+73262	Franja Clara	Penteado que te d  um look amea ador. Para Ninjas a partir de n vel 25.
+73501	Pr tico Branco	Um penteado pr tico.
+73502	Pr tico de cor castanha	Um penteado pr tico.
+73503	Pr tico Loiro	Um penteado pr tico.
+73504	Pr tico em Verde	Um penteado pr tico.
+73505	Longos Cabelos Brancos	Penteado carism tico com longos cabelos brancos.
+73506	Longos Cabelos Rosa	Penteado carism tico com longos cabelos rosa.
+73507	Longos Cabelos Negros	Penteado carism tico com longos cabelos negros.
+73508	Longos Cabelos Roxos	Penteado carism tico com longos cabelos roxos.
+73509	Cabelo Branco Apanhado	Penteado tradicional em branco.
+73510	Cabelo Azul Apanhado	Penteado tradicional em azul.
+73511	Cabelo Negro Apanhado	Penteado tradicional de cor negra.
+73512	Cabelo Castanho Apanhado	Penteado tradicional em castanho.
+73751	Cabelo Castanho Aprumado	Penteado elegante de cor castanha.
+73752	Cabelo Negro Aprumado	Penteado elegante de cor negra.
+73753	Cabelo Azul Aprumado	Penteado elegante de cor azul.
+73754	Cabelo Branco Aprumado	Penteado elegante de cor branca.
+73755	Cabelo M dio (Castanho)	Penteado elegante para Xam s.
+73756	Cabelos Negros Lisos	Penteado elegante para Xam s.
+73757	Cabelos Loiros Lisos	Elegante, cabelo liso.
+73758	Cabelos Violeta Lisos	Penteado elegante para Xam s.
+73759	Estilo Antigo - Castanho	Penteado tradicional de cabelos longos.
+73760	Estilo Antigo - Loiro	Cabelo comprido, usado de uma forma tradicional.
+73761	Estilo Antigo - Roxo	Penteado tradicional de cabelos longos.
+73762	Estilo Antigo - Ruivo	Penteado tradicional de cabelos longos.
+74001	Moderno (Vermelho)	Penteado que te d  um ar distinto
+74002	Moderno (Claro)	Penteado que te d  um ar distinto
+74003	Moderno (Azul)	Penteado que te d  um ar distinto
+74004	Moderno (Castanho)	Penteado que te d  um ar distinto
+74005	Len o (Vermelho)	Cabelo curto e um len o vermelho
+74006	Len o (Xadrez Castanho)	Cabelo curto e um len o de cor clara
+74007	Len o (Azul)	Cabelo curto e um len o azul
+74008	Len o (Xadrez Verde)	Cabelo curto e um len o verde
+74009	Apanhado (Preto)	Penteado que te d  um ar distinto
+74010	Apanhado (Vermelho)	Penteado que te d  um ar distinto
+74011	Apanhado (Castanho)	Penteado que te d  um ar distinto
+74012	Apanhado (Verde)	Penteado que te d  um ar distinto
+74013	Afro - Guerreiro	D  a um Guerreiro um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74014	Afro - Guerreiro	D  a um Guerreiro um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74015	Elmo Samurai - Guerreiro	D  a um Guerreiro um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74016	Elmo Samurai - Guerreiro	D  a um Guerreiro um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74017	Fez - Guerreiro	Um chap u vermelho para Guerreiros (M). (Dura  o: 7 dias)
+74018	Keffiyeh - Guerreiro	Um acess rio para Guerreiros (M). (Dura  o: 7 dias)
+74019	Turbante - Guerreiro	Um acess rio para Guerreiros (M) feito de material da mais alta qualidade. (Dura  o: 7 dias)
+74020	M scara de Guerreiro (m)	Uma m scara em forma de ab bora para Guerreiros do sexo masculino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+74251	Rabo de Cavalo(Castanho)	Penteado popular com um longo rabo de cavalo
+74252	Rabo de Cavalo(Verde)	Penteado popular com um longo rabo de cavalo
+74253	Rabo de Cavalo(Azul)	Penteado popular com um longo rabo de cavalo
+74254	Rabo de Cavalo(Claro)	Penteado popular com um longo rabo de cavalo
+74255	Corte M dio (Vermelho)	Penteado atrevido e moderno
+74256	Corte M dio (Castanho)	Penteado atrevido e moderno
+74257	Corte M dio (Claro)	Penteado atrevido e moderno
+74258	Corte M dio (Roxo)	Penteado atrevido e moderno
+74259	Corte Curto (Vermelho)	Cabelo vermelho para Ninjas
+74260	Corte Curto (Azul-C u)	Cabelo azul para Ninjas
+74261	Corte Curto (Preto)	Cabelo preto para Ninjas
+74262	Corte Curto (Loiro)	Cabelo loiro para Ninjas
+74263	Afro - Ninja (F)	D  a uma Ninja um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74264	Afro - Ninja (F)	D  a uma Ninja um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74265	Chap u - Ninja (F)	D  a uma Ninja um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74266	Chap u - Ninja (F)	D  a uma Ninja um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74267	Foulard - Ninja (F)	Um v u para Ninjas (F) feito de um material muito valioso. (Dura  o: 7 dias)
+74268	Cachecol - Ninja (F)	Um cachecol para o deserto para Ninjas (F) feito de um material precioso. (Dura  o: 7 dias)
+74269	Turbante - Ninja (F)	Um turbante para Ninjas (F) feito de um material muito valioso. (Dura  o: 7 dias)
+74270	M scara de Ninja (f)	Uma m scara em forma de ab bora para Ninjas do sexo feminino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+74501	Desportivo (Branco)	Penteado curto, de estilo militar
+74502	Desportivo (Castanho)	Penteado curto, de estilo militar
+74503	Desportivo (Loiro)	Penteado curto, de estilo militar
+74504	Desportivo (Verde)	Penteado curto, de estilo militar
+74505	Carism tico (Branco)	Penteado que acentua um car cter forte
+74506	Carism tico (Vermelho)	Penteado que acentua um car cter forte
+74507	Carism tico (Preto)	Penteado que acentua um car cter forte
+74508	Carism tico (Roxo)	Penteado que acentua um car cter forte
+74509	Elegante (Branco)	Penteado antigo que outrora foi um s mbolo de riqueza
+74510	Elegante (Azul)	Penteado antigo que outrora foi um s mbolo de riqueza
+74511	Elegante (Preto)	Penteado antigo que outrora foi um s mbolo de riqueza
+74512	Elegante (Castanho)	Penteado antigo que outrora foi um s mbolo de riqueza
+74513	Afro - Sura (M)	D  a um Sura um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74514	Afro - Sura (M)	D  a um Sura um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74515	Elmo Samurai - Sura (M)	D  a um Sura um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74516	Elmo Samurai - Sura (M)	D  a um Sura um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74517	Fez - Sura (M)	Um chap u vermelho para Suras (M). (Dura  o: 7 dias)
+74518	Keffiyeh - Sura (M)	Um acess rio para Suras (M). (Dura  o: 7 dias)
+74519	Turbante - Sura (M)	Um acess rio para Suras (M) feito de material da mais alta qualidade. (Dura  o: 7 dias)
+74520	M scara de Sura (m)	Uma m scara em forma de ab bora para Suras do sexo masculino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+74521	Moderno (Cinzento)	Um penteado que te d  um ar distinto.
+74522	Len o	Cabelo curto domado com um len o.
+74523	Longo (Loiro)	Um penteado impressionante com cabelo loiro magn fico.
+74524	Moderno (Dourado)	Penteado moderno com cabelo dourado e uma fita.
+74525	Len o (Preto)	Cabelo curto e despenteado, controlado com um len o.
+74526	Longo (Vermelho Rubi)	Cabelo maravilhoso, vermelho rubi.
+74527	Rabo de Cavalo(Vermelho)	Cabelo longo atado num rabo de cavalo.
+74528	Pelos Ombros (Aqua)	Um penteado discreto com uma fita azul.
+74529	Curto (Castanho)	Um penteado que te confere um ar amea ador.
+74530	Rabo de Cavalo(Vermelho)	Cabelo vermelho comprido que foi atado num rabo de cavalo - um penteado muito popular entre mulheres.
+74531	Pelos Ombros (Preto)	Um penteado com um aspecto moderno e atrevido.
+74532	Curto (Cinzento)	Um penteado curto que te confere um ar amea ador.
+74533	Desportivo (Preto)	Um penteado curto que te confere um ar militar.
+74534	Carism tico (Loiro)	Um penteado que acentua uma forte personalidade individual.
+74535	Apanhado Longo (Rosa)	Um penteado apanhado antiquado que outrora foi s mbolo de riqueza.
+74536	Desportivo (Roxo)	Um penteado curto e extravagante.
+74537	Carism tico (Loiro)	Um penteado carism tico com cabelo longo.
+74538	Apanhado Longo (Real)	Um penteado apanhado antiquado que outrora foi s mbolo de riqueza.
+74539	Elegante (Roxo)	Um penteado elegante com cabelo preto atado.
+74540	M dio (Escuro)	Um penteado elegante de Xam .
+74541	Antigo (Branco)	Cabelo comprido usado de uma forma tradicional.
+74542	Elegante (Vermelho)	Um penteado elegante apanhado com um gancho de borboleta.
+74543	M dio (Branco)	Penteado liso e elegante.
+74544	Antigo (Preto)	Um penteado feminino com cabelo longo.
+74545	Tribal+ (Vermelho)	Tran as decoradas com p rolas de madeira vermelhas que indicam uma associa  o tribal.
+74546	Tribal+ (Amarelo)	Tran as decoradas com p rolas de madeira amarelas que indicam uma associa  o tribal.
+74547	Tribal+ (Azul)	Tran as decoradas com p rolas de madeira azuis que indicam uma associa  o tribal.
+74548	Tribal+ (Roxo)	Tran as decoradas com p rolas de madeira roxas que indicam uma associa  o tribal.
+74549	Tribal+ (Verde)	Tran as decoradas com p rolas de madeira verdes que indicam uma associa  o tribal.
+74550	Coroa Lupina+ (Ouro)	Adere o para a cabe a decorado com j ias para o cabelo a condizer.
+74551	Coroa Lupina+ (Preta)	Adere o para a cabe a decorado com j ias para o cabelo a condizer.
+74552	Coroa Lupina+ (Vermelha)	Adere o para a cabe a decorado com j ias para o cabelo a condizer.
+74553	Coroa Lupina+ (Azul)	Adere o para a cabe a decorado com j ias para o cabelo a condizer.
+74554	Coroa Lupina+ (Branca)	Adere o para a cabe a decorado com j ias para o cabelo a condizer.
+74555	Capuz de Lobo+ (Ouro)	Armadura elaborada para a cabe a e fontes com j ias de cabelo tradicionais.
+74556	Capuz de Lobo+ (Preto)	Armadura elaborada para a cabe a e fontes com j ias de cabelo tradicionais.
+74557	Capuz de Lobo+(Vermelho)	Armadura elaborada para a cabe a e fontes com j ias de cabelo tradicionais.
+74558	Capuz de Lobo+ (Azul)	Armadura elaborada para a cabe a e fontes com j ias de cabelo tradicionais.
+74559	Capuz de Lobo+ (Verde)	Armadura elaborada para a cabe a e fontes com j ias de cabelo tradicionais.
+74751	Gancho (Castanho)	Penteado elegante com um gancho em borboleta
+74752	Gancho (Preto)	Penteado elegante com um gancho em borboleta
+74753	Gancho (Azul)	Penteado elegante com um gancho em borboleta
+74754	Gancho (Branco)	Penteado elegante com um gancho em borboleta
+74755	M dio (Castanho)	Penteado elegante para Xam s
+74756	Semi-Longo (Preto)	Penteado elegante para Xam s
+74757	Semi-Longo (Loiro)	Penteado elegante para Xam s
+74758	Semi-Longo (Roxo)	Penteado elegante para Xam s
+74759	Semi-Longo (Castanho)	Penteado feminino com cabelo longo e liso
+74760	Antigo Penteado (Loiro)	Penteado feminino com cabelo longo e liso
+74761	Semi-Longo (Roxo)	Penteado feminino com cabelo longo e liso
+74762	Semi-Longo (Vermelho)	Penteado feminino com cabelo longo e liso
+74763	Afro - Xam  (F)	D  a uma Xam  um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74764	Afro - Xam  (F)	D  a uma Xam  um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74765	Chap u - Xam  (F)	D  a uma Xam  um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74766	Chap u - Xam  (F)	D  a uma Xam  um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+74767	Foulard - Xam  (F)	Um v u para Xam s (F) feito de um material muito valioso. (Dura  o: 7 dias)
+74768	Cachecol - Xam  (F)	Um cachecol para o deserto para Xam s (F) feito de um material precioso. (Dura  o: 7 dias)
+74769	Turbante - Xam  (F)	Um turbante para Xam s (F) feito de um material muito valioso. (Dura  o: 7 dias)
+74770	M scara de Xam  (f)	Uma m scara em forma de ab bora para Xam s do sexo feminino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+75001	Tot s (Vermelho)	Penteado moderno com cabelo vermelho, tot s e duas fitas
+75002	Tot s (Claro)	Penteado moderno com cabelo claro, tot s e duas fitas
+75003	Tot s (Azul)	Penteado moderno com cabelo azul, tot s e duas fitas
+75004	Tot s (Castanho)	Penteado moderno com cabelo castanho, tot s e duas fitas
+75005	Fita (Castanho)	Cabelo curto e desgrenhado, com uma fita
+75006	Fita (Loiro)	Cabelo curto e desgrenhado, com uma fita
+75007	Fita (Azul)	Cabelo curto e desgrenhado, com uma fita
+75008	Fita (Verde)	Cabelo curto e desgrenhado, com uma fita
+75009	Esplendoroso (Preto)	Cabelo preto e esplendoroso
+75010	Esplendoroso (Vermelho)	Cabelo vermelho e esplendoroso
+75011	Esplendoroso (Castanho)	Cabelo castanho e esplendoroso
+75012	Esplendoroso (Verde)	Cabelo verde e esplendoroso
+75013	Afro - Guerreira	D  a uma Guerreira um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75014	Afro - Guerreira	D  a uma Guerreira um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75015	Chap u - Guerreira	D  a uma Guerreira um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75016	Chap u - Guerreira	D  a uma Guerreira um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75017	Foulard - Guerreira	Um v u para Guerreiros (F) feito de um material muito valioso. (Dura  o: 7 dias)
+75018	Cachecol - Guerreira	Um cachecol para o deserto para Guerreiros (F) feito de um material precioso. (Dura  o: 7 dias)
+75019	Turbante - Guerreira	Um turbante para Guerreiros (F) feito de um material muito valioso. (Dura  o: 7 dias)
+75020	M scara de Guerreiro (f)	Uma m scara em forma de ab bora para Guerreiros do sexo feminino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+75201	Rabo de Cavalo(Castanho)	Cabelo castanho com um rabo de cavalo
+75202	Rabo de Cavalo(Verde)	Cabelo verde com um rabo de cavalo
+75203	Rabo de Cavalo(Azul)	Cabelo azul com um rabo de cavalo
+75204	Rabo de cavalo(Loiro)	Cabelo loiro com um rabo de cavalo
+75205	Len o (Branco)	Penteado discreto com um len o branco
+75206	Len o (Verde)	Penteado discreto com um len o verde
+75207	Len o (Castanho)	Penteado discreto com um len o castanho
+75208	Len o (Vermelho)	Penteado discreto com um len o vermelho
+75209	Despenteado (Vermelho)	Penteado que te d  um ar sinistro
+75210	Despenteado (Azul)	Penteado que te d  um ar sinistro
+75211	Despenteado (Preto)	Penteado que te d  um ar sinistro
+75212	Despenteado (Loiro)	Penteado que te d  um ar sinistro
+75213	Afro - Ninja (M)	D  a um Ninja um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75214	Afro - Ninja (M)	D  a um Ninja um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75215	Elmo Samurai - Ninja (M)	D  a um Ninja um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75216	Elmo Samurai - Ninja (M)	D  a um Ninja um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75217	Fez - Ninja (M)	Um chap u vermelho para Ninjas (M). (Dura  o: 7 dias)
+75218	Keffiyeh - Ninja (M)	Um acess rio para Ninjas (M). (Dura  o: 7 dias)
+75219	Turbante - Ninja (M)	Um acess rio para Ninjas (M) feito de material da mais alta qualidade. (Dura  o: 7 dias)
+75220	M scara de Ninja (m)	Uma m scara em forma de ab bora para Ninjas do sexo masculino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+75401	Apanhado (Cinza)	Penteado extravagante popular entre Suras femininas
+75402	Apanhado (Castanho)	Penteado extravagante popular entre Suras femininas
+75403	Apanhado (Loiro)	Penteado extravagante popular entre Suras femininas
+75404	Apanhado (Verde)	Penteado extravagante popular entre Suras femininas
+75405	Comprido (Branco)	Cabelo branco e comprido que te d  um ar pensativo
+75406	Comprido (Vermelho)	Cabelo vermelho e comprido que te d  um ar pensativo
+75407	Comprido (Preto)	Cabelo preto e comprido que te d  um ar pensativo
+75408	Comprido (Roxo)	Cabelo roxo e comprido que te d  um ar pensativo
+75409	Duquesa (Branco)	Penteado com tran a
+75410	Duquesa (Roxo)	Penteado com tran a
+75411	Duquesa (Preto)	Penteado com tran a
+75412	Duquesa (Castanho)	Penteado com tran a
+75413	Afro - Sura (F)	D  a uma Sura um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75414	Afro - Sura (F)	D  a uma Sura um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75415	Chap u - Sura (F)	D  a uma Sura um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75416	Chap u - Sura (F)	D  a uma Sura um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75417	Foulard - Sura (F)	Um v u para Suras (F) feito de um material muito valioso. (Dura  o: 7 dias)
+75418	Cachecol - Sura (F)	Um cachecol para o deserto para Suras (F) feito de um material precioso. (Dura  o: 7 dias)
+75419	Turbante - Sura (F)	Um turbante para Suras (F) feito de um material muito valioso. (Dura  o: 7 dias)
+75420	M scara de Sura (f)	Uma m scara em forma de ab bora para Suras do sexo feminino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+75601	Aprumado (Castanho)	Penteado aprumado que te d  uma express o forte
+75602	Aprumado (Preto)	Penteado aprumado que te d  uma express o forte
+75603	Aprumado (Azul)	Penteado aprumado que te d  uma express o forte
+75604	Aprumado (Cinza)	Penteado aprumado que te d  uma express o forte
+75605	Longo (Castanho)	Cabelo longo e castanho
+75606	Longo (Preto)	Cabelo longo e preto
+75607	Longo (Loiro)	Cabelo longo e loiro
+75608	Longo (Roxo)	Cabelo longo e roxo
+75609	Antigo (Castanho)	Penteado antigo. Cabelo castanho apanhado num rabo de cavalo
+75610	Antigo (Claro)	Penteado antigo. Cabelo claro apanhado num rabo de cavalo
+75611	Antigo (Roxo)	Penteado antigo. Cabelo roxo apanhado num rabo de cavalo
+75612	Antigo (Vermelho)	Penteado antigo. Cabelo vermelho apanhado num rabo de cavalo
+75613	Afro - Xam  (M)	D  a um Xam  um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75614	Afro - Xam  (M)	D  a um Xam  um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75615	Elmo Samurai - Xam  (M)	D  a um Xam  um b nus de VD de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75616	Elmo Samurai - Xam  (M)	D  a um Xam  um b nus de MN de 1%. Substitui o penteado actual. (Dura  o: 7 dias)
+75617	Fez - Xam  (M)	Um chap u vermelho para Xam s (M). (Dura  o: 7 dias)
+75618	Keffiyeh - Xam  (M)	Um acess rio para Xam s (M). (Dura  o: 7 dias)
+75619	Turbante - Xam  (M)	Um acess rio para Xam s (M) feito de material da mais alta qualidade. (Dura  o: 7 dias)
+75620	M scara de Xam  (m)	Uma m scara em forma de ab bora para Xam s do sexo masculino. Os atributos e sua dura  o s o definidos aleatoriamente. Substitui qualquer penteado existente.
+76001	Pergaminho dos Atributos	A utiliza  o deste item permite-te redistribuir todos os teus Pontos de Atributo. Podes us -lo para alterar o curso de desenvolvimento da tua personagem. N o negoci vel.
+76002	Cabe a Encolhida	Esta cabe a de dem nio encolhida abre o selo para o 3  Andar das Catacumbas do Dem nio. N o negoci vel.
+76007	Capa de Bravura	Os Guerreiros antigos demonstravam a sua bravura ao usar uma capa colorida com a qual puxavam a aten  o de todos os monstros para si. N o negoci vel.
+76016	Pergaminho da B n  o	Elimina o risco de um item ser destru do caso um melhoramento falhe. Caso falhe, a qualidade do item ser  apenas reduzida em 1 n vel.
+76023	Feiti o Verde	Remove os b nus de um dos teus itens e adiciona novos. Apenas pode ser usado em armas e armaduras at  n vel 40. Item dos cofres de n vel. N o negoci vel.
+76025	Sapatos de Vento	Com este item voc  pode enfrentar a masmorra do Templo de Ochao.
+79501	Aljava do Arqueiro	Uma aljava que te proporciona uma fonte inesgot vel de flechas por 24 horas. Sem qualquer redu  o do dano infligido por disparos   dist ncia.
+79502	Aljava do Arqueiro	Uma aljava que te proporciona uma fonte inesgot vel de flechas por 7 dias. Sem qualquer redu  o do dano infligido por disparos   dist ncia.
+79503	Aljava do Arqueiro	Uma aljava que te proporciona uma fonte inesgot vel de flechas. Sem qualquer redu  o do dano infligido por disparos   dist ncia.
+79504	Aljava do Arqueiro	Uma aljava que te proporciona uma fonte inesgot vel de flechas. Sem qualquer redu  o do dano infligido por disparos   dist ncia.
+85001	Faixa de Lorde (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85002	Faixa de Lorde (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85003	Faixa de Lorde (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85004	Faixa de Lorde (Pessoal)	Esta Faixa retira 11~25% dos b nus da arma ou armadura que usas para absor  o.
+85005	Faixa de Mestre (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85006	Faixa de Mestre (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85007	Faixa de Mestre (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85008	Faixa de Mestre(Pessoal)	Esta Faixa retira 11~25% dos b nus da arma ou armadura que usas para absor  o.
+85011	Faixa Soberana (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85012	Faixa Soberana (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85013	Faixa Soberana (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85014	Faixa Soberana (Pessoal)	Esta Faixa retira 11~25% dos b nus da arma ou armadura que usas para absor  o.
+85015	Faixa Real (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85016	Faixa Real (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85017	Faixa Real (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85018	Faixa Real (Pessoal)	Esta Faixa retira 11~25% dos b nus da arma ou armadura que usas para absor  o.
+85071	Faixa Chou (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85072	Faixa Chou (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85073	Faixa Chou (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85074	Faixa Chou (Pessoal)	Esta Faixa retira 11-25% dos b nus da arma ou armadura que usas para absor  o.
+85075	Faixa Mao (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85076	Faixa Mao (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85077	Faixa Mao (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85078	Faixa Mao (Pessoal)	Esta Faixa retira 11-25% dos b nus da arma ou armadura que usas para absor  o.
+85079	Faixa You (B sica)	Esta Faixa retira 1% dos b nus da arma ou armadura que usas para absor  o.
+85080	Faixa You (Fina)	Esta Faixa retira 5% dos b nus da arma ou armadura que usas para absor  o.
+85081	Faixa You (Nobre)	Esta Faixa retira 10% dos b nus da arma ou armadura que usas para absor  o.
+85082	Faixa You (Pessoal)	Esta Faixa retira 11-25% dos b nus da arma ou armadura que usas para absor  o.
+90000	Certificado de Revers o	Usa o Certificado de Revers o para removeres b nus de uma Faixa de Ombro.
+10951	Vela Branca	Este item   usado para combater a masmorra de defesa do navio.
+10954	Cristal de Fogo	Este Cristal   usado para comprar ou atualizar um Talism  de fogo de um NPC.
+10955	Cristal de Gelo	Este Cristal   usado para comprar ou atualizar um Talism  de gelo de um NPC.
+10956	Cristal das Trevas	Este Cristal   usado para comprar ou atualizar um Talism  da escurid o um NPC.
+10957	Cristal de Raio	Este Cristal   usado para comprar ou atualizar um Talism  de raio de um NPC.
+10958	Cristal de Vento	Este Cristal   usado para comprar ou atualizar um Talism  de vento de um NPC.
+10959	Cristal da Terra	Este Cristal   usado para comprar ou atualizar um Talism  de terra de um NPC.
+10960	1  lugar Ba  Liga de Ouro	Recompensa 1  Classificado Liga de Ouro.
+10961	1  lugar Ba  Liga de Prata	Recompensa 1  Classificado Liga de Prata.
+10962	1  lugar Ba  liga de bronze	Recompensa 1  Classificado Liga de Bronze.
+10963	2  lugar Ba  Liga de Ouro	Recompensa 2  Classificado Liga de Ouro.
+10964	2  lugar Ba  Liga de Prata	Recompensa 2  Classificado Liga de Prata.
+10965	2  lugar Ba  liga de bronze	Recompensa 2  Classificado Liga de Bronze.
+10966	3  lugar Ba  Liga de Ouro	Recompensa 3  Classificado Liga de Ouro.
+10967	3  lugar Ba  Liga de Prata	Recompensa 3  Classificado Liga de Prata.
+10968	3  lugar Ba  Liga de bronze	Recompensa 3  Classificado Liga de bronze.
+18901	Pedra Chama Vermelha (Permanente)	Aumenta os b nus de seu cinto. Dura  o: infinita.
+27798	Camar o de  gua Doce	Isca para a captura de peixes grandes.	Aumenta em 20% a chance de um peixe raro ser capturado.
+27799	Ossos de peixes	Os ossos de um peixe
+27800	Massa	Uma isca leve e barata	Aumenta em 5% a chance de um peixe raro ser capturado.
+27801	Minhoca	Isca popular que atrai peixes.	Aumenta em 8% a chance de um peixe raro ser capturado.
+27802	Minnow	Isca que atrai peixes grandes.	Aumenta em 12% a chance de um peixe raro ser capturado.
+27863	Zander grelhado	Coma este peixe para receber:
+27864	Peixe Mandarim Grelhado	Coma este peixe para receber:
+27865	Zander Grelhado Grande	Coma este peixe para receber:
+27866	Carpa Grelhada	Coma este peixe para receber:
+27867	Salm o Grelhado	Coma este peixe para receber:
+27868	Carpa Grelhada	Coma este peixe para receber:
+27869	Truta de ribeiro grelhada	Coma este peixe para receber:
+27870	Enguia Grelhada	Coma este peixe para receber:
+27871	Truta arco- ris grelhada	Coma este peixe para receber:
+27872	Truta de rio grelhada	Coma este peixe para receber:
+27873	Rudd Grelhado	Coma este peixe para receber:
+27874	Poleiro Grelhado	Coma este peixe para receber:
+27875	Tenchi Grelhado	Coma este peixe para receber:
+27876	Peixe-gato Grelhado	Coma este peixe para receber:
+27877	Loach Grelhado	Coma este peixe para receber:
+27878	Peixe L tus Grelhado	Coma este peixe para receber:
+27879	Peixe-doce grelhado	Coma este peixe para receber:
+27880	Smelt grelhado	Coma este peixe para receber:
+27881	Shiri Grelhado	Coma este peixe para receber:
+27882	Carpa Espelho Grelhada	Coma este peixe para receber:
+27883	Peixe dourado grelhado	Coma este peixe para receber:
+27884	Snakehead Grelhado	Coma este peixe para receber:
+27885	 Skygazer Grelhado	Coma este peixe para receber:
+27886	Caranguejo Rei Vermelho Grelhado	Coma este peixe para receber:
+27887	Yabby Grelhado	Coma este peixe para receber:
+30002	Samambaia escura	Pode ser do interesse de Chaegirab.
+30003	Anel Chaegirab	Pode ser do interesse de Chaegirab.
+30004	Cristal de Metin	Pode ser do interesse de Chaegirab.
+30005	N cleo Purificado	Pode ser do interesse de Chaegirab.
+30006	Dente de Orc	Pode ser do interesse de Chaegirab.
+30015	Lembran a domon aca	Pode ser do interesse de Chaegirab.
+30047	Livro de maldi  es	Pode ser do interesse de Chaegirab.
+30050	Esfera de gelo	Pode ser do interesse de Chaegirab.
+30094	Bolsa de Gold Pequena	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 5.000 a 600,00 Gold.
+30095	Bolsa de Gold M dia	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 10.000 a 30.000 Gold.
+30096	Bolsa de Gold Grande	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 15.000 a 45.000 Gold.
+30097	Bolsa de Gold Pequena	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 5.000 a 15.000 Gold.
+30098	Bolsa de Gold M dia	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 10.000 a 30.000 Gold.
+30099	Bolsa de Gold Grande	Voc  pode encontrar Gold nesta bolsa. Clique com o bot o direito para abri-la. voc  pode encontrar de 15.000 a 45.000 Gold.
+30165	Ramo de Zelkova	Pode ser do interesse de Chaegirab.
+30166	S mbolo Fantasma	Pode ser do interesse de Chaegirab.
+30167	Galho Fantasma	Pode ser do interesse de Chaegirab.
+30168	Emblema do Rei Negro	Pode ser do interesse de Chaegirab.
+30251	J ia da Malevol ncia	Pode ser do interesse de Chaegirab.
+30252	J ia da Sabedoria	Pode ser do interesse de Chaegirab.
+30255	Tratado das Chamas	Este item   usado para atualizar o Talism  de Fogo.
+30256	Tratado do Raio	Este item   usado para atualizar o Talism  de Raio.
+30257	Tratado da Terra	Este item   usado para atualizar o Talism  da Terra.
+30258	Tratado de Gelo	Este item   usado para atualizar o Talism  de Gelo.
+30259	Tratado do Vento	Este item   usado para atualizar o Talism  do Vento.
+30260	Tratado das Trevas	Este item   usado para atualizar o Talism  da Escurid o.
+30271	Fragmento de Metin Rock	Este item   usado para atualizar pe as de equipamento.
+30273	Certificado M stico	Este item   usado para epicizar pe as de equipamento.
+30274	Certificado Antigo	Este item   usado para epicizar pe as de equipamento.
+30275	Certificado  pico	Este item   usado para epicizar pe as de equipamento.
+30276	Certificado Lend rio	Este item   usado para epicizar pe as de equipamento.
+30277	Cristal de Deus	Voc  pode trocar 100 Cristal de Deus por 1 Cristal de Deus+.	Clique com o bot o direito para transform -los.
+30278	Cristal de Deus+	Este item   usado para aprimoramentos, elabora  o e v rias compras de npc.
+30279	Cristal Solar	Voc  pode trocar 100 Cristal Solar por 1 Cristal Solar+.	Clique com o bot o direito para transform -los.
+30280	Cristal Solar+	Este item   usado para aprimoramentos, elabora  o e v rias compras de npc.
+30282	Chifre de Razador	Este item   usado para atualizar pe as de equipamento.
+30283	Chifre de Nemere	Este item   usado para atualizar pe as de equipamento.
+30284	Pedra sem Esp rito	Este item   usado para melhorias e v rias compras do NPC.
+30516	Dragonas antigas	Item para melhoria de equipamento.
+30524	Pedra Chama	Item para melhoria de equipamento.
+30525	Pedra da Chama de Gelo	Item para melhoria de equipamento.
+30587	Pano roxo	Item para melhoria de equipamento.
+30602	Corante azul	Item para melhoria de equipamento.
+30610	Mithril	Item para melhoria de equipamento.
+30612	Cordas Robustas	Item para melhoria de equipamento.
+30614	Tinta preta	Item para melhoria de equipamento.
+30615	Tinta Branca	Item para melhoria de equipamento.
+30623	Frasco de limo vazio	Este item   usado na masmorra do Slime, assim que dropar, deve ser arrastado para o Slime.
+30624	Frasco cheio de limo	Este item   usado na masmorra do Slime, assim que dropar, deve ser arrastado para a pederneira.
+30625	Peda o de limo de menir	Este item   usado para combater na masmorra de Slime.
+30798	Cruz Ankh	Com este item voc  pode enfrentar o calabou o das pir mides.
+30800	Peda o de pergaminho 1	Este item   usado para superar o segundo andar do Calabou o da Pir mide
+30801	Peda o de pergaminho 2	Este item   usado para superar o segundo andar do Calabou o da Pir mide
+30802	Peda o de pergaminho 3	Este item   usado para superar o segundo andar do Calabou o da Pir mide
+30803	Peda o de pergaminho 4	Este item   usado para superar o segundo andar do Calabou o da Pir mide
+30804	Sage Band	Este item   usado no Calabou o da Pir mide.
+30805	Chave Antiga	Este item   usado no Calabou o da Pir mide.
+30806	Ba  Milenar	Este item   usado no Calabou o da Pir mide.
+39015	Pedra do Ferreiro	Com esta pedra   poss vel comprar um item do ferreiro.
+39048	Ba  do Guerreiro	Pacote contendo livros  teis para guerreiro.
+39050	Ba  do Ninja	Pacote contendo livros  teis para ninja.
+39052	Ba  do Sura	Pacote contendo livros  teis para sura.
+39054	Ba  do Xam 	Pacote contendo livros  teis para xam .
+39065	Gold (20kk)	Cont m 20kk de Gold.
+39066	Gold (40kk)	Cont m 40kk de Gold.
+39067	Gold (70kk)	Cont m 70kk de Gold.
+39068	Gold (15kk)	Cont m 15kk de Gold.
+39069	Gold (10kk)	Cont m 10kk de Gold.
+39070	Gold (30kk)	Cont m 30kk de Gold.
+39071	Gold (5kk)	Cont m 5kk de Gold.
+39072	Gold (25kk)	Cont m 25kk de Gold.
+39073	Gold (35kk)	Cont m 35kk de Gold.
+39074	Gold (55kk)	Cont m 55kk de Gold.
+39075	Gold (50kk)	Cont m 50kk de Gold.
+39076	Gold (100kk)	Cont m 100kk de Gold.
+39077	Gold (150kk)	Cont m 150kk de Gold.
+39079	Gold (80kk)	Cont m 80kk de Gold.
+39080	Gold (130kk)	Cont m 130kk de Gold.
+39081	Gold (230kk)	Cont m 230kk de Gold.
+39082	Gold (120kk)	Cont m 120kk de Gold.
+39083	Gold (220kk)	Cont m 220kk de Gold.
+40004	Anel de Eek	Um anel feito com ingredientes secretos, que lhe d  b nus especiais.
+40095	Leque do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40096	Sino do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40097	Glava do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40098	Arco do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40099	Adaga do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40100	Espada do Zod aco Negro	Uma Skin de arma que pode ser comprada na loja de passes de batalha.
+40143	Elixir do Pesquisador+	Este elixir aumenta a qualidade dos itens e redefine o tempo de espera.
+40144	Elixir do Pesquisador	Este elixir redefine o tempo de espera.
+40192	Traje do Zod aco Negro (f)	Traje do Zod aco com efeitos que combinam com as armas.
+40193	Traje do Zod aco Negro (m)	Traje do Zod aco com efeitos que combinam com as armas.
+40194	Traje do Zod aco Negro (f)	Traje do Zod aco com efeitos que combinam com as armas.
+40195	Traje do Zod aco Negro (m)	Traje do Zod aco com efeitos que combinam com as armas.
+40196	Traje do Zod aco Negro (m)	Traje do Zod aco com efeitos que combinam com as armas.
+40197	Traje do Zod aco Negro (f)	Traje do Zod aco com efeitos que combinam com as armas.
+40198	Traje do Zod aco Negro (m)	Traje do Zod aco com efeitos que combinam com as armas.
+40199	Traje do Zod aco Negro (f)	Traje do Zod aco com efeitos que combinam com as armas.
+45242	Tran as pretas + (m)	Tran as especiais que combinam com o Traje do Zod aco.
+45243	Tran as pretas+ (f)	Tran as especiais que combinam com o Traje do Zod aco.
+46003	Crescent Warrioress (f)	Este item s  pode ser usado pelo xam  suporte.
+46004	Crescent Warrioress (m)	Este item s  pode ser usado pelo xam  suporte.
+46005	Armadura de Azrael (f)	Este item s  pode ser usado pelo xam  suporte.
+46006	Armadura de Azrael (m)	Este item s  pode ser usado pelo xam  suporte..
+46007	Guerreiro do deserto (f)	Este item s  pode ser usado pelo xam  suporte.
+46008	Guerreiro do deserto (m)	Este item s  pode ser usado pelo xam  suporte.
+46303	Capacete de Azrael (f)	Este item s  pode ser usado pelo xam  suporte.
+46304	Capacete de Azrael (m)	Este item s  pode ser usado pelo xam  suporte.
+46307	Salsa Bun	Este item s  pode ser usado pelo xam  suporte.
+46308	Mini Mohawk	Este item s  pode ser usado pelo xam  suporte.
+46601	Leque de Serra	Este item s  pode ser usado pelo xam  suporte.
+46602	Sino de Serra	Este item s  pode ser usado pelo xam  suporte.
+46603	Leque Acquariano	Este item s  pode ser usado pelo xam  suporte.
+46604	Sino Acquariano	Este item s  pode ser usado pelo xam  suporte.
+46605	Sino A ucarado	Este item s  pode ser usado pelo xam  suporte.
+46606	Leque de Gelo	Este item s  pode ser usado pelo xam  suporte.
+50063	Ba  do Razador	Este ba  foi recuperado da Fortaleza do Drag o Vermelho. Ele cont m um tesouro verdadeiramente magn fico.
+50064	Ba  do Nemere	Este ba  foi recuperado da Torre de Vigia de Nemere. Ele cont m um tesouro verdadeiramente magn fico.
+50065	Ba  de Bruxa de Gelo	Este ba  cont m algo valioso.
+50066	Ba  Precioso	Este ba  cont m itens valiosos para seu equipamento.	Ele pode conter faixas de ombro e outros itens  teis para trajes.
+50067	Ba  de Presente Di rio	Este ba  cont m alguns pr mios fant sticos.
+50069	Ba  do Lord  rvore Fantasma	Este ba  cont m algo valioso.
+50072	Ba  Orc Maze	Este ba  cont m algo valioso.
+50074	Ba  da Baronesa	Este ba  cont m algo valioso.
+50075	Ba  da Rainha Slime	Este ba  cont m algo valioso.
+50081	Ba  da Grande  rvore Fanstama	Este ba  cont m algo valioso.
+50098	Ba  do Beran-Setaou	Este ba  foi recuperado da Gruta do Ex lio. Ele cont m um tesouro verdadeiramente magn fico.
+50099	Ba  Elemental	Este ba  cont m itens necess rios para atualizar os talism s.
+50100	Ba  do Haru	Este ba  cont m algo valioso.
+50101	Ba  do Eien	Este ba  cont m algo valioso.
+50102	Ba  do Buncho	Este ba  cont m algo valioso.
+50138	Ba  do Mahon	Este ba  cont m algo valioso.
+50139	Ba  do Bo	Este ba  cont m algo valioso.
+50140	Ba  do Goo-Pae	Este ba  cont m algo valioso.
+50141	Ba  do Chuong	Este ba  cont m algo valioso.
+50142	Ba  do Comandante Brutal	Este ba  cont m algo valioso.
+50143	Ba  de Habilidades	Ba  de Skills cont m livros para habilidades padr o.
+50203	Ba  da Hydra	Este ba  cont m algo valioso.
+50204	Ba  do Ochao	Este ba  cont m algo valioso.
+50254	Ba  da Escurid o	O ba  pesado esconde as consideradas riquezas esquecidas da Na  o das Trevas.
+50285	Ba  do Ruler En-Tai's	Este ba  cont m algo valioso.
+50333	Livro da For a Divina	Aumente o poder divino. Atrav s deste livro, voc  pode melhorar a habilidade padr o da For a Divina.
+50334	Livro Master Gold	Aumente o poder divino. Por meio deste livro, voc  pode aprimorar a habilidade padr o de Coletar Gold.
+50335	Livro de ca adores de monstros	Aumente o poder divino. Atrav s deste livro, voc  pode melhorar a habilidade padr o de ca adores de monstros.
+50336	Livro da For a da Vida	Aumente o poder divino. Por meio deste livro, voc  pode melhorar a habilidade padr o da For a de Vida.
+50525	Pedras da Alma Perfeita	Esta Pedra Perfeita permite que voc  atualize suas habilidades de grau de Grande Mestre para grau de Grande Mestre Perfeito usando apenas uma pedra. A pedra desaparece ap s o uso.
+50526	Impulso Pedra da Alma	Esta pedra lend ria permite que voc  aumente as habilidades do Grande Mestre das habilidades de impulso. A pedra desaparece ap s o uso.
+50527	Contra ataque Pedra da Alma	Esta pedra lend ria permite que voc  aumente as habilidades do Grande Mestre das habilidades de contra-ataque. A pedra desaparece ap s o uso.
+50634	Alma de Cristal	Um cristal puro como a alma. Pode ser inserido como acess rio.
+50635	Rubi	Gema vermelha com acabamento  nico. Pode ser inserido como acess rio.
+50636	Granada	Gema laranja com acabamento  nico. Pode ser inserido como acess rio.
+50637	Esmeralda	Gema verde com acabamento  nico. Pode ser inserido como acess rio.
+50638	Safira	Gema azul com acabamento  nico. Pode ser inserido como acess rio.
+50639	Turmalina	Esta gema m gica brilha com todas as cores do arco- ris. Pode ser inserido como acess rio.
+50640	Cianita	Uma gema azul e vermelha com um corte  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+50672	 mbar (Permanente)	Uma joia l mpida feita de resina fossilizada, que brilha em tons de mel ou dourado.	Dura  o: infinita
+50673	Madeira F ssil (Permanente)	Uma madeira valiosa que pode dar estabilidade aos itens de joalheria.	Dura  o: infinita
+50674	Cobre (Permanente)	Um metal precioso male vel que pode ser usado para fazer joias e moedas. Tamb m   necess rio para a produ  o de bronze.	Dura  o: infinita
+50675	Prata (Permanente)	Metal precioso brilhante usado para fazer joias. Pode ser transformado em acess rios de prata.	Dura  o: infinita
+50676	Ouro (Permanente)	Metal dourado usado para fazer joias. Pode ser transformado em acess rios de ouro.	Dura  o: infinita
+50677	Jade (Permanente)	Um mineral valioso que   usado h  mais de 5.000 anos. Pode ser trabalhado em acess rios e joias.	Dura  o: infinita
+50678	 bano (Permanente)	Esta madeira negra e dura   uma das mais valiosas de todas. Pode ser trabalhado em acess rios e joias.	Dura  o: infinita
+50679	P rola (Permanente)	Usado para fazer joias. Pode ser trabalhado em acess rios e joias.	Dura  o: infinita
+50680	Ouro Branco (Permanente)	Uma liga de ouro dura e branca, freq entemente usada em joias.	Dura  o: infinita
+50681	Cristal (Permanente)	Uma pedra dura de quartzo cristalino que pode ser encontrada em v rias cores. Freq entemente usado para joalheria.	Dura  o: infinita
+50682	Ametista (Permanente)	Um quartzo popular que pode ser encontrado em diferentes tons de roxo. Muitas vezes   usado para fazer joias.	Dura  o: infinita
+50683	L grima do para so (Permanente)	Chuva cristalizada do c u. Pode ser usado para fazer joias.	    Dura  o: infinita
+50684	Cristal da Alma(Permanente)	Um cristal puro como a alma. Pode ser inserido como acess rio.	Dura  o: infinita
+50685	Rubi (Permanente)	Gema vermelha com acabamento  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+50686	Granada (Permanente)	Gema laranja com acabamento  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+50687	Esmeralda (Permanente)	Gema verde com acabamento  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+50688	Safira (Permanente)	Gema azul com acabamento  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+50689	Turmalina (Permanent)	Esta gema m gica brilha com todas as cores do arco- ris. Pode ser inserido como acess rio.	Dura  o: infinita
+50690	Cianita (Permanent)	Uma gema azul e vermelha com um corte  nico. Pode ser inserido como acess rio.	Dura  o: infinita
+53025	Leopard Cub	Este selo evoca seu beb  leopardo.
+53026	Leonidas Signet(15d)	Com este selo evoca filhote de le o Le nidas de 15 dias.
+53027	Leonidas Signet(30d)	Com este selo evoca filhote de le o Le nidas de 30 dias.
+53028	Leonidas Signet(Permanente)	Com este selo evoca Leonidas Permanente.
+53029	Nogai Signet (15d)	Com este selo evoca um Nogaj de 15 dias.
+53030	Nogai Signet (30d)	Com este selo evoca um Nogaj de 30 dias.
+53031	Nogai Signet (Permanente)	Com este selo evoca um Nogaj Permanente.
+53248	Donnie (15d)	Com este selo evoca uma lebre dos pesadelos, Donnie 15 dias.
+53249	Donnie (30d)	Com este selo evoca uma lebre dos pesadelos, Donnie 30 dias.
+53250	Donnie (Permanente)	Com este selo evoca uma lebre dos pesadelos, Donnie Permanente.
+53251	Frank (15d)	Com este selo evoca um Frank de 15 dias.
+53252	Frank (30d)	Com este selo evoca um Frank de 30 dias.
+53253	Frank (Permanente)	Com este selo evoca um Frank Permanente.
+53263	Gryph	Este selo invoca Griffy, invoca seu grifo de estima  o.
+53264	Nogai	Este selo invoca Nogai, invoca seu grifo de estima  o.
+53282	FlameCat	Com este selo evoca o Gato de Fogo que tudo v .
+53283	FrostCat	Com esta foca, voc  invoca um gato gelado que tudo v .
+55002	Caixa de Transporte	Ao colocar seu animal de estima  o na caixa de transporte, voc  o tornar  comercializ vel.
+55003	Livro do jovem Pet	Este livro   usado para o desenvolvimento dos Pet.
+55004	Livro de Pet selvagens	Este livro   usado para o desenvolvimento dos Pet.
+55005	Livro de Pet Valente	Este livro   usado para o desenvolvimento dos Pet.
+55014	Livro de danos cr ticos (PvM)	Depois de aprender essa habilidade, o Pet aumenta o dano cr tico causado no PVM.
+55015	Livro forte contra Metin	Depois de aprender essa habilidade, o Pet aumenta o dano causado  s Rochas Metin.
+55016	Livro forte contra Boss	Depois de aprender essa habilidade, o Pet aumenta o dano causado contra os Boss.
+55017	Livro da intui  o	Depois de aprender esta habilidade, o Pet o valor do b nus de XP.
+55018	Livro drop de Yang	Depois de aprender essa habilidade, o Pet aumenta a chance de dropar Gold.
+55019	Livro Valor de Ataque/Magia	Depois de aprender esta habilidade, o Pet aumenta o dano de ataque / magia.
+55020	Livro Bloqueio de Ataque Corporal	Depois de aprender esta habilidade, o Pet aumenta a chance de bloquear ataques corporais.
+55021	Livro Refletir Ataque Corporal	Ap s aprender esta habilidade, o pet aumenta o dano sofrido pelo jogador, que se refletir  no oponente.
+56001	Po  o de Melhoria (5%)	Esta po  o aumenta a chance de aprimorar um item em 5%.	Este item tamb m   usado para comprar itens do ferreiro.
+56002	Po  o de Melhoria (10%)	Esta po  o aumenta a chance de aprimorar um item em 10%.	Este item tamb m   usado para comprar itens do ferreiro.
+56003	Po  o de Melhoria (15%)	Esta po  o aumenta a chance de aprimorar um item em 15%.
+70058	Anel de Poder (15d)	Um anel feito com ingredientes secretos, que lhe d  b nus especiais por 15 dias.
+70059	Anel de Poder (30d)	Um anel feito com ingredientes secretos, que lhe d  b nus especiais por 30 dias..
+70060	Anel de Poder (Permanente)	Um anel feito com ingredientes secretos, que lhe d  b nus especiais permanente.
+70401	Trajes de encantamento	Remove os b nus de um de seus trajes e aplica novos.
+70402	Traje Especial da Bruxa (5%)	Adiciona um b nus especial (at  no m ximo 2) a um de seus trajes.
+70403	Traje Especial da Bruxa (10%)	Adiciona um b nus especial (at  no m ximo 2) a um de seus trajes.
+70404	Remove B nus Especial	Remove um dos b nus especiais de sua escolha do seu traje.
+70604	Congela B nus	Usa este item em um equipamento com b nus presentes ir  congelar um b nus escolhido.
+70605	Descongela B nus	Este item permite que voc  altere o b nus congelado escolhido.
+70606	B nus de Degelo	Este item permite que voc  descongele uma pe a de equipamento que tenha um b nus de congelamento.
+70610	Voucher do Battle Pass	Este item   usado para comprar roupas na loja Battle Pass.
+70611	Battle Pass	Este item ativa o Passe de Batalha.
+70612	Diamante precioso	Este Diamante premiado   usado para comprar Skin de armas, armaduras e cabelos de um NPC.
+70613	Po  o da beleza	Esta po  o de beleza   usada para comprar Skin de Pet e montaria de um NPC.
+70614	Po  o da beleza	Esta po  o de beleza   usada para comprar Skin de Pet e montaria de um NPC.
+71025	Pedra do ferreiro	Com esta pedra voc  pode comprar o livro do ferreiro no ferreiro.
+71085	Refor ar Item	Adicione 5 b nus a um de seus itens.
+71135	Anel da Lua Crescente (7d)	Um anel com uma gravura artisticamente trabalhada em forma de meia-lua.
+71136	Pirulito M gico (7d)	Um pirulito feito com ingredientes secretos, que te d  b nus especiais.
+71148	Anel For a de Vontade (30d)	Um anel feito com ingredientes secretos, que lhe d  b nus especiais.
+71153	Po  o da Sabedoria (1h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+71174	Razador Ticket	Entregando o Ticket Razador ao guardi o, voc  obter  permiss o para entrar na Fortaleza do Drag o Vermelho.
+71175	Nemere Ticket	Entregando o Nemere Ticket ao guardi o, voc  obter  permiss o para entrar na Torre de Vigia de Nemere.
+71188	Pirulito M gico (15d)	Um pirulito feito com ingredientes secretos, que te d  b nus especiais.
+71203	Ba  do Guerreiro	Pacote Guerreiro contendo 10 Livros de Habilidades selecionados aleatoriamente.
+71204	Ba  do Ninja	Pacote Ninja contendo 10 Livros de Habilidades selecionados aleatoriamente.
+71205	Ba  do Sura	Pacote Sura contendo 10 Livros de Habilidades selecionados aleatoriamente.
+71206	Ba  do Xam 	Pacote Xam  contendo 10 Livros de Habilidades selecionados aleatoriamente.
+71229	Manny (30d)	Este selo evoca um poderoso mamute de 30 dias.
+71231	Le o Branco (30d)	Este selo evoca um poderoso Le o Branco de 30 dias.
+71233	Cavalo Real (30d)	Este selo evoca um majestoso Cavalo Real de 30 dias.
+71234	Pirulito M gico (30d)	Um pirulito feito com ingredientes secretos, que te d  b nus especiais.
+71235	Pirulito M gico (Permanente)	Um pirulito feito com ingredientes secretos, que te d  b nus especiais.
+71252	Drake	Esta montagem s  pode ser encontrada no BattlePass.
+71253	Manny (Permanente)	Este selo evoca um poderoso mamute Permanente.
+71254	Le o Branco (Permanente)	Este selo evoca um poderoso Le o Branco Permanente.
+71255	Cavalo Real (Permanente)	Este selo evoca um majestoso Cavalo Real Permanente.
+72001	Anel de Experi ncia (1h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72002	Anel de Experi ncia (3h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72006	Luvas de Ladr o (1h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72013	Livro de Pesca (30m)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72014	Livro de Pesca (1h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72015	Livro de Pesca (Permanent)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72044	Livro do L der(1h)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+72726	Elixir do Sol (E)	Reabastece seu HP automaticamente. Cont m HP infinito.
+72730	Elixir da Lua (E)	Reabastece automaticamente seu SP. Cont m SP infinito.
+80019	Tecido fino amarelo	Uma faixa de ombro   feita com este material.
+80022	Tecido fino vermelho	Uma faixa de ombro   feita com este material.
+80023	Tecido fino azul claro	Uma faixa de ombro   feita com este material.
+80024	Tecido fino Verde	Uma faixa de ombro   feita com este material.
+80025	Tecido fino roxo	Uma faixa de ombro   feita com este material.
+80026	Tecido fino laranja	Uma faixa de ombro   feita com este material.
+80027	Tecido fino Azul	Uma faixa de ombro   feita com este material.
+84999	Faixa de Ombro de Encantamento	Remove os b nus de uma faixa de ombro e aplica novos.
+85019	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85020	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85021	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85022	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85023	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85024	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85025	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85026	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85027	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85028	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85029	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85030	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85031	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85032	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85033	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85034	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85035	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85036	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85037	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85038	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85039	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85040	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85041	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85042	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85043	Trajes Lord Sash (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85044	Trajes Lord Sash (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85045	Trajes Lord Sash (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85046	Trajes Lord Sash (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85047	Trajes Sash di Yu (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85048	Trajes Sash di Yu (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85049	Trajes Sash di Yu (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85050	Trajes Sash di Yu (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85051	Trajes Sash di Mao (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85052	Trajes Sash di Mao (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85053	Trajes Sash di Mao (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85054	Trajes Sash di Mao (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85055	Trajes Sash Reale (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85056	Trajes Sash Reale (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85057	Trajes Sash Reale (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85058	Trajes Sash Reale (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85059	Trajes Sash Principe (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85060	Trajes Sash Principe (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85061	Trajes Sash Principe (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85062	Trajes Sash Principe (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85063	Trajes Sash Maestro (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85064	Trajess Sash Maestro (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85065	Trajes Sash Maestro (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85066	Trajes Sash Maestro (custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85067	Trajes Sash di Chou (b sico)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85068	Trajes Sash di Chou (bom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85069	Trajes Sash di Chou (nobre)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85070	Trajes Sash di Chou(custom)	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+85083	Asas do Diabo	Este item   uma faixa de ombro, que fornece b nus adicionais ao seu personagem.
+86050	Refor a Talism s	Isso adicionar  um novo b nus ao seu talism  (at  um m ximo de 4 b nus).
+86051	Encanta Talism s	Remove b nus do talism  e aplica novos. As vari veis ??s o aleat rias.
+86052	Fortalece Talism s	Legendary sphere, If a talisman already has 4 attributes, this allows you to add the last bonus.
+86053	Fragmento de P rola Amarela	Voc  pode trocar 10 Fragmentos de P rola Amarela para 1 P rola Amarela.	Clique com o bot o direito para trocar.
+86054	Fragmento de P rola Verde	Voc  pode trocar 10 Fragmentos de P rola Verde para 1 P rola Verde.	Clique com o bot o direito para trocar.
+86055	Fragmento de P rola Roxa	Voc  pode trocar 10 Fragmentos de P rola Roxa para 1 P rola Roxa.	Clique com o bot o direito para trocar.
+86056	P rola Amarela	Uma p rola muito rara que   usada para evoluir o Pet.
+86057	P rola Verde	Uma p rola muito rara que   usada para evoluir o Pet.
+86058	P rola Roxa	Uma p rola muito rara que   usada para evoluir o Pet.
+86060	Encanta Zod aco	Remove b nus de sua arma e armadura do Zod aco e aplica novos.
+86062	Encanta Alquimia	Remove os b nus de uma de suas pedras do drag o e aplique novos.
+86066	Peda o De Pedra M gica	Com este item, indo para o ferreiro, voc  pode comprar a Pedra M gica.
+86067	Talism  Rude	Este item   usado para o aprimoramento de Talism s.
+86071	Prote na Pet (2d)	Com esta prote na voc  pode reviver ou aumentar a vida  til de seu Pet. Voc  receber  uma nova dura  o de: 2d.	Arraste a Prote na sobre o  cone do animal de estima  o para us -lo.
+86072	Prote na Pet (4d)	Com esta prote na voc  pode reviver ou aumentar a vida  til de seu Pet. Voc  receber  uma nova dura  o de: 4d.	Arraste a Prote na sobre o  cone do animal de estima  o para us -lo.
+86073	Prote na Pet (8d)	Com esta prote na voc  pode reviver ou aumentar a vida  til de seu Pet. Voc  receber  uma nova dura  o de: 8d.	Arraste a Prote na sobre o  cone do animal de estima  o para us -lo.
+86074	Prote na Pet Divina (Permanente)	Com esta prote na seu Pet receber  uma nova dura  o infinita.	 Arraste a Prote na sobre o  cone do animal de estima  o para us -lo.
+86075	Prote na Especial	Atrav s desta Prote na voc  pode aumentar um b nus   escolha do seu animal de estima  o.	 Arraste a Prote na sobre o  cone do animal de estima  o para us -lo.
+86076	Resetar Habilidade Pet	Este item permite que voc  esque a uma habilidade de seu Pet. Para us -lo, voc  precisa ter seu Pet convocado.
+86077	Resetar Habilidade Pet (S)	Este item permite que voc  esque a todas as habilidades de seu Pet. Para us -lo, voc  precisa ter seu Pet convocado.
+86080	Remove B nus Faixa de Ombro	Atrav s deste item voc  pode remover os b nus de sua Faixa de Ombro.	 Arraste o item sobre a Faixa de Ombro para remover seus b nus.
+88001	Suporte Xam  Lord Sash	Este item s  pode ser usado pelo xam  de apoio.
+88005	Suporte Xam  Red Sash	Este item s  pode ser usado pelo xam  de apoio.
+88009	Suporte Xam  Black Sash	Este item s  pode ser usado pelo xam  de apoio.
+88010	Traje Monkey (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88011	Traje Monkey (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88012	Traje Spider (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88013	Traje Spider (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88014	Traje Razador (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88015	Traje Razador (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88016	Traje Nemere (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88017	Traje Nemere (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88018	Traje Dragon (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88019	Traje Dragon (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88020	Traje Meley (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88021	Traje Meley (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88022	Traje Azrael (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88023	Traje Azrael (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88024	Traje Fat Executor (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88025	Traje Fat Mini Executor (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88026	Traje Baashido baby (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88027	Traje Baashido baby (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88028	Traje Nessie (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88029	Traje Nessie (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88030	Traje Exedyar (7d)	Este item proporciona uma est tica especial para seu Pet por 7 dias.
+88031	Traje Exedyar (Permanente)	Este item proporciona uma est tica especial ao seu Pet de forma permanente.
+88035	Suporte Xam  White Sash	Este item s  pode ser usado pelo xam  de apoio.
+88039	Suporte Xam  Sash by Chou	Este item s  pode ser usado pelo xam  de apoio.
+88110	Traje Lion (7d)	Este item d    sua montaria uma est tica especial por 7 dias.
+88111	Traje Lion (Permanente)	Este item fornece uma est tica especial para sua montaria de forma permanente.
+88112	Traje Dragon (7d)	Este item d    sua montaria uma est tica especial por 7 dias.
+88113	Traje Dragon (Permanente)	Este item fornece uma est tica especial para sua montaria de forma permanente.
+88114	Traje Elephant (7d)	Este item d    sua montaria uma est tica especial por 7 dias.
+88115	Traje Elephant (Permanente)	Este item fornece uma est tica especial para sua montaria de forma permanente.
+88116	Traje Panda (7d)	Este item d    sua montaria uma est tica especial por 7 dias.
+88117	Traje Panda (Permanente)	Este item fornece uma est tica especial para sua montaria de forma permanente.
+88210	Efeito Arma Negra I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88211	Efeito Arma Negra I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88212	Efeito Armadura Negra I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88213	Efeito Armadura Negra I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88214	Efeito Arma Rosa I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88215	Efeito Arma Rosa I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88216	Efeito Armadura Rosa I (7d)	TEste item fornece uma est tica especial ao seu personagem.
+88217	Efeito Armadura Rosa I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88218	Efeito Arma Laranja I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88219	Efeito Arma Laranja I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88220	Efeito Armadura Laranja I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88221	Efeito Armadura Laranja I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88222	Efeito Arma Verde I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88223	Efeito Arma Verde I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88224	Efeito Armadura Verde I (7d)	Este item fornece uma est tica especial ao seu personagem.
+88225	Efeito Armadura Verde I (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88226	Efeito Arma Roxo II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88227	Efeito Arma Roxo II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88228	Efeito Armadura Roxo II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88229	Efeito Armadura Roxo II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88230	Efeito Arma Azul II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88231	Efeito Arma Azul II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88232	Efeito Armadura Azul II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88233	Efeito Armadura Azul II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88234	Efeito Arma Rosa II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88235	Efeito Arma Rosa II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88236	Efeito Armadura Rosa II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88237	Efeito Armadura Rosa II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88238	Efeito Arma Branca II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88239	Efeito Arma Branca II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88240	Efeito Armadura Branca II (7d)	Este item fornece uma est tica especial ao seu personagem.
+88241	Efeito Armadura Branca II (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88242	Efeito Arma Verde III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88243	Efeito Arma Verde III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88244	Efeito Armadura Verde III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88245	Efeito Armadura Verde III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88246	Efeito Arma Vermelho III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88247	Efeito Arma Vermelho III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88248	Efeito Armadura Vermelho III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88249	Efeito Armadura Vermelho III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88250	Efeito Arma Azul III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88251	Efeito Arma Azul III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88252	Efeito Armadura Azul III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88253	Efeito Armadura Azul III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88254	Efeito Arma Amarelo III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88255	Efeito Arma Amarelo III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88256	Efeito Armadura Amarelo III (7d)	Este item fornece uma est tica especial ao seu personagem.
+88257	Efeito Armadura Amarelo III (Permanente)	Este item fornece uma est tica especial ao seu personagem.
+88902	Pacote da Caxemira	Este pacote permite decorar a sua loja privada de uma forma  nica.
+88910	Ampola Laranja	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88911	Ampola Amarela	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88912	Ampola Azul	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88913	Ampola Vermelha	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88914	Ampola Verde	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88915	Ampola Violeta	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88916	Orvalho Azul	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88917	Orvalho Laranja	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88918	Orvalho Branco	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88919	Orvalho Amarelo	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88920	Orvalho Vermelho	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88921	Orvalho Verde	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88922	Golpe Cr tico	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88923	Golpe Perfurador	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88924	Ataque do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88925	Defesa do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88926	Intelig ncia  do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88927	Vida do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88928	Elixir Velocidade de Ataque	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88929	Po  o Verde(L) (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88930	Orvalho Azul (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88931	Orvalho Laranja (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88932	Orvalho Amarelo (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88933	Orvalho Vermelho (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88934	Orvalho Verde (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88935	Golpe Cr tico (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88936	Golpe Perfurador (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88937	Ataque do Deus Drag o (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88938	Defesa do Deus Drag o (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88939	Intelig ncia do Deus Drag o (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88940	Vida do Deus Drag o (Permanente)	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88941	Orvalho Azul	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88942	Orvalho Laranja	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88943	Orvalho Amarelo	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88944	Orvalho Vermelho	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88945	Orvalho Verde	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88946	Orange Ampoule	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88947	Ampola Laranja	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88948	Ampola Azul	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88949	Ampola Vermelha	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88950	Ampola Verde	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88951	Ampola Violeta	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88952	Golpe Cr tico	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88953	Golpe Perfurador	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88954	Ataque do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88955	Defesa  do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88956	Intelig ncia do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88957	Vida do Deus Drag o	O Deus Drag o ir  aben o -lo com:	Clique com o bot o direito para receber a b n  o.
+88958	Pergaminho da alma	Com este pergaminho voc  faz sua alma evoluir um n vel.
+88959	Item Encantado	Ele remove os b nus de um de seus itens e adiciona mais.
+88960	Prote na Especial	Atrav s desta Prote na voc  pode aumentar um b nus   escolha do seu Pet. Arraste a Prote na sobre o  cone do Pet para us -lo.
+88961	Encanta Alquimia	Remove os b nus de uma de suas pedras de drag o e aplica novos.
+88962	Encanta Faixa de Ombro	Remove os b nus de uma faixa de ombro e aplique novas. As vari veis ??s o aleat rias e baseiam-se no grau da faixa de ombro.
+88963	Encanta Trajes	Remove os b nus de uma faixa de ombro e aplica novos.
+88964	Fortalece Talism s	Esfera lend ria, se um talism  j  tiver 4 atributos, isso permite que voc  adicione o  ltimo b nus.
+88965	Encanta Talism 	Remove b nus do talism  e aplica novos. As vari veis ??s o aleat rias.
+88966	Refor a Talism s	Isso adicionar  um novo b nus ao seu talism  (at  um m ximo de 4 b nus).
+88967	Ba  de Pet	cont m ovos de Pet	Clique com o bot o direito para escolher seu animal de estima  o.
+88968	Po  o da beleza	Esta po  o de beleza   usada para comprar Skin de Pet e montaria de um NPC.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Pedra de Zeus	Este item permite que voc  reinicie o tempo de espera da masmorra de runas.
+89101	Bilhete das Runas	Este Ticket concede a voc  acesso   masmorra das runas.
+89102	Alma R nica	Voc  pode trocar 10 Fragmentos de Alma R nica para 1 Chave Divina.	Clique com o bot o direito para trocar.
+89103	Chave Divina	Esta chave   usada no modo 1 da masmorra r nica. Tamb m   usado no  ltimo andar do calabou o das runas.	Clique com o bot o direito para us -lo no modo 1. Arraste a Pedra R nica para destru -la no  ltimo andar do Calabou o R nico.
+89104	Chave dos Orcs Verdes	Este item   usado para destravar um selo no Calabou o Orc.
+89105	Chave dos Orcs Negros	Este item   usado para desbloquear a  ltima ponte no Calabou o Orc.
+89106	Ticket dos Orcs	Este item   usado para entrar no Calabou o Orc.
+89107	Ticket das Runas	Este ticket concede a voc  acesso   masmorra das runas.
+89108	Brincos de Harmonia (2h)	Aumenta a chance de um acerto perfurante para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89109	Pulseira de Amor (2h)	Aumenta a cole  o de pontos de experi ncia durante a batalha para ambos os c njuges em no m ximo 20% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89110	Brincos de Amor (2h)	Aumenta a chance de acertos cr ticos para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89111	Pulseira de Harmonia (2h)	Reduz o poder de ataque de monstros inimigos em ambos os c njuges em um m ximo de 15% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89112	Colar de Amor (2h)	Aumenta o poder de ataque de ambos os c njuges em no m ximo 40 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89113	Colar de Harmonia (2h)	Aumenta a defesa de ambos os c njuges em no m ximo 30 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89114	Brincos de Harmonia (8h)	Aumenta a chance de um acerto perfurante para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89115	Pulseira de Amor (8h)	Aumenta a cole  o de pontos de experi ncia durante a batalha para ambos os c njuges em no m ximo 20% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89116	Brincos de Amor (8h)	Aumenta a chance de acertos cr ticos para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89117	Pulseira de Harmonia (8h)	Reduz o poder de ataque de monstros inimigos em ambos os c njuges em um m ximo de 15% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89118	Colar de Amor (8h)	Aumenta o poder de ataque de ambos os c njuges em no m ximo 40 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89119	Colar de Harmonia (8h)	Aumenta a defesa de ambos os c njuges em no m ximo 30 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89120	Brincos de Harmonia (Permanente)	Aumenta a chance de um acerto perfurante para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89121	Pulseira de Amor (Permanente)	Aumenta a cole  o de pontos de experi ncia durante a batalha para ambos os c njuges em no m ximo 20% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89122	Brincos de Amor (Permanente)	Aumenta a chance de acertos cr ticos para ambos os c njuges em no m ximo 8% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89123	Pulseira de Harmonia (Permanente)	Reduz o poder de ataque de monstros inimigos em ambos os c njuges em um m ximo de 15% por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89124	Colar de Amor (Permanente)	Aumenta o poder de ataque de ambos os c njuges em no m ximo 40 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+89125	Colar de Harmonia (Permanente)	Aumenta a defesa de ambos os c njuges em no m ximo 30 por 3 horas, se usado por um deles. O efeito do item depende da porcentagem de pontos de amor. Se um casal tem, por exemplo, 50% de pontos de amor, o efeito m ximo   reduzido pela metade.
+164401	M gica do Bi logo	Com este item   poss vel zerar o b nus de algumas miss es do bi logo.
+164402	Papiro Chaegirab	Com este papiro   poss vel comprar itens do Bi logo.
+164406	Elixir de Arco- ris	Este item permite que voc  altere a cor de uma de suas habilidades.
+164407	Po  o Brilhante	Esta Po  o   usada para comprar efeitos de arma e armadura de um NPC.
+164408	Fruto dos Deuses	Fruta de sabor doce do Jardim do Deus do Drag o.   usado para refinar um item do equipamento.
+164409	Elixir dos Deuses	O frasco cont m um misterioso l quido luminoso.   usado para refinar um item do equipamento.
+164410	Alma da Verdade	Uma boa alma para sempre aprisionada em uma esfera de vidro.   usado para refinar um item do equipamento.
+164411	Livro da Verdade	Volume poderoso, cujo t tulo parece brilhar.   usado para refinar um item do equipamento.
+164412	Flor Divina	Flor sagrada do Jardim do Deus do Drag o.   usado para refinar um item do equipamento.
+164413	Peda o de Espada Goad	Com este item   poss vel fabricar Espada Venenosa de +9 para a categoria Epic.
+164414	Peda o da L mina do Dem nio	Com este item   poss vel fabricar Espada de Le o de +9 para a categoria Epic.
+164415	Peda o de L mina Roubo de Alma	Com este item   poss vel fabricar Espada de Grudge de +9 para a categoria Epic.
+164416	Peda o de Arco do Drag o Azul	Com este item   poss vel criar um Arco de A o Corvo de +9 para a categoria Epic.
+164417	Peda o de Sino do  xtase	Com este item   poss vel criar Sino de Bambu de +9 para a categoria Epic.
+164418	Peda o de Faca Siamesa	Com este item   poss vel criar o Chakram da Asa do Diabo de +9 para a categoria Epic.
+164419	Po  o Brilhante	Esta Po  o   usada para comprar efeitos de arma e armadura de um NPC.
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min

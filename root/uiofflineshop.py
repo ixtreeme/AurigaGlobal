@@ -3138,37 +3138,39 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 		self.MyOffersTable = table
 
 	def OnClickAuctionSlot(self, slot):
-		if app.IsPressed(app.DIK_LCONTROL) or app.IsPressed(app.DIK_RCONTROL) and self.CreateAuctionSlotPos != -1:
-			if mousemodule.mouseController.isAttached():
-				mousemodule.mouseController.DeattachObject()
+		import chat
+		self.AppendChat(chat.CHAT_TYPE_INFO, "Funkcio letiltva")
+		# if app.IsPressed(app.DIK_LCONTROL) or app.IsPressed(app.DIK_RCONTROL) and self.CreateAuctionSlotPos != -1:
+			# if mousemodule.mouseController.isAttached():
+				# mousemodule.mouseController.DeattachObject()
 			
-			self.CreateAuctionWindowPos =-1
-			self.CreateAuctionSlotPos=-1
-			self.__MakeCreateAuctionSlot()
+			# self.CreateAuctionWindowPos =-1
+			# self.CreateAuctionSlotPos=-1
+			# self.__MakeCreateAuctionSlot()
 			
-			if self.itemTooltip:
-				self.itemTooltip.ClearToolTip()
-				self.itemTooltip.Hide()
-		else:
-			if mousemodule.mouseController.isAttached():
-				attachedSlotType = mousemodule.mouseController.GetAttachedType()
-				attachedSlotPos = mousemodule.mouseController.GetAttachedSlotNumber()
-				itemIndex = player.GetItemIndex(attachedSlotPos)
-				item.SelectItem(itemIndex)
-				if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
-					if app.ENABLE_EXTRA_INVENTORY:
-						if attachedSlotType != player.SLOT_TYPE_INVENTORY and attachedSlotType != SLOT_TYPE_EXTRA_INVENTORY:
-							mousemodule.mouseController.DeattachObject()
-							return
-					else:
-						if attachedSlotType != player.SLOT_TYPE_INVENTORY:
-							mousemodule.mouseController.DeattachObject()
-							return
-					self.AuctionBuilding_AddInventoryItem(attachedSlotPos)
-				else:
-					chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
+			# if self.itemTooltip:
+				# self.itemTooltip.ClearToolTip()
+				# self.itemTooltip.Hide()
+		# else:
+			# if mousemodule.mouseController.isAttached():
+				# attachedSlotType = mousemodule.mouseController.GetAttachedType()
+				# attachedSlotPos = mousemodule.mouseController.GetAttachedSlotNumber()
+				# itemIndex = player.GetItemIndex(attachedSlotPos)
+				# item.SelectItem(itemIndex)
+				# if not item.IsAntiFlag(item.ANTIFLAG_GIVE) and not item.IsAntiFlag(item.ANTIFLAG_MYSHOP):
+					# if app.ENABLE_EXTRA_INVENTORY:
+						# if attachedSlotType != player.SLOT_TYPE_INVENTORY and attachedSlotType != SLOT_TYPE_EXTRA_INVENTORY:
+							# mousemodule.mouseController.DeattachObject()
+							# return
+					# else:
+						# if attachedSlotType != player.SLOT_TYPE_INVENTORY:
+							# mousemodule.mouseController.DeattachObject()
+							# return
+					# self.AuctionBuilding_AddInventoryItem(attachedSlotPos)
+				# else:
+					# chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.OFFLINESHOP_CANT_SELECT_ITEM_DURING_BUILING)
 				
-				mousemodule.mouseController.DeattachObject()
+				# mousemodule.mouseController.DeattachObject()
 
 	def __MakeCreateAuctionSlot(self):
 		if self.CreateAuctionSlot:
@@ -5681,10 +5683,12 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 			pass
 
 		if app.IsPressed(app.DIK_LCONTROL) or app.IsPressed(app.DIK_RCONTROL):
-			itemid  = slot.GetIndex()
-			ownerid = self.ShopOpenInfo["owner_id"]
+			import chat
+			chat.AppendChat(chat.CHAT_TYPE_INFO, "Licit kikapcsolva - Razor")
+			# itemid  = slot.GetIndex()
+			# ownerid = self.ShopOpenInfo["owner_id"]
 
-			self.__OnMakeShopItemOffer(itemid, ownerid)
+			#self.__OnMakeShopItemOffer(itemid, ownerid)
 
 
 		else:
@@ -6076,7 +6080,7 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 		elif self.pageCategory == "open_shop" or self.pageCategory == "search_filter":
 			self.itemTooltip.AppendSpace(10)
 			self.itemTooltip.AppendTextLine(localeinfo.OFFLINESHOP_OPEN_SHOP_LEFT_CLICK_BUY_ITEM, infocolor)
-			self.itemTooltip.AppendTextLine(localeinfo.OFFLINESHOP_OPEN_SHOP_LEFT_CLICK_MAKE_OFFER, infocolor)
+			#self.itemTooltip.AppendTextLine(localeinfo.OFFLINESHOP_OPEN_SHOP_LEFT_CLICK_MAKE_OFFER, infocolor)
 
 		elif self.pageCategory == "shop_safebox":
 			self.itemTooltip.AppendSpace(10)

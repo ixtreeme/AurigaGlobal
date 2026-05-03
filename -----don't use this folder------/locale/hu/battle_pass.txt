@@ -1,0 +1,10 @@
+1	Öld meg a fonököt	Megmaradt öl: %s	Szörnyeteg: |cffff9d9d|H|h%s|h|r	Öld meg a |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+5	Használja az objektum	Használandó objektum: %s	objektum: |cffff9d9d|H|h%s|h|r	Használja |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+6	Adja el az elemet	Eladás tárgy: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Elad |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+8	Fokozza az objektumot	A javítás tárgy: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Fokozza |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+9	Pusztítsd el az elemedet	Megsemmisítendo tárgy: %s	Tárgy: |cffff9d9d|H|h%s|h|r	Pusztítsd |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+10	Gyujt	Objektum gyujteni: %s	Objektum: |cffff9d9d|H|h%s|h|r	Gyujt |cffff9d9d|H|h%s|h|r hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+11	A halat megsütjük	Fish to Fry: %s	Fry: Minden	Fry bármilyen hal hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+12	Elkapni a Halakat	Halak halászni: %s	halászni: Minden	Fogj bármilyen halat hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+14	Gyujtsd össze Yang-ot	Yang gyujteni: %s	Gyujtsön: Minden	Gyujtsd össze Yang-ot hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.
+15	Teljes Börtön	Börtön from Teljes: %s	Börtön: Minden	Teljesítsen 70 Börtön hogy	teljesítse a küldetést és jutalmat	szerezzen a karakteredért.

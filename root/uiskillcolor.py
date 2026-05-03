@@ -136,7 +136,7 @@ class SkillColorWindow(ui.ScriptWindow):
 
 	def UpdateUseAvailable(self):
 		c = 0
-		m = player.INVENTORY_PAGE_SIZE * 4
+		m = player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT
 		for i in xrange(m):
 			itemVnum = player.GetItemIndex(i)
 			if itemVnum == 164406:

@@ -11,6 +11,9 @@
 33017	ETC	icon/item/viking_reward.tga
 33018	ETC	icon/item/viking_time_item.tga
 
+30619	ETC	icon/item/30619.tga	
+30620	ETC	icon/item/30620.tga	
+
 
 50645	ETC	icon/item/aqua1.tga	
 50646	ETC	icon/item/divin1.tga	

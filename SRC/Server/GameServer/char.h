@@ -1618,7 +1618,7 @@ public:
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	int				Inven_Point() const { return m_points.envanter; }
-	int				Inventory_Size() const { return 90 + (5 * Inven_Point()); }
+	int				Inventory_Size() const { return INVENTORY_MAX_NUM; }
 	void			Set_Inventory_Point(int black) { m_points.envanter = black; }
 	bool			Update_Inven();
 #endif

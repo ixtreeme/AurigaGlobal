@@ -852,15 +852,15 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					return true;
 
 				int j = 1;
-				uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
+				uint8_t bPage = bCell / (INVENTORY_PAGE_SIZE);
 				do
 				{
-					uint8_t p = bCell + (5 * j);
+					uint16_t p = bCell + (5 * j);
 
 					if (p >= Inventory_Size())
 						return false;
 
-					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
+					if (p / (INVENTORY_PAGE_SIZE) != bPage)
 						return false;
 
 					if (m_pointsInstant.bItemGrid[p])
@@ -880,15 +880,15 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else
 		{
 			int j = 1;
-			uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
+			uint8_t bPage = bCell / (INVENTORY_PAGE_SIZE);
 
 			do
 			{
-				uint8_t p = bCell + (5 * j);
+				uint16_t p = bCell + (5 * j);
 
 				if (p >= Inventory_Size())
 					return false;
-				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
+				if (p / (INVENTORY_PAGE_SIZE) != bPage)
 					return false;
 
 				if (m_pointsInstant.bItemGrid[p])
@@ -976,7 +976,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 	{
 	case INVENTORY:
 	{
-		uint8_t bCell = Cell.cell;
+		uint16_t bCell = Cell.cell;
 
 		// bItemCell? 0? false?? ???? ?? + 1 ?? ????.
 		// ??? iExceptionCell? 1? ?? ????.
@@ -1016,16 +1016,16 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					return true;
 
 				int j = 1;
-				uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
+				uint8_t bPage = bCell / (INVENTORY_PAGE_SIZE);
 
 				do
 				{
-					uint8_t p = bCell + (5 * j);
+					uint16_t p = bCell + (5 * j);
 
 					if (p >= INVENTORY_MAX_NUM)
 						return false;
 
-					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
+					if (p / (INVENTORY_PAGE_SIZE) != bPage)
 						return false;
 
 					if (m_pointsInstant.bItemGrid[p])
@@ -1045,15 +1045,15 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else
 		{
 			int j = 1;
-			uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
+			uint8_t bPage = bCell / (INVENTORY_PAGE_SIZE);
 
 			do
 			{
-				uint8_t p = bCell + (5 * j);
+				uint16_t p = bCell + (5 * j);
 
 				if (p >= INVENTORY_MAX_NUM)
 					return false;
-				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
+				if (p / (INVENTORY_PAGE_SIZE) != bPage)
 					return false;
 
 				if (m_pointsInstant.bItemGrid[p])
@@ -1087,7 +1087,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 				do
 				{
-					uint8_t p = bCell + (5 * j);
+					uint16_t p = bCell + (5 * j);
 
 					if (p >= EXTRA_INVENTORY_MAX_NUM)
 						return false;
@@ -1115,7 +1115,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 			do
 			{
-				uint8_t p = bCell + (5 * j);
+				uint16_t p = bCell + (5 * j);
 
 				if (p >= EXTRA_INVENTORY_MAX_NUM)
 					return false;
@@ -1233,7 +1233,6 @@ int CHARACTER::GetEmptyInventory(uint8_t size) const
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
-
 	if (bAuto) {
 		if ((iArg1 >= 0) && (iArg1 < (EXTRA_INVENTORY_CATEGORY_MAX_NUM * 1)))
 			iArg1 = 0;
@@ -1252,61 +1251,25 @@ int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
 	if ((iArg1 < 0) || (iArg1 > 5))
 		return 0;
 
-	int iUnlock;
-	switch (iArg1) {
-	case 0: {
-		iUnlock = GetQuestFlag("lock_extra.cat1") * 5;
-		break;
-	}
-	case 1: {
-		iUnlock = GetQuestFlag("lock_extra.cat2") * 5;
-		break;
-	}
-	case 2: {
-		iUnlock = GetQuestFlag("lock_extra.cat3") * 5;
-		break;
-	}
-	case 3: {
-		iUnlock = GetQuestFlag("lock_extra.cat4") * 5;
-		break;
-	}
-	case 4: {
-		iUnlock = GetQuestFlag("lock_extra.cat5") * 5;
-		break;
-	}
-	case 5: {
-		iUnlock = GetQuestFlag("lock_extra.cat6") * 5;
-		break;
-	}
-	default: {
-		iUnlock = 0;
-		break;
-	}
-	}
-
-	//int iUnlock = GetPoint(POINT_EXTRA_INVENTORY1 + iArg1) * 5;
-	int iMaxUnlock = 25 + EXTRA_INVENTORY_PAGE_SIZE;
-	int iStart = EXTRA_INVENTORY_CATEGORY_MAX_NUM * iArg1;
-	int iFree = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
-	return iUnlock > iMaxUnlock ? iMaxUnlock + iStart + iFree : iUnlock + iStart + iFree;
+	return EXTRA_INVENTORY_CATEGORY_MAX_NUM * (iArg1 + 1);
 }
 
-static int NeedKeysForExtraInventory[] = {
-											1, // 20-25
-											1, // 25-30
-											1, // 30-35
-											2, // 35-40
-											2, // 40-45 : end page 3
-											2, // 45-50
-											3, // 50-55
-											3, // 55-60
-											3, // 60-65
-											4, // 65-70
-											4, // 70-75
-											4, // 75-80
-											5, // 80-85
-											6, // 90-95 : end page 4
-};
+static int NeedKeysForExtraInventory(uint8_t stage) {
+	static const int legacyNeedKeys[] = {
+		1, 1, 1,
+		2, 2, 2,
+		3, 3, 3,
+		4, 4, 4,
+		5,
+		6,
+	};
+
+	const int legacyNeedKeyCount = sizeof(legacyNeedKeys) / sizeof(legacyNeedKeys[0]);
+	if (stage < legacyNeedKeyCount)
+		return legacyNeedKeys[stage];
+
+	return 6 + ((stage - legacyNeedKeyCount) / 6);
+}
 
 void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	if (category > 5) {
@@ -1346,10 +1309,12 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	}
 
 	uint8_t stage = GetQuestFlag(stageName.c_str());
-	if (stage < 0 || stage >= 14)
+	const int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
+	const uint8_t maxStage = (EXTRA_INVENTORY_CATEGORY_MAX_NUM - freeSlots) / 5;
+	if (stage >= maxStage)
 		return;
 
-	int needKeys = NeedKeysForExtraInventory[stage];
+	int needKeys = NeedKeysForExtraInventory(stage);
 	if (CountSpecifyItem(72320) >= needKeys) {
 		RemoveSpecifyItem(72320, needKeys);
 

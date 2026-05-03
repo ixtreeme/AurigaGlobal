@@ -1,0 +1,12 @@
+1	Widerstand (Krieger)	jijoong	PASSIVE	Widerstand gegen Krieger-Angriffe (passiv)	0
+2	Widerstand (Sura)	jijoong	PASSIVE	Widerstand gegen Sura-Angriffe (passiv)	0
+3	Widerstand (Ninja)	jijoong	PASSIVE	Widerstand gegen Ninja-Angriffe (passiv)	0
+4	Widerstand (Schamane)	jijoong	PASSIVE	Widerstand gegen Schamanen-Angriffe (passiv)	0
+5	Kritischer Schaden (PvM)	banya	PASSIVE	Erhöht den verursachten kritischen Schaden in PVM (passiv)	0
+6	Stark gegen Metin	cheonryeong	PASSIVE	Erhöht den Schaden an Metin (passiv)	0
+7	Stark gegen Boss	choehoenbimu	PASSIVE	Erhöht den Schaden, der Bossen zugefügt wird (passiv)	0
+8	Scharfblick	stealmp	PASSIVE	Die Exp freisetzungsrate steigt (passiv)	0
+9	Yang Drop	gold_drop	PASSIVE	Droprate von Yang wird erhöht (passiv)	0
+10	Valore attacco/magico	pacheon	PASSIVE	Angriffswert erhöht sich (passiv)	0
+11	Blockieren a. Korporal	block	PASSIVE	Physischer Schaden wird abgeblockt (passiv)	0
+12	Ref. A. Korporal	reflect_melee	PASSIVE	Erlittener Schaden wird auf den Gegner reflektiert (passiv)	0

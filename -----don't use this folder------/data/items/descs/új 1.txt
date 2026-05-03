@@ -1,0 +1,2 @@
+27987	ÃÂ¶Â°Â³	Mu�le	Muschel	Clam	Almeja	Kagyl�	Ostrica	Ma��	Ostra	Scoic�	�stiridye	3	10	0	1	0	8196	0		1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	-1	-1	-1	-1	-1	-1	0	0	0
+27987	ÃÂ¶Â°Â³	Mu�le	Muschel	Clam	Almeja	Kagyl�	Ostrica	Ma��	Ostra	Scoic�	�stiridye	5	0	0	1	0	8196	0		12000	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	-1	-1	-1	-1	-1	-1	0	0	0

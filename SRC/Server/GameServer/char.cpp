@@ -11005,7 +11005,17 @@ void CHARACTER::EditMyExtraInven()
 
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
+static int NeedKeysForInventory(int stage)
+{
+	static const int legacyNeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
+	const int legacyNeedKeyCount = sizeof(legacyNeedKeys) / sizeof(legacyNeedKeys[0]);
+
+	if (stage < legacyNeedKeyCount)
+		return legacyNeedKeys[stage];
+
+	return 7 + ((stage - legacyNeedKeyCount) / 6);
+}
+
 bool CHARACTER::Update_Inven()
 {
 #ifdef ENABLE_SPAM_CHECK
@@ -11019,7 +11029,11 @@ bool CHARACTER::Update_Inven()
 #endif
 
 #define key2 72320
-	int needkey = NeedKeys[Inven_Point()];
+	const int maxStage = (INVENTORY_MAX_NUM - (INVENTORY_PAGE_SIZE * 2)) / 5;
+	if (Inven_Point() >= maxStage)
+		return false;
+
+	int needkey = NeedKeysForInventory(Inven_Point());
 	if (CountSpecifyItem(key2) >= needkey) {
 		RemoveSpecifyItem(key2, needkey);
 		PointChange(POINT_INVEN, 1, false);

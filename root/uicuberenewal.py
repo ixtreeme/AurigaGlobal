@@ -1141,7 +1141,7 @@ class CubeRenewalWindows(ui.ScriptWindow):
 			subtype_item_inv = None
 			check_item = -1
 
-			for i in xrange(player.INVENTORY_PAGE_SIZE*4):
+			for i in xrange(player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT):
 				item_vnum = player.GetItemIndex(i)
 
 				if item_vnum == self.selectedItem.GetIndexCopy() and check_item == -1 and index == 0 and self.selectedItem.GetIndexCopy() != 0:
@@ -1166,7 +1166,7 @@ class CubeRenewalWindows(ui.ScriptWindow):
 				check_item_material = -1
 
 				if self.selectedItem.GetVnumMaterial(index) != 0:
-					for i in xrange(player.INVENTORY_PAGE_SIZE*4):
+					for i in xrange(player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT):
 						item_vnum = player.GetItemIndex(i)
 
 						if item_vnum == self.selectedItem.GetVnumMaterial(index) and check_item_material == -1:
@@ -1197,7 +1197,7 @@ class CubeRenewalWindows(ui.ScriptWindow):
 
 		lock_index = -1
 		if app.ATTR_LOCK:
-			for i in xrange(player.INVENTORY_PAGE_SIZE*4):
+			for i in xrange(player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT):
 				item_vnum = player.GetItemIndex(i)
 
 				if item_vnum == vnum and lock_index == -1:
