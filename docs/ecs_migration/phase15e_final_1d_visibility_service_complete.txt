@@ -1,0 +1,61 @@
+Phase 15E-final.1d - ECS Visibility Service + Native Broadcast
+
+Scope
+- Added an entity-first `ecs::VisibilityService` boundary for visibility recipient queries.
+- Added native `ecs::NetworkService` broadcast helpers:
+  - `Broadcast`
+  - `BroadcastToView`
+  - `BroadcastInMap`
+- Removed `PacketAround` bridge usage from `NetworkSyncSystem.cpp`.
+- Removed the remaining `LegacyCharOf` helper usage from `NetworkSyncSystem.cpp`.
+
+VisibilityService implementation
+- Public API uses `entt::entity` inputs and outputs.
+- Current backend is sectree-backed and intentionally service-bound.
+- `GetEntitiesInRange` queries the source sectree with `ForEachAround`, converts discovered characters to ECS entities, and applies ECS `Position` distance filtering.
+- `GetViewersOf` currently uses the same ECS visibility query and preserves observer self-only behavior.
+- `OnPositionChanged`, `OnSpawn`, and `OnRemove` are present as integration hooks for the later full ViewMap replacement.
+
+NetworkService broadcast migration
+- `NetworkService::Broadcast` now resolves recipients through `VisibilityService::GetEntitiesInRange`.
+- `NetworkService::BroadcastToView` now resolves recipients through `VisibilityService::GetViewersOf`.
+- `NetworkService::BroadcastInMap` iterates ECS `MapIndex + NetworkSession`.
+- Descriptor access remains inside `NetworkService::Send`, which is the accepted service boundary.
+
+NetworkSyncSystem changes
+- `UpdatePacket(entt::entity)` broadcasts the update packet through `NetworkService::BroadcastToView`.
+- `BroadcastCharAdditionalInfo` broadcasts through `NetworkService::BroadcastToView` while preserving the source-exclude guard from 15E-final.1b.
+- Ownership, sync, item title, effect, and specific-effect broadcasts now use `NetworkService::BroadcastToView`.
+- `NetworkSyncSystem_Update` no longer resolves `LPCHARACTER` for dirty packet sends.
+
+Deferred work
+- Legacy `m_map_view` ownership and insert/remove packet bodies are not deleted in this subphase.
+- `CHARACTER::EncodeInsertPacket`, `EncodeRemovePacket`, `FindCharacterInView`, and related view-map maintenance remain deferred because they require a full ViewMap/ViewerMap ownership rewrite.
+- This avoids reintroducing the mount/dynamic actor disappearance regression while still eliminating broadcast bridge calls from `NetworkSyncSystem.cpp`.
+
+Metrics
+- Before 1d:
+  - `NetworkSyncSystem.cpp`: 18 `CHARACTER::` bodies
+  - `NetworkSyncSystem.cpp`: 17 `LPCHARACTER` references
+  - `NetworkSyncSystem.cpp`: 2 `LegacyCharOf` references
+  - `NetworkSyncSystem.cpp`: `PacketAround` bridge calls present
+- After 1d:
+  - `NetworkSyncSystem.cpp`: 18 `CHARACTER::` bodies
+  - `NetworkSyncSystem.cpp`: 15 `LPCHARACTER` references
+  - `NetworkSyncSystem.cpp`: 0 `LegacyCharOf` references
+  - `NetworkSyncSystem.cpp`: 0 `PacketAround` references
+  - Tree-wide `LPCHARACTER`: 1831
+
+Verification
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- The existing post-build environment still prints `pwsh.exe is not recognized`, but `GameServer.exe` is produced and the build command exits successfully.
+
+WinTest focus
+- Player approaches/leaves another player: visibility add/remove.
+- Mob/NPC/metin visibility after movement and map transfer.
+- Equipment, movement, combat, effect, sync, and rank-title broadcasts.
+- Mount/dismount and Ctrl+G remount regression guard.
+- VID_DRIFT remains zero.

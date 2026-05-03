@@ -11706,3 +11706,33 @@ WinTest result:
   - points packet keeps HP/SP/EXP/gold/stat UI correct;
   - no recurrence of the mount/dynamic actor disappearance regression.
 - Phase 15E-final.1c is accepted as WinTest verified.
+
+
+## Phase 15E-final.1d - ECS Visibility Service + Native Broadcast
+
+Scope:
+- Added `ecs::VisibilityService` as an entity-first visibility recipient query boundary.
+- Added native `ecs::NetworkService::{Broadcast,BroadcastToView,BroadcastInMap}` helpers.
+- Migrated `NetworkSyncSystem.cpp` broadcast paths away from `PacketAround`.
+- Removed the remaining `LegacyCharOf` helper usage from `NetworkSyncSystem.cpp`.
+
+Implementation notes:
+- The current visibility service is sectree-backed internally, which is treated as a service boundary.
+- Public visibility and broadcast APIs use `entt::entity` inputs/outputs.
+- `BroadcastCharAdditionalInfo` preserves the source-exclude guard from 15E-final.1b to avoid the previous mount/dynamic actor disappearance regression.
+- Full `m_map_view` ownership replacement is deferred; insert/remove/view-map bodies remain for a later ViewMap/ViewerMap phase.
+
+Metrics:
+- `NetworkSyncSystem.cpp` after 1d: 18 `CHARACTER::` bodies, 15 `LPCHARACTER` references, 0 `LegacyCharOf` references, 0 `PacketAround` references.
+- Tree-wide `LPCHARACTER`: 1831.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- WinTest focus: visibility add/remove, movement/mount broadcasts, effects, sync packets, rank title refresh, and Ctrl+G mount/dismount/remount regression guard.
+
+Status:
+- Phase 15E-final.1d code migration is complete.
+- WinTest required before verified close-out.

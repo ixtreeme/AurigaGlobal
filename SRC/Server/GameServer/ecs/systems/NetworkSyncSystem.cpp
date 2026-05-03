@@ -40,16 +40,6 @@
 #include "SocialSystem.hpp"
 #include <Core/Logging.hpp>
 
-static inline LPCHARACTER LegacyCharOf(entt::entity e)
-{
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid) {
-        return nullptr;
-    }
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
-}
-
 extern bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
 
 namespace
@@ -120,8 +110,7 @@ void UpdatePacket(entt::entity e)
     if (!ch || !ecs::PlayerRuntime::GetSectree(e))
         return;
 
-    // Visibility iteration remains a temporary service bridge until 1d.
-    ch->PacketAround(&packet, sizeof(packet));
+    ecs::NetworkService::BroadcastToView(g_registry, e, &packet, sizeof(packet), false);
     BroadcastCharAdditionalInfo(g_registry, e);
 }
 
@@ -402,13 +391,9 @@ void NetworkSyncSystem::BroadcastCharAdditionalInfo(entt::registry& reg, entt::e
     if (!BuildCharAdditionalInfo(reg, source, packet))
         return;
 
-    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
-    auto* ch = vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
-    if (ch) {
-        // AdditionalInfo is append-side payload on the client. Sending it
-        // standalone to the owner/main actor can clear dynamic actors.
-        ch->PacketAround(&packet, sizeof(packet), ch);
-    }
+    // AdditionalInfo is append-side payload on the client. Sending it
+    // standalone to the owner/main actor can clear dynamic actors.
+    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), true);
 }
 
 bool NetworkSyncSystem::BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet)
@@ -727,7 +712,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     pack.dwOwnerVID = ch ? ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)) : 0;
     pack.dwVictimVID = GetPacketVID();
 
-    PacketAround(&pack, sizeof(TPacketGCOwnership));
+    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &pack, sizeof(pack), false);
     return true;
 }
 
@@ -800,7 +785,7 @@ void CHARACTER::SyncPacket()
     buf.write(&pack, sizeof(pack));
     buf.write(&elem, sizeof(elem));
 
-    PacketAround(buf.read_peek(), buf.size());
+    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), buf.read_peek(), buf.size(), false);
 }
 
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
@@ -808,11 +793,6 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
 
     for (const entt::entity entity : view) {
-        LPCHARACTER ch = LegacyCharOf(entity);
-        if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
-            continue;
-        }
-
         auto& session = view.get<ecs::NetworkSession>(entity);
         const auto& position = view.get<ecs::Position>(entity);
         const auto& health = view.get<ecs::Health>(entity);
@@ -932,10 +912,7 @@ void CHARACTER::UpdateItemOnTitleName(bool bForce)
     p.dwVID = GetPacketVID();
     strlcpy(p.name, newPrefix.c_str(), sizeof(p.name));
 
-    if (GetDesc())
-        GetDesc()->Packet(&p, sizeof(p));
-
-    PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
 }
 #endif
 
@@ -947,7 +924,7 @@ void CHARACTER::EffectPacket(uint8_t enumEffectType)
     p.type = enumEffectType;
     p.vid = GetPacketVID();
 
-    PacketAround(&p, sizeof(TPacketGCSpecialEffect));
+    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
 }
 
 void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
@@ -958,7 +935,7 @@ void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
     p.vid = GetPacketVID();
     strlcpy(p.effect_file, filename, MAX_EFFECT_FILE_NAME);
 
-    PacketAround(&p, sizeof(TPacketGCSpecificEffect));
+    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
 }
 
 void CHARACTER::SendEquipment(LPCHARACTER ch)
