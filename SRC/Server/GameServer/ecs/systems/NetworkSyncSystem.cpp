@@ -18,7 +18,6 @@
 #include "../../sectree.h"
 #include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
-#include "../NetworkService.hpp"
 #include "../Registry.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -520,10 +519,21 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
 
     for (const entt::entity entity : view) {
+        LPCHARACTER ch = LegacyCharOf(entity);
+        if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
+            continue;
+        }
+
+        auto& session = view.get<ecs::NetworkSession>(entity);
         const auto& position = view.get<ecs::Position>(entity);
         const auto& health = view.get<ecs::Health>(entity);
         const auto& mana = view.get<ecs::Mana>(entity);
         const auto& vid = view.get<ecs::VIDComponent>(entity);
+
+        if (!session.desc) {
+            reg.remove<ecs::DirtyTag>(entity);
+            continue;
+        }
 
         TPacketGCMove movePacket {};
         movePacket.bHeader = HEADER_GC_MOVE;
@@ -535,7 +545,7 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
         movePacket.lY = position.y;
         movePacket.dwTime = tick;
         movePacket.dwDuration = 0;
-        const bool sentMove = ecs::NetworkService::Send(entity, &movePacket, sizeof(movePacket));
+        session.desc->Packet(&movePacket, sizeof(movePacket));
 
         TPacketGCPoints pointsPacket {};
         pointsPacket.header = HEADER_GC_CHARACTER_POINTS;
@@ -547,11 +557,9 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
             pointsPacket.points[POINT_STAMINA] = stamina->current;
             pointsPacket.points[POINT_MAX_STAMINA] = stamina->max;
         }
-        const bool sentPoints = ecs::NetworkService::Send(entity, &pointsPacket, sizeof(pointsPacket));
+        session.desc->Packet(&pointsPacket, sizeof(pointsPacket));
 
-        if (sentMove || sentPoints) {
-            reg.remove<ecs::DirtyTag>(entity);
-        }
+        reg.remove<ecs::DirtyTag>(entity);
     }
 }
 
