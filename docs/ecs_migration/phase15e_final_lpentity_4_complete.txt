@@ -71,24 +71,30 @@ Fallback:
   - Fallback emits [DISPATCH_FALLBACK].
   - Runtime target: [DISPATCH_FALLBACK] count must be zero.
 
-5. BroadcastToView native
+5. BroadcastToView status
 
-NetworkService::BroadcastToView now uses:
-  - VisibilityService::GetViewersOfNative
+Initial LPENTITY.4 state:
+  - NetworkService::BroadcastToView used VisibilityService::GetViewersOfNative.
+
+Hotfix state:
+  - BroadcastToView is restored to VisibilityService::GetViewersOf as authoritative.
+  - Native ViewerMap remains a drift-checked mirror, not the production recipient source.
+  - Reason: under two-client movement load, native ViewerMap could lag/stale enough to produce multi-second visible sync divergence.
 
 Debug drift guard:
-  - Compares native viewer count to legacy ViewersOf result in non-NDEBUG builds.
+  - Compares native viewer count to authoritative ViewersOf result in non-NDEBUG builds.
   - Emits [BROADCAST_DRIFT] if sizes differ.
+  - BroadcastToView(false) now avoids double-sending to source if the authoritative recipient set already contains source.
 
 6. Virtual wrapper status
 
 Simplified wrappers:
   - building::CObject::EncodeInsertPacket / EncodeRemovePacket now forward to EntityNetworkDispatch.
   - offlineshop::ShopEntity::EncodeInsertPacket / EncodeRemovePacket now forward to EntityNetworkDispatch.
-  - CHARACTER::EncodeInsertPacket / EncodeRemovePacket now try EntityNetworkDispatch first and keep legacy body as unmappable fallback.
+  - CHARACTER::EncodeInsertPacket / EncodeRemovePacket are restored as legacy-authoritative packet bodies after hotfix.
   - CItem wrappers were already ECS-native from LPENTITY.1f.
 
-Legacy bodies remain present until LPENTITY.6. They should be dormant in normal runtime if all entities are mapped.
+Legacy bodies remain present until LPENTITY.6. Character insert/remove is intentionally active until native movement destination/state parity is proven.
 
 7. Metrics
 
@@ -126,3 +132,47 @@ Next:
   - Replace PacketAround / PacketView users with NetworkService broadcast APIs.
   - Remove direct view-map packet send helpers.
   - Keep fallback bodies until LPENTITY.6 deletion step.
+
+10. Hotfix: Restore character view packets
+
+Commit:
+  - 21dc2df Hotfix LPENTITY.4: Restore character view packets
+
+Runtime issue:
+  - Two clients could see the same two characters at different distances/positions.
+  - One client showed the characters next to each other while the other showed them far apart.
+  - Prior BroadcastToView authoritative-recipient hotfix did not resolve the issue.
+
+Root-cause assessment:
+  - The remaining divergent path was character view insertion/removal after LPENTITY.4.
+  - EntityNetworkDispatch::SendCharacterInsert builds character add/move packets from ECS Position, MovementDestination, and MovementState.
+  - Legacy CHARACTER::EncodeInsertPacket still owns the exact historical movement state semantics: m_posDest, m_dwMoveStartTime, m_dwMoveDuration, m_bNowWalking.
+  - If ECS movement destination/state is stale or not identical for every movement path, a viewer can receive an insert packet with a position that differs from the legacy-authoritative state.
+
+Fix applied:
+  - EntityNetworkDispatch::SendInsert for SpatialKind::Character resolves LPENTITY at the SpatialService boundary and calls CHARACTER::EncodeInsertPacket.
+  - EntityNetworkDispatch::SendRemove for SpatialKind::Character resolves LPENTITY at the SpatialService boundary and calls CHARACTER::EncodeRemovePacket.
+  - CHARACTER::EncodeInsertPacket / EncodeRemovePacket no longer recursively call EntityNetworkDispatch first.
+  - Item, Building, and OfflineShop native dispatch remains active.
+  - BroadcastToView(false) duplicate self-send guard added.
+
+Architectural status:
+  - This is an intentional temporary rollback for character spawn/remove packet authority only.
+  - It does not revert LPENTITY.4 globally.
+  - Native character insert can be retried after a focused movement parity audit:
+    - ECS MovementDestination must match legacy m_posDest.
+    - ECS MovementState::moveStartTime / moveDuration must match m_dwMoveStartTime / m_dwMoveDuration.
+    - Walking mode must match m_bNowWalking on every movement path.
+
+Verification:
+  - Build gate passed:
+    cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+  - Build output warning only:
+    pwsh.exe is not recognized as an internal or external command.
+
+WinTest requirement before retrying native character insert:
+  - Two-client position sync: both clients must see both characters at identical relative positions.
+  - Walk/run/mount movement across view boundaries.
+  - Map transfer and re-enter view.
+  - Observer mode reencode.
+  - No [VIEWMAP_DRIFT], [BROADCAST_DRIFT], [DISPATCH_FALLBACK], or [SPATIAL_INVARIANT] warnings.
