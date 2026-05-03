@@ -1,0 +1,161 @@
+Phase 15E-final.LPENTITY.1 - Spatial coverage + entity kind tags
+=================================================================
+
+Scope
+-----
+
+This phase adds ECS spatial state required for the later LPENTITY virtual
+dispatch replacement. It does not remove CEntity virtual methods, does not
+change dispatch behavior, and does not alter view-map semantics.
+
+Components added
+----------------
+
+Added to ecs/components/spatial_components.hpp:
+
+- SpatialEntity: marker tag for entities that participate in sectree visibility.
+- SpatialKindTag: ECS-side kind discriminator for future tag-based dispatch.
+- SpatialKind enum:
+  - Character
+  - Item
+  - Building
+  - OfflineShop
+- PositionZ: transitional explicit Z component. Position already contains z,
+  but PositionZ makes Z coverage queryable during LPENTITY dismantling.
+- BuildingState: future building packet state container.
+- OfflineShopState: future offline-shop packet state container.
+
+Position sync
+-------------
+
+ecs::SyncPositionComponents now updates PositionZ together with Position,
+MapIndex, and DirtyTag. This keeps CHARACTER movement/show/warp write paths
+covered wherever the existing position sync helper is already used.
+
+Factory population coverage
+---------------------------
+
+Character entities:
+
+- EntityFactory::CreatePC populates:
+  - SpatialEntity
+  - SpatialKindTag{Character}
+  - Position
+  - PositionZ
+  - MapIndex
+  - VIDComponent already exists through RegisterEntityVID
+- CreateMobEntity, used by CreateMonster/CreateNPC/CreateStone, populates the
+  same spatial state with SpatialKindTag{Character}.
+- Existing/hydrated entity fast paths also re-apply spatial state before return.
+
+Item entities:
+
+- CItem::AddToGround now marks the item ECS entity as spatial only when it
+  actually becomes a ground/sectree item:
+  - SpatialEntity
+  - SpatialKindTag{Item}
+  - Position
+  - PositionZ
+  - MapIndex
+  - VIDComponent
+  - ItemGroundPosition remains the item packet source.
+- CItem::RemoveFromGround removes:
+  - SpatialEntity
+  - SpatialKindTag
+  - SectorPlacement
+  - ViewActiveTag
+  - ItemGroundPosition
+
+This preserves the intended distinction: inventory/equipment items are ECS item
+entities, but only ground items are spatial LPENTITY participants.
+
+Invariant checks
+----------------
+
+Added to ecs::Invariants:
+
+- HasMatchingSpatialKind(reg, entity, expected)
+- ValidateSpatialCoverage(reg, entity, context)
+
+ValidateSpatialCoverage checks:
+
+- SpatialEntity
+- SpatialKindTag
+- Position
+- PositionZ
+- MapIndex
+- VIDComponent
+
+Current validation call sites:
+
+- EntityFactory::CreatePC
+- EntityFactory::CreatePC existing-entity fast path
+- CreateMobEntity for monster/NPC/stone
+- CreateMobEntity existing-entity fast path
+- CItem::AddToGround
+
+Building and offline shop status
+--------------------------------
+
+Building and offline shop ECS components were defined, but runtime population
+was intentionally not added in this phase.
+
+Reason:
+
+- building::CObject and offlineshop::ShopEntity are CEntity-derived but do not
+  currently have a canonical ECS entity registry equivalent to CItemRegistry or
+  CVIDRegistry.
+- Adding those registries touches object/shop manager lifecycle and is better
+  handled in LPENTITY.2 with the SpatialService boundary, where sectree
+  insertion/removal can become the canonical registration point.
+
+Deferred implementation:
+
+- Add CBuildingRegistry keyed by building VID/ID.
+- Add OfflineShopEntityRegistry keyed by shop entity VID.
+- Populate BuildingState / OfflineShopState at Show/creation.
+- Add ValidateSpatialCoverage at the registration boundary.
+
+Verification
+------------
+
+Build gates run after each implementation group:
+
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+
+Result: PASS.
+
+Known warnings remain pre-existing/non-blocking. GameServer.exe links
+successfully.
+
+Metrics
+-------
+
+- Tree-wide LPENTITY references remain effectively unchanged: 137 measured
+  after this phase.
+- No dispatch changes were intended, so LPENTITY reference count is not expected
+  to decrease in LPENTITY.1.
+
+WinTest checklist
+-----------------
+
+Mandatory runtime checks:
+
+- Login: PC has SpatialEntity and SpatialKindTag{Character}.
+- Mob spawn: mob has SpatialEntity and SpatialKindTag{Character}.
+- NPC spawn: NPC has SpatialEntity and SpatialKindTag{Character}.
+- Stone spawn: stone has SpatialEntity and SpatialKindTag{Character}.
+- Drop item: ground item gets SpatialEntity and SpatialKindTag{Item}.
+- Pick up item: ground spatial tags are removed.
+- No ECS_INVARIANT warnings for ValidateSpatialCoverage.
+- VID_DRIFT remains zero.
+
+Architectural status
+--------------------
+
+LPENTITY.1 establishes spatial ECS coverage for the two currently registered
+CEntity families: CHARACTER and CItem. Building/offline shop coverage is
+component-ready but registry-deferred. The next phase should introduce
+SpatialService as the central boundary for CEntity-derived object registration,
+sectree insert/remove, and future ViewMap/ViewerMap synchronization.
+
