@@ -3,6 +3,8 @@
 #include <entt/entt.hpp>
 
 #include "components/identity_components.hpp"
+#include "components/spatial_components.hpp"
+#include "components/transform_components.hpp"
 #include <Core/Logging.hpp>
 
 namespace ecs::Invariants {
@@ -75,6 +77,36 @@ inline void ValidatePCIdentity(entt::registry& reg, entt::entity e, const char* 
         LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing EmpireComponent", static_cast<uint32_t>(e), ctx);
     if (!reg.all_of<ecs::GMLevel>(e))
         LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing GMLevel", static_cast<uint32_t>(e), ctx);
+}
+
+inline bool HasMatchingSpatialKind(entt::registry& reg, entt::entity e, ecs::SpatialKind expected)
+{
+    if (e == entt::null || !reg.valid(e))
+        return false;
+
+    const auto* kind = reg.try_get<ecs::SpatialKindTag>(e);
+    return kind && kind->kind == expected;
+}
+
+inline void ValidateSpatialCoverage(entt::registry& reg, entt::entity e, const char* context)
+{
+    if (e == entt::null || !reg.valid(e))
+        return;
+
+    const char* ctx = context ? context : "unknown";
+
+    if (!reg.all_of<ecs::SpatialEntity>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialEntity", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::SpatialKindTag>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialKindTag", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::Position>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing Position", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::PositionZ>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PositionZ", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::MapIndex>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing MapIndex", static_cast<uint32_t>(e), ctx);
+    if (!reg.all_of<ecs::VIDComponent>(e))
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", static_cast<uint32_t>(e), ctx);
 }
 
 } // namespace ecs::Invariants

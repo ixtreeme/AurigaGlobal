@@ -17,6 +17,7 @@
 #include "../../../common/VnumHelper.h"
 #include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
+#include "../EntityInvariants.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
@@ -658,6 +659,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		SyncItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
+		ecs::Invariants::ValidateSpatialCoverage(g_registry, itemEntity, "item.add_to_ground");
 	}
 
 	tree->InsertEntity(this);

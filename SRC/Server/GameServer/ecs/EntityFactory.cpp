@@ -299,6 +299,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.any_of<Tag>(entity)) {
         ApplySpatialState(reg, entity, ecs::SpatialKind::Character, mapIndex, x, y, 0);
+        ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.mob_entity.existing");
         return entity;
     }
 
@@ -362,6 +363,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
 
     ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.mob_entity");
     ecs::Invariants::ValidateCommonIdentity(reg, entity, "factory.mob_entity");
+    ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.mob_entity");
     return entity;
 }
 
@@ -578,6 +580,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.all_of<ecs::TagPC>(entity)) {
         ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);
+        ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.pc.existing");
         if (desc) {
             desc->SetEntity(entity);
         }
@@ -694,6 +697,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     ecs::Invariants::ValidateCharacterTags(reg, entity, "factory.pc");
     ecs::Invariants::ValidatePCIdentity(reg, entity, "factory.pc");
+    ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.pc");
     return entity;
 }
 
