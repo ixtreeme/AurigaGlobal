@@ -11655,3 +11655,12 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Status:
 - Phase 15E-final.1b is restored with the mount-regression guard retained.
 - Broadcast iteration remains a documented temporary service boundary for Phase 15E-final.1d.
+
+WinTest result:
+- Verified successfully in-game after the restored 1b implementation.
+- The previous regressions did not reappear:
+  - no mob/NPC/metin stone disappearance after mount or dismount;
+  - no broken Ctrl+G mount follower/remount flow;
+  - no visible dynamic actor loss around mount state changes.
+- Additional-info/rank-title behavior remained correct with the source-excluded broadcast guard.
+- Phase 15E-final.1b is accepted as WinTest verified.

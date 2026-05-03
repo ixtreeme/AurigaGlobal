@@ -52,3 +52,16 @@ WinTest checklist
 - Character panel and overhead name stay consistent.
 - Mount/dismount: no mob/NPC/stone disappearance regression.
 - Ctrl+G mount follower/remount path remains intact.
+
+WinTest result
+- Verified successfully in-game.
+- No recurrence of the previous mount/dynamic actor visibility bugs.
+- Mount/dismount does not hide mobs, NPCs, metin stones, pets, or mount actors.
+- Ctrl+G dismount/follower/remount path remains functional.
+- Additional-info/rank-title path works with the current broadcast guard.
+- VID_DRIFT remained clean during verification.
+
+Status
+- Phase 15E-final.1b is WinTest verified.
+- The native additional-info packet builder is accepted in its current form.
+- Broadcast iteration remains intentionally deferred to Phase 15E-final.1d visibility service cleanup.
