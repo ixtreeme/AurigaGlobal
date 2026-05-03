@@ -11664,3 +11664,36 @@ WinTest result:
   - no visible dynamic actor loss around mount state changes.
 - Additional-info/rank-title behavior remained correct with the source-excluded broadcast guard.
 - Phase 15E-final.1b is accepted as WinTest verified.
+
+
+## Phase 15E-final.1c - MainCharacterPacket + UpdatePacket + PointsPacket Native Rewrite
+
+Scope:
+- Rewrote `MainCharacterPacket`, `UpdatePacket`, and `PointsPacket` behind entity-first `NetworkSyncSystem` APIs.
+- Added native ECS builders for character update and points packets.
+- Migrated all `CHARACTER::` callers to `NetworkSyncSystem::{MainCharacterPacket,UpdatePacket,PointsPacket}(EcsOf(...))`.
+- Deleted the three legacy `CHARACTER::` packet bodies and removed their declarations from `char.h`.
+
+ECS packet sources:
+- Main character: VID, race, name, position/map, empire, skill group, BGM metadata.
+- Update: appearance parts, movement/attack speed, affect flags, status bits, guild, alignment, PK mode, mount vnum, language, skill color.
+- Points: full `POINT_*` array via `PointSystem::Get`.
+
+Sync fixes added:
+- `StatusFlags` now mirrors killer/spawn/party visible state bits.
+- Affect write paths sync `AffectList` before native update packet send to avoid stale affect flags.
+
+Metrics:
+- `NetworkSyncSystem.cpp` after 1c: 18 `CHARACTER::` bodies, 17 `LPCHARACTER` references, 2 `LegacyCharOf` references.
+- The 1c target bodies are gone; remaining bodies are later 1d+ service/subsystem targets.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after caller migration and body deletion.
+- Build passed again after affect mirror sync.
+
+Status:
+- Phase 15E-final.1c code migration is complete.
+- WinTest required before verified close-out.

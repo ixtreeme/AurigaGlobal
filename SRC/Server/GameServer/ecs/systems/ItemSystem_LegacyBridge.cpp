@@ -6,6 +6,7 @@
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../VIDRegistry.hpp"
 
@@ -8033,7 +8034,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								pPC->SetFlag("dyeing_hair.last_dye_level", GetLevel());
 
 							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
-							UpdatePacket();
+							NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
@@ -15488,7 +15489,7 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
 
 	SetPart(PART_HAIR, hair);
-	UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 
 	return true;
 }

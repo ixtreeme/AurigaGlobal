@@ -937,6 +937,7 @@ void CHARACTER::SetPosition(int pos)
 			{
 				status->isDead = false;
 				status->isStunned = false;
+				status->isSpawnState = false;
 			}
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}

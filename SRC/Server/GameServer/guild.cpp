@@ -6,6 +6,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
@@ -200,7 +201,7 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 	if (ch)
 		LoginMember(ch),
 #ifdef ENABLE_GUILD_ATTRIBUTE
-		ch->UpdatePacket(),
+		NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch)),
 		GiveGuildBuff(ch);
 
 	else
@@ -2625,7 +2626,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 			continue;
 
 		ch->ComputePoints();
-		ch->PointsPacket();
+		NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 	}
 
 
@@ -2694,7 +2695,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 			continue;
 
 		ch->ComputePoints();
-		ch->PointsPacket();
+		NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 	}
 
 	if (m_data.level >= 40)

@@ -33,6 +33,9 @@ struct StatusFlags {
     bool cannotDead : 1;
     bool detailLog : 1;
     bool monsterLog : 1;
+    bool isKillerMode : 1;
+    bool isSpawnState : 1;
+    bool isPartyState : 1;
 };
 
 struct PolymorphState {

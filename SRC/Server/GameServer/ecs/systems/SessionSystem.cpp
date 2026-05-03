@@ -39,6 +39,7 @@
 #include "../components/dirty_components.hpp"
 #include "../components/inventory_components.hpp"
 #include "../components/social_components.hpp"
+#include "../components/status_components.hpp"
 #include "../../questmanager.h"
 #include "../../safebox.h"
 #include "../../sectree.h"
@@ -975,6 +976,8 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (bShowSpawnMotion)
     {
         SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+        if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
+            status->isSpawnState = true;
         m_afAffectFlag.Set(AFF_SPAWN);
     }
 
@@ -1015,6 +1018,10 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     }
 
     REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle())) {
+        status->isSpawnState = false;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
+    }
 
     SetValidComboInterval(0);
     ComputePoints();

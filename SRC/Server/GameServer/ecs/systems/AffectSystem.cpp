@@ -4,6 +4,7 @@
 
 #include "AffectSystem.hpp"
 #include "QuestSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include "../../affect.h"
 #include "../../arena.h"
@@ -1100,7 +1101,8 @@ void CHARACTER::ClearAffect(bool bSave)
 	if (afOld != m_afAffectFlag ||
 			wMovSpd != GetPoint(POINT_MOV_SPEED) ||
 			wAttSpd != GetPoint(POINT_ATT_SPEED))
-		UpdatePacket();
+		SyncAffectList(AIHelpers::EcsOf(this), this);
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 
 	CheckMaximumPoints();
 
@@ -1253,7 +1255,8 @@ int CHARACTER::ProcessAffect()
 				lMovSpd != GetPoint(POINT_MOV_SPEED) ||
 				lAttSpd != GetPoint(POINT_ATT_SPEED))
 		{
-			UpdatePacket();
+			SyncAffectList(AIHelpers::EcsOf(this), this);
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 		}
 
 		CheckMaximumPoints();
@@ -1569,7 +1572,8 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 	if (afOld != m_afAffectFlag || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
 	{
-		UpdatePacket();
+		SyncAffectList(AIHelpers::EcsOf(this), this);
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 	}
 
 	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", GetPlayerID(), GetName());
@@ -1710,7 +1714,8 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 	ComputeAffect(pkAff, true);
 
 	if (pkAff->dwFlag || wMovSpd != GetPoint(POINT_MOV_SPEED) || wAttSpd != GetPoint(POINT_ATT_SPEED))
-		UpdatePacket();
+		SyncAffectList(AIHelpers::EcsOf(this), this);
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 
 	StartAffectEvent();
 
@@ -1816,7 +1821,8 @@ bool CHARACTER::RemoveAffect(CAffect * pkAff)
 	) {
 		ComputePoints();
 	} else {
-		UpdatePacket();
+		SyncAffectList(AIHelpers::EcsOf(this), this);
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 	}
 
 	CheckMaximumPoints();

@@ -3,6 +3,7 @@
 
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -1057,7 +1058,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	if (IsMountItem())
 		ch->MountSummon(EntityFactory::CreateItemEntity(g_registry, this));
 #endif
-	m_pOwner->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	if (bWearCell == WEAR_BELT)
 		ch->UpdateItemOnTitleName(true);
@@ -1154,7 +1155,7 @@ bool CItem::Unequip()
 
 	m_pOwner->ComputeBattlePoints();
 
-	m_pOwner->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
 #ifdef ENABLE_COSTUME_PET
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
 		m_pOwner->UpdatePetSkin();
@@ -1703,7 +1704,7 @@ void CItem::ModifyPoints(bool bAdd)
 		if (PART_MAX_NUM != toSetPart)
 		{
 			m_pOwner->SetPart((uint8_t)toSetPart, toSetValue);
-			m_pOwner->UpdatePacket();
+			NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
 
 		}
 	}

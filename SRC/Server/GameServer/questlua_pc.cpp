@@ -8,6 +8,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
 #include "config.h"
@@ -1268,7 +1269,7 @@ namespace quest
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         ch->SkillLevelPacket();
         if (auto* lv = ECS_TryGet<ecs::LevelComponent>(e))
             lv->value = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
@@ -1709,7 +1710,7 @@ namespace quest
         int part_idx = (int)lua_tonumber(L, 1);
         int part_value = (int)lua_tonumber(L, 2);
         ch->SetPart(part_idx, part_value);
-        ch->UpdatePacket();
+        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
         return 0;
     }
 
@@ -2616,7 +2617,7 @@ namespace quest
         ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_SKILL));
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SKILL, 0);
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         return 0;
     }
 
@@ -3091,7 +3092,7 @@ teleport_area:
 				}
 
 				ch->ComputePoints();
-				ch->PointsPacket();
+				NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 
 				if ( point == POINT_HT )
 				{
@@ -3168,7 +3169,7 @@ teleport_area:
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         return 1;
     }
 
@@ -3211,7 +3212,7 @@ teleport_area:
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         return 1;
     }
 
@@ -3254,7 +3255,7 @@ teleport_area:
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         return 1;
     }
 
@@ -3297,7 +3298,7 @@ teleport_area:
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
         ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -usedPoint);
         ch->ComputePoints();
-        ch->PointsPacket();
+        NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
         return 1;
     }
 
@@ -4896,7 +4897,7 @@ teleport_area:
 			return 0;
 		}
 
-		ch->UpdatePacket();
+		NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
 		return 0;
 	}
 #endif

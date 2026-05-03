@@ -31,6 +31,7 @@
 #include "../components/session_components.hpp"
 #include "../components/skill_components.hpp"
 #include "../components/social_components.hpp"
+#include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
@@ -98,27 +99,107 @@ bool CHARACTER_IsBGMVolumeEnable()
     return gs_bgmVolEnable;
 }
 
+namespace {
+void CopyStringView(char* dest, std::size_t destSize, std::string_view value);
+uint16_t GetAppearancePart(entt::registry& reg, entt::entity e, uint8_t part);
+uint16_t GetLimitedPointForPacket(entt::entity e, uint8_t type);
+TAffectFlag GetPacketAffectFlags(entt::registry& reg, entt::entity e);
+uint8_t GetPacketStateFlags(entt::registry& reg, entt::entity e);
+}
+
 namespace NetworkSyncSystem {
 
 void UpdatePacket(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
-        ch->UpdatePacket();
-    }
+    TPacketGCCharacterUpdate packet {};
+    if (!BuildCharacterUpdatePacket(g_registry, e, packet))
+        return;
+
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    auto* ch = vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
+    if (!ch || !ecs::PlayerRuntime::GetSectree(e))
+        return;
+
+    // Visibility iteration remains a temporary service bridge until 1d.
+    ch->PacketAround(&packet, sizeof(packet));
+    BroadcastCharAdditionalInfo(g_registry, e);
 }
 
 void MainCharacterPacket(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
-        ch->MainCharacterPacket();
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    const auto* mapIndex = g_registry.try_get<ecs::MapIndex>(e);
+    const auto* position = g_registry.try_get<ecs::Position>(e);
+    const auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
+    if (!mapIndex || !position || !vid)
+        return;
+
+    const unsigned map = static_cast<unsigned>(mapIndex->value);
+    const BGMInfo& bgmInfo = CHARACTER_GetBGMInfo(map);
+    const auto name = ecs::PlayerRuntime::GetName(e);
+    const uint16_t race = static_cast<uint16_t>(ecs::PlayerRuntime::GetRaceNum(e));
+    const uint8_t empire = ecs::PlayerRuntime::GetEmpire(e);
+    uint8_t skillGroup = 0;
+    if (const auto* skills = g_registry.try_get<ecs::SkillLevels>(e))
+        skillGroup = skills->group;
+
+    if (!bgmInfo.name.empty()) {
+        if (CHARACTER_IsBGMVolumeEnable()) {
+            LOG_INFO("bgm_info.play_bgm_vol({}, name='{}', vol={:f})", map, bgmInfo.name.c_str(), bgmInfo.vol);
+            TPacketGCMainCharacter4_BGM_VOL packet {};
+            packet.header = HEADER_GC_MAIN_CHARACTER4_BGM_VOL;
+            packet.dwVID = vid->value;
+            packet.wRaceNum = race;
+            packet.lx = position->x;
+            packet.ly = position->y;
+            packet.lz = position->z;
+            packet.empire = empire;
+            packet.skill_group = skillGroup;
+            packet.fBGMVol = bgmInfo.vol;
+            CopyStringView(packet.szChrName, sizeof(packet.szChrName), name);
+            strlcpy(packet.szBGMName, bgmInfo.name.c_str(), sizeof(packet.szBGMName));
+            ecs::NetworkService::Send(e, &packet, sizeof(packet));
+        } else {
+            LOG_INFO("bgm_info.play({}, '{}')", map, bgmInfo.name.c_str());
+            TPacketGCMainCharacter3_BGM packet {};
+            packet.header = HEADER_GC_MAIN_CHARACTER3_BGM;
+            packet.dwVID = vid->value;
+            packet.wRaceNum = race;
+            packet.lx = position->x;
+            packet.ly = position->y;
+            packet.lz = position->z;
+            packet.empire = empire;
+            packet.skill_group = skillGroup;
+            CopyStringView(packet.szChrName, sizeof(packet.szChrName), name);
+            strlcpy(packet.szBGMName, bgmInfo.name.c_str(), sizeof(packet.szBGMName));
+            ecs::NetworkService::Send(e, &packet, sizeof(packet));
+        }
+        return;
     }
+
+    LOG_INFO("bgm_info.play({}, DEFAULT_BGM_NAME)", map);
+    TPacketGCMainCharacter packet {};
+    packet.header = HEADER_GC_MAIN_CHARACTER;
+    packet.dwVID = vid->value;
+    packet.wRaceNum = race;
+    packet.lx = position->x;
+    packet.ly = position->y;
+    packet.lz = position->z;
+    packet.empire = empire;
+    packet.skill_group = skillGroup;
+    CopyStringView(packet.szName, sizeof(packet.szName), name);
+    ecs::NetworkService::Send(e, &packet, sizeof(packet));
 }
 
 void PointsPacket(entt::entity e)
 {
-    if (LPCHARACTER ch = LegacyCharOf(e)) {
-        ch->PointsPacket();
-    }
+    TPacketGCPoints packet {};
+    if (!BuildPointsPacket(g_registry, e, packet))
+        return;
+
+    ecs::NetworkService::Send(e, &packet, sizeof(packet));
 }
 
 } // namespace NetworkSyncSystem
@@ -174,6 +255,65 @@ uint16_t GetAppearancePart(entt::registry& reg, entt::entity e, uint8_t part)
         return 0;
 
     return appearance->parts[part];
+}
+
+uint16_t GetLimitedPointForPacket(entt::entity e, uint8_t type)
+{
+    int64_t value = ecs::PointSystem::Get(e, type);
+    int64_t minLimit = 0;
+    int64_t limit = INT64_MAX;
+
+    switch (type) {
+    case POINT_ATT_SPEED:
+        limit = ecs::PlayerRuntime::IsPC(e) ? 170 : 250;
+        break;
+    case POINT_MOV_SPEED:
+        limit = 350;
+        break;
+    default:
+        break;
+    }
+
+    value = std::clamp(value, minLimit, limit);
+    return static_cast<uint16_t>(value);
+}
+
+TAffectFlag GetPacketAffectFlags(entt::registry& reg, entt::entity e)
+{
+    TAffectFlag flags {};
+    if (const auto* affect = reg.try_get<ecs::AffectList>(e))
+        flags = affect->flags;
+
+#ifdef ENABLE_SOUL_SYSTEM
+    if (flags.IsSet(AFF_SOUL_RED) && flags.IsSet(AFF_SOUL_BLUE)) {
+        flags.Reset(AFF_SOUL_RED);
+        flags.Reset(AFF_SOUL_BLUE);
+        flags.Set(AFF_SOUL_MIX);
+    }
+#endif
+
+    return flags;
+}
+
+uint8_t GetPacketStateFlags(entt::registry& reg, entt::entity e)
+{
+    uint8_t state = 0;
+    const auto* status = reg.try_get<ecs::StatusFlags>(e);
+    if (status) {
+        if (status->isDead)
+            SET_BIT(state, ADD_CHARACTER_STATE_DEAD);
+        if (status->isSpawnState)
+            SET_BIT(state, ADD_CHARACTER_STATE_SPAWN);
+        if (status->isKillerMode)
+            SET_BIT(state, ADD_CHARACTER_STATE_KILLER);
+        if (status->isPartyState)
+            SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
+    }
+
+    if (ecs::SocialSystem::GetParty(e))
+        SET_BIT(state, ADD_CHARACTER_STATE_PARTY);
+
+    return state;
 }
 }
 
@@ -269,6 +409,77 @@ void NetworkSyncSystem::BroadcastCharAdditionalInfo(entt::registry& reg, entt::e
         // standalone to the owner/main actor can clear dynamic actors.
         ch->PacketAround(&packet, sizeof(packet), ch);
     }
+}
+
+bool NetworkSyncSystem::BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet)
+{
+    if (source == entt::null || !reg.valid(source))
+        return false;
+
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    if (!vid)
+        return false;
+
+    packet = {};
+    packet.header = HEADER_GC_CHARACTER_UPDATE;
+    packet.dwVID = vid->value;
+
+    packet.awPart[CHR_EQUIPPART_ARMOR] = GetAppearancePart(reg, source, PART_MAIN);
+    packet.awPart[CHR_EQUIPPART_WEAPON] = GetAppearancePart(reg, source, PART_WEAPON);
+    packet.awPart[CHR_EQUIPPART_HEAD] = GetAppearancePart(reg, source, PART_HEAD);
+    packet.awPart[CHR_EQUIPPART_HAIR] = GetAppearancePart(reg, source, PART_HAIR);
+#ifdef ENABLE_RUNE_SYSTEM
+    packet.awPart[CHR_EQUIPPART_RUNE] = GetAppearancePart(reg, source, PART_RUNE);
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+    packet.awPart[CHR_EQUIPPART_ACCE] = GetAppearancePart(reg, source, PART_ACCE);
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+    packet.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetAppearancePart(reg, source, PART_EFFECT_BODY);
+    packet.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetAppearancePart(reg, source, PART_EFFECT_WEAPON);
+#endif
+
+    packet.bMovingSpeed = GetLimitedPointForPacket(source, POINT_MOV_SPEED);
+    packet.bAttackSpeed = GetLimitedPointForPacket(source, POINT_ATT_SPEED);
+    packet.bStateFlag = GetPacketStateFlags(reg, source);
+
+    const TAffectFlag affectFlags = GetPacketAffectFlags(reg, source);
+    packet.dwAffectFlag[0] = affectFlags.bits[0];
+    packet.dwAffectFlag[1] = affectFlags.bits[1];
+
+    if (const auto* combat = reg.try_get<ecs::CombatStats>(source)) {
+        packet.sAlignment = combat->alignment / 10;
+        packet.bPKMode = combat->pkMode;
+    }
+
+    if (CGuild* guild = ecs::SocialSystem::GetGuild(source))
+        packet.dwGuildID = guild->GetID();
+
+    packet.dwMountVnum = MountSystem::GetMountVnum(source);
+
+#ifdef __SKILL_COLOR_SYSTEM__
+    if (const auto* skillColor = reg.try_get<ecs::SkillColor>(source))
+        std::memcpy(packet.dwSkillColor, skillColor->data, sizeof(packet.dwSkillColor));
+#endif
+
+#ifdef ENABLE_MULTI_LANGUAGE
+    packet.bLanguage = ecs::NetworkService::GetLanguage(source);
+#endif
+
+    return true;
+}
+
+bool NetworkSyncSystem::BuildPointsPacket(entt::registry& reg, entt::entity source, TPacketGCPoints& packet)
+{
+    if (source == entt::null || !reg.valid(source))
+        return false;
+
+    packet = {};
+    packet.header = HEADER_GC_CHARACTER_POINTS;
+    for (uint8_t i = 0; i < POINT_MAX_NUM; ++i)
+        packet.points[i] = ecs::PointSystem::Get(source, i);
+
+    return true;
 }
 
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
@@ -639,214 +850,6 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 
         reg.remove<ecs::DirtyTag>(entity);
     }
-}
-
-void CHARACTER::UpdatePacket()
-{
-    if (GetSectree() == nullptr)
-        return;
-
-#ifdef ENABLE_SOUL_SYSTEM
-    TAffectFlag sendAffectFlag = m_afAffectFlag;
-    if (sendAffectFlag.IsSet(AFF_SOUL_RED) && sendAffectFlag.IsSet(AFF_SOUL_BLUE))
-    {
-        sendAffectFlag.Reset(AFF_SOUL_RED);
-        sendAffectFlag.Reset(AFF_SOUL_BLUE);
-        sendAffectFlag.Set(AFF_SOUL_MIX);
-    }
-#endif
-
-    TPacketGCCharacterUpdate pack;
-    TPacketGCCharacterUpdate pack2;
-
-    pack.header = HEADER_GC_CHARACTER_UPDATE;
-    pack.dwVID = GetPacketVID();
-
-    pack.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
-    pack.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
-    pack.awPart[CHR_EQUIPPART_HEAD] = GetPart(PART_HEAD);
-    pack.awPart[CHR_EQUIPPART_HAIR] = GetPart(PART_HAIR);
-#ifdef ENABLE_RUNE_SYSTEM
-    pack.awPart[CHR_EQUIPPART_RUNE] = GetPart(PART_RUNE);
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-    pack.awPart[CHR_EQUIPPART_ACCE] = GetPart(PART_ACCE);
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-    pack.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetPart(PART_EFFECT_BODY);
-    pack.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetPart(PART_EFFECT_WEAPON);
-#endif
-#ifdef __SKILL_COLOR_SYSTEM__
-    memcpy(pack.dwSkillColor, GetSkillColor(), sizeof(pack.dwSkillColor));
-#endif
-
-    pack.bMovingSpeed = GetLimitPoint(POINT_MOV_SPEED);
-    pack.bAttackSpeed = GetLimitPoint(POINT_ATT_SPEED);
-    pack.bStateFlag = m_bAddChrState;
-#ifdef ENABLE_SOUL_SYSTEM
-    pack.dwAffectFlag[0] = sendAffectFlag.bits[0];
-    pack.dwAffectFlag[1] = sendAffectFlag.bits[1];
-#else
-    pack.dwAffectFlag[0] = m_afAffectFlag.bits[0];
-    pack.dwAffectFlag[1] = m_afAffectFlag.bits[1];
-#endif
-    pack.dwGuildID = 0;
-    pack.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
-#ifdef ENABLE_MULTI_LANGUAGE
-    pack.bLanguage = (IsPC() && GetDesc()) ? GetDesc()->GetLanguage() : 0;
-#endif
-    pack.bPKMode = m_bPKMode;
-
-    if (GetGuild())
-        pack.dwGuildID = GetGuild()->GetID();
-
-    pack.dwMountVnum = GetMountVnum();
-
-    pack2 = pack;
-    pack2.dwGuildID = 0;
-    pack2.sAlignment = 0;
-    if (false)
-    {
-        if (m_bIsObserver != true)
-        {
-            for (ENTITY_MAP::iterator iter = m_map_view.begin(); iter != m_map_view.end(); iter++)
-            {
-                LPENTITY pEntity = iter->first;
-
-                if (pEntity != nullptr)
-                {
-                    if (pEntity->IsType(ENTITY_CHARACTER) == true)
-                    {
-                        if (pEntity->GetDesc() != nullptr)
-                        {
-                            LPCHARACTER pChar = (LPCHARACTER)pEntity;
-
-                            if (GetEmpire() == ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pChar)) || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pChar)) > GM_PLAYER)
-                            {
-                                pEntity->GetDesc()->Packet(&pack, sizeof(pack));
-                            }
-                            else
-                            {
-                                pEntity->GetDesc()->Packet(&pack2, sizeof(pack2));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (pEntity->GetDesc() != nullptr)
-                        {
-                            pEntity->GetDesc()->Packet(&pack, sizeof(pack));
-                        }
-                    }
-                }
-            }
-        }
-
-        if (GetDesc() != nullptr)
-        {
-            GetDesc()->Packet(&pack, sizeof(pack));
-        }
-    }
-    else
-    {
-        PacketAround(&pack, sizeof(pack));
-    }
-
-    NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this));
-}
-
-void CHARACTER::MainCharacterPacket()
-{
-    const unsigned mapIndex = GetMapIndex();
-    const BGMInfo& bgmInfo = CHARACTER_GetBGMInfo(mapIndex);
-
-    if (!bgmInfo.name.empty())
-    {
-        if (CHARACTER_IsBGMVolumeEnable())
-        {
-            LOG_INFO("bgm_info.play_bgm_vol({}, name='{}', vol={:f})", mapIndex, bgmInfo.name.c_str(), bgmInfo.vol);
-            TPacketGCMainCharacter4_BGM_VOL mainChrPacket;
-            mainChrPacket.header = HEADER_GC_MAIN_CHARACTER4_BGM_VOL;
-            mainChrPacket.dwVID = GetPacketVID();
-            mainChrPacket.wRaceNum = GetRaceNum();
-            mainChrPacket.lx = GetX();
-            mainChrPacket.ly = GetY();
-            mainChrPacket.lz = GetZ();
-            mainChrPacket.empire = GetDesc()->GetEmpire();
-            mainChrPacket.skill_group = GetSkillGroup();
-            strlcpy(mainChrPacket.szChrName, GetName(), sizeof(mainChrPacket.szChrName));
-
-            mainChrPacket.fBGMVol = bgmInfo.vol;
-            strlcpy(mainChrPacket.szBGMName, bgmInfo.name.c_str(), sizeof(mainChrPacket.szBGMName));
-            GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter4_BGM_VOL));
-        }
-        else
-        {
-            LOG_INFO("bgm_info.play({}, '{}')", mapIndex, bgmInfo.name.c_str());
-            TPacketGCMainCharacter3_BGM mainChrPacket;
-            mainChrPacket.header = HEADER_GC_MAIN_CHARACTER3_BGM;
-            mainChrPacket.dwVID = GetPacketVID();
-            mainChrPacket.wRaceNum = GetRaceNum();
-            mainChrPacket.lx = GetX();
-            mainChrPacket.ly = GetY();
-            mainChrPacket.lz = GetZ();
-            mainChrPacket.empire = GetDesc()->GetEmpire();
-            mainChrPacket.skill_group = GetSkillGroup();
-            strlcpy(mainChrPacket.szChrName, GetName(), sizeof(mainChrPacket.szChrName));
-            strlcpy(mainChrPacket.szBGMName, bgmInfo.name.c_str(), sizeof(mainChrPacket.szBGMName));
-            GetDesc()->Packet(&mainChrPacket, sizeof(TPacketGCMainCharacter3_BGM));
-        }
-    }
-    else
-    {
-        LOG_INFO("bgm_info.play({}, DEFAULT_BGM_NAME)", mapIndex);
-
-        TPacketGCMainCharacter pack;
-        pack.header = HEADER_GC_MAIN_CHARACTER;
-        pack.dwVID = GetPacketVID();
-        pack.wRaceNum = GetRaceNum();
-        pack.lx = GetX();
-        pack.ly = GetY();
-        pack.lz = GetZ();
-        pack.empire = GetDesc()->GetEmpire();
-        pack.skill_group = GetSkillGroup();
-        strlcpy(pack.szName, GetName(), sizeof(pack.szName));
-        GetDesc()->Packet(&pack, sizeof(TPacketGCMainCharacter));
-
-        if (m_stMobile.length())
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "sms");
-    }
-}
-
-void CHARACTER::PointsPacket()
-{
-    if (!GetDesc())
-        return;
-
-    TPacketGCPoints pack;
-
-    pack.header = HEADER_GC_CHARACTER_POINTS;
-
-    pack.points[POINT_LEVEL] = GetLevel();
-    pack.points[POINT_EXP] = GetExp();
-    pack.points[POINT_NEXT_EXP] = GetNextExp();
-    pack.points[POINT_HP] = GetHP();
-    pack.points[POINT_MAX_HP] = GetMaxHP();
-    pack.points[POINT_SP] = GetSP();
-    pack.points[POINT_MAX_SP] = GetMaxSP();
-    pack.points[POINT_GOLD] = GetGold();
-    pack.points[POINT_STAMINA] = GetStamina();
-    pack.points[POINT_MAX_STAMINA] = GetMaxStamina();
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    pack.points[POINT_INVEN] = Inven_Point();
-#endif
-
-    for (int i = POINT_ST; i < POINT_MAX_NUM; ++i)
-        pack.points[i] = GetPoint(i);
-#ifdef ENABLE_GAYA_SYSTEM
-    pack.points[POINT_GAYA] = GetGaya();
-#endif
-    GetDesc()->Packet(&pack, sizeof(TPacketGCPoints));
 }
 
 #ifdef ENABLE_MULTI_LANGUAGE

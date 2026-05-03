@@ -3,6 +3,7 @@
 
 #include "MountSystem.hpp"
 #include "ItemSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -490,7 +491,7 @@ bool CHARACTER::StopRiding()
 		{
 			m_dwMountVnum = 0;
 			ComputePoints();
-			UpdatePacket();
+			NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 		}
 
 		PointChange(POINT_ST, 0);

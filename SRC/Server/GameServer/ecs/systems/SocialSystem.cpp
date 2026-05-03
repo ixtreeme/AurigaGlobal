@@ -20,8 +20,11 @@
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
+#include "../components/dirty_components.hpp"
 #include "../components/social_components.hpp"
+#include "../components/status_components.hpp"
 #include "ItemSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 #include <Core/Logging.hpp>
 
 namespace ecs::SocialSystem {
@@ -113,7 +116,12 @@ void CHARACTER::SetParty(LPPARTY pkParty)
         else
             REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_PARTY);
 
-        UpdatePacket();
+        if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this))) {
+            status->isPartyState = (m_pkParty != nullptr);
+            g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+        }
+
+        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
     }
 }
 
@@ -631,7 +639,7 @@ void CHARACTER::SetGuild(CGuild* pGuild)
     if (m_pGuild != pGuild)
     {
         m_pGuild = pGuild;
-        UpdatePacket();
+        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
     }
 }
 

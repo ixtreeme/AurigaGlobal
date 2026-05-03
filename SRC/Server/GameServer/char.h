@@ -676,7 +676,6 @@ protected:
 
 public:
 	LPCHARACTER			FindCharacterInView(const char* name, bool bFindPCOnly);
-	void				UpdatePacket();
 	int m_lastBeltMountCount;
 
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
@@ -940,8 +939,6 @@ public:
 	uint32_t			GetPolymorphItemVnum() const;
 	uint32_t			GetMonsterDrainSPPoint() const;
 
-	void			MainCharacterPacket();	// 내가 메인캐릭터라고 보내준다.
-
 	void			ComputeAligin();
 	void			ComputePoints();
 	void			ComputeBattlePoints();
@@ -952,7 +949,6 @@ public:
 #endif
 	);
 
-	void			PointsPacket();
 	void			ApplyPoint(uint8_t bApplyType, int iVal);
 #ifdef __NEWPET_SYSTEM__
 	void			SendPetLevelUpEffect(int vid, int type, int value, int amount);

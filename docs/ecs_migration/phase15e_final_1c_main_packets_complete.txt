@@ -1,0 +1,81 @@
+Phase 15E-final.1c - MainCharacterPacket + UpdatePacket + PointsPacket native rewrite
+
+Scope
+- Rewrote the central self/update/stat packet paths behind entity-first NetworkSyncSystem APIs.
+- Removed the legacy CHARACTER packet bodies after caller migration.
+- Kept broadcast iteration as the documented service bridge until Phase 15E-final.1d.
+
+Packets rewritten
+- Main character packet:
+  - NetworkSyncSystem::MainCharacterPacket(entt::entity)
+  - Handles default BGM, BGM name, and BGM volume packet variants.
+- Character update packet:
+  - NetworkSyncSystem::BuildCharacterUpdatePacket
+  - NetworkSyncSystem::UpdatePacket(entt::entity)
+- Points packet:
+  - NetworkSyncSystem::BuildPointsPacket
+  - NetworkSyncSystem::PointsPacket(entt::entity)
+
+ECS sources used
+- VIDComponent: packet VID.
+- PlayerName via PlayerRuntime::GetName.
+- RaceState via PlayerRuntime::GetRaceNum.
+- Position and MapIndex: spawn coordinates and BGM lookup.
+- EmpireComponent via PlayerRuntime::GetEmpire.
+- SkillLevels.group: main character skill group.
+- AppearancePartsComponent: visible equipment parts.
+- CombatStats: alignment and PK mode.
+- AffectList.flags: visible affect flag bits.
+- StatusFlags: dead, spawn, killer, party packet state bits.
+- SocialRefs via SocialSystem: guild and party state.
+- MountState via MountSystem::GetMountVnum.
+- SkillColor: skill color payload.
+- PointSystem::Get: full POINT_* packet values.
+- NetworkSession via NetworkService: descriptor send and language.
+
+Sync paths verified or added
+- PK mode was already mirrored to CombatStats by 1b.
+- Skill color was already mirrored to SkillColor by 1b.
+- Added StatusFlags mirrors for killer, spawn, and party packet state.
+- AffectSystem now syncs AffectList before native update packet sends from affect write paths.
+
+CHARACTER bodies deleted
+- CHARACTER::MainCharacterPacket
+- CHARACTER::UpdatePacket
+- CHARACTER::PointsPacket
+
+char.h declarations removed
+- MainCharacterPacket
+- UpdatePacket
+- PointsPacket
+
+NetworkSyncSystem.cpp metrics
+- Before 1c: 19-20 CHARACTER:: bodies, about 18 LPCHARACTER references, about 3 LegacyCharOf references.
+- After 1c: 18 CHARACTER:: bodies, 17 LPCHARACTER references, 2 LegacyCharOf references.
+- Metric decreased as required.
+
+Broadcast path status
+- UpdatePacket broadcast still uses the PacketAround service bridge.
+- Additional-info broadcast keeps the 1b source-exclusion guard.
+- Full native visibility iteration remains Phase 15E-final.1d.
+
+Verification
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after caller migration and legacy body deletion.
+- Build passed again after affect mirror sync was added.
+
+WinTest checklist
+- Login: main character packet shows correct VID, race, name, position, empire, skill group and BGM.
+- Map transfer / GM teleport: self spawn packet remains correct.
+- Equip change: update packet broadcasts visible equipment changes.
+- Mount / dismount: visible mount state remains correct and no actor disappearance regression returns.
+- Affect changes: visible affect bits and state flags refresh.
+- HP/SP/EXP/gold/stat changes: points packet refreshes client UI.
+- Alignment title interaction with 1b remains correct.
+- VID_DRIFT must stay zero.
+
+Status
+- Phase 15E-final.1c code migration is complete.
+- WinTest remains mandatory before verified commit.

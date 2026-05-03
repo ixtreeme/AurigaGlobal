@@ -2,6 +2,8 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "config.h"
 #include "utils.h"
@@ -609,7 +611,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	}
 
 	d->SetPhase(PHASE_LOADING);
-	ch->MainCharacterPacket();
+	NetworkSyncSystem::MainCharacterPacket(AIHelpers::EcsOf(ch));
 
 	int32_t lPublicMapIndex = lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex;
 	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(ch, lMapIndex))
@@ -630,7 +632,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
 		ch->SetQuickslot(i, pTab->quickslot[i]);
 
-	ch->PointsPacket();
+	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 	ch->SkillLevelPacket();
 
 	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_GRADE), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
@@ -1822,7 +1824,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 
 	ch->CheckMaximumPoints();
-	ch->PointsPacket();
+	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 
 	ch->SetItemLoaded();
 }

@@ -6,6 +6,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
@@ -911,7 +912,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
 	ch->SetPart(PART_RUNE, ch->GetRuneEffect());
-	ch->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect"));
 #endif
 #ifdef ENABLE_PVP_ADVANCED

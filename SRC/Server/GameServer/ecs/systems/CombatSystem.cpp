@@ -585,8 +585,13 @@ void CHARACTER::SetKillerMode(bool isOn)
 	else
 		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
 
+	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this))) {
+		status->isKillerMode = isOn;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+	}
+
 	m_iKillerModePulse = thecore_pulse();
-	UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 	LOG_INFO("SetKillerMode Update {}[{}]", GetName(), GetPlayerID());
 }
 
@@ -621,7 +626,7 @@ void CHARACTER::SetPKMode(uint8_t bPKMode)
 		combat->pkMode = bPKMode;
 		g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
 	}
-	UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 	LOG_INFO("PK_MODE: {} {}", GetName(), m_bPKMode);
 }
 
@@ -1872,7 +1877,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			RemoveAffect(AFFECT_MOUNT_BONUS);
 			m_dwMountVnum = 0;
 			UnEquipSpecialRideUniqueItem();
-			UpdatePacket();
+			NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 		}
 	}
 
@@ -6741,7 +6746,7 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 		CHARACTER_MANAGER::instance().SelectStone(nullptr);
 	}
 
-	ch->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
 }
 #endif
 static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)

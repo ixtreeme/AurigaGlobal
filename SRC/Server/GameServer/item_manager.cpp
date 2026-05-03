@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
@@ -676,7 +677,7 @@ void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 			{
 				o->SendMountInventory();
 				o->ComputePoints();
-				o->PointsPacket();
+				NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(o));
 #ifdef ENABLE_FAKE_SHOP_HEADER
 				o->UpdateMountCountOverheadToViewers();
 #endif

@@ -8,6 +8,7 @@
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
 #include <md5.h>
@@ -3770,7 +3771,7 @@ ACMD(do_hide_costume)
 	else
 		return;
 
-	ch->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
 }
 #endif
 
@@ -3969,7 +3970,7 @@ ACMD(do_rune_effect)
 
 	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect", iArg1);
 	ch->ComputePoints();
-	ch->UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }
 #endif

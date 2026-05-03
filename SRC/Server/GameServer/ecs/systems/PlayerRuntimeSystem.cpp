@@ -3,6 +3,7 @@
 
 #include "PlayerRuntimeSystem.hpp"
 #include "QuestSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 #include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
 #include "ItemSystem.hpp"
@@ -1636,7 +1637,7 @@ void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
         memcpy(skillColor->data, m_dwSkillColor, sizeof(skillColor->data));
         g_registry.emplace_or_replace<ecs::DirtyTag>(EcsEntityOf(this));
     }
-    UpdatePacket();
+    NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 }
 #endif
 
@@ -2854,7 +2855,7 @@ bool CHARACTER::Update_Inven()
         RemoveSpecifyItem(key2, needkey);
         PointChange(POINT_INVEN, 1, false);
         ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "refreshinven");
-        UpdatePacket();
+        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 #ifdef ENABLE_SPAM_CHECK
         SetLastUnlock();
 #endif
@@ -3513,7 +3514,7 @@ void CHARACTER::ResetPoint(int iLv)
     PointChange(POINT_HP, GetMaxHP() - GetHP());
     PointChange(POINT_SP, GetMaxSP() - GetSP());
 
-    PointsPacket();
+    NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(this));
 
     LogManager::instance().CharLog(this, 0, "RESET_POINT", "");
 }
@@ -3627,7 +3628,7 @@ int CHARACTER::ChangeEmpire(uint8_t empire)
     SetChangeEmpireCount();
 #ifdef ENABLE_BUG_FIXES
     SetEmpire(empire);
-    UpdatePacket();
+    NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 #endif
     return 999;
 }

@@ -8,6 +8,7 @@
 #include "../AIHelpers.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
 
 #include "../../char.h"
@@ -764,7 +765,7 @@ void CHARACTER::ComputePoints()
 	m_alignAppliedSkill = m_alignBonusSkill;
 
 
-	UpdatePacket();
+	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
 	ComputeBattlePoints();
 
 

@@ -7,6 +7,7 @@
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 
 
 #include "constants.h"
@@ -3271,7 +3272,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 	// mount bonus frissítés
 	ch->ComputePoints();
-	ch->PointsPacket();
+	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 	// overhead frissítés
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	ch->UpdateMountCountOverheadToViewers();
@@ -3338,7 +3339,7 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 
 	// mount bonus frissítés
 	ch->ComputePoints();
-	ch->PointsPacket();
+	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 	// overhead frissítés
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	ch->UpdateMountCountOverheadToViewers();
