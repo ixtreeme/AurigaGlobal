@@ -43,6 +43,7 @@
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
 #include "../services/VisibilityService.hpp"
+#include "../services/SpatialService.hpp"
 #include <Core/Logging.hpp>
 
 extern bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
@@ -768,27 +769,6 @@ void NetworkSyncSystem::SendConfirmWithMsg(entt::registry& reg, entt::entity rec
     strlcpy(packet.msg, message, sizeof(packet.msg));
     ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
 }
-
-namespace ecs {
-entt::entity EntityFromLPENTITY(LPENTITY entity)
-{
-    if (!entity)
-        return entt::null;
-
-    if (entity->IsType(ENTITY_CHARACTER))
-        return AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
-
-    if (entity->IsType(ENTITY_ITEM)) {
-        auto* item = static_cast<LPITEM>(entity);
-        entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
-        if (itemEntity == entt::null)
-            itemEntity = CItemRegistry::Instance().FindByVID(item->GetVID());
-        return itemEntity;
-    }
-
-    return entt::null;
-}
-} // namespace ecs
 
 namespace ecs::ItemNetworkSystem {
 
