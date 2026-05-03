@@ -323,9 +323,6 @@ void CMountActor::Unmount()
 	if (nullptr == m_pkOwner)
 		return;
 
-	if (!MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)))
-		return;
-
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT);
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS);
 
@@ -763,7 +760,6 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 	if(LPITEM pSummonItem = ItemSystem::GetWear(AIHelpers::EcsOf(m_pkOwner), WEAR_COSTUME_MOUNT))
 	{
 		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, 0);
-		this->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
 	}
 }
 

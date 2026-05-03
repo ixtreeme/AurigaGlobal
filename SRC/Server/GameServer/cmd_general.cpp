@@ -2493,10 +2493,7 @@ ACMD(do_unmount)
 
 		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
 		{
-			if(mountSystem->CountSummoned() == 0)
-			{
-				mountSystem->Unmount(mobVnum);
-			}
+			mountSystem->Unmount(mobVnum);
 		}
 		return;
 	}
@@ -3592,10 +3589,7 @@ ACMD(do_ride)
 
 		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
 		{
-			if(mountSystem->CountSummoned() == 0)
-			{
-				mountSystem->Unmount(mobVnum);
-			}
+			mountSystem->Unmount(mobVnum);
 		}
 		else
 		{
