@@ -3,6 +3,7 @@
 #include "AffectSystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
 #include "../EntityFactory.hpp"
@@ -16884,7 +16885,7 @@ void CItem::ClearMountAttributeAndAffect()
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
 	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
 
-	ch->MountVnum(0);
+	MountSystem::ForceClearRidingState(AIHelpers::EcsOf(ch));
 
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
 	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);

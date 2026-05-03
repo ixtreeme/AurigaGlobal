@@ -3693,6 +3693,8 @@ void CHARACTER::MountVnum(uint32_t vnum)
         auto& mount = g_registry.get_or_emplace<ecs::MountState>(e);
         mount.mountVnum = vnum;
         mount.mountTime = m_dwMountTime;
+        if (vnum == 0)
+            mount.horseRiding = false;
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
     }
 

@@ -347,6 +347,26 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
         ch->MountVnum(vnum);
 }
 
+void ForceClearRidingState(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    auto* ch = LegacyCharOf(rider);
+    if (ch)
+    {
+        if (ch->IsHorseRiding())
+            ch->StopRiding();
+        else
+            ch->MountVnum(0);
+    }
+
+    auto& state = g_registry.get_or_emplace<ecs::MountState>(rider);
+    state.mountVnum = 0;
+    state.horseRiding = false;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(rider);
+}
+
 } // namespace MountSystem
 
 bool CHARACTER::StartRiding()
