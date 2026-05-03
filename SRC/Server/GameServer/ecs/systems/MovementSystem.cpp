@@ -296,6 +296,57 @@ void Stop(entt::entity e)
     ch->Stop();
 }
 
+// LPENTITY.4-fixup helpers: mirror legacy CHARACTER movement-field writes
+// into the parallel ECS components. Each helper is safe to call with a
+// null/invalid entity. They patch existing components when available and
+// emplace_or_replace when not, except SyncDestinationClear which removes
+// MovementDestination outright (its absence is the canonical "no active
+// movement" state). See docs/ecs_migration/phase15e_final_lpentity_4_fixup_audit.txt.
+
+void SyncDestinationWrite(entt::entity e, int32_t x, int32_t y)
+{
+    if (!IsValid(e))
+        return;
+
+    g_registry.emplace_or_replace<ecs::MovementDestination>(e, x, y);
+}
+
+void SyncDestinationClear(entt::entity e)
+{
+    if (!IsValid(e))
+        return;
+
+    if (g_registry.all_of<ecs::MovementDestination>(e))
+        g_registry.remove<ecs::MovementDestination>(e);
+
+    if (auto* state = g_registry.try_get<ecs::MovementState>(e))
+    {
+        state->moveStartTime = 0;
+        state->moveDuration = 0;
+    }
+}
+
+void SyncTimingWrite(entt::entity e, uint32_t startTime, uint32_t duration)
+{
+    if (!IsValid(e))
+        return;
+
+    if (auto* state = g_registry.try_get<ecs::MovementState>(e))
+    {
+        state->moveStartTime = startTime;
+        state->moveDuration = duration;
+    }
+}
+
+void SyncWalkingWrite(entt::entity e, bool isNowWalking)
+{
+    if (!IsValid(e))
+        return;
+
+    if (auto* state = g_registry.try_get<ecs::MovementState>(e))
+        state->isNowWalking = isNowWalking;
+}
+
 } // namespace ecs::MovementSystem
 
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
