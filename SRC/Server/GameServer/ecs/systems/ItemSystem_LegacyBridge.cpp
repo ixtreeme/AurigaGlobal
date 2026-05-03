@@ -2814,6 +2814,9 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	}
 
 	//1A�� A��� ��?�1A ���� �� ��?�?�o� A1A�
+	if (item->IsRideItem() && IsRiding() && GetMountVnum() != 0 && !GetWear(WEAR_COSTUME_MOUNT))
+		MountSystem::ForceClearRidingState(AIHelpers::EcsOf(this));
+
 	if (item->IsRideItem() && IsRiding())
 	{
 #ifdef TEXTS_IMPROVEMENT

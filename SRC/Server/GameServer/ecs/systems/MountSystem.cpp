@@ -355,6 +355,16 @@ void ForceClearRidingState(entt::entity rider)
     auto* ch = LegacyCharOf(rider);
     if (ch)
     {
+        const uint32_t mountVnum = ch->GetMountVnum();
+        if (mountVnum != 0)
+        {
+            if (auto* mountSystem = ch->GetMountSystem())
+            {
+                if (mountSystem->GetByVnum(mountVnum))
+                    mountSystem->Unsummon(mountVnum, false);
+            }
+        }
+
         if (ch->IsHorseRiding())
             ch->StopRiding();
         else
