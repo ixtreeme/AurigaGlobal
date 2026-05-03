@@ -23,6 +23,8 @@ import uimountinventory
 import dbg
 dbg.TraceError("[RZ] uiinventory.py LOADED")
 
+IMG_DIR = "new_messenger/"
+
 if app.__ENABLE_NEW_OFFLINESHOP__:
 	import offlineshop
 	import uiofflineshop
@@ -875,6 +877,17 @@ class InventoryWindow(ui.ScriptWindow):
 		self.LEFT_PANEL_W = 76
 		self.leftPanel = None
 		self.sidebarButtons = []
+		self.searchEdit = None
+		self.searchBackground = None
+		self.searchButton = None
+		self.clearButton = None
+		self.suggestionsBox = None
+		self.searchHint = None
+		self.suggestionButtons = []
+		self.searchHighlightedSlots = []
+		self.lastSearchText = ""
+		self.lastSearchCheckTime = 0.0
+		self.isSearching = False
 		self.__LoadWindow()
 	def __MakeMountInventoryWindow(self, parent):
 		self.wndMountInventory = uimountinventory.MountInventoryWindow()
@@ -1138,6 +1151,8 @@ class InventoryWindow(ui.ScriptWindow):
 			for i in xrange(3):
 				self.listAttachedTransfer.append(999)
 		
+		self.__InitInventorySearch()
+		
 		# self.wndmenu = MenuWindow(self)
 		
 		## Refresh
@@ -1145,6 +1160,248 @@ class InventoryWindow(ui.ScriptWindow):
 		self.SetEquipmentPage(0)
 		self.RefreshItemSlot()
 		self.RefreshStatus()
+
+	def __InitInventorySearch(self):
+		self.searchHighlightedSlots = []
+		self.suggestionButtons = []
+		self.lastSearchText = ""
+		self.lastSearchCheckTime = 0.0
+		self.isSearching = False
+		
+		self.searchBackground = ui.ImageBox()
+		self.searchBackground.SetParent(self)
+		self.searchBackground.SetPosition(30, 562)
+		self.searchBackground.SetSize(100, 18)
+		self.searchBackground.LoadImage("d:/ymir work/ui/public/parameter_slot_05.sub")
+		self.searchBackground.Show()
+		
+		self.searchEdit = ui.EditLine()
+		self.searchEdit.SetParent(self)
+		self.searchEdit.SetPosition(34, 564)
+		self.searchEdit.SetSize(100, 18)
+		self.searchEdit.SetMax(20)
+		self.searchEdit.SetText("")
+		self.searchEdit.SetEscapeEvent(ui.__mem_func__(self.OnPressEscapeKey))
+		self.searchEdit.SetReturnEvent(ui.__mem_func__(self.__OnInventorySearchReturn))
+		self.searchEdit.SetEndPosition()
+		self.searchEdit.Show()
+		
+		self.searchHint = ui.TextLine()
+		self.searchHint.SetParent(self)
+		self.searchHint.SetPosition(34, 564)
+		self.searchHint.SetPackedFontColor(0xff00ff00)
+		self.searchHint.SetText("")
+		self.searchHint.Hide()
+		
+		self.searchButton = ui.Button()
+		self.searchButton.SetParent(self)
+		self.searchButton.SetPosition(7, 561)
+		self.searchButton.SetUpVisual(IMG_DIR + "btn_1.png")
+		self.searchButton.SetOverVisual(IMG_DIR + "btn_2.png")
+		self.searchButton.SetDownVisual(IMG_DIR + "btn_3.png")
+		self.searchButton.SetEvent(ui.__mem_func__(self.__OnInventorySearchReturn))
+		self.searchButton.Show()
+		
+		self.clearButton = ui.Button()
+		self.clearButton.SetParent(self)
+		self.clearButton.SetPosition(147, 565)
+		self.clearButton.SetUpVisual(IMG_DIR + "clear_btn_0.png")
+		self.clearButton.SetOverVisual(IMG_DIR + "clear_btn_1.png")
+		self.clearButton.SetDownVisual(IMG_DIR + "clear_btn_2.png")
+		self.clearButton.SetEvent(ui.__mem_func__(self.__OnInventorySearchEscape))
+		self.clearButton.Hide()
+		
+		self.suggestionsBox = ui.ThinBoard()
+		self.suggestionsBox.SetSize(138, 118)
+		self.suggestionsBox.Hide()
+
+	def __RefreshInventorySearchDropdownPosition(self):
+		if not self.suggestionsBox:
+			return
+		
+		try:
+			(x, y) = self.GetGlobalPosition()
+			self.suggestionsBox.SetPosition(x + 30, y + 575)
+		except:
+			pass
+
+	def __GetInventorySearchItemName(self, slot):
+		itemVnum = player.GetItemIndex(slot)
+		if itemVnum == 0:
+			return ""
+		
+		item.SelectItem(itemVnum)
+		return item.GetItemName()
+
+	def __ClearInventorySearchHighlights(self):
+		if app.ENABLE_HIGHLIGHT_SYSTEM:
+			for slot in self.searchHighlightedSlots:
+				if slot in self.listHighlightedSlot:
+					self.listHighlightedSlot.remove(slot)
+		
+		self.searchHighlightedSlots = []
+		self.RefreshBagSlotWindow()
+
+	def __OnInventorySearchEscape(self):
+		if self.searchEdit:
+			self.searchEdit.SetText("")
+		
+		self.__ClearInventorySearchHighlights()
+		self.__HideInventorySearchSuggestions()
+		if self.searchHint:
+			self.searchHint.Hide()
+		if self.clearButton:
+			self.clearButton.Hide()
+		self.isSearching = False
+		self.lastSearchText = ""
+
+	def __OnInventorySearchReturn(self):
+		if not self.searchEdit:
+			return
+		
+		searchText = self.searchEdit.GetText().lower().strip()
+		if not searchText:
+			return
+		
+		self.__HighlightInventorySearchItems(searchText)
+		self.__HideInventorySearchSuggestions()
+		if self.searchHint:
+			self.searchHint.Hide()
+		if self.clearButton:
+			self.clearButton.Show()
+		self.isSearching = False
+		self.__JumpToInventorySearchMatch(searchText)
+
+	def __OnInventorySearchSuggestionClick(self, globalSlot, searchText):
+		itemName = self.__GetInventorySearchItemName(globalSlot)
+		if itemName:
+			self.__HighlightInventorySearchItems(itemName.lower())
+		
+		self.__HideInventorySearchSuggestions()
+		if self.clearButton:
+			self.clearButton.Show()
+		self.isSearching = False
+		self.__JumpToInventorySearchMatch(searchText, globalSlot)
+
+	def __HighlightInventorySearchItems(self, searchText):
+		self.__ClearInventorySearchHighlights()
+		if not searchText:
+			return
+		
+		searchText = searchText.lower()
+		totalSlots = player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT
+		
+		for globalSlot in xrange(totalSlots):
+			itemName = self.__GetInventorySearchItemName(globalSlot)
+			if itemName and searchText in itemName.lower():
+				if app.ENABLE_HIGHLIGHT_SYSTEM:
+					self.HighlightSlot(globalSlot)
+				if globalSlot not in self.searchHighlightedSlots:
+					self.searchHighlightedSlots.append(globalSlot)
+		
+		self.RefreshBagSlotWindow()
+
+	def __HideInventorySearchSuggestions(self):
+		for button in self.suggestionButtons:
+			try:
+				button.Hide()
+			except:
+				pass
+		
+		self.suggestionButtons = []
+		if self.suggestionsBox:
+			self.suggestionsBox.Hide()
+
+	def __UpdateInventorySearchSuggestions(self, searchText):
+		self.__HideInventorySearchSuggestions()
+		self.__UpdateInventorySearchHint(searchText)
+		if not searchText:
+			if self.clearButton:
+				self.clearButton.Hide()
+			return
+		
+		if self.clearButton:
+			self.clearButton.Show()
+
+	def __UpdateInventorySearchHint(self, searchText):
+		if not self.searchHint:
+			return
+		
+		searchText = searchText.strip()
+		if len(searchText) < 2:
+			self.searchHint.Hide()
+			return
+		
+		searchTextLower = searchText.lower()
+		totalSlots = player.INVENTORY_PAGE_SIZE * player.INVENTORY_PAGE_COUNT
+		
+		for globalSlot in xrange(totalSlots):
+			itemName = self.__GetInventorySearchItemName(globalSlot)
+			if itemName and searchTextLower in itemName.lower():
+				itemNameLower = itemName.lower()
+				if itemNameLower.startswith(searchTextLower):
+					self.searchHint.SetPosition(34 + min(len(searchText) * 6, 82), 564)
+					self.searchHint.SetText(itemName[len(searchText):])
+				else:
+					self.searchHint.SetPosition(34, 564)
+					self.searchHint.SetText(itemName)
+				self.searchHint.Show()
+				return
+		
+		self.searchHint.Hide()
+
+	def __CheckInventorySearchInputChange(self):
+		if not self.searchEdit:
+			return
+		
+		currentText = self.searchEdit.GetText()
+		if currentText != self.lastSearchText:
+			self.lastSearchText = currentText
+			self.isSearching = True if currentText else False
+			self.__UpdateInventorySearchSuggestions(currentText)
+
+	def __JumpToInventorySearchMatch(self, searchText, preferredSlot=None):
+		targetSlot = preferredSlot
+		if targetSlot is None:
+			searchText = searchText.lower()
+			for slot in self.searchHighlightedSlots:
+				itemName = self.__GetInventorySearchItemName(slot)
+				if itemName and searchText in itemName.lower():
+					targetSlot = slot
+					break
+		
+		if targetSlot is None:
+			return
+		
+		page = targetSlot / player.INVENTORY_PAGE_SIZE
+		if page < 0 or page >= player.INVENTORY_PAGE_COUNT:
+			return
+		
+		self.SetInventoryPage(page)
+		try:
+			self.inventoryTab[page].Down()
+		except:
+			pass
+		
+		localSlot = targetSlot % player.INVENTORY_PAGE_SIZE
+		try:
+			self.wndItem.ActivateSlot(localSlot, 1.0, 0.2, 0.2, 1.0)
+			self.wndItem.RefreshSlot()
+		except:
+			pass
+		chat.AppendChat(chat.CHAT_TYPE_INFO, "Talalat: %d. oldal, %d. slot" % (page + 1, localSlot + 1))
+
+	def OnUpdate(self):
+		if not self.searchEdit:
+			return
+		
+		currentTime = app.GetTime()
+		if currentTime - self.lastSearchCheckTime >= 0.2:
+			self.lastSearchCheckTime = currentTime
+			self.__CheckInventorySearchInputChange()
+		
+		if self.searchHint and self.searchEdit and not self.searchEdit.GetText():
+			self.searchHint.Hide()
 
 	def Destroy(self):
 		self.ClearDictionary()
@@ -1166,6 +1423,14 @@ class InventoryWindow(ui.ScriptWindow):
 		self.wndMoneySlot = 0
 		self.questionDialog = None
 		self.mallButton = None
+		self.searchEdit = None
+		self.searchBackground = None
+		self.searchButton = None
+		self.clearButton = None
+		self.suggestionsBox = None
+		self.searchHint = None
+		self.suggestionButtons = []
+		self.searchHighlightedSlots = []
 		if app.ENABLE_SORT_INVEN:
 			self.separateButton = None
 		self.DSSButton = None
@@ -1193,6 +1458,10 @@ class InventoryWindow(ui.ScriptWindow):
 			self.listAttachedTransfer = []
 
 	def Hide(self):
+		suggestionsBox = getattr(self, "suggestionsBox", None)
+		if suggestionsBox:
+			suggestionsBox.Hide()
+		
 		# if self.wndmenu != None:
 			# self.wndmenu.Hide()
 		

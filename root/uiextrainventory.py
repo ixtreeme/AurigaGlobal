@@ -14,6 +14,8 @@ import uipickmoney
 import localeinfo
 import wiki
 
+IMG_DIR = "new_messenger/"
+
 if app.__ENABLE_NEW_OFFLINESHOP__:
 	import offlineshop
 	import uiofflineshop
@@ -26,6 +28,17 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 	def __init__(self):
 		ui.ScriptWindow.__init__(self)
 		self.wndDragonSoulRefine = None
+		self.searchEdit = None
+		self.searchBackground = None
+		self.searchButton = None
+		self.clearButton = None
+		self.suggestionsBox = None
+		self.searchHint = None
+		self.suggestionButtons = []
+		self.searchHighlightedSlots = []
+		self.lastSearchText = ""
+		self.lastSearchCheckTime = 0.0
+		self.isSearching = False
 
 	def __del__(self):
 		ui.ScriptWindow.__del__(self)
@@ -115,6 +128,7 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 		if app.ENABLE_DRAGON_SOUL_SYSTEM:
 			self.wndDragonSoulRefine = parent
 		
+		self.__InitExtraInventorySearch()
 		self.SetInventoryPage(0)
 
 	if app.ENABLE_HIGHLIGHT_SYSTEM:
@@ -125,12 +139,263 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 			if not slot in self.listHighlightedSlot[category]:
 				self.listHighlightedSlot[category].append(slot)
 
+	def __InitExtraInventorySearch(self):
+		self.searchHighlightedSlots = []
+		self.suggestionButtons = []
+		self.lastSearchText = ""
+		self.lastSearchCheckTime = 0.0
+		self.isSearching = False
+		
+		self.searchBackground = ui.ImageBox()
+		self.searchBackground.SetParent(self)
+		self.searchBackground.SetPosition(30, 454)
+		self.searchBackground.SetSize(100, 18)
+		self.searchBackground.LoadImage("d:/ymir work/ui/public/parameter_slot_05.sub")
+		self.searchBackground.Show()
+		
+		self.searchEdit = ui.EditLine()
+		self.searchEdit.SetParent(self)
+		self.searchEdit.SetPosition(34, 456)
+		self.searchEdit.SetSize(100, 18)
+		self.searchEdit.SetMax(20)
+		self.searchEdit.SetText("")
+		self.searchEdit.SetEscapeEvent(ui.__mem_func__(self.OnPressEscapeKey))
+		self.searchEdit.SetReturnEvent(ui.__mem_func__(self.__OnExtraInventorySearchReturn))
+		self.searchEdit.SetEndPosition()
+		self.searchEdit.Show()
+		
+		self.searchHint = ui.TextLine()
+		self.searchHint.SetParent(self)
+		self.searchHint.SetPosition(34, 456)
+		self.searchHint.SetPackedFontColor(0xff00ff00)
+		self.searchHint.SetText("")
+		self.searchHint.Hide()
+		
+		self.searchButton = ui.Button()
+		self.searchButton.SetParent(self)
+		self.searchButton.SetPosition(7, 453)
+		self.searchButton.SetUpVisual(IMG_DIR + "btn_1.png")
+		self.searchButton.SetOverVisual(IMG_DIR + "btn_2.png")
+		self.searchButton.SetDownVisual(IMG_DIR + "btn_3.png")
+		self.searchButton.SetEvent(ui.__mem_func__(self.__OnExtraInventorySearchReturn))
+		self.searchButton.Show()
+		
+		self.clearButton = ui.Button()
+		self.clearButton.SetParent(self)
+		self.clearButton.SetPosition(147, 457)
+		self.clearButton.SetUpVisual(IMG_DIR + "clear_btn_0.png")
+		self.clearButton.SetOverVisual(IMG_DIR + "clear_btn_1.png")
+		self.clearButton.SetDownVisual(IMG_DIR + "clear_btn_2.png")
+		self.clearButton.SetEvent(ui.__mem_func__(self.__OnExtraInventorySearchEscape))
+		self.clearButton.Hide()
+		
+		self.suggestionsBox = ui.ThinBoard()
+		self.suggestionsBox.SetSize(138, 118)
+		self.suggestionsBox.Hide()
+
+	def __RefreshExtraInventorySearchDropdownPosition(self):
+		if not self.suggestionsBox:
+			return
+		
+		try:
+			(x, y) = self.GetGlobalPosition()
+			self.suggestionsBox.SetPosition(x + 30, y + 468)
+		except:
+			pass
+
+	def __GetExtraInventorySearchItemName(self, slot):
+		itemVnum = player.GetItemIndex(player.EXTRA_INVENTORY, slot)
+		if itemVnum == 0:
+			return ""
+		
+		item.SelectItem(itemVnum)
+		return item.GetItemName()
+
+	def __ClearExtraInventorySearchHighlights(self):
+		if app.ENABLE_HIGHLIGHT_SYSTEM:
+			categorySlotCount = player.EXTRA_INVENTORY_PAGE_SIZE * (player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT)
+			for slot in self.searchHighlightedSlots:
+				category = min(slot / categorySlotCount, player.EXTRA_INVENTORY_CATEGORY_COUNT - 1)
+				if slot in self.listHighlightedSlot[category]:
+					self.listHighlightedSlot[category].remove(slot)
+		
+		self.searchHighlightedSlots = []
+		self.RefreshItemSlot()
+
+	def __OnExtraInventorySearchEscape(self):
+		if self.searchEdit:
+			self.searchEdit.SetText("")
+		
+		self.__ClearExtraInventorySearchHighlights()
+		self.__HideExtraInventorySearchSuggestions()
+		if self.searchHint:
+			self.searchHint.Hide()
+		if self.clearButton:
+			self.clearButton.Hide()
+		self.isSearching = False
+		self.lastSearchText = ""
+
+	def __OnExtraInventorySearchReturn(self):
+		if not self.searchEdit:
+			return
+		
+		searchText = self.searchEdit.GetText().lower().strip()
+		if not searchText:
+			return
+		
+		self.__HighlightExtraInventorySearchItems(searchText)
+		self.__HideExtraInventorySearchSuggestions()
+		if self.searchHint:
+			self.searchHint.Hide()
+		if self.clearButton:
+			self.clearButton.Show()
+		self.isSearching = False
+		self.__JumpToExtraInventorySearchMatch(searchText)
+
+	def __OnExtraInventorySearchSuggestionClick(self, globalSlot, searchText):
+		itemName = self.__GetExtraInventorySearchItemName(globalSlot)
+		if itemName:
+			self.__HighlightExtraInventorySearchItems(itemName.lower())
+		
+		self.__HideExtraInventorySearchSuggestions()
+		if self.clearButton:
+			self.clearButton.Show()
+		self.isSearching = False
+		self.__JumpToExtraInventorySearchMatch(searchText, globalSlot)
+
+	def __HighlightExtraInventorySearchItems(self, searchText):
+		self.__ClearExtraInventorySearchHighlights()
+		if not searchText:
+			return
+		
+		searchText = searchText.lower()
+		totalSlots = player.EXTRA_INVENTORY_PAGE_SIZE * player.EXTRA_INVENTORY_PAGE_COUNT
+		
+		for globalSlot in xrange(totalSlots):
+			itemName = self.__GetExtraInventorySearchItemName(globalSlot)
+			if itemName and searchText in itemName.lower():
+				if app.ENABLE_HIGHLIGHT_SYSTEM:
+					self.HighlightSlot(globalSlot)
+				if globalSlot not in self.searchHighlightedSlots:
+					self.searchHighlightedSlots.append(globalSlot)
+		
+		self.RefreshItemSlot()
+
+	def __HideExtraInventorySearchSuggestions(self):
+		for button in self.suggestionButtons:
+			try:
+				button.Hide()
+			except:
+				pass
+		
+		self.suggestionButtons = []
+		if self.suggestionsBox:
+			self.suggestionsBox.Hide()
+
+	def __UpdateExtraInventorySearchSuggestions(self, searchText):
+		self.__HideExtraInventorySearchSuggestions()
+		self.__UpdateExtraInventorySearchHint(searchText)
+		if not searchText:
+			if self.clearButton:
+				self.clearButton.Hide()
+			return
+		
+		if self.clearButton:
+			self.clearButton.Show()
+
+	def __UpdateExtraInventorySearchHint(self, searchText):
+		if not self.searchHint:
+			return
+		
+		searchText = searchText.strip()
+		if len(searchText) < 2:
+			self.searchHint.Hide()
+			return
+		
+		searchTextLower = searchText.lower()
+		totalSlots = player.EXTRA_INVENTORY_PAGE_SIZE * player.EXTRA_INVENTORY_PAGE_COUNT
+		
+		for globalSlot in xrange(totalSlots):
+			itemName = self.__GetExtraInventorySearchItemName(globalSlot)
+			if itemName and searchTextLower in itemName.lower():
+				itemNameLower = itemName.lower()
+				if itemNameLower.startswith(searchTextLower):
+					self.searchHint.SetPosition(34 + min(len(searchText) * 6, 82), 456)
+					self.searchHint.SetText(itemName[len(searchText):])
+				else:
+					self.searchHint.SetPosition(34, 456)
+					self.searchHint.SetText(itemName)
+				self.searchHint.Show()
+				return
+		
+		self.searchHint.Hide()
+
+	def __CheckExtraInventorySearchInputChange(self):
+		if not self.searchEdit:
+			return
+		
+		currentText = self.searchEdit.GetText()
+		if currentText != self.lastSearchText:
+			self.lastSearchText = currentText
+			self.isSearching = True if currentText else False
+			self.__UpdateExtraInventorySearchSuggestions(currentText)
+
+	def __JumpToExtraInventorySearchMatch(self, searchText, preferredSlot=None):
+		targetSlot = preferredSlot
+		if targetSlot is None:
+			searchText = searchText.lower()
+			for slot in self.searchHighlightedSlots:
+				itemName = self.__GetExtraInventorySearchItemName(slot)
+				if itemName and searchText in itemName.lower():
+					targetSlot = slot
+					break
+		
+		if targetSlot is None:
+			return
+		
+		categoryPageCount = player.EXTRA_INVENTORY_PAGE_COUNT / player.EXTRA_INVENTORY_CATEGORY_COUNT
+		categorySlotCount = player.EXTRA_INVENTORY_PAGE_SIZE * categoryPageCount
+		category = min(targetSlot / categorySlotCount, player.EXTRA_INVENTORY_CATEGORY_COUNT - 1)
+		page = (targetSlot - (category * categorySlotCount)) / player.EXTRA_INVENTORY_PAGE_SIZE
+		localSlot = targetSlot % player.EXTRA_INVENTORY_PAGE_SIZE
+		
+		self.SetCategory(category)
+		self.SetInventoryPage(page)
+		try:
+			self.categoryTab[category].Down()
+			self.inventoryTab[page].Down()
+			self.wndItem.ActivateSlot(localSlot, 1.0, 0.2, 0.2, 1.0)
+			self.wndItem.RefreshSlot()
+		except:
+			pass
+		chat.AppendChat(chat.CHAT_TYPE_INFO, "Talalat: Extra %d. kategoria, %d. oldal, %d. slot" % (category + 1, page + 1, localSlot + 1))
+
+	def OnUpdate(self):
+		if not self.searchEdit:
+			return
+		
+		currentTime = app.GetTime()
+		if currentTime - self.lastSearchCheckTime >= 0.2:
+			self.lastSearchCheckTime = currentTime
+			self.__CheckExtraInventorySearchInputChange()
+		
+		if self.searchHint and self.searchEdit and not self.searchEdit.GetText():
+			self.searchHint.Hide()
+
 	def Destroy(self):
 		self.ClearDictionary()
 		self.tooltipItem = None
 		self.wndItem = None
 		self.inventoryTab = []
 		self.categoryTab = []
+		self.searchEdit = None
+		self.searchBackground = None
+		self.searchButton = None
+		self.clearButton = None
+		self.suggestionsBox = None
+		self.searchHint = None
+		self.suggestionButtons = []
+		self.searchHighlightedSlots = []
 		self.dlgPickMoney.Destroy()
 		self.dlgPickMoney = None
 		if app.ENABLE_LOCKED_EXTRA_INVENTORY:
@@ -141,6 +406,10 @@ class ExtraInventoryWindow(ui.ScriptWindow):
 			self.bindWnds = []
 
 	def Close(self):
+		suggestionsBox = getattr(self, "suggestionsBox", None)
+		if suggestionsBox:
+			suggestionsBox.Hide()
+		
 		if constinfo.GET_ITEM_QUESTION_DIALOG_STATUS():
 			self.OnCloseQuestionDialog()
 			return
