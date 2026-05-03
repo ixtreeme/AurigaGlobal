@@ -79,3 +79,15 @@ WinTest checklist
 Status
 - Phase 15E-final.1c code migration is complete.
 - WinTest remains mandatory before verified commit.
+
+WinTest result
+- Verified successfully in-game.
+- Current gameplay state is acceptable with the native main/update/points packet path.
+- Login/spawn state, visible updates, mount/dismount visibility, affect/state refresh, and points UI remained correct during verification.
+- No recurrence of the previous mount/dynamic actor disappearance regression.
+- VID_DRIFT remained clean during verification.
+
+Verified status
+- Phase 15E-final.1c is WinTest verified.
+- The native packet builders are accepted in their current form.
+- Broadcast iteration remains intentionally deferred to Phase 15E-final.1d.

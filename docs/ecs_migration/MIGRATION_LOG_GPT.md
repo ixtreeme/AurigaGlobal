@@ -11697,3 +11697,12 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Status:
 - Phase 15E-final.1c code migration is complete.
 - WinTest required before verified close-out.
+
+WinTest result:
+- Verified successfully in-game with the native main/update/points packet path.
+- Current state is acceptable:
+  - login/spawn packet state is correct;
+  - visible update packets refresh equipment, mount and affect/state changes;
+  - points packet keeps HP/SP/EXP/gold/stat UI correct;
+  - no recurrence of the mount/dynamic actor disappearance regression.
+- Phase 15E-final.1c is accepted as WinTest verified.
