@@ -4,6 +4,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
+#include "MovementSystem.hpp"
 #include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
 #include "ItemSystem.hpp"
@@ -3709,6 +3710,12 @@ void CHARACTER::MountVnum(uint32_t vnum)
 
     m_posDest.x = m_posStart.x = GetX();
     m_posDest.y = m_posStart.y = GetY();
+
+    // LPENTITY.4-fixup.2.e: MountVnum re-encodes the character to all viewers
+    // after parking m_posDest at current position. Mirror the ECS side or
+    // native dispatch will encode a stale destination on the upcoming inserts.
+    ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
+
     EncodeInsertPacket(this);
 
     ENTITY_MAP::iterator it = m_map_view.begin();
