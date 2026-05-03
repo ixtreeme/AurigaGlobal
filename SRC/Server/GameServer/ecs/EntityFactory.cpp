@@ -27,6 +27,7 @@
 #include "components/session_components.hpp"
 #include "components/skill_components.hpp"
 #include "components/social_components.hpp"
+#include "components/spatial_components.hpp"
 #include "components/status_components.hpp"
 #include "components/transform_components.hpp"
 #include "components/vital_components.hpp"
@@ -232,6 +233,25 @@ void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER
     }
 }
 
+void ApplySpatialState(entt::registry& reg,
+    entt::entity entity,
+    ecs::SpatialKind kind,
+    int32_t mapIndex,
+    int32_t x,
+    int32_t y,
+    int32_t z)
+{
+    if (entity == entt::null || !reg.valid(entity)) {
+        return;
+    }
+
+    reg.emplace_or_replace<ecs::SpatialEntity>(entity);
+    reg.emplace_or_replace<ecs::SpatialKindTag>(entity, ecs::SpatialKindTag { kind });
+    reg.emplace_or_replace<ecs::Position>(entity, x, y, z);
+    reg.emplace_or_replace<ecs::PositionZ>(entity, ecs::PositionZ { z });
+    reg.emplace_or_replace<ecs::MapIndex>(entity, mapIndex);
+}
+
 void SeedCharacterStatsComponentFromLegacy(entt::registry& reg, entt::entity entity)
 {
     const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
@@ -278,6 +298,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     const CMob* mobProto = CMobManager::instance().Get(data.dwVnum);
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.any_of<Tag>(entity)) {
+        ApplySpatialState(reg, entity, ecs::SpatialKind::Character, mapIndex, x, y, 0);
         return entity;
     }
 
@@ -291,6 +312,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::PlayerName>(entity, MakeMobPlayerName(data));
     reg.emplace_or_replace<Tag>(entity);
     reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
+    ApplySpatialState(reg, entity, ecs::SpatialKind::Character, mapIndex, x, y, 0);
     reg.emplace_or_replace<ecs::Position>(entity, x, y, 0);
     reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
     reg.emplace_or_replace<ecs::ExitPosition>(entity, 0, 0, 0);
@@ -555,6 +577,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.all_of<ecs::TagPC>(entity)) {
+        ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);
         if (desc) {
             desc->SetEntity(entity);
         }
@@ -576,6 +599,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::TagPC>(entity);
     reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
 
+    ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);
     reg.emplace_or_replace<ecs::Position>(entity, data.x, data.y, data.z);
     reg.emplace_or_replace<ecs::WarpPosition>(entity, 0, 0, 0);
     reg.emplace_or_replace<ecs::ExitPosition>(entity, data.lExitX, data.lExitY, data.lExitMapIndex);
