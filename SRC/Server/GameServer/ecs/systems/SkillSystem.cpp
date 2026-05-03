@@ -10,6 +10,7 @@
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include "../../utils.h"
 #include "../../vector.h"
@@ -2500,7 +2501,7 @@ struct FuncSplashDamage
 				}
 				else
 				{
-					pkChrVictim->SyncPacket();
+					NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(pkChrVictim));
 				}
 			}
 		}
@@ -4194,7 +4195,7 @@ struct FHealerParty
 		int iRevive = (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkHealer)) / 100 * 15);
 		int iHP = (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)));
 		ch->SetHP(iHP);
-		ch->EffectPacket(SE_EFFECT_HEALER);
+		NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(ch), SE_EFFECT_HEALER);
 		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkHealer)).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
 	}
 
@@ -4241,7 +4242,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 			int iRevive = (int)(GetMaxHP() / 100 * 15);
 			int iHP = (GetMaxHP() >= GetHP() + iRevive) ? (int)(GetHP() + iRevive) : (int)(GetMaxHP());
 			SetHP(iHP);
-			EffectPacket(SE_EFFECT_HEALER);
+			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_EFFECT_HEALER);
 			LOG_INFO("FHealer: {} (pointer: {}) heal their HP with {} (new HP: {}).", GetName(), static_cast<const void*>(get_pointer(this)), iRevive, GetHP());
 		}
 

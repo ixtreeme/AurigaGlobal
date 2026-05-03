@@ -4,7 +4,9 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 
 #include <sstream>
 
@@ -924,7 +926,7 @@ namespace quest
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
 		if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
 		{
-			ch->ConfirmWithMsg(szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
+			NetworkSyncSystem::SendConfirmWithMsg(g_registry, AIHelpers::EcsOf(ch), szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
 		}
 
 		GetCurrentPC()->SetConfirmWait((ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))?(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))):0);
@@ -1049,6 +1051,5 @@ namespace quest
 		}
 	}
 }
-
 
 

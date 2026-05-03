@@ -1,0 +1,133 @@
+Phase 15E-final.1g - NetworkSyncSystem final sweep status
+==========================================================
+
+Scope completed in this pass
+----------------------------
+
+This pass migrated the safe NetworkSyncSystem wrapper group to native ECS
+entry points and deleted the corresponding dead CHARACTER declarations/bodies.
+
+Native ECS functions added:
+
+- ecs::NetworkSyncSystem::FindCharacterInView
+- ecs::NetworkSyncSystem::BuildPartyUpdatePacket
+- ecs::NetworkSyncSystem::BroadcastSyncPacket
+- ecs::NetworkSyncSystem::BroadcastEffect
+- ecs::NetworkSyncSystem::BroadcastSpecificEffect
+- ecs::NetworkSyncSystem::SendConfirmWithMsg
+
+Legacy CHARACTER bodies deleted:
+
+- CHARACTER::FindCharacterInView
+- CHARACTER::BuildUpdatePartyPacket
+- CHARACTER::SyncPacket
+- CHARACTER::ConfirmWithMsg
+
+Caller migrations completed
+---------------------------
+
+- cmd_emotion.cpp now queries visible characters through
+  NetworkSyncSystem::FindCharacterInView.
+- party.cpp now builds party HUD updates through
+  NetworkSyncSystem::BuildPartyUpdatePacket.
+- questlua.cpp now sends quest confirmation packets through
+  NetworkSyncSystem::SendConfirmWithMsg.
+- AffectSystem.cpp, CombatSystem.cpp, and SkillSystem.cpp now broadcast sync
+  position packets through NetworkSyncSystem::BroadcastSyncPacket.
+- Multiple effect call sites now call NetworkSyncSystem::BroadcastEffect or
+  BroadcastSpecificEffect directly where the surrounding code already had the
+  required entity context.
+
+Verification
+------------
+
+Build gate:
+
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+
+Result: PASS.
+
+The post-build environment still prints the known pwsh.exe warning after
+GameServer.exe is produced; this is not a GameServer compile/link failure.
+
+Direct caller check:
+
+- FindCharacterInView: 0 direct legacy callers
+- BuildUpdatePartyPacket: 0 direct legacy callers
+- SyncPacket: 0 direct legacy callers
+- ConfirmWithMsg: 0 direct legacy callers
+
+NetworkSyncSystem.cpp metrics after this pass
+---------------------------------------------
+
+- CHARACTER:: bodies: 9
+- LPCHARACTER references: 12
+- LegacyCharOf references: 0
+- PacketAround references: 0
+
+Remaining CHARACTER:: bodies
+----------------------------
+
+The following bodies remain in NetworkSyncSystem.cpp:
+
+- CHARACTER::EncodeInsertPacket
+- CHARACTER::EncodeRemovePacket
+- CHARACTER::SetSyncOwner
+- CHARACTER::ClearSync
+- CHARACTER::IsSyncOwner
+- CHARACTER::GetName(uint8_t)
+- CHARACTER::GetName()
+- CHARACTER::EffectPacket
+- CHARACTER::SpecificEffectPacket
+
+Deferred blockers
+-----------------
+
+The full "zero CHARACTER:: bodies" target was not completed in this pass.
+The remaining bodies are not safe dead-code deletions:
+
+- EncodeInsertPacket / EncodeRemovePacket are still tied to LPENTITY virtual
+  view protocol.
+- SetSyncOwner / ClearSync / IsSyncOwner still own legacy sync-owner list state
+  and need a dedicated SyncOwnership component/write-path migration.
+- GetName overloads are compatibility wrappers still used by legacy protocol.
+- EffectPacket / SpecificEffectPacket are now thin native ECS wrappers, but
+  ItemSystem_LegacyBridge still calls them in legacy expression/action paths.
+
+Rollback note
+-------------
+
+An attempted bulk migration of all remaining effect callers crossed into
+ItemSystem_LegacyBridge and produced more than 20 compile errors. Per rollback
+policy, that step was reverted. The retained effect wrappers are therefore
+intentional temporary wrappers, not read fallback.
+
+Architectural status
+--------------------
+
+NetworkSyncSystem no longer uses LegacyCharOf or PacketAround. The migrated
+packet builders and broadcasts read ECS components and use NetworkService /
+VisibilityService boundaries.
+
+Next focused work for a true zero-body 1g completion:
+
+1. Add SyncOwnership component and migrate SetSyncOwner/ClearSync/IsSyncOwner.
+2. Decide LPENTITY virtual protocol replacement for EncodeInsertPacket and
+   EncodeRemovePacket.
+3. Migrate ItemSystem_LegacyBridge effect callers or keep the thin wrappers
+   explicitly documented until the bridge phase.
+4. Remove the remaining GetName compatibility wrappers once their protocol
+   callers are migrated.
+
+WinTest status
+--------------
+
+WinTest is still required for this pass:
+
+- visibility enter/leave
+- party HUD update
+- sync position broadcast
+- skill/effect broadcasts
+- quest confirmation message
+- VID_DRIFT zero
+

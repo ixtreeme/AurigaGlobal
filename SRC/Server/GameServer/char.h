@@ -675,7 +675,6 @@ protected:
 	//////////////////////////////////////////////////////////////////////////////////
 
 public:
-	LPCHARACTER			FindCharacterInView(const char* name, bool bFindPCOnly);
 	int m_lastBeltMountCount;
 
 #ifdef ENABLE_VOTE4BUFF
@@ -1057,7 +1056,6 @@ public:
 
 	bool			CanMove() const;		// 이동할 수 있는가?
 
-	void			SyncPacket();
 	bool			Sync(int32_t x, int32_t y);	// 실제 이 메소드로 이동 한다 (각 종 조건에 의한 이동 불가가 없음)
 	bool			Move(int32_t x, int32_t y);	// 조건을 검사하고 Sync 메소드를 통해 이동 한다.
 	void			OnMove(bool bIsAttack = false);	// 움직일때 불린다. Move() 메소드 이외에서도 불릴 수 있다.
@@ -1255,7 +1253,6 @@ public:
 	 */
 	void			PartyInviteDeny(uint32_t dwPID);
 
-	bool			BuildUpdatePartyPacket(TPacketGCPartyUpdate& out);
 	int				GetLeadershipSkillLevel() const;
 
 	bool			CanSummon(int iLeaderShip);
@@ -1427,9 +1424,9 @@ public:
 	void			ProcessRecallItem(LPITEM item);
 
 	//	void			PotionPacket(int iPotionType);
+
 	void			EffectPacket(uint8_t enumEffectType);
 	void			SpecificEffectPacket(const char filename[128]);
-
 	// ADD_MONSTER_REFINE
 	bool			DoRefine(LPITEM item, bool bMoneyOnly = false);
 	// END_OF_ADD_MONSTER_REFINE
@@ -2266,7 +2263,6 @@ public:
 	int					GetQuestFlag(const std::string& flag) const;
 	void				SetQuestFlag(const std::string& flag, int value);
 
-	void				ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID);
 
 private:
 	uint32_t				m_dwQuestNPCVID;

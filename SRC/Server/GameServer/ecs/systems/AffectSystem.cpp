@@ -1673,7 +1673,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 			m_posDest.y = m_posStart.y = GetY();
 			battle_end(this);
 
-			SyncPacket();
+			NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(this));
 		}
 	}
 

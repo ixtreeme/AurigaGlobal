@@ -3,7 +3,9 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "constants.h"
 #include "config.h"
 #include "questmanager.h"
@@ -314,7 +316,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 
 			if (pos.x < rect[0] || pos.x > rect[2] || pos.y < rect[1] || pos.y > rect[3])
 			{
-				pkChar->EffectPacket(SE_FAIL);
+			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(pkChar), SE_FAIL);
 				const auto iter_tmp = iter;
 				iter++;
 				m_map_attender.erase(iter_tmp);
@@ -344,7 +346,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 				buf.write(chatbuf, len);
 
 				pkChar->PacketAround(buf.read_peek(), buf.size());
-				pkChar->EffectPacket(SE_SUCCESS);
+			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(pkChar), SE_SUCCESS);
 
 				++iter;
 			}

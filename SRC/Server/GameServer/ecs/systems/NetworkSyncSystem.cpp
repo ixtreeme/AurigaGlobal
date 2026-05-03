@@ -30,6 +30,7 @@
 #include "../components/identity_components.hpp"
 #include "../components/item_components.hpp"
 #include "../components/item_proto_components.hpp"
+#include "../components/movement_components.hpp"
 #include "../components/pet_mount_components.hpp"
 #include "../components/session_components.hpp"
 #include "../components/skill_components.hpp"
@@ -41,6 +42,7 @@
 #include "MountSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
+#include "../services/VisibilityService.hpp"
 #include <Core/Logging.hpp>
 
 extern bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
@@ -625,6 +627,148 @@ void NetworkSyncSystem::BroadcastEquipmentChange(entt::registry& reg, entt::enti
     ecs::NetworkService::BroadcastToView(reg, wearer, &packet, sizeof(packet), true);
 }
 
+entt::entity NetworkSyncSystem::FindCharacterInView(entt::registry& reg, entt::entity source, const char* name, bool findPCOnly)
+{
+    if (!name || source == entt::null || !reg.valid(source))
+        return entt::null;
+
+    const auto visible = ecs::VisibilityService::GetVisibleEntities(reg, source);
+    for (const entt::entity candidate : visible) {
+        if (candidate == entt::null || !reg.valid(candidate))
+            continue;
+
+        if (findPCOnly && !ecs::PlayerRuntime::IsPC(candidate))
+            continue;
+
+        if (!ecs::PlayerRuntime::IsPC(candidate)
+            && !ecs::PlayerRuntime::IsNPC(candidate)
+            && !ecs::PlayerRuntime::IsMonster(candidate)
+            && !ecs::PlayerRuntime::IsStone(candidate))
+            continue;
+
+        const auto candidateName = ecs::PlayerRuntime::GetName(candidate);
+        if (!candidateName.empty() && !strcasecmp(candidateName.data(), name))
+            return candidate;
+    }
+
+    return entt::null;
+}
+
+bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity member, TPacketGCPartyUpdate& packet)
+{
+    if (member == entt::null || !reg.valid(member))
+        return false;
+
+    LPPARTY party = ecs::SocialSystem::GetParty(member);
+    if (!party)
+        return false;
+
+    const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(member);
+    packet = {};
+    packet.header = HEADER_GC_PARTY_UPDATE;
+    packet.pid = playerID;
+
+    const int64_t maxHP = ecs::PointSystem::Get(member, POINT_MAX_HP);
+    if (maxHP <= 0)
+        packet.percent_hp = 0;
+    else
+        packet.percent_hp = MINMAX((int64_t)0, ecs::PointSystem::Get(member, POINT_HP) * 100 / maxHP, (int64_t)100);
+
+    packet.role = party->GetRole(playerID);
+    LOG_INFO("PARTY {} role is {}", ecs::PlayerRuntime::GetName(member), packet.role);
+
+    LPCHARACTER leader = party->GetLeaderCharacter();
+    const entt::entity leaderEntity = leader ? AIHelpers::EcsOf(leader) : entt::null;
+    if (leaderEntity != entt::null && reg.valid(leaderEntity)) {
+        const auto* memberPos = reg.try_get<ecs::Position>(member);
+        const auto* leaderPos = reg.try_get<ecs::Position>(leaderEntity);
+        if (memberPos && leaderPos && DISTANCE_APPROX(memberPos->x - leaderPos->x, memberPos->y - leaderPos->y) < PARTY_DEFAULT_RANGE) {
+            packet.affects[0] = party->GetPartyBonusExpPercent();
+            packet.affects[1] = ecs::PointSystem::Get(member, POINT_PARTY_ATTACKER_BONUS);
+            packet.affects[2] = ecs::PointSystem::Get(member, POINT_PARTY_TANKER_BONUS);
+            packet.affects[3] = ecs::PointSystem::Get(member, POINT_PARTY_BUFFER_BONUS);
+            packet.affects[4] = ecs::PointSystem::Get(member, POINT_PARTY_SKILL_MASTER_BONUS);
+            packet.affects[5] = ecs::PointSystem::Get(member, POINT_PARTY_HASTE_BONUS);
+            packet.affects[6] = ecs::PointSystem::Get(member, POINT_PARTY_DEFENDER_BONUS);
+        }
+    }
+
+    return true;
+}
+
+void NetworkSyncSystem::BroadcastSyncPacket(entt::registry& reg, entt::entity source)
+{
+    if (source == entt::null || !reg.valid(source))
+        return;
+
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    const auto* position = reg.try_get<ecs::Position>(source);
+    if (!vid || !position)
+        return;
+
+    TEMP_BUFFER buf;
+    TPacketCGSyncPositionElement elem {};
+    elem.dwVID = vid->value;
+    elem.lX = position->x;
+    elem.lY = position->y;
+
+    TPacketGCSyncPosition packet {};
+    packet.bHeader = HEADER_GC_SYNC_POSITION;
+    packet.wSize = sizeof(TPacketGCSyncPosition) + sizeof(elem);
+
+    buf.write(&packet, sizeof(packet));
+    buf.write(&elem, sizeof(elem));
+    ecs::NetworkService::BroadcastToView(reg, source, buf.read_peek(), buf.size(), false);
+}
+
+void NetworkSyncSystem::BroadcastEffect(entt::registry& reg, entt::entity source, uint8_t effectType)
+{
+    if (source == entt::null || !reg.valid(source))
+        return;
+
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    if (!vid)
+        return;
+
+    TPacketGCSpecialEffect packet {};
+    packet.header = HEADER_GC_SEPCIAL_EFFECT;
+    packet.type = effectType;
+    packet.vid = vid->value;
+    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), false);
+}
+
+void NetworkSyncSystem::BroadcastSpecificEffect(entt::registry& reg, entt::entity source, const char* effectName)
+{
+    if (source == entt::null || !reg.valid(source))
+        return;
+
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    if (!vid || !effectName)
+        return;
+
+    TPacketGCSpecificEffect packet {};
+    packet.header = HEADER_GC_SPECIFIC_EFFECT;
+    packet.vid = vid->value;
+    strlcpy(packet.effect_file, effectName, MAX_EFFECT_FILE_NAME);
+    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), false);
+}
+
+void NetworkSyncSystem::SendConfirmWithMsg(entt::registry& reg, entt::entity recipient, const char* message, int timeout, uint32_t requestPID)
+{
+    if (recipient == entt::null || !reg.valid(recipient))
+        return;
+
+    if (!ecs::PlayerRuntime::IsPC(recipient) || !message)
+        return;
+
+    TPacketGCQuestConfirm packet {};
+    packet.header = HEADER_GC_QUEST_CONFIRM;
+    packet.requestPID = requestPID;
+    packet.timeout = timeout;
+    strlcpy(packet.msg, message, sizeof(packet.msg));
+    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
+}
+
 namespace ecs {
 entt::entity EntityFromLPENTITY(LPENTITY entity)
 {
@@ -947,27 +1091,6 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
         LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)entity))).data());
 }
 
-LPCHARACTER CHARACTER::FindCharacterInView(const char* c_pszName, bool bFindPCOnly)
-{
-    ENTITY_MAP::iterator it = m_map_view.begin();
-
-    for (; it != m_map_view.end(); ++it)
-    {
-        if (!it->first->IsType(ENTITY_CHARACTER))
-            continue;
-
-        LPCHARACTER tch = (LPCHARACTER)it->first;
-
-        if (bFindPCOnly && ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(tch)))
-            continue;
-
-        if (!strcasecmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), c_pszName))
-            return tch;
-    }
-
-    return nullptr;
-}
-
 bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 {
     if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
@@ -1063,60 +1186,6 @@ bool CHARACTER::IsSyncOwner(LPCHARACTER ch) const
     return false;
 }
 
-bool CHARACTER::BuildUpdatePartyPacket(TPacketGCPartyUpdate& out)
-{
-    if (!GetParty())
-        return false;
-
-    memset(&out, 0, sizeof(out));
-
-    out.header = HEADER_GC_PARTY_UPDATE;
-    out.pid = GetPlayerID();
-    if (GetMaxHP() <= 0)
-        out.percent_hp = 0;
-    else
-        out.percent_hp = MINMAX((int64_t)0, GetHP() * 100 / GetMaxHP(), (int64_t)100);
-    out.role = GetParty()->GetRole(GetPlayerID());
-
-    LOG_INFO("PARTY {} role is {}", GetName(), out.role);
-
-    LPCHARACTER l = GetParty()->GetLeaderCharacter();
-
-    if (l && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(l)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(l))) < PARTY_DEFAULT_RANGE)
-    {
-        out.affects[0] = GetParty()->GetPartyBonusExpPercent();
-        out.affects[1] = GetPoint(POINT_PARTY_ATTACKER_BONUS);
-        out.affects[2] = GetPoint(POINT_PARTY_TANKER_BONUS);
-        out.affects[3] = GetPoint(POINT_PARTY_BUFFER_BONUS);
-        out.affects[4] = GetPoint(POINT_PARTY_SKILL_MASTER_BONUS);
-        out.affects[5] = GetPoint(POINT_PARTY_HASTE_BONUS);
-        out.affects[6] = GetPoint(POINT_PARTY_DEFENDER_BONUS);
-    }
-
-    return true;
-}
-
-void CHARACTER::SyncPacket()
-{
-    TEMP_BUFFER buf;
-
-    TPacketCGSyncPositionElement elem;
-
-    elem.dwVID = GetPacketVID();
-    elem.lX = GetX();
-    elem.lY = GetY();
-
-    TPacketGCSyncPosition pack;
-
-    pack.bHeader = HEADER_GC_SYNC_POSITION;
-    pack.wSize = sizeof(TPacketGCSyncPosition) + sizeof(elem);
-
-    buf.write(&pack, sizeof(pack));
-    buf.write(&elem, sizeof(elem));
-
-    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), buf.read_peek(), buf.size(), false);
-}
-
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 {
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
@@ -1175,39 +1244,12 @@ const char* CHARACTER::GetName() const
 
 void CHARACTER::EffectPacket(uint8_t enumEffectType)
 {
-    TPacketGCSpecialEffect p;
-
-    p.header = HEADER_GC_SEPCIAL_EFFECT;
-    p.type = enumEffectType;
-    p.vid = GetPacketVID();
-
-    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
+    NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), enumEffectType);
 }
 
 void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
 {
-    TPacketGCSpecificEffect p;
-
-    p.header = HEADER_GC_SPECIFIC_EFFECT;
-    p.vid = GetPacketVID();
-    strlcpy(p.effect_file, filename, MAX_EFFECT_FILE_NAME);
-
-    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
-}
-
-void CHARACTER::ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID)
-{
-    if (!IsPC())
-        return;
-
-    TPacketGCQuestConfirm p;
-
-    p.header = HEADER_GC_QUEST_CONFIRM;
-    p.requestPID = dwRequestPID;
-    p.timeout = iTimeout;
-    strlcpy(p.msg, szMsg, sizeof(p.msg));
-
-    GetDesc()->Packet(&p, sizeof(p));
+    NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(this), filename);
 }
 
 void CItem::EncodeInsertPacket(LPENTITY ent)

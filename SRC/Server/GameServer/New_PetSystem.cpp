@@ -10,6 +10,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "utils.h"
 #include "vector.h"
 #include "char_interface.hpp"
@@ -1451,7 +1452,7 @@ void CNewPetActor::DoPetSkill(int skillslot) {
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 751, "");
 #endif
 		ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_HP, riphp);
-		m_pkOwner->EffectPacket(SE_HPUP_RED);
+		NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(m_pkOwner), SE_HPUP_RED);
 	}
 	break;
 

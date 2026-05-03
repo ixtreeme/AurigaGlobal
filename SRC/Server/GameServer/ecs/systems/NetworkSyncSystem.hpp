@@ -24,6 +24,12 @@ void UpdateItemOnTitleName(entt::registry& reg, entt::entity source, bool force 
 bool BuildViewEquipmentPacket(entt::registry& reg, entt::entity wearer, TPacketViewEquip& packet);
 void SendEquipmentToViewer(entt::registry& reg, entt::entity wearer, entt::entity viewer);
 void BroadcastEquipmentChange(entt::registry& reg, entt::entity wearer);
+entt::entity FindCharacterInView(entt::registry& reg, entt::entity source, const char* name, bool findPCOnly);
+bool BuildPartyUpdatePacket(entt::registry& reg, entt::entity member, TPacketGCPartyUpdate& packet);
+void BroadcastSyncPacket(entt::registry& reg, entt::entity source);
+void BroadcastEffect(entt::registry& reg, entt::entity source, uint8_t effectType);
+void BroadcastSpecificEffect(entt::registry& reg, entt::entity source, const char* effectName);
+void SendConfirmWithMsg(entt::registry& reg, entt::entity recipient, const char* message, int timeout, uint32_t requestPID);
 
 } // namespace NetworkSyncSystem
 

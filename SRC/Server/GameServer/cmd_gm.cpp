@@ -8,6 +8,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "utils.h"
 #include "config.h"
 #include "desc_client.h"
@@ -43,6 +44,7 @@
 #include "unique_item.h"
 #include "DragonSoul.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/VIDRegistry.hpp"
@@ -4007,7 +4009,7 @@ ACMD(do_effect)
 
 	uint8_t	effect_type = 0;
 	str_to_number(effect_type, arg1);
-	ch->EffectPacket(effect_type);
+	NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(ch), effect_type);
 }
 
 

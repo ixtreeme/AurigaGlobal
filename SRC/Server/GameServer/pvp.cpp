@@ -8,6 +8,7 @@
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
 #include "pvp.h"
@@ -188,16 +189,16 @@ EVENTFUNC(pvp_duel_counter)
 	{
 		case 0:
 		{
-			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
-			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chA), "D:/ymir work/ui/game/pvp_advanced/3.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chB), "D:/ymir work/ui/game/pvp_advanced/3.mse");
 
 			info->state++;
 			return PASSES_PER_SEC(1); break;
 		}
 		case 1:
 		{
-			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/2.mse");
-			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/2.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chA), "D:/ymir work/ui/game/pvp_advanced/2.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chB), "D:/ymir work/ui/game/pvp_advanced/2.mse");
 			info->state++;
 			return PASSES_PER_SEC(1);
 			break;
@@ -296,8 +297,8 @@ EVENTFUNC(pvp_duel_counter)
 				}
 			}
 
-			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/1.mse");
-			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/1.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chA), "D:/ymir work/ui/game/pvp_advanced/1.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chB), "D:/ymir work/ui/game/pvp_advanced/1.mse");
 
 			info->state++;
 			return PASSES_PER_SEC(1);
@@ -305,8 +306,8 @@ EVENTFUNC(pvp_duel_counter)
 		}
 		case 3:
 		{
-			chA->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/go.mse");
-			chB->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/go.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chA), "D:/ymir work/ui/game/pvp_advanced/go.mse");
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(chB), "D:/ymir work/ui/game/pvp_advanced/go.mse");
 
 			info->state++;
 			return PASSES_PER_SEC(1);

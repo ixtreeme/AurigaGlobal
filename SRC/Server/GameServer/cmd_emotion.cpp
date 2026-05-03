@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include <Core/Logging.hpp>
 #include "utils.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/Registry.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "motion.h"
 #include "packet.h"
@@ -190,8 +192,10 @@ ACMD(do_emotion)
 
 	LPCHARACTER victim = nullptr;
 
-	if (*arg1)
-		victim = ch->FindCharacterInView(arg1, IS_SET(emotion_types[i].flag, NEED_PC));
+	if (*arg1) {
+		const entt::entity victimEntity = NetworkSyncSystem::FindCharacterInView(g_registry, AIHelpers::EcsOf(ch), arg1, IS_SET(emotion_types[i].flag, NEED_PC));
+		victim = victimEntity != entt::null ? CHARACTER_MANAGER::instance().Find(ecs::PlayerRuntime::GetPacketVID(victimEntity)) : nullptr;
+	}
 
 	if (IS_SET(emotion_types[i].flag, NEED_TARGET | NEED_PC))
 	{

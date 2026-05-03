@@ -8,6 +8,7 @@
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "utils.h"
 #include "config.h"
 #include "char_interface.hpp"
@@ -2636,7 +2637,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 		{
 			auto* ch = *it;
 			if (ch)
-				ch->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
+				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(ch), "D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
 	}
 
@@ -2704,7 +2705,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 		{
 			auto* ch = *it;
 			if (ch)
-				ch->SpecificEffectPacket("D:/ymir work/ui/game/pvp_advanced/3.mse");
+				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(ch), "D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
 	}
 }

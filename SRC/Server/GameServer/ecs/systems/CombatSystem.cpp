@@ -783,7 +783,7 @@ struct FuncPullMonster
 			ch->Goto(tx, ty);
 			ch->CalculateMoveDuration();
 
-			ch->SyncPacket();
+			NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(ch));
 		}
 	}
 };
@@ -4641,7 +4641,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				{
 					IsCritical = true;
 					dam *= 2;
-					EffectPacket(SE_CRITICAL);
+					NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_CRITICAL);
 
 					if (IsAffectFlag(AFF_MANASHIELD))
 					{
@@ -4699,7 +4699,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 						RemoveAffect(AFF_MANASHIELD);
 					}
 #ifdef ENABLE_EFFECT_PENETRATE
-					EffectPacket(SE_PENETRATE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_PENETRATE);
 #endif
 				}
 			}
@@ -4804,7 +4804,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				{
 					IsCritical = true;
 					dam *= 2;
-					EffectPacket(SE_CRITICAL);
+					NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_CRITICAL);
 				}
 			}
 
@@ -4837,7 +4837,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					IsPenetrate = true;
 					dam += GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100;
 #ifdef ENABLE_EFFECT_PENETRATE
-					EffectPacket(SE_PENETRATE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_PENETRATE);
 #endif
 				}
 			}

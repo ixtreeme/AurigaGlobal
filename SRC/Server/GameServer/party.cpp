@@ -4,7 +4,9 @@
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "utils.h"
 #include "char_interface.hpp"
 #include "party.h"
@@ -822,7 +824,7 @@ void CParty::SendPartyInfoOneToAll(LPCHARACTER ch)
 
 	// Data Building
 	TPacketGCPartyUpdate p;
-	ch->BuildUpdatePartyPacket(p);
+	NetworkSyncSystem::BuildPartyUpdatePacket(g_registry, AIHelpers::EcsOf(ch), p);
 
 	for (it = m_memberMap.begin();it!= m_memberMap.end(); ++it)
 	{
@@ -854,7 +856,7 @@ void CParty::SendPartyInfoAllToOne(LPCHARACTER ch)
 			continue;
 		}
 
-		it->second.pCharacter->BuildUpdatePartyPacket(p);
+		NetworkSyncSystem::BuildPartyUpdatePacket(g_registry, AIHelpers::EcsOf(it->second.pCharacter), p);
 		LOG_TRACE("PARTY send info {}[{}] to {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(it->second.pCharacter)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(it->second.pCharacter)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
 		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 	}

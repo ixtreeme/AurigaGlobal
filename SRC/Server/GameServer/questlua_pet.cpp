@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
 #include "questlua.h"
@@ -167,7 +168,7 @@ namespace quest
 
 		if (lua_isstring(L, 2))
 		{
-			pet_ch->SpecificEffectPacket (lua_tostring(L, 2));
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(pet_ch), lua_tostring(L, 2));
 		}
 		return 0;
 	}
