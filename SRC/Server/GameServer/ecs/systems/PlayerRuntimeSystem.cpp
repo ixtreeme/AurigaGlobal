@@ -4644,6 +4644,9 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 #endif
         return;
     }
+    // LPENTITY.4-fixup.2.g: mirror legacy KASMIR title into ECS ShopState
+    if (auto* shop = g_registry.try_get<ecs::ShopState>(AIHelpers::EcsOf(this)))
+        shop->kasmirTitle = m_bKasmirPaketBaslik;
 #endif
 
     std::map<uint32_t, uint32_t> itemkind;
@@ -4778,6 +4781,9 @@ void CHARACTER::CloseMyShop()
 #ifdef KASMIR_PAKET_SYSTEM
         m_bKasmirPaketBaslik = 0;
         m_bKasmirPaketDurum = false;
+        // LPENTITY.4-fixup.2.g: clear ECS mirror on shop close
+        if (auto* shop = g_registry.try_get<ecs::ShopState>(AIHelpers::EcsOf(this)))
+            shop->kasmirTitle = 0;
 #endif
 
         TPacketGCShopSign p;

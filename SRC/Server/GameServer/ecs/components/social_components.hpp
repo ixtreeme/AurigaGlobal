@@ -74,6 +74,11 @@ struct ShopState {
     bool underRefine;
     int refineCell;
     uint32_t refineNPCVID;
+#ifdef KASMIR_PAKET_SYSTEM
+    // LPENTITY.4-fixup.2.g: mirror of legacy m_bKasmirPaketBaslik so native
+    // EntityNetworkDispatch shop sign packet matches legacy bytes.
+    uint8_t kasmirTitle { 0 };
+#endif
 };
 
 struct WarpBlockState {
