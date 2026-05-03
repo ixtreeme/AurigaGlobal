@@ -1,0 +1,287 @@
+Phase 15E-final.LPENTITY.0 - LPENTITY to ECS migration audit
+============================================================
+
+Scope
+-----
+
+Audit-only phase. No source code changes were made. This report documents the
+current LPENTITY/CEntity protocol and proposes the migration order needed to
+remove virtual entity dispatch before the remaining Combat, Inventory, Item
+Bridge, and final CHARACTER/CItem deletion phases.
+
+Baseline metrics
+----------------
+
+- Tree-wide LPENTITY references in SRC/Server/GameServer: 136
+- CEntity-derived classes: 4
+- CEntity pure virtual methods: 2
+- Current NetworkSyncSystem.cpp after 15E-final.1g:
+  - CHARACTER:: bodies: 9
+  - LPCHARACTER references: 12
+  - LegacyCharOf references: 0
+  - PacketAround references: 0
+
+LPENTITY class structure
+------------------------
+
+LPENTITY is not a concrete class. It is an alias for CEntity:
+
+- typedef.h: LPENTITY is DebugPtr<CEntity> or CEntity* depending on build mode.
+- entity.h: CEntity is the base class.
+
+CEntity owns both spatial/service state and view-map packet dispatch:
+
+| Field | Type | Purpose | ECS status |
+|-------|------|---------|------------|
+| m_iType | int | ENTITY_CHARACTER / ENTITY_ITEM / ENTITY_OBJECT / ENTITY_NEWSHOPS dispatch kind | Not directly modeled; partially replaced by TagPC/TagNPC/TagMonster/TagStone and item components |
+| m_pos | PIXEL_POSITION | x/y/z spatial position | x/y covered by Position; z needs explicit coverage if packets still use z |
+| m_lMapIndex | int32_t | map index | Covered by MapIndex |
+| m_pSectree | LPSECTREE | spatial service pointer | Accepted service boundary, but should move behind SpatialService/SectreeRef |
+| m_map_view | unordered_map<LPENTITY,int> | current visible entity set with view age | Not fully modeled; current VisibilityService is range query only |
+| m_iViewAge | int | visibility aging during UpdateSectree | Needs ViewMap age/generation or event-driven diff |
+| m_lpDesc | LPDESC | descriptor bound to entity | Character network session covered by NetworkSession/GetDesc E-debt; non-character users need review |
+| m_bIsObserver | bool | observer visibility state | Covered for characters by ObserverModeTag/StatusFlags |
+| m_bObserverModeChange | bool | forces special UpdateSectree reencode path | Needs visibility dirty flag |
+| m_bIsDestroyed | bool | destructor safety guard | Can become lifecycle tag or be removed with CEntity |
+
+Derived class inventory
+-----------------------
+
+| Derived class | File | Virtual overrides | Complexity | Notes |
+|---------------|------|-------------------|------------|-------|
+| CHARACTER | char.h / NetworkSyncSystem.cpp | EncodeInsertPacket, EncodeRemovePacket | High | Main spawn/remove packet path; still uses many legacy character packet fields in EncodeInsertPacket |
+| CItem | item.h / NetworkSyncSystem.cpp | EncodeInsertPacket, EncodeRemovePacket | Medium | 15E-final.1f converted bodies to ECS-resolving wrappers; virtual dispatch remains |
+| building::CObject | building.h / building.cpp | EncodeInsertPacket, EncodeRemovePacket | Medium | Building/object packets use m_data, m_dwVID, proto, land/guild data; not ECS modeled |
+| offlineshop::ShopEntity | new_offlineshop.h / new_offlineshop.cpp | EncodeInsertPacket, EncodeRemovePacket | Medium | Offline shop entity protocol delegates to shop manager and PC-only recipient filtering |
+
+CEntity virtual method catalog
+------------------------------
+
+Only two methods are true CEntity virtuals:
+
+| Virtual method | Overrides | Dispatch sites | Migration target |
+|----------------|-----------|----------------|------------------|
+| EncodeInsertPacket(LPENTITY viewer) | CHARACTER, CItem, CObject, ShopEntity | entity_view.cpp, PlayerRuntimeSystem.cpp | ecs::EntityNetworkDispatch::SendInsert(sourceE, viewerE) |
+| EncodeRemovePacket(LPENTITY viewer) | CHARACTER, CItem, CObject, ShopEntity | entity_view.cpp, PlayerRuntimeSystem.cpp, SessionSystem.cpp | ecs::EntityNetworkDispatch::SendRemove(sourceE, viewerE) |
+
+Important non-CEntity packet methods:
+
+- CItem::UpdatePacket()
+- CItem::UsePacketEncode(...)
+
+These are not LPENTITY virtual methods, but they are part of the same CItem
+legacy packet-wrapper cleanup area.
+
+Virtual dispatch site inventory
+-------------------------------
+
+Primary polymorphic dispatch sites:
+
+- entity_view.cpp:
+  - ViewReencode calls EncodeRemovePacket/EncodeInsertPacket for self and each visible entity.
+  - ViewInsert calls entity->EncodeInsertPacket(this) and recursively inserts reverse relation.
+  - ViewRemove calls entity->EncodeRemovePacket(this) and recursively removes reverse relation.
+  - UpdateSectree ages m_map_view, inserts nearby entities from sectree, removes stale entries, and handles observer-mode transitions.
+- PlayerRuntimeSystem.cpp:
+  - legacy CHARACTER body paths still call EncodeInsertPacket/EncodeRemovePacket and entity->EncodeInsertPacket(this).
+- SessionSystem.cpp:
+  - login/logout/show cleanup calls ViewCleanup, EncodeInsertPacket, EncodeRemovePacket, UpdateSectree, ViewReencode.
+- building.cpp/new_offlineshop.cpp:
+  - derived object/shop overrides are still legacy packet builders.
+- ItemSystem_LegacyBridge.cpp:
+  - direct CItem::UpdatePacket callers remain; not LPENTITY virtual, but downstream affected by item network dispatch removal.
+
+View-map mechanism
+------------------
+
+The current CEntity visibility system is symmetric and age-based:
+
+1. UpdateSectree increments m_iViewAge.
+2. The current sectree iterates neighbors via ForEachAround.
+3. CFuncViewInsert filters by range except ENTITY_OBJECT, then calls m_me->ViewInsert(ent).
+4. ViewInsert adds ent to this->m_map_view with current m_iViewAge and sends ent->EncodeInsertPacket(this).
+5. If recursive, ent->ViewInsert(this,false) keeps the reverse relation.
+6. UpdateSectree later removes any m_map_view entry whose stored age is older than m_iViewAge.
+7. ViewRemove removes one side, sends entity->EncodeRemovePacket(this), and recursively removes the reverse relation.
+8. Observer mode is special:
+   - Observer receives self-only packet behavior.
+   - Observer transitions re-send remove/insert packets for existing view entries.
+
+Conclusion: the relation is intended to be symmetric, but the packet direction
+is asymmetric. "A sees B" sends B's insert packet to A. This must be preserved
+exactly in ECS dispatch.
+
+Current VisibilityService status
+--------------------------------
+
+VisibilityService exists, but it is not a full m_map_view replacement yet:
+
+- GetEntitiesInRange uses sectree->ForEachAround and returns character ECS entities only.
+- GetViewersOf currently delegates to GetEntitiesInRange.
+- GetVisibleEntities currently aliases GetViewersOf.
+- OnPositionChanged, OnSpawn, and OnRemove are no-ops.
+- Items, buildings, and offline shops are not fully represented in the current query result.
+
+This is acceptable for 15E-final.1b-1g bridge removal, but not sufficient for
+LPENTITY deletion. A real ViewMap/ViewerMap component pair is required before
+virtual dispatch can be removed safely.
+
+Dispatch replacement design
+---------------------------
+
+Recommended ECS components:
+
+| Component/tag | Purpose | Source |
+|---------------|---------|--------|
+| SpatialEntity | Common marker for entities participating in sectree visibility | New |
+| SpatialKind | Character / Item / Building / OfflineShop / Other; replaces m_iType for ECS dispatch | New, or use tag components |
+| Position3D | x/y/z if z remains packet-visible | Extend Position or add z companion |
+| SectreeRef | LPSECTREE service pointer, behind service boundary | New or formalize existing GetSectree E-debt |
+| ViewMap | vector/set of entities this entity sees, plus generation/age | New |
+| ViewerMap | reverse relation: entities that see this entity | New |
+| VisibilityDirty | marks spawn/remove/reencode needed | New |
+| ObserverVisibility | observer flags and transition dirty bit | Existing ObserverModeTag/StatusFlags plus dirty bit |
+| ObjectState | building object packet state: VID, vnum, rotation, land/guild owner | New |
+| OfflineShopState | shop entity packet state: VID, name, race, shop type/service pointer | New |
+
+Recommended ECS services:
+
+- SpatialService:
+  - InsertEntity(reg,e,map,x,y,z)
+  - RemoveEntity(reg,e)
+  - UpdateSectree(reg,e)
+  - ForEachAround(reg,e,callback)
+- VisibilityService:
+  - RebuildView(reg,e)
+  - InsertVisibility(reg,viewer,source)
+  - RemoveVisibility(reg,viewer,source)
+  - GetVisibleEntities(reg,viewer)
+  - GetViewersOf(reg,source)
+- EntityNetworkDispatch:
+  - SendInsert(reg,sourceE,viewerE)
+  - SendRemove(reg,sourceE,viewerE)
+  - Reencode(reg,e)
+
+EntityNetworkDispatch should dispatch by ECS tags/components, not C++ virtuals:
+
+- Character source: use native character spawn/remove builders.
+- Item source: use ItemNetworkSystem::SendItemInsert/SendItemRemove.
+- Building source: use native building/object packet builder.
+- OfflineShop source: use native offline shop packet builder or shop service boundary.
+
+Risk assessment
+---------------
+
+| Area | Risk | Reason | Mitigation |
+|------|------|--------|------------|
+| ViewMap semantics | High | Current m_map_view is symmetric but packet direction is subtle | Build component mirror first and compare against legacy before replacing |
+| Items on ground | High | Recent 1f regression showed item insert/remove path is fragile | Keep item drop/pickup WinTest in every LPENTITY subphase |
+| Buildings/offline shops | Medium | Less frequently tested than characters/items | Add targeted smoke tests before virtual removal |
+| Observer mode | Medium | UpdateSectree has custom branch for observer transition | Add VisibilityDirty/Observer transition tests |
+| Sectree PC count and mob FSM | Medium | UpdateSectree/InsertEntity starts/stops state machines | Keep service callbacks explicit in SpatialService |
+| PacketAround/PacketView users | Medium | Many subsystem packets still rely on CEntity view iteration | Migrate to NetworkService::BroadcastToView/Range after ViewMap exists |
+
+Sub-phase proposal
+------------------
+
+Phase 15E-final.LPENTITY.1 - Spatial coverage and entity kind tags
+
+- Add SpatialEntity/SpatialKind or equivalent tags for Character, Item,
+  Building, OfflineShop.
+- Ensure Position/MapIndex/VID coverage for every CEntity-derived object.
+- Add Position3D or z coverage where packet builders need it.
+- Estimated effort: 1-2 days.
+- Risk: low-medium.
+
+Phase 15E-final.LPENTITY.2 - ECS sectree boundary
+
+- Introduce SpatialService wrappers around sectree insert/remove/update.
+- Inputs/outputs become entt::entity.
+- Internally may still touch LPSECTREE/LPENTITY as service boundary.
+- Keep behavior identical: PC count, mob FSM start/stop, object attr regions.
+- Estimated effort: 2-3 days.
+- Risk: medium.
+
+Phase 15E-final.LPENTITY.3 - ViewMap/ViewerMap mirror
+
+- Add ViewMap and ViewerMap components.
+- Update them in parallel with m_map_view in ViewInsert/ViewRemove/UpdateSectree.
+- Add invariant logging comparing legacy m_map_view size/content with ECS maps.
+- Do not remove legacy dispatch yet.
+- Estimated effort: 2-4 days.
+- Risk: high.
+
+Phase 15E-final.LPENTITY.4 - Native entity insert/remove dispatch
+
+- Implement EntityNetworkDispatch::SendInsert/SendRemove.
+- Replace entity->EncodeInsertPacket and entity->EncodeRemovePacket call sites
+  in entity_view.cpp with tag dispatch.
+- Keep old virtual methods temporarily as wrappers until zero callers.
+- Estimated effort: 3-4 days.
+- Risk: high.
+
+Phase 15E-final.LPENTITY.5 - PacketAround/PacketView replacement
+
+- Replace CEntity::PacketAround/PacketView callers with NetworkService
+  broadcasts over ViewMap/ViewerMap.
+- Remove dependencies from Combat, Activity, Movement, Point, Chat, Inventory,
+  Fishing, input_main, OXEvent.
+- Estimated effort: 2-4 days.
+- Risk: medium-high.
+
+Phase 15E-final.LPENTITY.6 - CEntity base deletion preparation
+
+- Remove virtual methods and derived overrides.
+- Move remaining CEntity state into components/services.
+- Delete CEntity inheritance from CHARACTER/CItem where possible.
+- Leave service objects (sectree/desc/shop/building manager) behind explicit
+  service boundaries.
+- Estimated effort: 2-3 days.
+- Risk: medium.
+
+Total LPENTITY migration estimate: 12-20 days.
+
+This is slightly higher than the initial 10-17 day estimate because actual code
+shows two additional non-character derived types (building::CObject and
+ShopEntity) and PacketAround/PacketView callers outside NetworkSyncSystem.
+
+Downstream impact
+-----------------
+
+| Downstream phase | Before LPENTITY removal | After LPENTITY removal | Savings |
+|------------------|-------------------------|------------------------|---------|
+| Combat extraction | 12-18 days | 8-12 days | 4-6 days |
+| Inventory/item ground flow | 10-15 days | 7-10 days | 3-5 days |
+| ItemSystem_LegacyBridge | 8-12 days | 4-6 days | 4-6 days |
+| Movement/visibility | 6-10 days | 4-7 days | 2-3 days |
+| CHARACTER deletion | 2-3 days | 1-2 days | 1 day |
+| CItem deletion | 2-3 days | 1-2 days | 1 day |
+
+Net: 12-20 day investment, roughly 15-22 day downstream reduction, plus lower
+risk because Combat/Inventory phases no longer have to reason about C++ virtual
+packet dispatch and m_map_view at the same time.
+
+Recommended migration order
+---------------------------
+
+1. Add entity-kind/spatial coverage first. Do not touch dispatch yet.
+2. Wrap sectree operations in SpatialService while behavior is unchanged.
+3. Mirror m_map_view into ViewMap/ViewerMap with invariant diagnostics.
+4. Replace virtual EncodeInsert/EncodeRemove dispatch with tag dispatch.
+5. Replace PacketAround/PacketView users with NetworkService broadcasts.
+6. Delete CEntity virtual methods and then shrink/delete CEntity.
+
+Architectural conclusion
+------------------------
+
+Migrating LPENTITY before Combat/Inventory is the correct dependency order.
+The base class currently hides three major concerns behind one pointer:
+
+- spatial membership (sectree, map index, position)
+- visibility graph (m_map_view and view age)
+- polymorphic packet dispatch (EncodeInsertPacket/EncodeRemovePacket)
+
+As long as those remain coupled, later subsystem refactors will keep rediscovering
+the same boundary. The LPENTITY migration should therefore be treated as a
+foundation phase, not a cleanup phase.
+
