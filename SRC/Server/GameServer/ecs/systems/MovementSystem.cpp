@@ -618,6 +618,11 @@ void CHARACTER::Stop()
 
 	m_posDest.x = m_posStart.x = GetX();
 	m_posDest.y = m_posStart.y = GetY();
+
+	// LPENTITY.4-fixup.2.b: stop clears active movement; remove ECS
+	// MovementDestination and zero MovementState timing so native dispatch
+	// does not encode a phantom move on subsequent inserts.
+	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
 }
 
 bool CHARACTER::Goto(int32_t x, int32_t y)
@@ -908,6 +913,10 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
         {
             m_bNowWalking = false;
         }
+
+        // LPENTITY.4-fixup.2.b: mirror walk-mode toggle into ECS
+        // MovementState so native dispatch emits the correct WALKMODE.
+        ecs::MovementSystem::SyncWalkingWrite(EcsEntityOf(this), m_bNowWalking);
 
         {
             TPacketGCWalkMode p;
