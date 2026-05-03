@@ -69,14 +69,17 @@ inline void Broadcast(entt::registry& reg, entt::entity source, const void* pack
 
 inline void BroadcastToView(entt::registry& reg, entt::entity source, const void* packet, std::size_t size, bool excludeSource = true)
 {
-    const auto recipients = ecs::VisibilityService::GetViewersOfNative(reg, source);
+    // Keep legacy/range visibility authoritative for live broadcasts until
+    // LPENTITY native view ownership is proven under movement load. A stale
+    // ViewerMap mirror causes visible multi-second client sync lag.
+    const auto recipients = ecs::VisibilityService::GetViewersOf(reg, source);
 #ifndef NDEBUG
-    const auto legacyRecipients = ecs::VisibilityService::GetViewersOf(reg, source);
-    if (recipients.size() != legacyRecipients.size()) {
+    const auto nativeRecipients = ecs::VisibilityService::GetViewersOfNative(reg, source);
+    if (nativeRecipients.size() != recipients.size()) {
         LOG_WARN("[BROADCAST_DRIFT] entity={} native={} legacy={}",
             static_cast<uint32_t>(source),
-            recipients.size(),
-            legacyRecipients.size());
+            nativeRecipients.size(),
+            recipients.size());
     }
 #endif
     for (const auto recipient : recipients) {
