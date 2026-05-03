@@ -359,54 +359,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     }
 
     d->Packet(&pack, sizeof(pack));
-    if (IsPC() == true || m_bCharType == CHAR_TYPE_NPC) {
-        TPacketGCCharacterAdditionalInfo addPacket;
-        addPacket.dwLevel = 0;
-        addPacket.sAlignment = 0;
-        addPacket.dwMountVnum = 0;
-#ifdef ENABLE_MULTI_LANGUAGE
-        addPacket.bLanguage = 0;
-#endif
-        if (!IsPC()) {
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-        }
-
-        addPacket.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-        addPacket.dwVID = GetPacketVID();
-        addPacket.bPKMode = m_bPKMode;
-        addPacket.bEmpire = m_bEmpire;
-        addPacket.dwGuildID = 0;
-        strlcpy(addPacket.name, GetName(), sizeof(addPacket.name));
-        addPacket.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
-        addPacket.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
-        addPacket.awPart[CHR_EQUIPPART_HEAD] = GetPart(PART_HEAD);
-        addPacket.awPart[CHR_EQUIPPART_HAIR] = GetPart(PART_HAIR);
-#ifdef ENABLE_RUNE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_RUNE] = GetPart(PART_RUNE);
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_ACCE] = GetPart(PART_ACCE);
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetPart(PART_EFFECT_BODY);
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetPart(PART_EFFECT_WEAPON);
-#endif
-        if (IsPC()) {
-            addPacket.dwLevel = GetLevel();
-            addPacket.dwMountVnum = GetMountVnum();
-            addPacket.dwGuildID = GetGuild() ? GetGuild()->GetID() : 0;
-            addPacket.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
-
-#ifdef __SKILL_COLOR_SYSTEM__
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-#endif
-        }
-#ifdef __NEWPET_SYSTEM__
-        if (IsNewPet()) {
-            addPacket.dwLevel = GetLevel();
-        }
-#endif
-        d->Packet(&addPacket, sizeof(TPacketGCCharacterAdditionalInfo));
+    if (entity->IsType(ENTITY_CHARACTER)) {
+        NetworkSyncSystem::SendCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this), AIHelpers::EcsOf(ch));
     }
 
     if (iDur) {

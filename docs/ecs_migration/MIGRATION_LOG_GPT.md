@@ -11716,11 +11716,3 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 ~~~
 - Build passed.
 - WinTest pending.
-
-Hotfix after mount/dismount regression:
-- WinTest reported that mobs/NPCs/stones disappeared when mounting or dismounting.
-- The affected path is `CHARACTER::MountVnum() -> EncodeInsertPacket()`, which the client uses as a main-actor reappend/mount-state transition.
-- That client path removes dynamic actors unless the append packet carries the exact expected mount state.
-- `EncodeInsertPacket` additional-info construction was restored to legacy-parity for the append path.
-- The native ECS additional-info builder remains in use for alignment/rank refresh through `BroadcastCharAdditionalInfo`.
-- Full native append packet conversion is deferred to 15E-final.1d with the visibility/actor append service.
