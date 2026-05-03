@@ -11,15 +11,6 @@
 #include "ItemIDRangeManager.h"
 #include <signal.h>
 
-#ifdef _WIN64
-#pragma comment(lib, "bcrypt.lib")
-#pragma comment(lib, "secur32.lib")
-#pragma comment(lib, "crypt32.lib")
-#pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "ws2_32.lib")
-#endif
-
-
 void SetPlayerDBName(const char* c_pszPlayerDBName);
 void SetTablePostfix(const char* c_pszTablePostfix);
 int Start();

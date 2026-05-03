@@ -1,0 +1,149 @@
+#include "stdafx.h"
+
+#ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
+
+#include <array>
+
+#include "utils.h"
+#include "char.h"
+#include "desc.h"
+#include "desc_manager.h"
+#include "guild.h"
+#include "guild_renewal.h"
+
+namespace
+{
+	static int ParseDeadlineYMD(const char* ymd)
+	{
+		if (!ymd)
+			return 0;
+		int y = 0, m = 0, d = 0;
+		if (sscanf(ymd, "%d.%d.%d", &y, &m, &d) != 3)
+			return 0;
+		tm t = {};
+		t.tm_year = y - 1900;
+		t.tm_mon = m - 1;
+		t.tm_mday = d;
+		t.tm_hour = 23;
+		t.tm_min = 59;
+		t.tm_sec = 59;
+		return (int)mktime(&t);
+	}
+
+	static void BroadcastRenewalStateToGuild(CGuild* g)
+	{
+		if (!g)
+			return;
+
+		const uint32_t guildId = g->GetID();
+		const DESC_MANAGER::DESC_SET& c_ref_set = DESC_MANAGER::instance().GetClientSet();
+
+		for (DESC_MANAGER::DESC_SET::const_iterator it = c_ref_set.begin(); it != c_ref_set.end(); ++it)
+		{
+			LPDESC d = *it;
+			if (!d)
+				continue;
+
+			LPCHARACTER member = d->GetCharacter();
+			if (!member)
+				continue;
+
+			CGuild* mg = member->GetGuild();
+			if (!mg)
+				continue;
+
+			if (mg->GetID() != guildId)
+				continue;
+
+			CGuildRenewal::instance().SendFullStateTo(member);
+		}
+	}
+}
+
+ACMD(do_gr_open)
+{
+	if (!ch)
+		return;
+	if (!ch->GetGuild())
+		return;
+
+	// UI side can hook this to open the window.
+	ch->ChatPacket(CHAT_TYPE_COMMAND, "gr_open");
+	CGuildRenewal::instance().SendFullStateTo(ch);
+}
+
+ACMD(do_gr_deposit_item)
+{
+	if (!ch)
+		return;
+	CGuild* g = ch->GetGuild();
+	if (!g)
+		return;
+
+	char arg1[256], arg2[256];
+	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+
+	if (!*arg1)
+		return;
+
+	uint16_t invCell = (uint16_t)atoi(arg1);
+	uint32_t count = 0;
+	if (*arg2)
+		count = (uint32_t)atoi(arg2);
+
+	if (CGuildRenewal::instance().DepositItem(ch, invCell, count))
+		BroadcastRenewalStateToGuild(g);
+}
+
+ACMD(do_gr_deposit_yang)
+{
+	if (!ch)
+		return;
+	CGuild* g = ch->GetGuild();
+	if (!g)
+		return;
+
+	char arg1[256];
+	one_argument(argument, arg1, sizeof(arg1));
+	if (!*arg1)
+		return;
+
+	int64_t yang = (int64_t)atoll(arg1);
+	if (yang <= 0)
+		return;
+
+	if (CGuildRenewal::instance().DepositYang(ch, yang))
+		BroadcastRenewalStateToGuild(g);
+}
+
+ACMD(do_gr_set_tax)
+{
+	if (!ch)
+		return;
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");
+	return;
+}
+
+ACMD(do_gr_pay_tax)
+{
+	if (!ch)
+		return;
+
+	ch->ChatPacket(CHAT_TYPE_INFO, "A kivetett ado fizetese ki van kapcsolva (kis ado rendszer van ervenyben).");
+	return;
+}
+
+ACMD(do_gr_levelup)
+{
+	if (!ch)
+		return;
+	CGuild* g = ch->GetGuild();
+	if (!g)
+		return;
+
+	if (CGuildRenewal::instance().TryLevelUp(ch))	// itt a belso fuggveny ir ki okot is
+		BroadcastRenewalStateToGuild(g);
+}
+
+#endif // ENABLE_GUILD_RENEWAL_BY_RAZOR93

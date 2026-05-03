@@ -76,7 +76,7 @@ namespace
     constexpr int32_t kAntiSpamSec           = 1;
 
     constexpr int64_t kFinalBossNormalHP  = 10000000000;
-    constexpr int64_t kFinalBossPenaltyHP = 15000000000;
+    constexpr int64_t kFinalBossPenaltyHP = 4000000;
 
     constexpr const char* kRegen1FloorA = "data/dungeon/viking_dungeon/regen_1f_a.txt";
     constexpr const char* kRegen1FloorB = "data/dungeon/viking_dungeon/regen_1f_b.txt";
@@ -1531,9 +1531,9 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
         char notice[256];
         if (killer->GetParty())
-            std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Fagyos dungeont!", leaderName);
+            std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Viking dungeont!", leaderName);
         else
-            std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", killer->GetName());
+            std::snprintf(notice, sizeof(notice), "%s befejezte a Viking dungeont!", killer->GetName());
 
         BroadcastNotice(notice);
 

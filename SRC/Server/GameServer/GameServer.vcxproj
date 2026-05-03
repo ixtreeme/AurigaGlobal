@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{4681fdac-1e21-4ef5-997f-e6889f377dcf}</ProjectGuid>
+    <RootNamespace>GameServer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);__WIN32__;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern/Include;$(SolutionDir);$(SolutionDir)Extern/Include/lua5.0;%(AdditionalIncludeDirectories);$(SolutionDir)Server</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cryptlib_d.lib;DevIL.lib;libcrypto.lib;libssl.lib;libmariadb.lib;lzo2MTd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);__WIN32__;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;EMBEDDED_LIBRARY</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(SolutionDir)Extern/Include;$(SolutionDir)Server;$(SolutionDir)Extern/Include/lua5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Extern/lib/Server;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmariadb.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="affect.cpp" />
+    <ClCompile Include="ani.cpp" />
+    <ClCompile Include="arena.cpp" />
+    <ClCompile Include="attr_transfer.cpp" />
+    <ClCompile Include="banword.cpp" />
+    <ClCompile Include="battle.cpp" />
+    <ClCompile Include="BattleArena.cpp" />
+    <ClCompile Include="battle_pass.cpp" />
+    <ClCompile Include="blend_item.cpp" />
+    <ClCompile Include="buffer_manager.cpp" />
+    <ClCompile Include="buff_on_attributes.cpp" />
+    <ClCompile Include="building.cpp" />
+    <ClCompile Include="char.cpp" />
+    <ClCompile Include="char2.cpp" />
+    <ClCompile Include="char_affect.cpp" />
+    <ClCompile Include="char_battle.cpp" />
+    <ClCompile Include="char_change_empire.cpp" />
+    <ClCompile Include="char_dragonsoul.cpp" />
+    <ClCompile Include="char_fishing.cpp" />
+    <ClCompile Include="char_gaya.cpp" />
+    <ClCompile Include="char_horse.cpp" />
+    <ClCompile Include="char_item.cpp" />
+    <ClCompile Include="char_item2.cpp" />
+    <ClCompile Include="char_manager.cpp" />
+    <ClCompile Include="char_quickslot.cpp" />
+    <ClCompile Include="char_resist.cpp" />
+    <ClCompile Include="char_skill.cpp" />
+    <ClCompile Include="char_state.cpp" />
+    <ClCompile Include="cipher.cpp" />
+    <ClCompile Include="cmd.cpp" />
+    <ClCompile Include="cmd_emotion.cpp" />
+    <ClCompile Include="cmd_general.cpp" />
+    <ClCompile Include="cmd_general2.cpp" />
+    <ClCompile Include="cmd_gm.cpp" />
+    <ClCompile Include="cmd_gm2.cpp" />
+    <ClCompile Include="cmd_oxevent.cpp" />
+    <ClCompile Include="config.cpp" />
+    <ClCompile Include="constants.cpp" />
+    <ClCompile Include="crc32.cpp" />
+    <ClCompile Include="cuberenewal.cpp" />
+    <ClCompile Include="db.cpp" />
+    <ClCompile Include="desc.cpp" />
+    <ClCompile Include="desc_client.cpp" />
+    <ClCompile Include="desc_manager.cpp" />
+    <ClCompile Include="desc_p2p.cpp" />
+    <ClCompile Include="dev_log.cpp" />
+    <ClCompile Include="DragonSoul.cpp" />
+    <ClCompile Include="dragon_soul_table.cpp" />
+    <ClCompile Include="dungeon.cpp" />
+    <ClCompile Include="empire_text_convert.cpp" />
+    <ClCompile Include="entity.cpp" />
+    <ClCompile Include="entity_view.cpp" />
+    <ClCompile Include="event.cpp" />
+    <ClCompile Include="event_queue.cpp" />
+    <ClCompile Include="exchange.cpp" />
+    <ClCompile Include="file_loader.cpp" />
+    <ClCompile Include="fishing.cpp" />
+    <ClCompile Include="FSM.cpp" />
+    <ClCompile Include="gm.cpp" />
+    <ClCompile Include="group_text_parse_tree.cpp" />
+    <ClCompile Include="guild.cpp" />
+    <ClCompile Include="guild_manager.cpp" />
+    <ClCompile Include="guild_war.cpp" />
+    <ClCompile Include="horsename_manager.cpp" />
+    <ClCompile Include="horse_rider.cpp" />
+    <ClCompile Include="hwidmanager.cpp" />
+    <ClCompile Include="input.cpp" />
+    <ClCompile Include="input_auth.cpp" />
+    <ClCompile Include="input_db.cpp" />
+    <ClCompile Include="input_login.cpp" />
+    <ClCompile Include="input_main.cpp" />
+    <ClCompile Include="input_p2p.cpp" />
+    <ClCompile Include="input_teen.cpp" />
+    <ClCompile Include="input_udp.cpp" />
+    <ClCompile Include="ip_ban.cpp" />
+    <ClCompile Include="item.cpp" />
+    <ClCompile Include="item_addon.cpp" />
+    <ClCompile Include="item_attribute.cpp" />
+    <ClCompile Include="item_manager.cpp" />
+    <ClCompile Include="item_manager_idrange.cpp" />
+    <ClCompile Include="item_manager_read_tables.cpp" />
+    <ClCompile Include="locale.cpp" />
+    <ClCompile Include="locale_service.cpp" />
+    <ClCompile Include="log.cpp" />
+    <ClCompile Include="login_data.cpp" />
+    <ClCompile Include="lzo_manager.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="map_location.cpp" />
+    <ClCompile Include="MarkConvert.cpp" />
+    <ClCompile Include="MarkImage.cpp" />
+    <ClCompile Include="MarkManager.cpp" />
+    <ClCompile Include="marriage.cpp" />
+    <ClCompile Include="messenger_manager.cpp" />
+    <ClCompile Include="minilzo.c" />
+    <ClCompile Include="mining.cpp" />
+    <ClCompile Include="mob_manager.cpp" />
+    <ClCompile Include="motion.cpp" />
+    <ClCompile Include="MountSystem.cpp" />
+    <ClCompile Include="new_offlineshop.cpp" />
+    <ClCompile Include="new_offlineshop_manager.cpp" />
+    <ClCompile Include="new_offlineshop_safebox.cpp" />
+    <ClCompile Include="New_PetSystem.cpp" />
+    <ClCompile Include="new_switchbot.cpp" />
+    <ClCompile Include="over9refine.cpp" />
+    <ClCompile Include="OXEvent.cpp" />
+    <ClCompile Include="p2p.cpp" />
+    <ClCompile Include="packet_info.cpp" />
+    <ClCompile Include="party.cpp" />
+    <ClCompile Include="pcbang.cpp" />
+    <ClCompile Include="PetSystem.cpp" />
+    <ClCompile Include="polymorph.cpp" />
+    <ClCompile Include="priv_manager.cpp" />
+    <ClCompile Include="pvp.cpp" />
+    <ClCompile Include="questevent.cpp" />
+    <ClCompile Include="questlua.cpp" />
+    <ClCompile Include="questlua_affect.cpp" />
+    <ClCompile Include="questlua_arena.cpp" />
+    <ClCompile Include="questlua_ba.cpp" />
+    <ClCompile Include="questlua_building.cpp" />
+    <ClCompile Include="questlua_danceevent.cpp" />
+    <ClCompile Include="questlua_dragonsoul.cpp" />
+    <ClCompile Include="questlua_dungeon.cpp" />
+    <ClCompile Include="questlua_game.cpp" />
+    <ClCompile Include="questlua_global.cpp" />
+    <ClCompile Include="questlua_guild.cpp" />
+    <ClCompile Include="questlua_horse.cpp" />
+    <ClCompile Include="questlua_item.cpp" />
+    <ClCompile Include="questlua_marriage.cpp" />
+    <ClCompile Include="questlua_npc.cpp" />
+    <ClCompile Include="questlua_oxevent.cpp" />
+    <ClCompile Include="questlua_party.cpp" />
+    <ClCompile Include="questlua_pc.cpp" />
+    <ClCompile Include="questlua_pet.cpp" />
+    <ClCompile Include="questlua_petnew.cpp" />
+    <ClCompile Include="questlua_quest.cpp" />
+    <ClCompile Include="questlua_target.cpp" />
+    <ClCompile Include="questmanager.cpp" />
+    <ClCompile Include="questnpc.cpp" />
+    <ClCompile Include="questpc.cpp" />
+    <ClCompile Include="refine.cpp" />
+    <ClCompile Include="regen.cpp" />
+    <ClCompile Include="safebox.cpp" />
+    <ClCompile Include="sectree.cpp" />
+    <ClCompile Include="sectree_manager.cpp" />
+    <ClCompile Include="sequence.cpp" />
+    <ClCompile Include="shop.cpp" />
+    <ClCompile Include="shopEx.cpp" />
+    <ClCompile Include="shop_manager.cpp" />
+    <ClCompile Include="shutdown_manager.cpp" />
+    <ClCompile Include="skill.cpp" />
+    <ClCompile Include="skill_power.cpp" />
+    <ClCompile Include="start_position.cpp" />
+    <ClCompile Include="target.cpp" />
+    <ClCompile Include="text_file_loader.cpp" />
+    <ClCompile Include="trigger.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="vector.cpp" />
+    <ClCompile Include="war_map.cpp" />
+    <ClCompile Include="wedding.cpp" />
+    <ClCompile Include="whisper_admin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="affect.h" />
+    <ClInclude Include="affect_flag.h" />
+    <ClInclude Include="ani.h" />
+    <ClInclude Include="any_function.h" />
+    <ClInclude Include="arena.h" />
+    <ClInclude Include="attr_transfer.h" />
+    <ClInclude Include="banword.h" />
+    <ClInclude Include="battle.h" />
+    <ClInclude Include="BattleArena.h" />
+    <ClInclude Include="battle_pass.h" />
+    <ClInclude Include="belt_inventory_helper.h" />
+    <ClInclude Include="blend_item.h" />
+    <ClInclude Include="buffer_manager.h" />
+    <ClInclude Include="buff_on_attributes.h" />
+    <ClInclude Include="building.h" />
+    <ClInclude Include="char.h" />
+    <ClInclude Include="char_manager.h" />
+    <ClInclude Include="cipher.h" />
+    <ClInclude Include="cmd.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="constants.h" />
+    <ClInclude Include="crc32.h" />
+    <ClInclude Include="cuberenewal.h" />
+    <ClInclude Include="db.h" />
+    <ClInclude Include="debug_allocator.h" />
+    <ClInclude Include="debug_allocator_adapter.h" />
+    <ClInclude Include="debug_ptr.h" />
+    <ClInclude Include="desc.h" />
+    <ClInclude Include="desc_client.h" />
+    <ClInclude Include="desc_manager.h" />
+    <ClInclude Include="desc_p2p.h" />
+    <ClInclude Include="dev_log.h" />
+    <ClInclude Include="DragonSoul.h" />
+    <ClInclude Include="dragon_soul_table.h" />
+    <ClInclude Include="dungeon.h" />
+    <ClInclude Include="empire_text_convert.h" />
+    <ClInclude Include="entity.h" />
+    <ClInclude Include="event.h" />
+    <ClInclude Include="event_queue.h" />
+    <ClInclude Include="exchange.h" />
+    <ClInclude Include="fifo_allocator.h" />
+    <ClInclude Include="file_loader.h" />
+    <ClInclude Include="fishing.h" />
+    <ClInclude Include="FSM.h" />
+    <ClInclude Include="gm.h" />
+    <ClInclude Include="group_text_parse_tree.h" />
+    <ClInclude Include="guild.h" />
+    <ClInclude Include="guild_manager.h" />
+    <ClInclude Include="horsename_manager.h" />
+    <ClInclude Include="horse_rider.h" />
+    <ClInclude Include="hwidmanager.h" />
+    <ClInclude Include="IFileMonitor.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="ip_ban.h" />
+    <ClInclude Include="item.h" />
+    <ClInclude Include="item_addon.h" />
+    <ClInclude Include="item_manager.h" />
+    <ClInclude Include="item_manager_private_types.h" />
+    <ClInclude Include="limit_time.h" />
+    <ClInclude Include="locale.hpp" />
+    <ClInclude Include="locale_service.h" />
+    <ClInclude Include="log.h" />
+    <ClInclude Include="login_data.h" />
+    <ClInclude Include="login_sim.h" />
+    <ClInclude Include="lua_incl.h" />
+    <ClInclude Include="lzoconf.h" />
+    <ClInclude Include="lzodefs.h" />
+    <ClInclude Include="lzo_manager.h" />
+    <ClInclude Include="malloc_allocator.h" />
+    <ClInclude Include="map_location.h" />
+    <ClInclude Include="MarkImage.h" />
+    <ClInclude Include="MarkManager.h" />
+    <ClInclude Include="marriage.h" />
+    <ClInclude Include="messenger_manager.h" />
+    <ClInclude Include="minilzo.h" />
+    <ClInclude Include="mining.h" />
+    <ClInclude Include="mob_manager.h" />
+    <ClInclude Include="motion.h" />
+    <ClInclude Include="MountSystem.h" />
+    <ClInclude Include="new_offlineshop.h" />
+    <ClInclude Include="new_offlineshop_manager.h" />
+    <ClInclude Include="New_PetSystem.h" />
+    <ClInclude Include="new_switchbot.h" />
+    <ClInclude Include="object_allocator.h" />
+    <ClInclude Include="over9refine.h" />
+    <ClInclude Include="OXEvent.h" />
+    <ClInclude Include="p2p.h" />
+    <ClInclude Include="packet.h" />
+    <ClInclude Include="packet_info.h" />
+    <ClInclude Include="party.h" />
+    <ClInclude Include="pcbang.h" />
+    <ClInclude Include="PetSystem.h" />
+    <ClInclude Include="polymorph.h" />
+    <ClInclude Include="pool.h" />
+    <ClInclude Include="priv_manager.h" />
+    <ClInclude Include="profiler.h" />
+    <ClInclude Include="protocol.h" />
+    <ClInclude Include="pvp.h" />
+    <ClInclude Include="quest.h" />
+    <ClInclude Include="questevent.h" />
+    <ClInclude Include="questlua.h" />
+    <ClInclude Include="questmanager.h" />
+    <ClInclude Include="questnpc.h" />
+    <ClInclude Include="questpc.h" />
+    <ClInclude Include="refine.h" />
+    <ClInclude Include="regen.h" />
+    <ClInclude Include="safebox.h" />
+    <ClInclude Include="sectree.h" />
+    <ClInclude Include="sectree_manager.h" />
+    <ClInclude Include="sequence.h" />
+    <ClInclude Include="shop.h" />
+    <ClInclude Include="shopEx.h" />
+    <ClInclude Include="shop_manager.h" />
+    <ClInclude Include="shutdown_manager.h" />
+    <ClInclude Include="skill.h" />
+    <ClInclude Include="skill_power.h" />
+    <ClInclude Include="spam.h" />
+    <ClInclude Include="stable_priority_queue.h" />
+    <ClInclude Include="start_position.h" />
+    <ClInclude Include="state.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="target.h" />
+    <ClInclude Include="text_file_loader.h" />
+    <ClInclude Include="typedef.h" />
+    <ClInclude Include="unique_item.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="vector.h" />
+    <ClInclude Include="vid.h" />
+    <ClInclude Include="war_map.h" />
+    <ClInclude Include="wedding.h" />
+    <ClInclude Include="whisper_admin.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="any_function.inc" />
+    <None Include="Depend" />
+    <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\3rd party\cryptopp-master\cryptopp-master\cryptlib.vcxproj">
+      <Project>{c39f4b46-6e89-4074-902e-ca57073044d2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\3rd party\DevIL\build\src-IL\IL.vcxproj">
+      <Project>{cc86c134-f7ec-3cdb-a6f7-d7115ffc6000}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\3rd party\lzo2-master\build\lzo_static_lib.vcxproj">
+      <Project>{bb597460-a1ae-3bc2-b1b0-e287fae22c8e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Extern\3rd\cryptopp-master\cryptlib.vcxproj">
+      <Project>{60da104a-339d-484b-80d2-f186594dd8fa}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Extern\3rd\DevIL\build\src-IL\IL.vcxproj">
+      <Project>{406a6e53-7882-4fce-8ae1-c9b411d895a4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Extern\3rd\lzo2-master\build\lzo_static_lib.vcxproj">
+      <Project>{57f79620-fe4c-4e9e-b0de-059784f0e805}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Base\Base.vcxproj">
+      <Project>{690b6d63-a10a-408f-ad1d-cd596f1ce40d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Core\Core.vcxproj">
+      <Project>{ac4e4a9a-d070-4f33-8d9e-9a5257b9c6f4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\liblua\5.0\liblua.vcxproj">
+      <Project>{ec666345-5f4e-4a4e-8c66-c7a6326f8235}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Poly\Poly.vcxproj">
+      <Project>{6bd4dc53-7012-4cc3-b788-03d572f7350e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Pre_QC\Pre_QC.vcxproj">
+      <Project>{f94f04ad-1769-44c7-b381-af89c5fc970d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\SQL\SQL.vcxproj">
+      <Project>{0ec4ee77-989a-46bc-8215-e96a7f8e8605}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

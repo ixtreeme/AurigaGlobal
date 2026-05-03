@@ -1,7 +1,7 @@
 // ===========================================================================
 // [SERVER] MarkImage.cpp
 // Guild Mark Image System - Server Side
-// Compression: LZ4 | Image I/O: stb_image / stb_image_write (no DevIL)
+// Compression: LZ4
 // ===========================================================================
 #include "stdafx.h"
 #include "MarkImage.h"
@@ -9,141 +9,154 @@
 #include <lz4.h>
 #include "crc32.h"
 
-// stb_image - header-only, single TU definition
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_TGA
-#define STBI_ONLY_PNG
-#define STBI_ONLY_BMP
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
-#ifdef _WIN64
-#include <stb_image.h>
-#include <stb_image_write.h>
-#else
-#include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
-#endif
 // ---------------------------------------------------------------------------
-// Internal helpers: RGBA <-> BGRA swap
-// stb_image loads as RGBA; the guild mark system uses BGRA internally
-// ---------------------------------------------------------------------------
-static void RGBAtoBGRA(uint8_t* data, int pixelCount)
-{
-	for (int i = 0; i < pixelCount; ++i)
-	{
-		uint8_t* p = data + i * 4;
-		std::swap(p[0], p[2]); // R <-> B
-	}
-}
-
-// stb_image_write TGA callback — writes into a std::vector<uint8_t>
-static void StbWriteCallback(void* context, void* data, int size)
-{
-	auto* vec = static_cast<std::vector<uint8_t>*>(context);
-	const uint8_t* bytes = static_cast<const uint8_t*>(data);
-	vec->insert(vec->end(), bytes, bytes + size);
-}
-
-// ---------------------------------------------------------------------------
-// [SERVER] CGuildMarkImage - Construction
+// [SERVER] CGuildMarkImage - Construction / Destruction
 // ---------------------------------------------------------------------------
 CGuildMarkImage::CGuildMarkImage()
-	: m_buffer(WIDTH* HEIGHT, 0u)
+	: m_aakBlock{}, m_uImg(INVALID_HANDLE)
 {
 }
 
-// ---------------------------------------------------------------------------
-// [SERVER] Build - create a blank image and save to disk
-// ---------------------------------------------------------------------------
-bool CGuildMarkImage::Build(const char* c_szFileName)
+CGuildMarkImage::~CGuildMarkImage()
 {
-	sys_log(0, "GuildMarkImage: creating new file %s", c_szFileName);
+	Destroy();
+}
 
-	// Reset buffer to transparent black
-	std::fill(m_buffer.begin(), m_buffer.end(), 0u);
+CGuildMarkImage::CGuildMarkImage(CGuildMarkImage&& other) noexcept
+	: m_uImg(other.m_uImg)
+{
+	memcpy(m_aakBlock, other.m_aakBlock, sizeof(m_aakBlock));
+	other.m_uImg = INVALID_HANDLE;
+}
 
-	return Save(c_szFileName);
+CGuildMarkImage& CGuildMarkImage::operator=(CGuildMarkImage&& other) noexcept
+{
+	if (this != &other)
+	{
+		Destroy();
+		m_uImg = other.m_uImg;
+		memcpy(m_aakBlock, other.m_aakBlock, sizeof(m_aakBlock));
+		other.m_uImg = INVALID_HANDLE;
+	}
+	return *this;
 }
 
 // ---------------------------------------------------------------------------
-// [SERVER] Save - write current buffer as TGA
-// stb_image_write expects RGBA; we swap BGRA -> RGBA for the write, then swap back
+// [SERVER] DevIL image lifecycle
 // ---------------------------------------------------------------------------
+void CGuildMarkImage::Destroy()
+{
+	if (INVALID_HANDLE == m_uImg)
+		return;
+
+	ilDeleteImages(1, &m_uImg);
+	m_uImg = INVALID_HANDLE;
+}
+
+void CGuildMarkImage::Create()
+{
+	if (INVALID_HANDLE != m_uImg)
+		return;
+
+	ilGenImages(1, &m_uImg);
+}
+
 bool CGuildMarkImage::Save(const char* c_szFileName)
 {
-	// Work on a copy so we don't permanently alter the in-memory BGRA buffer
-	std::vector<uint8_t> rgba(WIDTH * HEIGHT * 4);
-	memcpy(rgba.data(), m_buffer.data(), rgba.size());
-	RGBAtoBGRA(rgba.data(), WIDTH * HEIGHT); // BGRA -> RGBA for stb
-
-	if (!stbi_write_tga(c_szFileName, WIDTH, HEIGHT, 4, rgba.data()))
+	if (INVALID_HANDLE == m_uImg)
 	{
-		sys_err("GuildMarkImage::Save: stbi_write_tga failed for %s", c_szFileName);
+		sys_err("GuildMarkImage::Save: no image loaded");
+		return false;
+	}
+
+	ilEnable(IL_FILE_OVERWRITE);
+	ilBindImage(m_uImg);
+
+	if (!ilSave(IL_TGA, (const ILstring)c_szFileName))
+	{
+		sys_err("GuildMarkImage::Save: ilSave failed for %s", c_szFileName);
 		return false;
 	}
 
 	return true;
 }
 
-// ---------------------------------------------------------------------------
-// [SERVER] Load - read TGA/PNG/BMP from disk into internal BGRA buffer
-// ---------------------------------------------------------------------------
+bool CGuildMarkImage::Build(const char* c_szFileName)
+{
+	sys_log(0, "GuildMarkImage: creating new file %s", c_szFileName);
+
+	Destroy();
+	Create();
+
+	ilBindImage(m_uImg);
+	ilEnable(IL_ORIGIN_SET);
+	ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
+
+	std::vector<uint8_t> data(sizeof(Pixel) * WIDTH * HEIGHT, 0);
+
+	if (!ilTexImage(WIDTH, HEIGHT, 1, 4, IL_BGRA, IL_UNSIGNED_BYTE, data.data()))
+	{
+		sys_err("GuildMarkImage::Build: cannot initialize image");
+		return false;
+	}
+
+	ilEnable(IL_FILE_OVERWRITE);
+
+	if (!ilSave(IL_TGA, (const ILstring)c_szFileName))
+	{
+		sys_err("GuildMarkImage::Build: cannot save %s", c_szFileName);
+		return false;
+	}
+
+	return true;
+}
+
 bool CGuildMarkImage::Load(const char* c_szFileName)
 {
-	int w = 0, h = 0, channels = 0;
+	Destroy();
+	Create();
 
-	// Force 4 channels (RGBA)
-	uint8_t* raw = stbi_load(c_szFileName, &w, &h, &channels, 4);
-	if (!raw)
+	ilBindImage(m_uImg);
+	ilEnable(IL_ORIGIN_SET);
+	ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
+
+	if (!ilLoad(IL_TYPE_UNKNOWN, (const ILstring)c_szFileName))
 	{
-		sys_err("GuildMarkImage::Load: %s cannot open file (%s)", c_szFileName, stbi_failure_reason());
+		sys_err("GuildMarkImage::Load: %s cannot open file.", c_szFileName);
 		return false;
 	}
 
-	if (w != WIDTH)
+	if (ilGetInteger(IL_IMAGE_WIDTH) != WIDTH)
 	{
-		sys_err("GuildMarkImage::Load: %s width must be %u (got %d)", c_szFileName, WIDTH, w);
-		stbi_image_free(raw);
+		sys_err("GuildMarkImage::Load: %s width must be %u (got %d)", c_szFileName, WIDTH, ilGetInteger(IL_IMAGE_WIDTH));
 		return false;
 	}
 
-	if (h != HEIGHT)
+	if (ilGetInteger(IL_IMAGE_HEIGHT) != HEIGHT)
 	{
-		sys_err("GuildMarkImage::Load: %s height must be %u (got %d)", c_szFileName, HEIGHT, h);
-		stbi_image_free(raw);
+		sys_err("GuildMarkImage::Load: %s height must be %u (got %d)", c_szFileName, HEIGHT, ilGetInteger(IL_IMAGE_HEIGHT));
 		return false;
 	}
 
-	// Convert RGBA -> BGRA in-place before copying into our buffer
-	RGBAtoBGRA(raw, WIDTH * HEIGHT);
-	memcpy(m_buffer.data(), raw, WIDTH * HEIGHT * 4);
-	stbi_image_free(raw);
+	ilConvertImage(IL_BGRA, IL_UNSIGNED_BYTE);
 
 	BuildAllBlocks();
 	return true;
 }
 
 // ---------------------------------------------------------------------------
-// [SERVER] Pixel I/O - direct sub-rect read/write on the flat buffer
+// [SERVER] Pixel I/O
 // ---------------------------------------------------------------------------
 void CGuildMarkImage::PutData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data)
 {
-	const Pixel* src = static_cast<const Pixel*>(data);
-	for (uint32_t row = 0; row < height; ++row)
-	{
-		Pixel* dst = m_buffer.data() + (y + row) * WIDTH + x;
-		memcpy(dst, src + row * width, width * sizeof(Pixel));
-	}
+	ilBindImage(m_uImg);
+	ilSetPixels(x, y, 0, width, height, 1, IL_BGRA, IL_UNSIGNED_BYTE, data);
 }
 
-void CGuildMarkImage::GetData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data) const
+void CGuildMarkImage::GetData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data)
 {
-	Pixel* dst = static_cast<Pixel*>(data);
-	for (uint32_t row = 0; row < height; ++row)
-	{
-		const Pixel* src = m_buffer.data() + (y + row) * WIDTH + x;
-		memcpy(dst + row * width, src, width * sizeof(Pixel));
-	}
+	ilBindImage(m_uImg);
+	ilCopyPixels(x, y, 0, width, height, 1, IL_BGRA, IL_UNSIGNED_BYTE, data);
 }
 
 // ---------------------------------------------------------------------------
@@ -161,18 +174,18 @@ bool CGuildMarkImage::SaveMark(uint32_t posMark, uint8_t* pbImage)
 	const uint32_t rowMark = posMark / MARK_COL_COUNT;
 
 	PutData(colMark * SGuildMark::WIDTH, rowMark * SGuildMark::HEIGHT,
-		SGuildMark::WIDTH, SGuildMark::HEIGHT, pbImage);
+	        SGuildMark::WIDTH, SGuildMark::HEIGHT, pbImage);
 
 	const uint32_t rowBlock = rowMark / SGuildMarkBlock::MARK_PER_BLOCK_HEIGHT;
 	const uint32_t colBlock = colMark / SGuildMarkBlock::MARK_PER_BLOCK_WIDTH;
 
 	Pixel apxBuf[SGuildMarkBlock::SIZE];
 	GetData(colBlock * SGuildMarkBlock::WIDTH, rowBlock * SGuildMarkBlock::HEIGHT,
-		SGuildMarkBlock::WIDTH, SGuildMarkBlock::HEIGHT, apxBuf);
+	        SGuildMarkBlock::WIDTH, SGuildMarkBlock::HEIGHT, apxBuf);
 	m_aakBlock[rowBlock][colBlock].Compress(apxBuf);
 
 	sys_log(0, "GuildMarkImage::SaveMark: pos=%u block[%u,%u] compSize=%u",
-		posMark, rowBlock, colBlock, m_aakBlock[rowBlock][colBlock].m_sizeCompBuf);
+	        posMark, rowBlock, colBlock, m_aakBlock[rowBlock][colBlock].m_sizeCompBuf);
 
 	return true;
 }
@@ -187,7 +200,7 @@ bool CGuildMarkImage::DeleteMark(uint32_t posMark)
 }
 
 // ---------------------------------------------------------------------------
-// [SERVER] BuildAllBlocks - compress all blocks from the loaded buffer
+// [SERVER] BuildAllBlocks - compress all blocks from the loaded image
 // ---------------------------------------------------------------------------
 void CGuildMarkImage::BuildAllBlocks()
 {
@@ -199,7 +212,7 @@ void CGuildMarkImage::BuildAllBlocks()
 		for (uint32_t col = 0; col < BLOCK_COL_COUNT; ++col)
 		{
 			GetData(col * SGuildMarkBlock::WIDTH, row * SGuildMarkBlock::HEIGHT,
-				SGuildMarkBlock::WIDTH, SGuildMarkBlock::HEIGHT, apxBuf);
+			        SGuildMarkBlock::WIDTH, SGuildMarkBlock::HEIGHT, apxBuf);
 			m_aakBlock[row][col].Compress(apxBuf);
 		}
 	}
@@ -217,7 +230,7 @@ uint32_t CGuildMarkImage::GetEmptyPosition()
 		for (uint32_t col = 0; col < MARK_COL_COUNT; ++col)
 		{
 			GetData(col * SGuildMark::WIDTH, row * SGuildMark::HEIGHT,
-				SGuildMark::WIDTH, SGuildMark::HEIGHT, kMark.m_apxBuf);
+			        SGuildMark::WIDTH, SGuildMark::HEIGHT, kMark.m_apxBuf);
 
 			if (kMark.IsEmpty())
 				return (row * MARK_COL_COUNT + col);
@@ -228,10 +241,10 @@ uint32_t CGuildMarkImage::GetEmptyPosition()
 }
 
 // ---------------------------------------------------------------------------
-// [SERVER] GetDiffBlocks
+// [SERVER] GetDiffBlocks - find blocks where server CRC differs from client
 // ---------------------------------------------------------------------------
 void CGuildMarkImage::GetDiffBlocks(const uint32_t* crcList,
-	std::map<uint8_t, const SGuildMarkBlock*>& mapDiffBlocks) const
+                                     std::map<uint8_t, const SGuildMarkBlock*>& mapDiffBlocks) const
 {
 	uint8_t posBlock = 0;
 
@@ -249,7 +262,7 @@ void CGuildMarkImage::GetDiffBlocks(const uint32_t* crcList,
 }
 
 // ---------------------------------------------------------------------------
-// [SERVER] GetBlockCRCList
+// [SERVER] GetBlockCRCList - export all block CRCs for sync comparison
 // ---------------------------------------------------------------------------
 void CGuildMarkImage::GetBlockCRCList(uint32_t* crcList) const
 {

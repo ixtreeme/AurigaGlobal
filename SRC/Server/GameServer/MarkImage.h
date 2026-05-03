@@ -1,15 +1,15 @@
 // ===========================================================================
 // [SERVER] MarkImage.h
 // Guild Mark Image System - Server Side
-// Compression: LZ4 | Image I/O: stb_image / stb_image_write (no DevIL)
+// Compression: LZ4
 // ===========================================================================
 #ifndef __INC_METIN_II_SERVER_MARKIMAGE_H__
 #define __INC_METIN_II_SERVER_MARKIMAGE_H__
 
+#include <IL/il.h>
 #include <cstdint>
 #include <map>
 #include <array>
-#include <vector>
 
 using Pixel = uint32_t;
 
@@ -41,6 +41,7 @@ struct SGuildMarkBlock
 		SIZE = WIDTH * HEIGHT,
 
 		// LZ4 worst-case bound: LZ4_COMPRESSBOUND(SIZE * sizeof(Pixel))
+		// LZ4_COMPRESSBOUND(n) = n + n/255 + 16
 		MAX_COMP_SIZE = (SIZE * sizeof(Pixel)) + ((SIZE * sizeof(Pixel)) / 255) + 16,
 	};
 
@@ -76,39 +77,41 @@ public:
 	};
 
 	CGuildMarkImage();
-	~CGuildMarkImage() = default;
+	~CGuildMarkImage();
 
 	// Non-copyable, movable
 	CGuildMarkImage(const CGuildMarkImage&) = delete;
 	CGuildMarkImage& operator=(const CGuildMarkImage&) = delete;
-	CGuildMarkImage(CGuildMarkImage&&) noexcept = default;
-	CGuildMarkImage& operator=(CGuildMarkImage&&) noexcept = default;
+	CGuildMarkImage(CGuildMarkImage&& other) noexcept;
+	CGuildMarkImage& operator=(CGuildMarkImage&& other) noexcept;
 
 	// [SERVER] Image lifecycle
+	void Create();
+	void Destroy();
 	bool Build(const char* c_szFileName);
 	bool Save(const char* c_szFileName);
 	bool Load(const char* c_szFileName);
 
 	// [SERVER] Pixel I/O
 	void PutData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data);
-	void GetData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data) const;
+	void GetData(uint32_t x, uint32_t y, uint32_t width, uint32_t height, void* data);
 
-	// [SERVER] Mark write/delete
+	// [SERVER] Mark write/delete - only server modifies marks
 	bool SaveMark(uint32_t posMark, uint8_t* pbMarkImage);
 	bool DeleteMark(uint32_t posMark);
 
-	// [SERVER] Block sync
+	// [SERVER] Block sync - server compares CRCs and sends diffs to client
 	uint32_t GetEmptyPosition();
 	void GetBlockCRCList(uint32_t* crcList) const;
 	void GetDiffBlocks(const uint32_t* crcList, std::map<uint8_t, const SGuildMarkBlock*>& mapDiffBlocks) const;
 
 private:
+	static constexpr ILuint INVALID_HANDLE = 0xffffffff;
+
 	void BuildAllBlocks();
 
-	// Flat BGRA pixel buffer: WIDTH * HEIGHT pixels
-	std::vector<Pixel> m_buffer;
-
 	SGuildMarkBlock m_aakBlock[BLOCK_ROW_COUNT][BLOCK_COL_COUNT]{};
+	ILuint m_uImg = INVALID_HANDLE;
 };
 
 #endif

@@ -737,7 +737,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 		pi->pSafebox = pSafebox;
 
-		char szQuery[512];
+		char szQuery[QUERY_MAX_LEN];
 		snprintf(szQuery, sizeof(szQuery),
 				"SELECT id, window+0, pos, count, vnum, "
 #ifdef ATTR_LOCK
@@ -809,7 +809,7 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 				auto it = pSet->begin();
 
-				char szQuery[512];
+				char szQuery[QUERY_MAX_LEN];
 
 				while (it != pSet->end())
 				{
@@ -1548,7 +1548,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 
 			delete c;
 		}
-		char szQuery[512];
+		char szQuery[QUERY_MAX_LEN];
 
 		snprintf(szQuery, sizeof(szQuery),
 			"REPLACE INTO item%s (id, owner_id, window, pos, count, vnum, "
@@ -2274,7 +2274,7 @@ void CClientManager::CreateObject(TPacketGDCreateObject * p)
 {
 	using namespace building;
 
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 
 	snprintf(szQuery, sizeof(szQuery),
 			"INSERT INTO object%s (land_id, vnum, map_index, x, y, x_rot, y_rot, z_rot) VALUES(%u, %u, %d, %d, %d, %f, %f, %f)",
@@ -3670,7 +3670,7 @@ uint32_t CClientManager::GetItemID()
 
 bool CClientManager::InitializeLocalization()
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery), "SELECT mValue, mKey FROM locale");
 	SQLMsg * pMsg = CDBManager::instance().DirectQuery(szQuery, SQL_COMMON);
 
@@ -4059,7 +4059,7 @@ bool CClientManager::InitializeLocalization()
 bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & rAdminVec)
 {
 	//szIP == NULL 일경우  모든서버에 운영자 권한을 갖는다.
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery),
 			"SELECT mID,mAccount,mName,mContactIP,mServerIP,mAuthority FROM gmlist WHERE mServerIP='ALL' or mServerIP='%s'",
 		   	szIP ? szIP : "ALL");
@@ -4114,7 +4114,7 @@ bool CClientManager::__GetAdminInfo(const char *szIP, std::vector<tAdminInfo> & 
 
 bool CClientManager::__GetHostInfo(std::vector<std::string> & rIPVec)
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	snprintf(szQuery, sizeof(szQuery), "SELECT mIP FROM gmhost");
 	SQLMsg * pMsg = CDBManager::instance().DirectQuery(szQuery, SQL_COMMON);
 
@@ -4292,7 +4292,7 @@ void CClientManager::ResetLastPlayerID(const TPacketNeedLoginLogInfo* data)
 
 void CClientManager::ChargeCash(const TRequestChargeCash* packet)
 {
-	char szQuery[512];
+	char szQuery[QUERY_MAX_LEN];
 	sprintf(szQuery, "update account set coins = coins + %d where id = %d limit 1", packet->amount, packet->aid);
 	sys_log(0, "Request Charge (amount : %d, aid : %d)", packet->amount, packet->aid);
 	CDBManager::Instance().AsyncQuery(szQuery, SQL_ACCOUNT);
@@ -5337,5 +5337,4 @@ void CClientManager::SendItemShopData(CPeer* pkPeer, bool isPacket)
 	}
 }
 #endif
-
 

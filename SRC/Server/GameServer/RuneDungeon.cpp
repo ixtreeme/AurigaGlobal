@@ -92,7 +92,7 @@ namespace
     constexpr int32_t kCooldownSeconds = 10; // rune_zone.complete(..., 120, ...)
 
     constexpr int32_t kMinLevel = 120;
-    constexpr int32_t kMaxLevel = 160;
+    constexpr int32_t kMaxLevel = 140;
 
     // Regen files
     constexpr const char* kRegenFloor1 = "data/dungeon/rune/regen1.txt";

@@ -61,6 +61,7 @@
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	#include "whisper_admin.h"
 #endif
+#include <IL/il.h>
 
 
 #ifdef __NEWPET_SYSTEM__
@@ -100,31 +101,20 @@
 #include "hwidmanager.h"
 #endif
 
-
-#ifdef _WIN64
-#pragma comment(lib, "bcrypt.lib")
-#pragma comment(lib, "secur32.lib")
-#pragma comment(lib, "crypt32.lib")
-#pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "ws2_32.lib")
-#endif
-
-
-
 extern void WriteVersion();
-////extern const char * _malloc_options;
-//#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
-//extern void (*_malloc_message)(const char* p1, const char* p2, const char* p3, const char* p4);
-//// FreeBSD _malloc_message replacement
-//void WriteMallocMessage(const char* p1, const char* p2, const char* p3, const char* p4) {
-//	FILE* fp = ::fopen(DBGALLOC_LOG_FILENAME, "a");
-//	if (fp == NULL) {
-//		return;
-//	}
-//	::fprintf(fp, "%s %s %s %s\n", p1, p2, p3, p4);
-//	::fclose(fp);
-//}
-//#endif
+//extern const char * _malloc_options;
+#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
+extern void (*_malloc_message)(const char* p1, const char* p2, const char* p3, const char* p4);
+// FreeBSD _malloc_message replacement
+void WriteMallocMessage(const char* p1, const char* p2, const char* p3, const char* p4) {
+	FILE* fp = ::fopen(DBGALLOC_LOG_FILENAME, "a");
+	if (fp == NULL) {
+		return;
+	}
+	::fprintf(fp, "%s %s %s %s\n", p1, p2, p3, p4);
+	::fclose(fp);
+}
+#endif
 
 // 게임과 연결되는 소켓
 volatile int	num_events_called = 0;
@@ -383,6 +373,9 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+	ilInit(); // DevIL Initialize
+	ilEnable(IL_ORIGIN_SET);
+	ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
 #ifdef __NEW_EVENT_HANDLER__
 	CEventFunctionHandler EventFunctionHandler;
 #endif
@@ -614,10 +607,10 @@ int start(int argc, char **argv)
 	bool bVerbose = false;
 	char ch;
 
-//	//_malloc_options = "A";
-//#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
-//	_malloc_message = WriteMallocMessage;
-//#endif
+	//_malloc_options = "A";
+#if defined(__FreeBSD__) && defined(DEBUG_ALLOC)
+	_malloc_message = WriteMallocMessage;
+#endif
 
 
 #ifdef ENABLE_NEWSTUFF
