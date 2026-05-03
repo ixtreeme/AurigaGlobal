@@ -20,6 +20,7 @@
 #include "building.h"
 #include "ecs/CBuildingRegistry.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/services/EntityNetworkDispatch.hpp"
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/components/identity_components.hpp"
 #include "ecs/components/spatial_components.hpp"
@@ -110,54 +111,18 @@ void CObject::Reconstruct(uint32_t dwVnum)
 
 void CObject::EncodeInsertPacket(LPENTITY entity)
 {
-	LPDESC d;
-
-	if (!(d = entity->GetDesc()))
-		return;
-
-	LOG_INFO("ObjectInsertPacket vid {} vnum {} rot {:f} {:f} {:f}", m_dwVID, m_data.dwVnum, m_data.xRot, m_data.yRot, m_data.zRot);
-
-	TPacketGCCharacterAdd pack = {};
-
-	pack.header         = HEADER_GC_CHARACTER_ADD;
-	pack.dwVID          = m_dwVID;
-	pack.bType          = CHAR_TYPE_BUILDING;
-	pack.angle          = m_data.zRot;
-	pack.x              = GetX();
-	pack.y              = GetY();
-	pack.z              = GetZ();
-	pack.wRaceNum       = m_data.dwVnum;
-#ifdef ENABLE_MULTI_NAMES
-	pack.transname = true;
-#endif
-	// ��� ȸ�� ����(���϶��� �� ��ġ)�� ��ȯ
-	pack.dwAffectFlag[0] = unsigned(m_data.xRot);
-	pack.dwAffectFlag[1] = unsigned(m_data.yRot);
-
-
-	if (GetLand())
-	{
-		// pack.dwGuild = GetLand()->GetOwner();
-	}
-
-	d->Packet(&pack, sizeof(pack));
+	const entt::entity source = ecs::CBuildingRegistry::FindByID(GetID());
+	const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
+	if (source != entt::null && viewer != entt::null)
+		ecs::EntityNetworkDispatch::SendInsert(g_registry, source, viewer);
 }
 
 void CObject::EncodeRemovePacket(LPENTITY entity)
 {
-	LPDESC d;
-
-	if (!(d = entity->GetDesc()))
-		return;
-
-	LOG_INFO("ObjectRemovePacket vid {}", m_dwVID);
-
-	TPacketGCCharacterDelete pack;
-
-	pack.header = HEADER_GC_CHARACTER_DEL;
-	pack.id     = m_dwVID;
-
-	d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
+	const entt::entity source = ecs::CBuildingRegistry::FindByID(GetID());
+	const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
+	if (source != entt::null && viewer != entt::null)
+		ecs::EntityNetworkDispatch::SendRemove(g_registry, source, viewer);
 }
 
 void CObject::SetVID(uint32_t dwVID)

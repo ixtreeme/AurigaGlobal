@@ -9,6 +9,7 @@
 namespace ecs {
 
 struct VIDComponent { uint32_t value; };
+struct CharacterType { uint8_t value { 0 }; };
 struct LegacyCharPtr { LPCHARACTER ptr; };
 struct PlayerID { uint32_t pid; };
 struct AccountID { uint32_t aid; };

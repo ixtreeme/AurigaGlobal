@@ -7,6 +7,7 @@
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/services/EntityNetworkDispatch.hpp"
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/components/visibility_components.hpp"
 #include "sectree_manager.h"
@@ -147,6 +148,38 @@ void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView
 	}
 }
 
+void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
+{
+	const entt::entity sourceE = EntityOf(source);
+	const entt::entity viewerE = EntityOf(viewer);
+	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE)) {
+		ecs::EntityNetworkDispatch::SendInsert(g_registry, sourceE, viewerE);
+		return;
+	}
+
+	LOG_WARN("[DISPATCH_FALLBACK] ctx={} op=insert source={} viewer={}",
+		context ? context : "unknown",
+		static_cast<const void*>(source),
+		static_cast<const void*>(viewer));
+	source->EncodeInsertPacket(viewer);
+}
+
+void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
+{
+	const entt::entity sourceE = EntityOf(source);
+	const entt::entity viewerE = EntityOf(viewer);
+	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE)) {
+		ecs::EntityNetworkDispatch::SendRemove(g_registry, sourceE, viewerE);
+		return;
+	}
+
+	LOG_WARN("[DISPATCH_FALLBACK] ctx={} op=remove source={} viewer={}",
+		context ? context : "unknown",
+		static_cast<const void*>(source),
+		static_cast<const void*>(viewer));
+	source->EncodeRemovePacket(viewer);
+}
+
 } // namespace
 
 void CEntity::ViewCleanup()
@@ -171,8 +204,8 @@ void CEntity::ViewReencode()
 	if (m_bIsObserver)
 		return;
 
-	EncodeRemovePacket(this);
-	EncodeInsertPacket(this);
+	DispatchRemove(this, this, "view.reencode.self");
+	DispatchInsert(this, this, "view.reencode.self");
 
 	auto it = m_map_view.begin();
 
@@ -180,12 +213,12 @@ void CEntity::ViewReencode()
 	{
 		LPENTITY entity = it++->first;
 
-		EncodeRemovePacket(entity);
+		DispatchRemove(this, entity, "view.reencode.visible");
 		if (!m_bIsObserver)
-			EncodeInsertPacket(entity);
+			DispatchInsert(this, entity, "view.reencode.visible");
 
 		if (!entity->m_bIsObserver)
-			entity->EncodeInsertPacket(this);
+			DispatchInsert(entity, this, "view.reencode.reverse");
 	}
 
 }
@@ -207,7 +240,7 @@ void CEntity::ViewInsert(LPENTITY entity, bool recursive)
 	MirrorViewInsert(this, entity, static_cast<uint32_t>(m_iViewAge));
 
 	if (!entity->m_bIsObserver)
-		entity->EncodeInsertPacket(this);
+		DispatchInsert(entity, this, "view.insert");
 
 	if (recursive)
 		entity->ViewInsert(this, false);
@@ -226,7 +259,7 @@ void CEntity::ViewRemove(LPENTITY entity, bool recursive)
 	MirrorViewRemove(this, entity);
 
 	if (!entity->m_bIsObserver)
-		entity->EncodeRemovePacket(this);
+		DispatchRemove(entity, this, "view.remove");
 
 	if (recursive)
 		entity->ViewRemove(this, false);
@@ -300,7 +333,7 @@ void CEntity::UpdateSectree()
 				{
 					LPENTITY ent = this_it->first;
 
-					ent->EncodeRemovePacket(this);
+					DispatchRemove(ent, this, "view.update.observer.remove_stale");
 					m_map_view.erase(this_it);
 					MirrorViewRemove(this, ent);
 
@@ -314,7 +347,7 @@ void CEntity::UpdateSectree()
 					//m_map_view.erase(this_it);
 
 					//ent->ViewRemove(this, false);
-					EncodeRemovePacket(ent);
+					DispatchRemove(this, ent, "view.update.observer.remove_self");
 				}
 			}
 		}
@@ -330,7 +363,7 @@ void CEntity::UpdateSectree()
 				{
 					LPENTITY ent = this_it->first;
 
-					ent->EncodeRemovePacket(this);
+					DispatchRemove(ent, this, "view.update.observer_exit.remove_stale");
 					m_map_view.erase(this_it);
 					MirrorViewRemove(this, ent);
 
@@ -339,8 +372,8 @@ void CEntity::UpdateSectree()
 				else
 				{
 					LPENTITY ent = this_it->first;
-					ent->EncodeInsertPacket(this);
-					EncodeInsertPacket(ent);
+					DispatchInsert(ent, this, "view.update.observer_exit.insert_reverse");
+					DispatchInsert(this, ent, "view.update.observer_exit.insert_self");
 
 					ent->ViewInsert(this, true);
 				}
@@ -363,7 +396,7 @@ void CEntity::UpdateSectree()
 				{
 					LPENTITY ent = this_it->first;
 
-					ent->EncodeRemovePacket(this);
+					DispatchRemove(ent, this, "view.update.remove_stale");
 					m_map_view.erase(this_it);
 					MirrorViewRemove(this, ent);
 

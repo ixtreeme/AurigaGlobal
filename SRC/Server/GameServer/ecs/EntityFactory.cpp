@@ -302,6 +302,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     const CMob* mobProto = CMobManager::instance().Get(data.dwVnum);
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.any_of<Tag>(entity)) {
+        reg.emplace_or_replace<ecs::CharacterType>(entity, static_cast<uint8_t>(data.bType));
         ApplySpatialState(reg, entity, ecs::SpatialKind::Character, mapIndex, x, y, 0);
         ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.mob_entity.existing");
         return entity;
@@ -314,6 +315,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
 
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { static_cast<uint16_t>(data.dwVnum) });
     reg.emplace_or_replace<ecs::RaceState>(entity, ecs::RaceState { data.dwVnum, 0u });
+    reg.emplace_or_replace<ecs::CharacterType>(entity, static_cast<uint8_t>(data.bType));
     reg.emplace_or_replace<ecs::PlayerName>(entity, MakeMobPlayerName(data));
     reg.emplace_or_replace<Tag>(entity);
     reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
@@ -586,6 +588,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.all_of<ecs::TagPC>(entity)) {
+        reg.emplace_or_replace<ecs::CharacterType>(entity, static_cast<uint8_t>(CHAR_TYPE_PC));
         ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);
         ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.pc.existing");
         if (desc) {
@@ -604,6 +607,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::EmpireComponent>(entity, ecs::EmpireComponent { static_cast<uint8_t>(desc ? desc->GetEmpire() : 0u) });
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { data.job });
     reg.emplace_or_replace<ecs::RaceState>(entity, ecs::RaceState { static_cast<uint32_t>(data.job), 0u });
+    reg.emplace_or_replace<ecs::CharacterType>(entity, static_cast<uint8_t>(CHAR_TYPE_PC));
     reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
     reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
     reg.emplace_or_replace<ecs::TagPC>(entity);

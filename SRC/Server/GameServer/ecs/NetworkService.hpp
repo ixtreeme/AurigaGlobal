@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 
 #include "../desc.h"
+#include <Core/Logging.hpp>
 #include "Registry.hpp"
 #include "components/session_components.hpp"
 #include "components/transform_components.hpp"
@@ -23,6 +24,24 @@ inline bool Send(entt::entity recipient, const void* packet, std::size_t size)
         return false;
 
     session->desc->Packet(packet, static_cast<int>(size));
+    return true;
+}
+
+inline bool SendBufferedPair(entt::entity recipient,
+    const void* first,
+    std::size_t firstSize,
+    const void* second,
+    std::size_t secondSize)
+{
+    if (recipient == entt::null || !g_registry.valid(recipient))
+        return false;
+
+    const auto* session = g_registry.try_get<ecs::NetworkSession>(recipient);
+    if (!session || !session->desc)
+        return false;
+
+    session->desc->BufferedPacket(first, static_cast<int>(firstSize));
+    session->desc->Packet(second, static_cast<int>(secondSize));
     return true;
 }
 
@@ -50,12 +69,24 @@ inline void Broadcast(entt::registry& reg, entt::entity source, const void* pack
 
 inline void BroadcastToView(entt::registry& reg, entt::entity source, const void* packet, std::size_t size, bool excludeSource = true)
 {
-    const auto recipients = ecs::VisibilityService::GetViewersOf(reg, source);
+    const auto recipients = ecs::VisibilityService::GetViewersOfNative(reg, source);
+#ifndef NDEBUG
+    const auto legacyRecipients = ecs::VisibilityService::GetViewersOf(reg, source);
+    if (recipients.size() != legacyRecipients.size()) {
+        LOG_WARN("[BROADCAST_DRIFT] entity={} native={} legacy={}",
+            static_cast<uint32_t>(source),
+            recipients.size(),
+            legacyRecipients.size());
+    }
+#endif
     for (const auto recipient : recipients) {
         if (excludeSource && recipient == source)
             continue;
         Send(recipient, packet, size);
     }
+
+    if (!excludeSource)
+        Send(source, packet, size);
 }
 
 inline void BroadcastInMap(entt::registry& reg, int32_t mapIndex, const void* packet, std::size_t size)

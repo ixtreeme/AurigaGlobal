@@ -1,0 +1,128 @@
+Phase 15E-final.LPENTITY.4 - Native virtual dispatch replacement
+
+Date: 2026-05-03
+Build gate:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+  Result: PASS
+
+1. EntityNetworkDispatch
+
+Added:
+  - SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp
+  - SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.cpp
+
+Primary API:
+  - EntityNetworkDispatch::SendInsert(reg, sourceE, viewerE)
+  - EntityNetworkDispatch::SendRemove(reg, sourceE, viewerE)
+  - EntityNetworkDispatch::Reencode(reg, viewerE)
+
+Dispatch source:
+  - SpatialKind::Character -> native character insert/remove packet
+  - SpatialKind::Item -> native ground item insert/remove packet
+  - SpatialKind::Building -> native building insert/remove packet
+  - SpatialKind::OfflineShop -> native offline shop insert/remove packet
+
+2. Native packet builders
+
+Character:
+  - Builds TPacketGCCharacterAdd from ECS components.
+  - Uses CharacterType, VIDComponent, Position, RaceState, RotationComponent, AffectList, StatusFlags, MovementDestination, MovementState, ShopState.
+  - Sends additional info via existing native NetworkSyncSystem::SendCharAdditionalInfo.
+
+Item:
+  - Builds ground add/remove packets from ItemIdentity and ItemGroundPosition.
+  - Sends ownership packet from ItemOwnershipDisplay.
+
+Building:
+  - Builds legacy-compatible TPacketGCCharacterAdd with CHAR_TYPE_BUILDING.
+  - Reads BuildingState, VIDComponent, Position.
+
+OfflineShop:
+  - Builds TPacketGCNewOfflineshop insert/remove payloads.
+  - Reads OfflineShopState and Position.
+  - NetworkService gained SendBufferedPair for header + subpacket compatibility.
+
+3. Component extensions
+
+Added:
+  - ecs::CharacterType: mirrors CHARACTER::m_bCharType for packet bType.
+  - OfflineShopState::name: required by native shop entity insert packet.
+
+Population:
+  - EntityFactory::CreatePC -> CharacterType{CHAR_TYPE_PC}
+  - EntityFactory mob/NPC/stone path -> CharacterType{TMobTable.bType}
+  - OfflineShop create/update paths sync OfflineShopState name/race/type.
+
+4. entity_view.cpp dispatch replacement
+
+entity_view.cpp normal packet path now calls:
+  - DispatchInsert -> EntityNetworkDispatch::SendInsert
+  - DispatchRemove -> EntityNetworkDispatch::SendRemove
+
+Affected paths:
+  - ViewInsert
+  - ViewRemove
+  - ViewReencode
+  - UpdateSectree stale view removal
+  - Observer mode view transitions
+
+Fallback:
+  - Virtual EncodeInsertPacket / EncodeRemovePacket is called only if source or viewer cannot be mapped to entt::entity.
+  - Fallback emits [DISPATCH_FALLBACK].
+  - Runtime target: [DISPATCH_FALLBACK] count must be zero.
+
+5. BroadcastToView native
+
+NetworkService::BroadcastToView now uses:
+  - VisibilityService::GetViewersOfNative
+
+Debug drift guard:
+  - Compares native viewer count to legacy ViewersOf result in non-NDEBUG builds.
+  - Emits [BROADCAST_DRIFT] if sizes differ.
+
+6. Virtual wrapper status
+
+Simplified wrappers:
+  - building::CObject::EncodeInsertPacket / EncodeRemovePacket now forward to EntityNetworkDispatch.
+  - offlineshop::ShopEntity::EncodeInsertPacket / EncodeRemovePacket now forward to EntityNetworkDispatch.
+  - CHARACTER::EncodeInsertPacket / EncodeRemovePacket now try EntityNetworkDispatch first and keep legacy body as unmappable fallback.
+  - CItem wrappers were already ECS-native from LPENTITY.1f.
+
+Legacy bodies remain present until LPENTITY.6. They should be dormant in normal runtime if all entities are mapped.
+
+7. Metrics
+
+Tree-wide LPENTITY line-reference metric after this phase: 158.
+
+This did not decrease because this phase added EntityNetworkDispatch boundary code and retained fallback guards. The meaningful production metric for LPENTITY.4 is runtime fallback absence:
+  - [VIEWMAP_DRIFT] = 0
+  - [BROADCAST_DRIFT] = 0
+  - [DISPATCH_FALLBACK] = 0
+
+Static LPENTITY count reduction is expected in LPENTITY.5-LPENTITY.6 when PacketAround/PacketView and virtual declarations/fallback bodies are removed.
+
+8. WinTest checklist
+
+Mandatory before LPENTITY.5:
+  - PC enters/leaves another PC view.
+  - Mob/NPC/stone spawn and despawn.
+  - Ground item drop/pickup.
+  - Building visible/remove.
+  - Offline shop visible/remove.
+  - Observer mode enter/exit.
+  - Mount movement and dismount/remount.
+  - Effects/equipment/alignment broadcasts.
+
+Tail syslog:
+  - [VIEWMAP_DRIFT] must remain 0.
+  - [BROADCAST_DRIFT] must remain 0.
+  - [DISPATCH_FALLBACK] must remain 0.
+  - [SPATIAL_INVARIANT] must remain 0.
+  - VID_DRIFT must remain 0.
+
+9. Outstanding for LPENTITY.5
+
+Next:
+  - Replace PacketAround / PacketView users with NetworkService broadcast APIs.
+  - Remove direct view-map packet send helpers.
+  - Keep fallback bodies until LPENTITY.6 deletion step.

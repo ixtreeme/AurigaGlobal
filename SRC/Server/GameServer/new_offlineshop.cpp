@@ -13,6 +13,9 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/OfflineShopEntityRegistry.hpp"
+#include "ecs/services/EntityNetworkDispatch.hpp"
+#include "ecs/services/SpatialService.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
 #include "new_offlineshop.h"
@@ -894,21 +897,19 @@ namespace offlineshop
 	//NEW ENTITY
 	void ShopEntity::EncodeInsertPacket(LPENTITY entity)
 	{
-		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
-			return;
-
-		GetManager().EncodeInsertShopEntity(*this, ch);
+		const entt::entity source = ecs::OfflineShopEntityRegistry::FindByVID(GetVID());
+		const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
+		if (source != entt::null && viewer != entt::null)
+			ecs::EntityNetworkDispatch::SendInsert(g_registry, source, viewer);
 	}
 
 
 	void ShopEntity::EncodeRemovePacket(LPENTITY entity)
 	{
-		LPCHARACTER ch = entity->GetType()== ENTITY_CHARACTER ? (LPCHARACTER) entity : nullptr;
-		if(!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
-			return;
-
-		GetManager().EncodeRemoveShopEntity(*this, ch);
+		const entt::entity source = ecs::OfflineShopEntityRegistry::FindByVID(GetVID());
+		const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
+		if (source != entt::null && viewer != entt::null)
+			ecs::EntityNetworkDispatch::SendRemove(g_registry, source, viewer);
 	}
 
 

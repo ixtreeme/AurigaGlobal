@@ -639,6 +639,19 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 			ent.SetShopRace(rShop.GetRace());
 #endif
+			const entt::entity shopEntity = ecs::OfflineShopEntityRegistry::FindByVID(ent.GetVID());
+			if (shopEntity != entt::null && g_registry.valid(shopEntity))
+			{
+				auto& state = g_registry.get_or_emplace<ecs::OfflineShopState>(shopEntity);
+				state.vid = ent.GetVID();
+				state.shopType = ent.GetShopType();
+				state.name = ent.GetShopName();
+#ifdef KASMIR_PAKET_SYSTEM
+				state.race = ent.GetShopRace();
+#else
+				state.race = 0u;
+#endif
+			}
 
 			if (ent.GetSectree())
 				ent.ViewReencode();
@@ -716,6 +729,7 @@ namespace offlineshop
 						0u,
 #endif
 						pEntity->GetShopType(),
+						pEntity->GetShopName(),
 					});
 
 				if (!ecs::SpatialService::InsertEntity(g_registry, shopEntity, static_cast<uint32_t>(map_index), shop_pos_x, shop_pos_y, 0))

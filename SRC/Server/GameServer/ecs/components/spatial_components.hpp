@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace ecs {
 
@@ -51,6 +52,7 @@ struct OfflineShopState {
     uint32_t vid { 0 };
     uint32_t race { 0 };
     int shopType { 0 };
+    std::string name {};
 };
 
 } // namespace ecs
