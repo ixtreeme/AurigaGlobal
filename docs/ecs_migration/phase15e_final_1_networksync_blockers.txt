@@ -1,0 +1,134 @@
+# Phase 15E-final.1 - NetworkSyncSystem Native ECS Rewrite Status
+
+Date: 2026-05-03
+Mode: safe implementation slice plus blocker inventory.
+Build target: `GameServer` / `RelWithDebInfo`.
+
+## 1. Requested Target
+
+Requested final state:
+
+- `NetworkSyncSystem.cpp` contains zero `LPCHARACTER`.
+- `NetworkSyncSystem.cpp` contains zero `LegacyCharOf`.
+- `NetworkSyncSystem.cpp` contains zero `CHARACTER::` method bodies.
+- Packet construction reads ECS components directly.
+- Descriptor access is hidden behind `ecs::NetworkService`.
+
+This target is not safe to complete in one mechanical pass because several packet bodies still read legacy-only packet state that is not yet represented as ECS components.
+
+## 2. Implemented in This Slice
+
+Added `ecs::NetworkService` service boundary:
+
+- `ecs::NetworkService::Send(entt::entity recipient, const void* packet, size_t size)`
+- `ecs::NetworkService::Broadcast(entt::registry& reg, entt::entity source, const void* packet, size_t size, int range)`
+- `ecs::NetworkService::SendToAll(const void* packet, size_t size)`
+
+`Broadcast` is intentionally conservative in this slice: it logs a one-time warning and does not send until the ECS visibility service exists. A global send-all implementation would be packet-semantics corruption.
+
+Migrated the already-native dirty update loop in `NetworkSyncSystem_Update`:
+
+- Removed the local `LegacyCharOf(entity)` lookup.
+- Removed direct descriptor packet send from the update loop.
+- Sends `TPacketGCMove` and `TPacketGCPoints` through `ecs::NetworkService::Send`.
+- Clears `DirtyTag` only after a successful send, so missing descriptors do not silently drop pending updates.
+
+This is Phase 15E-final.1a, not the full final.1 target.
+
+## 3. Current NetworkSyncSystem Legacy Surface
+
+Measured after the safe slice:
+
+| Pattern | Count |
+|---------|------:|
+| `LPCHARACTER` | 20 |
+| `CHARACTER\b` | 47 |
+| `LegacyCharOf` | 4 |
+| `CHARACTER::` method bodies | 21 |
+
+Remaining `CHARACTER::` bodies:
+
+- `EncodeInsertPacket`
+- `EncodeRemovePacket`
+- `FindCharacterInView`
+- `SetSyncOwner`
+- `ClearSync`
+- `IsSyncOwner`
+- `BuildUpdatePartyPacket`
+- `SyncPacket`
+- `UpdatePacket`
+- `MainCharacterPacket`
+- `PointsPacket`
+- `GetName(uint8_t)`
+- `GetName()`
+- `GetItemOnTitlePrefix`
+- `GetDisplayedNameWithItemOnTitle`
+- `SendItemOnTitleNameToDesc`
+- `UpdateItemOnTitleName`
+- `EffectPacket`
+- `SpecificEffectPacket`
+- `SendEquipment`
+- `ConfirmWithMsg`
+
+Remaining `CItem::` packet bodies:
+
+- `EncodeInsertPacket`
+- `EncodeRemovePacket`
+- `UsePacketEncode`
+- `UpdatePacket`
+
+## 4. Packet Inventory and Blockers
+
+| Packet / body | Reads today | Native ECS blockers |
+|---------------|-------------|---------------------|
+| `EncodeInsertPacket` | view map, descriptor, movement destination, affect flags, walking mode, shop sign, fake shop title, equipment/title side effects | ECS visibility/view service, packet movement snapshot component, affect flag packet snapshot, shop sign/title component, native equipment packet sender |
+| `EncodeRemovePacket` | view map, descriptor, packet around semantics | ECS visibility recipient list and broadcast service with sectree/range semantics |
+| `FindCharacterInView` | `m_map_view`, entity type casts, character name lookup | ECS visibility query service returning entity IDs |
+| `SetSyncOwner` / `ClearSync` / `IsSyncOwner` | `m_pkChrSyncOwner`, `m_kLst_pkChrSyncOwned`, attackability service | `SyncOwnership` component plus native attackability service |
+| `BuildUpdatePartyPacket` | party pointer, leader character pointer, member state | party service boundary or party ECS snapshot |
+| `SyncPacket` | packet around, VID, position | visibility-aware `NetworkService::Broadcast` with ECS recipient selection |
+| `UpdatePacket` | appearance, affect flags, runtime state, alignment/rank, guild, mount, language/name | packet-state components for affect flags/runtime flags plus validated native rank/title flow |
+| `MainCharacterPacket` | descriptor, map/player state, skill group, mobile SMS, empire/BGM | session service plus ECS skill group and login packet state coverage |
+| `PointsPacket` | full point packet emission | mostly covered by `PointSystem`; needs native packet sender and complete point packet field review |
+| item title name packets | item title prefix cache, descriptor send, visible-name update | `ItemTitlePrefixState` component and name-title broadcast service |
+| `EffectPacket` / `SpecificEffectPacket` | packet around service | native broadcast service using ECS visibility |
+| `SendEquipment` | viewer character, wear slots, item packet encoding | equipment view service and item packet builder operating on item entities |
+| `ConfirmWithMsg` | descriptor confirm packet | simple service boundary candidate |
+| `CItem::EncodeInsertPacket` / remove / update / use | owner pointer, ground item state, item event state, item update packet body | item network state component and item lifecycle service extraction |
+
+## 5. Missing Components / Services
+
+Required before a true zero-legacy rewrite:
+
+- `NetworkService::Broadcast` must implement actual visibility/range semantics, not a global send-all fallback.
+- `ViewMapService` or equivalent ECS visibility index must replace `m_map_view`.
+- `AffectPacketFlags` or packet-ready affect flag component must replace direct `m_afAffectFlag` packet reads.
+- `MovementPacketState` must model destination, start position, duration, start time and walking mode.
+- `RuntimePacketState` must model `m_bAddChrState` and related packet bits.
+- `ShopSignState` must model shop sign and Kasmir/fake-shop title state.
+- `ItemTitlePrefixState` must model item title prefix and last-sent cache.
+- `SyncOwnership` must model sync owner and owned list.
+- `ItemNetworkState` must model item ground/owner/network update fields used by `CItem::` packet bodies.
+- Party/guild packet snapshots need service boundaries where party/guild remain non-ECS services.
+
+## 6. Recommended Phase Split
+
+Recommended continuation:
+
+1. Phase 15E-final.1a - NetworkService boundary and dirty update loop native send. Completed in this slice.
+2. Phase 15E-final.1b - Native additional-info / rank-title packet path.
+3. Phase 15E-final.1c - Native `MainCharacterPacket`, `UpdatePacket`, and `PointsPacket`.
+4. Phase 15E-final.1d - ECS visibility service and native spawn/remove/effect broadcast.
+5. Phase 15E-final.1e - Native equipment packet builder.
+6. Phase 15E-final.1f - Item network packet extraction from `CItem::` bodies.
+7. Phase 15E-final.1g - Delete remaining `CHARACTER::` / `CItem::` network packet bodies and declarations.
+
+## 7. Architectural Conclusion
+
+The strict zero-legacy target is correct, but forcing it before the missing packet state exists would only move legacy behavior behind wrappers or break packet semantics.
+
+The safe path is staged:
+
+- Add service boundaries first.
+- Move packet bodies only when every field they read is available from ECS or an explicit service snapshot.
+- Delete legacy bodies only after caller counts reach zero and packet parity is verified by WinTest.

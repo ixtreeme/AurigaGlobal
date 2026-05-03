@@ -11625,3 +11625,45 @@ Status:
 - Direct non-system callers for `GetGMLevel`, `GetRaceNum`, `IsImmune`, and `MountVnum` are cleared.
 - `GetPoint` has one accepted ECS factory hydration bridge remaining.
 - Next: subsystem-owned rewires in Phase 15E-final.1+ before any body deletion.
+
+
+## Phase 15E-final.1a - NetworkService Boundary and Dirty Update Slice
+
+Scope:
+- Started the NetworkSyncSystem native ECS rewrite.
+- Added `ecs::NetworkService` as the descriptor service boundary for ECS-side packet sending.
+- Migrated the already-native dirty update loop to send through `NetworkService::Send`.
+
+Implemented:
+- Added `SRC/Server/GameServer/ecs/NetworkService.hpp`.
+- Added `SRC/Server/GameServer/ecs/NetworkService.cpp` as the build-system translation unit.
+- `NetworkSyncSystem_Update` no longer resolves `LegacyCharOf(entity)` before sending dirty `TPacketGCMove` / `TPacketGCPoints`.
+- `NetworkSyncSystem_Update` no longer sends directly through `session.desc->Packet`; it uses `ecs::NetworkService::Send`.
+- `DirtyTag` is cleared only when at least one packet send succeeds, preserving retry behavior when no descriptor is available.
+- `NetworkService::Broadcast` is intentionally a one-time warning/no-op until ECS visibility is implemented; this avoids accidentally replacing `PacketAround` with global send-all behavior.
+
+Important limitation:
+- This is not the full Phase 15E-final.1 target.
+- `NetworkSyncSystem.cpp` still contains legacy packet bodies and service-bound state that is not yet modeled in ECS.
+- Forcing zero `LPCHARACTER` in one pass would hide legacy behavior behind wrappers or break packet parity.
+
+Measured after this slice:
+- `LPCHARACTER` in `NetworkSyncSystem.cpp`: 20
+- `LegacyCharOf` in `NetworkSyncSystem.cpp`: 4
+- `CHARACTER::` method bodies in `NetworkSyncSystem.cpp`: 21
+
+Documentation added:
+- `docs/ecs_migration/phase15e_final_1_networksync_blockers.txt`
+
+Recommended continuation:
+- `15E-final.1b`: native additional-info / rank-title packet path.
+- `15E-final.1c`: native main/update/points packets.
+- `15E-final.1d`: ECS visibility service for spawn/remove/effect broadcast.
+- `15E-final.1e`: native equipment packet builder.
+- `15E-final.1f`: item packet extraction from `CItem::` bodies.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
