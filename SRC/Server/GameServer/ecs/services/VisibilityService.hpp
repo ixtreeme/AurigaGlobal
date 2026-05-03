@@ -13,6 +13,7 @@
 #include "../components/session_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
+#include "../components/visibility_components.hpp"
 #include "../systems/PlayerRuntimeSystem.hpp"
 
 namespace ecs::VisibilityService {
@@ -85,6 +86,42 @@ inline std::vector<entt::entity> GetViewersOf(entt::registry& reg, entt::entity 
 inline std::vector<entt::entity> GetVisibleEntities(entt::registry& reg, entt::entity source)
 {
     return GetViewersOf(reg, source);
+}
+
+inline std::vector<entt::entity> GetVisibleEntitiesNative(entt::registry& reg, entt::entity source)
+{
+    std::vector<entt::entity> result;
+    if (source == entt::null || !reg.valid(source))
+        return result;
+
+    const auto* view = reg.try_get<ecs::ViewMap>(source);
+    if (!view)
+        return result;
+
+    result.reserve(view->visible.size());
+    for (const entt::entity visible : view->visible) {
+        if (visible != entt::null && reg.valid(visible))
+            PushUnique(result, visible);
+    }
+    return result;
+}
+
+inline std::vector<entt::entity> GetViewersOfNative(entt::registry& reg, entt::entity source)
+{
+    std::vector<entt::entity> result;
+    if (source == entt::null || !reg.valid(source))
+        return result;
+
+    const auto* viewers = reg.try_get<ecs::ViewerMap>(source);
+    if (!viewers)
+        return result;
+
+    result.reserve(viewers->viewers.size());
+    for (const entt::entity viewer : viewers->viewers) {
+        if (viewer != entt::null && reg.valid(viewer))
+            PushUnique(result, viewer);
+    }
+    return result;
 }
 
 inline void OnPositionChanged(entt::registry&, entt::entity) {}

@@ -23,6 +23,7 @@
 #include "../components/item_components.hpp"
 #include "../components/spatial_components.hpp"
 #include "../components/transform_components.hpp"
+#include "../components/visibility_components.hpp"
 #include "../systems/PlayerRuntimeSystem.hpp"
 
 namespace {
@@ -58,6 +59,9 @@ void SyncSpatialComponents(entt::registry& reg,
     reg.emplace_or_replace<ecs::Position>(e, x, y, z);
     reg.emplace_or_replace<ecs::PositionZ>(e, ecs::PositionZ { z });
     reg.emplace_or_replace<ecs::MapIndex>(e, static_cast<int32_t>(mapIndex));
+    (void)reg.get_or_emplace<ecs::ViewMap>(e);
+    (void)reg.get_or_emplace<ecs::ViewerMap>(e);
+    (void)reg.get_or_emplace<ecs::ViewAgeMap>(e);
 }
 
 void SyncVIDFromLegacy(entt::registry& reg, entt::entity e, LPENTITY legacy)
@@ -86,6 +90,37 @@ void SyncVIDFromLegacy(entt::registry& reg, entt::entity e, LPENTITY legacy)
 #endif
     default:
         break;
+    }
+}
+
+void ClearVisibilityMirror(entt::registry& reg, entt::entity e)
+{
+    if (e == entt::null || !reg.valid(e))
+        return;
+
+    if (auto* view = reg.try_get<ecs::ViewMap>(e)) {
+        for (const entt::entity visible : view->visible) {
+            if (visible != entt::null && reg.valid(visible)) {
+                if (auto* reverse = reg.try_get<ecs::ViewerMap>(visible))
+                    reverse->viewers.erase(e);
+            }
+        }
+        view->visible.clear();
+    }
+
+    if (auto* ageMap = reg.try_get<ecs::ViewAgeMap>(e))
+        ageMap->ageByEntity.clear();
+
+    if (auto* reverse = reg.try_get<ecs::ViewerMap>(e)) {
+        for (const entt::entity viewer : reverse->viewers) {
+            if (viewer != entt::null && reg.valid(viewer)) {
+                if (auto* view = reg.try_get<ecs::ViewMap>(viewer))
+                    view->visible.erase(e);
+                if (auto* ageMap = reg.try_get<ecs::ViewAgeMap>(viewer))
+                    ageMap->ageByEntity.erase(e);
+            }
+        }
+        reverse->viewers.clear();
     }
 }
 
@@ -169,6 +204,7 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
 
     ecs::SyncSectorPlacement(reg, e, static_cast<int32_t>(mapIndex), legacy->GetX(), legacy->GetY());
     reg.emplace_or_replace<ecs::ViewActiveTag>(e);
+    reg.emplace_or_replace<ecs::VisibilityDirty>(e);
     ecs::Invariants::ValidateSpatialCoverage(reg, e, "spatial.insert");
     return true;
 }
@@ -183,9 +219,11 @@ void RemoveEntity(entt::registry& reg, entt::entity e)
         sectree->RemoveEntity(legacy);
 
     if (e != entt::null && reg.valid(e)) {
+        ClearVisibilityMirror(reg, e);
         reg.remove<ecs::SectorPlacement>(e);
         reg.remove<ecs::ViewActiveTag>(e);
         reg.remove<ecs::SpatialEntity>(e);
+        reg.remove<ecs::VisibilityDirty>(e);
     }
 }
 
@@ -207,6 +245,7 @@ void UpdateSectree(entt::registry& reg, entt::entity e)
             legacy->GetY(),
             legacy->GetZ());
         ecs::SyncSectorPlacement(reg, e, legacy->GetMapIndex(), legacy->GetX(), legacy->GetY());
+        reg.emplace_or_replace<ecs::VisibilityDirty>(e);
         ecs::Invariants::ValidateSpatialCoverage(reg, e, "spatial.update_sectree");
     }
 }

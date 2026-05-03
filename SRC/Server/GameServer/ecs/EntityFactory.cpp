@@ -30,6 +30,7 @@
 #include "components/spatial_components.hpp"
 #include "components/status_components.hpp"
 #include "components/transform_components.hpp"
+#include "components/visibility_components.hpp"
 #include "components/vital_components.hpp"
 #include "../char.h"
 #include "../char_manager.h"
@@ -250,6 +251,9 @@ void ApplySpatialState(entt::registry& reg,
     reg.emplace_or_replace<ecs::Position>(entity, x, y, z);
     reg.emplace_or_replace<ecs::PositionZ>(entity, ecs::PositionZ { z });
     reg.emplace_or_replace<ecs::MapIndex>(entity, mapIndex);
+    (void)reg.get_or_emplace<ecs::ViewMap>(entity);
+    (void)reg.get_or_emplace<ecs::ViewerMap>(entity);
+    (void)reg.get_or_emplace<ecs::ViewAgeMap>(entity);
 }
 
 void SeedCharacterStatsComponentFromLegacy(entt::registry& reg, entt::entity entity)
@@ -329,7 +333,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::LevelComponent>(entity, data.bLevel);
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, ecs::CharacterPoints {});
-    reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
+    (void)reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
     SeedCharacterStatsComponentFromLegacy(reg, entity);
     reg.emplace_or_replace<ecs::AppearancePartsComponent>(entity, ecs::AppearancePartsComponent {});
     auto runtimeFlags = MakeDefaultRuntimeFlags();
@@ -549,6 +553,9 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemAttributes>(entity, MakeItemAttributes(item));
     reg.emplace_or_replace<ecs::ItemLockedAttribute>(entity, MakeItemLockedAttribute(item));
     reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
+    (void)reg.get_or_emplace<ecs::ViewMap>(entity);
+    (void)reg.get_or_emplace<ecs::ViewerMap>(entity);
+    (void)reg.get_or_emplace<ecs::ViewAgeMap>(entity);
 }
 
 } // namespace
@@ -628,7 +635,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::LevelComponent>(entity, data.level);
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.exp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, MakeCharacterPoints(data));
-    reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
+    (void)reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
     SeedCharacterStatsComponentFromLegacy(reg, entity);
 
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));

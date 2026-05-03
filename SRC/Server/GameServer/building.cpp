@@ -23,6 +23,7 @@
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/components/identity_components.hpp"
 #include "ecs/components/spatial_components.hpp"
+#include "ecs/components/visibility_components.hpp"
 
 enum
 {
@@ -199,6 +200,9 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 
 	ecs::CBuildingRegistry::Register(GetID(), GetVID(), objectEntity, this);
 	g_registry.emplace_or_replace<ecs::VIDComponent>(objectEntity, GetVID());
+	(void)g_registry.get_or_emplace<ecs::ViewMap>(objectEntity);
+	(void)g_registry.get_or_emplace<ecs::ViewerMap>(objectEntity);
+	(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(objectEntity);
 	g_registry.emplace_or_replace<ecs::BuildingState>(
 		objectEntity,
 		ecs::BuildingState {

@@ -31,6 +31,7 @@
 #include "ecs/services/SpatialService.hpp"
 #include "ecs/components/identity_components.hpp"
 #include "ecs/components/spatial_components.hpp"
+#include "ecs/components/visibility_components.hpp"
 #include "new_offlineshop_manager.h"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
@@ -702,6 +703,9 @@ namespace offlineshop
 
 				ecs::OfflineShopEntityRegistry::Register(pEntity->GetVID(), pEntity->GetVID(), shopEntity, pEntity);
 				g_registry.emplace_or_replace<ecs::VIDComponent>(shopEntity, pEntity->GetVID());
+				(void)g_registry.get_or_emplace<ecs::ViewMap>(shopEntity);
+				(void)g_registry.get_or_emplace<ecs::ViewerMap>(shopEntity);
+				(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(shopEntity);
 				g_registry.emplace_or_replace<ecs::OfflineShopState>(
 					shopEntity,
 					ecs::OfflineShopState {

@@ -27,6 +27,7 @@
 #include "../components/identity_components.hpp"
 #include "../components/inventory_components.hpp"
 #include "../components/transform_components.hpp"
+#include "../components/visibility_components.hpp"
 #include <Core/Logging.hpp>
 
 namespace
@@ -660,6 +661,9 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		g_registry.emplace_or_replace<ecs::MapIndex>(itemEntity, lMapIndex);
 		g_registry.emplace_or_replace<ecs::VIDComponent>(itemEntity, GetVID());
 		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
+		(void)g_registry.get_or_emplace<ecs::ViewMap>(itemEntity);
+		(void)g_registry.get_or_emplace<ecs::ViewerMap>(itemEntity);
+		(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(itemEntity);
 		SyncItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);

@@ -1,0 +1,100 @@
+Phase 15E-final.LPENTITY.3 - ViewMap/ViewerMap shadow mirror
+
+Date: 2026-05-03
+Build gate:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+  Result: PASS
+
+1. Components added
+
+Added: SRC/Server/GameServer/ecs/components/visibility_components.hpp
+
+Components:
+  - ViewMap: ECS mirror of entities this entity currently sees.
+  - ViewerMap: reverse ECS mirror of entities currently seeing this entity.
+  - ViewAgeMap: ECS mirror of per-view relation age.
+  - VisibilityDirty: marks entities whose visibility mirror changed.
+
+2. Shadow sync points
+
+Legacy m_map_view remains authoritative. ECS only shadows the same state.
+
+Sync added at:
+  - CEntity::ViewInsert
+  - CEntity::ViewRemove
+  - CEntity::ViewCleanup
+  - CEntity::UpdateSectree stale-entry removal
+  - SpatialService::RemoveEntity cleanup
+  - SpatialService::InsertEntity / UpdateSectree dirty marking
+
+Factory/population coverage:
+  - EntityFactory character spatial state now creates empty ViewMap/ViewerMap/ViewAgeMap.
+  - EntityFactory item state now creates empty ViewMap/ViewerMap/ViewAgeMap.
+  - CItem::AddToGround ensures visibility components for ground items.
+  - building::CObject::Show ensures visibility components for buildings.
+  - offlineshop::CShopManager::CreateNewShopEntities ensures visibility components for offline shops.
+
+3. Invariant comparison logic
+
+entity_view.cpp compares the authoritative legacy m_map_view against ECS ViewMap.visible after view insert/remove/update cleanup operations.
+
+Warning format:
+  [VIEWMAP_DRIFT] entity=<ecs entity> ctx=<context> legacy_size=<n> ecs_size=<n> missing_in_ecs=<n> missing_in_legacy=<n>
+
+Implementation note:
+  The invariant lives in entity_view.cpp instead of EntityInvariants.hpp because m_map_view is a protected CEntity member. This avoids exposing or changing CEntity public API during the shadow-mirror phase.
+
+4. SpatialService hooks
+
+SpatialService now ensures visibility components when syncing spatial state and clears reverse viewer references during RemoveEntity.
+
+InsertEntity:
+  - Ensures ViewMap/ViewerMap/ViewAgeMap.
+  - Sets VisibilityDirty after successful legacy sectree insert.
+
+UpdateSectree:
+  - Sets VisibilityDirty after legacy sectree update and placement sync.
+
+RemoveEntity:
+  - Clears ViewMap.visible.
+  - Removes this entity from reverse ViewerMap entries.
+  - Clears ViewerMap.viewers and ViewAgeMap.
+  - Removes VisibilityDirty with spatial active tags.
+
+5. VisibilityService native variants
+
+Added native ECS mirror readers:
+  - VisibilityService::GetVisibleEntitiesNative(reg, e)
+  - VisibilityService::GetViewersOfNative(reg, e)
+
+The existing legacy-backed VisibilityService variants remain authoritative for now. LPENTITY.4 should switch broadcast dispatch to the native variants only after WinTest confirms zero drift.
+
+6. Metrics
+
+Tree-wide LPENTITY line-reference metric after this phase: 156.
+
+This phase adds mirror/boundary code, so count stability or slight growth is expected. Reduction is expected in LPENTITY.4-LPENTITY.6 after tag-based dispatch replaces virtual view dispatch.
+
+7. WinTest drift report
+
+Manual WinTest required before LPENTITY.4:
+  - PC login/view enter/view leave
+  - Mob/NPC/stone spawn and despawn
+  - Ground item drop/pickup
+  - Building visibility
+  - Offline shop open/close
+  - Map transfer
+  - Observer mode enter/exit
+  - Mount movement through sectree boundaries
+
+Runtime acceptance criteria:
+  - [VIEWMAP_DRIFT] count: 0
+  - SPATIAL_INVARIANT warnings: 0
+  - VID_DRIFT: 0
+
+8. Outstanding issues for LPENTITY.4
+
+Before replacing virtual dispatch:
+  - Confirm no drift under full gameplay WinTest.
+  - Switch NetworkService/VisibilityService broadcast paths to ViewMap/ViewerMap native variants.
+  - Keep legacy m_map_view until native dispatch has passed the same view enter/leave tests.
