@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 
@@ -88,7 +89,7 @@ inline void BroadcastToView(entt::registry& reg, entt::entity source, const void
         Send(recipient, packet, size);
     }
 
-    if (!excludeSource)
+    if (!excludeSource && std::find(recipients.begin(), recipients.end(), source) == recipients.end())
         Send(source, packet, size);
 }
 

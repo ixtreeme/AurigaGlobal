@@ -923,17 +923,6 @@ void SendItemUpdate(entt::registry& reg, entt::entity item)
 
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 {
-    const entt::entity source = AIHelpers::EcsOf(this);
-    const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-    if (source != entt::null && viewer != entt::null && g_registry.valid(source) && g_registry.valid(viewer)) {
-        ecs::EntityNetworkDispatch::SendInsert(g_registry, source, viewer);
-        return;
-    }
-
-    LOG_WARN("[DISPATCH_FALLBACK] ctx=character.virtual_insert source={} viewer={}",
-        static_cast<const void*>(this),
-        static_cast<const void*>(entity));
-
     LPDESC d;
     if (!(d = entity->GetDesc()))
         return;
@@ -1064,17 +1053,6 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
 void CHARACTER::EncodeRemovePacket(LPENTITY entity)
 {
-    const entt::entity source = AIHelpers::EcsOf(this);
-    const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-    if (source != entt::null && viewer != entt::null && g_registry.valid(source) && g_registry.valid(viewer)) {
-        ecs::EntityNetworkDispatch::SendRemove(g_registry, source, viewer);
-        return;
-    }
-
-    LOG_WARN("[DISPATCH_FALLBACK] ctx=character.virtual_remove source={} viewer={}",
-        static_cast<const void*>(this),
-        static_cast<const void*>(entity));
-
     if (entity->GetType() != ENTITY_CHARACTER)
         return;
 

@@ -25,6 +25,7 @@
 #include "../systems/PlayerRuntimeSystem.hpp"
 #include "../systems/PointSystem.hpp"
 #include "../systems/SocialSystem.hpp"
+#include "SpatialService.hpp"
 #include "VisibilityService.hpp"
 
 namespace {
@@ -402,6 +403,15 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
 
     switch (kind->kind) {
     case ecs::SpatialKind::Character:
+        // Character spawn/movement insert remains legacy-authoritative for now.
+        // The native builder can diverge from legacy movement destination state
+        // and leave two clients with different perceived character positions.
+        if (LPENTITY sourceLegacy = ecs::LPENTITYFromEntity(reg, source)) {
+            if (LPENTITY viewerLegacy = ecs::LPENTITYFromEntity(reg, viewer)) {
+                sourceLegacy->EncodeInsertPacket(viewerLegacy);
+                break;
+            }
+        }
         SendCharacterInsert(reg, source, viewer);
         break;
     case ecs::SpatialKind::Item:
@@ -427,6 +437,12 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
 
     switch (kind->kind) {
     case ecs::SpatialKind::Character:
+        if (LPENTITY sourceLegacy = ecs::LPENTITYFromEntity(reg, source)) {
+            if (LPENTITY viewerLegacy = ecs::LPENTITYFromEntity(reg, viewer)) {
+                sourceLegacy->EncodeRemovePacket(viewerLegacy);
+                break;
+            }
+        }
         SendCharacterRemove(reg, source, viewer);
         break;
     case ecs::SpatialKind::Item:
