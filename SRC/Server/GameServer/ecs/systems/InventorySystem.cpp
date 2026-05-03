@@ -22,7 +22,9 @@
 #include "../ItemRegistry.hpp"
 #include "../events.hpp"
 #include "../components/dirty_components.hpp"
+#include "../components/identity_components.hpp"
 #include "../components/inventory_components.hpp"
+#include "../components/transform_components.hpp"
 #include <Core/Logging.hpp>
 
 namespace
@@ -594,6 +596,8 @@ LPITEM CItem::RemoveFromGround()
 		{
 			g_registry.remove<ecs::SectorPlacement>(itemEntity);
 			g_registry.remove<ecs::ViewActiveTag>(itemEntity);
+			g_registry.remove<ecs::SpatialEntity>(itemEntity);
+			g_registry.remove<ecs::SpatialKindTag>(itemEntity);
 			g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
 		}
 
@@ -644,6 +648,12 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 
 	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
 	if (itemEntity != entt::null && g_registry.valid(itemEntity)) {
+		g_registry.emplace_or_replace<ecs::SpatialEntity>(itemEntity);
+		g_registry.emplace_or_replace<ecs::SpatialKindTag>(itemEntity, ecs::SpatialKindTag{ecs::SpatialKind::Item});
+		g_registry.emplace_or_replace<ecs::Position>(itemEntity, pos.x, pos.y, pos.z);
+		g_registry.emplace_or_replace<ecs::PositionZ>(itemEntity, ecs::PositionZ{pos.z});
+		g_registry.emplace_or_replace<ecs::MapIndex>(itemEntity, lMapIndex);
+		g_registry.emplace_or_replace<ecs::VIDComponent>(itemEntity, GetVID());
 		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
 		SyncItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
