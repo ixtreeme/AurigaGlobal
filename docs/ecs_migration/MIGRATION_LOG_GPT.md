@@ -11769,3 +11769,45 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Status:
 - Phase 15E-final.1e code migration is complete.
 - WinTest required before verified close-out.
+
+
+## Phase 15E-final.1f - CItem Packet Body Cleanup + Virtual Dispatch Refactor
+
+Scope:
+- Kept the four `CItem::` virtual packet overrides required by `LPENTITY`/`entity_view`.
+- Rewrote their body content into thin ECS-resolving wrappers.
+- Added native ECS item packet builders under `ecs::ItemNetworkSystem`.
+- Added `ecs::EntityFromLPENTITY` as the narrow virtual-dispatch boundary.
+
+Components added:
+- `ItemGroundPosition` for ground item x/y/z packet fields.
+- `ItemOwnershipDisplay` for protected ground-drop owner name.
+- `ItemLockedAttribute` for `ATTR_LOCK` item update packet field.
+
+Sync coverage:
+- `EntityFactory::SyncItemEntity` populates new item packet components.
+- `CItem::AddToGround` syncs ground position.
+- `CItem::RemoveFromGround` clears ground position.
+- `CItem::SetOwnership` syncs ownership display state.
+- `CItem::SetLockedAttr` syncs locked attribute state.
+
+Packet builders:
+- Ground insert/remove, item update, and item-use packet data now read ECS components.
+- Service delivery goes through `NetworkService`.
+- `CItem::` bodies no longer read direct packet fields such as `m_dwVID`, `m_dwVnum`, `m_bWindow`, `m_wCell`, `m_dwCount`, sockets, attributes, flags, or `m_pOwner`.
+
+Metrics:
+- `NetworkSyncSystem.cpp` after 1f: 13 `CHARACTER::` bodies, 4 retained `CItem::` virtual packet wrappers, 14 `LPCHARACTER`, 1 `LPITEM`, 0 `LegacyCharOf` / `LegacyItemOf`.
+- Tree-wide `LPCHARACTER`: 1829.
+- Tree-wide `LPITEM`: 905.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- WinTest focus: ground item appear/remove, ownership name for protected drops, item update packets, item-use packets, trade/safebox item updates, and VID_DRIFT.
+
+Status:
+- Phase 15E-final.1f code migration is complete.
+- WinTest required before verified close-out.

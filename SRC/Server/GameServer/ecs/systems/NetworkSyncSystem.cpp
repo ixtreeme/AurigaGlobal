@@ -21,6 +21,7 @@
 #include "../../sectree.h"
 #include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
+#include "../ItemRegistry.hpp"
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
 #include "../components/appearance_components.hpp"
@@ -624,6 +625,177 @@ void NetworkSyncSystem::BroadcastEquipmentChange(entt::registry& reg, entt::enti
     ecs::NetworkService::BroadcastToView(reg, wearer, &packet, sizeof(packet), true);
 }
 
+namespace ecs {
+entt::entity EntityFromLPENTITY(LPENTITY entity)
+{
+    if (!entity)
+        return entt::null;
+
+    if (entity->IsType(ENTITY_CHARACTER))
+        return AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
+
+    if (entity->IsType(ENTITY_ITEM)) {
+        auto* item = static_cast<LPITEM>(entity);
+        entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
+        if (itemEntity == entt::null)
+            itemEntity = CItemRegistry::Instance().FindByVID(item->GetVID());
+        return itemEntity;
+    }
+
+    return entt::null;
+}
+} // namespace ecs
+
+namespace ecs::ItemNetworkSystem {
+
+entt::entity ResolveItemEntity(CItem* item)
+{
+    if (!item)
+        return entt::null;
+
+    entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
+    if (itemEntity == entt::null)
+        itemEntity = CItemRegistry::Instance().FindByVID(item->GetVID());
+    return itemEntity;
+}
+
+entt::entity FindPlayerByPID(entt::registry& reg, uint32_t pid)
+{
+    if (pid == 0)
+        return entt::null;
+
+    auto players = reg.view<ecs::PlayerID>();
+    for (const auto player : players) {
+        const auto& playerID = players.get<ecs::PlayerID>(player);
+        if (playerID.pid == pid)
+            return player;
+    }
+
+    return entt::null;
+}
+
+bool EncodeItemGroundInsert(entt::registry& reg, entt::entity item, TPacketGCItemGroundAdd& packet)
+{
+    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
+    const auto* position = reg.try_get<ecs::ItemGroundPosition>(item);
+    if (!identity || !position)
+        return false;
+
+    packet = {};
+    packet.bHeader = HEADER_GC_ITEM_GROUND_ADD;
+    packet.x = position->x;
+    packet.y = position->y;
+    packet.z = position->z;
+    packet.dwVID = identity->vid;
+    packet.dwVnum = identity->vnum;
+    return true;
+}
+
+bool EncodeItemGroundRemove(entt::registry& reg, entt::entity item, TPacketGCItemGroundDel& packet)
+{
+    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
+    if (!identity)
+        return false;
+
+    packet = {};
+    packet.bHeader = HEADER_GC_ITEM_GROUND_DEL;
+    packet.dwVID = identity->vid;
+    return true;
+}
+
+bool EncodeItemUpdate(entt::registry& reg, entt::entity item, TPacketGCItemUpdate& packet)
+{
+    const auto* location = reg.try_get<ecs::ItemLocation>(item);
+    const auto* count = reg.try_get<ecs::ItemCount>(item);
+    const auto* sockets = reg.try_get<ecs::ItemSockets>(item);
+    const auto* attrs = reg.try_get<ecs::ItemAttributes>(item);
+    if (!location || !count || !sockets || !attrs)
+        return false;
+
+    packet = {};
+    packet.header = HEADER_GC_ITEM_UPDATE;
+    packet.Cell = TItemPos(location->window, location->cell);
+    packet.count = count->count;
+    std::copy(sockets->sockets.begin(), sockets->sockets.end(), packet.alSockets);
+    std::copy(attrs->attrs.begin(), attrs->attrs.end(), packet.aAttr);
+#ifdef ATTR_LOCK
+    const auto* locked = reg.try_get<ecs::ItemLockedAttribute>(item);
+    packet.lockedattr = locked ? locked->index : -1;
+#endif
+    return true;
+}
+
+bool EncodeItemUse(entt::registry& reg, entt::entity owner, entt::entity victim, entt::entity item, packet_item_use& packet)
+{
+    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
+    const auto* location = reg.try_get<ecs::ItemLocation>(item);
+    if (!identity || !location || identity->vnum == 0)
+        return false;
+
+    packet = {};
+    packet.header = HEADER_GC_ITEM_USE;
+    packet.ch_vid = ecs::PlayerRuntime::GetPacketVID(owner);
+    packet.victim_vid = ecs::PlayerRuntime::GetPacketVID(victim);
+    packet.Cell = TItemPos(location->window, location->cell);
+    packet.vnum = identity->vnum;
+    return true;
+}
+
+void SendItemInsert(entt::registry& reg, entt::entity item, entt::entity recipient)
+{
+    TPacketGCItemGroundAdd packet {};
+    if (!EncodeItemGroundInsert(reg, item, packet))
+        return;
+
+    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
+
+    const auto* ownership = reg.try_get<ecs::ItemOwnershipDisplay>(item);
+    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
+    if (!ownership || ownership->ownerName.empty() || !identity)
+        return;
+
+    TPacketGCItemOwnership ownershipPacket {};
+    ownershipPacket.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+    ownershipPacket.dwVID = identity->vid;
+    strlcpy(ownershipPacket.szName, ownership->ownerName.c_str(), sizeof(ownershipPacket.szName));
+    ecs::NetworkService::Send(recipient, &ownershipPacket, sizeof(ownershipPacket));
+}
+
+void SendItemRemove(entt::registry& reg, entt::entity item, entt::entity recipient)
+{
+    TPacketGCItemGroundDel packet {};
+    if (!EncodeItemGroundRemove(reg, item, packet))
+        return;
+
+    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
+}
+
+void SendItemUpdate(entt::registry& reg, entt::entity item)
+{
+    const auto* owner = reg.try_get<ecs::ItemOwner>(item);
+    if (!owner)
+        return;
+
+    const auto* location = reg.try_get<ecs::ItemLocation>(item);
+    if (location && location->window == SWITCHBOT)
+        return;
+
+    const entt::entity ownerEntity = FindPlayerByPID(reg, owner->ownerPID);
+    if (ownerEntity == entt::null)
+        return;
+
+    TPacketGCItemUpdate packet {};
+    if (!EncodeItemUpdate(reg, item, packet))
+        return;
+
+    LOG_TRACE("UpdatePacket {} -> {}",
+        ItemSystem::GetItemName(item),
+        ecs::PlayerRuntime::GetName(ownerEntity).data());
+    ecs::NetworkService::Send(ownerEntity, &packet, sizeof(packet));
+}
+
+} // namespace ecs::ItemNetworkSystem
+
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 {
     LPDESC d;
@@ -1040,98 +1212,50 @@ void CHARACTER::ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwReque
 
 void CItem::EncodeInsertPacket(LPENTITY ent)
 {
-	LPDESC d;
+    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
+    const entt::entity recipient = ecs::EntityFromLPENTITY(ent);
+    if (item == entt::null || recipient == entt::null)
+        return;
 
-	if (!(d = ent->GetDesc()))
-		return;
-
-	const PIXEL_POSITION& c_pos = GetXYZ();
-
-	packet_item_ground_add pack;
-
-	pack.bHeader = HEADER_GC_ITEM_GROUND_ADD;
-	pack.x = c_pos.x;
-	pack.y = c_pos.y;
-	pack.z = c_pos.z;
-	pack.dwVnum = GetVnum();
-	pack.dwVID = m_dwVID;
-	//pack.count	= m_dwCount;
-
-	d->Packet(&pack, sizeof(pack));
-
-	if (m_pkOwnershipEvent != nullptr)
-	{
-		auto info = dynamic_cast<item_event_info*>(m_pkOwnershipEvent->info);
-
-		if (info == nullptr)
-		{
-			LOG_ERROR("CItem::EncodeInsertPacket> <Factor> Null pointer");
-			return;
-		}
-
-		TPacketGCItemOwnership p;
-
-		p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-		p.dwVID = m_dwVID;
-		strlcpy(p.szName, info->szOwnerName, sizeof(p.szName));
-
-		d->Packet(&p, sizeof(TPacketGCItemOwnership));
-	}
+    ecs::ItemNetworkSystem::SendItemInsert(g_registry, item, recipient);
 }
 
 void CItem::EncodeRemovePacket(LPENTITY ent)
 {
-	LPDESC d;
+    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
+    const entt::entity recipient = ecs::EntityFromLPENTITY(ent);
+    if (item == entt::null || recipient == entt::null)
+        return;
 
-	if (!(d = ent->GetDesc()))
-		return;
-
-	packet_item_ground_del pack;
-
-	pack.bHeader = HEADER_GC_ITEM_GROUND_DEL;
-	pack.dwVID = m_dwVID;
-
-	d->Packet(&pack, sizeof(pack));
-	LOG_TRACE("Item::EncodeRemovePacket {} to {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)ent))).data());
+    ecs::ItemNetworkSystem::SendItemRemove(g_registry, item, recipient);
+    LOG_TRACE("Item::EncodeRemovePacket {} to {}",
+        ItemSystem::GetItemName(item),
+        ecs::PlayerRuntime::GetName(recipient).data());
 }
 
 void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)
 {
-	if (!GetVnum())
-		return;
+    if (!packet)
+        return;
 
-	packet->header = HEADER_GC_ITEM_USE;
-	packet->ch_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
-	packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
-	packet->Cell = TItemPos(GetWindow(), m_wCell);
-	packet->vnum = GetVnum();
+    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
+    if (item == entt::null)
+        return;
+
+    ecs::ItemNetworkSystem::EncodeItemUse(
+        g_registry,
+        AIHelpers::EcsOf(ch),
+        AIHelpers::EcsOf(victim),
+        item,
+        *packet);
 }
 
 void CItem::UpdatePacket()
 {
-	if (!m_pOwner || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner)))
-		return;
+    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
+    if (item == entt::null)
+        return;
 
-#ifdef ENABLE_SWITCHBOT
-	if (m_bWindow == SWITCHBOT)
-		return;
-#endif
-
-	TPacketGCItemUpdate pack;
-
-	pack.header = HEADER_GC_ITEM_UPDATE;
-	pack.Cell = TItemPos(GetWindow(), m_wCell);
-	pack.count = m_dwCount;
-#ifdef ATTR_LOCK
-	pack.lockedattr = m_sLockedAttr;
-#endif
-
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		pack.alSockets[i] = m_alSockets[i];
-
-	memcpy(pack.aAttr, GetAttributes(), sizeof(pack.aAttr));
-
-	LOG_TRACE("UpdatePacket {} -> {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pOwner)).data());
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner))->Packet(&pack, sizeof(pack));
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
 }
 

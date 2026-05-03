@@ -1,0 +1,75 @@
+Phase 15E-final.1f - CItem Packet Body Cleanup + Virtual Dispatch Refactor
+
+Scope
+- Kept the `CItem::` virtual packet override bodies because `LPENTITY`/`entity_view` still dispatches through that protocol.
+- Rewrote the body content into thin ECS-resolving wrappers.
+- Added native ECS item packet builders under `ecs::ItemNetworkSystem`.
+- Added `ecs::EntityFromLPENTITY` as a narrow virtual-dispatch boundary helper.
+
+Virtual bodies migrated
+- `CItem::EncodeInsertPacket(LPENTITY)`
+- `CItem::EncodeRemovePacket(LPENTITY)`
+- `CItem::UpdatePacket()`
+- `CItem::UsePacketEncode(LPCHARACTER, LPCHARACTER, packet_item_use*)`
+
+ECS components added
+- `ItemGroundPosition`: ground packet x/y/z.
+- `ItemOwnershipDisplay`: owner name shown on protected ground drops.
+- `ItemLockedAttribute`: `ATTR_LOCK` packet field.
+
+Sync coverage added
+- `EntityFactory::SyncItemEntity` populates `ItemGroundPosition` and `ItemLockedAttribute`.
+- `CItem::AddToGround` syncs `ItemGroundPosition`.
+- `CItem::RemoveFromGround` clears `ItemGroundPosition`.
+- `CItem::SetOwnership` syncs/clears `ItemOwnershipDisplay`.
+- `CItem::SetLockedAttr` syncs `ItemLockedAttribute`.
+
+Native packet builders
+- `EncodeItemGroundInsert`: reads `ItemIdentity + ItemGroundPosition`.
+- `EncodeItemGroundRemove`: reads `ItemIdentity`.
+- `EncodeItemUpdate`: reads `ItemLocation + ItemCount + ItemSockets + ItemAttributes + ItemLockedAttribute`.
+- `EncodeItemUse`: reads `ItemIdentity + ItemLocation` and entity packet VIDs.
+- `SendItemInsert`, `SendItemRemove`, `SendItemUpdate`: send through `NetworkService`.
+
+Boundary decision
+- Chosen approach: hybrid/minimum-invasive virtual wrapper.
+- The virtual `CItem::` overrides remain because `entity_view` and sectree view insertion still call polymorphic `LPENTITY::EncodeInsertPacket/EncodeRemovePacket`.
+- The wrappers now only resolve ECS entities and delegate packet construction/sending to ECS systems.
+
+Verification
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- The existing post-build environment still prints `pwsh.exe is not recognized`, but `GameServer.exe` is produced and the build command exits successfully.
+
+Metrics
+- `NetworkSyncSystem.cpp`: 13 `CHARACTER::` bodies.
+- `NetworkSyncSystem.cpp`: 4 `CItem::` packet bodies retained as virtual wrappers.
+- `NetworkSyncSystem.cpp`: 14 `LPCHARACTER` references.
+- `NetworkSyncSystem.cpp`: 1 `LPITEM` reference at the `LPENTITY -> item entity` boundary.
+- `NetworkSyncSystem.cpp`: 0 `LegacyCharOf` / `LegacyItemOf`.
+- Tree-wide `LPCHARACTER`: 1829.
+- Tree-wide `LPITEM`: 905.
+
+Body audit
+- Migrated `CItem::` packet bodies contain no direct reads of:
+  - `m_dwVID`
+  - `m_dwVnum`
+  - `m_bWindow`
+  - `m_wCell`
+  - `m_dwCount`
+  - `m_aiSocket`
+  - `m_aAttr`
+  - `m_lFlag`
+  - `m_pOwner`
+- Packet data is sourced from ECS components.
+
+WinTest focus
+- Drop item on ground: nearby players see the ground item.
+- Pick up item: nearby players see it disappear.
+- Protected drop ownership name appears for late viewers.
+- Item refine/socket/attribute update packet reaches owner.
+- Potion/item use packet still has correct actor/victim/item VIDs.
+- Trade and safebox item updates remain correct.
+- VID_DRIFT remains zero.

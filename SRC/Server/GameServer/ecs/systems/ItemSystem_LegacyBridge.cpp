@@ -16956,6 +16956,9 @@ void CItem::RemoveLockedAttr()
 void CItem::SetLockedAttr(short sIndex)
 {
 	m_sLockedAttr = sIndex;
+	if (const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+		itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(itemEntity, ecs::ItemLockedAttribute{sIndex});
 	UpdatePacket();
 	Save();
 }

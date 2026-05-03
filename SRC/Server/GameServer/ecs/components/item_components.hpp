@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 
 #include <common/length.h>
 #include <common/tables.h>
@@ -20,6 +21,12 @@ struct ItemLocation {
     uint16_t cell { 0 };
 };
 
+struct ItemGroundPosition {
+    int32_t x { 0 };
+    int32_t y { 0 };
+    int32_t z { 0 };
+};
+
 struct ItemCount {
     int count { 0 };
 };
@@ -33,6 +40,10 @@ struct ItemOwner {
     uint32_t ownerPID { 0 };
     uint32_t lastOwnerPID { 0 };
     uint32_t ownershipPID { 0 };
+};
+
+struct ItemOwnershipDisplay {
+    std::string ownerName;
 };
 
 struct ItemEquipped {
@@ -53,6 +64,10 @@ struct ItemSockets {
 
 struct ItemAttributes {
     std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> attrs {};
+};
+
+struct ItemLockedAttribute {
+    short index { -1 };
 };
 
 } // namespace ecs

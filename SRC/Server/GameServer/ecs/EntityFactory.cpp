@@ -400,6 +400,12 @@ ecs::ItemLocation MakeItemLocation(LPITEM item)
     };
 }
 
+ecs::ItemGroundPosition MakeItemGroundPosition(LPITEM item)
+{
+    const PIXEL_POSITION& pos = item->GetXYZ();
+    return ecs::ItemGroundPosition { pos.x, pos.y, pos.z };
+}
+
 ecs::ItemCount MakeItemCount(LPITEM item)
 {
     return ecs::ItemCount { item->GetCount() };
@@ -462,6 +468,16 @@ ecs::ItemAttributes MakeItemAttributes(LPITEM item)
     return attributes;
 }
 
+ecs::ItemLockedAttribute MakeItemLockedAttribute(LPITEM item)
+{
+#ifdef ATTR_LOCK
+    return ecs::ItemLockedAttribute { item->GetLockedAttr() };
+#else
+    (void)item;
+    return ecs::ItemLockedAttribute {};
+#endif
+}
+
 ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
 {
     ecs::ItemProtoRef protoRef {};
@@ -499,6 +515,7 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
 {
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
     reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
+    reg.emplace_or_replace<ecs::ItemGroundPosition>(entity, MakeItemGroundPosition(item));
     reg.emplace_or_replace<ecs::ItemCount>(entity, MakeItemCount(item));
     reg.emplace_or_replace<ecs::ItemPrototypeMeta>(entity, MakeItemPrototypeMeta(item));
     reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
@@ -506,6 +523,7 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
     reg.emplace_or_replace<ecs::ItemSockets>(entity, MakeItemSockets(item));
     reg.emplace_or_replace<ecs::ItemAttributes>(entity, MakeItemAttributes(item));
+    reg.emplace_or_replace<ecs::ItemLockedAttribute>(entity, MakeItemLockedAttribute(item));
     reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
 }
 

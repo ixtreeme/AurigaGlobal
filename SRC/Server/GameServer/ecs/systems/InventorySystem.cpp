@@ -594,6 +594,7 @@ LPITEM CItem::RemoveFromGround()
 		{
 			g_registry.remove<ecs::SectorPlacement>(itemEntity);
 			g_registry.remove<ecs::ViewActiveTag>(itemEntity);
+			g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
 		}
 
 		ViewCleanup();
@@ -645,6 +646,8 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	Save();
 
 	const entt::entity itemEntity = ItemEntityOf(this);
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
 	ecs::SyncSectorPlacement(g_registry, itemEntity, lMapIndex, GetX(), GetY());
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ViewActiveTag>(itemEntity);
@@ -698,6 +701,8 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 			const entt::entity itemEntity = ItemEntityOf(this);
 			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+			if (itemEntity != entt::null && g_registry.valid(itemEntity))
+				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
 		}
 		return;
 	}
@@ -726,6 +731,9 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 	const entt::entity itemEntity = ItemEntityOf(this);
 	SyncItemOwner(itemEntity, m_pOwner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pOwner)) : 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
+			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()});
 }
 
 bool CItem::CanUsedBy(LPCHARACTER ch)
