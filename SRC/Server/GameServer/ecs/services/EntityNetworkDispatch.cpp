@@ -141,10 +141,6 @@ uint16_t LimitedPoint(entt::entity e, uint8_t type)
 
 bool BuildCharacterInsert(entt::registry& reg, entt::entity source, TPacketGCCharacterAdd& packet)
 {
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-    ecs::EntityNetworkDispatchAudit::CheckMovementDrift(reg, source);
-#endif
-
     const auto* vid = reg.try_get<ecs::VIDComponent>(source);
     const auto* pos = reg.try_get<ecs::Position>(source);
     if (!vid || !pos)
@@ -400,6 +396,13 @@ void SendShopRemove(entt::registry& reg, entt::entity shop, entt::entity viewer)
 
 namespace ecs::EntityNetworkDispatch {
 
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+bool BuildCharacterInsertForAudit(entt::registry& reg, entt::entity source, TPacketGCCharacterAdd& packet)
+{
+    return BuildCharacterInsert(reg, source, packet);
+}
+#endif
+
 void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
 {
     if (source == entt::null || viewer == entt::null || !reg.valid(source) || !reg.valid(viewer))
@@ -417,6 +420,12 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
         if (LPENTITY sourceLegacy = ecs::LPENTITYFromEntity(reg, source)) {
             if (LPENTITY viewerLegacy = ecs::LPENTITYFromEntity(reg, viewer)) {
                 sourceLegacy->EncodeInsertPacket(viewerLegacy);
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+                // 4-fixup.3 + 4-fixup.4: validate ECS shadow state and
+                // packet parity AFTER the legacy authoritative emission.
+                ecs::EntityNetworkDispatchAudit::CheckMovementDrift(reg, source);
+                ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
+#endif
                 break;
             }
         }
