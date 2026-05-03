@@ -11582,3 +11582,46 @@ Follow-up required before actual deletion:
 Status:
 - Phase 15E-final.0.5 produced a safety categorization rather than code deletion.
 - This avoids deleting active bridge/subsystem behavior under a misleading "dead body" label.
+
+
+## Phase 15E-final.0.6 - Followup Caller Migration
+
+Scope:
+- Completed caller-side migration for the leftover direct callers identified by Phase 15E-final.0.5.
+- Added a small entity-first mount write wrapper for the `MountVnum` mutation path.
+
+Caller migrations:
+- `item_manager.cpp`:
+  - `killer.GetGMLevel()` -> `ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer))`
+  - `victim.GetRaceNum()` -> `ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(&victim))`
+- `ani.cpp`:
+  - debug `ch->GetPoint(POINT_ATT_SPEED)` -> `ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED)`
+- `battle.h` and `trigger.cpp`:
+  - `IsImmune` calls -> `AffectSystem::IsImmune(AIHelpers::EcsOf(...), flag)`
+- Mount paths:
+  - Added `MountSystem::SetMountVnum(entt::entity, uint32_t)`.
+  - Rewired direct `ch->MountVnum(...)` callers in GM, pet, mount and PvP paths.
+
+Intentional keep:
+- `ecs/EntityFactory.cpp:249` still calls legacy `GetPoint` during ECS hydration.
+- This is an accepted bridge because the component is being seeded from the legacy object at creation time.
+
+Body deletion result:
+- No method bodies were deleted.
+- The target bodies still have internal subsystem references or write/service bridge semantics.
+- Body deletion is deferred until the owning final phases remove those internal references.
+
+Documentation added:
+- `docs/ecs_migration/phase15e_final_06_followup_complete.txt`
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed after read/predicate caller migration.
+- Build passed after mount write wrapper migration.
+
+Status:
+- Direct non-system callers for `GetGMLevel`, `GetRaceNum`, `IsImmune`, and `MountVnum` are cleared.
+- `GetPoint` has one accepted ECS factory hydration bridge remaining.
+- Next: subsystem-owned rewires in Phase 15E-final.1+ before any body deletion.

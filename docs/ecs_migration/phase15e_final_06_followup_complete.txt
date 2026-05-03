@@ -1,0 +1,168 @@
+# Phase 15E-final.0.6 - Followup Caller Migration Complete
+
+Date: 2026-05-03
+Scope: finish caller-side migration for the five leftover migrated `CHARACTER` methods identified in Phase 15E-final.0.5.
+
+## 1. Caller Migrations Completed
+
+### GetGMLevel
+
+Completed:
+
+- `SRC/Server/GameServer/item_manager.cpp:1596`
+- `SRC/Server/GameServer/item_manager.cpp:1734`
+
+Migration:
+
+- Before: `killer.GetGMLevel()`
+- After: `ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer))`
+
+Result:
+
+- Remaining direct non-system callers: 0
+
+### GetRaceNum
+
+Completed:
+
+- `SRC/Server/GameServer/item_manager.cpp:1579`
+- `SRC/Server/GameServer/item_manager.cpp:1581`
+
+Migration:
+
+- Before: `victim.GetRaceNum()`
+- After: cached `victimRace = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(&victim))`
+
+Result:
+
+- Remaining direct non-system callers: 0
+
+### GetPoint
+
+Completed:
+
+- `SRC/Server/GameServer/ani.cpp:368`
+
+Migration:
+
+- Before: `ch->GetPoint(POINT_ATT_SPEED)` inside debug logging block.
+- After: `ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED)`.
+
+Kept intentionally:
+
+- `SRC/Server/GameServer/ecs/EntityFactory.cpp:249`
+
+Reason:
+
+- This is factory hydration code inside ECS infrastructure.
+- It seeds `CharacterStatsComponent` from the legacy object while the ECS entity is still being hydrated.
+- Keeping this bridge is intentional until the factory no longer uses legacy `CHARACTER` as the hydration source.
+
+Result:
+
+- Remaining direct non-system caller: 1 accepted bridge (`EntityFactory.cpp:249`)
+
+### IsImmune
+
+Completed:
+
+- `SRC/Server/GameServer/battle.h:50`
+- `SRC/Server/GameServer/battle.h:78`
+- `SRC/Server/GameServer/trigger.cpp:315`
+
+Migration:
+
+- Before: `pkVictim->IsImmune(flag)` / `m_pkChr->IsImmune(flag)`
+- After: `AffectSystem::IsImmune(AIHelpers::EcsOf(ch), flag)`
+
+Result:
+
+- Remaining direct non-system callers: 0
+
+### MountVnum
+
+Completed:
+
+- `SRC/Server/GameServer/cmd_gm.cpp:3073`
+- `SRC/Server/GameServer/MountSystem.cpp` owner unmount/unsummon paths
+- `SRC/Server/GameServer/New_PetSystem.cpp`
+- `SRC/Server/GameServer/PetSystem.cpp`
+- `SRC/Server/GameServer/pvp.cpp`
+
+Migration:
+
+- Added entity-first write wrapper:
+  - `MountSystem::SetMountVnum(entt::entity rider, uint32_t vnum)`
+- Caller-side direct `ch->MountVnum(vnum)` calls now use:
+  - `MountSystem::SetMountVnum(AIHelpers::EcsOf(ch), vnum)`
+
+Reason for write wrapper:
+
+- `MountVnum` is not a read accessor. It mutates mount state, updates ECS `MountState`, refreshes insert packets, resets combo state and recomputes points.
+- The wrapper keeps the API entity-first while preserving legacy service side effects until the mount subsystem is fully extracted.
+
+Result:
+
+- Remaining direct non-system method callers: 0
+- Remaining references in quest Lua are `mountVnum` component field accesses, not `CHARACTER::MountVnum()` calls.
+
+## 2. Bodies Deleted
+
+No method bodies were deleted in this phase.
+
+Reason:
+
+- `GetGMLevel`, `GetRaceNum`, `GetPoint`, `IsImmune`, and `MountVnum` still have internal ECS subsystem references or accepted bridge usage.
+- Deleting the bodies now would break subsystem method bodies that are explicitly deferred to Phase 15E-final.1-9.
+
+## 3. Bodies Kept
+
+| Body | Reason kept |
+|------|-------------|
+| `CHARACTER::GetGMLevel` | Still called inside `CombatSystem`, `ItemSystem_LegacyBridge`, `PlayerRuntimeSystem` and network/runtime legacy bodies. |
+| `CHARACTER::GetRaceNum` | Still called heavily inside combat, AI, activity and reward/drop subsystem bodies. |
+| `CHARACTER::GetPoint` | Still called heavily inside affect, combat, point and item bridge bodies. |
+| `CHARACTER::IsImmune` | Pure delegate, but still called by `CombatSystem.cpp:4773`. |
+| `CHARACTER::MountVnum` | Active write/service bridge; still used inside mount, item bridge and point subsystem bodies. |
+
+## 4. Updated Reference Counts
+
+PowerShell `Select-String` snapshot after caller migration:
+
+| Metric | Count |
+|--------|------:|
+| `LPCHARACTER` matches | 2009 |
+| `CHARACTER::` method bodies | 614 |
+
+These counts did not materially drop because this phase targeted direct method calls, not pointer type signatures or subsystem body deletion.
+
+## 5. Verification
+
+Build gate:
+
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+
+Result:
+
+- Passed after read/predicate caller migration.
+- Passed after mount write wrapper migration.
+
+Warnings observed:
+
+- Existing warning class only (`C4804`, `C4805`, `C4244`, linker incremental/LTCG warning).
+- No new compile errors after the final mount include fix.
+
+## 6. Next Cleanup
+
+Recommended next step before deleting these bodies:
+
+1. Rewire internal subsystem body references inside the owning final phases:
+   - Combat extraction for `GetRaceNum`, `GetPoint`, `IsImmune`.
+   - Point/stat extraction tail for `GetPoint`.
+   - Mount extraction for `MountVnum`.
+   - Runtime/network cleanup for `GetGMLevel`.
+2. Re-run Phase 15E-final.0.5 body categorization.
+3. Delete bodies only after internal subsystem references reach zero.
+
