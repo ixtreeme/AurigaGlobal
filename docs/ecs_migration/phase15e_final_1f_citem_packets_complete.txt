@@ -24,6 +24,11 @@ Sync coverage added
 - `CItem::SetOwnership` syncs/clears `ItemOwnershipDisplay`.
 - `CItem::SetLockedAttr` syncs `ItemLockedAttribute`.
 
+Hotfix: ground item insert ordering
+- Symptom: dropping an item removed it from inventory, but the ground item did not appear and then looked immediately deleted.
+- Cause: `CItem::AddToGround` updated `ItemGroundPosition` after `tree->InsertEntity(this)` / `UpdateSectree()`. The native `CItem::EncodeInsertPacket` can be dispatched during sectree insert, so the packet builder saw no `ItemGroundPosition` and skipped the ground-add packet.
+- Fix: hydrate the item ECS entity and write `ItemGroundPosition`, `ItemLocation`, owner/equipped state before sectree insertion. Ground insert packets now have the ECS state available at dispatch time.
+
 Native packet builders
 - `EncodeItemGroundInsert`: reads `ItemIdentity + ItemGroundPosition`.
 - `EncodeItemGroundRemove`: reads `ItemIdentity`.

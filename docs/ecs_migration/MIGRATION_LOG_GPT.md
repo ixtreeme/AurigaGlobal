@@ -11811,3 +11811,8 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Status:
 - Phase 15E-final.1f code migration is complete.
 - WinTest required before verified close-out.
+
+Hotfix:
+- Fixed ground item insert ordering after 15E-final.1f.
+- `CItem::AddToGround` now hydrates the item ECS entity and writes `ItemGroundPosition` before sectree insertion can dispatch the native `CItem::EncodeInsertPacket`.
+- This prevents dropped items from disappearing because the ground-add packet was skipped due to missing ECS ground position.

@@ -641,19 +641,22 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 
 	SetWindow(GROUND);
 	SetXYZ(pos.x, pos.y, pos.z);
+
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+	if (itemEntity != entt::null && g_registry.valid(itemEntity)) {
+		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
+		SyncItemLocation(itemEntity);
+		g_registry.remove<ecs::ItemOwner>(itemEntity);
+		g_registry.remove<ecs::ItemEquipped>(itemEntity);
+	}
+
 	tree->InsertEntity(this);
 	UpdateSectree();
 	Save();
 
-	const entt::entity itemEntity = ItemEntityOf(this);
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
 	ecs::SyncSectorPlacement(g_registry, itemEntity, lMapIndex, GetX(), GetY());
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ViewActiveTag>(itemEntity);
-	SyncItemLocation(itemEntity);
-	g_registry.remove<ecs::ItemOwner>(itemEntity);
-	g_registry.remove<ecs::ItemEquipped>(itemEntity);
 	return true;
 }
 
