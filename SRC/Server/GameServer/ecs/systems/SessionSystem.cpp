@@ -5,6 +5,7 @@
 
 #include "SessionSystem.hpp"
 #include "ItemSystem.hpp"
+#include "MovementSystem.hpp"
 
 #include "../../char.h"
 #include "../../char_manager.h"
@@ -995,6 +996,12 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     m_posStart.x = x;
     m_posStart.y = y;
     m_posStart.z = z;
+
+    // LPENTITY.4-fixup.2.d: warp / Show parks the character at the new
+    // position with no active movement. Clear ECS MovementDestination so
+    // any pre-warp move state is gone and native dispatch does not encode
+    // a phantom move on subsequent inserts.
+    ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
     if (bChangeTree)
     {
