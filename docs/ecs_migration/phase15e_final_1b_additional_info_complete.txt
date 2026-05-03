@@ -94,7 +94,23 @@ Broadcast remains a temporary service boundary:
 
 This is not read fallback: packet state is ECS-native; only recipient selection remains a legacy service boundary.
 
-## 8. Verification
+## 8. Hotfix: Mount Append Path
+
+WinTest found a mount/dismount regression:
+
+- When mounting or dismounting, nearby mobs/NPCs/stones disappeared from the client.
+- Root cause: `MountVnum()` uses `EncodeInsertPacket()` as a mount-state actor reappend path.
+- The client treats this path specially: if the main actor append packet does not carry the exact expected mount state, it calls `__RemoveDynamicActors()`.
+
+Hotfix:
+
+- `EncodeInsertPacket()` additional-info construction was restored to legacy-parity for this append path.
+- The native ECS additional-info builder remains active for rank/alignment refresh via `BroadcastCharAdditionalInfo`.
+- Full native replacement of the append path is deferred until 15E-final.1d, together with visibility/actor append semantics.
+
+This keeps the rank-title work while avoiding mount-state actor list corruption.
+
+## 9. Verification
 
 Build gate:
 
@@ -113,4 +129,3 @@ Required WinTest checks:
 - Character panel and overhead name remain consistent.
 - Multiple nearby characters see correct ranks.
 - GM `/addalignment` path refreshes correctly.
-
