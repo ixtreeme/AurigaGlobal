@@ -1061,7 +1061,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	if (bWearCell == WEAR_BELT)
-		ch->UpdateItemOnTitleName(true);
+		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, AIHelpers::EcsOf(ch), true);
 #endif
 
 #ifdef ENABLE_COSTUME_PET

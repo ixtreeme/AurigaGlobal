@@ -1,0 +1,64 @@
+Phase 15E-final.1e - Native Equipment Packet Builder
+
+Scope
+- Rewrote the equipment view packet path behind entity-first `NetworkSyncSystem` APIs.
+- Rewrote the item-on-title prefix/name refresh path behind native ECS reads.
+- Deleted dead `CHARACTER::` bodies and declarations for:
+  - `GetItemOnTitlePrefix`
+  - `GetDisplayedNameWithItemOnTitle`
+  - `SendItemOnTitleNameToDesc`
+  - `UpdateItemOnTitleName`
+  - `SendEquipment`
+
+Native APIs
+- `NetworkSyncSystem::GetItemOnTitlePrefix`
+- `NetworkSyncSystem::GetDisplayedNameWithItemOnTitle`
+- `NetworkSyncSystem::SendItemOnTitleNameToDesc`
+- `NetworkSyncSystem::UpdateItemOnTitleName`
+- `NetworkSyncSystem::BuildViewEquipmentPacket`
+- `NetworkSyncSystem::SendEquipmentToViewer`
+- `NetworkSyncSystem::BroadcastEquipmentChange`
+
+ECS sources
+- Wearer identity: `PlayerID`, `VIDComponent`, `PlayerName`
+- Equipment items: `ItemOwner`, `ItemEquipped`, `ItemIdentity`, `ItemCount`, `ItemSockets`, `ItemAttributes`
+- Title item data: `ItemPrototypeMeta`, `ItemProtoRef`, `ItemSystem::GetItemValue`
+- Title prefix cache: `ItemTitlePrefixCache`
+
+Caller migration
+- PvP equipment inspect paths now call `SendEquipmentToViewer`.
+- GM/general equipment view paths now call `SendEquipmentToViewer`.
+- Login/equip/unequip title refresh paths now call `UpdateItemOnTitleName`.
+- Chat title prefix construction now calls `GetItemOnTitlePrefix`.
+
+Deferred CItem packet bodies
+- `CItem::EncodeInsertPacket`, `CItem::EncodeRemovePacket`, `CItem::UpdatePacket`, and `CItem::UsePacketEncode` remain active.
+- They are still reached through the virtual `LPENTITY`/`entity_view` protocol and item lifecycle bridge calls.
+- Their cleanup is deferred to 15E-final.1f, where the virtual item packet dispatch can be handled as a focused CItem packet-body cleanup.
+
+Metrics
+- Before 1e:
+  - `NetworkSyncSystem.cpp`: 18 `CHARACTER::` bodies
+  - `NetworkSyncSystem.cpp`: 15 `LPCHARACTER` references
+  - `NetworkSyncSystem.cpp`: 0 `LegacyCharOf` references
+- After 1e:
+  - `NetworkSyncSystem.cpp`: 13 `CHARACTER::` bodies
+  - `NetworkSyncSystem.cpp`: 14 `LPCHARACTER` references
+  - `NetworkSyncSystem.cpp`: 0 `LegacyCharOf` references
+  - `NetworkSyncSystem.cpp`: 0 `PacketAround` references
+  - Tree-wide `LPCHARACTER`: 1829
+
+Verification
+```powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+```
+- Build passed.
+- The existing post-build environment still prints `pwsh.exe is not recognized`, but `GameServer.exe` is produced and the build command exits successfully.
+
+WinTest focus
+- Equipment inspect packet displays correct items, sockets, attributes, and counts.
+- Equip/unequip updates remain visible.
+- Item title prefix appears and disappears on belt equip/unequip.
+- Login title refresh works.
+- Chat title prefix uses the native ECS source.
+- VID_DRIFT remains zero.

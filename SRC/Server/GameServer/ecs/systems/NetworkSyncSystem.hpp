@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include <entt/entt.hpp>
 
@@ -16,6 +17,13 @@ void SendCharAdditionalInfo(entt::registry& reg, entt::entity source, entt::enti
 void BroadcastCharAdditionalInfo(entt::registry& reg, entt::entity source);
 bool BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet);
 bool BuildPointsPacket(entt::registry& reg, entt::entity source, TPacketGCPoints& packet);
+std::string GetItemOnTitlePrefix(entt::registry& reg, entt::entity source);
+std::string GetDisplayedNameWithItemOnTitle(entt::registry& reg, entt::entity source);
+void SendItemOnTitleNameToDesc(entt::registry& reg, entt::entity source, entt::entity recipient);
+void UpdateItemOnTitleName(entt::registry& reg, entt::entity source, bool force = false);
+bool BuildViewEquipmentPacket(entt::registry& reg, entt::entity wearer, TPacketViewEquip& packet);
+void SendEquipmentToViewer(entt::registry& reg, entt::entity wearer, entt::entity viewer);
+void BroadcastEquipmentChange(entt::registry& reg, entt::entity wearer);
 
 } // namespace NetworkSyncSystem
 

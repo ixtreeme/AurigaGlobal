@@ -709,7 +709,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	d->Packet(&p2, sizeof(p2));
 	ch->SendGreetMessage();
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	ch->UpdateItemOnTitleName(true);
+	NetworkSyncSystem::UpdateItemOnTitleName(g_registry, AIHelpers::EcsOf(ch), true);
 #endif
 #ifdef ENABLE_PVP_ADVANCED // If something is wrong and server is crashed or stopping when you was in duel.
 	int isDuel = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), CHECK_IS_FIGHT);

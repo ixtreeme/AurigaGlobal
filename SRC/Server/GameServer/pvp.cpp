@@ -6,6 +6,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "constants.h"
@@ -697,13 +698,13 @@ void CPVPManager::Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim)
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
 
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-				pkChr->SendEquipment(pkVictim);
+				NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkChr), AIHelpers::EcsOf(pkVictim));
 		}
 		else {
 			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_COMMAND, "BINARY_Duel_Request %d %s %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP, mTable[0], mTable[1], mTable[2], mTable[3], mTable[4], mTable[5], mTable[6], mTable[7], mTable[8]);
 
 			if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-				pkChr->SendEquipment(pkVictim);
+				NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkChr), AIHelpers::EcsOf(pkVictim));
 		}
 	}
 #else

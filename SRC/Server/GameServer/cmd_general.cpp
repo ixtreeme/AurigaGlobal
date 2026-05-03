@@ -1798,13 +1798,13 @@ ACMD(do_pvp_advanced)
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			pkVictim->SendEquipment(ch);
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkVictim), AIHelpers::EcsOf(ch));
 	}
 	else {
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			pkVictim->SendEquipment(ch);
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkVictim), AIHelpers::EcsOf(ch));
 	}
 }
 
@@ -2562,7 +2562,7 @@ ACMD(do_view_equip)
 		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
 			return;
 
-		tch->SendEquipment(ch);
+		NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(tch), AIHelpers::EcsOf(ch));
 	}
 }
 

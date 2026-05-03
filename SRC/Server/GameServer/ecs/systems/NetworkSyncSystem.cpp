@@ -27,6 +27,8 @@
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/item_components.hpp"
+#include "../components/item_proto_components.hpp"
 #include "../components/pet_mount_components.hpp"
 #include "../components/session_components.hpp"
 #include "../components/skill_components.hpp"
@@ -467,6 +469,161 @@ bool NetworkSyncSystem::BuildPointsPacket(entt::registry& reg, entt::entity sour
     return true;
 }
 
+#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
+std::string NetworkSyncSystem::GetItemOnTitlePrefix(entt::registry& reg, entt::entity source)
+{
+    if (!ecs::PlayerRuntime::IsPC(source))
+        return {};
+
+    const auto* playerID = reg.try_get<ecs::PlayerID>(source);
+    if (!playerID)
+        return {};
+
+    auto items = reg.view<ecs::ItemOwner, ecs::ItemEquipped, ecs::ItemPrototypeMeta, ecs::ItemProtoRef>();
+    for (const auto item : items) {
+        const auto& owner = items.get<ecs::ItemOwner>(item);
+        const auto& equipped = items.get<ecs::ItemEquipped>(item);
+        if (owner.ownerPID != playerID->pid || !equipped.equipped || equipped.slot != WEAR_BELT)
+            continue;
+
+        const auto& meta = items.get<ecs::ItemPrototypeMeta>(item);
+        if (meta.type != ITEM_BELT)
+            return {};
+
+        if (ItemSystem::GetItemValue(item, 5) != 1)
+            return {};
+
+        const auto& protoRef = items.get<ecs::ItemProtoRef>(item);
+        const char* protoName = protoRef.proto ? protoRef.proto->szName : nullptr;
+        if (!protoName || protoName[0] != '[')
+            return {};
+
+        const char* end = strchr(protoName, ']');
+        if (!end)
+            return {};
+
+        const int prefixLen = static_cast<int>(end - protoName) + 1;
+        if (prefixLen <= 0 || prefixLen > 24)
+            return {};
+
+        return std::string(protoName, prefixLen);
+    }
+
+    return {};
+}
+
+std::string NetworkSyncSystem::GetDisplayedNameWithItemOnTitle(entt::registry& reg, entt::entity source)
+{
+    const std::string prefix = GetItemOnTitlePrefix(reg, source);
+    const auto name = ecs::PlayerRuntime::GetName(source);
+    if (prefix.empty())
+        return std::string(name);
+
+    return prefix + std::string(name);
+}
+
+void NetworkSyncSystem::SendItemOnTitleNameToDesc(entt::registry& reg, entt::entity source, entt::entity recipient)
+{
+    TPacketGCItemOnTitleNameUpdate packet {};
+    packet.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
+    packet.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
+
+    const std::string prefix = GetItemOnTitlePrefix(reg, source);
+    strlcpy(packet.name, prefix.c_str(), sizeof(packet.name));
+
+    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
+}
+
+void NetworkSyncSystem::UpdateItemOnTitleName(entt::registry& reg, entt::entity source, bool force)
+{
+    if (source == entt::null || !reg.valid(source))
+        return;
+
+    const std::string prefix = GetItemOnTitlePrefix(reg, source);
+    auto& cache = reg.get_or_emplace<ecs::ItemTitlePrefixCache>(source);
+    if (!force && cache.prefix == prefix)
+        return;
+
+    cache.prefix = prefix;
+
+    TPacketGCItemOnTitleNameUpdate packet {};
+    packet.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
+    packet.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
+    strlcpy(packet.name, prefix.c_str(), sizeof(packet.name));
+
+    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), false);
+}
+#endif
+
+bool NetworkSyncSystem::BuildViewEquipmentPacket(entt::registry& reg, entt::entity wearer, TPacketViewEquip& packet)
+{
+    const auto* playerID = reg.try_get<ecs::PlayerID>(wearer);
+    const uint32_t vid = ecs::PlayerRuntime::GetPacketVID(wearer);
+    if (!playerID || vid == 0)
+        return false;
+
+    packet = {};
+    packet.header = HEADER_GC_VIEW_EQUIP;
+    packet.vid = vid;
+
+#ifdef EQUIP_ENABLE_VIEW_SASH
+#ifdef ENABLE_COSTUME_PET
+    const int positions[23] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
+                WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, WEAR_COSTUME_PET_SKIN, WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
+    constexpr int positionCount = 23;
+#else
+    const int positions[22] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
+                    WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
+    constexpr int positionCount = 22;
+#endif
+#else
+    const int positions[16] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
+                    WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT };
+    constexpr int positionCount = 16;
+#endif
+
+    auto items = reg.view<ecs::ItemOwner, ecs::ItemEquipped, ecs::ItemIdentity, ecs::ItemCount, ecs::ItemSockets, ecs::ItemAttributes>();
+    for (int i = 0; i < positionCount; ++i) {
+        for (const auto item : items) {
+            const auto& owner = items.get<ecs::ItemOwner>(item);
+            const auto& equipped = items.get<ecs::ItemEquipped>(item);
+            if (owner.ownerPID != playerID->pid || !equipped.equipped || equipped.slot != positions[i])
+                continue;
+
+            const auto& identity = items.get<ecs::ItemIdentity>(item);
+            const auto& count = items.get<ecs::ItemCount>(item);
+            const auto& sockets = items.get<ecs::ItemSockets>(item);
+            const auto& attrs = items.get<ecs::ItemAttributes>(item);
+
+            packet.equips[i].vnum = identity.vnum;
+            packet.equips[i].count = static_cast<uint8_t>(count.count);
+            std::copy(sockets.sockets.begin(), sockets.sockets.end(), packet.equips[i].alSockets);
+            std::copy(attrs.attrs.begin(), attrs.attrs.end(), packet.equips[i].aAttr);
+            break;
+        }
+    }
+
+    return true;
+}
+
+void NetworkSyncSystem::SendEquipmentToViewer(entt::registry& reg, entt::entity wearer, entt::entity viewer)
+{
+    TPacketViewEquip packet {};
+    if (!BuildViewEquipmentPacket(reg, wearer, packet))
+        return;
+
+    ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
+}
+
+void NetworkSyncSystem::BroadcastEquipmentChange(entt::registry& reg, entt::entity wearer)
+{
+    TPacketViewEquip packet {};
+    if (!BuildViewEquipmentPacket(reg, wearer, packet))
+        return;
+
+    ecs::NetworkService::BroadcastToView(reg, wearer, &packet, sizeof(packet), true);
+}
+
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 {
     LPDESC d;
@@ -844,78 +1001,6 @@ const char* CHARACTER::GetName() const
 }
 #endif
 
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-std::string CHARACTER::GetItemOnTitlePrefix() const
-{
-    if (!IsPC())
-        return std::string();
-
-    LPITEM pTitleItem = GetWear(WEAR_BELT);
-    if (!pTitleItem)
-        return std::string();
-
-    if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pTitleItem)) != ITEM_BELT)
-        return std::string();
-
-    if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pTitleItem), 5) != 1)
-        return std::string();
-
-    const TItemTable* pProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pTitleItem));
-    const char* szProtoName = pProto ? pProto->szName : nullptr;
-    if (!szProtoName || szProtoName[0] != '[')
-        return std::string();
-
-    const char* pEnd = strchr(szProtoName, ']');
-    if (!pEnd)
-        return std::string();
-
-    const int prefixLen = (int)(pEnd - szProtoName) + 1;
-    if (prefixLen <= 0 || prefixLen > 24)
-        return std::string();
-
-    return std::string(szProtoName, prefixLen);
-}
-
-std::string CHARACTER::GetDisplayedNameWithItemOnTitle() const
-{
-    const std::string prefix = GetItemOnTitlePrefix();
-    if (prefix.empty())
-        return std::string(GetName());
-    return prefix + std::string(GetName());
-}
-
-void CHARACTER::SendItemOnTitleNameToDesc(LPDESC d) const
-{
-    if (!d)
-        return;
-
-    TPacketGCItemOnTitleNameUpdate p;
-    p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    p.dwVID = GetPacketVID();
-
-    const std::string prefix = GetItemOnTitlePrefix();
-    strlcpy(p.name, prefix.c_str(), sizeof(p.name));
-
-    d->Packet(&p, sizeof(p));
-}
-
-void CHARACTER::UpdateItemOnTitleName(bool bForce)
-{
-    const std::string newPrefix = GetItemOnTitlePrefix();
-    if (!bForce && m_lastItemOnTitlePrefix == newPrefix)
-        return;
-
-    m_lastItemOnTitlePrefix = newPrefix;
-
-    TPacketGCItemOnTitleNameUpdate p;
-    p.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    p.dwVID = GetPacketVID();
-    strlcpy(p.name, newPrefix.c_str(), sizeof(p.name));
-
-    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
-}
-#endif
-
 void CHARACTER::EffectPacket(uint8_t enumEffectType)
 {
     TPacketGCSpecialEffect p;
@@ -936,43 +1021,6 @@ void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
     strlcpy(p.effect_file, filename, MAX_EFFECT_FILE_NAME);
 
     ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &p, sizeof(p), false);
-}
-
-void CHARACTER::SendEquipment(LPCHARACTER ch)
-{
-    TPacketViewEquip p;
-    p.header = HEADER_GC_VIEW_EQUIP;
-    p.vid = GetPacketVID();
-
-#ifdef EQUIP_ENABLE_VIEW_SASH
-#ifdef ENABLE_COSTUME_PET
-    int pos[23] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
-                WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, WEAR_COSTUME_PET_SKIN, WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
-    for (int i = 0; i < 23; i++)
-#else
-    int pos[22] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
-                    WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT, WEAR_COSTUME_ACCE_SLOT, WEAR_COSTUME_ACCE, WEAR_COSTUME_WEAPON, WEAR_COSTUME_MOUNT_SKIN, WEAR_COSTUME_EFFECT_BODY, WEAR_COSTUME_EFFECT_WEAPON };
-    for (int i = 0; i < 22; i++)
-#endif
-#else
-    int pos[16] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_UNIQUE1,
-                    WEAR_UNIQUE2, WEAR_ARROW, WEAR_SHIELD, WEAR_COSTUME_BODY, WEAR_COSTUME_HAIR, WEAR_RING1, WEAR_RING2, WEAR_BELT };
-    for (int i = 0; i < 16; i++)
-#endif
-    {
-        LPITEM item = GetWear(pos[i]);
-        if (item) {
-            p.equips[i].vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
-            p.equips[i].count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-
-            memcpy(p.equips[i].alSockets, item->GetSockets(), sizeof(p.equips[i].alSockets));
-            memcpy(p.equips[i].aAttr, item->GetAttributes(), sizeof(p.equips[i].aAttr));
-        }
-        else {
-            p.equips[i].vnum = 0;
-        }
-    }
-    ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&p, sizeof(p));
 }
 
 void CHARACTER::ConfirmWithMsg(const char* szMsg, int iTimeout, uint32_t dwRequestPID)

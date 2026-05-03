@@ -2763,7 +2763,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	if (iWearCell == WEAR_BELT) {
 
-		UpdateItemOnTitleName();
+		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, AIHelpers::EcsOf(this));
 	}
 #endif
 	return true;

@@ -97,7 +97,7 @@ static inline std::string MakeNameWithPrefix(LPCHARACTER ch)
 
 	std::string out;
 	if (ch)
-		out = ch->GetItemOnTitlePrefix(); // std::string
+		out = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, AIHelpers::EcsOf(ch)); // std::string
 
 
 	if (!out.empty() && out.back() != ' ')
@@ -1312,7 +1312,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		}
 
 
-		const std::string prefix = ch->GetItemOnTitlePrefix();
+		const std::string prefix = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, AIHelpers::EcsOf(ch));
 		const char* name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
 
 		len = snprintf(chatbuf, sizeof(chatbuf),

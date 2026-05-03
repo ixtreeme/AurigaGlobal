@@ -678,18 +678,6 @@ public:
 	LPCHARACTER			FindCharacterInView(const char* name, bool bFindPCOnly);
 	int m_lastBeltMountCount;
 
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-public:
-	std::string			GetItemOnTitlePrefix() const;
-	std::string			GetDisplayedNameWithItemOnTitle() const;
-	void				UpdateItemOnTitleName(bool bForce = false);
-	void				SendItemOnTitleNameToDesc(LPDESC d) const;
-
-private:
-	std::string			m_lastItemOnTitlePrefix;
-#endif
-
-
 #ifdef ENABLE_VOTE4BUFF
 public:
 	long long	GetVoteCoin();
@@ -1529,7 +1517,6 @@ public:
 	bool			IsEquipUniqueGroup(uint32_t dwGroupVnum) const;
 	// END_OF_CHECK_UNIQUE_GROUP
 
-	void			SendEquipment(LPCHARACTER ch);
 	// End of Item
 
 protected:

@@ -11736,3 +11736,36 @@ cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Status:
 - Phase 15E-final.1d code migration is complete.
 - WinTest required before verified close-out.
+
+
+## Phase 15E-final.1e - Native Equipment Packet Builder
+
+Scope:
+- Added native ECS equipment packet builders in `NetworkSyncSystem`.
+- Added native ECS item-on-title prefix/name refresh APIs.
+- Migrated equipment view callers and title refresh callers to entity-first APIs.
+- Deleted dead `CHARACTER::` bodies and `char.h` declarations for title-prefix and equipment view helpers.
+
+ECS packet sources:
+- Equipment packet: `PlayerID`, `VIDComponent`, `ItemOwner`, `ItemEquipped`, `ItemIdentity`, `ItemCount`, `ItemSockets`, `ItemAttributes`.
+- Title prefix: `ItemOwner`, `ItemEquipped`, `ItemPrototypeMeta`, `ItemProtoRef`, and `ItemSystem::GetItemValue`.
+- Title prefix cache: `ItemTitlePrefixCache`.
+
+Deferred:
+- `CItem::EncodeInsertPacket`, `EncodeRemovePacket`, `UpdatePacket`, and `UsePacketEncode` remain active because they are still part of the virtual `LPENTITY`/`entity_view` item lifecycle path.
+- These are documented for 15E-final.1f CItem packet body cleanup.
+
+Metrics:
+- `NetworkSyncSystem.cpp` after 1e: 13 `CHARACTER::` bodies, 14 `LPCHARACTER` references, 0 `LegacyCharOf` references, 0 `PacketAround` references.
+- Tree-wide `LPCHARACTER`: 1829.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- WinTest focus: equipment inspect packet, equip/unequip visibility, title prefix equip/unequip/login refresh, chat title prefix, and VID_DRIFT.
+
+Status:
+- Phase 15E-final.1e code migration is complete.
+- WinTest required before verified close-out.
