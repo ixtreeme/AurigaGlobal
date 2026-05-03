@@ -1,0 +1,54 @@
+Phase 15E-final.1b - Native additional info / rank title path
+
+Scope
+- Reintroduced the additional-info/rank-title rewrite after the mount packet regression.
+- The rewrite is deliberately narrower than the reverted attempt:
+  - packet construction is native ECS;
+  - explicit insert-recipient send uses NetworkService;
+  - visibility broadcast keeps the existing PacketAround service boundary but excludes the source owner.
+
+Packets rewritten
+- HEADER_GC_CHAR_ADDITIONAL_INFO construction now goes through
+  NetworkSyncSystem::BuildCharAdditionalInfo.
+- EncodeInsertPacket sends additional info via
+  NetworkSyncSystem::SendCharAdditionalInfo.
+- UpdatePacket refreshes rank/title via
+  NetworkSyncSystem::BroadcastCharAdditionalInfo.
+
+ECS sources used
+- VIDComponent for dwVID.
+- PlayerName via PlayerRuntime::GetName.
+- EmpireComponent via PlayerRuntime::GetEmpire.
+- CombatStats for PK mode and alignment.
+- AppearancePartsComponent for visible equipment parts.
+- PointSystem::GetLevel for PC level.
+- MountSystem::GetMountVnum for mount display.
+- SocialSystem::GetGuild for guild ID.
+- NetworkSession via NetworkService::GetLanguage for language.
+- SkillColor component for skill color payload.
+
+Regression guard
+- AdditionalInfo is an append-side client payload.
+- Broadcast intentionally uses PacketAround(..., source) so the owner/main actor
+  does not receive a standalone additional-info packet.
+- This preserves the fix for the mount/dynamic actor disappearance regression.
+
+Sync updates added
+- CHARACTER::SetPKMode mirrors pkMode into CombatStats.
+- Player proto and mob proto initialization mirror pkMode into CombatStats.
+- CHARACTER::SetSkillColor mirrors data into SkillColor.
+
+Broadcast path status
+- Native visibility service is still deferred to Phase 15E-final.1d.
+- Current broadcast remains a service-bound bridge, but packet data itself is ECS-built.
+
+Verification
+- Build gate passed:
+  cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+
+WinTest checklist
+- Login: rank title appears.
+- Alignment change: overhead rank title refreshes.
+- Character panel and overhead name stay consistent.
+- Mount/dismount: no mob/NPC/stone disappearance regression.
+- Ctrl+G mount follower/remount path remains intact.

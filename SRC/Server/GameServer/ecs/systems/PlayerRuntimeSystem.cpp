@@ -33,6 +33,7 @@
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/skill_components.hpp"
 #include "../../ecs/components/social_components.hpp"
 #include "../../ecs/components/status_components.hpp"
 #include "../../ecs/components/transform_components.hpp"
@@ -1631,6 +1632,10 @@ int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSou
 #ifdef __SKILL_COLOR_SYSTEM__
 void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
     memcpy(m_dwSkillColor, dwSkillColor, sizeof(m_dwSkillColor));
+    if (auto* skillColor = g_registry.try_get<ecs::SkillColor>(EcsEntityOf(this))) {
+        memcpy(skillColor->data, m_dwSkillColor, sizeof(skillColor->data));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(EcsEntityOf(this));
+    }
     UpdatePacket();
 }
 #endif
@@ -3873,11 +3878,16 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         {
             m_afAffectFlag.Set(AFF_YMIR);
             m_bPKMode = PK_MODE_PROTECT;
+            if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+                combat->pkMode = m_bPKMode;
         }
     }
 
-    if (GetLevel() < PK_PROTECT_LEVEL)
+    if (GetLevel() < PK_PROTECT_LEVEL) {
         m_bPKMode = PK_MODE_PROTECT;
+        if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+            combat->pkMode = m_bPKMode;
+    }
 
     m_stMobile = t->szMobile;
 
@@ -3943,6 +3953,8 @@ void CHARACTER::SetProto(const CMob* pkMob)
     m_pkMobInst = M2_NEW CMobInstance;
 
     m_bPKMode = PK_MODE_FREE;
+    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+        combat->pkMode = m_bPKMode;
 
     const TMobTable* t = &m_pkMobData->m_table;
 

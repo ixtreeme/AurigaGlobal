@@ -11625,3 +11625,33 @@ Status:
 - Direct non-system callers for `GetGMLevel`, `GetRaceNum`, `IsImmune`, and `MountVnum` are cleared.
 - `GetPoint` has one accepted ECS factory hydration bridge remaining.
 - Next: subsystem-owned rewires in Phase 15E-final.1+ before any body deletion.
+
+
+## Phase 15E-final.1b - Native Additional Info / Rank Title Path
+
+Scope:
+- Reintroduced native ECS packet construction for `HEADER_GC_CHAR_ADDITIONAL_INFO`.
+- Added `ecs::NetworkService` as the explicit descriptor send boundary.
+- Kept broadcast as a temporary service bridge, but excluded the source character from standalone additional-info broadcast to avoid the mount/dynamic actor disappearance regression.
+
+Changes:
+- `NetworkSyncSystem::BuildCharAdditionalInfo` now builds the packet from ECS components and systems.
+- `CHARACTER::EncodeInsertPacket` sends additional info through `NetworkSyncSystem::SendCharAdditionalInfo`.
+- `CHARACTER::UpdatePacket` refreshes rank title through `NetworkSyncSystem::BroadcastCharAdditionalInfo`.
+- PK mode and skill color state are mirrored into ECS so the native packet path has complete source data.
+
+Regression guard:
+- Standalone additional-info packets are not sent back to the owner/main actor.
+- Broadcast currently uses `PacketAround(&packet, sizeof(packet), ch)` until the visibility service is fully native.
+- This preserves the fixed mount flow: mount/dismount must not hide mobs, NPCs, stones, pets, or mount actors.
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- WinTest focus: login rank title, real-time alignment title refresh, overhead title refresh, Ctrl+G mount/dismount/remount, and mob/NPC/stone visibility after mount state changes.
+
+Status:
+- Phase 15E-final.1b is restored with the mount-regression guard retained.
+- Broadcast iteration remains a documented temporary service boundary for Phase 15E-final.1d.
