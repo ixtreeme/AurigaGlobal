@@ -3871,18 +3871,11 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         {
             m_afAffectFlag.Set(AFF_YMIR);
             m_bPKMode = PK_MODE_PROTECT;
-            if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
-                combat->pkMode = m_bPKMode;
-            }
         }
     }
 
-    if (GetLevel() < PK_PROTECT_LEVEL) {
+    if (GetLevel() < PK_PROTECT_LEVEL)
         m_bPKMode = PK_MODE_PROTECT;
-        if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
-            combat->pkMode = m_bPKMode;
-        }
-    }
 
     m_stMobile = t->szMobile;
 
@@ -3948,9 +3941,6 @@ void CHARACTER::SetProto(const CMob* pkMob)
     m_pkMobInst = M2_NEW CMobInstance;
 
     m_bPKMode = PK_MODE_FREE;
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
-        combat->pkMode = m_bPKMode;
-    }
 
     const TMobTable* t = &m_pkMobData->m_table;
 
@@ -5004,9 +4994,6 @@ void CHARACTER::Initialize()
 
     m_iKillerModePulse = 0;
     m_bPKMode = PK_MODE_PEACE;
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
-        combat->pkMode = m_bPKMode;
-    }
 
     m_dwQuestNPCVID = 0;
     m_dwQuestByVnum = 0;
