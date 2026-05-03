@@ -13,6 +13,9 @@
 #include "sectree_manager.h"
 #include "config.h"
 
+#include <unordered_map>
+#include <utility>
+
 namespace
 {
 
@@ -104,9 +107,27 @@ void MirrorViewClear(LPENTITY owner)
 
 void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView, const char* context)
 {
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
 	const entt::entity ownerE = EntityOf(owner);
 	if (ownerE == entt::null || !g_registry.valid(ownerE))
 		return;
+
+	// LPENTITY.4-fixup-B + audit: O(N^2) validation gated and rate-limited
+	// per entity. Without throttling this fires once per ViewInsert refresh
+	// (hundreds per second per entity) - 35K log warnings in 30 seconds
+	// drowned the async log queue and slowed the game thread enough that
+	// regen / spawn events stalled and the client connection timed out.
+	//
+	// The drift information is still useful: log once per entity per
+	// 30 seconds. If drift state stays unchanged the log is suppressed;
+	// state changes still surface because we record on first observation.
+	static thread_local std::unordered_map<uint64_t, uint32_t> s_lastLogTick;
+	const uint32_t nowMs = static_cast<uint32_t>(get_dword_time());
+	const uint64_t key = static_cast<uint64_t>(ownerE);
+	if (auto it = s_lastLogTick.find(key); it != s_lastLogTick.end()) {
+		if (nowMs - it->second < 30000u)
+			return;
+	}
 
 	EnsureVisibilityComponents(ownerE);
 
@@ -138,6 +159,7 @@ void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView
 	}
 
 	if (missingInEcs != 0 || missingInLegacy != 0 || legacySize != view.visible.size()) {
+		s_lastLogTick[key] = nowMs;
 		LOG_WARN("[VIEWMAP_DRIFT] entity={} ctx={} legacy_size={} ecs_size={} missing_in_ecs={} missing_in_legacy={}",
 			static_cast<uint32_t>(ownerE),
 			context ? context : "unknown",
@@ -146,6 +168,11 @@ void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView
 			missingInEcs,
 			missingInLegacy);
 	}
+#else
+	(void)owner;
+	(void)legacyView;
+	(void)context;
+#endif
 }
 
 void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
