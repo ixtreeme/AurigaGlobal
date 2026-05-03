@@ -988,6 +988,10 @@ void CHARACTER::SetPosition(int pos)
 	if (pos == POS_STANDING)
 	{
 		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_DEAD);
+		// LPENTITY.4-fixup.2.f: POS_STANDING clears legacy SPAWN bit too;
+		// previously only ECS isSpawnState was cleared (line below) which
+		// left m_bAddChrState SPAWN set, drifting from native dispatch.
+		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
 		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
 			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
 		const auto e = EcsEntityOf(this);

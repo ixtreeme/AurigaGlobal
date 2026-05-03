@@ -2017,9 +2017,16 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 	if (dwRaceNum != 0)
 		StopRiding();
 	SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+	// LPENTITY.4-fixup.2.f: mirror SPAWN bit into ECS StatusFlags so the
+	// native BuildCharacterInsert during ViewReencode emits the same
+	// bStateFlag byte as legacy.
+	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
+		status->isSpawnState = true;
 	m_afAffectFlag.Set(AFF_SPAWN);
 	ViewReencode();
 	REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
+		status->isSpawnState = false;
 	if (!bMaintainStat)
 	{
 		PointChange(POINT_ST, 0);

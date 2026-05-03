@@ -2418,6 +2418,13 @@ void CombatSystem_Update(entt::registry& reg, uint32_t tick)
         if (auto* statusFlags = reg.try_get<ecs::StatusFlags>(combatTarget.target)) {
             statusFlags->isDead = true;
         }
+        // LPENTITY.4-fixup.2.f note: m_bAddChrState DEAD bit is set later by
+        // CHARACTER::SetPosition(POS_DEAD) in the legacy Dead() flow.
+        // EvEntityDied below has no current sink, so the legacy bit only
+        // gets set if the legacy battle.cpp Damage path runs in parallel.
+        // This leaves a transient drift window where ECS reports DEAD but
+        // legacy does not. Resolution is deferred to LPENTITY.6 when this
+        // ECS combat tick is unified with the legacy death path.
 
         combatTarget.target = entt::null;
         reg.remove<ecs::CombatActiveTag>(entity);
