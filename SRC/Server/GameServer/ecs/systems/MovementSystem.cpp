@@ -809,6 +809,10 @@ void CHARACTER::CalculateMoveDuration()
 		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}", GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), m_dwMoveDuration, motionSpeed, m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
 
 	m_dwMoveStartTime = get_dword_time();
+
+	// LPENTITY.4-fixup.2.a: mirror legacy timing into ECS MovementState so
+	// EntityNetworkDispatch::SendCharacterInsert observes consistent state.
+	ecs::MovementSystem::SyncTimingWrite(EcsEntityOf(this), m_dwMoveStartTime, m_dwMoveDuration);
 }
 
 // x y A��!�� AI? ?�U. (AI?? 1?Aִ?? 3o�� ?�� E�A??�� Sync ?1O�a�� 1��?AI? ?�U)
