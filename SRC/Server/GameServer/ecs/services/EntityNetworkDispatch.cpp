@@ -27,6 +27,9 @@
 #include "../systems/SocialSystem.hpp"
 #include "SpatialService.hpp"
 #include "VisibilityService.hpp"
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+#include "EntityNetworkDispatchAudit.hpp"
+#endif
 
 namespace {
 
@@ -138,6 +141,10 @@ uint16_t LimitedPoint(entt::entity e, uint8_t type)
 
 bool BuildCharacterInsert(entt::registry& reg, entt::entity source, TPacketGCCharacterAdd& packet)
 {
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+    ecs::EntityNetworkDispatchAudit::CheckMovementDrift(reg, source);
+#endif
+
     const auto* vid = reg.try_get<ecs::VIDComponent>(source);
     const auto* pos = reg.try_get<ecs::Position>(source);
     if (!vid || !pos)
