@@ -1,0 +1,215 @@
+Phase 15E-final.LPENTITY.4-fixup - Movement state ECS sync audit
+================================================================
+
+Scope
+-----
+
+Audit-only phase. No source code changes were made. This report documents the
+legacy CHARACTER write paths that bypass the parallel ECS components consumed
+by the native EntityNetworkDispatch::SendCharacterInsert builder, and is the
+prerequisite of the 4-fixup.1-5 implementation work.
+
+Background
+----------
+
+Phase 15E-final.LPENTITY.4 (3b74ef3) made character view-packet dispatch native
+through ecs::EntityNetworkDispatch::SendInsert / SendRemove. Two-client testing
+revealed character position divergence: client A and client B saw the same two
+characters at different relative distances. Two hotfixes followed:
+
+- 2caa410 - BroadcastToView reverted to legacy GetViewersOf (ViewerMap mirror
+  lag - out of scope for this fixup).
+- 21dc2df - EntityNetworkDispatch::SendInsert / SendRemove for SpatialKind
+  ::Character calls back into legacy CHARACTER::EncodeInsertPacket /
+  EncodeRemovePacket (temporary).
+
+Root cause: native BuildCharacterInsert reads ECS Position, MovementDestination,
+MovementState, and StatusFlags. Legacy EncodeInsertPacket reads m_posDest,
+m_dwMoveStartTime, m_dwMoveDuration, m_bNowWalking, m_bAddChrState, and
+m_afAffectFlag. Several legacy write sites do not have a matching ECS component
+update, leaving the ECS side stale. Native dispatch then encodes from stale
+state while legacy encodes from fresh state, producing different on-the-wire
+bytes for the same observed character.
+
+This audit lists every divergent write path so 4-fixup.2 can add the missing
+sync.
+
+Confirmed drift sources (movement)
+----------------------------------
+
+All file:line references are valid at HEAD 6b6b6dd (LPENTITY.4 hotfix tip).
+
+m_posDest writers without ECS MovementDestination sync:
+
+| Site | Function | Notes |
+|------|----------|-------|
+| ecs/systems/MovementSystem.cpp:568-569 | Stop() reset | Sets m_posDest = current X/Y on stop. No remove<MovementDestination> or emplace_or_replace. |
+| ecs/systems/AffectSystem.cpp:1670-1673 | Stun / shock m_posDest reset | Sets m_posDest = current position when affected. No ECS sync. |
+| ecs/systems/SessionSystem.cpp:991-993 | Warp / Show position fallback | Sets m_posDest.x/y/z. No ECS sync. |
+| ecs/systems/PlayerRuntimeSystem.cpp:3710-3711 | Init / character spawn | Resets m_posDest to current position. No ECS sync. |
+| ecs/systems/PlayerRuntimeSystem.cpp:4889 | Cleanup | Resets m_posDest = 0. No ECS sync. |
+
+m_posDest writers WITH ECS sync (reference, no fix needed):
+
+| Site | Function | Notes |
+|------|----------|-------|
+| ecs/systems/MovementSystem.cpp:610 + 615-616 | Goto destination set | emplace_or_replace<MovementDestination> at 610, then legacy mirror at 615-616. |
+| ecs/systems/MovementSystem.cpp:629 | Goto fallback path | emplace_or_replace at 629. |
+| input_main.cpp:2332 | Move packet handler | emplace_or_replace at 2332, legacy write nearby. |
+| ecs/systems/MovementSystem.cpp:277, 293 | Update loop | remove<MovementDestination> on arrival. |
+
+m_dwMoveStartTime / m_dwMoveDuration writers without ECS MovementState sync:
+
+| Site | Function | Notes |
+|------|----------|-------|
+| ecs/systems/MovementSystem.cpp:754 | Goto duration calculation | Writes m_dwMoveDuration. No emplace_or_replace<MovementState>. |
+| ecs/systems/MovementSystem.cpp:760 | Goto start time | Writes m_dwMoveStartTime. No ECS sync. |
+| ecs/systems/PlayerRuntimeSystem.cpp:4976-4977 | Cleanup reset | Writes 0 to both. No ECS sync. |
+
+Note: MovementState is created with defaults at EntityFactory.cpp:329 and 624,
+and is patched only by the MovementSystem update loop reading from ECS
+MovementDestination. The legacy fields are never reflected back into
+MovementState, so any legacy timing write is invisible to native dispatch.
+
+m_bNowWalking writers without ECS MovementState::isNowWalking sync:
+
+| Site | Function | Notes |
+|------|----------|-------|
+| ecs/systems/MovementSystem.cpp:849 | Walk mode toggle on | m_bNowWalking = true. No ECS patch. |
+| ecs/systems/MovementSystem.cpp:854 | Walk mode toggle off | m_bNowWalking = false. No ECS patch. |
+| ecs/systems/PlayerRuntimeSystem.cpp:4999 | Cleanup reset | m_bNowWalking = m_bWalking = false. No ECS patch. |
+
+Confirmed drift sources (state flags)
+-------------------------------------
+
+m_bAddChrState bits feed pack.bStateFlag in legacy. StatusFlags::isDead /
+isSpawnState / isKillerMode / isPartyState feed the same field in native via
+StateFlagsFor (services/EntityNetworkDispatch.cpp:104-120). Discrepancy
+between the two sides produces a different bStateFlag byte even when position
+state is in sync.
+
+Side-by-side audit:
+
+| m_bAddChrState write | ECS StatusFlags companion | Sync |
+|----------------------|---------------------------|------|
+| ecs/systems/AffectSystem.cpp:2013 (SET SPAWN) | none in same scope | DRIFT |
+| ecs/systems/AffectSystem.cpp:2016 (REMOVE SPAWN) | none in same scope | DRIFT |
+| ecs/systems/CombatSystem.cpp:584, 586 (KILLER) | line 589 status->isKillerMode = isOn | OK |
+| ecs/systems/MovementSystem.cpp:926 (REMOVE DEAD via SetPosition POS_STANDING) | line 938 status->isDead = false | OK |
+| ecs/systems/MovementSystem.cpp:950 (SET DEAD via SetPosition POS_DEAD) | line 956 status->isDead = true | OK |
+| ecs/systems/PlayerRuntimeSystem.cpp:4952 (full reset m_bAddChrState = 0) | none | DRIFT |
+| ecs/systems/SessionSystem.cpp:978 (SET SPAWN) | line 980 status->isSpawnState = true | OK |
+| ecs/systems/SessionSystem.cpp:1020 (REMOVE SPAWN) | line 1022 status->isSpawnState = false | OK |
+| ecs/systems/SocialSystem.cpp:115, 117 (PARTY) | line 120 status->isPartyState = (m_pkParty != nullptr) | OK |
+
+Reverse direction (StatusFlags written without legacy m_bAddChrState):
+
+| StatusFlags write | Legacy companion | Sync |
+|-------------------|------------------|------|
+| ecs/systems/MovementSystem.cpp:940 status->isSpawnState = false (POS_STANDING) | none in same scope - m_bAddChrState SPAWN bit not cleared | DRIFT |
+| ecs/systems/CombatSystem.cpp:2419 statusFlags->isDead = true (kill callback) | none in same scope | DRIFT |
+| questlua_pc.cpp:4415 sf->isDead = true | followed by ch->Dead() at 4422 which reaches SetPosition(POS_DEAD) | OK indirect |
+
+Cross-reference: 4 m_bAddChrState drift sites (2 SPAWN bypass, 1 full reset)
+plus 2 StatusFlags drift sites (1 SPAWN bypass, 1 isDead bypass) need to be
+addressed in 4-fixup.2.f.
+
+Rotation audit (clean)
+----------------------
+
+Native: BuildCharacterInsert reads RotationComponent::yaw with fallback to
+CharacterRuntimeFlagsComponent::rotation
+(services/EntityNetworkDispatch.cpp:80-87).
+
+Legacy: EncodeInsertPacket reads GetRotation() which returns
+runtime->rotation (ecs/systems/MovementSystem.cpp:999-1004).
+
+Single writer for both ECS sources: SetRotation @
+ecs/systems/MovementSystem.cpp:448-455 updates runtime->rotation (line 449)
+and rotation->yaw (line 454) atomically.
+
+Single writer for RotationComponent::yaw: line 454 only. No other writer.
+
+Conclusion: rotation is consistent. No fix needed.
+
+KASMIR shop sign audit (drift)
+------------------------------
+
+Build flag: KASMIR_PAKET_SYSTEM is defined at common/service.h:66 - active in
+this build.
+
+Legacy: NetworkSyncSystem.cpp:1041 sets pack.bShopKasmirTitle =
+m_bKasmirPaketBaslik when KASMIR is active.
+
+Native: services/EntityNetworkDispatch.cpp:234-235 hard-codes
+sign.bShopKasmirTitle = false.
+
+Drift: confirmed when m_bKasmirPaketBaslik is true. The native builder will
+produce a packet with bShopKasmirTitle = false while legacy produces true.
+
+This is a single packet field, only emitted when the source character has an
+active shop. To fix in 4-fixup.2.g, add a KasmirShopFlag component populated at
+the legacy m_bKasmirPaketBaslik write site, and read in the native shop sign
+emission path at EntityNetworkDispatch.cpp:234. Alternative: extend the
+existing ShopState component with a kasmirTitle flag.
+
+Other packet fields (clean)
+---------------------------
+
+Spot-checked native vs legacy field sources for BuildCharacterInsert:
+
+| Field | Legacy | Native | Status |
+|-------|--------|--------|--------|
+| dwVID | GetPacketVID() | VIDComponent::value | Synced through PlayerRuntime layer |
+| bType | GetCharType() | CharacterType / Tag* fallback chain | Set at entity create, immutable for lifetime |
+| x/y/z | Position::x/y/z | same | Same source for both |
+| wRaceNum | GetRaceNum() | PlayerRuntime::GetRaceNum | Same source |
+| bMovingSpeed/AttackSpeed | GetLimitPoint(POINT_*) | LimitedPoint(source, POINT_*) | Same PointSystem source, identical clamp logic |
+| dwAffectFlag | m_afAffectFlag.bits | AffectList::flags.bits | SyncAffectList @ AffectSystem.cpp:1717 keeps both in sync |
+| Pet / Mount detection | IsPet, IsNewPet, m_bIsMount | StatusFlags::isPet/isNewPet/isMount | Need spot-check, deferred to runtime drift detector |
+
+Test matrix for 4-fixup.4 / 4-fixup.5
+-------------------------------------
+
+WinTest scenarios required to gate native re-enable (4-fixup.5). Each scenario
+must produce zero [MOVEMENT_DRIFT], [INSERT_PARITY], [VIEWMAP_DRIFT],
+[BROADCAST_DRIFT], [DISPATCH_FALLBACK], or [SPATIAL_INVARIANT] warnings in
+syslog.txt. Visual verification: both clients see both characters at
+identical relative positions.
+
+1. Two clients in mutual view, both walk - run mode toggle.
+2. Mount, unmount, mount-while-moving.
+3. Third client logs in while character A is mid-move, observes character A
+   from spawn.
+4. Stun affects character mid-walk - dest reset path.
+5. Map warp - viewer crosses map boundary, sees re-encoded characters.
+6. Observer mode toggle on / off, viewer re-encodes existing view set.
+7. Character death and respawn.
+8. Drift-injection negative test: temporary commit that bypasses one of the
+   Sync*Write helpers and writes a legacy field directly. Run scenario 1.
+   Verify [MOVEMENT_DRIFT] warning fires for the affected entity. Revert the
+   temporary commit before continuing.
+
+Failure of the negative drift-injection test means the detector is placebo
+and 4-fixup.5 must not proceed.
+
+Out of scope
+------------
+
+- BroadcastToView ViewerMap mirror lag (2caa410 hotfix) - separate phase
+  LPENTITY.4-fixup-B.
+- CHARACTER::EncodeInsertPacket / EncodeRemovePacket legacy body deletion -
+  LPENTITY.6.
+- Item, Building, OfflineShop dispatch - native since LPENTITY.4, untouched.
+
+Summary
+-------
+
+5 movement drift sites + 4 m_bAddChrState drift sites + 2 StatusFlags reverse
+drift sites + 1 KASMIR drift site = 12 confirmed write paths requiring sync.
+
+Phase 4-fixup.2 adds Sync*Write helper calls at the 5 movement sites
+(commits 2.a-2.e). Phase 4-fixup.2.f covers state flags. Phase 4-fixup.2.g
+covers KASMIR. Phases 4-fixup.3 and 4-fixup.4 add a runtime drift detector
+and packet byte-parity verifier that prove parity before phase 4-fixup.5
+re-enables native character dispatch.
