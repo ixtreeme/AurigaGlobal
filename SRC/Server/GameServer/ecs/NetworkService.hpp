@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include <entt/entt.hpp>
 
@@ -25,6 +26,20 @@ inline bool Send(entt::entity recipient, const void* packet, std::size_t size)
 
     session->desc->Packet(packet, static_cast<int>(size));
     return true;
+}
+
+inline uint8_t GetLanguage(entt::entity sessionOwner)
+{
+    if (sessionOwner == entt::null || !g_registry.valid(sessionOwner)) {
+        return 0;
+    }
+
+    const auto* session = g_registry.try_get<ecs::NetworkSession>(sessionOwner);
+    if (!session || !session->desc) {
+        return 0;
+    }
+
+    return session->desc->GetLanguage();
 }
 
 inline void Broadcast(entt::registry& reg, entt::entity source, const void* packet, std::size_t size, int range)

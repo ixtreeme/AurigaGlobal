@@ -4,6 +4,7 @@
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
 
@@ -552,7 +553,7 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 	}
 
 	if (oldVisibleAlignment != m_iAlignment / 10)
-		UpdatePacket();
+		NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this));
 
 }
 //void CHARACTER::UpdateAlignment(uint32_t iAmount)
@@ -616,6 +617,9 @@ void CHARACTER::SetPKMode(uint8_t bPKMode)
 		bPKMode = PK_MODE_FREE;
 
 	m_bPKMode = bPKMode;
+	if (auto* combat = g_registry.try_get<ecs::CombatStats>(AIHelpers::EcsOf(this))) {
+		combat->pkMode = bPKMode;
+	}
 	UpdatePacket();
 	LOG_INFO("PK_MODE: {} {}", GetName(), m_bPKMode);
 }

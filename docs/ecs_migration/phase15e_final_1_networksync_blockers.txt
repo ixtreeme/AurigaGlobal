@@ -116,7 +116,7 @@ Required before a true zero-legacy rewrite:
 Recommended continuation:
 
 1. Phase 15E-final.1a - NetworkService boundary and dirty update loop native send. Completed in this slice.
-2. Phase 15E-final.1b - Native additional-info / rank-title packet path.
+2. Phase 15E-final.1b - Native additional-info / rank-title packet path. Completed: packet construction is native ECS; visibility broadcast remains a temporary 1d boundary.
 3. Phase 15E-final.1c - Native `MainCharacterPacket`, `UpdatePacket`, and `PointsPacket`.
 4. Phase 15E-final.1d - ECS visibility service and native spawn/remove/effect broadcast.
 5. Phase 15E-final.1e - Native equipment packet builder.

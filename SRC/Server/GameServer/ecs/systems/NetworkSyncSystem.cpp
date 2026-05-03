@@ -3,8 +3,11 @@
 
 #include "NetworkSyncSystem.hpp"
 
+#include <algorithm>
+#include <cstring>
 #include <map>
 #include <string>
+#include <string_view>
 
 #include "../../char.h"
 #include "../../char_manager.h"
@@ -20,12 +23,19 @@
 #include "../EntityFactory.hpp"
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
+#include "../components/appearance_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
+#include "../components/pet_mount_components.hpp"
 #include "../components/session_components.hpp"
+#include "../components/skill_components.hpp"
+#include "../components/social_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
+#include "MountSystem.hpp"
+#include "PointSystem.hpp"
+#include "SocialSystem.hpp"
 #include "ItemSystem.hpp"
 #include <Core/Logging.hpp>
 
@@ -145,6 +155,130 @@ int16_t AlignmentForPacket(entt::entity e, uint32_t legacyAlignment)
 
     return static_cast<int16_t>(legacyAlignment / 10);
 }
+
+void CopyStringView(char* dest, std::size_t destSize, std::string_view value)
+{
+    if (!dest || destSize == 0) {
+        return;
+    }
+
+    const std::size_t len = std::min(destSize - 1, value.size());
+    if (len > 0) {
+        std::memcpy(dest, value.data(), len);
+    }
+    dest[len] = '\0';
+}
+
+uint16_t GetAppearancePart(entt::registry& reg, entt::entity e, uint8_t part)
+{
+    const auto* appearance = reg.try_get<ecs::AppearancePartsComponent>(e);
+    if (!appearance || part >= PART_MAX_NUM) {
+        return 0;
+    }
+
+    return appearance->parts[part];
+}
+}
+
+bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entity source, TPacketGCCharacterAdditionalInfo& packet)
+{
+    if (source == entt::null || !reg.valid(source)) {
+        return false;
+    }
+
+    const bool isPC = ecs::PlayerRuntime::IsPC(source);
+    const bool isNPC = ecs::PlayerRuntime::IsNPC(source);
+    if (!isPC && !isNPC) {
+        return false;
+    }
+
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    if (!vid) {
+        return false;
+    }
+
+    packet = {};
+    packet.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
+    packet.dwVID = vid->value;
+    packet.bEmpire = ecs::PlayerRuntime::GetEmpire(source);
+    packet.dwGuildID = 0;
+    packet.dwLevel = 0;
+    packet.sAlignment = 0;
+    packet.dwMountVnum = 0;
+
+    if (const auto* combat = reg.try_get<ecs::CombatStats>(source)) {
+        packet.bPKMode = combat->pkMode;
+        if (isPC) {
+            packet.sAlignment = static_cast<uint32_t>(combat->alignment / 10);
+        }
+    }
+
+    CopyStringView(packet.name, sizeof(packet.name), ecs::PlayerRuntime::GetName(source));
+
+    packet.awPart[CHR_EQUIPPART_ARMOR] = GetAppearancePart(reg, source, PART_MAIN);
+    packet.awPart[CHR_EQUIPPART_WEAPON] = GetAppearancePart(reg, source, PART_WEAPON);
+    packet.awPart[CHR_EQUIPPART_HEAD] = GetAppearancePart(reg, source, PART_HEAD);
+    packet.awPart[CHR_EQUIPPART_HAIR] = GetAppearancePart(reg, source, PART_HAIR);
+#ifdef ENABLE_RUNE_SYSTEM
+    packet.awPart[CHR_EQUIPPART_RUNE] = GetAppearancePart(reg, source, PART_RUNE);
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+    packet.awPart[CHR_EQUIPPART_ACCE] = GetAppearancePart(reg, source, PART_ACCE);
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+    packet.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetAppearancePart(reg, source, PART_EFFECT_BODY);
+    packet.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetAppearancePart(reg, source, PART_EFFECT_WEAPON);
+#endif
+
+    if (isPC) {
+        packet.dwLevel = static_cast<uint32_t>(std::max(0, ecs::PointSystem::GetLevel(source)));
+        packet.dwMountVnum = MountSystem::GetMountVnum(source);
+        if (CGuild* guild = ecs::SocialSystem::GetGuild(source)) {
+            packet.dwGuildID = guild->GetID();
+        }
+#ifdef ENABLE_MULTI_LANGUAGE
+        packet.bLanguage = ecs::NetworkService::GetLanguage(source);
+#endif
+    }
+#ifdef __NEWPET_SYSTEM__
+    else if (const auto* pet = reg.try_get<ecs::PetComponent>(source)) {
+        packet.dwLevel = pet->level;
+    }
+#endif
+
+#ifdef __SKILL_COLOR_SYSTEM__
+    if (const auto* skillColor = reg.try_get<ecs::SkillColor>(source)) {
+        std::memcpy(packet.dwSkillColor, skillColor->data, sizeof(packet.dwSkillColor));
+    }
+#endif
+
+    return true;
+}
+
+void NetworkSyncSystem::SendCharAdditionalInfo(entt::registry& reg, entt::entity source, entt::entity recipient)
+{
+    TPacketGCCharacterAdditionalInfo packet {};
+    if (!BuildCharAdditionalInfo(reg, source, packet)) {
+        return;
+    }
+
+    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
+}
+
+void NetworkSyncSystem::BroadcastCharAdditionalInfo(entt::registry& reg, entt::entity source)
+{
+    TPacketGCCharacterAdditionalInfo packet {};
+    if (!BuildCharAdditionalInfo(reg, source, packet)) {
+        return;
+    }
+
+    // Temporary 1b boundary: exact visibility semantics still live in PacketAround
+    // until Phase 15E-final.1d introduces a native ECS visibility service.
+    const auto* vid = reg.try_get<ecs::VIDComponent>(source);
+    auto* ch = vid ? CHARACTER_MANAGER::instance().Find(vid->value) : nullptr;
+    if (ch) {
+        ch->PacketAround(&packet, sizeof(packet));
+    }
 }
 
 void CHARACTER::EncodeInsertPacket(LPENTITY entity)
@@ -153,7 +287,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     if (!(d = entity->GetDesc()))
         return;
 
-    LPCHARACTER ch = (LPCHARACTER)entity;
+    auto* ch = static_cast<CHARACTER*>(entity);
     ch->SendGuildName(GetGuild());
 
 #ifdef ENABLE_SOUL_SYSTEM
@@ -225,54 +359,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     }
 
     d->Packet(&pack, sizeof(pack));
-    if (IsPC() == true || m_bCharType == CHAR_TYPE_NPC) {
-        TPacketGCCharacterAdditionalInfo addPacket;
-        addPacket.dwLevel = 0;
-        addPacket.sAlignment = 0;
-        addPacket.dwMountVnum = 0;
-#ifdef ENABLE_MULTI_LANGUAGE
-        addPacket.bLanguage = 0;
-#endif
-        if (!IsPC()) {
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-        }
-
-        addPacket.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-        addPacket.dwVID = GetPacketVID();
-        addPacket.bPKMode = m_bPKMode;
-        addPacket.bEmpire = m_bEmpire;
-        addPacket.dwGuildID = 0;
-        strlcpy(addPacket.name, GetName(), sizeof(addPacket.name));
-        addPacket.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
-        addPacket.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
-        addPacket.awPart[CHR_EQUIPPART_HEAD] = GetPart(PART_HEAD);
-        addPacket.awPart[CHR_EQUIPPART_HAIR] = GetPart(PART_HAIR);
-#ifdef ENABLE_RUNE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_RUNE] = GetPart(PART_RUNE);
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_ACCE] = GetPart(PART_ACCE);
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetPart(PART_EFFECT_BODY);
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetPart(PART_EFFECT_WEAPON);
-#endif
-        if (IsPC()) {
-            addPacket.dwLevel = GetLevel();
-            addPacket.dwMountVnum = GetMountVnum();
-            addPacket.dwGuildID = GetGuild() ? GetGuild()->GetID() : 0;
-            addPacket.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
-
-#ifdef __SKILL_COLOR_SYSTEM__
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-#endif
-        }
-#ifdef __NEWPET_SYSTEM__
-        if (IsNewPet()) {
-            addPacket.dwLevel = GetLevel();
-        }
-#endif
-        d->Packet(&addPacket, sizeof(TPacketGCCharacterAdditionalInfo));
+    if (entity->IsType(ENTITY_CHARACTER)) {
+        NetworkSyncSystem::SendCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this), AIHelpers::EcsOf(ch));
     }
 
     if (iDur) {
@@ -666,57 +754,7 @@ void CHARACTER::UpdatePacket()
         PacketAround(&pack, sizeof(pack));
     }
 
-    if (IsPC() == true || m_bCharType == CHAR_TYPE_NPC) {
-        TPacketGCCharacterAdditionalInfo addPacket {};
-        addPacket.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-        addPacket.dwVID = GetPacketVID();
-        addPacket.bPKMode = m_bPKMode;
-        addPacket.bEmpire = m_bEmpire;
-        addPacket.dwGuildID = 0;
-        addPacket.dwLevel = 0;
-        addPacket.sAlignment = 0;
-        addPacket.dwMountVnum = 0;
-#ifdef ENABLE_MULTI_LANGUAGE
-        addPacket.bLanguage = 0;
-#endif
-        strlcpy(addPacket.name, GetName(), sizeof(addPacket.name));
-        addPacket.awPart[CHR_EQUIPPART_ARMOR] = GetPart(PART_MAIN);
-        addPacket.awPart[CHR_EQUIPPART_WEAPON] = GetPart(PART_WEAPON);
-        addPacket.awPart[CHR_EQUIPPART_HEAD] = GetPart(PART_HEAD);
-        addPacket.awPart[CHR_EQUIPPART_HAIR] = GetPart(PART_HAIR);
-#ifdef ENABLE_RUNE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_RUNE] = GetPart(PART_RUNE);
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-        addPacket.awPart[CHR_EQUIPPART_ACCE] = GetPart(PART_ACCE);
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_BODY] = GetPart(PART_EFFECT_BODY);
-        addPacket.awPart[CHR_EQUIPPART_EFFECT_WEAPON] = GetPart(PART_EFFECT_WEAPON);
-#endif
-        if (IsPC()) {
-            addPacket.dwLevel = GetLevel();
-            addPacket.dwMountVnum = GetMountVnum();
-            addPacket.dwGuildID = GetGuild() ? GetGuild()->GetID() : 0;
-            addPacket.sAlignment = AlignmentForPacket(AIHelpers::EcsOf(this), m_iAlignment);
-#ifdef ENABLE_MULTI_LANGUAGE
-            addPacket.bLanguage = GetDesc() ? GetDesc()->GetLanguage() : 0;
-#endif
-#ifdef __SKILL_COLOR_SYSTEM__
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-#endif
-        }
-        else {
-            memcpy(addPacket.dwSkillColor, GetSkillColor(), sizeof(addPacket.dwSkillColor));
-        }
-#ifdef __NEWPET_SYSTEM__
-        if (IsNewPet()) {
-            addPacket.dwLevel = GetLevel();
-        }
-#endif
-
-        PacketAround(&addPacket, sizeof(addPacket));
-    }
+    NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this));
 }
 
 void CHARACTER::MainCharacterPacket()

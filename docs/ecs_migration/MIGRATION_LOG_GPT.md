@@ -11667,3 +11667,52 @@ Verification:
 cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 ~~~
 - Build passed.
+
+
+## Phase 15E-final.1b - Native Additional Info / Rank Title Path
+
+Scope:
+- Rewrote `HEADER_GC_CHAR_ADDITIONAL_INFO` packet construction to a native ECS builder.
+- Targeted the rank/alignment title path that previously required several 15E-65.4 runtime hotfixes.
+
+Implemented:
+- Added `NetworkSyncSystem::BuildCharAdditionalInfo`.
+- Added `NetworkSyncSystem::SendCharAdditionalInfo`.
+- Added `NetworkSyncSystem::BroadcastCharAdditionalInfo`.
+- `EncodeInsertPacket` now delegates the additional-info packet construction to the ECS builder.
+- `UpdatePacket` now delegates the additional-info packet construction to the ECS builder.
+- `UpdateAlignment` now broadcasts only the additional-info packet when visible alignment changes, instead of sending a full legacy update packet.
+- `CombatStats.pkMode` is synced on known `m_bPKMode` write paths so the native packet does not read stale PK mode.
+- `NetworkService::GetLanguage` added for language lookup through the network service boundary.
+
+ECS state used by the packet:
+- `VIDComponent`
+- `PlayerName`
+- `EmpireComponent`
+- `CombatStats`
+- `AppearancePartsComponent`
+- `SkillColor`
+- `LevelComponent`
+- `MountState`
+- `SocialRefs`
+- `NetworkSession`
+- `PetComponent`
+
+Metrics:
+- Before: `CHARACTER::=21`, `LPCHARACTER=20`, `LegacyCharOf=4`
+- After: `CHARACTER::=21`, `LPCHARACTER=19`, `LegacyCharOf=4`
+
+Body deletion:
+- No body was deleted in this phase.
+- There is no standalone `CHARACTER::SendCharAdditionalInfo` body; additional-info construction was embedded inside `EncodeInsertPacket` and `UpdatePacket`.
+- Those bodies remain until the full spawn/update packet rewrite in 15E-final.1c/1d.
+
+Documentation added:
+- `docs/ecs_migration/phase15e_final_1b_additional_info_complete.txt`
+
+Verification:
+~~~powershell
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+~~~
+- Build passed.
+- WinTest pending.
