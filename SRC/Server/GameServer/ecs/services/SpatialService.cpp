@@ -5,6 +5,7 @@
 #include "../../entity.h"
 #include "../../building.h"
 #include "../../char.h"
+#include "../../config.h"
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../new_offlineshop.h"
@@ -26,6 +27,7 @@
 #include "../components/visibility_components.hpp"
 #include "../systems/PlayerRuntimeSystem.hpp"
 #include "EntityNetworkDispatch.hpp"
+#include "VisibilityService.hpp"
 
 namespace {
 
@@ -216,28 +218,31 @@ void RemoveEntity(entt::registry& reg, entt::entity e)
     if (!legacy)
         return;
 
-    // LPENTITY.4-fixup-item: broadcast SendRemove to all current viewers
-    // BEFORE the legacy m_map_view ages out and BEFORE ClearVisibilityMirror
-    // empties the ECS ViewerMap. Without this, the only path to a remove
-    // packet is the per-viewer UpdateSectree age-out, which dispatches
-    // through SendRemove. SendRemove looks up SpatialKindTag on the source;
-    // if a caller (e.g. CItem::RemoveFromGround) strips SpatialKindTag in
-    // the same call sequence, the dispatch silently bails out and the
-    // item / building / shop persists visually on every viewer client.
+    // LPENTITY.4-fixup-item + 4-fixup-B (Option A): broadcast SendRemove to
+    // all current viewers BEFORE the sectree drop and visibility cleanup.
+    // Without this, the only path to a remove packet is the per-viewer
+    // UpdateSectree age-out which dispatches through SendRemove. SendRemove
+    // looks up SpatialKindTag on the source; if a caller strips
+    // SpatialKindTag in the same call sequence, dispatch silently bails out
+    // and the item / building / shop persists visually on every viewer
+    // client.
     //
-    // Broadcasting here while ECS state is still intact gets a deterministic
-    // remove packet to every viewer, regardless of caller cleanup order or
-    // sectree age-out timing. Only the four callers of RemoveEntity (Item
-    // pickup, Building destroy, OfflineShop close - characters do not use
-    // this path) need this broadcast.
+    // The recipient set is computed via the legacy/sectree-authoritative
+    // GetEntitiesInRange (not the native ViewerMap mirror). The native
+    // ViewerMap has gaps under load and would miss recipients - the very
+    // bug LPENTITY.4-fixup-B targets. Range query at VIEW_RANGE +
+    // VIEW_BONUS_RANGE matches what UpdateSectree would naturally discover.
+    //
+    // Only the four RemoveEntity callers (Item pickup, Building destroy x2,
+    // OfflineShop close - characters do not use this path) hit this branch.
     if (e != entt::null && reg.valid(e)) {
-        if (const auto* viewerMap = reg.try_get<ecs::ViewerMap>(e)) {
-            // Copy viewers since SendRemove may indirectly mutate maps.
-            const auto viewers = viewerMap->viewers;
-            for (const entt::entity viewer : viewers) {
-                if (viewer != entt::null && reg.valid(viewer))
-                    ecs::EntityNetworkDispatch::SendRemove(reg, e, viewer);
-            }
+        const auto recipients = ecs::VisibilityService::GetEntitiesInRange(
+            reg, e, VIEW_RANGE + VIEW_BONUS_RANGE);
+        for (const entt::entity viewer : recipients) {
+            if (viewer == e)
+                continue;
+            if (viewer != entt::null && reg.valid(viewer))
+                ecs::EntityNetworkDispatch::SendRemove(reg, e, viewer);
         }
     }
 

@@ -482,8 +482,16 @@ void Reencode(entt::registry& reg, entt::entity viewer)
     SendRemove(reg, viewer, viewer);
     SendInsert(reg, viewer, viewer);
 
-    const auto visible = ecs::VisibilityService::GetVisibleEntitiesNative(reg, viewer);
+    // LPENTITY.4-fixup-B (Option A): use the legacy/range-authoritative
+    // visibility set instead of the native ViewMap mirror. The mirror has
+    // gaps under map warp and combat broadcast load - viewers were not
+    // receiving insert/remove/effect packets because their ViewMap was
+    // missing entries the legacy m_map_view had. Switching all broadcast
+    // paths back to the legacy source until ViewerMap parity is proven.
+    const auto visible = ecs::VisibilityService::GetVisibleEntities(reg, viewer);
     for (const entt::entity source : visible) {
+        if (source == viewer)
+            continue;
         SendRemove(reg, viewer, source);
         SendInsert(reg, viewer, source);
         SendInsert(reg, source, viewer);
