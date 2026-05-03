@@ -603,7 +603,11 @@ LPITEM CItem::RemoveFromGround()
 			g_registry.remove<ecs::SectorPlacement>(itemEntity);
 			g_registry.remove<ecs::ViewActiveTag>(itemEntity);
 			g_registry.remove<ecs::SpatialEntity>(itemEntity);
-			g_registry.remove<ecs::SpatialKindTag>(itemEntity);
+			// LPENTITY.4-fixup-item: keep SpatialKindTag intact. Removing it
+			// here breaks any subsequent EntityNetworkDispatch::SendRemove
+			// (e.g. PC UpdateSectree age-out) since SendRemove returns
+			// silently on missing SpatialKindTag. SpatialEntity is the
+			// gating tag for spatial queries; the kind tag is identity.
 			g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
 		}
 
