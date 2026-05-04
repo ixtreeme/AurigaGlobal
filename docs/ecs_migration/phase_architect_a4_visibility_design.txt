@@ -1,0 +1,453 @@
+Phase 15E-final.LPENTITY.4-architect.A.4 - VisibilitySystem event-driven design
+===============================================================================
+
+Scope: design the event-driven VisibilitySystem that replaces
+UpdateSectree polling. After Phase D lands, ViewerMap is the
+authoritative recipient set used by BroadcastService::ToViewers (A.3),
+maintained incrementally as entities move.
+
+Read first:
+  phase_architect_a1_field_inventory.txt
+  phase_architect_a2_ownership_matrix.txt
+  phase_architect_a3_broadcast_design.txt
+  phase15e_final_lpentity_4_visibility_desync_audit.txt
+    (root cause of the polling model)
+
+
+======================================================================
+SECTION 1: WHY THE CURRENT MODEL FAILS
+======================================================================
+
+Current visibility maintenance (entity_view.cpp:303 UpdateSectree):
+
+  on UpdateSectree(this):
+    ++m_iViewAge
+    sectree->ForEachAround(CFuncViewInsert) // visit all in range,
+                                            // ViewInsert each one
+    iterate m_map_view: erase + DispatchRemove for stale entries
+
+UpdateSectree is invoked from:
+  - input_main.cpp:2291    HEADER_CG_MOVE arrival (moving char)
+  - SessionSystem.cpp:1016 CHARACTER::Show (warp)
+  - MovementSystem.cpp:156 MirrorLegacyMovement (mid-move)
+  - entity.cpp:186         SetObserverMode toggle
+  - SpatialService.cpp:267 generic spatial UpdateSectree
+
+A character that has stopped moving and is idle never invokes
+UpdateSectree on itself. Its m_map_view is frozen at the snapshot
+taken on the last movement.
+
+Failure mode (proven by f76a3f1 root cause):
+  - chA (idle) and chB (idle) at distance D
+  - chC walks past, then leaves chA's sectree neighbour
+  - chA's m_map_view did not get a chance to refresh (chA is idle)
+  - chC ages out of chA's m_map_view ONLY when chA next moves
+  - in the meantime, broadcasts from chA do not reach chC
+
+The fundamental issue: visibility is a function of position. Position
+changes are events. Visibility must be a function of those events,
+not a periodic poll of position state.
+
+
+======================================================================
+SECTION 2: TARGET MODEL
+======================================================================
+
+Visibility maintenance becomes:
+
+  on PositionChanged(entity, oldX, oldY, newX, newY):
+    1. Compute oldViewers  = entities that saw entity at oldX/oldY
+    2. Compute newViewers  = entities that see entity at newX/newY
+    3. leaving = oldViewers \ newViewers
+    4. entering = newViewers \ oldViewers
+    5. for each viewer in leaving:
+         remove entity from viewer.ViewMap
+         remove viewer from entity.ViewerMap
+         emit RemovePacket from entity to viewer
+    6. for each viewer in entering:
+         add entity to viewer.ViewMap
+         add viewer to entity.ViewerMap
+         emit InsertPacket from entity to viewer
+
+Inverse direction (entities `entity` itself sees) handled at the same
+time:
+  oldVisible = entities `entity` saw at oldX/oldY
+  newVisible = entities `entity` sees at newX/newY
+  symmetric updates.
+
+The sectree spatial index is queried twice per move: once for
+oldViewers (at oldX/oldY) and once for newViewers (at newX/newY).
+Both queries are fast (sectree neighbour walk = ~9 sectrees * count).
+
+No m_iViewAge. No polling. No "stale snapshot" window.
+
+
+======================================================================
+SECTION 3: COMPONENT CONTRACT
+======================================================================
+
+After Phase D, the component contract is:
+
+ecs::ViewMap
+  unordered_set<entt::entity> visible
+  uint32_t generation       // optional; debug counter, may delete
+
+  Semantics: at any tick, visible contains EXACTLY the entities that
+  this entity currently sees. Updated incrementally on
+  PositionChanged. No staleness.
+
+ecs::ViewerMap
+  unordered_set<entt::entity> viewers
+
+  Semantics: at any tick, viewers contains EXACTLY the entities that
+  see this entity. Reverse of ViewMap. Updated incrementally on
+  PositionChanged.
+
+Invariant (verified by sanity check, debug build):
+
+  for every entity A and every entity B in A.ViewerMap.viewers:
+      A is in B.ViewMap.visible
+
+  for every entity A and every entity B in A.ViewMap.visible:
+      A is in B.ViewerMap.viewers
+
+
+ecs::PositionChangedEvent (NEW, dispatcher event)
+  entt::entity entity
+  int32_t oldX, oldY, oldZ
+  int32_t newX, newY, newZ
+  uint32_t mapIndex
+
+
+======================================================================
+SECTION 4: VISIBILITY SYSTEM ARCHITECTURE
+======================================================================
+
+File: SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp/.cpp
+
+Public API:
+
+  namespace ecs::VisibilitySystem {
+      void Init(entt::registry& reg);            // wire dispatcher
+      void Shutdown(entt::registry& reg);
+      void Update(entt::registry& reg);          // optional sweep
+      uint32_t Tick(entt::registry& reg);        // process queue,
+                                                 // return events processed
+  }
+
+Wire-up in main.cpp boot sequence:
+  ecs::VisibilitySystem::Init(g_registry);
+
+Dispatcher event handler:
+  static void OnPositionChanged(const ecs::PositionChangedEvent& ev);
+
+Event processing strategy:
+
+Option A (synchronous, recommended for first iteration):
+  Handler runs inside g_dispatcher.trigger(...) call. Updates
+  ViewerMap immediately. PacketSendInsert / PacketSendRemove
+  triggered inline.
+  Pro: simple, no queue, no ordering questions.
+  Con: trigger sites pay the cost in the same call. Acceptable
+       because Position writes are bounded (move tick rate per PC ~1Hz,
+       global ~tens to hundreds per second).
+
+Option B (deferred queue):
+  Events enqueued; processed in VisibilitySystem::Tick called once
+  per server pulse from main loop.
+  Pro: batched processing; smoother frame times.
+  Con: introduces ordering dependency between PositionChanged trigger
+       and broadcast. If a broadcast fires between trigger and Tick,
+       it sees stale ViewerMap.
+
+Recommendation: Option A for initial Phase D landing. If profiling
+shows hot spots, migrate to Option B with a strict invariant: every
+broadcast call site that depends on visibility must run AFTER the
+per-tick VisibilitySystem::Tick.
+
+
+======================================================================
+SECTION 5: HANDLER LOGIC IN DETAIL
+======================================================================
+
+Pseudo-code for OnPositionChanged:
+
+  void OnPositionChanged(const ecs::PositionChangedEvent& ev) {
+      entt::entity self = ev.entity;
+      const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+
+      // Compute old and new viewer sets
+      // (entities that see `self` at the old vs new position)
+      auto oldViewers = ComputeViewersAt(reg, self, ev.oldX, ev.oldY,
+                                          ev.mapIndex, range);
+      auto newViewers = ComputeViewersAt(reg, self, ev.newX, ev.newY,
+                                          ev.mapIndex, range);
+
+      // Symmetric diff
+      auto leavingViewers = SetDifference(oldViewers, newViewers);
+      auto enteringViewers = SetDifference(newViewers, oldViewers);
+
+      for (auto viewer : leavingViewers) {
+          RemoveBidirectional(reg, self, viewer);
+          ecs::EntityNetworkDispatch::SendRemove(reg, self, viewer);
+      }
+      for (auto viewer : enteringViewers) {
+          InsertBidirectional(reg, self, viewer);
+          ecs::EntityNetworkDispatch::SendInsert(reg, self, viewer);
+      }
+
+      // Inverse direction: who self sees at old vs new
+      auto oldVisible = ComputeVisibleAt(reg, self, ev.oldX, ev.oldY,
+                                          ev.mapIndex, range);
+      auto newVisible = ComputeVisibleAt(reg, self, ev.newX, ev.newY,
+                                          ev.mapIndex, range);
+
+      auto leavingVisible = SetDifference(oldVisible, newVisible);
+      auto enteringVisible = SetDifference(newVisible, oldVisible);
+
+      // Already handled by the symmetric leaving/entering loops above
+      // because SeenBy(A, B) <=> Sees(B, A). The inverse computation
+      // is redundant if visibility is symmetric (it is, modulo
+      // observer mode). Keep as a sanity check in debug build.
+      #ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+          assert(leavingVisible == leavingViewers);
+          assert(enteringVisible == enteringViewers);
+      #endif
+  }
+
+ComputeViewersAt: query the sectree at (x, y, mapIndex) for all
+entities within range that are characters. Returns unordered_set
+of entity IDs.
+
+InsertBidirectional / RemoveBidirectional: maintain the ViewMap /
+ViewerMap pair invariant atomically (both sides updated in one
+step before any external observer can see either).
+
+
+======================================================================
+SECTION 6: OBSERVER MODE HANDLING
+======================================================================
+
+Observer mode currently special-cases visibility:
+  - An observer sees the world but is itself NOT visible.
+  - Other entities should not include observer in their ViewerMap.
+
+Implementation:
+  - StatusFlags::isObserverMode (existing)
+  - VisibilitySystem checks: if `self` is observer, NEW viewer set
+    is always EMPTY (no one sees self). The observer's ViewMap
+    (what self sees) is computed normally.
+  - Toggling observer mode triggers a synthetic PositionChangedEvent
+    with old = current position (so the diff fires).
+
+  on SetObserverMode(self, becameObserver):
+      reg.get<StatusFlags>(self).isObserverMode = becameObserver;
+      // Trigger visibility recompute
+      g_dispatcher.trigger(PositionChangedEvent{
+          self, GetX(self), GetY(self), GetZ(self),
+                GetX(self), GetY(self), GetZ(self),
+          GetMapIndex(self)
+      });
+
+The handler sees old==new but isObserverMode changed, so old viewer
+set differs from new viewer set, generating the proper insert /
+remove broadcasts.
+
+
+======================================================================
+SECTION 7: DESPAWN AND SPAWN HANDLING
+======================================================================
+
+Spawn (entity enters world):
+  on EntityCreated(entity, x, y, mapIndex):
+      // Compute current viewers as if entity teleported from (-inf,-inf)
+      auto viewers = ComputeViewersAt(reg, entity, x, y, mapIndex,
+                                       range);
+      auto visible = ComputeVisibleAt(reg, entity, x, y, mapIndex,
+                                       range);
+      for (each viewer: insert bidirectional + SendInsert)
+      for (each visible self sees: SendInsert that entity to self)
+
+Despawn (entity leaves world):
+  on EntityDestroyed(entity):
+      // Use current ViewerMap (still valid)
+      for (each viewer in ViewerMap.viewers):
+          remove from viewer.ViewMap
+          SendRemove(self, viewer)
+      ViewerMap.viewers.clear()
+      // Symmetric for ViewMap
+      for (each visible in ViewMap.visible):
+          remove self from visible.ViewerMap
+      ViewMap.visible.clear()
+
+This is what the current ClearVisibilityMirror function does
+(SpatialService.cpp:96-125). After Phase D it stays — but invocations
+move from RemoveEntity body to the despawn event handler.
+
+
+======================================================================
+SECTION 8: MAP TRANSITION HANDLING
+======================================================================
+
+Map warp (CHARACTER::Show with bChangeTree = true):
+  - Old map: every viewer there receives SendRemove
+  - New map: every viewer there receives SendInsert
+
+Implementation: the PositionChanged event carries (oldMapIndex,
+oldX, oldY) and (newMapIndex, newX, newY). When mapIndex differs:
+  - oldViewers query is on oldMapIndex
+  - newViewers query is on newMapIndex
+  - Symmetric diff naturally produces full removal from old
+    map's viewers and full insertion to new map's viewers.
+
+No special case; the same handler works for warp.
+
+
+======================================================================
+SECTION 9: PERFORMANCE PROJECTION
+======================================================================
+
+Per Position write:
+  - 2 sectree queries (old + new). Sectree query = walk neighbour
+    cells (~9 cells per query) and iterate entities. Per-cell typical
+    ~20-50 entities. So ~200-500 entity checks per sectree query.
+    Two queries: ~400-1000 entity checks.
+  - 2 set differences. Each O(|old| + |new|). Typical ~20-50 viewers
+    per entity.
+  - Insert/Remove updates: O(diff size).
+  - SendInsert/SendRemove per viewer in diff. Fixed cost per packet.
+
+Total per Position write: ~1ms order of magnitude on busy server.
+Very few Position writes per second (one per moving character per
+~50ms tick). Total: 100s of moves/sec * 1ms = 0.1-1.0 sec/sec of
+visibility work. Comparable to current f76a3f1 hybrid PacketView
+cost amortised over broadcasts.
+
+Trade-off vs polling: polling pays cost on every UpdateSectree call
+(typically once per Goto). Event-driven pays cost on every Position
+update (also once per Goto, same cost). NET ZERO at this layer.
+
+Win: broadcast cost goes from O(viewers) per packet (with sectree
+walk) to O(viewers) per packet (without sectree walk, ViewerMap
+already current). Multiply by broadcast rate (10-100x movement rate):
+substantial reduction in broadcast hot path.
+
+
+======================================================================
+SECTION 10: STAGED ROLLOUT (Phase D commits)
+======================================================================
+
+D.1: Define PositionChangedEvent.
+     SRC/Server/GameServer/ecs/events.hpp: add the event struct.
+     No subscribers yet. No triggers yet. Build clean.
+
+D.2: Trigger PositionChangedEvent at every Position write site.
+     - SpatialService::InsertEntity
+     - SyncPositionComponents
+     - MovementSystem update loop
+     - MirrorLegacyMovement
+     - CHARACTER::SetXYZ (via the access helper after Phase C)
+     Triggers fire but no handler yet — events are no-ops at runtime.
+     Build clean.
+
+D.3: Implement VisibilitySystem skeleton.
+     SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp/.cpp
+     Handler registered in Init(); body is empty (LOG_TRACE only).
+     Wire-up in main.cpp boot.
+     Build clean. No behaviour change yet.
+
+D.4: Handler implements the diff-and-update logic.
+     ComputeViewersAt + ComputeVisibleAt helpers.
+     InsertBidirectional / RemoveBidirectional.
+     Broadcast SendInsert / SendRemove via EntityNetworkDispatch.
+     Build clean. WinTest: visibility now event-driven for new
+     position changes; legacy UpdateSectree still runs in parallel.
+
+D.5: Drift detection: in debug build, compare VisibilitySystem
+     output against legacy UpdateSectree output for the same Position
+     change. Log [VISIBILITY_DRIFT] on disagreement. Run for 1
+     WinTest session to verify.
+
+D.6: Disable legacy UpdateSectree polling. CEntity::UpdateSectree
+     becomes empty stub (or trigger PositionChangedEvent and
+     return). m_iViewAge stops being read in the now-stub
+     UpdateSectree. Phase D depends on D.5 zero drift.
+     Build clean. WinTest critical: the original two-client
+     stationary symptom must be permanently fixed.
+
+D.7: Remove m_iViewAge increments and ViewAgeMap tracking. Clean up
+     dead code in entity_view.cpp.
+
+D.8: Remove f76a3f1 hybrid broadcast band-aid in CEntity::PacketView.
+     PacketView body becomes a single ToViewers call. (This commit
+     bridges Phase D to Phase E.)
+
+WinTest matrix per phase:
+  - 2-client stationary sync: ORIGINAL SYMPTOM. Must pass.
+  - Movement (walk, run, mount, dash).
+  - Map warp (with new map having existing PCs).
+  - Stun / observer mode toggles.
+  - Spawn / despawn.
+  - High concurrency: 5-10 PCs in same area moving simultaneously.
+  - Long idle: PCs stationary 60+ seconds, no drift.
+  - Drift detector: zero [VISIBILITY_DRIFT] in D.5; zero
+    [BROADCAST_DELIVERY_DRIFT] (from A.3) in D.6+.
+
+
+======================================================================
+SECTION 11: ERROR CASES AND DEFENSIVE PROGRAMMING
+======================================================================
+
+What if PositionChangedEvent is dropped (handler exception)?
+  - Logged as error.
+  - VisibilityState diverges.
+  - Sanity check (debug): periodic full-rebuild of ViewerMap and
+    diff against expected. If mismatch, force rebuild.
+  - Production: ViewerMap stays out of sync until next position
+    change. Self-healing on every move.
+
+What if a viewer entity is destroyed mid-handler?
+  - Event handler validates entt::registry::valid before each access.
+  - If a viewer is no longer valid, skip it.
+  - Despawn handler should fire BEFORE destruction; if order is
+    reversed, the dispatcher should drop the viewer cleanly.
+
+What if observer mode toggle occurs while events are queuing?
+  - Synchronous handler (Option A) eliminates the race.
+  - Deferred handler (Option B) requires careful ordering.
+
+What if sectree query returns inconsistent results during handler?
+  - Sectree mutations during entity iteration are unsafe in legacy
+    code already. The new system inherits this constraint. Sectree
+    inserts / removes happen in well-defined order around the
+    handler.
+
+
+======================================================================
+SECTION 12: PHASE D DELIVERABLES
+======================================================================
+
+  ✓ This document.
+
+  Phase D commits will produce:
+
+    D.1: ecs/events.hpp  (NEW PositionChangedEvent)
+    D.2: ~5 trigger sites (Position writers)
+    D.3: ecs/systems/VisibilitySystem.hpp/.cpp  (NEW)
+    D.4: handler implementation
+    D.5: [VISIBILITY_DRIFT] detector
+    D.6: legacy polling disabled
+    D.7: m_iViewAge removed
+    D.8: f76a3f1 hybrid broadcast band-aid removed
+
+  Phase G additionally:
+    - Delete ViewMap / ViewerMap mirror logic in entity_view.cpp
+      (MirrorViewInsert / MirrorViewRemove / MirrorViewClear)
+    - Delete ValidateViewMapMirror (no longer two sources of truth)
+    - Delete m_map_view field from CEntity
+
+  Phase A.4 success criterion: any reader can implement Phase D from
+  this document without further design questions.
+
+
+End of A.4 visibility design.
