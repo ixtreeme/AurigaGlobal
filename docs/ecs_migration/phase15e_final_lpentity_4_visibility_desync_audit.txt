@@ -1,0 +1,620 @@
+Phase 15E-final.LPENTITY.4 - Two-client visibility desync root-cause audit
+===========================================================================
+
+Status: RESOLVED at runtime by f76a3f1 (PacketView hybrid broadcast).
+The fix is a band-aid. The architectural proper resolution is described
+in section 8 and is the trigger for the C++ architect prompt that
+follows this document.
+
+1. Executive summary
+--------------------
+
+Symptom seen by user during WinTest sessions on 2026-05-03 / 2026-05-04:
+
+  Two clients (A and B) connected to the same channel, two characters
+  (chA on client A, chB on client B). After both characters walked
+  toward each other and stopped:
+
+    Client A's view: chA and chB visually adjacent (correct).
+    Client B's view: chA and chB visually far apart (wrong).
+
+  Server-side coordinates verified correct: dropping an item with chA
+  on client A's position landed it on chB's pickup range. So the
+  server believed the two characters were at the same place. Only one
+  client had a stale visual.
+
+After multiple speculative fixes targeting different layers
+(m_posDest sync, BroadcastToView legacy authoritative, item destroy
+fallback, VIEWMAP_DRIFT throttle, CHARACTER::Sync m_posDest
+initialisation, SetDetails m_posDest initialisation), the symptom
+persisted. The runtime resolution was a single change to
+CEntity::PacketView at SRC/Server/GameServer/entity.cpp: walk the
+sectree neighbours alongside m_map_view and dedup recipients, so any
+viewer in actual visibility range receives the broadcast even if the
+sender's m_map_view did not include them at the moment of broadcast.
+
+The structural debt this audit exposes:
+
+  - The legacy m_map_view is a snapshot updated only by UpdateSectree
+    polling.
+  - Stationary characters never call UpdateSectree.
+  - Visibility is therefore stale-by-default for any idle character.
+  - All broadcasts (PacketView, PacketAround, BroadcastToView before
+    2caa410, NetworkService::BroadcastToView) ultimately resolve
+    recipients from m_map_view or its mirror.
+  - Every silently-missed recipient compounds into a visible desync
+    that recovers only when something forces a full reencode.
+
+2. Symptoms observed
+--------------------
+
+2.1. Original LPENTITY.4 deployment (commit 3b74ef3, 2026-05-03):
+
+  Two clients reported the same characters at different relative
+  distances. Native EntityNetworkDispatch::SendInsert built character
+  insert packets from ECS Position / MovementDestination /
+  MovementState. Hotfix 21dc2df reverted character dispatch to the
+  legacy CHARACTER::EncodeInsertPacket path on the assumption that
+  legacy state was authoritative.
+
+2.2. After fixup phase 15E-final.LPENTITY.4-fixup (commits 35cbd25
+     through 4a4cab0, ten total) and the LPENTITY.4-fixup-B Option A
+     hotfix (86db318):
+
+  Item pickup, damage broadcast, map warp empty world fixes landed.
+  Spawning, regen, gameplay loops worked.
+
+  Two-client position desync symptom STILL PRESENT in stationary
+  characters, despite:
+
+    - 0 MOVEMENT_DRIFT warnings (ECS movement components matched
+      legacy CHARACTER fields).
+    - 0 INSERT_PARITY warnings (native and legacy packet builders
+      produced identical bytes).
+    - 0 BROADCAST_DRIFT warnings (native and legacy recipient sets
+      identical in NetworkService::BroadcastToView debug check).
+    - 0 SPATIAL_INVARIANT warnings.
+    - 0 VIEWMAP_DRIFT after the throttle fix in 261e74d.
+
+  The audit detectors said everything was consistent. Yet the
+  user-visible symptom reproduced deterministically.
+
+2.3. User reproduction protocol (2026-05-04 17:16):
+
+    1. Both characters fully stationary for several seconds.
+    2. Screenshot of client A: characters adjacent.
+    3. Screenshot of client B: characters far apart.
+    4. Item drop with one character: dropped at on-screen position
+       per client A, lands at server-side position which IS adjacent.
+    5. Pickup with the other character on client A: succeeds because
+       server distance is small.
+    6. Client B's view: still shows characters far apart.
+
+  This eliminated several initial hypotheses:
+
+    - Camera angle artefact: ruled out by item drop coordinate test.
+    - Mid-frame timing: ruled out by stationary requirement.
+    - Drift between ECS and legacy state: ruled out by zero
+      MOVEMENT_DRIFT and INSERT_PARITY.
+
+3. Investigation timeline
+-------------------------
+
+3.1. Hypothesis A: stale m_posDest after Sync.
+
+    CHARACTER::Sync(x, y) at MovementSystem.cpp:537 was found to update
+    m_pos via SetXYZ but never touch m_posDest. The legacy
+    EncodeInsertPacket reads m_posDest:
+
+        if (m_posDest.x != pack.x || m_posDest.y != pack.y) {
+            iDur = (m_dwMoveStartTime + m_dwMoveDuration) - get_dword_time();
+            if (iDur <= 0) {
+                pack.x = m_posDest.x;
+                pack.y = m_posDest.y;
+            }
+        }
+
+    For a settled character whose move expired, an m_posDest different
+    from current m_pos would snap pack.x/y back to the stale
+    m_posDest. Any new viewer entering range would receive an insert
+    packet at the prior destination, not the current synced position.
+
+    Fix bff8ffe: in Sync, mirror m_pos write into m_posDest and
+    m_posStart, plus call SyncDestinationClear on the ECS side.
+    Same pattern in CHARACTER::SetDetails for the player-load path.
+
+    Result: did NOT resolve the user's two-client symptom. Reduced
+    one drift class but the visible bug persisted.
+
+3.2. Hypothesis B: native ViewerMap mirror gaps in broadcast paths.
+
+    EntityNetworkDispatch::Reencode at services/EntityNetworkDispatch.cpp
+    used VisibilityService::GetVisibleEntitiesNative which reads
+    ViewMap::visible. SpatialService::RemoveEntity (the post-25be09a
+    synchronous remove broadcast) iterated source's ViewerMap.
+
+    Hotfix 86db318 forced both to legacy/sectree-authoritative
+    recipient sets:
+
+        - Reencode -> GetVisibleEntities (range-based via sectree).
+        - SpatialService::RemoveEntity -> GetEntitiesInRange.
+
+    Result: helped item pickup remove and reencode paths, but did not
+    address PacketView / PacketAround which carry MOVE / SYNC_POSITION
+    / effect packets.
+
+3.3. Hypothesis C: item destruction stripping SpatialKindTag.
+
+    Hotfix 25be09a kept SpatialKindTag through CItem::RemoveFromGround
+    and added a synchronous SendRemove broadcast in
+    SpatialService::RemoveEntity. This unblocked ground item pickup
+    visual cleanup. Orthogonal to the character desync.
+
+3.4. Hypothesis D: log-spam-induced server stall.
+
+    Hotfix 261e74d throttled ValidateViewMapMirror after WinTest
+    triage showed 34982 [VIEWMAP_DRIFT] warnings in 35 seconds, which
+    starved regen / spawn timers and triggered network heartbeat
+    timeouts. The user perceived this as a crash with no spawning.
+
+    Critical secondary discovery during this triage: ValidateViewMapMirror
+    consistently reported missing_in_legacy=2. The native ViewMap had
+    two entries the legacy m_map_view did not. The drift was harmless
+    when broadcasts read m_map_view (because ViewMap was a mirror,
+    not authoritative), but it forecast that broadcasts that DID read
+    ViewMap would deliver to fewer recipients than legacy expected.
+
+    This hypothesis turned out to be the wrong direction in retrospect:
+    legacy m_map_view was the AUTHORITATIVE side, and it was the side
+    missing recipients during stationary windows. Native ViewMap had
+    spurious entries; legacy m_map_view had spurious GAPS.
+
+3.5. Hypothesis E (correct): m_map_view is stale during idle windows.
+
+    Confirmed after f76a3f1 deployed and the user reported the
+    symptom resolved.
+
+    Rooted in the discovery that:
+
+      - UpdateSectree is invoked from input_main.cpp on the moving
+        character when a HEADER_CG_MOVE arrives, plus a few warp /
+        observer paths and the ECS movement update loop.
+      - A character that has stopped moving and is idle does NOT call
+        UpdateSectree on itself.
+      - Therefore the idle character's m_map_view is frozen at the
+        snapshot taken on the last movement.
+      - If a viewer entered or left visibility range during the idle
+        window, the idle character's m_map_view does not reflect it.
+
+4. The actual root cause
+------------------------
+
+CEntity::PacketView, defined at SRC/Server/GameServer/entity.cpp:98 in
+the pre-f76a3f1 form, broadcast a packet by iterating only
+this->m_map_view:
+
+    void CEntity::PacketView(const void* data, int bytes, LPENTITY except)
+    {
+        if (!GetSectree())
+            return;
+
+        FuncPacketView f(data, bytes, except);
+
+        if (!m_bIsObserver)
+            for_each(m_map_view.begin(), m_map_view.end(), f);
+
+        f(std::make_pair(this, 0));
+    }
+
+m_map_view is a std::map<LPENTITY, int> populated by ViewInsert and
+aged out by UpdateSectree. CEntity::UpdateSectree (entity_view.cpp:303)
+runs:
+
+    1. Increment m_iViewAge.
+    2. sectree->ForEachAround(CFuncViewInsert) - visit every entity in
+       neighbour sectrees, range-filter, ViewInsert each.
+    3. Iterate m_map_view: any entry whose age was not refreshed by
+       step 2 is stale - DispatchRemove and erase.
+
+UpdateSectree call sites that trigger it on a given character:
+
+    - input_main.cpp:2291         HEADER_CG_MOVE arrival (moving char)
+    - SessionSystem.cpp:1016      CHARACTER::Show (warp)
+    - MovementSystem.cpp:156      MirrorLegacyMovement (per ECS step)
+    - entity.cpp:186              SetObserverMode toggle
+    - SpatialService.cpp:267      generic spatial UpdateSectree
+
+None of these fire for an idle character.
+
+The breakage scenario:
+
+    1. chA walks from (50, 50) toward (100, 100). Owner client of chA
+       sends HEADER_CG_MOVE. Server runs ch->Goto(100, 100), broadcasts
+       MOVE packet via PacketView(this->m_map_view). Client B in
+       chA's m_map_view receives MOVE.
+    2. chA arrives at (100, 100). Move expires. chA is now idle.
+    3. chB enters the area, eventually appearing in chA's visibility
+       range. chB's UpdateSectree fires (chB just moved). chB calls
+       its own ViewInsert(chA), which:
+         - Inserts chA into chB's m_map_view.
+         - Recursively inserts chB into chA's m_map_view via
+           chA->ViewInsert(chB, false).
+         - DispatchInsert chA to chB.
+    4. So chA's m_map_view DOES eventually contain chB - the recursive
+       insert took care of it. But this only happens when chB moves.
+       If chB also stops, no further m_map_view reconciliation runs.
+    5. If chC (a third party) walks past chA while chA is idle,
+       chC->ViewInsert(chA) fires, recursive chA->ViewInsert(chC, false)
+       adds chC to chA's m_map_view. Same pattern.
+    6. The breakage shows when SOMEONE'S age-out runs while chA's
+       m_map_view-of-chB is stale. UpdateSectree on chB iterates chB's
+       m_map_view. Entries not refreshed by sectree visit during
+       the same UpdateSectree call are aged out. chB's UpdateSectree
+       calls ent->ViewRemove(chB, false) for each aged-out entry,
+       which removes chB from chA's m_map_view via the symmetric
+       reverse path.
+    7. If chA's m_map_view loses chB while chA is idle, and chA later
+       broadcasts (via, say, HEADER_GC_SYNC_POSITION carried by some
+       OTHER character's sync packet, or any incidental PacketView
+       call), chB does not receive.
+
+This produces gradual divergence: every idle window can shed viewers
+from m_map_view; the shedding only repairs on next movement of the
+shedded viewer.
+
+The compound effect over a long session: an idle character's
+m_map_view increasingly lags behind real visibility. Broadcasts skip
+recipients silently. Clients render stale state of the silent recipient.
+
+5. Why each prior attempt failed (or partially helped)
+------------------------------------------------------
+
+5.1. bff8ffe (CHARACTER::Sync m_posDest fix):
+
+    Removed an INSERT-time stale-snap of pack.x/y to m_posDest. Did
+    not address the broadcast delivery layer. After this fix the
+    INSERT bytes were correct but the INSERT (or MOVE) was not
+    reaching all viewers.
+
+5.2. 86db318 (Option A legacy authoritative recipients):
+
+    Targeted EntityNetworkDispatch::Reencode and
+    SpatialService::RemoveEntity. These two paths now query
+    GetEntitiesInRange (sectree-based, real-time). PacketView /
+    PacketAround were untouched - they kept reading m_map_view.
+
+    Net effect: items, buildings, shops correctly removed for all
+    viewers. Character MOVE / SYNC packets still broadcast through
+    the unchanged PacketView path.
+
+5.3. 25be09a (item pickup hotfix):
+
+    Independent of the character desync. Fixed CItem::RemoveFromGround
+    eager SpatialKindTag removal that broke any subsequent SendRemove.
+
+5.4. 261e74d (VIEWMAP_DRIFT throttle):
+
+    Operational fix only. Surfaced the missing_in_legacy=2 anomaly
+    that hinted at where authority should ultimately live, but did
+    not change behaviour.
+
+5.5. The drift detectors (CheckMovementDrift, CheckCharacterInsertParity):
+
+    All zero throughout. They proved equivalence at the per-entity
+    state level and at the per-packet build level. They could not
+    detect missing recipients because they instrument the source side
+    of broadcast, not the recipient set.
+
+  The audit instrumentation was complete for everything except the
+  recipient set itself.
+
+6. The fix that worked (f76a3f1)
+--------------------------------
+
+CEntity::PacketView now performs a hybrid broadcast:
+
+    Step 1: Iterate m_map_view (legacy behaviour preserved). Each
+            recipient pointer is recorded in a std::unordered_set
+            for dedup.
+
+    Step 2: Walk the source's sectree neighbours via
+            GetSectree()->ForEachAround. For every entity that
+              - is a character (ENTITY_CHARACTER)
+              - has a descriptor (network session present)
+              - is within VIEW_RANGE + VIEW_BONUS_RANGE of source
+              - is not the broadcast source itself
+              - is not the explicit `except` parameter
+              - was not already covered by step 1
+            send the packet.
+
+    Step 3: Send to self last, dedup-guarded so observer mode
+            self-only behaviour is preserved.
+
+The sectree walk uses the same range the visibility system uses, so
+this never broadcasts beyond legitimate visibility. The dedup set
+guarantees each recipient sees the packet exactly once.
+
+Cost: one extra ForEachAround pass per PacketView call. The set
+allocation is reusable on hot paths; in practice the dedup set is
+small (less than the number of entities in the source's neighbour
+sectrees). Negligible relative to the cost of constructing the packet
+and writing it to descriptors.
+
+Files changed:
+    SRC/Server/GameServer/entity.cpp lines 1-13 (added headers,
+        unordered_set include, sectree.h, config.h, utils.h for
+        VIEW_RANGE / DISTANCE_APPROX).
+    SRC/Server/GameServer/entity.cpp lines 102-176 (PacketView body
+        rewritten with hybrid broadcast + dedup).
+
+7. Why this fix is a band-aid
+-----------------------------
+
+The hybrid broadcast solves the symptom but leaves the underlying
+data model unchanged. The legacy m_map_view remains the authoritative
+recipient set in many code paths. The new sectree fallback is a
+recovery mechanism, not a redesign.
+
+7.1. Two sources of truth for visibility:
+
+    Legacy m_map_view              ECS ViewMap / ViewerMap
+    -------------------------      ------------------------------
+    LPENTITY -> int (age)          unordered_set<entt::entity>
+    Updated by UpdateSectree       Mirrored by entity_view.cpp
+    Polling-based                  Mirrored on every ViewInsert /
+                                   ViewRemove
+    Authoritative                  Currently a debug-only mirror
+    Stale during idle windows      Has spurious entries that age out
+
+    With the hybrid broadcast the AUTHORITATIVE source is now
+    effectively "m_map_view union (sectree range)", but neither
+    component alone is correct.
+
+7.2. Dual-write hazards remaining:
+
+    Every CHARACTER position write must update:
+
+      - m_pos (legacy)
+      - ECS Position (mirrored)
+      - m_posDest (legacy, if movement settled)
+      - ECS MovementDestination (mirrored)
+      - m_dwMoveStartTime / m_dwMoveDuration (legacy)
+      - ECS MovementState moveStartTime / moveDuration (mirrored)
+      - m_bNowWalking (legacy)
+      - ECS MovementState isNowWalking (mirrored)
+      - m_bAddChrState (legacy)
+      - ECS StatusFlags (mirrored, partially)
+
+    The Sync*Write helpers added in 4-fixup.1 made this less
+    error-prone but it is still per-call-site discipline. Any new
+    code path that touches any of these fields and forgets the mirror
+    re-introduces drift.
+
+7.3. PacketView dedup cost is per-broadcast:
+
+    For 50 PCs in a busy area broadcasting MOVE packets at the
+    update rate, the sectree walk happens many times per second.
+    The cost is acceptable for now but is duplicated work: every
+    broadcast computes the same recipient set the previous broadcast
+    computed.
+
+7.4. Visibility events not hooked:
+
+    Visibility transitions (entered / left view range) currently fire
+    only inside ViewInsert / ViewRemove which are called from
+    UpdateSectree. They are not surfaced as ECS events that other
+    systems can react to.
+
+8. Recommendations for proper architectural fix
+-----------------------------------------------
+
+The user's request after f76a3f1 confirmed the runtime fix:
+  "minden legacy reszt ami miatt meg johetnek a driftek, irj at
+   ECS-re a legjobb megoldas erdekeben"
+
+  -> Migrate every legacy element that can still cause drift to ECS
+     for the cleanest solution.
+
+This audit recommends the following architectural restructure. It is
+the input the user will use to compose a C++ architect-level prompt.
+
+8.1. Single source of truth for visibility:
+
+    Promote ECS ViewerMap to the authoritative recipient set.
+    m_map_view becomes a derived view (or is removed entirely once
+    the dependent code is converted).
+
+    Maintain ViewerMap by an event-driven model:
+
+      - On entity move (Position component change, ECS event):
+        recompute affected viewer relationships incrementally.
+        Use sectree / spatial index for the spatial query.
+      - On entity destroy: clean reverse relationships in one place
+        (ClearVisibilityMirror equivalent, generalised).
+      - On observer mode toggle: re-evaluate affected pairs.
+
+    The polling UpdateSectree disappears or becomes a sanity sweep
+    only.
+
+8.2. Single source of truth for position / movement:
+
+    Remove m_pos / m_posDest / m_posStart / m_dwMoveStartTime /
+    m_dwMoveDuration / m_bNowWalking / m_bAddChrState from CHARACTER.
+    The ECS components Position / MovementDestination / MovementState
+    / StatusFlags are the storage. Legacy getters (GetX, GetY,
+    GetCurrentDestX, IsWalking, etc.) become thin proxies into the
+    ECS components.
+
+    The Sync*Write helpers introduced in 4-fixup.1 disappear because
+    there is nothing to mirror.
+
+8.3. Native packet builders become authoritative:
+
+    CHARACTER::EncodeInsertPacket and EncodeRemovePacket bodies
+    delete. Virtual dispatch is removed in LPENTITY.6. The audit TU
+    (EntityNetworkDispatchAudit) deletes alongside.
+
+8.4. Broadcast helpers become single-implementation:
+
+    NetworkService::BroadcastToView / Broadcast / BroadcastInRange /
+    BroadcastInMap / CEntity::PacketView / CEntity::PacketAround
+    converge into one ECS-aware broadcast service. The hybrid
+    fallback in PacketView becomes the primary implementation,
+    re-using a cached recipient set per source per tick.
+
+8.5. Migration order proposed:
+
+    Phase A (preparation, no behaviour change):
+      A.1 Document every direct read / write of the legacy CHARACTER
+          fields enumerated in 7.2. Spreadsheet of file:line
+          per-field. Output of a one-off audit pass.
+      A.2 Identify per-field a clear ECS owner (component + system).
+      A.3 Define the broadcast service interface that subsumes
+          PacketView / NetworkService::* helpers.
+
+    Phase B (legacy reads -> ECS reads):
+      B.1 Convert getters one by one. e.g. CHARACTER::GetX returns
+          ecs::PositionAccess::Get(EcsOf(this)).x. Existing callers
+          do not change. Legacy m_pos still updated on writes
+          (dual-write).
+      B.2 Each conversion is a small commit, build-gated, no test
+          regression expected because read source is equivalent.
+
+    Phase C (legacy writes -> ECS writes):
+      C.1 Replace direct field writes with ECS write through an
+          access helper. Once all writers go through helpers, the
+          legacy field can be removed because no code reads it.
+      C.2 Particular care for SetXYZ, Sync, Goto, Stop, SetPosition,
+          SetNowWalking, SetRotation paths and the constructor /
+          Initialize / SetDetails paths.
+
+    Phase D (visibility migration):
+      D.1 Replace m_map_view direct iteration with ViewerMap iteration
+          where m_map_view is read.
+      D.2 Replace m_map_view writes (ViewInsert / ViewRemove) with
+          ViewerMap writes.
+      D.3 Migrate UpdateSectree from polling to event-driven. ECS
+          system listens for Position changes and recomputes affected
+          relationships incrementally.
+
+    Phase E (broadcast service):
+      E.1 New ecs::BroadcastService that takes (source, packet, kind)
+          and dispatches via cached recipient set.
+      E.2 PacketView / PacketAround / NetworkService::BroadcastToView
+          forward to the new service for one release window then
+          delete.
+
+    Phase F (native dispatch re-enable):
+      F.1 EntityNetworkDispatch::SendInsert / SendRemove for
+          SpatialKind::Character no longer falls back to legacy.
+          The 21dc2df hotfix legacy ag is removed.
+      F.2 CHARACTER::EncodeInsertPacket / EncodeRemovePacket virtual
+          method bodies delete.
+
+    Phase G (cleanup):
+      G.1 Remove MovementSystem::SyncDestinationWrite /
+          SyncDestinationClear / SyncTimingWrite / SyncWalkingWrite
+          (no callers after Phase C).
+      G.2 Remove EntityNetworkDispatchAudit TU and char.h audit
+          accessors.
+      G.3 Remove ValidateViewMapMirror once ViewerMap is the only
+          source of truth.
+
+8.6. Compatibility / risk:
+
+    Wire protocol must not change. All packet types and bytes
+    identical to current legacy output. The architecture change is
+    server-internal.
+
+    Database protocol must not change.
+
+    DUAL-PATH window: each phase keeps the legacy path operative
+    until the new path is proven. The fixup audit detectors stay
+    enabled in debug builds for the duration.
+
+    Estimated effort: 2-3 weeks of focused engineering, 5-10 commits
+    per phase.
+
+9. Closing
+----------
+
+The runtime is unblocked. Gameplay works. The architecture remains
+hybrid until phases A-G land. The next document is a C++ architect
+specification that the user will compose; this audit is its input.
+
+Commits referenced:
+
+    3b74ef3   Phase 15E-final.LPENTITY.4: Native entity dispatch (the
+              source of the original symptom)
+    2caa410   Hotfix LPENTITY.4: Restore authoritative broadcast
+              viewers (BroadcastToView legacy revert)
+    21dc2df   Hotfix LPENTITY.4: Restore character view packets
+              (CHARACTER dispatch legacy revert)
+    35cbd25   Phase 15E-final.LPENTITY.4-fixup.0: Movement state
+              drift audit
+    eb88cd9   Phase 15E-final.LPENTITY.4-fixup.1: Sync*Write API
+              skeleton
+    45a816c   2.a Sync Goto timing
+    81bd643   2.b Sync Stop and walk-mode
+    7c0ccac   2.c Sync stun dest reset
+    9e8fd1f   2.d Sync warp / Show position
+    e373354   2.e Sync MountVnum dest reset
+    8671bbc   2.f Sync state flags
+    4a4cab0   2.g Sync KASMIR shop title
+    9a21850   4-fixup.3: Movement drift detector audit TU
+    897d73c   4-fixup.4: Packet byte-parity verifier
+    e9fc33a   Phase 15E-final.LPENTITY.4-fixup: Mid-phase change log
+    25be09a   Hotfix LPENTITY.4: Ground item persists on screen
+              after pickup (SpatialKindTag preservation +
+              synchronous SendRemove)
+    86db318   Hotfix LPENTITY.4-fixup-B: Force all broadcast paths
+              to legacy authoritative
+    261e74d   Hotfix: Rate-limit ValidateViewMapMirror to unblock
+              WinTest
+    bff8ffe   Hotfix LPENTITY.4: Two-client position desync via
+              stale m_posDest
+    f76a3f1   Hotfix LPENTITY.4: PacketView hybrid broadcast
+              (m_map_view + sectree range)  <-- THE ACTUAL FIX
+
+Files referenced:
+
+    SRC/Server/GameServer/entity.cpp
+        Lines 60-90  FuncPacketAround / FuncPacketView functors
+        Lines 92-110 (pre-fix) / 92-180 (post-fix)
+                    PacketAround / PacketView definitions
+    SRC/Server/GameServer/entity_view.cpp
+        Lines 105-149  ValidateViewMapMirror (throttled)
+        Lines 226-249  CEntity::ViewInsert
+        Lines 251-268  CEntity::ViewRemove
+        Lines 303-410  CEntity::UpdateSectree
+    SRC/Server/GameServer/sectree.h
+        Lines 111-126  SECTREE::ForEachAround template
+    SRC/Server/GameServer/ecs/services/SpatialService.cpp
+        Lines 96-125   ClearVisibilityMirror
+        Lines 212-260  RemoveEntity (with synchronous SendRemove)
+    SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.cpp
+        Lines 396-440  SendInsert (Character branch with
+                       21dc2df hotfix and audit hooks)
+        Lines 477-495  Reencode (uses GetVisibleEntities legacy
+                       authoritative since 86db318)
+    SRC/Server/GameServer/ecs/services/EntityNetworkDispatchAudit.cpp
+        Whole file - drift / parity verifier
+    SRC/Server/GameServer/ecs/NetworkService.hpp
+        Lines 71-94    BroadcastToView (legacy authoritative since
+                       2caa410)
+    SRC/Server/GameServer/ecs/services/VisibilityService.hpp
+        Lines 29-70    GetEntitiesInRange (sectree based)
+        Lines 72-89    GetViewersOf (delegates to range)
+        Lines 109-125  GetViewersOfNative (ViewerMap, mirror only)
+    SRC/Server/GameServer/ecs/systems/MovementSystem.cpp
+        Lines 144-159  MirrorLegacyMovement
+        Lines 537-580  CHARACTER::Sync (post-bff8ffe)
+        Lines 859-875  CHARACTER::SendMovePacket
+    SRC/Server/GameServer/input_main.cpp
+        Lines 2575-2713  HEADER_CG_SYNC_POSITION handler
+        Lines 2310-2399  HEADER_CG_MOVE handler
+    SRC/Server/GameServer/config.cpp
+        Line 117       VIEW_RANGE = 5000
+        Line 118       VIEW_BONUS_RANGE = 500
+
+End of audit.
