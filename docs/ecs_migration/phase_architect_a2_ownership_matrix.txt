@@ -1,0 +1,484 @@
+Phase 15E-final.LPENTITY.4-architect.A.2 - Component ownership matrix
+======================================================================
+
+Scope: for each legacy CHARACTER / CEntity field listed in A.1,
+identify the ECS component(s) holding (or that should hold) the value,
+the system that owns the component lifecycle, the read consumers, and
+the migration targets for Phases B (read), C (write), D (event-driven
+visibility), and G (cleanup).
+
+Read first: phase_architect_a1_field_inventory.txt for the per-field
+read/write site lists.
+
+
+======================================================================
+SECTION 1: COMPONENT INVENTORY (existing ECS components)
+======================================================================
+
+Existing ECS components relevant to this migration, with their current
+location and primary purpose:
+
+ecs::Position  (transform_components.hpp:7)
+  Layout: int32_t x, y, z
+  Purpose: 3D spatial position. Already populated and read by ECS
+           subsystems; mirrored from legacy m_pos via
+           SyncPositionComponents on every SetXYZ.
+
+ecs::PositionZ  (spatial_components.hpp:25)
+  Layout: int32_t z
+  Purpose: Transitional explicit Z component. Redundant with Position.z
+           but kept queryable during migration. Will be folded back
+           into Position in Phase G or eliminated.
+
+ecs::MovementDestination  (movement_components.hpp:8)
+  Layout: int32_t x, y
+  Purpose: Active move destination. Absent if entity not moving;
+           emplaced by Goto / Move, removed by Stop / arrival /
+           SyncDestinationClear.
+
+ecs::MovementState  (movement_components.hpp:12)
+  Layout: moveStartTime, moveDuration, lastMoveTime, lastAttackTime,
+          walkStartTime, stopTime, isWalking, isNowWalking,
+          staminaConsume
+  Purpose: Movement timing and walking flag. Always present on
+           characters (created by EntityFactory).
+
+ecs::MovementSpeed  (movement_components.hpp:24)
+  Layout: int32_t walk, run
+  Purpose: Speed cache. Not in scope for this phase (already ECS-only).
+
+ecs::SyncState  (movement_components.hpp:29)
+  Layout: float lastSyncTime, int syncHackCount, timeval lastSyncTimeval
+  Purpose: Peer-sync bookkeeping. Already ECS, read-only target.
+
+ecs::StatusFlags  (status_components.hpp:18)
+  Layout: bitfields incl. isDead, isStunned, isSpawnState,
+          isKillerMode, isPartyState, isPet, isNewPet, isMount,
+          isObserverMode, ...
+  Purpose: 4 of these flags shadow m_bAddChrState; the others are
+           independent. Migration reaches only the four we mirror.
+
+ecs::ViewMap  (visibility_components.hpp:11)
+  Layout: unordered_set<entt::entity> visible, uint32_t generation
+  Purpose: forward visibility (entities I see). Currently a mirror of
+           legacy m_map_view.
+
+ecs::ViewerMap  (visibility_components.hpp:16)
+  Layout: unordered_set<entt::entity> viewers
+  Purpose: reverse visibility (entities seeing me). Has no legacy
+           equivalent (legacy is forward-only).
+
+ecs::ViewAgeMap  (visibility_components.hpp:20)
+  Layout: unordered_map<entt::entity, uint32_t>
+  Purpose: per-pair age generation. Polling-mode artefact; deletes
+           in Phase G alongside m_iViewAge.
+
+ecs::VisibilityDirty  (visibility_components.hpp:24)
+  Layout: empty tag
+  Purpose: dirty marker for visibility recomputation. May convert to
+           per-entity event in Phase D.
+
+ecs::SectorPlacement  (spatial_components.hpp:31)
+  Layout: int32_t mapIndex, uint32_t sectorX, sectorY
+  Purpose: Cached sector cell. Updated by SpatialService.
+
+ecs::SpatialEntity  (spatial_components.hpp:9)
+  Layout: empty tag
+  Purpose: marker for entities participating in spatial queries.
+
+ecs::SpatialKindTag  (spatial_components.hpp:19)
+  Layout: SpatialKind enum value
+  Purpose: identifies kind for dispatch. Untouched in this phase.
+
+
+Components to be ADDED in Phase A.2 (no implementation yet, just
+declared as the contract):
+
+ecs::PositionChanged  (NEW EVENT)
+  Layout: entt::entity entity, int32_t oldX, oldY, oldZ, newX, newY, newZ
+  Purpose: signal that an entity's position has changed. Consumed by
+           VisibilitySystem in Phase D. Implemented either as
+           dispatcher event or as a transient ECS component swept by
+           the visibility system per tick.
+
+(Optionally, consider a MovementOrigin if CalculateMoveDuration
+becomes a system instead of a CHARACTER member function. Decision
+deferred to Phase B.2.)
+
+
+======================================================================
+SECTION 2: PER-FIELD OWNERSHIP MATRIX
+======================================================================
+
+Each row gives:
+  field                  : legacy CHARACTER / CEntity field
+  ECS twin               : component(s) holding the same value
+  owner system           : the subsystem responsible for component
+                           lifecycle and primary writes after migration
+  primary writers        : systems / handlers that mutate the value
+  primary readers        : systems / functions that consume the value
+  Phase B target         : where reads are redirected to
+  Phase C target         : where writes are redirected to
+  Phase G action         : final state of the legacy field
+
+----------------------------------------------------------------------
+
+Field: m_pos
+  ECS twin       : Position (x, y, z); PositionZ.z secondary
+  Owner system   : SpatialService (already authoritative on writes via
+                   SyncPositionComponents)
+  Primary writers:
+    - SpatialService::InsertEntity / SyncPositionComponents
+    - CHARACTER::Show, CHARACTER::Sync, CHARACTER::SetDetails
+    - MovementSystem MirrorLegacyMovement (mid-move)
+  Primary readers:
+    - 188 indirect via GetX/GetY/GetZ, all subsystems
+  Phase B target : CHARACTER::GetX / GetY / GetZ inline accessors
+                   read Position via reg.get<Position>(EcsOf(this))
+                   (or PositionAccess helper to avoid the EcsOf cost)
+  Phase C target : CHARACTER::SetXYZ writes Position only; legacy
+                   m_pos field deletes
+  Phase G action : DELETE field. PositionZ folds into Position.
+
+----------------------------------------------------------------------
+
+Field: m_posDest
+  ECS twin       : MovementDestination (x, y) — emplace / remove
+                   semantics (absent = no active move)
+  Owner system   : MovementSystem
+  Primary writers:
+    - MovementSystem Goto, Stop, Sync, MirrorLegacyMovement
+    - AffectSystem stun reset
+    - SessionSystem Show
+    - PlayerRuntimeSystem MountVnum, SetDetails
+  Primary readers:
+    - NetworkSyncSystem EncodeInsertPacket (the symptom path)
+    - MovementSystem CalculateMoveDuration, SendMovePacket FUNC_WAIT
+  Phase B target : GetCurrentDestX / GetCurrentDestY accessors read
+                   MovementDestination via try_get (returns 0/0 when
+                   absent — matches "settled" semantics)
+  Phase C target : Direct field writes replaced by emplace_or_replace
+                   <MovementDestination> calls
+  Phase G action : DELETE field
+
+----------------------------------------------------------------------
+
+Field: m_posStart
+  ECS twin       : NONE currently
+  Owner system   : MovementSystem (only consumer)
+  Primary writers: MovementSystem CalculateMoveDuration (snapshot of
+                   current pos at start of move calc)
+  Primary readers: MovementSystem CalculateMoveDuration only
+  Decision (Phase B.2): m_posStart is used solely WITHIN
+    CalculateMoveDuration to compute fDist between start and dest.
+    No persistent storage needed. Convert CalculateMoveDuration to
+    take the start position as a function argument (or compute it
+    inline from current Position at the moment Goto is called).
+  Phase B target : CalculateMoveDuration becomes free function or
+                   pure-locals; m_posStart reads disappear
+  Phase C target : NONE — field no longer has writers; Phase C
+                   removes assignments
+  Phase G action : DELETE field. No new ECS component needed.
+
+----------------------------------------------------------------------
+
+Field: m_dwMoveStartTime
+  ECS twin       : MovementState.moveStartTime
+  Owner system   : MovementSystem
+  Primary writers:
+    - MovementSystem CalculateMoveDuration (timing stamp on move start)
+    - MovementSystem update loop (mid-move advance)
+    - PlayerRuntimeSystem Initialize (cleanup, entity null no-op)
+  Primary readers:
+    - NetworkSyncSystem EncodeInsertPacket iDur calc (the symptom path)
+    - PointSystem GetMoveSpeed limit (active-move check)
+  Phase B target : New accessor CHARACTER::GetMoveStartTime() reads
+                   MovementState via reg.get
+  Phase C target : Direct writes replaced by patch<MovementState>
+                   on the timing fields. SyncTimingWrite helper
+                   becomes the canonical write path until C.4 deletes
+                   the helper.
+  Phase G action : DELETE field. SyncTimingWrite helper deleted in
+                   Phase G.1 cleanup.
+
+----------------------------------------------------------------------
+
+Field: m_dwMoveDuration
+  ECS twin       : MovementState.moveDuration
+  Owner system   : MovementSystem
+  Same writer / reader / target structure as m_dwMoveStartTime.
+  Phase G action : DELETE field.
+
+----------------------------------------------------------------------
+
+Field: m_bNowWalking
+  ECS twin       : MovementState.isNowWalking
+  Owner system   : MovementSystem
+  Primary writers:
+    - MovementSystem SetNowWalking (toggle)
+    - PlayerRuntimeSystem Initialize cleanup
+  Primary readers:
+    - CHARACTER::IsWalking inline (composite with stamina)
+    - NetworkSyncSystem EncodeInsertPacket walk-mode packet branches
+    - MovementSystem internal SetNowWalking branches
+  Phase B target : IsWalking reads MovementState.isNowWalking; the
+                   stamina component remains legacy until
+                   PointSystem migration (out of scope here)
+  Phase C target : SetNowWalking writes MovementState only; legacy
+                   field deletes
+  Phase G action : DELETE field. SyncWalkingWrite helper deleted.
+
+----------------------------------------------------------------------
+
+Field: m_bAddChrState
+  ECS twin       : StatusFlags.isDead / isSpawnState / isKillerMode /
+                   isPartyState (4 of the StatusFlags bits)
+  Owner system   : multiple (the bits have different domain owners):
+    - DEAD     -> CombatSystem / MovementSystem (POS_DEAD path)
+    - SPAWN    -> SessionSystem (Show), AffectSystem (polymorph)
+    - KILLER   -> CombatSystem (SetKillerMode)
+    - PARTY    -> SocialSystem (Party)
+  Primary writers: see A.1 site list
+  Primary readers:
+    - NetworkSyncSystem EncodeInsertPacket pack.bStateFlag = ...
+    - CombatSystem IsKillerMode check
+  Phase B target : New accessor or proxy GetAddChrState() that
+                   composes the 4 bits from StatusFlags. Wire packet
+                   build reads StatusFlags directly (already does in
+                   native dispatch).
+  Phase C target : Each bit-write site replaced by status->isXxx
+                   assignment. SET_BIT / REMOVE_BIT on legacy field
+                   deletes.
+  Phase G action : DELETE field. The bits become first-class on
+                   StatusFlags.
+
+----------------------------------------------------------------------
+
+Field: m_map_view
+  ECS twin       : ViewMap (forward) + ViewerMap (reverse)
+  Owner system   : VisibilitySystem (NEW in Phase D)
+  Primary writers (legacy):
+    - entity_view.cpp ViewInsert / ViewRemove / ViewCleanup /
+      UpdateSectree age-out
+  Primary readers (legacy):
+    - entity.cpp PacketView (band-aid hybrid; legacy leg)
+    - entity_view.cpp ViewReencode, ViewCleanup, UpdateSectree
+    - SessionSystem Show post-spawn iteration
+    - PlayerRuntimeSystem MountVnum reencode, other iteration
+    - ItemSystem_LegacyBridge.cpp item iteration
+    - MountSystem mount viewer iteration
+  Phase B target : Each legacy m_map_view iteration replaced by
+                   ViewerMap.viewers iteration. Read-only migration;
+                   m_map_view still maintained.
+  Phase C target : ViewInsert / ViewRemove write only ViewerMap
+                   (and reverse pair on the other entity). Legacy
+                   m_map_view stops being written.
+  Phase D target : VisibilitySystem replaces UpdateSectree polling.
+                   Event-driven recomputation on PositionChanged.
+  Phase G action : DELETE m_map_view field. ENTITY_MAP typedef
+                   deletes. Legacy ViewInsert / ViewRemove API
+                   deletes.
+
+----------------------------------------------------------------------
+
+Field: m_iViewAge
+  ECS twin       : NONE (event-driven model has no aging)
+  Owner system   : N/A (deleted)
+  Phase B target : Aging-comparison readers in UpdateSectree are
+                   replaced when UpdateSectree itself is replaced
+                   (Phase D)
+  Phase C target : Increment in UpdateSectree deletes when
+                   UpdateSectree converts to event-driven
+  Phase G action : DELETE field. ViewAgeMap component also deletes.
+
+----------------------------------------------------------------------
+
+Field: m_pSectree
+  ECS twin       : SectorPlacement (mapIndex, sectorX, sectorY)
+  Owner system   : SpatialService
+  Primary writers:
+    - sectree.cpp SECTREE::InsertEntity / RemoveEntity (sets
+      pkEnt->SetSectree)
+    - CEntity::Initialize (nullptr)
+  Primary readers:
+    - GetSectree() inline accessor
+    - 60+ indirect via GetSectree() across sectree-aware code
+  Phase B target : GetSectree() reads SectorPlacement and resolves
+                   to LPSECTREE via SpatialService::SectorAt or
+                   equivalent. Note: LPSECTREE is a runtime pointer;
+                   storing the pointer on SectorPlacement is fine but
+                   currently the component holds map+sector indices.
+                   B.1 chooses between (a) extending SectorPlacement
+                   with LPSECTREE cache or (b) resolving on each
+                   GetSectree call.
+  Phase C target : SetSectree writes SectorPlacement; legacy field
+                   deletes
+  Phase G action : DELETE field.
+
+
+======================================================================
+SECTION 3: NEW COMPONENT — PositionChanged
+======================================================================
+
+Phase D introduces an event-driven visibility model. PositionChanged
+is the trigger event.
+
+Design options:
+
+Option D.A: entt dispatcher event (transient).
+  Definition:
+    namespace ecs {
+        struct PositionChangedEvent {
+            entt::entity entity;
+            int32_t oldX, oldY, oldZ;
+            int32_t newX, newY, newZ;
+        };
+    }
+  Trigger: g_dispatcher.trigger(ecs::PositionChangedEvent{...})
+  Subscriber: VisibilitySystem connect handler at server boot.
+  Pro: zero per-entity storage; events are fire-and-forget.
+  Con: handler runs synchronously in the trigger thread; must be
+       fast or queue to a deferred buffer.
+
+Option D.B: tag-based dirty mark.
+  Definition:
+    namespace ecs {
+        struct PositionDirty { int32_t prevX, prevY, prevZ; };
+    }
+  Mutation: every write site emplace_or_replace<PositionDirty>(...)
+            with the previous coords.
+  Sweep: VisibilitySystem update iterates the view<PositionDirty>
+         and processes each, removing the tag on completion.
+  Pro: batched processing; deferred work; trivial to delay or split.
+  Con: relies on every Position writer also emplacing PositionDirty —
+       the same dual-write hazard the migration eliminates elsewhere.
+
+Recommended: Option D.A with a small deferred queue inside
+VisibilitySystem so the handler can batch and split work across ticks
+without impacting the trigger site. The queue is a private detail of
+VisibilitySystem; outside callers only see g_dispatcher.trigger.
+
+Trigger sites: anywhere Position is written:
+  - SpatialService::InsertEntity  (at insert)
+  - SyncPositionComponents        (every position update)
+  - MovementSystem update loop    (per ECS step)
+  - MirrorLegacyMovement          (mid-move advance, deletes Phase C)
+
+Phase B can pre-trigger PositionChanged at all SetXYZ sites without
+yet implementing the subscriber (subscriber lands in Phase D). This
+ensures the wire is in place before the system is added.
+
+
+======================================================================
+SECTION 4: SYSTEM RESPONSIBILITY MATRIX
+======================================================================
+
+System                  | owns                      | reads
+------------------------|---------------------------|-------------------
+SpatialService          | Position, PositionZ,      | (all spatial
+                        | SectorPlacement,          | components)
+                        | SpatialEntity,            |
+                        | SpatialKindTag            |
+MovementSystem          | MovementDestination,      | Position, MapIndex
+                        | MovementState,            |
+                        | MovementSpeed,            |
+                        | SyncState                 |
+VisibilitySystem (NEW)  | ViewMap, ViewerMap,       | Position,
+                        | (ViewAgeMap deletes G)    | MapIndex,
+                        |                           | StatusFlags
+                        |                           | (observer)
+StatusSystem (existing  | StatusFlags               | (consumed by
+within bigger systems   |                           |  CombatSystem,
+domain-specific)        |                           |  EntityNetworkDispatch,
+                        |                           |  etc.)
+EntityNetworkDispatch   | (no components owned)     | Position,
+                        |                           | MovementDestination,
+                        |                           | MovementState,
+                        |                           | StatusFlags,
+                        |                           | ViewerMap (via
+                        |                           |  BroadcastService)
+
+
+======================================================================
+SECTION 5: MIGRATION ORDER WITHIN A FIELD
+======================================================================
+
+For each field, the conversion follows the same per-field pattern:
+
+  Step 1: identify the existing ECS twin (this document)
+  Step 2: in Phase B, redirect every reader from legacy to ECS
+          - getter rewrite (single-line change; covers many indirect
+            readers)
+          - direct field reads converted at each call site
+  Step 3: WinTest. Behaviour unchanged because writes still maintain
+          the legacy field; the read source switched to the ECS twin
+          which the dual-write keeps in sync.
+  Step 4: in Phase C, redirect every writer from legacy to ECS
+          - direct field writes converted at each call site
+          - constructor / Initialize stops touching the field
+  Step 5: WinTest. Behaviour unchanged because the legacy field is
+          no longer read (Phase B made all reads ECS-sourced).
+  Step 6: in Phase G, delete the legacy field, the audit-only
+          accessor, and any associated Sync*Write helper. Build
+          must be clean.
+
+The order between fields can be parallelised. The constraint is:
+  - m_pos must migrate before m_posDest (because m_posDest reads
+    GetX / GetY in Sync paths)
+  - m_dwMoveStartTime / m_dwMoveDuration migrate together (same code
+    sites)
+  - m_map_view migrates AFTER VisibilitySystem (Phase D); blockers
+    PacketView consumers
+  - m_iViewAge migrates LAST, only after polling is replaced
+
+
+======================================================================
+SECTION 6: CROSS-FIELD INVARIANTS
+======================================================================
+
+Invariants the migration must preserve at every step:
+
+  I1. Position == m_pos                         (covered by current
+                                                 SyncPositionComponents)
+  I2. MovementDestination == m_posDest when set (after 4-fixup.2.a-e)
+  I3. MovementState.moveStartTime == m_dwMoveStartTime (after 2.a)
+  I4. MovementState.moveDuration == m_dwMoveDuration (after 2.a)
+  I5. MovementState.isNowWalking == m_bNowWalking (after 2.b)
+  I6. StatusFlags 4 bits == m_bAddChrState 4 bits (after 2.f, modulo
+                                                  CombatSystem on-kill
+                                                  transient)
+  I7. ViewerMap.viewers == set of entities whose m_map_view contains
+       this (current MirrorViewInsert/Remove maintain this; gaps
+       documented in desync audit)
+  I8. SectorPlacement matches GetSectree()      (covered by
+                                                 SyncSectorPlacement)
+
+Drift detectors already enabled in debug build (AURIGA_LPENTITY_FIXUP
+_AUDIT) cover I1-I6 via CheckMovementDrift and CheckCharacterInsertParity.
+I7 is covered by ValidateViewMapMirror (rate-limited). I8 has no
+dedicated detector; consider adding one in Phase D.
+
+Acceptance gate per phase: zero new violations in syslog after WinTest.
+
+
+======================================================================
+SECTION 7: PHASE A.3 / A.4 LINKAGE
+======================================================================
+
+A.3 (BroadcastService design) consumes:
+  - m_map_view ownership (ViewerMap is the new authoritative source)
+  - SectorPlacement (used by InRange queries)
+  - the recipient set semantics defined here
+
+A.4 (VisibilitySystem event-driven design) consumes:
+  - PositionChanged event definition (this document)
+  - ViewMap / ViewerMap ownership (this document)
+  - the polling-to-event-driven transition described here
+
+A.3 and A.4 must be consistent with each other: BroadcastService reads
+ViewerMap, VisibilitySystem writes it. The contract is: after Phase D
+lands, every write to Position triggers a ViewerMap update before any
+subsequent broadcast can read it.
+
+
+End of A.2 ownership matrix.
