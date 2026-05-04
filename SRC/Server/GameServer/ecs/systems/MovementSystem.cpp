@@ -561,6 +561,23 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	SetXYZ(x, y, 0);
 	ecs::SyncPositionComponents(g_registry, EcsEntityOf(this), GetMapIndex(), x, y, GetZ());
 
+	// LPENTITY.4 sync drift fix: peer-sync overrides whatever destination the
+	// previous Goto/Move had recorded. Without this, EncodeInsertPacket reads
+	// the stale m_posDest, sees (m_posDest != current pos) with iDur <= 0 (the
+	// recorded move expired), and snaps pack.x/y BACK to the stale m_posDest.
+	// New viewers entering range then render the character at the prior
+	// destination instead of the synced position. The two-client desync the
+	// user reported (chars adjacent on one client, far apart on another)
+	// reproduces from this exact divergence: client A saw the move complete,
+	// sync tracked the actual position; client B never received an updated
+	// MOVE packet beyond the original Goto, then a reencode/insert produced
+	// pack at m_posDest = old destination.
+	m_posDest.x = x;
+	m_posDest.y = y;
+	m_posStart.x = x;
+	m_posStart.y = y;
+	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
+
 	if (GetDungeon())
 	{
 		// Sync quest event attr transitions when entering a new dungeon sector.

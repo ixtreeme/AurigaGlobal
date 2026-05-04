@@ -3868,6 +3868,19 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     SetXYZ(t->x, t->y, t->z);
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
 
+    // LPENTITY.4 sync drift fix: PlayerLoad must not leave m_posDest at the
+    // pre-init zero. EncodeInsertPacket compares m_posDest to current pos
+    // and may snap the packet x/y to m_posDest if the recorded move (also
+    // zero-init) is treated as "expired". Initialize m_posDest to the
+    // loaded position so subsequent INSERT packets agree with GetX/GetY.
+    m_posDest.x = t->x;
+    m_posDest.y = t->y;
+    m_posDest.z = t->z;
+    m_posStart.x = t->x;
+    m_posStart.y = t->y;
+    m_posStart.z = t->z;
+    ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
+
     ComputePoints();
 
     SetHP(t->hp);
