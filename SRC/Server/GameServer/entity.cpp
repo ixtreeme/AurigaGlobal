@@ -1,11 +1,16 @@
 #include "stdafx.h"
 #include "char_interface.hpp"
+#include "config.h"
 #include "desc.h"
+#include "sectree.h"
 #include "sectree_manager.h"
+#include "utils.h"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/status_components.hpp"
+
+#include <unordered_set>
 
 CEntity::CEntity()
 {
@@ -100,13 +105,75 @@ void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
 	if (!GetSectree())
 		return;
 
-	FuncPacketView f(data, bytes, except);
+	// LPENTITY.4 sync drift fix: hybrid broadcast.
+	//
+	// Original logic iterated only m_map_view (legacy snapshot updated by
+	// the periodic UpdateSectree). Two-client desync repro (chars at same
+	// server pos but visually apart on one client) traced back to viewers
+	// missing MOVE / SYNC_POSITION / effect packets because the broadcast
+	// source's m_map_view did not include them at the moment of broadcast.
+	// Causes: sectree boundary, asymmetric age-out, post-warp gap before
+	// the next UpdateSectree pass populated m_map_view.
+	//
+	// New logic:
+	//   1. Send to every entity in m_map_view (legacy behaviour preserved).
+	//   2. Additionally walk the sectree neighbour list and send to any
+	//      character within VIEW_RANGE + VIEW_BONUS_RANGE that wasn't
+	//      already in m_map_view. Dedup via a small set so no recipient
+	//      gets the same packet twice.
+	//   3. Send to self last (matches the original f(make_pair(this, 0))
+	//      semantics).
+	//
+	// Recipients with no descriptor are skipped by FuncPacketAround. The
+	// extra sectree walk costs ~one sectree neighbour iteration per
+	// broadcast; cheap relative to packet construction and send.
+	std::unordered_set<LPENTITY> sent;
+	sent.reserve(m_map_view.size() + 16);
 
-	// 옵저버 상태에선 내 패킷은 나만 받는다.
+	FuncPacketAround f(data, bytes, except);
+
 	if (!m_bIsObserver)
-		for_each(m_map_view.begin(), m_map_view.end(), f);
+	{
+		for (const auto& entry : m_map_view)
+		{
+			LPENTITY ent = entry.first;
+			if (!ent || ent == except)
+				continue;
+			if (sent.insert(ent).second)
+				f(ent);
+		}
 
-	f(std::make_pair(this, 0));
+		const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+		const int32_t selfX = GetX();
+		const int32_t selfY = GetY();
+		struct RangeCollector {
+			LPENTITY self;
+			LPENTITY except;
+			int32_t selfX;
+			int32_t selfY;
+			int32_t range;
+			std::unordered_set<LPENTITY>& sent;
+			FuncPacketAround& f;
+			void operator()(LPENTITY ent)
+			{
+				if (!ent || ent == self || ent == except)
+					return;
+				if (!ent->IsType(ENTITY_CHARACTER))
+					return;
+				if (!ent->GetDesc())
+					return;
+				if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
+					return;
+				if (sent.insert(ent).second)
+					f(ent);
+			}
+		} collector { this, except, selfX, selfY, range, sent, f };
+
+		GetSectree()->ForEachAround(collector);
+	}
+
+	if (sent.insert(this).second)
+		f(this);
 }
 
 void CEntity::SetObserverMode(bool bFlag)
